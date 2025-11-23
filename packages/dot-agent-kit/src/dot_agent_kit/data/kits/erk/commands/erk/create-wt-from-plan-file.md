@@ -17,9 +17,12 @@ Create an erk worktree from an existing plan file on disk.
 Delegates the complete worktree creation workflow to the `planned-wt-creator` agent, which handles:
 
 1. Auto-detect most recent `*-plan.md` file at repository root
-2. Validate plan file (exists, readable, not empty)
-3. Run `erk create --from-plan <file>` with JSON output
-4. Display plan location and next steps
+2. **Create GitHub issue from plan** (new step)
+3. **Extract issue number from result** (new step)
+4. **Create worktree via `erk create --from-issue <number>`** (changed from `--from-plan`)
+5. Display next steps with issue link
+
+**Note:** This workflow now ALWAYS creates a GitHub issue first. The issue becomes the single source of truth for the plan, enabling full traceability and integration with GitHub's PR workflow.
 
 ## Prerequisites
 

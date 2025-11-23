@@ -39,17 +39,23 @@ This is a test plan for verification.
 
     output = result.stdout
 
-    # Verify plan content is returned as-is (stripped but unchanged)
+    # Verify plan content is returned as-is (no wrapping)
+    # The command now outputs raw markdown; wrapping happens via separate comment
     assert "# Test Implementation Plan" in output
     assert "## Overview" in output
+    assert "This is a test plan for verification." in output
     assert "## Implementation Steps" in output
     assert "1. First step" in output
     assert "2. Second step" in output
+    assert "3. Third step" in output
     assert "## Success Criteria" in output
+    assert "- All tests pass" in output
+    assert "- Code follows standards" in output
 
     # Verify NO metadata wrapping (that now happens via separate comments)
-    assert "<details>" not in output
     assert "This issue contains an implementation plan:" not in output
+    assert "<details>" not in output
+    assert "<summary>" not in output
 
 
 def test_wrap_plan_command_handles_empty_input() -> None:
@@ -125,12 +131,15 @@ def test_wrap_plan_command_with_very_long_plan() -> None:
 
     output = result.stdout
 
-    # Verify content is returned complete (check first and last sections)
+    # Verify plan content is returned as-is (no wrapping)
+    assert "# Large Implementation Plan" in output
+
+    # Verify content is complete (check first and last sections)
     assert "## Phase 1" in output
     assert "## Phase 20" in output
     assert "Task 1.1" in output
     assert "Task 20.10" in output
 
     # Verify NO metadata wrapping (that now happens via separate comments)
-    assert "<details>" not in output
     assert "This issue contains an implementation plan:" not in output
+    assert "<details>" not in output

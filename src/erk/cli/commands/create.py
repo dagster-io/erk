@@ -1,4 +1,5 @@
 import json
+import re
 import shlex
 import subprocess
 from collections.abc import Iterable, Mapping
@@ -327,6 +328,135 @@ def quote_env_value(value: str) -> str:
     return f'"{escaped}"'
 
 
+def parse_issue_number(issue_arg: str) -> str:
+    """Parse issue number from plain number or GitHub URL.
+
+    Args:
+        issue_arg: Either a plain issue number ("123") or GitHub URL
+                  ("https://github.com/owner/repo/issues/123")
+
+    Returns:
+        Issue number as string
+
+    Examples:
+        >>> parse_issue_number("123")
+        "123"
+        >>> parse_issue_number("https://github.com/owner/repo/issues/456")
+        "456"
+        >>> parse_issue_number("https://github.com/owner/repo/issues/789#issuecomment-123")
+        "789"
+    """
+    # Pattern matches: optional "issues/" followed by digits, optional query/hash
+    pattern = r"(?:issues/)?(\d+)(?:[?#].*)?$"
+    match = re.search(pattern, issue_arg)
+    if match:
+        return match.group(1)
+    # If no match, assume it's already a plain number
+    return issue_arg
+
+
+def fetch_github_issue(issue_number: str) -> dict[str, object]:
+    """Fetch GitHub issue via gh CLI.
+
+    Args:
+        issue_number: GitHub issue number
+
+    Returns:
+        Parsed JSON response with fields: body, title, labels, number, html_url
+
+    Raises:
+        SystemExit: If gh CLI not found, not authenticated, or issue fetch fails
+    """
+    import shutil
+
+    # Check gh CLI availability (LBYL)
+    gh_path = shutil.which("gh")
+    if not gh_path:
+        user_output(
+            click.style("Error: ", fg="red")
+            + "gh CLI not found. Install via: brew install gh\n"
+            + "Or visit: https://cli.github.com/"
+        )
+        raise SystemExit(1)
+
+    # Check gh authentication (LBYL)
+    auth_result = subprocess.run(
+        ["gh", "auth", "status"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if auth_result.returncode != 0:
+        user_output(
+            click.style("Error: ", fg="red") + "gh CLI not authenticated. Run: gh auth login"
+        )
+        raise SystemExit(1)
+
+    # Fetch issue
+    result = subprocess.run(
+        ["gh", "issue", "view", issue_number, "--json", "body,title,labels,number,html_url"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if result.returncode != 0:
+        user_output(
+            click.style("Error: ", fg="red")
+            + f"Failed to fetch issue #{issue_number}\n"
+            + f"Details: {result.stderr}\n\n"
+            + "Troubleshooting:\n"
+            + "  • Verify issue number is correct\n"
+            + "  • Check repository access: gh auth status\n"
+            + f"  • Try viewing manually: gh issue view {issue_number}"
+        )
+        raise SystemExit(1)
+
+    # Parse JSON response
+    try:
+        issue_data = json.loads(result.stdout)
+    except json.JSONDecodeError as e:
+        user_output(
+            click.style("Error: ", fg="red")
+            + f"Failed to parse issue JSON: {e}\n"
+            + f"Raw output: {result.stdout}"
+        )
+        raise SystemExit(1) from e
+
+    return issue_data
+
+
+def validate_erk_plan_label(issue_data: dict[str, object], issue_number: str) -> None:
+    """Validate that issue has erk-plan label.
+
+    Args:
+        issue_data: Parsed JSON from gh CLI
+        issue_number: Issue number for error messages
+
+    Raises:
+        SystemExit: If erk-plan label is missing
+    """
+    labels = issue_data.get("labels", [])
+    if not isinstance(labels, list):
+        user_output(
+            click.style("Error: ", fg="red") + f"Issue #{issue_number} has invalid labels format"
+        )
+        raise SystemExit(1)
+
+    has_label = any(isinstance(label, dict) and label.get("name") == "erk-plan" for label in labels)
+
+    if not has_label:
+        user_output(
+            click.style("Error: ", fg="red")
+            + f"Issue #{issue_number} must have 'erk-plan' label\n\n"
+            + "To add the label:\n"
+            + f"  gh issue edit {issue_number} --add-label erk-plan\n\n"
+            + "Or create issues via:\n"
+            + "  /erk:create-plan-issue-from-plan-file"
+        )
+        raise SystemExit(1)
+
+
 def _create_json_response(
     *,
     worktree_name: str,
@@ -390,6 +520,16 @@ def _create_json_response(
     ),
 )
 @click.option(
+    "--from-issue",
+    "from_issue",
+    type=str,
+    help=(
+        "GitHub issue number or URL with erk-plan label. Fetches issue content "
+        "and creates worktree with .impl/ folder and .impl/issue.json metadata. "
+        "Mutually exclusive with --plan."
+    ),
+)
+@click.option(
     "--keep-plan",
     is_flag=True,
     help="Copy the plan file instead of moving it (requires --from-plan).",
@@ -450,6 +590,7 @@ def create(
     ref: str | None,
     no_post: bool,
     from_plan: Path | None,
+    from_issue: str | None,
     keep_plan: bool,
     copy_plan: bool,
     from_current_branch: bool,
@@ -473,9 +614,19 @@ def create(
     """
 
     # Validate mutually exclusive options
-    flags_set = sum([from_current_branch, from_branch is not None, from_plan is not None])
+    flags_set = sum(
+        [
+            from_current_branch,
+            from_branch is not None,
+            from_plan is not None,
+            from_issue is not None,
+        ]
+    )
     if flags_set > 1:
-        user_output("Cannot use multiple of: --from-current-branch, --from-branch, --from-plan")
+        user_output(
+            "Cannot use multiple of: --from-current-branch, --from-branch, "
+            "--from-plan, --from-issue"
+        )
         raise SystemExit(1)
 
     # Validate --json and --script are mutually exclusive
@@ -488,13 +639,13 @@ def create(
         user_output("Error: --keep-plan requires --from-plan")
         raise SystemExit(1)
 
-    # Validate --copy-plan and --from-plan are mutually exclusive
-    if copy_plan and from_plan is not None:
+    # Validate --copy-plan and --from-plan/--from-issue are mutually exclusive
+    if copy_plan and (from_plan is not None or from_issue is not None):
         user_output(
             click.style("Error: ", fg="red")
-            + "--copy-plan and --from-plan are mutually exclusive. "
+            + "--copy-plan and --from-plan/--from-issue are mutually exclusive. "
             + "Use --copy-plan to copy from current worktree OR "
-            + "--from-plan <file> to use a plan file."
+            + "--from-plan <file> / --from-issue <number> to use a plan source."
         )
         raise SystemExit(1)
 
@@ -556,19 +707,51 @@ def create(
         # Note: Apply ensure_unique_worktree_name() and truncation after getting erks_dir
         name = base_name
 
+    # Handle --from-issue flag
+    # Store issue data for later use (avoid fetching twice)
+    issue_data: dict[str, object] | None = None
+    issue_number_parsed: str | None = None
+
+    if from_issue:
+        if name:
+            user_output("Cannot specify both NAME and --from-issue. Use one or the other.")
+            raise SystemExit(1)
+
+        # Parse issue number from argument (handles URLs and plain numbers)
+        issue_number_parsed = parse_issue_number(from_issue)
+
+        # Fetch issue via gh CLI
+        issue_data = fetch_github_issue(issue_number_parsed)
+
+        # Validate erk-plan label exists
+        validate_erk_plan_label(issue_data, issue_number_parsed)
+
+        # Extract issue title for worktree name
+        issue_title = issue_data.get("title")
+        if not isinstance(issue_title, str) or not issue_title:
+            user_output(
+                click.style("Error: ", fg="red") + f"Issue #{issue_number_parsed} has no title"
+            )
+            raise SystemExit(1)
+
+        # Derive name from issue title
+        base_name = sanitize_worktree_name(issue_title)
+        name = base_name
+
     # Regular create (no special flags)
     else:
         if not name:
             user_output(
-                "Must provide NAME or --from-plan or --from-branch or --from-current-branch option."
+                "Must provide NAME or --from-plan or --from-issue "
+                "or --from-branch or --from-current-branch option."
             )
             raise SystemExit(1)
 
     # At this point, name should always be set
     assert name is not None, "name must be set by now"
 
-    # Track if name came from plan file (will need unique naming)
-    is_plan_derived = from_plan is not None
+    # Track if name came from plan file or issue (will need unique naming)
+    is_plan_derived = from_plan is not None or from_issue is not None
 
     # Sanitize the name to ensure consistency (truncate to 30 chars, normalize)
     # This applies to user-provided names as well as derived names
@@ -710,7 +893,8 @@ def create(
     (wt_path / ".env").write_text(env_content, encoding="utf-8")
 
     # Create impl folder if plan file provided
-    # Track impl folder destination: set to .impl/ path only if --from-plan was provided
+    # Track impl folder destination: set to .impl/ path only if --from-plan or
+    # --from-issue was provided
     impl_folder_destination: Path | None = None
     if from_plan:
         # Read plan content from source file
@@ -727,6 +911,28 @@ def create(
             from_plan.unlink()  # Remove source file
             if not script and not output_json:
                 user_output(f"Moved plan to {impl_folder_destination}")
+
+    # Create impl folder if issue provided (use cached issue_data from earlier)
+    if from_issue and issue_data and issue_number_parsed:
+        # Extract issue body as plan content
+        issue_body = issue_data.get("body")
+        if not isinstance(issue_body, str):
+            issue_body = ""  # Handle None or non-string body
+
+        # Create .impl/ folder in new worktree
+        impl_folder_destination = create_impl_folder(wt_path, issue_body)
+
+        # Create .impl/issue.json metadata
+        issue_json_path = impl_folder_destination / "issue.json"
+        issue_metadata = {
+            "number": issue_data.get("number"),
+            "url": issue_data.get("html_url"),
+            "title": issue_data.get("title"),
+        }
+        issue_json_path.write_text(json.dumps(issue_metadata, indent=2) + "\n", encoding="utf-8")
+
+        if not script and not output_json:
+            user_output(f"Created .impl/ from issue #{issue_number_parsed}")
 
     # Copy .impl directory if --copy-plan flag is set
     if copy_plan:
