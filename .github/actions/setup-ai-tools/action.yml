@@ -1,0 +1,110 @@
+name: Setup AI Tools
+description: Install and configure erk, dot-agent, and Claude Code for AI-driven implementation
+
+inputs:
+  erk-version:
+    description: Version of erk to install
+    required: false
+    default: latest
+  claude-version:
+    description: Version of Claude Code to install
+    required: false
+    default: latest
+  python-version:
+    description: Python version to use
+    required: false
+    default: "3.13"
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
+    - name: Cache uv installation
+      id: cache-uv
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/bin/uv
+        key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-uv-
+
+    - name: Install uv
+      if: steps.cache-uv.outputs.cache-hit != 'true'
+      shell: bash
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    - name: Add uv to PATH
+      shell: bash
+      run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Cache erk installation
+      id: cache-erk
+      uses: actions/cache@v4
+      with:
+        path: ~/.local/bin/erk
+        key: ${{ runner.os }}-erk-${{ inputs.erk-version }}
+        restore-keys: |
+          ${{ runner.os }}-erk-
+
+    - name: Install erk
+      if: steps.cache-erk.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        if [ "${{ inputs.erk-version }}" = "latest" ]; then
+          uv tool install erk
+        else
+          uv tool install erk==${{ inputs.erk-version }}
+        fi
+
+    - name: Add erk to PATH
+      shell: bash
+      run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Cache Claude Code installation
+      id: cache-claude
+      uses: actions/cache@v4
+      with:
+        path: ~/.npm/_npx
+        key: ${{ runner.os }}-claude-${{ inputs.claude-version }}
+        restore-keys: |
+          ${{ runner.os }}-claude-
+
+    - name: Install Claude Code (dot-agent)
+      shell: bash
+      run: |
+        if [ "${{ inputs.claude-version }}" = "latest" ]; then
+          npm install -g @anthropic-ai/claude-code
+        else
+          npm install -g @anthropic-ai/claude-code@${{ inputs.claude-version }}
+        fi
+
+    - name: Install erk kit for dot-agent
+      shell: bash
+      run: dot-agent kit install erk
+
+    - name: Verify installations
+      shell: bash
+      run: |
+        echo "Verifying tool installations..."
+        uv --version
+        erk --version
+        dot-agent --version
+        echo ""
+        echo "Installed kits:"
+        dot-agent kit list
+        echo ""
+        if dot-agent kit list | grep -q "erk"; then
+          echo "✓ erk kit successfully installed"
+        else
+          echo "✗ erk kit not found"
+          exit 1
+        fi

@@ -1,0 +1,333 @@
+name: AI Implementation System
+
+on:
+  workflow_dispatch:
+    inputs:
+      plan-file:
+        description: Plan file to implement (e.g., feature-name-plan.md)
+        required: true
+        type: string
+      validation-level:
+        description: Validation level
+        required: false
+        type: choice
+        options:
+          - full
+          - quick
+          - none
+        default: full
+  push:
+    paths:
+      - "*-plan.md"
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+env:
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+jobs:
+  discover-plan:
+    name: Discover Plan File
+    runs-on: ubuntu-latest
+    outputs:
+      plan-file: ${{ steps.determine-plan.outputs.plan_file }}
+      plan-exists: ${{ steps.determine-plan.outputs.plan_exists }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine plan file
+        id: determine-plan
+        run: |
+          # If manually triggered, use provided plan file
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            plan_file="${{ github.event.inputs.plan-file }}"
+            echo "Using manually specified plan: $plan_file"
+          else
+            # For push events, find the plan file from the commit
+            plan_file=$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }} | grep -E '.*-plan\.md$' | head -n 1)
+            if [ -z "$plan_file" ]; then
+              echo "No plan file found in commit"
+              echo "plan_exists=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            echo "Found plan file in commit: $plan_file"
+          fi
+
+          # Verify plan file exists
+          if [ ! -f "$plan_file" ]; then
+            echo "Error: Plan file '$plan_file' not found"
+            echo "plan_exists=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "plan_file=$plan_file" >> $GITHUB_OUTPUT
+          echo "plan_exists=true" >> $GITHUB_OUTPUT
+
+      - name: Validate plan structure
+        if: steps.determine-plan.outputs.plan_exists == 'true'
+        run: |
+          plan_file="${{ steps.determine-plan.outputs.plan_file }}"
+          echo "Validating plan structure for: $plan_file"
+
+          # Check for enrichment marker
+          if grep -q "enriched_by_persist_plan: true" "$plan_file"; then
+            echo "✓ Plan is enriched by /erk:persist-plan"
+          else
+            echo "⚠ Warning: Plan may not be enriched (missing enriched_by_persist_plan marker)"
+          fi
+
+          # Check for implementation steps
+          if grep -q -E "## Implementation (Steps|Phases)" "$plan_file"; then
+            echo "✓ Plan has Implementation section"
+          else
+            echo "✗ Error: Plan missing Implementation Steps/Phases section"
+            exit 1
+          fi
+
+          echo "✓ Plan validation complete"
+
+  setup-and-execute:
+    name: Setup Tools & Execute Plan
+    runs-on: ubuntu-latest
+    needs: discover-plan
+    if: needs.discover-plan.outputs.plan-exists == 'true'
+    outputs:
+      worktree-path: ${{ steps.execute.outputs.worktree-path }}
+      branch-name: ${{ steps.execute.outputs.branch-name }}
+      success: ${{ steps.execute.outputs.success }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for proper git operations
+
+      - name: Setup AI tools
+        uses: ./.github/actions/setup-ai-tools
+        with:
+          python-version: "3.13"
+
+      - name: Execute implementation plan
+        id: execute
+        uses: ./.github/actions/execute-plan
+        with:
+          plan-file: ${{ needs.discover-plan.outputs.plan-file }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          validation-level: ${{ github.event.inputs.validation-level || 'full' }}
+          permission-mode: acceptEdits
+
+      - name: Display execution summary
+        if: always()
+        run: |
+          echo "## Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Plan File:** ${{ needs.discover-plan.outputs.plan-file }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ steps.execute.outputs.branch-name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Worktree:** ${{ steps.execute.outputs.worktree-path }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Success:** ${{ steps.execute.outputs.success }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Show progress if available
+          worktree_path="${{ steps.execute.outputs.worktree-path }}"
+          if [ -f "$worktree_path/.plan/progress.md" ]; then
+            echo "### Progress" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            head -n 30 "$worktree_path/.plan/progress.md" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+  validate:
+    name: Run Validation Suite
+    runs-on: ubuntu-latest
+    needs: setup-and-execute
+    if: always() && github.event.inputs.validation-level != 'none'
+    continue-on-error: true
+    steps:
+      - name: Checkout worktree branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup-and-execute.outputs.branch-name }}
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Run unit tests
+        id: unit-tests
+        continue-on-error: true
+        run: |
+          if [ -f "Makefile" ] && grep -q "test-unit" Makefile; then
+            make test-unit
+          elif [ -f "pyproject.toml" ]; then
+            uv run pytest tests/unit -v
+          else
+            echo "No test configuration found, skipping"
+          fi
+
+      - name: Run integration tests
+        id: integration-tests
+        if: github.event.inputs.validation-level == 'full'
+        continue-on-error: true
+        run: |
+          if [ -f "Makefile" ] && grep -q "test-integration" Makefile; then
+            make test-integration
+          elif [ -f "pyproject.toml" ]; then
+            uv run pytest tests/integration -v
+          else
+            echo "No integration test configuration found, skipping"
+          fi
+
+      - name: Run type checking
+        id: type-check
+        continue-on-error: true
+        run: |
+          if [ -f "Makefile" ] && grep -q "pyright" Makefile; then
+            make pyright
+          elif [ -f "pyproject.toml" ]; then
+            uv run pyright
+          else
+            echo "No type checking configuration found, skipping"
+          fi
+
+      - name: Run linting
+        id: lint
+        continue-on-error: true
+        run: |
+          if [ -f "Makefile" ] && grep -q "lint" Makefile; then
+            make lint
+          elif [ -f "pyproject.toml" ]; then
+            uv run ruff check .
+          else
+            echo "No linting configuration found, skipping"
+          fi
+
+      - name: Upload validation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-results-${{ needs.setup-and-execute.outputs.branch-name }}
+          path: |
+            .pytest_cache/
+            .ruff_cache/
+          retention-days: 30
+
+      - name: Validation summary
+        if: always()
+        run: |
+          echo "## Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ steps.unit-tests.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event.inputs.validation-level }}" = "full" ]; then
+            echo "| Integration Tests | ${{ steps.integration-tests.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "| Type Checking | ${{ steps.type-check.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Linting | ${{ steps.lint.outcome }} |" >> $GITHUB_STEP_SUMMARY
+
+  create-pr:
+    name: Create Pull Request
+    runs-on: ubuntu-latest
+    needs: [discover-plan, setup-and-execute, validate]
+    if: always() && needs.setup-and-execute.outputs.branch-name != ''
+    steps:
+      - name: Checkout worktree branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup-and-execute.outputs.branch-name }}
+          fetch-depth: 0
+
+      - name: Generate PR body
+        id: pr-body
+        run: |
+          plan_file="${{ needs.discover-plan.outputs.plan-file }}"
+          branch="${{ needs.setup-and-execute.outputs.branch-name }}"
+          success="${{ needs.setup-and-execute.outputs.success }}"
+
+          # Extract plan title/objective if possible
+          plan_title=$(grep -E "^##? " "$plan_file" | head -n 1 | sed 's/^##* //' || echo "Implementation")
+
+          # Generate PR body
+          cat > pr_body.md <<'EOF'
+          ## AI-Generated Implementation
+
+          This PR was automatically generated by the AI Implementation System.
+
+          **Plan File:** `${{ needs.discover-plan.outputs.plan-file }}`
+          **Implementation Status:** ${{ needs.setup-and-execute.outputs.success == 'true' && '✓ Success' || '⚠ Completed with warnings' }}
+
+          ### Implementation Summary
+
+          Automated implementation based on the plan defined in the plan file above.
+
+          ### Validation Results
+
+          See the validation job for detailed test results, type checking, and linting output.
+
+          ### Review Checklist
+
+          - [ ] Review implementation logic
+          - [ ] Verify test coverage
+          - [ ] Check for security issues
+          - [ ] Validate against plan requirements
+          - [ ] Run local tests
+
+          ---
+
+          🤖 Generated with AI Implementation System
+          EOF
+
+          echo "Generated PR body"
+
+      - name: Create pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          branch="${{ needs.setup-and-execute.outputs.branch-name }}"
+          success="${{ needs.setup-and-execute.outputs.success }}"
+          plan_file="${{ needs.discover-plan.outputs.plan-file }}"
+
+          # Determine if PR should be draft
+          draft_flag=""
+          if [ "$success" != "true" ]; then
+            draft_flag="--draft"
+          fi
+
+          # Extract clean title from plan file
+          plan_name=$(basename "$plan_file" -plan.md)
+          pr_title="AI Implementation: ${plan_name}"
+
+          # Create PR
+          pr_url=$(gh pr create \
+            --title "$pr_title" \
+            --body-file pr_body.md \
+            --label "ai-generated" \
+            --label "needs-review" \
+            $draft_flag \
+            --base main || gh pr create \
+            --title "$pr_title" \
+            --body-file pr_body.md \
+            --label "ai-generated" \
+            --label "needs-review" \
+            $draft_flag \
+            --base master)
+
+          echo "PR created: $pr_url"
+          echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
+
+          echo "## Pull Request Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "[$pr_url]($pr_url)" >> $GITHUB_STEP_SUMMARY
