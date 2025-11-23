@@ -497,7 +497,12 @@ Suggested action:
 You can now:
 
 1. Review and edit the plan file if needed
-2. Create the worktree: /erk:create-wt-from-plan-file
+2. Create GitHub issue: /erk:create-plan-issue-from-plan-file
+3. Implement with unified command: erk implement #<issue_number>
+
+Alternative (file-based workflow):
+
+- Create worktree directly: /erk:create-wt-from-plan-file
 
 ---
 
