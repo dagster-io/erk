@@ -14,8 +14,10 @@ from erk.core.init_utils import (
     is_repo_named,
     render_config_template,
 )
+from erk.core.kit_installer import install_erk_kits
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.core.shell import Shell
+from erk.core.version_check import check_and_sync_kits
 
 
 def detect_graphite(shell_ops: Shell) -> bool:
@@ -244,6 +246,12 @@ def init_cmd(
         else:
             user_output("Graphite (gt) not detected - will use 'git' for branch creation")
 
+    # Check for version changes and sync kits if needed (for existing repos)
+    if not first_time_init:
+        # Discover repo context to get repo root
+        repo_context = discover_repo_context(ctx, ctx.cwd)
+        check_and_sync_kits(repo_context.root)
+
     # When --repo is set, verify that global config exists
     if repo and not ctx.config_store.exists():
         config_path = ctx.config_store.path()
@@ -277,6 +285,11 @@ def init_cmd(
     content = render_config_template(presets_dir, effective_preset)
     cfg_path.write_text(content, encoding="utf-8")
     user_output(f"Wrote {cfg_path}")
+
+    # Install Claude Code kits (first-time init only)
+    if first_time_init and ctx.global_config is not None:
+        has_graphite = ctx.global_config.use_graphite
+        install_erk_kits(repo_context.root, use_graphite=has_graphite)
 
     # Check for .gitignore and add .env
     gitignore_path = repo_context.root / ".gitignore"
