@@ -850,9 +850,23 @@ def execute_finalize(
     metadata_section = build_pr_metadata_section(impl_dir, pr_number=pr_number)
     # pr_body is guaranteed non-None here (either passed in or read from file, validated above)
     assert pr_body is not None
+
+    # Validate PR body contains erk-generated commit message marker
+    # This ensures the commit-message-generator agent ran successfully
+    if not _is_valid_commit_message(pr_body):
+        return PostAnalysisError(
+            success=False,
+            error_type="ai_generation_failed",
+            message="PR body missing erk-generated commit message marker",
+            details={
+                "hint": "The commit-message-generator agent may have failed or returned an error",
+                "expected_marker": ERK_COMMIT_MESSAGE_MARKER,
+            },
+        )
+
     final_body = pr_body + metadata_section
 
-    # Strip erk commit message marker if present (cleanup)
+    # Strip erk commit message marker after validation (cleanup)
     final_body = _strip_commit_message_marker(final_body)
 
     # Validate Closes # reference exists when .impl/ has issue reference

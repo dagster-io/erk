@@ -553,10 +553,13 @@ class TestExecuteFinalize:
             .with_pr(123, url="https://github.com/org/repo/pull/123")
         )
 
+        # PR body must include marker to pass validation
+        pr_body = f"This adds a great new feature\n\n{ERK_COMMIT_MESSAGE_MARKER}"
+
         result = execute_finalize(
             pr_number=123,
             pr_title="Add new feature",
-            pr_body="This adds a great new feature",
+            pr_body=pr_body,
             diff_file=None,
             ops=ops,
         )
@@ -567,10 +570,11 @@ class TestExecuteFinalize:
         assert result.pr_title == "Add new feature"
         assert result.branch_name == "feature-branch"
 
-        # Verify PR was updated
+        # Verify PR was updated (marker should be stripped)
         github_state = ops.github().get_state()
         assert github_state.pr_titles[123] == "Add new feature"
         assert "This adds a great new feature" in github_state.pr_bodies[123]
+        assert ERK_COMMIT_MESSAGE_MARKER not in github_state.pr_bodies[123]
 
     def test_finalize_cleans_up_diff_file(self, tmp_path: Path) -> None:
         """Test that finalize cleans up the temp diff file."""
@@ -591,10 +595,13 @@ class TestExecuteFinalize:
             .with_pr(123, url="https://github.com/org/repo/pull/123")
         )
 
+        # PR body must include marker to pass validation
+        pr_body = f"Description\n\n{ERK_COMMIT_MESSAGE_MARKER}"
+
         result = execute_finalize(
             pr_number=123,
             pr_title="Add feature",
-            pr_body="Description",
+            pr_body=pr_body,
             diff_file=str(diff_file),
             ops=ops,
         )
@@ -628,6 +635,9 @@ class TestExecuteFinalize:
             .with_pr(123, url="https://github.com/org/repo/pull/123")
         )
 
+        # PR body must include marker to pass validation
+        pr_body = f"Description\n\n{ERK_COMMIT_MESSAGE_MARKER}"
+
         # Mock Path.cwd() to return our temp directory
         patch_path = "erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch.Path.cwd"
         with patch(patch_path) as mock_cwd:
@@ -636,7 +646,7 @@ class TestExecuteFinalize:
             result = execute_finalize(
                 pr_number=123,
                 pr_title="Add feature",
-                pr_body="Description",
+                pr_body=pr_body,
                 diff_file=None,
                 ops=ops,
             )
@@ -647,13 +657,15 @@ class TestExecuteFinalize:
 
         # Verify PR body includes footer metadata
         github_state = ops.github().get_state()
-        pr_body = github_state.pr_bodies[123]
+        final_pr_body = github_state.pr_bodies[123]
         # Body comes first, then footer
-        assert pr_body.startswith("Description")
+        assert final_pr_body.startswith("Description")
         # Footer contains separator, checkout command, and Closes reference
-        assert "---" in pr_body
-        assert "erk pr checkout 123" in pr_body
-        assert "Closes #456" in pr_body
+        assert "---" in final_pr_body
+        assert "erk pr checkout 123" in final_pr_body
+        assert "Closes #456" in final_pr_body
+        # Marker should be stripped
+        assert ERK_COMMIT_MESSAGE_MARKER not in final_pr_body
 
     def test_finalize_strips_commit_message_marker(self, tmp_path: Path) -> None:
         """Test that finalize strips the erk commit message marker from PR body."""
@@ -689,6 +701,34 @@ class TestExecuteFinalize:
         assert ERK_COMMIT_MESSAGE_MARKER not in pr_body
         assert "Description of change" in pr_body
 
+    def test_finalize_fails_when_marker_missing(self) -> None:
+        """Test finalize fails when PR body is missing the commit message marker."""
+        from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
+            execute_finalize,
+        )
+
+        ops = (
+            FakeGtKitOps()
+            .with_branch("feature-branch", parent="main")
+            .with_commits(1)
+            .with_pr(123, url="https://github.com/org/repo/pull/123")
+        )
+
+        # PR body without marker (simulating agent failure)
+        result = execute_finalize(
+            pr_number=123,
+            pr_title="Add feature",
+            pr_body="Description without marker",
+            diff_file=None,
+            ops=ops,
+        )
+
+        assert isinstance(result, PostAnalysisError)
+        assert result.success is False
+        assert result.error_type == "ai_generation_failed"
+        assert "marker" in result.message.lower()
+        assert result.details["expected_marker"] == ERK_COMMIT_MESSAGE_MARKER
+
     def test_finalize_fails_when_closes_reference_missing(self, tmp_path: Path) -> None:
         """Test finalize fails when issue reference exists but Closes # is missing from body."""
         from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
@@ -712,6 +752,9 @@ class TestExecuteFinalize:
             .with_pr(123, url="https://github.com/org/repo/pull/123")
         )
 
+        # PR body must include marker but we mock metadata to NOT include Closes #
+        pr_body = f"Description without closes reference\n\n{ERK_COMMIT_MESSAGE_MARKER}"
+
         # Mock build_pr_metadata_section to return empty (simulating missing Closes #)
         # This happens when build_pr_metadata_section doesn't work correctly
         patch_path = "erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch.Path.cwd"
@@ -729,7 +772,7 @@ class TestExecuteFinalize:
             result = execute_finalize(
                 pr_number=123,
                 pr_title="Add feature",
-                pr_body="Description without closes reference",
+                pr_body=pr_body,
                 diff_file=None,
                 ops=ops,
             )
