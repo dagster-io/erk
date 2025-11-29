@@ -5,6 +5,7 @@ import click
 from erk.cli.alias import register_with_aliases
 from erk.cli.commands.admin import admin_group
 from erk.cli.commands.checkout import checkout_cmd
+from erk.cli.commands.codespace import codespace_group
 from erk.cli.commands.completion import completion_group
 from erk.cli.commands.config import config_group
 from erk.cli.commands.down import down_cmd
@@ -44,6 +45,7 @@ def cli(ctx: click.Context, debug: bool) -> None:
 # Commands with @alias decorators use register_with_aliases() to auto-register aliases
 cli.add_command(admin_group)
 register_with_aliases(cli, checkout_cmd)  # Has @alias("co")
+cli.add_command(codespace_group)
 cli.add_command(completion_group)
 cli.add_command(config_group)
 cli.add_command(down_cmd)
