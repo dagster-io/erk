@@ -7,9 +7,13 @@ from unittest.mock import Mock, patch
 import pytest
 from click.testing import CliRunner
 from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
+    ERK_COMMIT_MESSAGE_MARKER,
     PostAnalysisError,
     PreAnalysisError,
     PreAnalysisResult,
+    _has_closes_reference,
+    _is_valid_commit_message,
+    _strip_commit_message_marker,
     build_pr_metadata_section,
     execute_pre_analysis,
 )
@@ -650,3 +654,183 @@ class TestExecuteFinalize:
         assert "---" in pr_body
         assert "erk pr checkout 123" in pr_body
         assert "Closes #456" in pr_body
+
+    def test_finalize_strips_commit_message_marker(self, tmp_path: Path) -> None:
+        """Test that finalize strips the erk commit message marker from PR body."""
+        from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
+            FinalizeResult,
+            execute_finalize,
+        )
+
+        ops = (
+            FakeGtKitOps()
+            .with_branch("feature-branch", parent="main")
+            .with_commits(1)
+            .with_pr(123, url="https://github.com/org/repo/pull/123")
+        )
+
+        # PR body includes marker at end
+        pr_body_with_marker = f"Description of change\n\n{ERK_COMMIT_MESSAGE_MARKER}"
+
+        result = execute_finalize(
+            pr_number=123,
+            pr_title="Add feature",
+            pr_body=pr_body_with_marker,
+            diff_file=None,
+            ops=ops,
+        )
+
+        assert isinstance(result, FinalizeResult)
+        assert result.success is True
+
+        # Verify marker was stripped from PR body
+        github_state = ops.github().get_state()
+        pr_body = github_state.pr_bodies[123]
+        assert ERK_COMMIT_MESSAGE_MARKER not in pr_body
+        assert "Description of change" in pr_body
+
+    def test_finalize_fails_when_closes_reference_missing(self, tmp_path: Path) -> None:
+        """Test finalize fails when issue reference exists but Closes # is missing from body."""
+        from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
+            execute_finalize,
+        )
+
+        # Create .impl/issue.json
+        impl_dir = tmp_path / ".impl"
+        impl_dir.mkdir()
+        issue_json = impl_dir / "issue.json"
+        issue_json.write_text(
+            '{"issue_number": 456, "issue_url": "https://github.com/repo/issues/456", '
+            '"created_at": "2025-01-01T00:00:00Z", "synced_at": "2025-01-01T00:00:00Z"}',
+            encoding="utf-8",
+        )
+
+        ops = (
+            FakeGtKitOps()
+            .with_branch("feature-branch", parent="main")
+            .with_commits(1)
+            .with_pr(123, url="https://github.com/org/repo/pull/123")
+        )
+
+        # Mock build_pr_metadata_section to return empty (simulating missing Closes #)
+        # This happens when build_pr_metadata_section doesn't work correctly
+        patch_path = "erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch.Path.cwd"
+        patch_metadata = (
+            "erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch.build_pr_metadata_section"
+        )
+        with (
+            patch(patch_path) as mock_cwd,
+            patch(patch_metadata) as mock_build,
+        ):
+            mock_cwd.return_value = tmp_path
+            # Return metadata section WITHOUT Closes # reference
+            mock_build.return_value = "\n---\nSome metadata but no closes\n"
+
+            result = execute_finalize(
+                pr_number=123,
+                pr_title="Add feature",
+                pr_body="Description without closes reference",
+                diff_file=None,
+                ops=ops,
+            )
+
+        assert isinstance(result, PostAnalysisError)
+        assert result.success is False
+        assert result.error_type == "pr_update_failed"
+        assert "Closes #456" in result.message
+        assert result.details["issue_number"] == "456"
+
+
+class TestIsValidCommitMessage:
+    """Tests for _is_valid_commit_message() function."""
+
+    def test_valid_message_with_marker(self) -> None:
+        """Test that message with marker is considered valid."""
+        message = f"Add feature\n\nDescription\n\n{ERK_COMMIT_MESSAGE_MARKER}"
+        assert _is_valid_commit_message(message)
+
+    def test_rejects_message_without_marker(self) -> None:
+        """Test that message without marker is rejected."""
+        assert not _is_valid_commit_message("Add feature\n\nNo marker here")
+
+    def test_rejects_permission_request(self) -> None:
+        """Test that permission request error message is rejected."""
+        permission_msg = "I need permission to read the file at /tmp/diff.txt"
+        assert not _is_valid_commit_message(permission_msg)
+
+    def test_marker_can_appear_anywhere(self) -> None:
+        """Test that marker is detected anywhere in the message."""
+        message_start = f"{ERK_COMMIT_MESSAGE_MARKER}\n\nAdd feature"
+        message_middle = f"Title\n{ERK_COMMIT_MESSAGE_MARKER}\nBody"
+        assert _is_valid_commit_message(message_start)
+        assert _is_valid_commit_message(message_middle)
+
+
+class TestStripCommitMessageMarker:
+    """Tests for _strip_commit_message_marker() function."""
+
+    def test_strips_marker_at_end(self) -> None:
+        """Test that marker at end of body is stripped."""
+        body = f"Title\n\nBody\n\n{ERK_COMMIT_MESSAGE_MARKER}"
+        result = _strip_commit_message_marker(body)
+        assert result == "Title\n\nBody"
+        assert ERK_COMMIT_MESSAGE_MARKER not in result
+
+    def test_preserves_content_without_marker(self) -> None:
+        """Test that content without marker is preserved."""
+        body = "Title\n\nBody without marker"
+        result = _strip_commit_message_marker(body)
+        assert result == body
+
+    def test_strips_marker_in_middle(self) -> None:
+        """Test that marker in middle of body is stripped."""
+        body = f"Title\n\n{ERK_COMMIT_MESSAGE_MARKER}\n\nBody"
+        result = _strip_commit_message_marker(body)
+        assert ERK_COMMIT_MESSAGE_MARKER not in result
+        assert "Title" in result
+        assert "Body" in result
+
+    def test_strips_marker_with_surrounding_whitespace(self) -> None:
+        """Test that marker line with whitespace is stripped."""
+        body = f"Title\n\n  {ERK_COMMIT_MESSAGE_MARKER}  \n\nBody"
+        result = _strip_commit_message_marker(body)
+        assert ERK_COMMIT_MESSAGE_MARKER not in result
+
+    def test_returns_stripped_result(self) -> None:
+        """Test that result is stripped of leading/trailing whitespace."""
+        body = f"\n\nTitle\n\n{ERK_COMMIT_MESSAGE_MARKER}\n\n"
+        result = _strip_commit_message_marker(body)
+        assert not result.startswith("\n")
+        assert not result.endswith("\n")
+
+
+class TestHasClosesReference:
+    """Tests for _has_closes_reference() function."""
+
+    def test_detects_closes_reference(self) -> None:
+        """Test that Closes # reference is detected."""
+        assert _has_closes_reference("Body\n\nCloses #123")
+
+    def test_detects_closes_in_middle(self) -> None:
+        """Test that Closes # reference in middle of body is detected."""
+        assert _has_closes_reference("Closes #456\n\nMore text")
+
+    def test_rejects_body_without_closes(self) -> None:
+        """Test that body without Closes # is rejected."""
+        assert not _has_closes_reference("Body without issue reference")
+
+    def test_detects_closes_with_large_number(self) -> None:
+        """Test that Closes # with large issue number is detected."""
+        assert _has_closes_reference("Closes #12345")
+
+    def test_rejects_partial_closes_match(self) -> None:
+        """Test that partial match (missing #) is rejected."""
+        assert not _has_closes_reference("Closes 123")
+
+    def test_rejects_closes_without_number(self) -> None:
+        """Test that Closes # without number is rejected."""
+        assert not _has_closes_reference("Closes #")
+
+    def test_detects_closes_in_sentence(self) -> None:
+        """Test that Closes # within a sentence is detected."""
+        assert _has_closes_reference("This PR Closes #789 and adds feature")
