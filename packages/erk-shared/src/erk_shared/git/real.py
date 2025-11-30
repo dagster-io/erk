@@ -674,3 +674,27 @@ class RealGit(Git):
             operation_context=f"push branch '{branch}' to remote '{remote}'",
             cwd=cwd,
         )
+
+    def get_all_branch_author_dates(self, repo_root: Path) -> dict[str, str]:
+        """Get the author date of the HEAD commit for all local branches."""
+        result = subprocess.run(
+            [
+                "git",
+                "for-each-ref",
+                "--format=%(refname:short)\t%(authordate:iso-strict)",
+                "refs/heads/",
+            ],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return {}
+
+        dates: dict[str, str] = {}
+        for line in result.stdout.strip().split("\n"):
+            if "\t" in line:
+                branch, date = line.split("\t", 1)
+                dates[branch] = date
+        return dates

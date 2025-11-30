@@ -545,3 +545,19 @@ class Git(ABC):
             subprocess.CalledProcessError: If git command fails
         """
         ...
+
+    @abstractmethod
+    def get_all_branch_author_dates(self, repo_root: Path) -> dict[str, str]:
+        """Get the author date of the HEAD commit for all local branches.
+
+        Uses git for-each-ref to batch-fetch author dates in a single subprocess call.
+        Author dates are preserved through rebases, showing when work was written.
+
+        Args:
+            repo_root: Path to the git repository root
+
+        Returns:
+            Dict mapping branch name to ISO 8601 timestamp string.
+            Empty dict if git command fails.
+        """
+        ...

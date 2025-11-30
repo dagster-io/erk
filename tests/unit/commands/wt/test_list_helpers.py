@@ -7,6 +7,7 @@ from erk_shared.github.types import PullRequestInfo
 
 from erk.cli.commands.wt.list_cmd import (
     _format_impl_cell,
+    _format_last_commit_cell,
     _format_pr_cell,
     _format_sync_from_batch,
     _get_impl_issue,
@@ -325,3 +326,40 @@ def test_format_sync_from_batch_no_upstream() -> None:
     result = _format_sync_from_batch(all_sync, "feature")
 
     assert result == "current"
+
+
+def test_format_last_commit_cell_with_valid_timestamp() -> None:
+    """Test formatting last commit cell with valid ISO timestamp."""
+    # Use a recent timestamp to get a relative time like "just now" or "Xm ago"
+    from datetime import UTC, datetime, timedelta
+
+    # Create a timestamp from 2 days ago
+    two_days_ago = datetime.now(UTC) - timedelta(days=2)
+    timestamp = two_days_ago.isoformat()
+
+    result = _format_last_commit_cell(timestamp)
+
+    # Should return something like "2d ago"
+    assert result != "-"
+    assert "ago" in result or result == "just now"
+
+
+def test_format_last_commit_cell_with_none() -> None:
+    """Test formatting last commit cell with None returns '-'."""
+    result = _format_last_commit_cell(None)
+
+    assert result == "-"
+
+
+def test_format_last_commit_cell_with_empty_string() -> None:
+    """Test formatting last commit cell with empty string returns '-'."""
+    result = _format_last_commit_cell("")
+
+    assert result == "-"
+
+
+def test_format_last_commit_cell_with_invalid_timestamp() -> None:
+    """Test formatting last commit cell with invalid timestamp returns '-'."""
+    result = _format_last_commit_cell("not-a-valid-timestamp")
+
+    assert result == "-"

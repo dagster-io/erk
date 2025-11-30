@@ -85,6 +85,7 @@ class FakeGit(Git):
         tracking_branch_failures: dict[str, str] | None = None,
         dirty_worktrees: set[Path] | None = None,
         branch_issues: dict[str, int] | None = None,
+        branch_author_dates: dict[str, str] | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -111,6 +112,7 @@ class FakeGit(Git):
                 when create_tracking_branch is called for that branch
             dirty_worktrees: Set of worktree paths that have uncommitted/staged/untracked changes
             branch_issues: Mapping of branch name -> GitHub issue number
+            branch_author_dates: Mapping of branch name -> ISO 8601 author date timestamp
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -132,6 +134,7 @@ class FakeGit(Git):
         self._tracking_branch_failures = tracking_branch_failures or {}
         self._dirty_worktrees = dirty_worktrees or set()
         self._branch_issues = branch_issues or {}
+        self._branch_author_dates = branch_author_dates or {}
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -663,3 +666,7 @@ class FakeGit(Git):
         Returns list of (remote, branch, set_upstream) tuples.
         """
         return self._pushed_branches
+
+    def get_all_branch_author_dates(self, repo_root: Path) -> dict[str, str]:
+        """Get the author date of the HEAD commit for all local branches (fake implementation)."""
+        return self._branch_author_dates.copy()

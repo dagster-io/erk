@@ -234,3 +234,7 @@ class DryRunGit(Git):
         """No-op for pushing in dry-run mode."""
         # Do nothing - prevents actual push execution
         pass
+
+    def get_all_branch_author_dates(self, repo_root: Path) -> dict[str, str]:
+        """Get all branch author dates (read-only, delegates to wrapped)."""
+        return self._wrapped.get_all_branch_author_dates(repo_root)

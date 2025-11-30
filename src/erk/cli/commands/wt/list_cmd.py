@@ -12,7 +12,7 @@ from rich.table import Table
 from erk.cli.alias import alias
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk.core.display_utils import get_pr_status_emoji
+from erk.core.display_utils import format_relative_time, get_pr_status_emoji
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_utils import find_current_worktree
 
@@ -159,7 +159,22 @@ def _format_impl_cell(issue_text: str | None, issue_url: str | None) -> str:
         return issue_text
 
 
-def _list_worktrees(ctx: ErkContext) -> None:
+def _format_last_commit_cell(timestamp: str | None) -> str:
+    """Format last commit time cell for Rich table.
+
+    Args:
+        timestamp: ISO 8601 timestamp string, or None if not available
+
+    Returns:
+        Relative time string like "2d ago", or "-" if not available
+    """
+    if timestamp is None:
+        return "-"
+    formatted = format_relative_time(timestamp)
+    return formatted if formatted else "-"
+
+
+def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool = False) -> None:
     """List worktrees with fast local-only data.
 
     Shows a Rich table with columns:
@@ -167,6 +182,7 @@ def _list_worktrees(ctx: ErkContext) -> None:
     - branch: Branch name or (=) if matches worktree name
     - pr: PR emoji + number from Graphite cache
     - sync: Ahead/behind status
+    - last: Last commit time (only with --last-commit flag)
     - impl: Issue number from .impl/issue.json
     """
     # Use ctx.repo if it's a valid RepoContext, otherwise discover
@@ -182,6 +198,11 @@ def _list_worktrees(ctx: ErkContext) -> None:
 
     # Fetch all branch sync info in a single git call (batch operation for performance)
     all_sync_info = ctx.git.get_all_branch_sync_info(repo.root)
+
+    # Fetch author dates only if --last-commit flag is provided
+    author_dates: dict[str, str] = {}
+    if show_last_commit:
+        author_dates = ctx.git.get_all_branch_author_dates(repo.root)
 
     # Determine which worktree the user is currently in
     wt_info = find_current_worktree(worktrees, current_dir)
@@ -204,6 +225,8 @@ def _list_worktrees(ctx: ErkContext) -> None:
     table.add_column("branch", style="yellow", no_wrap=True)
     table.add_column("pr", no_wrap=True)
     table.add_column("sync", no_wrap=True)
+    if show_last_commit:
+        table.add_column("last", no_wrap=True)
     table.add_column("impl", no_wrap=True)
 
     # Build rows starting with root worktree
@@ -235,7 +258,19 @@ def _list_worktrees(ctx: ErkContext) -> None:
     root_impl_text, root_impl_url = _get_impl_issue(ctx, repo.root, root_branch)
     root_impl_cell = _format_impl_cell(root_impl_text, root_impl_url)
 
-    table.add_row(root_name, root_branch_display, root_pr_cell, root_sync, root_impl_cell)
+    if show_last_commit:
+        root_timestamp = author_dates.get(root_branch) if root_branch else None
+        root_last_commit = _format_last_commit_cell(root_timestamp)
+        table.add_row(
+            root_name,
+            root_branch_display,
+            root_pr_cell,
+            root_sync,
+            root_last_commit,
+            root_impl_cell,
+        )
+    else:
+        table.add_row(root_name, root_branch_display, root_pr_cell, root_sync, root_impl_cell)
 
     # Non-root worktrees, sorted by name
     non_root_worktrees = [wt for wt in worktrees if wt.path != repo.root]
@@ -268,7 +303,14 @@ def _list_worktrees(ctx: ErkContext) -> None:
         impl_text, impl_url = _get_impl_issue(ctx, wt.path, branch)
         impl_cell = _format_impl_cell(impl_text, impl_url)
 
-        table.add_row(name_cell, branch_display, pr_cell, sync_cell, impl_cell)
+        if show_last_commit:
+            branch_timestamp = author_dates.get(branch) if branch else None
+            last_commit_cell = _format_last_commit_cell(branch_timestamp)
+            table.add_row(
+                name_cell, branch_display, pr_cell, sync_cell, last_commit_cell, impl_cell
+            )
+        else:
+            table.add_row(name_cell, branch_display, pr_cell, sync_cell, impl_cell)
 
     # Output table to stderr (consistent with user_output convention)
     console = Console(stderr=True, force_terminal=True)
@@ -277,8 +319,9 @@ def _list_worktrees(ctx: ErkContext) -> None:
 
 @alias("ls")
 @click.command("list")
+@click.option("--last-commit", is_flag=True, help="Show last commit time column")
 @click.pass_obj
-def list_wt(ctx: ErkContext) -> None:
+def list_wt(ctx: ErkContext, last_commit: bool) -> None:
     """List worktrees with branch, PR, sync, and implementation info.
 
     Shows a fast local-only table with:
@@ -286,6 +329,7 @@ def list_wt(ctx: ErkContext) -> None:
     - branch: Branch name (or = if matches worktree name)
     - pr: PR status from Graphite cache
     - sync: Ahead/behind status vs tracking branch
+    - last: Last commit time (with --last-commit flag)
     - impl: Implementation issue number
     """
-    _list_worktrees(ctx)
+    _list_worktrees(ctx, show_last_commit=last_commit)

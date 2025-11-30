@@ -655,3 +655,9 @@ class FakeGit(Git):
         if not hasattr(self, "_pushed_branches"):
             self._pushed_branches = []
         return self._pushed_branches.copy()
+
+    def get_all_branch_author_dates(self, repo_root: Path) -> dict[str, str]:
+        """Get the author date of the HEAD commit for all local branches (fake implementation)."""
+        if not hasattr(self, "_branch_author_dates"):
+            self._branch_author_dates = {}
+        return self._branch_author_dates.copy()
