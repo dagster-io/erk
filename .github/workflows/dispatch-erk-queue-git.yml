@@ -76,6 +76,22 @@ jobs:
           git config user.name "$SUBMITTED_BY"
           git config user.email "${SUBMITTED_BY}@users.noreply.github.com"
 
+      # Record dispatch info early so erk ls can track the run even if later steps fail
+      - name: Update issue body with dispatch info
+        env:
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          source $HOME/.cargo/env
+          WORKFLOW_RUN_ID="${{ github.run_id }}"
+          DISPATCHED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          if dot-agent run erk update-dispatch-info "$ISSUE_NUMBER" "$WORKFLOW_RUN_ID" "$DISPATCHED_AT"; then
+            echo "✅ Updated issue body with dispatch info"
+          else
+            echo "⚠️ Issue does not have plan-header block - skipping update"
+          fi
+
       - name: Detect trunk branch
         id: trunk
         run: |
@@ -207,21 +223,6 @@ jobs:
 
           gh issue comment "$ISSUE_NUMBER" --body-file comment_body.md
           rm -f comment_body.md
-
-      - name: Update issue body with dispatch info
-        env:
-          ISSUE_NUMBER: ${{ inputs.issue_number }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          source $HOME/.cargo/env
-          WORKFLOW_RUN_ID="${{ github.run_id }}"
-          DISPATCHED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-          if dot-agent run erk update-dispatch-info "$ISSUE_NUMBER" "$WORKFLOW_RUN_ID" "$DISPATCHED_AT"; then
-            echo "✅ Updated issue body with dispatch info"
-          else
-            echo "⚠️ Issue does not have plan-header block - skipping update"
-          fi
 
       # =================================================================
       # PHASE 4: IMPLEMENTATION
