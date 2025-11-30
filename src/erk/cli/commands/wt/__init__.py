@@ -10,9 +10,10 @@ from erk.cli.commands.wt.delete_cmd import delete_wt
 from erk.cli.commands.wt.goto_cmd import goto_wt
 from erk.cli.commands.wt.list_cmd import list_wt
 from erk.cli.commands.wt.rename_cmd import rename_wt
+from erk.cli.help_formatter import GroupedCommandGroup
 
 
-@click.group("wt")
+@click.group("wt", cls=GroupedCommandGroup)
 def wt_group() -> None:
     """Manage git worktrees."""
     pass
