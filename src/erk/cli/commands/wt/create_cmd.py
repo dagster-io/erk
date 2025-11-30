@@ -979,7 +979,7 @@ def create_wt(
             wt_path,
             repo.root,
             comment="cd to new worktree",
-            success_message="✓ Switched to new worktree.",
+            success_message="✓ Went to new worktree.",
         )
         result = ctx.script_writer.write_activation_script(
             script_content,

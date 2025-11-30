@@ -102,7 +102,7 @@ def activate_root_repo(ctx: ErkContext, repo: RepoContext, script: bool, command
     if script:
         script_content = render_activation_script(
             worktree_path=root_path,
-            final_message='echo "Switched to root repo: $(pwd)"',
+            final_message='echo "Went to root repo: $(pwd)"',
             comment="work activate-script (root repo)",
         )
         result = ctx.script_writer.write_activation_script(
@@ -112,7 +112,7 @@ def activate_root_repo(ctx: ErkContext, repo: RepoContext, script: bool, command
         )
         machine_output(str(result.path), nl=False)
     else:
-        user_output(f"Switched to root repo: {root_path}")
+        user_output(f"Went to root repo: {root_path}")
         user_output(
             "\nShell integration not detected. "
             "Run 'erk init --shell' to set up automatic activation."

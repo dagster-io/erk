@@ -88,7 +88,7 @@ def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
         branch_name = target_worktree.branch or "(detached HEAD)"
         styled_wt = click.style(worktree_name, fg="cyan", bold=True)
         styled_branch = click.style(branch_name, fg="yellow")
-        user_output(f"Switched to worktree {styled_wt} [{styled_branch}]")
+        user_output(f"Went to worktree {styled_wt} [{styled_branch}]")
 
     # Activate the worktree
     activate_worktree(ctx, repo, worktree_path, script, "goto")

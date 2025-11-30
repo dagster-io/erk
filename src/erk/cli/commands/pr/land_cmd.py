@@ -124,7 +124,7 @@ def pr_land(ctx: ErkContext, script: bool) -> None:
         )
         machine_output(str(activation_result.path), nl=False)
     else:
-        user_output(f"\nSwitched to: {dest_path}")
+        user_output(f"\nWent to: {dest_path}")
         user_output(
             "\nShell integration not detected. "
             "Run 'erk init --shell' to set up automatic activation."
