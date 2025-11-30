@@ -19,6 +19,10 @@ from erk_shared.output.output import user_output
 
 from erk.cli.config import LoadedConfig, load_config
 from erk.core.claude_executor import ClaudeExecutor, RealClaudeExecutor
+from erk.core.codespace.github_abc import CodespaceGitHub
+from erk.core.codespace.github_real import RealCodespaceGitHub
+from erk.core.codespace.registry_abc import CodespaceRegistry
+from erk.core.codespace.registry_real import RealCodespaceRegistry
 from erk.core.completion import Completion, RealCompletion
 from erk.core.config_store import (
     ConfigStore,
@@ -69,6 +73,8 @@ class ErkContext:
     script_writer: ScriptWriter
     feedback: UserFeedback
     plan_list_service: PlanListService
+    codespace_registry: CodespaceRegistry
+    codespace_github: CodespaceGitHub
     cwd: Path  # Current working directory at CLI invocation
     global_config: GlobalConfig | None
     local_config: LoadedConfig
@@ -138,6 +144,8 @@ class ErkContext:
         from tests.fakes.shell import FakeShell
         from tests.fakes.user_feedback import FakeUserFeedback
 
+        from erk.core.codespace.github_fake import FakeCodespaceGitHub
+        from erk.core.codespace.registry_fake import FakeCodespaceRegistry
         from erk.core.config_store import FakeConfigStore
         from erk.core.github.fake import FakeGitHub
         from erk.core.plan_store.fake import FakePlanStore
@@ -160,6 +168,8 @@ class ErkContext:
             script_writer=FakeScriptWriter(),
             feedback=FakeUserFeedback(),
             plan_list_service=PlanListService(fake_github, fake_issues),
+            codespace_registry=FakeCodespaceRegistry(),
+            codespace_github=FakeCodespaceGitHub(),
             cwd=cwd,
             global_config=None,
             local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
@@ -183,6 +193,8 @@ class ErkContext:
         script_writer: ScriptWriter | None = None,
         feedback: UserFeedback | None = None,
         plan_list_service: PlanListService | None = None,
+        codespace_registry: CodespaceRegistry | None = None,
+        codespace_github: CodespaceGitHub | None = None,
         cwd: Path | None = None,
         global_config: GlobalConfig | None = None,
         local_config: LoadedConfig | None = None,
@@ -250,6 +262,8 @@ class ErkContext:
         from tests.fakes.user_feedback import FakeUserFeedback
         from tests.test_utils.paths import sentinel_path
 
+        from erk.core.codespace.github_fake import FakeCodespaceGitHub
+        from erk.core.codespace.registry_fake import FakeCodespaceRegistry
         from erk.core.config_store import FakeConfigStore
         from erk.core.git.fake import FakeGit
         from erk.core.github.fake import FakeGitHub
@@ -294,6 +308,12 @@ class ErkContext:
         if plan_list_service is None:
             plan_list_service = PlanListService(github, issues)
 
+        if codespace_registry is None:
+            codespace_registry = FakeCodespaceRegistry()
+
+        if codespace_github is None:
+            codespace_github = FakeCodespaceGitHub()
+
         if global_config is None:
             global_config = GlobalConfig(
                 erk_root=Path("/test/erks"),
@@ -334,6 +354,8 @@ class ErkContext:
             script_writer=script_writer,
             feedback=feedback,
             plan_list_service=plan_list_service,
+            codespace_registry=codespace_registry,
+            codespace_github=codespace_github,
             cwd=cwd or sentinel_path(),
             global_config=global_config,
             local_config=local_config,
@@ -462,6 +484,8 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
     issue_link_branches: IssueLinkBranches = RealIssueLinkBranches()
     plan_store: PlanStore = GitHubPlanStore(issues)
     plan_list_service: PlanListService = PlanListService(github, issues)
+    codespace_registry: CodespaceRegistry = RealCodespaceRegistry()
+    codespace_github: CodespaceGitHub = RealCodespaceGitHub(time)
 
     # 5. Discover repo (only needs cwd, erk_root, git)
     # If global_config is None, use placeholder path for repo discovery
@@ -506,6 +530,8 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
         script_writer=RealScriptWriter(),
         feedback=feedback,
         plan_list_service=plan_list_service,
+        codespace_registry=codespace_registry,
+        codespace_github=codespace_github,
         cwd=cwd,
         global_config=global_config,
         local_config=local_config,
