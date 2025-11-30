@@ -164,20 +164,11 @@ jobs:
       # =================================================================
       # PHASE 3: PR SETUP
       # =================================================================
-      - name: Use existing PR
-        id: use_pr
-        env:
-          PR_NUMBER: ${{ steps.find_pr.outputs.pr_number }}
-          BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
-        run: |
-          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
-          echo "Using existing PR #$PR_NUMBER for branch $BRANCH_NAME"
-
       - name: Post workflow started comment
         env:
           ISSUE_NUMBER: ${{ inputs.issue_number }}
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
-          PR_NUMBER: ${{ steps.use_pr.outputs.pr_number }}
+          PR_NUMBER: ${{ inputs.pr_number }}
           GH_TOKEN: ${{ github.token }}
         run: |
           STARTED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
