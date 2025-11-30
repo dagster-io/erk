@@ -3,6 +3,7 @@ name: AGENTS.md Standard Check
 on:
   push:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 jobs:
