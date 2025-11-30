@@ -218,7 +218,7 @@ class PrintingGit(PrintingBase, Git):
         """Commit with printed output."""
         # Truncate message for display
         display_msg = message[:50] + "..." if len(message) > 50 else message
-        self._emit(self._format_command(f'git commit -m "{display_msg}"'))
+        self._emit(self._format_command(f'git commit --allow-empty -m "{display_msg}"'))
         self._wrapped.commit(cwd, message)
 
     def push_to_remote(

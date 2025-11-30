@@ -228,8 +228,23 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
             )
             user_output("Skipping branch/PR creation, triggering workflow...")
         else:
-            # Branch exists but no PR - create the PR
-            user_output(f"Branch '{branch_name}' exists but no PR. Creating PR...")
+            # Branch exists but no PR - need to add a commit for PR creation
+            user_output(f"Branch '{branch_name}' exists but no PR. Adding placeholder commit...")
+
+            # Fetch and checkout the remote branch locally
+            ctx.git.fetch_branch(repo.root, "origin", branch_name)
+            ctx.git.create_tracking_branch(repo.root, branch_name, f"origin/{branch_name}")
+            ctx.git.checkout_branch(repo.root, branch_name)
+
+            # Create empty commit as placeholder for PR creation
+            ctx.git.commit(
+                repo.root,
+                f"[erk-plan] Initialize implementation for issue #{issue_number}",
+            )
+            ctx.git.push_to_remote(repo.root, "origin", branch_name)
+            user_output(click.style("✓", fg="green") + " Placeholder commit pushed")
+
+            # Now create the PR
             pr_body = (
                 f"**Author:** @{submitted_by}\n"
                 f"**Plan:** #{issue_number}\n\n"
@@ -268,6 +283,11 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
                     + f" Closed {len(closed_prs)} orphaned draft PR(s): "
                     + ", ".join(f"#{n}" for n in closed_prs)
                 )
+
+            # Restore local state
+            ctx.git.checkout_branch(repo.root, original_branch)
+            ctx.git.delete_branch(repo.root, branch_name, force=True)
+            user_output(click.style("✓", fg="green") + " Local branch cleaned up")
     else:
         # Step 4: Create branch and initial commit
         user_output(f"Creating branch from origin/{trunk_branch}...")
