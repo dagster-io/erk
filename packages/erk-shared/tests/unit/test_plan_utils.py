@@ -135,6 +135,36 @@ def test_extract_title_truncates_long_titles() -> None:
     assert result == "A" * 100
 
 
+def test_extract_title_strips_plan_prefix() -> None:
+    """Test title extraction strips 'Plan: ' prefix from H1."""
+    plan = "# Plan: Add Feature X\n\nDetails..."
+    assert extract_title_from_plan(plan) == "Add Feature X"
+
+
+def test_extract_title_strips_implementation_plan_prefix() -> None:
+    """Test title extraction strips 'Implementation Plan: ' prefix from H1."""
+    plan = "# Implementation Plan: Refactor Y\n\nDetails..."
+    assert extract_title_from_plan(plan) == "Refactor Y"
+
+
+def test_extract_title_strips_plan_prefix_h2() -> None:
+    """Test title extraction strips plan prefix from H2."""
+    plan = "## Plan: My Feature\n\nDetails..."
+    assert extract_title_from_plan(plan) == "My Feature"
+
+
+def test_extract_title_strips_plan_prefix_fallback() -> None:
+    """Test title extraction strips plan prefix from first line fallback."""
+    plan = "Plan: Some Feature\n\nMore text..."
+    assert extract_title_from_plan(plan) == "Some Feature"
+
+
+def test_extract_title_preserves_plan_in_middle() -> None:
+    """Test that 'Plan' in the middle of title is preserved."""
+    plan = "# The Migration Plan for Database\n\nDetails..."
+    assert extract_title_from_plan(plan) == "The Migration Plan for Database"
+
+
 def test_generate_filename_basic() -> None:
     """Test filename generation from simple title."""
     assert generate_filename_from_title("User Auth") == "user-auth-plan.md"
