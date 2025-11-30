@@ -133,6 +133,10 @@ Implement the plan interactively with --dangerously-skip-permissions:
 
 Implement the plan non-interactively with --dangerously-skip-permissions and submit pr:
     erk implement [issue_number] --yolo
+
+Submit the plan for remote implementation:
+    erk submit [issue_number]
+    /erk:submit-plan
 ```
 
 ## Error Handling
