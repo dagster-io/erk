@@ -674,3 +674,17 @@ class RealGit(Git):
             operation_context=f"push branch '{branch}' to remote '{remote}'",
             cwd=cwd,
         )
+
+    def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
+        """Get the author date of the most recent commit unique to a branch."""
+        result = subprocess.run(
+            ["git", "log", f"{trunk}..{branch}", "-1", "--format=%aI"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return None
+        timestamp = result.stdout.strip()
+        return timestamp if timestamp else None

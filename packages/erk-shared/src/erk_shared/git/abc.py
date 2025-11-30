@@ -545,3 +545,20 @@ class Git(ABC):
             subprocess.CalledProcessError: If git command fails
         """
         ...
+
+    @abstractmethod
+    def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
+        """Get the author date of the most recent commit unique to a branch.
+
+        Returns ISO 8601 timestamp of the latest commit on `branch` but not on `trunk`,
+        or None if branch has no unique commits or doesn't exist.
+
+        Args:
+            repo_root: Path to the repository root
+            branch: Branch name to check
+            trunk: Trunk branch name to compare against
+
+        Returns:
+            ISO 8601 timestamp string, or None if no unique commits
+        """
+        ...

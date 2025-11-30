@@ -234,3 +234,7 @@ class DryRunGit(Git):
         """No-op for pushing in dry-run mode."""
         # Do nothing - prevents actual push execution
         pass
+
+    def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
+        """Get branch last commit time (read-only, delegates to wrapped)."""
+        return self._wrapped.get_branch_last_commit_time(repo_root, branch, trunk)

@@ -655,3 +655,9 @@ class FakeGit(Git):
         if not hasattr(self, "_pushed_branches"):
             self._pushed_branches = []
         return self._pushed_branches.copy()
+
+    def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
+        """Get the author date of the most recent commit unique to a branch."""
+        if not hasattr(self, "_branch_last_commit_times"):
+            self._branch_last_commit_times: dict[str, str] = {}
+        return self._branch_last_commit_times.get(branch)

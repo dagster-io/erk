@@ -1,5 +1,6 @@
 """Unit tests for wt list command helper functions."""
 
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from erk_shared.git.abc import BranchSyncInfo
@@ -7,6 +8,7 @@ from erk_shared.github.types import PullRequestInfo
 
 from erk.cli.commands.wt.list_cmd import (
     _format_impl_cell,
+    _format_last_commit_cell,
     _format_pr_cell,
     _format_sync_from_batch,
     _get_impl_issue,
@@ -325,3 +327,55 @@ def test_format_sync_from_batch_no_upstream() -> None:
     result = _format_sync_from_batch(all_sync, "feature")
 
     assert result == "current"
+
+
+def test_format_last_commit_cell_with_valid_timestamp() -> None:
+    """Test formatting last commit cell with valid timestamp returns relative time."""
+    repo_root = Path("/repo")
+    # Create a timestamp from 2 days ago
+    two_days_ago = datetime.now(UTC) - timedelta(days=2)
+    timestamp = two_days_ago.isoformat()
+
+    git = FakeGit(
+        branch_last_commit_times={"feature": timestamp},
+    )
+    ctx = create_test_context(git=git)
+
+    result = _format_last_commit_cell(ctx, repo_root, "feature", "main")
+
+    assert result == "2d ago"
+
+
+def test_format_last_commit_cell_with_none_branch() -> None:
+    """Test formatting last commit cell returns '-' when branch is None (detached HEAD)."""
+    repo_root = Path("/repo")
+    git = FakeGit()
+    ctx = create_test_context(git=git)
+
+    result = _format_last_commit_cell(ctx, repo_root, None, "main")
+
+    assert result == "-"
+
+
+def test_format_last_commit_cell_with_trunk_branch() -> None:
+    """Test formatting last commit cell returns '-' when branch is trunk."""
+    repo_root = Path("/repo")
+    git = FakeGit()
+    ctx = create_test_context(git=git)
+
+    result = _format_last_commit_cell(ctx, repo_root, "main", "main")
+
+    assert result == "-"
+
+
+def test_format_last_commit_cell_no_unique_commits() -> None:
+    """Test formatting last commit cell returns '-' when no unique commits."""
+    repo_root = Path("/repo")
+    git = FakeGit(
+        branch_last_commit_times={},  # No entry for branch means no unique commits
+    )
+    ctx = create_test_context(git=git)
+
+    result = _format_last_commit_cell(ctx, repo_root, "feature", "main")
+
+    assert result == "-"
