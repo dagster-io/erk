@@ -117,43 +117,82 @@ jobs:
         run: |
           source $HOME/.cargo/env
 
-          # Step 1: Get linked branch via kit command
+          echo "::group::Step 1: Get linked branch for issue"
+          echo "📥 Input: ISSUE_NUMBER=$ISSUE_NUMBER"
+
+          echo "Running: dot-agent run erk get-linked-branch \"$ISSUE_NUMBER\""
           BRANCH_RESULT=$(dot-agent run erk get-linked-branch "$ISSUE_NUMBER")
+          BRANCH_EXIT_CODE=$?
+
+          echo "📤 Exit code: $BRANCH_EXIT_CODE"
+          echo "📤 Raw output:"
+          echo "$BRANCH_RESULT"
+
           BRANCH_SUCCESS=$(echo "$BRANCH_RESULT" | jq -r '.success')
+          echo "📊 Parsed success: $BRANCH_SUCCESS"
 
           if [ "$BRANCH_SUCCESS" != "true" ]; then
             ERROR_MSG=$(echo "$BRANCH_RESULT" | jq -r '.message')
+            echo "::endgroup::"
+            echo "::error::Failed to get linked branch: $ERROR_MSG"
             echo "❌ $ERROR_MSG"
             echo "Error: erk submit should have created a linked branch via 'gh issue develop'"
             exit 1
           fi
 
           BRANCH_NAME=$(echo "$BRANCH_RESULT" | jq -r '.branch_name')
-          echo "Found linked branch: $BRANCH_NAME"
+          echo "📊 Parsed branch_name: $BRANCH_NAME"
+          echo "✅ Found linked branch: $BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
 
-          # Step 2: Find PR for this branch via kit command
+          echo "::group::Step 2: Find PR for branch"
+          echo "📥 Input: BRANCH_NAME=$BRANCH_NAME"
+
+          echo "Running: dot-agent run erk get-pr-for-branch \"$BRANCH_NAME\""
           PR_RESULT=$(dot-agent run erk get-pr-for-branch "$BRANCH_NAME")
+          PR_EXIT_CODE=$?
+
+          echo "📤 Exit code: $PR_EXIT_CODE"
+          echo "📤 Raw output:"
+          echo "$PR_RESULT"
+
           PR_SUCCESS=$(echo "$PR_RESULT" | jq -r '.success')
+          echo "📊 Parsed success: $PR_SUCCESS"
 
           if [ "$PR_SUCCESS" != "true" ]; then
             ERROR_MSG=$(echo "$PR_RESULT" | jq -r '.message')
+            echo "::endgroup::"
+            echo "::error::Failed to get PR for branch: $ERROR_MSG"
             echo "❌ $ERROR_MSG"
             exit 1
           fi
 
           PR_EXISTS=$(echo "$PR_RESULT" | jq -r '.pr_exists')
+          echo "📊 Parsed pr_exists: $PR_EXISTS"
+
           if [ "$PR_EXISTS" = "true" ]; then
             PR_NUMBER=$(echo "$PR_RESULT" | jq -r '.pr_number')
+            echo "📊 Parsed pr_number: $PR_NUMBER"
             echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
             echo "pr_exists=true" >> $GITHUB_OUTPUT
-            echo "Found existing PR #$PR_NUMBER for branch $BRANCH_NAME"
+            echo "✅ Found existing PR #$PR_NUMBER for branch $BRANCH_NAME"
           else
+            echo "::endgroup::"
+            echo "::error::No PR found for branch $BRANCH_NAME"
             echo "pr_exists=false" >> $GITHUB_OUTPUT
             echo "No existing PR found for branch $BRANCH_NAME"
             echo "Error: erk submit should have created a PR before dispatching workflow"
             exit 1
           fi
+          echo "::endgroup::"
+
+          echo "::group::Summary"
+          echo "📋 Step outputs:"
+          echo "   branch_name=$BRANCH_NAME"
+          echo "   pr_number=$PR_NUMBER"
+          echo "   pr_exists=true"
+          echo "::endgroup::"
 
       - name: Checkout implementation branch
         env:
