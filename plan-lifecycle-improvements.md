@@ -563,7 +563,6 @@ Let the workflow create the PR after implementation:
 **Simplified `erk submit`:**
 
 ```python
-@app.command()
 def submit(issue_number: int) -> None:
     """Submit plan for remote implementation."""
     # Validate issue
