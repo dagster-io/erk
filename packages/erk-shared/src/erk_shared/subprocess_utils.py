@@ -4,10 +4,13 @@ This module provides basic subprocess execution for GitHub CLI commands.
 It's intentionally minimal to avoid pulling in complex dependencies.
 """
 
+import logging
 import subprocess
 from collections.abc import Sequence
 from pathlib import Path
 from typing import IO, Any
+
+logger = logging.getLogger(__name__)
 
 
 def run_subprocess_with_context(
@@ -106,6 +109,8 @@ def execute_gh_command(cmd: list[str], cwd: Path) -> str:
         RuntimeError: If command fails with enriched error context
         FileNotFoundError: If gh is not installed
     """
+    cmd_str = " ".join(cmd)
+    logger.debug("Executing gh command: %s (cwd=%s)", cmd_str, cwd)
     try:
         result = subprocess.run(
             cmd,
@@ -115,14 +120,21 @@ def execute_gh_command(cmd: list[str], cwd: Path) -> str:
             encoding="utf-8",
             check=True,
         )
+        stdout_preview = result.stdout[:200] if result.stdout else "(empty)"
+        logger.debug("gh command succeeded, stdout preview: %s", stdout_preview)
         return result.stdout
     except subprocess.CalledProcessError as e:
-        cmd_str = " ".join(cmd)
+        logger.debug(
+            "gh command failed: exit_code=%d, stdout=%s, stderr=%s",
+            e.returncode,
+            e.stdout,
+            e.stderr,
+        )
         error_msg = f"Failed to execute gh command '{cmd_str}'"
         if e.stderr:
             error_msg += f": {e.stderr.strip()}"
         raise RuntimeError(error_msg) from e
     except FileNotFoundError as e:
-        cmd_str = " ".join(cmd)
+        logger.debug("gh command not found: %s", cmd_str)
         error_msg = f"Command not found: {cmd_str}"
         raise RuntimeError(error_msg) from e

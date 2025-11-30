@@ -1,3 +1,5 @@
+import logging
+
 import click
 
 from erk.cli.alias import register_with_aliases
@@ -26,9 +28,13 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])  # terse help flags
 
 @click.group(cls=GroupedCommandGroup, context_settings=CONTEXT_SETTINGS)
 @click.version_option(package_name="erk")
+@click.option("--debug", is_flag=True, help="Enable debug logging")
 @click.pass_context
-def cli(ctx: click.Context) -> None:
+def cli(ctx: click.Context, debug: bool) -> None:
     """Manage git worktrees in a global worktrees directory."""
+    if debug:
+        logging.basicConfig(level=logging.DEBUG, format="%(name)s - %(levelname)s - %(message)s")
+
     # Only create context if not already provided (e.g., by tests)
     if ctx.obj is None:
         ctx.obj = create_context(dry_run=False)

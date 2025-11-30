@@ -1,5 +1,6 @@
 """Submit issue for remote AI implementation via GitHub Actions."""
 
+import logging
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -24,6 +25,8 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
+
+logger = logging.getLogger(__name__)
 
 
 def _construct_workflow_run_url(issue_url: str, run_id: str) -> str:
@@ -216,21 +219,40 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
 
     # Step 2: Create or derive branch name for the issue
     trunk_branch = ctx.git.get_trunk_branch(repo.root)
+    logger.debug("trunk_branch=%s", trunk_branch)
+    logger.debug("USE_GITHUB_NATIVE_BRANCH_LINKING=%s", USE_GITHUB_NATIVE_BRANCH_LINKING)
     if USE_GITHUB_NATIVE_BRANCH_LINKING:
         # Compute branch name: truncate to 31 chars, then append timestamp suffix
         base_branch_name = sanitize_worktree_name(f"{issue_number}-{issue.title}")
+        logger.debug("base_branch_name=%s", base_branch_name)
         timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
+        logger.debug("timestamp_suffix=%s", timestamp_suffix)
         desired_branch_name = base_branch_name + timestamp_suffix
+        logger.debug("desired_branch_name (before unique check)=%s", desired_branch_name)
 
         # Ensure unique name to prevent gh issue develop failure
         desired_branch_name = _ensure_unique_branch_name(ctx, repo.root, desired_branch_name)
+        logger.debug("desired_branch_name (after unique check)=%s", desired_branch_name)
 
         # Use GitHub's native branch linking via `gh issue develop`
+        logger.debug(
+            "Calling create_development_branch: repo_root=%s, issue_number=%d, "
+            "branch_name=%s, base_branch=%s",
+            repo.root,
+            issue_number,
+            desired_branch_name,
+            trunk_branch,
+        )
         dev_branch = ctx.issue_link_branches.create_development_branch(
             repo.root,
             issue_number,
             branch_name=desired_branch_name,
             base_branch=trunk_branch,
+        )
+        logger.debug(
+            "create_development_branch returned: branch_name=%s, already_existed=%s",
+            dev_branch.branch_name,
+            dev_branch.already_existed,
         )
     else:
         # Traditional branch naming from issue title
@@ -249,6 +271,7 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
 
     # Step 3: Check if branch already exists on remote
     branch_exists = ctx.git.branch_exists_on_remote(repo.root, "origin", branch_name)
+    logger.debug("branch_exists_on_remote(%s)=%s", branch_name, branch_exists)
     pr_number: int | None = None
 
     if branch_exists:
