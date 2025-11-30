@@ -120,39 +120,41 @@ jobs:
         env:
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
           ISSUE_NUMBER: ${{ inputs.issue_number }}
-          SUBMITTED_BY: ${{ inputs.submitted_by }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin "$BRANCH_NAME"
+          git checkout "$BRANCH_NAME"
+          echo "Checked out branch: $BRANCH_NAME"
+
+      - name: Reconstruct .impl/ from GitHub issue
+        env:
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
           GH_TOKEN: ${{ github.token }}
         run: |
           source $HOME/.cargo/env
-
           ISSUE_TITLE=$(gh issue view "$ISSUE_NUMBER" --json title -q .title)
-          export ISSUE_TITLE
 
-          git fetch origin "$BRANCH_NAME"
-          git checkout "$BRANCH_NAME"
+          # Remove stale .impl/ if exists (for reruns)
+          rm -rf .impl
 
-          # Update .worker-impl/ with fresh plan
-          rm -rf .worker-impl
-          dot-agent run erk create-worker-impl-from-issue "$ISSUE_NUMBER" "$ISSUE_TITLE"
+          # Reconstruct from issue (single source of truth)
+          dot-agent run erk create-impl-from-issue "$ISSUE_NUMBER" "$ISSUE_TITLE"
 
           if [ $? -ne 0 ]; then
-            gh issue comment "$ISSUE_NUMBER" --body "❌ **Plan Update Failed**
+            gh issue comment "$ISSUE_NUMBER" --body "❌ **Plan Reconstruction Failed**
 
           Could not fetch plan content for issue #$ISSUE_NUMBER."
             exit 1
           fi
 
-          # Commit if changed
-          git config user.name "$SUBMITTED_BY"
-          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
-
-          git add .worker-impl
-          if [[ -n $(git status --porcelain) ]]; then
-            git commit -m "Update plan for issue #$ISSUE_NUMBER (rerun)"
-            git push origin "$BRANCH_NAME"
-          fi
-
-          echo "Checked out branch: $BRANCH_NAME"
+          # Add run-info.json
+          cat > .impl/run-info.json <<EOF
+          {
+            "run_id": "${{ github.run_id }}",
+            "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          EOF
+          echo "✓ Created .impl/ from GitHub issue #$ISSUE_NUMBER"
 
       # =================================================================
       # PHASE 3: PR SETUP
@@ -229,19 +231,6 @@ jobs:
       # =================================================================
       # PHASE 4: IMPLEMENTATION
       # =================================================================
-      - name: Set up implementation folder
-        run: |
-          cp -r .worker-impl .impl
-          echo "✓ Copied .worker-impl/ to .impl/"
-
-          cat > .impl/run-info.json <<EOF
-          {
-            "run_id": "${{ github.run_id }}",
-            "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          }
-          EOF
-          echo "✓ Created .impl/run-info.json"
-
       - name: Run implementation
         id: implement
         run: |
@@ -285,11 +274,10 @@ jobs:
           git config user.name "$SUBMITTED_BY"
           git config user.email "$SUBMITTED_BY@users.noreply.github.com"
 
-          # Stage only implementation changes (NOT .worker-impl/ deletion)
+          # Stage all implementation changes
           git add -A
-          git reset HEAD .worker-impl/  # Unstage .worker-impl/ so it's not in the diff
 
-          # Submit with pure git - AI sees only implementation changes
+          # Submit with pure git - AI generates commit message from diff
           claude --print \
             --model claude-opus-4-5-20251101 \
             --output-format stream-json \
@@ -297,13 +285,8 @@ jobs:
             --verbose \
             "/git:pr-push Implement issue #$ISSUE_NUMBER"
 
-          # Capture implementation commit SHA before cleanup commits
+          # Capture implementation commit SHA
           echo "impl_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-
-          # Now clean up .worker-impl/ in a separate commit
-          git rm -rf .worker-impl/
-          git commit -m "Remove .worker-impl/ folder after implementation"
-          git push origin "$BRANCH_NAME"
 
       - name: Mark PR ready for review
         if: steps.implement.outputs.implementation_success == 'true'

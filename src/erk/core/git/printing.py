@@ -214,12 +214,13 @@ class PrintingGit(PrintingBase, Git):
         self._emit(self._format_command(f"git add {' '.join(paths)}"))
         self._wrapped.stage_files(cwd, paths)
 
-    def commit(self, cwd: Path, message: str) -> None:
+    def commit(self, cwd: Path, message: str, *, allow_empty: bool = False) -> None:
         """Commit with printed output."""
         # Truncate message for display
         display_msg = message[:50] + "..." if len(message) > 50 else message
-        self._emit(self._format_command(f'git commit -m "{display_msg}"'))
-        self._wrapped.commit(cwd, message)
+        empty_flag = " --allow-empty" if allow_empty else ""
+        self._emit(self._format_command(f'git commit -m "{display_msg}"{empty_flag}'))
+        self._wrapped.commit(cwd, message, allow_empty=allow_empty)
 
     def push_to_remote(
         self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False

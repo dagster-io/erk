@@ -171,11 +171,10 @@ This command:
 
 The GitHub Actions workflow will:
 
-1. Create a dedicated branch from trunk
-2. Set up the `.worker-impl/` folder with the plan from the issue
-3. Create a draft PR
-4. Execute the implementation automatically
-5. Mark the PR as ready for review
+1. Find the existing branch and PR (created by `erk submit`)
+2. Reconstruct `.impl/` from the GitHub issue
+3. Execute the implementation automatically
+4. Mark the PR as ready for review
 
 **Monitor workflow progress:**
 

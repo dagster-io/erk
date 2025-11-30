@@ -83,6 +83,13 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     # Expected branch name with date suffix
     expected_branch = derive_branch_name_with_date("Implement feature X")
 
+    # Verify empty commit was created (no staged files, allow_empty=True)
+    assert len(fake_git.commits) == 1
+    cwd, message, staged_files, allow_empty = fake_git.commits[0]
+    assert "Initialize implementation for issue #123" in message
+    assert staged_files == []  # No files staged (empty commit)
+    assert allow_empty is True
+
     # Verify branch was created and pushed
     assert len(fake_git.pushed_branches) == 1
     remote, branch, set_upstream = fake_git.pushed_branches[0]

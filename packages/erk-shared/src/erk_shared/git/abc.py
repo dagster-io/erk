@@ -515,12 +515,13 @@ class Git(ABC):
         ...
 
     @abstractmethod
-    def commit(self, cwd: Path, message: str) -> None:
+    def commit(self, cwd: Path, message: str, *, allow_empty: bool = False) -> None:
         """Create a commit with staged changes.
 
         Args:
             cwd: Working directory
             message: Commit message
+            allow_empty: If True, allow creating a commit with no changes (--allow-empty)
 
         Raises:
             subprocess.CalledProcessError: If git command fails

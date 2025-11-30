@@ -1,23 +1,23 @@
-"""Create .worker-impl/ folder from GitHub issue with plan content.
+"""Create .impl/ folder from GitHub issue with plan content.
 
-This kit CLI command fetches a plan from a GitHub issue and creates the .worker-impl/
+This kit CLI command fetches a plan from a GitHub issue and creates the .impl/
 folder structure, providing a testable alternative to inline workflow scripts.
 
 Usage:
-    dot-agent run erk create-worker-impl-from-issue <issue-number> <issue-title>
+    dot-agent run erk create-impl-from-issue <issue-number> <issue-title>
 
 Output:
     Structured JSON output with success status and folder details
 
 Exit Codes:
-    0: Success (.worker-impl/ folder created)
+    0: Success (.impl/ folder created)
     1: Error (issue not found, plan fetch failed, folder creation failed)
 
 Examples:
-    $ dot-agent run erk create-worker-impl-from-issue 1028 "Improve CLI output list format"
-    {"success": true, "worker_impl_path": "/path/to/.worker-impl", "issue_number": 1028}
+    $ dot-agent run erk create-impl-from-issue 1028 "Improve CLI output list format"
+    {"success": true, "impl_path": "/path/to/.impl", "issue_number": 1028}
 
-    $ dot-agent run erk create-worker-impl-from-issue 999 "Missing Issue"
+    $ dot-agent run erk create-impl-from-issue 999 "Missing Issue"
     {"success": false, "error": "issue_not_found", "message": "..."}
 """
 
@@ -26,11 +26,11 @@ from pathlib import Path
 
 import click
 from erk_shared.github.issues import RealGitHubIssues
+from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.plan_store.github import GitHubPlanStore
-from erk_shared.worker_impl_folder import create_worker_impl_folder
 
 
-@click.command(name="create-worker-impl-from-issue")
+@click.command(name="create-impl-from-issue")
 @click.argument("issue_number", type=int)
 @click.argument("issue_title")
 @click.option(
@@ -39,15 +39,15 @@ from erk_shared.worker_impl_folder import create_worker_impl_folder
     default=None,
     help="Repository root directory (defaults to current directory)",
 )
-def create_worker_impl_from_issue(
+def create_impl_from_issue(
     issue_number: int,
     issue_title: str,
     repo_root: Path | None,
 ) -> None:
-    """Create .worker-impl/ folder from GitHub issue with plan content.
+    """Create .impl/ folder from GitHub issue with plan content.
 
-    Fetches plan content from GitHub issue and creates .worker-impl/ folder structure
-    with plan.md, issue.json, and metadata.
+    Fetches plan content from GitHub issue and creates .impl/ folder structure
+    with plan.md, progress.md, and issue.json.
 
     ISSUE_NUMBER: GitHub issue number containing the plan
     ISSUE_TITLE: Title of the GitHub issue
@@ -74,20 +74,16 @@ def create_worker_impl_from_issue(
         click.echo(json.dumps(error_output), err=True)
         raise SystemExit(1) from e
 
-    # Create .worker-impl/ folder with plan content
-    worker_impl_path = repo_root / ".worker-impl"
-    create_worker_impl_folder(
-        plan_content=plan.body,
-        issue_number=issue_number,
-        issue_url=plan.url,
-        issue_title=issue_title,
-        repo_root=repo_root,
-    )
+    # Create .impl/ folder with plan content
+    impl_path = create_impl_folder(repo_root, plan.body)
+
+    # Add issue.json reference
+    save_issue_reference(impl_path, issue_number, plan.url)
 
     # Output structured success result
     output = {
         "success": True,
-        "worker_impl_path": str(worker_impl_path),
+        "impl_path": str(impl_path),
         "issue_number": issue_number,
         "issue_url": plan.url,
     }
