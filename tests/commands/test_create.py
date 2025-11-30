@@ -415,6 +415,168 @@ def test_create_from_issue_readonly_operation() -> None:
         assert len(fake_issues.added_comments) == 0
 
 
+def test_create_from_issue_tracks_branch_with_graphite() -> None:
+    """Test erk create --from-issue calls ctx.graphite.track_branch() when use_graphite=True.
+
+    Verifies that when:
+    1. use_graphite=True in global config
+    2. erk wt create --from-issue <issue> is called
+    3. Then ctx.graphite.track_branch() is called with the linked branch name and trunk as parent
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.erk_root / "repos" / env.cwd.name
+
+        # Set up git state
+        git_ops = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main"),
+                ]
+            },
+            current_branches={env.cwd: "main"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        # Set up GitHub state with issue
+        now = datetime.now(UTC)
+        fake_issues = FakeGitHubIssues(
+            issues={
+                500: IssueInfo(
+                    number=500,
+                    title="Test Graphite Tracking",
+                    body="## Plan\n\n- Step 1",
+                    state="OPEN",
+                    url="https://github.com/owner/repo/issues/500",
+                    labels=["erk-plan"],
+                    assignees=[],
+                    created_at=now,
+                    updated_at=now,
+                )
+            }
+        )
+
+        fake_issue_dev = FakeIssueLinkBranches()
+
+        # Create FakeGraphite to track calls
+        from erk_shared.integrations.graphite.fake import FakeGraphite
+
+        fake_graphite = FakeGraphite()
+
+        # Build context with use_graphite=True
+        test_ctx = env.build_context(
+            git=git_ops,
+            issues=fake_issues,
+            issue_link_branches=fake_issue_dev,
+            graphite=fake_graphite,
+            use_graphite=True,
+        )
+
+        # Act: Run create --from-issue 500
+        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-issue", "500"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        # Assert: Command succeeded
+        if result.exit_code != 0:
+            print(f"stderr: {result.stderr}")
+            print(f"stdout: {result.stdout}")
+        assert result.exit_code == 0
+
+        # Assert: Worktree was created
+        worktrees_dir = repo_dir / "worktrees"
+        assert worktrees_dir.exists(), f"Worktrees dir should exist: {worktrees_dir}"
+
+        # Assert: track_branch was called with correct parameters
+        # The branch name is derived from issue title with timestamp suffix
+        # Parent should be "main" (the trunk branch)
+        assert len(fake_graphite.track_branch_calls) == 1, (
+            f"Expected 1 track_branch call, got {len(fake_graphite.track_branch_calls)}: "
+            f"{fake_graphite.track_branch_calls}"
+        )
+
+        call = fake_graphite.track_branch_calls[0]
+        cwd_path, branch_name, parent_branch = call
+
+        # Branch name should contain the issue number
+        assert "500" in branch_name, f"Branch name should contain issue number: {branch_name}"
+
+        # Parent should be trunk branch (main)
+        assert parent_branch == "main", f"Parent branch should be 'main', got: {parent_branch}"
+
+
+def test_create_from_issue_no_graphite_tracking_when_disabled() -> None:
+    """Test erk create --from-issue does NOT call track_branch when use_graphite=False."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Set up git state
+        git_ops = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main"),
+                ]
+            },
+            current_branches={env.cwd: "main"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        # Set up GitHub state with issue
+        now = datetime.now(UTC)
+        fake_issues = FakeGitHubIssues(
+            issues={
+                501: IssueInfo(
+                    number=501,
+                    title="Test No Graphite",
+                    body="## Plan\n\n- Step 1",
+                    state="OPEN",
+                    url="https://github.com/owner/repo/issues/501",
+                    labels=["erk-plan"],
+                    assignees=[],
+                    created_at=now,
+                    updated_at=now,
+                )
+            }
+        )
+
+        fake_issue_dev = FakeIssueLinkBranches()
+
+        # Create FakeGraphite to track calls
+        from erk_shared.integrations.graphite.fake import FakeGraphite
+
+        fake_graphite = FakeGraphite()
+
+        # Build context with use_graphite=False (default)
+        test_ctx = env.build_context(
+            git=git_ops,
+            issues=fake_issues,
+            issue_link_branches=fake_issue_dev,
+            graphite=fake_graphite,
+            use_graphite=False,  # Explicitly disabled
+        )
+
+        # Act: Run create --from-issue 501
+        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-issue", "501"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        # Assert: Command succeeded
+        assert result.exit_code == 0
+
+        # Assert: track_branch was NOT called (Graphite disabled)
+        assert len(fake_graphite.track_branch_calls) == 0, (
+            f"Expected no track_branch calls when Graphite disabled, "
+            f"got: {fake_graphite.track_branch_calls}"
+        )
+
+
 def test_create_with_from_branch_trunk_errors() -> None:
     """Test that create --from-branch prevents creating worktree for trunk branch.
 

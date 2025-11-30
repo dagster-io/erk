@@ -251,6 +251,13 @@ def add_worktree(
             raise SystemExit(1)
 
         ctx.git.add_worktree(repo_root, path, branch=branch, ref=None, create_branch=False)
+
+        # Track existing branch with Graphite if enabled
+        if use_graphite and ref:
+            # Only track if not already tracked (idempotent)
+            all_branches = ctx.graphite.get_all_branches(ctx.git, repo_root)
+            if branch not in all_branches:
+                ctx.graphite.track_branch(path, branch, ref)
     elif branch:
         # Check if branch name exists on remote origin (only when creating new branches)
         if not skip_remote_check:
@@ -860,14 +867,15 @@ def create_wt(
         )
     elif linked_branch_name:
         # Issue-based worktree: use the branch created by gh issue develop
+        use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
         add_worktree(
             ctx,
             repo.root,
             wt_path,
             branch=linked_branch_name,
-            ref=None,
+            ref=trunk_branch,  # Needed for Graphite tracking
             use_existing_branch=True,
-            use_graphite=False,
+            use_graphite=use_graphite,  # Respect global config
             skip_remote_check=skip_remote_check,
         )
     else:
