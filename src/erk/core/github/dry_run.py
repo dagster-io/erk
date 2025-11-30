@@ -115,6 +115,10 @@ class DryRunGitHub(GitHub):
         # Return sentinel value - prevents actual PR creation
         return -1
 
+    def close_pr(self, repo_root: Path, pr_number: int) -> None:
+        """No-op for closing PR in dry-run mode."""
+        pass
+
     def list_workflow_runs(
         self, repo_root: Path, workflow: str, limit: int = 50
     ) -> list[WorkflowRun]:

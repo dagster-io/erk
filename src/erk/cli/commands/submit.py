@@ -1,6 +1,7 @@
 """Submit issue for remote AI implementation via GitHub Actions."""
 
 from datetime import UTC, datetime
+from pathlib import Path
 
 import click
 from erk_shared.github.metadata import create_submission_queued_block, render_erk_issue_event
@@ -69,6 +70,30 @@ def _construct_pr_url(issue_url: str, pr_number: int) -> str:
         repo = parts[-3]
         return f"https://github.com/{owner}/{repo}/pull/{pr_number}"
     return f"https://github.com/pull/{pr_number}"
+
+
+def _close_orphaned_draft_prs(
+    ctx: ErkContext,
+    repo_root: Path,
+    issue_number: int,
+    keep_pr_number: int,
+) -> list[int]:
+    """Close old draft PRs linked to an issue, keeping the specified one.
+
+    Returns list of PR numbers that were closed.
+    """
+    pr_linkages = ctx.github.get_prs_linked_to_issues(repo_root, [issue_number])
+    linked_prs = pr_linkages.get(issue_number, [])
+
+    closed_prs: list[int] = []
+    for pr in linked_prs:
+        # Close only: draft PRs with erk-plan label, that are OPEN, and not the one we just created
+        is_erk_plan_pr = ERK_PLAN_LABEL in pr.labels
+        if pr.is_draft and pr.state == "OPEN" and pr.number != keep_pr_number and is_erk_plan_pr:
+            ctx.github.close_pr(repo_root, pr.number)
+            closed_prs.append(pr.number)
+
+    return closed_prs
 
 
 @click.command("submit")
@@ -234,6 +259,15 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
             f"```"
         )
         ctx.github.update_pr_body(repo.root, pr_number, footer_body)
+
+        # Close any orphaned draft PRs for this issue
+        closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)
+        if closed_prs:
+            user_output(
+                click.style("✓", fg="green")
+                + f" Closed {len(closed_prs)} orphaned draft PR(s): "
+                + ", ".join(f"#{n}" for n in closed_prs)
+            )
 
         # Step 6: Restore local state
         user_output("Restoring local state...")

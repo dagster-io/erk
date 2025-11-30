@@ -9,6 +9,7 @@ When a plan submission fails (workflow error) and the user resubmits with `erk s
 Automatically close old OPEN draft PRs linked to the same issue when a new draft PR is created during submission.
 
 **Constraints (per user requirements):**
+
 - Close during submission (not a separate cleanup command)
 - Close the PR only (don't delete the branch) for reference
 
@@ -21,6 +22,7 @@ The current `PullRequestInfo` dataclass doesn't have labels. We need to:
 **File:** `packages/erk-shared/src/erk_shared/github/types.py`
 
 Add to `PullRequestInfo`:
+
 ```python
 labels: list[str] = field(default_factory=list)  # PR labels (e.g., ["erk-plan"])
 ```
@@ -28,6 +30,7 @@ labels: list[str] = field(default_factory=list)  # PR labels (e.g., ["erk-plan"]
 **File:** `src/erk/core/github/real.py`
 
 Update `_build_issue_pr_linkage_query()` GraphQL query to fetch labels:
+
 ```graphql
 labels(first: 10) {
   nodes {
@@ -74,11 +77,13 @@ def close_pr(self, repo_root: Path, pr_number: int) -> None:
 **File:** `src/erk/core/github/fake.py`
 
 Add tracking in `__init__`:
+
 ```python
 self._closed_prs: list[int] = []
 ```
 
 Add property and method:
+
 ```python
 @property
 def closed_prs(self) -> list[int]:
@@ -183,6 +188,7 @@ When resubmitting a plan (e.g., after a failed workflow), branch names change du
 **Automatic cleanup**: After creating a new draft PR, `erk submit` automatically closes any orphaned draft PRs linked to the same issue.
 
 **Closure criteria** (all must be true):
+
 - PR is a draft (`is_draft == True`)
 - PR is open (`state == "OPEN"`)
 - PR has the `erk-plan` label
@@ -192,8 +198,11 @@ When resubmitting a plan (e.g., after a failed workflow), branch names change du
 
 **Output**: Users see a confirmation message listing closed PRs:
 ```
+
 ✓ Closed 1 orphaned draft PR(s): #456
+
 ```
+
 ```
 
 ### Step 9: Add Unit Tests
@@ -201,6 +210,7 @@ When resubmitting a plan (e.g., after a failed workflow), branch names change du
 **File:** `tests/commands/test_submit.py`
 
 Test cases:
+
 1. `test_submit_closes_orphaned_draft_prs` - Verify old drafts with erk-plan label are closed
 2. `test_submit_skips_non_draft_prs` - Ready-for-review PRs not closed
 3. `test_submit_skips_closed_prs` - Already closed PRs not touched
@@ -210,22 +220,23 @@ Test cases:
 
 ## Critical Files
 
-| File | Change |
-|------|--------|
-| `packages/erk-shared/src/erk_shared/github/types.py` | Add `labels` field to `PullRequestInfo` |
-| `packages/erk-shared/src/erk_shared/github/abc.py` | Add `close_pr` abstract method |
-| `src/erk/core/github/real.py` | Implement `close_pr`, update GraphQL query + parser for labels |
-| `src/erk/core/github/fake.py` | Add tracking for tests |
-| `src/erk/core/github/dry_run.py` | No-op implementation |
-| `src/erk/core/github/printing.py` | Printing wrapper |
-| `packages/erk-shared/src/erk_shared/github/real.py` | Stub implementation |
-| `src/erk/cli/commands/submit.py` | Add helper and call after PR creation |
-| `tests/commands/test_submit.py` | Unit tests |
-| `docs/agent/plan-lifecycle.md` | Add "Orphaned Draft PR Cleanup" section after "Draft PR Creation" |
+| File                                                 | Change                                                            |
+| ---------------------------------------------------- | ----------------------------------------------------------------- |
+| `packages/erk-shared/src/erk_shared/github/types.py` | Add `labels` field to `PullRequestInfo`                           |
+| `packages/erk-shared/src/erk_shared/github/abc.py`   | Add `close_pr` abstract method                                    |
+| `src/erk/core/github/real.py`                        | Implement `close_pr`, update GraphQL query + parser for labels    |
+| `src/erk/core/github/fake.py`                        | Add tracking for tests                                            |
+| `src/erk/core/github/dry_run.py`                     | No-op implementation                                              |
+| `src/erk/core/github/printing.py`                    | Printing wrapper                                                  |
+| `packages/erk-shared/src/erk_shared/github/real.py`  | Stub implementation                                               |
+| `src/erk/cli/commands/submit.py`                     | Add helper and call after PR creation                             |
+| `tests/commands/test_submit.py`                      | Unit tests                                                        |
+| `docs/agent/plan-lifecycle.md`                       | Add "Orphaned Draft PR Cleanup" section after "Draft PR Creation" |
 
 ## Filter Logic
 
 Only close PRs that match ALL of:
+
 - `is_draft == True` (only drafts, not ready-for-review)
 - `state == "OPEN"` (not already closed/merged)
 - `number != keep_pr_number` (not the one we just created)

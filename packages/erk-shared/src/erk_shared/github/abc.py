@@ -198,6 +198,16 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
+    def close_pr(self, repo_root: Path, pr_number: int) -> None:
+        """Close a pull request without deleting its branch.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to close
+        """
+        ...
+
+    @abstractmethod
     def list_workflow_runs(
         self, repo_root: Path, workflow: str, limit: int = 50
     ) -> list[WorkflowRun]:

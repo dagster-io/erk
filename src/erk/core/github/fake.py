@@ -98,6 +98,7 @@ class FakeGitHub(GitHub):
         self._updated_pr_bases: list[tuple[int, str]] = []
         self._updated_pr_bodies: list[tuple[int, str]] = []
         self._merged_prs: list[int] = []
+        self._closed_prs: list[int] = []
         self._get_prs_for_repo_calls: list[tuple[Path, bool]] = []
         self._get_pr_status_calls: list[tuple[Path, str]] = []
         self._triggered_workflows: list[tuple[str, dict[str, str]]] = []
@@ -109,6 +110,11 @@ class FakeGitHub(GitHub):
     def merged_prs(self) -> list[int]:
         """List of PR numbers that were merged."""
         return self._merged_prs
+
+    @property
+    def closed_prs(self) -> list[int]:
+        """Read-only access to tracked PR closures for test assertions."""
+        return self._closed_prs
 
     @property
     def get_prs_for_repo_calls(self) -> list[tuple[Path, bool]]:
@@ -262,6 +268,10 @@ class FakeGitHub(GitHub):
         Returns list of (branch, title, body, base, draft) tuples.
         """
         return self._created_prs
+
+    def close_pr(self, repo_root: Path, pr_number: int) -> None:
+        """Record PR closure in mutation tracking list."""
+        self._closed_prs.append(pr_number)
 
     @property
     def updated_pr_bases(self) -> list[tuple[int, str]]:

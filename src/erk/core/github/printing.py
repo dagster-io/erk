@@ -160,6 +160,11 @@ class PrintingGitHub(PrintingBase, GitHub):
         self._emit(f"-> PR #{pr_number}")
         return pr_number
 
+    def close_pr(self, repo_root: Path, pr_number: int) -> None:
+        """Close PR with printed output."""
+        self._emit(self._format_command(f"gh pr close {pr_number}"))
+        self._wrapped.close_pr(repo_root, pr_number)
+
     def poll_for_workflow_run(
         self,
         repo_root: Path,
