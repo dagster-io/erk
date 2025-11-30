@@ -1011,6 +1011,84 @@ def test_ensure_unique_branch_name_increments_suffix(tmp_path: Path) -> None:
     assert result == "123-feature-11-30-1200-3"
 
 
+def test_submit_handles_local_branch_already_exists(tmp_path: Path) -> None:
+    """Test submit handles case where branch exists on remote AND locally.
+
+    This tests the scenario where a previous failed run left a local branch
+    that wasn't cleaned up. The command should not crash when trying to
+    create a tracking branch that already exists locally.
+    """
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+    issue = IssueInfo(
+        number=123,
+        title="Implement feature X",
+        body="# Plan\n\nImplementation details...",
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    # Pre-existing branch from previous gh issue develop (no PR though)
+    expected_branch = "123-existing-branch"
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    # FakeIssueLinkBranches with existing branch for issue 123
+    fake_issue_dev = FakeIssueLinkBranches(existing_branches={123: expected_branch})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+        # Branch exists on remote
+        remote_branches={repo_root: [f"origin/{expected_branch}"]},
+        # Branch ALSO exists locally (e.g., from previous failed run)
+        local_branches={repo_root: [expected_branch]},
+    )
+    # No PR status for this branch (pr_statuses is empty)
+    fake_github = FakeGitHub()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        issue_link_branches=fake_issue_dev,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
+
+    # Should succeed without crashing
+    assert result.exit_code == 0, result.output
+    assert "exists but no PR. Adding placeholder commit" in result.output
+    assert "Placeholder commit pushed" in result.output
+    assert "Draft PR #999 created" in result.output
+
+    # Verify no tracking branch was created (since local branch already exists)
+    assert fake_git.created_tracking_branches == []
+
+    # Verify branch was still checked out (reusing existing local branch)
+    assert (repo_root, expected_branch) in fake_git._checked_out_branches
+
+    # Verify commit was created
+    assert len(fake_git.commits) == 1
+
+    # Workflow should still be triggered
+    assert len(fake_github.triggered_workflows) == 1
+
+
 def test_submit_handles_branch_name_collision(tmp_path: Path) -> None:
     """Test submit adds numeric suffix when branch already exists on remote."""
     repo_root = tmp_path / "repo"
