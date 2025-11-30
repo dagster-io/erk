@@ -7,6 +7,7 @@
 ## Root Cause
 
 Lines 174-179 in `src/erk/cli/commands/submit.py`:
+
 ```python
 if ctx.git.has_uncommitted_changes(repo.root):
     user_output(
@@ -19,6 +20,7 @@ if ctx.git.has_uncommitted_changes(repo.root):
 ## Why the check is unnecessary
 
 The `erk submit` workflow:
+
 1. Records `original_branch`
 2. Creates new branch from `origin/{trunk_branch}` (NOT from current branch)
 3. Adds `.worker-impl/` folder content
@@ -34,6 +36,7 @@ Since git preserves uncommitted working directory changes when switching branche
 ### Step 1: Remove the uncommitted changes check
 
 Delete lines 174-179 in `src/erk/cli/commands/submit.py`:
+
 ```python
 if ctx.git.has_uncommitted_changes(repo.root):
     user_output(
