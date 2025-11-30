@@ -40,6 +40,7 @@ from erk.core.repo_discovery import (
 )
 from erk.core.script_writer import RealScriptWriter, ScriptWriter
 from erk.core.services.plan_list_service import PlanListService
+from erk.core.services.submit_service import SubmitService
 from erk.core.shell import RealShell, Shell
 from erk.core.user_feedback import InteractiveFeedback, SuppressedFeedback, UserFeedback
 
@@ -69,6 +70,7 @@ class ErkContext:
     script_writer: ScriptWriter
     feedback: UserFeedback
     plan_list_service: PlanListService
+    submit_service: SubmitService
     cwd: Path  # Current working directory at CLI invocation
     global_config: GlobalConfig | None
     local_config: LoadedConfig
@@ -145,21 +147,31 @@ class ErkContext:
         fake_github = FakeGitHub()
         fake_issues = FakeGitHubIssues()
         fake_issue_link_branches = FakeIssueLinkBranches()
+        fake_plan_store = FakePlanStore()
+        fake_time = FakeTime()
         return ErkContext(
             git=git,
             github=fake_github,
             issues=fake_issues,
             issue_link_branches=fake_issue_link_branches,
-            plan_store=FakePlanStore(),
+            plan_store=fake_plan_store,
             graphite=FakeGraphite(),
             shell=FakeShell(),
             claude_executor=FakeClaudeExecutor(),
             completion=FakeCompletion(),
-            time=FakeTime(),
+            time=fake_time,
             config_store=FakeConfigStore(config=None),
             script_writer=FakeScriptWriter(),
             feedback=FakeUserFeedback(),
             plan_list_service=PlanListService(fake_github, fake_issues),
+            submit_service=SubmitService(
+                git=git,
+                github=fake_github,
+                github_issues=fake_issues,
+                plan_store=fake_plan_store,
+                issue_link_branches=fake_issue_link_branches,
+                time_provider=fake_time,
+            ),
             cwd=cwd,
             global_config=None,
             local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
@@ -183,6 +195,7 @@ class ErkContext:
         script_writer: ScriptWriter | None = None,
         feedback: UserFeedback | None = None,
         plan_list_service: PlanListService | None = None,
+        submit_service: SubmitService | None = None,
         cwd: Path | None = None,
         global_config: GlobalConfig | None = None,
         local_config: LoadedConfig | None = None,
@@ -294,6 +307,16 @@ class ErkContext:
         if plan_list_service is None:
             plan_list_service = PlanListService(github, issues)
 
+        if submit_service is None:
+            submit_service = SubmitService(
+                git=git,
+                github=github,
+                github_issues=issues,
+                plan_store=plan_store,
+                issue_link_branches=issue_link_branches,
+                time_provider=time,
+            )
+
         if global_config is None:
             global_config = GlobalConfig(
                 erk_root=Path("/test/erks"),
@@ -334,6 +357,7 @@ class ErkContext:
             script_writer=script_writer,
             feedback=feedback,
             plan_list_service=plan_list_service,
+            submit_service=submit_service,
             cwd=cwd or sentinel_path(),
             global_config=global_config,
             local_config=local_config,
@@ -462,6 +486,14 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
     issue_link_branches: IssueLinkBranches = RealIssueLinkBranches()
     plan_store: PlanStore = GitHubPlanStore(issues)
     plan_list_service: PlanListService = PlanListService(github, issues)
+    submit_service: SubmitService = SubmitService(
+        git=git,
+        github=github,
+        github_issues=issues,
+        plan_store=plan_store,
+        issue_link_branches=issue_link_branches,
+        time_provider=time,
+    )
 
     # 5. Discover repo (only needs cwd, erk_root, git)
     # If global_config is None, use placeholder path for repo discovery
@@ -506,6 +538,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
         script_writer=RealScriptWriter(),
         feedback=feedback,
         plan_list_service=plan_list_service,
+        submit_service=submit_service,
         cwd=cwd,
         global_config=global_config,
         local_config=local_config,
