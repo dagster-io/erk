@@ -4,7 +4,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import click
+from erk_shared.github.issue_link_branches import DevelopmentBranch
 from erk_shared.github.metadata import create_submission_queued_block, render_erk_issue_event
+from erk_shared.naming import derive_branch_name_from_title
 from erk_shared.output.output import user_output
 from erk_shared.worker_impl_folder import create_worker_impl_folder
 
@@ -12,6 +14,7 @@ from erk.cli.constants import (
     DISPATCH_WORKFLOW_METADATA_NAME,
     DISPATCH_WORKFLOW_NAME,
     ERK_PLAN_LABEL,
+    USE_GITHUB_NATIVE_BRANCH_LINKING,
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -177,11 +180,21 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
     _, username, _ = ctx.github.check_auth_status()
     submitted_by = username or "unknown"
 
-    # Step 2: Create development branch linked to issue via gh issue develop
+    # Step 2: Create or derive branch name for the issue
     trunk_branch = ctx.git.get_trunk_branch(repo.root)
-    dev_branch = ctx.issue_link_branches.create_development_branch(
-        repo.root, issue_number, base_branch=trunk_branch
-    )
+    if USE_GITHUB_NATIVE_BRANCH_LINKING:
+        # Use GitHub's native branch linking via `gh issue develop`
+        dev_branch = ctx.issue_link_branches.create_development_branch(
+            repo.root, issue_number, base_branch=trunk_branch
+        )
+    else:
+        # Traditional branch naming from issue title
+        branch_name = derive_branch_name_from_title(issue.title)
+        dev_branch = DevelopmentBranch(
+            branch_name=branch_name,
+            issue_number=issue_number,
+            already_existed=False,
+        )
     branch_name = dev_branch.branch_name
 
     if dev_branch.already_existed:
