@@ -5,10 +5,12 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 
 import click
+from erk_shared.github.issue_link_branches import DevelopmentBranch
 from erk_shared.github.issues import IssueInfo
 from erk_shared.impl_folder import create_impl_folder, get_impl_path
 from erk_shared.naming import (
     default_branch_for_worktree,
+    derive_branch_name_from_title,
     ensure_simple_worktree_name,
     ensure_unique_worktree_name,
     ensure_unique_worktree_name_with_date,
@@ -18,6 +20,7 @@ from erk_shared.naming import (
 from erk_shared.output.output import user_output
 
 from erk.cli.config import LoadedConfig
+from erk.cli.constants import USE_GITHUB_NATIVE_BRANCH_LINKING
 from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.cli.ensure import Ensure
 from erk.cli.shell_utils import render_navigation_script
@@ -647,12 +650,17 @@ def create_wt(
             )
             raise SystemExit(1)
 
-    # Track if name came from plan file or issue (will need unique naming)
-    is_plan_derived = from_plan is not None or from_issue is not None
+    # Track if name came from plan file (will need unique naming with date suffix)
+    # Note: from_issue uses gh issue develop which creates a unique branch name,
+    # so it doesn't need the date suffix treatment
+    is_plan_derived = from_plan is not None
 
     # Discover repo context (needed for all paths)
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
+
+    # Track linked branch name for issue-based worktrees
+    linked_branch_name: str | None = None
 
     # Handle issue fetching after repo discovery
     if from_issue:
@@ -688,9 +696,30 @@ def create_wt(
             )
             raise SystemExit(1)
 
-        # Derive name from issue title
-        base_name = sanitize_worktree_name(issue_info.title)
-        name = base_name
+        # Create or derive branch name for the issue
+        trunk_branch = ctx.git.get_trunk_branch(repo.root)
+        if USE_GITHUB_NATIVE_BRANCH_LINKING:
+            # Use GitHub's native branch linking via `gh issue develop`
+            dev_branch = ctx.issue_link_branches.create_development_branch(
+                repo.root, int(issue_number_parsed), base_branch=trunk_branch
+            )
+        else:
+            # Traditional branch naming from issue title
+            branch_name = derive_branch_name_from_title(issue_info.title)
+            dev_branch = DevelopmentBranch(
+                branch_name=branch_name,
+                issue_number=int(issue_number_parsed),
+                already_existed=False,
+            )
+        linked_branch_name = dev_branch.branch_name
+
+        if dev_branch.already_existed:
+            user_output(f"Using existing linked branch: {linked_branch_name}")
+        else:
+            user_output(f"Created linked branch: {linked_branch_name}")
+
+        # Use the linked branch name for the worktree name
+        name = sanitize_worktree_name(linked_branch_name)
 
     # At this point, name should always be set
     assert name is not None, "name must be set by now"
@@ -813,6 +842,18 @@ def create_wt(
             repo.root,
             wt_path,
             branch=branch,
+            ref=None,
+            use_existing_branch=True,
+            use_graphite=False,
+            skip_remote_check=skip_remote_check,
+        )
+    elif linked_branch_name:
+        # Issue-based worktree: use the branch created by gh issue develop
+        add_worktree(
+            ctx,
+            repo.root,
+            wt_path,
+            branch=linked_branch_name,
             ref=None,
             use_existing_branch=True,
             use_graphite=False,

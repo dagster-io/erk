@@ -14,10 +14,11 @@ from pathlib import Path
 from typing import NamedTuple
 
 import click
+from erk_shared.github.issue_link_branches import DevelopmentBranch
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.naming import (
+    derive_branch_name_from_title,
     ensure_unique_worktree_name_with_date,
-    generate_filename_from_title,
     sanitize_worktree_name,
     strip_plan_from_filename,
 )
@@ -27,6 +28,7 @@ from erk.cli.activation import render_activation_script
 from erk.cli.commands.completions import complete_plan_files
 from erk.cli.commands.wt.create_cmd import add_worktree, run_post_worktree_setup
 from erk.cli.config import LoadedConfig
+from erk.cli.constants import USE_GITHUB_NATIVE_BRANCH_LINKING
 from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import ErkContext
@@ -294,10 +296,28 @@ def _detect_target_type(target: str) -> TargetInfo:
     return TargetInfo(target_type="file_path", issue_number=None)
 
 
+@dataclass(frozen=True)
+class IssuePlanSource:
+    """Extended plan source with issue-specific metadata.
+
+    Attributes:
+        plan_source: The base PlanSource with content and metadata
+        branch_name: The linked development branch name from gh issue develop
+        already_existed: Whether the branch already existed
+    """
+
+    plan_source: PlanSource
+    branch_name: str
+    already_existed: bool
+
+
 def _prepare_plan_source_from_issue(
     ctx: ErkContext, repo_root: Path, issue_number: str
-) -> PlanSource:
+) -> IssuePlanSource:
     """Prepare plan source from GitHub issue.
+
+    Uses `gh issue develop` to create a branch linked to the issue,
+    which makes the branch appear in the issue sidebar under "Development".
 
     Args:
         ctx: Erk context
@@ -305,7 +325,7 @@ def _prepare_plan_source_from_issue(
         issue_number: GitHub issue number
 
     Returns:
-        PlanSource with plan content and metadata
+        IssuePlanSource with plan content, metadata, and linked branch name
 
     Raises:
         SystemExit: If issue not found or doesn't have erk-plan label
@@ -341,18 +361,42 @@ def _prepare_plan_source_from_issue(
             + "Proceeding anyway..."
         )
 
-    # Generate base name from issue title
-    filename = generate_filename_from_title(plan.title)
-    stem = filename.removesuffix(".md")
-    cleaned_stem = strip_plan_from_filename(stem)
-    base_name = sanitize_worktree_name(cleaned_stem)
+    # Create or derive branch name for the issue
+    trunk_branch = ctx.git.get_trunk_branch(repo_root)
+    if USE_GITHUB_NATIVE_BRANCH_LINKING:
+        # Use GitHub's native branch linking via `gh issue develop`
+        dev_branch = ctx.issue_link_branches.create_development_branch(
+            repo_root, int(issue_number), base_branch=trunk_branch
+        )
+    else:
+        # Traditional branch naming from issue title
+        branch_name = derive_branch_name_from_title(plan.title)
+        dev_branch = DevelopmentBranch(
+            branch_name=branch_name,
+            issue_number=int(issue_number),
+            already_existed=False,
+        )
+
+    if dev_branch.already_existed:
+        ctx.feedback.info(f"Using existing linked branch: {dev_branch.branch_name}")
+    else:
+        ctx.feedback.info(f"Created linked branch: {dev_branch.branch_name}")
+
+    # Use the branch name as the base name for the worktree
+    base_name = sanitize_worktree_name(dev_branch.branch_name)
 
     dry_run_desc = f"Would create worktree from issue #{issue_number}\n  Title: {plan.title}"
 
-    return PlanSource(
+    plan_source = PlanSource(
         plan_content=plan.body,
         base_name=base_name,
         dry_run_description=dry_run_desc,
+    )
+
+    return IssuePlanSource(
+        plan_source=plan_source,
+        branch_name=dev_branch.branch_name,
+        already_existed=dev_branch.already_existed,
     )
 
 
@@ -418,6 +462,7 @@ def _create_worktree_with_plan_content(
     submit: bool,
     dangerous: bool,
     no_interactive: bool,
+    linked_branch_name: str | None = None,
 ) -> Path | None:
     """Create worktree with plan content.
 
@@ -429,6 +474,8 @@ def _create_worktree_with_plan_content(
         submit: Whether to auto-submit PR after implementation
         dangerous: Whether to skip permission prompts
         no_interactive: Whether to execute non-interactively
+        linked_branch_name: Optional branch name from gh issue develop
+                           (when provided, use this branch instead of creating new)
 
     Returns:
         Path to created worktree, or None if dry-run mode
@@ -438,37 +485,53 @@ def _create_worktree_with_plan_content(
     ensure_erk_metadata_dir(repo)
     repo_root = repo.root
 
-    # Determine worktree name
-    if worktree_name:
+    # Determine branch name and worktree name
+    # - linked_branch_name: use the GitHub-linked branch for the worktree
+    # - worktree_name: user override for worktree directory name (not branch)
+    # - base_name: fallback derived from plan file or issue title
+    if linked_branch_name:
+        # For issue mode: always use the branch created by gh issue develop
+        branch = linked_branch_name
+        # But allow --worktree-name to override the directory name
+        if worktree_name:
+            name = sanitize_worktree_name(worktree_name)
+        else:
+            name = sanitize_worktree_name(linked_branch_name)
+    elif worktree_name:
         name = sanitize_worktree_name(worktree_name)
+        branch = name
     else:
         name = ensure_unique_worktree_name_with_date(
             plan_source.base_name, repo.worktrees_dir, ctx.git
         )
+        branch = name
 
     # Calculate worktree path
     wt_path = worktree_path_for(repo.worktrees_dir, name)
 
-    # Validate branch doesn't exist (before dry-run output)
+    # For linked branches, we use the existing branch; for others, validate it doesn't exist
     trunk_branch = ctx.trunk_branch
-    branch = name
-    local_branches = ctx.git.list_local_branches(repo_root)
-    if branch in local_branches:
-        # Different error messages based on whether name was explicitly provided
-        if worktree_name:
-            # User explicitly provided this name - tell them to choose different one
-            ctx.feedback.error(
-                f"Error: Branch '{branch}' already exists.\n"
-                + "Please choose a different name with --worktree-name."
-            )
-        else:
-            # Auto-generated name conflicted - suggest using explicit name
-            ctx.feedback.error(
-                f"Error: Branch '{branch}' already exists.\n"
-                + "Cannot create worktree with existing branch name.\n"
-                + "Use --worktree-name to specify a different name."
-            )
-        raise SystemExit(1)
+    use_existing_branch = linked_branch_name is not None
+
+    if not use_existing_branch:
+        # Validate branch doesn't exist (before dry-run output)
+        local_branches = ctx.git.list_local_branches(repo_root)
+        if branch in local_branches:
+            # Different error messages based on whether name was explicitly provided
+            if worktree_name:
+                # User explicitly provided this name - tell them to choose different one
+                ctx.feedback.error(
+                    f"Error: Branch '{branch}' already exists.\n"
+                    + "Please choose a different name with --worktree-name."
+                )
+            else:
+                # Auto-generated name conflicted - suggest using explicit name
+                ctx.feedback.error(
+                    f"Error: Branch '{branch}' already exists.\n"
+                    + "Cannot create worktree with existing branch name.\n"
+                    + "Use --worktree-name to specify a different name."
+                )
+            raise SystemExit(1)
 
     # Handle dry-run mode
     if dry_run:
@@ -502,7 +565,10 @@ def _create_worktree_with_plan_content(
     )
 
     # Output worktree creation diagnostic
-    ctx.feedback.info(f"Creating branch '{branch}' from {trunk_branch}...")
+    if use_existing_branch:
+        ctx.feedback.info(f"Using linked branch '{branch}'...")
+    else:
+        ctx.feedback.info(f"Creating branch '{branch}' from {trunk_branch}...")
 
     # Respect global use_graphite config (matching erk create behavior)
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
@@ -514,7 +580,7 @@ def _create_worktree_with_plan_content(
         wt_path,
         branch=branch,
         ref=trunk_branch,
-        use_existing_branch=False,
+        use_existing_branch=use_existing_branch,
         use_graphite=use_graphite,
         skip_remote_check=True,
     )
@@ -623,18 +689,19 @@ def _implement_from_issue(
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
 
-    # Prepare plan source from issue
-    plan_source = _prepare_plan_source_from_issue(ctx, repo.root, issue_number)
+    # Prepare plan source from issue (creates linked branch via gh issue develop)
+    issue_plan_source = _prepare_plan_source_from_issue(ctx, repo.root, issue_number)
 
-    # Create worktree with plan content
+    # Create worktree with plan content, using the linked branch name
     wt_path = _create_worktree_with_plan_content(
         ctx,
-        plan_source=plan_source,
+        plan_source=issue_plan_source.plan_source,
         worktree_name=worktree_name,
         dry_run=dry_run,
         submit=submit,
         dangerous=dangerous,
         no_interactive=no_interactive,
+        linked_branch_name=issue_plan_source.branch_name,
     )
 
     # Early return for dry-run mode

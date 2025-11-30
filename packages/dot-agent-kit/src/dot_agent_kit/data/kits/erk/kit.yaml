@@ -102,9 +102,6 @@ kit_cli_commands:
   - name: mark-impl-started
     path: kit_cli_commands/erk/mark_impl_started.py
     description: Update last_local_impl_at in GitHub issue plan-header metadata
-  - name: derive-branch-name
-    path: kit_cli_commands/erk/derive_branch_name.py
-    description: Derive branch name from issue title (kebab-case, 30 char max)
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit
