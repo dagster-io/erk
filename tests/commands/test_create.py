@@ -109,7 +109,6 @@ def test_create_from_issue_with_valid_issue() -> None:
             }
         )
 
-        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
         fake_issue_dev = FakeIssueLinkBranches()
 
         test_ctx = env.build_context(
@@ -130,10 +129,11 @@ def test_create_from_issue_with_valid_issue() -> None:
             print(f"stdout: {result.stdout}")
         assert result.exit_code == 0
 
-        # Assert: Worktree created with issue-linked branch name
-        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
+        # Assert: Worktree created with branch name derived from issue title
+        # Branch name is sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
+        # "123-Add User Authentication" -> "123-add-user-authentication-01-15-1430"
         worktrees_dir = repo_dir / "worktrees"
-        expected_worktree_path = worktrees_dir / "123-issue-branch"
+        expected_worktree_path = worktrees_dir / "123-add-user-authentication-01-15-1430"
         assert expected_worktree_path.exists(), (
             f"Expected worktree at {expected_worktree_path}, found: {list(worktrees_dir.glob('*'))}"
         )
@@ -259,12 +259,12 @@ def test_create_from_issue_url_parsing() -> None:
 
         # Assert: Success (URL parsed correctly)
         assert result.exit_code == 0
-        # Branch name from gh issue develop: "789-issue-branch"
-        assert "Created worktree" in result.output or "789-issue-branch" in result.output
+        # Branch name derived from issue title: "789-Feature Request" -> "789-feature-request"
+        assert "Created worktree" in result.output or "789-feature-request" in result.output
 
 
 def test_create_from_issue_name_derivation() -> None:
-    """Test worktree name derived from gh issue develop branch."""
+    """Test worktree name derived from issue title via sanitize_worktree_name."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.erk_root / "repos" / env.cwd.name
@@ -299,7 +299,6 @@ def test_create_from_issue_name_derivation() -> None:
             }
         )
 
-        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
         fake_issue_dev = FakeIssueLinkBranches()
 
         test_ctx = env.build_context(
@@ -314,11 +313,11 @@ def test_create_from_issue_name_derivation() -> None:
             catch_exceptions=False,
         )
 
-        # Assert: Name from gh issue develop branch
+        # Assert: Name = sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
+        # "111-Fix: Database..." -> "111-fix-database-connection-iss-01-15-1430"
         assert result.exit_code == 0
         worktrees_dir = repo_dir / "worktrees"
-        # Worktree named after gh issue develop branch
-        expected_worktree_path = worktrees_dir / "111-issue-branch"
+        expected_worktree_path = worktrees_dir / "111-fix-database-connection-iss-01-15-1430"
         assert expected_worktree_path.exists(), (
             f"Expected worktree at {expected_worktree_path}, found: {list(worktrees_dir.glob('*'))}"
         )

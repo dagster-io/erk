@@ -35,10 +35,10 @@ def test_create_development_branch_returns_fake_result() -> None:
     fake = FakeIssueLinkBranches()
     dryrun = DryRunIssueLinkBranches(fake)
 
-    result = dryrun.create_development_branch(Path("/repo"), 42)
+    result = dryrun.create_development_branch(Path("/repo"), 42, branch_name="42-my-feature")
 
-    # Returns dry-run placeholder branch
-    assert result.branch_name == "42-dry-run-branch"
+    # Returns the provided branch name (dry-run uses it directly)
+    assert result.branch_name == "42-my-feature"
     assert result.issue_number == 42
     assert result.already_existed is False
 
@@ -48,7 +48,7 @@ def test_create_development_branch_does_not_call_wrapped() -> None:
     fake = FakeIssueLinkBranches()
     dryrun = DryRunIssueLinkBranches(fake)
 
-    dryrun.create_development_branch(Path("/repo"), 42)
+    dryrun.create_development_branch(Path("/repo"), 42, branch_name="42-my-feature")
 
     # Fake should NOT have any created branches
     assert fake.created_branches == []
@@ -59,8 +59,10 @@ def test_create_development_branch_ignores_base_branch() -> None:
     fake = FakeIssueLinkBranches()
     dryrun = DryRunIssueLinkBranches(fake)
 
-    result = dryrun.create_development_branch(Path("/repo"), 42, base_branch="develop")
+    result = dryrun.create_development_branch(
+        Path("/repo"), 42, branch_name="42-feature", base_branch="develop"
+    )
 
-    # Still returns dry-run placeholder
-    assert result.branch_name == "42-dry-run-branch"
+    # Uses the provided branch name regardless of base_branch
+    assert result.branch_name == "42-feature"
     assert fake.created_branches == []

@@ -18,10 +18,58 @@ _SAFE_COMPONENT_RE = re.compile(r"[^A-Za-z0-9._/-]+")
 # Date suffix format for plan-derived worktree names: -YY-MM-DD-HHMM
 WORKTREE_DATE_SUFFIX_FORMAT = "%y-%m-%d-%H%M"
 
+# Branch timestamp suffix format: -MM-DD-HHMM (appended after truncation)
+BRANCH_TIMESTAMP_SUFFIX_FORMAT = "%m-%d-%H%M"
+
+# Regex pattern to detect existing timestamp suffix (MM-DD-HHMM)
+_TIMESTAMP_SUFFIX_PATTERN = re.compile(r"-\d{2}-\d{2}-\d{4}$")
+
+
+def has_timestamp_suffix(name: str) -> bool:
+    """Check if a name already ends with a timestamp suffix (-MM-DD-HHMM).
+
+    Args:
+        name: Branch or worktree name to check
+
+    Returns:
+        True if name ends with timestamp suffix pattern, False otherwise
+
+    Examples:
+        >>> has_timestamp_suffix("42-feature-01-15-1430")
+        True
+        >>> has_timestamp_suffix("42-feature")
+        False
+        >>> has_timestamp_suffix("42-feature-branch")
+        False
+    """
+    return _TIMESTAMP_SUFFIX_PATTERN.search(name) is not None
+
+
+def format_branch_timestamp_suffix(dt: datetime) -> str:
+    """Format a datetime as a branch timestamp suffix.
+
+    Returns a suffix in the format -MM-DD-HHMM to be appended to branch names.
+
+    Args:
+        dt: Datetime to format
+
+    Returns:
+        Formatted suffix string (e.g., "-01-15-1430")
+
+    Examples:
+        >>> from datetime import datetime
+        >>> format_branch_timestamp_suffix(datetime(2024, 1, 15, 14, 30))
+        "-01-15-1430"
+        >>> format_branch_timestamp_suffix(datetime(2024, 12, 31, 23, 59))
+        "-12-31-2359"
+    """
+    return f"-{dt.strftime(BRANCH_TIMESTAMP_SUFFIX_FORMAT)}"
+
 
 def sanitize_worktree_name(name: str) -> str:
     """Sanitize a worktree name for use as a directory name.
 
+    - If name already has timestamp suffix (-MM-DD-HHMM), returns as-is (idempotent)
     - Lowercases input
     - Replaces underscores with hyphens
     - Replaces characters outside `[A-Za-z0-9.-]` with `-`
@@ -37,14 +85,20 @@ def sanitize_worktree_name(name: str) -> str:
         name: Arbitrary string to sanitize
 
     Returns:
-        Sanitized worktree name (max 31 chars)
+        Sanitized worktree name (max 31 chars, unless timestamp already present)
 
     Examples:
         >>> sanitize_worktree_name("My_Feature")
         "my-feature"
         >>> sanitize_worktree_name("a" * 40)
         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"  # 31 chars
+        >>> sanitize_worktree_name("42-feature-01-15-1430")
+        "42-feature-01-15-1430"  # timestamp preserved (idempotent)
     """
+    # If name already has a timestamp suffix, return as-is (idempotent)
+    if has_timestamp_suffix(name):
+        return name
+
     lowered = name.strip().lower()
     # Replace underscores with hyphens
     replaced_underscores = lowered.replace("_", "-")

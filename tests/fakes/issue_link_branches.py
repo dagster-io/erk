@@ -41,6 +41,7 @@ class FakeIssueLinkBranches(IssueLinkBranches):
         repo_root: Path,
         issue_number: int,
         *,
+        branch_name: str,
         base_branch: str | None = None,
     ) -> DevelopmentBranch:
         """Create a fake development branch linked to an issue.
@@ -48,9 +49,8 @@ class FakeIssueLinkBranches(IssueLinkBranches):
         If a branch already exists for this issue in existing_branches,
         returns it with already_existed=True.
 
-        Otherwise, creates a new branch named "{issue_number}-issue-branch",
-        stores it in existing_branches, tracks in _created_branches, and
-        returns with already_existed=False.
+        Otherwise, uses the provided branch_name, stores it in existing_branches,
+        tracks in _created_branches, and returns with already_existed=False.
         """
         if issue_number in self.existing_branches:
             return DevelopmentBranch(
@@ -59,7 +59,6 @@ class FakeIssueLinkBranches(IssueLinkBranches):
                 already_existed=True,
             )
 
-        branch_name = f"{issue_number}-issue-branch"
         self._created_branches.append((issue_number, branch_name))
         self.existing_branches[issue_number] = branch_name
 

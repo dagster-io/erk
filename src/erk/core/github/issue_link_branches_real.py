@@ -21,6 +21,7 @@ class RealIssueLinkBranches(IssueLinkBranches):
         repo_root: Path,
         issue_number: int,
         *,
+        branch_name: str,
         base_branch: str | None = None,
     ) -> DevelopmentBranch:
         """Create a development branch linked to an issue via gh issue develop.
@@ -40,13 +41,12 @@ class RealIssueLinkBranches(IssueLinkBranches):
                 already_existed=True,
             )
 
-        # Create via gh issue develop
-        cmd = ["gh", "issue", "develop", str(issue_number)]
+        # Create via gh issue develop with explicit branch name
+        cmd = ["gh", "issue", "develop", str(issue_number), "--name", branch_name]
         if base_branch is not None:
             cmd.extend(["--base", base_branch])
 
-        stdout = execute_gh_command(cmd, repo_root)
-        branch_name = stdout.strip()
+        execute_gh_command(cmd, repo_root)
 
         return DevelopmentBranch(
             branch_name=branch_name,

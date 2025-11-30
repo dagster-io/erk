@@ -36,6 +36,7 @@ class IssueLinkBranches(ABC):
         repo_root: Path,
         issue_number: int,
         *,
+        branch_name: str,
         base_branch: str | None = None,
     ) -> DevelopmentBranch:
         """Create a development branch linked to an issue via gh issue develop.
@@ -46,6 +47,8 @@ class IssueLinkBranches(ABC):
         Args:
             repo_root: Repository root directory
             issue_number: GitHub issue number to link the branch to
+            branch_name: The branch name to use. Passed to gh issue develop --name
+                        to ensure branch names match worktree naming conventions.
             base_branch: Optional base branch to create from (defaults to repo default)
 
         Returns:

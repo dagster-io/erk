@@ -14,6 +14,7 @@ from erk_shared.naming import (
     ensure_simple_worktree_name,
     ensure_unique_worktree_name,
     ensure_unique_worktree_name_with_date,
+    format_branch_timestamp_suffix,
     sanitize_worktree_name,
     strip_plan_from_filename,
 )
@@ -699,9 +700,17 @@ def create_wt(
         # Create or derive branch name for the issue
         trunk_branch = ctx.git.get_trunk_branch(repo.root)
         if USE_GITHUB_NATIVE_BRANCH_LINKING:
+            # Compute branch name that matches worktree naming convention
+            # First truncate to 31 chars, then append timestamp suffix
+            base_branch_name = sanitize_worktree_name(f"{issue_number_parsed}-{issue_info.title}")
+            timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
+            desired_branch_name = base_branch_name + timestamp_suffix
             # Use GitHub's native branch linking via `gh issue develop`
             dev_branch = ctx.issue_link_branches.create_development_branch(
-                repo.root, int(issue_number_parsed), base_branch=trunk_branch
+                repo.root,
+                int(issue_number_parsed),
+                branch_name=desired_branch_name,
+                base_branch=trunk_branch,
             )
         else:
             # Traditional branch naming from issue title
@@ -719,13 +728,15 @@ def create_wt(
             user_output(f"Created linked branch: {linked_branch_name}")
 
         # Use the linked branch name for the worktree name
+        # (already has timestamp suffix, sanitize_worktree_name will preserve it)
         name = sanitize_worktree_name(linked_branch_name)
 
     # At this point, name should always be set
     assert name is not None, "name must be set by now"
 
-    # Sanitize the name to ensure consistency (truncate to 30 chars, normalize)
+    # Sanitize the name to ensure consistency (truncate to 31 chars, normalize)
     # This applies to user-provided names as well as derived names
+    # Note: sanitize_worktree_name is idempotent - preserves timestamp suffixes
     if not is_plan_derived:
         name = sanitize_worktree_name(name)
 
