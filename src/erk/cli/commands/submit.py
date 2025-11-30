@@ -282,7 +282,12 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
 
             # Fetch and checkout the remote branch locally
             ctx.git.fetch_branch(repo.root, "origin", branch_name)
-            ctx.git.create_tracking_branch(repo.root, branch_name, f"origin/{branch_name}")
+
+            # Only create tracking branch if it doesn't exist locally (LBYL)
+            local_branches = ctx.git.list_local_branches(repo.root)
+            if branch_name not in local_branches:
+                ctx.git.create_tracking_branch(repo.root, branch_name, f"origin/{branch_name}")
+
             ctx.git.checkout_branch(repo.root, branch_name)
 
             # Create empty commit as placeholder for PR creation
