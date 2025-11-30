@@ -761,7 +761,7 @@ def test_close_orphaned_draft_prs_no_linked_prs(tmp_path: Path) -> None:
 
 
 def test_submit_creates_pr_when_branch_exists_but_no_pr(tmp_path: Path) -> None:
-    """Test submit creates PR when branch exists on remote but no PR exists."""
+    """Test submit adds empty commit and creates PR when branch exists but no PR."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -813,14 +813,25 @@ def test_submit_creates_pr_when_branch_exists_but_no_pr(tmp_path: Path) -> None:
     result = runner.invoke(submit_cmd, ["123"], obj=ctx)
 
     assert result.exit_code == 0, result.output
-    assert "Branch '123-existing-branch' exists but no PR. Creating PR..." in result.output
+    assert "exists but no PR. Adding placeholder commit" in result.output
+    assert "Placeholder commit pushed" in result.output
     assert "Draft PR #999 created" in result.output
+    assert "Local branch cleaned up" in result.output
 
-    # Verify no new branch was created (existing branch was reused)
+    # Verify no new branch was created via gh issue develop (existing branch was reused)
     assert fake_issue_dev.created_branches == []
 
-    # Verify no branch was pushed (branch already exists)
-    assert len(fake_git.pushed_branches) == 0
+    # Verify empty commit was created
+    assert len(fake_git.commits) == 1
+    cwd, message, staged_files = fake_git.commits[0]
+    assert "[erk-plan] Initialize implementation for issue #123" in message
+    assert staged_files == []  # Empty commit has no staged files
+
+    # Verify branch was pushed after commit
+    assert len(fake_git.pushed_branches) == 1
+    remote, branch, set_upstream = fake_git.pushed_branches[0]
+    assert remote == "origin"
+    assert branch == expected_branch
 
     # Verify draft PR was created
     assert len(fake_github.created_prs) == 1
@@ -835,6 +846,11 @@ def test_submit_creates_pr_when_branch_exists_but_no_pr(tmp_path: Path) -> None:
     pr_number, updated_body = fake_github.updated_pr_bodies[0]
     assert pr_number == 999
     assert "erk pr checkout 999" in updated_body
+
+    # Verify local branch was cleaned up (checkout original, delete local)
+    assert len(fake_git._checked_out_branches) == 2  # branch checkout + restore to original
+    assert len(fake_git._deleted_branches) == 1
+    assert expected_branch in fake_git._deleted_branches
 
     # Workflow should still be triggered
     assert len(fake_github.triggered_workflows) == 1

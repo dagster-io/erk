@@ -518,6 +518,8 @@ class Git(ABC):
     def commit(self, cwd: Path, message: str) -> None:
         """Create a commit with staged changes.
 
+        Always uses --allow-empty to support creating commits even with no staged changes.
+
         Args:
             cwd: Working directory
             message: Commit message
