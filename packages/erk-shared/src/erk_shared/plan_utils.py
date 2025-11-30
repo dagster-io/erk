@@ -10,6 +10,57 @@ dependencies or I/O operations.
 
 import re
 
+# Prefixes commonly added by Claude's Plan Mode that should be stripped
+_PLAN_PREFIXES = ("Plan: ", "Implementation Plan: ")
+
+
+def _strip_plan_prefixes(title: str) -> str:
+    """Strip common plan prefixes from extracted title.
+
+    Claude's Plan Mode often creates plans with H1 headers like "# Plan: Feature Name".
+    This function removes those prefixes to produce cleaner issue titles.
+
+    Args:
+        title: The extracted title string
+
+    Returns:
+        Title with plan prefixes stripped
+
+    Example:
+        >>> _strip_plan_prefixes("Plan: Add Feature X")
+        'Add Feature X'
+        >>> _strip_plan_prefixes("Implementation Plan: Refactor Y")
+        'Refactor Y'
+        >>> _strip_plan_prefixes("Feature Name")
+        'Feature Name'
+    """
+    for prefix in _PLAN_PREFIXES:
+        if title.startswith(prefix):
+            return title[len(prefix) :]
+    return title
+
+
+def _clean_title(raw_title: str) -> str:
+    """Clean title by removing markdown formatting and plan prefixes.
+
+    Performs cleanup in order:
+    1. Remove markdown backticks
+    2. Remove markdown bold
+    3. Remove markdown italic
+    4. Strip whitespace
+    5. Strip plan prefixes
+
+    Args:
+        raw_title: Raw title string with possible markdown formatting
+
+    Returns:
+        Cleaned title string
+    """
+    title = re.sub(r"`([^`]+)`", r"\1", raw_title)  # Remove backticks
+    title = re.sub(r"\*\*([^*]+)\*\*", r"\1", title)  # Remove bold
+    title = re.sub(r"\*([^*]+)\*", r"\1", title)  # Remove italic
+    return _strip_plan_prefixes(title.strip())
+
 
 def wrap_plan_in_metadata_block(
     plan: str, intro_text: str = "This issue contains an implementation plan:"
@@ -60,7 +111,8 @@ def extract_title_from_plan(plan: str) -> str:
     2. First H2 heading (## Title)
     3. First non-empty line
 
-    Title is cleaned of markdown formatting and whitespace.
+    Title is cleaned of markdown formatting, whitespace, and common plan prefixes
+    (e.g., "Plan: ", "Implementation Plan: ").
 
     Args:
         plan: Plan content as markdown string
@@ -80,6 +132,14 @@ def extract_title_from_plan(plan: str) -> str:
         >>> plan = "Some plain text\\n\\nMore text..."
         >>> extract_title_from_plan(plan)
         'Some plain text'
+
+        >>> plan = "# Plan: Add Feature X\\n\\nDetails..."
+        >>> extract_title_from_plan(plan)
+        'Add Feature X'
+
+        >>> plan = "# Implementation Plan: Refactor Y\\n\\nDetails..."
+        >>> extract_title_from_plan(plan)
+        'Refactor Y'
     """
     if not plan or not plan.strip():
         return "Implementation Plan"
@@ -90,13 +150,7 @@ def extract_title_from_plan(plan: str) -> str:
     for line in lines:
         line = line.strip()
         if line.startswith("# ") and len(line) > 2:
-            # Remove # and clean
-            title = line[2:].strip()
-            # Remove markdown formatting
-            title = re.sub(r"`([^`]+)`", r"\1", title)  # Remove backticks
-            title = re.sub(r"\*\*([^*]+)\*\*", r"\1", title)  # Remove bold
-            title = re.sub(r"\*([^*]+)\*", r"\1", title)  # Remove italic
-            title = title.strip()
+            title = _clean_title(line[2:])
             if title:
                 # Limit to 100 chars (GitHub recommendation)
                 return title[:100] if len(title) > 100 else title
@@ -105,13 +159,7 @@ def extract_title_from_plan(plan: str) -> str:
     for line in lines:
         line = line.strip()
         if line.startswith("## ") and len(line) > 3:
-            # Remove ## and clean
-            title = line[3:].strip()
-            # Remove markdown formatting
-            title = re.sub(r"`([^`]+)`", r"\1", title)
-            title = re.sub(r"\*\*([^*]+)\*\*", r"\1", title)
-            title = re.sub(r"\*([^*]+)\*", r"\1", title)
-            title = title.strip()
+            title = _clean_title(line[3:])
             if title:
                 return title[:100] if len(title) > 100 else title
 
@@ -120,11 +168,7 @@ def extract_title_from_plan(plan: str) -> str:
         line = line.strip()
         # Skip YAML front matter delimiters
         if line and line != "---":
-            # Remove markdown formatting
-            title = re.sub(r"`([^`]+)`", r"\1", line)
-            title = re.sub(r"\*\*([^*]+)\*\*", r"\1", title)
-            title = re.sub(r"\*([^*]+)\*", r"\1", title)
-            title = title.strip()
+            title = _clean_title(line)
             if title:
                 return title[:100] if len(title) > 100 else title
 
