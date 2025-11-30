@@ -54,17 +54,17 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
           source $HOME/.cargo/env
 
-          cd $GITHUB_WORKSPACE
-
-          # Install workspace packages in dependency order
-          uv tool install --from ./packages/dot-agent-kit --with ./packages/erk-shared dot-agent-kit
-          uv tool install --from . --with ./packages/erk-shared --with ./packages/dot-agent-kit erk
-
-          # Install Claude Code (curl-based, newer pattern)
+          # Install Claude Code first (better layer caching)
           curl -fsSL https://claude.ai/install.sh | bash
 
           # Install Prettier via npm (no Graphite CLI needed)
           npm install -g prettier
+
+          cd $GITHUB_WORKSPACE
+
+          # Install workspace packages in dependency order (last, changes frequently)
+          uv tool install --from ./packages/dot-agent-kit --with ./packages/erk-shared dot-agent-kit
+          uv tool install --from . --with ./packages/erk-shared --with ./packages/dot-agent-kit erk
 
           # Install erk kit for Claude Code
           dot-agent kit install erk
