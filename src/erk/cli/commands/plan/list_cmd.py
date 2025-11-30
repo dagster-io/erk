@@ -186,6 +186,14 @@ def plan_list_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
         type=int,
         help="Maximum number of results to return",
     )(f)
+    f = click.option(
+        "--all",
+        "-a",
+        "show_all",  # Use 'show_all' to avoid shadowing Python built-in 'all'
+        is_flag=True,
+        default=False,
+        help="Show all columns (equivalent to -P -r)",
+    )(f)
     return f
 
 
@@ -405,6 +413,7 @@ def list_plans(
     runs: bool,
     prs: bool,
     limit: int | None,
+    show_all: bool,
 ) -> None:
     """List plans with optional filters.
 
@@ -416,5 +425,11 @@ def list_plans(
         erk plan list --run-state success --state open
         erk plan list --runs
         erk plan list --prs
+        erk plan list --all
+        erk ls -a
     """
+    # Handle --all flag (equivalent to -P -r)
+    if show_all:
+        prs = True
+        runs = True
     _list_plans_impl(ctx, label, state, run_state, runs, prs, limit)

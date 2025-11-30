@@ -53,6 +53,7 @@ def test_list_plans_all_flag_shows_all_columns() -> None:
 ## Verification
 
 After implementation:
+
 - `erk ls -a` should show: plan, title, pr, chks, local-wt, local-run, run-id, run-state
 - `erk ls --all` should produce identical output
 - Existing flags `-P` and `-r` continue to work independently

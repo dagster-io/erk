@@ -1485,3 +1485,193 @@ def test_list_plans_pr_column_no_pr_linked() -> None:
         assert "🚧" not in result.output
         assert "🎉" not in result.output
         assert "⛔" not in result.output
+
+
+def test_list_plans_all_flag_shows_all_columns() -> None:
+    """Test that --all flag enables both PR and run columns."""
+    from erk_shared.github.types import PullRequestInfo, WorkflowRun
+
+    from erk.core.github.fake import FakeGitHub
+
+    # Arrange - Create plan with PR and workflow run data
+    plan_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+last_dispatched_run_id: '99999'
+```
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    plan = Plan(
+        plan_identifier="200",
+        title="Plan with PR and Run",
+        body=plan_body,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/200",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"number": 200},
+    )
+
+    pr = PullRequestInfo(
+        number=300,
+        state="OPEN",
+        url="https://github.com/owner/repo/pull/300",
+        is_draft=False,
+        title="PR for issue 200",
+        checks_passing=True,
+        owner="owner",
+        repo="repo",
+        has_conflicts=False,
+    )
+
+    workflow_run = WorkflowRun(
+        run_id="99999",
+        status="completed",
+        conclusion="success",
+        branch="master",
+        head_sha="abc123",
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues={200: plan_to_issue(plan)})
+        github = FakeGitHub(pr_issue_linkages={200: [pr]}, workflow_runs=[workflow_run])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
+
+        # Act - Use --all flag
+        result = runner.invoke(cli, ["list", "--all"], obj=ctx)
+
+        # Assert
+        assert result.exit_code == 0
+        assert "#200" in result.output
+        # PR columns should appear (from -P)
+        assert "#300" in result.output  # PR number
+        assert "👀" in result.output  # Open PR emoji
+        assert "✅" in result.output  # Checks passing
+        # Run columns should appear (from -r)
+        assert "99999" in result.output  # run-id
+
+
+def test_list_plans_all_flag_short_form() -> None:
+    """Test that -a short flag works same as --all."""
+    from erk_shared.github.types import PullRequestInfo, WorkflowRun
+
+    from erk.core.github.fake import FakeGitHub
+
+    # Arrange - Create plan with PR and workflow run data
+    plan_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+last_dispatched_run_id: '88888'
+```
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    plan = Plan(
+        plan_identifier="201",
+        title="Plan for short flag test",
+        body=plan_body,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/201",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"number": 201},
+    )
+
+    pr = PullRequestInfo(
+        number=301,
+        state="MERGED",
+        url="https://github.com/owner/repo/pull/301",
+        is_draft=False,
+        title="PR for issue 201",
+        checks_passing=True,
+        owner="owner",
+        repo="repo",
+        has_conflicts=False,
+    )
+
+    workflow_run = WorkflowRun(
+        run_id="88888",
+        status="in_progress",
+        conclusion=None,
+        branch="master",
+        head_sha="def456",
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues={201: plan_to_issue(plan)})
+        github = FakeGitHub(pr_issue_linkages={201: [pr]}, workflow_runs=[workflow_run])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
+
+        # Act - Use -a short flag
+        result = runner.invoke(cli, ["list", "-a"], obj=ctx)
+
+        # Assert
+        assert result.exit_code == 0
+        assert "#201" in result.output
+        # PR columns should appear
+        assert "#301" in result.output  # PR number
+        assert "🎉" in result.output  # Merged PR emoji
+        # Run columns should appear
+        assert "88888" in result.output  # run-id
+
+
+def test_list_plans_all_flag_with_ls_alias() -> None:
+    """Test that ls -a alias works correctly."""
+    from erk_shared.github.types import PullRequestInfo
+
+    from erk.core.github.fake import FakeGitHub
+
+    # Arrange
+    plan = Plan(
+        plan_identifier="202",
+        title="Plan for ls alias test",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/202",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"number": 202},
+    )
+
+    pr = PullRequestInfo(
+        number=302,
+        state="DRAFT",
+        url="https://github.com/owner/repo/pull/302",
+        is_draft=True,
+        title="Draft PR for issue 202",
+        checks_passing=None,
+        owner="owner",
+        repo="repo",
+        has_conflicts=False,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues={202: plan_to_issue(plan)})
+        github = FakeGitHub(pr_issue_linkages={202: [pr]})
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
+
+        # Act - Use ls alias with -a flag
+        result = runner.invoke(cli, ["ls", "-a"], obj=ctx)
+
+        # Assert
+        assert result.exit_code == 0
+        assert "#202" in result.output
+        # PR columns should appear
+        assert "#302" in result.output
+        assert "🚧" in result.output  # Draft PR emoji
