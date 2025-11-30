@@ -6,6 +6,7 @@ It's intentionally minimal to avoid pulling in complex dependencies.
 
 import logging
 import subprocess
+import time
 from collections.abc import Sequence
 from pathlib import Path
 from typing import IO, Any
@@ -111,6 +112,7 @@ def execute_gh_command(cmd: list[str], cwd: Path) -> str:
     """
     cmd_str = " ".join(cmd)
     logger.debug("Executing gh command: %s (cwd=%s)", cmd_str, cwd)
+    start_time = time.perf_counter()
     try:
         result = subprocess.run(
             cmd,
@@ -120,12 +122,15 @@ def execute_gh_command(cmd: list[str], cwd: Path) -> str:
             encoding="utf-8",
             check=True,
         )
+        elapsed_ms = int((time.perf_counter() - start_time) * 1000)
         stdout_preview = result.stdout[:200] if result.stdout else "(empty)"
-        logger.debug("gh command succeeded, stdout preview: %s", stdout_preview)
+        logger.debug("gh command succeeded in %dms, stdout preview: %s", elapsed_ms, stdout_preview)
         return result.stdout
     except subprocess.CalledProcessError as e:
+        elapsed_ms = int((time.perf_counter() - start_time) * 1000)
         logger.debug(
-            "gh command failed: exit_code=%d, stdout=%s, stderr=%s",
+            "gh command failed in %dms: exit_code=%d, stdout=%s, stderr=%s",
+            elapsed_ms,
             e.returncode,
             e.stdout,
             e.stderr,
@@ -135,6 +140,7 @@ def execute_gh_command(cmd: list[str], cwd: Path) -> str:
             error_msg += f": {e.stderr.strip()}"
         raise RuntimeError(error_msg) from e
     except FileNotFoundError as e:
-        logger.debug("gh command not found: %s", cmd_str)
+        elapsed_ms = int((time.perf_counter() - start_time) * 1000)
+        logger.debug("gh command not found in %dms: %s", elapsed_ms, cmd_str)
         error_msg = f"Command not found: {cmd_str}"
         raise RuntimeError(error_msg) from e

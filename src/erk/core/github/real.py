@@ -8,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from erk_shared.debug_timing import log_graphql_query
 from erk_shared.github.abc import GitHub
 from erk_shared.github.parsing import (
     _determine_checks_status,
@@ -266,6 +267,7 @@ query {{
         Returns:
             Parsed JSON response
         """
+        log_graphql_query(query)
         cmd = ["gh", "api", "graphql", "-f", f"query={query}"]
         stdout = execute_gh_command(cmd, repo_root)
         return json.loads(stdout)
