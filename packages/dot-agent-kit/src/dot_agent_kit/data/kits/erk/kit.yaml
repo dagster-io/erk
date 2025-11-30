@@ -105,6 +105,9 @@ kit_cli_commands:
   - name: derive-branch-name
     path: kit_cli_commands/erk/derive_branch_name.py
     description: Derive branch name from issue title (kebab-case, 30 char max)
+  - name: audit-branches
+    path: kit_cli_commands/erk/audit_branches.py
+    description: Audit git branches for cleanup candidates (empty, merged, stale)
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit
