@@ -1,0 +1,53 @@
+"""Connect to a planner box."""
+
+import os
+
+import click
+
+from erk.core.context import ErkContext
+
+
+@click.command("connect")
+@click.argument("name", required=False)
+@click.pass_obj
+def connect_planner(ctx: ErkContext, name: str | None) -> None:
+    """Connect to a planner box and launch Claude.
+
+    If NAME is provided, connects to that planner. Otherwise, connects
+    to the default planner.
+
+    This replaces the current process with an SSH session to the
+    codespace running Claude.
+    """
+    # Get planner by name or default
+    if name is not None:
+        planner = ctx.planner_registry.get(name)
+        if planner is None:
+            click.echo(f"Error: No planner named '{name}' found.", err=True)
+            click.echo("\nUse 'erk planner list' to see registered planners.", err=True)
+            raise SystemExit(1)
+    else:
+        planner = ctx.planner_registry.get_default()
+        if planner is None:
+            default_name = ctx.planner_registry.get_default_name()
+            if default_name is not None:
+                click.echo(f"Error: Default planner '{default_name}' not found.", err=True)
+            else:
+                click.echo("Error: No default planner set.", err=True)
+            click.echo("\nUse 'erk planner list' to see registered planners.", err=True)
+            click.echo("Use 'erk planner set-default <name>' to set a default.", err=True)
+            raise SystemExit(1)
+
+    # Check if configured
+    if not planner.configured:
+        click.echo(f"Warning: Planner '{planner.name}' has not been configured yet.", err=True)
+        click.echo(f"Run 'erk planner configure {planner.name}' for initial setup.", err=True)
+
+    # Update last connected timestamp
+    ctx.planner_registry.update_last_connected(planner.name, ctx.time.now())
+
+    # Connect via gh codespace ssh with claude command
+    click.echo(f"Connecting to planner '{planner.name}'...", err=True)
+
+    # Replace current process with ssh session
+    os.execvp("gh", ["gh", "codespace", "ssh", "-c", planner.gh_name, "--", "claude"])

@@ -32,6 +32,8 @@ from erk.core.github.issue_link_branches_real import RealIssueLinkBranches
 from erk.core.github.real import RealGitHub
 from erk.core.plan_store.github import GitHubPlanStore
 from erk.core.plan_store.store import PlanStore
+from erk.core.planner.registry_abc import PlannerRegistry
+from erk.core.planner.registry_real import RealPlannerRegistry
 from erk.core.repo_discovery import (
     NoRepoSentinel,
     RepoContext,
@@ -69,6 +71,7 @@ class ErkContext:
     script_writer: ScriptWriter
     feedback: UserFeedback
     plan_list_service: PlanListService
+    planner_registry: PlannerRegistry
     cwd: Path  # Current working directory at CLI invocation
     global_config: GlobalConfig | None
     local_config: LoadedConfig
@@ -141,6 +144,7 @@ class ErkContext:
         from erk.core.config_store import FakeConfigStore
         from erk.core.github.fake import FakeGitHub
         from erk.core.plan_store.fake import FakePlanStore
+        from erk.core.planner.registry_fake import FakePlannerRegistry
 
         fake_github = FakeGitHub()
         fake_issues = FakeGitHubIssues()
@@ -160,6 +164,7 @@ class ErkContext:
             script_writer=FakeScriptWriter(),
             feedback=FakeUserFeedback(),
             plan_list_service=PlanListService(fake_github, fake_issues),
+            planner_registry=FakePlannerRegistry(),
             cwd=cwd,
             global_config=None,
             local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
@@ -183,6 +188,7 @@ class ErkContext:
         script_writer: ScriptWriter | None = None,
         feedback: UserFeedback | None = None,
         plan_list_service: PlanListService | None = None,
+        planner_registry: PlannerRegistry | None = None,
         cwd: Path | None = None,
         global_config: GlobalConfig | None = None,
         local_config: LoadedConfig | None = None,
@@ -254,6 +260,7 @@ class ErkContext:
         from erk.core.git.fake import FakeGit
         from erk.core.github.fake import FakeGitHub
         from erk.core.plan_store.fake import FakePlanStore
+        from erk.core.planner.registry_fake import FakePlannerRegistry
 
         if git is None:
             git = FakeGit()
@@ -293,6 +300,9 @@ class ErkContext:
 
         if plan_list_service is None:
             plan_list_service = PlanListService(github, issues)
+
+        if planner_registry is None:
+            planner_registry = FakePlannerRegistry()
 
         if global_config is None:
             global_config = GlobalConfig(
@@ -334,6 +344,7 @@ class ErkContext:
             script_writer=script_writer,
             feedback=feedback,
             plan_list_service=plan_list_service,
+            planner_registry=planner_registry,
             cwd=cwd or sentinel_path(),
             global_config=global_config,
             local_config=local_config,
@@ -506,6 +517,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
         script_writer=RealScriptWriter(),
         feedback=feedback,
         plan_list_service=plan_list_service,
+        planner_registry=RealPlannerRegistry(),
         cwd=cwd,
         global_config=global_config,
         local_config=local_config,

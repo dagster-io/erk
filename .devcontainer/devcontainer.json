@@ -1,0 +1,24 @@
+{
+  "name": "erk-planning",
+  "image": "mcr.microsoft.com/devcontainers/python:3.13",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/sshd:1": {
+      "version": "latest"
+    }
+  },
+  "postCreateCommand": "curl -fsSL https://claude.ai/install.sh | bash && pip install uv && uv sync",
+  "customizations": {
+    "codespaces": {
+      "permissions": {
+        "contents": "write",
+        "pull_requests": "write",
+        "workflows": "write",
+        "statuses": "write",
+        "deployments": "write",
+        "security_events": "write",
+        "members": "read"
+      }
+    }
+  }
+}
