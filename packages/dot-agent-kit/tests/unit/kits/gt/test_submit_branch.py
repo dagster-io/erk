@@ -487,7 +487,7 @@ class TestExecutePreflight:
         assert result.pr_number == 123
         assert result.pr_url == "https://github.com/org/repo/pull/123"
         assert result.branch_name == "feature-branch"
-        assert ".tmp/test-session-123/" in result.diff_file
+        assert ".erk/scratch/test-session-123/" in result.diff_file
         assert result.diff_file.endswith(".diff")
         assert result.current_branch == "feature-branch"
         assert result.parent_branch == "main"

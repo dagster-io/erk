@@ -40,7 +40,7 @@ Execute the preflight command to do all deterministic work.
 dot-agent run gt pr-submit preflight --session-id "<session-id>" 2>&1
 ```
 
-The `--session-id` is **required**. The diff file is written to `.tmp/<session-id>/` in the repo root, which is accessible to subagents without permission prompts.
+The `--session-id` is **required**. The diff file is written to `.erk/scratch/<session-id>/` in the repo root, which is accessible to subagents without permission prompts.
 
 **IMPORTANT**: The `2>&1` redirection combines stderr and stdout so progress messages are visible. Display the full command output to the user first (this shows real-time progress), then extract and parse the JSON object from the end of the output.
 
@@ -92,16 +92,16 @@ Execute the finalize command to update PR metadata.
 
 **IMPORTANT**: Use `--pr-body-file` instead of `--pr-body` to avoid shell escaping issues with multi-line content and special characters.
 
-1. Write the PR body to a temp file (e.g., `/tmp/pr-body-{uuid}.txt`)
+1. Write the PR body to a scratch file (e.g., `.erk/scratch/<session-id>/pr-body.txt`)
 2. Pass the file path to finalize
 
 ```bash
-# Write PR body to temp file first (using Write tool or similar)
+# Write PR body to scratch file first (using Write tool or similar)
 # Then run finalize with the file path:
 dot-agent run gt pr-submit finalize \
     --pr-number {pr_number} \
     --pr-title "{pr_title}" \
-    --pr-body-file "/tmp/pr-body-{uuid}.txt" \
+    --pr-body-file ".erk/scratch/<session-id>/pr-body.txt" \
     --diff-file "{diff_file}" 2>&1
 ```
 

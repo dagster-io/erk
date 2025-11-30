@@ -16,7 +16,7 @@ activate.sh
 
 # Local implementation and configuration (not tracked in git)
 .impl/
-.tmp/
+.erk/scratch/
 .env
 
 CLAUDE.local.md
