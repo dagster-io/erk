@@ -81,3 +81,35 @@ def get_issue_state_emoji(state: str) -> str:
         🟢 for OPEN, 🔴 for CLOSED
     """
     return "🟢" if state == "OPEN" else "🔴"
+
+
+def format_checks_cell(pr: PullRequestInfo | None) -> str:
+    """Format checks status with emoji and counts.
+
+    Returns:
+        - "-" if no PR provided
+        - "🔄" if checks are pending or no checks configured
+        - "✅ 3/3" if all checks passing (with counts)
+        - "🚫 2/5" if any checks failing (with counts)
+
+    Args:
+        pr: PR information, or None if no PR
+
+    Returns:
+        Formatted string with emoji and optional counts
+    """
+    if pr is None:
+        return "-"
+
+    if pr.checks_passing is None:
+        return CHECKS_PENDING_EMOJI  # Pending or no checks
+
+    # Determine emoji
+    emoji = CHECKS_PASSING_EMOJI if pr.checks_passing else CHECKS_FAILING_EMOJI
+
+    # Add counts if available
+    if pr.checks_counts is not None:
+        passing, total = pr.checks_counts
+        return f"{emoji} {passing}/{total}"
+
+    return emoji

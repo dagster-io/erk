@@ -50,8 +50,10 @@ def parse_github_pr_list(json_str: str, include_checks: bool) -> dict[str, PullR
 
         # Only determine check status if we fetched it
         checks_passing = None
+        checks_counts = None
         if include_checks and "statusCheckRollup" in pr:
             checks_passing = _determine_checks_status(pr["statusCheckRollup"])
+            checks_counts = _extract_checks_counts(pr["statusCheckRollup"])
 
         # Parse owner and repo from GitHub URL
         url = pr["url"]
@@ -70,6 +72,7 @@ def parse_github_pr_list(json_str: str, include_checks: bool) -> dict[str, PullR
             checks_passing=checks_passing,
             owner=owner,
             repo=repo,
+            checks_counts=checks_counts,
         )
 
     return prs
@@ -125,6 +128,33 @@ def _determine_checks_status(check_rollup: list[dict]) -> bool | None:
             return False
 
     return True
+
+
+def _extract_checks_counts(check_rollup: list[dict]) -> tuple[int, int] | None:
+    """Extract passing and total check counts from statusCheckRollup data.
+
+    Returns:
+        (passing_count, total_count) tuple if checks exist, None otherwise.
+        Passing conclusions: SUCCESS, SKIPPED, NEUTRAL
+    """
+    if not check_rollup:
+        return None
+
+    passing_conclusions = {"SUCCESS", "SKIPPED", "NEUTRAL"}
+    passing = 0
+    total = 0
+
+    for check in check_rollup:
+        status = check.get("status")
+        conclusion = check.get("conclusion")
+
+        total += 1
+
+        # Only count as passing if completed with a passing conclusion
+        if status == "COMPLETED" and conclusion in passing_conclusions:
+            passing += 1
+
+    return (passing, total)
 
 
 def _parse_github_pr_url(url: str) -> tuple[str, str] | None:

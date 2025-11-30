@@ -30,6 +30,7 @@ class PullRequestInfo:
     # True if CONFLICTING, False if MERGEABLE, None if UNKNOWN or not fetched
     has_conflicts: bool | None = None
     labels: list[str] = field(default_factory=list)  # PR labels (e.g., ["erk-plan"])
+    checks_counts: tuple[int, int] | None = None  # (passing, total) or None if no checks
 
 
 @dataclass(frozen=True)

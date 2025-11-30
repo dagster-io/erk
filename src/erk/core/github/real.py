@@ -279,6 +279,36 @@ query {{
         Returns:
             True if all checks passing, False if any failing, None if no checks or error
         """
+        nodes = self._extract_check_nodes(pr_data)
+        if nodes is None:
+            return None
+        return _determine_checks_status(nodes)
+
+    def _parse_pr_ci_counts(self, pr_data: dict[str, Any] | None) -> tuple[int, int] | None:
+        """Parse check counts from GraphQL PR response.
+
+        Args:
+            pr_data: GraphQL response data for single PR (may be None)
+
+        Returns:
+            (passing, total) tuple or None if no checks
+        """
+        from erk_shared.github.parsing import _extract_checks_counts
+
+        nodes = self._extract_check_nodes(pr_data)
+        if nodes is None:
+            return None
+        return _extract_checks_counts(nodes)
+
+    def _extract_check_nodes(self, pr_data: dict[str, Any] | None) -> list[dict] | None:
+        """Extract check nodes from GraphQL PR response.
+
+        Args:
+            pr_data: GraphQL response data for single PR (may be None)
+
+        Returns:
+            List of check node dicts or None if not available
+        """
         # Check if PR data is missing (not found or error)
         if pr_data is None:
             return None
@@ -313,10 +343,7 @@ query {{
             return None
 
         # Extract nodes array from contexts connection
-        nodes = contexts.get("nodes", [])
-
-        # Call existing logic to determine status
-        return _determine_checks_status(nodes)
+        return contexts.get("nodes", [])
 
     def _parse_pr_mergeability(self, pr_data: dict[str, Any] | None) -> bool | None:
         """Parse mergeability status from GraphQL PR data.
@@ -379,15 +406,22 @@ query {{
             # Parse CI status (handles None/missing data gracefully)
             ci_status = self._parse_pr_ci_status(pr_data)
 
+            # Parse check counts
+            checks_counts = self._parse_pr_ci_counts(pr_data)
+
             # Parse mergeability status
             has_conflicts = self._parse_pr_mergeability(pr_data)
 
             # Extract title from PR data
             title = pr_data.get("title") if pr_data else None
 
-            # Create enriched PR with updated CI status, mergeability, and title
+            # Create enriched PR with updated CI status, mergeability, counts, and title
             enriched_pr = replace(
-                pr, checks_passing=ci_status, has_conflicts=has_conflicts, title=title
+                pr,
+                checks_passing=ci_status,
+                has_conflicts=has_conflicts,
+                title=title,
+                checks_counts=checks_counts,
             )
             enriched_prs[branch] = enriched_pr
 
@@ -871,6 +905,7 @@ query {{
             GraphQL query string
         """
         # Define the fragment once at the top of the query
+        # NOTE: Includes detailed contexts for check count extraction
         fragment_definition = """fragment IssuePRLinkageFields on CrossReferencedEvent {
   willCloseTarget
   source {
@@ -883,6 +918,17 @@ query {{
       createdAt
       statusCheckRollup {
         state
+        contexts(last: 100) {
+          nodes {
+            ... on StatusContext {
+              state
+            }
+            ... on CheckRun {
+              status
+              conclusion
+            }
+          }
+        }
       }
       mergeable
       labels(first: 10) {
@@ -978,8 +1024,9 @@ query {{
                 title = source.get("title")
                 created_at = source.get("createdAt")
 
-                # Parse checks status
+                # Parse checks status and counts
                 checks_passing = None
+                checks_counts: tuple[int, int] | None = None
                 status_rollup = source.get("statusCheckRollup")
                 if status_rollup is not None:
                     rollup_state = status_rollup.get("state")
@@ -987,6 +1034,14 @@ query {{
                         checks_passing = True
                     elif rollup_state in ("FAILURE", "ERROR"):
                         checks_passing = False
+
+                    # Extract check counts from detailed contexts
+                    contexts = status_rollup.get("contexts")
+                    if contexts is not None and isinstance(contexts, dict):
+                        from erk_shared.github.parsing import _extract_checks_counts
+
+                        check_nodes = contexts.get("nodes", [])
+                        checks_counts = _extract_checks_counts(check_nodes)
 
                 # Parse conflicts status
                 has_conflicts = None
@@ -1018,6 +1073,7 @@ query {{
                     repo=repo,
                     has_conflicts=has_conflicts,
                     labels=labels,
+                    checks_counts=checks_counts,
                 )
 
                 # Store with timestamp for sorting

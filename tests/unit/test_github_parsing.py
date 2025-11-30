@@ -2,6 +2,7 @@
 
 from erk_shared.github.parsing import (
     _determine_checks_status,
+    _extract_checks_counts,
     parse_gh_auth_status_output,
     parse_github_pr_list,
     parse_github_pr_status,
@@ -27,12 +28,14 @@ def test_parse_github_pr_list_with_checks():
     assert feature.checks_passing is True
     assert feature.owner == "dagster-io"
     assert feature.repo == "erk"
+    assert feature.checks_counts == (2, 2)  # 2 passing out of 2 total
 
     # Check bugfix branch with failing checks
     assert "bugfix-branch" in result
     bugfix = result["bugfix-branch"]
     assert bugfix.number == 124
     assert bugfix.checks_passing is False
+    assert bugfix.checks_counts == (0, 1)  # 0 passing out of 1 total
 
     # Check pending branch with in-progress checks
     assert "pending-branch" in result
@@ -40,6 +43,7 @@ def test_parse_github_pr_list_with_checks():
     assert pending.number == 125
     assert pending.is_draft is True
     assert pending.checks_passing is False  # In-progress treated as failing
+    assert pending.checks_counts == (0, 1)  # In-progress doesn't count as passing
 
 
 def test_parse_github_pr_list_without_checks():
@@ -56,6 +60,7 @@ def test_parse_github_pr_list_without_checks():
     assert main_feature.state == "MERGED"
     assert main_feature.is_draft is False
     assert main_feature.checks_passing is None  # Not included
+    assert main_feature.checks_counts is None  # Not included
 
     # Check test branch - closed PR
     assert "test-branch" in result
@@ -64,6 +69,7 @@ def test_parse_github_pr_list_without_checks():
     assert test.state == "CLOSED"
     assert test.is_draft is True
     assert test.checks_passing is None
+    assert test.checks_counts is None  # Not included
 
 
 def test_parse_github_pr_list_empty():
@@ -142,6 +148,63 @@ def test_determine_checks_status_no_checks():
     """Test check status with no checks configured."""
     result = _determine_checks_status([])
     assert result is None
+
+
+# Tests for _extract_checks_counts
+
+
+def test_extract_checks_counts_all_passing():
+    """Test count extraction when all checks pass."""
+    check_rollup = [
+        {"status": "COMPLETED", "conclusion": "SUCCESS"},
+        {"status": "COMPLETED", "conclusion": "SKIPPED"},
+        {"status": "COMPLETED", "conclusion": "NEUTRAL"},
+    ]
+    result = _extract_checks_counts(check_rollup)
+    assert result == (3, 3)
+
+
+def test_extract_checks_counts_some_failing():
+    """Test count extraction when some checks fail."""
+    check_rollup = [
+        {"status": "COMPLETED", "conclusion": "SUCCESS"},
+        {"status": "COMPLETED", "conclusion": "FAILURE"},
+        {"status": "COMPLETED", "conclusion": "SUCCESS"},
+    ]
+    result = _extract_checks_counts(check_rollup)
+    assert result == (2, 3)
+
+
+def test_extract_checks_counts_in_progress():
+    """Test count extraction when checks are in progress."""
+    check_rollup = [
+        {"status": "IN_PROGRESS"},
+        {"status": "COMPLETED", "conclusion": "SUCCESS"},
+        {"status": "QUEUED"},
+    ]
+    result = _extract_checks_counts(check_rollup)
+    # In-progress and queued don't count as passing
+    assert result == (1, 3)
+
+
+def test_extract_checks_counts_no_checks():
+    """Test count extraction with no checks configured."""
+    result = _extract_checks_counts([])
+    assert result is None
+
+
+def test_extract_checks_counts_mixed_conclusions():
+    """Test count extraction with various conclusion types."""
+    check_rollup = [
+        {"status": "COMPLETED", "conclusion": "SUCCESS"},
+        {"status": "COMPLETED", "conclusion": "FAILURE"},
+        {"status": "COMPLETED", "conclusion": "SKIPPED"},
+        {"status": "COMPLETED", "conclusion": "CANCELLED"},
+        {"status": "COMPLETED", "conclusion": "NEUTRAL"},
+    ]
+    result = _extract_checks_counts(check_rollup)
+    # SUCCESS, SKIPPED, NEUTRAL are passing; FAILURE, CANCELLED are not
+    assert result == (3, 5)
 
 
 # Tests for parse_gh_auth_status_output

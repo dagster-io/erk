@@ -3,7 +3,7 @@
 from collections.abc import Callable
 
 import click
-from erk_shared.github.emoji import get_checks_status_emoji, get_pr_status_emoji
+from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata import (
     extract_plan_header_local_impl_at,
@@ -104,18 +104,6 @@ def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str
         return f"[link={url}]{pr_text}[/link] {emoji}"
     else:
         return f"{pr_text} {emoji}"
-
-
-def format_checks_cell(pr: PullRequestInfo | None) -> str:
-    """Format checks cell: ✅/🚫/🔄/-
-
-    Args:
-        pr: PR information, or None if no PR
-
-    Returns:
-        Formatted string for table cell
-    """
-    return get_checks_status_emoji(pr)
 
 
 def format_worktree_name_cell(worktree_name: str, exists_locally: bool) -> str:

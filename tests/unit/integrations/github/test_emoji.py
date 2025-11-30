@@ -6,6 +6,7 @@ from erk_shared.github.emoji import (
     CHECKS_PENDING_EMOJI,
     CONFLICTS_EMOJI,
     PR_STATE_EMOJIS,
+    format_checks_cell,
     get_checks_status_emoji,
     get_issue_state_emoji,
     get_pr_status_emoji,
@@ -310,3 +311,125 @@ def test_get_issue_state_emoji_closed() -> None:
     """Test emoji for CLOSED issue state."""
     result = get_issue_state_emoji("CLOSED")
     assert result == "🔴"
+
+
+# Tests for format_checks_cell
+
+
+def test_format_checks_cell_no_pr() -> None:
+    """Test format_checks_cell for None PR returns dash."""
+    result = format_checks_cell(None)
+    assert result == "-"
+
+
+def test_format_checks_cell_pending() -> None:
+    """Test format_checks_cell for PR with no checks (None)."""
+    pr = PullRequestInfo(
+        number=300,
+        state="OPEN",
+        url="https://github.com/owner/repo/pull/300",
+        is_draft=False,
+        title="PR with pending checks",
+        checks_passing=None,
+        owner="owner",
+        repo="repo",
+        has_conflicts=False,
+    )
+
+    result = format_checks_cell(pr)
+    assert result == "🔄"
+
+
+def test_format_checks_cell_passing_with_counts() -> None:
+    """Test format_checks_cell for PR with passing checks and counts."""
+    pr = PullRequestInfo(
+        number=301,
+        state="OPEN",
+        url="https://github.com/owner/repo/pull/301",
+        is_draft=False,
+        title="PR with passing checks",
+        checks_passing=True,
+        owner="owner",
+        repo="repo",
+        has_conflicts=False,
+        checks_counts=(5, 5),
+    )
+
+    result = format_checks_cell(pr)
+    assert result == "✅ 5/5"
+
+
+def test_format_checks_cell_failing_with_counts() -> None:
+    """Test format_checks_cell for PR with failing checks and counts."""
+    pr = PullRequestInfo(
+        number=302,
+        state="OPEN",
+        url="https://github.com/owner/repo/pull/302",
+        is_draft=False,
+        title="PR with failing checks",
+        checks_passing=False,
+        owner="owner",
+        repo="repo",
+        has_conflicts=False,
+        checks_counts=(2, 5),
+    )
+
+    result = format_checks_cell(pr)
+    assert result == "🚫 2/5"
+
+
+def test_format_checks_cell_passing_without_counts() -> None:
+    """Test format_checks_cell for PR with passing checks but no counts."""
+    pr = PullRequestInfo(
+        number=303,
+        state="OPEN",
+        url="https://github.com/owner/repo/pull/303",
+        is_draft=False,
+        title="PR with passing checks",
+        checks_passing=True,
+        owner="owner",
+        repo="repo",
+        has_conflicts=False,
+        checks_counts=None,  # No counts available
+    )
+
+    result = format_checks_cell(pr)
+    assert result == "✅"  # Just emoji, no counts
+
+
+def test_format_checks_cell_failing_without_counts() -> None:
+    """Test format_checks_cell for PR with failing checks but no counts."""
+    pr = PullRequestInfo(
+        number=304,
+        state="OPEN",
+        url="https://github.com/owner/repo/pull/304",
+        is_draft=False,
+        title="PR with failing checks",
+        checks_passing=False,
+        owner="owner",
+        repo="repo",
+        has_conflicts=False,
+        checks_counts=None,  # No counts available
+    )
+
+    result = format_checks_cell(pr)
+    assert result == "🚫"  # Just emoji, no counts
+
+
+def test_format_checks_cell_zero_passing_zero_total() -> None:
+    """Test format_checks_cell edge case: 0/0 counts (shouldn't happen)."""
+    pr = PullRequestInfo(
+        number=305,
+        state="OPEN",
+        url="https://github.com/owner/repo/pull/305",
+        is_draft=False,
+        title="Edge case PR",
+        checks_passing=True,  # If counts is (0,0), passing should be True
+        owner="owner",
+        repo="repo",
+        has_conflicts=False,
+        checks_counts=(0, 0),
+    )
+
+    result = format_checks_cell(pr)
+    assert result == "✅ 0/0"

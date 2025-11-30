@@ -1,7 +1,7 @@
 """List workflow runs command."""
 
 import click
-from erk_shared.github.emoji import get_checks_status_emoji
+from erk_shared.github.emoji import format_checks_cell
 from erk_shared.output.output import user_output
 from rich.console import Console
 from rich.table import Table
@@ -162,7 +162,7 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
                     pr_cell = format_pr_cell(
                         selected_pr, use_graphite=use_graphite, graphite_url=graphite_url
                     )
-                    checks_cell = get_checks_status_emoji(selected_pr)
+                    checks_cell = format_checks_cell(selected_pr)
 
         table.add_row(
             run_id_cell,
