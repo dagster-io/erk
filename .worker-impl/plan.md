@@ -39,10 +39,10 @@ To:
 ```yaml
 # Install Claude Code (skip if cached)
 if [ "${{ steps.cache-claude.outputs.cache-hit }}" != "true" ]; then
-  curl -fsSL https://claude.ai/install.sh | bash
+curl -fsSL https://claude.ai/install.sh | bash
 else
-  echo "Claude Code restored from cache"
-  echo "$HOME/.local/bin" >> $GITHUB_PATH
+echo "Claude Code restored from cache"
+echo "$HOME/.local/bin" >> $GITHUB_PATH
 fi
 ```
 
