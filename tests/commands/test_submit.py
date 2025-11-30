@@ -12,6 +12,7 @@ from erk_shared.plan_store.types import Plan, PlanState
 from erk.cli.commands.submit import (
     ERK_PLAN_LABEL,
     _close_orphaned_draft_prs,
+    _ensure_unique_branch_name,
     _strip_plan_markers,
     submit_cmd,
 )
@@ -934,3 +935,160 @@ def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
 
     # Verify old draft was closed
     assert fake_github.closed_prs == [100]
+
+
+def test_ensure_unique_branch_name_returns_original_when_available(tmp_path: Path) -> None:
+    """Test _ensure_unique_branch_name returns original name if not on remote."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    # No remote branches configured - name is available
+    fake_git = FakeGit(remote_branches={repo_root: []})
+
+    repo_dir = tmp_path / ".erk" / "repos" / "repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(cwd=repo_root, git=fake_git, repo=repo)
+
+    result = _ensure_unique_branch_name(ctx, repo_root, "123-feature-11-30-1200")
+
+    assert result == "123-feature-11-30-1200"
+
+
+def test_ensure_unique_branch_name_adds_suffix_on_collision(tmp_path: Path) -> None:
+    """Test _ensure_unique_branch_name adds -1 suffix when branch exists."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    # Branch already exists on remote
+    fake_git = FakeGit(remote_branches={repo_root: ["origin/123-feature-11-30-1200"]})
+
+    repo_dir = tmp_path / ".erk" / "repos" / "repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(cwd=repo_root, git=fake_git, repo=repo)
+
+    result = _ensure_unique_branch_name(ctx, repo_root, "123-feature-11-30-1200")
+
+    assert result == "123-feature-11-30-1200-1"
+
+
+def test_ensure_unique_branch_name_increments_suffix(tmp_path: Path) -> None:
+    """Test _ensure_unique_branch_name increments suffix until unique."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    # Base name AND -1 suffix already exist
+    fake_git = FakeGit(
+        remote_branches={
+            repo_root: [
+                "origin/123-feature-11-30-1200",
+                "origin/123-feature-11-30-1200-1",
+                "origin/123-feature-11-30-1200-2",
+            ]
+        }
+    )
+
+    repo_dir = tmp_path / ".erk" / "repos" / "repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(cwd=repo_root, git=fake_git, repo=repo)
+
+    result = _ensure_unique_branch_name(ctx, repo_root, "123-feature-11-30-1200")
+
+    assert result == "123-feature-11-30-1200-3"
+
+
+def test_submit_handles_branch_name_collision(tmp_path: Path) -> None:
+    """Test submit adds numeric suffix when branch already exists on remote."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+    issue = IssueInfo(
+        number=123,
+        title="My Feature",
+        body="# Plan\n\nImplementation details...",
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    plan = Plan(
+        plan_identifier="123",
+        title="My Feature",
+        body="# Plan\n\nImplementation details...",
+        state=PlanState.OPEN,
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    fake_plan_store = FakePlanStore(plans={"123": plan})
+
+    # The expected branch name based on sanitize_worktree_name + timestamp suffix
+    # "123-my-feature" + "-01-15-1430" = "123-my-feature-01-15-1430"
+    # Simulate this branch already existing on remote
+    expected_base_branch = "123-my-feature-01-15-1430"
+
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+        # The base branch name already exists on remote
+        remote_branches={repo_root: [f"origin/{expected_base_branch}"]},
+    )
+    fake_github = FakeGitHub()
+    fake_issue_dev = FakeIssueLinkBranches()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        issue_link_branches=fake_issue_dev,
+        plan_store=fake_plan_store,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    assert "Issue submitted successfully!" in result.output
+
+    # Verify branch was created with -1 suffix due to collision
+    expected_branch_with_suffix = f"{expected_base_branch}-1"
+    assert fake_issue_dev.created_branches == [(123, expected_branch_with_suffix)]
+
+    # Verify branch was pushed with the suffixed name
+    assert len(fake_git.pushed_branches) == 1
+    remote, branch, set_upstream = fake_git.pushed_branches[0]
+    assert remote == "origin"
+    assert branch == expected_branch_with_suffix
+    assert set_upstream is True
