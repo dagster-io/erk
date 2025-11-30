@@ -102,6 +102,12 @@ kit_cli_commands:
   - name: mark-impl-started
     path: kit_cli_commands/erk/mark_impl_started.py
     description: Update last_local_impl_at in GitHub issue plan-header metadata
+  - name: get-linked-branch
+    path: kit_cli_commands/erk/get_linked_branch.py
+    description: Get development branch linked to a GitHub issue
+  - name: get-pr-for-branch
+    path: kit_cli_commands/erk/get_pr_for_branch.py
+    description: Get open PR number for a branch
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit
