@@ -3,12 +3,14 @@
 ## Goal
 
 Add comprehensive debug logging with timing for:
+
 1. Every `gh` command execution
 2. Every GraphQL query with full query content (multi-line)
 
 ## Current State
 
 Two `execute_gh_command` functions exist:
+
 - `erk_shared/subprocess_utils.py:98` - Has debug logging but no timing
 - `erk_shared/github/parsing.py:11` - No debug logging at all (used by `real.py` for GraphQL)
 
@@ -124,6 +126,7 @@ def _execute_batch_pr_query(self, query: str, repo_root: Path) -> dict[str, Any]
 ```
 
 Also add `log_graphql_query()` calls to other GraphQL-executing methods:
+
 - `get_prs_linked_to_issues()` (line ~855)
 - `get_multiple_issue_comments()` in `issues/real.py`
 
@@ -178,11 +181,11 @@ erk_shared.debug_timing - DEBUG - Completed in 567ms: gh: gh api graphql -f quer
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `packages/erk-shared/src/erk_shared/debug_timing.py` | NEW - timing utilities |
-| `packages/erk-shared/src/erk_shared/github/parsing.py` | Add timing wrapper |
-| `packages/erk-shared/src/erk_shared/subprocess_utils.py` | Add timing to existing logging |
-| `src/erk/core/github/real.py` | Add GraphQL query logging |
-| `packages/erk-shared/src/erk_shared/github/issues/real.py` | Add GraphQL query logging |
-| `tests/unit/test_debug_timing.py` | NEW - unit tests |
+| File                                                       | Change                         |
+| ---------------------------------------------------------- | ------------------------------ |
+| `packages/erk-shared/src/erk_shared/debug_timing.py`       | NEW - timing utilities         |
+| `packages/erk-shared/src/erk_shared/github/parsing.py`     | Add timing wrapper             |
+| `packages/erk-shared/src/erk_shared/subprocess_utils.py`   | Add timing to existing logging |
+| `src/erk/core/github/real.py`                              | Add GraphQL query logging      |
+| `packages/erk-shared/src/erk_shared/github/issues/real.py` | Add GraphQL query logging      |
+| `tests/unit/test_debug_timing.py`                          | NEW - unit tests               |

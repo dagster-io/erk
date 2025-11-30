@@ -4,6 +4,7 @@ import json
 import re
 from pathlib import Path
 
+from erk_shared.debug_timing import timed_operation
 from erk_shared.github.types import PRInfo, PullRequestInfo
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
@@ -26,11 +27,12 @@ def execute_gh_command(cmd: list[str], cwd: Path) -> str:
     cmd_str = " ".join(cmd)
     operation_context = f"execute gh command '{cmd_str}'"
 
-    result = run_subprocess_with_context(
-        cmd,
-        operation_context=operation_context,
-        cwd=cwd,
-    )
+    with timed_operation(f"gh: {cmd_str}"):
+        result = run_subprocess_with_context(
+            cmd,
+            operation_context=operation_context,
+            cwd=cwd,
+        )
 
     return result.stdout
 
