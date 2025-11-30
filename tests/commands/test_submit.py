@@ -6,7 +6,6 @@ from pathlib import Path
 from click.testing import CliRunner
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
 from erk_shared.github.types import PullRequestInfo
-from erk_shared.naming import derive_branch_name_with_date
 from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -20,10 +19,11 @@ from erk.core.context import ErkContext
 from erk.core.git.fake import FakeGit
 from erk.core.github.fake import FakeGitHub
 from erk.core.repo_discovery import RepoContext
+from tests.fakes.issue_development import FakeIssueDevelopment
 
 
 def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
-    """Test submit creates local branch, pushes, creates draft PR, then triggers workflow."""
+    """Test submit creates linked branch, pushes, creates draft PR, triggers workflow."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -62,6 +62,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
         trunk_branches={repo_root: "master"},
     )
     fake_github = FakeGitHub()
+    fake_issue_dev = FakeIssueDevelopment()
 
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
@@ -75,6 +76,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
         git=fake_git,
         github=fake_github,
         issues=fake_github_issues,
+        issue_development=fake_issue_dev,
         plan_store=fake_plan_store,
         repo=repo,
     )
@@ -86,22 +88,23 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     assert "Issue submitted successfully!" in result.output
     assert "View workflow run:" in result.output
 
-    # Expected branch name with date suffix
-    expected_branch = derive_branch_name_with_date("Implement feature X")
+    # FakeIssueDevelopment creates branches named "{issue_number}-issue-branch"
+    expected_branch = "123-issue-branch"
 
-    # Verify branch was created and pushed
+    # Verify branch was created via gh issue develop
+    assert fake_issue_dev.created_branches == [(123, expected_branch)]
+
+    # Verify branch was pushed
     assert len(fake_git.pushed_branches) == 1
     remote, branch, set_upstream = fake_git.pushed_branches[0]
     assert remote == "origin"
     assert branch == expected_branch
-    assert branch.startswith("implement-feature-x-")
     assert set_upstream is True
 
     # Verify draft PR was created
     assert len(fake_github.created_prs) == 1
     branch_name, title, body, base, draft = fake_github.created_prs[0]
     assert branch_name == expected_branch
-    assert branch_name.startswith("implement-feature-x-")
     assert title == "Implement feature X"
     assert draft is True
     assert "Closes #123" in body
@@ -135,14 +138,16 @@ def test_submit_skips_branch_creation_when_exists(tmp_path: Path) -> None:
         updated_at=now,
     )
 
-    # Expected branch name with date suffix
-    expected_branch = derive_branch_name_with_date("Implement feature X")
+    # Pre-existing branch from previous gh issue develop
+    expected_branch = "123-existing-branch"
 
     fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    # FakeIssueDevelopment with existing branch for issue 123
+    fake_issue_dev = FakeIssueDevelopment(existing_branches={123: expected_branch})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
-        # Simulate branch existing on remote with date suffix
+        # Simulate branch existing on remote
         remote_branches={repo_root: [f"origin/{expected_branch}"]},
     )
     # Set up PR status for existing branch
@@ -160,6 +165,7 @@ def test_submit_skips_branch_creation_when_exists(tmp_path: Path) -> None:
         git=fake_git,
         github=fake_github,
         issues=fake_github_issues,
+        issue_development=fake_issue_dev,
         repo=repo,
     )
 
@@ -169,6 +175,9 @@ def test_submit_skips_branch_creation_when_exists(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert "PR #456 already exists" in result.output
     assert "Skipping branch/PR creation" in result.output
+
+    # Verify no new branch was created (existing branch was reused)
+    assert fake_issue_dev.created_branches == []
 
     # Verify no branch/PR was created
     assert len(fake_git.pushed_branches) == 0

@@ -6,7 +6,6 @@ from erk_shared.naming import (
     WORKTREE_DATE_SUFFIX_FORMAT,
     default_branch_for_worktree,
     derive_branch_name_from_title,
-    derive_branch_name_with_date,
     ensure_unique_worktree_name,
     extract_trailing_number,
     sanitize_branch_component,
@@ -348,75 +347,3 @@ def test_derive_branch_name_truncates_to_30_chars() -> None:
     result = derive_branch_name_from_title(long_name)
     assert len(result) == 30
     assert not result.endswith("-")  # No trailing hyphens after truncation
-
-
-@pytest.mark.parametrize(
-    ("title", "expected_base"),
-    [
-        ("My Feature", "my-feature"),
-        ("Fix Bug #123!", "fix-bug-123"),
-        ("Simple", "simple"),
-        ("With_Underscores", "with-underscores"),
-        ("UPPERCASE", "uppercase"),
-    ],
-)
-def test_derive_branch_name_with_date_includes_date_suffix(title: str, expected_base: str) -> None:
-    """Test derive_branch_name_with_date includes date suffix."""
-    result = derive_branch_name_with_date(title)
-    date_suffix = _get_current_date_suffix()
-    expected = f"{expected_base}-{date_suffix}"
-    assert result == expected
-
-
-def test_derive_branch_name_with_date_format() -> None:
-    """Test derive_branch_name_with_date produces correct format.
-
-    Format should be: <sanitized-title>-<YY-MM-DD-HHMM>
-    """
-    result = derive_branch_name_with_date("Test Feature")
-
-    # Should start with sanitized title
-    assert result.startswith("test-feature-")
-
-    # Should end with date suffix in format YY-MM-DD-HHMM
-    date_part = result[len("test-feature-") :]
-    assert len(date_part) == 13  # YY-MM-DD-HHMM = 13 characters
-
-    # Verify format matches WORKTREE_DATE_SUFFIX_FORMAT
-    date_suffix = datetime.now().strftime(WORKTREE_DATE_SUFFIX_FORMAT)
-    assert result == f"test-feature-{date_suffix}"
-
-
-def test_derive_branch_name_with_date_truncates_base_to_30_chars() -> None:
-    """Test derive_branch_name_with_date truncates base name to 30 chars before adding date.
-
-    The base name (before date suffix) should be truncated to 30 chars maximum,
-    matching derive_branch_name_from_title behavior.
-    """
-    # Long title that would exceed 30 chars
-    long_title = "a" * 50
-    result = derive_branch_name_with_date(long_title)
-
-    # Extract base name (everything before the date suffix)
-    date_suffix = _get_current_date_suffix()
-    expected_base = "a" * 30
-    expected = f"{expected_base}-{date_suffix}"
-
-    assert result == expected
-    assert result.startswith("a" * 30 + "-")
-
-
-def test_derive_branch_name_with_date_consistency() -> None:
-    """Test derive_branch_name_with_date is consistent with derive_branch_name_from_title.
-
-    The base part (before date) should match derive_branch_name_from_title output.
-    """
-    title = "Fix Bug #123!"
-
-    base_name = derive_branch_name_from_title(title)
-    full_name = derive_branch_name_with_date(title)
-    date_suffix = _get_current_date_suffix()
-
-    # Full name should be base name + date suffix
-    assert full_name == f"{base_name}-{date_suffix}"
-    assert full_name.startswith(base_name + "-")

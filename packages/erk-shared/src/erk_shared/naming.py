@@ -446,29 +446,3 @@ def derive_branch_name_from_title(title: str) -> str:
     branch_name = branch_name.rstrip("-")
 
     return branch_name
-
-
-def derive_branch_name_with_date(title: str) -> str:
-    """Derive branch name with date suffix from issue/plan title.
-
-    Calls derive_branch_name_from_title() to get sanitized base name,
-    then appends datetime suffix using WORKTREE_DATE_SUFFIX_FORMAT.
-
-    This function provides canonical naming for branches created from
-    plans/issues, ensuring consistency with worktree naming.
-
-    Args:
-        title: Issue or plan title
-
-    Returns:
-        Branch name with date suffix (e.g., "my-feature-25-11-29-1430")
-
-    Examples:
-        >>> derive_branch_name_with_date("My Feature")  # doctest: +SKIP
-        "my-feature-25-11-29-1430"
-        >>> derive_branch_name_with_date("Fix Bug #123!")  # doctest: +SKIP
-        "fix-bug-123-25-11-29-1430"
-    """
-    base_name = derive_branch_name_from_title(title)
-    date_suffix = datetime.now().strftime(WORKTREE_DATE_SUFFIX_FORMAT)
-    return f"{base_name}-{date_suffix}"

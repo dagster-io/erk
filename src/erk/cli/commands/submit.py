@@ -5,7 +5,6 @@ from pathlib import Path
 
 import click
 from erk_shared.github.metadata import create_submission_queued_block, render_erk_issue_event
-from erk_shared.naming import derive_branch_name_with_date
 from erk_shared.output.output import user_output
 from erk_shared.worker_impl_folder import create_worker_impl_folder
 
@@ -178,12 +177,19 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
     _, username, _ = ctx.github.check_auth_status()
     submitted_by = username or "unknown"
 
-    # Step 2: Derive branch name with date suffix
-    branch_name = derive_branch_name_with_date(issue.title)
-    user_output(f"Branch name: {click.style(branch_name, fg='cyan')}")
+    # Step 2: Create development branch linked to issue via gh issue develop
+    trunk_branch = ctx.git.get_trunk_branch(repo.root)
+    dev_branch = ctx.issue_development.create_development_branch(
+        repo.root, issue_number, base_branch=trunk_branch
+    )
+    branch_name = dev_branch.branch_name
+
+    if dev_branch.already_existed:
+        user_output(f"Using existing linked branch: {click.style(branch_name, fg='cyan')}")
+    else:
+        user_output(f"Created linked branch: {click.style(branch_name, fg='cyan')}")
 
     # Step 3: Check if branch already exists on remote
-    trunk_branch = ctx.git.get_trunk_branch(repo.root)
     branch_exists = ctx.git.branch_exists_on_remote(repo.root, "origin", branch_name)
     pr_number: int | None = None
 

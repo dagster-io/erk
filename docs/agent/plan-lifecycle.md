@@ -156,15 +156,18 @@ Before submission, the command validates:
 
 ### Branch Creation
 
-Branch names are derived deterministically from the issue title:
+Branches are created using GitHub's native `gh issue develop` command:
 
-```python
-derive_branch_name_with_date(issue_title)
+```bash
+gh issue develop <issue_number> --base <trunk_branch>
 ```
 
-**Format**: `{slugified-title-30chars}-YY-MM-DD-HHMM`
+This creates a branch linked to the issue that appears in the GitHub issue sidebar
+under "Development", providing automatic tracking without custom metadata.
 
-**Example**: "Add user authentication" → `add-user-authentication-25-11-29-1442`
+**Branch naming**: GitHub generates the branch name (typically `{issue_number}-{slugified-title}`).
+
+**Example**: Issue #123 "Add user authentication" → `123-add-user-authentication`
 
 ### `.worker-impl/` Folder Creation
 
@@ -430,15 +433,14 @@ Entities are connected through deterministic naming and metadata.
 
 ### Branch → Issue
 
-Branch names are derived deterministically:
+Branches are linked to issues via GitHub's native `gh issue develop`:
 
-```python
-derive_branch_name_with_date(issue_title)
+```bash
+gh issue develop <issue_number> --base <trunk_branch>
 ```
 
-**Format**: `{slugified-title-30chars}-YY-MM-DD-HHMM`
-
-This allows reconstructing the branch name from any issue.
+This creates a branch that appears in the GitHub issue sidebar under "Development",
+providing automatic bidirectional linking maintained by GitHub.
 
 ### PR → Issue
 
