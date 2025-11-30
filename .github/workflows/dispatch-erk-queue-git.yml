@@ -115,25 +115,39 @@ jobs:
           ISSUE_NUMBER: ${{ inputs.issue_number }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Step 1: Get linked branch via native GitHub linking
-          BRANCH_NAME=$(gh issue develop --list "$ISSUE_NUMBER" 2>/dev/null | head -1 | cut -f1)
+          source $HOME/.cargo/env
 
-          if [ -z "$BRANCH_NAME" ]; then
-            echo "❌ No linked branch found for issue #$ISSUE_NUMBER"
+          # Step 1: Get linked branch via kit command
+          BRANCH_RESULT=$(dot-agent run erk get-linked-branch "$ISSUE_NUMBER")
+          BRANCH_SUCCESS=$(echo "$BRANCH_RESULT" | jq -r '.success')
+
+          if [ "$BRANCH_SUCCESS" != "true" ]; then
+            ERROR_MSG=$(echo "$BRANCH_RESULT" | jq -r '.message')
+            echo "❌ $ERROR_MSG"
             echo "Error: erk submit should have created a linked branch via 'gh issue develop'"
             exit 1
           fi
 
+          BRANCH_NAME=$(echo "$BRANCH_RESULT" | jq -r '.branch_name')
           echo "Found linked branch: $BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
-          # Step 2: Find PR for this branch
-          PR_DATA=$(gh pr list --state open --head "$BRANCH_NAME" --json number | jq -r '.[0].number // empty')
+          # Step 2: Find PR for this branch via kit command
+          PR_RESULT=$(dot-agent run erk get-pr-for-branch "$BRANCH_NAME")
+          PR_SUCCESS=$(echo "$PR_RESULT" | jq -r '.success')
 
-          if [ -n "$PR_DATA" ]; then
-            echo "pr_number=$PR_DATA" >> $GITHUB_OUTPUT
+          if [ "$PR_SUCCESS" != "true" ]; then
+            ERROR_MSG=$(echo "$PR_RESULT" | jq -r '.message')
+            echo "❌ $ERROR_MSG"
+            exit 1
+          fi
+
+          PR_EXISTS=$(echo "$PR_RESULT" | jq -r '.pr_exists')
+          if [ "$PR_EXISTS" = "true" ]; then
+            PR_NUMBER=$(echo "$PR_RESULT" | jq -r '.pr_number')
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
             echo "pr_exists=true" >> $GITHUB_OUTPUT
-            echo "Found existing PR #$PR_DATA for branch $BRANCH_NAME"
+            echo "Found existing PR #$PR_NUMBER for branch $BRANCH_NAME"
           else
             echo "pr_exists=false" >> $GITHUB_OUTPUT
             echo "No existing PR found for branch $BRANCH_NAME"
