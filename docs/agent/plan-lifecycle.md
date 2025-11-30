@@ -36,14 +36,13 @@ The erk plan lifecycle manages implementation plans from creation through automa
 
 ### Key File Locations at a Glance
 
-| Location               | Purpose                                           |
-| ---------------------- | ------------------------------------------------- |
-| `~/.claude/plans/*.md` | Local plan storage (sorted by modification time)  |
-| `.impl/plan.md`        | Immutable plan in worktree (local implementation) |
-| `.impl/progress.md`    | Mutable progress tracking                         |
-| `.impl/issue.json`     | GitHub issue reference                            |
-| `.impl/run-info.json`  | GitHub Actions run reference (remote only)        |
-| `.worker-impl/`        | Remote implementation folder (GitHub Actions)     |
+| Location               | Purpose                                          |
+| ---------------------- | ------------------------------------------------ |
+| `~/.claude/plans/*.md` | Local plan storage (sorted by modification time) |
+| `.impl/plan.md`        | Immutable plan in worktree                       |
+| `.impl/progress.md`    | Mutable progress tracking                        |
+| `.impl/issue.json`     | GitHub issue reference                           |
+| `.impl/run-info.json`  | GitHub Actions run reference (remote only)       |
 
 ### Which Phase Am I In?
 
@@ -166,28 +165,15 @@ derive_branch_name_with_date(issue_title)
 
 **Example**: "Add user authentication" → `add-user-authentication-25-11-29-1442`
 
-### `.worker-impl/` Folder Creation
+### Empty Commit for Branch Establishment
 
-The submit command creates the `.worker-impl/` folder structure:
+The submit command creates an empty commit to establish the branch:
 
-```
-.worker-impl/
-├── plan.md         # Full plan content from issue
-├── progress.md     # Initial progress tracking (all unchecked)
-├── issue.json      # GitHub issue reference
-└── README.md       # Documentation for the folder
+```bash
+git commit --allow-empty -m "Initialize implementation for issue #123"
 ```
 
-**`issue.json` structure:**
-
-```json
-{
-  "issue_number": 123,
-  "issue_url": "https://github.com/owner/repo/issues/123",
-  "created_at": "2025-01-15T10:30:00Z",
-  "synced_at": "2025-01-15T10:30:00Z"
-}
-```
+The GitHub Actions workflow will reconstruct `.impl/` directly from the issue (the issue is the single source of truth for plan content).
 
 ### Draft PR Creation
 
@@ -258,7 +244,8 @@ This ensures only one implementation runs per issue at a time.
 
 - Find existing PR via "Closes #N" search pattern (created by `erk submit`)
 - Checkout the implementation branch
-- Update `.worker-impl/` with fresh plan content (for reruns)
+- Reconstruct `.impl/` from GitHub issue (single source of truth)
+- Create `.impl/run-info.json` with workflow run details
 
 #### Phase 3: Use Existing PR
 
@@ -268,15 +255,13 @@ This ensures only one implementation runs per issue at a time.
 
 #### Phase 4: Implementation
 
-- Copy `.worker-impl/` to `.impl/` (Claude reads `.impl/`)
-- Create `.impl/run-info.json` with workflow run details
 - Execute `/erk:plan-implement` with Claude
+- Claude reads `.impl/plan.md` and updates `.impl/progress.md`
 
 #### Phase 5: Submission
 
-- Stage implementation changes (NOT `.worker-impl/` deletion)
+- Stage all implementation changes
 - Run `/git:pr-push` to create proper commit message
-- Clean up `.worker-impl/` in separate commit
 - Mark PR ready for review
 - Update PR body with implementation summary
 - Trigger CI via empty commit
@@ -287,14 +272,14 @@ This ensures only one implementation runs per issue at a time.
 
 Implementation executes the plan, whether locally or via GitHub Actions.
 
-### `.worker-impl/` vs `.impl/`
+### `.impl/` Folder
 
-| Folder          | Purpose                                      | Git Status                       |
-| --------------- | -------------------------------------------- | -------------------------------- |
-| `.worker-impl/` | Remote implementation (GitHub Actions)       | Committed, then deleted          |
-| `.impl/`        | Local implementation + Claude's working copy | In `.gitignore`, never committed |
+The `.impl/` folder is the working directory for both local and remote implementation:
 
-In GitHub Actions, `.worker-impl/` is copied to `.impl/` before Claude runs.
+- **Local**: Created by `erk wt create-from-issue` when setting up a worktree
+- **Remote**: Reconstructed from GitHub issue by the workflow via `create-impl-from-issue`
+
+The GitHub issue is the single source of truth for plan content. This eliminates the need for committed plan files in the branch.
 
 ### `.impl/run-info.json`
 
@@ -372,18 +357,6 @@ The pure git submission flow:
 3. Commit with proper attribution
 4. Push to remote
 5. Update PR body with summary
-
-### `.worker-impl/` Cleanup
-
-In GitHub Actions, `.worker-impl/` is removed in a separate commit:
-
-```bash
-git rm -rf .worker-impl/
-git commit -m "Remove .worker-impl/ folder after implementation"
-git push
-```
-
-This keeps the implementation commit clean.
 
 ### PR Ready for Review
 
@@ -589,9 +562,6 @@ git log origin/branch-name --oneline -5
 
 # Find PR
 gh pr view branch-name
-
-# Check for .worker-impl/
-git ls-tree origin/branch-name | grep worker-impl
 ```
 
 ### From PR Number

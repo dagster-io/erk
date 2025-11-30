@@ -7,19 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  check-submission:
-    runs-on: ubuntu-latest
-    outputs:
-      skip: ${{ steps.check.outputs.skip }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Check for submission folder
-        id: check
-        uses: ./.github/actions/check-worker-impl
-
   unit-tests:
-    needs: check-submission
-    if: needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,8 +24,6 @@ jobs:
         run: make test
 
   integration-tests:
-    needs: check-submission
-    if: needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

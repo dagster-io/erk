@@ -75,9 +75,9 @@ kit_cli_commands:
   - name: format-error
     path: kit_cli_commands/erk/format_error.py
     description: Format error messages with consistent structure and suggested actions
-  - name: create-worker-impl-from-issue
-    path: kit_cli_commands/erk/create_worker_impl_from_issue.py
-    description: Create .worker-impl/ folder from GitHub issue with plan content
+  - name: create-impl-from-issue
+    path: kit_cli_commands/erk/create_impl_from_issue.py
+    description: Create .impl/ folder from GitHub issue with plan content
   - name: update-dispatch-info
     path: kit_cli_commands/erk/update_dispatch_info.py
     description: Update dispatch info in GitHub issue plan-header metadata

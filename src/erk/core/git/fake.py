@@ -144,7 +144,7 @@ class FakeGit(Git):
         self._chdir_history: list[Path] = []
         self._created_tracking_branches: list[tuple[str, str]] = []
         self._staged_files: list[str] = []
-        self._commits: list[tuple[Path, str, list[str]]] = []
+        self._commits: list[tuple[Path, str, list[str], bool]] = []
         self._pushed_branches: list[tuple[str, str, bool]] = []
 
     def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
@@ -632,9 +632,9 @@ class FakeGit(Git):
         """Record staged files for commit."""
         self._staged_files.extend(paths)
 
-    def commit(self, cwd: Path, message: str) -> None:
+    def commit(self, cwd: Path, message: str, *, allow_empty: bool = False) -> None:
         """Record commit with staged changes."""
-        self._commits.append((cwd, message, list(self._staged_files)))
+        self._commits.append((cwd, message, list(self._staged_files), allow_empty))
         self._staged_files = []  # Clear staged files after commit
 
     def push_to_remote(
@@ -649,10 +649,10 @@ class FakeGit(Git):
         return self._staged_files
 
     @property
-    def commits(self) -> list[tuple[Path, str, list[str]]]:
+    def commits(self) -> list[tuple[Path, str, list[str], bool]]:
         """Read-only access to commits for test assertions.
 
-        Returns list of (cwd, message, staged_files) tuples.
+        Returns list of (cwd, message, staged_files, allow_empty) tuples.
         """
         return self._commits
 

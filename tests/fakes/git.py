@@ -619,12 +619,12 @@ class FakeGit(Git):
             self._staged_files: list[str] = []
         self._staged_files.extend(paths)
 
-    def commit(self, cwd: Path, message: str) -> None:
+    def commit(self, cwd: Path, message: str, *, allow_empty: bool = False) -> None:
         """Create a commit (tracks mutation)."""
         # Track commits for test assertions
         if not hasattr(self, "_commits"):
-            self._commits: list[tuple[Path, str]] = []
-        self._commits.append((cwd, message))
+            self._commits: list[tuple[Path, str, bool]] = []
+        self._commits.append((cwd, message, allow_empty))
 
     def push_to_remote(
         self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False
@@ -643,10 +643,13 @@ class FakeGit(Git):
         return self._staged_files.copy()
 
     @property
-    def commits(self) -> list[tuple[Path, str]]:
-        """Get list of commits made during test."""
+    def commits(self) -> list[tuple[Path, str, bool]]:
+        """Get list of commits made during test.
+
+        Returns list of (cwd, message, allow_empty) tuples.
+        """
         if not hasattr(self, "_commits"):
-            self._commits = []
+            self._commits: list[tuple[Path, str, bool]] = []
         return self._commits.copy()
 
     @property

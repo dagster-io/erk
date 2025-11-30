@@ -652,10 +652,13 @@ class RealGit(Git):
             cwd=cwd,
         )
 
-    def commit(self, cwd: Path, message: str) -> None:
+    def commit(self, cwd: Path, message: str, *, allow_empty: bool = False) -> None:
         """Create a commit with staged changes."""
+        cmd = ["git", "commit", "-m", message]
+        if allow_empty:
+            cmd.append("--allow-empty")
         run_subprocess_with_context(
-            ["git", "commit", "-m", message],
+            cmd,
             operation_context="create commit",
             cwd=cwd,
         )

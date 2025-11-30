@@ -7,11 +7,13 @@ Eliminate the `.worker-impl/` folder entirely by having GitHub Actions reconstru
 ## Current vs Target Flow
 
 **Current:**
+
 ```
 erk submit → create .worker-impl/ → commit → push → workflow copies to .impl/ → cleanup commit
 ```
 
 **Target:**
+
 ```
 erk submit → empty commit → push → workflow reconstructs .impl/ from issue → done
 ```
@@ -23,6 +25,7 @@ erk submit → empty commit → push → workflow reconstructs .impl/ from issue
 **Create:** `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/create_impl_from_issue.py`
 
 Pattern from `create_worker_impl_from_issue.py` but:
+
 - Call `create_impl_folder()` from `impl_folder.py` (not `create_worker_impl_folder`)
 - Call `save_issue_reference()` to create `.impl/issue.json`
 - Output `impl_path` instead of `worker_impl_path`
@@ -63,12 +66,14 @@ def create_impl_from_issue(issue_number: int, issue_title: str, repo_root: Path 
 **File:** `src/erk/cli/commands/submit.py`
 
 **Remove:**
+
 - Import of `create_worker_impl_folder`
 - Plan fetching (`ctx.plan_store.get_plan()`)
 - `.worker-impl/` folder creation
 - Staging `.worker-impl/`
 
 **Change commit to:**
+
 ```python
 # Create empty commit to establish branch for PR
 ctx.git.commit(
@@ -87,6 +92,7 @@ ctx.git.commit(
 **Phase 2 changes (lines ~119-155):**
 
 Remove `.worker-impl/` update block. After checkout, add:
+
 ```yaml
 - name: Reconstruct .impl/ from GitHub issue
   env:
@@ -118,6 +124,7 @@ Remove "Set up implementation folder" step (the copy from `.worker-impl/` to `.i
 **Phase 5 changes (lines ~274-306):**
 
 Remove these lines:
+
 ```yaml
 git reset HEAD .worker-impl/   # No longer needed
 git rm -rf .worker-impl/       # No longer needed
@@ -129,6 +136,7 @@ git commit -m "Remove .worker-impl/ folder after implementation"  # No longer ne
 **Delete:** `.github/actions/check-worker-impl/action.yml`
 
 **Update these workflows** to remove `check-worker-impl` usage:
+
 - `.github/workflows/test.yml`
 - `.github/workflows/lint.yml`
 - `.github/workflows/pyright.yml`
@@ -141,6 +149,7 @@ For each: remove the `check-submission` job and any `needs: check-submission` / 
 ### Step 5: Delete Obsolete Code
 
 **Delete files:**
+
 - `packages/erk-shared/src/erk_shared/worker_impl_folder.py`
 - `tests/packages/erk_shared/test_worker_impl_folder.py`
 - `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/create_worker_impl_from_issue.py`
@@ -163,28 +172,31 @@ For each: remove the `check-submission` job and any `needs: check-submission` / 
 ## Files Summary
 
 ### Create
-| File | Purpose |
-|------|---------|
-| `packages/dot-agent-kit/.../create_impl_from_issue.py` | New kit CLI command |
+
+| File                                                              | Purpose               |
+| ----------------------------------------------------------------- | --------------------- |
+| `packages/dot-agent-kit/.../create_impl_from_issue.py`            | New kit CLI command   |
 | `packages/dot-agent-kit/tests/.../test_create_impl_from_issue.py` | Tests for new command |
 
 ### Delete
-| File | Reason |
-|------|--------|
-| `.github/actions/check-worker-impl/action.yml` | No `.worker-impl/` to check |
-| `packages/erk-shared/.../worker_impl_folder.py` | Entire module obsolete |
-| `tests/packages/erk_shared/test_worker_impl_folder.py` | Tests for obsolete module |
-| `packages/dot-agent-kit/.../create_worker_impl_from_issue.py` | Replaced |
+
+| File                                                          | Reason                      |
+| ------------------------------------------------------------- | --------------------------- |
+| `.github/actions/check-worker-impl/action.yml`                | No `.worker-impl/` to check |
+| `packages/erk-shared/.../worker_impl_folder.py`               | Entire module obsolete      |
+| `tests/packages/erk_shared/test_worker_impl_folder.py`        | Tests for obsolete module   |
+| `packages/dot-agent-kit/.../create_worker_impl_from_issue.py` | Replaced                    |
 
 ### Modify
-| File | Changes |
-|------|---------|
-| `src/erk/cli/commands/submit.py` | Remove `.worker-impl/` creation, use empty commit |
-| `src/erk/core/integrations/git.py` | Add `allow_empty` param if needed |
-| `.github/workflows/dispatch-erk-queue-git.yml` | Reconstruct `.impl/` from issue |
-| `.github/workflows/*.yml` (6 files) | Remove CI skip logic |
-| `packages/dot-agent-kit/.../kit.yaml` | Update command registry |
-| `docs/agent/plan-lifecycle.md` | Update documentation |
+
+| File                                           | Changes                                           |
+| ---------------------------------------------- | ------------------------------------------------- |
+| `src/erk/cli/commands/submit.py`               | Remove `.worker-impl/` creation, use empty commit |
+| `src/erk/core/integrations/git.py`             | Add `allow_empty` param if needed                 |
+| `.github/workflows/dispatch-erk-queue-git.yml` | Reconstruct `.impl/` from issue                   |
+| `.github/workflows/*.yml` (6 files)            | Remove CI skip logic                              |
+| `packages/dot-agent-kit/.../kit.yaml`          | Update command registry                           |
+| `docs/agent/plan-lifecycle.md`                 | Update documentation                              |
 
 ## Testing Strategy
 
