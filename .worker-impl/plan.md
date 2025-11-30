@@ -3,6 +3,7 @@
 ## Objective
 
 Transform `erk plan` to serve dual purposes following the `git branch` pattern:
+
 - **Verb** (no args): `erk plan` → launches remote planning via Codespace with auto-execute Claude
 - **Noun** (with subcommands): `erk plan list`, `erk plan get <id>` → existing plan management
 
@@ -21,6 +22,7 @@ Transform `erk plan` to serve dual purposes following the `git branch` pattern:
 **Create `src/erk/core/codespace.py`**
 
 Extract reusable functions from `plan_cmd.py`:
+
 - `get_repo_name()` - Get repo in 'owner/repo' format via `gh repo view`
 - `get_current_branch()` - Get branch via `git rev-parse`
 - `find_existing_codespace(repo, branch)` - Find available Codespace
@@ -127,6 +129,7 @@ user_output("  4. Start remote planning: erk plan")
 ### Step 7: Clean Up `plan_cmd.py`
 
 Either:
+
 - **Delete** `src/erk/cli/commands/codespace/plan_cmd.py` entirely (functions moved to `codespace.py` service)
 - **Or** keep as internal module if useful for reference
 
@@ -151,13 +154,13 @@ erk plan log 42                    # Show plan event log
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/erk/core/codespace.py` | **NEW** - Extracted codespace service functions |
-| `src/erk/cli/commands/plan/__init__.py` | Add `invoke_without_command`, options, planning functions |
-| `src/erk/cli/commands/codespace/__init__.py` | Remove `plan_codespace` registration |
-| `src/erk/cli/commands/codespace/plan_cmd.py` | Delete or deprecate |
-| `src/erk/cli/commands/codespace/init_cmd.py` | Update next steps message |
+| File                                         | Change                                                    |
+| -------------------------------------------- | --------------------------------------------------------- |
+| `src/erk/core/codespace.py`                  | **NEW** - Extracted codespace service functions           |
+| `src/erk/cli/commands/plan/__init__.py`      | Add `invoke_without_command`, options, planning functions |
+| `src/erk/cli/commands/codespace/__init__.py` | Remove `plan_codespace` registration                      |
+| `src/erk/cli/commands/codespace/plan_cmd.py` | Delete or deprecate                                       |
+| `src/erk/cli/commands/codespace/init_cmd.py` | Update next steps message                                 |
 
 ## Testing
 
