@@ -38,12 +38,12 @@ The erk plan lifecycle manages implementation plans from creation through automa
 
 This approach uses GitHub's native `gh issue develop` command instead of custom branch naming:
 
-| Aspect           | Previous Approach       | Issue Develop Approach             |
-| ---------------- | ----------------------- | ---------------------------------- |
-| Branch creation  | Custom naming format    | `gh issue develop`                 |
-| Branch format    | `feature-YY-MM-DD-HHMM` | `{issue_number}-{slugified-title}` |
-| Issue linking    | Metadata in comments    | Native GitHub sidebar              |
-| Branch discovery | Parse branch name       | `gh issue develop --list`          |
+| Aspect           | Previous Approach       | Issue Develop Approach              |
+| ---------------- | ----------------------- | ----------------------------------- |
+| Branch creation  | Custom naming format    | `gh issue develop --name`           |
+| Branch format    | `feature-YY-MM-DD-HHMM` | `{issue}-{title-31char}-MM-DD-HHMM` |
+| Issue linking    | Metadata in comments    | Native GitHub sidebar               |
+| Branch discovery | Parse branch name       | `gh issue develop --list`           |
 
 ### Key File Locations at a Glance
 
@@ -172,9 +172,9 @@ gh issue develop <issue_number> --base <trunk_branch>
 
 This creates a branch linked to the issue that appears in the GitHub issue sidebar under "Development", providing automatic tracking without custom metadata.
 
-**Branch naming**: GitHub generates the branch name (typically `{issue_number}-{slugified-title}`).
+**Branch naming**: Erk computes the branch name explicitly using `sanitize_worktree_name()` with a timestamp suffix, then passes it via `--name` flag. This ensures branch names match worktree naming conventions (31-char max + `-MM-DD-HHMM` suffix).
 
-**Example**: Issue #123 "Add user authentication" → `123-add-user-authentication`
+**Example**: Issue #123 "Add user authentication" → `123-add-user-authentic-11-30-1430`
 
 **Reusing existing branches**: If a branch already exists for the issue, `gh issue develop --list` is used to discover it rather than creating a duplicate.
 
@@ -556,7 +556,7 @@ status: started
 started_at: 2025-01-15T10:30:00Z
 workflow_run_id: "1234567890"
 workflow_run_url: https://github.com/owner/repo/actions/runs/1234567890
-branch_name: 123-add-user-authentication
+branch_name: 123-add-user-authentic-11-30-1430
 issue_number: 123
 ```
 
@@ -573,8 +573,8 @@ step_description: "Implementing feature X" # optional
 ### `erk-worktree-creation` Schema
 
 ```yaml
-worktree_name: 123-add-user-authentication
-branch_name: 123-add-user-authentication
+worktree_name: 123-add-user-authentic-11-30-1430
+branch_name: 123-add-user-authentic-11-30-1430
 timestamp: 2025-01-15T10:30:00Z
 issue_number: 123 # optional
 ```
@@ -603,13 +603,13 @@ gh run list --workflow=dispatch-erk-queue-git.yml | grep "123:"
 
 ```bash
 # Get branch info
-git log origin/123-add-user-authentication --oneline -5
+git log origin/123-add-user-authentic-11-30-1430 --oneline -5
 
 # Find PR
-gh pr view 123-add-user-authentication
+gh pr view 123-add-user-authentic-11-30-1430
 
 # Check for .worker-impl/
-git ls-tree origin/123-add-user-authentication | grep worker-impl
+git ls-tree origin/123-add-user-authentic-11-30-1430 | grep worker-impl
 ```
 
 ### From PR Number
