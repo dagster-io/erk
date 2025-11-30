@@ -114,7 +114,7 @@ def pr_land(ctx: ErkContext, script: bool) -> None:
     if script:
         script_content = render_activation_script(
             worktree_path=dest_path,
-            final_message='echo "Landed PR and switched to trunk: $(pwd)"',
+            final_message='echo "Landed PR and went to trunk: $(pwd)"',
             comment="erk pr land activate-script",
         )
         activation_result = ctx.script_writer.write_activation_script(
@@ -124,7 +124,7 @@ def pr_land(ctx: ErkContext, script: bool) -> None:
         )
         machine_output(str(activation_result.path), nl=False)
     else:
-        user_output(f"\nSwitched to: {dest_path}")
+        user_output(f"\nWent to: {dest_path}")
         user_output(
             "\nShell integration not detected. "
             "Run 'erk init --shell' to set up automatic activation."

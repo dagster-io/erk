@@ -1,4 +1,4 @@
-"""Goto command - navigate directly to a worktree by name."""
+"""Goto command - go directly to a worktree by name."""
 
 import click
 from erk_shared.output.output import user_output
@@ -17,7 +17,7 @@ from erk.core.context import ErkContext
 )
 @click.pass_obj
 def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
-    """Jump directly to a worktree by name.
+    """Go directly to a worktree by name.
 
     With shell integration (recommended):
       erk goto WORKTREE_NAME
@@ -31,10 +31,10 @@ def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
     This will cd to the worktree, create/activate .venv, and load .env variables.
 
     Special keyword:
-      erk goto root    # Jump to the root repository
+      erk goto root    # Go to the root repository
 
     Example:
-      erk goto feature-work    # Jump to worktree named "feature-work"
+      erk goto feature-work    # Go to worktree named "feature-work"
     """
     repo = discover_repo_context(ctx, ctx.cwd)
 
@@ -66,7 +66,7 @@ def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
         if "/" in worktree_name:
             user_output(
                 "\nHint: It looks like you provided a branch name. "
-                "Use 'erk checkout' to switch by branch name."
+                "Use 'erk checkout' to go by branch name."
             )
 
         raise SystemExit(1)
@@ -88,7 +88,7 @@ def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
         branch_name = target_worktree.branch or "(detached HEAD)"
         styled_wt = click.style(worktree_name, fg="cyan", bold=True)
         styled_branch = click.style(branch_name, fg="yellow")
-        user_output(f"Switched to worktree {styled_wt} [{styled_branch}]")
+        user_output(f"Went to worktree {styled_wt} [{styled_branch}]")
 
     # Activate the worktree
     activate_worktree(ctx, repo, worktree_path, script, "goto")

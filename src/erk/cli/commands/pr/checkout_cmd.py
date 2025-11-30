@@ -78,7 +78,7 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
         if script:
             activation_script = render_activation_script(
                 worktree_path=existing_worktree,
-                final_message=f'echo "Switched to existing worktree for PR #{pr_number}"',
+                final_message=f'echo "Went to existing worktree for PR #{pr_number}"',
             )
             result = ctx.script_writer.write_activation_script(
                 activation_script,

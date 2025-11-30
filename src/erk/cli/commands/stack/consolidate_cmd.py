@@ -208,7 +208,7 @@ def consolidate_stack(
             user_output("\nSuggested action:")
             user_output("  1. Use a different name")
             user_output(f"  2. Remove existing worktree: erk remove {name}")
-            user_output("  3. Switch to existing: erk checkout <branch>")
+            user_output("  3. Go to existing: erk checkout <branch>")
             raise SystemExit(1)
 
     # Calculate stack range early (needed for safety check)
@@ -397,7 +397,7 @@ def consolidate_stack(
     if script and not dry_run:
         script_content = render_activation_script(
             worktree_path=target_worktree_path,
-            final_message='echo "✓ Switched to consolidated worktree."',
+            final_message='echo "✓ Went to consolidated worktree."',
             comment="work activate-script (consolidate)",
         )
         result = ctx.script_writer.write_activation_script(
@@ -408,6 +408,6 @@ def consolidate_stack(
         result.output_for_shell_integration()
     elif not dry_run:
         # Manual cd instruction when not in script mode
-        user_output(f"Switching to worktree: {click.style(name, fg='cyan', bold=True)}")
-        user_output(f"\n{click.style('ℹ️', fg='blue')} Run this command to switch:")
+        user_output(f"Going to worktree: {click.style(name, fg='cyan', bold=True)}")
+        user_output(f"\n{click.style('ℹ️', fg='blue')} Run this command to go there:")
         user_output(f"  cd {target_worktree_path}")

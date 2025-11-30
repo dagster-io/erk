@@ -1,4 +1,4 @@
-"""Checkout command - find and switch to a worktree by branch name."""
+"""Checkout command - find and go to a worktree by branch name."""
 
 from pathlib import Path
 
@@ -247,10 +247,10 @@ def _perform_checkout(
 )
 @click.pass_obj
 def checkout_cmd(ctx: ErkContext, branch: str, script: bool) -> None:
-    """Checkout BRANCH by finding and switching to its worktree.
+    """Checkout BRANCH by finding and going to its worktree.
 
     This command finds which worktree has the specified branch checked out
-    and switches to it. If the branch exists but isn't checked out anywhere,
+    and goes to it. If the branch exists but isn't checked out anywhere,
     a worktree is automatically created. If the branch exists on origin but
     not locally, a tracking branch and worktree are created automatically.
 

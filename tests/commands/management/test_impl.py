@@ -362,12 +362,12 @@ def test_render_cd_script() -> None:
     script = render_cd_script(
         worktree_path,
         comment="erk create - cd to new worktree",
-        success_message="✓ Switched to new worktree.",
+        success_message="✓ Went to new worktree.",
     )
 
     assert "# erk create - cd to new worktree" in script
     assert f"cd '{worktree_path}'" in script
-    assert 'echo "✓ Switched to new worktree."' in script
+    assert 'echo "✓ Went to new worktree."' in script
 
 
 def test_create_with_script_flag() -> None:

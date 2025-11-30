@@ -88,7 +88,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool) -> None:
             if script:
                 script_content = render_activation_script(
                     worktree_path=root_path,
-                    final_message='echo "Switched to root repo: $(pwd)"',
+                    final_message='echo "Went to root repo: $(pwd)"',
                     comment="work activate-script (root repo)",
                 )
                 result = ctx.script_writer.write_activation_script(
@@ -98,7 +98,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool) -> None:
                 )
                 machine_output(str(result.path), nl=False)
             else:
-                user_output(f"Switched to root repo: {root_path}")
+                user_output(f"Went to root repo: {root_path}")
 
             # Perform cleanup (no context regeneration needed - we haven't changed dirs)
             delete_branch_and_worktree(ctx, repo.root, current_branch, current_worktree_path)

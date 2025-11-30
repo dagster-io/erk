@@ -102,7 +102,7 @@ def ensure_worktree_for_branch(
         user_output(
             f'Error: Cannot create worktree for trunk branch "{trunk_branch}".\n'
             f"The trunk branch should be checked out in the root worktree.\n"
-            f"To switch to {trunk_branch}, use:\n"
+            f"To go to {trunk_branch}, use:\n"
             f"  erk checkout root"
         )
         raise SystemExit(1)
@@ -176,7 +176,7 @@ def ensure_worktree_for_branch(
                         f"with different branch '{wt.branch}'.\n"
                         f"Cannot create worktree for branch '{branch}' with same name.\n"
                         f"Options:\n"
-                        f"  1. Switch to existing worktree: erk jump {name}\n"
+                        f"  1. Go to existing worktree: erk goto {name}\n"
                         f"  2. Use a different branch name"
                     )
                     raise SystemExit(1)
@@ -242,7 +242,7 @@ def add_worktree(
                 f"Options:\n"
                 f"  • Use a different branch name\n"
                 f"  • Create a new branch instead: erk create {path.name}\n"
-                f"  • Switch to that worktree: erk checkout {branch}",
+                f"  • Go to that worktree: erk checkout {branch}",
             )
             raise SystemExit(1)
 
@@ -477,7 +477,7 @@ def _create_json_response(
     "--from-current-branch",
     is_flag=True,
     help=(
-        "Move the current branch to the new worktree, then switch current worktree to --ref "
+        "Move the current branch to the new worktree, then change current worktree to --ref"
         "(defaults to main/master). NAME defaults to current branch name."
     ),
 )
@@ -503,7 +503,7 @@ def _create_json_response(
 @click.option(
     "--stay",
     is_flag=True,
-    help="Stay in current directory instead of switching to new worktree.",
+    help="Stay in current directory instead of going to new worktree.",
 )
 @click.option(
     "--skip-remote-check",
@@ -712,7 +712,7 @@ def create_wt(
     if name == trunk_branch:
         user_output(
             f'Error: "{name}" cannot be used as a worktree name.\n'
-            f"To switch to the {name} branch in the root repository, use:\n"
+            f"To go to the {name} branch in the root repository, use:\n"
             f"  erk checkout root",
         )
         raise SystemExit(1)
@@ -772,7 +772,7 @@ def create_wt(
             f"The current branch cannot be moved to a worktree and then checked out again.\n\n"
             f"Alternatives:\n"
             f"  • Create a new branch: erk create {name}\n"
-            f"  • Switch to a feature branch first, then use --from-current-branch\n"
+            f"  • Go to a feature branch first, then use --from-current-branch\n"
             f"  • Use --from-branch to create from a different existing branch",
         )
 
@@ -802,7 +802,7 @@ def create_wt(
             user_output(
                 f'Error: Cannot create worktree for trunk branch "{trunk_branch}".\n'
                 f"The trunk branch should be checked out in the root worktree.\n"
-                f"To switch to {trunk_branch}, use:\n"
+                f"To go to {trunk_branch}, use:\n"
                 f"  erk checkout root"
             )
             raise SystemExit(1)
@@ -919,7 +919,7 @@ def create_wt(
             wt_path,
             repo.root,
             comment="cd to new worktree",
-            success_message="✓ Switched to new worktree.",
+            success_message="✓ Went to new worktree.",
         )
         result = ctx.script_writer.write_activation_script(
             script_content,
