@@ -125,15 +125,12 @@ jobs:
         run: |
           source $HOME/.cargo/env
 
-          ISSUE_TITLE=$(gh issue view "$ISSUE_NUMBER" --json title -q .title)
-          export ISSUE_TITLE
-
           git fetch origin "$BRANCH_NAME"
           git checkout "$BRANCH_NAME"
 
           # Update .worker-impl/ with fresh plan
           rm -rf .worker-impl
-          dot-agent run erk create-worker-impl-from-issue "$ISSUE_NUMBER" "$ISSUE_TITLE"
+          dot-agent run erk create-worker-impl-from-issue "$ISSUE_NUMBER"
 
           if [ $? -ne 0 ]; then
             gh issue comment "$ISSUE_NUMBER" --body "❌ **Plan Update Failed**
