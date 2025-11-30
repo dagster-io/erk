@@ -8,6 +8,9 @@
       "version": "latest"
     }
   },
+  "remoteEnv": {
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
+  },
   "postCreateCommand": "npm install -g @anthropic-ai/claude-code && pip install uv && uv sync",
   "secrets": [
     "ANTHROPIC_API_KEY"
