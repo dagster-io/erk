@@ -2,11 +2,11 @@
 
 from pathlib import Path
 
-from erk_shared.github.issue_development import DevelopmentBranch, IssueDevelopment
+from erk_shared.github.issue_link_branches import DevelopmentBranch, IssueLinkBranches
 from erk_shared.subprocess_utils import execute_gh_command
 
 
-class RealIssueDevelopment(IssueDevelopment):
+class RealIssueLinkBranches(IssueLinkBranches):
     """Production implementation using gh issue develop.
 
     Uses GitHub CLI to create branches that are automatically linked to issues,
@@ -14,7 +14,7 @@ class RealIssueDevelopment(IssueDevelopment):
     """
 
     def __init__(self) -> None:
-        """Initialize RealIssueDevelopment."""
+        """Initialize RealIssueLinkBranches."""
 
     def create_development_branch(
         self,

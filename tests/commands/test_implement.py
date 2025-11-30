@@ -10,7 +10,7 @@ from erk.core.plan_store.fake import FakePlanStore
 from erk.core.plan_store.types import Plan, PlanState
 from tests.fakes.claude_executor import FakeClaudeExecutor
 from tests.fakes.git import FakeGit
-from tests.fakes.issue_development import FakeIssueDevelopment
+from tests.fakes.issue_link_branches import FakeIssueLinkBranches
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -108,10 +108,10 @@ def test_implement_from_plain_issue_number() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"123": plan_issue})
-        # FakeIssueDevelopment creates branches named "{issue_number}-issue-branch"
-        issue_dev = FakeIssueDevelopment()
+        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
+        issue_dev = FakeIssueLinkBranches()
         ctx = build_workspace_test_context(
-            env, git=git, plan_store=store, issue_development=issue_dev
+            env, git=git, plan_store=store, issue_link_branches=issue_dev
         )
 
         # Test with plain number (no # prefix)
@@ -147,10 +147,10 @@ def test_implement_from_issue_number() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"42": plan_issue})
-        # FakeIssueDevelopment creates branches named "{issue_number}-issue-branch"
-        issue_dev = FakeIssueDevelopment()
+        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
+        issue_dev = FakeIssueLinkBranches()
         ctx = build_workspace_test_context(
-            env, git=git, plan_store=store, issue_development=issue_dev
+            env, git=git, plan_store=store, issue_link_branches=issue_dev
         )
 
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
@@ -184,10 +184,10 @@ def test_implement_from_issue_url() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"123": plan_issue})
-        # FakeIssueDevelopment creates branches named "{issue_number}-issue-branch"
-        issue_dev = FakeIssueDevelopment()
+        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
+        issue_dev = FakeIssueLinkBranches()
         ctx = build_workspace_test_context(
-            env, git=git, plan_store=store, issue_development=issue_dev
+            env, git=git, plan_store=store, issue_link_branches=issue_dev
         )
 
         url = "https://github.com/owner/repo/issues/123"
@@ -216,10 +216,10 @@ def test_implement_from_issue_with_custom_name() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"42": plan_issue})
-        # FakeIssueDevelopment creates branches named "{issue_number}-issue-branch"
-        issue_dev = FakeIssueDevelopment()
+        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
+        issue_dev = FakeIssueLinkBranches()
         ctx = build_workspace_test_context(
-            env, git=git, plan_store=store, issue_development=issue_dev
+            env, git=git, plan_store=store, issue_link_branches=issue_dev
         )
 
         result = runner.invoke(
@@ -463,10 +463,10 @@ def test_implement_issue_mode_uses_linked_branch_not_worktree_name() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"42": plan_issue})
-        # FakeIssueDevelopment creates branches named "{issue_number}-issue-branch"
-        issue_dev = FakeIssueDevelopment()
+        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
+        issue_dev = FakeIssueLinkBranches()
         ctx = build_workspace_test_context(
-            env, git=git, plan_store=store, issue_development=issue_dev
+            env, git=git, plan_store=store, issue_link_branches=issue_dev
         )
 
         # Even though "existing-branch" exists, issue mode uses "42-issue-branch"
@@ -971,10 +971,10 @@ def test_interactive_mode_calls_executor() -> None:
         )
         store = FakePlanStore(plans={"42": plan_issue})
         executor = FakeClaudeExecutor(claude_available=True)
-        # FakeIssueDevelopment creates branches named "{issue_number}-issue-branch"
-        issue_dev = FakeIssueDevelopment()
+        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
+        issue_dev = FakeIssueLinkBranches()
         ctx = build_workspace_test_context(
-            env, git=git, plan_store=store, claude_executor=executor, issue_development=issue_dev
+            env, git=git, plan_store=store, claude_executor=executor, issue_link_branches=issue_dev
         )
 
         # Interactive mode is the default (no --no-interactive flag)

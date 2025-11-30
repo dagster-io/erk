@@ -19,7 +19,7 @@ from erk.core.context import ErkContext
 from erk.core.git.fake import FakeGit
 from erk.core.github.fake import FakeGitHub
 from erk.core.repo_discovery import RepoContext
-from tests.fakes.issue_development import FakeIssueDevelopment
+from tests.fakes.issue_link_branches import FakeIssueLinkBranches
 
 
 def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
@@ -62,7 +62,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
         trunk_branches={repo_root: "master"},
     )
     fake_github = FakeGitHub()
-    fake_issue_dev = FakeIssueDevelopment()
+    fake_issue_dev = FakeIssueLinkBranches()
 
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
@@ -76,7 +76,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
         git=fake_git,
         github=fake_github,
         issues=fake_github_issues,
-        issue_development=fake_issue_dev,
+        issue_link_branches=fake_issue_dev,
         plan_store=fake_plan_store,
         repo=repo,
     )
@@ -88,7 +88,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     assert "Issue submitted successfully!" in result.output
     assert "View workflow run:" in result.output
 
-    # FakeIssueDevelopment creates branches named "{issue_number}-issue-branch"
+    # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
     expected_branch = "123-issue-branch"
 
     # Verify branch was created via gh issue develop
@@ -142,8 +142,8 @@ def test_submit_skips_branch_creation_when_exists(tmp_path: Path) -> None:
     expected_branch = "123-existing-branch"
 
     fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    # FakeIssueDevelopment with existing branch for issue 123
-    fake_issue_dev = FakeIssueDevelopment(existing_branches={123: expected_branch})
+    # FakeIssueLinkBranches with existing branch for issue 123
+    fake_issue_dev = FakeIssueLinkBranches(existing_branches={123: expected_branch})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -165,7 +165,7 @@ def test_submit_skips_branch_creation_when_exists(tmp_path: Path) -> None:
         git=fake_git,
         github=fake_github,
         issues=fake_github_issues,
-        issue_development=fake_issue_dev,
+        issue_link_branches=fake_issue_dev,
         repo=repo,
     )
 

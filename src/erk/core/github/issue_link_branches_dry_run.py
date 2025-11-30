@@ -2,24 +2,24 @@
 
 from pathlib import Path
 
-from erk_shared.github.issue_development import DevelopmentBranch, IssueDevelopment
+from erk_shared.github.issue_link_branches import DevelopmentBranch, IssueLinkBranches
 
 
-class DryRunIssueDevelopment(IssueDevelopment):
-    """No-op wrapper for issue development operations.
+class DryRunIssueLinkBranches(IssueLinkBranches):
+    """No-op wrapper for issue-linked branch operations.
 
     Read operations are delegated to the wrapped implementation.
     Write operations return without executing (no-op behavior).
 
-    This wrapper prevents destructive issue development operations from
+    This wrapper prevents destructive issue-linked branch operations from
     executing in dry-run mode, while still allowing read operations for validation.
     """
 
-    def __init__(self, wrapped: IssueDevelopment) -> None:
+    def __init__(self, wrapped: IssueLinkBranches) -> None:
         """Initialize dry-run wrapper with a real implementation.
 
         Args:
-            wrapped: The real IssueDevelopment implementation to wrap
+            wrapped: The real IssueLinkBranches implementation to wrap
         """
         self._wrapped = wrapped
 

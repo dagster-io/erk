@@ -1,18 +1,18 @@
-"""Fake issue development operations for testing.
+"""Fake issue-linked branch operations for testing.
 
-FakeIssueDevelopment is an in-memory implementation that accepts pre-configured state
+FakeIssueLinkBranches is an in-memory implementation that accepts pre-configured state
 in its constructor. Construct instances directly with keyword arguments.
 """
 
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from erk_shared.github.issue_development import DevelopmentBranch, IssueDevelopment
+from erk_shared.github.issue_link_branches import DevelopmentBranch, IssueLinkBranches
 
 
 @dataclass
-class FakeIssueDevelopment(IssueDevelopment):
-    """In-memory fake implementation of issue development operations.
+class FakeIssueLinkBranches(IssueLinkBranches):
+    """In-memory fake implementation of issue-linked branch operations.
 
     This class has NO public setup methods. All state is provided via constructor
     using keyword arguments with sensible defaults (empty dicts).

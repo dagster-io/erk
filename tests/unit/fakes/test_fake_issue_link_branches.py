@@ -1,17 +1,17 @@
-"""Tests for FakeIssueDevelopment test infrastructure.
+"""Tests for FakeIssueLinkBranches test infrastructure.
 
-These tests verify that FakeIssueDevelopment correctly simulates issue-linked
+These tests verify that FakeIssueLinkBranches correctly simulates issue-linked
 branch development operations, providing reliable test doubles for tests that
 use the `gh issue develop` functionality.
 """
 
-from tests.fakes.issue_development import FakeIssueDevelopment
+from tests.fakes.issue_link_branches import FakeIssueLinkBranches
 from tests.test_utils.paths import sentinel_path
 
 
-def test_fake_issue_development_initialization() -> None:
-    """Test that FakeIssueDevelopment initializes with empty state."""
-    dev = FakeIssueDevelopment()
+def test_fake_issue_link_branches_initialization() -> None:
+    """Test that FakeIssueLinkBranches initializes with empty state."""
+    dev = FakeIssueLinkBranches()
 
     # No existing branches
     assert dev.get_linked_branch(sentinel_path(), 123) is None
@@ -20,9 +20,9 @@ def test_fake_issue_development_initialization() -> None:
     assert dev.created_branches == []
 
 
-def test_fake_issue_development_create_branch_new() -> None:
+def test_fake_issue_link_branches_create_branch_new() -> None:
     """Test create_development_branch creates new branch when none exists."""
-    dev = FakeIssueDevelopment()
+    dev = FakeIssueLinkBranches()
 
     result = dev.create_development_branch(sentinel_path(), 123)
 
@@ -31,9 +31,9 @@ def test_fake_issue_development_create_branch_new() -> None:
     assert result.already_existed is False
 
 
-def test_fake_issue_development_create_branch_existing() -> None:
+def test_fake_issue_link_branches_create_branch_existing() -> None:
     """Test create_development_branch returns existing branch when present."""
-    dev = FakeIssueDevelopment(existing_branches={123: "123-my-feature"})
+    dev = FakeIssueLinkBranches(existing_branches={123: "123-my-feature"})
 
     result = dev.create_development_branch(sentinel_path(), 123)
 
@@ -42,9 +42,9 @@ def test_fake_issue_development_create_branch_existing() -> None:
     assert result.already_existed is True
 
 
-def test_fake_issue_development_create_branch_tracks_mutation() -> None:
+def test_fake_issue_link_branches_create_branch_tracks_mutation() -> None:
     """Test create_development_branch tracks created branches."""
-    dev = FakeIssueDevelopment()
+    dev = FakeIssueLinkBranches()
 
     dev.create_development_branch(sentinel_path(), 100)
     dev.create_development_branch(sentinel_path(), 200)
@@ -55,9 +55,9 @@ def test_fake_issue_development_create_branch_tracks_mutation() -> None:
     ]
 
 
-def test_fake_issue_development_create_branch_no_tracking_for_existing() -> None:
+def test_fake_issue_link_branches_create_branch_no_tracking_for_existing() -> None:
     """Test create_development_branch doesn't track when branch already existed."""
-    dev = FakeIssueDevelopment(existing_branches={123: "123-existing"})
+    dev = FakeIssueLinkBranches(existing_branches={123: "123-existing"})
 
     dev.create_development_branch(sentinel_path(), 123)
 
@@ -65,9 +65,9 @@ def test_fake_issue_development_create_branch_no_tracking_for_existing() -> None
     assert dev.created_branches == []
 
 
-def test_fake_issue_development_create_branch_stores_for_get() -> None:
+def test_fake_issue_link_branches_create_branch_stores_for_get() -> None:
     """Test created branch is stored and retrievable via get_linked_branch."""
-    dev = FakeIssueDevelopment()
+    dev = FakeIssueLinkBranches()
 
     dev.create_development_branch(sentinel_path(), 42)
 
@@ -75,27 +75,27 @@ def test_fake_issue_development_create_branch_stores_for_get() -> None:
     assert result == "42-issue-branch"
 
 
-def test_fake_issue_development_get_linked_branch_none() -> None:
+def test_fake_issue_link_branches_get_linked_branch_none() -> None:
     """Test get_linked_branch returns None when no branch exists."""
-    dev = FakeIssueDevelopment()
+    dev = FakeIssueLinkBranches()
 
     result = dev.get_linked_branch(sentinel_path(), 999)
 
     assert result is None
 
 
-def test_fake_issue_development_get_linked_branch_existing() -> None:
+def test_fake_issue_link_branches_get_linked_branch_existing() -> None:
     """Test get_linked_branch returns branch from existing_branches."""
-    dev = FakeIssueDevelopment(existing_branches={42: "42-feature-branch"})
+    dev = FakeIssueLinkBranches(existing_branches={42: "42-feature-branch"})
 
     result = dev.get_linked_branch(sentinel_path(), 42)
 
     assert result == "42-feature-branch"
 
 
-def test_fake_issue_development_base_branch_ignored() -> None:
+def test_fake_issue_link_branches_base_branch_ignored() -> None:
     """Test that base_branch parameter doesn't affect fake behavior."""
-    dev = FakeIssueDevelopment()
+    dev = FakeIssueLinkBranches()
 
     result = dev.create_development_branch(sentinel_path(), 123, base_branch="develop")
 
@@ -104,9 +104,9 @@ def test_fake_issue_development_base_branch_ignored() -> None:
     assert result.already_existed is False
 
 
-def test_fake_issue_development_created_branches_read_only() -> None:
+def test_fake_issue_link_branches_created_branches_read_only() -> None:
     """Test created_branches property returns a copy."""
-    dev = FakeIssueDevelopment()
+    dev = FakeIssueLinkBranches()
     dev.create_development_branch(sentinel_path(), 1)
 
     branches = dev.created_branches
@@ -116,9 +116,9 @@ def test_fake_issue_development_created_branches_read_only() -> None:
     assert dev.created_branches == [(1, "1-issue-branch")]
 
 
-def test_fake_issue_development_multiple_issues() -> None:
+def test_fake_issue_link_branches_multiple_issues() -> None:
     """Test handling multiple issues independently."""
-    dev = FakeIssueDevelopment(existing_branches={10: "10-existing"})
+    dev = FakeIssueLinkBranches(existing_branches={10: "10-existing"})
 
     # Get existing
     result1 = dev.create_development_branch(sentinel_path(), 10)

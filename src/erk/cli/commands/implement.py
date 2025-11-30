@@ -360,7 +360,7 @@ def _prepare_plan_source_from_issue(
 
     # Create development branch linked to issue via gh issue develop
     trunk_branch = ctx.git.get_trunk_branch(repo_root)
-    dev_branch = ctx.issue_development.create_development_branch(
+    dev_branch = ctx.issue_link_branches.create_development_branch(
         repo_root, int(issue_number), base_branch=trunk_branch
     )
 

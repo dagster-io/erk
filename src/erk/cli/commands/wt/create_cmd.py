@@ -695,7 +695,7 @@ def create_wt(
 
         # Create development branch linked to issue via gh issue develop
         trunk_branch = ctx.git.get_trunk_branch(repo.root)
-        dev_branch = ctx.issue_development.create_development_branch(
+        dev_branch = ctx.issue_link_branches.create_development_branch(
             repo.root, int(issue_number_parsed), base_branch=trunk_branch
         )
         linked_branch_name = dev_branch.branch_name

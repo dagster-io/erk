@@ -20,7 +20,7 @@ class DevelopmentBranch:
     already_existed: bool
 
 
-class IssueDevelopment(ABC):
+class IssueLinkBranches(ABC):
     """Abstract interface for issue-linked branch operations.
 
     This interface wraps `gh issue develop` which creates branches that are

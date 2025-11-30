@@ -179,7 +179,7 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
 
     # Step 2: Create development branch linked to issue via gh issue develop
     trunk_branch = ctx.git.get_trunk_branch(repo.root)
-    dev_branch = ctx.issue_development.create_development_branch(
+    dev_branch = ctx.issue_link_branches.create_development_branch(
         repo.root, issue_number, base_branch=trunk_branch
     )
     branch_name = dev_branch.branch_name

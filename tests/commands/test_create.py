@@ -9,7 +9,7 @@ from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
 
 from erk.cli.cli import cli
 from erk.core.git.fake import FakeGit
-from tests.fakes.issue_development import FakeIssueDevelopment
+from tests.fakes.issue_link_branches import FakeIssueLinkBranches
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
 
@@ -109,11 +109,11 @@ def test_create_from_issue_with_valid_issue() -> None:
             }
         )
 
-        # FakeIssueDevelopment creates branches named "{issue_number}-issue-branch"
-        fake_issue_dev = FakeIssueDevelopment()
+        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
+        fake_issue_dev = FakeIssueLinkBranches()
 
         test_ctx = env.build_context(
-            git=git_ops, issues=fake_issues, issue_development=fake_issue_dev
+            git=git_ops, issues=fake_issues, issue_link_branches=fake_issue_dev
         )
 
         # Act: Run create --from-issue 123
@@ -131,7 +131,7 @@ def test_create_from_issue_with_valid_issue() -> None:
         assert result.exit_code == 0
 
         # Assert: Worktree created with issue-linked branch name
-        # FakeIssueDevelopment creates branches named "{issue_number}-issue-branch"
+        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
         worktrees_dir = repo_dir / "worktrees"
         expected_worktree_path = worktrees_dir / "123-issue-branch"
         assert expected_worktree_path.exists(), (
@@ -242,11 +242,11 @@ def test_create_from_issue_url_parsing() -> None:
             }
         )
 
-        # FakeIssueDevelopment creates branches named "{issue_number}-issue-branch"
-        fake_issue_dev = FakeIssueDevelopment()
+        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
+        fake_issue_dev = FakeIssueLinkBranches()
 
         test_ctx = env.build_context(
-            git=git_ops, issues=fake_issues, issue_development=fake_issue_dev
+            git=git_ops, issues=fake_issues, issue_link_branches=fake_issue_dev
         )
 
         # Act: Run with full GitHub URL
@@ -299,11 +299,11 @@ def test_create_from_issue_name_derivation() -> None:
             }
         )
 
-        # FakeIssueDevelopment creates branches named "{issue_number}-issue-branch"
-        fake_issue_dev = FakeIssueDevelopment()
+        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
+        fake_issue_dev = FakeIssueLinkBranches()
 
         test_ctx = env.build_context(
-            git=git_ops, issues=fake_issues, issue_development=fake_issue_dev
+            git=git_ops, issues=fake_issues, issue_link_branches=fake_issue_dev
         )
 
         # Act
@@ -392,11 +392,11 @@ def test_create_from_issue_readonly_operation() -> None:
             }
         )
 
-        # FakeIssueDevelopment creates branches named "{issue_number}-issue-branch"
-        fake_issue_dev = FakeIssueDevelopment()
+        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
+        fake_issue_dev = FakeIssueLinkBranches()
 
         test_ctx = env.build_context(
-            git=git_ops, issues=fake_issues, issue_development=fake_issue_dev
+            git=git_ops, issues=fake_issues, issue_link_branches=fake_issue_dev
         )
 
         # Act
