@@ -133,7 +133,7 @@ CLI layer tests using fakes. Tests user-facing command behavior.
 **Contains:**
 
 - `workspace/` - create, rename, move, rm commands
-- `navigation/` - switch, up, down, jump commands
+- `navigation/` - switch, up, down, checkout commands
 - `sync/` - sync command with Graphite integration
 - `display/` - status, tree, list commands
 - `setup/` - init, config commands

@@ -1,6 +1,6 @@
-"""Unit tests for jump command message generation logic.
+"""Unit tests for checkout command message generation logic.
 
-Tests the four-case message logic in _perform_jump() without going through
+Tests the four-case message logic in _perform_checkout() without going through
 the full CLI command pipeline. These tests directly verify the message
 generation business logic.
 """
@@ -60,7 +60,7 @@ def test_message_case_1_already_on_target_branch_in_current_worktree() -> None:
         # Build context with cwd=feature_wt (already in target location)
         test_ctx = env.build_context(git=git_ops, cwd=feature_wt)
 
-        # Call _perform_jump in script mode
+        # Call _perform_checkout in script mode
         _perform_checkout(
             ctx=test_ctx,
             repo_root=env.cwd,
@@ -78,15 +78,15 @@ def test_message_case_1_already_on_target_branch_in_current_worktree() -> None:
         assert "Already on branch" in script_content
         assert "feature-1" in script_content
         assert "in worktree" in script_content
-        # Should not say "Jumped"
-        assert "Jumped" not in script_content
+        # Should not say "Switched"
+        assert "Switched" not in script_content
 
 
-def test_message_case_2_jumped_to_existing_worktree_standard_naming() -> None:
-    """Test message when jumping to existing worktree with standard naming.
+def test_message_case_2_switched_to_existing_worktree_standard_naming() -> None:
+    """Test message when switching to existing worktree with standard naming.
 
     Case 2: ctx.cwd != target_path AND current_branch == branch AND worktree_name == branch
-    Expected: "Jumped to worktree {name}"
+    Expected: "Switched to worktree {name}"
     """
     from click.testing import CliRunner
 
@@ -111,7 +111,7 @@ def test_message_case_2_jumped_to_existing_worktree_standard_naming() -> None:
         # Build context with cwd=env.cwd (root worktree, different from target)
         test_ctx = env.build_context(git=git_ops, cwd=env.cwd)
 
-        # Call _perform_jump in script mode
+        # Call _perform_checkout in script mode
         _perform_checkout(
             ctx=test_ctx,
             repo_root=env.cwd,
@@ -126,7 +126,7 @@ def test_message_case_2_jumped_to_existing_worktree_standard_naming() -> None:
         script_content = env.script_writer.last_script.content
 
         # Verify message contains expected text
-        assert "Jumped to worktree" in script_content
+        assert "Switched to worktree" in script_content
         assert "feature-1" in script_content
         # Should NOT say "Already"
         assert "Already" not in script_content
@@ -134,11 +134,11 @@ def test_message_case_2_jumped_to_existing_worktree_standard_naming() -> None:
         assert "(branch" not in script_content
 
 
-def test_message_case_2_jumped_to_existing_worktree_nonstandard_naming() -> None:
-    """Test message when jumping to existing worktree with non-standard naming.
+def test_message_case_2_switched_to_existing_worktree_nonstandard_naming() -> None:
+    """Test message when switching to existing worktree with non-standard naming.
 
     Case 2: ctx.cwd != target_path AND current_branch == branch AND worktree_name != branch
-    Expected: "Jumped to worktree {name} (branch {branch})"
+    Expected: "Switched to worktree {name} (branch {branch})"
     """
     from click.testing import CliRunner
 
@@ -163,7 +163,7 @@ def test_message_case_2_jumped_to_existing_worktree_nonstandard_naming() -> None
         # Build context with cwd=env.cwd (root worktree, different from target)
         test_ctx = env.build_context(git=git_ops, cwd=env.cwd)
 
-        # Call _perform_jump in script mode
+        # Call _perform_checkout in script mode
         _perform_checkout(
             ctx=test_ctx,
             repo_root=env.cwd,
@@ -178,18 +178,18 @@ def test_message_case_2_jumped_to_existing_worktree_nonstandard_naming() -> None
         script_content = env.script_writer.last_script.content
 
         # Verify message contains expected text
-        assert "Jumped to worktree" in script_content
+        assert "Switched to worktree" in script_content
         assert "custom-worktree-name" in script_content
         # Should explicitly mention branch when names differ
         assert "(branch" in script_content
         assert "feature-1" in script_content
 
 
-def test_message_case_3_jumped_and_checked_out_branch() -> None:
-    """Test message when jumping to worktree and checking out different branch.
+def test_message_case_3_switched_and_checked_out_branch() -> None:
+    """Test message when switching to worktree and checking out different branch.
 
     Case 3: ctx.cwd != target_path AND current_branch != branch
-    Expected: "Jumped to worktree {name} and checked out branch {branch}"
+    Expected: "Switched to worktree {name} and checked out branch {branch}"
     """
     from click.testing import CliRunner
 
@@ -214,7 +214,7 @@ def test_message_case_3_jumped_and_checked_out_branch() -> None:
         # Build context with cwd=env.cwd (root worktree)
         test_ctx = env.build_context(git=git_ops, cwd=env.cwd)
 
-        # Call _perform_jump in script mode - will checkout feature-1
+        # Call _perform_checkout in script mode - will checkout feature-1
         _perform_checkout(
             ctx=test_ctx,
             repo_root=env.cwd,
@@ -233,17 +233,17 @@ def test_message_case_3_jumped_and_checked_out_branch() -> None:
         script_content = env.script_writer.last_script.content
 
         # Verify message contains expected text
-        assert "Jumped to worktree" in script_content
+        assert "Switched to worktree" in script_content
         assert "feature-wt" in script_content
         assert "and checked out branch" in script_content
         assert "feature-1" in script_content
 
 
-def test_message_case_4_jumped_to_newly_created_worktree() -> None:
-    """Test message when jumping to newly created worktree.
+def test_message_case_4_switched_to_newly_created_worktree() -> None:
+    """Test message when switching to newly created worktree.
 
     Case 4: is_newly_created == True
-    Expected: "Jumped to new worktree {name}"
+    Expected: "Switched to new worktree {name}"
     """
     from click.testing import CliRunner
 
@@ -267,7 +267,7 @@ def test_message_case_4_jumped_to_newly_created_worktree() -> None:
         # Build context with cwd=env.cwd (root worktree)
         test_ctx = env.build_context(git=git_ops, cwd=env.cwd)
 
-        # Call _perform_jump with is_newly_created=True
+        # Call _perform_checkout with is_newly_created=True
         _perform_checkout(
             ctx=test_ctx,
             repo_root=env.cwd,
@@ -282,7 +282,7 @@ def test_message_case_4_jumped_to_newly_created_worktree() -> None:
         script_content = env.script_writer.last_script.content
 
         # Verify message contains expected text
-        assert "Jumped to new worktree" in script_content
+        assert "Switched to new worktree" in script_content
         assert "new-feature" in script_content
         # Should NOT say "and checked out" (worktree already has correct branch)
         assert "and checked out" not in script_content
@@ -314,7 +314,7 @@ def test_message_colorization_applied() -> None:
 
         test_ctx = env.build_context(git=git_ops, cwd=env.cwd)
 
-        # Call _perform_jump in script mode
+        # Call _perform_checkout in script mode
         _perform_checkout(
             ctx=test_ctx,
             repo_root=env.cwd,
@@ -371,7 +371,7 @@ def test_message_non_script_mode_case_1() -> None:
         sys.stderr = captured_stderr
 
         try:
-            # Call _perform_jump in non-script mode
+            # Call _perform_checkout in non-script mode
             _perform_checkout(
                 ctx=test_ctx,
                 repo_root=env.cwd,
@@ -428,7 +428,7 @@ def test_message_non_script_mode_case_4() -> None:
         sys.stderr = captured_stderr
 
         try:
-            # Call _perform_jump in non-script mode with is_newly_created=True
+            # Call _perform_checkout in non-script mode with is_newly_created=True
             _perform_checkout(
                 ctx=test_ctx,
                 repo_root=env.cwd,
@@ -443,5 +443,5 @@ def test_message_non_script_mode_case_4() -> None:
         output = captured_stderr.getvalue()
 
         # Verify message was written to stderr
-        assert "Jumped to new worktree" in output
+        assert "Switched to new worktree" in output
         assert "new-feature" in output

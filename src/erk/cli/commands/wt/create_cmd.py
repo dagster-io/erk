@@ -176,7 +176,7 @@ def ensure_worktree_for_branch(
                         f"with different branch '{wt.branch}'.\n"
                         f"Cannot create worktree for branch '{branch}' with same name.\n"
                         f"Options:\n"
-                        f"  1. Switch to existing worktree: erk jump {name}\n"
+                        f"  1. Switch to existing worktree: erk wt goto {name}\n"
                         f"  2. Use a different branch name"
                     )
                     raise SystemExit(1)

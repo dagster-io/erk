@@ -1111,7 +1111,7 @@ def erk_inmem_env(
 
     Example:
         ```python
-        def test_jump_pure() -> None:
+        def test_checkout_pure() -> None:
             runner = CliRunner()
             with erk_inmem_env(runner) as env:
                 # No filesystem I/O, all operations in-memory
@@ -1121,7 +1121,7 @@ def erk_inmem_env(
                     git=git,
                     script_writer=env.script_writer,
                 )
-                result = runner.invoke(cli, ["jump", "feature", "--script"], obj=ctx)
+                result = runner.invoke(cli, ["checkout", "feature", "--script"], obj=ctx)
 
                 # Verify script content in-memory
                 script_path = Path(result.stdout.strip())

@@ -3,6 +3,7 @@
 ## Summary
 
 Full cleanup of all references to the deprecated "jump" command. Replace with appropriate terminology based on context:
+
 - Error messages suggesting worktree navigation → `erk wt goto`
 - Internal function names in checkout.py → `_perform_checkout` (matches file name)
 - Output messages → "Switched to" (git-like convention)
@@ -10,14 +11,14 @@ Full cleanup of all references to the deprecated "jump" command. Replace with ap
 
 ## Terminology Mapping
 
-| Old | New | Context |
-|-----|-----|---------|
-| `erk jump {name}` | `erk wt goto {name}` | User-facing error messages |
-| `_perform_jump()` | `_perform_checkout()` | Function in checkout.py |
-| `"Jumped to worktree X"` | `"Switched to worktree X"` | Output messages |
-| `command_name="jump"` | `command_name="checkout"` | Script writer |
-| `"jump to {branch}"` | `"checkout {branch}"` | Comments |
-| `"jumps to root"` | `"navigates to root"` | Comments |
+| Old                      | New                        | Context                    |
+| ------------------------ | -------------------------- | -------------------------- |
+| `erk jump {name}`        | `erk wt goto {name}`       | User-facing error messages |
+| `_perform_jump()`        | `_perform_checkout()`      | Function in checkout.py    |
+| `"Jumped to worktree X"` | `"Switched to worktree X"` | Output messages            |
+| `command_name="jump"`    | `command_name="checkout"`  | Script writer              |
+| `"jump to {branch}"`     | `"checkout {branch}"`      | Comments                   |
+| `"jumps to root"`        | `"navigates to root"`      | Comments                   |
 
 ## Files to Modify
 

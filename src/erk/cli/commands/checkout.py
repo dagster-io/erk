@@ -132,12 +132,12 @@ def _perform_checkout(
     script: bool,
     is_newly_created: bool = False,
 ) -> None:
-    """Perform the actual jump to a worktree.
+    """Perform the actual checkout and switch to a worktree.
 
     Args:
         ctx: Erk context
         repo_root: Repository root path
-        target_worktree: The worktree to jump to
+        target_worktree: The worktree to switch to
         branch: Target branch name
         script: Whether to output only the activation script
         is_newly_created: Whether the worktree was just created (default False)
@@ -175,40 +175,40 @@ def _perform_checkout(
 
         # Four-case message logic:
         if is_newly_created:
-            # Case 4: Jumped to newly created worktree
+            # Case 4: Switched to newly created worktree
             styled_wt = click.style(worktree_name, fg="cyan", bold=True)
-            jump_message = f'echo "Jumped to new worktree {styled_wt}"'
+            switch_message = f'echo "Switched to new worktree {styled_wt}"'
         elif not is_switching_location:
             # Case 1: Already on target branch in current worktree
             styled_branch = click.style(branch, fg="yellow")
             styled_wt = click.style(worktree_name, fg="cyan", bold=True)
-            jump_message = f'echo "Already on branch {styled_branch} in worktree {styled_wt}"'
+            switch_message = f'echo "Already on branch {styled_branch} in worktree {styled_wt}"'
         elif not need_checkout:
-            # Case 2: Jumped to existing worktree with branch already checked out
+            # Case 2: Switched to existing worktree with branch already checked out
             styled_wt = click.style(worktree_name, fg="cyan", bold=True)
             if worktree_name == branch:
                 # Standard naming
-                jump_message = f'echo "Jumped to worktree {styled_wt}"'
+                switch_message = f'echo "Switched to worktree {styled_wt}"'
             else:
                 # Edge case: non-standard naming
                 styled_branch = click.style(branch, fg="yellow")
-                jump_message = f'echo "Jumped to worktree {styled_wt} (branch {styled_branch})"'
+                switch_message = f'echo "Switched to worktree {styled_wt} (branch {styled_branch})"'
         else:
-            # Case 3: Jumped to existing worktree and checked out branch
+            # Case 3: Switched to existing worktree and checked out branch
             styled_wt = click.style(worktree_name, fg="cyan", bold=True)
             styled_branch = click.style(branch, fg="yellow")
-            jump_message = (
-                f'echo "Jumped to worktree {styled_wt} and checked out branch {styled_branch}"'
+            switch_message = (
+                f'echo "Switched to worktree {styled_wt} and checked out branch {styled_branch}"'
             )
 
         script_content = render_activation_script(
-            worktree_path=target_path, final_message=jump_message
+            worktree_path=target_path, final_message=switch_message
         )
 
         result = ctx.script_writer.write_activation_script(
             script_content,
-            command_name="jump",
-            comment=f"jump to {branch}",
+            command_name="checkout",
+            comment=f"checkout {branch}",
         )
         result.output_for_shell_integration()
     else:
@@ -217,7 +217,7 @@ def _perform_checkout(
 
         if is_newly_created:
             styled_wt = click.style(worktree_name, fg="cyan", bold=True)
-            user_output(f"Jumped to new worktree {styled_wt}")
+            user_output(f"Switched to new worktree {styled_wt}")
         elif ctx.cwd == target_path:
             styled_branch = click.style(branch, fg="yellow")
             styled_wt = click.style(worktree_name, fg="cyan", bold=True)
@@ -225,14 +225,14 @@ def _perform_checkout(
         elif current_branch_in_worktree == branch:
             styled_wt = click.style(worktree_name, fg="cyan", bold=True)
             if worktree_name == branch:
-                user_output(f"Jumped to worktree {styled_wt}")
+                user_output(f"Switched to worktree {styled_wt}")
             else:
                 styled_branch = click.style(branch, fg="yellow")
-                user_output(f"Jumped to worktree {styled_wt} (branch {styled_branch})")
+                user_output(f"Switched to worktree {styled_wt} (branch {styled_branch})")
         else:
             styled_wt = click.style(worktree_name, fg="cyan", bold=True)
             styled_branch = click.style(branch, fg="yellow")
-            user_output(f"Jumped to worktree {styled_wt} and checked out branch {styled_branch}")
+            user_output(f"Switched to worktree {styled_wt} and checked out branch {styled_branch}")
 
         # Show manual instructions
         user_output("\nShell integration not detected. Run 'erk init --shell' to set up.")

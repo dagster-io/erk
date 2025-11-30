@@ -238,8 +238,8 @@ def test_shell_integration_switch_invokes_successfully() -> None:
                 assert script_path.exists() or not script_path_str
 
 
-def test_shell_integration_jump_invokes_successfully() -> None:
-    """Test that __shell jump invokes command successfully."""
+def test_shell_integration_checkout_invokes_successfully() -> None:
+    """Test that __shell checkout invokes command successfully."""
     from erk_shared.git.abc import WorktreeInfo
 
     from erk.core.git.fake import FakeGit
@@ -269,7 +269,7 @@ def test_shell_integration_jump_invokes_successfully() -> None:
 
         test_ctx = env.build_context(git=git_ops)
 
-        result = runner.invoke(cli, ["__shell", "jump", "feat-1"], obj=test_ctx)
+        result = runner.invoke(cli, ["__shell", "checkout", "feat-1"], obj=test_ctx)
 
         # Should succeed without TypeError (may fail for other reasons like missing config)
         assert result.exit_code in (0, 1), f"Unexpected exit code: {result.exit_code}"

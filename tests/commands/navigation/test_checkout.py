@@ -1,4 +1,4 @@
-"""Tests for erk jump command."""
+"""Tests for erk checkout command."""
 
 from pathlib import Path
 
@@ -14,7 +14,7 @@ from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
 
 def test_checkout_to_branch_in_single_worktree() -> None:
-    """Test jumping to a branch that is checked out in exactly one worktree.
+    """Test switching to a branch that is checked out in exactly one worktree.
 
     This test uses erk_inmem_env() for in-memory testing without filesystem I/O.
     """
@@ -49,7 +49,7 @@ def test_checkout_to_branch_in_single_worktree() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        # Jump to feature-2 which is checked out in feature_wt
+        # Checkout feature-2 which is checked out in feature_wt
         result = runner.invoke(
             cli, ["checkout", "feature-2", "--script"], obj=test_ctx, catch_exceptions=False
         )
@@ -69,7 +69,7 @@ def test_checkout_to_branch_in_single_worktree() -> None:
 
 
 def test_checkout_to_branch_not_found() -> None:
-    """Test jumping to a branch that doesn't exist in git."""
+    """Test switching to a branch that doesn't exist in git."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
@@ -97,7 +97,7 @@ def test_checkout_to_branch_not_found() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        # Jump to a branch that doesn't exist
+        # Checkout a branch that doesn't exist
         result = runner.invoke(
             cli, ["checkout", "nonexistent-branch"], obj=test_ctx, catch_exceptions=False
         )
@@ -108,7 +108,7 @@ def test_checkout_to_branch_not_found() -> None:
 
 
 def test_checkout_creates_worktree_for_unchecked_branch() -> None:
-    """Test that jump auto-creates worktree when branch exists but is not checked out."""
+    """Test that checkout auto-creates worktree when branch exists but is not checked out."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
@@ -136,7 +136,7 @@ def test_checkout_creates_worktree_for_unchecked_branch() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        # Jump to branch that exists but is not checked out
+        # Checkout branch that exists but is not checked out
         result = runner.invoke(
             cli, ["checkout", "existing-branch", "--script"], obj=test_ctx, catch_exceptions=False
         )
@@ -160,14 +160,14 @@ def test_checkout_creates_worktree_for_unchecked_branch() -> None:
         script_path = Path(result.stdout.strip())
         assert script_path.exists()
 
-        # Verify "Jumped to new worktree" message in activation script
+        # Verify "Switched to new worktree" message in activation script
         script_content = script_path.read_text(encoding="utf-8")
-        assert "Jumped to new worktree" in script_content
+        assert "Switched to new worktree" in script_content
         assert "existing-branch" in script_content
 
 
 def test_checkout_to_branch_in_stack_but_not_checked_out() -> None:
-    """Test that jump auto-creates worktree when branch exists in repo but is not checked out.
+    """Test that checkout auto-creates worktree when branch exists in repo but is not checked out.
 
     With auto-creation behavior, branches that exist in Graphite stacks but are not
     directly checked out will have a worktree created automatically.
@@ -202,7 +202,7 @@ def test_checkout_to_branch_in_stack_but_not_checked_out() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        # Jump to feature-base which exists in repo but is not checked out
+        # Checkout feature-base which exists in repo but is not checked out
         result = runner.invoke(
             cli, ["checkout", "feature-base", "--script"], obj=test_ctx, catch_exceptions=False
         )
@@ -220,7 +220,7 @@ def test_checkout_to_branch_in_stack_but_not_checked_out() -> None:
 
 
 def test_checkout_works_without_graphite() -> None:
-    """Test that jump works without Graphite enabled."""
+    """Test that checkout works without Graphite enabled."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
@@ -245,14 +245,14 @@ def test_checkout_works_without_graphite() -> None:
             worktrees_dir=work_dir / "worktrees",
         )
 
-        # Graphite is NOT enabled - jump should still work
+        # Graphite is NOT enabled - checkout should still work
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
             cli, ["checkout", "feature-1", "--script"], obj=test_ctx, catch_exceptions=False
         )
 
-        # Should succeed - jump no longer requires Graphite
+        # Should succeed - checkout does not require Graphite
         assert result.exit_code == 0
         script_path = Path(result.stdout.strip())
         # Verify script was written to in-memory store
@@ -261,10 +261,10 @@ def test_checkout_works_without_graphite() -> None:
 
 
 def test_checkout_already_on_target_branch() -> None:
-    """Test jumping when already in the target worktree on the target branch.
+    """Test checking out when already in the target worktree on the target branch.
 
     This test validates the TRUE 'already there' case where ctx.cwd matches the target worktree.
-    Should show 'Already in worktree' message, NOT 'Jumped to worktree'.
+    Should show 'Already in worktree' message, NOT 'Switched to worktree'.
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -294,7 +294,7 @@ def test_checkout_already_on_target_branch() -> None:
         # CRITICAL: Set cwd to feature_wt to simulate already being in target location
         test_ctx = env.build_context(git=git_ops, repo=repo, cwd=feature_wt)
 
-        # Jump to feature-1 while already in feature_wt
+        # Checkout feature-1 while already in feature_wt
         result = runner.invoke(
             cli, ["checkout", "feature-1", "--script"], obj=test_ctx, catch_exceptions=False
         )
@@ -318,12 +318,12 @@ def test_checkout_already_on_target_branch() -> None:
         assert "Already on branch" in script_content
         assert "feature-1" in script_content
         assert "feature-1-wt" in script_content
-        # Should NOT say "Jumped" since we didn't switch locations
-        assert "Jumped" not in script_content
+        # Should NOT say "Switched" since we didn't switch locations
+        assert "Switched" not in script_content
 
 
 def test_checkout_succeeds_when_branch_exactly_checked_out() -> None:
-    """Test that jump succeeds when branch is exactly checked out in a worktree."""
+    """Test that checkout succeeds when branch is exactly checked out in a worktree."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
@@ -351,7 +351,7 @@ def test_checkout_succeeds_when_branch_exactly_checked_out() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        # Jump to feature-2 which is checked out in feature_wt
+        # Checkout feature-2 which is checked out in feature_wt
         result = runner.invoke(
             cli, ["checkout", "feature-2", "--script"], obj=test_ctx, catch_exceptions=False
         )
@@ -400,7 +400,7 @@ def test_checkout_with_multiple_worktrees_same_branch() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        # Jump to feature-2 which is checked out in multiple worktrees
+        # Checkout feature-2 which is checked out in multiple worktrees
         result = runner.invoke(
             cli, ["checkout", "feature-2", "--script"], obj=test_ctx, catch_exceptions=False
         )
@@ -411,7 +411,7 @@ def test_checkout_with_multiple_worktrees_same_branch() -> None:
 
 
 def test_checkout_creates_worktree_for_remote_only_branch() -> None:
-    """Test jump auto-creates worktree when branch exists only on origin."""
+    """Test checkout auto-creates worktree when branch exists only on origin."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
@@ -440,7 +440,7 @@ def test_checkout_creates_worktree_for_remote_only_branch() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        # Jump to remote branch
+        # Checkout remote branch
         result = runner.invoke(
             cli, ["checkout", "feature-remote", "--script"], obj=test_ctx, catch_exceptions=False
         )
@@ -465,14 +465,14 @@ def test_checkout_creates_worktree_for_remote_only_branch() -> None:
         script_path = Path(result.stdout.strip())
         assert script_path.exists()
 
-        # Verify "Jumped to new worktree" message in activation script
+        # Verify "Switched to new worktree" message in activation script
         script_content = script_path.read_text(encoding="utf-8")
-        assert "Jumped to new worktree" in script_content
+        assert "Switched to new worktree" in script_content
         assert "feature-remote" in script_content
 
 
 def test_checkout_fails_when_branch_not_on_origin() -> None:
-    """Test jump shows error when branch doesn't exist locally or on origin."""
+    """Test checkout shows error when branch doesn't exist locally or on origin."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
@@ -501,7 +501,7 @@ def test_checkout_fails_when_branch_not_on_origin() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        # Jump to nonexistent branch
+        # Checkout nonexistent branch
         result = runner.invoke(
             cli,
             ["checkout", "nonexistent-branch", "--script"],
@@ -516,7 +516,7 @@ def test_checkout_fails_when_branch_not_on_origin() -> None:
 
 
 def test_checkout_message_when_switching_worktrees() -> None:
-    """Test that jump shows 'Jumped to worktree' when switching from different location.
+    """Test that checkout shows 'Switched to worktree' when switching from different location.
 
     This validates that message logic checks location change, not whether git checkout is needed.
     Regression test for bug where 'Already on branch X' was shown when switching worktrees even
@@ -552,7 +552,7 @@ def test_checkout_message_when_switching_worktrees() -> None:
         # Build context with cwd=env.cwd (root worktree)
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        # Jump to feature-branch from root worktree
+        # Checkout feature-branch from root worktree
         result = runner.invoke(
             cli, ["checkout", "feature-branch", "--script"], obj=test_ctx, catch_exceptions=False
         )
@@ -568,11 +568,11 @@ def test_checkout_message_when_switching_worktrees() -> None:
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
 
-        # CRITICAL: Message should say "Jumped to worktree"
+        # CRITICAL: Message should say "Switched to worktree"
         # NOT "Already on branch" or "Already in worktree"
         # Because user is switching from env.cwd to feature_wt
-        # Message format: "Jumped to worktree {name}" (when name matches branch)
-        assert "Jumped to worktree" in script_content
+        # Message format: "Switched to worktree {name}" (when name matches branch)
+        assert "Switched to worktree" in script_content
         assert "feature-wt" in script_content
         assert str(feature_wt) in script_content
 

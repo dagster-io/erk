@@ -12,7 +12,7 @@ When you have a ScriptResult, choose the appropriate output method:
 1. **Shell Integration (--script flag)**: Use `result.output_for_shell_integration()`
    - Routes to stdout via machine_output()
    - Handler parses stdout to get script path
-   - Used by: create, jump, switch, consolidate, sync
+   - Used by: create, checkout, switch, consolidate, sync
 
 2. **User Visibility (verbose mode)**: Use `result.output_path_for_user()`
    - Routes to stderr via user_output()
@@ -36,8 +36,8 @@ When you have a ScriptResult, choose the appropriate output method:
 ```python
 result = ctx.script_writer.write_activation_script(
     script_content,
-    command_name="jump",
-    comment="Jump to worktree",
+    command_name="checkout",
+    comment="Checkout worktree",
 )
 result.output_for_shell_integration()
 ```
@@ -142,8 +142,8 @@ class ScriptResult:
             # Immediate output pattern (most common):
             result = ctx.script_writer.write_activation_script(
                 script_content,
-                command_name="jump",
-                comment="Jump to worktree",
+                command_name="checkout",
+                comment="Checkout worktree",
             )
             result.output_for_shell_integration()
 
@@ -234,7 +234,7 @@ class ScriptWriter(ABC):
 
         Args:
             content: The shell script content (without metadata header)
-            command_name: Command generating the script (e.g., 'jump', 'switch')
+            command_name: Command generating the script (e.g., 'checkout', 'switch')
             comment: Description for the script header
 
         Returns:

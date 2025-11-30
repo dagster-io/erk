@@ -17,7 +17,7 @@ from erk.core.context import ErkContext
 )
 @click.pass_obj
 def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
-    """Jump directly to a worktree by name.
+    """Switch directly to a worktree by name.
 
     With shell integration (recommended):
       erk goto WORKTREE_NAME
@@ -31,14 +31,14 @@ def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
     This will cd to the worktree, create/activate .venv, and load .env variables.
 
     Special keyword:
-      erk goto root    # Jump to the root repository
+      erk goto root    # Switch to the root repository
 
     Example:
-      erk goto feature-work    # Jump to worktree named "feature-work"
+      erk goto feature-work    # Switch to worktree named "feature-work"
     """
     repo = discover_repo_context(ctx, ctx.cwd)
 
-    # Special case: "root" jumps to root repository
+    # Special case: "root" navigates to root repository
     if worktree_name == "root":
         activate_root_repo(ctx, repo, script, "goto")
         return  # _activate_root_repo raises SystemExit, but explicit return for clarity
