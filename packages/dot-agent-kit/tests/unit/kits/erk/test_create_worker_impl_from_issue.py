@@ -53,7 +53,7 @@ def test_create_worker_impl_from_issue_success(
     runner = CliRunner()
     result = runner.invoke(
         create_worker_impl_from_issue,
-        ["1028", "Test Issue Title", "--repo-root", str(tmp_path)],
+        ["1028", "--repo-root", str(tmp_path)],
     )
 
     # Assert: Command succeeded
@@ -99,7 +99,7 @@ def test_create_worker_impl_from_issue_plan_not_found(
     runner = CliRunner()
     result = runner.invoke(
         create_worker_impl_from_issue,
-        ["999", "Non-existent Issue", "--repo-root", str(tmp_path)],
+        ["999", "--repo-root", str(tmp_path)],
     )
 
     # Assert: Command failed with exit code 1
@@ -155,7 +155,7 @@ def test_create_worker_impl_from_issue_uses_cwd_when_no_repo_root(
     runner = CliRunner()
     result = runner.invoke(
         create_worker_impl_from_issue,
-        ["100", "Default CWD Issue"],
+        ["100"],
     )
 
     # Assert: Command succeeded

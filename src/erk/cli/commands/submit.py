@@ -194,7 +194,6 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
             plan_content=plan.body,
             issue_number=issue_number,
             issue_url=issue.url,
-            issue_title=issue.title,
             repo_root=repo.root,
         )
 

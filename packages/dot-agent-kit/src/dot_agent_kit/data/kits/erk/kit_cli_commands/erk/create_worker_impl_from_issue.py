@@ -4,7 +4,7 @@ This kit CLI command fetches a plan from a GitHub issue and creates the .worker-
 folder structure, providing a testable alternative to inline workflow scripts.
 
 Usage:
-    dot-agent run erk create-worker-impl-from-issue <issue-number> <issue-title>
+    dot-agent run erk create-worker-impl-from-issue <issue-number>
 
 Output:
     Structured JSON output with success status and folder details
@@ -14,10 +14,10 @@ Exit Codes:
     1: Error (issue not found, plan fetch failed, folder creation failed)
 
 Examples:
-    $ dot-agent run erk create-worker-impl-from-issue 1028 "Improve CLI output list format"
+    $ dot-agent run erk create-worker-impl-from-issue 1028
     {"success": true, "worker_impl_path": "/path/to/.worker-impl", "issue_number": 1028}
 
-    $ dot-agent run erk create-worker-impl-from-issue 999 "Missing Issue"
+    $ dot-agent run erk create-worker-impl-from-issue 999
     {"success": false, "error": "issue_not_found", "message": "..."}
 """
 
@@ -32,7 +32,6 @@ from erk_shared.worker_impl_folder import create_worker_impl_folder
 
 @click.command(name="create-worker-impl-from-issue")
 @click.argument("issue_number", type=int)
-@click.argument("issue_title")
 @click.option(
     "--repo-root",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
@@ -41,7 +40,6 @@ from erk_shared.worker_impl_folder import create_worker_impl_folder
 )
 def create_worker_impl_from_issue(
     issue_number: int,
-    issue_title: str,
     repo_root: Path | None,
 ) -> None:
     """Create .worker-impl/ folder from GitHub issue with plan content.
@@ -50,7 +48,6 @@ def create_worker_impl_from_issue(
     with plan.md, issue.json, and metadata.
 
     ISSUE_NUMBER: GitHub issue number containing the plan
-    ISSUE_TITLE: Title of the GitHub issue
     """
     # Default to current directory if not specified
     if repo_root is None:
@@ -80,7 +77,6 @@ def create_worker_impl_from_issue(
         plan_content=plan.body,
         issue_number=issue_number,
         issue_url=plan.url,
-        issue_title=issue_title,
         repo_root=repo_root,
     )
 

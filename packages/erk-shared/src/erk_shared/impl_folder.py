@@ -52,7 +52,7 @@ def create_impl_folder(worktree_path: Path, plan_content: str) -> Path:
 
     # Extract steps and generate progress.md
     steps = extract_steps_from_plan(plan_content)
-    progress_content = _generate_progress_content(steps)
+    progress_content = generate_progress_content(steps)
 
     progress_file = impl_folder / "progress.md"
     progress_file.write_text(progress_content, encoding="utf-8")
@@ -233,7 +233,7 @@ def update_progress_frontmatter(worktree_path: Path, completed: int, total: int)
     progress_file.write_text(updated_content, encoding="utf-8")
 
 
-def _generate_progress_content(steps: list[str]) -> str:
+def generate_progress_content(steps: list[str]) -> str:
     """Generate progress.md content with YAML front matter and checkboxes.
 
     The YAML frontmatter contains the source of truth (steps array with completion status),
