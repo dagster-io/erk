@@ -7,6 +7,7 @@ Create a `/debug-run` Claude command that analyzes failed GitHub Actions workflo
 ## Architecture
 
 **Two-component design:**
+
 1. **Kit CLI command** (`fetch-run-logs`): Handles deterministic work - parsing run references, fetching logs via `gh`, extracting failure metadata
 2. **Claude command** (`debug-run.md`): Invokes kit command and performs semantic analysis of failures
 
@@ -17,6 +18,7 @@ Create a `/debug-run` Claude command that analyzes failed GitHub Actions workflo
 **File**: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/fetch_run_logs.py`
 
 **Functionality**:
+
 - Parse run reference (plain ID like `12345678` or GitHub URL like `https://github.com/owner/repo/actions/runs/12345678`)
 - Fetch workflow run metadata via `gh run view <id> --json status,conclusion,headBranch,displayTitle`
 - Fetch logs via `gh run view <id> --log`
@@ -24,12 +26,14 @@ Create a `/debug-run` Claude command that analyzes failed GitHub Actions workflo
 - Output structured JSON with run info and path to log file
 
 **Input/Output**:
+
 ```bash
 dot-agent run erk fetch-run-logs "12345678"
 dot-agent run erk fetch-run-logs "https://github.com/owner/repo/actions/runs/12345678"
 ```
 
 **JSON Output Schema**:
+
 ```json
 {
   "success": true,
@@ -46,6 +50,7 @@ dot-agent run erk fetch-run-logs "https://github.com/owner/repo/actions/runs/123
 ```
 
 **Error Cases**:
+
 - Invalid reference format → `{"success": false, "error": "invalid_format", "message": "..."}`
 - Run not found → `{"success": false, "error": "not_found", "message": "..."}`
 - gh CLI issues → `{"success": false, "error": "gh_error", "message": "..."}`
@@ -56,10 +61,11 @@ dot-agent run erk fetch-run-logs "https://github.com/owner/repo/actions/runs/123
 **File**: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit.yaml`
 
 Add entry:
+
 ```yaml
-  - name: fetch-run-logs
-    path: kit_cli_commands/erk/fetch_run_logs.py
-    description: Fetch GitHub Actions workflow run logs for failure analysis
+- name: fetch-run-logs
+  path: kit_cli_commands/erk/fetch_run_logs.py
+  description: Fetch GitHub Actions workflow run logs for failure analysis
 ```
 
 ### Step 3: Create Claude Command
@@ -67,6 +73,7 @@ Add entry:
 **File**: `.claude/commands/debug-run.md`
 
 **Structure**:
+
 ```markdown
 ---
 description: Debug a GitHub Actions workflow run and recommend fixes
@@ -80,18 +87,23 @@ argument-hint: <run-id-or-url>
 ## Agent Instructions
 
 ### Step 1: Fetch Logs
+
 Call: `dot-agent run erk fetch-run-logs "$ARGUMENTS"`
 
 ### Step 2: Handle Errors
+
 [Error case handling]
 
 ### Step 3: Analyze Failures
+
 [Guidance on identifying failure types and root causes]
 
 ### Step 4: Classify Fix Complexity
+
 [Criteria for trivial vs non-trivial]
 
 ### Step 5: Output Analysis
+
 [Format for recommendations vs explanations]
 ```
 
@@ -109,11 +121,11 @@ Call: `dot-agent run erk fetch-run-logs "$ARGUMENTS"`
 
 ## Files to Create/Modify
 
-| File | Action |
-|------|--------|
-| `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/fetch_run_logs.py` | Create |
-| `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit.yaml` | Modify (add entry) |
-| `.claude/commands/debug-run.md` | Create |
+| File                                                                                            | Action             |
+| ----------------------------------------------------------------------------------------------- | ------------------ |
+| `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/fetch_run_logs.py` | Create             |
+| `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit.yaml`                               | Modify (add entry) |
+| `.claude/commands/debug-run.md`                                                                 | Create             |
 
 ## Reference Files
 

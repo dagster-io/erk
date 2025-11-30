@@ -102,6 +102,9 @@ kit_cli_commands:
   - name: mark-impl-started
     path: kit_cli_commands/erk/mark_impl_started.py
     description: Update last_local_impl_at in GitHub issue plan-header metadata
+  - name: fetch-run-logs
+    path: kit_cli_commands/erk/fetch_run_logs.py
+    description: Fetch GitHub Actions workflow run logs for failure analysis
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit
