@@ -19,13 +19,11 @@ def test_create_worker_impl_folder_success(tmp_path: Path) -> None:
     plan_content = "# Test Plan\n\n1. First step\n2. Second step"
     issue_number = 123
     issue_url = "https://github.com/owner/repo/issues/123"
-    issue_title = "Test Issue"
 
     worker_impl_folder = create_worker_impl_folder(
         plan_content=plan_content,
         issue_number=issue_number,
         issue_url=issue_url,
-        issue_title=issue_title,
         repo_root=tmp_path,
     )
 
@@ -39,13 +37,14 @@ def test_create_worker_impl_folder_success(tmp_path: Path) -> None:
     assert plan_file.exists()
     assert plan_file.read_text(encoding="utf-8") == plan_content
 
-    # Verify issue.json exists with correct structure
+    # Verify issue.json exists with correct structure (canonical schema from impl_folder)
     issue_file = worker_impl_folder / "issue.json"
     assert issue_file.exists()
     issue_data = json.loads(issue_file.read_text(encoding="utf-8"))
-    assert issue_data["number"] == issue_number
-    assert issue_data["url"] == issue_url
-    assert issue_data["title"] == issue_title
+    assert issue_data["issue_number"] == issue_number
+    assert issue_data["issue_url"] == issue_url
+    assert "created_at" in issue_data
+    assert "synced_at" in issue_data
 
     # Verify progress.md exists with checkboxes
     progress_file = worker_impl_folder / "progress.md"
@@ -80,7 +79,6 @@ def test_create_worker_impl_folder_already_exists(tmp_path: Path) -> None:
             plan_content="# Test",
             issue_number=123,
             issue_url="https://github.com/owner/repo/issues/123",
-            issue_title="Test",
             repo_root=tmp_path,
         )
 
@@ -96,7 +94,6 @@ def test_create_worker_impl_folder_repo_root_not_exists(tmp_path: Path) -> None:
             plan_content="# Test",
             issue_number=123,
             issue_url="https://github.com/owner/repo/issues/123",
-            issue_title="Test",
             repo_root=nonexistent_path,
         )
 
@@ -114,7 +111,6 @@ def test_create_worker_impl_folder_repo_root_not_directory(tmp_path: Path) -> No
             plan_content="# Test",
             issue_number=123,
             issue_url="https://github.com/owner/repo/issues/123",
-            issue_title="Test",
             repo_root=file_path,
         )
 
@@ -128,7 +124,6 @@ def test_remove_worker_impl_folder_success(tmp_path: Path) -> None:
         plan_content="# Test\n\n1. Step one",
         issue_number=123,
         issue_url="https://github.com/owner/repo/issues/123",
-        issue_title="Test",
         repo_root=tmp_path,
     )
 
@@ -169,7 +164,6 @@ def test_worker_impl_folder_exists_true(tmp_path: Path) -> None:
         plan_content="# Test\n\n1. Step one",
         issue_number=123,
         issue_url="https://github.com/owner/repo/issues/123",
-        issue_title="Test",
         repo_root=tmp_path,
     )
 
@@ -218,7 +212,6 @@ def example():
         plan_content=plan_content,
         issue_number=456,
         issue_url="https://github.com/owner/repo/issues/456",
-        issue_title="Special chars test",
         repo_root=tmp_path,
     )
 
@@ -244,7 +237,6 @@ def test_worker_impl_folder_progress_generation(tmp_path: Path) -> None:
         plan_content=plan_content,
         issue_number=789,
         issue_url="https://github.com/owner/repo/issues/789",
-        issue_title="Progress test",
         repo_root=tmp_path,
     )
 

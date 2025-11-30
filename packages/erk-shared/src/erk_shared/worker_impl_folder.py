@@ -12,22 +12,24 @@ Unlike .impl/ folders (ephemeral, local, never committed), .worker-impl/ folders
 Folder structure:
 .worker-impl/
 ├── plan.md          # Full plan content from GitHub issue
-├── issue.json       # {"number": 123, "url": "...", "title": "..."}
+├── issue.json       # Canonical schema from impl_folder (issue_number, issue_url, etc.)
 ├── progress.md      # Progress tracking checkboxes
 └── README.md        # Explanation that folder is temporary
 """
 
-import json
 from pathlib import Path
 
-from erk_shared.impl_folder import extract_steps_from_plan
+from erk_shared.impl_folder import (
+    extract_steps_from_plan,
+    generate_progress_content,
+    save_issue_reference,
+)
 
 
 def create_worker_impl_folder(
     plan_content: str,
     issue_number: int,
     issue_url: str,
-    issue_title: str,
     repo_root: Path,
 ) -> Path:
     """Create .worker-impl/ folder with all required files.
@@ -36,7 +38,6 @@ def create_worker_impl_folder(
         plan_content: Full plan markdown content from GitHub issue
         issue_number: GitHub issue number
         issue_url: Full GitHub issue URL
-        issue_title: GitHub issue title
         repo_root: Repository root directory path
 
     Returns:
@@ -66,18 +67,12 @@ def create_worker_impl_folder(
     plan_file = worker_impl_folder / "plan.md"
     plan_file.write_text(plan_content, encoding="utf-8")
 
-    # Write issue.json
-    issue_data = {
-        "number": issue_number,
-        "url": issue_url,
-        "title": issue_title,
-    }
-    issue_file = worker_impl_folder / "issue.json"
-    issue_file.write_text(json.dumps(issue_data, indent=2) + "\n", encoding="utf-8")
+    # Write issue.json using canonical function from impl_folder
+    save_issue_reference(worker_impl_folder, issue_number, issue_url)
 
-    # Generate and write progress.md
+    # Generate and write progress.md using canonical function from impl_folder
     steps = extract_steps_from_plan(plan_content)
-    progress_content = _generate_progress_content(steps)
+    progress_content = generate_progress_content(steps)
     progress_file = worker_impl_folder / "progress.md"
     progress_file.write_text(progress_content, encoding="utf-8")
 
@@ -143,29 +138,3 @@ def worker_impl_folder_exists(repo_root: Path) -> bool:
 
     worker_impl_folder = repo_root / ".worker-impl"
     return worker_impl_folder.exists()
-
-
-def _generate_progress_content(steps: list[str]) -> str:
-    """Generate progress.md content with YAML front matter and checkboxes.
-
-    Args:
-        steps: List of step descriptions
-
-    Returns:
-        Formatted progress markdown with front matter and unchecked boxes
-    """
-    if not steps:
-        return "# Progress Tracking\n\nNo steps detected in plan.\n"
-
-    # Generate YAML front matter
-    total_steps = len(steps)
-    front_matter = f"---\ncompleted_steps: 0\ntotal_steps: {total_steps}\n---\n\n"
-
-    lines = [front_matter + "# Progress Tracking\n"]
-
-    for step in steps:
-        # Create checkbox: - [ ] Step description
-        lines.append(f"- [ ] {step}")
-
-    lines.append("")  # Trailing newline
-    return "\n".join(lines)
