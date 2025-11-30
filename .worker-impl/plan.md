@@ -16,12 +16,14 @@ The columns are always present but contain only `-` when no PR data is fetched.
 ## Desired Behavior
 
 Without `-P`:
+
 ```
 ┃ plan  ┃ title    ┃ local-wt ┃ local-run ┃
 │ #1639 │ Plan...  │ -        │ -         │
 ```
 
 With `-P`:
+
 ```
 ┃ plan  ┃ title    ┃ pr     ┃ chks ┃ local-wt ┃ local-run ┃
 │ #1639 │ Plan...  │ #42 👀 │ ✅   │ -        │ -         │
@@ -38,6 +40,7 @@ Apply the same pattern used for `--runs` flag to the `--prs` flag in `/Users/sch
 1. **Lines 286-296 - Conditional column addition:**
 
    Change from:
+
    ```python
    table.add_column("plan", style="cyan", no_wrap=True)
    table.add_column("title", no_wrap=True)
@@ -51,6 +54,7 @@ Apply the same pattern used for `--runs` flag to the `--prs` flag in `/Users/sch
    ```
 
    To:
+
    ```python
    table.add_column("plan", style="cyan", no_wrap=True)
    table.add_column("title", no_wrap=True)

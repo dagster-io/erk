@@ -286,8 +286,9 @@ def _list_plans_impl(
     table = Table(show_header=True, header_style="bold")
     table.add_column("plan", style="cyan", no_wrap=True)
     table.add_column("title", no_wrap=True)
-    table.add_column("pr", no_wrap=True)
-    table.add_column("chks", no_wrap=True)
+    if prs:
+        table.add_column("pr", no_wrap=True)
+        table.add_column("chks", no_wrap=True)
     table.add_column("local-wt", no_wrap=True)
     table.add_column("local-run", no_wrap=True)
     if runs:
@@ -375,27 +376,14 @@ def _list_plans_impl(
         # Format workflow run outcome
         run_outcome_cell = format_workflow_outcome(workflow_run)
 
-        # Add row to table (columns depend on runs flag)
+        # Build row based on which columns are enabled
+        row: list[str] = [issue_id, title]
+        if prs:
+            row.extend([pr_cell, checks_cell])
+        row.extend([worktree_name_cell, local_run_cell])
         if runs:
-            table.add_row(
-                issue_id,
-                title,
-                pr_cell,
-                checks_cell,
-                worktree_name_cell,
-                local_run_cell,
-                run_id_cell,
-                run_outcome_cell,
-            )
-        else:
-            table.add_row(
-                issue_id,
-                title,
-                pr_cell,
-                checks_cell,
-                worktree_name_cell,
-                local_run_cell,
-            )
+            row.extend([run_id_cell, run_outcome_cell])
+        table.add_row(*row)
 
     # Output table to stderr (consistent with user_output convention)
     # Use width=200 to ensure proper display without truncation
