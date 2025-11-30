@@ -12,8 +12,10 @@ from erk_shared.plan_store.types import Plan, PlanState
 
 from erk.cli.commands.submit import (
     ERK_PLAN_LABEL,
+    ValidatedIssue,
     _close_orphaned_draft_prs,
     _strip_plan_markers,
+    _validate_issue_for_submit,
     submit_cmd,
 )
 from erk.core.context import ErkContext
@@ -83,8 +85,8 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     result = runner.invoke(submit_cmd, ["123"], obj=ctx)
 
     assert result.exit_code == 0, result.output
-    assert "Issue submitted successfully!" in result.output
-    assert "View workflow run:" in result.output
+    assert "1 issue(s) submitted successfully!" in result.output
+    assert "#123: Implement feature X" in result.output
 
     # Expected branch name with date suffix
     expected_branch = derive_branch_name_with_date("Implement feature X")
@@ -168,7 +170,7 @@ def test_submit_skips_branch_creation_when_exists(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
     assert "PR #456 already exists" in result.output
-    assert "Skipping branch/PR creation" in result.output
+    assert "skipping branch/PR creation" in result.output
 
     # Verify no branch/PR was created
     assert len(fake_git.pushed_branches) == 0
@@ -380,11 +382,9 @@ def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
     result = runner.invoke(submit_cmd, ["123"], obj=ctx)
 
     assert result.exit_code == 0, result.output
-    assert "Issue submitted successfully!" in result.output
+    assert "1 issue(s) submitted successfully!" in result.output
     # Verify workflow run URL is displayed (uses run_id returned by trigger_workflow)
-    expected_url = (
-        "View workflow run: https://github.com/test-owner/test-repo/actions/runs/1234567890"
-    )
+    expected_url = "https://github.com/test-owner/test-repo/actions/runs/1234567890"
     assert expected_url in result.output
 
 
@@ -829,3 +829,299 @@ def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
 
     # Verify old draft was closed
     assert fake_github.closed_prs == [100]
+
+
+def test_submit_multiple_issues_success(tmp_path: Path) -> None:
+    """Test submit successfully processes multiple issues."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+
+    # Create two issues with erk-plan label
+    issue1 = IssueInfo(
+        number=123,
+        title="Implement feature X",
+        body="# Plan\n\nFeature X details...",
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+    issue2 = IssueInfo(
+        number=456,
+        title="Implement feature Y",
+        body="# Plan\n\nFeature Y details...",
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/456",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    plan1 = Plan(
+        plan_identifier="123",
+        title="Implement feature X",
+        body="# Plan\n\nFeature X details...",
+        state=PlanState.OPEN,
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
+    plan2 = Plan(
+        plan_identifier="456",
+        title="Implement feature Y",
+        body="# Plan\n\nFeature Y details...",
+        state=PlanState.OPEN,
+        url="https://github.com/test-owner/test-repo/issues/456",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue1, 456: issue2})
+    fake_plan_store = FakePlanStore(plans={"123": plan1, "456": plan2})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+    )
+    fake_github = FakeGitHub()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        plan_store=fake_plan_store,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123", "456"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    assert "2 issue(s) submitted successfully!" in result.output
+    assert "#123: Implement feature X" in result.output
+    assert "#456: Implement feature Y" in result.output
+
+    # Verify both branches were created and pushed
+    assert len(fake_git.pushed_branches) == 2
+
+    # Verify both PRs were created
+    assert len(fake_github.created_prs) == 2
+
+    # Verify both workflows were triggered
+    assert len(fake_github.triggered_workflows) == 2
+    workflow_issues = {inputs["issue_number"] for _, inputs in fake_github.triggered_workflows}
+    assert workflow_issues == {"123", "456"}
+
+
+def test_submit_multiple_issues_atomic_validation_failure(tmp_path: Path) -> None:
+    """Test submit fails atomically when one issue is invalid - nothing submitted."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+
+    # First issue is valid
+    issue1 = IssueInfo(
+        number=123,
+        title="Implement feature X",
+        body="# Plan\n\nFeature X details...",
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+    # Second issue is CLOSED (invalid)
+    issue2 = IssueInfo(
+        number=456,
+        title="Implement feature Y",
+        body="# Plan\n\nFeature Y details...",
+        state="CLOSED",
+        url="https://github.com/test-owner/test-repo/issues/456",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue1, 456: issue2})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+    )
+    fake_github = FakeGitHub()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123", "456"], obj=ctx)
+
+    # Should fail because second issue is closed
+    assert result.exit_code == 1
+    assert "is CLOSED" in result.output
+
+    # CRITICAL: Verify NOTHING was submitted (atomic validation)
+    assert len(fake_git.pushed_branches) == 0
+    assert len(fake_github.created_prs) == 0
+    assert len(fake_github.triggered_workflows) == 0
+
+
+def test_submit_single_issue_still_works(tmp_path: Path) -> None:
+    """Test submit still works with a single issue (backwards compatibility)."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+    issue = IssueInfo(
+        number=123,
+        title="Implement feature X",
+        body="# Plan\n\nImplementation details...",
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    plan = Plan(
+        plan_identifier="123",
+        title="Implement feature X",
+        body="# Plan\n\nImplementation details...",
+        state=PlanState.OPEN,
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+    )
+    fake_github = FakeGitHub()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        plan_store=fake_plan_store,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    # Single issue still works with new nargs=-1 signature
+    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    assert "1 issue(s) submitted successfully!" in result.output
+    assert "#123: Implement feature X" in result.output
+
+    # Verify single issue was processed
+    assert len(fake_git.pushed_branches) == 1
+    assert len(fake_github.created_prs) == 1
+    assert len(fake_github.triggered_workflows) == 1
+
+
+def test_submit_requires_at_least_one_issue() -> None:
+    """Test submit requires at least one issue number argument."""
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, [])
+
+    # Should fail with usage error (no arguments provided)
+    assert result.exit_code != 0
+    assert "Missing argument" in result.output or "Usage:" in result.output
+
+
+def test_validate_issue_for_submit_returns_validated_issue(tmp_path: Path) -> None:
+    """Test _validate_issue_for_submit returns ValidatedIssue with correct fields."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+    issue = IssueInfo(
+        number=123,
+        title="Implement feature X",
+        body="# Plan\n\nImplementation details...",
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+    )
+    fake_github = FakeGitHub()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        repo=repo,
+    )
+
+    validated = _validate_issue_for_submit(ctx, repo, 123)
+
+    assert isinstance(validated, ValidatedIssue)
+    assert validated.number == 123
+    assert validated.issue == issue
+    assert validated.branch_name.startswith("implement-feature-x-")
+    assert validated.branch_exists is False
+    assert validated.pr_number is None
