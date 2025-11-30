@@ -713,59 +713,49 @@ query {{
     def list_workflow_runs(
         self, repo_root: Path, workflow: str, limit: int = 50
     ) -> list[WorkflowRun]:
-        """List workflow runs for a specific workflow.
+        """List workflow runs for a specific workflow."""
+        cmd = [
+            "gh",
+            "run",
+            "list",
+            "--workflow",
+            workflow,
+            "--json",
+            "databaseId,status,conclusion,headBranch,headSha,displayTitle,createdAt",
+            "--limit",
+            str(limit),
+        ]
 
-        Note: Uses try/except as an acceptable error boundary for handling gh CLI
-        availability and authentication. We cannot reliably check gh installation
-        and authentication status a priori without duplicating gh's logic.
-        """
-        try:
-            cmd = [
-                "gh",
-                "run",
-                "list",
-                "--workflow",
-                workflow,
-                "--json",
-                "databaseId,status,conclusion,headBranch,headSha,displayTitle,createdAt",
-                "--limit",
-                str(limit),
-            ]
+        result = run_subprocess_with_context(
+            cmd,
+            operation_context=f"list workflow runs for '{workflow}'",
+            cwd=repo_root,
+        )
 
-            result = run_subprocess_with_context(
-                cmd,
-                operation_context=f"list workflow runs for '{workflow}'",
-                cwd=repo_root,
+        # Parse JSON response
+        data = json.loads(result.stdout)
+
+        # Map to WorkflowRun dataclasses
+        runs = []
+        for run in data:
+            # Parse created_at timestamp if present
+            created_at = None
+            created_at_str = run.get("createdAt")
+            if created_at_str:
+                created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+
+            workflow_run = WorkflowRun(
+                run_id=str(run["databaseId"]),
+                status=run["status"],
+                conclusion=run.get("conclusion"),
+                branch=run["headBranch"],
+                head_sha=run["headSha"],
+                display_title=run.get("displayTitle"),
+                created_at=created_at,
             )
+            runs.append(workflow_run)
 
-            # Parse JSON response
-            data = json.loads(result.stdout)
-
-            # Map to WorkflowRun dataclasses
-            runs = []
-            for run in data:
-                # Parse created_at timestamp if present
-                created_at = None
-                created_at_str = run.get("createdAt")
-                if created_at_str:
-                    created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
-
-                workflow_run = WorkflowRun(
-                    run_id=str(run["databaseId"]),
-                    status=run["status"],
-                    conclusion=run.get("conclusion"),
-                    branch=run["headBranch"],
-                    head_sha=run["headSha"],
-                    display_title=run.get("displayTitle"),
-                    created_at=created_at,
-                )
-                runs.append(workflow_run)
-
-            return runs
-
-        except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError):
-            # gh not installed, not authenticated, or JSON parsing failed
-            return []
+        return runs
 
     def get_workflow_run(self, repo_root: Path, run_id: str) -> WorkflowRun | None:
         """Get details for a specific workflow run by ID.

@@ -798,7 +798,7 @@ def test_list_workflow_runs_custom_limit() -> None:
 
 
 def test_list_workflow_runs_command_failure() -> None:
-    """Test list_workflow_runs returns empty list on command failure."""
+    """Test list_workflow_runs propagates errors on command failure."""
     repo_root = Path("/repo")
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -809,16 +809,16 @@ def test_list_workflow_runs_command_failure() -> None:
         subprocess.run = mock_run
 
         ops = RealGitHub(FakeTime())
-        result = ops.list_workflow_runs(repo_root, "test.yml")
 
-        # Should gracefully return empty list
-        assert result == []
+        # Should raise RuntimeError with helpful message instead of silently failing
+        with pytest.raises(RuntimeError, match="gh not authenticated"):
+            ops.list_workflow_runs(repo_root, "test.yml")
     finally:
         subprocess.run = original_run
 
 
 def test_list_workflow_runs_json_decode_error() -> None:
-    """Test list_workflow_runs returns empty list on malformed JSON."""
+    """Test list_workflow_runs propagates JSONDecodeError on malformed JSON."""
     repo_root = Path("/repo")
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -831,16 +831,16 @@ def test_list_workflow_runs_json_decode_error() -> None:
         subprocess.run = mock_run
 
         ops = RealGitHub(FakeTime())
-        result = ops.list_workflow_runs(repo_root, "test.yml")
 
-        # Should gracefully return empty list
-        assert result == []
+        # Should raise JSONDecodeError instead of silently failing
+        with pytest.raises(json.JSONDecodeError):
+            ops.list_workflow_runs(repo_root, "test.yml")
     finally:
         subprocess.run = original_run
 
 
 def test_list_workflow_runs_missing_fields() -> None:
-    """Test list_workflow_runs returns empty list when JSON has missing fields."""
+    """Test list_workflow_runs propagates KeyError when JSON has missing fields."""
     repo_root = Path("/repo")
 
     # Missing 'headBranch' field
@@ -866,10 +866,10 @@ def test_list_workflow_runs_missing_fields() -> None:
         subprocess.run = mock_run
 
         ops = RealGitHub(FakeTime())
-        result = ops.list_workflow_runs(repo_root, "test.yml")
 
-        # Should gracefully return empty list on KeyError
-        assert result == []
+        # Should raise KeyError instead of silently failing
+        with pytest.raises(KeyError, match="headBranch"):
+            ops.list_workflow_runs(repo_root, "test.yml")
     finally:
         subprocess.run = original_run
 
