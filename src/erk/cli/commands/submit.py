@@ -228,7 +228,46 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
             )
             user_output("Skipping branch/PR creation, triggering workflow...")
         else:
-            user_output(f"Branch '{branch_name}' exists but no PR. Skipping creation...")
+            # Branch exists but no PR - create the PR
+            user_output(f"Branch '{branch_name}' exists but no PR. Creating PR...")
+            pr_body = (
+                f"**Author:** @{submitted_by}\n"
+                f"**Plan:** #{issue_number}\n\n"
+                f"**Status:** Queued for implementation\n\n"
+                f"This PR will be marked ready for review after implementation completes.\n\n"
+                f"---\n\n"
+                f"Closes #{issue_number}"
+            )
+            pr_title = _strip_plan_markers(issue.title)
+            pr_number = ctx.github.create_pr(
+                repo_root=repo.root,
+                branch=branch_name,
+                title=pr_title,
+                body=pr_body,
+                base=trunk_branch,
+                draft=True,
+            )
+            user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
+
+            # Update PR body with checkout command footer
+            footer_body = (
+                f"{pr_body}\n\n"
+                f"---\n\n"
+                f"To checkout this PR locally:\n\n"
+                f"```\n"
+                f"erk pr checkout {pr_number}\n"
+                f"```"
+            )
+            ctx.github.update_pr_body(repo.root, pr_number, footer_body)
+
+            # Close any orphaned draft PRs
+            closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)
+            if closed_prs:
+                user_output(
+                    click.style("✓", fg="green")
+                    + f" Closed {len(closed_prs)} orphaned draft PR(s): "
+                    + ", ".join(f"#{n}" for n in closed_prs)
+                )
     else:
         # Step 4: Create branch and initial commit
         user_output(f"Creating branch from origin/{trunk_branch}...")
