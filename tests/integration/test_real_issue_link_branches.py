@@ -150,19 +150,22 @@ def test_create_development_branch_creates_new_branch(monkeypatch: MonkeyPatch) 
                 stderr="",
             )
 
-        # Second call: gh issue develop (create) returns branch name
+        # Second call: gh issue develop (create) returns success
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="42-new-feature-branch\n",
+            stdout="",
             stderr="",
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issue_link = RealIssueLinkBranches()
-        result = issue_link.create_development_branch(Path("/repo"), 42)
+        result = issue_link.create_development_branch(
+            Path("/repo"), 42, branch_name="42-new-feature"
+        )
 
-        assert result.branch_name == "42-new-feature-branch"
+        # Branch name comes from what we pass in, not from stdout
+        assert result.branch_name == "42-new-feature"
         assert result.issue_number == 42
         assert result.already_existed is False
 
@@ -175,6 +178,8 @@ def test_create_development_branch_creates_new_branch(monkeypatch: MonkeyPatch) 
         assert create_cmd[1] == "issue"
         assert create_cmd[2] == "develop"
         assert create_cmd[3] == "42"
+        assert "--name" in create_cmd
+        assert "42-new-feature" in create_cmd
         assert "--list" not in create_cmd
 
 
@@ -194,7 +199,10 @@ def test_create_development_branch_returns_existing(monkeypatch: MonkeyPatch) ->
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issue_link = RealIssueLinkBranches()
-        result = issue_link.create_development_branch(Path("/repo"), 123)
+        # Even though we pass a branch_name, existing branch takes precedence
+        result = issue_link.create_development_branch(
+            Path("/repo"), 123, branch_name="123-new-name"
+        )
 
         assert result.branch_name == "123-existing-branch"
         assert result.issue_number == 123
@@ -220,23 +228,27 @@ def test_create_development_branch_with_base_branch(monkeypatch: MonkeyPatch) ->
                 stderr="",
             )
 
-        # Second call: create returns branch
+        # Second call: create returns success
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="42-feature\n",
+            stdout="",
             stderr="",
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issue_link = RealIssueLinkBranches()
-        result = issue_link.create_development_branch(Path("/repo"), 42, base_branch="develop")
+        result = issue_link.create_development_branch(
+            Path("/repo"), 42, branch_name="42-feature", base_branch="develop"
+        )
 
         assert result.branch_name == "42-feature"
         assert result.already_existed is False
 
-        # Verify create command includes --base
+        # Verify create command includes --name and --base
         create_cmd = created_commands[1]
+        assert "--name" in create_cmd
+        assert "42-feature" in create_cmd
         assert "--base" in create_cmd
         assert "develop" in create_cmd
 
@@ -259,16 +271,18 @@ def test_create_development_branch_without_base_branch(monkeypatch: MonkeyPatch)
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="42-feature\n",
+            stdout="",
             stderr="",
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issue_link = RealIssueLinkBranches()
-        issue_link.create_development_branch(Path("/repo"), 42)
+        issue_link.create_development_branch(Path("/repo"), 42, branch_name="42-feature")
 
-        # Verify create command does NOT include --base
+        # Verify create command includes --name but NOT --base
         create_cmd = created_commands[1]
+        assert "--name" in create_cmd
+        assert "42-feature" in create_cmd
         assert "--base" not in create_cmd
 
 
@@ -295,11 +309,11 @@ def test_create_development_branch_command_failure(monkeypatch: MonkeyPatch) -> 
         issue_link = RealIssueLinkBranches()
 
         with pytest.raises(RuntimeError, match="issue not found"):
-            issue_link.create_development_branch(Path("/repo"), 999)
+            issue_link.create_development_branch(Path("/repo"), 999, branch_name="999-feature")
 
 
-def test_create_development_branch_strips_whitespace(monkeypatch: MonkeyPatch) -> None:
-    """Test create_development_branch strips trailing whitespace from output."""
+def test_create_development_branch_uses_provided_name(monkeypatch: MonkeyPatch) -> None:
+    """Test create_development_branch uses provided branch_name directly."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         if "--list" in cmd:
@@ -310,16 +324,19 @@ def test_create_development_branch_strips_whitespace(monkeypatch: MonkeyPatch) -
                 stderr="",
             )
 
-        # Output with extra whitespace
+        # gh issue develop no longer returns branch name when --name is used
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="  42-branch-name  \n\n",
+            stdout="",
             stderr="",
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issue_link = RealIssueLinkBranches()
-        result = issue_link.create_development_branch(Path("/repo"), 42)
+        result = issue_link.create_development_branch(
+            Path("/repo"), 42, branch_name="42-my-custom-branch"
+        )
 
-        assert result.branch_name == "42-branch-name"
+        # Branch name comes from what we pass in, not from stdout
+        assert result.branch_name == "42-my-custom-branch"

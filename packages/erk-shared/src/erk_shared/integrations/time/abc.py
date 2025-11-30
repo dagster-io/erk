@@ -1,11 +1,11 @@
 """Time operations abstraction for testing.
 
-This module provides an ABC for time operations (sleep, etc.) to enable
-fast tests that don't actually sleep. Future extensions may include
-datetime.now() and other clock-related operations.
+This module provides an ABC for time operations (sleep, now) to enable
+fast tests that don't actually sleep and can use deterministic timestamps.
 """
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 
 class Time(ABC):
@@ -17,5 +17,14 @@ class Time(ABC):
 
         Args:
             seconds: Number of seconds to sleep
+        """
+        ...
+
+    @abstractmethod
+    def now(self) -> datetime:
+        """Get the current datetime.
+
+        Returns:
+            Current datetime (timezone-naive for simplicity)
         """
         ...

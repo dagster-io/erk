@@ -28,15 +28,17 @@ class DryRunIssueLinkBranches(IssueLinkBranches):
         repo_root: Path,
         issue_number: int,
         *,
+        branch_name: str,
         base_branch: str | None = None,
     ) -> DevelopmentBranch:
         """No-op for creating development branch in dry-run mode.
 
         Returns a fake branch result without actually creating anything.
+        Uses the provided branch_name to match real behavior.
         """
-        # Return fake result - prevents actual branch creation
+        # Return fake result using the provided branch name
         return DevelopmentBranch(
-            branch_name=f"{issue_number}-dry-run-branch",
+            branch_name=branch_name,
             issue_number=issue_number,
             already_existed=False,
         )

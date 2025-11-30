@@ -108,7 +108,6 @@ def test_implement_from_plain_issue_number() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"123": plan_issue})
-        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
         issue_dev = FakeIssueLinkBranches()
         ctx = build_workspace_test_context(
             env, git=git, plan_store=store, issue_link_branches=issue_dev
@@ -119,8 +118,8 @@ def test_implement_from_plain_issue_number() -> None:
 
         assert result.exit_code == 0
         assert "Created worktree" in result.output
-        # Branch name is now from gh issue develop: "123-issue-branch"
-        assert "123-issue-branch" in result.output
+        # Branch name: sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
+        assert "123-add-authentication-feature-01-15-1430" in result.output
 
         # Verify worktree was created
         assert len(git.added_worktrees) == 1
@@ -147,7 +146,6 @@ def test_implement_from_issue_number() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"42": plan_issue})
-        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
         issue_dev = FakeIssueLinkBranches()
         ctx = build_workspace_test_context(
             env, git=git, plan_store=store, issue_link_branches=issue_dev
@@ -157,8 +155,8 @@ def test_implement_from_issue_number() -> None:
 
         assert result.exit_code == 0
         assert "Created worktree" in result.output
-        # Branch name is now from gh issue develop: "42-issue-branch"
-        assert "42-issue-branch" in result.output
+        # Branch name: sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
+        assert "42-add-authentication-feature-01-15-1430" in result.output
 
         # Verify worktree was created
         assert len(git.added_worktrees) == 1
@@ -184,7 +182,7 @@ def test_implement_from_issue_url() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"123": plan_issue})
-        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
+        # Branch name is computed as sanitize_worktree_name(f"{issue_number}-{title}")
         issue_dev = FakeIssueLinkBranches()
         ctx = build_workspace_test_context(
             env, git=git, plan_store=store, issue_link_branches=issue_dev
@@ -216,7 +214,7 @@ def test_implement_from_issue_with_custom_name() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"42": plan_issue})
-        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
+        # Branch name is computed as sanitize_worktree_name(f"{issue_number}-{title}")
         issue_dev = FakeIssueLinkBranches()
         ctx = build_workspace_test_context(
             env, git=git, plan_store=store, issue_link_branches=issue_dev
@@ -463,20 +461,19 @@ def test_implement_issue_mode_uses_linked_branch_not_worktree_name() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"42": plan_issue})
-        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
         issue_dev = FakeIssueLinkBranches()
         ctx = build_workspace_test_context(
             env, git=git, plan_store=store, issue_link_branches=issue_dev
         )
 
-        # Even though "existing-branch" exists, issue mode uses "42-issue-branch"
-        # so this should succeed - the worktree name is "existing-branch" but
-        # the branch is "42-issue-branch" from gh issue develop
+        # Even though "existing-branch" exists, issue mode uses a computed branch name
+        # (e.g., "42-add-authentication-feature-01-15-1430") so this should succeed - the
+        # worktree name is "existing-branch" but the branch is derived from issue title
         result = runner.invoke(
             implement, ["#42", "--worktree-name", "existing-branch", "--script"], obj=ctx
         )
 
-        # Should succeed because the branch (42-issue-branch) doesn't conflict
+        # Should succeed because the branch doesn't conflict with "existing-branch"
         assert result.exit_code == 0
         assert "Created worktree" in result.output
 
@@ -987,8 +984,8 @@ def test_interactive_mode_calls_executor() -> None:
         assert len(executor.executed_commands) == 0
 
         worktree_path, dangerous = executor.interactive_calls[0]
-        # Branch name is now from gh issue develop: "42-issue-branch"
-        assert "42-issue-branch" in str(worktree_path)
+        # Branch name: sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
+        assert "42-add-authentication-feature-01-15-1430" in str(worktree_path)
         assert dangerous is False
 
 

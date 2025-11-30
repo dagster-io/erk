@@ -88,8 +88,8 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     assert "Issue submitted successfully!" in result.output
     assert "View workflow run:" in result.output
 
-    # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
-    expected_branch = "123-issue-branch"
+    # Branch name is sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
+    expected_branch = "123-implement-feature-x-01-15-1430"
 
     # Verify branch was created via gh issue develop
     assert fake_issue_dev.created_branches == [(123, expected_branch)]
