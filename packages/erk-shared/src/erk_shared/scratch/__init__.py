@@ -1,6 +1,6 @@
 """Scratch space for inter-process file passing.
 
-Provides a `.tmp/` directory in the repository root for temporary files
+Provides a `.erk/scratch/` directory in the repository root for temporary files
 that need to be readable by subagents without permission prompts.
 
 Import from submodules:

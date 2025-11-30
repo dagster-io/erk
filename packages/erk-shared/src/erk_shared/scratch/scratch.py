@@ -1,6 +1,6 @@
 """Scratch space utilities for inter-process file passing.
 
-Provides functions for writing temp files to `.tmp/<session-id>/` in the repo root.
+Provides functions for writing temp files to `.erk/scratch/<session-id>/` in the repo root.
 Each Claude session gets its own subdirectory, making debugging and auditing easier.
 """
 
@@ -34,19 +34,19 @@ def get_scratch_dir(
     *,
     repo_root: Path | None = None,
 ) -> Path:
-    """Get or create the .tmp/<session_id>/ scratch directory.
+    """Get or create the .erk/scratch/<session_id>/ scratch directory.
 
     Args:
         session_id: Claude session ID for isolation.
         repo_root: Repo root path. If None, auto-detects via git.
 
     Returns:
-        Path to .tmp/<session_id>/ directory (creates if needed).
+        Path to .erk/scratch/<session_id>/ directory (creates if needed).
     """
     if repo_root is None:
         repo_root = _get_repo_root()
 
-    scratch_dir = repo_root / ".tmp" / session_id
+    scratch_dir = repo_root / ".erk" / "scratch" / session_id
     scratch_dir.mkdir(parents=True, exist_ok=True)
     return scratch_dir
 
@@ -69,7 +69,7 @@ def write_scratch_file(
         repo_root: Optional repo root (auto-detected if None).
 
     Returns:
-        Path to the created file (e.g., .tmp/<session_id>/diff-abc12345.diff).
+        Path to the created file (e.g., .erk/scratch/<session_id>/diff-abc12345.diff).
     """
     scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
 
@@ -102,7 +102,7 @@ def cleanup_stale_scratch(
     if repo_root is None:
         repo_root = _get_repo_root()
 
-    tmp_dir = repo_root / ".tmp"
+    tmp_dir = repo_root / ".erk" / "scratch"
     if not tmp_dir.exists():
         return 0
 
