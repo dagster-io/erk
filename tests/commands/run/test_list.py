@@ -643,10 +643,12 @@ def test_list_runs_filters_missing_issue_data(tmp_path: Path) -> None:
     )
 
     now = datetime.now(UTC)
+    # Use distinctive run_ids that won't appear in ANSI escape codes
+    # (short numbers like "200" can appear in 256-color ANSI sequences)
     workflow_runs = [
         # Valid run with issue
         WorkflowRun(
-            run_id="100",
+            run_id="111111",
             status="completed",
             conclusion="success",
             branch="feat-1",
@@ -655,7 +657,7 @@ def test_list_runs_filters_missing_issue_data(tmp_path: Path) -> None:
         ),
         # Run with issue not found in issue_map
         WorkflowRun(
-            run_id="200",
+            run_id="222222",
             status="completed",
             conclusion="success",
             branch="feat-2",
@@ -664,7 +666,7 @@ def test_list_runs_filters_missing_issue_data(tmp_path: Path) -> None:
         ),
         # Run with empty title
         WorkflowRun(
-            run_id="300",
+            run_id="333333",
             status="completed",
             conclusion="success",
             branch="feat-3",
@@ -708,13 +710,13 @@ def test_list_runs_filters_missing_issue_data(tmp_path: Path) -> None:
     # Act - Default behavior (without --show-legacy)
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
 
-    # Assert - Only run 100 should appear
+    # Assert - Only run 111111 should appear
     assert result.exit_code == 0
-    assert "100" in result.output
+    assert "111111" in result.output
     assert "#142" in result.output
-    # Runs 200 and 300 should be filtered out
-    assert "200" not in result.output
-    assert "300" not in result.output
+    # Runs 222222 and 333333 should be filtered out
+    assert "222222" not in result.output
+    assert "333333" not in result.output
     # Issue #999 and #143 should not be in the output
     # (use #-prefixed form to avoid false positives from timestamps)
     assert "#999" not in result.output

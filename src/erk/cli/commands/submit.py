@@ -154,7 +154,6 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
     Requires:
         - Issue must have erk-plan label
         - Issue must be OPEN
-        - Working directory must be clean (no uncommitted changes)
     """
     # Validate GitHub CLI authentication upfront (LBYL)
     Ensure.gh_authenticated(ctx)
@@ -171,13 +170,6 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
         user_output(
             click.style("Error: ", fg="red")
             + "Not on a branch (detached HEAD state). Cannot submit from here."
-        )
-        raise SystemExit(1)
-
-    if ctx.git.has_uncommitted_changes(repo.root):
-        user_output(
-            click.style("Error: ", fg="red")
-            + "You have uncommitted changes. Please commit or stash them first."
         )
         raise SystemExit(1)
 
