@@ -101,6 +101,32 @@ def test_get_linked_branch_command_failure(monkeypatch: MonkeyPatch) -> None:
             issue_link.get_linked_branch(Path("/repo"), 123)
 
 
+def test_get_linked_branch_parses_tab_separated_output(monkeypatch: MonkeyPatch) -> None:
+    """Test get_linked_branch extracts only branch name from tab-separated output.
+
+    gh issue develop --list outputs: "branch-name\thttps://github.com/..."
+    We should only return the branch name, not the URL.
+    """
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        # Real gh output format: branch name, tab, URL
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="123-my-feature\thttps://github.com/owner/repo/tree/123-my-feature\n",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        issue_link = RealIssueLinkBranches()
+        result = issue_link.get_linked_branch(Path("/repo"), 123)
+
+        # Should return ONLY the branch name, not the URL
+        assert result == "123-my-feature"
+        assert "\t" not in result
+        assert "https://" not in result
+
+
 # ============================================================================
 # create_development_branch() tests
 # ============================================================================

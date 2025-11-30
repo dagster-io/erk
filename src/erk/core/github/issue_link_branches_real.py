@@ -77,4 +77,5 @@ class RealIssueLinkBranches(IssueLinkBranches):
             return None
 
         # Return the first linked branch (there may be multiple)
-        return lines[0]
+        # gh issue develop --list outputs: "branch-name\tURL" - extract just the branch name
+        return lines[0].split("\t")[0]
