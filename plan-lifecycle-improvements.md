@@ -1,5 +1,16 @@
 # Plan Lifecycle Architecture Improvements
 
+## Implementation Status
+
+- [ ] **Improvement 1:** Unify `.worker-impl/` and `.impl/`
+- [ ] **Improvement 2:** Replace `distinct_id` with comment-based run discovery
+- [ ] **Improvement 3:** Consolidate metadata block types
+- [ ] **Improvement 4:** Use GitHub's native branch-to-issue linking
+- [ ] **Improvement 5:** Store plan in issue body (not split)
+- [ ] **Improvement 6:** Let workflow create PR
+
+---
+
 This document outlines proposed simplifications to the plan lifecycle system. These improvements reduce complexity, eliminate redundant mechanisms, and leverage GitHub's native features.
 
 ## Overview
