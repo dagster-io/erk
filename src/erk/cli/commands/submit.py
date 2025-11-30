@@ -424,6 +424,14 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
     # Gather submission metadata
     queued_at = datetime.now(UTC).isoformat()
 
+    # Validate pr_number is set before workflow dispatch
+    if pr_number is None:
+        user_output(
+            click.style("Error: ", fg="red")
+            + "Failed to create or find PR. Cannot trigger workflow."
+        )
+        raise SystemExit(1)
+
     # Step 7: Trigger workflow via direct dispatch
     user_output("")
     user_output(f"Triggering workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
@@ -435,6 +443,8 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
             "issue_number": str(issue_number),
             "submitted_by": submitted_by,
             "issue_title": issue.title,
+            "branch_name": branch_name,
+            "pr_number": str(pr_number),
         },
     )
     user_output(click.style("✓", fg="green") + " Workflow triggered.")
