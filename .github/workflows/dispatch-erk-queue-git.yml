@@ -27,6 +27,14 @@ on:
         description: "Issue title for workflow run display"
         required: true
         type: string
+      branch_name:
+        description: "Branch name for implementation (created by submit command)"
+        required: true
+        type: string
+      pr_number:
+        description: "PR number for implementation (created by submit command)"
+        required: true
+        type: string
 
 concurrency:
   group: implement-issue-${{ github.event.inputs.issue_number }}
@@ -109,90 +117,14 @@ jobs:
       # =================================================================
       # PHASE 2: BRANCH SETUP
       # =================================================================
-      - name: Find linked branch and PR for issue
+      - name: Set branch and PR from inputs
         id: find_pr
-        env:
-          ISSUE_NUMBER: ${{ inputs.issue_number }}
-          GH_TOKEN: ${{ github.token }}
         run: |
-          source $HOME/.cargo/env
-
-          echo "::group::Step 1: Get linked branch for issue"
-          echo "📥 Input: ISSUE_NUMBER=$ISSUE_NUMBER"
-
-          echo "Running: dot-agent run erk get-linked-branch \"$ISSUE_NUMBER\""
-          BRANCH_RESULT=$(dot-agent run erk get-linked-branch "$ISSUE_NUMBER")
-          BRANCH_EXIT_CODE=$?
-
-          echo "📤 Exit code: $BRANCH_EXIT_CODE"
-          echo "📤 Raw output:"
-          echo "$BRANCH_RESULT"
-
-          BRANCH_SUCCESS=$(echo "$BRANCH_RESULT" | jq -r '.success')
-          echo "📊 Parsed success: $BRANCH_SUCCESS"
-
-          if [ "$BRANCH_SUCCESS" != "true" ]; then
-            ERROR_MSG=$(echo "$BRANCH_RESULT" | jq -r '.message')
-            echo "::endgroup::"
-            echo "::error::Failed to get linked branch: $ERROR_MSG"
-            echo "❌ $ERROR_MSG"
-            echo "Error: erk submit should have created a linked branch via 'gh issue develop'"
-            exit 1
-          fi
-
-          BRANCH_NAME=$(echo "$BRANCH_RESULT" | jq -r '.branch_name')
-          echo "📊 Parsed branch_name: $BRANCH_NAME"
-          echo "✅ Found linked branch: $BRANCH_NAME"
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          echo "::endgroup::"
-
-          echo "::group::Step 2: Find PR for branch"
-          echo "📥 Input: BRANCH_NAME=$BRANCH_NAME"
-
-          echo "Running: dot-agent run erk get-pr-for-branch \"$BRANCH_NAME\""
-          PR_RESULT=$(dot-agent run erk get-pr-for-branch "$BRANCH_NAME")
-          PR_EXIT_CODE=$?
-
-          echo "📤 Exit code: $PR_EXIT_CODE"
-          echo "📤 Raw output:"
-          echo "$PR_RESULT"
-
-          PR_SUCCESS=$(echo "$PR_RESULT" | jq -r '.success')
-          echo "📊 Parsed success: $PR_SUCCESS"
-
-          if [ "$PR_SUCCESS" != "true" ]; then
-            ERROR_MSG=$(echo "$PR_RESULT" | jq -r '.message')
-            echo "::endgroup::"
-            echo "::error::Failed to get PR for branch: $ERROR_MSG"
-            echo "❌ $ERROR_MSG"
-            exit 1
-          fi
-
-          PR_EXISTS=$(echo "$PR_RESULT" | jq -r '.pr_exists')
-          echo "📊 Parsed pr_exists: $PR_EXISTS"
-
-          if [ "$PR_EXISTS" = "true" ]; then
-            PR_NUMBER=$(echo "$PR_RESULT" | jq -r '.pr_number')
-            echo "📊 Parsed pr_number: $PR_NUMBER"
-            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
-            echo "pr_exists=true" >> $GITHUB_OUTPUT
-            echo "✅ Found existing PR #$PR_NUMBER for branch $BRANCH_NAME"
-          else
-            echo "::endgroup::"
-            echo "::error::No PR found for branch $BRANCH_NAME"
-            echo "pr_exists=false" >> $GITHUB_OUTPUT
-            echo "No existing PR found for branch $BRANCH_NAME"
-            echo "Error: erk submit should have created a PR before dispatching workflow"
-            exit 1
-          fi
-          echo "::endgroup::"
-
-          echo "::group::Summary"
-          echo "📋 Step outputs:"
-          echo "   branch_name=$BRANCH_NAME"
-          echo "   pr_number=$PR_NUMBER"
-          echo "   pr_exists=true"
-          echo "::endgroup::"
+          echo "branch_name=${{ inputs.branch_name }}" >> $GITHUB_OUTPUT
+          echo "pr_number=${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
+          echo "pr_exists=true" >> $GITHUB_OUTPUT
+          echo "Using branch: ${{ inputs.branch_name }}"
+          echo "Using PR: #${{ inputs.pr_number }}"
 
       - name: Checkout implementation branch
         env:
