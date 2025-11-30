@@ -78,6 +78,36 @@ def _construct_pr_url(issue_url: str, pr_number: int) -> str:
     return f"https://github.com/pull/{pr_number}"
 
 
+def _ensure_unique_branch_name(
+    ctx: ErkContext,
+    repo_root: Path,
+    base_name: str,
+) -> str:
+    """Ensure branch name is unique by adding numeric suffix if needed.
+
+    If the base_name already exists on the remote, appends -1, -2, etc.
+    until a unique name is found. This prevents `gh issue develop` from
+    failing when a branch with the same name already exists.
+
+    Args:
+        ctx: ErkContext with git operations
+        repo_root: Repository root path
+        base_name: Initial branch name to check
+
+    Returns:
+        Unique branch name (original if available, or with -1, -2, etc. suffix)
+    """
+    if not ctx.git.branch_exists_on_remote(repo_root, "origin", base_name):
+        return base_name
+
+    for i in range(1, 100):
+        candidate = f"{base_name}-{i}"
+        if not ctx.git.branch_exists_on_remote(repo_root, "origin", candidate):
+            return candidate
+
+    raise RuntimeError(f"Could not find unique branch name after 100 attempts: {base_name}")
+
+
 def _close_orphaned_draft_prs(
     ctx: ErkContext,
     repo_root: Path,
@@ -191,6 +221,10 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
         base_branch_name = sanitize_worktree_name(f"{issue_number}-{issue.title}")
         timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
         desired_branch_name = base_branch_name + timestamp_suffix
+
+        # Ensure unique name to prevent gh issue develop failure
+        desired_branch_name = _ensure_unique_branch_name(ctx, repo.root, desired_branch_name)
+
         # Use GitHub's native branch linking via `gh issue develop`
         dev_branch = ctx.issue_link_branches.create_development_branch(
             repo.root,
