@@ -6,8 +6,6 @@ from pathlib import Path
 from click.testing import CliRunner
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
 from erk_shared.github.types import PullRequestInfo
-from erk_shared.plan_store.fake import FakePlanStore
-from erk_shared.plan_store.types import Plan, PlanState
 
 from erk.cli.commands.submit import (
     ERK_PLAN_LABEL,
@@ -42,22 +40,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
         updated_at=now,
     )
 
-    # Create plan for the issue
-    plan = Plan(
-        plan_identifier="123",
-        title="Implement feature X",
-        body="# Plan\n\nImplementation details...",
-        state=PlanState.OPEN,
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        metadata={},
-    )
-
     fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -78,7 +61,6 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
         github=fake_github,
         issues=fake_github_issues,
         issue_link_branches=fake_issue_dev,
-        plan_store=fake_plan_store,
         repo=repo,
     )
 
@@ -347,22 +329,7 @@ def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
         updated_at=now,
     )
 
-    # Create plan for the issue
-    plan = Plan(
-        plan_identifier="123",
-        title="Add workflow run URL to erk submit output",
-        body="# Plan\n\nImplementation details...",
-        state=PlanState.OPEN,
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        metadata={},
-    )
-
     fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -382,7 +349,6 @@ def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
         git=fake_git,
         github=fake_github,
         issues=fake_github_issues,
-        plan_store=fake_plan_store,
         repo=repo,
     )
 
@@ -482,21 +448,7 @@ def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
         updated_at=now,
     )
 
-    plan = Plan(
-        plan_identifier="123",
-        title="Implement feature X [erk-plan]",
-        body="# Plan\n\nImplementation details...",
-        state=PlanState.OPEN,
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        metadata={},
-    )
-
     fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -515,7 +467,6 @@ def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
         git=fake_git,
         github=fake_github,
         issues=fake_github_issues,
-        plan_store=fake_plan_store,
         repo=repo,
     )
 
@@ -873,19 +824,6 @@ def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
         updated_at=now,
     )
 
-    plan = Plan(
-        plan_identifier="123",
-        title="Implement feature X",
-        body="# Plan\n\nImplementation details...",
-        state=PlanState.OPEN,
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        metadata={},
-    )
-
     # Old orphaned draft PR linked to this issue
     old_draft_pr = PullRequestInfo(
         number=100,
@@ -900,7 +838,6 @@ def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
     )
 
     fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -921,7 +858,6 @@ def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
         git=fake_git,
         github=fake_github,
         issues=fake_github_issues,
-        plan_store=fake_plan_store,
         repo=repo,
     )
 
@@ -1105,21 +1041,7 @@ def test_submit_handles_branch_name_collision(tmp_path: Path) -> None:
         updated_at=now,
     )
 
-    plan = Plan(
-        plan_identifier="123",
-        title="My Feature",
-        body="# Plan\n\nImplementation details...",
-        state=PlanState.OPEN,
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        metadata={},
-    )
-
     fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
 
     # The expected branch name based on sanitize_worktree_name + timestamp suffix
     # "123-my-feature" + "-01-15-1430" = "123-my-feature-01-15-1430"
@@ -1148,7 +1070,6 @@ def test_submit_handles_branch_name_collision(tmp_path: Path) -> None:
         github=fake_github,
         issues=fake_github_issues,
         issue_link_branches=fake_issue_dev,
-        plan_store=fake_plan_store,
         repo=repo,
     )
 
@@ -1172,8 +1093,6 @@ def test_submit_handles_branch_name_collision(tmp_path: Path) -> None:
 
 def test_submit_multiple_issues_success(tmp_path: Path) -> None:
     """Test submit successfully handles multiple issue numbers (happy path)."""
-    import shutil
-
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -1202,47 +1121,9 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
         updated_at=now,
     )
 
-    plan_123 = Plan(
-        plan_identifier="123",
-        title="Feature A",
-        body="# Plan\n\nImplementation for A...",
-        state=PlanState.OPEN,
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        metadata={},
-    )
-    plan_456 = Plan(
-        plan_identifier="456",
-        title="Feature B",
-        body="# Plan\n\nImplementation for B...",
-        state=PlanState.OPEN,
-        url="https://github.com/test-owner/test-repo/issues/456",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        metadata={},
-    )
-
     fake_github_issues = FakeGitHubIssues(issues={123: issue_123, 456: issue_456})
-    fake_plan_store = FakePlanStore(plans={"123": plan_123, "456": plan_456})
 
-    # Create a custom FakeGit that cleans up .worker-impl/ on branch checkout
-    # This simulates the real behavior where checking out a branch without
-    # .worker-impl/ removes the folder from the working directory
-    class FakeGitWithCheckoutCleanup(FakeGit):
-        def checkout_branch(self, cwd: Path, branch_name: str) -> None:
-            super().checkout_branch(cwd, branch_name)
-            # Simulate git checkout: when switching to original branch,
-            # files from the feature branch (like .worker-impl/) are removed
-            worker_impl = cwd / ".worker-impl"
-            if worker_impl.exists():
-                shutil.rmtree(worker_impl)
-
-    fake_git = FakeGitWithCheckoutCleanup(
+    fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
     )
@@ -1262,7 +1143,6 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
         github=fake_github,
         issues=fake_github_issues,
         issue_link_branches=fake_issue_dev,
-        plan_store=fake_plan_store,
         repo=repo,
     )
 
@@ -1369,21 +1249,7 @@ def test_submit_single_issue_still_works(tmp_path: Path) -> None:
         updated_at=now,
     )
 
-    plan = Plan(
-        plan_identifier="123",
-        title="Implement feature X",
-        body="# Plan\n\nImplementation details...",
-        state=PlanState.OPEN,
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        metadata={},
-    )
-
     fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -1404,7 +1270,6 @@ def test_submit_single_issue_still_works(tmp_path: Path) -> None:
         github=fake_github,
         issues=fake_github_issues,
         issue_link_branches=fake_issue_dev,
-        plan_store=fake_plan_store,
         repo=repo,
     )
 

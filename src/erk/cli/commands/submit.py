@@ -15,7 +15,6 @@ from erk_shared.naming import (
     sanitize_worktree_name,
 )
 from erk_shared.output.output import user_output
-from erk_shared.worker_impl_folder import create_worker_impl_folder
 
 from erk.cli.constants import (
     DISPATCH_WORKFLOW_METADATA_NAME,
@@ -376,21 +375,12 @@ def _submit_single_issue(
         ctx.git.create_branch(repo.root, branch_name, f"origin/{trunk_branch}")
         ctx.git.checkout_branch(repo.root, branch_name)
 
-        # Get plan content and create .worker-impl/ folder
-        user_output("Fetching plan content...")
-        plan = ctx.plan_store.get_plan(repo.root, str(issue_number))
-
-        user_output("Creating .worker-impl/ folder...")
-        create_worker_impl_folder(
-            plan_content=plan.body,
-            issue_number=issue_number,
-            issue_url=issue.url,
-            repo_root=repo.root,
+        # Create placeholder commit for PR creation
+        # The workflow will reconstruct .impl/ from the GitHub issue (single source of truth)
+        ctx.git.commit(
+            repo.root,
+            f"[erk-plan] Initialize implementation for issue #{issue_number}",
         )
-
-        # Stage, commit, and push
-        ctx.git.stage_files(repo.root, [".worker-impl"])
-        ctx.git.commit(repo.root, f"Add plan for issue #{issue_number}")
         ctx.git.push_to_remote(repo.root, "origin", branch_name, set_upstream=True)
         user_output(click.style("✓", fg="green") + " Branch pushed to remote")
 
