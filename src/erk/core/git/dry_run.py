@@ -223,7 +223,7 @@ class DryRunGit(Git):
         # Do nothing - prevents actual file staging
         pass
 
-    def commit(self, cwd: Path, message: str) -> None:
+    def commit(self, cwd: Path, message: str, *, allow_empty: bool = False) -> None:
         """No-op for committing in dry-run mode."""
         # Do nothing - prevents actual commit creation
         pass
