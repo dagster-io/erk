@@ -161,6 +161,14 @@ class RealGitHub(GitHub):
         )
         raise NotImplementedError(msg)
 
+    def close_pr(self, repo_root: Path, pr_number: int) -> None:
+        """Stub method - not implemented in erk-shared."""
+        msg = (
+            "RealGitHub from erk-shared is a stub for context creation only. "
+            "Use the full implementation from erk.core.github.real."
+        )
+        raise NotImplementedError(msg)
+
     def list_workflow_runs(
         self, repo_root: Path, workflow: str, limit: int = 50
     ) -> list[WorkflowRun]:

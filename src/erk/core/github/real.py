@@ -705,6 +705,11 @@ query {{
 
         return pr_number
 
+    def close_pr(self, repo_root: Path, pr_number: int) -> None:
+        """Close a pull request without deleting its branch."""
+        cmd = ["gh", "pr", "close", str(pr_number)]
+        execute_gh_command(cmd, repo_root)
+
     def list_workflow_runs(
         self, repo_root: Path, workflow: str, limit: int = 50
     ) -> list[WorkflowRun]:
@@ -893,6 +898,11 @@ query {{
                   state
                 }}
                 mergeable
+                labels(first: 10) {{
+                  nodes {{
+                    name
+                  }}
+                }}
               }}
             }}
           }}
@@ -987,6 +997,17 @@ query {{
                 elif mergeable == "MERGEABLE":
                     has_conflicts = False
 
+                # Parse labels
+                labels: list[str] = []
+                labels_data = source.get("labels")
+                if labels_data is not None:
+                    label_nodes = labels_data.get("nodes", [])
+                    for label_node in label_nodes:
+                        if label_node is not None:
+                            label_name = label_node.get("name")
+                            if label_name:
+                                labels.append(label_name)
+
                 pr_info = PullRequestInfo(
                     number=pr_number,
                     state=state,
@@ -997,6 +1018,7 @@ query {{
                     owner=owner,
                     repo=repo,
                     has_conflicts=has_conflicts,
+                    labels=labels,
                 )
 
                 # Store with timestamp for sorting

@@ -1,6 +1,6 @@
 """Type definitions for GitHub operations."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal, NamedTuple
 
@@ -29,6 +29,7 @@ class PullRequestInfo:
     repo: str  # GitHub repo name (e.g., "erk")
     # True if CONFLICTING, False if MERGEABLE, None if UNKNOWN or not fetched
     has_conflicts: bool | None = None
+    labels: list[str] = field(default_factory=list)  # PR labels (e.g., ["erk-plan"])
 
 
 @dataclass(frozen=True)
