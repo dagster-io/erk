@@ -21,6 +21,7 @@ on:
 ```
 
 This configuration:
+
 - Runs CI on PR creation (`opened`)
 - Runs CI on new commits (`synchronize`)
 - Runs CI when PR is reopened (`reopened`)
@@ -38,6 +39,7 @@ This configuration:
 ### Change for Each File
 
 Replace:
+
 ```yaml
 on:
   push:
@@ -46,6 +48,7 @@ on:
 ```
 
 With:
+
 ```yaml
 on:
   push:
@@ -57,6 +60,7 @@ on:
 ## Verification
 
 After implementation, verify by:
+
 1. Creating a draft PR - CI should NOT run
 2. Marking PR ready for review - CI should run
 3. Pushing commits to ready PR - CI should run
