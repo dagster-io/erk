@@ -1,11 +1,13 @@
 """Submit issue for remote AI implementation via GitHub Actions."""
 
 import logging
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
 import click
 from erk_shared.github.issue_link_branches import DevelopmentBranch
+from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata import create_submission_queued_block, render_erk_issue_event
 from erk_shared.naming import (
     derive_branch_name_from_title,
@@ -27,6 +29,30 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ValidatedIssue:
+    """Issue that passed all validation checks."""
+
+    number: int
+    issue: IssueInfo
+    branch_name: str
+    branch_exists: bool
+    pr_number: int | None
+
+
+@dataclass
+class SubmitResult:
+    """Result of submitting a single issue."""
+
+    issue_number: int
+    issue_title: str
+    issue_url: str
+    pr_number: int | None
+    pr_url: str | None
+    workflow_run_id: str
+    workflow_url: str
 
 
 def _construct_workflow_run_url(issue_url: str, run_id: str) -> str:
@@ -135,44 +161,19 @@ def _close_orphaned_draft_prs(
     return closed_prs
 
 
-@click.command("submit")
-@click.argument("issue_number", type=int)
-@click.pass_obj
-def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
-    """Submit issue for remote AI implementation via GitHub Actions.
+def _validate_issue_for_submit(
+    ctx: ErkContext,
+    repo: RepoContext,
+    issue_number: int,
+) -> ValidatedIssue:
+    """Validate a single issue for submission.
 
-    Creates branch and draft PR locally (for correct commit attribution),
-    then triggers the dispatch-erk-queue.yml GitHub Actions workflow.
+    Fetches the issue, validates constraints, derives branch name, and checks
+    if branch/PR already exist.
 
-    The workflow will:
-    - Pick up the existing branch and PR
-    - Run the implementation
-
-    Arguments:
-        ISSUE_NUMBER: GitHub issue number to submit for implementation
-
-    Requires:
-        - Issue must have erk-plan label
-        - Issue must be OPEN
+    Raises:
+        SystemExit: If issue doesn't exist, missing label, or closed.
     """
-    # Validate GitHub CLI authentication upfront (LBYL)
-    Ensure.gh_authenticated(ctx)
-
-    # Get repository context
-    if isinstance(ctx.repo, RepoContext):
-        repo = ctx.repo
-    else:
-        repo = discover_repo_context(ctx, ctx.cwd)
-
-    # Step 1: Save current state and check for uncommitted changes
-    original_branch = ctx.git.get_current_branch(repo.root)
-    if original_branch is None:
-        user_output(
-            click.style("Error: ", fg="red")
-            + "Not on a branch (detached HEAD state). Cannot submit from here."
-        )
-        raise SystemExit(1)
-
     # Fetch issue from GitHub
     try:
         issue = ctx.issues.get_issue(repo.root, issue_number)
@@ -198,21 +199,11 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
         )
         raise SystemExit(1)
 
-    # Display issue details
-    user_output("Submitting issue for automated implementation:")
-    user_output(f"  Number: {click.style(f'#{issue_number}', fg='cyan')}")
-    user_output(f"  Title:  {click.style(issue.title, fg='yellow')}")
-    user_output(f"  State:  {click.style(issue.state, fg='green')}")
-    user_output("")
-
-    # Get GitHub username from gh CLI (authentication already validated)
-    _, username, _ = ctx.github.check_auth_status()
-    submitted_by = username or "unknown"
-
-    # Step 2: Create or derive branch name for the issue
+    # Derive branch name
     trunk_branch = ctx.git.get_trunk_branch(repo.root)
     logger.debug("trunk_branch=%s", trunk_branch)
     logger.debug("USE_GITHUB_NATIVE_BRANCH_LINKING=%s", USE_GITHUB_NATIVE_BRANCH_LINKING)
+
     if USE_GITHUB_NATIVE_BRANCH_LINKING:
         # Compute branch name: truncate to 31 chars, then append timestamp suffix
         base_branch_name = sanitize_worktree_name(f"{issue_number}-{issue.title}")
@@ -254,6 +245,7 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
             issue_number=issue_number,
             already_existed=False,
         )
+
     branch_name = dev_branch.branch_name
 
     if dev_branch.already_existed:
@@ -261,19 +253,50 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
     else:
         user_output(f"Created linked branch: {click.style(branch_name, fg='cyan')}")
 
-    # Step 3: Check if branch already exists on remote
+    # Check if branch already exists on remote and has a PR
     branch_exists = ctx.git.branch_exists_on_remote(repo.root, "origin", branch_name)
     logger.debug("branch_exists_on_remote(%s)=%s", branch_name, branch_exists)
-    pr_number: int | None = None
 
+    pr_number: int | None = None
     if branch_exists:
-        # Check PR status for existing branch
         pr_status = ctx.github.get_pr_status(repo.root, branch_name, debug=False)
         if pr_status.pr_number is not None:
             pr_number = pr_status.pr_number
+
+    return ValidatedIssue(
+        number=issue_number,
+        issue=issue,
+        branch_name=branch_name,
+        branch_exists=branch_exists,
+        pr_number=pr_number,
+    )
+
+
+def _submit_single_issue(
+    ctx: ErkContext,
+    repo: RepoContext,
+    validated: ValidatedIssue,
+    submitted_by: str,
+    original_branch: str,
+) -> SubmitResult:
+    """Submit a single validated issue for implementation.
+
+    Creates branch/PR if needed and triggers workflow.
+
+    Returns:
+        SubmitResult with URLs and identifiers.
+    """
+    issue = validated.issue
+    issue_number = validated.number
+    branch_name = validated.branch_name
+    branch_exists = validated.branch_exists
+    pr_number = validated.pr_number
+    trunk_branch = ctx.git.get_trunk_branch(repo.root)
+
+    if branch_exists:
+        if pr_number is not None:
             user_output(
-                f"PR #{pr_number} already exists for branch "
-                f"'{branch_name}' (state: {pr_status.state})"
+                f"PR #{pr_number} already exists for branch '{branch_name}' (state: existing)"
             )
             user_output("Skipping branch/PR creation, triggering workflow...")
         else:
@@ -343,7 +366,7 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
             ctx.git.delete_branch(repo.root, branch_name, force=True)
             user_output(click.style("✓", fg="green") + " Local branch cleaned up")
     else:
-        # Step 4: Create branch and initial commit
+        # Create branch and initial commit
         user_output(f"Creating branch from origin/{trunk_branch}...")
 
         # Fetch trunk branch
@@ -371,7 +394,7 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
         ctx.git.push_to_remote(repo.root, "origin", branch_name, set_upstream=True)
         user_output(click.style("✓", fg="green") + " Branch pushed to remote")
 
-        # Step 5: Create draft PR
+        # Create draft PR
         user_output("Creating draft PR...")
         pr_body = (
             f"**Author:** @{submitted_by}\n"
@@ -412,7 +435,7 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
                 + ", ".join(f"#{n}" for n in closed_prs)
             )
 
-        # Step 6: Restore local state
+        # Restore local state
         user_output("Restoring local state...")
         ctx.git.checkout_branch(repo.root, original_branch)
         ctx.git.delete_branch(repo.root, branch_name, force=True)
@@ -429,7 +452,7 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
         )
         raise SystemExit(1)
 
-    # Step 7: Trigger workflow via direct dispatch
+    # Trigger workflow via direct dispatch
     user_output("")
     user_output(f"Triggering workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
     user_output(f"  Display name: {DISPATCH_WORKFLOW_METADATA_NAME}")
@@ -485,14 +508,101 @@ def submit_cmd(ctx: ErkContext, issue_number: int) -> None:
             + "Workflow is already running."
         )
 
+    pr_url = _construct_pr_url(issue.url, pr_number) if pr_number else None
+
+    return SubmitResult(
+        issue_number=issue_number,
+        issue_title=issue.title,
+        issue_url=issue.url,
+        pr_number=pr_number,
+        pr_url=pr_url,
+        workflow_run_id=run_id,
+        workflow_url=workflow_url,
+    )
+
+
+@click.command("submit")
+@click.argument("issue_numbers", type=int, nargs=-1, required=True)
+@click.pass_obj
+def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...]) -> None:
+    """Submit issues for remote AI implementation via GitHub Actions.
+
+    Creates branch and draft PR locally (for correct commit attribution),
+    then triggers the dispatch-erk-queue.yml GitHub Actions workflow.
+
+    Arguments:
+        ISSUE_NUMBERS: One or more GitHub issue numbers to submit
+
+    Example:
+        erk submit 123
+        erk submit 123 456 789
+
+    Requires:
+        - All issues must have erk-plan label
+        - All issues must be OPEN
+        - Working directory must be clean (no uncommitted changes)
+    """
+    # Validate GitHub CLI authentication upfront (LBYL)
+    Ensure.gh_authenticated(ctx)
+
+    # Get repository context
+    if isinstance(ctx.repo, RepoContext):
+        repo = ctx.repo
+    else:
+        repo = discover_repo_context(ctx, ctx.cwd)
+
+    # Save current state
+    original_branch = ctx.git.get_current_branch(repo.root)
+    if original_branch is None:
+        user_output(
+            click.style("Error: ", fg="red")
+            + "Not on a branch (detached HEAD state). Cannot submit from here."
+        )
+        raise SystemExit(1)
+
+    # Get GitHub username (authentication already validated)
+    _, username, _ = ctx.github.check_auth_status()
+    submitted_by = username or "unknown"
+
+    # Phase 1: Validate ALL issues upfront (atomic - fail fast before any side effects)
+    user_output(f"Validating {len(issue_numbers)} issue(s)...")
+    user_output("")
+
+    validated: list[ValidatedIssue] = []
+    for issue_number in issue_numbers:
+        user_output(f"Validating issue #{issue_number}...")
+        validated_issue = _validate_issue_for_submit(ctx, repo, issue_number)
+        validated.append(validated_issue)
+
+    user_output("")
+    user_output(click.style("✓", fg="green") + f" All {len(validated)} issue(s) validated")
+    user_output("")
+
+    # Display validated issues
+    for v in validated:
+        user_output(f"  #{v.number}: {click.style(v.issue.title, fg='yellow')}")
+    user_output("")
+
+    # Phase 2: Submit all validated issues
+    results: list[SubmitResult] = []
+    for i, v in enumerate(validated):
+        if len(validated) > 1:
+            user_output(f"--- Submitting issue {i + 1}/{len(validated)}: #{v.number} ---")
+        else:
+            user_output(f"Submitting issue #{v.number}...")
+        user_output("")
+        result = _submit_single_issue(ctx, repo, v, submitted_by, original_branch)
+        results.append(result)
+        user_output("")
+
     # Success output
     user_output("")
-    user_output(click.style("✓", fg="green") + " Issue submitted successfully!")
+    user_output(click.style("✓", fg="green") + f" {len(results)} issue(s) submitted successfully!")
     user_output("")
-    user_output("Next steps:")
-    user_output(f"  • View issue: {issue.url}")
-    if pr_number is not None:
-        pr_url = _construct_pr_url(issue.url, pr_number)
-        user_output(f"  • View PR: {pr_url}")
-    user_output(f"  • View workflow run: {workflow_url}")
-    user_output("")
+    user_output("Submitted issues:")
+    for r in results:
+        user_output(f"  • #{r.issue_number}: {r.issue_title}")
+        user_output(f"    Issue: {r.issue_url}")
+        if r.pr_url:
+            user_output(f"    PR: {r.pr_url}")
+        user_output(f"    Workflow: {r.workflow_url}")

@@ -86,8 +86,8 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     result = runner.invoke(submit_cmd, ["123"], obj=ctx)
 
     assert result.exit_code == 0, result.output
-    assert "Issue submitted successfully!" in result.output
-    assert "View workflow run:" in result.output
+    assert "issue(s) submitted successfully!" in result.output
+    assert "Workflow:" in result.output
 
     # Branch name is sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
     expected_branch = "123-implement-feature-x-01-15-1430"
@@ -390,11 +390,9 @@ def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
     result = runner.invoke(submit_cmd, ["123"], obj=ctx)
 
     assert result.exit_code == 0, result.output
-    assert "Issue submitted successfully!" in result.output
+    assert "issue(s) submitted successfully!" in result.output
     # Verify workflow run URL is displayed (uses run_id returned by trigger_workflow)
-    expected_url = (
-        "View workflow run: https://github.com/test-owner/test-repo/actions/runs/1234567890"
-    )
+    expected_url = "https://github.com/test-owner/test-repo/actions/runs/1234567890"
     assert expected_url in result.output
 
 
@@ -1158,7 +1156,7 @@ def test_submit_handles_branch_name_collision(tmp_path: Path) -> None:
     result = runner.invoke(submit_cmd, ["123"], obj=ctx)
 
     assert result.exit_code == 0, result.output
-    assert "Issue submitted successfully!" in result.output
+    assert "issue(s) submitted successfully!" in result.output
 
     # Verify branch was created with -1 suffix due to collision
     expected_branch_with_suffix = f"{expected_base_branch}-1"
@@ -1170,3 +1168,256 @@ def test_submit_handles_branch_name_collision(tmp_path: Path) -> None:
     assert remote == "origin"
     assert branch == expected_branch_with_suffix
     assert set_upstream is True
+
+
+def test_submit_multiple_issues_success(tmp_path: Path) -> None:
+    """Test submit successfully handles multiple issue numbers (happy path)."""
+    import shutil
+
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+    # Create two valid issues with erk-plan label
+    issue_123 = IssueInfo(
+        number=123,
+        title="Feature A",
+        body="# Plan\n\nImplementation for A...",
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+    issue_456 = IssueInfo(
+        number=456,
+        title="Feature B",
+        body="# Plan\n\nImplementation for B...",
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/456",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    plan_123 = Plan(
+        plan_identifier="123",
+        title="Feature A",
+        body="# Plan\n\nImplementation for A...",
+        state=PlanState.OPEN,
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
+    plan_456 = Plan(
+        plan_identifier="456",
+        title="Feature B",
+        body="# Plan\n\nImplementation for B...",
+        state=PlanState.OPEN,
+        url="https://github.com/test-owner/test-repo/issues/456",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue_123, 456: issue_456})
+    fake_plan_store = FakePlanStore(plans={"123": plan_123, "456": plan_456})
+
+    # Create a custom FakeGit that cleans up .worker-impl/ on branch checkout
+    # This simulates the real behavior where checking out a branch without
+    # .worker-impl/ removes the folder from the working directory
+    class FakeGitWithCheckoutCleanup(FakeGit):
+        def checkout_branch(self, cwd: Path, branch_name: str) -> None:
+            super().checkout_branch(cwd, branch_name)
+            # Simulate git checkout: when switching to original branch,
+            # files from the feature branch (like .worker-impl/) are removed
+            worker_impl = cwd / ".worker-impl"
+            if worker_impl.exists():
+                shutil.rmtree(worker_impl)
+
+    fake_git = FakeGitWithCheckoutCleanup(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+    )
+    fake_github = FakeGitHub()
+    fake_issue_dev = FakeIssueLinkBranches()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        issue_link_branches=fake_issue_dev,
+        plan_store=fake_plan_store,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123", "456"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    assert "2 issue(s) submitted successfully!" in result.output
+    assert "#123: Feature A" in result.output
+    assert "#456: Feature B" in result.output
+
+    # Verify both branches were created
+    assert len(fake_issue_dev.created_branches) == 2
+    issue_numbers_created = [b[0] for b in fake_issue_dev.created_branches]
+    assert 123 in issue_numbers_created
+    assert 456 in issue_numbers_created
+
+    # Verify both workflows were triggered
+    assert len(fake_github.triggered_workflows) == 2
+
+
+def test_submit_multiple_issues_atomic_validation_failure(tmp_path: Path) -> None:
+    """Test atomic validation: if second issue is invalid, nothing is submitted."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+    # First issue is valid
+    issue_123 = IssueInfo(
+        number=123,
+        title="Feature A",
+        body="# Plan\n\nImplementation for A...",
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+    # Second issue is CLOSED (invalid)
+    issue_456 = IssueInfo(
+        number=456,
+        title="Feature B",
+        body="# Plan\n\nImplementation for B...",
+        state="CLOSED",
+        url="https://github.com/test-owner/test-repo/issues/456",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue_123, 456: issue_456})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+    )
+    fake_github = FakeGitHub()
+    fake_issue_dev = FakeIssueLinkBranches()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        issue_link_branches=fake_issue_dev,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123", "456"], obj=ctx)
+
+    # Should fail on the second issue validation
+    assert result.exit_code == 1
+    assert "is CLOSED" in result.output or "Cannot submit closed issues" in result.output
+
+    # Critical: First issue validated and created branch, but validation happens before submission
+    # The branch was created during validation, but workflow was NOT triggered
+    assert len(fake_github.triggered_workflows) == 0
+
+
+def test_submit_single_issue_still_works(tmp_path: Path) -> None:
+    """Test backwards compatibility: single issue argument still works."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+    issue = IssueInfo(
+        number=123,
+        title="Implement feature X",
+        body="# Plan\n\nImplementation details...",
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    plan = Plan(
+        plan_identifier="123",
+        title="Implement feature X",
+        body="# Plan\n\nImplementation details...",
+        state=PlanState.OPEN,
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+    )
+    fake_github = FakeGitHub()
+    fake_issue_dev = FakeIssueLinkBranches()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        issue_link_branches=fake_issue_dev,
+        plan_store=fake_plan_store,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    # Single argument - backwards compatibility
+    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    assert "1 issue(s) submitted successfully!" in result.output
+    assert "Workflow:" in result.output
+
+    # Verify branch was created
+    assert len(fake_issue_dev.created_branches) == 1
+
+    # Verify workflow was triggered
+    assert len(fake_github.triggered_workflows) == 1
