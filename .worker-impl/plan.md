@@ -47,6 +47,7 @@ erk pr --help
 ```
 
 Should show:
+
 ```
 Commands:
   checkout, co  Checkout a pull request into a worktree.
