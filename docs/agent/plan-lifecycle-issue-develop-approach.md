@@ -268,7 +268,8 @@ This ensures only one implementation runs per issue at a time.
 
 #### Phase 2: Find PR & Checkout Branch
 
-- Find existing PR via "Closes #N" search pattern (created by `erk submit`)
+- Find linked branch via `gh issue develop --list <issue_number>` (native GitHub linking)
+- Find existing PR via `gh pr list --head <branch_name>` (by branch, not body search)
 - Checkout the implementation branch
 - Update `.worker-impl/` with fresh plan content (for reruns)
 
@@ -592,8 +593,9 @@ gh issue view 123 --json title,body,comments,labels
 # Find linked branch
 gh issue develop --list 123
 
-# Find associated PR
-gh pr list --search "Closes #123"
+# Find associated PR (via branch, not body search)
+BRANCH=$(gh issue develop --list 123 | head -1 | cut -f1)
+gh pr list --head "$BRANCH"
 
 # Find workflow runs
 gh run list --workflow=dispatch-erk-queue-git.yml | grep "123:"

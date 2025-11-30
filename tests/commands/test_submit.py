@@ -760,6 +760,86 @@ def test_close_orphaned_draft_prs_no_linked_prs(tmp_path: Path) -> None:
     assert fake_github.closed_prs == []
 
 
+def test_submit_creates_pr_when_branch_exists_but_no_pr(tmp_path: Path) -> None:
+    """Test submit creates PR when branch exists on remote but no PR exists."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+    issue = IssueInfo(
+        number=123,
+        title="Implement feature X",
+        body="# Plan\n\nImplementation details...",
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    # Pre-existing branch from previous gh issue develop (no PR though)
+    expected_branch = "123-existing-branch"
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    # FakeIssueLinkBranches with existing branch for issue 123
+    fake_issue_dev = FakeIssueLinkBranches(existing_branches={123: expected_branch})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+        # Simulate branch existing on remote
+        remote_branches={repo_root: [f"origin/{expected_branch}"]},
+    )
+    # No PR status for this branch (pr_statuses is empty)
+    fake_github = FakeGitHub()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        issue_link_branches=fake_issue_dev,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    assert "Branch '123-existing-branch' exists but no PR. Creating PR..." in result.output
+    assert "Draft PR #999 created" in result.output
+
+    # Verify no new branch was created (existing branch was reused)
+    assert fake_issue_dev.created_branches == []
+
+    # Verify no branch was pushed (branch already exists)
+    assert len(fake_git.pushed_branches) == 0
+
+    # Verify draft PR was created
+    assert len(fake_github.created_prs) == 1
+    branch_name, title, body, base, draft = fake_github.created_prs[0]
+    assert branch_name == expected_branch
+    assert title == "Implement feature X"
+    assert draft is True
+    assert "Closes #123" in body
+
+    # Verify PR body was updated with checkout footer
+    assert len(fake_github.updated_pr_bodies) == 1
+    pr_number, updated_body = fake_github.updated_pr_bodies[0]
+    assert pr_number == 999
+    assert "erk pr checkout 999" in updated_body
+
+    # Workflow should still be triggered
+    assert len(fake_github.triggered_workflows) == 1
+
+
 def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
     """Test submit command closes orphaned draft PRs after creating new one."""
     repo_root = tmp_path / "repo"

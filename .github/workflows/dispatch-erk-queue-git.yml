@@ -109,25 +109,34 @@ jobs:
       # =================================================================
       # PHASE 2: BRANCH SETUP
       # =================================================================
-      - name: Find existing PR for issue
+      - name: Find linked branch and PR for issue
         id: find_pr
         env:
           ISSUE_NUMBER: ${{ inputs.issue_number }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Find PR that closes this issue (created by erk submit)
-          PR_DATA=$(gh pr list --state open --json number,headRefName --search "Closes #$ISSUE_NUMBER" | jq -r '.[0] // empty')
+          # Step 1: Get linked branch via native GitHub linking
+          BRANCH_NAME=$(gh issue develop --list "$ISSUE_NUMBER" 2>/dev/null | head -1 | cut -f1)
+
+          if [ -z "$BRANCH_NAME" ]; then
+            echo "❌ No linked branch found for issue #$ISSUE_NUMBER"
+            echo "Error: erk submit should have created a linked branch via 'gh issue develop'"
+            exit 1
+          fi
+
+          echo "Found linked branch: $BRANCH_NAME"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+          # Step 2: Find PR for this branch
+          PR_DATA=$(gh pr list --state open --head "$BRANCH_NAME" --json number | jq -r '.[0].number // empty')
 
           if [ -n "$PR_DATA" ]; then
-            PR_NUMBER=$(echo "$PR_DATA" | jq -r '.number')
-            BRANCH_NAME=$(echo "$PR_DATA" | jq -r '.headRefName')
-            echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "pr_number=$PR_DATA" >> $GITHUB_OUTPUT
             echo "pr_exists=true" >> $GITHUB_OUTPUT
-            echo "Found existing PR #$PR_NUMBER for branch $BRANCH_NAME"
+            echo "Found existing PR #$PR_DATA for branch $BRANCH_NAME"
           else
             echo "pr_exists=false" >> $GITHUB_OUTPUT
-            echo "No existing PR found for issue #$ISSUE_NUMBER"
+            echo "No existing PR found for branch $BRANCH_NAME"
             echo "Error: erk submit should have created a PR before dispatching workflow"
             exit 1
           fi
