@@ -110,3 +110,7 @@ def test_init_shows_next_steps() -> None:
         assert "Next steps" in result.output
         assert "ANTHROPIC_API_KEY" in result.output
         assert "gh secret set" in result.output
+        # Verify it shows the new command
+        assert "erk plan" in result.output
+        # Old command should not be present
+        assert "erk codespace plan" not in result.output
