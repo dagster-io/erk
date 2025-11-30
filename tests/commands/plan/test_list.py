@@ -1485,3 +1485,238 @@ def test_list_plans_pr_column_no_pr_linked() -> None:
         assert "🚧" not in result.output
         assert "🎉" not in result.output
         assert "⛔" not in result.output
+
+
+def test_list_plans_default_no_pr_columns() -> None:
+    """Test default output has no pr/chks columns."""
+    from tests.test_utils.output_helpers import strip_ansi
+
+    # Arrange
+    plan = Plan(
+        plan_identifier="200",
+        title="Test Default Columns",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/200",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"number": 200},
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues={200: plan_to_issue(plan)})
+        ctx = build_workspace_test_context(env, issues=issues)
+
+        # Act - default (no --prs flag)
+        result = runner.invoke(cli, ["list"], obj=ctx)
+
+        # Assert
+        assert result.exit_code == 0
+        output = strip_ansi(result.output)
+        # Header should NOT contain pr or chks columns by default
+        assert "pr" not in output.split("\n")[0].lower() or "plan" in output.split("\n")[0].lower()
+        # More reliable: check that column headers don't include "pr" and "chks"
+        # The header line contains column names
+        lines = [line for line in output.split("\n") if line.strip()]
+        if len(lines) >= 2:
+            header_line = lines[1]  # First line after "Found X plan(s)"
+            # "pr" as a standalone column header should not appear
+            # but "plan" does contain "p" - check for standalone "pr " or " pr"
+            assert " pr " not in header_line.lower()
+            assert "chks" not in header_line.lower()
+
+
+def test_list_plans_prs_flag_shows_pr_columns() -> None:
+    """Test --prs flag shows pr and chks columns."""
+    from erk_shared.github.types import PullRequestInfo
+
+    from erk.core.github.fake import FakeGitHub
+    from tests.test_utils.output_helpers import strip_ansi
+
+    # Arrange
+    plan = Plan(
+        plan_identifier="201",
+        title="Test PR Columns",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/201",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"number": 201},
+    )
+
+    pr = PullRequestInfo(
+        number=301,
+        state="OPEN",
+        url="https://github.com/owner/repo/pull/301",
+        is_draft=False,
+        title="PR for issue 201",
+        checks_passing=True,
+        owner="owner",
+        repo="repo",
+        has_conflicts=False,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues={201: plan_to_issue(plan)})
+        github = FakeGitHub(pr_issue_linkages={201: [pr]})
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
+
+        # Act - with --prs flag
+        result = runner.invoke(cli, ["list", "--prs"], obj=ctx)
+
+        # Assert
+        assert result.exit_code == 0
+        output = strip_ansi(result.output)
+        # Should show PR number and emoji
+        assert "#301" in output
+        assert "👀" in result.output  # Open PR emoji
+        assert "✅" in result.output  # Checks passing
+
+
+def test_list_plans_all_flag_shows_pr_and_run_columns() -> None:
+    """Test --all flag shows both PR and run columns."""
+    from erk_shared.github.types import PullRequestInfo, WorkflowRun
+
+    from erk.core.github.fake import FakeGitHub
+    from tests.test_utils.output_helpers import strip_ansi
+
+    # Arrange - Create plan with workflow run ID in plan-header
+    plan_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+last_dispatched_run_id: '99999'
+```
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    plan = Plan(
+        plan_identifier="202",
+        title="Test All Columns",
+        body=plan_body,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/202",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"number": 202},
+    )
+
+    pr = PullRequestInfo(
+        number=302,
+        state="OPEN",
+        url="https://github.com/owner/repo/pull/302",
+        is_draft=False,
+        title="PR for issue 202",
+        checks_passing=True,
+        owner="owner",
+        repo="repo",
+        has_conflicts=False,
+    )
+
+    workflow_run = WorkflowRun(
+        run_id="99999",
+        status="completed",
+        conclusion="success",
+        branch="master",
+        head_sha="abc123",
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues={202: plan_to_issue(plan)})
+        github = FakeGitHub(pr_issue_linkages={202: [pr]}, workflow_runs=[workflow_run])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
+
+        # Act - with --all flag
+        result = runner.invoke(cli, ["list", "--all"], obj=ctx)
+
+        # Assert
+        assert result.exit_code == 0
+        output = strip_ansi(result.output)
+        # Should show PR number
+        assert "#302" in output
+        assert "👀" in result.output  # Open PR emoji
+        # Should show workflow run ID
+        assert "99999" in output
+
+
+def test_list_plans_all_flag_short_form() -> None:
+    """Test -a short form works same as --all."""
+    from erk_shared.github.types import PullRequestInfo, WorkflowRun
+
+    from erk.core.github.fake import FakeGitHub
+    from tests.test_utils.output_helpers import strip_ansi
+
+    # Arrange - Create plan with workflow run ID in plan-header
+    plan_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+last_dispatched_run_id: '88888'
+```
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    plan = Plan(
+        plan_identifier="203",
+        title="Test Short Form",
+        body=plan_body,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/203",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"number": 203},
+    )
+
+    pr = PullRequestInfo(
+        number=303,
+        state="MERGED",
+        url="https://github.com/owner/repo/pull/303",
+        is_draft=False,
+        title="PR for issue 203",
+        checks_passing=True,
+        owner="owner",
+        repo="repo",
+        has_conflicts=False,
+    )
+
+    workflow_run = WorkflowRun(
+        run_id="88888",
+        status="completed",
+        conclusion="success",
+        branch="master",
+        head_sha="def456",
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues={203: plan_to_issue(plan)})
+        github = FakeGitHub(pr_issue_linkages={203: [pr]}, workflow_runs=[workflow_run])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
+
+        # Act - with -a short form
+        result = runner.invoke(cli, ["list", "-a"], obj=ctx)
+
+        # Assert
+        assert result.exit_code == 0
+        output = strip_ansi(result.output)
+        # Should show PR number (merged PR)
+        assert "#303" in output
+        assert "🎉" in result.output  # Merged PR emoji
+        # Should show workflow run ID
+        assert "88888" in output

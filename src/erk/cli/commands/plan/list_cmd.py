@@ -182,6 +182,14 @@ def plan_list_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
         help="Show PR columns (pr, chks) - requires additional API calls",
     )(f)
     f = click.option(
+        "--all",
+        "-a",
+        "all_columns",
+        is_flag=True,
+        default=False,
+        help="Show all columns (equivalent to --runs --prs)",
+    )(f)
+    f = click.option(
         "--limit",
         type=int,
         help="Maximum number of results to return",
@@ -196,6 +204,7 @@ def _list_plans_impl(
     run_state: str | None,
     runs: bool,
     prs: bool,
+    all_columns: bool,
     limit: int | None,
 ) -> None:
     """Implementation logic for listing plans with optional filters.
@@ -205,6 +214,11 @@ def _list_plans_impl(
     2. Single GraphQL query for PRs (only if --prs flag is set)
     3. REST API calls for workflow runs (one per issue with run_id)
     """
+    # Resolve --all flag
+    if all_columns:
+        runs = True
+        prs = True
+
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)  # Ensure erk metadata directories exist
     repo_root = repo.root  # Use git repository root for GitHub operations
@@ -286,8 +300,9 @@ def _list_plans_impl(
     table = Table(show_header=True, header_style="bold")
     table.add_column("plan", style="cyan", no_wrap=True)
     table.add_column("title", no_wrap=True)
-    table.add_column("pr", no_wrap=True)
-    table.add_column("chks", no_wrap=True)
+    if prs:
+        table.add_column("pr", no_wrap=True)
+        table.add_column("chks", no_wrap=True)
     table.add_column("local-wt", no_wrap=True)
     table.add_column("local-run", no_wrap=True)
     if runs:
@@ -375,27 +390,24 @@ def _list_plans_impl(
         # Format workflow run outcome
         run_outcome_cell = format_workflow_outcome(workflow_run)
 
-        # Add row to table (columns depend on runs flag)
+        # Build row values dynamically based on flags
+        row_values: list[str] = [issue_id, title]
+
+        # Add PR columns if enabled
+        if prs:
+            row_values.append(pr_cell)
+            row_values.append(checks_cell)
+
+        # Add local columns (always shown)
+        row_values.append(worktree_name_cell)
+        row_values.append(local_run_cell)
+
+        # Add run columns if enabled
         if runs:
-            table.add_row(
-                issue_id,
-                title,
-                pr_cell,
-                checks_cell,
-                worktree_name_cell,
-                local_run_cell,
-                run_id_cell,
-                run_outcome_cell,
-            )
-        else:
-            table.add_row(
-                issue_id,
-                title,
-                pr_cell,
-                checks_cell,
-                worktree_name_cell,
-                local_run_cell,
-            )
+            row_values.append(run_id_cell)
+            row_values.append(run_outcome_cell)
+
+        table.add_row(*row_values)
 
     # Output table to stderr (consistent with user_output convention)
     # Use width=200 to ensure proper display without truncation
@@ -416,6 +428,7 @@ def list_plans(
     run_state: str | None,
     runs: bool,
     prs: bool,
+    all_columns: bool,
     limit: int | None,
 ) -> None:
     """List plans with optional filters.
@@ -428,5 +441,6 @@ def list_plans(
         erk plan list --run-state success --state open
         erk plan list --runs
         erk plan list --prs
+        erk plan list --all
     """
-    _list_plans_impl(ctx, label, state, run_state, runs, prs, limit)
+    _list_plans_impl(ctx, label, state, run_state, runs, prs, all_columns, limit)
