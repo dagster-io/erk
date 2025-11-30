@@ -557,8 +557,43 @@ class TestPlanHeaderSchema:
             "last_dispatched_run_id": "123456789",
             "last_dispatched_at": "2024-01-15T11:00:00Z",
             "last_local_impl_at": "2024-01-15T12:00:00Z",
+            "last_remote_impl_at": "2024-01-15T13:00:00Z",
         }
         schema.validate(data)  # Should not raise
+
+    def test_valid_with_last_remote_impl_at(self) -> None:
+        """Valid plan-header with last_remote_impl_at field."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "last_remote_impl_at": "2024-01-15T14:00:00Z",
+        }
+        schema.validate(data)  # Should not raise
+
+    def test_null_last_remote_impl_at_is_valid(self) -> None:
+        """Null last_remote_impl_at is valid (not set yet)."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "last_remote_impl_at": None,
+        }
+        schema.validate(data)  # Should not raise
+
+    def test_non_string_last_remote_impl_at_raises(self) -> None:
+        """Non-string last_remote_impl_at raises ValueError."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "last_remote_impl_at": 12345,
+        }
+        with pytest.raises(ValueError, match="last_remote_impl_at must be a string or null"):
+            schema.validate(data)
 
     def test_missing_required_field(self) -> None:
         """Missing required field raises ValueError."""

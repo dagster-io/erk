@@ -1,7 +1,11 @@
-"""Mark local implementation started by updating GitHub issue metadata.
+"""Mark implementation started by updating GitHub issue metadata.
 
 This kit CLI command updates the plan-header metadata block in a GitHub issue
-with the last_local_impl_at timestamp to track when local implementations were run.
+with the appropriate timestamp field based on the execution environment:
+- Local machine: Updates last_local_impl_at
+- GitHub Actions: Updates last_remote_impl_at
+
+This separation allows erk ls to show distinct timestamps for local vs remote runs.
 
 Usage:
     dot-agent run erk mark-impl-started
@@ -27,7 +31,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import click
-from erk_shared.github.metadata import update_plan_header_local_impl
+from erk_shared.env import in_github_actions
+from erk_shared.github.metadata import (
+    update_plan_header_local_impl,
+    update_plan_header_remote_impl,
+)
 from erk_shared.impl_folder import read_issue_reference
 
 from dot_agent_kit.context_helpers import (
@@ -56,10 +64,14 @@ class MarkImplError:
 @click.command(name="mark-impl-started")
 @click.pass_context
 def mark_impl_started(ctx: click.Context) -> None:
-    """Update last_local_impl_at in GitHub issue plan-header metadata.
+    """Update implementation timestamp in GitHub issue plan-header metadata.
 
     Reads issue number from .impl/issue.json, fetches the issue from GitHub,
     updates the plan-header block with current timestamp, and posts back.
+
+    Detects execution environment:
+    - Local machine: Updates last_local_impl_at field
+    - GitHub Actions: Updates last_remote_impl_at field
 
     Gracefully fails with exit code 0 to support || true pattern in slash commands.
     """
@@ -102,13 +114,19 @@ def mark_impl_started(ctx: click.Context) -> None:
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(0) from None
 
-    # Update local impl timestamp
-    local_impl_at = datetime.now(UTC).isoformat()
+    # Update impl timestamp based on environment
+    timestamp = datetime.now(UTC).isoformat()
     try:
-        updated_body = update_plan_header_local_impl(
-            issue_body=issue.body,
-            local_impl_at=local_impl_at,
-        )
+        if in_github_actions():
+            updated_body = update_plan_header_remote_impl(
+                issue_body=issue.body,
+                remote_impl_at=timestamp,
+            )
+        else:
+            updated_body = update_plan_header_local_impl(
+                issue_body=issue.body,
+                local_impl_at=timestamp,
+            )
     except ValueError as e:
         # plan-header block not found (old format issue)
         result = MarkImplError(

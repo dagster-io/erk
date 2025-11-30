@@ -1144,7 +1144,8 @@ class PlanHeaderSchema(MetadataBlockSchema):
         worktree_name: Set when worktree is created (nullable)
         last_dispatched_run_id: Updated by workflow, enables direct run lookup (nullable)
         last_dispatched_at: Updated by workflow (nullable)
-        last_local_impl_at: Updated by local implementation, tracks last implement time (nullable)
+        last_local_impl_at: Updated by local implementation, tracks last time (nullable)
+        last_remote_impl_at: Updated by GitHub Actions, tracks last remote run (nullable)
     """
 
     def validate(self, data: dict[str, Any]) -> None:
@@ -1159,6 +1160,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
             "last_dispatched_run_id",
             "last_dispatched_at",
             "last_local_impl_at",
+            "last_remote_impl_at",
         }
 
         # Check required fields exist
@@ -1200,6 +1202,11 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 if not isinstance(data["last_local_impl_at"], str):
                     raise ValueError("last_local_impl_at must be a string or null")
 
+        if "last_remote_impl_at" in data:
+            if data["last_remote_impl_at"] is not None:
+                if not isinstance(data["last_remote_impl_at"], str):
+                    raise ValueError("last_remote_impl_at must be a string or null")
+
         # Check for unexpected fields
         known_fields = required_fields | optional_fields
         unknown_fields = set(data.keys()) - known_fields
@@ -1218,6 +1225,7 @@ def create_plan_header_block(
     last_dispatched_run_id: str | None = None,
     last_dispatched_at: str | None = None,
     last_local_impl_at: str | None = None,
+    last_remote_impl_at: str | None = None,
 ) -> MetadataBlock:
     """Create a plan-header metadata block with validation.
 
@@ -1228,6 +1236,7 @@ def create_plan_header_block(
         last_dispatched_run_id: Optional workflow run ID (set by workflow)
         last_dispatched_at: Optional dispatch timestamp (set by workflow)
         last_local_impl_at: Optional local implementation timestamp (set by plan-implement)
+        last_remote_impl_at: Optional remote implementation timestamp (set by GitHub Actions)
 
     Returns:
         MetadataBlock with plan-header schema
@@ -1240,6 +1249,7 @@ def create_plan_header_block(
         "last_dispatched_run_id": last_dispatched_run_id,
         "last_dispatched_at": last_dispatched_at,
         "last_local_impl_at": last_local_impl_at,
+        "last_remote_impl_at": last_remote_impl_at,
     }
     # Only include worktree_name if provided
     if worktree_name is not None:
@@ -1260,6 +1270,7 @@ def format_plan_header_body(
     last_dispatched_run_id: str | None = None,
     last_dispatched_at: str | None = None,
     last_local_impl_at: str | None = None,
+    last_remote_impl_at: str | None = None,
 ) -> str:
     """Format issue body with only metadata (schema version 2).
 
@@ -1273,6 +1284,7 @@ def format_plan_header_body(
         last_dispatched_run_id: Optional workflow run ID
         last_dispatched_at: Optional dispatch timestamp
         last_local_impl_at: Optional local implementation timestamp
+        last_remote_impl_at: Optional remote implementation timestamp
 
     Returns:
         Issue body string with metadata block only
@@ -1284,6 +1296,7 @@ def format_plan_header_body(
         last_dispatched_run_id=last_dispatched_run_id,
         last_dispatched_at=last_dispatched_at,
         last_local_impl_at=last_local_impl_at,
+        last_remote_impl_at=last_remote_impl_at,
     )
 
     return render_metadata_block(block)
@@ -1554,3 +1567,60 @@ def extract_plan_header_local_impl_at(issue_body: str) -> str | None:
         return None
 
     return block.data.get("last_local_impl_at")
+
+
+def update_plan_header_remote_impl(
+    issue_body: str,
+    remote_impl_at: str,
+) -> str:
+    """Update last_remote_impl_at field in plan-header metadata block.
+
+    Uses Python YAML parsing for robustness (not regex).
+    This function reads the existing plan-header block, updates the
+    remote_impl_at field, and re-renders the entire body.
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        remote_impl_at: ISO 8601 timestamp of remote implementation
+
+    Returns:
+        Updated issue body with new last_remote_impl_at field
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """
+    # Extract existing plan-header block
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    # Update remote impl field
+    updated_data = dict(block.data)
+    updated_data["last_remote_impl_at"] = remote_impl_at
+
+    # Validate updated data
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    # Create new block and render
+    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    # Replace block in full body
+    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+
+
+def extract_plan_header_remote_impl_at(issue_body: str) -> str | None:
+    """Extract last_remote_impl_at from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        last_remote_impl_at ISO timestamp if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get("last_remote_impl_at")

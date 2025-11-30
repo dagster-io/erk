@@ -7,6 +7,7 @@ from erk_shared.github.emoji import get_checks_status_emoji, get_pr_status_emoji
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata import (
     extract_plan_header_local_impl_at,
+    extract_plan_header_remote_impl_at,
     extract_plan_header_worktree_name,
 )
 from erk_shared.github.types import PullRequestInfo
@@ -145,6 +146,19 @@ def format_local_run_cell(last_local_impl_at: str | None) -> str:
         Relative time string (e.g., "2h ago") or "-" if no timestamp
     """
     relative_time = format_relative_time(last_local_impl_at)
+    return relative_time if relative_time else "-"
+
+
+def format_remote_run_cell(last_remote_impl_at: str | None) -> str:
+    """Format last remote implementation timestamp as relative time.
+
+    Args:
+        last_remote_impl_at: ISO timestamp of last remote (GitHub Actions) implementation, or None
+
+    Returns:
+        Relative time string (e.g., "2h ago") or "-" if no timestamp
+    """
+    relative_time = format_relative_time(last_remote_impl_at)
     return relative_time if relative_time else "-"
 
 
@@ -300,6 +314,7 @@ def _list_plans_impl(
     table.add_column("local-wt", no_wrap=True)
     table.add_column("local-run", no_wrap=True)
     if runs:
+        table.add_column("remote-run", no_wrap=True)
         table.add_column("run-id", no_wrap=True)
         table.add_column("run-state", no_wrap=True, width=12)
 
@@ -326,6 +341,7 @@ def _list_plans_impl(
         worktree_name = ""
         exists_locally = False
         last_local_impl_at: str | None = None
+        last_remote_impl_at: str | None = None
 
         # Check local mapping first (worktree exists locally)
         if isinstance(issue_number, int) and issue_number in worktree_by_issue:
@@ -339,12 +355,14 @@ def _list_plans_impl(
                 # If we don't have a local name yet, use the one from issue body
                 if not worktree_name:
                     worktree_name = extracted
-            # Extract last_local_impl_at timestamp
+            # Extract implementation timestamps
             last_local_impl_at = extract_plan_header_local_impl_at(plan.body)
+            last_remote_impl_at = extract_plan_header_remote_impl_at(plan.body)
 
         # Format the worktree cells
         worktree_name_cell = format_worktree_name_cell(worktree_name, exists_locally)
         local_run_cell = format_local_run_cell(last_local_impl_at)
+        remote_run_cell = format_remote_run_cell(last_remote_impl_at)
 
         # Get PR info for this issue
         pr_cell = "-"
@@ -390,7 +408,7 @@ def _list_plans_impl(
             row.extend([pr_cell, checks_cell])
         row.extend([worktree_name_cell, local_run_cell])
         if runs:
-            row.extend([run_id_cell, run_outcome_cell])
+            row.extend([remote_run_cell, run_id_cell, run_outcome_cell])
         table.add_row(*row)
 
     # Output table to stderr (consistent with user_output convention)
