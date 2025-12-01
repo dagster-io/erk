@@ -101,6 +101,7 @@ plan_group.add_command(list_plans, name="list")
 ## Testing
 
 Add test in `tests/commands/plan/test_list.py` following the pattern from `test_get.py`:
+
 - Test with FakePlanStore to verify output format
 - Test empty state (no plans)
 - Test table output includes expected columns

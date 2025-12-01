@@ -449,3 +449,63 @@ def dash(
         prs = True
         runs = True
     _list_plans_impl(ctx, label, state, run_state, runs, prs, limit)
+
+
+@click.command("list")
+@click.pass_obj
+def list_plans(ctx: ErkContext) -> None:
+    """List plans with erk-plan label.
+
+    Shows open plans by default with plan number, title, and state.
+
+    Examples:
+        erk plan list
+    """
+    repo = discover_repo_context(ctx, ctx.cwd)
+    ensure_erk_metadata_dir(repo)
+    repo_root = repo.root
+
+    # Fetch only issues - skip workflow runs and PR linkages for efficiency
+    try:
+        plan_data = ctx.plan_list_service.get_plan_list_data(
+            repo_root=repo_root,
+            labels=["erk-plan"],
+            state="open",
+            skip_workflow_runs=True,
+            skip_pr_linkages=True,
+        )
+    except RuntimeError as e:
+        user_output(click.style("Error: ", fg="red") + str(e))
+        raise SystemExit(1) from e
+
+    plans = [_issue_to_plan(issue) for issue in plan_data.issues]
+
+    if not plans:
+        user_output("No plans found.")
+        return
+
+    user_output(f"\nFound {len(plans)} plan(s):\n")
+
+    # Simple table with 3 columns
+    table = Table(show_header=True, header_style="bold")
+    table.add_column("plan", style="cyan", no_wrap=True)
+    table.add_column("title", no_wrap=True)
+    table.add_column("state", no_wrap=True)
+
+    for plan in plans:
+        # Plan number with clickable link
+        id_text = f"#{plan.plan_identifier}"
+        colored_id = f"[cyan]{id_text}[/cyan]"
+        issue_id = f"[link={plan.url}]{colored_id}[/link]" if plan.url else colored_id
+
+        # Truncate title
+        title = plan.title[:47] + "..." if len(plan.title) > 50 else plan.title
+
+        # State with emoji
+        state_cell = "🟢 open" if plan.state == PlanState.OPEN else "⚫ closed"
+
+        table.add_row(issue_id, title, state_cell)
+
+    console = Console(stderr=True, width=200, force_terminal=True)
+    console.print(table)
+    console.print()
