@@ -446,6 +446,7 @@ def _build_watch_content(
     count: int,
     last_update: str,
     seconds_remaining: int,
+    fetch_duration_secs: float | None = None,
 ) -> Group | Panel:
     """Build display content for watch mode.
 
@@ -454,12 +455,16 @@ def _build_watch_content(
         count: Number of plans found
         last_update: Formatted time of last data refresh
         seconds_remaining: Seconds until next refresh
+        fetch_duration_secs: Duration of last data fetch in seconds, or None
 
     Returns:
         Rich renderable content for the display
     """
+    # Build duration suffix
+    duration_suffix = f" ({fetch_duration_secs:.1f}s)" if fetch_duration_secs is not None else ""
+
     footer = (
-        f"Found {count} plan(s) | Updated: {last_update} | "
+        f"Found {count} plan(s) | Updated: {last_update}{duration_suffix} | "
         f"Next refresh: {seconds_remaining}s | Ctrl+C to exit"
     )
 
@@ -488,14 +493,18 @@ def _run_watch_loop(
     """
     live_display.start()
     try:
-        # Initial data fetch
+        # Initial data fetch - with timing
+        start = ctx.time.now()
         table, count = build_table_fn()
+        fetch_duration_secs = (ctx.time.now() - start).total_seconds()
         last_update = ctx.time.now().strftime("%H:%M:%S")
         seconds_remaining = int(interval)
 
         while True:
             # Update display with current countdown
-            content = _build_watch_content(table, count, last_update, seconds_remaining)
+            content = _build_watch_content(
+                table, count, last_update, seconds_remaining, fetch_duration_secs
+            )
             live_display.update(content)
 
             # Sleep for 1 second
@@ -504,7 +513,9 @@ def _run_watch_loop(
 
             # Refresh data when countdown reaches zero
             if seconds_remaining <= 0:
+                start = ctx.time.now()
                 table, count = build_table_fn()
+                fetch_duration_secs = (ctx.time.now() - start).total_seconds()
                 last_update = ctx.time.now().strftime("%H:%M:%S")
                 seconds_remaining = int(interval)
     except KeyboardInterrupt:

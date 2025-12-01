@@ -1,5 +1,7 @@
 """Tests for erk dash --watch mode."""
 
+from datetime import datetime
+
 from erk_shared.integrations.time.fake import FakeTime
 from rich.console import Group
 from rich.panel import Panel
@@ -251,3 +253,173 @@ def test_watch_loop_countdown_decrements() -> None:
 
     # Should see countdown values: 5, 4, 3 (before interrupt)
     assert countdown_values == [5, 4, 3]
+
+
+def test_build_watch_content_shows_fetch_duration() -> None:
+    """Footer includes fetch duration when provided."""
+    table = Table()
+    content = _build_watch_content(
+        table, count=5, last_update="14:30:45", seconds_remaining=3, fetch_duration_secs=1.234
+    )
+
+    # Verify duration appears in footer (will show "1.2s")
+    assert isinstance(content, Group)
+    # Extract panel from group
+    panel = content.renderables[1]
+    assert isinstance(panel, Panel)
+    footer_text = str(panel.renderable)
+    assert "(1.2s)" in footer_text
+    assert "Updated: 14:30:45 (1.2s)" in footer_text
+
+
+def test_build_watch_content_without_fetch_duration() -> None:
+    """Footer works without fetch duration (backwards compatibility)."""
+    table = Table()
+    content = _build_watch_content(table, count=5, last_update="14:30:45", seconds_remaining=3)
+
+    # Verify no duration appears in footer
+    assert isinstance(content, Group)
+    panel = content.renderables[1]
+    assert isinstance(panel, Panel)
+    footer_text = str(panel.renderable)
+    # Verify the footer doesn't have the duration format "(X.Xs)"
+    import re
+
+    duration_pattern = r"\(\d+\.\d+s\)"
+    assert not re.search(duration_pattern, footer_text)
+    assert "Updated: 14:30:45 |" in footer_text
+
+
+def test_watch_loop_tracks_fetch_duration() -> None:
+    """Watch loop measures and displays fetch duration."""
+    from datetime import timedelta
+
+    start_time = datetime(2024, 1, 15, 14, 30, 0)
+    fake_display = FakeLiveDisplay()
+
+    # Track when now() is called to simulate time passing
+    now_call_count = 0
+
+    class TimingFakeTime(FakeTime):
+        def now(self) -> datetime:
+            nonlocal now_call_count
+            now_call_count += 1
+            # First call: start timing (before build)
+            # Second call: end timing (after build) - simulate 0.5s elapsed
+            # Third call: format last_update
+            if now_call_count == 2:
+                return start_time + timedelta(seconds=0.5)
+            return start_time + timedelta(seconds=(now_call_count - 1) * 0.5)
+
+    fake_time = TimingFakeTime(start_time)
+
+    def build_table() -> tuple[Table | None, int]:
+        return Table(), 5
+
+    # Interrupt after first display update
+    update_count = 0
+    original_update = fake_display.update
+
+    def counting_update(renderable):
+        nonlocal update_count
+        original_update(renderable)
+        update_count += 1
+        if update_count >= 1:
+            raise KeyboardInterrupt()
+
+    fake_display.update = counting_update
+
+    ctx = ErkContext.for_test(time=fake_time)
+    _run_watch_loop(ctx, fake_display, build_table, interval=5.0)
+
+    # Should have one update with duration
+    assert len(fake_display.updates) == 1
+    content = fake_display.updates[0]
+    assert isinstance(content, Group)
+
+    # Extract footer and verify duration is present
+    panel = content.renderables[1]
+    assert isinstance(panel, Panel)
+    footer_text = str(panel.renderable)
+    assert "(0.5s)" in footer_text
+
+
+def test_watch_loop_updates_duration_on_refresh() -> None:
+    """Watch loop tracks new duration after each data refresh."""
+    from datetime import timedelta
+
+    start_time = datetime(2024, 1, 15, 14, 30, 0)
+    fake_display = FakeLiveDisplay()
+
+    fetch_count = 0
+
+    # Simulate time passing during fetches
+    # Track each now() call and return appropriate time
+    now_calls: list[datetime] = []
+
+    class TimingFakeTime(FakeTime):
+        def now(self) -> datetime:
+            # First fetch pair: start at 0s, end at 0.3s
+            # Second fetch pair: start at 1.0s, end at 1.7s
+            if len(now_calls) == 0:
+                now_calls.append(start_time)
+                return start_time
+            if len(now_calls) == 1:
+                now_calls.append(start_time + timedelta(seconds=0.3))
+                return start_time + timedelta(seconds=0.3)
+            if len(now_calls) == 2:
+                now_calls.append(start_time + timedelta(seconds=0.3))
+                return start_time + timedelta(seconds=0.3)
+            if len(now_calls) == 3:
+                now_calls.append(start_time + timedelta(seconds=1.0))
+                return start_time + timedelta(seconds=1.0)
+            if len(now_calls) == 4:
+                now_calls.append(start_time + timedelta(seconds=1.7))
+                return start_time + timedelta(seconds=1.7)
+            now_calls.append(start_time + timedelta(seconds=1.7))
+            return start_time + timedelta(seconds=1.7)
+
+    fake_time = TimingFakeTime(start_time)
+
+    sleep_count = 0
+
+    def build_table() -> tuple[Table | None, int]:
+        nonlocal fetch_count
+        fetch_count += 1
+        return Table(), fetch_count
+
+    original_sleep = fake_time.sleep
+
+    def counting_sleep(seconds: float) -> None:
+        nonlocal sleep_count
+        original_sleep(seconds)
+        sleep_count += 1
+        # Interrupt after second sleep
+        if sleep_count >= 2:
+            raise KeyboardInterrupt()
+
+    fake_time.sleep = counting_sleep
+
+    ctx = ErkContext.for_test(time=fake_time)
+    _run_watch_loop(ctx, fake_display, build_table, interval=1.0)
+
+    # Should have multiple updates
+    assert len(fake_display.updates) >= 2
+
+    # Collect all unique durations seen in updates
+    durations_seen = set()
+    for update in fake_display.updates:
+        if isinstance(update, Group):
+            panel = update.renderables[1]
+            if isinstance(panel, Panel):
+                footer_text = str(panel.renderable)
+                # Extract duration if present
+                import re
+
+                match = re.search(r"\((\d+\.\d+)s\)", footer_text)
+                if match:
+                    durations_seen.add(match.group(1))
+
+    # Should have seen both 0.3s and 0.7s durations
+    assert "0.3" in durations_seen
+    assert "0.7" in durations_seen
