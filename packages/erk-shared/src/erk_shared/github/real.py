@@ -1,9 +1,18 @@
-"""Production implementation of GitHub operations."""
+"""Production implementation of GitHub operations.
+
+Error Handling Philosophy:
+    gh CLI invocations should let exceptions bubble by default. Callers are
+    responsible for handling failures appropriately. Don't swallow exceptions
+    and return None/False/default values - this masks real errors and makes
+    debugging difficult.
+
+    Legitimate "not found" cases (e.g., no PR exists for a branch) are handled
+    by checking the response data, not by catching exceptions.
+"""
 
 import json
 import secrets
 import string
-import subprocess
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -27,6 +36,7 @@ from erk_shared.github.types import (
     PRInfo,
     PRMergeability,
     PullRequestInfo,
+    RepoInfo,
     WorkflowRun,
     WorkflowRunConclusion,
     WorkflowRunStatus,
@@ -493,21 +503,31 @@ query {{
         *,
         squash: bool = True,
         verbose: bool = False,
-    ) -> None:
+        subject: str | None = None,
+        body: str | None = None,
+    ) -> bool:
         """Merge a pull request on GitHub via gh CLI."""
         cmd = ["gh", "pr", "merge", str(pr_number)]
         if squash:
             cmd.append("--squash")
+        if subject is not None:
+            cmd.extend(["--subject", subject])
+        if body is not None:
+            cmd.extend(["--body", body])
 
-        result = run_subprocess_with_context(
-            cmd,
-            operation_context=f"merge PR #{pr_number}",
-            cwd=repo_root,
-        )
+        try:
+            result = run_subprocess_with_context(
+                cmd,
+                operation_context=f"merge PR #{pr_number}",
+                cwd=repo_root,
+            )
 
-        # Show output in verbose mode
-        if verbose and result.stdout:
-            user_output(result.stdout)
+            # Show output in verbose mode
+            if verbose and result.stdout:
+                user_output(result.stdout)
+            return True
+        except RuntimeError:
+            return False
 
     def _generate_distinct_id(self) -> str:
         """Generate a random base36 ID for workflow dispatch correlation.
@@ -1679,20 +1699,189 @@ query {{
 
         return (issues, pr_linkages)
 
-    def get_repo_info(self, repo_root: Path) -> tuple[str, str] | None:
-        """Get repository owner and name via gh repo view.
+    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR number and URL for a specific branch using gh CLI.
 
-        Uses gh repo view which reads from local git remote config.
+        Returns:
+            Tuple of (pr_number, pr_url) or None if no PR exists for this branch.
+
+        Raises:
+            RuntimeError: If gh command fails (auth issues, network errors, etc.)
         """
-        result = subprocess.run(
-            ["gh", "repo", "view", "--json", "owner,name"],
-            capture_output=True,
-            text=True,
-            cwd=repo_root,
-            check=False,
-        )
-        if result.returncode != 0:
+        cmd = [
+            "gh",
+            "pr",
+            "list",
+            "--head",
+            branch,
+            "--json",
+            "number,url",
+            "--limit",
+            "1",
+        ]
+        stdout = execute_gh_command(cmd, repo_root)
+        data = json.loads(stdout)
+        if not data:
             return None
+        pr = data[0]
+        return (pr["number"], pr["url"])
 
-        data = json.loads(result.stdout)
-        return (data["owner"]["login"], data["name"])
+    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR number and state for a specific branch using gh CLI.
+
+        Returns:
+            Tuple of (pr_number, state) or None if no PR exists for this branch.
+
+        Raises:
+            RuntimeError: If gh command fails (auth issues, network errors, etc.)
+        """
+        cmd = [
+            "gh",
+            "pr",
+            "list",
+            "--head",
+            branch,
+            "--state",
+            "all",
+            "--json",
+            "number,state",
+            "--limit",
+            "1",
+        ]
+        stdout = execute_gh_command(cmd, repo_root)
+        data = json.loads(stdout)
+        if not data:
+            return None
+        pr = data[0]
+        return (pr["number"], pr["state"])
+
+    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get PR title by number using gh CLI.
+
+        Returns:
+            PR title string, or None if empty.
+
+        Raises:
+            RuntimeError: If gh command fails (auth issues, network errors, etc.)
+        """
+        cmd = [
+            "gh",
+            "pr",
+            "view",
+            str(pr_number),
+            "--json",
+            "title",
+            "-q",
+            ".title",
+        ]
+        stdout = execute_gh_command(cmd, repo_root)
+        title = stdout.strip()
+        return title if title else None
+
+    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get PR body by number using gh CLI.
+
+        Returns:
+            PR body string, or None if empty.
+
+        Raises:
+            RuntimeError: If gh command fails (auth issues, network errors, etc.)
+        """
+        cmd = [
+            "gh",
+            "pr",
+            "view",
+            str(pr_number),
+            "--json",
+            "body",
+            "-q",
+            ".body",
+        ]
+        stdout = execute_gh_command(cmd, repo_root)
+        body = stdout.strip()
+        return body if body else None
+
+    def update_pr_title_and_body(
+        self, repo_root: Path, pr_number: int, title: str, body: str
+    ) -> None:
+        """Update PR title and body using gh CLI.
+
+        Raises:
+            RuntimeError: If gh command fails (auth issues, network errors, etc.)
+        """
+        cmd = [
+            "gh",
+            "pr",
+            "edit",
+            str(pr_number),
+            "--title",
+            title,
+            "--body",
+            body,
+        ]
+        execute_gh_command(cmd, repo_root)
+
+    def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
+        """Mark a draft PR as ready for review using gh CLI.
+
+        Raises:
+            RuntimeError: If gh command fails (auth issues, network errors, etc.)
+        """
+        cmd = ["gh", "pr", "ready", str(pr_number)]
+        execute_gh_command(cmd, repo_root)
+
+    def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
+        """Get the diff for a PR using gh CLI.
+
+        Raises:
+            RuntimeError: If gh command fails
+        """
+        result = run_subprocess_with_context(
+            ["gh", "pr", "diff", str(pr_number)],
+            operation_context=f"get diff for PR #{pr_number}",
+            cwd=repo_root,
+        )
+        return result.stdout
+
+    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
+        """Get PR mergeability status from GitHub API.
+
+        Uses REST API to get mergeable state. Returns ("UNKNOWN", "UNKNOWN") when
+        GitHub hasn't computed mergeability yet (null response).
+
+        Raises:
+            RuntimeError: If gh command fails (auth issues, network errors, etc.)
+        """
+        cmd = [
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+            "--jq",
+            ".mergeable,.mergeable_state",
+        ]
+        stdout = execute_gh_command(cmd, repo_root)
+        lines = stdout.strip().split("\n")
+        mergeable = lines[0] if len(lines) > 0 else "null"
+        merge_state = lines[1] if len(lines) > 1 else "unknown"
+
+        # Convert to GitHub GraphQL enum format
+        if mergeable == "true":
+            return ("MERGEABLE", merge_state.upper())
+        if mergeable == "false":
+            return ("CONFLICTING", merge_state.upper())
+        return ("UNKNOWN", "UNKNOWN")
+
+    def get_repo_info(self, repo_root: Path) -> RepoInfo:
+        """Get repository owner and name from GitHub CLI.
+
+        Uses `gh repo view --json owner,name` to get repo info.
+
+        Raises:
+            RuntimeError: If gh command fails (auth issues, network errors, etc.)
+        """
+        cmd = ["gh", "repo", "view", "--json", "owner,name"]
+        stdout = execute_gh_command(cmd, repo_root)
+        data = json.loads(stdout)
+        owner = data["owner"]["login"]
+        name = data["name"]
+        return RepoInfo(owner=owner, name=name)

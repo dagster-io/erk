@@ -84,7 +84,11 @@ def execute_update_pr(ops: GtKit | None = None) -> dict:
         return {"success": False, "error": f"Failed to submit update: {e}"}
 
     # 4. Fetch PR info after submission
-    pr_info = ops.github().get_pr_info()
+    branch = ops.git().get_current_branch(cwd)
+    if branch is None:
+        return {"success": False, "error": "Could not determine current branch"}
+
+    pr_info = ops.github().get_pr_info_for_branch(repo_root, branch)
     if not pr_info:
         return {"success": False, "error": "PR submission succeeded but failed to retrieve PR info"}
 

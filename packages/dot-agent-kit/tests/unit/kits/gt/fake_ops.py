@@ -15,11 +15,11 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from erk_shared.git.abc import Git
+from erk_shared.github.types import RepoInfo
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 from erk_shared.integrations.gt import (
-    GitHubGtKit,
     GtKit,
 )
 
@@ -356,8 +356,12 @@ class FakeGitGtKitOps(Git):
         raise NotImplementedError
 
 
-class FakeGitHubGtKitOps(GitHubGtKit):
-    """Fake GitHub operations with in-memory state."""
+class FakeGitHubGtKitOps:
+    """Fake GitHub operations with in-memory state.
+
+    Note: This is a test-local fake that doesn't inherit from an ABC.
+    It provides a simplified interface for testing GT kit operations.
+    """
 
     def __init__(self, state: GitHubState | None = None) -> None:
         """Initialize with optional initial state."""
@@ -428,31 +432,32 @@ class FakeGitHubGtKitOps(GitHubGtKit):
         # In the fake, marking as ready always succeeds if PR exists
         return True
 
-    def get_pr_title(self) -> str | None:
-        """Get the title of the PR for the current branch."""
-        if self._current_branch not in self._state.pr_numbers:
-            return None
-        pr_number = self._state.pr_numbers[self._current_branch]
+    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get the title of the PR (matches GitHub ABC interface)."""
         return self._state.pr_titles.get(pr_number)
 
-    def get_pr_body(self) -> str | None:
-        """Get the body of the PR for the current branch."""
-        if self._current_branch not in self._state.pr_numbers:
-            return None
-        pr_number = self._state.pr_numbers[self._current_branch]
+    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get the body of the PR (matches GitHub ABC interface)."""
         return self._state.pr_bodies.get(pr_number)
 
-    def merge_pr(self, *, subject: str | None = None, body: str | None = None) -> bool:
-        """Merge the PR with configurable success/failure."""
-        if self._current_branch not in self._state.pr_numbers:
-            return False
+    def merge_pr(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        *,
+        squash: bool = True,
+        verbose: bool = False,
+        subject: str | None = None,
+        body: str | None = None,
+    ) -> bool:
+        """Merge the PR with configurable success/failure (matches GitHub ABC interface)."""
         return self._state.merge_success
 
     def get_graphite_pr_url(self, pr_number: int) -> str | None:
         """Get Graphite PR URL (fake returns test URL)."""
         return f"https://app.graphite.com/github/pr/test-owner/test-repo/{pr_number}"
 
-    def get_pr_diff(self, pr_number: int) -> str:
+    def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
         """Get PR diff from configured state or return default."""
         if pr_number in self._state.pr_diffs:
             return self._state.pr_diffs[pr_number]
@@ -480,11 +485,58 @@ class FakeGitHubGtKitOps(GitHubGtKit):
         # Default: MERGEABLE/CLEAN unless configured otherwise
         return self._state.pr_mergeability.get(pr_number, ("MERGEABLE", "CLEAN"))
 
+    # Methods matching GitHub ABC interface (take repo_root as first param)
+
+    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR info for branch (matches GitHub ABC interface)."""
+        if branch not in self._state.pr_numbers:
+            return None
+        pr_number = self._state.pr_numbers[branch]
+        pr_url = self._state.pr_urls.get(branch, f"https://github.com/repo/pull/{pr_number}")
+        return (pr_number, pr_url)
+
+    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR state for branch (matches GitHub ABC interface)."""
+        if branch not in self._state.pr_numbers:
+            return None
+        pr_number = self._state.pr_numbers[branch]
+        pr_state = self._state.pr_states.get(branch, "OPEN")
+        return (pr_number, pr_state)
+
+    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
+        """Get PR mergeability status (matches GitHub ABC interface)."""
+        return self._state.pr_mergeability.get(pr_number, ("MERGEABLE", "CLEAN"))
+
+    def update_pr_title_and_body(
+        self, repo_root: Path, pr_number: int, title: str, body: str
+    ) -> bool:
+        """Update PR title and body (matches GitHub ABC interface)."""
+        if not self._state.pr_update_success:
+            return False
+
+        # Create new state with updated metadata
+        new_titles = {**self._state.pr_titles, pr_number: title}
+        new_bodies = {**self._state.pr_bodies, pr_number: body}
+        self._state = replace(self._state, pr_titles=new_titles, pr_bodies=new_bodies)
+        return True
+
+    def get_repo_info(self, repo_root: Path) -> RepoInfo | None:
+        """Get repo info (matches GitHub ABC interface).
+
+        Returns a fake RepoInfo for testing.
+        """
+        return RepoInfo(owner="test-owner", name="test-repo")
+
 
 class FakeGtKitOps(GtKit):
     """Fake composite operations for testing.
 
     Provides declarative setup methods for common test scenarios.
+
+    Note: Returns FakeGitGtKitOps and FakeGitHubGtKitOps for testability,
+    which have test-specific helper methods not in the production ABCs.
+    The github() method returns a test fake that doesn't implement the full
+    GitHub ABC, so uses type: ignore.
     """
 
     def __init__(
@@ -502,8 +554,11 @@ class FakeGtKitOps(GtKit):
         """Get the git operations interface."""
         return self._git  # type: ignore[return-value]
 
-    def github(self) -> FakeGitHubGtKitOps:
-        """Get the GitHub operations interface."""
+    def github(self) -> FakeGitHubGtKitOps:  # type: ignore[override]
+        """Get the GitHub operations interface.
+
+        Returns a test fake with helper methods not in the production ABC.
+        """
         return self._github
 
     def main_graphite(self) -> Graphite:

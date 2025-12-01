@@ -11,6 +11,7 @@ from erk_shared.github.types import (
     PRInfo,
     PRMergeability,
     PullRequestInfo,
+    RepoInfo,
     WorkflowRun,
 )
 from erk_shared.printing.base import PrintingBase
@@ -112,11 +113,15 @@ class PrintingGitHub(PrintingBase, GitHub):
         *,
         squash: bool = True,
         verbose: bool = False,
-    ) -> None:
+        subject: str | None = None,
+        body: str | None = None,
+    ) -> bool:
         """Merge PR with printed output."""
         merge_type = "--squash" if squash else "--merge"
         self._emit(self._format_command(f"gh pr merge {pr_number} {merge_type}"))
-        self._wrapped.merge_pr(repo_root, pr_number, squash=squash, verbose=verbose)
+        return self._wrapped.merge_pr(
+            repo_root, pr_number, squash=squash, verbose=verbose, subject=subject, body=body
+        )
 
     def trigger_workflow(
         self,
@@ -197,3 +202,47 @@ class PrintingGitHub(PrintingBase, GitHub):
     ) -> dict[str, WorkflowRun | None]:
         """Get workflow runs by node IDs (read-only, no printing)."""
         return self._wrapped.get_workflow_runs_by_node_ids(repo_root, node_ids)
+
+    def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -> str | None:
+        """Get workflow run node ID (read-only, no printing)."""
+        return self._wrapped.get_workflow_run_node_id(repo_root, run_id)
+
+    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR info for branch (read-only, no printing)."""
+        return self._wrapped.get_pr_info_for_branch(repo_root, branch)
+
+    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR state for branch (read-only, no printing)."""
+        return self._wrapped.get_pr_state_for_branch(repo_root, branch)
+
+    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get PR title (read-only, no printing)."""
+        return self._wrapped.get_pr_title(repo_root, pr_number)
+
+    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get PR body (read-only, no printing)."""
+        return self._wrapped.get_pr_body(repo_root, pr_number)
+
+    def update_pr_title_and_body(
+        self, repo_root: Path, pr_number: int, title: str, body: str
+    ) -> bool:
+        """Update PR title and body with printed output."""
+        self._emit(self._format_command(f"gh pr edit {pr_number} --title <title> --body <body>"))
+        return self._wrapped.update_pr_title_and_body(repo_root, pr_number, title, body)
+
+    def mark_pr_ready(self, repo_root: Path, pr_number: int) -> bool:
+        """Mark PR as ready with printed output."""
+        self._emit(self._format_command(f"gh pr ready {pr_number}"))
+        return self._wrapped.mark_pr_ready(repo_root, pr_number)
+
+    def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
+        """Get PR diff (read-only, no printing)."""
+        return self._wrapped.get_pr_diff(repo_root, pr_number)
+
+    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
+        """Get PR mergeability status (read-only, no printing)."""
+        return self._wrapped.get_pr_mergeability_status(repo_root, pr_number)
+
+    def get_repo_info(self, repo_root: Path) -> RepoInfo | None:
+        """Get repository info (read-only, no printing)."""
+        return self._wrapped.get_repo_info(repo_root)

@@ -222,7 +222,8 @@ def _build_plans_table(
     if repo_info is None:
         user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
         raise SystemExit(1)
-    owner, repo_name = repo_info
+    owner = repo_info.owner
+    repo_name = repo_info.name
 
     # Use PlanListService for batched API calls
     # Skip workflow runs when not needed for better performance
@@ -533,7 +534,8 @@ def _run_interactive_mode(
     if repo_info is None:
         user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
         raise SystemExit(1)
-    owner, repo_name = repo_info
+    owner = repo_info.owner
+    repo_name = repo_info.name
 
     # Build labels - default to ["erk-plan"]
     labels = label if label else ("erk-plan",)

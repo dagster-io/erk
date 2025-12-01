@@ -10,6 +10,7 @@ from erk_shared.github.types import (
     PRInfo,
     PRMergeability,
     PullRequestInfo,
+    RepoInfo,
     WorkflowRun,
 )
 
@@ -141,7 +142,9 @@ class GitHub(ABC):
         *,
         squash: bool = True,
         verbose: bool = False,
-    ) -> None:
+        subject: str | None = None,
+        body: str | None = None,
+    ) -> bool:
         """Merge a pull request on GitHub.
 
         Args:
@@ -149,6 +152,13 @@ class GitHub(ABC):
             pr_number: PR number to merge
             squash: If True, use squash merge strategy (default: True)
             verbose: If True, show detailed output
+            subject: Optional commit message subject for squash merge.
+                     If provided, overrides GitHub's default behavior.
+            body: Optional commit message body for squash merge.
+                  If provided, included as the commit body text.
+
+        Returns:
+            True on success, False on failure
         """
         ...
 
@@ -433,16 +443,130 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
-    def get_repo_info(self, repo_root: Path) -> tuple[str, str] | None:
-        """Get repository owner and name.
+    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR number and URL for a specific branch.
 
-        Returns the owner/name for the repository at repo_root.
-        Uses local git remote configuration without network calls.
+        Args:
+            repo_root: Repository root directory
+            branch: Branch name to check
+
+        Returns:
+            Tuple of (pr_number, pr_url) or None if no PR exists for this branch
+        """
+        ...
+
+    @abstractmethod
+    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR number and state for a specific branch.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Branch name to check
+
+        Returns:
+            Tuple of (pr_number, state) where state is "OPEN", "MERGED", or "CLOSED"
+            None if no PR exists for this branch
+        """
+        ...
+
+    @abstractmethod
+    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get PR title by number.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number
+
+        Returns:
+            PR title string, or None if PR not found
+        """
+        ...
+
+    @abstractmethod
+    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get PR body by number.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number
+
+        Returns:
+            PR body string, or None if PR not found
+        """
+        ...
+
+    @abstractmethod
+    def update_pr_title_and_body(
+        self, repo_root: Path, pr_number: int, title: str, body: str
+    ) -> None:
+        """Update PR title and body.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to update
+            title: New PR title
+            body: New PR body
+
+        Raises:
+            RuntimeError: If gh command fails
+        """
+        ...
+
+    @abstractmethod
+    def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
+        """Mark a draft PR as ready for review.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to mark as ready
+
+        Raises:
+            RuntimeError: If gh command fails
+        """
+        ...
+
+    @abstractmethod
+    def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
+        """Get the diff for a PR.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to get diff for
+
+        Returns:
+            Diff content as string
+
+        Raises:
+            RuntimeError: If gh command fails
+        """
+        ...
+
+    @abstractmethod
+    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
+        """Get PR mergeability status from GitHub API.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to check
+
+        Returns:
+            Tuple of (mergeable, merge_state_status):
+            - mergeable: "MERGEABLE", "CONFLICTING", or "UNKNOWN"
+            - merge_state_status: "CLEAN", "DIRTY", "UNSTABLE", etc.
+        """
+        ...
+
+    @abstractmethod
+    def get_repo_info(self, repo_root: Path) -> RepoInfo:
+        """Get repository owner and name from GitHub CLI.
 
         Args:
             repo_root: Repository root directory
 
         Returns:
-            Tuple of (owner, name) or None if cannot be determined
+            RepoInfo with owner and name
+
+        Raises:
+            RuntimeError: If gh command fails
         """
         ...

@@ -16,6 +16,7 @@ from erk_shared.github.types import (
     PRMergeability,
     PRState,
     PullRequestInfo,
+    RepoInfo,
     WorkflowRun,
 )
 
@@ -228,9 +229,12 @@ class FakeGitHub(GitHub):
         *,
         squash: bool = True,
         verbose: bool = False,
-    ) -> None:
+        subject: str | None = None,
+        body: str | None = None,
+    ) -> bool:
         """Record PR merge in mutation tracking list."""
         self._merged_prs.append(pr_number)
+        return True
 
     def trigger_workflow(
         self,
@@ -585,9 +589,80 @@ class FakeGitHub(GitHub):
 
         return (filtered_issues, pr_linkages)
 
-    def get_repo_info(self, repo_root: Path) -> tuple[str, str] | None:
-        """Return pre-configured repo info.
+    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR number and URL for a specific branch from configured state.
 
-        Returns ("owner", "repo") for test convenience.
+        Returns None if branch not found in configured PRs.
         """
-        return ("owner", "repo")
+        pr = self._prs.get(branch)
+        if pr is None:
+            return None
+        return (pr.number, pr.url)
+
+    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR number and state for a specific branch from configured state.
+
+        Returns None if branch not found in configured PRs.
+        """
+        pr = self._prs.get(branch)
+        if pr is None:
+            return None
+        return (pr.number, pr.state)
+
+    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get PR title by number from configured state.
+
+        Searches through configured PRs to find one matching the number.
+        Returns None if PR not found.
+        """
+        for pr in self._prs.values():
+            if pr.number == pr_number:
+                return pr.title
+        return None
+
+    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get PR body by number from configured state.
+
+        Fake implementation returns None as PR bodies are not tracked.
+        """
+        return None
+
+    def update_pr_title_and_body(
+        self, repo_root: Path, pr_number: int, title: str, body: str
+    ) -> None:
+        """Record PR title and body update in mutation tracking list."""
+        self._updated_pr_bodies.append((pr_number, body))
+
+    def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
+        """Mark a draft PR as ready for review (fake is a no-op)."""
+        pass
+
+    def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
+        """Get the diff for a PR (returns simple fake diff).
+
+        Returns a simple default diff for testing purposes.
+        """
+        return (
+            "diff --git a/file.py b/file.py\n"
+            "--- a/file.py\n"
+            "+++ b/file.py\n"
+            "@@ -1,1 +1,1 @@\n"
+            "-old\n"
+            "+new"
+        )
+
+    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
+        """Get PR mergeability status from configured state.
+
+        Returns configured mergeability or defaults to ("MERGEABLE", "CLEAN").
+        """
+        if pr_number in self._pr_mergeability:
+            mergeability = self._pr_mergeability[pr_number]
+            if mergeability is None:
+                return ("UNKNOWN", "UNKNOWN")
+            return (mergeability.mergeable, mergeability.merge_state_status)
+        return ("MERGEABLE", "CLEAN")
+
+    def get_repo_info(self, repo_root: Path) -> RepoInfo:
+        """Get repository owner and name (returns test defaults)."""
+        return RepoInfo(owner="test-owner", name="test-repo")
