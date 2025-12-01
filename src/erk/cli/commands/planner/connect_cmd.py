@@ -53,6 +53,18 @@ def connect_planner(ctx: ErkContext, name: str | None) -> None:
     # -t: Force pseudo-terminal allocation (required for interactive TUI like claude)
     # bash -l -c: Use login shell to ensure PATH is set up (claude installs to ~/.claude/local/)
     # Pass /erk:craft-plan as initial prompt to launch the planning workflow immediately
+    #
+    # IMPORTANT: The entire remote command (bash -l -c '...') must be a single argument.
+    # SSH concatenates command arguments with spaces without preserving grouping.
+    # If passed as separate args ["bash", "-l", "-c", "cmd"], the remote receives:
+    #   bash -l -c git pull && uv sync && ...
+    # Instead of:
+    #   bash -l -c "git pull && uv sync && ..."
+    # This causes `bash -l -c git` to run `git` with no subcommand (exits with help).
+    setup_commands = "git pull && uv sync && source .venv/bin/activate"
+    claude_command = 'claude "/erk:craft-plan"'
+    remote_command = f"bash -l -c '{setup_commands} && {claude_command}'"
+
     os.execvp(
         "gh",
         [
@@ -63,9 +75,6 @@ def connect_planner(ctx: ErkContext, name: str | None) -> None:
             planner.gh_name,
             "--",
             "-t",
-            "bash",
-            "-l",
-            "-c",
-            "git pull && uv sync && source .venv/bin/activate && claude '/erk:craft-plan'",
+            remote_command,
         ],
     )
