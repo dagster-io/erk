@@ -333,7 +333,7 @@ class FakeGitHub(GitHub):
         location: GitHubRepoLocation,
         issue_numbers: list[int],
     ) -> dict[int, list[PullRequestInfo]]:
-        """Get PRs linked to issues via closing keywords (returns pre-configured data).
+        """Get PRs linked to issues (returns pre-configured data).
 
         Returns only the mappings for issues in issue_numbers that have
         pre-configured PR linkages. Issues without linkages are omitted.

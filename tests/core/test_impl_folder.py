@@ -12,7 +12,6 @@ from erk_shared.impl_folder import (
     add_worktree_creation_comment,
     create_impl_folder,
     extract_steps_from_plan,
-    get_closing_text,
     get_impl_path,
     get_progress_path,
     has_issue_reference,
@@ -655,57 +654,6 @@ def test_has_issue_reference_plan_dir_not_exists(tmp_path: Path) -> None:
     # Don't create directory
 
     assert has_issue_reference(plan_dir) is False
-
-
-# ============================================================================
-# get_closing_text Tests
-# ============================================================================
-
-
-def test_get_closing_text_with_issue_reference(tmp_path: Path) -> None:
-    """Test get_closing_text returns 'Closes #N' when issue reference exists."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
-
-    save_issue_reference(impl_dir, 123, "https://github.com/owner/repo/issues/123")
-
-    result = get_closing_text(impl_dir)
-
-    assert result == "Closes #123"
-
-
-def test_get_closing_text_without_issue_reference(tmp_path: Path) -> None:
-    """Test get_closing_text returns empty string when no issue reference."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
-
-    result = get_closing_text(impl_dir)
-
-    assert result == ""
-
-
-def test_get_closing_text_impl_dir_not_exists(tmp_path: Path) -> None:
-    """Test get_closing_text returns empty string when .impl dir doesn't exist."""
-    impl_dir = tmp_path / ".impl"
-    # Don't create directory
-
-    result = get_closing_text(impl_dir)
-
-    assert result == ""
-
-
-def test_get_closing_text_invalid_issue_json(tmp_path: Path) -> None:
-    """Test get_closing_text returns empty string when issue.json is invalid."""
-    impl_dir = tmp_path / ".impl"
-    impl_dir.mkdir()
-
-    # Create invalid JSON file
-    issue_file = impl_dir / "issue.json"
-    issue_file.write_text("not valid json", encoding="utf-8")
-
-    result = get_closing_text(impl_dir)
-
-    assert result == ""
 
 
 def test_issue_reference_roundtrip(tmp_path: Path) -> None:

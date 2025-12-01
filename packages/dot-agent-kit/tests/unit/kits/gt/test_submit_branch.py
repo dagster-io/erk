@@ -10,7 +10,6 @@ from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
     PostAnalysisError,
     PreAnalysisError,
     PreAnalysisResult,
-    _has_closes_reference,
     build_pr_metadata_section,
     execute_pre_analysis,
 )
@@ -55,15 +54,16 @@ class TestBuildPRMetadataSection:
     The function builds a footer section for PR bodies containing:
     - Separator (---) at start
     - Checkout command
-    - Closes #N reference
 
     The footer is only generated when an issue reference exists.
+    Note: Closes #N is no longer included - GitHub handles this via native branch linking.
     """
 
     def test_build_metadata_footer_with_issue_reference(self, tmp_path: Path) -> None:
         """Test building metadata footer with issue reference.
 
-        Footer should contain: separator, checkout command, and Closes reference.
+        Footer should contain: separator and checkout command.
+        Note: Closes #N is NOT included - GitHub handles this via native branch linking.
         """
         impl_dir = tmp_path / ".impl"
         impl_dir.mkdir()
@@ -82,8 +82,8 @@ class TestBuildPRMetadataSection:
         assert "---" in result
         # Contains checkout command
         assert "erk pr checkout 456" in result
-        # Contains Closes reference
-        assert "Closes #123" in result
+        # Should NOT contain Closes reference (handled by native branch linking)
+        assert "Closes #" not in result
         # Should NOT contain old header elements
         assert "- **Plan:**" not in result
         assert "- **Plan Author:**" not in result
@@ -106,7 +106,8 @@ class TestBuildPRMetadataSection:
         result = build_pr_metadata_section(impl_dir, pr_number=None)
 
         assert "erk pr checkout __PLACEHOLDER_PR_NUMBER__" in result
-        assert "Closes #789" in result
+        # No Closes reference - handled by native branch linking
+        assert "Closes #" not in result
 
     def test_build_metadata_empty_when_no_issue_reference(self, tmp_path: Path) -> None:
         """Test that empty string is returned when no issue reference exists."""
@@ -653,93 +654,8 @@ class TestExecuteFinalize:
         final_pr_body = github_state.pr_bodies[123]
         # Body comes first, then footer
         assert final_pr_body.startswith("Description")
-        # Footer contains separator, checkout command, and Closes reference
+        # Footer contains separator and checkout command (no Closes # - handled by native linking)
         assert "---" in final_pr_body
         assert "erk pr checkout 123" in final_pr_body
-        assert "Closes #456" in final_pr_body
-
-    def test_finalize_fails_when_closes_reference_missing(self, tmp_path: Path) -> None:
-        """Test finalize fails when issue reference exists but Closes # is missing from body."""
-        from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
-            execute_finalize,
-        )
-
-        # Create .impl/issue.json
-        impl_dir = tmp_path / ".impl"
-        impl_dir.mkdir()
-        issue_json = impl_dir / "issue.json"
-        issue_json.write_text(
-            '{"issue_number": 456, "issue_url": "https://github.com/repo/issues/456", '
-            '"created_at": "2025-01-01T00:00:00Z", "synced_at": "2025-01-01T00:00:00Z"}',
-            encoding="utf-8",
-        )
-
-        ops = (
-            FakeGtKitOps()
-            .with_branch("feature-branch", parent="main")
-            .with_commits(1)
-            .with_pr(123, url="https://github.com/org/repo/pull/123")
-        )
-
-        # Mock metadata to NOT include Closes # reference
-        pr_body = "Description without closes reference"
-
-        # Mock build_pr_metadata_section to return empty (simulating missing Closes #)
-        # This happens when build_pr_metadata_section doesn't work correctly
-        patch_path = "erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch.Path.cwd"
-        patch_metadata = (
-            "erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch.build_pr_metadata_section"
-        )
-        with (
-            patch(patch_path) as mock_cwd,
-            patch(patch_metadata) as mock_build,
-        ):
-            mock_cwd.return_value = tmp_path
-            # Return metadata section WITHOUT Closes # reference
-            mock_build.return_value = "\n---\nSome metadata but no closes\n"
-
-            result = execute_finalize(
-                pr_number=123,
-                pr_title="Add feature",
-                pr_body=pr_body,
-                diff_file=None,
-                ops=ops,
-            )
-
-        assert isinstance(result, PostAnalysisError)
-        assert result.success is False
-        assert result.error_type == "pr_update_failed"
-        assert "Closes #456" in result.message
-        assert result.details["issue_number"] == "456"
-
-
-class TestHasClosesReference:
-    """Tests for _has_closes_reference() function."""
-
-    def test_detects_closes_reference(self) -> None:
-        """Test that Closes # reference is detected."""
-        assert _has_closes_reference("Body\n\nCloses #123")
-
-    def test_detects_closes_in_middle(self) -> None:
-        """Test that Closes # reference in middle of body is detected."""
-        assert _has_closes_reference("Closes #456\n\nMore text")
-
-    def test_rejects_body_without_closes(self) -> None:
-        """Test that body without Closes # is rejected."""
-        assert not _has_closes_reference("Body without issue reference")
-
-    def test_detects_closes_with_large_number(self) -> None:
-        """Test that Closes # with large issue number is detected."""
-        assert _has_closes_reference("Closes #12345")
-
-    def test_rejects_partial_closes_match(self) -> None:
-        """Test that partial match (missing #) is rejected."""
-        assert not _has_closes_reference("Closes 123")
-
-    def test_rejects_closes_without_number(self) -> None:
-        """Test that Closes # without number is rejected."""
-        assert not _has_closes_reference("Closes #")
-
-    def test_detects_closes_in_sentence(self) -> None:
-        """Test that Closes # within a sentence is detected."""
-        assert _has_closes_reference("This PR Closes #789 and adds feature")
+        # Closes # is NOT included - GitHub handles this via native branch linking
+        assert "Closes #" not in final_pr_body

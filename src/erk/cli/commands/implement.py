@@ -14,10 +14,8 @@ from pathlib import Path
 from typing import NamedTuple
 
 import click
-from erk_shared.github.issue_link_branches import DevelopmentBranch
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.naming import (
-    derive_branch_name_from_title,
     ensure_unique_worktree_name_with_date,
     format_branch_timestamp_suffix,
     sanitize_worktree_name,
@@ -30,7 +28,6 @@ from erk.cli.activation import render_activation_script
 from erk.cli.commands.completions import complete_plan_files
 from erk.cli.commands.wt.create_cmd import add_worktree, run_post_worktree_setup
 from erk.cli.config import LoadedConfig
-from erk.cli.constants import USE_GITHUB_NATIVE_BRANCH_LINKING
 from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import ErkContext
@@ -362,28 +359,19 @@ def _prepare_plan_source_from_issue(
             + "Proceeding anyway..."
         )
 
-    # Create or derive branch name for the issue
+    # Create or derive branch name for the issue using GitHub's native branch linking
     trunk_branch = ctx.git.get_trunk_branch(repo_root)
-    if USE_GITHUB_NATIVE_BRANCH_LINKING:
-        # Compute branch name: truncate to 31 chars, then append timestamp suffix
-        base_branch_name = sanitize_worktree_name(f"{issue_number}-{plan.title}")
-        timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
-        desired_branch_name = base_branch_name + timestamp_suffix
-        # Use GitHub's native branch linking via `gh issue develop`
-        dev_branch = ctx.issue_link_branches.create_development_branch(
-            repo_root,
-            int(issue_number),
-            branch_name=desired_branch_name,
-            base_branch=trunk_branch,
-        )
-    else:
-        # Traditional branch naming from issue title
-        branch_name = derive_branch_name_from_title(plan.title)
-        dev_branch = DevelopmentBranch(
-            branch_name=branch_name,
-            issue_number=int(issue_number),
-            already_existed=False,
-        )
+    # Compute branch name: truncate to 31 chars, then append timestamp suffix
+    base_branch_name = sanitize_worktree_name(f"{issue_number}-{plan.title}")
+    timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
+    desired_branch_name = base_branch_name + timestamp_suffix
+    # Use GitHub's native branch linking via `gh issue develop`
+    dev_branch = ctx.issue_link_branches.create_development_branch(
+        repo_root,
+        int(issue_number),
+        branch_name=desired_branch_name,
+        base_branch=trunk_branch,
+    )
 
     if dev_branch.already_existed:
         ctx.feedback.info(f"Using existing linked branch: {dev_branch.branch_name}")

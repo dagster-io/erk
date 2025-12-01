@@ -45,9 +45,6 @@ kit_cli_commands:
   - name: post-plan-comment
     path: kit_cli_commands/erk/post_plan_comment.py
     description: Post plan issue comment with workflow instructions
-  - name: get-closing-text
-    path: kit_cli_commands/erk/get_closing_text.py
-    description: Get GitHub issue closing text for PR body
   - name: plan-save-to-issue
     path: kit_cli_commands/erk/plan_save_to_issue.py
     description: Extract plan from ~/.claude/plans/ and create GitHub issue with schema v2 format
@@ -90,9 +87,6 @@ kit_cli_commands:
   - name: get-progress
     path: kit_cli_commands/erk/get_progress.py
     description: Query progress information from progress.md frontmatter
-  - name: get-pr-metadata
-    path: kit_cli_commands/erk/get_pr_metadata.py
-    description: Get PR metadata section for PR body with issue link and author
   - name: extract-latest-plan
     path: kit_cli_commands/erk/extract_latest_plan.py
     description: Extract the latest plan from Claude session files

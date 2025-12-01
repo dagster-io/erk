@@ -6,7 +6,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import click
-from erk_shared.github.issue_link_branches import DevelopmentBranch
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata import (
     create_submission_queued_block,
@@ -15,7 +14,6 @@ from erk_shared.github.metadata import (
 )
 from erk_shared.github.parsing import github_repo_location_from_url
 from erk_shared.naming import (
-    derive_branch_name_from_title,
     format_branch_timestamp_suffix,
     sanitize_worktree_name,
 )
@@ -26,7 +24,6 @@ from erk.cli.constants import (
     DISPATCH_WORKFLOW_METADATA_NAME,
     DISPATCH_WORKFLOW_NAME,
     ERK_PLAN_LABEL,
-    USE_GITHUB_NATIVE_BRANCH_LINKING,
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -211,49 +208,39 @@ def _validate_issue_for_submit(
     # Derive branch name
     trunk_branch = ctx.git.get_trunk_branch(repo.root)
     logger.debug("trunk_branch=%s", trunk_branch)
-    logger.debug("USE_GITHUB_NATIVE_BRANCH_LINKING=%s", USE_GITHUB_NATIVE_BRANCH_LINKING)
 
-    if USE_GITHUB_NATIVE_BRANCH_LINKING:
-        # Compute branch name: truncate to 31 chars, then append timestamp suffix
-        base_branch_name = sanitize_worktree_name(f"{issue_number}-{issue.title}")
-        logger.debug("base_branch_name=%s", base_branch_name)
-        timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
-        logger.debug("timestamp_suffix=%s", timestamp_suffix)
-        desired_branch_name = base_branch_name + timestamp_suffix
-        logger.debug("desired_branch_name (before unique check)=%s", desired_branch_name)
+    # Compute branch name: truncate to 31 chars, then append timestamp suffix
+    base_branch_name = sanitize_worktree_name(f"{issue_number}-{issue.title}")
+    logger.debug("base_branch_name=%s", base_branch_name)
+    timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
+    logger.debug("timestamp_suffix=%s", timestamp_suffix)
+    desired_branch_name = base_branch_name + timestamp_suffix
+    logger.debug("desired_branch_name (before unique check)=%s", desired_branch_name)
 
-        # Ensure unique name to prevent gh issue develop failure
-        desired_branch_name = _ensure_unique_branch_name(ctx, repo.root, desired_branch_name)
-        logger.debug("desired_branch_name (after unique check)=%s", desired_branch_name)
+    # Ensure unique name to prevent gh issue develop failure
+    desired_branch_name = _ensure_unique_branch_name(ctx, repo.root, desired_branch_name)
+    logger.debug("desired_branch_name (after unique check)=%s", desired_branch_name)
 
-        # Use GitHub's native branch linking via `gh issue develop`
-        logger.debug(
-            "Calling create_development_branch: repo_root=%s, issue_number=%d, "
-            "branch_name=%s, base_branch=%s",
-            repo.root,
-            issue_number,
-            desired_branch_name,
-            trunk_branch,
-        )
-        dev_branch = ctx.issue_link_branches.create_development_branch(
-            repo.root,
-            issue_number,
-            branch_name=desired_branch_name,
-            base_branch=trunk_branch,
-        )
-        logger.debug(
-            "create_development_branch returned: branch_name=%s, already_existed=%s",
-            dev_branch.branch_name,
-            dev_branch.already_existed,
-        )
-    else:
-        # Traditional branch naming from issue title
-        branch_name = derive_branch_name_from_title(issue.title)
-        dev_branch = DevelopmentBranch(
-            branch_name=branch_name,
-            issue_number=issue_number,
-            already_existed=False,
-        )
+    # Use GitHub's native branch linking via `gh issue develop`
+    logger.debug(
+        "Calling create_development_branch: repo_root=%s, issue_number=%d, "
+        "branch_name=%s, base_branch=%s",
+        repo.root,
+        issue_number,
+        desired_branch_name,
+        trunk_branch,
+    )
+    dev_branch = ctx.issue_link_branches.create_development_branch(
+        repo.root,
+        issue_number,
+        branch_name=desired_branch_name,
+        base_branch=trunk_branch,
+    )
+    logger.debug(
+        "create_development_branch returned: branch_name=%s, already_existed=%s",
+        dev_branch.branch_name,
+        dev_branch.already_existed,
+    )
 
     branch_name = dev_branch.branch_name
 
@@ -335,9 +322,7 @@ def _submit_single_issue(
                 f"**Author:** @{submitted_by}\n"
                 f"**Plan:** #{issue_number}\n\n"
                 f"**Status:** Queued for implementation\n\n"
-                f"This PR will be marked ready for review after implementation completes.\n\n"
-                f"---\n\n"
-                f"Closes #{issue_number}"
+                f"This PR will be marked ready for review after implementation completes."
             )
             pr_title = _strip_plan_markers(issue.title)
             pr_number = ctx.github.create_pr(
@@ -411,9 +396,7 @@ def _submit_single_issue(
             f"**Author:** @{submitted_by}\n"
             f"**Plan:** #{issue_number}\n\n"
             f"**Status:** Queued for implementation\n\n"
-            f"This PR will be marked ready for review after implementation completes.\n\n"
-            f"---\n\n"
-            f"Closes #{issue_number}"
+            f"This PR will be marked ready for review after implementation completes."
         )
         pr_title = _strip_plan_markers(issue.title)
         pr_number = ctx.github.create_pr(

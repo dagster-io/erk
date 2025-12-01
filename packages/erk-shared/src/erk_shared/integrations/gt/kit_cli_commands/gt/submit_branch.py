@@ -53,7 +53,6 @@ Examples:
 """
 
 import json
-import re
 import subprocess
 import threading
 import time
@@ -64,27 +63,11 @@ from typing import Literal, NamedTuple
 import click
 
 from erk_shared.impl_folder import (
-    get_closing_text,
     has_issue_reference,
     read_issue_reference,
 )
 from erk_shared.integrations.gt.abc import GtKit
 from erk_shared.integrations.gt.real import RealGtKit
-
-CLOSES_ISSUE_PATTERN = re.compile(r"Closes #\d+")
-
-
-def _has_closes_reference(pr_body: str) -> bool:
-    """Check if PR body contains a Closes #N reference.
-
-    Args:
-        pr_body: PR body text
-
-    Returns:
-        True if body contains Closes #N pattern, False otherwise
-    """
-    return bool(CLOSES_ISSUE_PATTERN.search(pr_body))
-
 
 PreAnalysisErrorType = Literal[
     "gt_not_authenticated",
@@ -398,7 +381,10 @@ def build_pr_metadata_section(
     """Build metadata footer section for PR body.
 
     This section is appended AFTER the PR body content, not before.
-    It contains only essential metadata: checkout command and Closes reference.
+    It contains only essential metadata: checkout command.
+
+    Note: Issue closing is now handled via GitHub's native branch linking
+    (branches created with `gh issue develop` automatically close issues when merged).
 
     Args:
         impl_dir: Path to .impl/ directory
@@ -407,12 +393,8 @@ def build_pr_metadata_section(
     Returns:
         Metadata footer section as string (empty if no issue reference exists)
     """
-    # Get closing text using canonical function
-    closing_text = get_closing_text(impl_dir)
-
     # Only build metadata if we have an issue reference
-    # (checkout command is only useful if we have a PR to link to)
-    if not closing_text:
+    if not has_issue_reference(impl_dir):
         return ""
 
     metadata_parts: list[str] = []
@@ -428,9 +410,6 @@ def build_pr_metadata_section(
         f"erk pr checkout {pr_display}\n"
         f"```\n"
     )
-
-    # Closes #N - use canonical closing text
-    metadata_parts.append(f"\n{closing_text}\n")
 
     return "\n".join(metadata_parts)
 
@@ -820,18 +799,6 @@ def execute_finalize(
     assert pr_body is not None
 
     final_body = pr_body + metadata_section
-
-    # Validate Closes # reference exists when .impl/ has issue reference
-    if issue_number is not None and not _has_closes_reference(final_body):
-        return PostAnalysisError(
-            success=False,
-            error_type="pr_update_failed",
-            message=f"PR body missing 'Closes #{issue_number}' reference",
-            details={
-                "issue_number": str(issue_number),
-                "hint": "The build_pr_metadata_section should have added this reference",
-            },
-        )
 
     # Update PR metadata
     click.echo("📝 Updating PR metadata... (gh pr edit)", err=True)
