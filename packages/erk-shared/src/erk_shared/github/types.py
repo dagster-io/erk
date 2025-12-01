@@ -41,17 +41,144 @@ class PRMergeability:
     merge_state_status: str  # "CLEAN", "BLOCKED", "UNSTABLE", "DIRTY", etc.
 
 
-@dataclass(frozen=True)
-class WorkflowRun:
-    """Information about a GitHub Actions workflow run."""
+class _NotAvailable:
+    """Sentinel for fields not available from certain API queries.
 
-    run_id: str
-    status: str  # "in_progress", "completed", "queued"
-    conclusion: str | None  # "success", "failure", "cancelled" (None if in progress)
-    branch: str
-    head_sha: str
-    display_title: str | None = None  # The display title (e.g., issue title for dispatch workflows)
-    created_at: datetime | None = None  # Timestamp when the workflow run was created (UTC)
+    Raises AttributeError when accessed as a string, preventing silent bugs
+    when code tries to use fields that weren't populated.
+    """
+
+    def __init__(self, field_name: str, source: str) -> None:
+        self._field_name = field_name
+        self._source = source
+
+    def __str__(self) -> str:
+        msg = f"'{self._field_name}' is not available from {self._source}"
+        raise AttributeError(msg)
+
+    def __repr__(self) -> str:
+        return f"<NotAvailable: {self._field_name}>"
+
+    def __eq__(self, other: object) -> bool:
+        # Allow comparison with other _NotAvailable instances
+        if isinstance(other, _NotAvailable):
+            return self._field_name == other._field_name
+        # Comparing with anything else (including strings) raises
+        msg = f"'{self._field_name}' is not available from {self._source}"
+        raise AttributeError(msg)
+
+    def __hash__(self) -> int:
+        return hash(("_NotAvailable", self._field_name))
+
+
+# Sentinel instances for WorkflowRun fields not available from nodes() query
+BRANCH_NOT_AVAILABLE = _NotAvailable("branch", "GraphQL nodes() query")
+DISPLAY_TITLE_NOT_AVAILABLE = _NotAvailable("display_title", "GraphQL nodes() query")
+
+
+class WorkflowRun:
+    """Information about a GitHub Actions workflow run.
+
+    Immutable class representing workflow run data. Some fields may not be
+    available depending on the API query used to fetch the data:
+
+    - branch: Not available from GraphQL nodes() query
+    - display_title: Not available from GraphQL nodes() query
+
+    Accessing unavailable fields raises AttributeError.
+    """
+
+    __slots__ = (
+        "_run_id",
+        "_status",
+        "_conclusion",
+        "_branch",
+        "_head_sha",
+        "_display_title",
+        "_created_at",
+    )
+
+    def __init__(
+        self,
+        run_id: str,
+        status: str,
+        conclusion: str | None,
+        branch: str | _NotAvailable,
+        head_sha: str,
+        display_title: str | None | _NotAvailable = None,
+        created_at: datetime | None = None,
+    ) -> None:
+        object.__setattr__(self, "_run_id", run_id)
+        object.__setattr__(self, "_status", status)
+        object.__setattr__(self, "_conclusion", conclusion)
+        object.__setattr__(self, "_branch", branch)
+        object.__setattr__(self, "_head_sha", head_sha)
+        object.__setattr__(self, "_display_title", display_title)
+        object.__setattr__(self, "_created_at", created_at)
+
+    def __setattr__(self, name: str, value: object) -> None:
+        msg = "WorkflowRun is immutable"
+        raise AttributeError(msg)
+
+    def __delattr__(self, name: str) -> None:
+        msg = "WorkflowRun is immutable"
+        raise AttributeError(msg)
+
+    @property
+    def run_id(self) -> str:
+        return self._run_id  # type: ignore[return-value]
+
+    @property
+    def status(self) -> str:
+        return self._status  # type: ignore[return-value]
+
+    @property
+    def conclusion(self) -> str | None:
+        return self._conclusion  # type: ignore[return-value]
+
+    @property
+    def branch(self) -> str:
+        value = self._branch
+        if isinstance(value, _NotAvailable):
+            # Trigger the error message
+            str(value)
+        return value  # type: ignore[return-value]
+
+    @property
+    def head_sha(self) -> str:
+        return self._head_sha  # type: ignore[return-value]
+
+    @property
+    def display_title(self) -> str | None:
+        value = self._display_title
+        if isinstance(value, _NotAvailable):
+            # Trigger the error message
+            str(value)
+        return value  # type: ignore[return-value]
+
+    @property
+    def created_at(self) -> datetime | None:
+        return self._created_at  # type: ignore[return-value]
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, WorkflowRun):
+            return NotImplemented
+        return (
+            self._run_id == other._run_id
+            and self._status == other._status
+            and self._conclusion == other._conclusion
+            and self._head_sha == other._head_sha
+            and self._created_at == other._created_at
+        )
+
+    def __hash__(self) -> int:
+        return hash((self._run_id, self._status, self._conclusion, self._head_sha))
+
+    def __repr__(self) -> str:
+        return (
+            f"WorkflowRun(run_id={self._run_id!r}, status={self._status!r}, "
+            f"conclusion={self._conclusion!r}, head_sha={self._head_sha!r})"
+        )
 
 
 @dataclass(frozen=True)

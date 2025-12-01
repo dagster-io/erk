@@ -17,6 +17,8 @@ from erk_shared.github.parsing import (
     parse_github_pr_status,
 )
 from erk_shared.github.types import (
+    BRANCH_NOT_AVAILABLE,
+    DISPLAY_TITLE_NOT_AVAILABLE,
     PRCheckoutInfo,
     PRInfo,
     PRMergeability,
@@ -1302,26 +1304,17 @@ query {{
         Uses GraphQL nodes(ids: [...]) query to efficiently fetch multiple
         workflow runs in a single API call. This is dramatically faster than
         individual REST API calls for each run.
-
-        Note: Uses try/except as an acceptable error boundary for handling gh CLI
-        availability and authentication. We cannot reliably check gh installation
-        and authentication status a priori without duplicating gh's logic.
         """
         # Early exit for empty input
         if not node_ids:
             return {}
 
-        try:
-            # Build GraphQL query using nodes() interface
-            query = self._build_workflow_runs_nodes_query(node_ids)
-            response = self._execute_batch_pr_query(query, repo_root)
+        # Build GraphQL query using nodes() interface
+        query = self._build_workflow_runs_nodes_query(node_ids)
+        response = self._execute_batch_pr_query(query, repo_root)
 
-            # Parse response into WorkflowRun objects
-            return self._parse_workflow_runs_nodes_response(response, node_ids)
-
-        except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError):
-            # gh not installed, not authenticated, or parsing failed
-            return {node_id: None for node_id in node_ids}
+        # Parse response into WorkflowRun objects
+        return self._parse_workflow_runs_nodes_response(response, node_ids)
 
     def _build_workflow_runs_nodes_query(self, node_ids: list[str]) -> str:
         """Build GraphQL query to fetch workflow runs by node IDs.
@@ -1429,9 +1422,9 @@ query {{
                 run_id=str(node.get("databaseId", "")),
                 status=status or "unknown",  # Default for missing status
                 conclusion=conclusion,
-                branch="",  # Not available from nodes query
+                branch=BRANCH_NOT_AVAILABLE,
                 head_sha=head_sha or "",  # Default for missing SHA
-                display_title=None,  # Not available from nodes query
+                display_title=DISPLAY_TITLE_NOT_AVAILABLE,
                 created_at=created_at,
             )
             result[node_id] = workflow_run
