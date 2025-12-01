@@ -6,9 +6,8 @@ Testing the fake ensures all higher-layer tests using FakeGitHub are reliable.
 
 from pathlib import Path
 
+from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import WorkflowRun
-
-from erk.core.github.fake import FakeGitHub
 
 
 def test_get_workflow_run_returns_correct_run_by_id() -> None:

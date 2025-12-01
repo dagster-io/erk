@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import GitHubIssues
 from erk_shared.integrations.graphite.fake import FakeGraphite
 
@@ -10,7 +11,6 @@ from erk.core.claude_executor import ClaudeExecutor
 from erk.core.config_store import GlobalConfig
 from erk.core.context import ErkContext
 from erk.core.git.fake import FakeGit
-from erk.core.github.fake import FakeGitHub
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk.core.script_writer import ScriptWriter
 from tests.fakes.completion import FakeCompletion

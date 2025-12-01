@@ -374,9 +374,8 @@ def test_down_delete_current_success() -> None:
         )
 
         # PR for feature-2 is merged
+        from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.types import PullRequestInfo
-
-        from erk.core.github.fake import FakeGitHub
 
         github_ops = FakeGitHub(
             prs={
@@ -501,9 +500,8 @@ def test_down_delete_current_pr_open() -> None:
         )
 
         # PR for feature-2 is OPEN (active work in progress)
+        from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.types import PullRequestInfo
-
-        from erk.core.github.fake import FakeGitHub
 
         github_ops = FakeGitHub(
             prs={
@@ -574,9 +572,8 @@ def test_down_delete_current_pr_closed() -> None:
         )
 
         # PR for feature-2 is CLOSED (abandoned/rejected work)
+        from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.types import PullRequestInfo
-
-        from erk.core.github.fake import FakeGitHub
 
         github_ops = FakeGitHub(
             prs={
@@ -651,7 +648,7 @@ def test_down_delete_current_no_pr() -> None:
         )
 
         # No PR for feature-2
-        from erk.core.github.fake import FakeGitHub
+        from erk_shared.github.fake import FakeGitHub
 
         github_ops = FakeGitHub(prs={})
 
@@ -706,9 +703,8 @@ def test_down_delete_current_trunk_in_root() -> None:
         )
 
         # PR for feature-1 is merged
+        from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.types import PullRequestInfo
-
-        from erk.core.github.fake import FakeGitHub
 
         github_ops = FakeGitHub(
             prs={

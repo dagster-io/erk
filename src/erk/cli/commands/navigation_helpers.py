@@ -1,12 +1,12 @@
 from pathlib import Path
 
 import click
+from erk_shared.debug import debug_log
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.output.output import machine_output, user_output
 
 from erk.cli.activation import render_activation_script
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
-from erk.cli.debug import debug_log
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext

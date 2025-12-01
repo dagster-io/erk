@@ -4,12 +4,12 @@ This file tests the rename command which renames a worktree workspace.
 """
 
 from click.testing import CliRunner
+from erk_shared.github.fake import FakeGitHub
 from erk_shared.integrations.graphite.fake import FakeGraphite
 
 from erk.cli.cli import cli
 from erk.core.git.dry_run import DryRunGit
 from erk.core.git.fake import FakeGit
-from erk.core.github.fake import FakeGitHub
 from erk.core.repo_discovery import RepoContext
 from tests.fakes.shell import FakeShell
 from tests.test_utils.env_helpers import erk_inmem_env

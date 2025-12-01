@@ -892,9 +892,8 @@ timestamp: "2024-11-23T12:00:00Z"
 
 def test_list_plans_filter_by_run_state_queued() -> None:
     """Test filtering plans by workflow run state (queued)."""
+    from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import WorkflowRun
-
-    from erk.core.github.fake import FakeGitHub
 
     # Arrange - Create plans with workflow run node_ids in plan-header
     queued_plan_body = """<!-- erk:metadata-block:plan-header -->
@@ -985,9 +984,8 @@ last_dispatched_node_id: 'WFR_running'
 
 def test_list_plans_filter_by_run_state_success() -> None:
     """Test filtering plans by workflow run state (success)."""
+    from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import WorkflowRun
-
-    from erk.core.github.fake import FakeGitHub
 
     # Arrange - Create plans with workflow run node_ids in plan-header
     success_plan_body = """<!-- erk:metadata-block:plan-header -->
@@ -1078,9 +1076,8 @@ last_dispatched_node_id: 'WFR_failed'
 
 def test_list_plans_run_state_filter_no_matches() -> None:
     """Test run-state filter with no matching plans."""
+    from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import WorkflowRun
-
-    from erk.core.github.fake import FakeGitHub
 
     # Arrange - Plan with workflow run that doesn't match filter
     plan = Plan(
@@ -1122,9 +1119,8 @@ def test_list_plans_run_state_filter_no_matches() -> None:
 
 def test_list_plans_pr_column_open_pr() -> None:
     """Test PR column displays open PR with 👀 emoji."""
+    from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo
-
-    from erk.core.github.fake import FakeGitHub
 
     # Arrange
     plan = Plan(
@@ -1171,9 +1167,8 @@ def test_list_plans_pr_column_open_pr() -> None:
 
 def test_list_plans_pr_column_draft_pr() -> None:
     """Test PR column displays draft PR with 🚧 emoji."""
+    from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo
-
-    from erk.core.github.fake import FakeGitHub
 
     # Arrange
     plan = Plan(
@@ -1220,9 +1215,8 @@ def test_list_plans_pr_column_draft_pr() -> None:
 
 def test_list_plans_pr_column_merged_pr() -> None:
     """Test PR column displays merged PR with 🎉 emoji."""
+    from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo
-
-    from erk.core.github.fake import FakeGitHub
 
     # Arrange
     plan = Plan(
@@ -1269,9 +1263,8 @@ def test_list_plans_pr_column_merged_pr() -> None:
 
 def test_list_plans_pr_column_closed_pr() -> None:
     """Test PR column displays closed PR with ⛔ emoji."""
+    from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo
-
-    from erk.core.github.fake import FakeGitHub
 
     # Arrange
     plan = Plan(
@@ -1318,9 +1311,8 @@ def test_list_plans_pr_column_closed_pr() -> None:
 
 def test_list_plans_pr_column_with_conflicts() -> None:
     """Test PR column shows conflict indicator 💥 for open/draft PRs with conflicts."""
+    from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo
-
-    from erk.core.github.fake import FakeGitHub
 
     # Arrange
     plan = Plan(
@@ -1367,9 +1359,8 @@ def test_list_plans_pr_column_with_conflicts() -> None:
 
 def test_list_plans_pr_column_multiple_prs_prefers_open() -> None:
     """Test PR column shows most recent open PR when multiple PRs exist."""
+    from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo
-
-    from erk.core.github.fake import FakeGitHub
 
     # Arrange
     plan = Plan(
@@ -1466,9 +1457,8 @@ def test_list_plans_pr_column_no_pr_linked() -> None:
 
 def test_list_plans_all_flag_shows_all_columns() -> None:
     """Test that --all flag enables both PR and run columns."""
+    from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo, WorkflowRun
-
-    from erk.core.github.fake import FakeGitHub
 
     # Arrange - Create plan with PR and workflow run data
     plan_body = """<!-- erk:metadata-block:plan-header -->
@@ -1541,9 +1531,8 @@ last_dispatched_node_id: 'WFR_all_flag'
 
 def test_list_plans_all_flag_short_form() -> None:
     """Test that -a short flag works same as --all."""
+    from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo, WorkflowRun
-
-    from erk.core.github.fake import FakeGitHub
 
     # Arrange - Create plan with PR and workflow run data
     plan_body = """<!-- erk:metadata-block:plan-header -->

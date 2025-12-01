@@ -6,6 +6,7 @@ from typing import Final
 
 from click import Command
 from click.testing import CliRunner
+from erk_shared.debug import debug_log
 from erk_shared.output.output import user_output
 
 from erk.cli.commands.checkout import checkout_cmd
@@ -17,7 +18,6 @@ from erk.cli.commands.stack.consolidate_cmd import consolidate_stack
 from erk.cli.commands.up import up_cmd
 from erk.cli.commands.wt.create_cmd import create_wt
 from erk.cli.commands.wt.goto_cmd import goto_wt
-from erk.cli.debug import debug_log
 from erk.cli.shell_utils import (
     STALE_SCRIPT_MAX_AGE_SECONDS,
     cleanup_stale_scripts,

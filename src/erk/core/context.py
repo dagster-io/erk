@@ -10,6 +10,7 @@ from erk_shared.git.real import RealGit
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issue_link_branches import IssueLinkBranches
 from erk_shared.github.issues import DryRunGitHubIssues, GitHubIssues, RealGitHubIssues
+from erk_shared.github.real import RealGitHub
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.dry_run import DryRunGraphite
 from erk_shared.integrations.graphite.real import RealGraphite
@@ -31,7 +32,6 @@ from erk.core.git.dry_run import DryRunGit
 from erk.core.github.dry_run import DryRunGitHub
 from erk.core.github.issue_link_branches_dry_run import DryRunIssueLinkBranches
 from erk.core.github.issue_link_branches_real import RealIssueLinkBranches
-from erk.core.github.real import RealGitHub
 from erk.core.planner.registry_abc import PlannerRegistry
 from erk.core.planner.registry_real import RealPlannerRegistry
 from erk.core.repo_discovery import (
@@ -106,7 +106,7 @@ class ErkContext:
         Example:
             Before (7 lines):
             >>> from erk.core.git.fake import FakeGit
-            >>> from erk.core.github.fake import FakeGitHub
+            >>> from erk_shared.github.fake import FakeGitHub
             >>> from erk_shared.integrations.graphite.fake import FakeGraphite
             >>> from tests.fakes.shell import FakeShell
             >>> ctx = ErkContext(
@@ -131,6 +131,7 @@ class ErkContext:
             For more complex test setup with custom configs or multiple integration classes,
             use ErkContext.for_test() instead.
         """
+        from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
         from erk_shared.integrations.graphite.fake import FakeGraphite
         from erk_shared.integrations.time.fake import FakeTime
@@ -143,7 +144,6 @@ class ErkContext:
         from tests.fakes.user_feedback import FakeUserFeedback
 
         from erk.core.config_store import FakeConfigStore
-        from erk.core.github.fake import FakeGitHub
         from erk.core.planner.registry_fake import FakePlannerRegistry
 
         fake_github = FakeGitHub()
@@ -245,6 +245,7 @@ class ErkContext:
             For simple cases that only need git, use ErkContext.minimal()
             which is more concise.
         """
+        from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
         from erk_shared.integrations.graphite.fake import FakeGraphite
         from erk_shared.integrations.time.fake import FakeTime
@@ -259,7 +260,6 @@ class ErkContext:
 
         from erk.core.config_store import FakeConfigStore
         from erk.core.git.fake import FakeGit
-        from erk.core.github.fake import FakeGitHub
         from erk.core.planner.registry_fake import FakePlannerRegistry
 
         if git is None:

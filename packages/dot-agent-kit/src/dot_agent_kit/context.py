@@ -75,10 +75,10 @@ class DotAgentContext:
             ...     github_issues=github, git=git_ops, debug=True
             ... )
         """
+        from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
 
         from erk.core.git.fake import FakeGit
-        from erk.core.github.fake import FakeGitHub
 
         # Provide defaults - ensures non-None values for type checker
         resolved_github_issues: GitHubIssues = (
@@ -120,6 +120,7 @@ def create_context(*, debug: bool) -> DotAgentContext:
     """
     from erk_shared.git.real import RealGit
     from erk_shared.github.real import RealGitHub
+    from erk_shared.integrations.time.real import RealTime
 
     # Detect repo root using git rev-parse
     result = subprocess.run(
@@ -139,7 +140,7 @@ def create_context(*, debug: bool) -> DotAgentContext:
     return DotAgentContext(
         github_issues=RealGitHubIssues(),
         git=RealGit(),
-        github=RealGitHub(),
+        github=RealGitHub(time=RealTime()),
         debug=debug,
         repo_root=repo_root,
         cwd=cwd,

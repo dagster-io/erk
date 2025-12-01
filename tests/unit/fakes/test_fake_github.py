@@ -7,9 +7,9 @@ providing reliable test doubles for CLI tests.
 from pathlib import Path
 
 import pytest
+from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRInfo, PullRequestInfo, WorkflowRun
 
-from erk.core.github.fake import FakeGitHub
 from tests.test_utils.paths import sentinel_path
 
 

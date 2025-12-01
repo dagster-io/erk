@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk.core.github.fake import FakeGitHub
+from erk_shared.github.fake import FakeGitHub
 
 
 def test_trigger_workflow_tracks_call() -> None:

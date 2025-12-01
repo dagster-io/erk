@@ -4,10 +4,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
 from erk_shared.github.types import PullRequestInfo, WorkflowRun
 
-from erk.core.github.fake import FakeGitHub
 from erk.core.services.plan_list_service import PlanListData, PlanListService
 
 

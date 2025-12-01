@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.github.fake import FakeGitHub
 from erk_shared.integrations.graphite.fake import FakeGraphite
 
 from erk.cli.cli import cli
@@ -10,7 +11,6 @@ from erk.cli.config import LoadedConfig
 from erk.core.config_store import GlobalConfig
 from erk.core.context import ErkContext
 from erk.core.git.fake import FakeGit
-from erk.core.github.fake import FakeGitHub
 from erk.core.repo_discovery import RepoContext
 from tests.test_utils.env_helpers import erk_inmem_env
 

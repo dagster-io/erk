@@ -7,8 +7,9 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
+from erk_shared.debug import debug_log
+
 from erk.cli.activation import render_activation_script
-from erk.cli.debug import debug_log
 
 STALE_SCRIPT_MAX_AGE_SECONDS = 3600
 

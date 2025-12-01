@@ -85,13 +85,13 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import Git, WorktreeInfo
+from erk_shared.github.fake import FakeGitHub
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 
 from erk.core.config_store import GlobalConfig
 from erk.core.context import ErkContext
 from erk.core.git.fake import FakeGit
-from erk.core.github.fake import FakeGitHub
 from erk.core.repo_discovery import RepoContext
 from erk.core.script_writer import RealScriptWriter
 from tests.fakes.script_writer import FakeScriptWriter
