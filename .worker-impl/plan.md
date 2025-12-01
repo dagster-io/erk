@@ -3,6 +3,7 @@
 ## Summary
 
 Modify `erk wt ls` command to:
+
 1. Remove `--last-commit` flag and make commit info the default behavior
 2. Rename "last" column to "last cmt"
 3. Add "cmt" column showing git short hash of the last unique commit
@@ -14,6 +15,7 @@ Modify `erk wt ls` command to:
 **File:** `packages/erk-shared/src/erk_shared/git/abc.py`
 
 Add new abstract method after `get_branch_last_commit_time`:
+
 ```python
 @abstractmethod
 def get_branch_last_commit_sha(self, repo_root: Path, branch: str, trunk: str) -> str | None:
@@ -30,6 +32,7 @@ def get_branch_last_commit_sha(self, repo_root: Path, branch: str, trunk: str) -
 **File:** `packages/erk-shared/src/erk_shared/git/real.py`
 
 Add implementation after `get_branch_last_commit_time`:
+
 ```python
 def get_branch_last_commit_sha(self, repo_root: Path, branch: str, trunk: str) -> str | None:
     """Get the short SHA of the most recent commit unique to a branch."""
@@ -51,6 +54,7 @@ def get_branch_last_commit_sha(self, repo_root: Path, branch: str, trunk: str) -
 **File:** `src/erk/core/git/fake.py`
 
 Add constructor parameter and implementation:
+
 - Add `branch_last_commit_shas: dict[str, str] | None = None` to constructor
 - Implement method to return from the dict
 
@@ -59,6 +63,7 @@ Add constructor parameter and implementation:
 **File:** `src/erk/core/git/dry_run.py`
 
 Delegate to wrapped implementation (read-only operation):
+
 ```python
 def get_branch_last_commit_sha(self, repo_root: Path, branch: str, trunk: str) -> str | None:
     return self._git.get_branch_last_commit_sha(repo_root, branch, trunk)
@@ -71,6 +76,7 @@ def get_branch_last_commit_sha(self, repo_root: Path, branch: str, trunk: str) -
 #### 5a. Add `_format_commit_sha_cell` function
 
 After `_format_last_commit_cell`:
+
 ```python
 def _format_commit_sha_cell(
     ctx: ErkContext, repo_root: Path, branch: str | None, trunk: str
@@ -123,6 +129,7 @@ def _format_commit_sha_cell(
 ## Expected Output Change
 
 Before (with `--last-commit`):
+
 ```
 worktree   branch    pr    sync      last      impl
 root       (main)    -     current   -         -
@@ -130,6 +137,7 @@ feature    (=)       ✅ #1  current   2d ago    #42
 ```
 
 After (columns: last cmt, cmt, impl):
+
 ```
 worktree   branch    pr    sync      last cmt   cmt       impl
 root       (main)    -     current   -          -         -
