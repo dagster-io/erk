@@ -153,8 +153,8 @@ def test_connect_with_named_planner() -> None:
     assert "gh-name-2" in args_list
 
 
-def test_connect_executes_claude_command() -> None:
-    """Test that connect runs claude command via SSH in a bash login shell."""
+def test_connect_executes_claude_command_with_craft_plan() -> None:
+    """Test that connect runs claude with /erk:craft-plan via SSH in a bash login shell."""
     planner = _make_planner(name="my-planner", gh_name="my-gh-codespace")
     registry = FakePlannerRegistry(planners=[planner], default_planner="my-planner")
     ctx = ErkContext.for_test(planner_registry=registry)
@@ -174,9 +174,11 @@ def test_connect_executes_claude_command() -> None:
     assert "ssh" in args_list
     assert "-c" in args_list
     assert "my-gh-codespace" in args_list
-    # Should run claude via bash login shell after --
-    # This ensures PATH is set up correctly (claude installs to ~/.claude/local/)
+    # Should run claude with /erk:craft-plan via bash login shell after --
+    # -t: Force pseudo-terminal allocation for interactive TUI
+    # bash -l -c: Login shell ensures PATH is set up correctly (claude installs to ~/.claude/local/)
+    # '/erk:craft-plan': Initial prompt to launch the planning workflow immediately
     assert "--" in args_list
     dash_dash_idx = args_list.index("--")
     remaining_args = args_list[dash_dash_idx + 1 :]
-    assert remaining_args == ["bash", "-l", "-c", "claude"]
+    assert remaining_args == ["-t", "bash", "-l", "-c", "claude '/erk:craft-plan'"]

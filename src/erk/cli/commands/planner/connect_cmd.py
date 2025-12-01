@@ -50,8 +50,22 @@ def connect_planner(ctx: ErkContext, name: str | None) -> None:
     click.echo(f"Connecting to planner '{planner.name}'...", err=True)
 
     # Replace current process with ssh session
-    # Use bash login shell to ensure PATH is set up (claude installs to ~/.claude/local/)
+    # -t: Force pseudo-terminal allocation (required for interactive TUI like claude)
+    # bash -l -c: Use login shell to ensure PATH is set up (claude installs to ~/.claude/local/)
+    # Pass /erk:craft-plan as initial prompt to launch the planning workflow immediately
     os.execvp(
         "gh",
-        ["gh", "codespace", "ssh", "-c", planner.gh_name, "--", "bash", "-l", "-c", "claude"],
+        [
+            "gh",
+            "codespace",
+            "ssh",
+            "-c",
+            planner.gh_name,
+            "--",
+            "-t",
+            "bash",
+            "-l",
+            "-c",
+            "claude '/erk:craft-plan'",
+        ],
     )
