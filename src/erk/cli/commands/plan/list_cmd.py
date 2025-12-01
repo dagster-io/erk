@@ -14,11 +14,13 @@ from erk_shared.github.types import PullRequestInfo
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import Plan, PlanState
-from rich.console import Console
+from rich.console import Console, Group
+from rich.panel import Panel
 from rich.table import Table
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
+from erk.core.display import LiveDisplay, RealLiveDisplay
 from erk.core.display_utils import (
     format_relative_time,
     format_workflow_outcome,
@@ -195,10 +197,23 @@ def plan_list_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
         default=False,
         help="Show all columns (equivalent to -P -r)",
     )(f)
+    f = click.option(
+        "--watch",
+        "-w",
+        is_flag=True,
+        default=False,
+        help="Watch mode: refresh dashboard at regular intervals",
+    )(f)
+    f = click.option(
+        "--interval",
+        type=float,
+        default=5.0,
+        help="Refresh interval in seconds for watch mode (default: 5.0)",
+    )(f)
     return f
 
 
-def _list_plans_impl(
+def _build_plans_table(
     ctx: ErkContext,
     label: tuple[str, ...],
     state: str | None,
@@ -206,13 +221,16 @@ def _list_plans_impl(
     runs: bool,
     prs: bool,
     limit: int | None,
-) -> None:
-    """Implementation logic for listing plans with optional filters.
+) -> tuple[Table | None, int]:
+    """Build plan dashboard table.
 
     Uses PlanListService to batch all API calls into 3 total:
     1. Single GraphQL query for issues
     2. Single GraphQL query for PRs (only if --prs flag is set)
     3. REST API calls for workflow runs (one per issue with run_id)
+
+    Returns:
+        Tuple of (table, plan_count). Table is None if no plans found.
     """
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)  # Ensure erk metadata directories exist
@@ -244,11 +262,7 @@ def _list_plans_impl(
     plans = [_issue_to_plan(issue) for issue in plan_data.issues]
 
     if not plans:
-        user_output("No plans found matching the criteria.")
-        return
-
-    # Display results header
-    user_output(f"\nFound {len(plans)} plan(s):\n")
+        return None, 0
 
     # Use pre-fetched data from PlanListService
     pr_linkages = plan_data.pr_linkages
@@ -285,8 +299,7 @@ def _list_plans_impl(
 
         # Check if filtering resulted in no plans
         if not plans:
-            user_output("No plans found matching the criteria.")
-            return
+            return None, 0
 
     # Determine use_graphite for URL selection
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
@@ -398,12 +411,106 @@ def _list_plans_impl(
             row.extend([remote_run_cell, run_id_cell, run_outcome_cell])
         table.add_row(*row)
 
+    return table, len(plans)
+
+
+def _list_plans_impl(
+    ctx: ErkContext,
+    label: tuple[str, ...],
+    state: str | None,
+    run_state: str | None,
+    runs: bool,
+    prs: bool,
+    limit: int | None,
+) -> None:
+    """Implementation logic for listing plans with optional filters."""
+    table, plan_count = _build_plans_table(ctx, label, state, run_state, runs, prs, limit)
+
+    if table is None:
+        user_output("No plans found matching the criteria.")
+        return
+
+    # Display results header
+    user_output(f"\nFound {plan_count} plan(s):\n")
+
     # Output table to stderr (consistent with user_output convention)
     # Use width=200 to ensure proper display without truncation
     # force_terminal=True ensures hyperlinks render even when Rich doesn't detect a TTY
     console = Console(stderr=True, width=200, force_terminal=True)
     console.print(table)
     console.print()  # Add blank line after table
+
+
+def _build_watch_content(
+    table: Table | None,
+    count: int,
+    last_update: str,
+    seconds_remaining: int,
+) -> Group | Panel:
+    """Build display content for watch mode.
+
+    Args:
+        table: The plans table, or None if no plans
+        count: Number of plans found
+        last_update: Formatted time of last data refresh
+        seconds_remaining: Seconds until next refresh
+
+    Returns:
+        Rich renderable content for the display
+    """
+    footer = (
+        f"Found {count} plan(s) | Updated: {last_update} | "
+        f"Next refresh: {seconds_remaining}s | Ctrl+C to exit"
+    )
+
+    if table is None:
+        return Panel(f"No plans found.\n\n{footer}", title="erk dash --watch")
+    else:
+        return Group(table, Panel(footer, style="dim"))
+
+
+def _run_watch_loop(
+    ctx: ErkContext,
+    live_display: LiveDisplay,
+    build_table_fn: Callable[[], tuple[Table | None, int]],
+    interval: float,
+) -> None:
+    """Run watch loop until KeyboardInterrupt.
+
+    Updates display every second with countdown timer. Fetches fresh data
+    when countdown reaches zero.
+
+    Args:
+        ctx: ErkContext with time abstraction
+        live_display: Display renderer for live updates
+        build_table_fn: Function that returns (table, count)
+        interval: Seconds between data refreshes
+    """
+    live_display.start()
+    try:
+        # Initial data fetch
+        table, count = build_table_fn()
+        last_update = ctx.time.now().strftime("%H:%M:%S")
+        seconds_remaining = int(interval)
+
+        while True:
+            # Update display with current countdown
+            content = _build_watch_content(table, count, last_update, seconds_remaining)
+            live_display.update(content)
+
+            # Sleep for 1 second
+            ctx.time.sleep(1.0)
+            seconds_remaining -= 1
+
+            # Refresh data when countdown reaches zero
+            if seconds_remaining <= 0:
+                table, count = build_table_fn()
+                last_update = ctx.time.now().strftime("%H:%M:%S")
+                seconds_remaining = int(interval)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        live_display.stop()
 
 
 @click.command("dash")
@@ -418,11 +525,16 @@ def dash(
     prs: bool,
     limit: int | None,
     show_all: bool,
+    watch: bool,
+    interval: float,
 ) -> None:
     """Display plan dashboard with optional filters.
 
     Examples:
         erk dash
+        erk dash --watch
+        erk dash -w --interval 10
+        erk dash -a --watch
         erk dash --label erk-plan --state open
         erk dash --limit 10
         erk dash --run-state in_progress
@@ -436,4 +548,13 @@ def dash(
     if show_all:
         prs = True
         runs = True
-    _list_plans_impl(ctx, label, state, run_state, runs, prs, limit)
+
+    if watch:
+        live_display = RealLiveDisplay()
+
+        def build_fn() -> tuple[Table | None, int]:
+            return _build_plans_table(ctx, label, state, run_state, runs, prs, limit)
+
+        _run_watch_loop(ctx, live_display, build_fn, interval)
+    else:
+        _list_plans_impl(ctx, label, state, run_state, runs, prs, limit)
