@@ -8,7 +8,11 @@ from pathlib import Path
 import click
 from erk_shared.github.issue_link_branches import DevelopmentBranch
 from erk_shared.github.issues import IssueInfo
-from erk_shared.github.metadata import create_submission_queued_block, render_erk_issue_event
+from erk_shared.github.metadata import (
+    create_submission_queued_block,
+    render_erk_issue_event,
+    update_plan_header_dispatch,
+)
 from erk_shared.github.parsing import extract_owner_repo_from_github_url
 from erk_shared.naming import (
     derive_branch_name_from_title,
@@ -483,6 +487,29 @@ def _submit_single_issue(
         },
     )
     user_output(click.style("✓", fg="green") + " Workflow triggered.")
+
+    # Write dispatch metadata synchronously to fix race condition with erk dash
+    # This ensures the issue body has the run info before we return to the user
+    node_id = ctx.github.get_workflow_run_node_id(repo.root, run_id)
+    if node_id is not None:
+        try:
+            # Fetch fresh issue body and update dispatch metadata
+            fresh_issue = ctx.issues.get_issue(repo.root, issue_number)
+            updated_body = update_plan_header_dispatch(
+                issue_body=fresh_issue.body,
+                run_id=run_id,
+                node_id=node_id,
+                dispatched_at=queued_at,
+            )
+            ctx.issues.update_issue_body(repo.root, issue_number, updated_body)
+            user_output(click.style("✓", fg="green") + " Dispatch metadata written to issue")
+        except Exception as e:
+            # Log warning but don't block - workflow is already triggered
+            user_output(
+                click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+            )
+    else:
+        user_output(click.style("Warning: ", fg="yellow") + "Could not fetch workflow run node_id")
 
     validation_results = {
         "issue_is_open": True,

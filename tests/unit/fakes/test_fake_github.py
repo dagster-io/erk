@@ -583,3 +583,69 @@ def test_fake_github_fetch_pr_titles_batch_empty_input() -> None:
     # Should return empty dict unchanged
     assert result == {}
     assert len(result) == 0
+
+
+def test_fake_github_get_workflow_run_node_id_returns_fake_for_any_run() -> None:
+    """Test get_workflow_run_node_id returns a generated fake node_id for any run_id."""
+    ops = FakeGitHub()
+
+    result = ops.get_workflow_run_node_id(sentinel_path(), "12345")
+
+    # Should generate a fake node_id for convenience in tests
+    assert result == "WFR_fake_node_id_12345"
+
+
+def test_fake_github_get_workflow_run_node_id_from_workflow_runs_list() -> None:
+    """Test get_workflow_run_node_id finds run in workflow_runs list."""
+    workflow_runs = [
+        WorkflowRun(
+            run_id="123",
+            status="completed",
+            conclusion="success",
+            branch="feat-1",
+            head_sha="abc123",
+        ),
+    ]
+    ops = FakeGitHub(workflow_runs=workflow_runs)
+
+    result = ops.get_workflow_run_node_id(sentinel_path(), "123")
+
+    # Should generate fake node_id for run found in workflow_runs
+    assert result == "WFR_fake_node_id_123"
+
+
+def test_fake_github_get_workflow_run_node_id_from_node_id_mapping() -> None:
+    """Test get_workflow_run_node_id returns node_id from pre-configured mapping."""
+    workflow_run = WorkflowRun(
+        run_id="456",
+        status="in_progress",
+        conclusion=None,
+        branch="feat-2",
+        head_sha="def456",
+    )
+    ops = FakeGitHub(workflow_runs_by_node_id={"WFR_kwXXXX": workflow_run})
+
+    result = ops.get_workflow_run_node_id(sentinel_path(), "456")
+
+    # Should return the configured node_id
+    assert result == "WFR_kwXXXX"
+
+
+def test_fake_github_get_workflow_run_node_id_prefers_node_id_mapping() -> None:
+    """Test get_workflow_run_node_id prefers node_id mapping over generating fake."""
+    workflow_run = WorkflowRun(
+        run_id="789",
+        status="completed",
+        conclusion="success",
+        branch="main",
+        head_sha="ghi789",
+    )
+    ops = FakeGitHub(
+        workflow_runs=[workflow_run],
+        workflow_runs_by_node_id={"WFR_real_node": workflow_run},
+    )
+
+    result = ops.get_workflow_run_node_id(sentinel_path(), "789")
+
+    # Should return real node_id from mapping, not generated one
+    assert result == "WFR_real_node"

@@ -387,3 +387,20 @@ class GitHub(ABC):
             Node IDs that don't exist or are inaccessible will have None value.
         """
         ...
+
+    @abstractmethod
+    def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -> str | None:
+        """Get the GraphQL node ID for a workflow run.
+
+        This method fetches the node_id from the GitHub API given a workflow run ID.
+        The node_id is required for batched GraphQL queries and for updating
+        issue metadata synchronously after triggering a workflow.
+
+        Args:
+            repo_root: Repository root directory
+            run_id: GitHub Actions run ID (numeric string)
+
+        Returns:
+            GraphQL node ID (e.g., "WFR_kwLOPxC3hc8AAAAEnZK8rQ") or None if not found
+        """
+        ...

@@ -1407,3 +1407,29 @@ query {{
                 result[node_id] = None
 
         return result
+
+    def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -> str | None:
+        """Get the GraphQL node ID for a workflow run via gh API.
+
+        Uses the REST API endpoint to get workflow run details including node_id.
+
+        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+        availability and authentication. We cannot reliably check gh installation
+        and authentication status a priori without duplicating gh's logic.
+        """
+        try:
+            # Use gh api to get the workflow run details which includes node_id
+            cmd = [
+                "gh",
+                "api",
+                f"/repos/{{owner}}/{{repo}}/actions/runs/{run_id}",
+                "--jq",
+                ".node_id",
+            ]
+            stdout = execute_gh_command(cmd, repo_root)
+            node_id = stdout.strip()
+            return node_id if node_id else None
+
+        except (RuntimeError, FileNotFoundError):
+            # gh not installed, not authenticated, or command failed
+            return None

@@ -177,3 +177,7 @@ class DryRunGitHub(GitHub):
     ) -> dict[str, WorkflowRun | None]:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_workflow_runs_by_node_ids(repo_root, node_ids)
+
+    def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -> str | None:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_workflow_run_node_id(repo_root, run_id)

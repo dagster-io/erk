@@ -487,3 +487,29 @@ class FakeGitHub(GitHub):
             Mapping of node_id -> WorkflowRun or None if not found
         """
         return {node_id: self._workflow_runs_by_node_id.get(node_id) for node_id in node_ids}
+
+    def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -> str | None:
+        """Get node ID for a workflow run (returns pre-configured fake data).
+
+        Looks up the run_id in the pre-configured workflow_runs_by_node_id mapping
+        (reverse lookup) to find the corresponding node_id.
+
+        Args:
+            repo_root: Repository root directory (ignored in fake)
+            run_id: GitHub Actions run ID
+
+        Returns:
+            Node ID if found in pre-configured data, or a generated fake node_id
+        """
+        # Reverse lookup: find node_id by run_id
+        for node_id, run in self._workflow_runs_by_node_id.items():
+            if run is not None and run.run_id == run_id:
+                return node_id
+
+        # If not in node_id mapping, check regular workflow runs and generate fake node_id
+        for run in self._workflow_runs:
+            if run.run_id == run_id:
+                return f"WFR_fake_node_id_{run_id}"
+
+        # Default: return a fake node_id for any run_id (convenience for tests)
+        return f"WFR_fake_node_id_{run_id}"
