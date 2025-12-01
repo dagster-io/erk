@@ -17,7 +17,6 @@
         "actions": "write",
         "statuses": "write",
         "deployments": "write",
-        "security_events": "write",
         "members": "read"
       }
     }
