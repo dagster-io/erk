@@ -342,4 +342,10 @@ When users ask "what can gh do?":
   - Detailed field definitions for core types
   - Mutation input types and examples
 
+- `issue-caching-semantics.md` - GitHub issue timestamp behavior for caching (~110 lines)
+  - Load when implementing issue caching strategies
+  - Documents which operations update `updatedAt` timestamp
+  - Caching wrapper implementation patterns
+  - API efficiency patterns using lightweight timestamp queries
+
 These references should be loaded as needed to ensure accurate, detailed information. Use progressive disclosure: start with the main reference, then load specialized GraphQL docs when needed.

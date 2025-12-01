@@ -9,7 +9,12 @@ from erk_shared.git.abc import Git
 from erk_shared.git.real import RealGit
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issue_link_branches import IssueLinkBranches
-from erk_shared.github.issues import DryRunGitHubIssues, GitHubIssues, RealGitHubIssues
+from erk_shared.github.issues import (
+    CachingGitHubIssues,
+    DryRunGitHubIssues,
+    GitHubIssues,
+    RealGitHubIssues,
+)
 from erk_shared.github.real import RealGitHub
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.dry_run import DryRunGraphite
@@ -469,7 +474,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
     git: Git = RealGit()
     graphite: Graphite = RealGraphite()
     github: GitHub = RealGitHub(time)
-    issues: GitHubIssues = RealGitHubIssues()
+    issues: GitHubIssues = CachingGitHubIssues(RealGitHubIssues())
     issue_link_branches: IssueLinkBranches = RealIssueLinkBranches()
     plan_store: PlanStore = GitHubPlanStore(issues)
     plan_list_service: PlanListService = PlanListService(github, issues)
