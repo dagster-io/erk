@@ -12,11 +12,11 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.plan_store.fake import FakePlanStore
+from erk_shared.plan_store.types import Plan, PlanState
 
 from erk.cli.commands.plan.get import get_plan
 from erk.cli.commands.plan.list_cmd import dash
-from erk.core.plan_store.fake import FakePlanStore
-from erk.core.plan_store.types import Plan, PlanState
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 

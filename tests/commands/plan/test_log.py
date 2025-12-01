@@ -12,10 +12,10 @@ from erk_shared.github.metadata import (
     create_workflow_started_block,
     render_metadata_block,
 )
+from erk_shared.plan_store.fake import FakePlanStore
+from erk_shared.plan_store.types import Plan, PlanState
 
 from erk.cli.cli import cli
-from erk.core.plan_store.fake import FakePlanStore
-from erk.core.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 

@@ -24,6 +24,7 @@ from erk_shared.naming import (
     strip_plan_from_filename,
 )
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import PlanState
 
 from erk.cli.activation import render_activation_script
 from erk.cli.commands.completions import complete_plan_files
@@ -33,7 +34,6 @@ from erk.cli.constants import USE_GITHUB_NATIVE_BRANCH_LINKING
 from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import ErkContext
-from erk.core.plan_store.types import PlanState
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 
 

@@ -35,16 +35,14 @@ packages/erk-shared/src/erk_shared/integrations/gt/
 
 **Location**: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/[kit_name]/`
 
-**What goes here**: Kit metadata + thin shims (10-20 lines each)
+**What goes here**: Kit metadata only (no code)
 
 ```
 packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/
 ├── kit.yaml                         # Kit metadata
 ├── kit_cli_commands/
 │   └── gt/
-│       ├── submit_branch.py         # Shim (imports from erk-shared)
-│       ├── land_branch.py           # Shim
-│       └── pr_update.py             # Shim
+│       └── land_pr.py              # Direct implementation (no shims)
 ├── agents/                          # Agent definitions
 ├── commands/                        # Command definitions
 └── skills/                          # Skill definitions
@@ -52,26 +50,12 @@ packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/
 
 **Rules**:
 
-- ✅ Thin shims that re-export from erk-shared
 - ✅ Kit metadata (kit.yaml, agents/, commands/, skills/)
-- ❌ NO actual implementation code
+- ✅ Kit CLI commands can be implemented directly (no need for shims)
+- ❌ NO re-export shims (all re-exports have been eliminated)
+- ❌ NO imports from `erk` package or `dot-agent-kit` package
 
-**Example Shim**:
-
-```python
-# packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/submit_branch.py
-"""Re-export from erk-shared."""
-
-from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
-    execute_finalize,
-    execute_pre_analysis,
-    execute_preflight,
-    get_diff_context,
-    pr_submit,
-)
-
-__all__ = ["execute_pre_analysis", "execute_preflight", "execute_finalize", "get_diff_context", "pr_submit"]
-```
+**Note**: Re-export shims (like `ops.py`, `real_ops.py`, `submit_branch.py`, `pr_update.py`, `prompts.py`) have been removed as part of the re-export elimination effort. All consumers now import directly from canonical sources in erk-shared.
 
 ## Architecture Diagram
 
@@ -79,18 +63,21 @@ __all__ = ["execute_pre_analysis", "execute_preflight", "execute_finalize", "get
 ┌───────────────────────────────────────┐
 │ dot-agent-kit/data/kits/gt/           │
 │   ├── kit.yaml                        │
-│   └── kit_cli_commands/gt/            │
-│       └── submit_branch.py (shim)     │
-│              ↓ imports                │
+│   ├── agents/                         │
+│   ├── commands/                       │
+│   └── skills/                         │
 └───────────────────────────────────────┘
-             ↓
+
 ┌───────────────────────────────────────┐
 │ erk-shared/integrations/gt/           │
 │   ├── abc.py                          │
 │   ├── real.py                         │
 │   ├── fake.py                         │
+│   ├── types.py                        │
 │   └── kit_cli_commands/gt/            │
-│       └── submit_branch.py (1000+loc) │
+│       ├── submit_branch.py            │
+│       ├── land_pr.py                  │
+│       └── pr_update.py                │
 └───────────────────────────────────────┘
 ```
 
@@ -117,10 +104,9 @@ def test_gt_kit_architecture() -> None:
     impl = Path("packages/erk-shared/src/erk_shared/integrations/gt/kit_cli_commands/gt/submit_branch.py")
     assert impl.exists()
 
-    # Layer 2: Shim exists in dot-agent-kit
-    shim = Path("packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/submit_branch.py")
-    assert shim.exists()
-    assert "from erk_shared.integrations.gt" in shim.read_text()
+    # Layer 2: Kit metadata exists in dot-agent-kit
+    kit_yaml = Path("packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/kit.yaml")
+    assert kit_yaml.exists()
 ```
 
 ## Quick Reference
@@ -132,7 +118,7 @@ A: `packages/erk-shared/src/erk_shared/integrations/[kit_name]/kit_cli_commands/
 A: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/[kit_name]/kit.yaml`
 
 **Q: What goes in kit_cli_commands in dot-agent-kit?**
-A: Thin shims (10-20 lines) that import from erk-shared
+A: Only kit CLI commands that don't belong in erk-shared (very rare). Most kit CLI commands live in erk-shared.
 
 **Q: How do I know if code belongs in erk-shared?**
 A: If it has more than 20 lines of logic, it goes in erk-shared

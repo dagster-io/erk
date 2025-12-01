@@ -1,13 +1,10 @@
-"""Re-export pr_update command from erk-shared.
+"""Shim for pr_update kit CLI command.
 
-This module is a thin shim that re-exports the pr_update command from its
-canonical location in erk-shared. All implementation has been moved to
-erk-shared/integrations/gt/ for true canonicalization.
+The canonical implementation is in erk_shared.integrations.gt.kit_cli_commands.gt.pr_update.
+This file exists only to provide the entry point for the kit CLI system.
+Import symbols directly from the canonical location.
 """
 
 from erk_shared.integrations.gt.kit_cli_commands.gt.pr_update import (
-    execute_update_pr,
-    pr_update,
+    pr_update as pr_update,
 )
-
-__all__ = ["execute_update_pr", "pr_update"]

@@ -1,11 +1,6 @@
 """Provider-agnostic abstraction for plan storage.
 
-This module re-exports from erk_shared.plan_store for backwards compatibility.
-New code should import directly from erk_shared.plan_store.
-
-Import from submodules:
-- types: Plan, PlanQuery, PlanState
-- store: PlanStore
-- github: GitHubPlanStore
-- fake: FakePlanStore
+This package previously re-exported from erk_shared.plan_store.
+All imports have been migrated to erk_shared.plan_store directly.
+This module remains as an empty namespace marker.
 """
