@@ -713,11 +713,11 @@ def test_format_worktree_name_cell_exists_locally() -> None:
 
 
 def test_format_worktree_name_cell_not_exists_locally() -> None:
-    """Test worktree that doesn't exist locally shows dash."""
+    """Test worktree that doesn't exist locally shows in dim color."""
     from erk.cli.commands.plan.list_cmd import format_worktree_name_cell
 
     result = format_worktree_name_cell("deleted-worktree", False)
-    assert result == "-"
+    assert result == "[dim]deleted-worktree[/dim]"
 
 
 def test_format_worktree_name_cell_empty_name_not_exists() -> None:

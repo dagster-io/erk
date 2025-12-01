@@ -44,6 +44,7 @@ def update_plan_header_worktree_name(
 ```
 
 This function should:
+
 1. Parse the existing plan-header from the issue body
 2. Update only the `worktree_name` field
 3. Return the updated issue body
@@ -75,6 +76,7 @@ def format_worktree_name_cell(worktree_name: str, exists_locally: bool) -> str:
 **3c. Update call site** (line 350): Pass `worktree_name` even when not local
 
 Current:
+
 ```python
 worktree_name_cell = format_worktree_name_cell(worktree_name, exists_locally)
 ```
@@ -86,6 +88,7 @@ The logic already extracts `worktree_name` from plan-header when not local (line
 **File**: `src/erk/integrations/github/service.py` (or wherever the GitHub ABC is implemented)
 
 Add a method to update plan issue body:
+
 ```python
 def update_plan_worktree_name(
     repo_root: Path,
@@ -97,6 +100,7 @@ def update_plan_worktree_name(
 ### Step 5: Update Tests
 
 **Files**:
+
 - `tests/commands/test_dash.py` - Update column name expectations, add test for remote-only display
 - `tests/commands/test_submit.py` - Add test that submit stores worktree_name
 - `packages/erk-shared/tests/github/test_metadata.py` - Test new update function
@@ -114,6 +118,7 @@ def update_plan_worktree_name(
 ## Visual Result
 
 Before:
+
 ```
 ┃ local-wt                                      ┃
 ├───────────────────────────────────────────────┤
@@ -123,6 +128,7 @@ Before:
 ```
 
 After:
+
 ```
 ┃ wt                                            ┃
 ├───────────────────────────────────────────────┤

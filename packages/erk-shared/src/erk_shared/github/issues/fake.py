@@ -41,6 +41,7 @@ class FakeGitHubIssues(GitHubIssues):
         self._added_comments: list[tuple[int, str]] = []
         self._created_labels: list[tuple[str, str, str]] = []
         self._closed_issues: list[int] = []
+        self._updated_issue_bodies: list[tuple[int, str]] = []
 
     @property
     def created_issues(self) -> list[tuple[str, str, list[str]]]:
@@ -81,6 +82,14 @@ class FakeGitHubIssues(GitHubIssues):
         Returns set of label names.
         """
         return self._labels.copy()
+
+    @property
+    def updated_issue_bodies(self) -> list[tuple[int, str]]:
+        """Read-only access to updated issue bodies for test assertions.
+
+        Returns list of (issue_number, body) tuples.
+        """
+        return self._updated_issue_bodies
 
     def create_issue(
         self, repo_root: Path, title: str, body: str, labels: list[str]
@@ -139,6 +148,9 @@ class FakeGitHubIssues(GitHubIssues):
         if number not in self._issues:
             msg = f"Issue #{number} not found"
             raise RuntimeError(msg)
+
+        # Track mutation for test assertions
+        self._updated_issue_bodies.append((number, body))
 
         # Update the issue body in-place (creates new IssueInfo with updated body)
         old_issue = self._issues[number]

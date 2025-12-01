@@ -8,7 +8,11 @@ from pathlib import Path
 import click
 from erk_shared.github.issue_link_branches import DevelopmentBranch
 from erk_shared.github.issues import IssueInfo
-from erk_shared.github.metadata import create_submission_queued_block, render_erk_issue_event
+from erk_shared.github.metadata import (
+    create_submission_queued_block,
+    render_erk_issue_event,
+    update_plan_header_worktree_name,
+)
 from erk_shared.naming import (
     derive_branch_name_from_title,
     format_branch_timestamp_suffix,
@@ -161,6 +165,40 @@ def _close_orphaned_draft_prs(
     return closed_prs
 
 
+def _update_worktree_name_in_plan_header(
+    ctx: ErkContext,
+    repo_root: Path,
+    issue_number: int,
+    branch_name: str,
+) -> None:
+    """Update worktree_name field in plan-header metadata.
+
+    Fetches current issue body, updates the plan-header worktree_name field,
+    and writes back to GitHub.
+
+    Args:
+        ctx: ErkContext with GitHub operations
+        repo_root: Repository root path
+        issue_number: GitHub issue number
+        branch_name: Branch name to store as worktree_name
+    """
+    # Fetch current issue body
+    issue = ctx.issues.get_issue(repo_root, issue_number)
+
+    # Update plan-header with worktree_name
+    try:
+        updated_body = update_plan_header_worktree_name(issue.body, branch_name)
+        ctx.issues.update_issue_body(repo_root, issue_number, updated_body)
+        logger.debug("Updated plan-header worktree_name to '%s'", branch_name)
+    except ValueError as e:
+        # Log warning but don't fail - this is metadata enrichment, not critical
+        logger.warning(
+            "Failed to update plan-header worktree_name for issue #%d: %s",
+            issue_number,
+            e,
+        )
+
+
 def _validate_issue_for_submit(
     ctx: ErkContext,
     repo: RepoContext,
@@ -299,6 +337,9 @@ def _submit_single_issue(
                 f"PR #{pr_number} already exists for branch '{branch_name}' (state: existing)"
             )
             user_output("Skipping branch/PR creation, triggering workflow...")
+
+            # Update plan-header with branch name
+            _update_worktree_name_in_plan_header(ctx, repo.root, issue_number, branch_name)
         else:
             # Branch exists but no PR - need to add a commit for PR creation
             user_output(f"Branch '{branch_name}' exists but no PR. Adding placeholder commit...")
@@ -360,6 +401,9 @@ def _submit_single_issue(
                     + f" Closed {len(closed_prs)} orphaned draft PR(s): "
                     + ", ".join(f"#{n}" for n in closed_prs)
                 )
+
+            # Update plan-header with branch name
+            _update_worktree_name_in_plan_header(ctx, repo.root, issue_number, branch_name)
 
             # Restore local state
             ctx.git.checkout_branch(repo.root, original_branch)
@@ -434,6 +478,9 @@ def _submit_single_issue(
                 + f" Closed {len(closed_prs)} orphaned draft PR(s): "
                 + ", ".join(f"#{n}" for n in closed_prs)
             )
+
+        # Update plan-header with branch name
+        _update_worktree_name_in_plan_header(ctx, repo.root, issue_number, branch_name)
 
         # Restore local state
         user_output("Restoring local state...")

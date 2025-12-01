@@ -305,10 +305,10 @@ def test_list_plans_empty_results() -> None:
 
 
 def test_dash_command_shows_worktree_status() -> None:
-    """Test that dash command shows dash for non-local worktrees.
+    """Test that dash command shows worktree names for both local and remote.
 
     When a plan has a worktree_name in the issue body but no local worktree,
-    the local-wt column should show "-" (not the remote worktree name).
+    the wt column should show the worktree name in dim/grey color.
     """
     # Arrange - Create issue with plan-header block containing worktree_name
     body_with_worktree = """<!-- erk:metadata-block:plan-header -->
@@ -367,17 +367,17 @@ Implementation details here."""
         assert "Found 2 plan(s)" in result.output
         assert "#867" in result.output
         assert "Rename Erk Slash Commands" in result.output
-        # Non-local worktree should NOT appear in output (shows "-" instead)
-        assert "rename-erk-slash-commands" not in result.output
+        # Remote worktree should now appear in output (in dim color)
+        assert "rename-erk-slash-commands" in result.output
         assert "#868" in result.output
         assert "Issue Without Worktree" in result.output
 
 
 def test_list_plans_shows_dash_for_non_local_worktree() -> None:
-    """Test that list command shows dash when worktree exists only in issue body (not local).
+    """Test that list command shows remote worktree name in dim color.
 
     When the plan-header contains a worktree_name but no local worktree exists,
-    the local-wt column should show "-" instead of the remote worktree name.
+    the wt column should show the worktree name in dim/grey color.
     """
     # Arrange - Issue body with plan-header containing worktree that doesn't exist locally
     body_with_worktree = """<!-- erk:metadata-block:plan-header -->
@@ -418,9 +418,9 @@ Issue updated with current worktree name."""
         # Act
         result = runner.invoke(cli, ["dash"], obj=ctx)
 
-        # Assert - Non-local worktree should NOT be shown (shows "-" instead)
+        # Assert - Remote worktree should now be shown (in dim color)
         assert result.exit_code == 0
-        assert "second-attempt" not in result.output
+        assert "second-attempt" in result.output
 
 
 def test_list_plans_shows_worktree_from_local_impl() -> None:
@@ -571,10 +571,10 @@ issue_number: 960
 
 
 def test_list_plans_shows_dash_when_no_local_worktree() -> None:
-    """Test that local-wt column shows dash when no local worktree exists.
+    """Test that wt column shows remote worktree name in dim color.
 
-    Even when the issue body contains a worktree_name, if there's no local
-    worktree, the local-wt column should show "-".
+    When the issue body contains a worktree_name but no local worktree exists,
+    the wt column should show the worktree name in dim/grey color.
     """
     # Arrange - Issue with plan-header containing worktree_name
     body_with_worktree = """<!-- erk:metadata-block:plan-header -->
@@ -612,10 +612,10 @@ Plan content."""
         # Act
         result = runner.invoke(cli, ["dash"], obj=ctx)
 
-        # Assert - Non-local worktree should NOT be shown (shows "-" instead)
+        # Assert - Remote worktree should now be shown (in dim color)
         assert result.exit_code == 0
         assert "#970" in result.output
-        assert "github-worktree" not in result.output
+        assert "github-worktree" in result.output
 
 
 def test_list_plans_handles_multiple_local_worktrees() -> None:

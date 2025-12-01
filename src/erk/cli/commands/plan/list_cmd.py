@@ -116,11 +116,14 @@ def format_worktree_name_cell(worktree_name: str, exists_locally: bool) -> str:
     Returns:
         Formatted string with Rich markup:
         - Exists locally: "[yellow]name[/yellow]"
-        - Doesn't exist: "-"
+        - Remote only: "[dim]name[/dim]"
+        - No worktree: "-"
     """
-    if not exists_locally:
+    if not worktree_name:
         return "-"
-    return f"[yellow]{worktree_name}[/yellow]"
+    if exists_locally:
+        return f"[yellow]{worktree_name}[/yellow]"
+    return f"[dim]{worktree_name}[/dim]"
 
 
 def format_local_run_cell(last_local_impl_at: str | None) -> str:
@@ -298,7 +301,7 @@ def _list_plans_impl(
     if prs:
         table.add_column("pr", no_wrap=True)
         table.add_column("chks", no_wrap=True)
-    table.add_column("local-wt", no_wrap=True)
+    table.add_column("wt", no_wrap=True)
     table.add_column("local-run", no_wrap=True)
     if runs:
         table.add_column("remote-run", no_wrap=True)
