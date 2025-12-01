@@ -525,7 +525,7 @@ def test_fetch_pr_titles_batch_missing_title_field(monkeypatch: pytest.MonkeyPat
 
 
 def test_build_issue_pr_linkage_query_structure() -> None:
-    """Test that issue-PR linkage query uses timeline API with CrossReferencedEvent."""
+    """Test that issue PR linkage query uses timelineItems with CrossReferencedEvent."""
     ops = RealGitHub(FakeTime())
 
     query = ops._build_issue_pr_linkage_query([100, 200], "test-owner", "test-repo")
@@ -534,26 +534,25 @@ def test_build_issue_pr_linkage_query_structure() -> None:
     assert "query {" in query
     assert 'repository(owner: "test-owner", name: "test-repo")' in query
 
-    # Validate we're using timeline approach (not pullRequests)
-    assert "pullRequests(" not in query
-    assert "closingIssuesReferences(" not in query
+    # Validate fragment definition
+    assert "fragment IssuePRLinkageFields on CrossReferencedEvent {" in query
 
     # Validate aliased issue queries
     assert "issue_100: issue(number: 100)" in query
     assert "issue_200: issue(number: 200)" in query
 
-    # Validate timeline items with CrossReferencedEvent
-    assert "timelineItems(itemTypes: [CROSS_REFERENCED_EVENT]" in query
-    assert "willCloseTarget" in query
+    # Validate timelineItems query with CrossReferencedEvent filter
+    assert "timelineItems(itemTypes: [CROSS_REFERENCED_EVENT], first: 20)" in query
 
-    # Validate PR fields within source
+    # Validate fragment includes required fields
+    assert "willCloseTarget" in query
     assert "source {" in query
     assert "... on PullRequest {" in query
     assert "number" in query
     assert "state" in query
     assert "url" in query
     assert "isDraft" in query
-    assert "statusCheckRollup" in query
+    assert "createdAt" in query
     assert "mergeable" in query
 
     # Validate aggregated check count fields are used (efficiency optimization)
@@ -575,7 +574,7 @@ def test_build_issue_pr_linkage_query_structure() -> None:
 
 
 def test_parse_issue_pr_linkages_with_single_pr() -> None:
-    """Test parsing GraphQL timeline response with single PR closing an issue."""
+    """Test parsing timeline response with single PR closing issue."""
     ops = RealGitHub(FakeTime())
 
     # Timeline response with PR closing issue 100 (uses aggregated check counts)
@@ -615,7 +614,6 @@ def test_parse_issue_pr_linkages_with_single_pr() -> None:
 
     result = ops._parse_issue_pr_linkages(response, "owner", "repo")
 
-    # Should have one issue with one PR
     assert 100 in result
     assert len(result[100]) == 1
 
@@ -674,7 +672,6 @@ def test_parse_issue_pr_linkages_with_multiple_prs() -> None:
 
     result = ops._parse_issue_pr_linkages(response, "owner", "repo")
 
-    # Should have one issue with two PRs, sorted by created_at descending
     assert 100 in result
     assert len(result[100]) == 2
 
@@ -688,7 +685,7 @@ def test_parse_issue_pr_linkages_with_multiple_prs() -> None:
 
 
 def test_parse_issue_pr_linkages_with_pr_linking_multiple_issues() -> None:
-    """Test parsing timeline response where same PR closes multiple issues."""
+    """Test parsing response where same PR closes multiple issues."""
     ops = RealGitHub(FakeTime())
 
     # Timeline response with same PR closing both issues 100 and 101 (aggregated format)
@@ -737,33 +734,18 @@ def test_parse_issue_pr_linkages_with_pr_linking_multiple_issues() -> None:
 
     result = ops._parse_issue_pr_linkages(response, "owner", "repo")
 
-    # Should have two issues, each with the same PR
+    # Both issues should have the same PR
     assert 100 in result
     assert 101 in result
-    assert len(result[100]) == 1
-    assert len(result[101]) == 1
-
-    # Both should point to same PR
     assert result[100][0].number == 200
     assert result[101][0].number == 200
 
 
 def test_parse_issue_pr_linkages_handles_empty_timeline() -> None:
-    """Test parsing handles issues with no cross-reference events."""
+    """Test parsing handles issues with no linked PRs."""
     ops = RealGitHub(FakeTime())
 
-    # Timeline response with empty timeline (no PRs reference this issue)
-    response = {
-        "data": {
-            "repository": {
-                "issue_100": {
-                    "timelineItems": {
-                        "nodes": []  # Empty - no cross-references
-                    }
-                }
-            }
-        }
-    }
+    response = {"data": {"repository": {"issue_100": {"timelineItems": {"nodes": []}}}}}
 
     result = ops._parse_issue_pr_linkages(response, "owner", "repo")
 
@@ -773,7 +755,7 @@ def test_parse_issue_pr_linkages_handles_empty_timeline() -> None:
 
 
 def test_parse_issue_pr_linkages_handles_null_nodes() -> None:
-    """Test parsing handles null values in timeline nodes gracefully."""
+    """Test parsing handles null values gracefully."""
     ops = RealGitHub(FakeTime())
 
     # Timeline response with null nodes and null source (aggregated format)

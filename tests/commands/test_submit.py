@@ -123,7 +123,8 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     assert branch_name == expected_branch
     assert title == "Implement feature X"
     assert draft is True
-    assert "Closes #123" in body
+    # PR body contains plan reference (not Closes #N - handled by native branch linking)
+    assert "**Plan:** #123" in body
 
     # Verify workflow was triggered
     assert len(fake_github.triggered_workflows) == 1
@@ -830,7 +831,8 @@ def test_submit_creates_pr_when_branch_exists_but_no_pr(tmp_path: Path) -> None:
     assert branch_name == expected_branch
     assert title == "Implement feature X"
     assert draft is True
-    assert "Closes #123" in body
+    # PR body contains plan reference (not Closes #N - handled by native branch linking)
+    assert "**Plan:** #123" in body
 
     # Verify PR body was updated with checkout footer
     assert len(fake_github.updated_pr_bodies) == 1

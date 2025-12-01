@@ -372,25 +372,6 @@ def has_issue_reference(impl_dir: Path) -> bool:
     return issue_file.exists()
 
 
-def get_closing_text(impl_dir: Path) -> str:
-    """Get GitHub issue closing text for PR body.
-
-    This is the canonical function for generating the "Closes #N" text
-    that links PRs to issues. All PR body construction should use this
-    function rather than constructing the text independently.
-
-    Args:
-        impl_dir: Path to .impl/ directory
-
-    Returns:
-        "Closes #N" if issue reference exists, empty string otherwise
-    """
-    issue_ref = read_issue_reference(impl_dir)
-    if issue_ref is None:
-        return ""
-    return f"Closes #{issue_ref.issue_number}"
-
-
 def read_run_info(impl_dir: Path) -> RunInfo | None:
     """Read GitHub Actions run info from .impl/run-info.json.
 

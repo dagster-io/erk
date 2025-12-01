@@ -244,24 +244,40 @@ Use "See #123" for reference without closure.
 
 ## Integration with erk Workflows
 
-### For `erk-plan` Issues
+### Native Branch Linking (Preferred)
 
-**User workflow:**
+Erk uses GitHub's native branch-to-issue linking via `gh issue develop` instead of explicit `Closes #N` keywords:
 
-1. Create issue with `erk-plan` label
-2. Create PR with `Closes #<issue-number>` in description
-3. Merge PR to master → GitHub auto-closes issue
-4. Workflow adds attribution comment (optional)
+```bash
+gh issue develop --name my-branch --base main <issue_number>
+```
 
-**Workflow automation:**
+**Benefits:**
 
-- Query `closingIssuesReferences` after PR merge
-- Filter for issues with `erk-plan` label
-- Add comments for traceability
+- Branch appears in issue sidebar under "Development"
+- PR automatically linked when branch is pushed
+- Issue auto-closes on PR merge (no keywords needed)
+- Cleaner PR bodies without boilerplate text
+
+**Discovery:**
+
+```bash
+# Find branches linked to an issue
+gh issue develop --list <issue_number>
+
+# Find PRs linked via native linking
+gh pr view <pr_number> --json closingIssuesReferences
+```
+
+See [github-branch-linking.md](agent/github-branch-linking.md) for complete documentation on native branch linking.
+
+### Legacy: Keyword-Based Linking
+
+The `Closes #N` keyword approach is still supported by GitHub but not used by erk workflows. This section documents the keyword approach for reference when working with external PRs or repositories not using native branch linking.
 
 ### For `erk-queue` Issues
 
-The `dispatch-erk-queue.yml` workflow already creates PRs programmatically - can easily inject `Closes #<issue-number>` into PR body.
+The `dispatch-erk-queue.yml` workflow uses native branch linking via `gh issue develop` to connect branches to issues automatically.
 
 ## References
 

@@ -260,19 +260,17 @@ class GitHub(ABC):
         location: GitHubRepoLocation,
         issue_numbers: list[int],
     ) -> dict[int, list[PullRequestInfo]]:
-        """Get PRs linked to issues via closing keywords.
+        """Get PRs linked to issues via GitHub's native branch linking.
 
-        Queries GitHub for all PRs that link to the given issues using
-        closing keywords (Closes, Fixes, Resolves). Returns a mapping
-        of issue numbers to the PRs that close them.
+        Queries GitHub for PRs associated with branches created via
+        `gh issue develop`. Returns a mapping of issue numbers to PRs.
 
         Args:
             location: GitHub repository location (local path + owner/repo identity)
             issue_numbers: List of issue numbers to query
 
         Returns:
-            Mapping of issue_number -> list of PRs that close that issue.
-            PRs are sorted by created_at descending (most recent first).
+            Mapping of issue_number -> list of PRs linked to that issue.
             Returns empty dict if no PRs link to any of the issues.
         """
         ...

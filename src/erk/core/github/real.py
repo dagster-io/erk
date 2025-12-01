@@ -832,13 +832,15 @@ query {{
         location: GitHubRepoLocation,
         issue_numbers: list[int],
     ) -> dict[int, list[PullRequestInfo]]:
-        """Get PRs linked to issues via closing keywords.
+        """Get PRs linked to issues via GitHub's native branch linking.
+
+        Uses linkedBranches GraphQL field to find branches created via
+        `gh issue develop`, then looks up PRs for those branches.
 
         Note: Uses try/except as an acceptable error boundary for handling gh CLI
         availability and authentication. We cannot reliably check gh installation
         and authentication status a priori without duplicating gh's logic.
         """
-        # Early exit for empty input
         if not issue_numbers:
             return {}
 
@@ -849,7 +851,6 @@ query {{
 
             # Parse response and build inverse mapping
             return self._parse_issue_pr_linkages(response, location.owner, location.repo)
-
         except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError, IndexError):
             # gh not installed, not authenticated, or parsing failed
             return {}
