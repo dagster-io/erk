@@ -8,6 +8,7 @@ on:
 
 jobs:
   check-submission:
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-latest
     outputs:
       skip: ${{ steps.check.outputs.skip }}
@@ -19,7 +20,7 @@ jobs:
 
   check-sync:
     needs: check-submission
-    if: needs.check-submission.outputs.skip == 'false'
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

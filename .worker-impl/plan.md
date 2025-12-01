@@ -1,6 +1,7 @@
 # Skip CI for Draft PRs
 
 ## Summary
+
 Add draft PR detection to all CI workflows so jobs don't run when a PR is in draft mode.
 
 ## Workflows to Modify (7 files)
@@ -26,6 +27,7 @@ if: github.event.pull_request.draft != true && needs.check-submission.outputs.sk
 For push events (not PR), `github.event.pull_request.draft` is `null`, so `!= true` evaluates to `true` (allowing push builds to run).
 
 ### Note on check-submission job
+
 The `check-submission` job itself should also skip on drafts to avoid unnecessary checkout/compute:
 
 ```yaml
@@ -42,6 +44,7 @@ check-submission:
 ## CodeQL
 
 CodeQL is **not configured via workflow files** in this repo. If you're seeing CodeQL runs, it's enabled at the repository level:
+
 - Settings → Code security → Code scanning → CodeQL analysis
 - You can disable it there, or add a `.github/workflows/codeql.yml` with draft exclusion
 
