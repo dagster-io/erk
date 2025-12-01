@@ -209,7 +209,7 @@ class GitHub(ABC):
 
     @abstractmethod
     def list_workflow_runs(
-        self, repo_root: Path, workflow: str, limit: int = 50
+        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
     ) -> list[WorkflowRun]:
         """List workflow runs for a specific workflow.
 
@@ -217,6 +217,7 @@ class GitHub(ABC):
             repo_root: Repository root directory
             workflow: Workflow filename (e.g., "implement-plan.yml")
             limit: Maximum number of runs to return (default: 50)
+            user: Optional GitHub username to filter runs by (maps to --user flag)
 
         Returns:
             List of workflow runs, ordered by creation time (newest first)
@@ -339,16 +340,24 @@ class GitHub(ABC):
 
     @abstractmethod
     def get_workflow_runs_batch(
-        self, repo_root: Path, run_ids: list[str]
+        self,
+        repo_root: Path,
+        run_ids: list[str],
+        *,
+        workflow: str | None = None,
+        user: str | None = None,
     ) -> dict[str, WorkflowRun | None]:
-        """Get details for multiple workflow runs by ID in a single request.
+        """Get details for multiple workflow runs by ID.
 
-        Uses GraphQL to fetch multiple workflow runs efficiently in one API call,
-        avoiding N+1 query patterns when fetching runs for multiple issues.
+        If workflow is provided, uses `gh run list --workflow [--user]` to fetch runs
+        efficiently in a single API call and filters by run_id in memory.
+        Otherwise falls back to individual `gh run view` calls.
 
         Args:
             repo_root: Repository root directory
             run_ids: List of GitHub Actions run IDs to fetch
+            workflow: Optional workflow filename for efficient batch fetch
+            user: Optional GitHub username to filter runs by (only used with workflow)
 
         Returns:
             Mapping of run_id -> WorkflowRun or None if not found.

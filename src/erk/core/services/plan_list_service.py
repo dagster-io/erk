@@ -15,6 +15,8 @@ from erk_shared.github.issues import GitHubIssues, IssueInfo
 from erk_shared.github.metadata import extract_plan_header_dispatch_info
 from erk_shared.github.types import PullRequestInfo, WorkflowRun
 
+from erk.cli.constants import DISPATCH_WORKFLOW_NAME
+
 
 @dataclass(frozen=True)
 class PlanListData:
@@ -101,10 +103,18 @@ class PlanListService:
                 if run_id is not None:
                     run_id_to_issue[run_id] = issue.number
 
-            # Batch fetch all workflow runs in single GraphQL query
+            # Batch fetch all workflow runs in single API call
+            # Uses gh run list with --workflow and --user filters for efficiency
             if run_id_to_issue:
                 run_ids = list(run_id_to_issue.keys())
-                runs_by_id = self._github.get_workflow_runs_batch(repo_root, run_ids)
+                # Get current user from gh auth status for filtering
+                _, username, _ = self._github.check_auth_status()
+                runs_by_id = self._github.get_workflow_runs_batch(
+                    repo_root,
+                    run_ids,
+                    workflow=DISPATCH_WORKFLOW_NAME,
+                    user=username,
+                )
 
                 # Map results back to issue numbers
                 for run_id, run in runs_by_id.items():

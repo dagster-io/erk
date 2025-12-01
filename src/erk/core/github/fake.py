@@ -289,11 +289,11 @@ class FakeGitHub(GitHub):
         return self._triggered_workflows
 
     def list_workflow_runs(
-        self, repo_root: Path, workflow: str, limit: int = 50
+        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
     ) -> list[WorkflowRun]:
         """List workflow runs for a specific workflow (returns pre-configured data).
 
-        Returns the pre-configured list of workflow runs. The workflow and limit
+        Returns the pre-configured list of workflow runs. The workflow, limit and user
         parameters are accepted but ignored - fake returns all pre-configured runs.
         """
         return self._workflow_runs
@@ -435,7 +435,12 @@ class FakeGitHub(GitHub):
         return self._pr_checkout_infos.get(pr_number)
 
     def get_workflow_runs_batch(
-        self, repo_root: Path, run_ids: list[str]
+        self,
+        repo_root: Path,
+        run_ids: list[str],
+        *,
+        workflow: str | None = None,
+        user: str | None = None,
     ) -> dict[str, WorkflowRun | None]:
         """Get details for multiple workflow runs by ID (returns pre-configured data).
 
@@ -444,6 +449,8 @@ class FakeGitHub(GitHub):
         Args:
             repo_root: Repository root directory (ignored in fake)
             run_ids: List of GitHub Actions run IDs to lookup
+            workflow: Optional workflow filename (ignored in fake)
+            user: Optional GitHub username (ignored in fake)
 
         Returns:
             Mapping of run_id -> WorkflowRun or None if not found

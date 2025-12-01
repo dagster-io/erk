@@ -64,10 +64,10 @@ class PrintingGitHub(PrintingBase, GitHub):
         return self._wrapped.enrich_prs_with_ci_status_batch(prs, repo_root)
 
     def list_workflow_runs(
-        self, repo_root: Path, workflow: str, limit: int = 50
+        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
     ) -> list[WorkflowRun]:
         """List workflow runs (read-only, no printing)."""
-        return self._wrapped.list_workflow_runs(repo_root, workflow, limit)
+        return self._wrapped.list_workflow_runs(repo_root, workflow, limit, user=user)
 
     def get_workflow_run(self, repo_root: Path, run_id: str) -> WorkflowRun | None:
         """Get workflow run details (read-only, no printing)."""
@@ -183,10 +183,17 @@ class PrintingGitHub(PrintingBase, GitHub):
         return self._wrapped.get_pr_checkout_info(repo_root, pr_number)
 
     def get_workflow_runs_batch(
-        self, repo_root: Path, run_ids: list[str]
+        self,
+        repo_root: Path,
+        run_ids: list[str],
+        *,
+        workflow: str | None = None,
+        user: str | None = None,
     ) -> dict[str, WorkflowRun | None]:
         """Get workflow runs batch (read-only, no printing)."""
-        return self._wrapped.get_workflow_runs_batch(repo_root, run_ids)
+        return self._wrapped.get_workflow_runs_batch(
+            repo_root, run_ids, workflow=workflow, user=user
+        )
 
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Check auth status (read-only, no printing)."""

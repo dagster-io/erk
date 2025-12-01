@@ -5,6 +5,7 @@
 `erk ls -a` makes 11 serial `gh run view` calls, each taking ~800-1200ms, adding ~10 seconds total latency.
 
 **Current code** (`src/erk/core/github/real.py:1235-1256`):
+
 ```python
 def get_workflow_runs_batch(self, repo_root, run_ids):
     result = {}
@@ -18,10 +19,12 @@ def get_workflow_runs_batch(self, repo_root, run_ids):
 All runs we fetch are from the `dispatch-erk-queue-git.yml` workflow. Instead of fetching each run individually, fetch all recent runs from that workflow in ONE call and filter by run_id in memory.
 
 **Filters applied:**
+
 - `--workflow dispatch-erk-queue-git.yml` - Only this workflow's runs
 - `--user <current_user>` - Only runs triggered by current user (from `gh auth status`)
 
 **Performance impact:**
+
 - Before: 11 serial `gh run view` calls (~11s)
 - After: 1 `gh run list --workflow --user` call (~1s)
 
@@ -113,6 +116,7 @@ runs_by_id = self._github.get_workflow_runs_batch(
 ### Step 5: Update Fake/DryRun Implementations
 
 Update signatures in:
+
 - `src/erk/core/github/fake.py`
 - `src/erk/core/github/dry_run.py`
 - `src/erk/core/github/printing.py`
@@ -122,15 +126,15 @@ All just need to add `*, workflow: str | None = None, user: str | None = None` p
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `packages/erk-shared/src/erk_shared/github/abc.py` | Add `user` param to `list_workflow_runs()`, add `workflow`+`user` params to `get_workflow_runs_batch()` |
-| `src/erk/core/github/real.py` | Add `--user` flag to `list_workflow_runs()`, implement batch fetch in `get_workflow_runs_batch()` |
-| `src/erk/core/github/fake.py` | Add parameters (existing behavior fine) |
-| `src/erk/core/github/dry_run.py` | Add parameters, pass through |
-| `src/erk/core/github/printing.py` | Add parameters, pass through |
-| `packages/erk-shared/src/erk_shared/github/real.py` | Add parameters to stubs |
-| `src/erk/core/services/plan_list_service.py` | Pass workflow name and username |
+| File                                                | Change                                                                                                  |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `packages/erk-shared/src/erk_shared/github/abc.py`  | Add `user` param to `list_workflow_runs()`, add `workflow`+`user` params to `get_workflow_runs_batch()` |
+| `src/erk/core/github/real.py`                       | Add `--user` flag to `list_workflow_runs()`, implement batch fetch in `get_workflow_runs_batch()`       |
+| `src/erk/core/github/fake.py`                       | Add parameters (existing behavior fine)                                                                 |
+| `src/erk/core/github/dry_run.py`                    | Add parameters, pass through                                                                            |
+| `src/erk/core/github/printing.py`                   | Add parameters, pass through                                                                            |
+| `packages/erk-shared/src/erk_shared/github/real.py` | Add parameters to stubs                                                                                 |
+| `src/erk/core/services/plan_list_service.py`        | Pass workflow name and username                                                                         |
 
 ## Edge Cases
 

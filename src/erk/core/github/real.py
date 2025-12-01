@@ -711,7 +711,7 @@ query {{
         execute_gh_command(cmd, repo_root)
 
     def list_workflow_runs(
-        self, repo_root: Path, workflow: str, limit: int = 50
+        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
     ) -> list[WorkflowRun]:
         """List workflow runs for a specific workflow."""
         cmd = [
@@ -725,6 +725,8 @@ query {{
             "--limit",
             str(limit),
         ]
+        if user is not None:
+            cmd.extend(["--user", user])
 
         result = run_subprocess_with_context(
             cmd,
@@ -1233,23 +1235,35 @@ query {{
         )
 
     def get_workflow_runs_batch(
-        self, repo_root: Path, run_ids: list[str]
+        self,
+        repo_root: Path,
+        run_ids: list[str],
+        *,
+        workflow: str | None = None,
+        user: str | None = None,
     ) -> dict[str, WorkflowRun | None]:
-        """Get details for multiple workflow runs by ID using REST API.
+        """Get details for multiple workflow runs by ID.
 
-        Note: Uses get_workflow_run() for each run ID. The previous GraphQL
-        implementation was broken because database IDs cannot be used directly
-        in GraphQL Global ID format (gid://github/WorkflowRun/{db_id}).
-
-        Note: Uses try/except as an acceptable error boundary for handling gh CLI
-        availability and authentication. We cannot reliably check gh installation
-        and authentication status a priori without duplicating gh's logic.
+        If workflow is provided, uses `gh run list --workflow [--user]` to fetch runs
+        efficiently in a single API call and filters by run_id in memory.
+        Otherwise falls back to individual `gh run view` calls.
         """
         # Early exit for empty input
         if not run_ids:
             return {}
 
-        # Use get_workflow_run() for each ID (REST API via gh run view)
+        # If workflow provided, use efficient batch fetch via gh run list
+        if workflow is not None:
+            # Fetch recent runs from workflow (single API call)
+            all_runs = self.list_workflow_runs(repo_root, workflow, limit=200, user=user)
+
+            # Build lookup by run_id
+            runs_by_id = {run.run_id: run for run in all_runs}
+
+            # Return only requested run_ids
+            return {run_id: runs_by_id.get(run_id) for run_id in run_ids}
+
+        # Fallback: individual fetch for each run_id (existing behavior)
         result: dict[str, WorkflowRun | None] = {}
         for run_id in run_ids:
             result[run_id] = self.get_workflow_run(repo_root, run_id)

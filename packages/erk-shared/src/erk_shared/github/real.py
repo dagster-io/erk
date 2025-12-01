@@ -170,7 +170,7 @@ class RealGitHub(GitHub):
         raise NotImplementedError(msg)
 
     def list_workflow_runs(
-        self, repo_root: Path, workflow: str, limit: int = 50
+        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
     ) -> list[WorkflowRun]:
         """Stub method - not implemented in erk-shared."""
         msg = (
@@ -246,7 +246,12 @@ class RealGitHub(GitHub):
         raise NotImplementedError(msg)
 
     def get_workflow_runs_batch(
-        self, repo_root: Path, run_ids: list[str]
+        self,
+        repo_root: Path,
+        run_ids: list[str],
+        *,
+        workflow: str | None = None,
+        user: str | None = None,
     ) -> dict[str, WorkflowRun | None]:
         """Stub method - not implemented in erk-shared."""
         msg = (
