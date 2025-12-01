@@ -1,4 +1,4 @@
-"""Tests for top-level plan commands (list, ls, get, close, retry)."""
+"""Tests for top-level plan commands (dash, get, close, retry)."""
 
 from datetime import UTC, datetime
 
@@ -6,7 +6,7 @@ from click.testing import CliRunner
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
 
 from erk.cli.cli import cli
-from erk.cli.commands.plan.list_cmd import list_plans
+from erk.cli.commands.plan.list_cmd import dash
 from erk.core.plan_store.fake import FakePlanStore
 from erk.core.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -28,39 +28,8 @@ def plan_to_issue(plan: Plan) -> IssueInfo:
     )
 
 
-def test_top_level_list_command_works() -> None:
-    """Test that top-level 'erk list' command works."""
-    # Arrange
-    plan1 = Plan(
-        plan_identifier="1",
-        title="Test Issue",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={},
-    )
-
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1)})
-        ctx = build_workspace_test_context(env, issues=issues)
-
-        # Act - Use top-level list command
-        result = runner.invoke(cli, ["list"], obj=ctx)
-
-        # Assert
-        assert result.exit_code == 0
-        assert "Found 1 plan(s)" in result.output
-        assert "#1" in result.output
-        assert "Test Issue" in result.output
-
-
-def test_ls_command_lists_plans_by_default() -> None:
-    """Test that 'erk ls' lists plans by default (new behavior)."""
+def test_dash_command_lists_plans_by_default() -> None:
+    """Test that 'erk dash' lists plans by default."""
     # Arrange
     plan1 = Plan(
         plan_identifier="1",
@@ -80,8 +49,8 @@ def test_ls_command_lists_plans_by_default() -> None:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1)})
         ctx = build_workspace_test_context(env, issues=issues)
 
-        # Act - Use list_plans command (which has @alias("ls"))
-        result = runner.invoke(list_plans, [], obj=ctx)
+        # Act - Use dash command
+        result = runner.invoke(dash, [], obj=ctx)
 
         # Assert - Should show plans
         assert result.exit_code == 0
@@ -90,8 +59,8 @@ def test_ls_command_lists_plans_by_default() -> None:
         assert "Test Plan" in result.output
 
 
-def test_ls_command_plan_filters_work() -> None:
-    """Test that plan filters work with 'erk ls' command."""
+def test_dash_command_plan_filters_work() -> None:
+    """Test that plan filters work with 'erk dash' command."""
     # Arrange
     open_plan = Plan(
         plan_identifier="1",
@@ -125,8 +94,8 @@ def test_ls_command_plan_filters_work() -> None:
         )
         ctx = build_workspace_test_context(env, issues=issues)
 
-        # Act - Filter for open plans using list_plans command
-        result = runner.invoke(list_plans, ["--state", "open"], obj=ctx)
+        # Act - Filter for open plans using dash command
+        result = runner.invoke(dash, ["--state", "open"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0

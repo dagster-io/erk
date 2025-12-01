@@ -70,7 +70,7 @@ This reference contains:
 - Use grep patterns to find specific sections when needed:
   - `erk create` - Creating worktrees
   - `erk checkout` - Navigating to branches
-  - `erk list` - Listing worktrees
+  - `erk dash` - Listing plans
   - `Pattern [0-9]:` - Workflow patterns
   - `Graphite Integration` - Graphite-specific features
   - `Configuration` - Setup and config
@@ -103,13 +103,14 @@ Load `references/erk.md` and search for "erk checkout" section to provide:
 - Stack navigation: Use Graphite's `gt up` and `gt down` for stack traversal
 - Environment activation details
 
-### Listing and Viewing
+### Listing Plans
 
-Load `references/erk.md` and search for "erk list" section to provide:
+Load `references/erk.md` and search for "erk dash" section to provide:
 
-- Basic listing: `erk ls`
-- With stacks: `erk ls --stacks` (shows Graphite structure)
-- With checks: `erk ls --checks` (shows CI status)
+- Basic listing: `erk dash`
+- With PRs: `erk dash --prs` (shows PR information)
+- With runs: `erk dash --runs` (shows workflow runs)
+- All columns: `erk dash --all` or `erk dash -a`
 
 ### Cleanup and Maintenance
 
@@ -149,7 +150,6 @@ When users mention Graphite or stacked diffs:
 
 - Load the Graphite Integration section from `references/erk.md`
 - Explain stack navigation: Use Graphite's `gt up` and `gt down` commands
-- Show stack visualization: `erk list --stacks`
 - Branch navigation: `erk checkout <branch>` to navigate to any branch in the stack
 - Reference the separate Graphite (gt) documentation for deeper gt concepts
 

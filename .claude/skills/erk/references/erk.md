@@ -420,37 +420,38 @@ erk checkout my-feature --script
 - Navigating between features by branch name
 - Creating worktrees on-demand from remote branches
 
-### Listing & Viewing
+### Listing Plans
 
-#### `erk list` / `erk ls`
+#### `erk dash`
 
-List all worktrees.
+List plans with optional filters.
 
 ```bash
 # Basic list
-erk list
-# Output:
-# root [main]
-# feature-a [feature-a]
-# feature-b [feature/bug-fix]
+erk dash
 
-# With Graphite stacks and PR info
-erk list --stacks
-# Output:
-# root [main]
-#   ◉  main
-#
-# feature-a [feature-a]
-#   ◯  main
-#   ◉  feature-a ✅ #123
-#
-# feature-b [feature/bug-fix]
-#   ◯  main
-#   ◉  feature/bug-fix 🚧 #456
+# With PR columns
+erk dash --prs
 
-# With detailed CI checks
-erk list --checks
+# With workflow run columns
+erk dash --runs
+
+# All columns
+erk dash --all
+erk dash -a
 ```
+
+**Output columns:**
+
+- `plan` - Issue number (clickable link)
+- `title` - Plan title (truncated to 50 chars)
+- `pr` - Associated PR number (with --prs)
+- `chks` - CI checks status (with --prs)
+- `local-wt` - Local worktree name (yellow if exists)
+- `local-run` - Time since last local implementation
+- `remote-run` - Time since last remote implementation (with --runs)
+- `run-id` - Workflow run ID (with --runs)
+- `run-state` - Workflow run state (with --runs)
 
 **PR Status Indicators:**
 
@@ -459,13 +460,6 @@ erk list --checks
 - 🟣 Merged
 - 🚧 Draft
 - ⭕ Closed
-- ◯ Open (no checks)
-
-**Stack Indicators:**
-
-- ◉ Current branch
-- ◯ Parent branch
-- ├─ Stack relationship
 
 #### `erk status`
 
@@ -671,8 +665,8 @@ erk checkout feature-base
 gt up                  # Move to feature-base-part-2 (within same worktree)
 gt down                # Back to feature-base
 
-# View stack structure
-erk list --stacks
+# View plans (use erk dash for plan listing)
+erk dash
 ```
 
 ### Pattern 5: Parallel Development
@@ -683,8 +677,8 @@ erk create feature-a
 erk create feature-b
 erk create feature-c
 
-# List all worktrees
-erk ls
+# List worktrees
+erk wt list
 
 # Navigate between them instantly
 erk checkout feature-a   # Work on A
@@ -780,8 +774,8 @@ gt up                  # Navigate to child branch (within worktree)
 gt down                # Navigate to parent branch (within worktree)
 erk checkout <branch>  # Navigate to specific branch (across worktrees)
 
-# Stack visualization
-erk list --stacks      # Show stack structure
+# List worktrees
+erk wt list            # Show worktrees
 ```
 
 **Graphite commands used:**
@@ -801,9 +795,9 @@ erk list --stacks      # Show stack structure
 Requires GitHub CLI (`gh`) installed and authenticated:
 
 ```bash
-# PR status in listings
-erk list --stacks
-# Shows: ✅ #123, 🚧 #456, 🟣 #789
+# PR status in plan listings
+erk dash --prs
+# Shows PR info with status indicators
 ```
 
 **GitHub commands used:**
@@ -839,8 +833,8 @@ erk init --shell
 ### Example 1: Daily Development Flow
 
 ```bash
-# Morning: Check current worktrees
-erk ls --stacks
+# Morning: Check current plans
+erk dash
 
 # Work on feature A
 erk checkout feature-a
@@ -880,8 +874,8 @@ git commit -m "Add authentication"
 git push -u origin add-authentication
 gh pr create --fill
 
-# 5. Check status
-erk ls --stacks     # See PR #123 ✅
+# 5. Check plan status
+erk dash --prs     # See PR info
 ```
 
 ### Example 3: Stacked Features
@@ -900,8 +894,8 @@ erk checkout api-v2-auth
 # ... implement auth on top of API v2 ...
 git commit -m "Add authentication to API v2"
 
-# Navigate stack
-erk list --stacks
+# View plans
+erk dash
 
 erk checkout api-v2    # Base
 gt up                  # → api-v2-auth (within worktree)

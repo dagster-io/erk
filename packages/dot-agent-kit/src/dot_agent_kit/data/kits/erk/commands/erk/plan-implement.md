@@ -169,7 +169,7 @@ dot-agent run erk mark-impl-started 2>/dev/null || true
 This updates:
 
 - `last_local_impl_at` field in the plan-header metadata block
-- Used by `erk ls` to show relative time since last local implementation
+- Used by `erk dash` to show relative time since last local implementation
 
 If issue tracking is not enabled, this will exit gracefully.
 
