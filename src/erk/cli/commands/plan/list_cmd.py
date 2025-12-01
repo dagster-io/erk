@@ -16,7 +16,6 @@ from erk_shared.output.output import user_output
 from rich.console import Console
 from rich.table import Table
 
-from erk.cli.alias import alias
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.display_utils import (
@@ -419,11 +418,10 @@ def _list_plans_impl(
     console.print()  # Add blank line after table
 
 
-@alias("ls")
-@click.command("list")
+@click.command("dash")
 @plan_list_options
 @click.pass_obj
-def list_plans(
+def dash(
     ctx: ErkContext,
     label: tuple[str, ...],
     state: str | None,
@@ -433,18 +431,18 @@ def list_plans(
     limit: int | None,
     show_all: bool,
 ) -> None:
-    """List plans with optional filters.
+    """Display plan dashboard with optional filters.
 
     Examples:
-        erk plan list
-        erk plan list --label erk-plan --state open
-        erk plan list --limit 10
-        erk plan list --run-state in_progress
-        erk plan list --run-state success --state open
-        erk plan list --runs
-        erk plan list --prs
-        erk plan list --all
-        erk ls -a
+        erk dash
+        erk dash --label erk-plan --state open
+        erk dash --limit 10
+        erk dash --run-state in_progress
+        erk dash --run-state success --state open
+        erk dash --runs
+        erk dash --prs
+        erk dash --all
+        erk dash -a
     """
     # Handle --all flag (equivalent to -P -r)
     if show_all:

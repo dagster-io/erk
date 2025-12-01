@@ -13,7 +13,7 @@ Plans represent implementation work to be done. Since users interact with plans 
 ```bash
 erk create        # Create a new plan issue
 erk get           # View a plan
-erk list          # List plans
+erk dash          # Display plan dashboard
 erk close         # Close a plan
 erk implement     # Implement a plan
 erk submit        # Submit a plan for remote execution
@@ -32,16 +32,15 @@ erk log           # View plan execution logs
 
 Plan commands appear at the top level without a noun prefix:
 
-| Command     | Description                                                 | Frequency |
-| ----------- | ----------------------------------------------------------- | --------- |
-| `ls`        | Default: list plans (with `--worktrees` flag for worktrees) | Very High |
-| `list`      | Explicit plan listing                                       | High      |
-| `get`       | View plan details                                           | High      |
-| `create`    | Create new plan issue                                       | High      |
-| `close`     | Close a plan                                                | Medium    |
-| `implement` | Start implementing a plan                                   | Very High |
-| `submit`    | Queue plan for remote execution                             | High      |
-| `log`       | View plan execution history                                 | Medium    |
+| Command     | Description                     | Frequency |
+| ----------- | ------------------------------- | --------- |
+| `dash`      | Display plan dashboard          | Very High |
+| `get`       | View plan details               | High      |
+| `create`    | Create new plan issue           | High      |
+| `close`     | Close a plan                    | Medium    |
+| `implement` | Start implementing a plan       | Very High |
+| `submit`    | Queue plan for remote execution | High      |
+| `log`       | View plan execution history     | Medium    |
 
 ### Grouped Commands
 
@@ -280,8 +279,7 @@ erk wt list
 erk create --file implementation-plan.md
 
 # View plans
-erk ls                    # List all plans (default)
-erk list                  # Explicit list
+erk dash                  # Display plan dashboard
 erk get 42                # View specific plan
 
 # Work on a plan
@@ -305,8 +303,7 @@ erk close 42              # Close completed plan
 erk wt create my-feature
 
 # List and inspect
-erk ls --worktrees        # List worktrees
-erk wt list               # Explicit worktree list
+erk wt list               # List worktrees
 
 # Clean up
 erk wt delete my-feature

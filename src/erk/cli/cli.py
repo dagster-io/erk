@@ -11,7 +11,7 @@ from erk.cli.commands.down import down_cmd
 from erk.cli.commands.implement import implement
 from erk.cli.commands.init import init_cmd
 from erk.cli.commands.plan import plan_group
-from erk.cli.commands.plan.list_cmd import list_plans
+from erk.cli.commands.plan.list_cmd import dash
 from erk.cli.commands.planner import planner_group
 from erk.cli.commands.pr import pr_group
 from erk.cli.commands.prepare_cwd_recovery import prepare_cwd_recovery_cmd
@@ -50,7 +50,7 @@ cli.add_command(config_group)
 cli.add_command(down_cmd)
 cli.add_command(implement)
 cli.add_command(init_cmd)
-register_with_aliases(cli, list_plans, name="list")  # Has @alias("ls")
+cli.add_command(dash)
 cli.add_command(plan_group)
 cli.add_command(planner_group)
 cli.add_command(pr_group)

@@ -44,7 +44,7 @@ class GroupedCommandGroup(click.Group):
         # Define command organization (aliases now derived from decorator, not hardcoded)
         core_navigation = ["checkout", "up", "down"]
         command_groups = ["wt", "plan", "stack", "run", "admin", "config", "completion"]
-        top_level_plans = ["list", "implement", "submit"]
+        top_level_plans = ["dash", "implement", "submit"]
         initialization = ["init"]
 
         # Categorize commands
