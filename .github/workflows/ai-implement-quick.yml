@@ -1,0 +1,123 @@
+name: AI Implementation (Quick)
+
+on:
+  workflow_dispatch:
+    inputs:
+      plan-file:
+        description: Plan file to implement (e.g., feature-name-plan.md)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+jobs:
+  quick-implement:
+    name: Quick Implementation (No Validation)
+    runs-on: ubuntu-latest
+    outputs:
+      branch-name: ${{ steps.execute.outputs.branch-name }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify plan file
+        run: |
+          if [ ! -f "${{ github.event.inputs.plan-file }}" ]; then
+            echo "Error: Plan file not found"
+            exit 1
+          fi
+          echo "✓ Plan file found"
+
+      - name: Setup AI tools
+        uses: ./.github/actions/setup-ai-tools
+        with:
+          python-version: "3.13"
+
+      - name: Execute implementation
+        id: execute
+        uses: ./.github/actions/execute-plan
+        with:
+          plan-file: ${{ github.event.inputs.plan-file }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          validation-level: none
+          permission-mode: acceptEdits
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Quick Implementation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Plan:** ${{ github.event.inputs.plan-file }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ steps.execute.outputs.branch-name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Success:** ${{ steps.execute.outputs.success }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚡ Quick mode: Validation skipped for faster iteration" >> $GITHUB_STEP_SUMMARY
+
+  create-draft-pr:
+    name: Create Draft PR
+    runs-on: ubuntu-latest
+    needs: quick-implement
+    if: always() && needs.quick-implement.outputs.branch-name != ''
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.quick-implement.outputs.branch-name }}
+          fetch-depth: 0
+
+      - name: Create draft PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          branch="${{ needs.quick-implement.outputs.branch-name }}"
+          plan_file="${{ github.event.inputs.plan-file }}"
+          plan_name=$(basename "$plan_file" -plan.md)
+
+          cat > pr_body.md <<'EOF'
+          ## AI-Generated Implementation (Quick Mode)
+
+          ⚡ This PR was created in **quick mode** with validation skipped.
+
+          **Plan File:** `${{ github.event.inputs.plan-file }}`
+
+          ### ⚠ Quick Mode Notice
+
+          This implementation was generated without running the full validation suite.
+          Please review carefully and run tests locally before merging.
+
+          ### Review Checklist
+
+          - [ ] Review implementation logic
+          - [ ] Run tests locally
+          - [ ] Check for security issues
+          - [ ] Validate against plan requirements
+
+          ---
+
+          🤖 Generated with AI Implementation System (Quick Mode)
+          EOF
+
+          gh pr create \
+            --title "AI Implementation (Quick): ${plan_name}" \
+            --body-file pr_body.md \
+            --draft \
+            --label "ai-generated" \
+            --label "quick-mode" \
+            --label "needs-testing" \
+            --base main || gh pr create \
+            --title "AI Implementation (Quick): ${plan_name}" \
+            --body-file pr_body.md \
+            --draft \
+            --label "ai-generated" \
+            --label "quick-mode" \
+            --label "needs-testing" \
+            --base master
+
+          echo "Draft PR created for quick implementation"

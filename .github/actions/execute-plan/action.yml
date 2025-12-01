@@ -1,0 +1,195 @@
+name: Execute Implementation Plan
+description: Create worktree from plan file and execute implementation via Claude Code
+
+inputs:
+  plan-file:
+    description: Path to the plan file (e.g., feature-name-plan.md)
+    required: true
+  anthropic-api-key:
+    description: Anthropic API key for Claude Code
+    required: true
+  validation-level:
+    description: Validation level (full, quick, none)
+    required: false
+    default: full
+  permission-mode:
+    description: Permission mode for Claude Code (acceptEdits, acceptAll, prompt)
+    required: false
+    default: acceptEdits
+  working-directory:
+    description: Working directory for execution
+    required: false
+    default: "."
+
+outputs:
+  worktree-path:
+    description: Path to the created worktree
+    value: ${{ steps.create-worktree.outputs.worktree_path }}
+  branch-name:
+    description: Name of the created branch
+    value: ${{ steps.create-worktree.outputs.branch_name }}
+  success:
+    description: Whether implementation succeeded
+    value: ${{ steps.execute.outputs.success }}
+  exit-code:
+    description: Exit code from dot-agent command
+    value: ${{ steps.execute.outputs.exit_code }}
+
+runs:
+  using: composite
+  steps:
+    - name: Verify plan file exists
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if [ ! -f "${{ inputs.plan-file }}" ]; then
+          echo "Error: Plan file '${{ inputs.plan-file }}' not found"
+          exit 1
+        fi
+        echo "✓ Plan file found: ${{ inputs.plan-file }}"
+
+    - name: Validate plan structure
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "Validating plan structure..."
+        if ! grep -q "enriched_by_persist_plan: true" "${{ inputs.plan-file }}"; then
+          echo "Warning: Plan may not be enriched by /erk:persist-plan"
+        fi
+        if ! grep -q "## Implementation Steps" "${{ inputs.plan-file }}" && ! grep -q "## Implementation Phases" "${{ inputs.plan-file }}"; then
+          echo "Error: Plan missing Implementation Steps/Phases section"
+          exit 1
+        fi
+        echo "✓ Plan structure validated"
+
+    - name: Create worktree from plan
+      id: create-worktree
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "Creating worktree from plan file..."
+
+        # Run erk create with --json flag for parseable output
+        output=$(erk create --plan "${{ inputs.plan-file }}" --json --stay 2>&1)
+        exit_code=$?
+
+        echo "$output"
+
+        if [ $exit_code -ne 0 ]; then
+          echo "Error: Failed to create worktree"
+          exit $exit_code
+        fi
+
+        # Parse JSON output
+        worktree_path=$(echo "$output" | jq -r '.worktree_path // empty' | tail -n 1)
+        branch_name=$(echo "$output" | jq -r '.branch_name // empty' | tail -n 1)
+
+        if [ -z "$worktree_path" ] || [ -z "$branch_name" ]; then
+          echo "Error: Failed to parse worktree info from output"
+          echo "Output was: $output"
+          exit 1
+        fi
+
+        echo "worktree_path=$worktree_path" >> $GITHUB_OUTPUT
+        echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
+
+        echo "✓ Worktree created:"
+        echo "  Path: $worktree_path"
+        echo "  Branch: $branch_name"
+
+    - name: Verify .plan directory
+      shell: bash
+      run: |
+        worktree_path="${{ steps.create-worktree.outputs.worktree_path }}"
+
+        if [ ! -d "$worktree_path/.plan" ]; then
+          echo "Error: .plan directory not found in worktree"
+          exit 1
+        fi
+
+        if [ ! -f "$worktree_path/.plan/plan.md" ]; then
+          echo "Error: .plan/plan.md not found"
+          exit 1
+        fi
+
+        if [ ! -f "$worktree_path/.plan/progress.md" ]; then
+          echo "Error: .plan/progress.md not found"
+          exit 1
+        fi
+
+        echo "✓ Plan directory structure verified"
+
+    - name: Execute implementation
+      id: execute
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+      run: |
+        worktree_path="${{ steps.create-worktree.outputs.worktree_path }}"
+
+        echo "Executing implementation in worktree: $worktree_path"
+        cd "$worktree_path"
+
+        # Execute dot-agent command
+        set +e
+        dot-agent command "/erk:implement-plan" --permission-mode "${{ inputs.permission-mode }}" 2>&1 | tee implementation.log
+        exit_code=$?
+        set -e
+
+        echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+
+        if [ $exit_code -eq 0 ]; then
+          echo "success=true" >> $GITHUB_OUTPUT
+          echo "✓ Implementation completed successfully"
+        else
+          echo "success=false" >> $GITHUB_OUTPUT
+          echo "⚠ Implementation completed with errors (exit code: $exit_code)"
+        fi
+
+        # Save implementation log as artifact data
+        if [ -f implementation.log ]; then
+          echo "Implementation log saved to: $worktree_path/implementation.log"
+        fi
+
+    - name: Check progress
+      shell: bash
+      run: |
+        worktree_path="${{ steps.create-worktree.outputs.worktree_path }}"
+
+        if [ -f "$worktree_path/.plan/progress.md" ]; then
+          echo "Progress summary:"
+          head -n 20 "$worktree_path/.plan/progress.md"
+        fi
+
+    - name: Track token usage
+      if: always()
+      shell: bash
+      run: |
+        worktree_path="${{ steps.create-worktree.outputs.worktree_path }}"
+
+        if [ -f "$worktree_path/implementation.log" ]; then
+          echo "Analyzing token usage..."
+
+          # Generate cost report
+          if [ -f "scripts/track-token-usage.sh" ]; then
+            bash scripts/track-token-usage.sh "$worktree_path/implementation.log" || echo "Token tracking unavailable"
+
+            # Generate JSON report for artifacts
+            bash scripts/track-token-usage.sh "$worktree_path/implementation.log" json > "$worktree_path/token-usage.json" || echo "{}" > "$worktree_path/token-usage.json"
+          else
+            echo "Token tracking script not found, skipping"
+          fi
+        else
+          echo "Implementation log not found, skipping token tracking"
+        fi
+
+    - name: Upload implementation artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: implementation-artifacts-${{ steps.create-worktree.outputs.branch_name }}
+        path: |
+          ${{ steps.create-worktree.outputs.worktree_path }}/.plan/
+          ${{ steps.create-worktree.outputs.worktree_path }}/implementation.log
+          ${{ steps.create-worktree.outputs.worktree_path }}/token-usage.json
+        retention-days: 30
