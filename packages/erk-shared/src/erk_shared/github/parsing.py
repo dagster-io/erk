@@ -3,6 +3,7 @@
 import json
 import re
 from pathlib import Path
+from typing import Any
 
 from erk_shared.github.types import PRInfo, PullRequestInfo
 from erk_shared.subprocess_utils import run_subprocess_with_context
@@ -174,6 +175,40 @@ def _parse_github_pr_url(url: str) -> tuple[str, str] | None:
     if match:
         return (match.group(1), match.group(2))
     return None
+
+
+PASSING_CHECK_RUN_STATES = frozenset({"SUCCESS", "SKIPPED", "NEUTRAL"})
+PASSING_STATUS_CONTEXT_STATES = frozenset({"SUCCESS"})
+
+
+def parse_aggregated_check_counts(
+    check_run_counts: list[dict[str, Any]],
+    status_context_counts: list[dict[str, Any]],
+    total_count: int,
+) -> tuple[int, int]:
+    """Parse aggregated check counts from GitHub GraphQL response.
+
+    Returns (passing, total) tuple.
+
+    Passing criteria:
+        - CheckRun: SUCCESS, SKIPPED, NEUTRAL
+        - StatusContext: SUCCESS
+    """
+    passing = 0
+
+    for item in check_run_counts:
+        state = item.get("state", "")
+        count = item.get("count", 0)
+        if state in PASSING_CHECK_RUN_STATES:
+            passing += count
+
+    for item in status_context_counts:
+        state = item.get("state", "")
+        count = item.get("count", 0)
+        if state in PASSING_STATUS_CONTEXT_STATES:
+            passing += count
+
+    return (passing, total_count)
 
 
 def parse_gh_auth_status_output(output: str) -> tuple[bool, str | None, str | None]:

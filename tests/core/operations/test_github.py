@@ -83,43 +83,27 @@ def test_parse_github_pr_url_edge_cases() -> None:
     assert result == ("owner", "repo")
 
 
-def test_build_batch_pr_query_has_contexts_nodes_wrapper() -> None:
-    """Test that contexts field has nodes wrapper in fragment definition (regression test for bug).
+def test_build_batch_pr_query_uses_aggregated_count_fields() -> None:
+    """Test that GraphQL query uses pre-aggregated count fields for efficiency.
 
-    This is a regression test for a bug where the GraphQL query was missing the
-    'nodes' wrapper around the inline fragments in the contexts field. The contexts
-    field returns a connection object (StatusCheckRollupContextConnection), not a
-    direct array, so inline fragments must be applied to nodes, not the connection.
-
-    The bug was:
-        contexts(last: 100) {
-          ... on StatusContext { ... }  # WRONG - can't spread on connection
-        }
-
-    The fix is:
-        contexts(last: 100) {
-          nodes {  # CORRECT - spread on nodes
-            ... on StatusContext { ... }
-          }
-        }
+    The query should use contexts(last: 1) with totalCount, checkRunCountsByState,
+    and statusContextCountsByState instead of fetching up to 100 individual nodes.
+    This reduces payload size by ~15-30x while maintaining identical functionality.
     """
     ops = RealGitHub(FakeTime())
 
     query = ops._build_batch_pr_query([123], "owner", "repo")
 
-    # Critical: contexts must have nodes wrapper (in the fragment definition)
-    assert "contexts(last: 100) {" in query
-    assert "nodes {" in query
+    # Critical: contexts should use aggregated count fields, not nodes with inline fragments
+    assert "contexts(last: 1) {" in query  # Only need 1 for metadata
+    assert "totalCount" in query
+    assert "checkRunCountsByState" in query
+    assert "statusContextCountsByState" in query
 
-    # Verify the structure order in the fragment: contexts -> nodes -> fragments
-    # This ensures nodes comes between contexts and the inline fragments
-    fragment_start = query.index("fragment PRCICheckFields")
-    contexts_idx = query.index("contexts(last: 100)", fragment_start)
-    nodes_idx = query.index("nodes {", contexts_idx)
-    status_context_idx = query.index("... on StatusContext", nodes_idx)
-
-    # Ensure proper nesting order
-    assert contexts_idx < nodes_idx < status_context_idx
+    # Should NOT have the old inefficient patterns
+    assert "contexts(last: 100)" not in query
+    assert "... on StatusContext" not in query
+    assert "... on CheckRun" not in query
 
 
 def test_build_batch_pr_query_structure() -> None:
@@ -144,14 +128,11 @@ def test_build_batch_pr_query_structure() -> None:
     assert query.count("commits(last: 1)") == 1  # Only in fragment definition
     assert query.count("statusCheckRollup") == 1  # Only in fragment definition
 
-    # Validate inline fragments for both types (in the fragment definition)
-    assert "... on StatusContext {" in query
-    assert "... on CheckRun {" in query
-
-    # Validate fields within fragments
-    assert "status" in query  # CheckRun field
-    assert "conclusion" in query  # Both StatusContext and CheckRun
-    assert "state" in query  # StatusContext and statusCheckRollup
+    # Validate aggregated count fields (new efficient pattern)
+    assert "totalCount" in query
+    assert "checkRunCountsByState" in query
+    assert "statusContextCountsByState" in query
+    assert "state" in query  # statusCheckRollup state field
 
     # Validate fragment spread is used for each PR
     assert query.count("...PRCICheckFields") == 2  # One for each PR
@@ -175,29 +156,30 @@ def test_build_batch_pr_query_multiple_prs() -> None:
     # With fragments, the structure is defined once in the fragment definition
     assert query.count("commits(last: 1)") == 1  # Only in fragment definition
     assert query.count("statusCheckRollup") == 1  # Only in fragment definition
+    assert query.count("totalCount") == 1  # Only in fragment definition
+    assert query.count("checkRunCountsByState") == 1  # Only in fragment definition
 
     # Each PR should use the fragment spread
     assert query.count("...PRCICheckFields") == len(pr_numbers)
 
 
-def test_parse_pr_ci_status_handles_missing_nodes() -> None:
-    """Test that parser handles missing nodes field gracefully.
+def test_parse_pr_ci_status_handles_invalid_contexts_type() -> None:
+    """Test that parser handles invalid contexts type gracefully.
 
     This tests that the parser correctly handles the case where the contexts
-    field is present but doesn't have a nodes wrapper (e.g., if the query
-    structure is incorrect or the API response format changes).
+    field is a list instead of a dict (e.g., if the API response format changes).
     """
     ops = RealGitHub(FakeTime())
 
-    # Simulate response with contexts but no nodes wrapper (old buggy structure)
-    buggy_response = {
+    # Simulate response with contexts as a list (invalid structure)
+    invalid_response = {
         "commits": {
             "nodes": [
                 {
                     "commit": {
                         "statusCheckRollup": {
-                            "contexts": [  # Direct array, no nodes wrapper
-                                {"status": "COMPLETED", "conclusion": "SUCCESS"}
+                            "contexts": [  # Direct array, should be dict
+                                {"state": "SUCCESS", "count": 1}
                             ]
                         }
                     }
@@ -207,8 +189,7 @@ def test_parse_pr_ci_status_handles_missing_nodes() -> None:
     }
 
     # Parser should handle this gracefully and return None
-    # (since it expects contexts.nodes, not contexts as direct array)
-    result = ops._parse_pr_ci_status(buggy_response)
+    result = ops._parse_pr_ci_status(invalid_response)
     assert result is None
 
 
@@ -216,19 +197,23 @@ def test_parse_pr_ci_status_with_correct_structure() -> None:
     """Test that parser correctly handles the expected GraphQL response structure."""
     ops = RealGitHub(FakeTime())
 
-    # Simulate correct response structure with contexts.nodes wrapper
+    # Simulate correct response structure with aggregated count fields
     correct_response = {
         "commits": {
             "nodes": [
                 {
                     "commit": {
                         "statusCheckRollup": {
+                            "state": "SUCCESS",
                             "contexts": {
-                                "nodes": [
-                                    {"status": "COMPLETED", "conclusion": "SUCCESS"},
-                                    {"status": "COMPLETED", "conclusion": "SUCCESS"},
-                                ]
-                            }
+                                "totalCount": 3,
+                                "checkRunCountsByState": [
+                                    {"state": "SUCCESS", "count": 2},
+                                ],
+                                "statusContextCountsByState": [
+                                    {"state": "SUCCESS", "count": 1},
+                                ],
+                            },
                         }
                     }
                 }
@@ -238,7 +223,7 @@ def test_parse_pr_ci_status_with_correct_structure() -> None:
 
     # Parser should successfully extract and parse CI status
     result = ops._parse_pr_ci_status(correct_response)
-    assert result is True  # All checks passing
+    assert result is True  # All checks passing (3/3)
 
 
 def test_parse_pr_ci_status_with_failing_checks() -> None:
@@ -251,12 +236,15 @@ def test_parse_pr_ci_status_with_failing_checks() -> None:
                 {
                     "commit": {
                         "statusCheckRollup": {
+                            "state": "FAILURE",
                             "contexts": {
-                                "nodes": [
-                                    {"status": "COMPLETED", "conclusion": "SUCCESS"},
-                                    {"status": "COMPLETED", "conclusion": "FAILURE"},
-                                ]
-                            }
+                                "totalCount": 3,
+                                "checkRunCountsByState": [
+                                    {"state": "SUCCESS", "count": 1},
+                                    {"state": "FAILURE", "count": 2},
+                                ],
+                                "statusContextCountsByState": [],
+                            },
                         }
                     }
                 }
@@ -264,7 +252,7 @@ def test_parse_pr_ci_status_with_failing_checks() -> None:
         }
     }
 
-    # Parser should detect failing check
+    # Parser should detect failing check (1/3 passing)
     result = ops._parse_pr_ci_status(response)
     assert result is False
 
@@ -279,11 +267,15 @@ def test_parse_pr_ci_status_with_pending_checks() -> None:
                 {
                     "commit": {
                         "statusCheckRollup": {
+                            "state": "PENDING",
                             "contexts": {
-                                "nodes": [
-                                    {"status": "IN_PROGRESS", "conclusion": None},
-                                ]
-                            }
+                                "totalCount": 2,
+                                "checkRunCountsByState": [
+                                    {"state": "IN_PROGRESS", "count": 1},
+                                    {"state": "SUCCESS", "count": 1},
+                                ],
+                                "statusContextCountsByState": [],
+                            },
                         }
                     }
                 }
@@ -291,7 +283,7 @@ def test_parse_pr_ci_status_with_pending_checks() -> None:
         }
     }
 
-    # Parser should detect incomplete check
+    # Parser should detect incomplete check (1/2 passing)
     result = ops._parse_pr_ci_status(response)
     assert result is False
 

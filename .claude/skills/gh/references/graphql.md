@@ -199,17 +199,10 @@ gh api graphql -f query='
             commit {
               statusCheckRollup {
                 state
-                contexts(first: 100) {
-                  nodes {
-                    ... on CheckRun {
-                      name
-                      conclusion
-                    }
-                    ... on StatusContext {
-                      context
-                      state
-                    }
-                  }
+                contexts(last: 1) {
+                  totalCount
+                  checkRunCountsByState { state count }
+                  statusContextCountsByState { state count }
                 }
               }
             }
@@ -222,6 +215,74 @@ gh api graphql -f query='
 ```
 
 **Alternative with REST:** Would require 3-4 separate API calls.
+
+### 4a. Efficient CI Check Status Queries
+
+**Why GraphQL?** The `statusCheckRollup` connection provides pre-aggregated count fields that avoid O(n) iteration over check nodes.
+
+**Anti-pattern (inefficient):**
+
+```graphql
+# DON'T: Fetches up to 100 individual nodes (~5-10KB per PR)
+statusCheckRollup {
+  state
+  contexts(last: 100) {
+    nodes {
+      ... on StatusContext { state }
+      ... on CheckRun { status, conclusion }
+    }
+  }
+}
+```
+
+**Optimal pattern:**
+
+```graphql
+# DO: Uses pre-aggregated counts (~300 bytes per PR, ~15-30x smaller)
+statusCheckRollup {
+  state
+  contexts(last: 1) {
+    totalCount
+    checkRunCountsByState { state count }
+    statusContextCountsByState { state count }
+  }
+}
+```
+
+**Available fields on `StatusCheckRollupContextConnection`:**
+
+- `totalCount` - Total number of checks
+- `checkRunCount` - Number of CheckRun checks
+- `statusContextCount` - Number of StatusContext checks
+- `checkRunCountsByState` - Array of `{state, count}` for CheckRuns
+- `statusContextCountsByState` - Array of `{state, count}` for StatusContexts
+
+**Passing criteria:**
+
+- CheckRun states: `SUCCESS`, `SKIPPED`, `NEUTRAL`
+- StatusContext states: `SUCCESS`
+
+**Example: Calculate passing checks**
+
+```python
+def calculate_passing(contexts: dict) -> tuple[int, int]:
+    """Returns (passing, total) from aggregated counts."""
+    passing = 0
+    for item in contexts.get("checkRunCountsByState", []):
+        if item["state"] in {"SUCCESS", "SKIPPED", "NEUTRAL"}:
+            passing += item["count"]
+    for item in contexts.get("statusContextCountsByState", []):
+        if item["state"] == "SUCCESS":
+            passing += item["count"]
+    return (passing, contexts["totalCount"])
+```
+
+**Performance comparison:**
+
+| Approach           | Data per PR | 10 PRs    |
+| ------------------ | ----------- | --------- |
+| Fetching 100 nodes | ~5-10KB     | ~50-100KB |
+| Aggregated counts  | ~300 bytes  | ~3KB      |
 
 ### 5. Advanced Issue Search
 
@@ -988,25 +1049,16 @@ gh api graphql -f query='
           }
         }
 
-        # Status checks
+        # Status checks (using efficient aggregated counts)
         commits(last: 1) {
           nodes {
             commit {
               statusCheckRollup {
                 state
-                contexts(first: 100) {
-                  nodes {
-                    ... on CheckRun {
-                      name
-                      conclusion
-                      detailsUrl
-                    }
-                    ... on StatusContext {
-                      context
-                      state
-                      targetUrl
-                    }
-                  }
+                contexts(last: 1) {
+                  totalCount
+                  checkRunCountsByState { state count }
+                  statusContextCountsByState { state count }
                 }
               }
             }

@@ -10,8 +10,8 @@ from typing import Any
 
 from erk_shared.github.abc import GitHub
 from erk_shared.github.parsing import (
-    _determine_checks_status,
     execute_gh_command,
+    parse_aggregated_check_counts,
     parse_gh_auth_status_output,
     parse_github_pr_list,
     parse_github_pr_status,
@@ -211,6 +211,7 @@ class RealGitHub(GitHub):
             GraphQL query string
         """
         # Define the fragment once at the top of the query
+        # Uses pre-aggregated count fields for ~15-30x smaller payload vs fetching 100 nodes
         fragment_definition = """fragment PRCICheckFields on PullRequest {
   number
   title
@@ -221,16 +222,10 @@ class RealGitHub(GitHub):
       commit {
         statusCheckRollup {
           state
-          contexts(last: 100) {
-            nodes {
-              ... on StatusContext {
-                state
-              }
-              ... on CheckRun {
-                status
-                conclusion
-              }
-            }
+          contexts(last: 1) {
+            totalCount
+            checkRunCountsByState { state count }
+            statusContextCountsByState { state count }
           }
         }
       }
@@ -270,6 +265,48 @@ query {{
         stdout = execute_gh_command(cmd, repo_root)
         return json.loads(stdout)
 
+    def _extract_aggregated_check_data(
+        self, pr_data: dict[str, Any] | None
+    ) -> dict[str, Any] | None:
+        """Extract aggregated check count data from GraphQL PR response.
+
+        Returns dict with keys: totalCount, checkRunCountsByState, statusContextCountsByState
+        or None if not available.
+        """
+        if pr_data is None:
+            return None
+        commits = pr_data.get("commits")
+        if commits is None:
+            return None
+        nodes = commits.get("nodes", [])
+        if not nodes:
+            return None
+        commit = nodes[0].get("commit")
+        if commit is None:
+            return None
+        status_check_rollup = commit.get("statusCheckRollup")
+        if status_check_rollup is None:
+            return None
+        contexts = status_check_rollup.get("contexts")
+        if contexts is None or not isinstance(contexts, dict):
+            return None
+        return contexts
+
+    def _parse_pr_ci_counts(self, pr_data: dict[str, Any] | None) -> tuple[int, int] | None:
+        """Parse check counts from GraphQL PR response using aggregated fields."""
+        contexts = self._extract_aggregated_check_data(pr_data)
+        if contexts is None:
+            return None
+
+        total = contexts.get("totalCount", 0)
+        if total == 0:
+            return None
+
+        check_run_counts = contexts.get("checkRunCountsByState", [])
+        status_context_counts = contexts.get("statusContextCountsByState", [])
+
+        return parse_aggregated_check_counts(check_run_counts, status_context_counts, total)
+
     def _parse_pr_ci_status(self, pr_data: dict[str, Any] | None) -> bool | None:
         """Parse CI status from GraphQL PR response.
 
@@ -279,71 +316,11 @@ query {{
         Returns:
             True if all checks passing, False if any failing, None if no checks or error
         """
-        nodes = self._extract_check_nodes(pr_data)
-        if nodes is None:
+        counts = self._parse_pr_ci_counts(pr_data)
+        if counts is None:
             return None
-        return _determine_checks_status(nodes)
-
-    def _parse_pr_ci_counts(self, pr_data: dict[str, Any] | None) -> tuple[int, int] | None:
-        """Parse check counts from GraphQL PR response.
-
-        Args:
-            pr_data: GraphQL response data for single PR (may be None)
-
-        Returns:
-            (passing, total) tuple or None if no checks
-        """
-        from erk_shared.github.parsing import _extract_checks_counts
-
-        nodes = self._extract_check_nodes(pr_data)
-        if nodes is None:
-            return None
-        return _extract_checks_counts(nodes)
-
-    def _extract_check_nodes(self, pr_data: dict[str, Any] | None) -> list[dict] | None:
-        """Extract check nodes from GraphQL PR response.
-
-        Args:
-            pr_data: GraphQL response data for single PR (may be None)
-
-        Returns:
-            List of check node dicts or None if not available
-        """
-        # Check if PR data is missing (not found or error)
-        if pr_data is None:
-            return None
-
-        # Extract commits
-        commits = pr_data.get("commits")
-        if commits is None:
-            return None
-
-        # Check for empty commits nodes
-        nodes = commits.get("nodes", [])
-        if not nodes:
-            return None
-
-        # Extract statusCheckRollup from first commit
-        commit = nodes[0].get("commit")
-        if commit is None:
-            return None
-
-        status_check_rollup = commit.get("statusCheckRollup")
-        if status_check_rollup is None:
-            return None
-
-        # Extract contexts connection
-        contexts = status_check_rollup.get("contexts")
-        if contexts is None:
-            return None
-
-        # Validate contexts is a dict (connection object) not a list
-        # This handles cases where query structure is wrong or API changes
-        if not isinstance(contexts, dict):
-            return None
-
-        # Extract nodes array from contexts connection
-        return contexts.get("nodes", [])
+        passing, total = counts
+        return passing == total
 
     def _parse_pr_mergeability(self, pr_data: dict[str, Any] | None) -> bool | None:
         """Parse mergeability status from GraphQL PR data.

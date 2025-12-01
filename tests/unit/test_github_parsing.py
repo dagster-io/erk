@@ -3,12 +3,108 @@
 from erk_shared.github.parsing import (
     _determine_checks_status,
     _extract_checks_counts,
+    parse_aggregated_check_counts,
     parse_gh_auth_status_output,
     parse_github_pr_list,
     parse_github_pr_status,
 )
 
 from tests.conftest import load_fixture
+
+# Tests for parse_aggregated_check_counts
+
+
+def test_parse_aggregated_check_counts_all_passing():
+    """Test count parsing when all checks pass."""
+    check_run_counts = [
+        {"state": "SUCCESS", "count": 5},
+        {"state": "SKIPPED", "count": 2},
+    ]
+    status_context_counts = [
+        {"state": "SUCCESS", "count": 1},
+    ]
+
+    result = parse_aggregated_check_counts(check_run_counts, status_context_counts, 8)
+    assert result == (8, 8)
+
+
+def test_parse_aggregated_check_counts_mixed():
+    """Test count parsing with mixed results."""
+    check_run_counts = [
+        {"state": "SUCCESS", "count": 3},
+        {"state": "FAILURE", "count": 2},
+    ]
+    status_context_counts = [
+        {"state": "SUCCESS", "count": 1},
+        {"state": "FAILURE", "count": 1},
+    ]
+
+    result = parse_aggregated_check_counts(check_run_counts, status_context_counts, 7)
+    assert result == (4, 7)  # 3 SUCCESS + 1 SUCCESS = 4 passing
+
+
+def test_parse_aggregated_check_counts_empty():
+    """Test with empty state arrays."""
+    result = parse_aggregated_check_counts([], [], 0)
+    assert result == (0, 0)
+
+
+def test_parse_aggregated_check_counts_neutral_counts_as_passing():
+    """Test that NEUTRAL state counts as passing."""
+    check_run_counts = [{"state": "NEUTRAL", "count": 2}]
+    result = parse_aggregated_check_counts(check_run_counts, [], 2)
+    assert result == (2, 2)
+
+
+def test_parse_aggregated_check_counts_skipped_counts_as_passing():
+    """Test that SKIPPED state counts as passing."""
+    check_run_counts = [{"state": "SKIPPED", "count": 3}]
+    result = parse_aggregated_check_counts(check_run_counts, [], 3)
+    assert result == (3, 3)
+
+
+def test_parse_aggregated_check_counts_status_context_failure_not_passing():
+    """Test that FAILURE StatusContext does not count as passing."""
+    status_context_counts = [
+        {"state": "SUCCESS", "count": 2},
+        {"state": "FAILURE", "count": 1},
+        {"state": "PENDING", "count": 1},
+    ]
+    result = parse_aggregated_check_counts([], status_context_counts, 4)
+    # Only SUCCESS counts as passing for StatusContext
+    assert result == (2, 4)
+
+
+def test_parse_aggregated_check_counts_check_run_in_progress_not_passing():
+    """Test that IN_PROGRESS CheckRun does not count as passing."""
+    check_run_counts = [
+        {"state": "SUCCESS", "count": 2},
+        {"state": "IN_PROGRESS", "count": 1},
+    ]
+    result = parse_aggregated_check_counts(check_run_counts, [], 3)
+    # Only SUCCESS, SKIPPED, NEUTRAL count as passing for CheckRun
+    assert result == (2, 3)
+
+
+def test_parse_aggregated_check_counts_missing_state_field():
+    """Test handling of items with missing state field."""
+    check_run_counts = [
+        {"state": "SUCCESS", "count": 2},
+        {"count": 1},  # Missing state
+    ]
+    result = parse_aggregated_check_counts(check_run_counts, [], 3)
+    # Missing state should not count as passing (empty string not in passing set)
+    assert result == (2, 3)
+
+
+def test_parse_aggregated_check_counts_missing_count_field():
+    """Test handling of items with missing count field."""
+    check_run_counts = [
+        {"state": "SUCCESS", "count": 2},
+        {"state": "SUCCESS"},  # Missing count, defaults to 0
+    ]
+    result = parse_aggregated_check_counts(check_run_counts, [], 2)
+    assert result == (2, 2)
 
 
 def test_parse_github_pr_list_with_checks():
