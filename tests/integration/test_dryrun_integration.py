@@ -106,9 +106,9 @@ def test_dryrun_read_operations_still_work(tmp_path: Path) -> None:
     )
 
     runner = CliRunner()
-    # List should work even in dry-run mode since it's a read operation
+    # Dash should work even in dry-run mode since it's a read operation
     # No need to os.chdir() since ctx.cwd is already set to repo
-    result = runner.invoke(cli, ["list"], obj=ctx)
+    result = runner.invoke(cli, ["dash"], obj=ctx)
 
     # Should succeed (read operations are not blocked)
     assert result.exit_code == 0

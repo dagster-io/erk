@@ -14,7 +14,7 @@ from click.testing import CliRunner
 from erk_shared.github.issues import FakeGitHubIssues
 
 from erk.cli.commands.plan.get import get_plan
-from erk.cli.commands.plan.list_cmd import list_plans
+from erk.cli.commands.plan.list_cmd import dash
 from erk.core.plan_store.fake import FakePlanStore
 from erk.core.plan_store.types import Plan, PlanState
 from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -50,8 +50,8 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
         issues = TrackingGitHubIssues()
         ctx = env.build_context(issues=issues)
 
-        # Act: Run the list command
-        result = runner.invoke(list_plans, obj=ctx)
+        # Act: Run the dash command
+        result = runner.invoke(dash, obj=ctx)
 
         # Assert: Command should succeed
         assert result.exit_code == 0, f"Command failed: {result.output}"
