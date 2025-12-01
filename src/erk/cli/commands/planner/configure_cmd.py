@@ -46,7 +46,9 @@ def configure_planner(ctx: ErkContext, name: str) -> None:
 
     click.echo(SETUP_CHECKLIST, err=True)
     click.echo(f"Opening interactive SSH session to '{name}'...", err=True)
-    click.echo("Complete the setup steps above, then exit the session (Ctrl+D or 'exit').", err=True)
+    click.echo(
+        "Complete the setup steps above, then exit the session (Ctrl+D or 'exit').", err=True
+    )
     click.echo("", err=True)
 
     # Run interactive SSH session (waits for completion)

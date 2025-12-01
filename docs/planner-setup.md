@@ -37,15 +37,15 @@ This SSHs into the codespace and launches Claude.
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `erk planner create [name]` | Create codespace and register as planner |
-| `erk planner configure <name>` | Configure authentication (gh, claude) |
-| `erk planner connect [name]` | Connect to planner and launch Claude |
-| `erk planner list` | Show registered planners |
-| `erk planner set-default <name>` | Set the default planner |
-| `erk planner register <name>` | Register an existing codespace |
-| `erk planner unregister <name>` | Remove a registered planner |
+| Command                          | Description                              |
+| -------------------------------- | ---------------------------------------- |
+| `erk planner create [name]`      | Create codespace and register as planner |
+| `erk planner configure <name>`   | Configure authentication (gh, claude)    |
+| `erk planner connect [name]`     | Connect to planner and launch Claude     |
+| `erk planner list`               | Show registered planners                 |
+| `erk planner set-default <name>` | Set the default planner                  |
+| `erk planner register <name>`    | Register an existing codespace           |
+| `erk planner unregister <name>`  | Remove a registered planner              |
 
 ## Devcontainer
 
