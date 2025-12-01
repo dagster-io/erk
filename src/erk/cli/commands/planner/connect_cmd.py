@@ -9,15 +9,16 @@ from erk.core.context import ErkContext
 
 @click.command("connect")
 @click.argument("name", required=False)
+@click.option("--ssh", is_flag=True, help="Connect via SSH instead of VS Code")
 @click.pass_obj
-def connect_planner(ctx: ErkContext, name: str | None) -> None:
-    """Connect to a planner box and launch Claude.
+def connect_planner(ctx: ErkContext, name: str | None, ssh: bool) -> None:
+    """Connect to a planner box.
 
     If NAME is provided, connects to that planner. Otherwise, connects
     to the default planner.
 
-    This replaces the current process with an SSH session to the
-    codespace running Claude.
+    By default, opens VS Code desktop to prevent idle timeout. Use --ssh
+    to connect via SSH and launch Claude directly.
     """
     # Get planner by name or default
     if name is not None:
@@ -46,35 +47,48 @@ def connect_planner(ctx: ErkContext, name: str | None) -> None:
     # Update last connected timestamp
     ctx.planner_registry.update_last_connected(planner.name, ctx.time.now())
 
-    # Connect via gh codespace ssh with claude command
-    click.echo(f"Connecting to planner '{planner.name}'...", err=True)
+    if ssh:
+        # Connect via gh codespace ssh with claude command
+        click.echo(f"Connecting to planner '{planner.name}' via SSH...", err=True)
 
-    # Replace current process with ssh session
-    # -t: Force pseudo-terminal allocation (required for interactive TUI like claude)
-    # bash -l -c: Use login shell to ensure PATH is set up (claude installs to ~/.claude/local/)
-    # Pass /erk:craft-plan as initial prompt to launch the planning workflow immediately
-    #
-    # IMPORTANT: The entire remote command (bash -l -c '...') must be a single argument.
-    # SSH concatenates command arguments with spaces without preserving grouping.
-    # If passed as separate args ["bash", "-l", "-c", "cmd"], the remote receives:
-    #   bash -l -c git pull && uv sync && ...
-    # Instead of:
-    #   bash -l -c "git pull && uv sync && ..."
-    # This causes `bash -l -c git` to run `git` with no subcommand (exits with help).
-    setup_commands = "git pull && uv sync && source .venv/bin/activate"
-    claude_command = 'claude --allow-dangerously-skip-permissions --verbose "/erk:craft-plan"'
-    remote_command = f"bash -l -c '{setup_commands} && {claude_command}'"
+        # Replace current process with ssh session
+        # -t: Force pseudo-terminal allocation (required for interactive TUI like claude)
+        # bash -l -c: Use login shell to ensure PATH is set up (claude installs to ~/.claude/local/)
+        # Pass /erk:craft-plan as initial prompt to launch the planning workflow immediately
+        #
+        # IMPORTANT: The entire remote command (bash -l -c '...') must be a single argument.
+        # SSH concatenates command arguments with spaces without preserving grouping.
+        # If passed as separate args ["bash", "-l", "-c", "cmd"], the remote receives:
+        #   bash -l -c git pull && uv sync && ...
+        # Instead of:
+        #   bash -l -c "git pull && uv sync && ..."
+        # This causes `bash -l -c git` to run `git` with no subcommand (exits with help).
+        setup_commands = "git pull && uv sync && source .venv/bin/activate"
+        claude_command = 'claude --allow-dangerously-skip-permissions --verbose "/erk:craft-plan"'
+        remote_command = f"bash -l -c '{setup_commands} && {claude_command}'"
 
-    os.execvp(
-        "gh",
-        [
+        os.execvp(
             "gh",
-            "codespace",
-            "ssh",
-            "-c",
-            planner.gh_name,
-            "--",
-            "-t",
-            remote_command,
-        ],
-    )
+            [
+                "gh",
+                "codespace",
+                "ssh",
+                "-c",
+                planner.gh_name,
+                "--",
+                "-t",
+                remote_command,
+            ],
+        )
+    else:
+        # Default: Open VS Code desktop (prevents idle timeout)
+        click.echo("Opening VS Code...", err=True)
+        click.echo("", err=True)
+        click.echo("Run in VS Code terminal:", err=True)
+        click.echo("  git pull && uv sync && source .venv/bin/activate", err=True)
+        click.echo(
+            '  claude --allow-dangerously-skip-permissions --verbose "/erk:craft-plan"',
+            err=True,
+        )
+
+        os.execvp("gh", ["gh", "codespace", "code", "-c", planner.gh_name])
