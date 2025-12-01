@@ -1,14 +1,14 @@
-"""Mark implementation started by updating GitHub issue metadata.
+"""Mark implementation ended by updating GitHub issue metadata.
 
 This kit CLI command updates the plan-header metadata block in a GitHub issue
 with the appropriate event fields based on the execution environment:
-- Local machine: Updates last_local_impl_* fields (timestamp, event, session, user)
+- Local machine: Updates last_local_impl_* fields (timestamp, event="ended", session, user)
 - GitHub Actions: Updates last_remote_impl_at field
 
 Also writes .impl/local-run-state.json for fast local access (no GitHub API needed).
 
 Usage:
-    dot-agent run erk mark-impl-started
+    dot-agent run erk mark-impl-ended
 
 Output:
     JSON with success status or error information
@@ -18,10 +18,10 @@ Exit Codes:
     0: Always (even on error, to support || true pattern)
 
 Examples:
-    $ dot-agent run erk mark-impl-started
+    $ dot-agent run erk mark-impl-ended
     {"success": true, "issue_number": 123}
 
-    $ dot-agent run erk mark-impl-started
+    $ dot-agent run erk mark-impl-ended
     {"success": false, "error_type": "no_issue_reference", "message": "..."}
 """
 
@@ -48,7 +48,7 @@ from dot_agent_kit.context_helpers import (
 
 @dataclass(frozen=True)
 class MarkImplSuccess:
-    """Success response for mark impl started."""
+    """Success response for mark impl ended."""
 
     success: bool
     issue_number: int
@@ -56,17 +56,17 @@ class MarkImplSuccess:
 
 @dataclass(frozen=True)
 class MarkImplError:
-    """Error response for mark impl started."""
+    """Error response for mark impl ended."""
 
     success: bool
     error_type: str
     message: str
 
 
-@click.command(name="mark-impl-started")
+@click.command(name="mark-impl-ended")
 @click.pass_context
-def mark_impl_started(ctx: click.Context) -> None:
-    """Update implementation started event in GitHub issue and local state file.
+def mark_impl_ended(ctx: click.Context) -> None:
+    """Update implementation ended event in GitHub issue and local state file.
 
     Reads issue number from .impl/issue.json, fetches the issue from GitHub,
     updates the plan-header block with current event metadata, and posts back.
@@ -74,7 +74,7 @@ def mark_impl_started(ctx: click.Context) -> None:
     Also writes .impl/local-run-state.json for fast local access.
 
     Detects execution environment:
-    - Local machine: Updates last_local_impl_* fields (timestamp, event, session, user)
+    - Local machine: Updates last_local_impl_* fields (timestamp, event="ended", session, user)
     - GitHub Actions: Updates last_remote_impl_at field
 
     Gracefully fails with exit code 0 to support || true pattern in slash commands.
@@ -103,7 +103,7 @@ def mark_impl_started(ctx: click.Context) -> None:
     try:
         write_local_run_state(
             impl_dir=impl_dir,
-            last_event="started",
+            last_event="ended",
             timestamp=timestamp,
             user=user,
             session_id=session_id,
@@ -152,7 +152,7 @@ def mark_impl_started(ctx: click.Context) -> None:
             updated_body = update_plan_header_local_impl_event(
                 issue_body=issue.body,
                 local_impl_at=timestamp,
-                event="started",
+                event="ended",
                 session_id=session_id,
                 user=user,
             )
