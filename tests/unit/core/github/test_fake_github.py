@@ -336,3 +336,212 @@ def test_get_workflow_runs_by_branches_priority_order() -> None:
     github3 = FakeGitHub(workflow_runs=[completed_success])
     result3 = github3.get_workflow_runs_by_branches(Path("/fake"), "workflow.yml", ["test"])
     assert result3["test"].run_id == "401", "Expected completed success as fallback"
+
+
+# =============================================================================
+# Tests for get_workflow_runs_batch()
+# =============================================================================
+
+
+def test_get_workflow_runs_batch_returns_correct_runs_by_id() -> None:
+    """Test that batch lookup returns correct runs when found."""
+    # Arrange
+    run1 = WorkflowRun(
+        run_id="123",
+        status="completed",
+        conclusion="success",
+        branch="main",
+        head_sha="abc",
+    )
+    run2 = WorkflowRun(
+        run_id="456",
+        status="in_progress",
+        conclusion=None,
+        branch="feature",
+        head_sha="def",
+    )
+    github = FakeGitHub(workflow_runs=[run1, run2])
+    repo_root = Path("/fake/repo")
+
+    # Act
+    result = github.get_workflow_runs_batch(repo_root, ["123", "456"])
+
+    # Assert
+    assert len(result) == 2
+    assert result["123"] is not None
+    assert result["123"].run_id == "123"
+    assert result["123"].status == "completed"
+    assert result["456"] is not None
+    assert result["456"].run_id == "456"
+    assert result["456"].status == "in_progress"
+
+
+def test_get_workflow_runs_batch_returns_none_for_missing_runs() -> None:
+    """Test that batch lookup returns None for run_ids not found."""
+    # Arrange
+    run1 = WorkflowRun(
+        run_id="123",
+        status="completed",
+        conclusion="success",
+        branch="main",
+        head_sha="abc",
+    )
+    github = FakeGitHub(workflow_runs=[run1])
+    repo_root = Path("/fake/repo")
+
+    # Act
+    result = github.get_workflow_runs_batch(repo_root, ["999"])
+
+    # Assert
+    assert len(result) == 1
+    assert result["999"] is None, "Expected None for non-existent run ID"
+
+
+def test_get_workflow_runs_batch_handles_empty_run_ids() -> None:
+    """Test that batch lookup handles empty run_ids list gracefully."""
+    # Arrange
+    run1 = WorkflowRun(
+        run_id="123",
+        status="completed",
+        conclusion="success",
+        branch="main",
+        head_sha="abc",
+    )
+    github = FakeGitHub(workflow_runs=[run1])
+    repo_root = Path("/fake/repo")
+
+    # Act
+    result = github.get_workflow_runs_batch(repo_root, [])
+
+    # Assert
+    assert result == {}, "Expected empty dict for empty run_ids list"
+
+
+def test_get_workflow_runs_batch_handles_mixed_found_and_missing() -> None:
+    """Test that batch lookup correctly handles mix of found and missing runs."""
+    # Arrange
+    run1 = WorkflowRun(
+        run_id="111",
+        status="completed",
+        conclusion="success",
+        branch="main",
+        head_sha="aaa",
+    )
+    run2 = WorkflowRun(
+        run_id="222",
+        status="in_progress",
+        conclusion=None,
+        branch="feature",
+        head_sha="bbb",
+    )
+    github = FakeGitHub(workflow_runs=[run1, run2])
+    repo_root = Path("/fake/repo")
+
+    # Act
+    result = github.get_workflow_runs_batch(repo_root, ["111", "333", "222", "444"])
+
+    # Assert
+    assert len(result) == 4, "Expected entry for each requested run_id"
+    assert result["111"] is not None
+    assert result["111"].run_id == "111"
+    assert result["333"] is None, "Expected None for missing run 333"
+    assert result["222"] is not None
+    assert result["222"].run_id == "222"
+    assert result["444"] is None, "Expected None for missing run 444"
+
+
+def test_get_workflow_runs_batch_ignores_repo_root_param() -> None:
+    """Test that fake ignores repo_root parameter (documents fake simplification).
+
+    The fake implementation doesn't use repo_root since it has no filesystem access.
+    This test documents this intentional simplification.
+    """
+    # Arrange
+    run1 = WorkflowRun(
+        run_id="123",
+        status="completed",
+        conclusion="success",
+        branch="main",
+        head_sha="abc",
+    )
+    github = FakeGitHub(workflow_runs=[run1])
+
+    # Act: Call with different repo_root values
+    result1 = github.get_workflow_runs_batch(Path("/path/one"), ["123"])
+    result2 = github.get_workflow_runs_batch(Path("/path/two"), ["123"])
+    result3 = github.get_workflow_runs_batch(Path("/completely/different"), ["123"])
+
+    # Assert: All return the same result regardless of repo_root
+    assert result1["123"] is not None
+    assert result2["123"] is not None
+    assert result3["123"] is not None
+    assert result1["123"].run_id == result2["123"].run_id == result3["123"].run_id
+
+
+# =============================================================================
+# Tests for check_auth_status()
+# =============================================================================
+
+
+def test_check_auth_status_returns_configured_values() -> None:
+    """Test that check_auth_status returns pre-configured username and hostname."""
+    # Arrange
+    github = FakeGitHub(
+        authenticated=True,
+        auth_username="custom-user",
+        auth_hostname="github.enterprise.com",
+    )
+
+    # Act
+    is_authenticated, username, hostname = github.check_auth_status()
+
+    # Assert
+    assert is_authenticated is True
+    assert username == "custom-user"
+    assert hostname == "github.enterprise.com"
+
+
+def test_check_auth_status_tracks_calls() -> None:
+    """Test that check_auth_status tracks calls for test assertions."""
+    # Arrange
+    github = FakeGitHub()
+
+    # Act
+    github.check_auth_status()
+    github.check_auth_status()
+    github.check_auth_status()
+
+    # Assert
+    assert len(github.check_auth_status_calls) == 3, "Expected 3 calls tracked"
+
+
+def test_check_auth_status_unauthenticated_returns_false() -> None:
+    """Test that check_auth_status returns (False, None, None) when unauthenticated."""
+    # Arrange
+    github = FakeGitHub(
+        authenticated=False,
+        auth_username="should-be-ignored",
+        auth_hostname="should-be-ignored.com",
+    )
+
+    # Act
+    is_authenticated, username, hostname = github.check_auth_status()
+
+    # Assert
+    assert is_authenticated is False
+    assert username is None, "Expected None username when not authenticated"
+    assert hostname is None, "Expected None hostname when not authenticated"
+
+
+def test_check_auth_status_default_values() -> None:
+    """Test that check_auth_status has sensible defaults for testing convenience."""
+    # Arrange: Create FakeGitHub with no auth config (uses defaults)
+    github = FakeGitHub()
+
+    # Act
+    is_authenticated, username, hostname = github.check_auth_status()
+
+    # Assert: Defaults should be authenticated with test-user on github.com
+    assert is_authenticated is True, "Default should be authenticated for test convenience"
+    assert username == "test-user", "Default username should be 'test-user'"
+    assert hostname == "github.com", "Default hostname should be 'github.com'"
