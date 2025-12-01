@@ -101,17 +101,16 @@ def config_get(ctx: ErkContext, key: str) -> None:
 
     # Handle global config keys
     if parts[0] in ("erk_root", "use_graphite", "show_pr_info"):
-        if ctx.global_config is None:
-            config_path = ctx.config_store.path()
-            user_output(f"Global config not found at {config_path}")
-            raise SystemExit(1)
+        global_config = Ensure.not_none(
+            ctx.global_config, f"Global config not found at {ctx.config_store.path()}"
+        )
 
         if parts[0] == "erk_root":
-            machine_output(str(ctx.global_config.erk_root))
+            machine_output(str(global_config.erk_root))
         elif parts[0] == "use_graphite":
-            machine_output(str(ctx.global_config.use_graphite).lower())
+            machine_output(str(global_config.use_graphite).lower())
         elif parts[0] == "show_pr_info":
-            machine_output(str(ctx.global_config.show_pr_info).lower())
+            machine_output(str(global_config.show_pr_info).lower())
         return
 
     # Handle repo config keys
@@ -154,38 +153,37 @@ def config_set(ctx: ErkContext, key: str, value: str) -> None:
 
     # Handle global config keys
     if parts[0] in ("erk_root", "use_graphite", "show_pr_info"):
-        if ctx.global_config is None:
-            config_path = ctx.config_store.path()
-            user_output(f"Global config not found at {config_path}")
-            user_output("Run 'erk init' to create it.")
-            raise SystemExit(1)
+        global_config = Ensure.not_none(
+            ctx.global_config,
+            f"Global config not found at {ctx.config_store.path()}. Run 'erk init' to create it.",
+        )
 
         # Create new config with updated value
         if parts[0] == "erk_root":
             new_config = GlobalConfig(
                 erk_root=Path(value).expanduser().resolve(),
-                use_graphite=ctx.global_config.use_graphite,
-                shell_setup_complete=ctx.global_config.shell_setup_complete,
-                show_pr_info=ctx.global_config.show_pr_info,
+                use_graphite=global_config.use_graphite,
+                shell_setup_complete=global_config.shell_setup_complete,
+                show_pr_info=global_config.show_pr_info,
             )
         elif parts[0] == "use_graphite":
             if value.lower() not in ("true", "false"):
                 user_output(f"Invalid boolean value: {value}")
                 raise SystemExit(1)
             new_config = GlobalConfig(
-                erk_root=ctx.global_config.erk_root,
+                erk_root=global_config.erk_root,
                 use_graphite=value.lower() == "true",
-                shell_setup_complete=ctx.global_config.shell_setup_complete,
-                show_pr_info=ctx.global_config.show_pr_info,
+                shell_setup_complete=global_config.shell_setup_complete,
+                show_pr_info=global_config.show_pr_info,
             )
         elif parts[0] == "show_pr_info":
             if value.lower() not in ("true", "false"):
                 user_output(f"Invalid boolean value: {value}")
                 raise SystemExit(1)
             new_config = GlobalConfig(
-                erk_root=ctx.global_config.erk_root,
-                use_graphite=ctx.global_config.use_graphite,
-                shell_setup_complete=ctx.global_config.shell_setup_complete,
+                erk_root=global_config.erk_root,
+                use_graphite=global_config.use_graphite,
+                shell_setup_complete=global_config.shell_setup_complete,
                 show_pr_info=value.lower() == "true",
             )
         else:
