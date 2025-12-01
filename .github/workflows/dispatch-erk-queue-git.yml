@@ -56,28 +56,14 @@ jobs:
           token: ${{ secrets.ERK_QUEUE_GH_PAT }}
           fetch-depth: 0
 
-      - name: Cache Claude Code
-        id: cache-claude
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.claude
-            ~/.local/bin/claude
-          key: claude-code-${{ runner.os }}-v1
-
       - name: Setup all tools
         run: |
           # Install uv
           curl -LsSf https://astral.sh/uv/install.sh | sh
           source $HOME/.cargo/env
 
-          # Install Claude Code (skip if cached)
-          if [ "${{ steps.cache-claude.outputs.cache-hit }}" != "true" ]; then
-            curl -fsSL https://claude.ai/install.sh | bash
-          else
-            echo "Claude Code restored from cache"
-            echo "$HOME/.local/bin" >> $GITHUB_PATH
-          fi
+          # Install Claude Code
+          curl -fsSL https://claude.ai/install.sh | bash
 
           # Install Prettier via npm (no Graphite CLI needed)
           npm install -g prettier
