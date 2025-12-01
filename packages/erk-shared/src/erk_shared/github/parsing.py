@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from erk_shared.github.types import PRInfo, PullRequestInfo
+from erk_shared.github.types import GitHubRepoLocation, PRInfo, PullRequestInfo
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
@@ -203,6 +203,25 @@ def extract_owner_repo_from_github_url(url: str) -> tuple[str, str] | None:
     if match:
         return (match.group(1), match.group(2))
     return None
+
+
+def github_repo_location_from_url(root: Path, github_url: str) -> GitHubRepoLocation | None:
+    """Create GitHubRepoLocation from a GitHub URL.
+
+    Extracts owner/repo from the URL and combines with local root path.
+    Returns None if URL doesn't match expected GitHub pattern.
+
+    Args:
+        root: Local repository root path
+        github_url: GitHub URL (e.g., "https://github.com/owner/repo/issues/123")
+
+    Returns:
+        GitHubRepoLocation or None if URL doesn't match expected pattern
+    """
+    owner_repo = extract_owner_repo_from_github_url(github_url)
+    if owner_repo is None:
+        return None
+    return GitHubRepoLocation(root=root, owner=owner_repo[0], repo=owner_repo[1])
 
 
 def parse_aggregated_check_counts(

@@ -13,6 +13,7 @@ from pathlib import Path
 
 from erk_shared.github.abc import GitHub
 from erk_shared.github.types import (
+    GitHubRepoLocation,
     PRCheckoutInfo,
     PRInfo,
     PRMergeability,
@@ -200,10 +201,8 @@ class RealGitHub(GitHub):
 
     def get_prs_linked_to_issues(
         self,
-        repo_root: Path,
+        location: GitHubRepoLocation,
         issue_numbers: list[int],
-        owner: str,
-        repo: str,
     ) -> dict[int, list[PullRequestInfo]]:
         """Stub method - not implemented in erk-shared."""
         msg = (

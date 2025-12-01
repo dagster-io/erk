@@ -4,6 +4,7 @@ from pathlib import Path
 
 from erk_shared.github.abc import GitHub
 from erk_shared.github.types import (
+    GitHubRepoLocation,
     PRCheckoutInfo,
     PRInfo,
     PRMergeability,
@@ -135,13 +136,11 @@ class DryRunGitHub(GitHub):
 
     def get_prs_linked_to_issues(
         self,
-        repo_root: Path,
+        location: GitHubRepoLocation,
         issue_numbers: list[int],
-        owner: str,
-        repo: str,
     ) -> dict[int, list[PullRequestInfo]]:
         """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_prs_linked_to_issues(repo_root, issue_numbers, owner, repo)
+        return self._wrapped.get_prs_linked_to_issues(location, issue_numbers)
 
     def get_workflow_runs_by_branches(
         self, repo_root: Path, workflow: str, branches: list[str]

@@ -2,7 +2,7 @@
 
 import click
 from erk_shared.github.emoji import format_checks_cell
-from erk_shared.github.parsing import extract_owner_repo_from_github_url
+from erk_shared.github.parsing import github_repo_location_from_url
 from erk_shared.output.output import user_output
 from rich.console import Console
 from rich.table import Table
@@ -76,20 +76,15 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
             user_output("No runs with plans found. Use --show-legacy to see all runs.")
             return
 
-    # Extract owner/repo from first issue URL (needed for API calls and links)
-    owner: str | None = None
-    repo_name: str | None = None
+    # Extract location from first issue URL (needed for API calls and links)
+    location = None
     if issues:
-        owner_repo = extract_owner_repo_from_github_url(issues[0].url)
-        if owner_repo is not None:
-            owner, repo_name = owner_repo
+        location = github_repo_location_from_url(repo.root, issues[0].url)
 
     # 4. Batch fetch PRs linked to issues
     pr_linkages: dict[int, list] = {}
-    if issue_numbers and owner and repo_name:
-        pr_linkages = ctx.github.get_prs_linked_to_issues(
-            repo.root, issue_numbers, owner, repo_name
-        )
+    if issue_numbers and location is not None:
+        pr_linkages = ctx.github.get_prs_linked_to_issues(location, issue_numbers)
 
     # Determine use_graphite for URL selection
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
@@ -109,8 +104,10 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
 
         # Format run-id with link
         workflow_url = None
-        if owner and repo_name:
-            workflow_url = f"https://github.com/{owner}/{repo_name}/actions/runs/{run.run_id}"
+        if location is not None:
+            workflow_url = (
+                f"https://github.com/{location.owner}/{location.repo}/actions/runs/{run.run_id}"
+            )
         run_id_cell = format_workflow_run_id(run, workflow_url)
 
         # Format status
@@ -130,8 +127,10 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
         else:
             # New format - have issue number, try to get data
             issue_url = None
-            if owner and repo_name:
-                issue_url = f"https://github.com/{owner}/{repo_name}/issues/{issue_num}"
+            if location is not None:
+                issue_url = (
+                    f"https://github.com/{location.owner}/{location.repo}/issues/{issue_num}"
+                )
             # Make plan number clickable
             if issue_url:
                 plan_cell = f"[link={issue_url}][cyan]#{issue_num}[/cyan][/link]"

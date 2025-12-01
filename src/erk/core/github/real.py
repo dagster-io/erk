@@ -19,6 +19,7 @@ from erk_shared.github.parsing import (
 from erk_shared.github.types import (
     BRANCH_NOT_AVAILABLE,
     DISPLAY_TITLE_NOT_AVAILABLE,
+    GitHubRepoLocation,
     PRCheckoutInfo,
     PRInfo,
     PRMergeability,
@@ -831,10 +832,8 @@ query {{
 
     def get_prs_linked_to_issues(
         self,
-        repo_root: Path,
+        location: GitHubRepoLocation,
         issue_numbers: list[int],
-        owner: str,
-        repo: str,
     ) -> dict[int, list[PullRequestInfo]]:
         """Get PRs linked to issues via closing keywords.
 
@@ -848,11 +847,11 @@ query {{
 
         try:
             # Build and execute GraphQL query to fetch all issues
-            query = self._build_issue_pr_linkage_query(issue_numbers, owner, repo)
-            response = self._execute_batch_pr_query(query, repo_root)
+            query = self._build_issue_pr_linkage_query(issue_numbers, location.owner, location.repo)
+            response = self._execute_batch_pr_query(query, location.root)
 
             # Parse response and build inverse mapping
-            return self._parse_issue_pr_linkages(response, owner, repo)
+            return self._parse_issue_pr_linkages(response, location.owner, location.repo)
 
         except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError, IndexError):
             # gh not installed, not authenticated, or parsing failed

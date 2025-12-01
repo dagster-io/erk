@@ -9,6 +9,7 @@ from typing import cast
 
 from erk_shared.github.abc import GitHub
 from erk_shared.github.types import (
+    GitHubRepoLocation,
     PRCheckoutInfo,
     PRInfo,
     PRMergeability,
@@ -329,18 +330,16 @@ class FakeGitHub(GitHub):
 
     def get_prs_linked_to_issues(
         self,
-        repo_root: Path,
+        location: GitHubRepoLocation,
         issue_numbers: list[int],
-        owner: str,
-        repo: str,
     ) -> dict[int, list[PullRequestInfo]]:
         """Get PRs linked to issues via closing keywords (returns pre-configured data).
 
         Returns only the mappings for issues in issue_numbers that have
         pre-configured PR linkages. Issues without linkages are omitted.
 
-        The owner/repo parameters are accepted but ignored - fake returns
-        pre-configured data regardless of these parameters.
+        The location parameter is accepted but ignored - fake returns
+        pre-configured data regardless of the location.
         """
         result = {}
         for issue_num in issue_numbers:
