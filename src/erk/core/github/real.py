@@ -24,6 +24,8 @@ from erk_shared.github.types import (
     PRMergeability,
     PullRequestInfo,
     WorkflowRun,
+    WorkflowRunConclusion,
+    WorkflowRunStatus,
 )
 from erk_shared.integrations.time.abc import Time
 from erk_shared.output.output import user_output
@@ -1380,9 +1382,9 @@ query {{
 
             # Extract checkSuite data
             check_suite = node.get("checkSuite")
-            status = None
-            conclusion = None
-            head_sha = None
+            status: WorkflowRunStatus | None = None
+            conclusion: WorkflowRunConclusion | None = None
+            head_sha: str | None = None
 
             if check_suite is not None:
                 # Map GitHub checkSuite status to workflow run status

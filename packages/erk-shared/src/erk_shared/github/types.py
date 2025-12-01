@@ -6,6 +6,12 @@ from typing import Literal, NamedTuple
 
 PRState = Literal["OPEN", "MERGED", "CLOSED", "NONE"]
 
+# Workflow run status (lowercase, matches gh CLI and normalized GraphQL responses)
+WorkflowRunStatus = Literal["completed", "in_progress", "queued", "unknown"]
+
+# Workflow run conclusion (lowercase, None when run is not completed)
+WorkflowRunConclusion = Literal["success", "failure", "cancelled", "skipped"]
+
 
 class PRInfo(NamedTuple):
     """PR status information from GitHub API."""
@@ -99,8 +105,8 @@ class WorkflowRun:
     )
 
     _run_id: str
-    _status: str
-    _conclusion: str | None
+    _status: WorkflowRunStatus
+    _conclusion: WorkflowRunConclusion | None
     _branch: str | _NotAvailable
     _head_sha: str
     _display_title: str | None | _NotAvailable
@@ -109,8 +115,8 @@ class WorkflowRun:
     def __init__(
         self,
         run_id: str,
-        status: str,
-        conclusion: str | None,
+        status: WorkflowRunStatus,
+        conclusion: WorkflowRunConclusion | None,
         branch: str | _NotAvailable,
         head_sha: str,
         display_title: str | None | _NotAvailable = None,
@@ -137,11 +143,11 @@ class WorkflowRun:
         return self._run_id
 
     @property
-    def status(self) -> str:
+    def status(self) -> WorkflowRunStatus:
         return self._status
 
     @property
-    def conclusion(self) -> str | None:
+    def conclusion(self) -> WorkflowRunConclusion | None:
         return self._conclusion
 
     @property
