@@ -221,12 +221,41 @@ For each phase in the plan:
    - This command modifies `.impl/progress.md` and parallel execution causes lost updates
    - If marking multiple steps, use a single command: `dot-agent run erk mark-step 1 2 3`
 
-7. **Verify progress** (optional):
+7. **Checkpoint commit** (after marking step complete):
+
+   Before committing, run formatting and linting:
+
+   ```bash
+   uv run ruff format .
+   uv run ruff check --fix .
+   ```
+
+   If there are uncommitted changes and ruff check passes:
+
+   ```bash
+   git add -A
+   git commit -m "checkpoint: Step N - [brief step description]
+
+   Progress: N/M steps complete"
+   ```
+
+   **Discretion guidance:**
+   - COMMIT if the step made code changes
+   - SKIP if the step was research-only or no files changed
+   - SKIP if changes are trivial (typo fixes, comments only)
+
+   Then push to remote for visibility:
+
+   ```bash
+   git push
+   ```
+
+8. **Verify progress** (optional):
    ```bash
    dot-agent run erk get-progress
    ```
-8. **Report progress**: what was done and what's next
-9. **Move to next phase**
+9. **Report progress**: what was done and what's next
+10. **Move to next phase**
 
 **IMPORTANT - Progress Tracking:**
 
@@ -271,6 +300,7 @@ After completing each major phase, provide an update:
 
 ```
 ✅ Phase X complete: [Brief description]
+📦 Checkpoint committed: [commit hash or "skipped - no code changes"]
 
 Changes made:
 - [Change 1]
@@ -384,3 +414,6 @@ If clarification is needed during execution:
 - **Sequential execution**: Complete phases in order unless plan specifies otherwise
 - **Progress tracking**: Keep todo list updated throughout
 - **User communication**: Provide clear, concise progress updates
+- **Checkpoint commits**: Intermediate commits should represent coherent states.
+  They must pass ruff formatting/linting but do NOT need to pass type checks or tests.
+  These are progress markers, not production-ready commits.
