@@ -33,12 +33,14 @@ Fix at two layers:
 ### 1. Update pr_update.py (lines 75-78)
 
 Replace:
+
 ```python
 except RuntimeError as e:
     return {"success": False, "error": f"Failed to submit update: {e}"}
 ```
 
 With:
+
 ```python
 except RuntimeError as e:
     error_message = str(e)
@@ -61,6 +63,7 @@ except RuntimeError as e:
 ### 2. Add test to test_pr_update.py
 
 Add test after `test_update_pr_submit_fails`:
+
 ```python
 def test_update_pr_submit_diverged_detected(self) -> None:
     """Test that 'updated remotely' errors return submit_diverged type."""
@@ -85,7 +88,7 @@ def test_update_pr_submit_diverged_detected(self) -> None:
 
 Add after the "Conflict Error" section in Response Handling:
 
-```markdown
+````markdown
 **Diverged Error (requires user action):**
 
 ```json
@@ -95,8 +98,12 @@ Add after the "Conflict Error" section in Response Handling:
   "error": "Branch has diverged from remote. Run 'gt sync' to synchronize before updating PR."
 }
 ```
+````
 
 Display: `Failed: Branch has diverged from remote. User must run 'gt sync' manually to synchronize.`
 
 **IMPORTANT:** This error requires manual user intervention. Do NOT attempt to run `gt sync` or any other recovery command. The user must handle this interactively.
+
+```
+
 ```

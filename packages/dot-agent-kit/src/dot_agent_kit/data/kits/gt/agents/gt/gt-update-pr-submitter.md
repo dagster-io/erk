@@ -72,6 +72,20 @@ Display: `Failed: No PR associated with current branch`
 
 Display: `Failed: Merge conflict detected during restack. Resolve conflicts manually or run 'gt restack --continue' after fixing.`
 
+**Diverged Error (requires user action):**
+
+```json
+{
+  "success": false,
+  "error_type": "submit_diverged",
+  "error": "Branch has diverged from remote. Run 'gt sync' to synchronize before updating PR."
+}
+```
+
+Display: `Failed: Branch has diverged from remote. User must run 'gt sync' manually to synchronize.`
+
+**IMPORTANT:** This error requires manual user intervention. Do NOT attempt to run `gt sync` or any other recovery command. The user must handle this interactively.
+
 ## Restrictions
 
 - **NEVER** edit files or mutate environment state
