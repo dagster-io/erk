@@ -199,7 +199,12 @@ class RealGitHub(GitHub):
         raise NotImplementedError(msg)
 
     def get_prs_linked_to_issues(
-        self, repo_root: Path, issue_numbers: list[int]
+        self,
+        repo_root: Path,
+        issue_numbers: list[int],
+        *,
+        owner: str | None = None,
+        repo: str | None = None,
     ) -> dict[int, list[PullRequestInfo]]:
         """Stub method - not implemented in erk-shared."""
         msg = (

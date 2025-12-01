@@ -255,7 +255,12 @@ class GitHub(ABC):
 
     @abstractmethod
     def get_prs_linked_to_issues(
-        self, repo_root: Path, issue_numbers: list[int]
+        self,
+        repo_root: Path,
+        issue_numbers: list[int],
+        *,
+        owner: str | None = None,
+        repo: str | None = None,
     ) -> dict[int, list[PullRequestInfo]]:
         """Get PRs linked to issues via closing keywords.
 
@@ -266,11 +271,17 @@ class GitHub(ABC):
         Args:
             repo_root: Repository root directory
             issue_numbers: List of issue numbers to query
+            owner: Optional repository owner (extracted from issue URLs if not provided)
+            repo: Optional repository name (extracted from issue URLs if not provided)
 
         Returns:
             Mapping of issue_number -> list of PRs that close that issue.
             PRs are sorted by created_at descending (most recent first).
             Returns empty dict if no PRs link to any of the issues.
+
+        Note:
+            When owner/repo are provided, skips an expensive `gh pr list --limit 1`
+            call that would otherwise be needed to determine the repository context.
         """
         ...
 

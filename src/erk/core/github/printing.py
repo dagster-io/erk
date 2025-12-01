@@ -78,10 +78,17 @@ class PrintingGitHub(PrintingBase, GitHub):
         return self._wrapped.get_run_logs(repo_root, run_id)
 
     def get_prs_linked_to_issues(
-        self, repo_root: Path, issue_numbers: list[int]
+        self,
+        repo_root: Path,
+        issue_numbers: list[int],
+        *,
+        owner: str | None = None,
+        repo: str | None = None,
     ) -> dict[int, list[PullRequestInfo]]:
         """Get PRs linked to issues (read-only, no printing)."""
-        return self._wrapped.get_prs_linked_to_issues(repo_root, issue_numbers)
+        return self._wrapped.get_prs_linked_to_issues(
+            repo_root, issue_numbers, owner=owner, repo=repo
+        )
 
     def get_workflow_runs_by_branches(
         self, repo_root: Path, workflow: str, branches: list[str]

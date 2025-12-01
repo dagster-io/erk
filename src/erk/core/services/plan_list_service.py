@@ -10,6 +10,7 @@ from pathlib import Path
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues, IssueInfo
 from erk_shared.github.metadata import extract_plan_header_dispatch_info
+from erk_shared.github.parsing import extract_owner_repo_from_github_url
 from erk_shared.github.types import PullRequestInfo, WorkflowRun
 
 
@@ -77,7 +78,17 @@ class PlanListService:
         # Conditionally fetch PR linkages (skip for performance when not needed)
         pr_linkages: dict[int, list[PullRequestInfo]] = {}
         if not skip_pr_linkages:
-            pr_linkages = self._github.get_prs_linked_to_issues(repo_root, issue_numbers)
+            # Extract owner/repo from first issue URL to skip expensive gh pr list lookup
+            owner: str | None = None
+            repo: str | None = None
+            if issues:
+                owner_repo = extract_owner_repo_from_github_url(issues[0].url)
+                if owner_repo is not None:
+                    owner, repo = owner_repo
+
+            pr_linkages = self._github.get_prs_linked_to_issues(
+                repo_root, issue_numbers, owner=owner, repo=repo
+            )
 
         # Conditionally fetch workflow runs (skip for performance when not needed)
         workflow_runs: dict[int, WorkflowRun | None] = {}

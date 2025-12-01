@@ -830,42 +830,55 @@ query {{
         return result.stdout
 
     def get_prs_linked_to_issues(
-        self, repo_root: Path, issue_numbers: list[int]
+        self,
+        repo_root: Path,
+        issue_numbers: list[int],
+        *,
+        owner: str | None = None,
+        repo: str | None = None,
     ) -> dict[int, list[PullRequestInfo]]:
         """Get PRs linked to issues via closing keywords.
 
         Note: Uses try/except as an acceptable error boundary for handling gh CLI
         availability and authentication. We cannot reliably check gh installation
         and authentication status a priori without duplicating gh's logic.
+
+        When owner/repo are provided, skips the expensive `gh pr list --limit 1`
+        call that would otherwise be needed to determine the repository context.
         """
         # Early exit for empty input
         if not issue_numbers:
             return {}
 
         try:
-            # Get owner/repo from first PR in repo (needed for GraphQL query)
-            # We query for ANY PR to extract owner/repo info
-            cmd = ["gh", "pr", "list", "--limit", "1", "--json", "url"]
-            stdout = execute_gh_command(cmd, repo_root)
-            pr_list = json.loads(stdout)
+            # Use provided owner/repo if available, otherwise fall back to gh pr list
+            resolved_owner = owner
+            resolved_repo = repo
 
-            # If no PRs exist in repo, return empty dict
-            if not pr_list:
-                return {}
+            if resolved_owner is None or resolved_repo is None:
+                # Get owner/repo from first PR in repo (needed for GraphQL query)
+                # We query for ANY PR to extract owner/repo info
+                cmd = ["gh", "pr", "list", "--limit", "1", "--json", "url"]
+                stdout = execute_gh_command(cmd, repo_root)
+                pr_list = json.loads(stdout)
 
-            # Extract owner/repo from first PR URL
-            # Format: https://github.com/owner/repo/pull/123
-            pr_url = pr_list[0]["url"]
-            parts = pr_url.split("/")
-            owner = parts[-4]
-            repo = parts[-3]
+                # If no PRs exist in repo, return empty dict
+                if not pr_list:
+                    return {}
+
+                # Extract owner/repo from first PR URL
+                # Format: https://github.com/owner/repo/pull/123
+                pr_url = pr_list[0]["url"]
+                parts = pr_url.split("/")
+                resolved_owner = parts[-4]
+                resolved_repo = parts[-3]
 
             # Build and execute GraphQL query to fetch all issues
-            query = self._build_issue_pr_linkage_query(issue_numbers, owner, repo)
+            query = self._build_issue_pr_linkage_query(issue_numbers, resolved_owner, resolved_repo)
             response = self._execute_batch_pr_query(query, repo_root)
 
             # Parse response and build inverse mapping
-            return self._parse_issue_pr_linkages(response, owner, repo)
+            return self._parse_issue_pr_linkages(response, resolved_owner, resolved_repo)
 
         except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError, IndexError):
             # gh not installed, not authenticated, or parsing failed
@@ -877,6 +890,10 @@ query {{
         Uses CrossReferencedEvent on issue timelines to find PRs that will close
         each issue. This is O(issues) instead of O(all PRs in repo).
 
+        Uses pre-aggregated count fields for efficiency (~15-30x smaller payload):
+        - contexts(last: 1) with totalCount, checkRunCountsByState, statusContextCountsByState
+        - Removes unused fields (title, labels) that dash doesn't display
+
         Args:
             issue_numbers: List of issue numbers to query
             owner: Repository owner
@@ -886,7 +903,8 @@ query {{
             GraphQL query string
         """
         # Define the fragment once at the top of the query
-        # NOTE: Includes detailed contexts for check count extraction
+        # Uses pre-aggregated count fields for ~15-30x smaller payload vs fetching 100 nodes
+        # Removes title and labels fields which are not displayed in dash output
         fragment_definition = """fragment IssuePRLinkageFields on CrossReferencedEvent {
   willCloseTarget
   source {
@@ -895,28 +913,16 @@ query {{
       state
       url
       isDraft
-      title
       createdAt
       statusCheckRollup {
         state
-        contexts(last: 100) {
-          nodes {
-            ... on StatusContext {
-              state
-            }
-            ... on CheckRun {
-              status
-              conclusion
-            }
-          }
+        contexts(last: 1) {
+          totalCount
+          checkRunCountsByState { state count }
+          statusContextCountsByState { state count }
         }
       }
       mergeable
-      labels(first: 10) {
-        nodes {
-          name
-        }
-      }
     }
   }
 }"""
@@ -1000,12 +1006,11 @@ query {{
                 if pr_number is None or state is None or url is None:
                     continue
 
-                # Extract optional fields
+                # Extract optional fields (title no longer fetched for efficiency)
                 is_draft = source.get("isDraft")
-                title = source.get("title")
                 created_at = source.get("createdAt")
 
-                # Parse checks status and counts
+                # Parse checks status and counts using aggregated fields
                 checks_passing = None
                 checks_counts: tuple[int, int] | None = None
                 status_rollup = source.get("statusCheckRollup")
@@ -1016,13 +1021,16 @@ query {{
                     elif rollup_state in ("FAILURE", "ERROR"):
                         checks_passing = False
 
-                    # Extract check counts from detailed contexts
+                    # Extract check counts from aggregated fields
                     contexts = status_rollup.get("contexts")
                     if contexts is not None and isinstance(contexts, dict):
-                        from erk_shared.github.parsing import _extract_checks_counts
-
-                        check_nodes = contexts.get("nodes", [])
-                        checks_counts = _extract_checks_counts(check_nodes)
+                        total = contexts.get("totalCount", 0)
+                        if total > 0:
+                            checks_counts = parse_aggregated_check_counts(
+                                contexts.get("checkRunCountsByState", []),
+                                contexts.get("statusContextCountsByState", []),
+                                total,
+                            )
 
                 # Parse conflicts status
                 has_conflicts = None
@@ -1032,28 +1040,18 @@ query {{
                 elif mergeable == "MERGEABLE":
                     has_conflicts = False
 
-                # Parse labels
-                labels: list[str] = []
-                labels_data = source.get("labels")
-                if labels_data is not None:
-                    label_nodes = labels_data.get("nodes", [])
-                    for label_node in label_nodes:
-                        if label_node is not None:
-                            label_name = label_node.get("name")
-                            if label_name:
-                                labels.append(label_name)
-
+                # Note: title and labels are no longer fetched (not displayed in dash)
                 pr_info = PullRequestInfo(
                     number=pr_number,
                     state=state,
                     url=url,
                     is_draft=is_draft if is_draft is not None else False,
-                    title=title,
+                    title=None,  # Not fetched for efficiency
                     checks_passing=checks_passing,
                     owner=owner,
                     repo=repo,
                     has_conflicts=has_conflicts,
-                    labels=labels,
+                    labels=[],  # Not fetched for efficiency
                     checks_counts=checks_counts,
                 )
 

@@ -181,6 +181,30 @@ PASSING_CHECK_RUN_STATES = frozenset({"SUCCESS", "SKIPPED", "NEUTRAL"})
 PASSING_STATUS_CONTEXT_STATES = frozenset({"SUCCESS"})
 
 
+def extract_owner_repo_from_github_url(url: str) -> tuple[str, str] | None:
+    """Extract owner and repo from any GitHub URL.
+
+    Works with PR URLs, issue URLs, and other GitHub URLs that follow
+    the pattern: https://github.com/owner/repo/...
+
+    Args:
+        url: GitHub URL (e.g., "https://github.com/owner/repo/issues/123")
+
+    Returns:
+        Tuple of (owner, repo) or None if URL doesn't match expected pattern
+
+    Example:
+        >>> extract_owner_repo_from_github_url("https://github.com/dagster-io/erk/issues/23")
+        ("dagster-io", "erk")
+        >>> extract_owner_repo_from_github_url("https://github.com/dagster-io/erk/pull/45")
+        ("dagster-io", "erk")
+    """
+    match = re.match(r"https://github\.com/([^/]+)/([^/]+)(?:/|$)", url)
+    if match:
+        return (match.group(1), match.group(2))
+    return None
+
+
 def parse_aggregated_check_counts(
     check_run_counts: list[dict[str, Any]],
     status_context_counts: list[dict[str, Any]],

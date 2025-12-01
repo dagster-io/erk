@@ -328,12 +328,20 @@ class FakeGitHub(GitHub):
         return self._run_logs[run_id]
 
     def get_prs_linked_to_issues(
-        self, repo_root: Path, issue_numbers: list[int]
+        self,
+        repo_root: Path,
+        issue_numbers: list[int],
+        *,
+        owner: str | None = None,
+        repo: str | None = None,
     ) -> dict[int, list[PullRequestInfo]]:
         """Get PRs linked to issues via closing keywords (returns pre-configured data).
 
         Returns only the mappings for issues in issue_numbers that have
         pre-configured PR linkages. Issues without linkages are omitted.
+
+        The owner/repo parameters are accepted but ignored - fake returns
+        pre-configured data regardless of these parameters.
         """
         result = {}
         for issue_num in issue_numbers:

@@ -1,7 +1,7 @@
 """Tests for GitHub operations."""
 
 import pytest
-from erk_shared.github.parsing import _parse_github_pr_url
+from erk_shared.github.parsing import _parse_github_pr_url, extract_owner_repo_from_github_url
 from erk_shared.integrations.time.fake import FakeTime
 
 from erk.core.github.real import RealGitHub
@@ -81,6 +81,43 @@ def test_parse_github_pr_url_edge_cases() -> None:
     # URL with extra path segments (accepted - regex is permissive)
     result = _parse_github_pr_url("https://github.com/owner/repo/pull/123/files")
     assert result == ("owner", "repo")
+
+
+def test_extract_owner_repo_from_github_url_valid_urls() -> None:
+    """Test extraction of owner/repo from various GitHub URLs."""
+    # Issue URL
+    result = extract_owner_repo_from_github_url("https://github.com/dagster-io/erk/issues/23")
+    assert result == ("dagster-io", "erk")
+
+    # PR URL
+    result = extract_owner_repo_from_github_url("https://github.com/facebook/react/pull/12345")
+    assert result == ("facebook", "react")
+
+    # Repository URL without trailing path
+    result = extract_owner_repo_from_github_url("https://github.com/owner/repo")
+    assert result == ("owner", "repo")
+
+    # Repository URL with trailing slash
+    result = extract_owner_repo_from_github_url("https://github.com/owner/repo/")
+    assert result == ("owner", "repo")
+
+
+def test_extract_owner_repo_from_github_url_invalid_urls() -> None:
+    """Test that invalid URLs return None."""
+    # Not a GitHub URL
+    assert extract_owner_repo_from_github_url("https://gitlab.com/owner/repo") is None
+
+    # Not a URL
+    assert extract_owner_repo_from_github_url("not a url") is None
+
+    # Empty string
+    assert extract_owner_repo_from_github_url("") is None
+
+    # Just github.com
+    assert extract_owner_repo_from_github_url("https://github.com") is None
+
+    # Only owner, no repo
+    assert extract_owner_repo_from_github_url("https://github.com/owner") is None
 
 
 def test_build_batch_pr_query_uses_aggregated_count_fields() -> None:
@@ -519,12 +556,27 @@ def test_build_issue_pr_linkage_query_structure() -> None:
     assert "statusCheckRollup" in query
     assert "mergeable" in query
 
+    # Validate aggregated check count fields are used (efficiency optimization)
+    assert "contexts(last: 1)" in query
+    assert "totalCount" in query
+    assert "checkRunCountsByState" in query
+    assert "statusContextCountsByState" in query
+
+    # Validate inefficient patterns are NOT used
+    assert "contexts(last: 100)" not in query
+    assert "... on StatusContext" not in query
+    assert "... on CheckRun" not in query
+
+    # Validate unused fields are NOT fetched (removed for efficiency)
+    assert "title" not in query  # Not displayed in dash
+    assert "labels" not in query  # Not displayed in dash
+
 
 def test_parse_issue_pr_linkages_with_single_pr() -> None:
     """Test parsing GraphQL timeline response with single PR closing an issue."""
     ops = RealGitHub(FakeTime())
 
-    # Timeline response with PR closing issue 100
+    # Timeline response with PR closing issue 100 (uses aggregated check counts)
     response = {
         "data": {
             "repository": {
@@ -538,9 +590,17 @@ def test_parse_issue_pr_linkages_with_single_pr() -> None:
                                     "state": "OPEN",
                                     "url": "https://github.com/owner/repo/pull/200",
                                     "isDraft": False,
-                                    "title": "Fix bug",
                                     "createdAt": "2024-01-01T00:00:00Z",
-                                    "statusCheckRollup": {"state": "SUCCESS"},
+                                    "statusCheckRollup": {
+                                        "state": "SUCCESS",
+                                        "contexts": {
+                                            "totalCount": 3,
+                                            "checkRunCountsByState": [
+                                                {"state": "SUCCESS", "count": 3}
+                                            ],
+                                            "statusContextCountsByState": [],
+                                        },
+                                    },
                                     "mergeable": "MERGEABLE",
                                 },
                             }
@@ -562,16 +622,17 @@ def test_parse_issue_pr_linkages_with_single_pr() -> None:
     assert pr.state == "OPEN"
     assert pr.url == "https://github.com/owner/repo/pull/200"
     assert pr.is_draft is False
-    assert pr.title == "Fix bug"
+    assert pr.title is None  # Not fetched for efficiency
     assert pr.checks_passing is True
     assert pr.has_conflicts is False
+    assert pr.checks_counts == (3, 3)  # Aggregated counts
 
 
 def test_parse_issue_pr_linkages_with_multiple_prs() -> None:
     """Test parsing timeline response with multiple PRs closing same issue."""
     ops = RealGitHub(FakeTime())
 
-    # Timeline response with two PRs closing issue 100
+    # Timeline response with two PRs closing issue 100 (aggregated format)
     response = {
         "data": {
             "repository": {
@@ -585,7 +646,6 @@ def test_parse_issue_pr_linkages_with_multiple_prs() -> None:
                                     "state": "OPEN",
                                     "url": "https://github.com/owner/repo/pull/201",
                                     "isDraft": False,
-                                    "title": "Recent PR",
                                     "createdAt": "2024-01-02T00:00:00Z",
                                     "statusCheckRollup": None,
                                     "mergeable": "UNKNOWN",
@@ -598,7 +658,6 @@ def test_parse_issue_pr_linkages_with_multiple_prs() -> None:
                                     "state": "CLOSED",
                                     "url": "https://github.com/owner/repo/pull/200",
                                     "isDraft": False,
-                                    "title": "Older PR",
                                     "createdAt": "2024-01-01T00:00:00Z",
                                     "statusCheckRollup": {"state": "FAILURE"},
                                     "mergeable": "MERGEABLE",
@@ -619,18 +678,18 @@ def test_parse_issue_pr_linkages_with_multiple_prs() -> None:
 
     # Most recent PR should be first
     assert result[100][0].number == 201
-    assert result[100][0].title == "Recent PR"
+    assert result[100][0].title is None  # Not fetched for efficiency
 
     # Older PR should be second
     assert result[100][1].number == 200
-    assert result[100][1].title == "Older PR"
+    assert result[100][1].title is None  # Not fetched for efficiency
 
 
 def test_parse_issue_pr_linkages_with_pr_linking_multiple_issues() -> None:
     """Test parsing timeline response where same PR closes multiple issues."""
     ops = RealGitHub(FakeTime())
 
-    # Timeline response with same PR closing both issues 100 and 101
+    # Timeline response with same PR closing both issues 100 and 101 (aggregated format)
     response = {
         "data": {
             "repository": {
@@ -644,7 +703,6 @@ def test_parse_issue_pr_linkages_with_pr_linking_multiple_issues() -> None:
                                     "state": "OPEN",
                                     "url": "https://github.com/owner/repo/pull/200",
                                     "isDraft": False,
-                                    "title": "Fix multiple bugs",
                                     "createdAt": "2024-01-01T00:00:00Z",
                                     "statusCheckRollup": {"state": "SUCCESS"},
                                     "mergeable": "MERGEABLE",
@@ -663,7 +721,6 @@ def test_parse_issue_pr_linkages_with_pr_linking_multiple_issues() -> None:
                                     "state": "OPEN",
                                     "url": "https://github.com/owner/repo/pull/200",
                                     "isDraft": False,
-                                    "title": "Fix multiple bugs",
                                     "createdAt": "2024-01-01T00:00:00Z",
                                     "statusCheckRollup": {"state": "SUCCESS"},
                                     "mergeable": "MERGEABLE",
@@ -717,7 +774,7 @@ def test_parse_issue_pr_linkages_handles_null_nodes() -> None:
     """Test parsing handles null values in timeline nodes gracefully."""
     ops = RealGitHub(FakeTime())
 
-    # Timeline response with null nodes and null source
+    # Timeline response with null nodes and null source (aggregated format)
     response = {
         "data": {
             "repository": {
@@ -736,7 +793,6 @@ def test_parse_issue_pr_linkages_handles_null_nodes() -> None:
                                     "state": "OPEN",
                                     "url": "https://github.com/owner/repo/pull/200",
                                     "isDraft": False,
-                                    "title": "Valid PR",
                                     "createdAt": "2024-01-01T00:00:00Z",
                                     "statusCheckRollup": None,
                                     "mergeable": "MERGEABLE",
@@ -761,7 +817,7 @@ def test_parse_issue_pr_linkages_handles_missing_optional_fields() -> None:
     """Test parsing handles missing optional fields (checks, conflicts)."""
     ops = RealGitHub(FakeTime())
 
-    # Timeline response with minimal fields in PR source
+    # Timeline response with minimal fields in PR source (aggregated format)
     response = {
         "data": {
             "repository": {
@@ -775,7 +831,6 @@ def test_parse_issue_pr_linkages_handles_missing_optional_fields() -> None:
                                     "state": "MERGED",
                                     "url": "https://github.com/owner/repo/pull/200",
                                     "isDraft": None,  # Missing
-                                    "title": None,  # Missing
                                     "createdAt": "2024-01-01T00:00:00Z",
                                     "statusCheckRollup": None,  # No checks
                                     "mergeable": None,  # Unknown
@@ -795,7 +850,7 @@ def test_parse_issue_pr_linkages_handles_missing_optional_fields() -> None:
     pr = result[100][0]
     assert pr.number == 200
     assert pr.is_draft is False  # Defaults to False
-    assert pr.title is None
+    assert pr.title is None  # Not fetched for efficiency
     assert pr.checks_passing is None
     assert pr.has_conflicts is None
 
@@ -804,7 +859,7 @@ def test_parse_issue_pr_linkages_filters_non_closing_prs() -> None:
     """Test parsing filters out PRs that don't close the issue (willCloseTarget=false)."""
     ops = RealGitHub(FakeTime())
 
-    # Timeline response with PRs that mention but don't close the issue
+    # Timeline response with PRs that mention but don't close the issue (aggregated format)
     response = {
         "data": {
             "repository": {
@@ -818,7 +873,6 @@ def test_parse_issue_pr_linkages_filters_non_closing_prs() -> None:
                                     "state": "OPEN",
                                     "url": "https://github.com/owner/repo/pull/201",
                                     "isDraft": False,
-                                    "title": "Mentions issue",
                                     "createdAt": "2024-01-01T00:00:00Z",
                                     "statusCheckRollup": None,
                                     "mergeable": "MERGEABLE",
@@ -831,7 +885,6 @@ def test_parse_issue_pr_linkages_filters_non_closing_prs() -> None:
                                     "state": "OPEN",
                                     "url": "https://github.com/owner/repo/pull/200",
                                     "isDraft": False,
-                                    "title": "Fixes issue",
                                     "createdAt": "2024-01-02T00:00:00Z",
                                     "statusCheckRollup": None,
                                     "mergeable": "MERGEABLE",
@@ -856,7 +909,7 @@ def test_parse_issue_pr_linkages_handles_issue_not_found() -> None:
     """Test parsing handles non-existent issue (null result)."""
     ops = RealGitHub(FakeTime())
 
-    # Timeline response where one issue doesn't exist
+    # Timeline response where one issue doesn't exist (aggregated format)
     response = {
         "data": {
             "repository": {
@@ -871,7 +924,6 @@ def test_parse_issue_pr_linkages_handles_issue_not_found() -> None:
                                     "state": "OPEN",
                                     "url": "https://github.com/owner/repo/pull/200",
                                     "isDraft": False,
-                                    "title": "Fix",
                                     "createdAt": "2024-01-01T00:00:00Z",
                                     "statusCheckRollup": None,
                                     "mergeable": "MERGEABLE",
