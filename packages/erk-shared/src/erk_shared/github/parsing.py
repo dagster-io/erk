@@ -26,7 +26,7 @@ def execute_gh_command(cmd: list[str], cwd: Path) -> str:
     """
     result = run_subprocess_with_context(
         cmd,
-        operation_context=f"execute gh command",
+        operation_context="execute gh command",
         cwd=cwd,
     )
     return result.stdout
