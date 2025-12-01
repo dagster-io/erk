@@ -134,7 +134,7 @@ def test_list_runs_multiple_runs_different_statuses(tmp_path: Path) -> None:
             display_title="142:abc",
         ),
         WorkflowRun(
-            run_id="456",
+            run_id="999888",
             status="completed",
             conclusion="failure",
             branch="feat-2",
@@ -201,7 +201,7 @@ def test_list_runs_multiple_runs_different_statuses(tmp_path: Path) -> None:
     assert result.exit_code == 0
     # All run IDs should appear
     assert "123" in result.output
-    assert "456" in result.output
+    assert "999888" in result.output
     assert "789" in result.output
     # All issue numbers should appear
     assert "#142" in result.output
@@ -280,7 +280,7 @@ def test_list_runs_default_filters_out_runs_without_plans(tmp_path: Path) -> Non
         ),
         # Old format - no plan linkage
         WorkflowRun(
-            run_id="456",
+            run_id="999888",
             status="completed",
             conclusion="success",
             branch="feat-2",
@@ -318,7 +318,7 @@ def test_list_runs_default_filters_out_runs_without_plans(tmp_path: Path) -> Non
     assert "123" in result.output
     assert "#142" in result.output
     # Old format run should NOT appear
-    assert "456" not in result.output
+    assert "999888" not in result.output
     assert "Add feature" not in result.output
 
 
@@ -347,7 +347,7 @@ def test_list_runs_with_show_legacy_flag_shows_all_runs(tmp_path: Path) -> None:
         ),
         # Old format - no plan linkage
         WorkflowRun(
-            run_id="456",
+            run_id="999888",
             status="completed",
             conclusion="success",
             branch="feat-2",
@@ -385,7 +385,7 @@ def test_list_runs_with_show_legacy_flag_shows_all_runs(tmp_path: Path) -> None:
     assert "123" in result.output
     assert "#142" in result.output
     # Old format run SHOULD appear with --show-legacy
-    assert "456" in result.output
+    assert "999888" in result.output
     # Legacy run should show "X" for plan/title/pr/chks
     assert "X" in result.output
 

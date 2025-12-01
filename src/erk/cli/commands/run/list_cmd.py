@@ -2,6 +2,7 @@
 
 import click
 from erk_shared.github.emoji import format_checks_cell
+from erk_shared.github.parsing import extract_owner_repo_from_github_url
 from erk_shared.output.output import user_output
 from rich.console import Console
 from rich.table import Table
@@ -75,10 +76,20 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
             user_output("No runs with plans found. Use --show-legacy to see all runs.")
             return
 
+    # Extract owner/repo from first issue URL (needed for API calls and links)
+    owner: str | None = None
+    repo_name: str | None = None
+    if issues:
+        owner_repo = extract_owner_repo_from_github_url(issues[0].url)
+        if owner_repo is not None:
+            owner, repo_name = owner_repo
+
     # 4. Batch fetch PRs linked to issues
     pr_linkages: dict[int, list] = {}
-    if issue_numbers:
-        pr_linkages = ctx.github.get_prs_linked_to_issues(repo.root, issue_numbers)
+    if issue_numbers and owner and repo_name:
+        pr_linkages = ctx.github.get_prs_linked_to_issues(
+            repo.root, issue_numbers, owner, repo_name
+        )
 
     # Determine use_graphite for URL selection
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
@@ -92,16 +103,6 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
     table.add_column("title", no_wrap=True)
     table.add_column("pr", no_wrap=True)
     table.add_column("chks", no_wrap=True)
-
-    # Build repo URL for links
-    # Extract owner/repo from issue URL if available, otherwise use git remote
-    owner, repo_name = None, None
-    if issues and issues[0].url:
-        # Parse from URL like https://github.com/owner/repo/issues/123
-        parts = issues[0].url.split("/")
-        if len(parts) >= 5:
-            owner = parts[-4]
-            repo_name = parts[-3]
 
     for run in runs:
         issue_num = extract_issue_number(run.display_title)

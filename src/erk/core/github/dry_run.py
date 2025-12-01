@@ -137,14 +137,11 @@ class DryRunGitHub(GitHub):
         self,
         repo_root: Path,
         issue_numbers: list[int],
-        *,
-        owner: str | None = None,
-        repo: str | None = None,
+        owner: str,
+        repo: str,
     ) -> dict[int, list[PullRequestInfo]]:
         """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_prs_linked_to_issues(
-            repo_root, issue_numbers, owner=owner, repo=repo
-        )
+        return self._wrapped.get_prs_linked_to_issues(repo_root, issue_numbers, owner, repo)
 
     def get_workflow_runs_by_branches(
         self, repo_root: Path, workflow: str, branches: list[str]

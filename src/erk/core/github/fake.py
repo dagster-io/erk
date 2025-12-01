@@ -331,9 +331,8 @@ class FakeGitHub(GitHub):
         self,
         repo_root: Path,
         issue_numbers: list[int],
-        *,
-        owner: str | None = None,
-        repo: str | None = None,
+        owner: str,
+        repo: str,
     ) -> dict[int, list[PullRequestInfo]]:
         """Get PRs linked to issues via closing keywords (returns pre-configured data).
 

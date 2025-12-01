@@ -9,6 +9,7 @@ import click
 from erk_shared.github.issue_link_branches import DevelopmentBranch
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata import create_submission_queued_block, render_erk_issue_event
+from erk_shared.github.parsing import extract_owner_repo_from_github_url
 from erk_shared.naming import (
     derive_branch_name_from_title,
     format_branch_timestamp_suffix,
@@ -142,12 +143,14 @@ def _close_orphaned_draft_prs(
     repo_root: Path,
     issue_number: int,
     keep_pr_number: int,
+    owner: str,
+    repo: str,
 ) -> list[int]:
     """Close old draft PRs linked to an issue, keeping the specified one.
 
     Returns list of PR numbers that were closed.
     """
-    pr_linkages = ctx.github.get_prs_linked_to_issues(repo_root, [issue_number])
+    pr_linkages = ctx.github.get_prs_linked_to_issues(repo_root, [issue_number], owner, repo)
     linked_prs = pr_linkages.get(issue_number, [])
 
     closed_prs: list[int] = []
@@ -293,6 +296,14 @@ def _submit_single_issue(
     pr_number = validated.pr_number
     trunk_branch = ctx.git.get_trunk_branch(repo.root)
 
+    # Extract owner/repo from issue URL for API calls
+    owner_repo = extract_owner_repo_from_github_url(issue.url)
+    if owner_repo is None:
+        # This should never happen with valid GitHub issue URLs
+        msg = f"Could not extract owner/repo from issue URL: {issue.url}"
+        raise RuntimeError(msg)
+    gh_owner, gh_repo = owner_repo
+
     if branch_exists:
         if pr_number is not None:
             user_output(
@@ -353,7 +364,9 @@ def _submit_single_issue(
             ctx.github.update_pr_body(repo.root, pr_number, footer_body)
 
             # Close any orphaned draft PRs
-            closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)
+            closed_prs = _close_orphaned_draft_prs(
+                ctx, repo.root, issue_number, pr_number, gh_owner, gh_repo
+            )
             if closed_prs:
                 user_output(
                     click.style("✓", fg="green")
@@ -427,7 +440,9 @@ def _submit_single_issue(
         ctx.github.update_pr_body(repo.root, pr_number, footer_body)
 
         # Close any orphaned draft PRs for this issue
-        closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)
+        closed_prs = _close_orphaned_draft_prs(
+            ctx, repo.root, issue_number, pr_number, gh_owner, gh_repo
+        )
         if closed_prs:
             user_output(
                 click.style("✓", fg="green")

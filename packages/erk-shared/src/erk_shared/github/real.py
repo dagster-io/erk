@@ -202,9 +202,8 @@ class RealGitHub(GitHub):
         self,
         repo_root: Path,
         issue_numbers: list[int],
-        *,
-        owner: str | None = None,
-        repo: str | None = None,
+        owner: str,
+        repo: str,
     ) -> dict[int, list[PullRequestInfo]]:
         """Stub method - not implemented in erk-shared."""
         msg = (

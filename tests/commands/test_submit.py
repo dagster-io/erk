@@ -596,7 +596,9 @@ def test_close_orphaned_draft_prs_closes_old_drafts(tmp_path: Path) -> None:
         repo=repo,
     )
 
-    closed_prs = _close_orphaned_draft_prs(ctx, repo_root, issue_number=123, keep_pr_number=999)
+    closed_prs = _close_orphaned_draft_prs(
+        ctx, repo_root, issue_number=123, keep_pr_number=999, owner="owner", repo="repo"
+    )
 
     # Should close old drafts but not the new PR
     assert sorted(closed_prs) == [100, 101]
@@ -638,7 +640,9 @@ def test_close_orphaned_draft_prs_skips_non_drafts(tmp_path: Path) -> None:
         repo=repo,
     )
 
-    closed_prs = _close_orphaned_draft_prs(ctx, repo_root, issue_number=123, keep_pr_number=999)
+    closed_prs = _close_orphaned_draft_prs(
+        ctx, repo_root, issue_number=123, keep_pr_number=999, owner="owner", repo="repo"
+    )
 
     # Non-draft PR should not be closed
     assert closed_prs == []
@@ -680,7 +684,9 @@ def test_close_orphaned_draft_prs_skips_already_closed(tmp_path: Path) -> None:
         repo=repo,
     )
 
-    closed_prs = _close_orphaned_draft_prs(ctx, repo_root, issue_number=123, keep_pr_number=999)
+    closed_prs = _close_orphaned_draft_prs(
+        ctx, repo_root, issue_number=123, keep_pr_number=999, owner="owner", repo="repo"
+    )
 
     # Already-closed PR should not be closed again
     assert closed_prs == []
@@ -722,7 +728,9 @@ def test_close_orphaned_draft_prs_skips_prs_without_erk_plan_label(tmp_path: Pat
         repo=repo,
     )
 
-    closed_prs = _close_orphaned_draft_prs(ctx, repo_root, issue_number=123, keep_pr_number=999)
+    closed_prs = _close_orphaned_draft_prs(
+        ctx, repo_root, issue_number=123, keep_pr_number=999, owner="owner", repo="repo"
+    )
 
     # PR without erk-plan label should not be closed
     assert closed_prs == []
@@ -752,7 +760,9 @@ def test_close_orphaned_draft_prs_no_linked_prs(tmp_path: Path) -> None:
         repo=repo,
     )
 
-    closed_prs = _close_orphaned_draft_prs(ctx, repo_root, issue_number=123, keep_pr_number=999)
+    closed_prs = _close_orphaned_draft_prs(
+        ctx, repo_root, issue_number=123, keep_pr_number=999, owner="owner", repo="repo"
+    )
 
     # No PRs to close
     assert closed_prs == []

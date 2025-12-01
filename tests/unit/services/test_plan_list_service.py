@@ -49,7 +49,7 @@ class TestPlanListService:
             title="Test Plan",
             body="",
             state="OPEN",
-            url="",
+            url="https://github.com/owner/repo/issues/42",
             labels=["erk-plan"],
             assignees=[],
             created_at=now,

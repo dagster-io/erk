@@ -833,52 +833,26 @@ query {{
         self,
         repo_root: Path,
         issue_numbers: list[int],
-        *,
-        owner: str | None = None,
-        repo: str | None = None,
+        owner: str,
+        repo: str,
     ) -> dict[int, list[PullRequestInfo]]:
         """Get PRs linked to issues via closing keywords.
 
         Note: Uses try/except as an acceptable error boundary for handling gh CLI
         availability and authentication. We cannot reliably check gh installation
         and authentication status a priori without duplicating gh's logic.
-
-        When owner/repo are provided, skips the expensive `gh pr list --limit 1`
-        call that would otherwise be needed to determine the repository context.
         """
         # Early exit for empty input
         if not issue_numbers:
             return {}
 
         try:
-            # Use provided owner/repo if available, otherwise fall back to gh pr list
-            resolved_owner = owner
-            resolved_repo = repo
-
-            if resolved_owner is None or resolved_repo is None:
-                # Get owner/repo from first PR in repo (needed for GraphQL query)
-                # We query for ANY PR to extract owner/repo info
-                cmd = ["gh", "pr", "list", "--limit", "1", "--json", "url"]
-                stdout = execute_gh_command(cmd, repo_root)
-                pr_list = json.loads(stdout)
-
-                # If no PRs exist in repo, return empty dict
-                if not pr_list:
-                    return {}
-
-                # Extract owner/repo from first PR URL
-                # Format: https://github.com/owner/repo/pull/123
-                pr_url = pr_list[0]["url"]
-                parts = pr_url.split("/")
-                resolved_owner = parts[-4]
-                resolved_repo = parts[-3]
-
             # Build and execute GraphQL query to fetch all issues
-            query = self._build_issue_pr_linkage_query(issue_numbers, resolved_owner, resolved_repo)
+            query = self._build_issue_pr_linkage_query(issue_numbers, owner, repo)
             response = self._execute_batch_pr_query(query, repo_root)
 
             # Parse response and build inverse mapping
-            return self._parse_issue_pr_linkages(response, resolved_owner, resolved_repo)
+            return self._parse_issue_pr_linkages(response, owner, repo)
 
         except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError, IndexError):
             # gh not installed, not authenticated, or parsing failed
@@ -892,7 +866,7 @@ query {{
 
         Uses pre-aggregated count fields for efficiency (~15-30x smaller payload):
         - contexts(last: 1) with totalCount, checkRunCountsByState, statusContextCountsByState
-        - Removes unused fields (title, labels) that dash doesn't display
+        - Removes title field (not displayed in dash)
 
         Args:
             issue_numbers: List of issue numbers to query
@@ -904,7 +878,6 @@ query {{
         """
         # Define the fragment once at the top of the query
         # Uses pre-aggregated count fields for ~15-30x smaller payload vs fetching 100 nodes
-        # Removes title and labels fields which are not displayed in dash output
         fragment_definition = """fragment IssuePRLinkageFields on CrossReferencedEvent {
   willCloseTarget
   source {
@@ -923,6 +896,11 @@ query {{
         }
       }
       mergeable
+      labels(first: 10) {
+        nodes {
+          name
+        }
+      }
     }
   }
 }"""
@@ -1040,7 +1018,18 @@ query {{
                 elif mergeable == "MERGEABLE":
                     has_conflicts = False
 
-                # Note: title and labels are no longer fetched (not displayed in dash)
+                # Parse labels
+                labels: list[str] = []
+                labels_data = source.get("labels")
+                if labels_data is not None:
+                    label_nodes = labels_data.get("nodes", [])
+                    for label_node in label_nodes:
+                        if label_node is not None:
+                            label_name = label_node.get("name")
+                            if label_name:
+                                labels.append(label_name)
+
+                # Note: title is not fetched (not displayed in dash)
                 pr_info = PullRequestInfo(
                     number=pr_number,
                     state=state,
@@ -1051,7 +1040,7 @@ query {{
                     owner=owner,
                     repo=repo,
                     has_conflicts=has_conflicts,
-                    labels=[],  # Not fetched for efficiency
+                    labels=labels,
                     checks_counts=checks_counts,
                 )
 
