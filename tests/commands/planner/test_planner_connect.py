@@ -174,11 +174,13 @@ def test_connect_executes_claude_command_with_craft_plan() -> None:
     assert "ssh" in args_list
     assert "-c" in args_list
     assert "my-gh-codespace" in args_list
-    # Should run claude with /erk:craft-plan via bash login shell after --
+    # Should run setup commands then claude with /erk:craft-plan via bash login shell after --
     # -t: Force pseudo-terminal allocation for interactive TUI
     # bash -l -c: Login shell ensures PATH is set up correctly (claude installs to ~/.claude/local/)
+    # git pull && uv sync && source .venv/bin/activate: Setup commands before launching claude
     # '/erk:craft-plan': Initial prompt to launch the planning workflow immediately
     assert "--" in args_list
     dash_dash_idx = args_list.index("--")
     remaining_args = args_list[dash_dash_idx + 1 :]
-    assert remaining_args == ["-t", "bash", "-l", "-c", "claude '/erk:craft-plan'"]
+    expected_cmd = "git pull && uv sync && source .venv/bin/activate && claude '/erk:craft-plan'"
+    assert remaining_args == ["-t", "bash", "-l", "-c", expected_cmd]

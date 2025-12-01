@@ -66,6 +66,6 @@ def connect_planner(ctx: ErkContext, name: str | None) -> None:
             "bash",
             "-l",
             "-c",
-            "claude '/erk:craft-plan'",
+            "git pull && uv sync && source .venv/bin/activate && claude '/erk:craft-plan'",
         ],
     )
