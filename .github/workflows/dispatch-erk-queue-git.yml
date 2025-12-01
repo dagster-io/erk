@@ -231,7 +231,7 @@ jobs:
           set +e
 
           claude --print \
-            --model claude-opus-4-5-20251101 \
+            --model claude-sonnet-4-5-20250929 \
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
@@ -274,7 +274,7 @@ jobs:
 
           # Submit with pure git - AI sees only implementation changes
           claude --print \
-            --model claude-opus-4-5-20251101 \
+            --model claude-sonnet-4-5-20250929 \
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
