@@ -3,6 +3,7 @@
 ## Goal
 
 Enhance `/erk:submit-plan` to attempt `git pull` before running `erk submit` when:
+
 1. Current branch is master (or the trunk branch)
 2. Working directory is clean (no uncommitted changes)
 
@@ -27,15 +28,18 @@ Add a new section between "Finding the Issue" and "Execution" called "Pre-Execut
 
 ```markdown
 ## Goal
+
 (unchanged)
 
 ## What This Command Does
+
 1. Search conversation for the last GitHub issue reference
 2. Extract the issue number
 3. **Sync trunk if on master/main with clean working directory** (NEW)
 4. Run `erk submit <issue_number>` to trigger remote implementation
 
 ## Finding the Issue
+
 (unchanged)
 
 ## Pre-Execution: Sync Trunk (NEW SECTION)
@@ -50,10 +54,13 @@ Before running `erk submit`, check if trunk should be synced:
 3. If not on trunk or working directory is dirty, skip this step silently
 
 ## Execution
+
 (unchanged)
 
 ## Error Cases
+
 (add new case)
+
 - **git pull fails**: Report the error but continue with `erk submit` anyway (pull failure shouldn't block submit)
 ```
 
