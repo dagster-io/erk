@@ -62,7 +62,7 @@ def connect_planner(ctx: ErkContext, name: str | None) -> None:
     #   bash -l -c "git pull && uv sync && ..."
     # This causes `bash -l -c git` to run `git` with no subcommand (exits with help).
     setup_commands = "git pull && uv sync && source .venv/bin/activate"
-    claude_command = 'claude "/erk:craft-plan"'
+    claude_command = 'claude --allow-dangerously-skip-permissions --verbose "/erk:craft-plan"'
     remote_command = f"bash -l -c '{setup_commands} && {claude_command}'"
 
     os.execvp(
