@@ -508,3 +508,44 @@ def test_ensure_worktree_returns_was_created_flag() -> None:
         # Test new worktree - should return was_created=True
         _path2, was_created2 = ensure_worktree_for_branch(ctx, repo, "new-feature")
         assert was_created2 is True
+
+
+def test_ensure_worktree_detached_head_error_message() -> None:
+    """Test that ensure_worktree_for_branch shows clear error for detached HEAD worktree."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.erk_root / "repos" / env.cwd.name
+        detached_path = repo_dir / "feature-branch"
+
+        git_ops = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main"),
+                    WorktreeInfo(path=detached_path, branch=None),  # Detached HEAD
+                ]
+            },
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            git_common_dirs={env.cwd: env.git_dir},
+            existing_paths={env.cwd, detached_path},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir,
+        )
+
+        ctx = env.build_context(git=git_ops, repo=repo)
+
+        # Call ensure_worktree_for_branch for branch with same name as detached HEAD worktree
+        # Should raise SystemExit with helpful error message
+        import pytest
+
+        with pytest.raises(SystemExit) as exc_info:
+            ensure_worktree_for_branch(ctx, repo, "feature-branch", is_plan_derived=False)
+
+        # Should exit with error code
+        assert exc_info.value.code == 1
+        # No worktrees should be created
+        assert len(git_ops.added_worktrees) == 0

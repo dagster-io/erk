@@ -175,6 +175,19 @@ def ensure_worktree_for_branch(
         for wt in worktrees:
             if wt.path == wt_path:
                 if wt.branch != branch:
+                    # Detached HEAD: provide specific guidance
+                    if wt.branch is None:
+                        user_output(
+                            f"Error: Worktree '{name}' is in detached HEAD state "
+                            f"(possibly mid-rebase).\n\n"
+                            f"Cannot create new worktree for branch '{branch}' with same name.\n\n"
+                            f"Options:\n"
+                            f"  1. Resume work in existing worktree: erk wt goto {name}\n"
+                            f"  2. Complete or abort the rebase first, then try again\n"
+                            f"  3. Use a different branch name"
+                        )
+                        raise SystemExit(1)
+                    # Different branch: existing error handling
                     user_output(
                         f"Error: Worktree '{name}' already exists "
                         f"with different branch '{wt.branch}'.\n"
