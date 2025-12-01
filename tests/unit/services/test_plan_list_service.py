@@ -132,12 +132,12 @@ class TestPlanListService:
 
 
 class TestWorkflowRunFetching:
-    """Tests for efficient workflow run fetching via batch API."""
+    """Tests for efficient workflow run fetching via GraphQL node_id batch API."""
 
-    def test_fetches_workflow_runs_with_batch_parameters(self) -> None:
-        """Service uses workflow and user params for efficient batch fetching."""
+    def test_fetches_workflow_runs_by_node_id(self) -> None:
+        """Service uses GraphQL nodes(ids: [...]) for efficient batch fetching."""
         now = datetime.now(UTC)
-        # Create issue with plan-header metadata containing run_id in correct format
+        # Create issue with plan-header metadata containing node_id
         issue_body = """## Objective
 Test plan
 
@@ -151,6 +151,7 @@ created_at: '2024-01-15T10:30:00Z'
 created_by: user123
 worktree_name: feature-branch
 last_dispatched_run_id: '12345'
+last_dispatched_node_id: 'WFR_abc123'
 last_dispatched_at: '2024-01-15T11:00:00Z'
 ```
 
@@ -168,7 +169,7 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
             created_at=now,
             updated_at=now,
         )
-        # Pre-configure workflow run that matches the run_id
+        # Pre-configure workflow run that matches the node_id
         run = WorkflowRun(
             run_id="12345",
             status="completed",
@@ -180,8 +181,7 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
         )
         fake_issues = FakeGitHubIssues(issues={42: issue})
         fake_github = FakeGitHub(
-            workflow_runs=[run],
-            auth_username="test-user",
+            workflow_runs_by_node_id={"WFR_abc123": run},
         )
 
         service = PlanListService(fake_github, fake_issues)
@@ -194,8 +194,6 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
         assert 42 in result.workflow_runs
         assert result.workflow_runs[42] is not None
         assert result.workflow_runs[42].run_id == "12345"
-        # Verify auth was called to get username
-        assert len(fake_github.check_auth_status_calls) == 1
 
     def test_skips_workflow_fetch_when_skip_flag_set(self) -> None:
         """Service skips workflow fetching when skip_workflow_runs=True."""
@@ -206,7 +204,7 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
 
 ```yaml
 schema_version: '2'
-last_dispatched_run_id: '12345'
+last_dispatched_node_id: 'WFR_abc123'
 ```
 
 </details>
@@ -231,7 +229,7 @@ last_dispatched_run_id: '12345'
             head_sha="abc",
         )
         fake_issues = FakeGitHubIssues(issues={42: issue})
-        fake_github = FakeGitHub(workflow_runs=[run])
+        fake_github = FakeGitHub(workflow_runs_by_node_id={"WFR_abc123": run})
 
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
@@ -242,11 +240,9 @@ last_dispatched_run_id: '12345'
 
         # Workflow runs dict should be empty when skipped
         assert result.workflow_runs == {}
-        # Auth should not be called when skipping workflow runs
-        assert len(fake_github.check_auth_status_calls) == 0
 
-    def test_handles_missing_run_id_gracefully(self) -> None:
-        """Service handles issues without run_id in body."""
+    def test_handles_missing_node_id_gracefully(self) -> None:
+        """Service handles issues without node_id in body."""
         now = datetime.now(UTC)
         issue = IssueInfo(
             number=42,
@@ -268,13 +264,11 @@ last_dispatched_run_id: '12345'
             labels=["erk-plan"],
         )
 
-        # No workflow runs should be fetched (no run_ids to fetch)
+        # No workflow runs should be fetched (no node_ids to fetch)
         assert result.workflow_runs == {}
-        # Auth should not be called when there are no run_ids
-        assert len(fake_github.check_auth_status_calls) == 0
 
-    def test_handles_run_not_found_in_batch(self) -> None:
-        """Service handles case where run_id not found in batch results."""
+    def test_handles_node_id_not_found(self) -> None:
+        """Service handles case where node_id not found in GraphQL results."""
         now = datetime.now(UTC)
         issue_body = """<!-- erk:metadata-block:plan-header -->
 <details>
@@ -282,7 +276,7 @@ last_dispatched_run_id: '12345'
 
 ```yaml
 schema_version: '2'
-last_dispatched_run_id: '99999'
+last_dispatched_node_id: 'WFR_nonexistent'
 ```
 
 </details>
@@ -299,7 +293,7 @@ last_dispatched_run_id: '99999'
             created_at=now,
             updated_at=now,
         )
-        # No workflow runs configured - run_id won't be found
+        # No workflow runs configured - node_id won't be found
         fake_issues = FakeGitHubIssues(issues={42: issue})
         fake_github = FakeGitHub()
 

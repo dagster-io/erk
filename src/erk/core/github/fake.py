@@ -33,6 +33,7 @@ class FakeGitHub(GitHub):
         pr_bases: dict[int, str] | None = None,
         pr_mergeability: dict[int, PRMergeability | None] | None = None,
         workflow_runs: list[WorkflowRun] | None = None,
+        workflow_runs_by_node_id: dict[str, WorkflowRun] | None = None,
         run_logs: dict[str, str] | None = None,
         pr_issue_linkages: dict[int, list[PullRequestInfo]] | None = None,
         polled_run_id: str | None = None,
@@ -50,6 +51,8 @@ class FakeGitHub(GitHub):
             pr_bases: Mapping of pr_number -> base_branch
             pr_mergeability: Mapping of pr_number -> PRMergeability (None for API errors)
             workflow_runs: List of WorkflowRun objects to return from list_workflow_runs
+            workflow_runs_by_node_id: Mapping of GraphQL node_id -> WorkflowRun for
+                                     get_workflow_runs_by_node_ids()
             run_logs: Mapping of run_id -> log string
             pr_issue_linkages: Mapping of issue_number -> list[PullRequestInfo]
             polled_run_id: Run ID to return from poll_for_workflow_run (None for timeout)
@@ -88,6 +91,7 @@ class FakeGitHub(GitHub):
         self._pr_bases = pr_bases or {}
         self._pr_mergeability = pr_mergeability or {}
         self._workflow_runs = workflow_runs or []
+        self._workflow_runs_by_node_id = workflow_runs_by_node_id or {}
         self._run_logs = run_logs or {}
         self._pr_issue_linkages = pr_issue_linkages or {}
         self._polled_run_id = polled_run_id
@@ -434,37 +438,6 @@ class FakeGitHub(GitHub):
         """
         return self._pr_checkout_infos.get(pr_number)
 
-    def get_workflow_runs_batch(
-        self,
-        repo_root: Path,
-        run_ids: list[str],
-        *,
-        workflow: str | None = None,
-        user: str | None = None,
-    ) -> dict[str, WorkflowRun | None]:
-        """Get details for multiple workflow runs by ID (returns pre-configured data).
-
-        Looks up each run_id in the pre-configured workflow_runs list.
-
-        Args:
-            repo_root: Repository root directory (ignored in fake)
-            run_ids: List of GitHub Actions run IDs to lookup
-            workflow: Optional workflow filename (ignored in fake)
-            user: Optional GitHub username (ignored in fake)
-
-        Returns:
-            Mapping of run_id -> WorkflowRun or None if not found
-        """
-        result: dict[str, WorkflowRun | None] = {}
-        for run_id in run_ids:
-            found = None
-            for run in self._workflow_runs:
-                if run.run_id == run_id:
-                    found = run
-                    break
-            result[run_id] = found
-        return result
-
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Return pre-configured authentication status.
 
@@ -489,3 +462,21 @@ class FakeGitHub(GitHub):
         This property is for test assertions only.
         """
         return self._check_auth_status_calls
+
+    def get_workflow_runs_by_node_ids(
+        self,
+        repo_root: Path,
+        node_ids: list[str],
+    ) -> dict[str, WorkflowRun | None]:
+        """Get workflow runs by GraphQL node IDs (returns pre-configured data).
+
+        Looks up each node_id in the pre-configured workflow_runs_by_node_id mapping.
+
+        Args:
+            repo_root: Repository root directory (ignored in fake)
+            node_ids: List of GraphQL node IDs to lookup
+
+        Returns:
+            Mapping of node_id -> WorkflowRun or None if not found
+        """
+        return {node_id: self._workflow_runs_by_node_id.get(node_id) for node_id in node_ids}

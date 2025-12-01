@@ -1379,6 +1379,7 @@ last_dispatched_at: null
     result = update_plan_header_dispatch(
         issue_body=body,
         run_id="12345678",
+        node_id="WFR_kwLOPxC3hc8AAAAEnZK8rQ",
         dispatched_at="2025-11-25T15:00:00Z",
     )
 
@@ -1390,11 +1391,16 @@ last_dispatched_at: null
         "last_dispatched_run_id: '12345678'" in result
         or "last_dispatched_run_id: 12345678" in result
     )
+    has_node_id = (
+        "last_dispatched_node_id: 'WFR_kwLOPxC3hc8AAAAEnZK8rQ'" in result
+        or "last_dispatched_node_id: WFR_kwLOPxC3hc8AAAAEnZK8rQ" in result
+    )
     has_timestamp = (
         "last_dispatched_at: '2025-11-25T15:00:00Z'" in result
         or "last_dispatched_at: 2025-11-25T15:00:00Z" in result
     )
     assert has_run_id
+    assert has_node_id
     assert has_timestamp
 
 
@@ -1408,6 +1414,7 @@ def test_update_plan_header_dispatch_no_block_raises() -> None:
         update_plan_header_dispatch(
             issue_body=body,
             run_id="12345678",
+            node_id="WFR_kwLOPxC3hc8AAAAEnZK8rQ",
             dispatched_at="2025-11-25T15:00:00Z",
         )
 
@@ -1442,6 +1449,7 @@ Suffix content"""
     result = update_plan_header_dispatch(
         issue_body=body,
         run_id="run-123",
+        node_id="WFR_kwLOPxC3hc8AAAAEnZK8rQ",
         dispatched_at="2025-11-25T16:00:00Z",
     )
 

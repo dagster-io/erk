@@ -93,9 +93,11 @@ jobs:
           source $HOME/.cargo/env
           WORKFLOW_RUN_ID="${{ github.run_id }}"
           DISPATCHED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          # Fetch the GraphQL node_id for efficient batch queries via nodes(ids: [...])
+          NODE_ID=$(gh api /repos/${{ github.repository }}/actions/runs/${{ github.run_id }} --jq '.node_id')
 
-          if dot-agent run erk update-dispatch-info "$ISSUE_NUMBER" "$WORKFLOW_RUN_ID" "$DISPATCHED_AT"; then
-            echo "✅ Updated issue body with dispatch info"
+          if dot-agent run erk update-dispatch-info "$ISSUE_NUMBER" "$WORKFLOW_RUN_ID" "$NODE_ID" "$DISPATCHED_AT"; then
+            echo "✅ Updated issue body with dispatch info (run_id=$WORKFLOW_RUN_ID, node_id=$NODE_ID)"
           else
             echo "⚠️ Issue does not have plan-header block - skipping update"
           fi

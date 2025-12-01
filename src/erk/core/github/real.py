@@ -17,6 +17,8 @@ from erk_shared.github.parsing import (
     parse_github_pr_status,
 )
 from erk_shared.github.types import (
+    BRANCH_NOT_AVAILABLE,
+    DISPLAY_TITLE_NOT_AVAILABLE,
     PRCheckoutInfo,
     PRInfo,
     PRMergeability,
@@ -1267,41 +1269,6 @@ query {{
             state=data["state"],
         )
 
-    def get_workflow_runs_batch(
-        self,
-        repo_root: Path,
-        run_ids: list[str],
-        *,
-        workflow: str | None = None,
-        user: str | None = None,
-    ) -> dict[str, WorkflowRun | None]:
-        """Get details for multiple workflow runs by ID.
-
-        If workflow is provided, uses `gh run list --workflow [--user]` to fetch runs
-        efficiently in a single API call and filters by run_id in memory.
-        Otherwise falls back to individual `gh run view` calls.
-        """
-        # Early exit for empty input
-        if not run_ids:
-            return {}
-
-        # If workflow provided, use efficient batch fetch via gh run list
-        if workflow is not None:
-            # Fetch recent runs from workflow (single API call)
-            all_runs = self.list_workflow_runs(repo_root, workflow, limit=200, user=user)
-
-            # Build lookup by run_id
-            runs_by_id = {run.run_id: run for run in all_runs}
-
-            # Return only requested run_ids
-            return {run_id: runs_by_id.get(run_id) for run_id in run_ids}
-
-        # Fallback: individual fetch for each run_id (existing behavior)
-        result: dict[str, WorkflowRun | None] = {}
-        for run_id in run_ids:
-            result[run_id] = self.get_workflow_run(repo_root, run_id)
-        return result
-
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Check GitHub CLI authentication status.
 
@@ -1326,3 +1293,145 @@ query {{
 
         output = result.stdout + result.stderr
         return parse_gh_auth_status_output(output)
+
+    def get_workflow_runs_by_node_ids(
+        self,
+        repo_root: Path,
+        node_ids: list[str],
+    ) -> dict[str, WorkflowRun | None]:
+        """Batch query workflow runs by GraphQL node IDs.
+
+        Uses GraphQL nodes(ids: [...]) query to efficiently fetch multiple
+        workflow runs in a single API call. This is dramatically faster than
+        individual REST API calls for each run.
+        """
+        # Early exit for empty input
+        if not node_ids:
+            return {}
+
+        # Build GraphQL query using nodes() interface
+        query = self._build_workflow_runs_nodes_query(node_ids)
+        response = self._execute_batch_pr_query(query, repo_root)
+
+        # Parse response into WorkflowRun objects
+        return self._parse_workflow_runs_nodes_response(response, node_ids)
+
+    def _build_workflow_runs_nodes_query(self, node_ids: list[str]) -> str:
+        """Build GraphQL query to fetch workflow runs by node IDs.
+
+        Uses the nodes(ids: [...]) interface which efficiently fetches
+        multiple objects in a single API call. WorkflowRun implements Node.
+
+        Args:
+            node_ids: List of GraphQL node IDs
+
+        Returns:
+            GraphQL query string
+        """
+        # Escape node IDs for use in JSON array
+        node_ids_json = json.dumps(node_ids)
+
+        query = f"""query {{
+  nodes(ids: {node_ids_json}) {{
+    ... on WorkflowRun {{
+      id
+      databaseId
+      url
+      createdAt
+      checkSuite {{
+        status
+        conclusion
+        commit {{
+          oid
+        }}
+      }}
+    }}
+  }}
+}}"""
+        return query
+
+    def _parse_workflow_runs_nodes_response(
+        self,
+        response: dict[str, Any],
+        node_ids: list[str],
+    ) -> dict[str, WorkflowRun | None]:
+        """Parse GraphQL nodes response into WorkflowRun objects.
+
+        Maps the GraphQL checkSuite status/conclusion to WorkflowRun fields.
+
+        Args:
+            response: GraphQL response data
+            node_ids: Original list of node IDs (for result ordering)
+
+        Returns:
+            Mapping of node_id -> WorkflowRun or None
+        """
+        result: dict[str, WorkflowRun | None] = {}
+        nodes = response.get("data", {}).get("nodes", [])
+
+        # Build mapping from id to parsed WorkflowRun
+        for node in nodes:
+            if node is None:
+                continue
+
+            node_id = node.get("id")
+            if node_id is None:
+                continue
+
+            # Extract checkSuite data
+            check_suite = node.get("checkSuite")
+            status = None
+            conclusion = None
+            head_sha = None
+
+            if check_suite is not None:
+                # Map GitHub checkSuite status to workflow run status
+                cs_status = check_suite.get("status")
+                cs_conclusion = check_suite.get("conclusion")
+
+                # Map checkSuite.status to workflow run status
+                if cs_status == "COMPLETED":
+                    status = "completed"
+                elif cs_status == "IN_PROGRESS":
+                    status = "in_progress"
+                elif cs_status == "QUEUED":
+                    status = "queued"
+
+                # Map checkSuite.conclusion to workflow run conclusion
+                if cs_conclusion == "SUCCESS":
+                    conclusion = "success"
+                elif cs_conclusion == "FAILURE":
+                    conclusion = "failure"
+                elif cs_conclusion == "SKIPPED":
+                    conclusion = "skipped"
+                elif cs_conclusion == "CANCELLED":
+                    conclusion = "cancelled"
+
+                # Extract commit SHA
+                commit = check_suite.get("commit")
+                if commit is not None:
+                    head_sha = commit.get("oid")
+
+            # Parse created_at timestamp
+            created_at = None
+            created_at_str = node.get("createdAt")
+            if created_at_str:
+                created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+
+            workflow_run = WorkflowRun(
+                run_id=str(node.get("databaseId", "")),
+                status=status or "unknown",  # Default for missing status
+                conclusion=conclusion,
+                branch=BRANCH_NOT_AVAILABLE,
+                head_sha=head_sha or "",  # Default for missing SHA
+                display_title=DISPLAY_TITLE_NOT_AVAILABLE,
+                created_at=created_at,
+            )
+            result[node_id] = workflow_run
+
+        # Ensure all requested node_ids are in result (with None for missing)
+        for node_id in node_ids:
+            if node_id not in result:
+                result[node_id] = None
+
+        return result

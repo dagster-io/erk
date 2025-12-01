@@ -84,10 +84,11 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
 <!-- /erk:metadata-block:plan-header -->"""
 
     worktree = extract_plan_header_worktree_name(issue_body)
-    run_id, dispatched_at = extract_plan_header_dispatch_info(issue_body)
+    run_id, node_id, dispatched_at = extract_plan_header_dispatch_info(issue_body)
 
     assert worktree == "feature-branch-b-24-01-15"
     assert run_id == "1234567890"
+    assert node_id is None  # Not present in this test fixture
     assert dispatched_at == "2024-01-15T11:00:00Z"
 
 
@@ -250,8 +251,9 @@ last_local_impl_at: '2024-01-15T12:00:00Z'
     assert worktree_name == "my-feature-25-11-28"
 
     # Verify other fields are preserved
-    run_id, dispatched_at = extract_plan_header_dispatch_info(updated_body)
+    run_id, node_id, dispatched_at = extract_plan_header_dispatch_info(updated_body)
     assert run_id == "1234567890"
+    assert node_id is None  # Not present in this test fixture
     assert dispatched_at == "2024-01-15T11:00:00Z"
 
     local_impl_at = extract_plan_header_local_impl_at(updated_body)
@@ -420,8 +422,9 @@ last_remote_impl_at: null
     )
 
     # Should preserve dispatch fields
-    run_id, dispatched_at = extract_plan_header_dispatch_info(result)
+    run_id, node_id, dispatched_at = extract_plan_header_dispatch_info(result)
     assert run_id == "12345"
+    assert node_id is None  # Not present in this test fixture
     assert dispatched_at == "2025-11-26T08:00:00Z"
 
     # Should preserve local impl timestamp

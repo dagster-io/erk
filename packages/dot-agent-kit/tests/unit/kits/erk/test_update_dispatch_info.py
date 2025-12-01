@@ -90,7 +90,7 @@ def test_update_dispatch_info_success() -> None:
 
     result = runner.invoke(
         update_dispatch_info,
-        ["123", "12345678", "2025-11-25T15:00:00Z"],
+        ["123", "12345678", "WFR_kwLOPxC3hc8AAAAEnZK8rQ", "2025-11-25T15:00:00Z"],
         obj=DotAgentContext.for_test(github_issues=fake_gh),
     )
 
@@ -99,12 +99,14 @@ def test_update_dispatch_info_success() -> None:
     assert output["success"] is True
     assert output["issue_number"] == 123
     assert output["run_id"] == "12345678"
+    assert output["node_id"] == "WFR_kwLOPxC3hc8AAAAEnZK8rQ"
 
     # Verify issue body was updated with dispatch info
     updated_issue = fake_gh.get_issue(Path(), 123)
     block = find_metadata_block(updated_issue.body, "plan-header")
     assert block is not None
     assert block.data["last_dispatched_run_id"] == "12345678"
+    assert block.data["last_dispatched_node_id"] == "WFR_kwLOPxC3hc8AAAAEnZK8rQ"
     assert block.data["last_dispatched_at"] == "2025-11-25T15:00:00Z"
 
 
@@ -119,7 +121,7 @@ def test_update_dispatch_info_overwrites_existing() -> None:
 
     result = runner.invoke(
         update_dispatch_info,
-        ["456", "new-run-id", "2025-11-25T16:00:00Z"],
+        ["456", "new-run-id", "WFR_kwLOPxC3hc8AAAAEnZK8rQ", "2025-11-25T16:00:00Z"],
         obj=DotAgentContext.for_test(github_issues=fake_gh),
     )
 
@@ -132,6 +134,7 @@ def test_update_dispatch_info_overwrites_existing() -> None:
     block = find_metadata_block(updated_issue.body, "plan-header")
     assert block is not None
     assert block.data["last_dispatched_run_id"] == "new-run-id"
+    assert block.data["last_dispatched_node_id"] == "WFR_kwLOPxC3hc8AAAAEnZK8rQ"
     assert block.data["last_dispatched_at"] == "2025-11-25T16:00:00Z"
 
 
@@ -143,7 +146,7 @@ def test_update_dispatch_info_preserves_other_content() -> None:
 
     result = runner.invoke(
         update_dispatch_info,
-        ["789", "test-run", "2025-11-25T17:00:00Z"],
+        ["789", "test-run", "WFR_kwLOPxC3hc8AAAAEnZK8rQ", "2025-11-25T17:00:00Z"],
         obj=DotAgentContext.for_test(github_issues=fake_gh),
     )
 
@@ -166,7 +169,7 @@ def test_update_dispatch_info_issue_not_found() -> None:
 
     result = runner.invoke(
         update_dispatch_info,
-        ["999", "test-run", "2025-11-25T18:00:00Z"],
+        ["999", "test-run", "WFR_kwLOPxC3hc8AAAAEnZK8rQ", "2025-11-25T18:00:00Z"],
         obj=DotAgentContext.for_test(github_issues=fake_gh),
     )
 
@@ -188,7 +191,7 @@ This is an issue created before plan-header blocks were introduced.
 
     result = runner.invoke(
         update_dispatch_info,
-        ["100", "test-run", "2025-11-25T19:00:00Z"],
+        ["100", "test-run", "WFR_kwLOPxC3hc8AAAAEnZK8rQ", "2025-11-25T19:00:00Z"],
         obj=DotAgentContext.for_test(github_issues=fake_gh),
     )
 
@@ -211,7 +214,7 @@ def test_update_dispatch_info_github_api_failure() -> None:
 
     result = runner.invoke(
         update_dispatch_info,
-        ["200", "test-run", "2025-11-25T20:00:00Z"],
+        ["200", "test-run", "WFR_kwLOPxC3hc8AAAAEnZK8rQ", "2025-11-25T20:00:00Z"],
         obj=DotAgentContext.for_test(github_issues=fake_gh),
     )
 
@@ -235,7 +238,7 @@ def test_json_output_structure_success() -> None:
 
     result = runner.invoke(
         update_dispatch_info,
-        ["321", "run-12345", "2025-11-25T21:00:00Z"],
+        ["321", "run-12345", "WFR_kwLOPxC3hc8AAAAEnZK8rQ", "2025-11-25T21:00:00Z"],
         obj=DotAgentContext.for_test(github_issues=fake_gh),
     )
 
@@ -246,16 +249,19 @@ def test_json_output_structure_success() -> None:
     assert "success" in output
     assert "issue_number" in output
     assert "run_id" in output
+    assert "node_id" in output
 
     # Verify types
     assert isinstance(output["success"], bool)
     assert isinstance(output["issue_number"], int)
     assert isinstance(output["run_id"], str)
+    assert isinstance(output["node_id"], str)
 
     # Verify values
     assert output["success"] is True
     assert output["issue_number"] == 321
     assert output["run_id"] == "run-12345"
+    assert output["node_id"] == "WFR_kwLOPxC3hc8AAAAEnZK8rQ"
 
 
 def test_json_output_structure_error() -> None:
@@ -265,7 +271,7 @@ def test_json_output_structure_error() -> None:
 
     result = runner.invoke(
         update_dispatch_info,
-        ["999", "run-abc", "2025-11-25T22:00:00Z"],
+        ["999", "run-abc", "WFR_kwLOPxC3hc8AAAAEnZK8rQ", "2025-11-25T22:00:00Z"],
         obj=DotAgentContext.for_test(github_issues=fake_gh),
     )
 
