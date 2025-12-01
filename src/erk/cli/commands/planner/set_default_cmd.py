@@ -2,6 +2,7 @@
 
 import click
 
+from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 
 
@@ -13,11 +14,10 @@ def set_default_planner(ctx: ErkContext, name: str) -> None:
 
     The default planner is used when running 'erk planner' without arguments.
     """
-    planner = ctx.planner_registry.get(name)
-    if planner is None:
-        click.echo(f"Error: No planner named '{name}' found.", err=True)
-        click.echo("\nUse 'erk planner list' to see registered planners.", err=True)
-        raise SystemExit(1)
+    _planner = Ensure.not_none(
+        ctx.planner_registry.get(name),
+        f"No planner named '{name}' found.\n\nUse 'erk planner list' to see registered planners.",
+    )
 
     ctx.planner_registry.set_default(name)
     click.echo(f"Set '{name}' as the default planner.", err=True)
