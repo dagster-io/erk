@@ -7,6 +7,9 @@
       "version": "latest"
     }
   },
+  "remoteEnv": {
+    "UV_LINK_MODE": "copy"
+  },
   "postCreateCommand": "curl -fsSL https://claude.ai/install.sh | bash && pip install uv && uv sync",
   "customizations": {
     "codespaces": {
