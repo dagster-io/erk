@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from erk_shared.github.types import (
+    GitHubRepoLocation,
     PRCheckoutInfo,
     PRInfo,
     PRMergeability,
@@ -256,10 +257,8 @@ class GitHub(ABC):
     @abstractmethod
     def get_prs_linked_to_issues(
         self,
-        repo_root: Path,
+        location: GitHubRepoLocation,
         issue_numbers: list[int],
-        owner: str,
-        repo: str,
     ) -> dict[int, list[PullRequestInfo]]:
         """Get PRs linked to issues via closing keywords.
 
@@ -268,10 +267,8 @@ class GitHub(ABC):
         of issue numbers to the PRs that close them.
 
         Args:
-            repo_root: Repository root directory
+            location: GitHub repository location (local path + owner/repo identity)
             issue_numbers: List of issue numbers to query
-            owner: Repository owner (e.g., "dagster-io")
-            repo: Repository name (e.g., "erk")
 
         Returns:
             Mapping of issue_number -> list of PRs that close that issue.

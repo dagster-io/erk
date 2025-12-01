@@ -2,9 +2,20 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Literal, NamedTuple
 
 PRState = Literal["OPEN", "MERGED", "CLOSED", "NONE"]
+
+
+@dataclass(frozen=True)
+class GitHubRepoLocation:
+    """GitHub repository location combining local path with owner/repo identity."""
+
+    root: Path
+    owner: str
+    repo: str
+
 
 # Workflow run status (lowercase, matches gh CLI and normalized GraphQL responses)
 WorkflowRunStatus = Literal["completed", "in_progress", "queued", "unknown"]

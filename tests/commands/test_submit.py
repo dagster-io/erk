@@ -594,7 +594,11 @@ def test_close_orphaned_draft_prs_closes_old_drafts(tmp_path: Path) -> None:
     )
 
     closed_prs = _close_orphaned_draft_prs(
-        ctx, repo_root, issue_number=123, keep_pr_number=999, owner="owner", repo="repo"
+        ctx,
+        repo_root,
+        issue_number=123,
+        keep_pr_number=999,
+        issue_url="https://github.com/owner/repo/issues/123",
     )
 
     # Should close old drafts but not the new PR
@@ -637,7 +641,11 @@ def test_close_orphaned_draft_prs_skips_non_drafts(tmp_path: Path) -> None:
     )
 
     closed_prs = _close_orphaned_draft_prs(
-        ctx, repo_root, issue_number=123, keep_pr_number=999, owner="owner", repo="repo"
+        ctx,
+        repo_root,
+        issue_number=123,
+        keep_pr_number=999,
+        issue_url="https://github.com/owner/repo/issues/123",
     )
 
     # Non-draft PR should not be closed
@@ -680,7 +688,11 @@ def test_close_orphaned_draft_prs_skips_already_closed(tmp_path: Path) -> None:
     )
 
     closed_prs = _close_orphaned_draft_prs(
-        ctx, repo_root, issue_number=123, keep_pr_number=999, owner="owner", repo="repo"
+        ctx,
+        repo_root,
+        issue_number=123,
+        keep_pr_number=999,
+        issue_url="https://github.com/owner/repo/issues/123",
     )
 
     # Already-closed PR should not be closed again
@@ -712,7 +724,11 @@ def test_close_orphaned_draft_prs_no_linked_prs(tmp_path: Path) -> None:
     )
 
     closed_prs = _close_orphaned_draft_prs(
-        ctx, repo_root, issue_number=123, keep_pr_number=999, owner="owner", repo="repo"
+        ctx,
+        repo_root,
+        issue_number=123,
+        keep_pr_number=999,
+        issue_url="https://github.com/owner/repo/issues/123",
     )
 
     # No PRs to close

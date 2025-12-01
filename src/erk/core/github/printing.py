@@ -5,6 +5,7 @@ from pathlib import Path
 import click
 from erk_shared.github.abc import GitHub
 from erk_shared.github.types import (
+    GitHubRepoLocation,
     PRCheckoutInfo,
     PRInfo,
     PRMergeability,
@@ -79,13 +80,11 @@ class PrintingGitHub(PrintingBase, GitHub):
 
     def get_prs_linked_to_issues(
         self,
-        repo_root: Path,
+        location: GitHubRepoLocation,
         issue_numbers: list[int],
-        owner: str,
-        repo: str,
     ) -> dict[int, list[PullRequestInfo]]:
         """Get PRs linked to issues (read-only, no printing)."""
-        return self._wrapped.get_prs_linked_to_issues(repo_root, issue_numbers, owner, repo)
+        return self._wrapped.get_prs_linked_to_issues(location, issue_numbers)
 
     def get_workflow_runs_by_branches(
         self, repo_root: Path, workflow: str, branches: list[str]
@@ -189,3 +188,11 @@ class PrintingGitHub(PrintingBase, GitHub):
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Check auth status (read-only, no printing)."""
         return self._wrapped.check_auth_status()
+
+    def get_workflow_runs_by_node_ids(
+        self,
+        repo_root: Path,
+        node_ids: list[str],
+    ) -> dict[str, WorkflowRun | None]:
+        """Get workflow runs by node IDs (read-only, no printing)."""
+        return self._wrapped.get_workflow_runs_by_node_ids(repo_root, node_ids)
