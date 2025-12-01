@@ -1,6 +1,7 @@
 """Tests for land_pr kit CLI command using fake ops."""
 
 from dataclasses import replace
+from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
@@ -232,8 +233,8 @@ class TestLandPrTitle:
             .with_pr(123, state="OPEN", title="Add new feature")
         )
 
-        # Verify the title can be fetched
-        assert ops.github().get_pr_title() == "Add new feature"
+        # Verify the title can be fetched (using Path(".") as placeholder repo_root)
+        assert ops.github().get_pr_title(Path("."), 123) == "Add new feature"
 
         result = execute_land_pr(ops)
 
@@ -251,7 +252,7 @@ class TestLandPrTitle:
         )
 
         # Verify no title is set
-        assert ops.github().get_pr_title() is None
+        assert ops.github().get_pr_title(Path("."), 123) is None
 
         result = execute_land_pr(ops)
 
@@ -264,7 +265,7 @@ class TestLandPrTitle:
         ops = FakeGtKitOps().with_branch("feature-branch", parent="main")
         # No PR configured
 
-        assert ops.github().get_pr_title() is None
+        assert ops.github().get_pr_title(Path("."), 999) is None
 
 
 class TestLandPrBody:
@@ -285,7 +286,8 @@ class TestLandPrBody:
         )
 
         # Verify the body can be fetched
-        assert ops.github().get_pr_body() == "This PR adds a new feature with detailed description."
+        expected_body = "This PR adds a new feature with detailed description."
+        assert ops.github().get_pr_body(Path("."), 123) == expected_body
 
         result = execute_land_pr(ops)
 
@@ -303,7 +305,7 @@ class TestLandPrBody:
         )
 
         # Verify no body is set
-        assert ops.github().get_pr_body() is None
+        assert ops.github().get_pr_body(Path("."), 123) is None
 
         result = execute_land_pr(ops)
 
@@ -316,7 +318,7 @@ class TestLandPrBody:
         ops = FakeGtKitOps().with_branch("feature-branch", parent="main")
         # No PR configured
 
-        assert ops.github().get_pr_body() is None
+        assert ops.github().get_pr_body(Path("."), 999) is None
 
     def test_land_pr_with_title_and_body(self) -> None:
         """Test landing with both title and body for rich merge commit."""
@@ -338,8 +340,9 @@ class TestLandPrBody:
         )
 
         # Verify both can be fetched
-        assert ops.github().get_pr_title() == "Extract subprocess calls into reusable interface"
-        assert "Refactors" in ops.github().get_pr_body()  # type: ignore[operator]
+        expected_title = "Extract subprocess calls into reusable interface"
+        assert ops.github().get_pr_title(Path("."), 123) == expected_title
+        assert "Refactors" in ops.github().get_pr_body(Path("."), 123)  # type: ignore[operator]
 
         result = execute_land_pr(ops)
 

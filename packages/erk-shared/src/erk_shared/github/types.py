@@ -17,6 +17,14 @@ class GitHubRepoLocation:
     repo: str
 
 
+@dataclass(frozen=True)
+class RepoInfo:
+    """Basic repository owner and name information."""
+
+    owner: str
+    name: str
+
+
 # Workflow run status (lowercase, matches gh CLI and normalized GraphQL responses)
 WorkflowRunStatus = Literal["completed", "in_progress", "queued", "unknown"]
 

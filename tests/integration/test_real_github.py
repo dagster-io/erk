@@ -545,8 +545,8 @@ def test_merge_pr_without_squash() -> None:
         subprocess.run = original_run
 
 
-def test_merge_pr_raises_on_failure() -> None:
-    """Test merge_pr raises RuntimeError when gh pr merge fails."""
+def test_merge_pr_returns_false_on_failure() -> None:
+    """Test merge_pr returns False when gh pr merge fails."""
     repo_root = Path("/repo")
     pr_number = 789
 
@@ -559,9 +559,9 @@ def test_merge_pr_raises_on_failure() -> None:
 
         ops = RealGitHub(FakeTime())
 
-        # Should raise RuntimeError (from run_subprocess_with_context wrapper)
-        with pytest.raises(RuntimeError):
-            ops.merge_pr(repo_root, pr_number, squash=True, verbose=False)
+        # Should return False (graceful degradation)
+        result = ops.merge_pr(repo_root, pr_number, squash=True, verbose=False)
+        assert result is False
     finally:
         subprocess.run = original_run
 

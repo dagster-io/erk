@@ -9,6 +9,7 @@ from erk_shared.github.types import (
     PRInfo,
     PRMergeability,
     PullRequestInfo,
+    RepoInfo,
     WorkflowRun,
 )
 
@@ -78,10 +79,12 @@ class DryRunGitHub(GitHub):
         *,
         squash: bool = True,
         verbose: bool = False,
-    ) -> None:
+        subject: str | None = None,
+        body: str | None = None,
+    ) -> bool:
         """No-op for merging PR in dry-run mode."""
         # Do nothing - prevents actual PR merge
-        pass
+        return True
 
     def trigger_workflow(
         self,
@@ -180,3 +183,41 @@ class DryRunGitHub(GitHub):
     def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -> str | None:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_workflow_run_node_id(repo_root, run_id)
+
+    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_pr_info_for_branch(repo_root, branch)
+
+    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_pr_state_for_branch(repo_root, branch)
+
+    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_pr_title(repo_root, pr_number)
+
+    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_pr_body(repo_root, pr_number)
+
+    def update_pr_title_and_body(
+        self, repo_root: Path, pr_number: int, title: str, body: str
+    ) -> bool:
+        """No-op for updating PR title and body in dry-run mode."""
+        return True
+
+    def mark_pr_ready(self, repo_root: Path, pr_number: int) -> bool:
+        """No-op for marking PR ready in dry-run mode."""
+        return True
+
+    def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_pr_diff(repo_root, pr_number)
+
+    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_pr_mergeability_status(repo_root, pr_number)
+
+    def get_repo_info(self, repo_root: Path) -> RepoInfo | None:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_repo_info(repo_root)
