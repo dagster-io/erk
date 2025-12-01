@@ -19,21 +19,21 @@ These files exist solely to re-export from `erk_shared.plan_store`. Delete them 
 
 **Update 13 files** - change imports from `erk.core.plan_store.*` to `erk_shared.plan_store.*`:
 
-| File | Change |
-|------|--------|
-| `src/erk/cli/commands/implement.py` | `erk.core.plan_store.types` → `erk_shared.plan_store.types` |
-| `src/erk/core/context.py` | `erk.core.plan_store.{github,store,fake}` → `erk_shared.plan_store.*` |
-| `src/erk/cli/commands/plan/list_cmd.py` | `erk.core.plan_store.types` → `erk_shared.plan_store.types` |
-| `tests/commands/test_dash_workflow_runs.py` | `erk.core.plan_store.types` → `erk_shared.plan_store.types` |
-| `tests/commands/test_implement.py` | `erk.core.plan_store.{fake,types}` → `erk_shared.plan_store.*` |
-| `tests/commands/test_top_level_commands.py` | `erk.core.plan_store.{fake,types}` → `erk_shared.plan_store.*` |
-| `tests/commands/test_dash.py` | `erk.core.plan_store.types` → `erk_shared.plan_store.types` |
-| `tests/commands/plan/test_get.py` | `erk.core.plan_store.{fake,types}` → `erk_shared.plan_store.*` |
-| `tests/commands/plan/test_close.py` | `erk.core.plan_store.{fake,types}` → `erk_shared.plan_store.*` |
-| `tests/commands/plan/test_log.py` | `erk.core.plan_store.{fake,types}` → `erk_shared.plan_store.*` |
-| `tests/unit/plan_store/test_fake_plan_store.py` | `erk.core.plan_store.{fake,types}` → `erk_shared.plan_store.*` |
-| `tests/integration/test_plan_repo_root.py` | `erk.core.plan_store.{fake,types}` → `erk_shared.plan_store.*` |
-| `tests/integration/plan_store/test_github_plan_store.py` | `erk.core.plan_store.{github,types}` → `erk_shared.plan_store.*` |
+| File                                                     | Change                                                                |
+| -------------------------------------------------------- | --------------------------------------------------------------------- |
+| `src/erk/cli/commands/implement.py`                      | `erk.core.plan_store.types` → `erk_shared.plan_store.types`           |
+| `src/erk/core/context.py`                                | `erk.core.plan_store.{github,store,fake}` → `erk_shared.plan_store.*` |
+| `src/erk/cli/commands/plan/list_cmd.py`                  | `erk.core.plan_store.types` → `erk_shared.plan_store.types`           |
+| `tests/commands/test_dash_workflow_runs.py`              | `erk.core.plan_store.types` → `erk_shared.plan_store.types`           |
+| `tests/commands/test_implement.py`                       | `erk.core.plan_store.{fake,types}` → `erk_shared.plan_store.*`        |
+| `tests/commands/test_top_level_commands.py`              | `erk.core.plan_store.{fake,types}` → `erk_shared.plan_store.*`        |
+| `tests/commands/test_dash.py`                            | `erk.core.plan_store.types` → `erk_shared.plan_store.types`           |
+| `tests/commands/plan/test_get.py`                        | `erk.core.plan_store.{fake,types}` → `erk_shared.plan_store.*`        |
+| `tests/commands/plan/test_close.py`                      | `erk.core.plan_store.{fake,types}` → `erk_shared.plan_store.*`        |
+| `tests/commands/plan/test_log.py`                        | `erk.core.plan_store.{fake,types}` → `erk_shared.plan_store.*`        |
+| `tests/unit/plan_store/test_fake_plan_store.py`          | `erk.core.plan_store.{fake,types}` → `erk_shared.plan_store.*`        |
+| `tests/integration/test_plan_repo_root.py`               | `erk.core.plan_store.{fake,types}` → `erk_shared.plan_store.*`        |
+| `tests/integration/plan_store/test_github_plan_store.py` | `erk.core.plan_store.{github,types}` → `erk_shared.plan_store.*`      |
 
 ### 2. Remove `__all__` from `erk_shared` Package Aggregations (3 files)
 
@@ -86,6 +86,7 @@ These shims have NO consumers in the codebase. Delete them entirely:
 ## Files to Modify (Complete List)
 
 ### Deletions (11 files)
+
 - `src/erk/core/plan_store/types.py`
 - `src/erk/core/plan_store/store.py`
 - `src/erk/core/plan_store/github.py`
@@ -99,10 +100,12 @@ These shims have NO consumers in the codebase. Delete them entirely:
 - `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/real_ops.py`
 
 ### `__init__.py` Cleanups (4 files)
+
 - `src/erk/core/plan_store/__init__.py` - Remove docstring about submodules
 - `packages/erk-shared/src/erk_shared/integrations/gt/__init__.py` - Remove `__all__` and imports
 - `packages/erk-shared/src/erk_shared/integrations/erk_wt/__init__.py` - Remove `__all__` and imports
 - `packages/erk-shared/src/erk_shared/github/issues/__init__.py` - Remove `__all__` and imports
 
 ### Import Updates (~52 files)
+
 See detailed lists in sections above.

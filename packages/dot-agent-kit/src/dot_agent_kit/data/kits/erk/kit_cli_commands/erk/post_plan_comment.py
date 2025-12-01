@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import click
-from erk_shared.github.issues import RealGitHubIssues
+from erk_shared.github.issues.real import RealGitHubIssues
 from erk_shared.github.metadata import (
     create_plan_issue_block,
     render_erk_issue_event,

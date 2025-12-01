@@ -7,7 +7,7 @@ information for worktrees with associated GitHub issues.
 from pathlib import Path
 
 from erk_shared.github.abc import GitHub
-from erk_shared.github.issues import GitHubIssues
+from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.status_history import extract_workflow_run_id
 from erk_shared.github.types import WorkflowRun
 from erk_shared.impl_folder import read_issue_reference

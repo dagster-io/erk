@@ -7,7 +7,7 @@ from pathlib import Path
 
 import click
 from erk_shared.github.issue_link_branches import DevelopmentBranch
-from erk_shared.github.issues import IssueInfo
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata import create_submission_queued_block, render_erk_issue_event
 from erk_shared.naming import (
     derive_branch_name_from_title,

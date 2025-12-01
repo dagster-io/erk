@@ -10,7 +10,8 @@ from datetime import UTC
 from pathlib import Path
 from urllib.parse import urlparse
 
-from erk_shared.github.issues import GitHubIssues, IssueInfo
+from erk_shared.github.issues.abc import GitHubIssues
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata import extract_plan_from_comment
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.plan_store.types import Plan, PlanQuery, PlanState

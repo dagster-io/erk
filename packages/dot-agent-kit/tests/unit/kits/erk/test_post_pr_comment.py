@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.impl_folder import save_issue_reference
 

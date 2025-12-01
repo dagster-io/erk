@@ -15,7 +15,7 @@ from pathlib import Path
 import click
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
-from erk_shared.github.issues import GitHubIssues
+from erk_shared.github.issues.abc import GitHubIssues
 
 
 def require_github_issues(ctx: click.Context) -> GitHubIssues:

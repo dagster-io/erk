@@ -4,6 +4,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from erk_shared.integrations.gt.real import RealGitGtKit
+
 
 class TestSubmitBranchIntegration:
     """Integration tests using real git repos for edge cases."""
@@ -75,10 +77,6 @@ class TestSubmitBranchIntegration:
 
     def test_real_git_merge_tree_detects_conflicts(self) -> None:
         """Integration test: Verify git merge-tree actually detects conflicts."""
-        from erk_shared.integrations.gt import (
-            RealGitGtKit,
-        )
-
         with tempfile.TemporaryDirectory() as tmpdir:
             repo_path = Path(tmpdir)
 

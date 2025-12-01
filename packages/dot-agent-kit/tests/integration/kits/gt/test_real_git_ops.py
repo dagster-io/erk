@@ -14,9 +14,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from erk_shared.integrations.gt import (
-    RealGitGtKit,
-)
+from erk_shared.integrations.gt.real import RealGitGtKit
 
 
 class TestRealGitOperations:

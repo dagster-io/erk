@@ -14,11 +14,7 @@ Test organization:
 import subprocess
 from unittest.mock import Mock, patch
 
-from erk_shared.integrations.gt import (
-    RealGitGtKit,
-    RealGitHubGtKit,
-    RealGtKit,
-)
+from erk_shared.integrations.gt.real import RealGitGtKit, RealGitHubGtKit, RealGtKit
 
 
 class TestRealGitGtKitOps:

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk_shared.github.issues import GitHubIssues
+from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.integrations.graphite.fake import FakeGraphite
 
 from erk.cli.config import LoadedConfig
