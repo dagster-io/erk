@@ -11,6 +11,7 @@ from erk.cli.commands.plan.list_cmd import format_pr_cell, select_display_pr
 from erk.cli.commands.run.shared import extract_issue_number
 from erk.cli.constants import DISPATCH_WORKFLOW_NAME
 from erk.cli.core import discover_repo_context
+from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.display_utils import (
     format_submission_time,
@@ -22,8 +23,6 @@ from erk.core.display_utils import (
 def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
     """List workflow runs in a run-centric table view."""
     # Validate preconditions upfront (LBYL)
-    from erk.cli.ensure import Ensure
-
     Ensure.gh_authenticated(ctx)
 
     # Discover repository context

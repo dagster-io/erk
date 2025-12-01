@@ -64,19 +64,20 @@ def test_get_prs_for_repo_without_checks(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_get_prs_for_repo_command_failure(monkeypatch: MonkeyPatch) -> None:
-    """Test that get_prs_for_repo propagates command failures."""
+    """Test that get_prs_for_repo returns empty dict on command failure."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         raise RuntimeError("Failed to execute gh command")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
-        with pytest.raises(RuntimeError, match="Failed to execute gh command"):
-            ops.get_prs_for_repo(Path("/repo"), include_checks=False)
+        # Gracefully returns empty dict on failure
+        result = ops.get_prs_for_repo(Path("/repo"), include_checks=False)
+        assert result == {}
 
 
 def test_get_prs_for_repo_json_decode_error(monkeypatch: MonkeyPatch) -> None:
-    """Test that get_prs_for_repo propagates JSON decode errors."""
+    """Test that get_prs_for_repo returns empty dict on JSON decode errors."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         return subprocess.CompletedProcess(
@@ -88,8 +89,9 @@ def test_get_prs_for_repo_json_decode_error(monkeypatch: MonkeyPatch) -> None:
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
-        with pytest.raises(json.JSONDecodeError):
-            ops.get_prs_for_repo(Path("/repo"), include_checks=False)
+        # Gracefully returns empty dict on JSON decode error
+        result = ops.get_prs_for_repo(Path("/repo"), include_checks=False)
+        assert result == {}
 
 
 # ============================================================================
@@ -138,15 +140,18 @@ def test_get_pr_status_no_pr(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_get_pr_status_command_failure(monkeypatch: MonkeyPatch) -> None:
-    """Test that get_pr_status propagates command failures."""
+    """Test that get_pr_status returns NONE status on command failure."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         raise RuntimeError("Failed to execute gh command")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
-        with pytest.raises(RuntimeError, match="Failed to execute gh command"):
-            ops.get_pr_status(Path("/repo"), "branch", debug=False)
+        # Gracefully returns NONE status on failure
+        state, number, title = ops.get_pr_status(Path("/repo"), "branch", debug=False)
+        assert state == "NONE"
+        assert number is None
+        assert title is None
 
 
 def test_get_pr_status_debug_output(capsys, monkeypatch: MonkeyPatch) -> None:
@@ -210,28 +215,29 @@ def test_get_pr_base_branch_with_whitespace(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_get_pr_base_branch_command_failure(monkeypatch: MonkeyPatch) -> None:
-    """Test that get_pr_base_branch propagates command failures."""
+    """Test that get_pr_base_branch returns None on command failure."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         raise RuntimeError("Failed to execute gh command")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
-        with pytest.raises(RuntimeError, match="Failed to execute gh command"):
-            ops.get_pr_base_branch(Path("/repo"), 123)
+        # Gracefully returns None on failure
+        result = ops.get_pr_base_branch(Path("/repo"), 123)
+        assert result is None
 
 
 def test_get_pr_base_branch_file_not_found(monkeypatch: MonkeyPatch) -> None:
-    """Test that get_pr_base_branch propagates error when gh CLI not installed."""
+    """Test that get_pr_base_branch returns None when gh CLI not installed."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         raise FileNotFoundError("gh command not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
-        # FileNotFoundError is converted to RuntimeError by subprocess wrapper
-        with pytest.raises(RuntimeError, match="Command not found"):
-            ops.get_pr_base_branch(Path("/repo"), 123)
+        # Gracefully returns None when gh CLI not found
+        result = ops.get_pr_base_branch(Path("/repo"), 123)
+        assert result is None
 
 
 # ============================================================================
@@ -262,28 +268,35 @@ def test_update_pr_base_branch_success(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_update_pr_base_branch_command_failure(monkeypatch: MonkeyPatch) -> None:
-    """Test that update_pr_base_branch propagates command failures."""
+    """Test that update_pr_base_branch silently handles command failures."""
+    called_with = []
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
         raise RuntimeError("Failed to execute gh command")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
-        with pytest.raises(RuntimeError, match="Failed to execute gh command"):
-            ops.update_pr_base_branch(Path("/repo"), 123, "new-base")
+        # Gracefully degrades - silently fails without raising
+        ops.update_pr_base_branch(Path("/repo"), 123, "new-base")
+        # Verify the command was attempted
+        assert len(called_with) == 1
 
 
 def test_update_pr_base_branch_file_not_found(monkeypatch: MonkeyPatch) -> None:
-    """Test that update_pr_base_branch propagates error when gh CLI not installed."""
+    """Test that update_pr_base_branch silently handles gh CLI not installed."""
+    called_with = []
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
         raise FileNotFoundError("gh command not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
-        # FileNotFoundError is converted to RuntimeError by subprocess wrapper
-        with pytest.raises(RuntimeError, match="Command not found"):
-            ops.update_pr_base_branch(Path("/repo"), 123, "new-base")
+        # Gracefully degrades - silently fails when gh not found
+        ops.update_pr_base_branch(Path("/repo"), 123, "new-base")
+        # Verify the command was attempted
+        assert len(called_with) == 1
 
 
 # ============================================================================
