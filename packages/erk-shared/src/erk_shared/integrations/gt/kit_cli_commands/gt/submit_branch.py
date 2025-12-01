@@ -195,6 +195,7 @@ def execute_pre_analysis(ops: GtKit | None = None) -> PreAnalysisResult | PreAna
 
     # Step 0b: Check GitHub authentication (required for PR operations)
     click.echo("  ↳ Checking GitHub authentication... (gh auth status)", err=True)
+    # check_auth_status doesn't need repo_root - it checks global gh auth
     gh_authenticated, gh_username, _ = ops.github().check_auth_status()
     if not gh_authenticated:
         return PreAnalysisError(
@@ -256,7 +257,9 @@ def execute_pre_analysis(ops: GtKit | None = None) -> PreAnalysisResult | PreAna
 
     # Step 2.5: Check for merge conflicts (informational only, does not block)
     # First try GitHub API if PR exists (most accurate), then fallback to local git merge-tree
-    pr_number, pr_url = ops.github().get_pr_status(branch_name)
+    pr_info = ops.github().get_pr_info_for_branch(repo_root, branch_name)
+    pr_number = pr_info[0] if pr_info else None
+    pr_info[1] if pr_info else None
 
     # Track conflict info (will be included in success result)
     has_conflicts = False
@@ -264,7 +267,9 @@ def execute_pre_analysis(ops: GtKit | None = None) -> PreAnalysisResult | PreAna
 
     if pr_number is not None:
         # PR exists - check mergeability
-        mergeable, merge_state = ops.github().get_pr_mergeability(pr_number)
+        mergeable_result = ops.github().get_pr_mergeability(repo_root, pr_number)
+        mergeable = mergeable_result.mergeable if mergeable_result else "UNKNOWN"
+        merge_state = mergeable_result.merge_state_status if mergeable_result else "UNKNOWN"
 
         if mergeable == "CONFLICTING":
             has_conflicts = True
@@ -623,10 +628,11 @@ def _execute_submit_only(
     for attempt in range(max_retries):
         if attempt > 0:
             click.echo(f"   Attempt {attempt + 1}/{max_retries}...", err=True)
-        pr_info = ops.github().get_pr_info()
-        if pr_info is not None:
-            pr_num, _ = pr_info
+        pr_info_result = ops.github().get_pr_info_for_branch(repo_root, branch_name)
+        if pr_info_result is not None:
+            pr_num, _ = pr_info_result
             click.echo(f"✓ PR info retrieved (PR #{pr_num})", err=True)
+            pr_info = pr_info_result
             break
         if attempt < max_retries - 1:
             time.sleep(retry_delays[attempt])
@@ -640,7 +646,7 @@ def _execute_submit_only(
         )
 
     pr_number, pr_url = pr_info
-    graphite_url_result = ops.github().get_graphite_pr_url(pr_number)
+    graphite_url_result = ops.github().get_graphite_pr_url(repo_root, pr_number)
     graphite_url = graphite_url_result or ""
 
     return (pr_number, pr_url, graphite_url, branch_name)
@@ -688,9 +694,16 @@ def execute_preflight(
 
     pr_number, pr_url, graphite_url, branch_name = submit_result
 
+    # Get repo root and branch info (needed for subsequent operations)
+    repo_root = Path(ops.git().get_repository_root())
+    current_branch = ops.git().get_current_branch() or branch_name
+    parent_branch = (
+        ops.main_graphite().get_parent_branch(ops.git(), repo_root, current_branch) or "main"
+    )
+
     # Step 3: Get PR diff from GitHub API
     click.echo(f"📊 Getting PR diff from GitHub... (gh pr diff {pr_number})", err=True)
-    pr_diff = ops.github().get_pr_diff(pr_number)
+    pr_diff = ops.github().get_pr_diff(repo_root, pr_number)
     diff_lines = len(pr_diff.splitlines())
     click.echo(f"✓ PR diff retrieved ({diff_lines} lines)", err=True)
 
@@ -698,13 +711,6 @@ def execute_preflight(
     diff_content, was_truncated = truncate_diff(pr_diff)
     if was_truncated:
         click.echo("  ⚠️  Diff truncated for size", err=True)
-
-    # Get repo root and branch info for AI prompt (needed before writing diff)
-    repo_root = Path(ops.git().get_repository_root())
-    current_branch = ops.git().get_current_branch() or branch_name
-    parent_branch = (
-        ops.main_graphite().get_parent_branch(ops.git(), repo_root, current_branch) or "main"
-    )
 
     # Write diff to scratch file in repo .tmp/<session_id>/
     from erk_shared.scratch.scratch import write_scratch_file
@@ -801,8 +807,9 @@ def execute_finalize(
     final_body = pr_body + metadata_section
 
     # Update PR metadata
+    repo_root = Path(ops.git().get_repository_root())
     click.echo("📝 Updating PR metadata... (gh pr edit)", err=True)
-    if ops.github().update_pr_metadata(pr_title, final_body):
+    if ops.github().update_pr_title_and_body(repo_root, pr_number, pr_title, final_body):
         click.echo("✓ PR metadata updated", err=True)
     else:
         click.echo("⚠️  Failed to update PR metadata", err=True)
@@ -819,9 +826,9 @@ def execute_finalize(
 
     # Get PR info for result
     branch_name = ops.git().get_current_branch() or "unknown"
-    pr_url_result = ops.github().get_pr_info()
+    pr_url_result = ops.github().get_pr_info_for_branch(repo_root, branch_name)
     pr_url = pr_url_result[1] if pr_url_result else ""
-    graphite_url = ops.github().get_graphite_pr_url(pr_number) or ""
+    graphite_url = ops.github().get_graphite_pr_url(repo_root, pr_number) or ""
 
     return FinalizeResult(
         success=True,

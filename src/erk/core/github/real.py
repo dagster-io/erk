@@ -1420,3 +1420,217 @@ query {{
         stdout = execute_gh_command(cmd, repo_root)
         node_id = stdout.strip()
         return node_id if node_id else None
+
+    # Methods migrated from RealGitHubGtKit for unified GitHub interface
+
+    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR number and URL for a branch using gh pr list.
+
+        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+        availability and authentication.
+        """
+        try:
+            cmd = ["gh", "pr", "list", "--head", branch, "--json", "number,url", "--limit", "1"]
+            result = run_subprocess_with_context(
+                cmd,
+                operation_context=f"get PR info for branch '{branch}'",
+                cwd=repo_root,
+                timeout=10,
+            )
+
+            data = json.loads(result.stdout)
+            if not data:
+                return None
+
+            pr = data[0]
+            return (pr["number"], pr["url"])
+        except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError):
+            return None
+
+    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR number and state for a branch using gh pr list.
+
+        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+        availability and authentication.
+        """
+        try:
+            cmd = [
+                "gh",
+                "pr",
+                "list",
+                "--head",
+                branch,
+                "--state",
+                "all",
+                "--json",
+                "number,state",
+                "--limit",
+                "1",
+            ]
+            result = run_subprocess_with_context(
+                cmd,
+                operation_context=f"get PR state for branch '{branch}'",
+                cwd=repo_root,
+                timeout=10,
+            )
+
+            data = json.loads(result.stdout)
+            if not data:
+                return None
+
+            pr = data[0]
+            return (pr["number"], pr["state"])
+        except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError):
+            return None
+
+    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get the title of a specific PR using gh pr view.
+
+        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+        availability and authentication.
+        """
+        try:
+            cmd = [
+                "gh",
+                "pr",
+                "view",
+                str(pr_number),
+                "--json",
+                "title",
+                "--jq",
+                ".title",
+            ]
+            result = run_subprocess_with_context(
+                cmd,
+                operation_context=f"get title for PR #{pr_number}",
+                cwd=repo_root,
+            )
+            title = result.stdout.strip()
+            return title if title else None
+        except (RuntimeError, FileNotFoundError):
+            return None
+
+    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get the body of a specific PR using gh pr view.
+
+        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+        availability and authentication.
+        """
+        try:
+            cmd = [
+                "gh",
+                "pr",
+                "view",
+                str(pr_number),
+                "--json",
+                "body",
+                "--jq",
+                ".body",
+            ]
+            result = run_subprocess_with_context(
+                cmd,
+                operation_context=f"get body for PR #{pr_number}",
+                cwd=repo_root,
+            )
+            body = result.stdout.strip()
+            return body if body else None
+        except (RuntimeError, FileNotFoundError):
+            return None
+
+    def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
+        """Get the diff for a PR using gh pr diff."""
+        result = run_subprocess_with_context(
+            ["gh", "pr", "diff", str(pr_number)],
+            operation_context=f"get diff for PR #{pr_number}",
+            cwd=repo_root,
+        )
+        return result.stdout
+
+    def update_pr_title_and_body(
+        self, repo_root: Path, pr_number: int, title: str, body: str
+    ) -> bool:
+        """Update PR title and body using gh pr edit.
+
+        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+        availability and authentication.
+        """
+        try:
+            cmd = ["gh", "pr", "edit", str(pr_number), "--title", title, "--body", body]
+            run_subprocess_with_context(
+                cmd,
+                operation_context=f"update metadata for PR #{pr_number}",
+                cwd=repo_root,
+                timeout=30,
+            )
+            return True
+        except (RuntimeError, FileNotFoundError):
+            return False
+
+    def mark_pr_ready(self, repo_root: Path, pr_number: int) -> bool:
+        """Mark PR as ready for review using gh pr ready.
+
+        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+        availability and authentication.
+        """
+        try:
+            cmd = ["gh", "pr", "ready", str(pr_number)]
+            run_subprocess_with_context(
+                cmd,
+                operation_context=f"mark PR #{pr_number} as ready",
+                cwd=repo_root,
+            )
+            return True
+        except (RuntimeError, FileNotFoundError):
+            return False
+
+    def get_graphite_pr_url(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get Graphite PR URL using gh repo view.
+
+        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+        availability and authentication.
+        """
+        try:
+            cmd = ["gh", "repo", "view", "--json", "owner,name"]
+            result = run_subprocess_with_context(
+                cmd,
+                operation_context="get repository info for Graphite URL",
+                cwd=repo_root,
+                timeout=10,
+            )
+
+            data = json.loads(result.stdout)
+            owner = data["owner"]["login"]
+            repo = data["name"]
+
+            return f"https://app.graphite.com/github/pr/{owner}/{repo}/{pr_number}"
+        except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError):
+            return None
+
+    def merge_pr_with_message(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        *,
+        subject: str | None = None,
+        body: str | None = None,
+    ) -> bool:
+        """Merge a PR using squash merge with optional commit message.
+
+        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+        availability and authentication.
+        """
+        try:
+            cmd = ["gh", "pr", "merge", str(pr_number), "--squash"]
+            if subject is not None:
+                cmd.extend(["--subject", subject])
+            if body is not None:
+                cmd.extend(["--body", body])
+
+            run_subprocess_with_context(
+                cmd,
+                operation_context=f"merge PR #{pr_number}",
+                cwd=repo_root,
+            )
+            return True
+        except (RuntimeError, FileNotFoundError):
+            return False

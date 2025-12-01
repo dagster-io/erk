@@ -42,6 +42,13 @@ class FakeGitHub(GitHub):
         authenticated: bool = True,
         auth_username: str | None = "test-user",
         auth_hostname: str | None = "github.com",
+        # GT-kit state (migrated from FakeGitHubGtKitOps)
+        pr_titles: dict[int, str] | None = None,
+        pr_bodies: dict[int, str] | None = None,
+        pr_diffs: dict[int, str] | None = None,
+        merge_should_fail: bool = False,
+        repo_owner: str = "test-owner",
+        repo_name: str = "test-repo",
     ) -> None:
         """Create FakeGitHub with pre-configured state.
 
@@ -61,6 +68,12 @@ class FakeGitHub(GitHub):
             authenticated: Whether gh CLI is authenticated (default True for test convenience)
             auth_username: Username returned by check_auth_status() (default "test-user")
             auth_hostname: Hostname returned by check_auth_status() (default "github.com")
+            pr_titles: Mapping of pr_number -> title (for get_pr_title)
+            pr_bodies: Mapping of pr_number -> body (for get_pr_body)
+            pr_diffs: Mapping of pr_number -> diff string (for get_pr_diff)
+            merge_should_fail: If True, merge_pr_with_message returns False
+            repo_owner: Repository owner for Graphite URL (default "test-owner")
+            repo_name: Repository name for Graphite URL (default "test-repo")
         """
         if prs is not None and pr_statuses is not None:
             msg = "Cannot specify both prs and pr_statuses"
@@ -110,6 +123,19 @@ class FakeGitHub(GitHub):
         self._poll_attempts: list[tuple[str, str, int, int]] = []
         self._check_auth_status_calls: list[None] = []
         self._created_prs: list[tuple[str, str, str, str | None, bool]] = []
+
+        # GT-kit state (migrated from FakeGitHubGtKitOps)
+        self._pr_titles = pr_titles or {}
+        self._pr_bodies_by_number = pr_bodies or {}
+        self._pr_diffs = pr_diffs or {}
+        self._merge_should_fail = merge_should_fail
+        self._repo_owner = repo_owner
+        self._repo_name = repo_name
+
+        # GT-kit mutation tracking
+        self._updated_pr_metadata: list[tuple[int, str, str]] = []
+        self._marked_ready: list[int] = []
+        self._merged_prs_with_message: list[tuple[int, str | None, str | None]] = []
 
     @property
     def merged_prs(self) -> list[int]:
@@ -529,3 +555,96 @@ class FakeGitHub(GitHub):
 
         # Default: return a fake node_id for any run_id (convenience for tests)
         return f"WFR_fake_node_id_{run_id}"
+
+    # Methods migrated from FakeGitHubGtKitOps for unified GitHub interface
+
+    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR number and URL for a branch (returns pre-configured data)."""
+        if branch not in self._prs:
+            return None
+
+        pr_info = self._prs[branch]
+        url = f"https://github.com/{self._repo_owner}/{self._repo_name}/pull/{pr_info.number}"
+        return (pr_info.number, url)
+
+    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR number and state for a branch (returns pre-configured data)."""
+        if branch not in self._prs:
+            return None
+
+        pr_info = self._prs[branch]
+        return (pr_info.number, pr_info.state)
+
+    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get PR title by number (returns pre-configured data)."""
+        return self._pr_titles.get(pr_number)
+
+    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get PR body by number (returns pre-configured data)."""
+        return self._pr_bodies_by_number.get(pr_number)
+
+    def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
+        """Get PR diff by number (returns pre-configured data or default)."""
+        if pr_number in self._pr_diffs:
+            return self._pr_diffs[pr_number]
+        # Return a default diff
+        return (
+            "diff --git a/file.py b/file.py\n"
+            "--- a/file.py\n"
+            "+++ b/file.py\n"
+            "@@ -1,1 +1,1 @@\n"
+            "-old\n"
+            "+new"
+        )
+
+    def update_pr_title_and_body(
+        self, repo_root: Path, pr_number: int, title: str, body: str
+    ) -> bool:
+        """Update PR title and body (records mutation for assertions)."""
+        self._updated_pr_metadata.append((pr_number, title, body))
+        # Update internal state so get_pr_title/body return updated values
+        self._pr_titles[pr_number] = title
+        self._pr_bodies_by_number[pr_number] = body
+        return True
+
+    def mark_pr_ready(self, repo_root: Path, pr_number: int) -> bool:
+        """Mark PR as ready for review (records mutation for assertions)."""
+        self._marked_ready.append(pr_number)
+        return True
+
+    def get_graphite_pr_url(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get Graphite PR URL (returns URL using configured repo owner/name)."""
+        return (
+            f"https://app.graphite.com/github/pr/{self._repo_owner}/{self._repo_name}/{pr_number}"
+        )
+
+    def merge_pr_with_message(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        *,
+        subject: str | None = None,
+        body: str | None = None,
+    ) -> bool:
+        """Merge a PR with optional message (records mutation for assertions)."""
+        self._merged_prs_with_message.append((pr_number, subject, body))
+        if self._merge_should_fail:
+            return False
+        return True
+
+    # GT-kit mutation tracking properties
+
+    @property
+    def updated_pr_metadata(self) -> list[tuple[int, str, str]]:
+        """List of (pr_number, title, body) tuples that were updated."""
+        return list(self._updated_pr_metadata)
+
+    @property
+    def marked_ready_prs(self) -> list[int]:
+        """List of PR numbers that were marked ready."""
+        return list(self._marked_ready)
+
+    @property
+    def merged_prs_with_message(self) -> list[tuple[int, str | None, str | None]]:
+        """List of (pr_number, subject, body) tuples that were merged."""
+        return list(self._merged_prs_with_message)

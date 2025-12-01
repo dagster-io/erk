@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 from click.testing import CliRunner
+from erk_shared.integrations.gt.fake import FakeGtKitOps
 from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
     PostAnalysisError,
     PreAnalysisError,
@@ -13,8 +14,6 @@ from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
     build_pr_metadata_section,
     execute_pre_analysis,
 )
-
-from tests.unit.kits.gt.fake_ops import FakeGtKitOps
 
 
 @pytest.fixture
@@ -302,7 +301,9 @@ class TestPreAnalysisExecution:
         from dataclasses import replace
 
         ops.git()._state = replace(ops.git().get_state(), current_branch="orphan-branch")
-        ops.github().set_current_branch("orphan-branch")
+        # Also update the legacy github state for context
+        if ops._legacy_github is not None:
+            ops._legacy_github.set_current_branch("orphan-branch")
         # main_graphite has no branches tracked, so get_parent_branch returns None
 
         result = execute_pre_analysis(ops)
@@ -568,7 +569,8 @@ class TestExecuteFinalize:
         assert result.branch_name == "feature-branch"
 
         # Verify PR was updated
-        github_state = ops.github().get_state()
+        assert ops._legacy_github is not None
+        github_state = ops._legacy_github.get_state()
         assert github_state.pr_titles[123] == "Add new feature"
         assert "This adds a great new feature" in github_state.pr_bodies[123]
 
@@ -650,7 +652,8 @@ class TestExecuteFinalize:
         assert result.issue_number == 456
 
         # Verify PR body includes footer metadata
-        github_state = ops.github().get_state()
+        assert ops._legacy_github is not None
+        github_state = ops._legacy_github.get_state()
         final_pr_body = github_state.pr_bodies[123]
         # Body comes first, then footer
         assert final_pr_body.startswith("Description")

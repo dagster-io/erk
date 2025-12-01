@@ -1,6 +1,6 @@
 """GT kit operations for git, Graphite (gt), and GitHub (gh)."""
 
-from erk_shared.integrations.gt.abc import GitGtKit, GitHubGtKit, GtKit
+from erk_shared.integrations.gt.abc import GitGtKit, GtKit
 from erk_shared.integrations.gt.fake import (
     FakeGitGtKitOps,
     FakeGitHubGtKitOps,
@@ -19,7 +19,6 @@ __all__ = [
     # ABC interfaces
     "GtKit",
     "GitGtKit",
-    "GitHubGtKit",
     "CommandResult",
     # Real implementations
     "RealGtKit",
