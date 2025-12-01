@@ -183,6 +183,6 @@ def test_connect_executes_claude_command_with_craft_plan() -> None:
     # The remote command is now a single combined string
     expected_remote_cmd = (
         "bash -l -c 'git pull && uv sync && source .venv/bin/activate "
-        '&& claude "/erk:craft-plan"\''
+        '&& claude --allow-dangerously-skip-permissions --verbose "/erk:craft-plan"\''
     )
     assert remaining_args == ["-t", expected_remote_cmd]
