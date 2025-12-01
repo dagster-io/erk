@@ -102,14 +102,13 @@ def ensure_worktree_for_branch(
     trunk_branch = ctx.git.get_trunk_branch(repo.root)
 
     # Validate that we're not trying to create worktree for trunk branch
-    if branch == trunk_branch:
-        user_output(
-            f'Error: Cannot create worktree for trunk branch "{trunk_branch}".\n'
-            f"The trunk branch should be checked out in the root worktree.\n"
-            f"To switch to {trunk_branch}, use:\n"
-            f"  erk checkout root"
-        )
-        raise SystemExit(1)
+    Ensure.invariant(
+        branch != trunk_branch,
+        f'Cannot create worktree for trunk branch "{trunk_branch}".\n'
+        f"The trunk branch should be checked out in the root worktree.\n"
+        f"To switch to {trunk_branch}, use:\n"
+        f"  erk checkout root",
+    )
 
     # Branch not checked out - need to create worktree
     # First check if branch exists locally
