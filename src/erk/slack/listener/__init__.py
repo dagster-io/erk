@@ -1,0 +1,1 @@
+"""Slack listener module."""

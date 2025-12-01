@@ -23,8 +23,15 @@ dependencies = [
     "erk-shared",
 ]
 
+[project.optional-dependencies]
+slack = [
+    "slack-bolt>=1.18.0",
+    "slack-sdk>=3.21.0",
+]
+
 [project.scripts]
 erk = "erk.cli.cli:main"
+erk-slack-serve = "erk.slack.cli:main"
 
 [dependency-groups]
 dev = [
