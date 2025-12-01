@@ -33,6 +33,26 @@ def _make_planner(
     )
 
 
+def test_planner_without_subcommand_connects_to_default() -> None:
+    """Test 'erk planner' (without subcommand) connects to default.
+
+    This verifies the fix for Click 8.3+ Sentinel.UNSET handling.
+    When invoked without subcommand, the planner group invokes connect_planner
+    with name=None explicitly to avoid Sentinel.UNSET being passed instead.
+    """
+    registry = FakePlannerRegistry()
+    ctx = ErkContext.for_test(planner_registry=registry)
+
+    runner = CliRunner()
+    # Use bare "planner" command without subcommand
+    result = runner.invoke(cli, ["planner"], obj=ctx)
+
+    # Should show "No default planner set" error, not "No planner named 'Sentinel.UNSET'"
+    assert result.exit_code == 1
+    assert "No default planner set" in result.output
+    assert "Sentinel.UNSET" not in result.output
+
+
 def test_connect_no_planners_shows_error() -> None:
     """Test connect with no registered planners shows error."""
     registry = FakePlannerRegistry()

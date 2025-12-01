@@ -25,7 +25,7 @@ def planner_group(ctx: click.Context) -> None:
     """
     # If no subcommand provided, invoke connect to default
     if ctx.invoked_subcommand is None:
-        ctx.invoke(connect_planner)
+        ctx.invoke(connect_planner, name=None)
 
 
 # Register subcommands
