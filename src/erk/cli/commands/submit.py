@@ -155,9 +155,9 @@ def _close_orphaned_draft_prs(
 
     closed_prs: list[int] = []
     for pr in linked_prs:
-        # Close only: draft PRs with erk-plan label, that are OPEN, and not the one we just created
-        is_erk_plan_pr = ERK_PLAN_LABEL in pr.labels
-        if pr.is_draft and pr.state == "OPEN" and pr.number != keep_pr_number and is_erk_plan_pr:
+        # Close orphaned drafts: draft PRs that are OPEN and not the one we just created
+        # Any draft PR linked to an erk-plan issue is fair game to close
+        if pr.is_draft and pr.state == "OPEN" and pr.number != keep_pr_number:
             ctx.github.close_pr(repo_root, pr.number)
             closed_prs.append(pr.number)
 

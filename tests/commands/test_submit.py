@@ -537,13 +537,13 @@ def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
 
 
 def test_close_orphaned_draft_prs_closes_old_drafts(tmp_path: Path) -> None:
-    """Test _close_orphaned_draft_prs closes old draft PRs with erk-plan label."""
+    """Test _close_orphaned_draft_prs closes old draft PRs linked to issue."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
     # Set up linked PRs:
-    # - PR #100: old draft with erk-plan label (should be closed)
-    # - PR #101: another old draft with erk-plan label (should be closed)
+    # - PR #100: old draft (should be closed)
+    # - PR #101: another old draft (should be closed)
     # - PR #999: the new PR we just created (should NOT be closed)
     old_draft_pr = PullRequestInfo(
         number=100,
@@ -554,7 +554,6 @@ def test_close_orphaned_draft_prs_closes_old_drafts(tmp_path: Path) -> None:
         checks_passing=None,
         owner="owner",
         repo="repo",
-        labels=[ERK_PLAN_LABEL],
     )
     another_old_draft_pr = PullRequestInfo(
         number=101,
@@ -565,7 +564,6 @@ def test_close_orphaned_draft_prs_closes_old_drafts(tmp_path: Path) -> None:
         checks_passing=None,
         owner="owner",
         repo="repo",
-        labels=[ERK_PLAN_LABEL],
     )
     new_pr = PullRequestInfo(
         number=999,
@@ -576,7 +574,6 @@ def test_close_orphaned_draft_prs_closes_old_drafts(tmp_path: Path) -> None:
         checks_passing=None,
         owner="owner",
         repo="repo",
-        labels=[ERK_PLAN_LABEL],
     )
 
     fake_github = FakeGitHub(
@@ -620,7 +617,6 @@ def test_close_orphaned_draft_prs_skips_non_drafts(tmp_path: Path) -> None:
         checks_passing=None,
         owner="owner",
         repo="repo",
-        labels=[ERK_PLAN_LABEL],
     )
 
     fake_github = FakeGitHub(
@@ -664,7 +660,6 @@ def test_close_orphaned_draft_prs_skips_already_closed(tmp_path: Path) -> None:
         checks_passing=None,
         owner="owner",
         repo="repo",
-        labels=[ERK_PLAN_LABEL],
     )
 
     fake_github = FakeGitHub(
@@ -689,50 +684,6 @@ def test_close_orphaned_draft_prs_skips_already_closed(tmp_path: Path) -> None:
     )
 
     # Already-closed PR should not be closed again
-    assert closed_prs == []
-    assert fake_github.closed_prs == []
-
-
-def test_close_orphaned_draft_prs_skips_prs_without_erk_plan_label(tmp_path: Path) -> None:
-    """Test _close_orphaned_draft_prs does NOT close PRs without erk-plan label."""
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-
-    # Old draft without erk-plan label - should not be closed
-    pr_without_label = PullRequestInfo(
-        number=100,
-        state="OPEN",
-        url="https://github.com/owner/repo/pull/100",
-        is_draft=True,
-        title="Unrelated draft PR",
-        checks_passing=None,
-        owner="owner",
-        repo="repo",
-        labels=["bug"],  # No erk-plan label
-    )
-
-    fake_github = FakeGitHub(
-        pr_issue_linkages={123: [pr_without_label]},
-    )
-
-    repo_dir = tmp_path / ".erk" / "repos" / "repo"
-    repo = RepoContext(
-        root=repo_root,
-        repo_name="repo",
-        repo_dir=repo_dir,
-        worktrees_dir=repo_dir / "worktrees",
-    )
-    ctx = ErkContext.for_test(
-        cwd=repo_root,
-        github=fake_github,
-        repo=repo,
-    )
-
-    closed_prs = _close_orphaned_draft_prs(
-        ctx, repo_root, issue_number=123, keep_pr_number=999, owner="owner", repo="repo"
-    )
-
-    # PR without erk-plan label should not be closed
     assert closed_prs == []
     assert fake_github.closed_prs == []
 
@@ -906,7 +857,6 @@ def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
         checks_passing=None,
         owner="test-owner",
         repo="test-repo",
-        labels=[ERK_PLAN_LABEL],
     )
 
     fake_github_issues = FakeGitHubIssues(issues={123: issue})

@@ -866,7 +866,7 @@ query {{
 
         Uses pre-aggregated count fields for efficiency (~15-30x smaller payload):
         - contexts(last: 1) with totalCount, checkRunCountsByState, statusContextCountsByState
-        - Removes title field (not displayed in dash)
+        - Removes title and labels fields (not needed for dash)
 
         Args:
             issue_numbers: List of issue numbers to query
@@ -896,11 +896,6 @@ query {{
         }
       }
       mergeable
-      labels(first: 10) {
-        nodes {
-          name
-        }
-      }
     }
   }
 }"""
@@ -1018,18 +1013,7 @@ query {{
                 elif mergeable == "MERGEABLE":
                     has_conflicts = False
 
-                # Parse labels
-                labels: list[str] = []
-                labels_data = source.get("labels")
-                if labels_data is not None:
-                    label_nodes = labels_data.get("nodes", [])
-                    for label_node in label_nodes:
-                        if label_node is not None:
-                            label_name = label_node.get("name")
-                            if label_name:
-                                labels.append(label_name)
-
-                # Note: title is not fetched (not displayed in dash)
+                # Note: title and labels not fetched (not needed for dash)
                 pr_info = PullRequestInfo(
                     number=pr_number,
                     state=state,
@@ -1040,7 +1024,6 @@ query {{
                     owner=owner,
                     repo=repo,
                     has_conflicts=has_conflicts,
-                    labels=labels,
                     checks_counts=checks_counts,
                 )
 

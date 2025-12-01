@@ -570,8 +570,8 @@ def test_build_issue_pr_linkage_query_structure() -> None:
     # Validate title is NOT fetched (not displayed in dash)
     assert "title" not in query
 
-    # Validate labels IS fetched (needed for submit.py to filter erk-plan PRs)
-    assert "labels(first: 10)" in query
+    # Validate labels is NOT fetched (no longer needed)
+    assert "labels" not in query
 
 
 def test_parse_issue_pr_linkages_with_single_pr() -> None:
