@@ -5,7 +5,8 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
-from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
+from erk_shared.github.issues.fake import FakeGitHubIssues
+from erk_shared.github.issues.types import IssueInfo
 
 from erk.cli.cli import cli
 from erk.core.git.fake import FakeGit

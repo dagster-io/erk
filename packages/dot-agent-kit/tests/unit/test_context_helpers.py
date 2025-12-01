@@ -15,7 +15,7 @@ def test_require_github_issues_returns_issues_when_context_initialized() -> None
     """Test that require_github_issues returns Issues when context is initialized."""
     from unittest.mock import MagicMock
 
-    from erk_shared.github.issues import FakeGitHubIssues
+    from erk_shared.github.issues.fake import FakeGitHubIssues
 
     # Create context and mock Click context
     github_issues = FakeGitHubIssues()

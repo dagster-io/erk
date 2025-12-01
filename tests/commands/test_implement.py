@@ -4,10 +4,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.plan_store.fake import FakePlanStore
+from erk_shared.plan_store.types import Plan, PlanState
 
 from erk.cli.commands.implement import _detect_target_type, implement
-from erk.core.plan_store.fake import FakePlanStore
-from erk.core.plan_store.types import Plan, PlanState
 from tests.fakes.claude_executor import FakeClaudeExecutor
 from tests.fakes.git import FakeGit
 from tests.fakes.issue_link_branches import FakeIssueLinkBranches

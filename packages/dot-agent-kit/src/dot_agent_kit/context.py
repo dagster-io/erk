@@ -14,7 +14,8 @@ from pathlib import Path
 import click
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
-from erk_shared.github.issues import GitHubIssues, RealGitHubIssues
+from erk_shared.github.issues.abc import GitHubIssues
+from erk_shared.github.issues.real import RealGitHubIssues
 
 
 @dataclass(frozen=True)
@@ -67,7 +68,7 @@ class DotAgentContext:
             DotAgentContext configured with provided values and test defaults
 
         Example:
-            >>> from erk_shared.github.issues import FakeGitHubIssues
+            >>> from erk_shared.github.issues.fake import FakeGitHubIssues
             >>> from erk.core.git.fake import FakeGit
             >>> github = FakeGitHubIssues()
             >>> git_ops = FakeGit()
@@ -75,7 +76,7 @@ class DotAgentContext:
             ...     github_issues=github, git=git_ops, debug=True
             ... )
         """
-        from erk_shared.github.issues import FakeGitHubIssues
+        from erk_shared.github.issues.fake import FakeGitHubIssues
 
         from erk.core.git.fake import FakeGit
         from erk.core.github.fake import FakeGitHub

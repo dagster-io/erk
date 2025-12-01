@@ -8,7 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from erk_shared.github.abc import GitHub
-from erk_shared.github.issues import GitHubIssues, IssueInfo
+from erk_shared.github.issues.abc import GitHubIssues
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata import extract_plan_header_dispatch_info
 from erk_shared.github.types import PullRequestInfo, WorkflowRun
 

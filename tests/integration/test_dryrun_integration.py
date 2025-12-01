@@ -10,7 +10,8 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
-from erk_shared.github.issues import DryRunGitHubIssues, FakeGitHubIssues
+from erk_shared.github.issues.dry_run import DryRunGitHubIssues
+from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.integrations.graphite.dry_run import DryRunGraphite
 from erk_shared.integrations.graphite.fake import FakeGraphite
 

@@ -4,7 +4,7 @@ import json
 from unittest.mock import patch
 
 from click.testing import CliRunner
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.issues.fake import FakeGitHubIssues
 
 from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue import (

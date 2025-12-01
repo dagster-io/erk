@@ -17,11 +17,7 @@ from pathlib import Path
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
-from erk_shared.integrations.gt import (
-    GitGtKit,
-    GitHubGtKit,
-    GtKit,
-)
+from erk_shared.integrations.gt.abc import GitGtKit, GitHubGtKit, GtKit
 
 
 @dataclass(frozen=True)

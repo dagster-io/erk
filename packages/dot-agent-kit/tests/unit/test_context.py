@@ -7,7 +7,8 @@ from dataclasses import FrozenInstanceError
 from pathlib import Path
 
 import pytest
-from erk_shared.github.issues import FakeGitHubIssues, RealGitHubIssues
+from erk_shared.github.issues.fake import FakeGitHubIssues
+from erk_shared.github.issues.real import RealGitHubIssues
 
 from dot_agent_kit.context import DotAgentContext, create_context
 

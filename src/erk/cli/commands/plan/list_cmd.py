@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 import click
 from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
-from erk_shared.github.issues import IssueInfo
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata import (
     extract_plan_header_local_impl_at,
     extract_plan_header_remote_impl_at,
@@ -13,6 +13,7 @@ from erk_shared.github.metadata import (
 from erk_shared.github.types import PullRequestInfo
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import Plan, PlanState
 from rich.console import Console
 from rich.table import Table
 
@@ -24,7 +25,6 @@ from erk.core.display_utils import (
     format_workflow_run_id,
     get_workflow_run_state,
 )
-from erk.core.plan_store.types import Plan, PlanState
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 
 

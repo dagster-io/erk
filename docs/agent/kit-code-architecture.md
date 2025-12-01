@@ -35,16 +35,14 @@ packages/erk-shared/src/erk_shared/integrations/gt/
 
 **Location**: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/[kit_name]/`
 
-**What goes here**: Kit metadata + thin shims (10-20 lines each)
+**What goes here**: Kit metadata + thin shims (when needed, 10-20 lines each)
 
 ```
 packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/
 ├── kit.yaml                         # Kit metadata
 ├── kit_cli_commands/
 │   └── gt/
-│       ├── submit_branch.py         # Shim (imports from erk-shared)
-│       ├── land_branch.py           # Shim
-│       └── pr_update.py             # Shim
+│       └── land_pr.py               # Shim (imports from erk-shared)
 ├── agents/                          # Agent definitions
 ├── commands/                        # Command definitions
 └── skills/                          # Skill definitions
@@ -52,25 +50,22 @@ packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/
 
 **Rules**:
 
-- ✅ Thin shims that re-export from erk-shared
+- ✅ Thin shims that re-export from erk-shared (when needed)
 - ✅ Kit metadata (kit.yaml, agents/, commands/, skills/)
 - ❌ NO actual implementation code
+- ✅ Commands can be used directly from erk-shared without shims
 
 **Example Shim**:
 
 ```python
-# packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/submit_branch.py
+# packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/land_pr.py
 """Re-export from erk-shared."""
 
-from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
-    execute_finalize,
-    execute_pre_analysis,
-    execute_preflight,
-    get_diff_context,
-    pr_submit,
+from erk_shared.integrations.gt.kit_cli_commands.gt.land_pr import (
+    land_pr,
 )
 
-__all__ = ["execute_pre_analysis", "execute_preflight", "execute_finalize", "get_diff_context", "pr_submit"]
+__all__ = ["land_pr"]
 ```
 
 ## Architecture Diagram
@@ -80,7 +75,7 @@ __all__ = ["execute_pre_analysis", "execute_preflight", "execute_finalize", "get
 │ dot-agent-kit/data/kits/gt/           │
 │   ├── kit.yaml                        │
 │   └── kit_cli_commands/gt/            │
-│       └── submit_branch.py (shim)     │
+│       └── land_pr.py (shim)           │
 │              ↓ imports                │
 └───────────────────────────────────────┘
              ↓
@@ -90,20 +85,25 @@ __all__ = ["execute_pre_analysis", "execute_preflight", "execute_finalize", "get
 │   ├── real.py                         │
 │   ├── fake.py                         │
 │   └── kit_cli_commands/gt/            │
-│       └── submit_branch.py (1000+loc) │
+│       ├── submit_branch.py (1000+loc) │
+│       ├── pr_update.py                │
+│       └── land_pr.py (core impl)      │
 └───────────────────────────────────────┘
 ```
 
 ## Testing
 
-Always import from erk-shared:
+Always import from erk-shared canonical locations:
 
 ```python
-# ✅ CORRECT
-from erk_shared.integrations.gt import RealGtKit
+# ✅ CORRECT - Import from canonical submodules
+from erk_shared.integrations.gt.real import RealGtKit
 from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import pr_submit
 
-# ❌ WRONG - don't import from kit location
+# ❌ WRONG - Don't import from aggregation packages
+from erk_shared.integrations.gt import RealGtKit
+
+# ❌ WRONG - Don't import from kit location
 from dot_agent_kit.data.kits.gt.kit_cli_commands.gt.submit_branch import pr_submit
 ```
 
@@ -117,10 +117,8 @@ def test_gt_kit_architecture() -> None:
     impl = Path("packages/erk-shared/src/erk_shared/integrations/gt/kit_cli_commands/gt/submit_branch.py")
     assert impl.exists()
 
-    # Layer 2: Shim exists in dot-agent-kit
-    shim = Path("packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/submit_branch.py")
-    assert shim.exists()
-    assert "from erk_shared.integrations.gt" in shim.read_text()
+    # Commands can be used directly from erk-shared
+    # Shims are optional and only created when needed
 ```
 
 ## Quick Reference
@@ -132,7 +130,7 @@ A: `packages/erk-shared/src/erk_shared/integrations/[kit_name]/kit_cli_commands/
 A: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/[kit_name]/kit.yaml`
 
 **Q: What goes in kit_cli_commands in dot-agent-kit?**
-A: Thin shims (10-20 lines) that import from erk-shared
+A: Optional thin shims (10-20 lines) that import from erk-shared. Most commands can be used directly from erk-shared without shims.
 
 **Q: How do I know if code belongs in erk-shared?**
-A: If it has more than 20 lines of logic, it goes in erk-shared
+A: All implementation code goes in erk-shared. Only kit metadata (kit.yaml, agents/, commands/, skills/) and optional shims go in dot-agent-kit.

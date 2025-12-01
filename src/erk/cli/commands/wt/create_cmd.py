@@ -6,7 +6,7 @@ from pathlib import Path
 
 import click
 from erk_shared.github.issue_link_branches import DevelopmentBranch
-from erk_shared.github.issues import IssueInfo
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.impl_folder import create_impl_folder, get_impl_path
 from erk_shared.naming import (
     default_branch_for_worktree,
