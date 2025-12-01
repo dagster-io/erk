@@ -20,7 +20,7 @@ from erk_shared.github.parsing import parse_gh_auth_status_output
 from erk_shared.github.types import PRMergeability
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.real import RealGraphite
-from erk_shared.integrations.gt.abc import GitGtKit, GitHubGtKit, GtKit
+from erk_shared.integrations.gt.abc import GitGtKit, GtKit
 
 
 def _run_subprocess_with_timeout(
@@ -250,8 +250,14 @@ class RealGitGtKit(GitGtKit):
         return result.returncode == 0
 
 
-class RealGitHubGtKit(GitHubGtKit):
-    """Real GitHub operations using subprocess."""
+class RealGitHubGtKit:
+    """Real GitHub operations using subprocess.
+
+    This class provides a minimal implementation of GitHub operations
+    needed by GT kit commands. It implements the unified GitHub interface
+    methods (with explicit repo_root and pr_number parameters) and duck-types
+    as a GitHub implementation.
+    """
 
     def get_pr_info(self) -> tuple[int, str] | None:
         """Get PR number and URL using gh pr view."""
@@ -314,7 +320,7 @@ class RealGitHubGtKit(GitHubGtKit):
             cmd = ["gh", "pr", "ready", str(pr_number)]
             cwd = repo_root
         else:
-            # Legacy GitHubGtKit interface
+            # Implicit context interface (no repo_root)
             cmd = ["gh", "pr", "ready"]
             cwd = None
         result = subprocess.run(
@@ -340,7 +346,7 @@ class RealGitHubGtKit(GitHubGtKit):
             cmd = ["gh", "pr", "view", str(pr_number), "--json", "title", "-q", ".title"]
             cwd = repo_root
         else:
-            # Legacy GitHubGtKit interface
+            # Implicit context interface (no repo_root)
             cmd = ["gh", "pr", "view", "--json", "title", "-q", ".title"]
             cwd = None
         result = subprocess.run(
@@ -371,7 +377,7 @@ class RealGitHubGtKit(GitHubGtKit):
             cmd = ["gh", "pr", "view", str(pr_number), "--json", "body", "-q", ".body"]
             cwd = repo_root
         else:
-            # Legacy GitHubGtKit interface
+            # Implicit context interface (no repo_root)
             cmd = ["gh", "pr", "view", "--json", "body", "-q", ".body"]
             cwd = None
         result = subprocess.run(
@@ -417,7 +423,7 @@ class RealGitHubGtKit(GitHubGtKit):
             actual_pr_number = pr_number
             cwd = repo_root_or_pr_number
         else:
-            # Legacy GitHubGtKit interface
+            # Implicit context interface (no repo_root)
             actual_pr_number = int(repo_root_or_pr_number)  # type: ignore[arg-type]
             cwd = None
 
@@ -472,7 +478,7 @@ class RealGitHubGtKit(GitHubGtKit):
             actual_pr_number = pr_number
             cwd = repo_root_or_pr_number
         else:
-            # Legacy GitHubGtKit interface
+            # Implicit context interface (no repo_root)
             actual_pr_number = int(repo_root_or_pr_number)  # type: ignore[arg-type]
             cwd = None
 
@@ -519,7 +525,7 @@ class RealGitHubGtKit(GitHubGtKit):
             repo_root = repo_root_or_pr_number
             return_prmergeability = True
         else:
-            # Legacy GitHubGtKit interface - first arg is pr_number
+            # Implicit context interface (no repo_root) - first arg is pr_number
             actual_pr_number = int(repo_root_or_pr_number)  # type: ignore[arg-type]
             repo_root = None
             return_prmergeability = False
@@ -662,11 +668,10 @@ class RealGtKit(GtKit):
         Args:
             github: Optional unified GitHub implementation. If not provided,
                    falls back to RealGitHubGtKit for backwards compatibility.
-                   Once all callers migrate, this will become required.
         """
         self._git = RealGitGtKit()
-        # Use unified GitHub if provided, else fallback to legacy RealGitHubGtKit
-        self._github: GitHub | GitHubGtKit = github if github is not None else RealGitHubGtKit()
+        # Use unified GitHub if provided, else fallback to RealGitHubGtKit
+        self._github: GitHub | RealGitHubGtKit = github if github is not None else RealGitHubGtKit()
         self._main_graphite = RealGraphite()
 
     def git(self) -> GitGtKit:
@@ -676,11 +681,10 @@ class RealGtKit(GtKit):
     def github(self) -> GitHub:
         """Get the unified GitHub operations interface.
 
-        Note: During migration, this may return GitHubGtKit for callers that
-        don't provide a unified GitHub implementation. The return type is
-        GitHub (unified) but the implementation respects duck typing.
+        Note: When no GitHub is provided to __init__, this returns RealGitHubGtKit
+        which duck-types as GitHub for the subset of operations needed by GT kit.
         """
-        # Type assertion for mypy - the actual implementation handles both types
+        # Type assertion for mypy - RealGitHubGtKit duck-types as GitHub
         return self._github  # type: ignore[return-value]
 
     def main_graphite(self) -> Graphite:

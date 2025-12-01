@@ -20,7 +20,7 @@ from erk_shared.github.types import PRMergeability
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
-from erk_shared.integrations.gt.abc import GitGtKit, GitHubGtKit, GtKit
+from erk_shared.integrations.gt.abc import GitGtKit, GtKit
 
 
 @dataclass(frozen=True)
@@ -178,8 +178,14 @@ class FakeGitGtKitOps(GitGtKit):
         return True
 
 
-class FakeGitHubGtKitOps(GitHubGtKit):
-    """Fake GitHub operations with in-memory state."""
+class FakeGitHubGtKitOps:
+    """Fake GitHub operations with in-memory state.
+
+    This class provides a minimal fake implementation of GitHub operations
+    needed by GT kit commands. It implements the unified GitHub interface
+    methods (with explicit repo_root and pr_number parameters) and duck-types
+    as a GitHub implementation for testing purposes.
+    """
 
     def __init__(self, state: GitHubState | None = None) -> None:
         """Initialize with optional initial state."""
@@ -255,7 +261,7 @@ class FakeGitHubGtKitOps(GitHubGtKit):
         if pr_number is not None:
             # Unified GitHub interface - always succeeds
             return True
-        # Legacy GitHubGtKit interface
+        # Implicit context interface (no repo_root)
         if self._current_branch not in self._state.pr_numbers:
             return False
         return True
@@ -272,7 +278,7 @@ class FakeGitHubGtKitOps(GitHubGtKit):
         if pr_number is not None:
             # Unified GitHub interface
             return self._state.pr_titles.get(pr_number)
-        # Legacy GitHubGtKit interface
+        # Implicit context interface (no repo_root)
         if self._current_branch not in self._state.pr_numbers:
             return None
         branch_pr_number = self._state.pr_numbers[self._current_branch]
@@ -290,7 +296,7 @@ class FakeGitHubGtKitOps(GitHubGtKit):
         if pr_number is not None:
             # Unified GitHub interface
             return self._state.pr_bodies.get(pr_number)
-        # Legacy GitHubGtKit interface
+        # Implicit context interface (no repo_root)
         if self._current_branch not in self._state.pr_numbers:
             return None
         branch_pr_number = self._state.pr_numbers[self._current_branch]
@@ -315,7 +321,7 @@ class FakeGitHubGtKitOps(GitHubGtKit):
             # Unified GitHub interface
             actual_pr_number = pr_number
         else:
-            # Legacy GitHubGtKit interface - first arg is pr_number
+            # Implicit context interface (no repo_root) - first arg is pr_number
             actual_pr_number = int(repo_root_or_pr_number)  # type: ignore[arg-type]
         return f"https://app.graphite.com/github/pr/test-owner/test-repo/{actual_pr_number}"
 
@@ -332,7 +338,7 @@ class FakeGitHubGtKitOps(GitHubGtKit):
             # Unified GitHub interface
             actual_pr_number = pr_number
         else:
-            # Legacy GitHubGtKit interface - first arg is pr_number
+            # Implicit context interface (no repo_root) - first arg is pr_number
             actual_pr_number = int(repo_root_or_pr_number)  # type: ignore[arg-type]
 
         if actual_pr_number in self._state.pr_diffs:
@@ -373,7 +379,7 @@ class FakeGitHubGtKitOps(GitHubGtKit):
             )
             return PRMergeability(mergeable=mergeable, merge_state_status=merge_state)
         else:
-            # Legacy GitHubGtKit interface - return tuple
+            # Implicit context interface (no repo_root) - return tuple
             actual_pr_number = int(repo_root_or_pr_number)  # type: ignore[arg-type]
             return self._state.pr_mergeability.get(actual_pr_number, ("MERGEABLE", "CLEAN"))
 
@@ -435,7 +441,7 @@ class FakeGtKitOps(GtKit):
 
         Args:
             git_state: Initial git state
-            github_state: Initial GitHub state (used by legacy FakeGitHubGtKitOps)
+            github_state: Initial GitHub state (used by FakeGitHubGtKitOps)
             main_graphite: Graphite implementation
             github: Optional unified GitHub implementation. If provided,
                    github_state is ignored and the builder pattern methods
@@ -443,14 +449,14 @@ class FakeGtKitOps(GtKit):
                    for full control over GitHub state.
         """
         self._git = FakeGitGtKitOps(git_state)
-        # Use unified GitHub if provided, else fallback to legacy FakeGitHubGtKitOps
+        # Use unified GitHub if provided, else fallback to FakeGitHubGtKitOps
         if github is not None:
             self._github: GitHub | FakeGitHubGtKitOps = github
             self._legacy_github: FakeGitHubGtKitOps | None = None
         else:
-            legacy = FakeGitHubGtKitOps(github_state)
-            self._github = legacy
-            self._legacy_github = legacy
+            fake_github = FakeGitHubGtKitOps(github_state)
+            self._github = fake_github
+            self._legacy_github = fake_github
         self._main_graphite = main_graphite if main_graphite is not None else FakeGraphite()
 
     def git(self) -> FakeGitGtKitOps:
@@ -460,9 +466,8 @@ class FakeGtKitOps(GtKit):
     def github(self) -> GitHub:
         """Get the unified GitHub operations interface.
 
-        Note: During migration, this may return FakeGitHubGtKitOps for callers
-        that don't provide a unified GitHub implementation. The return type is
-        GitHub (unified) but the implementation respects duck typing.
+        Note: When no GitHub is provided to __init__, this returns FakeGitHubGtKitOps
+        which duck-types as GitHub for the subset of operations needed by GT kit.
         """
         return self._github  # type: ignore[return-value]
 
@@ -482,7 +487,7 @@ class FakeGtKitOps(GtKit):
         Returns:
             Self for chaining
 
-        Note: This builder method only works with legacy FakeGitHubGtKitOps.
+        Note: This builder method only works with FakeGitHubGtKitOps.
               When using unified FakeGitHub, configure state via its constructor.
         """
         # Update git state
@@ -548,7 +553,7 @@ class FakeGtKitOps(GtKit):
         Returns:
             Self for chaining
 
-        Note: This builder method only works with legacy FakeGitHubGtKitOps.
+        Note: This builder method only works with FakeGitHubGtKitOps.
               When using unified FakeGitHub, configure state via its constructor.
         """
         if self._legacy_github is None:
@@ -586,7 +591,7 @@ class FakeGtKitOps(GtKit):
         Returns:
             Self for chaining
 
-        Note: This builder method only works with legacy FakeGitHubGtKitOps.
+        Note: This builder method only works with FakeGitHubGtKitOps.
               When using unified FakeGitHub, use merge_should_fail=True in constructor.
         """
         if self._legacy_github is None:
@@ -612,7 +617,7 @@ class FakeGtKitOps(GtKit):
         Returns:
             Self for chaining
 
-        Note: This builder method only works with legacy FakeGitHubGtKitOps.
+        Note: This builder method only works with FakeGitHubGtKitOps.
               When using unified FakeGitHub, configure state via its constructor.
         """
         if self._legacy_github is None:
@@ -633,7 +638,7 @@ class FakeGtKitOps(GtKit):
         Returns:
             Self for chaining
 
-        Note: This builder method only works with legacy FakeGitHubGtKitOps.
+        Note: This builder method only works with FakeGitHubGtKitOps.
               When using unified FakeGitHub, configure state via its constructor.
         """
         if self._legacy_github is None:
@@ -651,7 +656,7 @@ class FakeGtKitOps(GtKit):
         Returns:
             Self for chaining
 
-        Note: This builder method only works with legacy FakeGitHubGtKitOps.
+        Note: This builder method only works with FakeGitHubGtKitOps.
               When using unified FakeGitHub, use authenticated=False in constructor.
         """
         if self._legacy_github is None:
@@ -675,7 +680,7 @@ class FakeGtKitOps(GtKit):
         Returns:
             Self for chaining
 
-        Note: This builder method only works with legacy FakeGitHubGtKitOps.
+        Note: This builder method only works with FakeGitHubGtKitOps.
               When using unified FakeGitHub, configure state via its constructor.
         """
         if self._legacy_github is None:
@@ -702,7 +707,7 @@ class FakeGtKitOps(GtKit):
         Returns:
             Self for chaining
 
-        Note: This builder method only works with legacy FakeGitHubGtKitOps.
+        Note: This builder method only works with FakeGitHubGtKitOps.
               When using unified FakeGitHub, configure state via its constructor.
         """
         if self._legacy_github is None:
