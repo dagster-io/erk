@@ -4,13 +4,12 @@ from dataclasses import replace
 
 import pytest
 from click.testing import CliRunner
+from erk_shared.integrations.gt.fake import FakeGtKitOps
 from erk_shared.integrations.gt.kit_cli_commands.gt.land_pr import (
     LandPrError,
     LandPrSuccess,
     execute_land_pr,
 )
-
-from tests.unit.kits.gt.fake_ops import FakeGtKitOps
 
 
 @pytest.fixture
@@ -89,8 +88,11 @@ class TestLandPrExecution:
         # Setup: branch with no parent (orphaned)
         ops = FakeGtKitOps()
         # Don't set parent relationship, so get_parent_branch returns None
+        # Only update git state - don't track branch in graphite
         ops.git()._state = replace(ops.git().get_state(), current_branch="orphan-branch")
-        ops.github().set_current_branch("orphan-branch")
+        # Also update the legacy github state for context
+        if ops._legacy_github is not None:
+            ops._legacy_github.set_current_branch("orphan-branch")
 
         result = execute_land_pr(ops)
 
@@ -232,8 +234,9 @@ class TestLandPrTitle:
             .with_pr(123, state="OPEN", title="Add new feature")
         )
 
-        # Verify the title can be fetched
-        assert ops.github().get_pr_title() == "Add new feature"
+        # Verify the title can be fetched via legacy interface
+        assert ops._legacy_github is not None
+        assert ops._legacy_github.get_pr_title() == "Add new feature"
 
         result = execute_land_pr(ops)
 
@@ -251,7 +254,8 @@ class TestLandPrTitle:
         )
 
         # Verify no title is set
-        assert ops.github().get_pr_title() is None
+        assert ops._legacy_github is not None
+        assert ops._legacy_github.get_pr_title() is None
 
         result = execute_land_pr(ops)
 
@@ -264,7 +268,8 @@ class TestLandPrTitle:
         ops = FakeGtKitOps().with_branch("feature-branch", parent="main")
         # No PR configured
 
-        assert ops.github().get_pr_title() is None
+        assert ops._legacy_github is not None
+        assert ops._legacy_github.get_pr_title() is None
 
 
 class TestLandPrBody:
@@ -284,8 +289,10 @@ class TestLandPrBody:
             )
         )
 
-        # Verify the body can be fetched
-        assert ops.github().get_pr_body() == "This PR adds a new feature with detailed description."
+        # Verify the body can be fetched via legacy interface
+        assert ops._legacy_github is not None
+        expected_body = "This PR adds a new feature with detailed description."
+        assert ops._legacy_github.get_pr_body() == expected_body
 
         result = execute_land_pr(ops)
 
@@ -303,7 +310,8 @@ class TestLandPrBody:
         )
 
         # Verify no body is set
-        assert ops.github().get_pr_body() is None
+        assert ops._legacy_github is not None
+        assert ops._legacy_github.get_pr_body() is None
 
         result = execute_land_pr(ops)
 
@@ -316,7 +324,8 @@ class TestLandPrBody:
         ops = FakeGtKitOps().with_branch("feature-branch", parent="main")
         # No PR configured
 
-        assert ops.github().get_pr_body() is None
+        assert ops._legacy_github is not None
+        assert ops._legacy_github.get_pr_body() is None
 
     def test_land_pr_with_title_and_body(self) -> None:
         """Test landing with both title and body for rich merge commit."""
@@ -337,9 +346,11 @@ class TestLandPrBody:
             )
         )
 
-        # Verify both can be fetched
-        assert ops.github().get_pr_title() == "Extract subprocess calls into reusable interface"
-        assert "Refactors" in ops.github().get_pr_body()  # type: ignore[operator]
+        # Verify both can be fetched via legacy interface
+        assert ops._legacy_github is not None
+        expected_title = "Extract subprocess calls into reusable interface"
+        assert ops._legacy_github.get_pr_title() == expected_title
+        assert "Refactors" in (ops._legacy_github.get_pr_body() or "")
 
         result = execute_land_pr(ops)
 

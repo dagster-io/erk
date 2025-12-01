@@ -278,3 +278,95 @@ class RealGitHub(GitHub):
             "actual GitHub operations."
         )
         raise NotImplementedError(msg)
+
+    # Methods migrated from GitHubGtKit for unified GitHub interface
+
+    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Stub method - not implemented in erk-shared."""
+        msg = (
+            "RealGitHub from erk-shared is a stub for context creation only. "
+            "Use the full implementation from erk.core.github.real if you need "
+            "actual GitHub operations."
+        )
+        raise NotImplementedError(msg)
+
+    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Stub method - not implemented in erk-shared."""
+        msg = (
+            "RealGitHub from erk-shared is a stub for context creation only. "
+            "Use the full implementation from erk.core.github.real if you need "
+            "actual GitHub operations."
+        )
+        raise NotImplementedError(msg)
+
+    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
+        """Stub method - not implemented in erk-shared."""
+        msg = (
+            "RealGitHub from erk-shared is a stub for context creation only. "
+            "Use the full implementation from erk.core.github.real if you need "
+            "actual GitHub operations."
+        )
+        raise NotImplementedError(msg)
+
+    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
+        """Stub method - not implemented in erk-shared."""
+        msg = (
+            "RealGitHub from erk-shared is a stub for context creation only. "
+            "Use the full implementation from erk.core.github.real if you need "
+            "actual GitHub operations."
+        )
+        raise NotImplementedError(msg)
+
+    def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
+        """Stub method - not implemented in erk-shared."""
+        msg = (
+            "RealGitHub from erk-shared is a stub for context creation only. "
+            "Use the full implementation from erk.core.github.real if you need "
+            "actual GitHub operations."
+        )
+        raise NotImplementedError(msg)
+
+    def update_pr_title_and_body(
+        self, repo_root: Path, pr_number: int, title: str, body: str
+    ) -> bool:
+        """Stub method - not implemented in erk-shared."""
+        msg = (
+            "RealGitHub from erk-shared is a stub for context creation only. "
+            "Use the full implementation from erk.core.github.real if you need "
+            "actual GitHub operations."
+        )
+        raise NotImplementedError(msg)
+
+    def mark_pr_ready(self, repo_root: Path, pr_number: int) -> bool:
+        """Stub method - not implemented in erk-shared."""
+        msg = (
+            "RealGitHub from erk-shared is a stub for context creation only. "
+            "Use the full implementation from erk.core.github.real if you need "
+            "actual GitHub operations."
+        )
+        raise NotImplementedError(msg)
+
+    def get_graphite_pr_url(self, repo_root: Path, pr_number: int) -> str | None:
+        """Stub method - not implemented in erk-shared."""
+        msg = (
+            "RealGitHub from erk-shared is a stub for context creation only. "
+            "Use the full implementation from erk.core.github.real if you need "
+            "actual GitHub operations."
+        )
+        raise NotImplementedError(msg)
+
+    def merge_pr_with_message(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        *,
+        subject: str | None = None,
+        body: str | None = None,
+    ) -> bool:
+        """Stub method - not implemented in erk-shared."""
+        msg = (
+            "RealGitHub from erk-shared is a stub for context creation only. "
+            "Use the full implementation from erk.core.github.real if you need "
+            "actual GitHub operations."
+        )
+        raise NotImplementedError(msg)

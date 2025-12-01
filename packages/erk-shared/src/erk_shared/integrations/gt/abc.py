@@ -5,8 +5,9 @@ used by GT kit CLI commands. These interfaces enable dependency injection with
 in-memory fakes for testing while maintaining type safety.
 
 Design:
-- Two separate ABC interfaces: GitGtKit, GitHubGtKit
-- Composite GtKit interface that combines both plus main_graphite()
+- GitGtKit for git operations specific to GT kit commands
+- GtKit composite interface that combines GitGtKit + GitHub (unified) + Graphite
+- GitHubGtKit is DEPRECATED - use GitHub from erk_shared.github.abc instead
 - Return values match existing subprocess patterns (str | None, bool, etc.)
 - LBYL pattern: operations check state, return None/False on failure
 """
@@ -14,6 +15,7 @@ Design:
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from erk_shared.github.abc import GitHub
 from erk_shared.integrations.graphite.abc import Graphite
 
 
@@ -166,7 +168,21 @@ class GitGtKit(ABC):
 
 
 class GitHubGtKit(ABC):
-    """GitHub (gh) operations interface for GT kit commands."""
+    """GitHub (gh) operations interface for GT kit commands.
+
+    DEPRECATED: This interface is deprecated. Use the unified `GitHub` ABC
+    from `erk_shared.github.abc` instead. This class is kept for backwards
+    compatibility with existing implementations (RealGitHubGtKit, FakeGitHubGtKitOps)
+    but will be removed in a future version.
+
+    Migration guide:
+    - Instead of `ops.github().get_pr_info()`, use:
+      `ops.github().get_pr_info_for_branch(repo_root, branch)`
+    - Instead of `ops.github().get_pr_title()`, use:
+      `ops.github().get_pr_title(repo_root, pr_number)`
+    - All methods in the unified GitHub ABC take explicit repo_root and
+      pr_number/branch parameters instead of relying on implicit context.
+    """
 
     @abstractmethod
     def get_pr_info(self) -> tuple[int, str] | None:
@@ -313,11 +329,11 @@ class GtKit(ABC):
         """
 
     @abstractmethod
-    def github(self) -> GitHubGtKit:
-        """Get the GitHub operations interface.
+    def github(self) -> GitHub:
+        """Get the unified GitHub operations interface.
 
         Returns:
-            GitHubGtKitOps implementation
+            GitHub implementation from erk_shared.github.abc
         """
 
     @abstractmethod

@@ -399,3 +399,138 @@ class GitHub(ABC):
             GraphQL node ID (e.g., "WFR_kwLOPxC3hc8AAAAEnZK8rQ") or None if not found
         """
         ...
+
+    # Methods migrated from GitHubGtKit for unified GitHub interface
+
+    @abstractmethod
+    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR number and URL for a branch.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Branch name to check
+
+        Returns:
+            Tuple of (number, url) or None if no PR exists
+        """
+        ...
+
+    @abstractmethod
+    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR number and state for a branch.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Branch name to check
+
+        Returns:
+            Tuple of (number, state) or None if no PR exists
+        """
+        ...
+
+    @abstractmethod
+    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get the title of a specific PR.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to query
+
+        Returns:
+            PR title string, or None if PR not found
+        """
+        ...
+
+    @abstractmethod
+    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get the body of a specific PR.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to query
+
+        Returns:
+            PR body string, or None if PR not found
+        """
+        ...
+
+    @abstractmethod
+    def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
+        """Get the diff for a PR.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to get diff for
+
+        Returns:
+            Diff content as string
+
+        Raises:
+            RuntimeError: If gh command fails
+        """
+        ...
+
+    @abstractmethod
+    def update_pr_title_and_body(
+        self, repo_root: Path, pr_number: int, title: str, body: str
+    ) -> bool:
+        """Update PR title and body.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to update
+            title: New PR title
+            body: New PR body
+
+        Returns:
+            True on success, False on failure
+        """
+        ...
+
+    @abstractmethod
+    def mark_pr_ready(self, repo_root: Path, pr_number: int) -> bool:
+        """Mark a draft PR as ready for review.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to mark ready
+
+        Returns:
+            True on success, False on failure
+        """
+        ...
+
+    @abstractmethod
+    def get_graphite_pr_url(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get Graphite PR URL for a PR.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number
+
+        Returns:
+            Graphite URL or None if repo info cannot be determined
+        """
+        ...
+
+    @abstractmethod
+    def merge_pr_with_message(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        *,
+        subject: str | None = None,
+        body: str | None = None,
+    ) -> bool:
+        """Merge a PR using squash merge with optional commit message.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to merge
+            subject: Optional commit message subject for squash merge
+            body: Optional commit message body for squash merge
+
+        Returns:
+            True on success, False on failure
+        """
+        ...

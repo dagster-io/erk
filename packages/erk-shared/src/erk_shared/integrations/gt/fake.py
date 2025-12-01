@@ -9,13 +9,17 @@ Design:
 - Automatic state transitions (commit clears uncommitted files)
 - LBYL pattern: methods check state before operations
 - Returns match interface contracts exactly
+- Uses unified FakeGitHub from erk.core.github.fake
 """
 
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+from erk_shared.github.abc import GitHub
+from erk_shared.github.types import PRMergeability
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.fake import FakeGraphite
+from erk_shared.integrations.graphite.types import BranchMetadata
 from erk_shared.integrations.gt.abc import GitGtKit, GitHubGtKit, GtKit
 
 
@@ -30,6 +34,7 @@ class GitState:
     add_success: bool = True
     trunk_branch: str = "main"
     tracked_files: list[str] = field(default_factory=list)
+    repo_root: str = "/fake/repo/root"
 
 
 @dataclass(frozen=True)
@@ -133,7 +138,7 @@ class FakeGitGtKitOps(GitGtKit):
 
     def get_repository_root(self) -> str:
         """Fake repository root."""
-        return "/fake/repo/root"
+        return self._state.repo_root
 
     def get_diff_to_parent(self, parent_branch: str) -> str:
         """Fake diff output."""
@@ -238,26 +243,58 @@ class FakeGitHubGtKitOps(GitHubGtKit):
         self._state = replace(self._state, pr_titles=new_titles, pr_bodies=new_bodies)
         return True
 
-    def mark_pr_ready(self) -> bool:
-        """Mark PR as ready for review (fake always succeeds if PR exists)."""
+    def mark_pr_ready(  # type: ignore[override]
+        self, repo_root: Path | None = None, pr_number: int | None = None
+    ) -> bool:
+        """Mark PR as ready for review.
+
+        Supports both interfaces:
+        - Old: mark_pr_ready() - uses current branch context
+        - New: mark_pr_ready(repo_root, pr_number) - explicit PR number
+        """
+        if pr_number is not None:
+            # Unified GitHub interface - always succeeds
+            return True
+        # Legacy GitHubGtKit interface
         if self._current_branch not in self._state.pr_numbers:
             return False
-        # In the fake, marking as ready always succeeds if PR exists
         return True
 
-    def get_pr_title(self) -> str | None:
-        """Get the title of the PR for the current branch."""
-        if self._current_branch not in self._state.pr_numbers:
-            return None
-        pr_number = self._state.pr_numbers[self._current_branch]
-        return self._state.pr_titles.get(pr_number)
+    def get_pr_title(  # type: ignore[override]
+        self, repo_root: Path | None = None, pr_number: int | None = None
+    ) -> str | None:
+        """Get the title of a PR.
 
-    def get_pr_body(self) -> str | None:
-        """Get the body of the PR for the current branch."""
+        Supports both interfaces:
+        - Old: get_pr_title() - uses current branch context
+        - New: get_pr_title(repo_root, pr_number) - explicit PR number
+        """
+        if pr_number is not None:
+            # Unified GitHub interface
+            return self._state.pr_titles.get(pr_number)
+        # Legacy GitHubGtKit interface
         if self._current_branch not in self._state.pr_numbers:
             return None
-        pr_number = self._state.pr_numbers[self._current_branch]
-        return self._state.pr_bodies.get(pr_number)
+        branch_pr_number = self._state.pr_numbers[self._current_branch]
+        return self._state.pr_titles.get(branch_pr_number)
+
+    def get_pr_body(  # type: ignore[override]
+        self, repo_root: Path | None = None, pr_number: int | None = None
+    ) -> str | None:
+        """Get the body of a PR.
+
+        Supports both interfaces:
+        - Old: get_pr_body() - uses current branch context
+        - New: get_pr_body(repo_root, pr_number) - explicit PR number
+        """
+        if pr_number is not None:
+            # Unified GitHub interface
+            return self._state.pr_bodies.get(pr_number)
+        # Legacy GitHubGtKit interface
+        if self._current_branch not in self._state.pr_numbers:
+            return None
+        branch_pr_number = self._state.pr_numbers[self._current_branch]
+        return self._state.pr_bodies.get(branch_pr_number)
 
     def merge_pr(self, *, subject: str | None = None, body: str | None = None) -> bool:
         """Merge the PR with configurable success/failure."""
@@ -265,14 +302,41 @@ class FakeGitHubGtKitOps(GitHubGtKit):
             return False
         return self._state.merge_success
 
-    def get_graphite_pr_url(self, pr_number: int) -> str | None:
-        """Get Graphite PR URL (fake returns test URL)."""
-        return f"https://app.graphite.com/github/pr/test-owner/test-repo/{pr_number}"
+    def get_graphite_pr_url(  # type: ignore[override]
+        self, repo_root_or_pr_number: Path | int, pr_number: int | None = None
+    ) -> str | None:
+        """Get Graphite PR URL.
 
-    def get_pr_diff(self, pr_number: int) -> str:
-        """Get PR diff from configured state or return default."""
-        if pr_number in self._state.pr_diffs:
-            return self._state.pr_diffs[pr_number]
+        Supports both interfaces:
+        - Old: get_graphite_pr_url(pr_number) - just PR number
+        - New: get_graphite_pr_url(repo_root, pr_number) - explicit repo root
+        """
+        if pr_number is not None:
+            # Unified GitHub interface
+            actual_pr_number = pr_number
+        else:
+            # Legacy GitHubGtKit interface - first arg is pr_number
+            actual_pr_number = int(repo_root_or_pr_number)  # type: ignore[arg-type]
+        return f"https://app.graphite.com/github/pr/test-owner/test-repo/{actual_pr_number}"
+
+    def get_pr_diff(  # type: ignore[override]
+        self, repo_root_or_pr_number: Path | int, pr_number: int | None = None
+    ) -> str:
+        """Get PR diff from configured state or return default.
+
+        Supports both interfaces:
+        - Old: get_pr_diff(pr_number) - just PR number
+        - New: get_pr_diff(repo_root, pr_number) - explicit repo root
+        """
+        if pr_number is not None:
+            # Unified GitHub interface
+            actual_pr_number = pr_number
+        else:
+            # Legacy GitHubGtKit interface - first arg is pr_number
+            actual_pr_number = int(repo_root_or_pr_number)  # type: ignore[arg-type]
+
+        if actual_pr_number in self._state.pr_diffs:
+            return self._state.pr_diffs[actual_pr_number]
         # Return a simple default diff
         return (
             "diff --git a/file.py b/file.py\n"
@@ -292,10 +356,66 @@ class FakeGitHubGtKitOps(GitHubGtKit):
         pr_url = self._state.pr_urls.get(branch, f"https://github.com/repo/pull/{pr_number}")
         return (pr_number, pr_url)
 
-    def get_pr_mergeability(self, pr_number: int) -> tuple[str, str]:
-        """Get PR mergeability status from fake state."""
-        # Default: MERGEABLE/CLEAN unless configured otherwise
-        return self._state.pr_mergeability.get(pr_number, ("MERGEABLE", "CLEAN"))
+    def get_pr_mergeability(  # type: ignore[override]
+        self, repo_root_or_pr_number: Path | int, pr_number: int | None = None
+    ) -> tuple[str, str] | PRMergeability | None:
+        """Get PR mergeability status from fake state.
+
+        Supports both interfaces:
+        - Old: get_pr_mergeability(pr_number) - returns tuple[str, str]
+        - New: get_pr_mergeability(repo_root, pr_number) - returns PRMergeability | None
+        """
+        if pr_number is not None:
+            # Unified GitHub interface - return PRMergeability object
+            actual_pr_number = pr_number
+            mergeable, merge_state = self._state.pr_mergeability.get(
+                actual_pr_number, ("MERGEABLE", "CLEAN")
+            )
+            return PRMergeability(mergeable=mergeable, merge_state_status=merge_state)
+        else:
+            # Legacy GitHubGtKit interface - return tuple
+            actual_pr_number = int(repo_root_or_pr_number)  # type: ignore[arg-type]
+            return self._state.pr_mergeability.get(actual_pr_number, ("MERGEABLE", "CLEAN"))
+
+    # Unified GitHub interface methods (no legacy equivalent)
+
+    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR number and URL for a branch (unified GitHub interface)."""
+        if branch not in self._state.pr_numbers:
+            return None
+        pr_number = self._state.pr_numbers[branch]
+        pr_url = self._state.pr_urls.get(branch, f"https://github.com/repo/pull/{pr_number}")
+        return (pr_number, pr_url)
+
+    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        """Get PR number and state for a branch (unified GitHub interface)."""
+        if branch not in self._state.pr_numbers:
+            return None
+        pr_number = self._state.pr_numbers[branch]
+        pr_state = self._state.pr_states.get(branch, "OPEN")
+        return (pr_number, pr_state)
+
+    def update_pr_title_and_body(
+        self, repo_root: Path, pr_number: int, title: str, body: str
+    ) -> bool:
+        """Update PR title and body (unified GitHub interface)."""
+        if not self._state.pr_update_success:
+            return False
+        new_titles = {**self._state.pr_titles, pr_number: title}
+        new_bodies = {**self._state.pr_bodies, pr_number: body}
+        self._state = replace(self._state, pr_titles=new_titles, pr_bodies=new_bodies)
+        return True
+
+    def merge_pr_with_message(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        *,
+        subject: str | None = None,
+        body: str | None = None,
+    ) -> bool:
+        """Merge a PR using squash merge (unified GitHub interface)."""
+        return self._state.merge_success
 
 
 class FakeGtKitOps(GtKit):
@@ -309,19 +429,42 @@ class FakeGtKitOps(GtKit):
         git_state: GitState | None = None,
         github_state: GitHubState | None = None,
         main_graphite: Graphite | None = None,
+        github: GitHub | None = None,
     ) -> None:
-        """Initialize with optional initial states."""
+        """Initialize with optional initial states.
+
+        Args:
+            git_state: Initial git state
+            github_state: Initial GitHub state (used by legacy FakeGitHubGtKitOps)
+            main_graphite: Graphite implementation
+            github: Optional unified GitHub implementation. If provided,
+                   github_state is ignored and the builder pattern methods
+                   for PR state will not work. Use FakeGitHub's constructor
+                   for full control over GitHub state.
+        """
         self._git = FakeGitGtKitOps(git_state)
-        self._github = FakeGitHubGtKitOps(github_state)
+        # Use unified GitHub if provided, else fallback to legacy FakeGitHubGtKitOps
+        if github is not None:
+            self._github: GitHub | FakeGitHubGtKitOps = github
+            self._legacy_github: FakeGitHubGtKitOps | None = None
+        else:
+            legacy = FakeGitHubGtKitOps(github_state)
+            self._github = legacy
+            self._legacy_github = legacy
         self._main_graphite = main_graphite if main_graphite is not None else FakeGraphite()
 
     def git(self) -> FakeGitGtKitOps:
         """Get the git operations interface."""
         return self._git
 
-    def github(self) -> FakeGitHubGtKitOps:
-        """Get the GitHub operations interface."""
-        return self._github
+    def github(self) -> GitHub:
+        """Get the unified GitHub operations interface.
+
+        Note: During migration, this may return FakeGitHubGtKitOps for callers
+        that don't provide a unified GitHub implementation. The return type is
+        GitHub (unified) but the implementation respects duck typing.
+        """
+        return self._github  # type: ignore[return-value]
 
     def main_graphite(self) -> Graphite:
         """Get the main Graphite operations interface."""
@@ -338,13 +481,22 @@ class FakeGtKitOps(GtKit):
 
         Returns:
             Self for chaining
+
+        Note: This builder method only works with legacy FakeGitHubGtKitOps.
+              When using unified FakeGitHub, configure state via its constructor.
         """
         # Update git state
         git_state = self._git.get_state()
         self._git._state = replace(git_state, current_branch=branch)
 
-        # Update github state
-        self._github.set_current_branch(branch)
+        # Update github state (only for legacy implementation)
+        if self._legacy_github is not None:
+            self._legacy_github.set_current_branch(branch)
+
+        # Configure main_graphite fake to track the parent relationship
+        if hasattr(self._main_graphite, "track_branch"):
+            repo_root = Path(self._git.get_state().repo_root)
+            self._main_graphite.track_branch(repo_root, branch, parent)
 
         return self
 
@@ -395,9 +547,15 @@ class FakeGtKitOps(GtKit):
 
         Returns:
             Self for chaining
+
+        Note: This builder method only works with legacy FakeGitHubGtKitOps.
+              When using unified FakeGitHub, configure state via its constructor.
         """
-        gh_state = self._github.get_state()
-        branch = self._github._current_branch
+        if self._legacy_github is None:
+            return self  # Skip if using unified GitHub
+
+        gh_state = self._legacy_github.get_state()
+        branch = self._legacy_github._current_branch
 
         if url is None:
             url = f"https://github.com/repo/pull/{number}"
@@ -412,7 +570,7 @@ class FakeGtKitOps(GtKit):
         if body is not None:
             new_pr_bodies = {**gh_state.pr_bodies, number: body}
 
-        self._github._state = replace(
+        self._legacy_github._state = replace(
             gh_state,
             pr_numbers=new_pr_numbers,
             pr_urls=new_pr_urls,
@@ -427,9 +585,15 @@ class FakeGtKitOps(GtKit):
 
         Returns:
             Self for chaining
+
+        Note: This builder method only works with legacy FakeGitHubGtKitOps.
+              When using unified FakeGitHub, use merge_should_fail=True in constructor.
         """
-        gh_state = self._github.get_state()
-        self._github._state = replace(gh_state, merge_success=False)
+        if self._legacy_github is None:
+            return self  # Skip if using unified GitHub
+
+        gh_state = self._legacy_github.get_state()
+        self._legacy_github._state = replace(gh_state, merge_success=False)
         return self
 
     def with_add_failure(self) -> "FakeGtKitOps":
@@ -447,9 +611,15 @@ class FakeGtKitOps(GtKit):
 
         Returns:
             Self for chaining
+
+        Note: This builder method only works with legacy FakeGitHubGtKitOps.
+              When using unified FakeGitHub, configure state via its constructor.
         """
-        gh_state = self._github.get_state()
-        self._github._state = replace(gh_state, pr_update_success=False)
+        if self._legacy_github is None:
+            return self  # Skip if using unified GitHub
+
+        gh_state = self._legacy_github.get_state()
+        self._legacy_github._state = replace(gh_state, pr_update_success=False)
         return self
 
     def with_pr_delay(self, attempts_until_visible: int) -> "FakeGtKitOps":
@@ -462,9 +632,15 @@ class FakeGtKitOps(GtKit):
 
         Returns:
             Self for chaining
+
+        Note: This builder method only works with legacy FakeGitHubGtKitOps.
+              When using unified FakeGitHub, configure state via its constructor.
         """
-        gh_state = self._github.get_state()
-        self._github._state = replace(
+        if self._legacy_github is None:
+            return self  # Skip if using unified GitHub
+
+        gh_state = self._legacy_github.get_state()
+        self._legacy_github._state = replace(
             gh_state, pr_delay_attempts_until_visible=attempts_until_visible
         )
         return self
@@ -474,9 +650,15 @@ class FakeGtKitOps(GtKit):
 
         Returns:
             Self for chaining
+
+        Note: This builder method only works with legacy FakeGitHubGtKitOps.
+              When using unified FakeGitHub, use authenticated=False in constructor.
         """
-        gh_state = self._github.get_state()
-        self._github._state = replace(
+        if self._legacy_github is None:
+            return self  # Skip if using unified GitHub
+
+        gh_state = self._legacy_github.get_state()
+        self._legacy_github._state = replace(
             gh_state,
             authenticated=False,
             auth_username=None,
@@ -492,13 +674,19 @@ class FakeGtKitOps(GtKit):
 
         Returns:
             Self for chaining
+
+        Note: This builder method only works with legacy FakeGitHubGtKitOps.
+              When using unified FakeGitHub, configure state via its constructor.
         """
-        gh_state = self._github.get_state()
+        if self._legacy_github is None:
+            return self  # Skip if using unified GitHub
+
+        gh_state = self._legacy_github.get_state()
         new_mergeability = {
             **gh_state.pr_mergeability,
             pr_number: ("CONFLICTING", "DIRTY"),
         }
-        self._github._state = replace(gh_state, pr_mergeability=new_mergeability)
+        self._legacy_github._state = replace(gh_state, pr_mergeability=new_mergeability)
         return self
 
     def with_pr_mergeability(
@@ -513,11 +701,160 @@ class FakeGtKitOps(GtKit):
 
         Returns:
             Self for chaining
+
+        Note: This builder method only works with legacy FakeGitHubGtKitOps.
+              When using unified FakeGitHub, configure state via its constructor.
         """
-        gh_state = self._github.get_state()
+        if self._legacy_github is None:
+            return self  # Skip if using unified GitHub
+
+        gh_state = self._legacy_github.get_state()
         new_mergeability = {
             **gh_state.pr_mergeability,
             pr_number: (mergeable, merge_state),
         }
-        self._github._state = replace(gh_state, pr_mergeability=new_mergeability)
+        self._legacy_github._state = replace(gh_state, pr_mergeability=new_mergeability)
+        return self
+
+    def with_repo_root(self, repo_root: str) -> "FakeGtKitOps":
+        """Set the repository root path.
+
+        Args:
+            repo_root: Path to repository root
+
+        Returns:
+            Self for chaining
+        """
+        git_state = self._git.get_state()
+        self._git._state = replace(git_state, repo_root=repo_root)
+        return self
+
+    def with_children(self, children: list[str]) -> "FakeGtKitOps":
+        """Set child branches for current branch.
+
+        Args:
+            children: List of child branch names
+
+        Returns:
+            Self for chaining
+        """
+        # Track children relationships in main_graphite for each child
+        if hasattr(self._main_graphite, "track_branch"):
+            current_branch = self._git.get_state().current_branch
+            repo_root = Path(self._git.get_state().repo_root)
+            for child in children:
+                self._main_graphite.track_branch(repo_root, child, current_branch)
+
+        return self
+
+    def with_submit_failure(self, stderr: str = "") -> "FakeGtKitOps":
+        """Configure submit_stack to fail via main_graphite.
+
+        Args:
+            stderr: Error message to include
+
+        Returns:
+            Self for chaining
+        """
+        # Configure main_graphite to raise RuntimeError for submit_stack
+        existing_branches: dict[str, BranchMetadata] = {}
+        if isinstance(self._main_graphite, FakeGraphite):
+            existing_branches = self._main_graphite._branches
+        error = RuntimeError(f"gt submit failed: {stderr}")
+        self._main_graphite = FakeGraphite(
+            submit_stack_raises=error,
+            branches=existing_branches,
+        )
+        return self
+
+    def with_restack_failure(self, stdout: str = "", stderr: str = "") -> "FakeGtKitOps":
+        """Configure restack to fail.
+
+        Args:
+            stdout: Stdout to return
+            stderr: Stderr to return
+
+        Returns:
+            Self for chaining
+        """
+        import subprocess
+
+        # Configure main_graphite to raise CalledProcessError for restack
+        error = subprocess.CalledProcessError(returncode=1, cmd=["gt", "restack"])
+        error.stdout = stdout
+        error.stderr = stderr
+        existing_branches: dict[str, BranchMetadata] = {}
+        if isinstance(self._main_graphite, FakeGraphite):
+            existing_branches = self._main_graphite._branches
+        self._main_graphite = FakeGraphite(
+            restack_raises=error,
+            branches=existing_branches,
+        )
+        return self
+
+    def with_squash_failure(self, stdout: str = "", stderr: str = "") -> "FakeGtKitOps":
+        """Configure squash_branch to fail via main_graphite.
+
+        Args:
+            stdout: Stdout to include
+            stderr: Error message to include
+
+        Returns:
+            Self for chaining
+        """
+        import subprocess
+
+        # Configure main_graphite to raise CalledProcessError for squash
+        error = subprocess.CalledProcessError(returncode=1, cmd=["gt", "squash"])
+        error.stdout = stdout
+        error.stderr = stderr
+        existing_branches: dict[str, BranchMetadata] = {}
+        if isinstance(self._main_graphite, FakeGraphite):
+            existing_branches = self._main_graphite._branches
+        self._main_graphite = FakeGraphite(
+            squash_branch_raises=error,
+            branches=existing_branches,
+        )
+        return self
+
+    def with_submit_success_but_nothing_submitted(self) -> "FakeGtKitOps":
+        """Configure submit_stack to fail with 'Nothing to submit!' error.
+
+        Simulates the case where a parent branch is empty/already merged.
+
+        Returns:
+            Self for chaining
+        """
+        # Configure main_graphite to raise RuntimeError with nothing submitted message
+        existing_branches: dict[str, BranchMetadata] = {}
+        if isinstance(self._main_graphite, FakeGraphite):
+            existing_branches = self._main_graphite._branches
+        error = RuntimeError(
+            "gt submit failed: WARNING: This branch does not introduce any changes:\n"
+            "▸ stale-parent-branch\n"
+            "WARNING: This branch and any dependent branches will not be submitted.\n"
+            "Nothing to submit!"
+        )
+        self._main_graphite = FakeGraphite(
+            submit_stack_raises=error,
+            branches=existing_branches,
+        )
+        return self
+
+    def with_gt_unauthenticated(self) -> "FakeGtKitOps":
+        """Configure Graphite as not authenticated.
+
+        Returns:
+            Self for chaining
+        """
+        # Configure main_graphite to return unauthenticated status
+        existing_branches: dict[str, BranchMetadata] = {}
+        if isinstance(self._main_graphite, FakeGraphite):
+            existing_branches = self._main_graphite._branches
+        self._main_graphite = FakeGraphite(
+            authenticated=False,
+            auth_username=None,
+            auth_repo_info=None,
+            branches=existing_branches,
+        )
         return self
