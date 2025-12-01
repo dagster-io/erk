@@ -53,24 +53,24 @@ def test_get_workflow_run_returns_none_when_not_found() -> None:
     github = FakeGitHub(workflow_runs=[run1])
     repo_root = Path("/fake/repo")
 
-    # Act & Assert
-    import pytest
+    # Act
+    result = github.get_workflow_run(repo_root, "999")
 
-    with pytest.raises(KeyError, match="Workflow run 999 not configured"):
-        github.get_workflow_run(repo_root, "999")
+    # Assert
+    assert result is None, "Expected None when workflow run not found"
 
 
 def test_get_workflow_run_handles_empty_workflow_runs() -> None:
-    """Test that get_workflow_run raises KeyError when no workflow runs configured."""
-    import pytest
-
+    """Test that get_workflow_run returns None when no workflow runs configured."""
     # Arrange
     github = FakeGitHub(workflow_runs=[])
     repo_root = Path("/fake/repo")
 
-    # Act & Assert
-    with pytest.raises(KeyError, match="Workflow run 123 not configured"):
-        github.get_workflow_run(repo_root, "123")
+    # Act
+    result = github.get_workflow_run(repo_root, "123")
+
+    # Assert
+    assert result is None, "Expected None when no workflow runs configured"
 
 
 def test_get_workflow_runs_by_branches_prefers_in_progress_over_completed() -> None:

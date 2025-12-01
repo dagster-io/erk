@@ -51,14 +51,13 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
 
     # Get PR checkout info from GitHub
     ctx.feedback.info(f"Fetching PR #{pr_number}...")
-    try:
-        pr_info = ctx.github.get_pr_checkout_info(repo.root, pr_number)
-    except (KeyError, RuntimeError):
+    pr_info = ctx.github.get_pr_checkout_info(repo.root, pr_number)
+    if pr_info is None:
         ctx.feedback.error(
             f"Could not find PR #{pr_number}\n\n"
             "Check the PR number and ensure you're authenticated with gh CLI."
         )
-        raise SystemExit(1) from None
+        raise SystemExit(1)
 
     # Warn for closed/merged PRs
     if pr_info.state != "OPEN":
