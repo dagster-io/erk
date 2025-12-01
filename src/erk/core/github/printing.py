@@ -44,7 +44,7 @@ class PrintingGitHub(PrintingBase, GitHub):
         """Get PR status (read-only, no printing)."""
         return self._wrapped.get_pr_status(repo_root, branch, debug=debug)
 
-    def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
+    def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str:
         """Get PR base branch (read-only, no printing)."""
         return self._wrapped.get_pr_base_branch(repo_root, pr_number)
 
@@ -70,7 +70,7 @@ class PrintingGitHub(PrintingBase, GitHub):
         """List workflow runs (read-only, no printing)."""
         return self._wrapped.list_workflow_runs(repo_root, workflow, limit, user=user)
 
-    def get_workflow_run(self, repo_root: Path, run_id: str) -> WorkflowRun | None:
+    def get_workflow_run(self, repo_root: Path, run_id: str) -> WorkflowRun:
         """Get workflow run details (read-only, no printing)."""
         return self._wrapped.get_workflow_run(repo_root, run_id)
 
@@ -181,7 +181,7 @@ class PrintingGitHub(PrintingBase, GitHub):
             repo_root, workflow, branch_name, timeout, poll_interval
         )
 
-    def get_pr_checkout_info(self, repo_root: Path, pr_number: int) -> PRCheckoutInfo | None:
+    def get_pr_checkout_info(self, repo_root: Path, pr_number: int) -> PRCheckoutInfo:
         """Get PR checkout info (read-only, no printing)."""
         return self._wrapped.get_pr_checkout_info(repo_root, pr_number)
 

@@ -391,22 +391,25 @@ class Ensure:
 
     @staticmethod
     def gh_authenticated(ctx: "ErkContext") -> None:
-        """Ensure GitHub CLI (gh) is authenticated.
+        """Ensure GitHub CLI (gh) is installed and authenticated.
 
-        Uses LBYL pattern to check gh authentication status before operations
-        that require it.
+        Uses LBYL pattern to check gh installation and authentication status
+        before operations that require it. This is the canonical check for
+        GitHub CLI readiness - callers should use this single method rather
+        than calling gh_installed() separately.
 
         Args:
             ctx: Application context with github integration
 
         Raises:
-            SystemExit: If gh is not authenticated
+            SystemExit: If gh is not installed or not authenticated
 
         Example:
             >>> Ensure.gh_authenticated(ctx)
             >>> # Now safe to call gh commands
             >>> pr_info = ctx.github.get_pr_status(repo.root, branch)
         """
+        Ensure.gh_installed()
         is_authenticated, username, _ = ctx.github.check_auth_status()
 
         if not is_authenticated:

@@ -17,6 +17,9 @@ def logs_run(ctx: ErkContext, run_id: str | None) -> None:
     If RUN_ID is not provided, shows logs for the most recent run
     on the current branch.
     """
+    # Validate preconditions upfront (LBYL)
+    Ensure.gh_authenticated(ctx)
+
     # Discover repository context
     repo = discover_repo_context(ctx, ctx.cwd)
 

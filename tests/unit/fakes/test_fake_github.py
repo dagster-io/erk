@@ -216,21 +216,23 @@ def test_fake_github_ops_get_pr_base_branch_existing() -> None:
 
 
 def test_fake_github_ops_get_pr_base_branch_missing() -> None:
-    """Test get_pr_base_branch returns None for missing PR."""
+    """Test get_pr_base_branch raises KeyError for missing PR."""
+    import pytest
+
     ops = FakeGitHub()
 
-    result = ops.get_pr_base_branch(sentinel_path(), 999)
-
-    assert result is None
+    with pytest.raises(KeyError, match="PR #999 base branch not configured"):
+        ops.get_pr_base_branch(sentinel_path(), 999)
 
 
 def test_fake_github_ops_get_pr_base_branch_empty_dict() -> None:
-    """Test get_pr_base_branch with explicitly empty pr_bases dict."""
+    """Test get_pr_base_branch raises KeyError with empty pr_bases dict."""
+    import pytest
+
     ops = FakeGitHub(pr_bases={})
 
-    result = ops.get_pr_base_branch(sentinel_path(), 123)
-
-    assert result is None
+    with pytest.raises(KeyError, match="PR #123 base branch not configured"):
+        ops.get_pr_base_branch(sentinel_path(), 123)
 
 
 def test_fake_github_ops_update_pr_base_branch_single() -> None:

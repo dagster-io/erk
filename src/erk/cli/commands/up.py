@@ -40,6 +40,8 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool) -> None:
     This will cd to the child branch's worktree, create/activate .venv, and load .env variables.
     Requires Graphite to be enabled: 'erk config set use_graphite true'
     """
+    # Validate preconditions upfront (LBYL)
+    Ensure.gh_authenticated(ctx)
     ensure_graphite_enabled(ctx)
     repo = discover_repo_context(ctx, ctx.cwd)
 

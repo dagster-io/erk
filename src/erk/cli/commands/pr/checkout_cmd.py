@@ -40,7 +40,7 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
         erk pr checkout https://github.com/owner/repo/pull/123
     """
     # Validate preconditions upfront (LBYL)
-    Ensure.gh_installed()
+    Ensure.gh_authenticated(ctx)
 
     if isinstance(ctx.repo, NoRepoSentinel):
         ctx.feedback.error("Not in a git repository")
@@ -51,13 +51,14 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
 
     # Get PR checkout info from GitHub
     ctx.feedback.info(f"Fetching PR #{pr_number}...")
-    pr_info = ctx.github.get_pr_checkout_info(repo.root, pr_number)
-    if pr_info is None:
+    try:
+        pr_info = ctx.github.get_pr_checkout_info(repo.root, pr_number)
+    except (KeyError, RuntimeError):
         ctx.feedback.error(
             f"Could not find PR #{pr_number}\n\n"
             "Check the PR number and ensure you're authenticated with gh CLI."
         )
-        raise SystemExit(1)
+        raise SystemExit(1) from None
 
     # Warn for closed/merged PRs
     if pr_info.state != "OPEN":

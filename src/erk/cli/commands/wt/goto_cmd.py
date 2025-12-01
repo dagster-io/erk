@@ -36,6 +36,9 @@ def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
     Example:
       erk goto feature-work    # Switch to worktree named "feature-work"
     """
+    # Validate preconditions upfront (LBYL)
+    Ensure.gh_authenticated(ctx)
+
     repo = discover_repo_context(ctx, ctx.cwd)
 
     # Special case: "root" navigates to root repository

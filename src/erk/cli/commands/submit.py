@@ -559,7 +559,7 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...]) -> None:
         - All issues must be OPEN
         - Working directory must be clean (no uncommitted changes)
     """
-    # Validate GitHub CLI authentication upfront (LBYL)
+    # Validate GitHub CLI prerequisites upfront (LBYL)
     Ensure.gh_authenticated(ctx)
 
     # Get repository context

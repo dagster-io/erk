@@ -42,6 +42,8 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool) -> None:
     create/activate .venv, and load .env variables.
     Requires Graphite to be enabled: 'erk config set use_graphite true'
     """
+    # Validate preconditions upfront (LBYL)
+    Ensure.gh_authenticated(ctx)
     ensure_graphite_enabled(ctx)
     repo = discover_repo_context(ctx, ctx.cwd)
     trunk_branch = ctx.trunk_branch

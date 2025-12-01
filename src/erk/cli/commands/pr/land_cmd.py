@@ -51,6 +51,7 @@ def pr_land(ctx: ErkContext, script: bool) -> None:
     - Working tree must be clean (no uncommitted changes)
     """
     # Validate prerequisites
+    Ensure.gh_authenticated(ctx)
     ensure_graphite_enabled(ctx)
     check_clean_working_tree(ctx)
 

@@ -64,21 +64,19 @@ def test_get_prs_for_repo_without_checks(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_get_prs_for_repo_command_failure(monkeypatch: MonkeyPatch) -> None:
-    """Test that get_prs_for_repo gracefully handles command failures."""
+    """Test that get_prs_for_repo propagates command failures."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         raise RuntimeError("Failed to execute gh command")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
-        result = ops.get_prs_for_repo(Path("/repo"), include_checks=False)
-
-        # Should return empty dict on failure
-        assert result == {}
+        with pytest.raises(RuntimeError, match="Failed to execute gh command"):
+            ops.get_prs_for_repo(Path("/repo"), include_checks=False)
 
 
 def test_get_prs_for_repo_json_decode_error(monkeypatch: MonkeyPatch) -> None:
-    """Test that get_prs_for_repo gracefully handles malformed JSON."""
+    """Test that get_prs_for_repo propagates JSON decode errors."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         return subprocess.CompletedProcess(
@@ -90,10 +88,8 @@ def test_get_prs_for_repo_json_decode_error(monkeypatch: MonkeyPatch) -> None:
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
-        result = ops.get_prs_for_repo(Path("/repo"), include_checks=False)
-
-        # Should return empty dict on JSON error
-        assert result == {}
+        with pytest.raises(json.JSONDecodeError):
+            ops.get_prs_for_repo(Path("/repo"), include_checks=False)
 
 
 # ============================================================================
@@ -142,19 +138,15 @@ def test_get_pr_status_no_pr(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_get_pr_status_command_failure(monkeypatch: MonkeyPatch) -> None:
-    """Test that get_pr_status gracefully handles command failures."""
+    """Test that get_pr_status propagates command failures."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         raise RuntimeError("Failed to execute gh command")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
-        state, number, title = ops.get_pr_status(Path("/repo"), "branch", debug=False)
-
-        # Should return NONE status on failure
-        assert state == "NONE"
-        assert number is None
-        assert title is None
+        with pytest.raises(RuntimeError, match="Failed to execute gh command"):
+            ops.get_pr_status(Path("/repo"), "branch", debug=False)
 
 
 def test_get_pr_status_debug_output(capsys, monkeypatch: MonkeyPatch) -> None:
@@ -218,29 +210,28 @@ def test_get_pr_base_branch_with_whitespace(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_get_pr_base_branch_command_failure(monkeypatch: MonkeyPatch) -> None:
-    """Test that get_pr_base_branch returns None on command failure."""
+    """Test that get_pr_base_branch propagates command failures."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         raise RuntimeError("Failed to execute gh command")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
-        result = ops.get_pr_base_branch(Path("/repo"), 123)
-
-        assert result is None
+        with pytest.raises(RuntimeError, match="Failed to execute gh command"):
+            ops.get_pr_base_branch(Path("/repo"), 123)
 
 
 def test_get_pr_base_branch_file_not_found(monkeypatch: MonkeyPatch) -> None:
-    """Test that get_pr_base_branch returns None when gh CLI not installed."""
+    """Test that get_pr_base_branch propagates error when gh CLI not installed."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         raise FileNotFoundError("gh command not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
-        result = ops.get_pr_base_branch(Path("/repo"), 123)
-
-        assert result is None
+        # FileNotFoundError is converted to RuntimeError by subprocess wrapper
+        with pytest.raises(RuntimeError, match="Command not found"):
+            ops.get_pr_base_branch(Path("/repo"), 123)
 
 
 # ============================================================================
@@ -271,29 +262,28 @@ def test_update_pr_base_branch_success(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_update_pr_base_branch_command_failure(monkeypatch: MonkeyPatch) -> None:
-    """Test that update_pr_base_branch gracefully handles command failures."""
+    """Test that update_pr_base_branch propagates command failures."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         raise RuntimeError("Failed to execute gh command")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
-
-        # Should not raise exception - graceful degradation
-        ops.update_pr_base_branch(Path("/repo"), 123, "new-base")
+        with pytest.raises(RuntimeError, match="Failed to execute gh command"):
+            ops.update_pr_base_branch(Path("/repo"), 123, "new-base")
 
 
 def test_update_pr_base_branch_file_not_found(monkeypatch: MonkeyPatch) -> None:
-    """Test that update_pr_base_branch gracefully handles missing gh CLI."""
+    """Test that update_pr_base_branch propagates error when gh CLI not installed."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         raise FileNotFoundError("gh command not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
-
-        # Should not raise exception - graceful degradation
-        ops.update_pr_base_branch(Path("/repo"), 123, "new-base")
+        # FileNotFoundError is converted to RuntimeError by subprocess wrapper
+        with pytest.raises(RuntimeError, match="Command not found"):
+            ops.update_pr_base_branch(Path("/repo"), 123, "new-base")
 
 
 # ============================================================================

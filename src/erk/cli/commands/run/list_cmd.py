@@ -21,6 +21,11 @@ from erk.core.display_utils import (
 
 def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
     """List workflow runs in a run-centric table view."""
+    # Validate preconditions upfront (LBYL)
+    from erk.cli.ensure import Ensure
+
+    Ensure.gh_authenticated(ctx)
+
     # Discover repository context
     repo = discover_repo_context(ctx, ctx.cwd)
 
