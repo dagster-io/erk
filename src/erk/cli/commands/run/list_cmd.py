@@ -3,6 +3,7 @@
 import click
 from erk_shared.github.emoji import format_checks_cell
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import PlanQuery
 from rich.console import Console
 from rich.table import Table
 
@@ -45,9 +46,9 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
         if issue_num is not None:
             issue_numbers.append(issue_num)
 
-    # 3. Fetch issues for titles (using issues interface)
-    issues = ctx.issues.list_issues(repo.root, labels=["erk-plan"])
-    issue_map = {issue.number: issue for issue in issues}
+    # 3. Fetch plans for titles (using plan store)
+    plans = ctx.plan_store.list_plans(repo.root, PlanQuery(labels=["erk-plan"]))
+    plan_map = {int(plan.plan_identifier): plan for plan in plans}
 
     # Second filtering pass - remove runs where we can't display title
     if not show_all:
@@ -57,13 +58,13 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
             if issue_num is None:
                 continue  # Already filtered, but defensive check
 
-            # Filter if issue not found
-            if issue_num not in issue_map:
+            # Filter if plan not found
+            if issue_num not in plan_map:
                 continue
 
             # Filter if title is empty
-            issue = issue_map[issue_num]
-            if not issue.title or not issue.title.strip():
+            plan = plan_map[issue_num]
+            if not plan.title or not plan.title.strip():
                 continue
 
             filtered_runs.append(run)
@@ -94,11 +95,11 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
     table.add_column("chks", no_wrap=True)
 
     # Build repo URL for links
-    # Extract owner/repo from issue URL if available, otherwise use git remote
+    # Extract owner/repo from plan URL if available, otherwise use git remote
     owner, repo_name = None, None
-    if issues and issues[0].url:
+    if plans and plans[0].url:
         # Parse from URL like https://github.com/owner/repo/issues/123
-        parts = issues[0].url.split("/")
+        parts = plans[0].url.split("/")
         if len(parts) >= 5:
             owner = parts[-4]
             repo_name = parts[-3]
@@ -137,11 +138,11 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
             else:
                 plan_cell = f"[cyan]#{issue_num}[/cyan]"
 
-            # Get title from issue map
-            if issue_num in issue_map:
-                issue = issue_map[issue_num]
+            # Get title from plan map
+            if issue_num in plan_map:
+                plan = plan_map[issue_num]
 
-                title = issue.title
+                title = plan.title
                 # Truncate to 50 characters
                 if len(title) > 50:
                     title = title[:47] + "..."

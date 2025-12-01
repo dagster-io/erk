@@ -4,6 +4,8 @@ from pathlib import Path
 
 from erk_shared.github.issues import GitHubIssues
 from erk_shared.integrations.graphite.fake import FakeGraphite
+from erk_shared.plan_store.event_store import PlanEventStore
+from erk_shared.plan_store.store import PlanStore
 
 from erk.cli.config import LoadedConfig
 from erk.core.claude_executor import ClaudeExecutor
@@ -21,6 +23,8 @@ def create_test_context(
     git: FakeGit | None = None,
     github: FakeGitHub | None = None,
     issues: GitHubIssues | None = None,
+    plan_store: PlanStore | None = None,
+    plan_event_store: PlanEventStore | None = None,
     graphite: FakeGraphite | None = None,
     shell: FakeShell | None = None,
     claude_executor: ClaudeExecutor | None = None,
@@ -44,6 +48,10 @@ def create_test_context(
                    If None, creates empty FakeGitHub.
         issues: Optional GitHubIssues implementation (Real/Fake/DryRun).
                    If None, creates empty FakeGitHubIssues.
+        plan_store: Optional PlanStore implementation (Real/Fake).
+                   If None, creates empty FakePlanStore.
+        plan_event_store: Optional PlanEventStore implementation (Real/Fake).
+                   If None, creates empty FakePlanEventStore.
         graphite: Optional FakeGraphite with test configuration.
                      If None, creates empty FakeGraphite.
         shell: Optional FakeShell with test configuration.
@@ -89,6 +97,8 @@ def create_test_context(
         git=git,
         github=github,
         issues=issues,
+        plan_store=plan_store,
+        plan_event_store=plan_event_store,
         graphite=graphite,
         shell=shell,
         claude_executor=claude_executor,

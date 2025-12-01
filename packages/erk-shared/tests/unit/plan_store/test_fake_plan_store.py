@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 from erk_shared.plan_store.fake import FakePlanStore
-from erk_shared.plan_store.types import Plan, PlanQuery, PlanState
+from erk_shared.plan_store.types import Plan, PlanMetadataUpdate, PlanQuery, PlanState
 
 
 def test_get_plan_success() -> None:
@@ -330,3 +330,159 @@ def test_string_identifier_flexibility() -> None:
     assert store.get_plan(Path("/fake"), "42") == issue_github
     assert store.get_plan(Path("/fake"), "PROJ-123") == issue_jira
     assert store.get_plan(Path("/fake"), "550e8400-e29b-41d4-a716-446655440000") == issue_linear
+
+
+# === WRITE OPERATIONS TESTS ===
+
+
+def test_create_plan_basic() -> None:
+    """Test creating a plan stores it and returns result."""
+    store = FakePlanStore()
+
+    result = store.create_plan(
+        repo_root=Path("/fake/repo"),
+        title="Test Plan",
+        body="Plan content here",
+        labels=["bug"],
+    )
+
+    # Check result
+    assert result.plan_identifier == "1"
+    assert result.url.startswith("https://github.com/")
+
+    # Check plan was stored
+    plan = store.get_plan(Path("/fake"), "1")
+    assert plan.title == "Test Plan [erk-plan]"
+    assert plan.body == "Plan content here"
+    assert plan.state == PlanState.OPEN
+    assert "erk-plan" in plan.labels
+    assert "bug" in plan.labels
+
+    # Check created_plans tracking
+    assert len(store.created_plans) == 1
+    assert store.created_plans[0] == result
+
+
+def test_create_plan_auto_increments_id() -> None:
+    """Test that plan IDs auto-increment."""
+    store = FakePlanStore()
+
+    result1 = store.create_plan(Path("/fake"), "Plan 1", "Body 1", [])
+    result2 = store.create_plan(Path("/fake"), "Plan 2", "Body 2", [])
+
+    assert result1.plan_identifier == "1"
+    assert result2.plan_identifier == "2"
+
+
+def test_create_plan_deduplicates_erk_plan_label() -> None:
+    """Test that erk-plan label is not duplicated if already provided."""
+    store = FakePlanStore()
+
+    result = store.create_plan(
+        repo_root=Path("/fake"),
+        title="Test",
+        body="Body",
+        labels=["erk-plan", "other"],
+    )
+
+    plan = store.get_plan(Path("/fake"), result.plan_identifier)
+    # erk-plan should appear exactly once
+    assert plan.labels.count("erk-plan") == 1
+    assert "other" in plan.labels
+
+
+def test_update_plan_metadata_worktree_name() -> None:
+    """Test updating worktree_name in plan metadata."""
+    # Create initial plan
+    initial_plan = Plan(
+        plan_identifier="42",
+        title="Test Plan",
+        body="Body",
+        state=PlanState.OPEN,
+        url="https://example.com/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"number": 42},
+    )
+    store = FakePlanStore(plans={"42": initial_plan})
+
+    # Update metadata
+    updates = PlanMetadataUpdate(worktree_name="feature-branch")
+    store.update_plan_metadata(Path("/fake"), "42", updates)
+
+    # Verify update
+    updated_plan = store.get_plan(Path("/fake"), "42")
+    assert updated_plan.metadata.get("worktree_name") == "feature-branch"
+
+
+def test_update_plan_metadata_multiple_fields() -> None:
+    """Test updating multiple metadata fields at once."""
+    initial_plan = Plan(
+        plan_identifier="42",
+        title="Test Plan",
+        body="Body",
+        state=PlanState.OPEN,
+        url="https://example.com/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"number": 42},
+    )
+    store = FakePlanStore(plans={"42": initial_plan})
+
+    updates = PlanMetadataUpdate(
+        worktree_name="feature-branch",
+        last_dispatched_run_id="run-123",
+        last_dispatched_at="2024-06-01T12:00:00Z",
+        last_local_impl_at="2024-06-02T10:00:00Z",
+    )
+    store.update_plan_metadata(Path("/fake"), "42", updates)
+
+    updated_plan = store.get_plan(Path("/fake"), "42")
+    assert updated_plan.metadata.get("worktree_name") == "feature-branch"
+    assert updated_plan.metadata.get("last_dispatched_run_id") == "run-123"
+    assert updated_plan.metadata.get("last_dispatched_at") == "2024-06-01T12:00:00Z"
+    assert updated_plan.metadata.get("last_local_impl_at") == "2024-06-02T10:00:00Z"
+
+
+def test_update_plan_metadata_not_found() -> None:
+    """Test updating metadata for non-existent plan raises error."""
+    store = FakePlanStore()
+
+    with pytest.raises(RuntimeError, match="Plan '999' not found"):
+        store.update_plan_metadata(Path("/fake"), "999", PlanMetadataUpdate())
+
+
+def test_ensure_label_tracks_labels() -> None:
+    """Test that ensure_label tracks labels in memory."""
+    store = FakePlanStore()
+
+    store.ensure_label(
+        repo_root=Path("/fake"),
+        label="erk-plan",
+        description="Implementation plan",
+        color="0E8A16",
+    )
+
+    assert "erk-plan" in store.labels
+    assert store.labels["erk-plan"] == ("Implementation plan", "0E8A16")
+
+
+def test_get_current_user_default() -> None:
+    """Test default current user is 'test-user'."""
+    store = FakePlanStore()
+    assert store.get_current_user() == "test-user"
+
+
+def test_get_current_user_configurable() -> None:
+    """Test current user can be configured."""
+    store = FakePlanStore()
+
+    store.set_current_user("custom-user")
+    assert store.get_current_user() == "custom-user"
+
+    store.set_current_user(None)
+    assert store.get_current_user() is None

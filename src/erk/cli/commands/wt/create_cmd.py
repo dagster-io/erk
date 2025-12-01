@@ -6,7 +6,6 @@ from pathlib import Path
 
 import click
 from erk_shared.github.issue_link_branches import DevelopmentBranch
-from erk_shared.github.issues import IssueInfo
 from erk_shared.impl_folder import create_impl_folder, get_impl_path
 from erk_shared.naming import (
     default_branch_for_worktree,
@@ -19,6 +18,7 @@ from erk_shared.naming import (
     strip_plan_from_filename,
 )
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import Plan
 
 from erk.cli.config import LoadedConfig
 from erk.cli.constants import USE_GITHUB_NATIVE_BRANCH_LINKING
@@ -608,7 +608,7 @@ def create_wt(
 
     # Initialize variables used in conditional blocks (for type checking)
     issue_number_parsed: str | None = None
-    issue_info: IssueInfo | None = None
+    plan: Plan | None = None
 
     # Handle --from-current-branch flag
     if from_current_branch:
@@ -690,10 +690,10 @@ def create_wt(
             "issue_number_parsed must be set when from_issue is True"
         )
 
-        # Fetch issue using integration layer
+        # Fetch plan using plan store
         try:
-            issue_info = ctx.issues.get_issue(repo.root, int(issue_number_parsed))
-        except RuntimeError as e:
+            plan = ctx.plan_store.get_plan(repo.root, issue_number_parsed)
+        except (RuntimeError, ValueError) as e:
             user_output(
                 click.style("Error: ", fg="red")
                 + f"Failed to fetch issue #{issue_number_parsed}\n"
@@ -706,7 +706,7 @@ def create_wt(
             raise SystemExit(1) from e
 
         # Validate erk-plan label
-        if "erk-plan" not in issue_info.labels:
+        if "erk-plan" not in plan.labels:
             user_output(
                 click.style("Error: ", fg="red")
                 + f"Issue #{issue_number_parsed} must have 'erk-plan' label\n\n"
@@ -722,7 +722,7 @@ def create_wt(
         if USE_GITHUB_NATIVE_BRANCH_LINKING:
             # Compute branch name that matches worktree naming convention
             # First truncate to 31 chars, then append timestamp suffix
-            base_branch_name = sanitize_worktree_name(f"{issue_number_parsed}-{issue_info.title}")
+            base_branch_name = sanitize_worktree_name(f"{issue_number_parsed}-{plan.title}")
             timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
             desired_branch_name = base_branch_name + timestamp_suffix
             # Use GitHub's native branch linking via `gh issue develop`
@@ -734,7 +734,7 @@ def create_wt(
             )
         else:
             # Traditional branch naming from issue title
-            branch_name = derive_branch_name_from_title(issue_info.title)
+            branch_name = derive_branch_name_from_title(plan.title)
             dev_branch = DevelopmentBranch(
                 branch_name=branch_name,
                 issue_number=int(issue_number_parsed),
@@ -935,11 +935,11 @@ def create_wt(
 
     # Create impl folder if issue provided
     if from_issue:
-        # Type narrowing: issue_info must be set if from_issue is True
-        assert issue_info is not None, "issue_info must be set when from_issue is True"
+        # Type narrowing: plan must be set if from_issue is True
+        assert plan is not None, "plan must be set when from_issue is True"
 
-        # Use issue body as plan content
-        plan_content = issue_info.body
+        # Use plan body as plan content
+        plan_content = plan.body
 
         # Create .impl/ folder in new worktree
         impl_folder_destination = create_impl_folder(wt_path, plan_content)
@@ -947,14 +947,14 @@ def create_wt(
         # Create .impl/issue.json metadata
         issue_json_path = wt_path / ".impl" / "issue.json"
         issue_metadata = {
-            "number": issue_info.number,
-            "url": issue_info.url,
-            "title": issue_info.title,
+            "number": int(plan.plan_identifier),
+            "url": plan.url,
+            "title": plan.title,
         }
         issue_json_path.write_text(json.dumps(issue_metadata, indent=2), encoding="utf-8")
 
         if not script and not output_json:
-            user_output(f"Created worktree from issue #{issue_info.number}: {issue_info.title}")
+            user_output(f"Created worktree from issue #{plan.plan_identifier}: {plan.title}")
 
     # Copy .impl directory if --copy-plan flag is set
     if copy_plan:

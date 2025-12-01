@@ -1,99 +1,29 @@
-"""Command to display chronological event log for a plan."""
+"""Command to display chronological event log for a plan.
+
+Uses the provider-agnostic PlanEventStore to fetch events,
+abstracting away the underlying storage format (e.g., GitHub comments).
+"""
 
 import json
-from collections.abc import Callable
 from datetime import datetime
-from typing import Literal, TypedDict
+from typing import TypedDict
 
 import click
-from erk_shared.github.metadata import parse_metadata_blocks
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.event_store import PlanEvent, PlanEventType
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 
-# Event type literals
-type EventType = Literal[
-    "plan_created",
-    "submission_queued",
-    "workflow_started",
-    "implementation_status",
-    "plan_retry",
-    "worktree_created",
-]
 
-
-# Event metadata types
-class PlanCreatedMetadata(TypedDict, total=False):
-    """Metadata for plan_created event."""
-
-    worktree_name: str
-    issue_number: int
-
-
-class SubmissionQueuedMetadata(TypedDict, total=False):
-    """Metadata for submission_queued event."""
-
-    status: str
-    submitted_by: str
-    expected_workflow: str
-
-
-class WorkflowStartedMetadata(TypedDict, total=False):
-    """Metadata for workflow_started event."""
-
-    status: str
-    workflow_run_id: str
-    workflow_run_url: str
-
-
-class ImplementationStatusMetadata(TypedDict, total=False):
-    """Metadata for implementation_status event."""
-
-    status: str
-    completed_steps: int
-    total_steps: int
-    step_description: str
-    worktree: str
-    branch: str
-
-
-class PlanRetryMetadata(TypedDict, total=False):
-    """Metadata for plan_retry event."""
-
-    retry_count: int
-    triggered_by: str
-
-
-class WorktreeCreatedMetadata(TypedDict, total=False):
-    """Metadata for worktree_created event."""
-
-    worktree_name: str
-    branch_name: str
-
-
-# Union type for all metadata types
-type EventMetadata = (
-    PlanCreatedMetadata
-    | SubmissionQueuedMetadata
-    | WorkflowStartedMetadata
-    | ImplementationStatusMetadata
-    | PlanRetryMetadata
-    | WorktreeCreatedMetadata
-)
-
-
-class Event(TypedDict):
-    """Structured event with timestamp, type, and metadata."""
+# Output format types for JSON serialization
+class OutputEvent(TypedDict):
+    """Structured event for output (JSON and timeline)."""
 
     timestamp: str
-    event_type: EventType
-    metadata: EventMetadata
-
-
-# Type alias for event extractor functions
-type EventExtractor = Callable[[dict], Event | None]
+    event_type: str
+    metadata: dict[str, object]
 
 
 @click.command("log")
@@ -131,230 +61,72 @@ def plan_log(ctx: ErkContext, identifier: str, output_json: bool) -> None:
         ensure_erk_metadata_dir(repo)
         repo_root = repo.root
 
-        # Resolve plan identifier to issue number
+        # Resolve plan identifier
         plan = ctx.plan_store.get_plan(repo_root, identifier)
+        plan_identifier = plan.plan_identifier
 
-        # Convert plan identifier to issue number (GitHub: issue number as string)
-        if not plan.plan_identifier.isdigit():
-            user_output(
-                click.style("Error: ", fg="red")
-                + f"Invalid plan identifier '{plan.plan_identifier}': not a valid issue number"
-            )
-            raise SystemExit(1)
+        # Fetch events from event store (already sorted chronologically)
+        plan_events = ctx.plan_event_store.get_events(repo_root, plan_identifier)
 
-        issue_number = int(plan.plan_identifier)
-
-        # Fetch all comments for the plan issue
-        comment_bodies = ctx.issues.get_issue_comments(repo_root, issue_number)
-
-        # Extract events from all comments
-        events = _extract_events_from_comments(comment_bodies)
-
-        # Sort events chronologically (oldest first)
-        events.sort(key=lambda e: e["timestamp"])
+        # Convert to output format
+        output_events = [_plan_event_to_output(e) for e in plan_events]
 
         # Output events
         if output_json:
-            _output_json(events)
+            _output_json(output_events)
         else:
-            _output_timeline(events, issue_number)
+            _output_timeline(output_events, plan_identifier)
 
     except (RuntimeError, ValueError) as e:
         user_output(click.style("Error: ", fg="red") + str(e))
         raise SystemExit(1) from e
 
 
-def _extract_events_from_comments(comment_bodies: list[str]) -> list[Event]:
-    """Extract all events from comment metadata blocks.
+def _plan_event_to_output(event: PlanEvent) -> OutputEvent:
+    """Convert PlanEvent to output format.
 
     Args:
-        comment_bodies: List of GitHub issue comment bodies
+        event: PlanEvent from event store
 
     Returns:
-        List of Event objects with timestamp, event_type, and metadata fields
+        OutputEvent ready for JSON or timeline display
     """
-    events: list[Event] = []
-
-    for comment_body in comment_bodies:
-        blocks = parse_metadata_blocks(comment_body)
-
-        for block in blocks:
-            event = _block_to_event(block.key, block.data)
-            if event is not None:
-                events.append(event)
-
-    return events
-
-
-def _block_to_event(key: str, data: dict) -> Event | None:
-    """Convert a metadata block to an Event.
-
-    Args:
-        key: Metadata block key (e.g., "erk-plan", "submission-queued")
-        data: Metadata block data
-
-    Returns:
-        Event object or None if block type is not recognized
-    """
-    # Map block types to event extractors
-    extractors: dict[str, EventExtractor] = {
-        "erk-plan": _extract_plan_created_event,
-        "submission-queued": _extract_submission_queued_event,
-        "workflow-started": _extract_workflow_started_event,
-        "erk-implementation-status": _extract_implementation_status_event,
-        "plan-retry": _extract_plan_retry_event,
-        "erk-worktree-creation": _extract_worktree_creation_event,
+    # Map PlanEventType to display string
+    event_type_map = {
+        PlanEventType.CREATED: "plan_created",
+        PlanEventType.QUEUED: "submission_queued",
+        PlanEventType.WORKFLOW_STARTED: "workflow_started",
+        PlanEventType.PROGRESS: "implementation_status",
+        PlanEventType.COMPLETED: "implementation_status",
+        PlanEventType.FAILED: "implementation_status",
+        PlanEventType.RETRY: "plan_retry",
+        PlanEventType.WORKTREE_CREATED: "worktree_created",
     }
 
-    extractor = extractors.get(key)
-    if extractor is None:
-        return None
-
-    return extractor(data)
-
-
-def _extract_plan_created_event(data: dict) -> Event | None:
-    """Extract plan creation event from erk-plan block."""
-    timestamp = data.get("timestamp")
-    if not timestamp:
-        return None
-
-    metadata: PlanCreatedMetadata = {}
-    if "worktree_name" in data:
-        metadata["worktree_name"] = data["worktree_name"]
-    if "issue_number" in data:
-        metadata["issue_number"] = data["issue_number"]
-
-    return Event(
-        timestamp=timestamp,
-        event_type="plan_created",
-        metadata=metadata,
+    return OutputEvent(
+        timestamp=event.timestamp.isoformat(),
+        event_type=event_type_map.get(event.event_type, event.event_type.value),
+        metadata=event.data,
     )
 
 
-def _extract_submission_queued_event(data: dict) -> Event | None:
-    """Extract submission queued event from submission-queued block."""
-    timestamp = data.get("queued_at")
-    if not timestamp:
-        return None
-
-    metadata: SubmissionQueuedMetadata = {"status": "queued"}
-    if "submitted_by" in data:
-        metadata["submitted_by"] = data["submitted_by"]
-    if "expected_workflow" in data:
-        metadata["expected_workflow"] = data["expected_workflow"]
-
-    return Event(
-        timestamp=timestamp,
-        event_type="submission_queued",
-        metadata=metadata,
-    )
-
-
-def _extract_workflow_started_event(data: dict) -> Event | None:
-    """Extract workflow started event from workflow-started block."""
-    timestamp = data.get("started_at")
-    if not timestamp:
-        return None
-
-    metadata: WorkflowStartedMetadata = {"status": "started"}
-    if "workflow_run_id" in data:
-        metadata["workflow_run_id"] = data["workflow_run_id"]
-    if "workflow_run_url" in data:
-        metadata["workflow_run_url"] = data["workflow_run_url"]
-
-    return Event(
-        timestamp=timestamp,
-        event_type="workflow_started",
-        metadata=metadata,
-    )
-
-
-def _extract_implementation_status_event(data: dict) -> Event | None:
-    """Extract implementation status event from erk-implementation-status block."""
-    timestamp = data.get("timestamp")
-    if not timestamp:
-        return None
-
-    status = data.get("status")
-    if not status:
-        return None
-
-    metadata: ImplementationStatusMetadata = {"status": status}
-
-    if "completed_steps" in data:
-        metadata["completed_steps"] = data["completed_steps"]
-    if "total_steps" in data:
-        metadata["total_steps"] = data["total_steps"]
-    if "step_description" in data:
-        metadata["step_description"] = data["step_description"]
-    if "worktree" in data:
-        metadata["worktree"] = data["worktree"]
-    if "branch" in data:
-        metadata["branch"] = data["branch"]
-
-    return Event(
-        timestamp=timestamp,
-        event_type="implementation_status",
-        metadata=metadata,
-    )
-
-
-def _extract_plan_retry_event(data: dict) -> Event | None:
-    """Extract plan retry event from plan-retry block."""
-    timestamp = data.get("retry_timestamp")
-    if not timestamp:
-        return None
-
-    metadata: PlanRetryMetadata = {}
-    if "retry_count" in data:
-        metadata["retry_count"] = data["retry_count"]
-    if "triggered_by" in data:
-        metadata["triggered_by"] = data["triggered_by"]
-
-    return Event(
-        timestamp=timestamp,
-        event_type="plan_retry",
-        metadata=metadata,
-    )
-
-
-def _extract_worktree_creation_event(data: dict) -> Event | None:
-    """Extract worktree creation event from erk-worktree-creation block."""
-    timestamp = data.get("timestamp")
-    if not timestamp:
-        return None
-
-    metadata: WorktreeCreatedMetadata = {}
-    if "worktree_name" in data:
-        metadata["worktree_name"] = data["worktree_name"]
-    if "branch_name" in data:
-        metadata["branch_name"] = data["branch_name"]
-
-    return Event(
-        timestamp=timestamp,
-        event_type="worktree_created",
-        metadata=metadata,
-    )
-
-
-def _output_json(events: list[Event]) -> None:
+def _output_json(events: list[OutputEvent]) -> None:
     """Output events as JSON array."""
     user_output(json.dumps(events, indent=2))
 
 
-def _output_timeline(events: list[Event], issue_number: int) -> None:
+def _output_timeline(events: list[OutputEvent], plan_identifier: str) -> None:
     """Output events as human-readable timeline.
 
     Args:
-        events: List of Event objects sorted chronologically
-        issue_number: GitHub issue number for the plan
+        events: List of OutputEvent objects sorted chronologically
+        plan_identifier: Plan identifier for display
     """
     if not events:
-        user_output(f"No events found for plan #{issue_number}")
+        user_output(f"No events found for plan #{plan_identifier}")
         return
 
-    user_output(f"Plan #{issue_number} Event Timeline\n")
+    user_output(f"Plan #{plan_identifier} Event Timeline\n")
 
     for event in events:
         # Format timestamp as human-readable
@@ -384,11 +156,11 @@ def _format_timestamp(iso_timestamp: str) -> str:
         return iso_timestamp
 
 
-def _format_event_description(event: Event) -> str:
+def _format_event_description(event: OutputEvent) -> str:
     """Format event as human-readable description.
 
     Args:
-        event: Event object with event_type and metadata
+        event: OutputEvent object with event_type and metadata
 
     Returns:
         Formatted description string

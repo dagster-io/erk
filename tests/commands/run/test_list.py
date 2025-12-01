@@ -17,14 +17,36 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import PullRequestInfo, WorkflowRun
+from erk_shared.plan_store.fake import FakePlanStore
+from erk_shared.plan_store.types import Plan, PlanState
 
 from erk.cli.commands.run.list_cmd import list_runs
 from erk.core.git.fake import FakeGit
 from erk.core.github.fake import FakeGitHub
 from tests.fakes.context import create_test_context
+
+
+def _make_plan(
+    plan_identifier: str,
+    title: str,
+    body: str = "",
+    labels: list[str] | None = None,
+) -> Plan:
+    """Create a Plan for testing."""
+    now = datetime.now(UTC)
+    return Plan(
+        plan_identifier=plan_identifier,
+        title=title,
+        body=body,
+        state=PlanState.OPEN,
+        url=f"https://github.com/owner/repo/issues/{plan_identifier}",
+        labels=labels or ["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={"number": int(plan_identifier)},
+    )
 
 
 def test_list_runs_empty_state(tmp_path: Path) -> None:
@@ -63,7 +85,6 @@ def test_list_runs_single_success_run_with_issue_linkage(tmp_path: Path) -> None
         git_common_dirs={repo_root: repo_root / ".git"},
     )
 
-    now = datetime.now(UTC)
     workflow_runs = [
         WorkflowRun(
             run_id="1234567890",
@@ -76,23 +97,11 @@ def test_list_runs_single_success_run_with_issue_linkage(tmp_path: Path) -> None
     ]
     github_ops = FakeGitHub(workflow_runs=workflow_runs)
 
-    # Create issue for linkage
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Add user authentication with OAuth2",
-            body="Plan content",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    # Create plan for linkage
+    plan = _make_plan("142", "Add user authentication with OAuth2", body="Plan content")
+    plan_store = FakePlanStore(plans={"142": plan})
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github_ops, plan_store=plan_store, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -123,7 +132,6 @@ def test_list_runs_multiple_runs_different_statuses(tmp_path: Path) -> None:
         git_common_dirs={repo_root: repo_root / ".git"},
     )
 
-    now = datetime.now(UTC)
     workflow_runs = [
         WorkflowRun(
             run_id="123",
@@ -152,45 +160,16 @@ def test_list_runs_multiple_runs_different_statuses(tmp_path: Path) -> None:
     ]
     github_ops = FakeGitHub(workflow_runs=workflow_runs)
 
-    # Create issues for linkage
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Feature one",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-        ),
-        143: IssueInfo(
-            number=143,
-            title="Feature two",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/143",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-        ),
-        144: IssueInfo(
-            number=144,
-            title="Feature three",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/144",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    # Create plans for linkage
+    plan_store = FakePlanStore(
+        plans={
+            "142": _make_plan("142", "Feature one"),
+            "143": _make_plan("143", "Feature two"),
+            "144": _make_plan("144", "Feature three"),
+        }
+    )
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github_ops, plan_store=plan_store, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -237,9 +216,9 @@ def test_list_runs_run_without_issue_linkage(tmp_path: Path) -> None:
         ),
     ]
     github_ops = FakeGitHub(workflow_runs=workflow_runs)
-    issues_ops = FakeGitHubIssues(issues={})
+    plan_store = FakePlanStore(plans={})
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github_ops, plan_store=plan_store, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -267,7 +246,6 @@ def test_list_runs_default_filters_out_runs_without_plans(tmp_path: Path) -> Non
         git_common_dirs={repo_root: repo_root / ".git"},
     )
 
-    now = datetime.now(UTC)
     workflow_runs = [
         # New format - has plan linkage
         WorkflowRun(
@@ -290,22 +268,10 @@ def test_list_runs_default_filters_out_runs_without_plans(tmp_path: Path) -> Non
     ]
     github_ops = FakeGitHub(workflow_runs=workflow_runs)
 
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Feature one",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    plan = _make_plan("142", "Feature one")
+    plan_store = FakePlanStore(plans={"142": plan})
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github_ops, plan_store=plan_store, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -334,7 +300,6 @@ def test_list_runs_with_show_legacy_flag_shows_all_runs(tmp_path: Path) -> None:
         git_common_dirs={repo_root: repo_root / ".git"},
     )
 
-    now = datetime.now(UTC)
     workflow_runs = [
         # New format - has plan linkage
         WorkflowRun(
@@ -357,22 +322,10 @@ def test_list_runs_with_show_legacy_flag_shows_all_runs(tmp_path: Path) -> None:
     ]
     github_ops = FakeGitHub(workflow_runs=workflow_runs)
 
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Feature one",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    plan = _make_plan("142", "Feature one")
+    plan_store = FakePlanStore(plans={"142": plan})
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github_ops, plan_store=plan_store, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -402,7 +355,6 @@ def test_list_runs_with_pr_linkage(tmp_path: Path) -> None:
         git_common_dirs={repo_root: repo_root / ".git"},
     )
 
-    now = datetime.now(UTC)
     workflow_runs = [
         WorkflowRun(
             run_id="123",
@@ -432,22 +384,10 @@ def test_list_runs_with_pr_linkage(tmp_path: Path) -> None:
         pr_issue_linkages={142: [pr_info]},
     )
 
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Add user authentication",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    plan = _make_plan("142", "Add user authentication")
+    plan_store = FakePlanStore(plans={"142": plan})
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github_ops, plan_store=plan_store, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -474,7 +414,6 @@ def test_list_runs_handles_queued_status(tmp_path: Path) -> None:
         git_common_dirs={repo_root: repo_root / ".git"},
     )
 
-    now = datetime.now(UTC)
     workflow_runs = [
         WorkflowRun(
             run_id="123",
@@ -487,22 +426,10 @@ def test_list_runs_handles_queued_status(tmp_path: Path) -> None:
     ]
     github_ops = FakeGitHub(workflow_runs=workflow_runs)
 
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Queued feature",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    plan = _make_plan("142", "Queued feature")
+    plan_store = FakePlanStore(plans={"142": plan})
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github_ops, plan_store=plan_store, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -527,7 +454,6 @@ def test_list_runs_handles_cancelled_status(tmp_path: Path) -> None:
         git_common_dirs={repo_root: repo_root / ".git"},
     )
 
-    now = datetime.now(UTC)
     workflow_runs = [
         WorkflowRun(
             run_id="123",
@@ -540,22 +466,10 @@ def test_list_runs_handles_cancelled_status(tmp_path: Path) -> None:
     ]
     github_ops = FakeGitHub(workflow_runs=workflow_runs)
 
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Cancelled feature",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    plan = _make_plan("142", "Cancelled feature")
+    plan_store = FakePlanStore(plans={"142": plan})
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github_ops, plan_store=plan_store, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -580,7 +494,6 @@ def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
         git_common_dirs={repo_root: repo_root / ".git"},
     )
 
-    now = datetime.now(UTC)
     long_title = (
         "This is a very long title that exceeds fifty characters "
         "and should be truncated with ellipsis"
@@ -598,22 +511,10 @@ def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
     ]
     github_ops = FakeGitHub(workflow_runs=workflow_runs)
 
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title=long_title,
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    plan = _make_plan("142", long_title)
+    plan_store = FakePlanStore(plans={"142": plan})
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github_ops, plan_store=plan_store, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -642,11 +543,10 @@ def test_list_runs_filters_missing_issue_data(tmp_path: Path) -> None:
         git_common_dirs={repo_root: repo_root / ".git"},
     )
 
-    now = datetime.now(UTC)
     # Use distinctive run_ids that won't appear in ANSI escape codes
     # (short numbers like "200" can appear in 256-color ANSI sequences)
     workflow_runs = [
-        # Valid run with issue
+        # Valid run with plan
         WorkflowRun(
             run_id="111111",
             status="completed",
@@ -655,14 +555,14 @@ def test_list_runs_filters_missing_issue_data(tmp_path: Path) -> None:
             head_sha="abc123",
             display_title="142:abc123",
         ),
-        # Run with issue not found in issue_map
+        # Run with plan not found in plan_map
         WorkflowRun(
             run_id="222222",
             status="completed",
             conclusion="success",
             branch="feat-2",
             head_sha="def456",
-            display_title="999:def456",  # Issue 999 doesn't exist
+            display_title="999:def456",  # Plan 999 doesn't exist
         ),
         # Run with empty title
         WorkflowRun(
@@ -671,39 +571,20 @@ def test_list_runs_filters_missing_issue_data(tmp_path: Path) -> None:
             conclusion="success",
             branch="feat-3",
             head_sha="ghi789",
-            display_title="143:ghi789",  # Issue 143 has empty title
+            display_title="143:ghi789",  # Plan 143 has empty title
         ),
     ]
     github_ops = FakeGitHub(workflow_runs=workflow_runs)
 
-    # Only create issues 142 (valid) and 143 (empty title)
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Valid issue with title",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-        ),
-        143: IssueInfo(
-            number=143,
-            title="",  # Empty title
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/143",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    # Only create plans 142 (valid) and 143 (empty title)
+    plan_store = FakePlanStore(
+        plans={
+            "142": _make_plan("142", "Valid issue with title"),
+            "143": _make_plan("143", ""),  # Empty title
+        }
+    )
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github_ops, plan_store=plan_store, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -751,22 +632,10 @@ def test_list_runs_displays_submission_time(tmp_path: Path) -> None:
     ]
     github_ops = FakeGitHub(workflow_runs=workflow_runs)
 
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Test issue",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=timestamp,
-            updated_at=timestamp,
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    plan = _make_plan("142", "Test issue")
+    plan_store = FakePlanStore(plans={"142": plan})
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github_ops, plan_store=plan_store, cwd=repo_root)
     runner = CliRunner()
 
     # Act
@@ -794,7 +663,6 @@ def test_list_runs_handles_missing_timestamp(tmp_path: Path) -> None:
         git_common_dirs={repo_root: repo_root / ".git"},
     )
 
-    now = datetime.now(UTC)
     workflow_runs = [
         WorkflowRun(
             run_id="1234567890",
@@ -808,22 +676,10 @@ def test_list_runs_handles_missing_timestamp(tmp_path: Path) -> None:
     ]
     github_ops = FakeGitHub(workflow_runs=workflow_runs)
 
-    issues = {
-        142: IssueInfo(
-            number=142,
-            title="Test issue",
-            body="",
-            state="OPEN",
-            url="https://github.com/owner/repo/issues/142",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-        ),
-    }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    plan = _make_plan("142", "Test issue")
+    plan_store = FakePlanStore(plans={"142": plan})
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github_ops, plan_store=plan_store, cwd=repo_root)
     runner = CliRunner()
 
     # Act

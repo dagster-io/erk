@@ -4,31 +4,24 @@ import json
 from datetime import UTC, datetime
 
 from click.testing import CliRunner
-from erk_shared.github.issues import FakeGitHubIssues
-from erk_shared.github.metadata import (
-    create_implementation_status_block,
-    create_plan_block,
-    create_submission_queued_block,
-    create_workflow_started_block,
-    render_metadata_block,
-)
+from erk_shared.plan_store.event_store import PlanEvent, PlanEventType
+from erk_shared.plan_store.fake import FakePlanStore
+from erk_shared.plan_store.fake_event_store import FakePlanEventStore
+from erk_shared.plan_store.types import Plan, PlanState
 
 from erk.cli.cli import cli
-from erk.core.plan_store.fake import FakePlanStore
-from erk.core.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
-def test_log_displays_timeline_chronologically() -> None:
-    """Test log command displays events in chronological order."""
-    # Arrange: Create plan and comments with metadata blocks
-    plan = Plan(
-        plan_identifier="42",
+def _make_plan(plan_identifier: str = "42") -> Plan:
+    """Create a Plan for testing."""
+    return Plan(
+        plan_identifier=plan_identifier,
         title="Test Plan",
         body="Implementation plan",
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
+        url=f"https://github.com/owner/repo/issues/{plan_identifier}",
         labels=["erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -36,41 +29,39 @@ def test_log_displays_timeline_chronologically() -> None:
         metadata={},
     )
 
-    # Create metadata blocks (intentionally out of order to test sorting)
-    workflow_block = create_workflow_started_block(
-        started_at="2024-01-15T12:35:00Z",
-        workflow_run_id="123456",
-        workflow_run_url="https://github.com/owner/repo/actions/runs/123456",
-        issue_number=42,
+
+def test_log_displays_timeline_chronologically() -> None:
+    """Test log command displays events in chronological order."""
+    # Arrange
+    plan = _make_plan()
+
+    # Create events (intentionally out of order to test sorting in event store)
+    event1 = PlanEvent(
+        event_type=PlanEventType.CREATED,
+        timestamp=datetime(2024, 1, 15, 12, 30, 0, tzinfo=UTC),
+        data={"worktree_name": "test-plan"},
     )
-
-    plan_block = create_plan_block(
-        issue_number=42,
-        worktree_name="test-plan",
-        timestamp="2024-01-15T12:30:00Z",
+    event2 = PlanEvent(
+        event_type=PlanEventType.QUEUED,
+        timestamp=datetime(2024, 1, 15, 12, 32, 0, tzinfo=UTC),
+        data={"submitted_by": "user", "status": "queued"},
     )
-
-    submission_block = create_submission_queued_block(
-        queued_at="2024-01-15T12:32:00Z",
-        submitted_by="user",
-        issue_number=42,
-        validation_results={"issue_is_open": True},
-        expected_workflow="implement-plan",
-    )
-
-    # Create comments with rendered blocks (out of chronological order)
-    comment1 = render_metadata_block(workflow_block)
-    comment2 = render_metadata_block(plan_block)
-    comment3 = render_metadata_block(submission_block)
-
-    issues = FakeGitHubIssues(
-        comments={42: [comment1, comment2, comment3]},
+    event3 = PlanEvent(
+        event_type=PlanEventType.WORKFLOW_STARTED,
+        timestamp=datetime(2024, 1, 15, 12, 35, 0, tzinfo=UTC),
+        data={"workflow_run_url": "https://github.com/owner/repo/actions/runs/123456"},
     )
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store = FakePlanStore(plans={"42": plan})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=issues)
+        plan_store = FakePlanStore(plans={"42": plan})
+        event_store = FakePlanEventStore()
+        # Append events out of order - event store sorts them
+        event_store.append_event(env.cwd, "42", event3)
+        event_store.append_event(env.cwd, "42", event1)
+        event_store.append_event(env.cwd, "42", event2)
+
+        ctx = build_workspace_test_context(env, plan_store=plan_store, plan_event_store=event_store)
 
         # Act
         result = runner.invoke(cli, ["plan", "log", "42"], obj=ctx)
@@ -81,14 +72,10 @@ def test_log_displays_timeline_chronologically() -> None:
 
         # Verify chronological order (plan created → queued → workflow started)
         output_lines = result.output.split("\n")
-
-        # Find event lines (lines with timestamps)
         event_lines = [line for line in output_lines if "[2024-" in line]
 
         assert len(event_lines) == 3
-
-        # Verify order by checking timestamps
-        assert "12:30:00" in event_lines[0]  # Plan created first
+        assert "12:30:00" in event_lines[0]  # Created first
         assert "12:32:00" in event_lines[1]  # Queued second
         assert "12:35:00" in event_lines[2]  # Workflow started third
 
@@ -96,35 +83,20 @@ def test_log_displays_timeline_chronologically() -> None:
 def test_log_json_output() -> None:
     """Test log command with --json flag outputs valid JSON."""
     # Arrange
-    plan = Plan(
-        plan_identifier="42",
-        title="Test Plan",
-        body="Implementation plan",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
-    )
-
-    plan_block = create_plan_block(
-        issue_number=42,
-        worktree_name="test-plan",
-        timestamp="2024-01-15T12:30:00Z",
-    )
-
-    comment = render_metadata_block(plan_block)
-
-    issues = FakeGitHubIssues(
-        comments={42: [comment]},
+    plan = _make_plan()
+    event = PlanEvent(
+        event_type=PlanEventType.CREATED,
+        timestamp=datetime(2024, 1, 15, 12, 30, 0, tzinfo=UTC),
+        data={"worktree_name": "test-plan"},
     )
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store = FakePlanStore(plans={"42": plan})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=issues)
+        plan_store = FakePlanStore(plans={"42": plan})
+        event_store = FakePlanEventStore()
+        event_store.append_event(env.cwd, "42", event)
+
+        ctx = build_workspace_test_context(env, plan_store=plan_store, plan_event_store=event_store)
 
         # Act
         result = runner.invoke(cli, ["plan", "log", "42", "--json"], obj=ctx)
@@ -132,42 +104,27 @@ def test_log_json_output() -> None:
         # Assert
         assert result.exit_code == 0
 
-        # Parse JSON output
         events = json.loads(result.output)
-
         assert isinstance(events, list)
         assert len(events) == 1
 
-        event = events[0]
-        assert event["event_type"] == "plan_created"
-        assert event["timestamp"] == "2024-01-15T12:30:00Z"
-        assert event["metadata"]["worktree_name"] == "test-plan"
+        parsed_event = events[0]
+        assert parsed_event["event_type"] == "plan_created"
+        assert "2024-01-15" in parsed_event["timestamp"]
+        assert parsed_event["metadata"]["worktree_name"] == "test-plan"
 
 
 def test_log_with_no_events() -> None:
-    """Test log command when issue has no comments."""
+    """Test log command when plan has no events."""
     # Arrange
-    plan = Plan(
-        plan_identifier="42",
-        title="Test Plan",
-        body="Implementation plan",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
-    )
-
-    issues = FakeGitHubIssues(
-        comments={42: []},  # No comments
-    )
+    plan = _make_plan()
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store = FakePlanStore(plans={"42": plan})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=issues)
+        plan_store = FakePlanStore(plans={"42": plan})
+        event_store = FakePlanEventStore()  # No events
+
+        ctx = build_workspace_test_context(env, plan_store=plan_store, plan_event_store=event_store)
 
         # Act
         result = runner.invoke(cli, ["plan", "log", "42"], obj=ctx)
@@ -180,63 +137,39 @@ def test_log_with_no_events() -> None:
 def test_log_with_all_event_types() -> None:
     """Test log command displays all supported event types."""
     # Arrange
-    plan = Plan(
-        plan_identifier="42",
-        title="Test Plan",
-        body="Implementation plan",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
-    )
+    plan = _make_plan()
 
-    # Create all event types
-    plan_block = create_plan_block(
-        issue_number=42,
-        worktree_name="test-plan",
-        timestamp="2024-01-15T12:30:00Z",
-    )
-
-    submission_block = create_submission_queued_block(
-        queued_at="2024-01-15T12:32:00Z",
-        submitted_by="testuser",
-        issue_number=42,
-        validation_results={"issue_is_open": True},
-        expected_workflow="implement-plan",
-    )
-
-    workflow_block = create_workflow_started_block(
-        started_at="2024-01-15T12:35:00Z",
-        workflow_run_id="123456",
-        workflow_run_url="https://github.com/owner/repo/actions/runs/123456",
-        issue_number=42,
-    )
-
-    status_block = create_implementation_status_block(
-        status="in_progress",
-        completed_steps=3,
-        total_steps=5,
-        timestamp="2024-01-15T12:40:00Z",
-    )
-
-    comments = [
-        render_metadata_block(plan_block),
-        render_metadata_block(submission_block),
-        render_metadata_block(workflow_block),
-        render_metadata_block(status_block),
+    events = [
+        PlanEvent(
+            event_type=PlanEventType.CREATED,
+            timestamp=datetime(2024, 1, 15, 12, 30, 0, tzinfo=UTC),
+            data={"worktree_name": "test-plan"},
+        ),
+        PlanEvent(
+            event_type=PlanEventType.QUEUED,
+            timestamp=datetime(2024, 1, 15, 12, 32, 0, tzinfo=UTC),
+            data={"submitted_by": "testuser", "status": "queued"},
+        ),
+        PlanEvent(
+            event_type=PlanEventType.WORKFLOW_STARTED,
+            timestamp=datetime(2024, 1, 15, 12, 35, 0, tzinfo=UTC),
+            data={"workflow_run_url": "https://github.com/owner/repo/actions/runs/123456"},
+        ),
+        PlanEvent(
+            event_type=PlanEventType.PROGRESS,
+            timestamp=datetime(2024, 1, 15, 12, 40, 0, tzinfo=UTC),
+            data={"status": "in_progress", "completed_steps": 3, "total_steps": 5},
+        ),
     ]
-
-    issues = FakeGitHubIssues(
-        comments={42: comments},
-    )
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store = FakePlanStore(plans={"42": plan})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=issues)
+        plan_store = FakePlanStore(plans={"42": plan})
+        event_store = FakePlanEventStore()
+        for event in events:
+            event_store.append_event(env.cwd, "42", event)
+
+        ctx = build_workspace_test_context(env, plan_store=plan_store, plan_event_store=event_store)
 
         # Act
         result = runner.invoke(cli, ["plan", "log", "42"], obj=ctx)
@@ -256,9 +189,10 @@ def test_log_with_invalid_plan_identifier() -> None:
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store = FakePlanStore(plans={})
-        issues = FakeGitHubIssues()
-        ctx = build_workspace_test_context(env, plan_store=store, issues=issues)
+        plan_store = FakePlanStore(plans={})
+        event_store = FakePlanEventStore()
+
+        ctx = build_workspace_test_context(env, plan_store=plan_store, plan_event_store=event_store)
 
         # Act
         result = runner.invoke(cli, ["plan", "log", "999"], obj=ctx)
@@ -271,55 +205,34 @@ def test_log_with_invalid_plan_identifier() -> None:
 def test_log_multiple_status_updates() -> None:
     """Test log command with multiple implementation status updates."""
     # Arrange
-    plan = Plan(
-        plan_identifier="42",
-        title="Test Plan",
-        body="Implementation plan",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
-    )
+    plan = _make_plan()
 
-    # Create multiple status updates
-    status1 = create_implementation_status_block(
-        status="in_progress",
-        completed_steps=1,
-        total_steps=5,
-        timestamp="2024-01-15T12:30:00Z",
-    )
-
-    status2 = create_implementation_status_block(
-        status="in_progress",
-        completed_steps=3,
-        total_steps=5,
-        timestamp="2024-01-15T12:35:00Z",
-    )
-
-    status3 = create_implementation_status_block(
-        status="complete",
-        completed_steps=5,
-        total_steps=5,
-        timestamp="2024-01-15T12:40:00Z",
-    )
-
-    comments = [
-        render_metadata_block(status1),
-        render_metadata_block(status2),
-        render_metadata_block(status3),
+    events = [
+        PlanEvent(
+            event_type=PlanEventType.PROGRESS,
+            timestamp=datetime(2024, 1, 15, 12, 30, 0, tzinfo=UTC),
+            data={"status": "in_progress", "completed_steps": 1, "total_steps": 5},
+        ),
+        PlanEvent(
+            event_type=PlanEventType.PROGRESS,
+            timestamp=datetime(2024, 1, 15, 12, 35, 0, tzinfo=UTC),
+            data={"status": "in_progress", "completed_steps": 3, "total_steps": 5},
+        ),
+        PlanEvent(
+            event_type=PlanEventType.COMPLETED,
+            timestamp=datetime(2024, 1, 15, 12, 40, 0, tzinfo=UTC),
+            data={"status": "complete", "completed_steps": 5, "total_steps": 5},
+        ),
     ]
-
-    issues = FakeGitHubIssues(
-        comments={42: comments},
-    )
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store = FakePlanStore(plans={"42": plan})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=issues)
+        plan_store = FakePlanStore(plans={"42": plan})
+        event_store = FakePlanEventStore()
+        for event in events:
+            event_store.append_event(env.cwd, "42", event)
+
+        ctx = build_workspace_test_context(env, plan_store=plan_store, plan_event_store=event_store)
 
         # Act
         result = runner.invoke(cli, ["plan", "log", "42"], obj=ctx)
@@ -336,37 +249,24 @@ def test_log_multiple_status_updates() -> None:
 def test_log_json_structure() -> None:
     """Test JSON output has correct structure with metadata."""
     # Arrange
-    plan = Plan(
-        plan_identifier="42",
-        title="Test Plan",
-        body="Implementation plan",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
-    )
-
-    submission_block = create_submission_queued_block(
-        queued_at="2024-01-15T12:32:00Z",
-        submitted_by="testuser",
-        issue_number=42,
-        validation_results={"issue_is_open": True},
-        expected_workflow="implement-plan",
-    )
-
-    comment = render_metadata_block(submission_block)
-
-    issues = FakeGitHubIssues(
-        comments={42: [comment]},
+    plan = _make_plan()
+    event = PlanEvent(
+        event_type=PlanEventType.QUEUED,
+        timestamp=datetime(2024, 1, 15, 12, 32, 0, tzinfo=UTC),
+        data={
+            "status": "queued",
+            "submitted_by": "testuser",
+            "expected_workflow": "implement-plan",
+        },
     )
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store = FakePlanStore(plans={"42": plan})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=issues)
+        plan_store = FakePlanStore(plans={"42": plan})
+        event_store = FakePlanEventStore()
+        event_store.append_event(env.cwd, "42", event)
+
+        ctx = build_workspace_test_context(env, plan_store=plan_store, plan_event_store=event_store)
 
         # Act
         result = runner.invoke(cli, ["plan", "log", "42", "--json"], obj=ctx)
@@ -377,15 +277,15 @@ def test_log_json_structure() -> None:
         events = json.loads(result.output)
         assert len(events) == 1
 
-        event = events[0]
+        parsed_event = events[0]
 
         # Verify required fields
-        assert "timestamp" in event
-        assert "event_type" in event
-        assert "metadata" in event
+        assert "timestamp" in parsed_event
+        assert "event_type" in parsed_event
+        assert "metadata" in parsed_event
 
         # Verify metadata structure
-        metadata = event["metadata"]
+        metadata = parsed_event["metadata"]
         assert metadata["status"] == "queued"
         assert metadata["submitted_by"] == "testuser"
         assert metadata["expected_workflow"] == "implement-plan"

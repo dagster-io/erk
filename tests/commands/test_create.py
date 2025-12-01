@@ -5,12 +5,35 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
-from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
+from erk_shared.plan_store.fake import FakePlanStore
+from erk_shared.plan_store.types import Plan, PlanState
 
 from erk.cli.cli import cli
 from erk.core.git.fake import FakeGit
 from tests.fakes.issue_link_branches import FakeIssueLinkBranches
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
+
+
+def _make_plan(
+    plan_identifier: str,
+    title: str,
+    body: str,
+    labels: list[str] | None = None,
+) -> Plan:
+    """Create a Plan for testing."""
+    now = datetime.now(UTC)
+    return Plan(
+        plan_identifier=plan_identifier,
+        title=title,
+        body=body,
+        state=PlanState.OPEN,
+        url=f"https://github.com/owner/repo/issues/{plan_identifier}",
+        labels=labels or ["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
 
 
 def test_create_from_current_branch_outputs_script_path_to_stdout() -> None:
@@ -91,28 +114,18 @@ def test_create_from_issue_with_valid_issue() -> None:
             git_common_dirs={env.cwd: env.git_dir},
         )
 
-        # Set up GitHub state with issue
-        now = datetime.now(UTC)
-        fake_issues = FakeGitHubIssues(
-            issues={
-                123: IssueInfo(
-                    number=123,
-                    title="Add User Authentication",
-                    body="## Implementation\n\n- Step 1\n- Step 2",
-                    state="OPEN",
-                    url="https://github.com/owner/repo/issues/123",
-                    labels=["erk-plan"],
-                    assignees=[],
-                    created_at=now,
-                    updated_at=now,
-                )
-            }
+        # Set up plan store with plan
+        plan = _make_plan(
+            plan_identifier="123",
+            title="Add User Authentication",
+            body="## Implementation\n\n- Step 1\n- Step 2",
         )
+        plan_store = FakePlanStore(plans={"123": plan})
 
         fake_issue_dev = FakeIssueLinkBranches()
 
         test_ctx = env.build_context(
-            git=git_ops, issues=fake_issues, issue_link_branches=fake_issue_dev
+            git=git_ops, plan_store=plan_store, issue_link_branches=fake_issue_dev
         )
 
         # Act: Run create --from-issue 123
@@ -175,25 +188,16 @@ def test_create_from_issue_missing_label() -> None:
             git_common_dirs={env.cwd: env.git_dir},
         )
 
-        # Set up GitHub state with issue without erk-plan label
-        now = datetime.now(UTC)
-        fake_issues = FakeGitHubIssues(
-            issues={
-                456: IssueInfo(
-                    number=456,
-                    title="Regular Issue",
-                    body="Not a plan",
-                    state="OPEN",
-                    url="https://github.com/owner/repo/issues/456",
-                    labels=["bug", "enhancement"],  # No erk-plan label
-                    assignees=[],
-                    created_at=now,
-                    updated_at=now,
-                )
-            }
+        # Set up plan store with plan without erk-plan label
+        plan = _make_plan(
+            plan_identifier="456",
+            title="Regular Issue",
+            body="Not a plan",
+            labels=["bug", "enhancement"],  # No erk-plan label
         )
+        plan_store = FakePlanStore(plans={"456": plan})
 
-        test_ctx = env.build_context(git=git_ops, issues=fake_issues)
+        test_ctx = env.build_context(git=git_ops, plan_store=plan_store)
 
         # Act: Run create --from-issue 456
         result = runner.invoke(
@@ -224,29 +228,19 @@ def test_create_from_issue_url_parsing() -> None:
             git_common_dirs={env.cwd: env.git_dir},
         )
 
-        # Set up GitHub state with issue
-        now = datetime.now(UTC)
-        fake_issues = FakeGitHubIssues(
-            issues={
-                789: IssueInfo(
-                    number=789,
-                    title="Feature Request",
-                    body="Plan content",
-                    state="OPEN",
-                    url="https://github.com/owner/repo/issues/789",
-                    labels=["erk-plan"],
-                    assignees=[],
-                    created_at=now,
-                    updated_at=now,
-                )
-            }
+        # Set up plan store with plan
+        plan = _make_plan(
+            plan_identifier="789",
+            title="Feature Request",
+            body="Plan content",
         )
+        plan_store = FakePlanStore(plans={"789": plan})
 
         # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
         fake_issue_dev = FakeIssueLinkBranches()
 
         test_ctx = env.build_context(
-            git=git_ops, issues=fake_issues, issue_link_branches=fake_issue_dev
+            git=git_ops, plan_store=plan_store, issue_link_branches=fake_issue_dev
         )
 
         # Act: Run with full GitHub URL
@@ -281,28 +275,18 @@ def test_create_from_issue_name_derivation() -> None:
             git_common_dirs={env.cwd: env.git_dir},
         )
 
-        # Set up GitHub state with issue with special characters in title
-        now = datetime.now(UTC)
-        fake_issues = FakeGitHubIssues(
-            issues={
-                111: IssueInfo(
-                    number=111,
-                    title="Fix: Database Connection Issues!!!",
-                    body="Plan",
-                    state="OPEN",
-                    url="https://github.com/owner/repo/issues/111",
-                    labels=["erk-plan"],
-                    assignees=[],
-                    created_at=now,
-                    updated_at=now,
-                )
-            }
+        # Set up plan store with plan with special characters in title
+        plan = _make_plan(
+            plan_identifier="111",
+            title="Fix: Database Connection Issues!!!",
+            body="Plan",
         )
+        plan_store = FakePlanStore(plans={"111": plan})
 
         fake_issue_dev = FakeIssueLinkBranches()
 
         test_ctx = env.build_context(
-            git=git_ops, issues=fake_issues, issue_link_branches=fake_issue_dev
+            git=git_ops, plan_store=plan_store, issue_link_branches=fake_issue_dev
         )
 
         # Act
@@ -339,10 +323,10 @@ def test_create_from_issue_not_found() -> None:
             git_common_dirs={env.cwd: env.git_dir},
         )
 
-        # Set up GitHub state with no issues
-        fake_issues = FakeGitHubIssues()  # Empty
+        # Set up empty plan store (no plans)
+        plan_store = FakePlanStore()  # Empty
 
-        test_ctx = env.build_context(git=git_ops, issues=fake_issues)
+        test_ctx = env.build_context(git=git_ops, plan_store=plan_store)
 
         # Act: Request non-existent issue
         result = runner.invoke(
@@ -351,14 +335,14 @@ def test_create_from_issue_not_found() -> None:
             obj=test_ctx,
         )
 
-        # Assert: Error from integration layer
+        # Assert: Error from plan store layer
         assert result.exit_code == 1
-        # FakeGitHubIssues raises RuntimeError with "not found" message
+        # FakePlanStore raises ValueError with "not found" message
         assert "not found" in result.output.lower() or "Issue #999" in result.output
 
 
 def test_create_from_issue_readonly_operation() -> None:
-    """Test that --from-issue doesn't create/modify issues."""
+    """Test that --from-issue doesn't create/modify plans."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
@@ -373,29 +357,19 @@ def test_create_from_issue_readonly_operation() -> None:
             git_common_dirs={env.cwd: env.git_dir},
         )
 
-        # Set up GitHub state with issue
-        now = datetime.now(UTC)
-        fake_issues = FakeGitHubIssues(
-            issues={
-                222: IssueInfo(
-                    number=222,
-                    title="Test",
-                    body="Body",
-                    state="OPEN",
-                    url="https://example.com",
-                    labels=["erk-plan"],
-                    assignees=[],
-                    created_at=now,
-                    updated_at=now,
-                )
-            }
+        # Set up plan store with plan
+        plan = _make_plan(
+            plan_identifier="222",
+            title="Test",
+            body="Body",
         )
+        plan_store = FakePlanStore(plans={"222": plan})
 
         # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
         fake_issue_dev = FakeIssueLinkBranches()
 
         test_ctx = env.build_context(
-            git=git_ops, issues=fake_issues, issue_link_branches=fake_issue_dev
+            git=git_ops, plan_store=plan_store, issue_link_branches=fake_issue_dev
         )
 
         # Act
@@ -409,10 +383,8 @@ def test_create_from_issue_readonly_operation() -> None:
         # Assert: Command succeeded
         assert result.exit_code == 0
 
-        # Assert: No issues created
-        assert len(fake_issues.created_issues) == 0
-        # Assert: No comments added
-        assert len(fake_issues.added_comments) == 0
+        # Assert: No plans created (only the initial plan exists)
+        assert len(plan_store.created_plans) == 0
 
 
 def test_create_from_issue_tracks_branch_with_graphite() -> None:
@@ -439,23 +411,13 @@ def test_create_from_issue_tracks_branch_with_graphite() -> None:
             git_common_dirs={env.cwd: env.git_dir},
         )
 
-        # Set up GitHub state with issue
-        now = datetime.now(UTC)
-        fake_issues = FakeGitHubIssues(
-            issues={
-                500: IssueInfo(
-                    number=500,
-                    title="Test Graphite Tracking",
-                    body="## Plan\n\n- Step 1",
-                    state="OPEN",
-                    url="https://github.com/owner/repo/issues/500",
-                    labels=["erk-plan"],
-                    assignees=[],
-                    created_at=now,
-                    updated_at=now,
-                )
-            }
+        # Set up plan store with plan
+        plan = _make_plan(
+            plan_identifier="500",
+            title="Test Graphite Tracking",
+            body="## Plan\n\n- Step 1",
         )
+        plan_store = FakePlanStore(plans={"500": plan})
 
         fake_issue_dev = FakeIssueLinkBranches()
 
@@ -467,7 +429,7 @@ def test_create_from_issue_tracks_branch_with_graphite() -> None:
         # Build context with use_graphite=True
         test_ctx = env.build_context(
             git=git_ops,
-            issues=fake_issues,
+            plan_store=plan_store,
             issue_link_branches=fake_issue_dev,
             graphite=fake_graphite,
             use_graphite=True,
@@ -525,23 +487,13 @@ def test_create_from_issue_no_graphite_tracking_when_disabled() -> None:
             git_common_dirs={env.cwd: env.git_dir},
         )
 
-        # Set up GitHub state with issue
-        now = datetime.now(UTC)
-        fake_issues = FakeGitHubIssues(
-            issues={
-                501: IssueInfo(
-                    number=501,
-                    title="Test No Graphite",
-                    body="## Plan\n\n- Step 1",
-                    state="OPEN",
-                    url="https://github.com/owner/repo/issues/501",
-                    labels=["erk-plan"],
-                    assignees=[],
-                    created_at=now,
-                    updated_at=now,
-                )
-            }
+        # Set up plan store with plan
+        plan = _make_plan(
+            plan_identifier="501",
+            title="Test No Graphite",
+            body="## Plan\n\n- Step 1",
         )
+        plan_store = FakePlanStore(plans={"501": plan})
 
         fake_issue_dev = FakeIssueLinkBranches()
 
@@ -553,7 +505,7 @@ def test_create_from_issue_no_graphite_tracking_when_disabled() -> None:
         # Build context with use_graphite=False (default)
         test_ctx = env.build_context(
             git=git_ops,
-            issues=fake_issues,
+            plan_store=plan_store,
             issue_link_branches=fake_issue_dev,
             graphite=fake_graphite,
             use_graphite=False,  # Explicitly disabled
