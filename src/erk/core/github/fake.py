@@ -241,11 +241,28 @@ class FakeGitHub(GitHub):
         and adds it to the inputs. Tests should verify the workflow was called
         with expected inputs; the distinct_id is an internal implementation detail.
 
+        Also creates a WorkflowRun entry so get_workflow_run() can find it.
+        This simulates the real behavior where triggering a workflow creates a run.
+
         Returns:
             A fake run ID for testing
         """
         self._triggered_workflows.append((workflow, inputs))
-        return "1234567890"
+        run_id = "1234567890"
+        # Create a WorkflowRun entry so get_workflow_run() can find it
+        # Use branch_name from inputs if available
+        branch = inputs.get("branch_name", "main")
+        triggered_run = WorkflowRun(
+            run_id=run_id,
+            status="queued",
+            conclusion=None,
+            branch=branch,
+            head_sha="abc123",
+            node_id=f"WFR_{run_id}",
+        )
+        # Prepend to list so it's found first (most recent)
+        self._workflow_runs.insert(0, triggered_run)
+        return run_id
 
     def create_pr(
         self,
