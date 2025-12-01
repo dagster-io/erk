@@ -499,10 +499,7 @@ All metadata blocks use a consistent format:
 <details>
   <summary><code>{key}</code></summary>
 
-  ```yaml
-  {structured_data}
-  ```
-
+  ```yaml {structured_data} ```
 </details>
 <!-- /erk:metadata-block:{key} -->
 ````
