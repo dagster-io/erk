@@ -50,4 +50,8 @@ def connect_planner(ctx: ErkContext, name: str | None) -> None:
     click.echo(f"Connecting to planner '{planner.name}'...", err=True)
 
     # Replace current process with ssh session
-    os.execvp("gh", ["gh", "codespace", "ssh", "-c", planner.gh_name, "--", "claude"])
+    # Use bash login shell to ensure PATH is set up (claude installs to ~/.claude/local/)
+    os.execvp(
+        "gh",
+        ["gh", "codespace", "ssh", "-c", planner.gh_name, "--", "bash", "-l", "-c", "claude"],
+    )

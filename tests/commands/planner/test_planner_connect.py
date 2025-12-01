@@ -154,7 +154,7 @@ def test_connect_with_named_planner() -> None:
 
 
 def test_connect_executes_claude_command() -> None:
-    """Test that connect runs claude command via SSH."""
+    """Test that connect runs claude command via SSH in a bash login shell."""
     planner = _make_planner(name="my-planner", gh_name="my-gh-codespace")
     registry = FakePlannerRegistry(planners=[planner], default_planner="my-planner")
     ctx = ErkContext.for_test(planner_registry=registry)
@@ -174,6 +174,9 @@ def test_connect_executes_claude_command() -> None:
     assert "ssh" in args_list
     assert "-c" in args_list
     assert "my-gh-codespace" in args_list
-    # Should run claude after --
+    # Should run claude via bash login shell after --
+    # This ensures PATH is set up correctly (claude installs to ~/.claude/local/)
     assert "--" in args_list
-    assert "claude" in args_list
+    dash_dash_idx = args_list.index("--")
+    remaining_args = args_list[dash_dash_idx + 1 :]
+    assert remaining_args == ["bash", "-l", "-c", "claude"]
