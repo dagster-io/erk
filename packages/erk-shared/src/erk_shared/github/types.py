@@ -98,6 +98,14 @@ class WorkflowRun:
         "_created_at",
     )
 
+    _run_id: str
+    _status: str
+    _conclusion: str | None
+    _branch: str | _NotAvailable
+    _head_sha: str
+    _display_title: str | None | _NotAvailable
+    _created_at: datetime | None
+
     def __init__(
         self,
         run_id: str,
@@ -126,39 +134,37 @@ class WorkflowRun:
 
     @property
     def run_id(self) -> str:
-        return self._run_id  # type: ignore[return-value]
+        return self._run_id
 
     @property
     def status(self) -> str:
-        return self._status  # type: ignore[return-value]
+        return self._status
 
     @property
     def conclusion(self) -> str | None:
-        return self._conclusion  # type: ignore[return-value]
+        return self._conclusion
 
     @property
     def branch(self) -> str:
         value = self._branch
         if isinstance(value, _NotAvailable):
-            # Trigger the error message
-            str(value)
+            str(value)  # Trigger the error
         return value  # type: ignore[return-value]
 
     @property
     def head_sha(self) -> str:
-        return self._head_sha  # type: ignore[return-value]
+        return self._head_sha
 
     @property
     def display_title(self) -> str | None:
         value = self._display_title
         if isinstance(value, _NotAvailable):
-            # Trigger the error message
-            str(value)
+            str(value)  # Trigger the error
         return value  # type: ignore[return-value]
 
     @property
     def created_at(self) -> datetime | None:
-        return self._created_at  # type: ignore[return-value]
+        return self._created_at
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, WorkflowRun):
