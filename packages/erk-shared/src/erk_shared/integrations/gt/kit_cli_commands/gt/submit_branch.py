@@ -71,39 +71,7 @@ from erk_shared.impl_folder import (
 from erk_shared.integrations.gt.abc import GtKit
 from erk_shared.integrations.gt.real import RealGtKit
 
-# Marker used by commit-message-generator agent to indicate valid output
-ERK_COMMIT_MESSAGE_MARKER = "<!-- erk-generated commit message -->"
 CLOSES_ISSUE_PATTERN = re.compile(r"Closes #\d+")
-
-
-def _is_valid_commit_message(output: str) -> bool:
-    """Check if output contains the erk-generated commit message marker.
-
-    The commit-message-generator agent is configured to end its output with
-    the marker. If the agent fails (e.g., permission issues), it outputs
-    an error message instead of a valid commit message.
-
-    Args:
-        output: Raw output from commit message generator
-
-    Returns:
-        True if output contains the marker, False otherwise
-    """
-    return ERK_COMMIT_MESSAGE_MARKER in output
-
-
-def _strip_commit_message_marker(pr_body: str) -> str:
-    """Remove the erk commit message marker from PR body.
-
-    Args:
-        pr_body: Raw PR body text
-
-    Returns:
-        PR body with marker line removed
-    """
-    lines = pr_body.split("\n")
-    lines = [line for line in lines if line.strip() != ERK_COMMIT_MESSAGE_MARKER]
-    return "\n".join(lines).strip()
 
 
 def _has_closes_reference(pr_body: str) -> bool:
@@ -851,23 +819,7 @@ def execute_finalize(
     # pr_body is guaranteed non-None here (either passed in or read from file, validated above)
     assert pr_body is not None
 
-    # Validate PR body contains erk-generated commit message marker
-    # This ensures the commit-message-generator agent ran successfully
-    if not _is_valid_commit_message(pr_body):
-        return PostAnalysisError(
-            success=False,
-            error_type="ai_generation_failed",
-            message="PR body missing erk-generated commit message marker",
-            details={
-                "hint": "The commit-message-generator agent may have failed or returned an error",
-                "expected_marker": ERK_COMMIT_MESSAGE_MARKER,
-            },
-        )
-
     final_body = pr_body + metadata_section
-
-    # Strip erk commit message marker after validation (cleanup)
-    final_body = _strip_commit_message_marker(final_body)
 
     # Validate Closes # reference exists when .impl/ has issue reference
     if issue_number is not None and not _has_closes_reference(final_body):

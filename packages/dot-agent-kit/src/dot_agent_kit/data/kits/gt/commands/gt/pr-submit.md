@@ -83,8 +83,6 @@ Parse the agent output:
 
 - First line = PR title
 - Remaining lines = PR body
-- The marker `<!-- erk-generated commit message -->` should be present (validates agent success)
-- Do NOT strip the marker - finalize handles validation and cleanup
 
 ### Step 3: Run Finalize Phase
 

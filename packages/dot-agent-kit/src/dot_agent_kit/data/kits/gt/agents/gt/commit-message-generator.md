@@ -60,7 +60,6 @@ Follow the shared diff analysis guide:
 - **Component-level** descriptions (not function-level)
 - **First line** becomes the PR title
 - **Rest** becomes the PR body
-- **ALWAYS end with marker**: Your output MUST end with `<!-- erk-generated commit message -->` on its own line
 
 ## Example
 
@@ -97,8 +96,6 @@ Implements token-based authentication for API access. Users receive JWT tokens o
 - Password hashing with bcrypt
 - Protected routes require valid token
 - Session management for user context
-
-<!-- erk-generated commit message -->
 ```
 
 **That's it. No other output.**
