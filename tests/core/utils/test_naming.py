@@ -48,6 +48,9 @@ def _get_current_date_suffix() -> str:
             "1234567890123456789012345678901-extra",
             "1234567890123456789012345678901",
         ),  # Hyphen at position 31 stripped
+        # Test dot handling - dots should be replaced with hyphens
+        (".hidden-file", "hidden-file"),
+        ("file.extension", "file-extension"),
     ],
 )
 def test_sanitize_branch_component(value: str, expected: str) -> None:
@@ -99,6 +102,10 @@ def test_default_branch_for_worktree(value: str, expected: str) -> None:
             "1234567890123456789012345678901-extra",
             "1234567890123456789012345678901",
         ),  # Hyphen at position 31 stripped
+        # Test dot handling - dots should be replaced with hyphens
+        (".worker-impl", "worker-impl"),
+        ("fix-.worker", "fix-worker"),
+        ("name.with.dots", "name-with-dots"),
     ],
 )
 def test_sanitize_worktree_name(value: str, expected: str) -> None:

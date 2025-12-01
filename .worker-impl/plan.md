@@ -21,6 +21,7 @@ Remove `.` from allowed characters in all branch/worktree sanitization functions
 ### Changes to `packages/erk-shared/src/erk_shared/naming.py`
 
 1. **Line 16**: Update `_SAFE_COMPONENT_RE` pattern
+
    ```python
    # Before
    _SAFE_COMPONENT_RE = re.compile(r"[^A-Za-z0-9._/-]+")
@@ -30,6 +31,7 @@ Remove `.` from allowed characters in all branch/worktree sanitization functions
    ```
 
 2. **Line 106**: Update `sanitize_worktree_name()` regex
+
    ```python
    # Before
    replaced = re.sub(r"[^a-z0-9.-]+", "-", replaced_underscores)
@@ -65,6 +67,7 @@ Add test cases to verify dots are replaced with hyphens:
 ## Verification
 
 Run tests after changes:
+
 ```bash
 uv run pytest tests/core/utils/test_naming.py -v
 ```

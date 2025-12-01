@@ -13,7 +13,7 @@ import unicodedata
 from datetime import datetime
 from pathlib import Path
 
-_SAFE_COMPONENT_RE = re.compile(r"[^A-Za-z0-9._/-]+")
+_SAFE_COMPONENT_RE = re.compile(r"[^A-Za-z0-9_/-]+")
 
 # Date suffix format for plan-derived worktree names: -YY-MM-DD-HHMM
 WORKTREE_DATE_SUFFIX_FORMAT = "%y-%m-%d-%H%M"
@@ -72,7 +72,7 @@ def sanitize_worktree_name(name: str) -> str:
     - If name already has timestamp suffix (-MM-DD-HHMM), returns as-is (idempotent)
     - Lowercases input
     - Replaces underscores with hyphens
-    - Replaces characters outside `[A-Za-z0-9.-]` with `-`
+    - Replaces characters outside `[A-Za-z0-9-]` with `-`
     - Collapses consecutive `-`
     - Strips leading/trailing `-`
     - Truncates to 31 characters maximum (matches branch component sanitization)
@@ -103,7 +103,7 @@ def sanitize_worktree_name(name: str) -> str:
     # Replace underscores with hyphens
     replaced_underscores = lowered.replace("_", "-")
     # Replace unsafe characters with hyphens
-    replaced = re.sub(r"[^a-z0-9.-]+", "-", replaced_underscores)
+    replaced = re.sub(r"[^a-z0-9-]+", "-", replaced_underscores)
     # Collapse consecutive hyphens
     collapsed = re.sub(r"-+", "-", replaced)
     # Strip leading/trailing hyphens
@@ -121,7 +121,7 @@ def sanitize_branch_component(name: str) -> str:
     """Return a sanitized, predictable branch component from an arbitrary name.
 
     - Lowercases input
-    - Replaces characters outside `[A-Za-z0-9._/-]` with `-`
+    - Replaces characters outside `[A-Za-z0-9_/-]` with `-`
     - Collapses consecutive `-`
     - Strips leading/trailing `-` and `/`
     - Truncates to 31 characters maximum (matches worktree behavior)
