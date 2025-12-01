@@ -4,13 +4,14 @@ import json
 import re
 from pathlib import Path
 
-from erk_shared.debug_timing import timed_operation
 from erk_shared.github.types import PRInfo, PullRequestInfo
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
 def execute_gh_command(cmd: list[str], cwd: Path) -> str:
     """Execute a gh CLI command and return stdout.
+
+    Timing is handled by run_subprocess_with_context.
 
     Args:
         cmd: Command and arguments to execute
@@ -23,17 +24,11 @@ def execute_gh_command(cmd: list[str], cwd: Path) -> str:
         RuntimeError: If command fails with enriched error context
         FileNotFoundError: If gh is not installed
     """
-    # Build operation context from command
-    cmd_str = " ".join(cmd)
-    operation_context = f"execute gh command '{cmd_str}'"
-
-    with timed_operation(f"gh: {cmd_str}"):
-        result = run_subprocess_with_context(
-            cmd,
-            operation_context=operation_context,
-            cwd=cwd,
-        )
-
+    result = run_subprocess_with_context(
+        cmd,
+        operation_context=f"execute gh command",
+        cwd=cwd,
+    )
     return result.stdout
 
 

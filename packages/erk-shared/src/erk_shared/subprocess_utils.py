@@ -14,6 +14,27 @@ from typing import IO, Any
 logger = logging.getLogger(__name__)
 
 
+def _build_timing_description(cmd: Sequence[str]) -> str:
+    """Build a timing log description from a command.
+
+    For GraphQL queries, replaces the query text with a character count
+    to avoid verbose output in logs.
+    """
+    cmd_list = list(cmd)
+    # Check if this is a GraphQL command with query parameter
+    if len(cmd_list) >= 4 and cmd_list[1:3] == ["api", "graphql"]:
+        # Find query parameter and replace it
+        result_parts = []
+        for part in cmd_list:
+            if part.startswith("query="):
+                query_len = len(part) - len("query=")
+                result_parts.append(f"query=<{query_len} chars>")
+            else:
+                result_parts.append(part)
+        return " ".join(result_parts)
+    return " ".join(str(arg) for arg in cmd)
+
+
 def run_subprocess_with_context(
     cmd: Sequence[str],
     operation_context: str,
@@ -50,6 +71,10 @@ def run_subprocess_with_context(
         RuntimeError: If command fails with enriched error context
         FileNotFoundError: If command binary is not found
     """
+    timing_desc = _build_timing_description(cmd)
+    start_time = time.perf_counter()
+    logger.debug("Starting: %s", timing_desc)
+
     try:
         # Handle stdout/stderr arguments
         if capture_output and (stdout is not None or stderr is not None):
@@ -67,6 +92,8 @@ def run_subprocess_with_context(
             stderr=stderr,
             **kwargs,
         )
+        elapsed_ms = int((time.perf_counter() - start_time) * 1000)
+        logger.debug("Completed in %dms: %s", elapsed_ms, timing_desc)
         return result
 
     except subprocess.CalledProcessError as e:
@@ -110,37 +137,12 @@ def execute_gh_command(cmd: list[str], cwd: Path) -> str:
         RuntimeError: If command fails with enriched error context
         FileNotFoundError: If gh is not installed
     """
-    cmd_str = " ".join(cmd)
-    logger.debug("Executing gh command: %s (cwd=%s)", cmd_str, cwd)
-    start_time = time.perf_counter()
-    try:
-        result = subprocess.run(
-            cmd,
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            check=True,
-        )
-        elapsed_ms = int((time.perf_counter() - start_time) * 1000)
-        stdout_preview = result.stdout[:200] if result.stdout else "(empty)"
-        logger.debug("gh command succeeded in %dms, stdout preview: %s", elapsed_ms, stdout_preview)
-        return result.stdout
-    except subprocess.CalledProcessError as e:
-        elapsed_ms = int((time.perf_counter() - start_time) * 1000)
-        logger.debug(
-            "gh command failed in %dms: exit_code=%d, stdout=%s, stderr=%s",
-            elapsed_ms,
-            e.returncode,
-            e.stdout,
-            e.stderr,
-        )
-        error_msg = f"Failed to execute gh command '{cmd_str}'"
-        if e.stderr:
-            error_msg += f": {e.stderr.strip()}"
-        raise RuntimeError(error_msg) from e
-    except FileNotFoundError as e:
-        elapsed_ms = int((time.perf_counter() - start_time) * 1000)
-        logger.debug("gh command not found in %dms: %s", elapsed_ms, cmd_str)
-        error_msg = f"Command not found: {cmd_str}"
-        raise RuntimeError(error_msg) from e
+    timing_desc = _build_timing_description(cmd)
+    result = run_subprocess_with_context(
+        cmd,
+        operation_context=f"execute gh command '{timing_desc}'",
+        cwd=cwd,
+    )
+    stdout_preview = result.stdout[:200] if result.stdout else "(empty)"
+    logger.debug("gh command stdout preview: %s", stdout_preview)
+    return result.stdout

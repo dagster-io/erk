@@ -5,7 +5,6 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
-from erk_shared.debug_timing import log_graphql_query
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.types import CreateIssueResult, IssueInfo
 from erk_shared.subprocess_utils import execute_gh_command
@@ -191,7 +190,6 @@ class RealGitHubIssues(GitHubIssues):
         repo_query = f'repository(owner: "{owner}", name: "{repo_name}")'
         query = f"query {{ {repo_query} {{ " + " ".join(aliases) + " } }"
 
-        log_graphql_query(query)
         cmd = ["gh", "api", "graphql", "-f", f"query={query}"]
         stdout = execute_gh_command(cmd, repo_root)
         data = json.loads(stdout)

@@ -22,8 +22,3 @@ def timed_operation(operation: str) -> Generator[None]:
     finally:
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
         logger.debug("Completed in %dms: %s", elapsed_ms, operation)
-
-
-def log_graphql_query(query: str) -> None:
-    """Log GraphQL query content for debugging (multi-line)."""
-    logger.debug("GraphQL query:\n%s", query)
