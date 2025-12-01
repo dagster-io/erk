@@ -245,14 +245,7 @@ class RealGitHub(GitHub):
         )
         raise NotImplementedError(msg)
 
-    def get_workflow_runs_batch(
-        self,
-        repo_root: Path,
-        run_ids: list[str],
-        *,
-        workflow: str | None = None,
-        user: str | None = None,
-    ) -> dict[str, WorkflowRun | None]:
+    def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Stub method - not implemented in erk-shared."""
         msg = (
             "RealGitHub from erk-shared is a stub for context creation only. "
@@ -261,7 +254,11 @@ class RealGitHub(GitHub):
         )
         raise NotImplementedError(msg)
 
-    def check_auth_status(self) -> tuple[bool, str | None, str | None]:
+    def get_workflow_runs_by_node_ids(
+        self,
+        repo_root: Path,
+        node_ids: list[str],
+    ) -> dict[str, WorkflowRun | None]:
         """Stub method - not implemented in erk-shared."""
         msg = (
             "RealGitHub from erk-shared is a stub for context creation only. "

@@ -896,7 +896,7 @@ def test_list_plans_filter_by_run_state_queued() -> None:
 
     from erk.core.github.fake import FakeGitHub
 
-    # Arrange - Create plans with workflow run IDs in plan-header
+    # Arrange - Create plans with workflow run node_ids in plan-header
     queued_plan_body = """<!-- erk:metadata-block:plan-header -->
 <details>
 <summary><code>plan-header</code></summary>
@@ -904,6 +904,7 @@ def test_list_plans_filter_by_run_state_queued() -> None:
 ```yaml
 schema_version: '2'
 last_dispatched_run_id: '11111'
+last_dispatched_node_id: 'WFR_queued'
 ```
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
@@ -915,6 +916,7 @@ last_dispatched_run_id: '11111'
 ```yaml
 schema_version: '2'
 last_dispatched_run_id: '22222'
+last_dispatched_node_id: 'WFR_running'
 ```
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
@@ -945,7 +947,7 @@ last_dispatched_run_id: '22222'
         metadata={"number": 1011},
     )
 
-    # Configure workflow runs with run_id lookup
+    # Configure workflow runs with node_id lookup
     queued_run = WorkflowRun(
         run_id="11111",
         status="queued",
@@ -966,7 +968,9 @@ last_dispatched_run_id: '22222'
         issues = FakeGitHubIssues(
             issues={1010: plan_to_issue(queued_plan), 1011: plan_to_issue(running_plan)},
         )
-        github = FakeGitHub(workflow_runs=[queued_run, running_run])
+        github = FakeGitHub(
+            workflow_runs_by_node_id={"WFR_queued": queued_run, "WFR_running": running_run}
+        )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Filter for queued workflow runs
@@ -985,7 +989,7 @@ def test_list_plans_filter_by_run_state_success() -> None:
 
     from erk.core.github.fake import FakeGitHub
 
-    # Arrange - Create plans with workflow run IDs in plan-header
+    # Arrange - Create plans with workflow run node_ids in plan-header
     success_plan_body = """<!-- erk:metadata-block:plan-header -->
 <details>
 <summary><code>plan-header</code></summary>
@@ -993,6 +997,7 @@ def test_list_plans_filter_by_run_state_success() -> None:
 ```yaml
 schema_version: '2'
 last_dispatched_run_id: '11111'
+last_dispatched_node_id: 'WFR_success'
 ```
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
@@ -1004,6 +1009,7 @@ last_dispatched_run_id: '11111'
 ```yaml
 schema_version: '2'
 last_dispatched_run_id: '22222'
+last_dispatched_node_id: 'WFR_failed'
 ```
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
@@ -1034,7 +1040,7 @@ last_dispatched_run_id: '22222'
         metadata={"number": 1021},
     )
 
-    # Configure workflow runs with run_id lookup
+    # Configure workflow runs with node_id lookup
     success_run = WorkflowRun(
         run_id="11111",
         status="completed",
@@ -1055,7 +1061,9 @@ last_dispatched_run_id: '22222'
         issues = FakeGitHubIssues(
             issues={1020: plan_to_issue(success_plan), 1021: plan_to_issue(failed_plan)},
         )
-        github = FakeGitHub(workflow_runs=[success_run, failed_run])
+        github = FakeGitHub(
+            workflow_runs_by_node_id={"WFR_success": success_run, "WFR_failed": failed_run}
+        )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Filter for success workflow runs
@@ -1470,6 +1478,7 @@ def test_list_plans_all_flag_shows_all_columns() -> None:
 ```yaml
 schema_version: '2'
 last_dispatched_run_id: '99999'
+last_dispatched_node_id: 'WFR_all_flag'
 ```
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
@@ -1510,7 +1519,10 @@ last_dispatched_run_id: '99999'
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={200: plan_to_issue(plan)})
-        github = FakeGitHub(pr_issue_linkages={200: [pr]}, workflow_runs=[workflow_run])
+        github = FakeGitHub(
+            pr_issue_linkages={200: [pr]},
+            workflow_runs_by_node_id={"WFR_all_flag": workflow_run},
+        )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use --all flag
@@ -1541,6 +1553,7 @@ def test_list_plans_all_flag_short_form() -> None:
 ```yaml
 schema_version: '2'
 last_dispatched_run_id: '88888'
+last_dispatched_node_id: 'WFR_short_flag'
 ```
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
@@ -1581,7 +1594,10 @@ last_dispatched_run_id: '88888'
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={201: plan_to_issue(plan)})
-        github = FakeGitHub(pr_issue_linkages={201: [pr]}, workflow_runs=[workflow_run])
+        github = FakeGitHub(
+            pr_issue_linkages={201: [pr]},
+            workflow_runs_by_node_id={"WFR_short_flag": workflow_run},
+        )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use -a short flag

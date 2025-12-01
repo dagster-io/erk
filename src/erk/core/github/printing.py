@@ -182,19 +182,6 @@ class PrintingGitHub(PrintingBase, GitHub):
         """Get PR checkout info (read-only, no printing)."""
         return self._wrapped.get_pr_checkout_info(repo_root, pr_number)
 
-    def get_workflow_runs_batch(
-        self,
-        repo_root: Path,
-        run_ids: list[str],
-        *,
-        workflow: str | None = None,
-        user: str | None = None,
-    ) -> dict[str, WorkflowRun | None]:
-        """Get workflow runs batch (read-only, no printing)."""
-        return self._wrapped.get_workflow_runs_batch(
-            repo_root, run_ids, workflow=workflow, user=user
-        )
-
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Check auth status (read-only, no printing)."""
         return self._wrapped.check_auth_status()

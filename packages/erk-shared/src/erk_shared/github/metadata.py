@@ -1158,6 +1158,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         optional_fields = {
             "worktree_name",
             "last_dispatched_run_id",
+            "last_dispatched_node_id",
             "last_dispatched_at",
             "last_local_impl_at",
             "last_remote_impl_at",
@@ -1192,6 +1193,11 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 if not isinstance(data["last_dispatched_run_id"], str):
                     raise ValueError("last_dispatched_run_id must be a string or null")
 
+        if "last_dispatched_node_id" in data:
+            if data["last_dispatched_node_id"] is not None:
+                if not isinstance(data["last_dispatched_node_id"], str):
+                    raise ValueError("last_dispatched_node_id must be a string or null")
+
         if "last_dispatched_at" in data:
             if data["last_dispatched_at"] is not None:
                 if not isinstance(data["last_dispatched_at"], str):
@@ -1223,6 +1229,7 @@ def create_plan_header_block(
     created_by: str,
     worktree_name: str | None = None,
     last_dispatched_run_id: str | None = None,
+    last_dispatched_node_id: str | None = None,
     last_dispatched_at: str | None = None,
     last_local_impl_at: str | None = None,
     last_remote_impl_at: str | None = None,
@@ -1234,6 +1241,7 @@ def create_plan_header_block(
         created_by: GitHub username of plan creator
         worktree_name: Optional worktree name (set when worktree is created)
         last_dispatched_run_id: Optional workflow run ID (set by workflow)
+        last_dispatched_node_id: Optional GraphQL node ID (set by workflow, for batch queries)
         last_dispatched_at: Optional dispatch timestamp (set by workflow)
         last_local_impl_at: Optional local implementation timestamp (set by plan-implement)
         last_remote_impl_at: Optional remote implementation timestamp (set by GitHub Actions)
@@ -1247,6 +1255,7 @@ def create_plan_header_block(
         "created_at": created_at,
         "created_by": created_by,
         "last_dispatched_run_id": last_dispatched_run_id,
+        "last_dispatched_node_id": last_dispatched_node_id,
         "last_dispatched_at": last_dispatched_at,
         "last_local_impl_at": last_local_impl_at,
         "last_remote_impl_at": last_remote_impl_at,
@@ -1268,6 +1277,7 @@ def format_plan_header_body(
     created_by: str,
     worktree_name: str | None = None,
     last_dispatched_run_id: str | None = None,
+    last_dispatched_node_id: str | None = None,
     last_dispatched_at: str | None = None,
     last_local_impl_at: str | None = None,
     last_remote_impl_at: str | None = None,
@@ -1282,6 +1292,7 @@ def format_plan_header_body(
         created_by: GitHub username of plan creator
         worktree_name: Optional worktree name (set when worktree is created)
         last_dispatched_run_id: Optional workflow run ID
+        last_dispatched_node_id: Optional GraphQL node ID (for batch queries)
         last_dispatched_at: Optional dispatch timestamp
         last_local_impl_at: Optional local implementation timestamp
         last_remote_impl_at: Optional remote implementation timestamp
@@ -1294,6 +1305,7 @@ def format_plan_header_body(
         created_by=created_by,
         worktree_name=worktree_name,
         last_dispatched_run_id=last_dispatched_run_id,
+        last_dispatched_node_id=last_dispatched_node_id,
         last_dispatched_at=last_dispatched_at,
         last_local_impl_at=last_local_impl_at,
         last_remote_impl_at=last_remote_impl_at,
@@ -1392,6 +1404,7 @@ def replace_metadata_block_in_body(
 def update_plan_header_dispatch(
     issue_body: str,
     run_id: str,
+    node_id: str,
     dispatched_at: str,
 ) -> str:
     """Update dispatch fields in plan-header metadata block.
@@ -1403,6 +1416,7 @@ def update_plan_header_dispatch(
     Args:
         issue_body: Current issue body containing plan-header block
         run_id: Workflow run ID to set
+        node_id: GraphQL node ID to set (for batch queries)
         dispatched_at: ISO 8601 timestamp of dispatch
 
     Returns:
@@ -1419,6 +1433,7 @@ def update_plan_header_dispatch(
     # Update dispatch fields
     updated_data = dict(block.data)
     updated_data["last_dispatched_run_id"] = run_id
+    updated_data["last_dispatched_node_id"] = node_id
     updated_data["last_dispatched_at"] = dispatched_at
 
     # Validate updated data
@@ -1435,24 +1450,25 @@ def update_plan_header_dispatch(
 
 def extract_plan_header_dispatch_info(
     issue_body: str,
-) -> tuple[str | None, str | None]:
+) -> tuple[str | None, str | None, str | None]:
     """Extract dispatch info from plan-header block.
 
     Args:
         issue_body: Issue body containing plan-header block
 
     Returns:
-        Tuple of (last_dispatched_run_id, last_dispatched_at)
-        Both are None if block not found or fields not present
+        Tuple of (last_dispatched_run_id, last_dispatched_node_id, last_dispatched_at)
+        All are None if block not found or fields not present
     """
     block = find_metadata_block(issue_body, "plan-header")
     if block is None:
-        return (None, None)
+        return (None, None, None)
 
     run_id = block.data.get("last_dispatched_run_id")
+    node_id = block.data.get("last_dispatched_node_id")
     dispatched_at = block.data.get("last_dispatched_at")
 
-    return (run_id, dispatched_at)
+    return (run_id, node_id, dispatched_at)
 
 
 def extract_plan_header_worktree_name(issue_body: str) -> str | None:

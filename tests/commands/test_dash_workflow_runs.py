@@ -32,7 +32,7 @@ def plan_to_issue(plan: Plan) -> IssueInfo:
 
 
 def test_list_displays_workflow_run_id_for_plan_with_impl_folder() -> None:
-    """Workflow run ID should appear for plans with run_id in plan-header."""
+    """Workflow run ID should appear for plans with node_id in plan-header."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Create worktree directory with .impl/issue.json
@@ -51,7 +51,7 @@ def test_list_displays_workflow_run_id_for_plan_with_impl_folder() -> None:
             encoding="utf-8",
         )
 
-        # Create plan with workflow run ID in plan-header
+        # Create plan with workflow run node_id in plan-header
         plan_body = """<!-- erk:metadata-block:plan-header -->
 <details>
 <summary><code>plan-header</code></summary>
@@ -59,6 +59,7 @@ def test_list_displays_workflow_run_id_for_plan_with_impl_folder() -> None:
 ```yaml
 schema_version: '2'
 last_dispatched_run_id: '12345678'
+last_dispatched_node_id: 'WFR_abc123'
 ```
 </details>
 <!-- /erk:metadata-block:plan-header -->
@@ -89,7 +90,7 @@ Implementation details"""
             git_common_dirs={env.cwd: env.git_dir},
         )
 
-        # Add workflow run with matching run_id
+        # Add workflow run with matching node_id
         workflow_run = WorkflowRun(
             run_id="12345678",
             status="completed",
@@ -97,7 +98,7 @@ Implementation details"""
             branch="master",
             head_sha="abc123",
         )
-        github = FakeGitHub(workflow_runs=[workflow_run])
+        github = FakeGitHub(workflow_runs_by_node_id={"WFR_abc123": workflow_run})
         issues = FakeGitHubIssues(issues={123: plan_to_issue(plan)})
 
         ctx = build_workspace_test_context(
@@ -137,7 +138,7 @@ def test_list_linkifies_workflow_run_id_with_owner_repo() -> None:
             encoding="utf-8",
         )
 
-        # Create plan with workflow run ID in plan-header
+        # Create plan with workflow run node_id in plan-header
         plan_body = """<!-- erk:metadata-block:plan-header -->
 <details>
 <summary><code>plan-header</code></summary>
@@ -145,6 +146,7 @@ def test_list_linkifies_workflow_run_id_with_owner_repo() -> None:
 ```yaml
 schema_version: '2'
 last_dispatched_run_id: '87654321'
+last_dispatched_node_id: 'WFR_def456'
 ```
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
@@ -175,7 +177,7 @@ last_dispatched_run_id: '87654321'
             git_common_dirs={env.cwd: env.git_dir},
         )
 
-        # Add workflow run with matching run_id
+        # Add workflow run with matching node_id
         workflow_run = WorkflowRun(
             run_id="87654321",
             status="in_progress",
@@ -183,7 +185,7 @@ last_dispatched_run_id: '87654321'
             branch="master",
             head_sha="def456",
         )
-        github = FakeGitHub(workflow_runs=[workflow_run])
+        github = FakeGitHub(workflow_runs_by_node_id={"WFR_def456": workflow_run})
         issues = FakeGitHubIssues(issues={456: plan_to_issue(plan)})
 
         ctx = build_workspace_test_context(
@@ -222,7 +224,7 @@ def test_list_displays_plain_run_id_without_owner_repo() -> None:
             encoding="utf-8",
         )
 
-        # Create plan with workflow run ID but WITHOUT url metadata (no owner/repo)
+        # Create plan with workflow run node_id but WITHOUT url metadata (no owner/repo)
         plan_body = """<!-- erk:metadata-block:plan-header -->
 <details>
 <summary><code>plan-header</code></summary>
@@ -230,6 +232,7 @@ def test_list_displays_plain_run_id_without_owner_repo() -> None:
 ```yaml
 schema_version: '2'
 last_dispatched_run_id: '99887766'
+last_dispatched_node_id: 'WFR_ghi789'
 ```
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
@@ -257,7 +260,7 @@ last_dispatched_run_id: '99887766'
             git_common_dirs={env.cwd: env.git_dir},
         )
 
-        # Add workflow run with matching run_id
+        # Add workflow run with matching node_id
         workflow_run = WorkflowRun(
             run_id="99887766",
             status="completed",
@@ -265,7 +268,7 @@ last_dispatched_run_id: '99887766'
             branch="master",
             head_sha="ghi789",
         )
-        github = FakeGitHub(workflow_runs=[workflow_run])
+        github = FakeGitHub(workflow_runs_by_node_id={"WFR_ghi789": workflow_run})
         issues = FakeGitHubIssues(issues={789: plan_to_issue(plan)})
 
         ctx = build_workspace_test_context(
@@ -445,7 +448,7 @@ def test_list_displays_multiple_plans_with_different_workflow_runs() -> None:
             encoding="utf-8",
         )
 
-        # Create two plans with workflow run IDs in plan-header
+        # Create two plans with workflow run node_ids in plan-header
         plan1_body = """<!-- erk:metadata-block:plan-header -->
 <details>
 <summary><code>plan-header</code></summary>
@@ -453,6 +456,7 @@ def test_list_displays_multiple_plans_with_different_workflow_runs() -> None:
 ```yaml
 schema_version: '2'
 last_dispatched_run_id: '11111111'
+last_dispatched_node_id: 'WFR_node1'
 ```
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
@@ -464,6 +468,7 @@ last_dispatched_run_id: '11111111'
 ```yaml
 schema_version: '2'
 last_dispatched_run_id: '22222222'
+last_dispatched_node_id: 'WFR_node2'
 ```
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
@@ -505,7 +510,7 @@ last_dispatched_run_id: '22222222'
             git_common_dirs={env.cwd: env.git_dir},
         )
 
-        # Add workflow runs with matching run_ids
+        # Add workflow runs with matching node_ids
         run1 = WorkflowRun(
             run_id="11111111",
             status="completed",
@@ -520,7 +525,7 @@ last_dispatched_run_id: '22222222'
             branch="master",
             head_sha="abc222",
         )
-        github = FakeGitHub(workflow_runs=[run1, run2])
+        github = FakeGitHub(workflow_runs_by_node_id={"WFR_node1": run1, "WFR_node2": run2})
         issues = FakeGitHubIssues(issues={301: plan_to_issue(plan1), 302: plan_to_issue(plan2)})
 
         ctx = build_workspace_test_context(

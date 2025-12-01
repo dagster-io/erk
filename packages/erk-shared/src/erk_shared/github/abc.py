@@ -339,33 +339,6 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
-    def get_workflow_runs_batch(
-        self,
-        repo_root: Path,
-        run_ids: list[str],
-        *,
-        workflow: str | None = None,
-        user: str | None = None,
-    ) -> dict[str, WorkflowRun | None]:
-        """Get details for multiple workflow runs by ID.
-
-        If workflow is provided, uses `gh run list --workflow [--user]` to fetch runs
-        efficiently in a single API call and filters by run_id in memory.
-        Otherwise falls back to individual `gh run view` calls.
-
-        Args:
-            repo_root: Repository root directory
-            run_ids: List of GitHub Actions run IDs to fetch
-            workflow: Optional workflow filename for efficient batch fetch
-            user: Optional GitHub username to filter runs by (only used with workflow)
-
-        Returns:
-            Mapping of run_id -> WorkflowRun or None if not found.
-            Run IDs that don't exist will have None as their value.
-        """
-        ...
-
-    @abstractmethod
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Check GitHub CLI authentication status.
 
@@ -384,5 +357,27 @@ class GitHub(ABC):
             (True, "octocat", "github.com")
             >>> # If not authenticated:
             (False, None, None)
+        """
+        ...
+
+    @abstractmethod
+    def get_workflow_runs_by_node_ids(
+        self,
+        repo_root: Path,
+        node_ids: list[str],
+    ) -> dict[str, WorkflowRun | None]:
+        """Batch query workflow runs by GraphQL node IDs.
+
+        Uses GraphQL nodes(ids: [...]) query to efficiently fetch multiple
+        workflow runs in a single API call. This is dramatically faster than
+        individual REST API calls for each run.
+
+        Args:
+            repo_root: Repository root directory
+            node_ids: List of GraphQL node IDs (e.g., "WFR_kwLOPxC3hc8AAAAEnZK8rQ")
+
+        Returns:
+            Mapping of node_id -> WorkflowRun or None if not found.
+            Node IDs that don't exist or are inaccessible will have None value.
         """
         ...

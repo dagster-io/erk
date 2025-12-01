@@ -1,10 +1,7 @@
 """Service for efficiently fetching plan list data via batched API calls.
 
-Schema Version 2 Optimization:
-- Extracts last_dispatched_run_id directly from issue body metadata
-- Uses batch workflow run lookup by IDs (single GraphQL query for all plans)
-- Eliminates expensive get_workflow_runs_by_titles() which fetched 100+ runs
-- Eliminates comments fetch (worktree_name now in issue body)
+Uses GraphQL nodes(ids: [...]) for O(1) batch lookup of workflow runs (~200ms for any N).
+All plan issues store last_dispatched_node_id in the plan-header metadata block.
 """
 
 from dataclasses import dataclass
@@ -14,8 +11,6 @@ from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues, IssueInfo
 from erk_shared.github.metadata import extract_plan_header_dispatch_info
 from erk_shared.github.types import PullRequestInfo, WorkflowRun
-
-from erk.cli.constants import DISPATCH_WORKFLOW_NAME
 
 
 @dataclass(frozen=True)
@@ -37,12 +32,8 @@ class PlanListService:
     """Service for efficiently fetching plan list data.
 
     Composes GitHub and GitHubIssues integrations to batch fetch all data
-    needed for plan listing.
-
-    Schema Version 2 Only:
-    - Issues have last_dispatched_run_id in body metadata
-    - Uses get_workflow_runs_batch(run_ids) for single GraphQL query
-    - Extracts worktree_name from issue body (no comments needed)
+    needed for plan listing. Uses GraphQL nodes(ids: [...]) for efficient
+    batch lookup of workflow runs by node_id.
     """
 
     def __init__(self, github: GitHub, github_issues: GitHubIssues) -> None:
@@ -65,11 +56,6 @@ class PlanListService:
         skip_pr_linkages: bool = False,
     ) -> PlanListData:
         """Batch fetch all data needed for plan listing.
-
-        Schema Version 2 Only:
-        - Extracts last_dispatched_run_id from issue body (plan-header block)
-        - Uses get_workflow_runs_batch() for single GraphQL query
-        - Extracts worktree_name from issue body (no comments needed)
 
         Args:
             repo_root: Repository root directory
@@ -96,29 +82,21 @@ class PlanListService:
         # Conditionally fetch workflow runs (skip for performance when not needed)
         workflow_runs: dict[int, WorkflowRun | None] = {}
         if not skip_workflow_runs:
-            # Collect all run IDs and build mapping back to issue numbers
-            run_id_to_issue: dict[str, int] = {}
+            # Extract node_ids from plan-header metadata
+            node_id_to_issue: dict[str, int] = {}
             for issue in issues:
-                run_id, _ = extract_plan_header_dispatch_info(issue.body)
-                if run_id is not None:
-                    run_id_to_issue[run_id] = issue.number
+                _, node_id, _ = extract_plan_header_dispatch_info(issue.body)
+                if node_id is not None:
+                    node_id_to_issue[node_id] = issue.number
 
-            # Batch fetch all workflow runs in single API call
-            # Uses gh run list with --workflow and --user filters for efficiency
-            if run_id_to_issue:
-                run_ids = list(run_id_to_issue.keys())
-                # Get current user from gh auth status for filtering
-                _, username, _ = self._github.check_auth_status()
-                runs_by_id = self._github.get_workflow_runs_batch(
+            # Batch fetch workflow runs via GraphQL nodes(ids: [...])
+            if node_id_to_issue:
+                runs_by_node_id = self._github.get_workflow_runs_by_node_ids(
                     repo_root,
-                    run_ids,
-                    workflow=DISPATCH_WORKFLOW_NAME,
-                    user=username,
+                    list(node_id_to_issue.keys()),
                 )
-
-                # Map results back to issue numbers
-                for run_id, run in runs_by_id.items():
-                    issue_number = run_id_to_issue[run_id]
+                for node_id, run in runs_by_node_id.items():
+                    issue_number = node_id_to_issue[node_id]
                     workflow_runs[issue_number] = run
 
         return PlanListData(
