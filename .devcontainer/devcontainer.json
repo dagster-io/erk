@@ -14,9 +14,9 @@
         "contents": "write",
         "pull_requests": "write",
         "workflows": "write",
+        "actions": "write",
         "statuses": "write",
         "deployments": "write",
-        "security_events": "write",
         "members": "read"
       }
     }
