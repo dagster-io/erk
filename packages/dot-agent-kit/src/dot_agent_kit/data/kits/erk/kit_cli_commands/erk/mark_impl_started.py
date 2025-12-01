@@ -5,7 +5,7 @@ with the appropriate timestamp field based on the execution environment:
 - Local machine: Updates last_local_impl_at
 - GitHub Actions: Updates last_remote_impl_at
 
-This separation allows erk ls to show distinct timestamps for local vs remote runs.
+This separation allows erk dash to show distinct timestamps for local vs remote runs.
 
 Usage:
     dot-agent run erk mark-impl-started

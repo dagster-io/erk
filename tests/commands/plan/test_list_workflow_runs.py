@@ -1,4 +1,4 @@
-"""Tests for workflow run ID display in erk plan list command."""
+"""Tests for workflow run ID display in erk dash command."""
 
 from datetime import UTC, datetime
 
@@ -107,7 +107,7 @@ Implementation details"""
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["list", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["dash", "--runs"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify workflow run ID appears
@@ -193,7 +193,7 @@ last_dispatched_run_id: '87654321'
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["list", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["dash", "--runs"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify run ID and OSC 8 link present
@@ -275,7 +275,7 @@ last_dispatched_run_id: '99887766'
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["list", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["dash", "--runs"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify run ID displays (without link)
@@ -336,7 +336,7 @@ def test_list_handles_missing_workflow_run() -> None:
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["list", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["dash", "--runs"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify "-" appears in run-id column
@@ -403,7 +403,7 @@ def test_list_handles_batch_query_failure() -> None:
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["list"], obj=ctx)
+        result = runner.invoke(cli, ["dash"], obj=ctx)
         # Command should succeed despite API failure
         assert result.exit_code == 0, result.output
 
@@ -530,7 +530,7 @@ last_dispatched_run_id: '22222222'
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["list", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["dash", "--runs"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify both run IDs appear
@@ -584,7 +584,7 @@ def test_list_skips_run_id_for_plans_without_impl_folder() -> None:
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["list"], obj=ctx)
+        result = runner.invoke(cli, ["dash"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify plan displays without run ID
