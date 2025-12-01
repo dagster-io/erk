@@ -13,6 +13,42 @@ class PlanState(Enum):
 
 
 @dataclass(frozen=True)
+class CreatePlanResult:
+    """Result from creating a plan.
+
+    Attributes:
+        plan_identifier: Provider-specific ID (e.g., "42" for GitHub issue number)
+        url: Web URL to view the plan
+    """
+
+    plan_identifier: str
+    url: str
+
+
+@dataclass(frozen=True)
+class PlanMetadataUpdate:
+    """Mutable metadata fields that can be updated.
+
+    All fields are optional - only provided fields are updated.
+    Used for updating worktree_name, last_dispatched_run_id, etc.
+    Does NOT update plan content or title.
+
+    Attributes:
+        worktree_name: Name of worktree implementing this plan
+        last_dispatched_run_id: ID of most recent workflow dispatch
+        last_dispatched_at: ISO timestamp of most recent dispatch
+        last_local_impl_at: ISO timestamp of most recent local implementation
+        last_remote_impl_at: ISO timestamp of most recent remote implementation
+    """
+
+    worktree_name: str | None = None
+    last_dispatched_run_id: str | None = None
+    last_dispatched_at: str | None = None
+    last_local_impl_at: str | None = None
+    last_remote_impl_at: str | None = None
+
+
+@dataclass(frozen=True)
 class Plan:
     """Provider-agnostic representation of a plan.
 

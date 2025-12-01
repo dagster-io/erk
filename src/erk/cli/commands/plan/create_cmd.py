@@ -1,11 +1,9 @@
 """Command to create a plan issue from markdown content."""
 
 import sys
-from datetime import UTC, datetime
 from pathlib import Path
 
 import click
-from erk_shared.github.metadata import format_plan_content_comment, format_plan_header_body
 from erk_shared.output.output import user_output
 from erk_shared.plan_utils import extract_title_from_plan
 
@@ -83,7 +81,7 @@ def create_plan(
 
     # Ensure erk-plan label exists
     try:
-        ctx.issues.ensure_label_exists(
+        ctx.plan_store.ensure_label(
             repo_root,
             label="erk-plan",
             description="Implementation plan tracked by erk",
@@ -93,55 +91,28 @@ def create_plan(
         user_output(click.style("Error: ", fg="red") + f"Failed to ensure label exists: {e}")
         raise SystemExit(1) from e
 
-    # Build labels list: erk-plan + additional labels
-    labels = ["erk-plan"] + list(label)
+    # Build labels list from additional labels (erk-plan added automatically by plan_store)
+    labels = list(label)
 
-    # Create timestamp
-    timestamp = datetime.now(UTC).isoformat()
-
-    # Get creator from GitHub authentication
-    creator = ctx.issues.get_current_username()
-    if not creator:
-        creator = "unknown"
-
-    # Format issue body (Schema V2: metadata only, worktree_name set later)
-    issue_body = format_plan_header_body(
-        created_at=timestamp,
-        created_by=creator,
-    )
-
-    # Create the issue (add [erk-plan] suffix for visibility)
-    issue_title = f"{title} [erk-plan]"
+    # Create plan using plan_store abstraction
+    # (handles Schema V2: metadata in issue body, plan content in first comment)
     try:
-        result = ctx.issues.create_issue(
+        result = ctx.plan_store.create_plan(
             repo_root=repo_root,
-            title=issue_title,
-            body=issue_body,
+            title=title,  # Without [erk-plan] suffix - plan_store adds it
+            body=content,
             labels=labels,
         )
     except RuntimeError as e:
-        user_output(click.style("Error: ", fg="red") + f"Failed to create issue: {e}")
-        raise SystemExit(1) from e
-
-    # Add plan content as first comment (Schema V2 format)
-    try:
-        comment_body = format_plan_content_comment(content)
-        ctx.issues.add_comment(repo_root, result.number, comment_body)
-    except RuntimeError as e:
-        user_output(
-            click.style("Warning: ", fg="yellow")
-            + f"Issue created but failed to add plan comment: {e}"
-        )
-        user_output(f"Issue #{result.number} created but incomplete.")
-        user_output(f"URL: {result.url}")
+        user_output(click.style("Error: ", fg="red") + f"Failed to create plan: {e}")
         raise SystemExit(1) from e
 
     # Display success message with next steps
-    user_output(f"Created plan #{result.number}")
+    user_output(f"Created plan #{result.plan_identifier}")
     user_output("")
     user_output(f"Issue: {result.url}")
     user_output("")
     user_output("Next steps:")
-    user_output(f"  View:       erk get {result.number}")
-    user_output(f"  Implement:  erk implement {result.number}")
-    user_output(f"  Submit:     erk submit {result.number}")
+    user_output(f"  View:       erk get {result.plan_identifier}")
+    user_output(f"  Implement:  erk implement {result.plan_identifier}")
+    user_output(f"  Submit:     erk submit {result.plan_identifier}")

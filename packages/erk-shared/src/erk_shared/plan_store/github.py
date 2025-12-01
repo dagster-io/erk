@@ -6,14 +6,28 @@ Schema Version 2:
 - Plan content is always fetched fresh (no caching)
 """
 
-from datetime import UTC
+from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
 from erk_shared.github.issues import GitHubIssues, IssueInfo
-from erk_shared.github.metadata import extract_plan_from_comment
+from erk_shared.github.metadata import (
+    extract_plan_from_comment,
+    format_plan_content_comment,
+    format_plan_header_body,
+    update_plan_header_dispatch,
+    update_plan_header_local_impl,
+    update_plan_header_remote_impl,
+    update_plan_header_worktree_name,
+)
 from erk_shared.plan_store.store import PlanStore
-from erk_shared.plan_store.types import Plan, PlanQuery, PlanState
+from erk_shared.plan_store.types import (
+    CreatePlanResult,
+    Plan,
+    PlanMetadataUpdate,
+    PlanQuery,
+    PlanState,
+)
 
 
 class GitHubPlanStore(PlanStore):
@@ -207,3 +221,130 @@ class GitHubPlanStore(PlanStore):
             updated_at=issue_info.updated_at.astimezone(UTC),
             metadata=metadata,
         )
+
+    # === WRITE OPERATIONS ===
+
+    def create_plan(
+        self,
+        repo_root: Path,
+        title: str,
+        body: str,
+        labels: list[str],
+    ) -> CreatePlanResult:
+        """Create GitHub issue with plan content.
+
+        Schema V2: Metadata in issue body, plan content in first comment.
+
+        Args:
+            repo_root: Repository root directory
+            title: Plan title (without [erk-plan] suffix - added automatically)
+            body: Plan content (markdown)
+            labels: Additional labels (erk-plan added automatically)
+
+        Returns:
+            CreatePlanResult with plan_identifier and url
+
+        Raises:
+            RuntimeError: If gh CLI fails
+        """
+        timestamp = datetime.now(UTC).isoformat()
+        creator = self._github_issues.get_current_username() or "unknown"
+
+        # Format issue body (metadata only for Schema V2)
+        issue_body = format_plan_header_body(
+            created_at=timestamp,
+            created_by=creator,
+        )
+
+        # Create issue with [erk-plan] suffix
+        issue_title = f"{title} [erk-plan]"
+        all_labels = ["erk-plan"] + [label for label in labels if label != "erk-plan"]
+
+        result = self._github_issues.create_issue(
+            repo_root=repo_root,
+            title=issue_title,
+            body=issue_body,
+            labels=all_labels,
+        )
+
+        # Add plan content as first comment (Schema V2)
+        comment_body = format_plan_content_comment(body)
+        self._github_issues.add_comment(repo_root, result.number, comment_body)
+
+        return CreatePlanResult(
+            plan_identifier=str(result.number),
+            url=result.url,
+        )
+
+    def update_plan_metadata(
+        self,
+        repo_root: Path,
+        plan_identifier: str,
+        updates: PlanMetadataUpdate,
+    ) -> None:
+        """Update plan-header block in issue body.
+
+        Applies provided metadata updates to the existing plan-header block.
+        Each non-None field in updates will be written to the plan header.
+
+        Args:
+            repo_root: Repository root directory
+            plan_identifier: Issue number as string
+            updates: Metadata fields to update
+
+        Raises:
+            RuntimeError: If gh CLI fails or plan not found
+        """
+        issue_number = int(plan_identifier)
+        issue = self._github_issues.get_issue(repo_root, issue_number)
+        updated_body = issue.body
+
+        # Apply each update in sequence (order doesn't matter since each
+        # update reads the latest block state before modifying)
+        if updates.worktree_name is not None:
+            updated_body = update_plan_header_worktree_name(updated_body, updates.worktree_name)
+
+        if updates.last_dispatched_run_id is not None and updates.last_dispatched_at is not None:
+            updated_body = update_plan_header_dispatch(
+                updated_body, updates.last_dispatched_run_id, updates.last_dispatched_at
+            )
+
+        if updates.last_local_impl_at is not None:
+            updated_body = update_plan_header_local_impl(updated_body, updates.last_local_impl_at)
+
+        if updates.last_remote_impl_at is not None:
+            updated_body = update_plan_header_remote_impl(updated_body, updates.last_remote_impl_at)
+
+        # Only update if body actually changed
+        if updated_body != issue.body:
+            self._github_issues.update_issue_body(repo_root, issue_number, updated_body)
+
+    def ensure_label(
+        self,
+        repo_root: Path,
+        label: str,
+        description: str,
+        color: str,
+    ) -> None:
+        """Ensure label exists in repository.
+
+        Creates the label if it doesn't exist, no-op if it does.
+
+        Args:
+            repo_root: Repository root directory
+            label: Label name
+            description: Label description
+            color: Label color (6-char hex, no #)
+
+        Raises:
+            RuntimeError: If gh CLI fails
+        """
+        self._github_issues.ensure_label_exists(repo_root, label, description, color)
+
+    def get_current_user(self) -> str | None:
+        """Get current authenticated GitHub user.
+
+        Returns:
+            Username or None if not authenticated
+        """
+        return self._github_issues.get_current_username()

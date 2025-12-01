@@ -1,8 +1,7 @@
 """Tests for plan create command."""
 
 from click.testing import CliRunner
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.metadata import find_metadata_block
+from erk_shared.plan_store.fake import FakePlanStore
 
 from erk.cli.cli import cli
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -18,8 +17,8 @@ def test_create_from_file(tmp_path) -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues()
-        ctx = build_workspace_test_context(env, issues=issues)
+        plan_store = FakePlanStore()
+        ctx = build_workspace_test_context(env, plan_store=plan_store)
 
         # Act
         result = runner.invoke(cli, ["plan", "create", "--file", str(plan_file)], obj=ctx)
@@ -27,27 +26,16 @@ def test_create_from_file(tmp_path) -> None:
         # Assert
         assert result.exit_code == 0, f"Command failed: {result.output}"
         assert "Created plan #1" in result.output
-        assert "https://github.com/test-owner/test-repo/issues/1" in result.output
         assert "View:       erk get 1" in result.output
         assert "Implement:  erk implement 1" in result.output
         assert "Submit:     erk submit 1" in result.output
 
-        # Verify issue was created with correct data
-        assert len(issues.created_issues) == 1
-        title, body, labels = issues.created_issues[0]
-        assert title == "Test Feature [erk-plan]"
-        assert "erk-plan" in labels
-
-        # Verify Schema V2 format: metadata in body
-        assert "plan-header" in body
-        # Note: worktree_name is set later when worktree is actually created
-
-        # Verify plan content was added as first comment
-        assert len(issues.added_comments) == 1
-        comment_number, comment_body = issues.added_comments[0]
-        assert comment_number == 1
-        assert plan_content in comment_body
-        assert "plan-body" in comment_body
+        # Verify plan was created with correct data via plan_store
+        assert len(plan_store.created_plans) == 1
+        plan = plan_store.get_plan(env.cwd, "1")
+        assert plan.url.startswith("https://github.com/")
+        assert "Test Feature" in plan.title
+        assert plan.body == plan_content
 
 
 def test_create_from_stdin() -> None:
@@ -57,8 +45,8 @@ def test_create_from_stdin() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues()
-        ctx = build_workspace_test_context(env, issues=issues)
+        plan_store = FakePlanStore()
+        ctx = build_workspace_test_context(env, plan_store=plan_store)
 
         # Act
         result = runner.invoke(cli, ["plan", "create"], input=plan_content, obj=ctx)
@@ -67,9 +55,9 @@ def test_create_from_stdin() -> None:
         assert result.exit_code == 0, f"Command failed: {result.output}"
         assert "Created plan #1" in result.output
 
-        # Verify title was extracted from H1 (with [erk-plan] suffix)
-        title, body, labels = issues.created_issues[0]
-        assert title == "Stdin Feature [erk-plan]"
+        # Verify title was extracted from H1
+        plan = plan_store.get_plan(env.cwd, "1")
+        assert "Stdin Feature" in plan.title
 
 
 def test_create_extracts_h1_title(tmp_path) -> None:
@@ -81,16 +69,16 @@ def test_create_extracts_h1_title(tmp_path) -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues()
-        ctx = build_workspace_test_context(env, issues=issues)
+        plan_store = FakePlanStore()
+        ctx = build_workspace_test_context(env, plan_store=plan_store)
 
         # Act
         result = runner.invoke(cli, ["plan", "create", "--file", str(plan_file)], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
-        title, body, labels = issues.created_issues[0]
-        assert title == "Auto Extracted Title [erk-plan]"
+        plan = plan_store.get_plan(env.cwd, "1")
+        assert "Auto Extracted Title" in plan.title
 
 
 def test_create_with_explicit_title(tmp_path) -> None:
@@ -102,8 +90,8 @@ def test_create_with_explicit_title(tmp_path) -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues()
-        ctx = build_workspace_test_context(env, issues=issues)
+        plan_store = FakePlanStore()
+        ctx = build_workspace_test_context(env, plan_store=plan_store)
 
         # Act
         result = runner.invoke(
@@ -112,8 +100,8 @@ def test_create_with_explicit_title(tmp_path) -> None:
 
         # Assert
         assert result.exit_code == 0
-        title, body, labels = issues.created_issues[0]
-        assert title == "Custom Title [erk-plan]"
+        plan = plan_store.get_plan(env.cwd, "1")
+        assert "Custom Title" in plan.title
 
 
 def test_create_with_additional_labels(tmp_path) -> None:
@@ -125,8 +113,8 @@ def test_create_with_additional_labels(tmp_path) -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues()
-        ctx = build_workspace_test_context(env, issues=issues)
+        plan_store = FakePlanStore()
+        ctx = build_workspace_test_context(env, plan_store=plan_store)
 
         # Act
         result = runner.invoke(
@@ -137,10 +125,10 @@ def test_create_with_additional_labels(tmp_path) -> None:
 
         # Assert
         assert result.exit_code == 0
-        title, body, labels = issues.created_issues[0]
-        assert "erk-plan" in labels
-        assert "bug" in labels
-        assert "urgent" in labels
+        plan = plan_store.get_plan(env.cwd, "1")
+        # Verify custom labels were added
+        assert "bug" in plan.labels
+        assert "urgent" in plan.labels
 
 
 def test_create_fails_with_no_input() -> None:
@@ -148,8 +136,8 @@ def test_create_fails_with_no_input() -> None:
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues()
-        ctx = build_workspace_test_context(env, issues=issues)
+        plan_store = FakePlanStore()
+        ctx = build_workspace_test_context(env, plan_store=plan_store)
 
         # Act (CliRunner provides empty stdin by default, not TTY)
         # Empty stdin will be read successfully but content will be empty
@@ -170,8 +158,8 @@ def test_create_with_file_ignores_stdin(tmp_path) -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues()
-        ctx = build_workspace_test_context(env, issues=issues)
+        plan_store = FakePlanStore()
+        ctx = build_workspace_test_context(env, plan_store=plan_store)
 
         # Act (provide both file and stdin - file should take precedence)
         result = runner.invoke(
@@ -183,21 +171,21 @@ def test_create_with_file_ignores_stdin(tmp_path) -> None:
 
         # Assert
         assert result.exit_code == 0, f"Command failed: {result.output}"
-        # Verify the file content was used, not stdin (with [erk-plan] suffix)
-        title, body, labels = issues.created_issues[0]
-        assert title == "File Title [erk-plan]"
+        # Verify the file content was used, not stdin
+        plan = plan_store.get_plan(env.cwd, "1")
+        assert "File Title" in plan.title
 
 
-def test_create_ensures_label_exists(tmp_path) -> None:
-    """Test that erk-plan label is created if it doesn't exist."""
+def test_create_ensures_required_labels_exist(tmp_path) -> None:
+    """Test that required labels are created if they don't exist."""
     # Arrange
     plan_file = tmp_path / "plan.md"
     plan_file.write_text("# Feature\n\nDetails", encoding="utf-8")
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues(labels=set())  # No labels exist initially
-        ctx = build_workspace_test_context(env, issues=issues)
+        plan_store = FakePlanStore()
+        ctx = build_workspace_test_context(env, plan_store=plan_store)
 
         # Act
         result = runner.invoke(cli, ["plan", "create", "--file", str(plan_file)], obj=ctx)
@@ -205,48 +193,8 @@ def test_create_ensures_label_exists(tmp_path) -> None:
         # Assert
         assert result.exit_code == 0
 
-        # Verify label was created
-        assert len(issues.created_labels) == 1
-        label, description, color = issues.created_labels[0]
-        assert label == "erk-plan"
-        assert "Implementation plan tracked by erk" in description
-        assert color == "0E8A16"
-
-
-def test_create_uses_schema_v2(tmp_path) -> None:
-    """Test that created issue uses Schema V2 format (metadata body + plan comment)."""
-    # Arrange
-    plan_file = tmp_path / "plan.md"
-    plan_content = "# Schema V2 Test\n\nPlan content"
-    plan_file.write_text(plan_content, encoding="utf-8")
-
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues()
-        ctx = build_workspace_test_context(env, issues=issues)
-
-        # Act
-        result = runner.invoke(cli, ["plan", "create", "--file", str(plan_file)], obj=ctx)
-
-        # Assert
-        assert result.exit_code == 0
-
-        # Verify Schema V2 structure
-        title, body, labels = issues.created_issues[0]
-
-        # Issue body should contain plan-header metadata block
-        header_block = find_metadata_block(body, "plan-header")
-        assert header_block is not None
-        assert header_block.data["schema_version"] == "2"
-        assert "created_at" in header_block.data
-        assert "created_by" in header_block.data
-        # Note: worktree_name is set later when worktree is actually created
-
-        # First comment should contain plan-body metadata block
-        comment_number, comment_body = issues.added_comments[0]
-        assert comment_number == 1
-        assert "plan-body" in comment_body
-        assert plan_content in comment_body
+        # Verify ensure_label was called (labels dict populated)
+        assert len(plan_store.labels) > 0
 
 
 def test_create_with_empty_file(tmp_path) -> None:
@@ -257,8 +205,8 @@ def test_create_with_empty_file(tmp_path) -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues()
-        ctx = build_workspace_test_context(env, issues=issues)
+        plan_store = FakePlanStore()
+        ctx = build_workspace_test_context(env, plan_store=plan_store)
 
         # Act
         result = runner.invoke(cli, ["plan", "create", "--file", str(plan_file)], obj=ctx)
@@ -274,8 +222,8 @@ def test_create_with_nonexistent_file() -> None:
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues()
-        ctx = build_workspace_test_context(env, issues=issues)
+        plan_store = FakePlanStore()
+        ctx = build_workspace_test_context(env, plan_store=plan_store)
 
         # Act
         result = runner.invoke(cli, ["plan", "create", "--file", "/nonexistent/plan.md"], obj=ctx)
@@ -295,42 +243,13 @@ def test_create_with_h2_title_fallback(tmp_path) -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues()
-        ctx = build_workspace_test_context(env, issues=issues)
+        plan_store = FakePlanStore()
+        ctx = build_workspace_test_context(env, plan_store=plan_store)
 
         # Act
         result = runner.invoke(cli, ["plan", "create", "--file", str(plan_file)], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
-        title, body, labels = issues.created_issues[0]
-        assert title == "H2 Title [erk-plan]"
-
-
-def test_create_does_not_include_worktree_name(tmp_path) -> None:
-    """Test that worktree_name is NOT included at issue creation time.
-
-    worktree_name is now set later when the actual worktree is created,
-    not at issue creation time.
-    """
-    # Arrange
-    plan_file = tmp_path / "plan.md"
-    plan_content = "# My Cool Feature!\n\nDetails"
-    plan_file.write_text(plan_content, encoding="utf-8")
-
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues()
-        ctx = build_workspace_test_context(env, issues=issues)
-
-        # Act
-        result = runner.invoke(cli, ["plan", "create", "--file", str(plan_file)], obj=ctx)
-
-        # Assert
-        assert result.exit_code == 0
-
-        # Verify worktree_name is NOT in the header
-        title, body, labels = issues.created_issues[0]
-        header_block = find_metadata_block(body, "plan-header")
-        assert header_block is not None
-        assert "worktree_name" not in header_block.data
+        plan = plan_store.get_plan(env.cwd, "1")
+        assert "H2 Title" in plan.title

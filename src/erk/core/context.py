@@ -30,7 +30,9 @@ from erk.core.github.dry_run import DryRunGitHub
 from erk.core.github.issue_link_branches_dry_run import DryRunIssueLinkBranches
 from erk.core.github.issue_link_branches_real import RealIssueLinkBranches
 from erk.core.github.real import RealGitHub
+from erk.core.plan_store.event_store import PlanEventStore
 from erk.core.plan_store.github import GitHubPlanStore
+from erk.core.plan_store.github_event_store import GitHubPlanEventStore
 from erk.core.plan_store.store import PlanStore
 from erk.core.planner.registry_abc import PlannerRegistry
 from erk.core.planner.registry_real import RealPlannerRegistry
@@ -62,6 +64,7 @@ class ErkContext:
     issues: GitHubIssues
     issue_link_branches: IssueLinkBranches
     plan_store: PlanStore
+    plan_event_store: PlanEventStore
     graphite: Graphite
     shell: Shell
     claude_executor: ClaudeExecutor
@@ -134,6 +137,7 @@ class ErkContext:
         from erk_shared.github.issues import FakeGitHubIssues
         from erk_shared.integrations.graphite.fake import FakeGraphite
         from erk_shared.integrations.time.fake import FakeTime
+        from erk_shared.plan_store.fake_event_store import FakePlanEventStore
         from tests.fakes.claude_executor import FakeClaudeExecutor
         from tests.fakes.completion import FakeCompletion
         from tests.fakes.issue_link_branches import FakeIssueLinkBranches
@@ -155,6 +159,7 @@ class ErkContext:
             issues=fake_issues,
             issue_link_branches=fake_issue_link_branches,
             plan_store=FakePlanStore(),
+            plan_event_store=FakePlanEventStore(),
             graphite=FakeGraphite(),
             shell=FakeShell(),
             claude_executor=FakeClaudeExecutor(),
@@ -179,6 +184,7 @@ class ErkContext:
         issues: GitHubIssues | None = None,
         issue_link_branches: IssueLinkBranches | None = None,
         plan_store: PlanStore | None = None,
+        plan_event_store: PlanEventStore | None = None,
         graphite: Graphite | None = None,
         shell: Shell | None = None,
         claude_executor: ClaudeExecutor | None = None,
@@ -248,6 +254,7 @@ class ErkContext:
         from erk_shared.github.issues import FakeGitHubIssues
         from erk_shared.integrations.graphite.fake import FakeGraphite
         from erk_shared.integrations.time.fake import FakeTime
+        from erk_shared.plan_store.fake_event_store import FakePlanEventStore
         from tests.fakes.claude_executor import FakeClaudeExecutor
         from tests.fakes.completion import FakeCompletion
         from tests.fakes.issue_link_branches import FakeIssueLinkBranches
@@ -276,6 +283,9 @@ class ErkContext:
 
         if plan_store is None:
             plan_store = FakePlanStore()
+
+        if plan_event_store is None:
+            plan_event_store = FakePlanEventStore()
 
         if graphite is None:
             graphite = FakeGraphite()
@@ -335,6 +345,7 @@ class ErkContext:
             issues=issues,
             issue_link_branches=issue_link_branches,
             plan_store=plan_store,
+            plan_event_store=plan_event_store,
             graphite=graphite,
             shell=shell,
             claude_executor=claude_executor,
@@ -472,6 +483,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
     issues: GitHubIssues = RealGitHubIssues()
     issue_link_branches: IssueLinkBranches = RealIssueLinkBranches()
     plan_store: PlanStore = GitHubPlanStore(issues)
+    plan_event_store: PlanEventStore = GitHubPlanEventStore(issues)
     plan_list_service: PlanListService = PlanListService(github, issues)
 
     # 5. Discover repo (only needs cwd, erk_root, git)
@@ -508,6 +520,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
         issues=issues,
         issue_link_branches=issue_link_branches,
         plan_store=plan_store,
+        plan_event_store=plan_event_store,
         graphite=graphite,
         shell=RealShell(),
         claude_executor=RealClaudeExecutor(),

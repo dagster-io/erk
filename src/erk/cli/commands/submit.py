@@ -7,14 +7,14 @@ from pathlib import Path
 
 import click
 from erk_shared.github.issue_link_branches import DevelopmentBranch
-from erk_shared.github.issues import IssueInfo
-from erk_shared.github.metadata import create_submission_queued_block, render_erk_issue_event
 from erk_shared.naming import (
     derive_branch_name_from_title,
     format_branch_timestamp_suffix,
     sanitize_worktree_name,
 )
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.event_store import PlanEvent, PlanEventType
+from erk_shared.plan_store.types import Plan
 from erk_shared.worker_impl_folder import create_worker_impl_folder
 
 from erk.cli.constants import (
@@ -32,11 +32,11 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ValidatedIssue:
-    """Issue that passed all validation checks."""
+class ValidatedPlan:
+    """Plan that passed all validation checks."""
 
     number: int
-    issue: IssueInfo
+    plan: Plan
     branch_name: str
     branch_exists: bool
     pr_number: int | None
@@ -161,28 +161,28 @@ def _close_orphaned_draft_prs(
     return closed_prs
 
 
-def _validate_issue_for_submit(
+def _validate_plan_for_submit(
     ctx: ErkContext,
     repo: RepoContext,
     issue_number: int,
-) -> ValidatedIssue:
-    """Validate a single issue for submission.
+) -> ValidatedPlan:
+    """Validate a single plan for submission.
 
-    Fetches the issue, validates constraints, derives branch name, and checks
+    Fetches the plan, validates constraints, derives branch name, and checks
     if branch/PR already exist.
 
     Raises:
-        SystemExit: If issue doesn't exist, missing label, or closed.
+        SystemExit: If plan doesn't exist, missing label, or closed.
     """
-    # Fetch issue from GitHub
+    # Fetch plan from plan store
     try:
-        issue = ctx.issues.get_issue(repo.root, issue_number)
-    except RuntimeError as e:
+        plan = ctx.plan_store.get_plan(repo.root, str(issue_number))
+    except (RuntimeError, ValueError) as e:
         user_output(click.style("Error: ", fg="red") + str(e))
         raise SystemExit(1) from None
 
     # Validate: must have erk-plan label
-    if ERK_PLAN_LABEL not in issue.labels:
+    if ERK_PLAN_LABEL not in plan.labels:
         user_output(
             click.style("Error: ", fg="red")
             + f"Issue #{issue_number} does not have {ERK_PLAN_LABEL} label\n\n"
@@ -192,9 +192,9 @@ def _validate_issue_for_submit(
         raise SystemExit(1)
 
     # Validate: must be OPEN
-    if issue.state != "OPEN":
+    if plan.state.value != "OPEN":
         user_output(
-            click.style("Error: ", fg="red") + f"Issue #{issue_number} is {issue.state}\n\n"
+            click.style("Error: ", fg="red") + f"Issue #{issue_number} is {plan.state.value}\n\n"
             "Cannot submit closed issues for automated implementation."
         )
         raise SystemExit(1)
@@ -206,7 +206,7 @@ def _validate_issue_for_submit(
 
     if USE_GITHUB_NATIVE_BRANCH_LINKING:
         # Compute branch name: truncate to 31 chars, then append timestamp suffix
-        base_branch_name = sanitize_worktree_name(f"{issue_number}-{issue.title}")
+        base_branch_name = sanitize_worktree_name(f"{issue_number}-{plan.title}")
         logger.debug("base_branch_name=%s", base_branch_name)
         timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
         logger.debug("timestamp_suffix=%s", timestamp_suffix)
@@ -238,8 +238,8 @@ def _validate_issue_for_submit(
             dev_branch.already_existed,
         )
     else:
-        # Traditional branch naming from issue title
-        branch_name = derive_branch_name_from_title(issue.title)
+        # Traditional branch naming from plan title
+        branch_name = derive_branch_name_from_title(plan.title)
         dev_branch = DevelopmentBranch(
             branch_name=branch_name,
             issue_number=issue_number,
@@ -263,30 +263,30 @@ def _validate_issue_for_submit(
         if pr_status.pr_number is not None:
             pr_number = pr_status.pr_number
 
-    return ValidatedIssue(
+    return ValidatedPlan(
         number=issue_number,
-        issue=issue,
+        plan=plan,
         branch_name=branch_name,
         branch_exists=branch_exists,
         pr_number=pr_number,
     )
 
 
-def _submit_single_issue(
+def _submit_single_plan(
     ctx: ErkContext,
     repo: RepoContext,
-    validated: ValidatedIssue,
+    validated: ValidatedPlan,
     submitted_by: str,
     original_branch: str,
 ) -> SubmitResult:
-    """Submit a single validated issue for implementation.
+    """Submit a single validated plan for implementation.
 
     Creates branch/PR if needed and triggers workflow.
 
     Returns:
         SubmitResult with URLs and identifiers.
     """
-    issue = validated.issue
+    plan = validated.plan
     issue_number = validated.number
     branch_name = validated.branch_name
     branch_exists = validated.branch_exists
@@ -330,7 +330,7 @@ def _submit_single_issue(
                 f"---\n\n"
                 f"Closes #{issue_number}"
             )
-            pr_title = _strip_plan_markers(issue.title)
+            pr_title = _strip_plan_markers(plan.title)
             pr_number = ctx.github.create_pr(
                 repo_root=repo.root,
                 branch=branch_name,
@@ -384,7 +384,7 @@ def _submit_single_issue(
         create_worker_impl_folder(
             plan_content=plan.body,
             issue_number=issue_number,
-            issue_url=issue.url,
+            issue_url=plan.url,
             repo_root=repo.root,
         )
 
@@ -404,7 +404,7 @@ def _submit_single_issue(
             f"---\n\n"
             f"Closes #{issue_number}"
         )
-        pr_title = _strip_plan_markers(issue.title)
+        pr_title = _strip_plan_markers(plan.title)
         pr_number = ctx.github.create_pr(
             repo_root=repo.root,
             branch=branch_name,
@@ -462,7 +462,7 @@ def _submit_single_issue(
         inputs={
             "issue_number": str(issue_number),
             "submitted_by": submitted_by,
-            "issue_title": issue.title,
+            "issue_title": plan.title,
             "branch_name": branch_name,
             "pr_number": str(pr_number),
         },
@@ -474,46 +474,38 @@ def _submit_single_issue(
         "has_erk_plan_label": True,
     }
 
-    # Create and post queued event comment
-    workflow_url = _construct_workflow_run_url(issue.url, run_id)
+    # Create and post queued event
+    workflow_url = _construct_workflow_run_url(plan.url, run_id)
     try:
-        metadata_block = create_submission_queued_block(
-            queued_at=queued_at,
-            submitted_by=submitted_by,
-            issue_number=issue_number,
-            validation_results=validation_results,
-            expected_workflow=DISPATCH_WORKFLOW_METADATA_NAME,
+        queued_event = PlanEvent(
+            event_type=PlanEventType.QUEUED,
+            timestamp=datetime.fromisoformat(queued_at),
+            data={
+                "submitted_by": submitted_by,
+                "status": "queued",
+                "expected_workflow": DISPATCH_WORKFLOW_METADATA_NAME,
+                "workflow_run_url": workflow_url,
+                "validation_results": validation_results,
+            },
         )
 
-        comment_body = render_erk_issue_event(
-            title="🔄 Issue Queued for Implementation",
-            metadata=metadata_block,
-            description=(
-                f"Issue submitted by **{submitted_by}** at {queued_at}.\n\n"
-                f"The `{DISPATCH_WORKFLOW_METADATA_NAME}` workflow has been "
-                f"triggered via direct dispatch.\n\n"
-                f"**Workflow run:** {workflow_url}\n\n"
-                f"Branch and draft PR were created locally for correct commit attribution."
-            ),
-        )
-
-        user_output("Posting queued event comment...")
-        ctx.issues.add_comment(repo.root, issue_number, comment_body)
-        user_output(click.style("✓", fg="green") + " Queued event comment posted")
+        user_output("Posting queued event...")
+        ctx.plan_event_store.append_event(repo.root, str(issue_number), queued_event)
+        user_output(click.style("✓", fg="green") + " Queued event posted")
     except Exception as e:
         # Log warning but don't block - workflow is already triggered
         user_output(
             click.style("Warning: ", fg="yellow")
-            + f"Failed to post queued comment: {e}\n"
+            + f"Failed to post queued event: {e}\n"
             + "Workflow is already running."
         )
 
-    pr_url = _construct_pr_url(issue.url, pr_number) if pr_number else None
+    pr_url = _construct_pr_url(plan.url, pr_number) if pr_number else None
 
     return SubmitResult(
         issue_number=issue_number,
-        issue_title=issue.title,
-        issue_url=issue.url,
+        issue_title=plan.title,
+        issue_url=plan.url,
         pr_number=pr_number,
         pr_url=pr_url,
         workflow_run_id=run_id,
@@ -568,11 +560,11 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...]) -> None:
     user_output(f"Validating {len(issue_numbers)} issue(s)...")
     user_output("")
 
-    validated: list[ValidatedIssue] = []
+    validated: list[ValidatedPlan] = []
     for issue_number in issue_numbers:
         user_output(f"Validating issue #{issue_number}...")
-        validated_issue = _validate_issue_for_submit(ctx, repo, issue_number)
-        validated.append(validated_issue)
+        validated_plan = _validate_plan_for_submit(ctx, repo, issue_number)
+        validated.append(validated_plan)
 
     user_output("")
     user_output(click.style("✓", fg="green") + f" All {len(validated)} issue(s) validated")
@@ -580,7 +572,7 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...]) -> None:
 
     # Display validated issues
     for v in validated:
-        user_output(f"  #{v.number}: {click.style(v.issue.title, fg='yellow')}")
+        user_output(f"  #{v.number}: {click.style(v.plan.title, fg='yellow')}")
     user_output("")
 
     # Phase 2: Submit all validated issues
@@ -591,7 +583,7 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...]) -> None:
         else:
             user_output(f"Submitting issue #{v.number}...")
         user_output("")
-        result = _submit_single_issue(ctx, repo, v, submitted_by, original_branch)
+        result = _submit_single_plan(ctx, repo, v, submitted_by, original_branch)
         results.append(result)
         user_output("")
 
