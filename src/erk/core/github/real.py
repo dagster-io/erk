@@ -778,43 +778,40 @@ query {{
     def get_workflow_run(self, repo_root: Path, run_id: str) -> WorkflowRun | None:
         """Get details for a specific workflow run by ID.
 
+        Uses the REST API to get workflow run details including node_id.
+        The gh CLI's `gh run view --json` does not support the nodeId field,
+        but the REST API does.
+
         Note: Uses try/except as an acceptable error boundary for handling gh CLI
         availability and authentication. We cannot reliably check gh installation
         and authentication status a priori without duplicating gh's logic.
         """
         try:
+            # Use REST API - {owner}/{repo} placeholders are auto-filled by gh
             cmd = [
                 "gh",
-                "run",
-                "view",
-                run_id,
-                "--json",
-                "databaseId,status,conclusion,headBranch,headSha,displayTitle,createdAt",
+                "api",
+                f"repos/{{owner}}/{{repo}}/actions/runs/{run_id}",
             ]
 
-            result = run_subprocess_with_context(
-                cmd,
-                operation_context=f"get workflow run details for run {run_id}",
-                cwd=repo_root,
-            )
-
-            # Parse JSON response
-            data = json.loads(result.stdout)
+            stdout = execute_gh_command(cmd, repo_root)
+            data = json.loads(stdout)
 
             # Parse created_at timestamp if present
             created_at = None
-            created_at_str = data.get("createdAt")
+            created_at_str = data.get("created_at")
             if created_at_str:
                 created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
 
             return WorkflowRun(
-                run_id=str(data["databaseId"]),
+                run_id=str(data["id"]),
                 status=data["status"],
                 conclusion=data.get("conclusion"),
-                branch=data["headBranch"],
-                head_sha=data["headSha"],
-                display_title=data.get("displayTitle"),
+                branch=data["head_branch"],
+                head_sha=data["head_sha"],
+                display_title=data.get("display_title"),
                 created_at=created_at,
+                node_id=data.get("node_id"),
             )
 
         except (RuntimeError, json.JSONDecodeError, KeyError, FileNotFoundError):

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
+from erk_shared.github.metadata import MetadataBlock, render_metadata_block
 from erk_shared.github.types import PullRequestInfo
 from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
@@ -23,6 +24,20 @@ from erk.core.repo_discovery import RepoContext
 from tests.fakes.issue_link_branches import FakeIssueLinkBranches
 
 
+def _make_plan_body(content: str = "Implementation details...") -> str:
+    """Create a valid issue body with plan-header metadata block.
+
+    The plan-header block is required for `update_plan_header_dispatch` to work.
+    """
+    plan_header_data = {
+        "schema_version": "2",
+        "created_at": "2024-01-01T00:00:00Z",
+        "created_by": "test-user",
+    }
+    header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
+    return f"{header_block}\n\n# Plan\n\n{content}"
+
+
 def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     """Test submit creates linked branch, pushes, creates draft PR, triggers workflow."""
     repo_root = tmp_path / "repo"
@@ -33,7 +48,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     issue = IssueInfo(
         number=123,
         title="Implement feature X",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state="OPEN",
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -46,7 +61,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     plan = Plan(
         plan_identifier="123",
         title="Implement feature X",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state=PlanState.OPEN,
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -130,7 +145,7 @@ def test_submit_skips_branch_creation_when_exists(tmp_path: Path) -> None:
     issue = IssueInfo(
         number=123,
         title="Implement feature X",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state="OPEN",
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -250,7 +265,7 @@ def test_submit_closed_issue(tmp_path: Path) -> None:
     issue = IssueInfo(
         number=123,
         title="Implement feature X",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state="CLOSED",
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -338,7 +353,7 @@ def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
     issue = IssueInfo(
         number=123,
         title="Add workflow run URL to erk submit output",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state="OPEN",
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -351,7 +366,7 @@ def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
     plan = Plan(
         plan_identifier="123",
         title="Add workflow run URL to erk submit output",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state=PlanState.OPEN,
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -406,7 +421,7 @@ def test_submit_requires_gh_authentication(tmp_path: Path) -> None:
     issue = IssueInfo(
         number=123,
         title="Implement feature X",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state="OPEN",
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -473,7 +488,7 @@ def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
     issue = IssueInfo(
         number=123,
         title="Implement feature X [erk-plan]",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state="OPEN",
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -485,7 +500,7 @@ def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
     plan = Plan(
         plan_identifier="123",
         title="Implement feature X [erk-plan]",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state=PlanState.OPEN,
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -745,7 +760,7 @@ def test_submit_creates_pr_when_branch_exists_but_no_pr(tmp_path: Path) -> None:
     issue = IssueInfo(
         number=123,
         title="Implement feature X",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state="OPEN",
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -841,7 +856,7 @@ def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
     issue = IssueInfo(
         number=123,
         title="Implement feature X",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state="OPEN",
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -853,7 +868,7 @@ def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
     plan = Plan(
         plan_identifier="123",
         title="Implement feature X",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state=PlanState.OPEN,
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -999,7 +1014,7 @@ def test_submit_handles_local_branch_already_exists(tmp_path: Path) -> None:
     issue = IssueInfo(
         number=123,
         title="Implement feature X",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state="OPEN",
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -1072,7 +1087,7 @@ def test_submit_handles_branch_name_collision(tmp_path: Path) -> None:
     issue = IssueInfo(
         number=123,
         title="My Feature",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state="OPEN",
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -1084,7 +1099,7 @@ def test_submit_handles_branch_name_collision(tmp_path: Path) -> None:
     plan = Plan(
         plan_identifier="123",
         title="My Feature",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state=PlanState.OPEN,
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -1158,7 +1173,7 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
     issue_123 = IssueInfo(
         number=123,
         title="Feature A",
-        body="# Plan\n\nImplementation for A...",
+        body=_make_plan_body("Implementation for A..."),
         state="OPEN",
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -1169,7 +1184,7 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
     issue_456 = IssueInfo(
         number=456,
         title="Feature B",
-        body="# Plan\n\nImplementation for B...",
+        body=_make_plan_body("Implementation for B..."),
         state="OPEN",
         url="https://github.com/test-owner/test-repo/issues/456",
         labels=[ERK_PLAN_LABEL],
@@ -1181,7 +1196,7 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
     plan_123 = Plan(
         plan_identifier="123",
         title="Feature A",
-        body="# Plan\n\nImplementation for A...",
+        body=_make_plan_body("Implementation for A..."),
         state=PlanState.OPEN,
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -1193,7 +1208,7 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
     plan_456 = Plan(
         plan_identifier="456",
         title="Feature B",
-        body="# Plan\n\nImplementation for B...",
+        body=_make_plan_body("Implementation for B..."),
         state=PlanState.OPEN,
         url="https://github.com/test-owner/test-repo/issues/456",
         labels=[ERK_PLAN_LABEL],
@@ -1270,7 +1285,7 @@ def test_submit_multiple_issues_atomic_validation_failure(tmp_path: Path) -> Non
     issue_123 = IssueInfo(
         number=123,
         title="Feature A",
-        body="# Plan\n\nImplementation for A...",
+        body=_make_plan_body("Implementation for A..."),
         state="OPEN",
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -1282,7 +1297,7 @@ def test_submit_multiple_issues_atomic_validation_failure(tmp_path: Path) -> Non
     issue_456 = IssueInfo(
         number=456,
         title="Feature B",
-        body="# Plan\n\nImplementation for B...",
+        body=_make_plan_body("Implementation for B..."),
         state="CLOSED",
         url="https://github.com/test-owner/test-repo/issues/456",
         labels=[ERK_PLAN_LABEL],
@@ -1336,7 +1351,7 @@ def test_submit_single_issue_still_works(tmp_path: Path) -> None:
     issue = IssueInfo(
         number=123,
         title="Implement feature X",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state="OPEN",
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -1348,7 +1363,7 @@ def test_submit_single_issue_still_works(tmp_path: Path) -> None:
     plan = Plan(
         plan_identifier="123",
         title="Implement feature X",
-        body="# Plan\n\nImplementation details...",
+        body=_make_plan_body(),
         state=PlanState.OPEN,
         url="https://github.com/test-owner/test-repo/issues/123",
         labels=[ERK_PLAN_LABEL],
@@ -1397,3 +1412,147 @@ def test_submit_single_issue_still_works(tmp_path: Path) -> None:
 
     # Verify workflow was triggered
     assert len(fake_github.triggered_workflows) == 1
+
+
+def test_submit_updates_dispatch_info_in_issue(tmp_path: Path) -> None:
+    """Test submit updates issue body with dispatch info after triggering workflow."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+    issue = IssueInfo(
+        number=123,
+        title="Implement feature X",
+        body=_make_plan_body(),
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    plan = Plan(
+        plan_identifier="123",
+        title="Implement feature X",
+        body=_make_plan_body(),
+        state=PlanState.OPEN,
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+    )
+    fake_github = FakeGitHub()
+    fake_issue_dev = FakeIssueLinkBranches()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        issue_link_branches=fake_issue_dev,
+        plan_store=fake_plan_store,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    assert "Dispatch metadata written to issue" in result.output
+
+    # Verify issue body was updated with dispatch info
+    updated_issue = fake_github_issues.get_issue(repo_root, 123)
+    assert "last_dispatched_run_id: '1234567890'" in updated_issue.body
+    assert "last_dispatched_node_id: WFR_fake_node_id_1234567890" in updated_issue.body
+    assert "last_dispatched_at:" in updated_issue.body
+
+
+def test_submit_warns_when_node_id_not_available(tmp_path: Path) -> None:
+    """Test submit warns but continues when workflow run node_id cannot be fetched."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+    issue = IssueInfo(
+        number=123,
+        title="Implement feature X",
+        body=_make_plan_body(),
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    plan = Plan(
+        plan_identifier="123",
+        title="Implement feature X",
+        body=_make_plan_body(),
+        state=PlanState.OPEN,
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+    )
+
+    # Create a custom FakeGitHub that returns None for node_id lookup
+    class FakeGitHubNoNodeId(FakeGitHub):
+        def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -> None:
+            # Return None to simulate failure to fetch node_id
+            return None
+
+    fake_github = FakeGitHubNoNodeId()
+    fake_issue_dev = FakeIssueLinkBranches()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        issue_link_branches=fake_issue_dev,
+        plan_store=fake_plan_store,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
+
+    # Should succeed but warn about missing node_id
+    assert result.exit_code == 0, result.output
+    assert "Could not fetch workflow run node_id" in result.output
+    # Workflow should still be triggered successfully
+    assert "1 issue(s) submitted successfully!" in result.output

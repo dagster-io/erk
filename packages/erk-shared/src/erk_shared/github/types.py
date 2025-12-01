@@ -106,6 +106,7 @@ class WorkflowRun:
 
     __slots__ = (
         "_run_id",
+        "_node_id",
         "_status",
         "_conclusion",
         "_branch",
@@ -115,6 +116,7 @@ class WorkflowRun:
     )
 
     _run_id: str
+    _node_id: str | None
     _status: WorkflowRunStatus
     _conclusion: WorkflowRunConclusion | None
     _branch: str | _NotAvailable
@@ -131,8 +133,10 @@ class WorkflowRun:
         head_sha: str,
         display_title: str | None | _NotAvailable = None,
         created_at: datetime | None = None,
+        node_id: str | None = None,
     ) -> None:
         object.__setattr__(self, "_run_id", run_id)
+        object.__setattr__(self, "_node_id", node_id)
         object.__setattr__(self, "_status", status)
         object.__setattr__(self, "_conclusion", conclusion)
         object.__setattr__(self, "_branch", branch)
@@ -151,6 +155,11 @@ class WorkflowRun:
     @property
     def run_id(self) -> str:
         return self._run_id
+
+    @property
+    def node_id(self) -> str | None:
+        """GraphQL node ID for batch queries."""
+        return self._node_id
 
     @property
     def status(self) -> WorkflowRunStatus:
