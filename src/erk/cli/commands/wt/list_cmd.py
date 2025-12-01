@@ -159,6 +159,26 @@ def _format_impl_cell(issue_text: str | None, issue_url: str | None) -> str:
         return issue_text
 
 
+def _format_commit_sha_cell(
+    ctx: ErkContext, repo_root: Path, branch: str | None, trunk: str
+) -> str:
+    """Format commit SHA cell for Rich table.
+
+    Args:
+        ctx: Erk context with git operations
+        repo_root: Path to the repository root
+        branch: Branch name, or None if detached HEAD
+        trunk: Trunk branch name
+
+    Returns:
+        Short SHA of last unique commit, or "-" if no unique commits
+    """
+    if branch is None or branch == trunk:
+        return "-"
+    sha = ctx.git.get_branch_last_commit_sha(repo_root, branch, trunk)
+    return sha if sha else "-"
+
+
 def _list_worktrees(ctx: ErkContext) -> None:
     """List worktrees with fast local-only data.
 
@@ -167,6 +187,7 @@ def _list_worktrees(ctx: ErkContext) -> None:
     - branch: Branch name or (=) if matches worktree name
     - pr: PR emoji + number from Graphite cache
     - sync: Ahead/behind status
+    - cmt: Short SHA of last unique commit on branch
     - impl: Issue number from .impl/issue.json
     """
     # Use ctx.repo if it's a valid RepoContext, otherwise discover
@@ -179,6 +200,9 @@ def _list_worktrees(ctx: ErkContext) -> None:
 
     # Get worktree info
     worktrees = ctx.git.list_worktrees(repo.root)
+
+    # Get trunk branch for commit SHA comparison
+    trunk = ctx.git.get_trunk_branch(repo.root)
 
     # Fetch all branch sync info in a single git call (batch operation for performance)
     all_sync_info = ctx.git.get_all_branch_sync_info(repo.root)
@@ -204,6 +228,7 @@ def _list_worktrees(ctx: ErkContext) -> None:
     table.add_column("branch", style="yellow", no_wrap=True)
     table.add_column("pr", no_wrap=True)
     table.add_column("sync", no_wrap=True)
+    table.add_column("cmt", no_wrap=True)
     table.add_column("impl", no_wrap=True)
 
     # Build rows starting with root worktree
@@ -232,10 +257,13 @@ def _list_worktrees(ctx: ErkContext) -> None:
         root_pr, use_graphite=use_graphite, graphite_url=root_graphite_url
     )
     root_sync = _format_sync_from_batch(all_sync_info, root_branch)
+    root_cmt_cell = _format_commit_sha_cell(ctx, repo.root, root_branch, trunk)
     root_impl_text, root_impl_url = _get_impl_issue(ctx, repo.root, root_branch)
     root_impl_cell = _format_impl_cell(root_impl_text, root_impl_url)
 
-    table.add_row(root_name, root_branch_display, root_pr_cell, root_sync, root_impl_cell)
+    table.add_row(
+        root_name, root_branch_display, root_pr_cell, root_sync, root_cmt_cell, root_impl_cell
+    )
 
     # Non-root worktrees, sorted by name
     non_root_worktrees = [wt for wt in worktrees if wt.path != repo.root]
@@ -264,11 +292,14 @@ def _list_worktrees(ctx: ErkContext) -> None:
         # Sync status
         sync_cell = _format_sync_from_batch(all_sync_info, branch)
 
+        # Commit SHA
+        cmt_cell = _format_commit_sha_cell(ctx, repo.root, branch, trunk)
+
         # Impl issue
         impl_text, impl_url = _get_impl_issue(ctx, wt.path, branch)
         impl_cell = _format_impl_cell(impl_text, impl_url)
 
-        table.add_row(name_cell, branch_display, pr_cell, sync_cell, impl_cell)
+        table.add_row(name_cell, branch_display, pr_cell, sync_cell, cmt_cell, impl_cell)
 
     # Output table to stderr (consistent with user_output convention)
     console = Console(stderr=True, force_terminal=True)
@@ -279,13 +310,14 @@ def _list_worktrees(ctx: ErkContext) -> None:
 @click.command("list")
 @click.pass_obj
 def list_wt(ctx: ErkContext) -> None:
-    """List worktrees with branch, PR, sync, and implementation info.
+    """List worktrees with branch, PR, sync, commit, and implementation info.
 
     Shows a fast local-only table with:
     - worktree: Directory name
     - branch: Branch name (or = if matches worktree name)
     - pr: PR status from Graphite cache
     - sync: Ahead/behind status vs tracking branch
+    - cmt: Short SHA of last unique commit on branch
     - impl: Implementation issue number
     """
     _list_worktrees(ctx)

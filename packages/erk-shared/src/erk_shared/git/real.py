@@ -674,3 +674,17 @@ class RealGit(Git):
             operation_context=f"push branch '{branch}' to remote '{remote}'",
             cwd=cwd,
         )
+
+    def get_branch_last_commit_sha(self, repo_root: Path, branch: str, trunk: str) -> str | None:
+        """Get the short SHA of the most recent commit unique to a branch."""
+        result = subprocess.run(
+            ["git", "log", f"{trunk}..{branch}", "-1", "--format=%h"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return None
+        sha = result.stdout.strip()
+        return sha if sha else None

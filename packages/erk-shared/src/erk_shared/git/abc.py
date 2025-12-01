@@ -545,3 +545,20 @@ class Git(ABC):
             subprocess.CalledProcessError: If git command fails
         """
         ...
+
+    @abstractmethod
+    def get_branch_last_commit_sha(self, repo_root: Path, branch: str, trunk: str) -> str | None:
+        """Get the short SHA of the most recent commit unique to a branch.
+
+        Returns 7-character short SHA of the latest commit on `branch` but not on `trunk`,
+        or None if branch has no unique commits or doesn't exist.
+
+        Args:
+            repo_root: Path to the git repository root
+            branch: Branch name to query
+            trunk: Trunk branch name (e.g., 'main', 'master')
+
+        Returns:
+            Short SHA string, or None if no unique commits or branch doesn't exist.
+        """
+        ...

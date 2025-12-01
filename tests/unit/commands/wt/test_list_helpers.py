@@ -6,6 +6,7 @@ from erk_shared.git.abc import BranchSyncInfo
 from erk_shared.github.types import PullRequestInfo
 
 from erk.cli.commands.wt.list_cmd import (
+    _format_commit_sha_cell,
     _format_impl_cell,
     _format_pr_cell,
     _format_sync_from_batch,
@@ -325,3 +326,53 @@ def test_format_sync_from_batch_no_upstream() -> None:
     result = _format_sync_from_batch(all_sync, "feature")
 
     assert result == "current"
+
+
+def test_format_commit_sha_cell_with_sha() -> None:
+    """Test formatting commit SHA cell returns SHA when branch has unique commits."""
+    repo_root = Path("/repo")
+    git = FakeGit(
+        branch_last_commit_shas={"feature": "abc1234"},
+    )
+    ctx = create_test_context(git=git)
+
+    result = _format_commit_sha_cell(ctx, repo_root, "feature", "main")
+
+    assert result == "abc1234"
+
+
+def test_format_commit_sha_cell_no_unique_commits() -> None:
+    """Test formatting commit SHA cell returns '-' when no unique commits."""
+    repo_root = Path("/repo")
+    git = FakeGit(
+        branch_last_commit_shas={},  # No SHA for feature branch
+    )
+    ctx = create_test_context(git=git)
+
+    result = _format_commit_sha_cell(ctx, repo_root, "feature", "main")
+
+    assert result == "-"
+
+
+def test_format_commit_sha_cell_none_branch() -> None:
+    """Test formatting commit SHA cell returns '-' when branch is None (detached HEAD)."""
+    repo_root = Path("/repo")
+    git = FakeGit()
+    ctx = create_test_context(git=git)
+
+    result = _format_commit_sha_cell(ctx, repo_root, None, "main")
+
+    assert result == "-"
+
+
+def test_format_commit_sha_cell_trunk_branch() -> None:
+    """Test formatting commit SHA cell returns '-' when branch is trunk."""
+    repo_root = Path("/repo")
+    git = FakeGit(
+        branch_last_commit_shas={"main": "abc1234"},  # Even if SHA exists
+    )
+    ctx = create_test_context(git=git)
+
+    result = _format_commit_sha_cell(ctx, repo_root, "main", "main")
+
+    assert result == "-"
