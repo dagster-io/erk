@@ -270,7 +270,6 @@ def move_stack(
     # Discover repository context
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
-    trunk_branch = ctx.trunk_branch
 
     # Resolve source worktree
     source_wt = resolve_source_worktree(
@@ -303,7 +302,7 @@ def move_stack(
     else:
         # Auto-detect default branch if using 'main' default and it doesn't exist
         if ref == "main":
-            detected_default = ctx.git.detect_default_branch(repo.root, trunk_branch)
+            detected_default = ctx.git.detect_trunk_branch(repo.root)
             ref = detected_default
 
         execute_move(ctx, repo.root, source_wt, target_wt, ref, force=force)

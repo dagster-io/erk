@@ -83,7 +83,7 @@ def pr_land(ctx: ErkContext, script: bool) -> None:
 
     # Step 2: Navigate to trunk (since land-pr validates parent is trunk)
     # The parent is always trunk after a successful land-pr
-    trunk_branch = ctx.git.detect_default_branch(repo.root, ctx.trunk_branch)
+    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
 
     # Find where trunk is checked out
     trunk_wt_path = ctx.git.find_worktree_for_branch(repo.root, trunk_branch)

@@ -222,7 +222,7 @@ def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool = False) -> None:
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
 
     # Get trunk branch once if showing last commit
-    trunk = ctx.git.get_trunk_branch(repo.root) if show_last_commit else ""
+    trunk = ctx.git.detect_trunk_branch(repo.root) if show_last_commit else ""
 
     # Create Rich table
     table = Table(show_header=True, header_style="bold", box=None)
