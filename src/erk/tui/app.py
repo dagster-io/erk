@@ -11,10 +11,12 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Header, Label
+from textual.widgets import Header, Input, Label
 
 from erk.tui.data.provider import PlanDataProvider
 from erk.tui.data.types import PlanFilters, PlanRowData
+from erk.tui.filtering.logic import filter_plans
+from erk.tui.filtering.types import FilterMode, FilterState
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
 
@@ -77,10 +79,16 @@ class HelpScreen(ModalScreen):
 
             with Vertical(classes="help-section"):
                 yield Label("Actions", classes="help-section-title")
-                yield Label("Enter/o Open issue in browser", classes="help-binding")
+                yield Label("Enter/o Open PR (or issue if no PR)", classes="help-binding")
                 yield Label("p       Open PR in browser", classes="help-binding")
                 yield Label("c       Copy checkout command", classes="help-binding")
                 yield Label("i       Show implement command", classes="help-binding")
+
+            with Vertical(classes="help-section"):
+                yield Label("Filter", classes="help-section-title")
+                yield Label("/       Start filter mode", classes="help-binding")
+                yield Label("Esc     Clear filter / exit filter", classes="help-binding")
+                yield Label("Enter   Return focus to table", classes="help-binding")
 
             with Vertical(classes="help-section"):
                 yield Label("General", classes="help-section-title")
@@ -107,11 +115,12 @@ class ErkDashApp(App):
         Binding("?", "help", "Help"),
         Binding("j", "cursor_down", "Down", show=False),
         Binding("k", "cursor_up", "Up", show=False),
-        Binding("enter", "open_issue", "Open Issue"),
-        Binding("o", "open_issue", "Open Issue", show=False),
+        Binding("enter", "open_row", "Open"),
+        Binding("o", "open_row", "Open", show=False),
         Binding("p", "open_pr", "Open PR"),
         Binding("c", "copy_checkout", "Copy Checkout"),
         Binding("i", "show_implement", "Implement"),
+        Binding("slash", "start_filter", "Filter", key_display="/"),
     ]
 
     def __init__(
@@ -133,9 +142,12 @@ class ErkDashApp(App):
         self._refresh_interval = refresh_interval
         self._table: PlanDataTable | None = None
         self._status_bar: StatusBar | None = None
-        self._rows: list[PlanRowData] = []
+        self._filter_input: Input | None = None
+        self._all_rows: list[PlanRowData] = []  # Unfiltered data
+        self._rows: list[PlanRowData] = []  # Currently displayed (possibly filtered)
         self._refresh_task: asyncio.Task | None = None
         self._loading = True
+        self._filter_state = FilterState.initial()
 
     def compose(self) -> ComposeResult:
         """Create the application layout."""
@@ -143,12 +155,14 @@ class ErkDashApp(App):
         with Container(id="main-container"):
             yield Label("Loading plans...", id="loading-message")
             yield PlanDataTable(self._plan_filters)
+        yield Input(id="filter-input", placeholder="Filter...", disabled=True)
         yield StatusBar()
 
     def on_mount(self) -> None:
         """Initialize app after mounting."""
         self._table = self.query_one(PlanDataTable)
         self._status_bar = self.query_one(StatusBar)
+        self._filter_input = self.query_one("#filter-input", Input)
         self._loading_label = self.query_one("#loading-message", Label)
 
         # Hide table until loaded
@@ -190,16 +204,22 @@ class ErkDashApp(App):
             update_time: Formatted time of this update
             duration: Duration of the fetch in seconds
         """
-        self._rows = rows
+        self._all_rows = rows
         self._loading = False
+
+        # Apply current filter if active
+        if self._filter_state.mode == FilterMode.ACTIVE and self._filter_state.query:
+            self._rows = filter_plans(rows, self._filter_state.query)
+        else:
+            self._rows = rows
 
         if self._table is not None:
             self._loading_label.display = False
             self._table.display = True
-            self._table.populate(rows)
+            self._table.populate(self._rows)
 
         if self._status_bar is not None:
-            self._status_bar.set_plan_count(len(rows))
+            self._status_bar.set_plan_count(len(self._rows))
             if update_time is not None:
                 self._status_bar.set_last_update(update_time, duration)
 
@@ -219,7 +239,19 @@ class ErkDashApp(App):
             self._seconds_remaining = int(self._refresh_interval)
 
     def action_exit_app(self) -> None:
-        """Quit the application."""
+        """Quit the application or handle progressive escape from filter mode."""
+        if self._filter_state.mode == FilterMode.ACTIVE:
+            self._filter_state = self._filter_state.handle_escape()
+            if self._filter_state.mode == FilterMode.INACTIVE:
+                # Fully exited filter mode
+                self._exit_filter_mode()
+            else:
+                # Just cleared text, stay in filter mode
+                if self._filter_input is not None:
+                    self._filter_input.value = ""
+                # Reset to show all rows
+                self._apply_filter()
+            return
         self.exit()
 
     def action_refresh(self) -> None:
@@ -243,13 +275,56 @@ class ErkDashApp(App):
         if self._table is not None:
             self._table.action_cursor_up()
 
-    def action_open_issue(self) -> None:
-        """Open selected issue in browser."""
+    def action_start_filter(self) -> None:
+        """Activate filter mode and focus the input."""
+        if self._filter_input is None:
+            return
+        self._filter_state = self._filter_state.activate()
+        self._filter_input.disabled = False
+        self._filter_input.add_class("visible")
+        self._filter_input.focus()
+
+    def _apply_filter(self) -> None:
+        """Apply current filter query to the table."""
+        if self._filter_state.query:
+            self._rows = filter_plans(self._all_rows, self._filter_state.query)
+        else:
+            self._rows = self._all_rows
+
+        if self._table is not None:
+            self._table.populate(self._rows)
+
+        if self._status_bar is not None:
+            self._status_bar.set_plan_count(len(self._rows))
+
+    def _exit_filter_mode(self) -> None:
+        """Exit filter mode, restore all rows, and focus table."""
+        if self._filter_input is not None:
+            self._filter_input.value = ""
+            self._filter_input.remove_class("visible")
+            self._filter_input.disabled = True
+
+        self._filter_state = FilterState.initial()
+        self._rows = self._all_rows
+
+        if self._table is not None:
+            self._table.populate(self._rows)
+            self._table.focus()
+
+        if self._status_bar is not None:
+            self._status_bar.set_plan_count(len(self._rows))
+
+    def action_open_row(self) -> None:
+        """Open selected row - PR if available, otherwise issue."""
         row = self._get_selected_row()
         if row is None:
             return
 
-        if row.issue_url:
+        if row.pr_url:
+            click.launch(row.pr_url)
+            if self._status_bar is not None:
+                self._status_bar.set_message(f"Opened PR #{row.pr_number}")
+        elif row.issue_url:
             click.launch(row.issue_url)
             if self._status_bar is not None:
                 self._status_bar.set_message(f"Opened issue #{row.issue_number}")
@@ -326,8 +401,20 @@ class ErkDashApp(App):
 
     @on(PlanDataTable.RowSelected)
     def on_row_selected(self, event: PlanDataTable.RowSelected) -> None:
-        """Handle Enter/double-click on row - open issue."""
-        self.action_open_issue()
+        """Handle Enter/double-click on row - open PR or issue."""
+        self.action_open_row()
+
+    @on(Input.Changed, "#filter-input")
+    def on_filter_changed(self, event: Input.Changed) -> None:
+        """Handle filter input text changes."""
+        self._filter_state = self._filter_state.with_query(event.value)
+        self._apply_filter()
+
+    @on(Input.Submitted, "#filter-input")
+    def on_filter_submitted(self, event: Input.Submitted) -> None:
+        """Handle Enter in filter input - return focus to table."""
+        if self._table is not None:
+            self._table.focus()
 
     @on(PlanDataTable.PlanClicked)
     def on_plan_clicked(self, event: PlanDataTable.PlanClicked) -> None:
