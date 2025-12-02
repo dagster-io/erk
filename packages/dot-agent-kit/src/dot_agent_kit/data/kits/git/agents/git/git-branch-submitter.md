@@ -121,8 +121,8 @@ Before creating the PR, get the appropriate prefix for the PR body based on cont
 ```bash
 # Check if running in CI (GitHub Actions)
 if [ -n "$GITHUB_ACTIONS" ]; then
-    # CI mode: Get full PR metadata section (author, checkout command, etc.)
-    pr_prefix=$(dot-agent run erk get-pr-metadata 2>/dev/null || echo "")
+    # CI mode: Get full PR body footer (author, checkout command, etc.)
+    pr_prefix=$(dot-agent run erk get-pr-body-footer 2>/dev/null || echo "")
     is_ci="true"
 else
     # Manual mode: Get just the closing text

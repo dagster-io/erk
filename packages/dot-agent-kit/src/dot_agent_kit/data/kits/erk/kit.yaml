@@ -96,6 +96,9 @@ kit_cli_commands:
   - name: mark-impl-started
     path: kit_cli_commands/erk/mark_impl_started.py
     description: Update last_local_impl_at in GitHub issue plan-header metadata
+  - name: get-pr-body-footer
+    path: kit_cli_commands/erk/get_pr_body_footer.py
+    description: Generate PR body footer with checkout command for remote implementations
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit

@@ -405,7 +405,7 @@ Marks the draft PR as ready for review.
 The PR body is updated with:
 
 1. Implementation summary (from commit message)
-2. Standardized footer from `get-pr-metadata`
+2. Standardized footer from `get-pr-body-footer`
 3. Checkout instructions
 
 ### CI Trigger

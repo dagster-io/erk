@@ -301,8 +301,8 @@ jobs:
           # Get PR number for checkout instructions
           PR_NUMBER=$(gh pr view "$BRANCH_NAME" --json number -q .number)
 
-          # Get standardized metadata footer from get-pr-metadata
-          pr_metadata=$(dot-agent run erk get-pr-metadata --pr-number "$PR_NUMBER" 2>/dev/null || echo "")
+          # Get standardized body footer from get-pr-body-footer
+          pr_metadata=$(dot-agent run erk get-pr-body-footer --pr-number "$PR_NUMBER" 2>/dev/null || echo "")
 
           # Build PR body: summary + footer
           cat > pr_body.md <<BODY_EOF
