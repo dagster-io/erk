@@ -24,7 +24,10 @@ class RealClipboard(Clipboard):
         # and may not be available in all environments
         import pyperclip
 
-        if not pyperclip.is_available():
+        # Note: pyperclip.is_available() returns False until first copy/paste call
+        # (lazy initialization), so we try the operation and catch exceptions instead
+        try:
+            pyperclip.copy(text)
+            return True
+        except pyperclip.PyperclipException:
             return False
-        pyperclip.copy(text)
-        return True
