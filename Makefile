@@ -80,10 +80,37 @@ md-check:
 # Removed: sync-dignified-python-universal (obsolete - shared content now referenced directly)
 
 # Fast CI: Run all checks with unit tests only (fast feedback loop)
-fast-ci: lint format-check prettier-check md-check pyright test check
+fast-ci:
+	@echo "=== Fast CI ===" && \
+	exit_code=0; \
+	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
+	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
+	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
+	echo "\n--- Markdown Check ---" && uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" || exit_code=1; \
+	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
+	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
+	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
+	echo "\n--- Unit Tests (dot-agent-kit) ---" && (cd packages/dot-agent-kit && uv run pytest tests/unit/ -n auto) || exit_code=1; \
+	cd $(CURDIR); \
+	echo "\n--- Dot-Agent Check ---" && uv run dot-agent check || exit_code=1; \
+	exit $$exit_code
 
 # CI target: Run all tests (unit + integration) for comprehensive validation
-all-ci: lint format-check prettier-check md-check pyright test-all check
+all-ci:
+	@echo "=== All CI ===" && \
+	exit_code=0; \
+	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
+	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
+	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
+	echo "\n--- Markdown Check ---" && uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" || exit_code=1; \
+	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
+	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
+	echo "\n--- Integration Tests (erk) ---" && uv run pytest tests/integration/ -n auto || exit_code=1; \
+	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
+	echo "\n--- Unit Tests (dot-agent-kit) ---" && (cd packages/dot-agent-kit && uv run pytest tests/unit/ -n auto) || exit_code=1; \
+	echo "\n--- Integration Tests (dot-agent-kit) ---" && (cd packages/dot-agent-kit && uv run pytest tests/integration/ -n auto) || exit_code=1; \
+	echo "\n--- Dot-Agent Check ---" && uv run dot-agent check || exit_code=1; \
+	exit $$exit_code
 
 # Clean build artifacts
 clean:

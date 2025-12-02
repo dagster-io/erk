@@ -1,9 +1,11 @@
 # Plan: Run All CI Phases Even on Failure
 
 ## Goal
+
 Modify `fast-ci` and `all-ci` Make targets to run all test phases even when earlier phases fail, providing complete context for debugging and better CI reporting.
 
 ## Current State
+
 ```makefile
 fast-ci: lint format-check prettier-check md-check pyright test check
 all-ci: lint format-check prettier-check md-check pyright test-all check
@@ -12,7 +14,9 @@ all-ci: lint format-check prettier-check md-check pyright test-all check
 These use Make's dependency syntax which stops at first failure.
 
 ## Solution
+
 Rewrite both targets as shell scripts that:
+
 1. Initialize an exit code accumulator
 2. Run each phase, OR-ing failures into the accumulator
 3. Print a summary of which phases passed/failed
@@ -21,6 +25,7 @@ Rewrite both targets as shell scripts that:
 ## Implementation
 
 ### Modified `fast-ci` target:
+
 ```makefile
 fast-ci:
 	@echo "=== Fast CI ===" && \
@@ -39,6 +44,7 @@ fast-ci:
 ```
 
 ### Modified `all-ci` target:
+
 ```makefile
 all-ci:
 	@echo "=== All CI ===" && \
@@ -58,6 +64,7 @@ all-ci:
 ```
 
 ## Key Changes
+
 1. **Exit code tracking**: `exit_code=0` starts clean, `|| exit_code=1` captures failures
 2. **Phase headers**: Echo statements before each phase for clear output
 3. **Inline commands**: Expand the Make target dependencies into explicit commands
@@ -65,10 +72,13 @@ all-ci:
 5. **Final exit**: `exit $$exit_code` returns failure if any phase failed
 
 ## Files to Modify
+
 - `Makefile` - lines 82-86
 
 ## Testing
+
 After implementation, verify by:
+
 1. Intentionally breaking one phase (e.g., add a lint error)
 2. Run `make fast-ci`
 3. Confirm all phases run and final exit code is non-zero
