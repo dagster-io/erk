@@ -140,6 +140,25 @@ class TestExecuteUpdatePr:
         assert result["success"] is False
         assert "Failed to submit update" in result["error"]
 
+    def test_update_pr_remote_divergence_detected(self) -> None:
+        """Test that remote divergence is detected and returns hard abort message."""
+        ops = (
+            FakeGtKitOps()
+            .with_branch("feature-branch", parent="main")
+            .with_commits(1)
+            .with_submit_failure(
+                stderr="ERROR: Branch feature-branch has been updated remotely. "
+                "Use gt get or gt sync to sync with remote before submitting"
+            )
+        )
+
+        result = execute_update_pr(ops)
+
+        assert result["success"] is False
+        assert result["error_type"] == "remote_divergence"
+        assert "ABORT" in result["error"]
+        assert "Do NOT auto-sync" in result["error"]
+
     def test_update_pr_add_fails(self) -> None:
         """Test error when git add fails."""
         ops = (

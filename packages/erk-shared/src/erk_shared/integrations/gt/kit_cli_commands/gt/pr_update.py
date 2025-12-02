@@ -81,6 +81,18 @@ def execute_update_pr(ops: GtKit | None = None) -> dict:
     try:
         ops.main_graphite().submit_stack(repo_root, publish=True, restack=False, quiet=False)
     except RuntimeError as e:
+        error_str = str(e).lower()
+        # Detect remote divergence - this requires manual resolution
+        if "updated remotely" in error_str or "has been updated remotely" in error_str:
+            return {
+                "success": False,
+                "error_type": "remote_divergence",
+                "error": (
+                    "ABORT: Branch has diverged from remote. "
+                    "Run 'gt sync' or 'gt get' manually to resolve, then retry. "
+                    "Do NOT auto-sync."
+                ),
+            }
         return {"success": False, "error": f"Failed to submit update: {e}"}
 
     # 4. Fetch PR info after submission

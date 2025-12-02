@@ -54,6 +54,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         simulated_pr_number: int | None = None,
         simulated_pr_title: str | None = None,
         simulated_issue_number: int | None = None,
+        simulated_tool_events: list[str] | None = None,
     ) -> None:
         """Initialize fake with predetermined behavior.
 
@@ -64,6 +65,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
             simulated_pr_number: PR number to return (simulates PR metadata)
             simulated_pr_title: PR title to return (simulates PR metadata)
             simulated_issue_number: Issue number to return (simulates linked issue)
+            simulated_tool_events: Tool event contents to emit (e.g., "Using...")
         """
         self._claude_available = claude_available
         self._command_should_fail = command_should_fail
@@ -71,6 +73,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         self._simulated_pr_number = simulated_pr_number
         self._simulated_pr_title = simulated_pr_title
         self._simulated_issue_number = simulated_issue_number
+        self._simulated_tool_events = simulated_tool_events or []
         self._executed_commands: list[tuple[str, Path, bool, bool]] = []
         self._interactive_calls: list[tuple[Path, bool]] = []
 
@@ -113,6 +116,11 @@ class FakeClaudeExecutor(ClaudeExecutor):
         # Simulate some basic streaming events
         yield StreamEvent("text", "Starting execution...")
         yield StreamEvent("spinner_update", f"Running {command}...")
+
+        # Yield any configured tool events
+        for tool_event in self._simulated_tool_events:
+            yield StreamEvent("tool", tool_event)
+
         yield StreamEvent("text", "Execution complete")
 
         # Yield PR metadata if configured
