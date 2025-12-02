@@ -78,6 +78,7 @@ class RealPlanDataProvider(PlanDataProvider):
         needs_workflow_runs = filters.show_runs or filters.run_state is not None
 
         # Fetch data via PlanListService
+        # Note: PR linkages are always fetched via unified GraphQL query (no performance penalty)
         plan_data = self._ctx.plan_list_service.get_plan_list_data(
             repo_root=self._repo_root,
             owner=self._owner,
@@ -86,7 +87,6 @@ class RealPlanDataProvider(PlanDataProvider):
             state=filters.state,
             limit=filters.limit,
             skip_workflow_runs=not needs_workflow_runs,
-            skip_pr_linkages=not filters.show_prs,
         )
 
         # Build local worktree mapping
