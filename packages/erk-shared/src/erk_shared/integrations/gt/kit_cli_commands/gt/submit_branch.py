@@ -815,11 +815,8 @@ def execute_finalize(
 
     # Update PR metadata
     click.echo("📝 Updating PR metadata... (gh pr edit)", err=True)
-    try:
-        ops.github().update_pr_title_and_body(repo_root, pr_number, pr_title, final_body)
-        click.echo("✓ PR metadata updated", err=True)
-    except RuntimeError as e:
-        click.echo(f"⚠️  Failed to update PR metadata: {e}", err=True)
+    ops.github().update_pr_title_and_body(repo_root, pr_number, pr_title, final_body)
+    click.echo("✓ PR metadata updated", err=True)
 
     # Clean up temp diff file
     if diff_file is not None:
