@@ -11,12 +11,15 @@ instead of relying on ensure_erk_metadata_dir()'s return value.
 from pathlib import Path
 
 from click.testing import CliRunner
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.issues import IssueInfo
+from erk_shared.github.types import PullRequestInfo
 from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 
 from erk.cli.commands.plan.get import get_plan
 from erk.cli.commands.plan.list_cmd import dash
+from erk.core.services.plan_list_service import PlanListService
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
@@ -35,20 +38,33 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
     5. gh failed because metadata dir has no .git
 
     After fix: Commands call ensure_erk_metadata_dir() for side effects but use repo.root directly.
+    Now: dash command uses PlanListService which calls GitHub.get_issues_with_pr_linkages().
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        # Track which directory is passed to GitHubIssues operations
+        # Track which directory is passed to GitHub operations
         captured_repo_root: Path | None = None
 
-        class TrackingGitHubIssues(FakeGitHubIssues):
-            def list_issues(self, repo_root: Path, **kwargs):
+        class TrackingGitHub(FakeGitHub):
+            def get_issues_with_pr_linkages(
+                self,
+                repo_root: Path,
+                owner: str,
+                repo: str,
+                labels: list[str],
+                state: str | None = None,
+                limit: int | None = None,
+            ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
                 nonlocal captured_repo_root
                 captured_repo_root = repo_root
-                return []  # Return empty list
+                return [], {}  # Return empty results
 
-        issues = TrackingGitHubIssues()
-        ctx = env.build_context(issues=issues)
+        github = TrackingGitHub()
+        # Create PlanListService with tracking GitHub
+        from erk_shared.github.issues import FakeGitHubIssues
+
+        plan_list_service = PlanListService(github, FakeGitHubIssues())
+        ctx = env.build_context(github=github, plan_list_service=plan_list_service)
 
         # Act: Run the dash command
         result = runner.invoke(dash, obj=ctx)
@@ -56,7 +72,7 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
         # Assert: Command should succeed
         assert result.exit_code == 0, f"Command failed: {result.output}"
 
-        # Assert: repo_root passed to GitHubIssues should be git root, NOT metadata dir
+        # Assert: repo_root passed to GitHub should be git root, NOT metadata dir
         assert captured_repo_root == env.cwd, (
             f"Expected repo_root to be git repository root ({env.cwd}), "
             f"but got erk metadata directory ({captured_repo_root})"
