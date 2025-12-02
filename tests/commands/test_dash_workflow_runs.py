@@ -98,7 +98,9 @@ Implementation details"""
             branch="master",
             head_sha="abc123",
         )
-        github = FakeGitHub(workflow_runs_by_node_id={"WFR_abc123": workflow_run})
+        github = FakeGitHub(
+            issues=[plan_to_issue(plan)], workflow_runs_by_node_id={"WFR_abc123": workflow_run}
+        )
         issues = FakeGitHubIssues(issues={123: plan_to_issue(plan)})
 
         ctx = build_workspace_test_context(
@@ -185,7 +187,9 @@ last_dispatched_node_id: 'WFR_def456'
             branch="master",
             head_sha="def456",
         )
-        github = FakeGitHub(workflow_runs_by_node_id={"WFR_def456": workflow_run})
+        github = FakeGitHub(
+            issues=[plan_to_issue(plan)], workflow_runs_by_node_id={"WFR_def456": workflow_run}
+        )
         issues = FakeGitHubIssues(issues={456: plan_to_issue(plan)})
 
         ctx = build_workspace_test_context(
@@ -268,7 +272,9 @@ last_dispatched_node_id: 'WFR_ghi789'
             branch="master",
             head_sha="ghi789",
         )
-        github = FakeGitHub(workflow_runs_by_node_id={"WFR_ghi789": workflow_run})
+        github = FakeGitHub(
+            issues=[plan_to_issue(plan)], workflow_runs_by_node_id={"WFR_ghi789": workflow_run}
+        )
         issues = FakeGitHubIssues(issues={789: plan_to_issue(plan)})
 
         ctx = build_workspace_test_context(
@@ -329,7 +335,7 @@ def test_list_handles_missing_workflow_run() -> None:
         )
 
         # No workflow runs
-        github = FakeGitHub(workflow_runs=[])
+        github = FakeGitHub(issues=[plan_to_issue(plan)], workflow_runs=[])
         issues = FakeGitHubIssues(issues={111: plan_to_issue(plan)}, comments={})
 
         ctx = build_workspace_test_context(
@@ -396,7 +402,7 @@ def test_list_handles_batch_query_failure() -> None:
         )
 
         # No workflow runs configured (simulates API failure or no runs found)
-        github = FakeGitHub(workflow_runs=[])
+        github = FakeGitHub(issues=[plan_to_issue(plan)], workflow_runs=[])
         issues = FakeGitHubIssues(issues={222: plan_to_issue(plan)}, comments={})
 
         ctx = build_workspace_test_context(
@@ -525,7 +531,10 @@ last_dispatched_node_id: 'WFR_node2'
             branch="master",
             head_sha="abc222",
         )
-        github = FakeGitHub(workflow_runs_by_node_id={"WFR_node1": run1, "WFR_node2": run2})
+        github = FakeGitHub(
+            issues=[plan_to_issue(plan1), plan_to_issue(plan2)],
+            workflow_runs_by_node_id={"WFR_node1": run1, "WFR_node2": run2},
+        )
         issues = FakeGitHubIssues(issues={301: plan_to_issue(plan1), 302: plan_to_issue(plan2)})
 
         ctx = build_workspace_test_context(
@@ -579,7 +588,7 @@ def test_list_skips_run_id_for_plans_without_impl_folder() -> None:
             branch="some-other-branch",
             head_sha="xyz999",
         )
-        github = FakeGitHub(workflow_runs=[workflow_run])
+        github = FakeGitHub(issues=[plan_to_issue(plan)], workflow_runs=[workflow_run])
         issues = FakeGitHubIssues(issues={999: plan_to_issue(plan)}, comments={})
 
         ctx = build_workspace_test_context(

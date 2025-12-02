@@ -60,7 +60,6 @@ class PlanListService:
         state: str | None = None,
         limit: int | None = None,
         skip_workflow_runs: bool = False,
-        skip_pr_linkages: bool = False,
     ) -> PlanListData:
         """Batch fetch all data needed for plan listing.
 
@@ -72,28 +71,19 @@ class PlanListService:
             state: Filter by state ("open", "closed", or None for all)
             limit: Maximum number of issues to return (None for no limit)
             skip_workflow_runs: If True, skip fetching workflow runs (for performance)
-            skip_pr_linkages: If True, skip fetching PR linkages (for performance)
 
         Returns:
             PlanListData containing issues, PR linkages, and workflow runs
         """
-        # Decide which path to use based on skip_pr_linkages flag
-        if skip_pr_linkages:
-            # Light path: issues only (no PR linkages)
-            issues = self._github_issues.list_issues(
-                repo_root, labels=labels, state=state, limit=limit
-            )
-            pr_linkages: dict[int, list[PullRequestInfo]] = {}
-        else:
-            # Unified path: issues + PR linkages in one API call (~600ms instead of ~2s)
-            issues, pr_linkages = self._github.get_issues_with_pr_linkages(
-                repo_root,
-                owner,
-                repo,
-                labels,
-                state=state,
-                limit=limit,
-            )
+        # Always use unified path: issues + PR linkages in one API call (~600ms)
+        issues, pr_linkages = self._github.get_issues_with_pr_linkages(
+            repo_root,
+            owner,
+            repo,
+            labels,
+            state=state,
+            limit=limit,
+        )
 
         # Conditionally fetch workflow runs (skip for performance when not needed)
         workflow_runs: dict[int, WorkflowRun | None] = {}

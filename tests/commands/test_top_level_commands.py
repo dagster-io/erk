@@ -30,6 +30,8 @@ def plan_to_issue(plan: Plan) -> IssueInfo:
 
 def test_top_level_dash_command_works() -> None:
     """Test that top-level 'erk dash' command works."""
+    from erk_shared.github.fake import FakeGitHub
+
     # Arrange
     plan1 = Plan(
         plan_identifier="1",
@@ -47,7 +49,8 @@ def test_top_level_dash_command_works() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1)})
-        ctx = build_workspace_test_context(env, issues=issues)
+        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use top-level dash command
         result = runner.invoke(cli, ["dash"], obj=ctx)
@@ -61,6 +64,8 @@ def test_top_level_dash_command_works() -> None:
 
 def test_dash_command_lists_plans_by_default() -> None:
     """Test that 'erk dash' lists plans by default."""
+    from erk_shared.github.fake import FakeGitHub
+
     # Arrange
     plan1 = Plan(
         plan_identifier="1",
@@ -78,7 +83,8 @@ def test_dash_command_lists_plans_by_default() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1)})
-        ctx = build_workspace_test_context(env, issues=issues)
+        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use dash command directly
         result = runner.invoke(dash, [], obj=ctx)
@@ -92,6 +98,8 @@ def test_dash_command_lists_plans_by_default() -> None:
 
 def test_dash_command_plan_filters_work() -> None:
     """Test that plan filters work with 'erk dash' command."""
+    from erk_shared.github.fake import FakeGitHub
+
     # Arrange
     open_plan = Plan(
         plan_identifier="1",
@@ -123,7 +131,8 @@ def test_dash_command_plan_filters_work() -> None:
         issues = FakeGitHubIssues(
             issues={1: plan_to_issue(open_plan), 2: plan_to_issue(closed_plan)}
         )
-        ctx = build_workspace_test_context(env, issues=issues)
+        github = FakeGitHub(issues=[plan_to_issue(open_plan), plan_to_issue(closed_plan)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Filter for open plans using dash command
         result = runner.invoke(dash, ["--state", "open"], obj=ctx)

@@ -178,13 +178,6 @@ def plan_list_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
         help="Show workflow run columns (run-id, run-state)",
     )(f)
     f = click.option(
-        "--prs",
-        "-P",
-        is_flag=True,
-        default=False,
-        help="Show PR columns (pr, chks) - requires additional API calls",
-    )(f)
-    f = click.option(
         "--limit",
         type=int,
         help="Maximum number of results to return",
@@ -195,7 +188,7 @@ def plan_list_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
         "show_all",  # Use 'show_all' to avoid shadowing Python built-in 'all'
         is_flag=True,
         default=False,
-        help="Show all columns (equivalent to -P -r)",
+        help="Show all columns (equivalent to -r)",
     )(f)
     f = click.option(
         "--watch",
@@ -219,15 +212,13 @@ def _build_plans_table(
     state: str | None,
     run_state: str | None,
     runs: bool,
-    prs: bool,
     limit: int | None,
 ) -> tuple[Table | None, int]:
     """Build plan dashboard table.
 
-    Uses PlanListService to batch all API calls into 3 total:
-    1. Single GraphQL query for issues
-    2. Single GraphQL query for PRs (only if --prs flag is set)
-    3. REST API calls for workflow runs (one per issue with run_id)
+    Uses PlanListService to batch all API calls into 2 total:
+    1. Single unified GraphQL query for issues + PR linkages
+    2. REST API calls for workflow runs (one per issue with run_id)
 
     Returns:
         Tuple of (table, plan_count). Table is None if no plans found.
@@ -251,7 +242,7 @@ def _build_plans_table(
 
     # Use PlanListService for batched API calls
     # Skip workflow runs when not needed for better performance
-    # Skip PR linkages when --prs flag is not set for better performance
+    # PR linkages are always fetched via unified GraphQL query (no performance penalty)
     try:
         plan_data = ctx.plan_list_service.get_plan_list_data(
             repo_root=repo_root,
@@ -261,7 +252,6 @@ def _build_plans_table(
             state=state,
             limit=limit,
             skip_workflow_runs=not needs_workflow_runs,
-            skip_pr_linkages=not prs,
         )
     except RuntimeError as e:
         user_output(click.style("Error: ", fg="red") + str(e))
@@ -317,9 +307,8 @@ def _build_plans_table(
     table = Table(show_header=True, header_style="bold")
     table.add_column("plan", style="cyan", no_wrap=True)
     table.add_column("title", no_wrap=True)
-    if prs:
-        table.add_column("pr", no_wrap=True)
-        table.add_column("chks", no_wrap=True)
+    table.add_column("pr", no_wrap=True)
+    table.add_column("chks", no_wrap=True)
     table.add_column("local-wt", no_wrap=True)
     table.add_column("local-impl", no_wrap=True)
     if runs:
@@ -412,10 +401,7 @@ def _build_plans_table(
         run_outcome_cell = format_workflow_outcome(workflow_run)
 
         # Build row based on which columns are enabled
-        row: list[str] = [issue_id, title]
-        if prs:
-            row.extend([pr_cell, checks_cell])
-        row.extend([worktree_name_cell, local_run_cell])
+        row: list[str] = [issue_id, title, pr_cell, checks_cell, worktree_name_cell, local_run_cell]
         if runs:
             row.extend([remote_run_cell, run_id_cell, run_outcome_cell])
         table.add_row(*row)
@@ -429,11 +415,10 @@ def _list_plans_impl(
     state: str | None,
     run_state: str | None,
     runs: bool,
-    prs: bool,
     limit: int | None,
 ) -> None:
     """Implementation logic for listing plans with optional filters."""
-    table, plan_count = _build_plans_table(ctx, label, state, run_state, runs, prs, limit)
+    table, plan_count = _build_plans_table(ctx, label, state, run_state, runs, limit)
 
     if table is None:
         user_output("No plans found matching the criteria.")
@@ -542,7 +527,6 @@ def dash(
     state: str | None,
     run_state: str | None,
     runs: bool,
-    prs: bool,
     limit: int | None,
     show_all: bool,
     watch: bool,
@@ -560,21 +544,19 @@ def dash(
         erk dash --run-state in_progress
         erk dash --run-state success --state open
         erk dash --runs
-        erk dash --prs
         erk dash --all
         erk dash -a
     """
-    # Handle --all flag (equivalent to -P -r)
+    # Handle --all flag (equivalent to -r)
     if show_all:
-        prs = True
         runs = True
 
     if watch:
         live_display = RealLiveDisplay()
 
         def build_fn() -> tuple[Table | None, int]:
-            return _build_plans_table(ctx, label, state, run_state, runs, prs, limit)
+            return _build_plans_table(ctx, label, state, run_state, runs, limit)
 
         _run_watch_loop(ctx, live_display, build_fn, interval)
     else:
-        _list_plans_impl(ctx, label, state, run_state, runs, prs, limit)
+        _list_plans_impl(ctx, label, state, run_state, runs, limit)
