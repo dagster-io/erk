@@ -348,4 +348,6 @@ class ErkDashApp(App):
             if row.run_url:
                 click.launch(row.run_url)
                 if self._status_bar is not None:
-                    self._status_bar.set_message(f"Opened run {row.run_id_display}")
+                    # Extract run ID from URL to avoid Rich markup in status bar
+                    run_id = row.run_url.rsplit("/", 1)[-1]
+                    self._status_bar.set_message(f"Opened run {run_id}")
