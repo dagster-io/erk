@@ -228,3 +228,34 @@ class PrintingGit(PrintingBase, Git):
         upstream_flag = "-u " if set_upstream else ""
         self._emit(self._format_command(f"git push {upstream_flag}{remote} {branch}"))
         self._wrapped.push_to_remote(cwd, remote, branch, set_upstream=set_upstream)
+
+    def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
+        """Get branch last commit time (read-only, no printing)."""
+        return self._wrapped.get_branch_last_commit_time(repo_root, branch, trunk)
+
+    def add_all(self, cwd: Path) -> None:
+        """Stage all changes with printed output."""
+        self._emit(self._format_command("git add -A"))
+        self._wrapped.add_all(cwd)
+
+    def amend_commit(self, cwd: Path, message: str) -> None:
+        """Amend commit with printed output."""
+        display_msg = message[:50] + "..." if len(message) > 50 else message
+        self._emit(self._format_command(f'git commit --amend -m "{display_msg}"'))
+        self._wrapped.amend_commit(cwd, message)
+
+    def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
+        """Count commits ahead (read-only, no printing)."""
+        return self._wrapped.count_commits_ahead(cwd, base_branch)
+
+    def get_repository_root(self, cwd: Path) -> Path:
+        """Get repository root (read-only, no printing)."""
+        return self._wrapped.get_repository_root(cwd)
+
+    def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
+        """Get diff to branch (read-only, no printing)."""
+        return self._wrapped.get_diff_to_branch(cwd, branch)
+
+    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
+        """Check merge conflicts (read-only, no printing)."""
+        return self._wrapped.check_merge_conflicts(cwd, base_branch, head_branch)

@@ -209,30 +209,35 @@ def execute_pre_analysis(ops: GtKit | None = None) -> PreAnalysisResult | PreAna
     click.echo(f"  ✓ Authenticated as {gh_username}", err=True)
 
     # Step 0c: Check for and commit uncommitted changes
+    cwd = Path.cwd()
     uncommitted_changes_committed = False
-    if ops.git().has_uncommitted_changes():
+    if ops.git().has_uncommitted_changes(cwd):
         click.echo("  ↳ Staging uncommitted changes... (git add -A)", err=True)
-        if not ops.git().add_all():
+        try:
+            ops.git().add_all(cwd)
+            click.echo("  ✓ Changes staged", err=True)
+        except subprocess.CalledProcessError:
             return PreAnalysisError(
                 success=False,
                 error_type="squash_failed",
                 message="Failed to stage uncommitted changes",
                 details={"reason": "git add failed"},
             )
-        click.echo("  ✓ Changes staged", err=True)
         click.echo("  ↳ Committing staged changes... (git commit)", err=True)
-        if not ops.git().commit("WIP: Prepare for submission"):
+        try:
+            ops.git().commit(cwd, "WIP: Prepare for submission")
+            uncommitted_changes_committed = True
+            click.echo("  ✓ Uncommitted changes committed", err=True)
+        except subprocess.CalledProcessError:
             return PreAnalysisError(
                 success=False,
                 error_type="squash_failed",
                 message="Failed to commit uncommitted changes",
                 details={"reason": "git commit failed"},
             )
-        uncommitted_changes_committed = True
-        click.echo("  ✓ Uncommitted changes committed", err=True)
 
     # Step 1: Get current branch
-    branch_name = ops.git().get_current_branch()
+    branch_name = ops.git().get_current_branch(cwd)
 
     if branch_name is None:
         return PreAnalysisError(
@@ -243,7 +248,7 @@ def execute_pre_analysis(ops: GtKit | None = None) -> PreAnalysisResult | PreAna
         )
 
     # Step 2: Get parent branch
-    repo_root = Path(ops.git().get_repository_root())
+    repo_root = ops.git().get_repository_root(cwd)
     parent_branch = ops.main_graphite().get_parent_branch(ops.git(), repo_root, branch_name)
 
     if parent_branch is None:
@@ -288,7 +293,7 @@ def execute_pre_analysis(ops: GtKit | None = None) -> PreAnalysisResult | PreAna
 
     else:
         # No PR yet - fallback to local git merge-tree check
-        if ops.git().check_merge_conflicts(parent_branch, branch_name):
+        if ops.git().check_merge_conflicts(cwd, parent_branch, branch_name):
             has_conflicts = True
             conflict_details = {
                 "parent_branch": parent_branch,
@@ -300,7 +305,7 @@ def execute_pre_analysis(ops: GtKit | None = None) -> PreAnalysisResult | PreAna
             )
 
     # Step 3: Count commits in branch
-    commit_count = ops.git().count_commits_in_branch(parent_branch)
+    commit_count = ops.git().count_commits_ahead(cwd, parent_branch)
 
     if commit_count == 0:
         return PreAnalysisError(
@@ -477,13 +482,14 @@ def _execute_submit_only(
         Tuple of (pr_number, pr_url, graphite_url, branch_name) on success
         PostAnalysisError on failure
     """
-    branch_name = ops.git().get_current_branch() or "unknown"
+    cwd = Path.cwd()
+    branch_name = ops.git().get_current_branch(cwd) or "unknown"
 
     # Phase 1: Restack the stack
     click.echo("  ↳ Rebasing stack... (gt restack)", err=True)
     restack_start = time.time()
     try:
-        repo_root = Path(ops.git().get_repository_root())
+        repo_root = ops.git().get_repository_root(cwd)
         ops.main_graphite().restack(repo_root, no_interactive=True, quiet=False)
     except subprocess.CalledProcessError as e:
         # Check for restack errors (conflicts, etc.)
@@ -691,8 +697,9 @@ def execute_preflight(
         click.echo("  ⚠️  Diff truncated for size", err=True)
 
     # Get repo root and branch info for AI prompt (needed before writing diff)
-    repo_root = Path(ops.git().get_repository_root())
-    current_branch = ops.git().get_current_branch() or branch_name
+    cwd = Path.cwd()
+    repo_root = ops.git().get_repository_root(cwd)
+    current_branch = ops.git().get_current_branch(cwd) or branch_name
     parent_branch = (
         ops.main_graphite().get_parent_branch(ops.git(), repo_root, current_branch) or "main"
     )
@@ -809,7 +816,8 @@ def execute_finalize(
                 pass  # Ignore cleanup errors
 
     # Get PR info for result
-    branch_name = ops.git().get_current_branch() or "unknown"
+    cwd = Path.cwd()
+    branch_name = ops.git().get_current_branch(cwd) or "unknown"
     pr_url_result = ops.github().get_pr_info()
     pr_url = pr_url_result[1] if pr_url_result else ""
     graphite_url = ops.github().get_graphite_pr_url(pr_number) or ""

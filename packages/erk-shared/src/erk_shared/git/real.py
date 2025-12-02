@@ -688,3 +688,64 @@ class RealGit(Git):
             return None
         timestamp = result.stdout.strip()
         return timestamp if timestamp else None
+
+    def add_all(self, cwd: Path) -> None:
+        """Stage all changes for commit (git add -A)."""
+        run_subprocess_with_context(
+            ["git", "add", "-A"],
+            operation_context="stage all changes",
+            cwd=cwd,
+        )
+
+    def amend_commit(self, cwd: Path, message: str) -> None:
+        """Amend the current commit with a new message."""
+        run_subprocess_with_context(
+            ["git", "commit", "--amend", "-m", message],
+            operation_context="amend commit",
+            cwd=cwd,
+        )
+
+    def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
+        """Count commits in HEAD that are not in base_branch."""
+        result = subprocess.run(
+            ["git", "rev-list", "--count", f"{base_branch}..HEAD"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return 0
+        count_str = result.stdout.strip()
+        if not count_str:
+            return 0
+        return int(count_str)
+
+    def get_repository_root(self, cwd: Path) -> Path:
+        """Get the repository root directory."""
+        result = run_subprocess_with_context(
+            ["git", "rev-parse", "--show-toplevel"],
+            operation_context="get repository root",
+            cwd=cwd,
+        )
+        return Path(result.stdout.strip())
+
+    def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
+        """Get diff between branch and HEAD."""
+        result = run_subprocess_with_context(
+            ["git", "diff", f"{branch}...HEAD"],
+            operation_context=f"get diff to branch '{branch}'",
+            cwd=cwd,
+        )
+        return result.stdout
+
+    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
+        """Check if merging would have conflicts using git merge-tree."""
+        result = subprocess.run(
+            ["git", "merge-tree", "--write-tree", base_branch, head_branch],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return result.returncode != 0

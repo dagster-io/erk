@@ -89,7 +89,7 @@ class TestLandPrExecution:
         # Setup: branch with no parent (orphaned)
         ops = FakeGtKitOps()
         # Don't set parent relationship, so get_parent_branch returns None
-        ops.git()._state = replace(ops.git().get_state(), current_branch="orphan-branch")
+        ops.git()._state = replace(ops.git().get_state(), current_branch="orphan-branch")  # type: ignore[attr-defined]
         ops.github().set_current_branch("orphan-branch")
 
         result = execute_land_pr(ops)
@@ -152,7 +152,7 @@ class TestLandPrExecution:
             FakeGtKitOps().with_branch("feature-branch", parent="master").with_pr(123, state="OPEN")
         )
         # Configure git ops to return "master" as trunk
-        ops.git()._state = replace(ops.git().get_state(), trunk_branch="master")
+        ops.git()._state = replace(ops.git().get_state(), trunk_branch="master")  # type: ignore[attr-defined]
 
         result = execute_land_pr(ops)
 
@@ -166,7 +166,7 @@ class TestLandPrExecution:
         # Setup: feature branch with parent "main" when trunk is "master"
         ops = FakeGtKitOps().with_branch("feature-branch", parent="main")
         # Configure git ops to return "master" as trunk
-        ops.git()._state = replace(ops.git().get_state(), trunk_branch="master")
+        ops.git()._state = replace(ops.git().get_state(), trunk_branch="master")  # type: ignore[attr-defined]
 
         result = execute_land_pr(ops)
 
@@ -211,7 +211,7 @@ class TestLandPrEdgeCases:
         """Test when current branch cannot be determined."""
         ops = FakeGtKitOps()
         # Set current_branch to empty to simulate failure
-        ops.git()._state = replace(ops.git().get_state(), current_branch="")
+        ops.git()._state = replace(ops.git().get_state(), current_branch="")  # type: ignore[attr-defined]
 
         result = execute_land_pr(ops)
 

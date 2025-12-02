@@ -562,3 +562,33 @@ class Git(ABC):
             ISO 8601 timestamp string, or None if no unique commits
         """
         ...
+
+    @abstractmethod
+    def add_all(self, cwd: Path) -> None:
+        """Stage all changes for commit (git add -A)."""
+        ...
+
+    @abstractmethod
+    def amend_commit(self, cwd: Path, message: str) -> None:
+        """Amend the current commit with a new message."""
+        ...
+
+    @abstractmethod
+    def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
+        """Count commits in HEAD that are not in base_branch."""
+        ...
+
+    @abstractmethod
+    def get_repository_root(self, cwd: Path) -> Path:
+        """Get the repository root directory."""
+        ...
+
+    @abstractmethod
+    def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
+        """Get diff between branch and HEAD."""
+        ...
+
+    @abstractmethod
+    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
+        """Check if merging would have conflicts using git merge-tree."""
+        ...

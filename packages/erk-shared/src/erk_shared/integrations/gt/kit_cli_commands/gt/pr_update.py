@@ -37,16 +37,22 @@ def execute_update_pr(ops: GtKit | None = None) -> dict:
     if ops is None:
         ops = RealGtKit()
 
+    cwd = Path.cwd()
+
     # 1. Commit if uncommitted changes
-    if ops.git().has_uncommitted_changes():
-        if not ops.git().add_all():
+    if ops.git().has_uncommitted_changes(cwd):
+        try:
+            ops.git().add_all(cwd)
+        except subprocess.CalledProcessError:
             return {"success": False, "error": "Failed to stage changes"}
-        if not ops.git().commit("Update changes"):
+        try:
+            ops.git().commit(cwd, "Update changes")
+        except subprocess.CalledProcessError:
             return {"success": False, "error": "Failed to commit changes"}
 
     # 2. Restack with conflict detection
     try:
-        repo_root = Path(ops.git().get_repository_root())
+        repo_root = ops.git().get_repository_root(cwd)
         ops.main_graphite().restack(repo_root, no_interactive=True, quiet=False)
     except subprocess.CalledProcessError as e:
         has_output = hasattr(e, "stdout") and hasattr(e, "stderr")

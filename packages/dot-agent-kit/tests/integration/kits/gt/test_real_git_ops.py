@@ -7,20 +7,19 @@ real operations to catch integration issues that mocks might miss.
 Test organization:
 - TestRealGitOperations: Git operations (6 tests with real git commands)
 - TestRealGraphiteOperations: Graphite operations (2 tests with real gt commands)
+
+Note: Git operations now use the core RealGit interface from erk_shared.git.real.
 """
 
-import os
 import subprocess
 import tempfile
 from pathlib import Path
 
-from erk_shared.integrations.gt import (
-    RealGitGtKit,
-)
+from erk_shared.git.real import RealGit
 
 
 class TestRealGitOperations:
-    """Integration tests for RealGitGtKit using real git subprocess calls."""
+    """Integration tests for RealGit using real git subprocess calls."""
 
     def test_get_current_branch(self) -> None:
         """Test get_current_branch returns branch name with real git repo."""
@@ -54,18 +53,13 @@ class TestRealGitOperations:
             )
 
             # Test from repo directory
-            original_cwd = os.getcwd()
-            try:
-                os.chdir(repo_path)
-                ops = RealGitGtKit()
-                branch_name = ops.get_current_branch()
+            git = RealGit()
+            branch_name = git.get_current_branch(repo_path)
 
-                assert branch_name is not None
-                assert isinstance(branch_name, str)
-                # Default branch is typically "main" or "master"
-                assert branch_name in ("main", "master")
-            finally:
-                os.chdir(original_cwd)
+            assert branch_name is not None
+            assert isinstance(branch_name, str)
+            # Default branch is typically "main" or "master"
+            assert branch_name in ("main", "master")
 
     def test_has_uncommitted_changes(self) -> None:
         """Test has_uncommitted_changes detects changes correctly with real git."""
@@ -98,22 +92,17 @@ class TestRealGitOperations:
                 capture_output=True,
             )
 
-            original_cwd = os.getcwd()
-            try:
-                os.chdir(repo_path)
-                ops = RealGitGtKit()
+            git = RealGit()
 
-                # Should be clean after commit
-                assert ops.has_uncommitted_changes() is False
+            # Should be clean after commit
+            assert git.has_uncommitted_changes(repo_path) is False
 
-                # Create new file
-                new_file = repo_path / "new.txt"
-                new_file.write_text("new content", encoding="utf-8")
+            # Create new file
+            new_file = repo_path / "new.txt"
+            new_file.write_text("new content", encoding="utf-8")
 
-                # Should detect uncommitted changes
-                assert ops.has_uncommitted_changes() is True
-            finally:
-                os.chdir(original_cwd)
+            # Should detect uncommitted changes
+            assert git.has_uncommitted_changes(repo_path) is True
 
     def test_add_all(self) -> None:
         """Test add_all stages files correctly with real git."""
@@ -139,17 +128,21 @@ class TestRealGitOperations:
             test_file = repo_path / "test.txt"
             test_file.write_text("test", encoding="utf-8")
 
-            original_cwd = os.getcwd()
-            try:
-                os.chdir(repo_path)
-                ops = RealGitGtKit()
+            git = RealGit()
 
-                # Add all files
-                result = ops.add_all()
+            # Add all files (RealGit.add_all raises on failure, doesn't return bool)
+            git.add_all(repo_path)
 
-                assert result is True
-            finally:
-                os.chdir(original_cwd)
+            # Verify files are staged by checking git status
+            result = subprocess.run(
+                ["git", "status", "--porcelain"],
+                cwd=repo_path,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            # Staged new file shows as "A " (added to index)
+            assert "A  test.txt" in result.stdout
 
     def test_commit(self) -> None:
         """Test commit creates commit correctly with real git."""
@@ -176,17 +169,20 @@ class TestRealGitOperations:
             test_file.write_text("test", encoding="utf-8")
             subprocess.run(["git", "add", "."], cwd=repo_path, check=True, capture_output=True)
 
-            original_cwd = os.getcwd()
-            try:
-                os.chdir(repo_path)
-                ops = RealGitGtKit()
+            git = RealGit()
 
-                # Create commit
-                result = ops.commit("Test commit")
+            # Create commit (RealGit.commit raises on failure, doesn't return bool)
+            git.commit(repo_path, "Test commit")
 
-                assert result is True
-            finally:
-                os.chdir(original_cwd)
+            # Verify commit was created
+            result = subprocess.run(
+                ["git", "log", "-1", "--format=%s"],
+                cwd=repo_path,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            assert "Test commit" in result.stdout
 
     def test_amend_commit(self) -> None:
         """Test amend_commit modifies commit correctly with real git."""
@@ -223,20 +219,23 @@ class TestRealGitOperations:
             test_file.write_text("modified", encoding="utf-8")
             subprocess.run(["git", "add", "."], cwd=repo_path, check=True, capture_output=True)
 
-            original_cwd = os.getcwd()
-            try:
-                os.chdir(repo_path)
-                ops = RealGitGtKit()
+            git = RealGit()
 
-                # Amend commit
-                result = ops.amend_commit("Amended commit")
+            # Amend commit (RealGit.amend_commit raises on failure, doesn't return bool)
+            git.amend_commit(repo_path, "Amended commit")
 
-                assert result is True
-            finally:
-                os.chdir(original_cwd)
+            # Verify commit was amended
+            result = subprocess.run(
+                ["git", "log", "-1", "--format=%s"],
+                cwd=repo_path,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            assert "Amended commit" in result.stdout
 
-    def test_count_commits_in_branch(self) -> None:
-        """Test count_commits_in_branch counts correctly with real git."""
+    def test_count_commits_ahead(self) -> None:
+        """Test count_commits_ahead counts correctly with real git."""
         with tempfile.TemporaryDirectory() as tmpdir:
             repo_path = Path(tmpdir)
 
@@ -292,18 +291,13 @@ class TestRealGitOperations:
                     capture_output=True,
                 )
 
-            original_cwd = os.getcwd()
-            try:
-                os.chdir(repo_path)
-                ops = RealGitGtKit()
+            git = RealGit()
 
-                # Count commits since main
-                count = ops.count_commits_in_branch("main")
+            # Count commits since main
+            count = git.count_commits_ahead(repo_path, "main")
 
-                assert isinstance(count, int)
-                assert count == 3
-            finally:
-                os.chdir(original_cwd)
+            assert isinstance(count, int)
+            assert count == 3
 
 
 class TestRealGraphiteOperations:

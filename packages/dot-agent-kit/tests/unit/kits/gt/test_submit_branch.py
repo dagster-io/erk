@@ -136,7 +136,7 @@ class TestPreAnalysisExecution:
         assert result.uncommitted_changes_committed is True
         assert "Committed uncommitted changes" in result.message
         # After commit, should have 1 commit
-        assert ops.git().count_commits_in_branch("main") == 1
+        assert ops.git().count_commits_in_branch("main") == 1  # type: ignore[attr-defined]
 
     def test_pre_analysis_without_uncommitted_changes(self) -> None:
         """Test pre-analysis when no uncommitted changes exist."""
@@ -193,7 +193,7 @@ class TestPreAnalysisExecution:
         # Set current_branch to None to simulate failure
         from dataclasses import replace
 
-        ops.git()._state = replace(ops.git().get_state(), current_branch="")
+        ops.git()._state = replace(ops.git().get_state(), current_branch="")  # type: ignore[attr-defined]
 
         result = execute_pre_analysis(ops)
 
@@ -210,7 +210,7 @@ class TestPreAnalysisExecution:
         # Manually set just the current branch without any parent relationship
         from dataclasses import replace
 
-        ops.git()._state = replace(ops.git().get_state(), current_branch="orphan-branch")
+        ops.git()._state = replace(ops.git().get_state(), current_branch="orphan-branch")  # type: ignore[attr-defined]
         ops.github().set_current_branch("orphan-branch")
         # main_graphite has no branches tracked, so get_parent_branch returns None
 
@@ -339,7 +339,7 @@ class TestPreAnalysisExecution:
         """Test fallback to git merge-tree when no PR exists (informational, not blocking)."""
         ops = FakeGtKitOps().with_branch("feature-branch", parent="master").with_commits(1)
         # Configure fake to simulate conflict
-        ops.git().simulate_conflict("master", "feature-branch")
+        ops.git().simulate_conflict("master", "feature-branch")  # type: ignore[attr-defined]
 
         # No PR configured - should fallback to git merge-tree
         result = execute_pre_analysis(ops)

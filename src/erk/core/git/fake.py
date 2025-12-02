@@ -86,6 +86,10 @@ class FakeGit(Git):
         dirty_worktrees: set[Path] | None = None,
         branch_issues: dict[str, int] | None = None,
         branch_last_commit_times: dict[str, str] | None = None,
+        repository_roots: dict[Path, Path] | None = None,
+        diff_to_branch: dict[tuple[Path, str], str] | None = None,
+        merge_conflicts: dict[tuple[str, str], bool] | None = None,
+        commits_ahead: dict[tuple[Path, str], int] | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -113,6 +117,10 @@ class FakeGit(Git):
             dirty_worktrees: Set of worktree paths that have uncommitted/staged/untracked changes
             branch_issues: Mapping of branch name -> GitHub issue number
             branch_last_commit_times: Mapping of branch name -> ISO 8601 timestamp for last commit
+            repository_roots: Mapping of cwd -> repository root path
+            diff_to_branch: Mapping of (cwd, branch) -> diff output
+            merge_conflicts: Mapping of (base_branch, head_branch) -> has conflicts bool
+            commits_ahead: Mapping of (cwd, base_branch) -> commit count
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -135,6 +143,10 @@ class FakeGit(Git):
         self._dirty_worktrees = dirty_worktrees or set()
         self._branch_issues = branch_issues or {}
         self._branch_last_commit_times = branch_last_commit_times or {}
+        self._repository_roots = repository_roots or {}
+        self._diff_to_branch = diff_to_branch or {}
+        self._merge_conflicts = merge_conflicts or {}
+        self._commits_ahead = commits_ahead or {}
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -670,3 +682,33 @@ class FakeGit(Git):
     def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
         """Get the author date of the most recent commit unique to a branch."""
         return self._branch_last_commit_times.get(branch)
+
+    def add_all(self, cwd: Path) -> None:
+        """Stage all changes for commit (git add -A)."""
+        # In the fake, just record that add_all was called
+        # No actual state mutation needed for tests
+        pass
+
+    def amend_commit(self, cwd: Path, message: str) -> None:
+        """Amend the current commit with a new message."""
+        # In the fake, replace last commit message if commits exist
+        if self._commits:
+            last_commit = self._commits[-1]
+            self._commits[-1] = (last_commit[0], message, last_commit[2])
+
+    def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
+        """Count commits in HEAD that are not in base_branch."""
+        return self._commits_ahead.get((cwd, base_branch), 0)
+
+    def get_repository_root(self, cwd: Path) -> Path:
+        """Get the repository root directory."""
+        # Return configured root for this cwd, or default to cwd as fallback
+        return self._repository_roots.get(cwd, cwd)
+
+    def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
+        """Get diff between branch and HEAD."""
+        return self._diff_to_branch.get((cwd, branch), "")
+
+    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
+        """Check if merging would have conflicts using git merge-tree."""
+        return self._merge_conflicts.get((base_branch, head_branch), False)

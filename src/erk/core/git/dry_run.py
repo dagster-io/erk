@@ -238,3 +238,29 @@ class DryRunGit(Git):
     def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
         """Get branch last commit time (read-only, delegates to wrapped)."""
         return self._wrapped.get_branch_last_commit_time(repo_root, branch, trunk)
+
+    def add_all(self, cwd: Path) -> None:
+        """No-op for staging all changes in dry-run mode."""
+        # Do nothing - prevents actual staging
+        pass
+
+    def amend_commit(self, cwd: Path, message: str) -> None:
+        """No-op for amending commit in dry-run mode."""
+        # Do nothing - prevents actual commit amendment
+        pass
+
+    def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
+        """Count commits ahead (read-only, delegates to wrapped)."""
+        return self._wrapped.count_commits_ahead(cwd, base_branch)
+
+    def get_repository_root(self, cwd: Path) -> Path:
+        """Get repository root (read-only, delegates to wrapped)."""
+        return self._wrapped.get_repository_root(cwd)
+
+    def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
+        """Get diff to branch (read-only, delegates to wrapped)."""
+        return self._wrapped.get_diff_to_branch(cwd, branch)
+
+    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
+        """Check merge conflicts (read-only, delegates to wrapped)."""
+        return self._wrapped.check_merge_conflicts(cwd, base_branch, head_branch)

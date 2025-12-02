@@ -75,9 +75,7 @@ class TestSubmitBranchIntegration:
 
     def test_real_git_merge_tree_detects_conflicts(self) -> None:
         """Integration test: Verify git merge-tree actually detects conflicts."""
-        from erk_shared.integrations.gt import (
-            RealGitGtKit,
-        )
+        from erk_shared.git.real import RealGit
 
         with tempfile.TemporaryDirectory() as tmpdir:
             repo_path = Path(tmpdir)
@@ -146,16 +144,8 @@ class TestSubmitBranchIntegration:
             )
 
             # Test: Check for conflicts using real implementation
-            # Change to repo directory so git commands work
-            import os
-
-            original_cwd = os.getcwd()
-            try:
-                os.chdir(repo_path)
-                ops = RealGitGtKit()
-                has_conflicts = ops.check_merge_conflicts("main", "feature")
-            finally:
-                os.chdir(original_cwd)
+            git = RealGit()
+            has_conflicts = git.check_merge_conflicts(repo_path, "main", "feature")
 
             # Assert: Should detect conflicts
             assert has_conflicts is True

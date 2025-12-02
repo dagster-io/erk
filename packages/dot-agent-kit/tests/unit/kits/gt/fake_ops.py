@@ -14,11 +14,11 @@ Design:
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+from erk_shared.git.abc import Git
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 from erk_shared.integrations.gt import (
-    GitGtKit,
     GitHubGtKit,
     GtKit,
 )
@@ -57,8 +57,12 @@ class GitHubState:
     auth_hostname: str | None = "github.com"
 
 
-class FakeGitGtKitOps(GitGtKit):
-    """Fake git operations with in-memory state."""
+class FakeGitGtKitOps(Git):
+    """Fake git operations with in-memory state.
+
+    This fake implements the Git interface and provides additional methods
+    for backward compatibility with GitGtKit tests.
+    """
 
     def __init__(self, state: GitState | None = None) -> None:
         """Initialize with optional initial state."""
@@ -68,20 +72,22 @@ class FakeGitGtKitOps(GitGtKit):
         """Get current state (for testing assertions)."""
         return self._state
 
-    def get_current_branch(self) -> str | None:
+    def get_current_branch(self, cwd: Path) -> str | None:
         """Get the name of the current branch."""
         if not self._state.current_branch:
             return None
         return self._state.current_branch
 
-    def has_uncommitted_changes(self) -> bool:
+    def has_uncommitted_changes(self, cwd: Path) -> bool:
         """Check if there are uncommitted changes."""
         return len(self._state.uncommitted_files) > 0
 
-    def add_all(self) -> bool:
-        """Stage all changes with configurable success/failure."""
+    def add_all(self, cwd: Path) -> None:
+        """Stage all changes for commit."""
+        import subprocess
+
         if not self._state.add_success:
-            return False
+            raise subprocess.CalledProcessError(1, ["git", "add", "-A"])
 
         # Track staged files separately for proper simulation
         # In a real git workflow, add_all stages files but doesn't commit them
@@ -89,9 +95,8 @@ class FakeGitGtKitOps(GitGtKit):
         if not hasattr(self, "_staged_files"):
             self._staged_files: list[str] = []
         self._staged_files = list(self._state.uncommitted_files)
-        return True
 
-    def commit(self, message: str) -> bool:
+    def commit(self, cwd: Path, message: str) -> None:
         """Create a commit and clear uncommitted files."""
         # Create new state with commit added and uncommitted files cleared
         new_commits = [*self._state.commits, message]
@@ -104,12 +109,13 @@ class FakeGitGtKitOps(GitGtKit):
         # Clear staged files after commit
         if hasattr(self, "_staged_files"):
             self._staged_files = []
-        return True
 
-    def amend_commit(self, message: str) -> bool:
+    def amend_commit(self, cwd: Path, message: str) -> None:
         """Amend the current commit message and include any staged changes."""
+        import subprocess
+
         if not self._state.commits:
-            return False
+            raise subprocess.CalledProcessError(1, ["git", "commit", "--amend"])
 
         # Replace last commit message
         new_commits = [*self._state.commits[:-1], message]
@@ -123,7 +129,6 @@ class FakeGitGtKitOps(GitGtKit):
         # Clear staged files after amend
         if hasattr(self, "_staged_files"):
             self._staged_files = []
-        return True
 
     def count_commits_in_branch(self, parent_branch: str) -> int:
         """Count commits in current branch.
@@ -133,13 +138,17 @@ class FakeGitGtKitOps(GitGtKit):
         """
         return len(self._state.commits)
 
-    def get_trunk_branch(self) -> str:
+    def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
+        """Count commits in HEAD that are not in base_branch."""
+        return len(self._state.commits)
+
+    def get_trunk_branch(self, repo_root: Path) -> str:
         """Get the trunk branch name for the repository."""
         return self._state.trunk_branch
 
-    def get_repository_root(self) -> str:
+    def get_repository_root(self, cwd: Path) -> Path:
         """Fake repository root."""
-        return self._state.repo_root
+        return Path(self._state.repo_root)
 
     def get_diff_to_parent(self, parent_branch: str) -> str:
         """Fake diff output."""
@@ -152,12 +161,16 @@ class FakeGitGtKitOps(GitGtKit):
             "+new"
         )
 
-    def check_merge_conflicts(self, base_branch: str, head_branch: str) -> bool:
+    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
         """Fake conflict checker - returns False unless configured otherwise."""
         # Check if fake has been configured to simulate conflicts
         if hasattr(self, "_simulated_conflicts"):
             return (base_branch, head_branch) in self._simulated_conflicts
         return False
+
+    def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
+        """Get diff between branch and HEAD."""
+        return ""
 
     def simulate_conflict(self, base_branch: str, head_branch: str) -> None:
         """Configure fake to simulate conflicts for specific branch pair."""
@@ -174,10 +187,160 @@ class FakeGitGtKitOps(GitGtKit):
         # Return a fake SHA based on branch name for deterministic testing
         return f"fake-sha-for-{branch}"
 
-    def checkout_branch(self, branch: str) -> bool:
+    def checkout_branch(self, cwd: Path, branch: str) -> None:
         """Fake branch checkout - updates current branch state."""
         self._state = replace(self._state, current_branch=branch)
-        return True
+
+    # Stub implementations for unused Git ABC methods
+    def list_worktrees(self, repo_root: Path) -> list:
+        """Stub."""
+        raise NotImplementedError
+
+    def detect_default_branch(self, repo_root: Path, configured: str | None = None) -> str:
+        """Stub."""
+        raise NotImplementedError
+
+    def list_local_branches(self, repo_root: Path) -> list[str]:
+        """Stub."""
+        raise NotImplementedError
+
+    def list_remote_branches(self, repo_root: Path) -> list[str]:
+        """Stub."""
+        raise NotImplementedError
+
+    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -> None:
+        """Stub."""
+        raise NotImplementedError
+
+    def has_staged_changes(self, repo_root: Path) -> bool:
+        """Stub."""
+        raise NotImplementedError
+
+    def is_worktree_clean(self, worktree_path: Path) -> bool:
+        """Stub."""
+        raise NotImplementedError
+
+    def add_worktree(
+        self,
+        repo_root: Path,
+        path: Path,
+        *,
+        branch: str | None = None,
+        ref: str | None = None,
+        create_branch: bool = False,
+    ) -> None:
+        """Stub."""
+        raise NotImplementedError
+
+    def move_worktree(self, repo_root: Path, old_path: Path, new_path: Path) -> None:
+        """Stub."""
+        raise NotImplementedError
+
+    def remove_worktree(self, repo_root: Path, path: Path, *, force: bool) -> None:
+        """Stub."""
+        raise NotImplementedError
+
+    def checkout_detached(self, cwd: Path, ref: str) -> None:
+        """Stub."""
+        raise NotImplementedError
+
+    def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None:
+        """Stub."""
+        raise NotImplementedError
+
+    def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
+        """Stub."""
+        raise NotImplementedError
+
+    def delete_branch_with_graphite(self, repo_root: Path, branch: str, *, force: bool) -> None:
+        """Stub."""
+        raise NotImplementedError
+
+    def prune_worktrees(self, repo_root: Path) -> None:
+        """Stub."""
+        raise NotImplementedError
+
+    def path_exists(self, path: Path) -> bool:
+        """Stub."""
+        raise NotImplementedError
+
+    def is_dir(self, path: Path) -> bool:
+        """Stub."""
+        raise NotImplementedError
+
+    def safe_chdir(self, path: Path) -> bool:
+        """Stub."""
+        raise NotImplementedError
+
+    def is_branch_checked_out(self, repo_root: Path, branch: str) -> Path | None:
+        """Stub."""
+        raise NotImplementedError
+
+    def find_worktree_for_branch(self, repo_root: Path, branch: str) -> Path | None:
+        """Stub."""
+        raise NotImplementedError
+
+    def get_commit_message(self, repo_root: Path, commit_sha: str) -> str | None:
+        """Stub."""
+        raise NotImplementedError
+
+    def get_file_status(self, cwd: Path) -> tuple[list[str], list[str], list[str]]:
+        """Stub."""
+        raise NotImplementedError
+
+    def get_ahead_behind(self, cwd: Path, branch: str) -> tuple[int, int]:
+        """Stub."""
+        raise NotImplementedError
+
+    def get_all_branch_sync_info(self, repo_root: Path) -> dict:
+        """Stub."""
+        raise NotImplementedError
+
+    def get_recent_commits(self, cwd: Path, *, limit: int = 5) -> list[dict[str, str]]:
+        """Stub."""
+        raise NotImplementedError
+
+    def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
+        """Stub."""
+        raise NotImplementedError
+
+    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -> None:
+        """Stub."""
+        raise NotImplementedError
+
+    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -> bool:
+        """Stub."""
+        raise NotImplementedError
+
+    def set_branch_issue(self, repo_root: Path, branch: str, issue_number: int) -> None:
+        """Stub."""
+        raise NotImplementedError
+
+    def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
+        """Stub."""
+        raise NotImplementedError
+
+    def fetch_pr_ref(self, repo_root: Path, remote: str, pr_number: int, local_branch: str) -> None:
+        """Stub."""
+        raise NotImplementedError
+
+    def stage_files(self, cwd: Path, paths: list[str]) -> None:
+        """Stub."""
+        raise NotImplementedError
+
+    def push_to_remote(
+        self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False
+    ) -> None:
+        """Stub."""
+        raise NotImplementedError
+
+    def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
+        """Stub."""
+        return None
+
+    def read_file(self, path: Path) -> str:
+        """Stub."""
+        raise NotImplementedError
 
 
 class FakeGitHubGtKitOps(GitHubGtKit):
@@ -322,9 +485,9 @@ class FakeGtKitOps(GtKit):
         self._github = FakeGitHubGtKitOps(github_state)
         self._main_graphite = main_graphite if main_graphite is not None else FakeGraphite()
 
-    def git(self) -> FakeGitGtKitOps:
+    def git(self) -> Git:
         """Get the git operations interface."""
-        return self._git
+        return self._git  # type: ignore[return-value]
 
     def github(self) -> FakeGitHubGtKitOps:
         """Get the GitHub operations interface."""

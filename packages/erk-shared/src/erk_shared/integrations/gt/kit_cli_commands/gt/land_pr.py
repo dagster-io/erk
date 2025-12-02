@@ -87,13 +87,15 @@ def execute_land_pr(ops: GtKit | None = None) -> LandPrSuccess | LandPrError:
     """Execute the land-pr workflow. Returns success or error result."""
     kit_ops: GtKit = ops if ops is not None else RealGtKit()
 
+    cwd = Path.cwd()
+
     # Step 1: Get current branch
-    branch_name = kit_ops.git().get_current_branch()
+    branch_name = kit_ops.git().get_current_branch(cwd)
     if branch_name is None:
         branch_name = "unknown"
 
     # Step 2: Get parent branch
-    repo_root = Path(kit_ops.git().get_repository_root())
+    repo_root = kit_ops.git().get_repository_root(cwd)
     parent = kit_ops.main_graphite().get_parent_branch(kit_ops.git(), repo_root, branch_name)
 
     if parent is None:
@@ -105,7 +107,7 @@ def execute_land_pr(ops: GtKit | None = None) -> LandPrSuccess | LandPrError:
         )
 
     # Step 3: Validate parent is trunk
-    trunk = kit_ops.git().get_trunk_branch()
+    trunk = kit_ops.git().get_trunk_branch(repo_root)
     if parent != trunk:
         return LandPrError(
             success=False,
@@ -174,8 +176,11 @@ def execute_land_pr(ops: GtKit | None = None) -> LandPrSuccess | LandPrError:
     child_branch = None
     if len(children) == 1:
         # Use git checkout to switch to the child branch
-        if kit_ops.git().checkout_branch(children[0]):
+        try:
+            kit_ops.git().checkout_branch(cwd, children[0])
             child_branch = children[0]
+        except Exception:
+            pass  # Checkout failed, leave child_branch as None
 
     # Build success message with navigation info
     if len(children) == 0:

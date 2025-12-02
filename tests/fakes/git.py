@@ -661,3 +661,45 @@ class FakeGit(Git):
         if not hasattr(self, "_branch_last_commit_times"):
             self._branch_last_commit_times: dict[str, str] = {}
         return self._branch_last_commit_times.get(branch)
+
+    def add_all(self, cwd: Path) -> None:
+        """Stage all changes for commit (tracks mutation)."""
+        # Track that add_all was called
+        if not hasattr(self, "_add_all_calls"):
+            self._add_all_calls: list[Path] = []
+        self._add_all_calls.append(cwd)
+
+    def amend_commit(self, cwd: Path, message: str) -> None:
+        """Amend the current commit with a new message (tracks mutation)."""
+        # Track amended commits
+        if not hasattr(self, "_amended_commits"):
+            self._amended_commits: list[tuple[Path, str]] = []
+        self._amended_commits.append((cwd, message))
+
+    def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
+        """Count commits in HEAD that are not in base_branch."""
+        # Return configured count or 0
+        if not hasattr(self, "_commits_ahead"):
+            self._commits_ahead: dict[tuple[Path, str], int] = {}
+        return self._commits_ahead.get((cwd, base_branch), 0)
+
+    def get_repository_root(self, cwd: Path) -> Path:
+        """Get the repository root directory."""
+        # Return the cwd as root by default (simplest fake behavior)
+        if not hasattr(self, "_repository_roots"):
+            self._repository_roots: dict[Path, Path] = {}
+        return self._repository_roots.get(cwd, cwd)
+
+    def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
+        """Get diff between branch and HEAD."""
+        # Return configured diff or empty string
+        if not hasattr(self, "_diffs_to_branch"):
+            self._diffs_to_branch: dict[tuple[Path, str], str] = {}
+        return self._diffs_to_branch.get((cwd, branch), "")
+
+    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
+        """Check if merging would have conflicts using git merge-tree."""
+        # Return configured conflict status or False
+        if not hasattr(self, "_merge_conflicts"):
+            self._merge_conflicts: dict[tuple[str, str], bool] = {}
+        return self._merge_conflicts.get((base_branch, head_branch), False)
