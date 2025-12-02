@@ -61,9 +61,7 @@ class RealPlanDataProvider(PlanDataProvider):
     Transforms PlanListData into PlanRowData for TUI display.
     """
 
-    def __init__(
-        self, ctx: ErkContext, location: GitHubRepoLocation, clipboard: Clipboard
-    ) -> None:
+    def __init__(self, ctx: ErkContext, location: GitHubRepoLocation, clipboard: Clipboard) -> None:
         """Initialize with context and repository info.
 
         Args:
