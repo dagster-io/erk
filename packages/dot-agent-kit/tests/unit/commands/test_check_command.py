@@ -887,6 +887,7 @@ def test_check_command_perfect_sync_no_missing_no_obsolete(tmp_path: Path) -> No
                     artifacts=[
                         ".claude/agents/gt/commit-message-generator.md",
                         ".claude/agents/gt/gt-update-pr-submitter.md",
+                        ".claude/commands/gt/pr-prep.md",
                         ".claude/commands/gt/pr-submit.md",
                         ".claude/commands/gt/pr-update.md",
                         ".claude/skills/gt-graphite/SKILL.md",
@@ -906,6 +907,7 @@ def test_check_command_perfect_sync_no_missing_no_obsolete(tmp_path: Path) -> No
             for artifact_rel in [
                 "agents/gt/commit-message-generator.md",
                 "agents/gt/gt-update-pr-submitter.md",
+                "commands/gt/pr-prep.md",
                 "commands/gt/pr-submit.md",
                 "commands/gt/pr-update.md",
                 "skills/gt-graphite/SKILL.md",

@@ -93,6 +93,7 @@ version = "0.1.0"
 artifacts = [
     ".claude/agents/gt/commit-message-generator.md",
     ".claude/agents/gt/gt-update-pr-submitter.md",
+    ".claude/commands/gt/pr-prep.md",
     ".claude/commands/gt/pr-submit.md",
     ".claude/commands/gt/pr-update.md",
     ".claude/skills/gt-graphite/SKILL.md",

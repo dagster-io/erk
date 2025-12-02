@@ -6,6 +6,9 @@ kit_cli_commands:
   - name: land-pr
     path: kit_cli_commands/gt/land_pr.py
     description: Land a single PR from Graphite stack without affecting upstack branches
+  - name: pr-prep
+    path: kit_cli_commands/gt/pr_prep.py
+    description: Prepare branch for PR (squash + diff extraction, no submit)
   - name: pr-submit
     path: kit_cli_commands/gt/submit_branch.py
     description: Create git commit and submit current branch with Graphite (two-phase)
@@ -17,6 +20,7 @@ artifacts:
     - agents/gt/commit-message-generator.md
     - agents/gt/gt-update-pr-submitter.md
   command:
+    - commands/gt/pr-prep.md
     - commands/gt/pr-submit.md
     - commands/gt/pr-update.md
   skill:
