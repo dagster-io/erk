@@ -11,6 +11,7 @@ from erk_shared.github.metadata import (
 )
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
 from erk_shared.impl_folder import read_issue_reference
+from erk_shared.integrations.clipboard.abc import Clipboard
 from erk_shared.plan_store.types import Plan, PlanState
 
 from erk.core.context import ErkContext
@@ -31,6 +32,16 @@ class PlanDataProvider(ABC):
     Defines the interface for fetching plan data for TUI display.
     """
 
+    @property
+    @abstractmethod
+    def clipboard(self) -> Clipboard:
+        """Get the clipboard interface for copy operations.
+
+        Returns:
+            Clipboard interface for copying to system clipboard
+        """
+        ...
+
     @abstractmethod
     def fetch_plans(self, filters: PlanFilters) -> list[PlanRowData]:
         """Fetch plans matching the given filters.
@@ -50,15 +61,24 @@ class RealPlanDataProvider(PlanDataProvider):
     Transforms PlanListData into PlanRowData for TUI display.
     """
 
-    def __init__(self, ctx: ErkContext, location: GitHubRepoLocation) -> None:
+    def __init__(
+        self, ctx: ErkContext, location: GitHubRepoLocation, clipboard: Clipboard
+    ) -> None:
         """Initialize with context and repository info.
 
         Args:
             ctx: ErkContext with all dependencies
             location: GitHub repository location (local root + repo identity)
+            clipboard: Clipboard interface for copy operations
         """
         self._ctx = ctx
         self._location = location
+        self._clipboard = clipboard
+
+    @property
+    def clipboard(self) -> Clipboard:
+        """Get the clipboard interface for copy operations."""
+        return self._clipboard
 
     def fetch_plans(self, filters: PlanFilters) -> list[PlanRowData]:
         """Fetch plans and transform to TUI row format.

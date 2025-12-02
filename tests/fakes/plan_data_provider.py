@@ -1,5 +1,8 @@
 """Fake plan data provider for testing TUI components."""
 
+from erk_shared.integrations.clipboard.abc import Clipboard
+from erk_shared.integrations.clipboard.fake import FakeClipboard
+
 from erk.tui.data.provider import PlanDataProvider
 from erk.tui.data.types import PlanFilters, PlanRowData
 
@@ -10,14 +13,25 @@ class FakePlanDataProvider(PlanDataProvider):
     Returns canned data without making any API calls.
     """
 
-    def __init__(self, plans: list[PlanRowData] | None = None) -> None:
+    def __init__(
+        self,
+        plans: list[PlanRowData] | None = None,
+        clipboard: Clipboard | None = None,
+    ) -> None:
         """Initialize with optional canned plan data.
 
         Args:
             plans: List of PlanRowData to return, or None for empty list
+            clipboard: Clipboard interface, defaults to FakeClipboard()
         """
         self._plans = plans or []
         self._fetch_count = 0
+        self._clipboard = clipboard if clipboard is not None else FakeClipboard()
+
+    @property
+    def clipboard(self) -> Clipboard:
+        """Get the clipboard interface for copy operations."""
+        return self._clipboard
 
     def fetch_plans(self, filters: PlanFilters) -> list[PlanRowData]:
         """Return canned plan data.

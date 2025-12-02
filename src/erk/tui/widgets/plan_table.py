@@ -1,5 +1,7 @@
 """Plan table widget for TUI dashboard."""
 
+from textual.events import Click
+from textual.message import Message
 from textual.widgets import DataTable
 
 from erk.tui.data.types import PlanFilters, PlanRowData
@@ -12,6 +14,18 @@ class PlanDataTable(DataTable):
     Uses row selection mode (not cell selection) for simpler navigation.
     """
 
+    class LocalWtClicked(Message):
+        """Posted when user clicks local-wt column on a row with existing worktree."""
+
+        def __init__(self, row_index: int) -> None:
+            """Initialize the message.
+
+            Args:
+                row_index: Index of the clicked row
+            """
+            super().__init__()
+            self.row_index = row_index
+
     def __init__(self, plan_filters: PlanFilters) -> None:
         """Initialize table with column configuration based on filters.
 
@@ -21,6 +35,19 @@ class PlanDataTable(DataTable):
         super().__init__(cursor_type="row")
         self._plan_filters = plan_filters
         self._rows: list[PlanRowData] = []
+        self._local_wt_column_index: int | None = None
+
+    @property
+    def local_wt_column_index(self) -> int | None:
+        """Get the column index for the local-wt column.
+
+        Returns:
+            Column index (0-based), or None if columns not yet set up.
+            The index varies based on show_prs flag:
+            - Without PRs: index 2 (plan, title, local-wt)
+            - With PRs: index 4 (plan, title, pr, chks, local-wt)
+        """
+        return self._local_wt_column_index
 
     def action_cursor_left(self) -> None:
         """Disable left arrow navigation (row mode only)."""
@@ -35,17 +62,30 @@ class PlanDataTable(DataTable):
         self._setup_columns()
 
     def _setup_columns(self) -> None:
-        """Add columns based on current filter settings."""
+        """Add columns based on current filter settings.
+
+        Tracks the column index for local-wt to enable click detection.
+        """
+        col_index = 0
         self.add_column("plan", key="plan")
+        col_index += 1
         self.add_column("title", key="title")
+        col_index += 1
         if self._plan_filters.show_prs:
             self.add_column("pr", key="pr")
+            col_index += 1
             self.add_column("chks", key="chks")
+            col_index += 1
+        self._local_wt_column_index = col_index
         self.add_column("local-wt", key="local_wt")
+        col_index += 1
         self.add_column("local-impl", key="local_impl")
+        col_index += 1
         if self._plan_filters.show_runs:
             self.add_column("remote-impl", key="remote_impl")
+            col_index += 1
             self.add_column("run-id", key="run_id")
+            col_index += 1
             self.add_column("run-state", key="run_state")
 
     def populate(self, rows: list[PlanRowData]) -> None:
@@ -130,6 +170,36 @@ class PlanDataTable(DataTable):
         if cursor_row is None or cursor_row < 0 or cursor_row >= len(self._rows):
             return None
         return self._rows[cursor_row]
+
+    def on_click(self, event: Click) -> None:
+        """Detect clicks on local-wt column and post message.
+
+        Posts LocalWtClicked event if:
+        - Click is on the local-wt column
+        - The row has an existing local worktree (not '-')
+
+        Note: DataTable's click handling (row selection, cursor movement) happens
+        via internal _on_click method, not on_click, so we don't call super().
+
+        Args:
+            event: Click event from Textual
+        """
+        if self._local_wt_column_index is None:
+            return
+
+        # Convert screen offset to cell coordinate
+        # hover_coordinate is updated by the DataTable on mouse events
+        coord = self.hover_coordinate
+        if coord is None:
+            return
+
+        row_index = coord.row
+        col_index = coord.column
+
+        # Only post event if local-wt column AND worktree exists
+        if col_index == self._local_wt_column_index:
+            if row_index < len(self._rows) and self._rows[row_index].exists_locally:
+                self.post_message(self.LocalWtClicked(row_index))
 
 
 def _strip_rich_markup(text: str) -> str:

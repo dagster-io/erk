@@ -79,6 +79,7 @@ class HelpScreen(ModalScreen):
                 yield Label("Actions", classes="help-section-title")
                 yield Label("Enter/o Open issue in browser", classes="help-binding")
                 yield Label("p       Open PR in browser", classes="help-binding")
+                yield Label("c       Copy checkout command", classes="help-binding")
                 yield Label("i       Show implement command", classes="help-binding")
 
             with Vertical(classes="help-section"):
@@ -109,6 +110,7 @@ class ErkDashApp(App):
         Binding("enter", "open_issue", "Open Issue"),
         Binding("o", "open_issue", "Open Issue", show=False),
         Binding("p", "open_pr", "Open PR"),
+        Binding("c", "copy_checkout", "Copy Checkout"),
         Binding("i", "show_implement", "Implement"),
     ]
 
@@ -276,6 +278,46 @@ class ErkDashApp(App):
         if self._status_bar is not None:
             self._status_bar.set_message(f"Copy: {cmd}")
 
+    def action_copy_checkout(self) -> None:
+        """Copy checkout command for selected row."""
+        row = self._get_selected_row()
+        if row is None:
+            return
+        self._copy_checkout_command(row)
+
+    def _copy_checkout_command(self, row: PlanRowData) -> None:
+        """Copy appropriate checkout command based on row state.
+
+        If worktree exists locally, copies 'erk co {worktree_name}'.
+        If only PR available, copies 'erk pr co #{pr_number}'.
+        Shows status message with result.
+
+        Args:
+            row: The plan row data to generate command from
+        """
+        # Determine which command to use
+        if row.exists_locally:
+            # Local worktree exists - use branch checkout
+            cmd = f"erk co {row.worktree_name}"
+        elif row.pr_number is not None:
+            # No local worktree but PR exists - use PR checkout
+            cmd = f"erk pr co #{row.pr_number}"
+        else:
+            # Neither available
+            if self._status_bar is not None:
+                self._status_bar.set_message("No worktree or PR available for checkout")
+            return
+
+        # Copy to clipboard
+        success = self._provider.clipboard.copy(cmd)
+
+        # Show status message
+        if self._status_bar is not None:
+            if success:
+                self._status_bar.set_message(f"Copied: {cmd}")
+            else:
+                self._status_bar.set_message(f"Clipboard unavailable. Copy manually: {cmd}")
+
     def _get_selected_row(self) -> PlanRowData | None:
         """Get currently selected row data."""
         if self._table is None:
@@ -286,3 +328,14 @@ class ErkDashApp(App):
     def on_row_selected(self, event: PlanDataTable.RowSelected) -> None:
         """Handle Enter/double-click on row - open issue."""
         self.action_open_issue()
+
+    @on(PlanDataTable.LocalWtClicked)
+    def on_local_wt_clicked(self, event: PlanDataTable.LocalWtClicked) -> None:
+        """Handle click on local-wt cell - copy checkout command.
+
+        Args:
+            event: LocalWtClicked event with row index
+        """
+        if event.row_index < len(self._rows):
+            row = self._rows[event.row_index]
+            self._copy_checkout_command(row)

@@ -154,3 +154,62 @@ class TestPlanDataTableRowConversion:
         values = table._row_to_values(row)
 
         assert values[2] == "feature-branch"
+
+
+class TestLocalWtColumnIndex:
+    """Tests for local_wt_column_index tracking."""
+
+    def test_column_index_without_prs(self) -> None:
+        """Column index is 2 when show_prs=False (plan, title, local-wt)."""
+        filters = PlanFilters(
+            labels=("erk-plan",),
+            state=None,
+            run_state=None,
+            limit=None,
+            show_prs=False,
+            show_runs=False,
+        )
+        table = PlanDataTable(filters)
+        # Simulate mount to trigger column setup
+        table._setup_columns()
+
+        assert table.local_wt_column_index == 2
+
+    def test_column_index_with_prs(self) -> None:
+        """Column index is 4 when show_prs=True (plan, title, pr, chks, local-wt)."""
+        filters = PlanFilters(
+            labels=("erk-plan",),
+            state=None,
+            run_state=None,
+            limit=None,
+            show_prs=True,
+            show_runs=False,
+        )
+        table = PlanDataTable(filters)
+        table._setup_columns()
+
+        assert table.local_wt_column_index == 4
+
+    def test_column_index_none_before_setup(self) -> None:
+        """Column index is None before columns are set up."""
+        filters = PlanFilters.default()
+        table = PlanDataTable(filters)
+        # Don't call _setup_columns
+
+        assert table.local_wt_column_index is None
+
+    def test_column_index_with_all_columns(self) -> None:
+        """Column index is 4 with show_prs=True and show_runs=True."""
+        filters = PlanFilters(
+            labels=("erk-plan",),
+            state=None,
+            run_state=None,
+            limit=None,
+            show_prs=True,
+            show_runs=True,
+        )
+        table = PlanDataTable(filters)
+        table._setup_columns()
+
+        # Still 4: plan, title, pr, chks, local-wt (runs come after)
+        assert table.local_wt_column_index == 4
