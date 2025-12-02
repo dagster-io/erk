@@ -123,8 +123,8 @@ def execute_land_pr(ops: GtKit | None = None) -> LandPrSuccess | LandPrError:
         )
 
     # Step 4: Check PR exists and is open
-    pr_state_info = kit_ops.github().get_pr_state_for_branch(repo_root, branch_name)
-    if pr_state_info is None:
+    pr_status = kit_ops.github().get_pr_status(repo_root, branch_name, debug=False)
+    if pr_status.pr_number is None:
         return LandPrError(
             success=False,
             error_type="no_pr_found",
@@ -134,7 +134,8 @@ def execute_land_pr(ops: GtKit | None = None) -> LandPrSuccess | LandPrError:
             details={"current_branch": branch_name},
         )
 
-    pr_number, pr_state = pr_state_info
+    pr_number = pr_status.pr_number
+    pr_state = pr_status.state
     if pr_state != "OPEN":
         return LandPrError(
             success=False,

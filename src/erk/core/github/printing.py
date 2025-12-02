@@ -206,14 +206,6 @@ class PrintingGitHub(PrintingBase, GitHub):
         """Get workflow run node ID (read-only, no printing)."""
         return self._wrapped.get_workflow_run_node_id(repo_root, run_id)
 
-    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR info for branch (read-only, no printing)."""
-        return self._wrapped.get_pr_info_for_branch(repo_root, branch)
-
-    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR state for branch (read-only, no printing)."""
-        return self._wrapped.get_pr_state_for_branch(repo_root, branch)
-
     def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
         """Get PR title (read-only, no printing)."""
         return self._wrapped.get_pr_title(repo_root, pr_number)
@@ -237,10 +229,6 @@ class PrintingGitHub(PrintingBase, GitHub):
     def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
         """Get PR diff (read-only, no printing)."""
         return self._wrapped.get_pr_diff(repo_root, pr_number)
-
-    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
-        """Get PR mergeability status (read-only, no printing)."""
-        return self._wrapped.get_pr_mergeability_status(repo_root, pr_number)
 
     def get_repo_info(self, repo_root: Path) -> RepoInfo | None:
         """Get repository info (read-only, no printing)."""

@@ -411,33 +411,6 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
-    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR number and URL for a specific branch.
-
-        Args:
-            repo_root: Repository root directory
-            branch: Branch name to check
-
-        Returns:
-            Tuple of (pr_number, pr_url) or None if no PR exists for this branch
-        """
-        ...
-
-    @abstractmethod
-    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR number and state for a specific branch.
-
-        Args:
-            repo_root: Repository root directory
-            branch: Branch name to check
-
-        Returns:
-            Tuple of (pr_number, state) where state is "OPEN", "MERGED", or "CLOSED"
-            None if no PR exists for this branch
-        """
-        ...
-
-    @abstractmethod
     def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
         """Get PR title by number.
 
@@ -506,21 +479,6 @@ class GitHub(ABC):
 
         Raises:
             RuntimeError: If gh command fails
-        """
-        ...
-
-    @abstractmethod
-    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
-        """Get PR mergeability status from GitHub API.
-
-        Args:
-            repo_root: Repository root directory
-            pr_number: PR number to check
-
-        Returns:
-            Tuple of (mergeable, merge_state_status):
-            - mergeable: "MERGEABLE", "CONFLICTING", or "UNKNOWN"
-            - merge_state_status: "CLEAN", "DIRTY", "UNSTABLE", etc.
         """
         ...
 

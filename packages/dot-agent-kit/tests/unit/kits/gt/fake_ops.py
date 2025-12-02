@@ -13,8 +13,9 @@ Design:
 
 from dataclasses import dataclass, field, replace
 from pathlib import Path
+from typing import cast
 
-from erk_shared.github.types import RepoInfo
+from erk_shared.github.types import PRInfo, PRMergeability, PRState, RepoInfo
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
@@ -253,6 +254,17 @@ class FakeGitHubGtKitOps:
         # In the fake, marking as ready always succeeds if PR exists
         return True
 
+    def get_pr_status(self, repo_root: Path, branch: str, *, debug: bool = False) -> PRInfo:
+        """Get PR status for branch (matches GitHub ABC interface)."""
+        if branch not in self._state.pr_numbers:
+            return PRInfo(state="NONE", pr_number=None, title=None)
+
+        pr_number = self._state.pr_numbers[branch]
+        pr_state = cast(PRState, self._state.pr_states.get(branch, "OPEN"))
+        pr_title = self._state.pr_titles.get(pr_number)
+
+        return PRInfo(state=pr_state, pr_number=pr_number, title=pr_title)
+
     def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
         """Get the title of the PR (matches GitHub ABC interface)."""
         return self._state.pr_titles.get(pr_number)
@@ -260,6 +272,14 @@ class FakeGitHubGtKitOps:
     def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
         """Get the body of the PR (matches GitHub ABC interface)."""
         return self._state.pr_bodies.get(pr_number)
+
+    def get_pr_mergeability(self, repo_root: Path, pr_number: int) -> PRMergeability | None:
+        """Get PR mergeability status (matches GitHub ABC interface)."""
+        if pr_number in self._state.pr_mergeability:
+            mergeable, merge_state = self._state.pr_mergeability[pr_number]
+            return PRMergeability(mergeable=mergeable, merge_state_status=merge_state)
+        # Default: MERGEABLE/CLEAN
+        return PRMergeability(mergeable="MERGEABLE", merge_state_status="CLEAN")
 
     def merge_pr(
         self,
@@ -292,41 +312,7 @@ class FakeGitHubGtKitOps:
             "+new"
         )
 
-    def get_pr_status(self, branch: str) -> tuple[int | None, str | None]:
-        """Get PR number and URL for branch from fake state."""
-        if branch not in self._state.pr_numbers:
-            return (None, None)
-
-        pr_number = self._state.pr_numbers[branch]
-        pr_url = self._state.pr_urls.get(branch, f"https://github.com/repo/pull/{pr_number}")
-        return (pr_number, pr_url)
-
-    def get_pr_mergeability(self, pr_number: int) -> tuple[str, str]:
-        """Get PR mergeability status from fake state."""
-        # Default: MERGEABLE/CLEAN unless configured otherwise
-        return self._state.pr_mergeability.get(pr_number, ("MERGEABLE", "CLEAN"))
-
     # Methods matching GitHub ABC interface (take repo_root as first param)
-
-    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR info for branch (matches GitHub ABC interface)."""
-        if branch not in self._state.pr_numbers:
-            return None
-        pr_number = self._state.pr_numbers[branch]
-        pr_url = self._state.pr_urls.get(branch, f"https://github.com/repo/pull/{pr_number}")
-        return (pr_number, pr_url)
-
-    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR state for branch (matches GitHub ABC interface)."""
-        if branch not in self._state.pr_numbers:
-            return None
-        pr_number = self._state.pr_numbers[branch]
-        pr_state = self._state.pr_states.get(branch, "OPEN")
-        return (pr_number, pr_state)
-
-    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
-        """Get PR mergeability status (matches GitHub ABC interface)."""
-        return self._state.pr_mergeability.get(pr_number, ("MERGEABLE", "CLEAN"))
 
     def update_pr_title_and_body(
         self, repo_root: Path, pr_number: int, title: str, body: str

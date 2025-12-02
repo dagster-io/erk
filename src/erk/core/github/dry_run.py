@@ -184,14 +184,6 @@ class DryRunGitHub(GitHub):
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_workflow_run_node_id(repo_root, run_id)
 
-    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_pr_info_for_branch(repo_root, branch)
-
-    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_pr_state_for_branch(repo_root, branch)
-
     def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_pr_title(repo_root, pr_number)
@@ -213,10 +205,6 @@ class DryRunGitHub(GitHub):
     def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_pr_diff(repo_root, pr_number)
-
-    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
-        """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_pr_mergeability_status(repo_root, pr_number)
 
     def get_repo_info(self, repo_root: Path) -> RepoInfo | None:
         """Delegate read operation to wrapped implementation."""

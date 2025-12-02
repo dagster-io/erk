@@ -1431,62 +1431,6 @@ query {{
         node_id = stdout.strip()
         return node_id if node_id else None
 
-    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR number and URL for a specific branch using gh CLI.
-
-        Note: Uses try/except as an acceptable error boundary for handling gh CLI
-        availability and authentication.
-        """
-        try:
-            cmd = [
-                "gh",
-                "pr",
-                "list",
-                "--head",
-                branch,
-                "--json",
-                "number,url",
-                "--limit",
-                "1",
-            ]
-            stdout = execute_gh_command(cmd, repo_root)
-            data = json.loads(stdout)
-            if not data:
-                return None
-            pr = data[0]
-            return (pr["number"], pr["url"])
-        except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError, IndexError):
-            return None
-
-    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR number and state for a specific branch using gh CLI.
-
-        Note: Uses try/except as an acceptable error boundary for handling gh CLI
-        availability and authentication.
-        """
-        try:
-            cmd = [
-                "gh",
-                "pr",
-                "list",
-                "--head",
-                branch,
-                "--state",
-                "all",
-                "--json",
-                "number,state",
-                "--limit",
-                "1",
-            ]
-            stdout = execute_gh_command(cmd, repo_root)
-            data = json.loads(stdout)
-            if not data:
-                return None
-            pr = data[0]
-            return (pr["number"], pr["state"])
-        except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError, IndexError):
-            return None
-
     def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
         """Get PR title by number using gh CLI.
 
@@ -1582,33 +1526,6 @@ query {{
             cwd=repo_root,
         )
         return result.stdout
-
-    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
-        """Get PR mergeability status from GitHub API.
-
-        Uses REST API to get mergeable state. Returns ("UNKNOWN", "UNKNOWN") on failure.
-        """
-        try:
-            cmd = [
-                "gh",
-                "api",
-                f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
-                "--jq",
-                ".mergeable,.mergeable_state",
-            ]
-            stdout = execute_gh_command(cmd, repo_root)
-            lines = stdout.strip().split("\n")
-            mergeable = lines[0] if len(lines) > 0 else "null"
-            merge_state = lines[1] if len(lines) > 1 else "unknown"
-
-            # Convert to GitHub GraphQL enum format
-            if mergeable == "true":
-                return ("MERGEABLE", merge_state.upper())
-            if mergeable == "false":
-                return ("CONFLICTING", merge_state.upper())
-            return ("UNKNOWN", "UNKNOWN")
-        except (RuntimeError, FileNotFoundError):
-            return ("UNKNOWN", "UNKNOWN")
 
     def get_repo_info(self, repo_root: Path) -> RepoInfo | None:
         """Get repository owner and name from GitHub CLI.

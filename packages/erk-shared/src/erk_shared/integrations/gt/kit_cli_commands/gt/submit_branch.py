@@ -256,16 +256,23 @@ def execute_pre_analysis(ops: GtKit | None = None) -> PreAnalysisResult | PreAna
 
     # Step 2.5: Check for merge conflicts (informational only, does not block)
     # First try GitHub API if PR exists (most accurate), then fallback to local git merge-tree
-    pr_status_info = ops.github().get_pr_info_for_branch(repo_root, branch_name)
+    pr_status = ops.github().get_pr_status(repo_root, branch_name, debug=False)
 
     # Track conflict info (will be included in success result)
     has_conflicts = False
     conflict_details: dict[str, str] | None = None
 
-    if pr_status_info is not None:
-        pr_number, pr_url = pr_status_info
+    if pr_status.pr_number is not None:
+        pr_number = pr_status.pr_number
         # PR exists - check mergeability
-        mergeable, merge_state = ops.github().get_pr_mergeability_status(repo_root, pr_number)
+        mergeability = ops.github().get_pr_mergeability(repo_root, pr_number)
+        if mergeability is None:
+            # API error or PR not found - skip conflict check
+            mergeable = "UNKNOWN"
+            merge_state = "UNKNOWN"
+        else:
+            mergeable = mergeability.mergeable
+            merge_state = mergeability.merge_state_status
 
         if mergeable == "CONFLICTING":
             has_conflicts = True
@@ -606,25 +613,24 @@ def _execute_submit_only(
     click.echo("  ✓ Branch submitted to Graphite", err=True)
 
     # Wait for PR info
-    pr_info = None
     max_retries = 5
     retry_delays = [0.5, 1.0, 2.0, 4.0, 8.0]
     repo_root = Path(ops.git().get_repository_root())
 
     click.echo("⏳ Waiting for PR info from GitHub API... (gh pr view)", err=True)
 
+    pr_status = ops.github().get_pr_status(repo_root, branch_name, debug=False)
     for attempt in range(max_retries):
         if attempt > 0:
             click.echo(f"   Attempt {attempt + 1}/{max_retries}...", err=True)
-        pr_info = ops.github().get_pr_info_for_branch(repo_root, branch_name)
-        if pr_info is not None:
-            pr_num, _ = pr_info
-            click.echo(f"✓ PR info retrieved (PR #{pr_num})", err=True)
+            pr_status = ops.github().get_pr_status(repo_root, branch_name, debug=False)
+        if pr_status.pr_number is not None:
+            click.echo(f"✓ PR info retrieved (PR #{pr_status.pr_number})", err=True)
             break
         if attempt < max_retries - 1:
             time.sleep(retry_delays[attempt])
 
-    if pr_info is None:
+    if pr_status.pr_number is None:
         return PostAnalysisError(
             success=False,
             error_type="submit_failed",
@@ -632,14 +638,16 @@ def _execute_submit_only(
             details={"branch_name": branch_name},
         )
 
-    pr_number, pr_url = pr_info
-    # Get Graphite URL using the main_graphite interface
+    pr_number = pr_status.pr_number
+    # Get Graphite URL and construct PR URL
     repo_info = ops.github().get_repo_info(repo_root)
     if repo_info is not None:
+        pr_url = f"https://github.com/{repo_info.owner}/{repo_info.name}/pull/{pr_number}"
         graphite_url = ops.main_graphite().get_graphite_url(
             repo_info.owner, repo_info.name, pr_number
         )
     else:
+        pr_url = ""
         graphite_url = ""
 
     return (pr_number, pr_url, graphite_url, branch_name)
@@ -822,15 +830,15 @@ def execute_finalize(
 
     # Get PR info for result
     branch_name = ops.git().get_current_branch() or "unknown"
-    pr_url_result = ops.github().get_pr_info_for_branch(repo_root, branch_name)
-    pr_url = pr_url_result[1] if pr_url_result else ""
-    # Get Graphite URL using the main_graphite interface
+    # Construct PR URL and get Graphite URL
     repo_info = ops.github().get_repo_info(repo_root)
     if repo_info is not None:
+        pr_url = f"https://github.com/{repo_info.owner}/{repo_info.name}/pull/{pr_number}"
         graphite_url = ops.main_graphite().get_graphite_url(
             repo_info.owner, repo_info.name, pr_number
         )
     else:
+        pr_url = ""
         graphite_url = ""
 
     return FinalizeResult(

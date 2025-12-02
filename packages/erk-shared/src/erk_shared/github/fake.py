@@ -534,26 +534,6 @@ class FakeGitHub(GitHub):
         # Default: return a fake node_id for any run_id (convenience for tests)
         return f"WFR_fake_node_id_{run_id}"
 
-    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR number and URL for a specific branch from configured state.
-
-        Returns None if branch not found in configured PRs.
-        """
-        pr = self._prs.get(branch)
-        if pr is None:
-            return None
-        return (pr.number, pr.url)
-
-    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR number and state for a specific branch from configured state.
-
-        Returns None if branch not found in configured PRs.
-        """
-        pr = self._prs.get(branch)
-        if pr is None:
-            return None
-        return (pr.number, pr.state)
-
     def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
         """Get PR title by number from configured state.
 
@@ -596,18 +576,6 @@ class FakeGitHub(GitHub):
             "-old\n"
             "+new"
         )
-
-    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
-        """Get PR mergeability status from configured state.
-
-        Returns configured mergeability or defaults to ("MERGEABLE", "CLEAN").
-        """
-        if pr_number in self._pr_mergeability:
-            mergeability = self._pr_mergeability[pr_number]
-            if mergeability is None:
-                return ("UNKNOWN", "UNKNOWN")
-            return (mergeability.mergeable, mergeability.merge_state_status)
-        return ("MERGEABLE", "CLEAN")
 
     def get_repo_info(self, repo_root: Path) -> RepoInfo | None:
         """Get repository owner and name (returns test defaults)."""

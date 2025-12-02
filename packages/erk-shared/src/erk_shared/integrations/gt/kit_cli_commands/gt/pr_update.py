@@ -82,13 +82,18 @@ def execute_update_pr(ops: GtKit | None = None) -> dict:
     if branch is None:
         return {"success": False, "error": "Could not determine current branch"}
 
-    pr_info = ops.github().get_pr_info_for_branch(repo_root, branch)
-    if not pr_info:
+    pr_status = ops.github().get_pr_status(repo_root, branch, debug=False)
+    if pr_status.pr_number is None:
         return {"success": False, "error": "PR submission succeeded but failed to retrieve PR info"}
 
-    pr_number, pr_url = pr_info
+    # Construct PR URL from repo info
+    repo_info = ops.github().get_repo_info(repo_root)
+    if repo_info is not None:
+        pr_url = f"https://github.com/{repo_info.owner}/{repo_info.name}/pull/{pr_status.pr_number}"
+    else:
+        pr_url = ""
 
-    return {"success": True, "pr_number": pr_number, "pr_url": pr_url}
+    return {"success": True, "pr_number": pr_status.pr_number, "pr_url": pr_url}
 
 
 @click.command()
