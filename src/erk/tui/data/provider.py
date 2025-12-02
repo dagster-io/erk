@@ -212,18 +212,18 @@ class RealPlanDataProvider(PlanDataProvider):
         # Workflow run info
         run_id_display = "-"
         run_state_display = "-"
+        run_url: str | None = None
 
         if workflow_run is not None:
-            workflow_url = None
             if plan.url:
                 parts = plan.url.split("/")
                 if len(parts) >= 5:
                     owner = parts[-4]
                     repo_name = parts[-3]
-                    workflow_url = (
+                    run_url = (
                         f"https://github.com/{owner}/{repo_name}/actions/runs/{workflow_run.run_id}"
                     )
-            run_id_display = format_workflow_run_id(workflow_run, workflow_url)
+            run_id_display = format_workflow_run_id(workflow_run, run_url)
             run_state_display = format_workflow_outcome(workflow_run)
 
         return PlanRowData(
@@ -240,6 +240,7 @@ class RealPlanDataProvider(PlanDataProvider):
             remote_impl_display=remote_impl_display,
             run_id_display=run_id_display,
             run_state_display=run_state_display,
+            run_url=run_url,
         )
 
 

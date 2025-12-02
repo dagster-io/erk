@@ -26,6 +26,13 @@ class PlanDataTable(DataTable):
             super().__init__()
             self.row_index = row_index
 
+    class RunIdClicked(Message):
+        """Posted when user clicks run-id column on a row with a run URL."""
+
+        def __init__(self, row_index: int) -> None:
+            super().__init__()
+            self.row_index = row_index
+
     def __init__(self, plan_filters: PlanFilters) -> None:
         """Initialize table with column configuration based on filters.
 
@@ -36,6 +43,7 @@ class PlanDataTable(DataTable):
         self._plan_filters = plan_filters
         self._rows: list[PlanRowData] = []
         self._local_wt_column_index: int | None = None
+        self._run_id_column_index: int | None = None
 
     @property
     def local_wt_column_index(self) -> int | None:
@@ -85,6 +93,7 @@ class PlanDataTable(DataTable):
             self.add_column("remote-impl", key="remote_impl")
             col_index += 1
             self.add_column("run-id", key="run_id")
+            self._run_id_column_index = col_index
             col_index += 1
             self.add_column("run-state", key="run_state")
 
@@ -172,11 +181,15 @@ class PlanDataTable(DataTable):
         return self._rows[cursor_row]
 
     def on_click(self, event: Click) -> None:
-        """Detect clicks on local-wt column and post message.
+        """Detect clicks on specific columns and post appropriate messages.
 
         Posts LocalWtClicked event if:
         - Click is on the local-wt column
         - The row has an existing local worktree (not '-')
+
+        Posts RunIdClicked event if:
+        - Click is on the run-id column
+        - The row has a run URL
 
         Note: DataTable's click handling (row selection, cursor movement) happens
         via internal _on_click method, not on_click, so we don't call super().
@@ -184,11 +197,6 @@ class PlanDataTable(DataTable):
         Args:
             event: Click event from Textual
         """
-        if self._local_wt_column_index is None:
-            return
-
-        # Convert screen offset to cell coordinate
-        # hover_coordinate is updated by the DataTable on mouse events
         coord = self.hover_coordinate
         if coord is None:
             return
@@ -196,10 +204,15 @@ class PlanDataTable(DataTable):
         row_index = coord.row
         col_index = coord.column
 
-        # Only post event if local-wt column AND worktree exists
-        if col_index == self._local_wt_column_index:
+        # Check local-wt column - post event if worktree exists
+        if self._local_wt_column_index is not None and col_index == self._local_wt_column_index:
             if row_index < len(self._rows) and self._rows[row_index].exists_locally:
                 self.post_message(self.LocalWtClicked(row_index))
+
+        # Check run-id column - post event if run URL exists
+        if self._run_id_column_index is not None and col_index == self._run_id_column_index:
+            if row_index < len(self._rows) and self._rows[row_index].run_url:
+                self.post_message(self.RunIdClicked(row_index))
 
 
 def _strip_rich_markup(text: str) -> str:

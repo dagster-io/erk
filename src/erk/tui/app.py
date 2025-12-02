@@ -339,3 +339,13 @@ class ErkDashApp(App):
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
             self._copy_checkout_command(row)
+
+    @on(PlanDataTable.RunIdClicked)
+    def on_run_id_clicked(self, event: PlanDataTable.RunIdClicked) -> None:
+        """Handle click on run-id cell - open run in browser."""
+        if event.row_index < len(self._rows):
+            row = self._rows[event.row_index]
+            if row.run_url:
+                click.launch(row.run_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened run {row.run_id_display}")

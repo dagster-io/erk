@@ -24,6 +24,7 @@ class PlanRowData:
         remote_impl_display: Relative time since last remote impl
         run_id_display: Formatted workflow run ID
         run_state_display: Formatted workflow run state
+        run_url: URL to the GitHub Actions run page
     """
 
     issue_number: int
@@ -39,6 +40,7 @@ class PlanRowData:
     remote_impl_display: str
     run_id_display: str
     run_state_display: str
+    run_url: str | None
 
 
 @dataclass(frozen=True)
