@@ -273,10 +273,15 @@ jobs:
           # Capture implementation commit SHA before cleanup commits
           echo "impl_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
-          # Now clean up .worker-impl/ in a separate commit
-          git rm -rf .worker-impl/
-          git commit -m "Remove .worker-impl/ folder after implementation"
-          git push origin "$BRANCH_NAME"
+          # Now clean up .worker-impl/ in a separate commit (defensive - check if exists)
+          if [ -d .worker-impl/ ]; then
+            git rm -rf .worker-impl/
+            git commit -m "Remove .worker-impl/ folder after implementation"
+            git push origin "$BRANCH_NAME"
+            echo "✓ .worker-impl/ folder removed"
+          else
+            echo "⚠ .worker-impl/ folder not found - skipping cleanup"
+          fi
 
       - name: Mark PR ready for review
         if: steps.implement.outputs.implementation_success == 'true'
