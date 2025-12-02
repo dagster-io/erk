@@ -22,84 +22,91 @@ artifacts:
     - docs/erk/includes/validate-github-cli.md
     - docs/erk/includes/validate-plan-structure.md
 kit_cli_commands:
-  - name: find-project-dir
-    path: kit_cli_commands/erk/find_project_dir.py
-    description: Find Claude Code project directory for a given filesystem path
-  - name: session-id-injector-hook
-    path: kit_cli_commands/erk/session_id_injector_hook.py
-    description: Inject session ID into conversation context for plan creation
-  - name: preprocess-session
-    path: kit_cli_commands/erk/preprocess_session.py
-    description: Compress JSONL session logs to XML format, auto-discovering agent logs for comprehensive preprocessing
-  - name: comment-worktree-creation
-    path: kit_cli_commands/erk/comment_worktree_creation.py
-    description: Post GitHub comment documenting worktree creation
-  - name: parse-issue-reference
-    path: kit_cli_commands/erk/parse_issue_reference.py
-    description: Parse GitHub issue number from URL or plain number
-  - name: issue-title-to-filename
-    path: kit_cli_commands/erk/issue_title_to_filename.py
-    description: Convert GitHub issue title to plan filename
-  - name: post-start-comment
-    path: kit_cli_commands/erk/post_start_comment.py
-    description: Post implementation start comment to GitHub issue with worktree, branch, and steps list
-  - name: post-plan-comment
-    path: kit_cli_commands/erk/post_plan_comment.py
-    description: Post plan issue comment with workflow instructions
-  - name: plan-save-to-issue
-    path: kit_cli_commands/erk/plan_save_to_issue.py
-    description: Extract plan from ~/.claude/plans/ and create GitHub issue with schema v2 format
-  - name: wrap-plan-in-metadata-block
-    path: kit_cli_commands/erk/wrap_plan_in_metadata_block.py
-    description: Wrap plan content in collapsible GitHub metadata block
-  - name: create-wt-from-issue
-    path: kit_cli_commands/erk/create_wt_from_issue.py
-    description: Create worktree from GitHub issue with erk-plan label
-  - name: create-plan-from-context
-    path: kit_cli_commands/erk/create_plan_from_context.py
-    description: Create GitHub issue from plan content (stdin) with erk-plan label
-  - name: check-impl
-    path: kit_cli_commands/erk/check_impl.py
-    description: Check .impl/ folder structure and validate prerequisites
+  # DEBUG
   - name: agent-debug
     path: kit_cli_commands/erk/agent_debug.py
-    description: Inspect failed agent runs from the current session
-  - name: validate-plan-content
-    path: kit_cli_commands/erk/validate_plan_content.py
-    description: Validate plan content structure and quality from stdin
-  - name: format-success-output
-    path: kit_cli_commands/erk/format_success_output.py
-    description: Format success output for GitHub issue creation with next steps and metadata
-  - name: format-error
-    path: kit_cli_commands/erk/format_error.py
-    description: Format error messages with consistent structure and suggested actions
-  - name: create-worker-impl-from-issue
-    path: kit_cli_commands/erk/create_worker_impl_from_issue.py
-    description: Create .worker-impl/ folder from GitHub issue with plan content
-  - name: update-dispatch-info
-    path: kit_cli_commands/erk/update_dispatch_info.py
-    description: Update dispatch info in GitHub issue plan-header metadata
-  - name: post-pr-comment
-    path: kit_cli_commands/erk/post_pr_comment.py
-    description: Post PR link comment to GitHub issue after PR publication
-  - name: mark-step
-    path: kit_cli_commands/erk/mark_step.py
-    description: Mark one or more steps as completed/incomplete in progress.md (supports batching to avoid race conditions)
-  - name: get-progress
-    path: kit_cli_commands/erk/get_progress.py
-    description: Query progress information from progress.md frontmatter
-  - name: extract-latest-plan
-    path: kit_cli_commands/erk/extract_latest_plan.py
-    description: Extract the latest plan from Claude session files
-  - name: create-issue-from-session
-    path: kit_cli_commands/erk/create_issue_from_session.py
-    description: Extract plan from Claude session and create GitHub issue
+    description: "[DEBUG] Show failed agent runs from current Claude session"
+  # GITHUB
+  - name: comment-worktree-creation
+    path: kit_cli_commands/erk/comment_worktree_creation.py
+    description: "[GITHUB] Post comment to issue after worktree creation"
   - name: mark-impl-started
     path: kit_cli_commands/erk/mark_impl_started.py
-    description: Update last_local_impl_at in GitHub issue plan-header metadata
+    description: "[GITHUB] Update last_local_impl_at timestamp in issue metadata"
+  - name: post-plan-comment
+    path: kit_cli_commands/erk/post_plan_comment.py
+    description: "[GITHUB] Post workflow instructions comment to plan issue"
+  - name: post-pr-comment
+    path: kit_cli_commands/erk/post_pr_comment.py
+    description: '[GITHUB] Post "PR created" comment linking PR to issue'
+  - name: post-start-comment
+    path: kit_cli_commands/erk/post_start_comment.py
+    description: '[GITHUB] Post "implementation started" comment with worktree/branch info'
+  - name: update-dispatch-info
+    path: kit_cli_commands/erk/update_dispatch_info.py
+    description: "[GITHUB] Update dispatch_workflow_run_id in issue metadata"
+  # IMPL
+  - name: check-impl
+    path: kit_cli_commands/erk/check_impl.py
+    description: "[IMPL] Validate .impl/ folder exists with required files"
+  - name: create-worker-impl-from-issue
+    path: kit_cli_commands/erk/create_worker_impl_from_issue.py
+    description: "[IMPL] Create .worker-impl/ folder for CI worker execution"
+  - name: create-wt-from-issue
+    path: kit_cli_commands/erk/create_wt_from_issue.py
+    description: "[IMPL] Create worktree from GitHub issue (requires erk-plan label)"
+  # PLAN
+  - name: create-issue-from-session
+    path: kit_cli_commands/erk/create_issue_from_session.py
+    description: "[PLAN] Extract plan from session and create GitHub issue"
+  - name: create-plan-from-context
+    path: kit_cli_commands/erk/create_plan_from_context.py
+    description: "[PLAN] Create GitHub issue from stdin plan content"
+  - name: plan-save-to-issue
+    path: kit_cli_commands/erk/plan_save_to_issue.py
+    description: "[PLAN] Create GitHub issue from ~/.claude/plans/ file (schema v2)"
+  - name: validate-plan-content
+    path: kit_cli_commands/erk/validate_plan_content.py
+    description: "[PLAN] Validate plan structure from stdin (title, steps, format)"
+  # PROGRESS
+  - name: get-progress
+    path: kit_cli_commands/erk/get_progress.py
+    description: "[PROGRESS] Get completion status from .impl/progress.md (X/Y steps)"
+  - name: mark-step
+    path: kit_cli_commands/erk/mark_step.py
+    description: "[PROGRESS] Mark step(s) complete/incomplete in .impl/progress.md"
+  # SESSION
+  - name: extract-latest-plan
+    path: kit_cli_commands/erk/extract_latest_plan.py
+    description: "[SESSION] Extract most recent plan from Claude session JSONL"
+  - name: preprocess-session
+    path: kit_cli_commands/erk/preprocess_session.py
+    description: "[SESSION] Convert JSONL session logs to XML format for analysis"
+  - name: session-id-injector-hook
+    path: kit_cli_commands/erk/session_id_injector_hook.py
+    description: "[SESSION] Hook: Inject session ID for plan tracking (auto-triggered)"
+  # UTIL
+  - name: find-project-dir
+    path: kit_cli_commands/erk/find_project_dir.py
+    description: "[UTIL] Map filesystem path to ~/.claude/projects/ directory"
+  - name: format-error
+    path: kit_cli_commands/erk/format_error.py
+    description: "[UTIL] Format error message with suggested actions"
+  - name: format-success-output
+    path: kit_cli_commands/erk/format_success_output.py
+    description: "[UTIL] Format success message with next steps (for command output)"
   - name: get-pr-body-footer
     path: kit_cli_commands/erk/get_pr_body_footer.py
-    description: Generate PR body footer with checkout command for remote implementations
+    description: "[UTIL] Generate PR footer with checkout command for remote impls"
+  - name: issue-title-to-filename
+    path: kit_cli_commands/erk/issue_title_to_filename.py
+    description: "[UTIL] Convert issue title to safe filename (kebab-case)"
+  - name: parse-issue-reference
+    path: kit_cli_commands/erk/parse_issue_reference.py
+    description: '[UTIL] Extract issue number from URL or "#123" or "123"'
+  - name: wrap-plan-in-metadata-block
+    path: kit_cli_commands/erk/wrap_plan_in_metadata_block.py
+    description: "[UTIL] Wrap plan in collapsible <details> block for GitHub"
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit
