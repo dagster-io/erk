@@ -329,6 +329,26 @@ class ErkDashApp(App):
         """Handle Enter/double-click on row - open issue."""
         self.action_open_issue()
 
+    @on(PlanDataTable.PlanClicked)
+    def on_plan_clicked(self, event: PlanDataTable.PlanClicked) -> None:
+        """Handle click on plan cell - open issue in browser."""
+        if event.row_index < len(self._rows):
+            row = self._rows[event.row_index]
+            if row.issue_url:
+                click.launch(row.issue_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened issue #{row.issue_number}")
+
+    @on(PlanDataTable.PrClicked)
+    def on_pr_clicked(self, event: PlanDataTable.PrClicked) -> None:
+        """Handle click on pr cell - open PR in browser."""
+        if event.row_index < len(self._rows):
+            row = self._rows[event.row_index]
+            if row.pr_url:
+                click.launch(row.pr_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened PR #{row.pr_number}")
+
     @on(PlanDataTable.LocalWtClicked)
     def on_local_wt_clicked(self, event: PlanDataTable.LocalWtClicked) -> None:
         """Handle click on local-wt cell - copy checkout command.
