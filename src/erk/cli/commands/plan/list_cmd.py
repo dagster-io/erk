@@ -20,7 +20,7 @@ from rich.table import Table
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk.core.display import LiveDisplay, RealLiveDisplay
+from erk.core.display import LiveDisplay
 from erk.core.display_utils import (
     format_relative_time,
     format_workflow_outcome,
@@ -128,8 +128,8 @@ def format_remote_run_cell(last_remote_impl_at: str | None) -> str:
     return relative_time if relative_time else "-"
 
 
-def plan_list_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
-    """Shared options for list/ls commands."""
+def plan_filter_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
+    """Shared filter options for plan list commands."""
     f = click.option(
         "--label",
         multiple=True,
@@ -167,25 +167,16 @@ def plan_list_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
         default=False,
         help="Show all columns (equivalent to -r)",
     )(f)
-    f = click.option(
-        "--watch",
-        "-w",
-        is_flag=True,
-        default=False,
-        help="Watch mode: refresh dashboard at regular intervals",
-    )(f)
+    return f
+
+
+def dash_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
+    """TUI-specific options for dash command."""
     f = click.option(
         "--interval",
         type=float,
         default=15.0,
-        help="Refresh interval in seconds for watch mode (default: 15.0)",
-    )(f)
-    f = click.option(
-        "--interactive",
-        "-i",
-        is_flag=True,
-        default=False,
-        help="Interactive TUI mode with keyboard navigation",
+        help="Refresh interval in seconds (default: 15.0)",
     )(f)
     return f
 
@@ -556,8 +547,43 @@ def _run_interactive_mode(
     app.run()
 
 
+@click.command("list")
+@plan_filter_options
+@click.pass_obj
+def list_plans(
+    ctx: ErkContext,
+    label: tuple[str, ...],
+    state: str | None,
+    run_state: str | None,
+    runs: bool,
+    limit: int | None,
+    show_all: bool,
+) -> None:
+    """List plans as a static table.
+
+    Displays a table of plans filtered by the specified criteria.
+    For an interactive dashboard, use 'erk dash' instead.
+
+    Examples:
+        erk plan list
+        erk plan list --state open
+        erk plan list --label erk-plan --label bug
+        erk plan list --limit 10
+        erk plan list --run-state in_progress
+        erk plan list --runs
+        erk plan list --all
+        erk plan list -a
+    """
+    # Handle --all flag (equivalent to -r)
+    if show_all:
+        runs = True
+
+    _list_plans_impl(ctx, label, state, run_state, runs, limit)
+
+
 @click.command("dash")
-@plan_list_options
+@plan_filter_options
+@dash_options
 @click.pass_obj
 def dash(
     ctx: ErkContext,
@@ -567,41 +593,23 @@ def dash(
     runs: bool,
     limit: int | None,
     show_all: bool,
-    watch: bool,
     interval: float,
-    interactive: bool,
 ) -> None:
-    """Display plan dashboard with optional filters.
+    """Interactive plan dashboard (TUI).
+
+    Launches an interactive terminal UI for viewing and managing plans.
+    Shows all columns (runs) by default. For a static table output, use
+    'erk plan list' instead.
 
     Examples:
         erk dash
-        erk dash --watch
-        erk dash -w --interval 10
-        erk dash -a --watch
+        erk dash --interval 10
         erk dash --label erk-plan --state open
         erk dash --limit 10
         erk dash --run-state in_progress
-        erk dash --run-state success --state open
-        erk dash --runs
-        erk dash --all
-        erk dash -a
-        erk dash -i
-        erk dash --interactive
     """
-    # Handle --all flag (equivalent to -r)
-    # Interactive mode implies --all for full dashboard view
+    # Default to showing all columns (runs=True), can be disabled with explicit --no-runs
     prs = True  # Always show PRs
-    if show_all or interactive:
-        runs = True
+    runs = True  # Default to -a behavior
 
-    if interactive:
-        _run_interactive_mode(ctx, label, state, run_state, runs, prs, limit, interval)
-    elif watch:
-        live_display = RealLiveDisplay()
-
-        def build_fn() -> tuple[Table | None, int]:
-            return _build_plans_table(ctx, label, state, run_state, runs, limit)
-
-        _run_watch_loop(ctx, live_display, build_fn, interval)
-    else:
-        _list_plans_impl(ctx, label, state, run_state, runs, limit)
+    _run_interactive_mode(ctx, label, state, run_state, runs, prs, limit, interval)

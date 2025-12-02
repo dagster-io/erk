@@ -110,7 +110,7 @@ Implementation details"""
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["dash", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify workflow run ID appears
@@ -118,7 +118,7 @@ Implementation details"""
         assert "12345678" in output, "Expected run ID in output"
 
 
-def test_list_linkifies_workflow_run_id_with_owner_repo() -> None:
+def test_plan_list_linkifies_workflow_run_id_with_owner_repo() -> None:
     """Workflow run ID should be linkified when owner/repo available from metadata."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -199,7 +199,7 @@ last_dispatched_node_id: 'WFR_def456'
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["dash", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify run ID and OSC 8 link present
@@ -209,7 +209,7 @@ last_dispatched_node_id: 'WFR_def456'
         assert "87654321" in output
 
 
-def test_list_displays_plain_run_id_without_owner_repo() -> None:
+def test_plan_list_displays_plain_run_id_without_owner_repo() -> None:
     """Workflow run ID should display without link when owner/repo missing."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -284,7 +284,7 @@ last_dispatched_node_id: 'WFR_ghi789'
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["dash", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify run ID displays (without link)
@@ -292,7 +292,7 @@ last_dispatched_node_id: 'WFR_ghi789'
         assert "99887766" in output
 
 
-def test_list_handles_missing_workflow_run() -> None:
+def test_plan_list_handles_missing_workflow_run() -> None:
     """Plan list should handle branches without workflow runs gracefully."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -345,7 +345,7 @@ def test_list_handles_missing_workflow_run() -> None:
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["dash", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify "-" appears in run-id column
@@ -359,7 +359,7 @@ def test_list_handles_missing_workflow_run() -> None:
                 assert "-" in line or "" in line  # Blank or dash
 
 
-def test_list_handles_batch_query_failure() -> None:
+def test_plan_list_handles_batch_query_failure() -> None:
     """Plan list should succeed even if batch workflow query fails."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -412,7 +412,7 @@ def test_list_handles_batch_query_failure() -> None:
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
         # Command should succeed despite API failure
         assert result.exit_code == 0, result.output
 
@@ -422,7 +422,7 @@ def test_list_handles_batch_query_failure() -> None:
         assert "Plan with API failure" in output
 
 
-def test_list_displays_multiple_plans_with_different_workflow_runs() -> None:
+def test_plan_list_displays_multiple_plans_with_different_workflow_runs() -> None:
     """Plan list should display different workflow run IDs for multiple plans."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -544,7 +544,7 @@ last_dispatched_node_id: 'WFR_node2'
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["dash", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify both run IDs appear
@@ -553,7 +553,7 @@ last_dispatched_node_id: 'WFR_node2'
         assert "22222222" in output, "Expected second run ID"
 
 
-def test_list_skips_run_id_for_plans_without_impl_folder() -> None:
+def test_plan_list_skips_run_id_for_plans_without_impl_folder() -> None:
     """Plan list should not query workflow runs for plans without .impl/ folders."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -598,7 +598,7 @@ def test_list_skips_run_id_for_plans_without_impl_folder() -> None:
             issues=issues,
         )
 
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
         assert result.exit_code == 0, result.output
 
         # Verify plan displays without run ID

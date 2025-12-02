@@ -1,4 +1,12 @@
-"""Tests for plan dash command (formerly list/ls)."""
+"""Tests for plan dash command (formerly list/ls).
+
+Note: Many static table tests have been moved to tests/commands/plan/test_list.py
+since `erk plan list` is now the command for static table output.
+
+This file now focuses on tests that are specific to the `erk dash` TUI behavior.
+Since the TUI cannot be tested in unit tests (it requires a real terminal),
+these tests use `erk plan list` as a proxy for testing the shared filtering logic.
+"""
 
 from datetime import UTC, datetime
 
@@ -29,7 +37,7 @@ def plan_to_issue(plan: Plan) -> IssueInfo:
     )
 
 
-def test_list_plans_no_filters() -> None:
+def test_plan_list_no_filters() -> None:
     """Test listing all plan issues with no filters (defaults to open plans only)."""
     from erk_shared.github.fake import FakeGitHub
 
@@ -65,8 +73,8 @@ def test_list_plans_no_filters() -> None:
         github = FakeGitHub(issues=[plan_to_issue(plan1), plan_to_issue(plan2)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        # Act
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        # Act - Use erk plan list for static output
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -77,7 +85,7 @@ def test_list_plans_no_filters() -> None:
         assert "Issue 2" in result.output
 
 
-def test_list_plans_filter_by_state() -> None:
+def test_plan_list_filter_by_state() -> None:
     """Test filtering plan issues by state."""
     from erk_shared.github.fake import FakeGitHub
 
@@ -116,7 +124,7 @@ def test_list_plans_filter_by_state() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Filter for open issues
-        result = runner.invoke(cli, ["dash", "--state", "open"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "--state", "open"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -126,7 +134,7 @@ def test_list_plans_filter_by_state() -> None:
         assert "#2" not in result.output
 
 
-def test_list_plans_filter_by_labels() -> None:
+def test_plan_list_filter_by_labels() -> None:
     """Test filtering plan issues by labels with AND logic."""
     from erk_shared.github.fake import FakeGitHub
 
@@ -167,7 +175,7 @@ def test_list_plans_filter_by_labels() -> None:
         # Act - Filter for both labels (AND logic)
         result = runner.invoke(
             cli,
-            ["dash", "--label", "erk-plan", "--label", "erk-queue"],
+            ["plan", "list", "--label", "erk-plan", "--label", "erk-queue"],
             obj=ctx,
         )
 
@@ -179,7 +187,7 @@ def test_list_plans_filter_by_labels() -> None:
         assert "#2" not in result.output
 
 
-def test_list_plans_with_limit() -> None:
+def test_plan_list_with_limit() -> None:
     """Test limiting the number of returned plan issues."""
     from erk_shared.github.fake import FakeGitHub
 
@@ -210,14 +218,14 @@ def test_list_plans_with_limit() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
-        result = runner.invoke(cli, ["dash", "--limit", "2"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "--limit", "2"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
         assert "Found 2 plan(s)" in result.output
 
 
-def test_list_plans_combined_filters() -> None:
+def test_plan_list_combined_filters() -> None:
     """Test combining multiple filters."""
     from erk_shared.github.fake import FakeGitHub
 
@@ -281,7 +289,8 @@ def test_list_plans_combined_filters() -> None:
         result = runner.invoke(
             cli,
             [
-                "dash",
+                "plan",
+                "list",
                 "--state",
                 "open",
                 "--label",
@@ -299,7 +308,7 @@ def test_list_plans_combined_filters() -> None:
         assert "Matching Issue" in result.output
 
 
-def test_list_plans_empty_results() -> None:
+def test_plan_list_empty_results() -> None:
     """Test querying with filters that match no issues."""
     from erk_shared.github.fake import FakeGitHub
 
@@ -324,15 +333,15 @@ def test_list_plans_empty_results() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
-        result = runner.invoke(cli, ["dash", "--state", "closed"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "--state", "closed"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
         assert "No plans found matching the criteria" in result.output
 
 
-def test_dash_command_shows_worktree_status() -> None:
-    """Test that dash command shows dash for non-local worktrees.
+def test_plan_list_shows_worktree_status() -> None:
+    """Test that plan list shows dash for non-local worktrees.
 
     When a plan has a worktree_name in the issue body but no local worktree,
     the local-wt column should show "-" (not the remote worktree name).
@@ -389,8 +398,8 @@ Implementation details here."""
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        # Act
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        # Act - Use erk plan list for static output
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -403,7 +412,7 @@ Implementation details here."""
         assert "Issue Without Worktree" in result.output
 
 
-def test_list_plans_shows_dash_for_non_local_worktree() -> None:
+def test_plan_list_shows_dash_for_non_local_worktree() -> None:
     """Test that list command shows dash when worktree exists only in issue body (not local).
 
     When the plan-header contains a worktree_name but no local worktree exists,
@@ -448,15 +457,15 @@ Issue updated with current worktree name."""
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        # Act
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        # Act - Use erk plan list for static output
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert - Non-local worktree should NOT be shown (shows "-" instead)
         assert result.exit_code == 0
         assert "second-attempt" not in result.output
 
 
-def test_list_plans_shows_worktree_from_local_impl() -> None:
+def test_plan_list_shows_worktree_from_local_impl() -> None:
     """Test that list command detects worktree from local .impl/issue.json file."""
     import json
 
@@ -513,8 +522,8 @@ def test_list_plans_shows_worktree_from_local_impl() -> None:
         github = FakeGitHub(issues=[plan_to_issue(plan1)])
         ctx = build_workspace_test_context(env, git=git, issues=issues, github=github)
 
-        # Act
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        # Act - Use erk plan list for static output
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert - Should show worktree name from local detection
         assert result.exit_code == 0
@@ -523,7 +532,7 @@ def test_list_plans_shows_worktree_from_local_impl() -> None:
         assert "feature-worktree" in result.output
 
 
-def test_list_plans_prefers_local_over_github() -> None:
+def test_plan_list_prefers_local_over_github() -> None:
     """Test that local .impl/issue.json detection takes precedence over GitHub comments."""
     import json
 
@@ -598,8 +607,8 @@ issue_number: 960
         github = FakeGitHub(issues=[plan_to_issue(plan1)])
         ctx = build_workspace_test_context(env, git=git, issues=issues, github=github)
 
-        # Act
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        # Act - Use erk plan list for static output
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert - Should show local worktree name, not GitHub one
         assert result.exit_code == 0
@@ -607,7 +616,7 @@ issue_number: 960
         assert "old-github-worktree" not in result.output
 
 
-def test_list_plans_shows_dash_when_no_local_worktree() -> None:
+def test_plan_list_shows_dash_when_no_local_worktree() -> None:
     """Test that local-wt column shows dash when no local worktree exists.
 
     Even when the issue body contains a worktree_name, if there's no local
@@ -649,8 +658,8 @@ Plan content."""
         github = FakeGitHub(issues=[plan_to_issue(plan1)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        # Act
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        # Act - Use erk plan list for static output
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert - Non-local worktree should NOT be shown (shows "-" instead)
         assert result.exit_code == 0
@@ -658,7 +667,7 @@ Plan content."""
         assert "github-worktree" not in result.output
 
 
-def test_list_plans_handles_multiple_local_worktrees() -> None:
+def test_plan_list_handles_multiple_local_worktrees() -> None:
     """Test first-found worktree shown when multiple worktrees reference same issue."""
     import json
 
@@ -727,8 +736,8 @@ def test_list_plans_handles_multiple_local_worktrees() -> None:
         github = FakeGitHub(issues=[plan_to_issue(plan1)])
         ctx = build_workspace_test_context(env, git=git, issues=issues, github=github)
 
-        # Act
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        # Act - Use erk plan list for static output
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert - Should show first worktree found
         assert result.exit_code == 0
@@ -738,7 +747,7 @@ def test_list_plans_handles_multiple_local_worktrees() -> None:
         assert "first-worktree" in result.output or "second-worktree" in result.output
 
 
-def test_list_plans_shows_action_state_with_no_queue_label() -> None:
+def test_plan_list_shows_action_state_with_no_queue_label() -> None:
     """Test that plans without erk-queue label show '-' for action state."""
     # Arrange
     plan1 = Plan(
@@ -763,14 +772,14 @@ def test_list_plans_shows_action_state_with_no_queue_label() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
         assert "#1001" in result.output
 
 
-def test_list_plans_shows_pending_action_state() -> None:
+def test_plan_list_shows_pending_action_state() -> None:
     """Test that plans with erk-queue label but no metadata show 'Pending'."""
     # Arrange
     plan1 = Plan(
@@ -795,14 +804,14 @@ def test_list_plans_shows_pending_action_state() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
         assert "#1002" in result.output
 
 
-def test_list_plans_shows_running_action_state_with_workflow_started() -> None:
+def test_plan_list_shows_running_action_state_with_workflow_started() -> None:
     """Test that plans with workflow-started metadata show 'Running'."""
     # Arrange
     plan1 = Plan(
@@ -844,14 +853,14 @@ issue_number: 1003
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
         assert "#1003" in result.output
 
 
-def test_list_plans_shows_complete_action_state() -> None:
+def test_plan_list_shows_complete_action_state() -> None:
     """Test that plans with complete implementation status show 'Complete'."""
     # Arrange
     plan1 = Plan(
@@ -892,14 +901,14 @@ timestamp: "2024-11-23T12:00:00Z"
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
         assert "#1004" in result.output
 
 
-def test_list_plans_shows_failed_action_state() -> None:
+def test_plan_list_shows_failed_action_state() -> None:
     """Test that plans with failed implementation status show 'Failed'."""
     # Arrange
     plan1 = Plan(
@@ -940,14 +949,14 @@ timestamp: "2024-11-23T12:00:00Z"
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
         assert "#1005" in result.output
 
 
-def test_list_plans_filter_by_run_state_queued() -> None:
+def test_plan_list_filter_by_run_state_queued() -> None:
     """Test filtering plans by workflow run state (queued)."""
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import WorkflowRun
@@ -1031,7 +1040,7 @@ last_dispatched_node_id: 'WFR_running'
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Filter for queued workflow runs
-        result = runner.invoke(cli, ["dash", "--run-state", "queued"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "--run-state", "queued"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1040,7 +1049,7 @@ last_dispatched_node_id: 'WFR_running'
         assert "#1011" not in result.output
 
 
-def test_list_plans_filter_by_run_state_success() -> None:
+def test_plan_list_filter_by_run_state_success() -> None:
     """Test filtering plans by workflow run state (success)."""
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import WorkflowRun
@@ -1124,7 +1133,7 @@ last_dispatched_node_id: 'WFR_failed'
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Filter for success workflow runs
-        result = runner.invoke(cli, ["dash", "--run-state", "success"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "--run-state", "success"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1133,7 +1142,7 @@ last_dispatched_node_id: 'WFR_failed'
         assert "#1021" not in result.output
 
 
-def test_list_plans_run_state_filter_no_matches() -> None:
+def test_plan_list_run_state_filter_no_matches() -> None:
     """Test run-state filter with no matching plans."""
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import WorkflowRun
@@ -1169,14 +1178,14 @@ def test_list_plans_run_state_filter_no_matches() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Filter for "in_progress" which won't match (run is completed/success)
-        result = runner.invoke(cli, ["dash", "--run-state", "in_progress"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "--run-state", "in_progress"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
         assert "No plans found matching the criteria" in result.output
 
 
-def test_list_plans_pr_column_open_pr() -> None:
+def test_plan_list_pr_column_open_pr() -> None:
     """Test PR column displays open PR with 👀 emoji."""
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo
@@ -1217,7 +1226,7 @@ def test_list_plans_pr_column_open_pr() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - PR columns are always visible now
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1227,7 +1236,7 @@ def test_list_plans_pr_column_open_pr() -> None:
         assert "✅" in result.output  # Checks passing
 
 
-def test_list_plans_pr_column_draft_pr() -> None:
+def test_plan_list_pr_column_draft_pr() -> None:
     """Test PR column displays draft PR with 🚧 emoji."""
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo
@@ -1268,7 +1277,7 @@ def test_list_plans_pr_column_draft_pr() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - PR columns are always visible now
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1278,7 +1287,7 @@ def test_list_plans_pr_column_draft_pr() -> None:
         assert "🔄" in result.output  # Checks pending
 
 
-def test_list_plans_pr_column_merged_pr() -> None:
+def test_plan_list_pr_column_merged_pr() -> None:
     """Test PR column displays merged PR with 🎉 emoji."""
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo
@@ -1319,7 +1328,7 @@ def test_list_plans_pr_column_merged_pr() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - PR columns are always visible now
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1329,7 +1338,7 @@ def test_list_plans_pr_column_merged_pr() -> None:
         assert "✅" in result.output  # Checks passing
 
 
-def test_list_plans_pr_column_closed_pr() -> None:
+def test_plan_list_pr_column_closed_pr() -> None:
     """Test PR column displays closed PR with ⛔ emoji."""
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo
@@ -1370,7 +1379,7 @@ def test_list_plans_pr_column_closed_pr() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - PR columns are always visible now
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1380,7 +1389,7 @@ def test_list_plans_pr_column_closed_pr() -> None:
         assert "🚫" in result.output  # Checks failing
 
 
-def test_list_plans_pr_column_with_conflicts() -> None:
+def test_plan_list_pr_column_with_conflicts() -> None:
     """Test PR column shows conflict indicator 💥 for open/draft PRs with conflicts."""
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo
@@ -1421,7 +1430,7 @@ def test_list_plans_pr_column_with_conflicts() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - PR columns are always visible now
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1431,7 +1440,7 @@ def test_list_plans_pr_column_with_conflicts() -> None:
         assert "💥" in result.output  # Conflict indicator
 
 
-def test_list_plans_pr_column_multiple_prs_prefers_open() -> None:
+def test_plan_list_pr_column_multiple_prs_prefers_open() -> None:
     """Test PR column shows most recent open PR when multiple PRs exist."""
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo
@@ -1487,7 +1496,7 @@ def test_list_plans_pr_column_multiple_prs_prefers_open() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - PR columns are always visible now
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1496,7 +1505,7 @@ def test_list_plans_pr_column_multiple_prs_prefers_open() -> None:
         assert "👀" in result.output  # Open PR emoji
 
 
-def test_list_plans_pr_column_no_pr_linked() -> None:
+def test_plan_list_pr_column_no_pr_linked() -> None:
     """Test PR column shows '-' when no PR is linked to issue."""
     # Arrange
     plan = Plan(
@@ -1522,7 +1531,7 @@ def test_list_plans_pr_column_no_pr_linked() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
-        result = runner.invoke(cli, ["dash"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1535,7 +1544,7 @@ def test_list_plans_pr_column_no_pr_linked() -> None:
         assert "⛔" not in result.output
 
 
-def test_list_plans_all_flag_shows_all_columns() -> None:
+def test_plan_list_all_flag_shows_all_columns() -> None:
     """Test that --all flag enables run columns (PR columns always visible)."""
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo, WorkflowRun
@@ -1597,7 +1606,7 @@ last_dispatched_node_id: 'WFR_all_flag'
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use --all flag
-        result = runner.invoke(cli, ["dash", "--all"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "--all"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1610,7 +1619,7 @@ last_dispatched_node_id: 'WFR_all_flag'
         assert "99999" in result.output  # run-id
 
 
-def test_list_plans_all_flag_short_form() -> None:
+def test_plan_list_all_flag_short_form() -> None:
     """Test that -a short flag works same as --all (enables run columns)."""
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo, WorkflowRun
@@ -1672,7 +1681,7 @@ last_dispatched_node_id: 'WFR_short_flag'
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use -a short flag
-        result = runner.invoke(cli, ["dash", "-a"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "-a"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1721,7 +1730,7 @@ last_remote_impl_at: '2024-11-21T12:00:00Z'
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use --runs to show both local-impl and remote-impl columns
-        result = runner.invoke(cli, ["dash", "--runs"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
 
         # Assert - Column headers should appear in output
         assert result.exit_code == 0

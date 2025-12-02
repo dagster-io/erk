@@ -1,0 +1,328 @@
+"""Tests for erk plan list command."""
+
+from datetime import UTC, datetime
+
+from click.testing import CliRunner
+from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
+from erk_shared.plan_store.types import Plan, PlanState
+
+from erk.cli.cli import cli
+from tests.test_utils.context_builders import build_workspace_test_context
+from tests.test_utils.env_helpers import erk_inmem_env
+
+
+def plan_to_issue(plan: Plan) -> IssueInfo:
+    """Convert Plan to IssueInfo for test setup."""
+    return IssueInfo(
+        number=int(plan.plan_identifier),
+        title=plan.title,
+        body=plan.body,
+        state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
+        url=plan.url,
+        labels=plan.labels,
+        assignees=plan.assignees,
+        created_at=plan.created_at,
+        updated_at=plan.updated_at,
+    )
+
+
+def test_plan_list_no_filters() -> None:
+    """Test listing all plan issues with no filters."""
+    plan1 = Plan(
+        plan_identifier="1",
+        title="Issue 1",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/1",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={},
+    )
+    plan2 = Plan(
+        plan_identifier="2",
+        title="Issue 2",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/2",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 2, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
+        github = FakeGitHub(issues=[plan_to_issue(plan1), plan_to_issue(plan2)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
+
+        result = runner.invoke(cli, ["plan", "list"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Found 2 plan(s)" in result.output
+        assert "#1" in result.output
+        assert "Issue 1" in result.output
+        assert "#2" in result.output
+        assert "Issue 2" in result.output
+
+
+def test_plan_list_filter_by_state() -> None:
+    """Test filtering plan issues by state."""
+    open_plan = Plan(
+        plan_identifier="1",
+        title="Open Issue",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/1",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={},
+    )
+    closed_plan = Plan(
+        plan_identifier="2",
+        title="Closed Issue",
+        body="",
+        state=PlanState.CLOSED,
+        url="https://github.com/owner/repo/issues/2",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 2, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(
+            issues={1: plan_to_issue(open_plan), 2: plan_to_issue(closed_plan)}
+        )
+        github = FakeGitHub(issues=[plan_to_issue(open_plan), plan_to_issue(closed_plan)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
+
+        result = runner.invoke(cli, ["plan", "list", "--state", "open"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Found 1 plan(s)" in result.output
+        assert "#1" in result.output
+        assert "Open Issue" in result.output
+        assert "#2" not in result.output
+
+
+def test_plan_list_filter_by_labels() -> None:
+    """Test filtering plan issues by labels with AND logic."""
+    plan_with_both = Plan(
+        plan_identifier="1",
+        title="Issue with both labels",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/1",
+        labels=["erk-plan", "erk-queue"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={},
+    )
+    plan_with_one = Plan(
+        plan_identifier="2",
+        title="Issue with one label",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/2",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 2, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(
+            issues={1: plan_to_issue(plan_with_both), 2: plan_to_issue(plan_with_one)}
+        )
+        github = FakeGitHub(issues=[plan_to_issue(plan_with_both), plan_to_issue(plan_with_one)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
+
+        result = runner.invoke(
+            cli,
+            ["plan", "list", "--label", "erk-plan", "--label", "erk-queue"],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 0
+        assert "Found 1 plan(s)" in result.output
+        assert "#1" in result.output
+        assert "Issue with both labels" in result.output
+        assert "#2" not in result.output
+
+
+def test_plan_list_with_limit() -> None:
+    """Test limiting the number of returned plan issues."""
+    plans_dict: dict[int, IssueInfo] = {}
+    issues_list: list[IssueInfo] = []
+    for i in range(1, 6):
+        plan = Plan(
+            plan_identifier=str(i),
+            title=f"Issue {i}",
+            body="",
+            state=PlanState.OPEN,
+            url=f"https://github.com/owner/repo/issues/{i}",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=datetime(2024, 1, i, tzinfo=UTC),
+            updated_at=datetime(2024, 1, i, tzinfo=UTC),
+            metadata={},
+        )
+        issue = plan_to_issue(plan)
+        plans_dict[i] = issue
+        issues_list.append(issue)
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues=plans_dict)
+        github = FakeGitHub(issues=issues_list)
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
+
+        result = runner.invoke(cli, ["plan", "list", "--limit", "2"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Found 2 plan(s)" in result.output
+
+
+def test_plan_list_empty_results() -> None:
+    """Test querying with filters that match no issues."""
+    plan = Plan(
+        plan_identifier="1",
+        title="Issue",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/1",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={},
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
+        github = FakeGitHub(issues=[plan_to_issue(plan)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
+
+        result = runner.invoke(cli, ["plan", "list", "--state", "closed"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "No plans found matching the criteria" in result.output
+
+
+def test_plan_list_all_flag_shows_run_columns() -> None:
+    """Test that --all flag enables run columns."""
+    from erk_shared.github.types import WorkflowRun
+
+    plan_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+last_dispatched_run_id: '99999'
+last_dispatched_node_id: 'WFR_all_flag'
+```
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    plan = Plan(
+        plan_identifier="200",
+        title="Plan with Run",
+        body=plan_body,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/200",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"number": 200},
+    )
+
+    workflow_run = WorkflowRun(
+        run_id="99999",
+        status="completed",
+        conclusion="success",
+        branch="master",
+        head_sha="abc123",
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues={200: plan_to_issue(plan)})
+        github = FakeGitHub(
+            issues=[plan_to_issue(plan)],
+            workflow_runs_by_node_id={"WFR_all_flag": workflow_run},
+        )
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
+
+        result = runner.invoke(cli, ["plan", "list", "--all"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "#200" in result.output
+        assert "99999" in result.output
+
+
+def test_plan_list_short_all_flag() -> None:
+    """Test that -a short flag works same as --all."""
+    from erk_shared.github.types import WorkflowRun
+
+    plan_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+last_dispatched_run_id: '88888'
+last_dispatched_node_id: 'WFR_short_flag'
+```
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    plan = Plan(
+        plan_identifier="201",
+        title="Plan for short flag test",
+        body=plan_body,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/201",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"number": 201},
+    )
+
+    workflow_run = WorkflowRun(
+        run_id="88888",
+        status="in_progress",
+        conclusion=None,
+        branch="master",
+        head_sha="def456",
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues={201: plan_to_issue(plan)})
+        github = FakeGitHub(
+            issues=[plan_to_issue(plan)],
+            workflow_runs_by_node_id={"WFR_short_flag": workflow_run},
+        )
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
+
+        result = runner.invoke(cli, ["plan", "list", "-a"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "#201" in result.output
+        assert "88888" in result.output
