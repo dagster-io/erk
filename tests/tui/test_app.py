@@ -210,7 +210,7 @@ class TestCopyCheckoutCommand:
             await pilot.press("c")
             await pilot.pause()
 
-            assert clipboard.last_copied == "erk pr co #456"
+            assert clipboard.last_copied == "erk pr co 456"
 
     @pytest.mark.asyncio
     async def test_copy_checkout_with_neither_shows_error(self) -> None:

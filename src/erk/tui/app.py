@@ -289,7 +289,7 @@ class ErkDashApp(App):
         """Copy appropriate checkout command based on row state.
 
         If worktree exists locally, copies 'erk co {worktree_name}'.
-        If only PR available, copies 'erk pr co #{pr_number}'.
+        If only PR available, copies 'erk pr co {pr_number}'.
         Shows status message with result.
 
         Args:
@@ -301,7 +301,7 @@ class ErkDashApp(App):
             cmd = f"erk co {row.worktree_name}"
         elif row.pr_number is not None:
             # No local worktree but PR exists - use PR checkout
-            cmd = f"erk pr co #{row.pr_number}"
+            cmd = f"erk pr co {row.pr_number}"
         else:
             # Neither available
             if self._status_bar is not None:
