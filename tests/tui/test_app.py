@@ -1,9 +1,12 @@
 """Tests for ErkDashApp using Textual Pilot."""
 
 import pytest
+from erk_shared.integrations.browser.fake import FakeBrowserLauncher
 from erk_shared.integrations.clipboard.fake import FakeClipboard
 
+from erk.core.context import ErkContext
 from erk.tui.app import ErkDashApp, HelpScreen
+from erk.tui.context import ErkDashContext
 from erk.tui.data.types import PlanFilters
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
@@ -331,3 +334,120 @@ class TestCopyCheckoutCommand:
 
             status_bar = app.query_one(StatusBar)
             assert status_bar._message == "Copied: erk co feature-branch"
+
+
+class TestErkDashAppBrowserActions:
+    """Tests for browser launching via injected ErkDashContext."""
+
+    @pytest.mark.asyncio
+    async def test_open_issue_uses_injected_browser(self) -> None:
+        """Pressing 'o' on a row launches issue URL via injected browser."""
+        provider = FakePlanDataProvider(
+            [make_plan_row(123, "Test Plan", issue_url="https://github.com/test/repo/issues/123")]
+        )
+        filters = PlanFilters.default()
+
+        # Create dash_ctx with fake browser
+        ctx = ErkContext.for_test()
+        browser = FakeBrowserLauncher()
+        dash_ctx = ErkDashContext.for_test(ctx, browser=browser)
+
+        app = ErkDashApp(provider, filters, refresh_interval=0, dash_ctx=dash_ctx)
+
+        async with app.run_test() as pilot:
+            # Wait for data load
+            await pilot.pause()
+            await pilot.pause()
+
+            # Select first row and press 'o' to open issue
+            await pilot.press("o")
+            await pilot.pause()
+
+            # Browser should have been called with issue URL
+            assert browser.launched_urls == ["https://github.com/test/repo/issues/123"]
+
+    @pytest.mark.asyncio
+    async def test_open_pr_uses_injected_browser(self) -> None:
+        """Pressing 'p' on a row launches PR URL via injected browser."""
+        provider = FakePlanDataProvider(
+            [
+                make_plan_row(
+                    123,
+                    "Test Plan",
+                    pr_number=456,
+                    pr_url="https://github.com/test/repo/pull/456",
+                )
+            ]
+        )
+        filters = PlanFilters.default()
+
+        # Create dash_ctx with fake browser
+        ctx = ErkContext.for_test()
+        browser = FakeBrowserLauncher()
+        dash_ctx = ErkDashContext.for_test(ctx, browser=browser)
+
+        app = ErkDashApp(provider, filters, refresh_interval=0, dash_ctx=dash_ctx)
+
+        async with app.run_test() as pilot:
+            # Wait for data load
+            await pilot.pause()
+            await pilot.pause()
+
+            # Select first row and press 'p' to open PR
+            await pilot.press("p")
+            await pilot.pause()
+
+            # Browser should have been called with PR URL
+            assert browser.launched_urls == ["https://github.com/test/repo/pull/456"]
+
+    @pytest.mark.asyncio
+    async def test_enter_on_row_opens_issue(self) -> None:
+        """Pressing Enter on a row launches issue URL via injected browser."""
+        provider = FakePlanDataProvider(
+            [make_plan_row(123, "Test Plan", issue_url="https://github.com/test/repo/issues/123")]
+        )
+        filters = PlanFilters.default()
+
+        ctx = ErkContext.for_test()
+        browser = FakeBrowserLauncher()
+        dash_ctx = ErkDashContext.for_test(ctx, browser=browser)
+
+        app = ErkDashApp(provider, filters, refresh_interval=0, dash_ctx=dash_ctx)
+
+        async with app.run_test() as pilot:
+            # Wait for data load
+            await pilot.pause()
+            await pilot.pause()
+
+            # Press Enter to open selected issue
+            await pilot.press("enter")
+            await pilot.pause()
+
+            # Browser should have been called with issue URL
+            assert browser.launched_urls == ["https://github.com/test/repo/issues/123"]
+
+    @pytest.mark.asyncio
+    async def test_browser_not_called_when_no_url(self) -> None:
+        """Browser is not called when row has no PR URL."""
+        provider = FakePlanDataProvider(
+            [make_plan_row(123, "Test Plan", pr_number=None, pr_url=None)]
+        )
+        filters = PlanFilters.default()
+
+        ctx = ErkContext.for_test()
+        browser = FakeBrowserLauncher()
+        dash_ctx = ErkDashContext.for_test(ctx, browser=browser)
+
+        app = ErkDashApp(provider, filters, refresh_interval=0, dash_ctx=dash_ctx)
+
+        async with app.run_test() as pilot:
+            # Wait for data load
+            await pilot.pause()
+            await pilot.pause()
+
+            # Press 'p' but there's no PR
+            await pilot.press("p")
+            await pilot.pause()
+
+            # Browser should NOT have been called
+            assert browser.launched_urls == []

@@ -1,8 +1,12 @@
 """Command to list plans with filtering."""
 
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import click
+
+if TYPE_CHECKING:
+    from erk.tui.context import ErkDashContext
 from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata import (
@@ -503,6 +507,8 @@ def _run_interactive_mode(
     prs: bool,
     limit: int | None,
     interval: float,
+    *,
+    dash_ctx: "ErkDashContext | None" = None,
 ) -> None:
     """Run interactive TUI mode.
 
@@ -515,7 +521,15 @@ def _run_interactive_mode(
         prs: Whether to show PR columns
         limit: Maximum number of results
         interval: Refresh interval in seconds
+        dash_ctx: Optional ErkDashContext for dependency injection.
+            If None, creates production context.
     """
+    # Create dash context if not provided (inline import to avoid circular import)
+    if dash_ctx is None:
+        from erk.tui.context import ErkDashContext
+
+        dash_ctx = ErkDashContext.for_production(ctx)
+
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
     repo_root = repo.root
@@ -544,9 +558,9 @@ def _run_interactive_mode(
         show_runs=runs,
     )
 
-    # Run the TUI app
-    app = ErkDashApp(provider, filters, refresh_interval=interval)
-    app.run()
+    # Run the TUI app via the runner (enables testing without event loop)
+    app = ErkDashApp(provider, filters, refresh_interval=interval, dash_ctx=dash_ctx)
+    dash_ctx.tui_runner.run(app)
 
 
 @click.command("list")
