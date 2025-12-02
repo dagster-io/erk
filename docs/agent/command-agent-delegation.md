@@ -3,7 +3,7 @@
 ## Pattern Overview
 
 For architectural context and pattern rationale (WHAT and WHY), see:
-[Agent-Delegating Commands Pattern](../agentic-engineering-patterns/agent-delegating-commands.md)
+[Agent-Delegating Commands Pattern](../developer/agentic-engineering-patterns/agent-delegating-commands.md)
 
 This guide focuses on HOW to implement the pattern with step-by-step technical instructions.
 

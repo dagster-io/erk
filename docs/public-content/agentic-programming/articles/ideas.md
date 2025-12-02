@@ -95,17 +95,17 @@ Topics to explore in agentic programming articles.
 ## Published Articles
 
 0. **30 days of agentic programming** ✅ (Intro) - A comprehensive series exploring daily tips, techniques, and patterns for effective agentic development workflows
-   - Location: `docs/writing/30-days-of-agentic-programming/00-intro.md`
+   - Location: `docs/public-content/30-days-series/00-intro.md`
    - Posted: https://github.com/dagster-io/internal/discussions/19182
 
 1. **Always run Claude in verbose mode** ✅ - Why enabling verbose output is essential for understanding agent reasoning, debugging workflows, and building trust in agentic development
-   - Location: `docs/writing/30-days-of-agentic-programming/01-verbose-mode.md`
+   - Location: `docs/public-content/30-days-series/01-verbose-mode.md`
    - Posted: https://github.com/dagster-io/internal/discussions/19183
 
 2. **Use voice input** ✅ - You'll naturally provide more context when speaking than typing, your bit rate is higher, and Claude is excellent at distilling meaningful information from conversational input
-   - Location: `docs/writing/30-days-of-agentic-programming/02-voice-input.md`
+   - Location: `docs/public-content/30-days-series/02-voice-input.md`
    - Posted: https://github.com/dagster-io/internal/discussions/19184
 
 3. **Start with Claude as investigator** ✅ - LLMs excel at synthesizing scattered context into compressed understanding. Software engineering has many read-only tasks that fit this pattern perfectly - use them to build confidence with zero risk
-   - Location: `docs/writing/30-days-of-agentic-programming/03-claude-as-investigator.md`
+   - Location: `docs/public-content/30-days-series/03-claude-as-investigator.md`
    - Posted: https://github.com/dagster-io/internal/discussions/19185
