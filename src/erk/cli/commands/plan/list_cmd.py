@@ -207,8 +207,8 @@ def plan_list_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
     f = click.option(
         "--interval",
         type=float,
-        default=5.0,
-        help="Refresh interval in seconds for watch mode (default: 5.0)",
+        default=15.0,
+        help="Refresh interval in seconds for watch mode (default: 15.0)",
     )(f)
     return f
 
