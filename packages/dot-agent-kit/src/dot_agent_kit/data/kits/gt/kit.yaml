@@ -6,6 +6,9 @@ kit_cli_commands:
   - name: get-pr-commit-message
     path: kit_cli_commands/gt/get_pr_commit_message.py
     description: Extract commit message from PR body for squash operations
+  - name: idempotent-squash
+    path: kit_cli_commands/gt/idempotent_squash.py
+    description: Squash commits idempotently (skips if already single commit)
   - name: land-pr
     path: kit_cli_commands/gt/land_pr.py
     description: Land a single PR from Graphite stack without affecting upstack branches
