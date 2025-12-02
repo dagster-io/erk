@@ -5,6 +5,7 @@ import subprocess
 
 import click
 
+from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.planner.types import RegisteredPlanner
 
@@ -78,12 +79,8 @@ def register_planner(ctx: ErkContext, name: str) -> None:
     )
 
     selected = codespaces[selection - 1]
-    gh_name = selected.get("name", "")
+    gh_name = Ensure.truthy(selected.get("name", ""), "Could not get codespace name.")
     repository = selected.get("repository", "")
-
-    if not gh_name:
-        click.echo("Error: Could not get codespace name.", err=True)
-        raise SystemExit(1)
 
     # Create and register the planner
     planner = RegisteredPlanner(
