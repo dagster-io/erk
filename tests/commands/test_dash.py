@@ -30,8 +30,10 @@ def plan_to_issue(plan: Plan) -> IssueInfo:
 
 
 def test_list_plans_no_filters() -> None:
-    """Test listing all plan issues with no filters."""
-    # Arrange
+    """Test listing all plan issues with no filters (defaults to open plans only)."""
+    from erk_shared.github.fake import FakeGitHub
+
+    # Arrange - Create two OPEN plans (no filter defaults to open state)
     plan1 = Plan(
         plan_identifier="1",
         title="Issue 1",
@@ -48,7 +50,7 @@ def test_list_plans_no_filters() -> None:
         plan_identifier="2",
         title="Issue 2",
         body="",
-        state=PlanState.CLOSED,
+        state=PlanState.OPEN,  # Changed to OPEN to match default behavior
         url="https://github.com/owner/repo/issues/2",
         labels=["erk-plan"],  # Must have erk-plan label to be returned by default
         assignees=[],
@@ -60,7 +62,8 @@ def test_list_plans_no_filters() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
-        ctx = build_workspace_test_context(env, issues=issues)
+        github = FakeGitHub(issues=[plan_to_issue(plan1), plan_to_issue(plan2)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
         result = runner.invoke(cli, ["dash"], obj=ctx)
@@ -76,6 +79,8 @@ def test_list_plans_no_filters() -> None:
 
 def test_list_plans_filter_by_state() -> None:
     """Test filtering plan issues by state."""
+    from erk_shared.github.fake import FakeGitHub
+
     # Arrange
     open_plan = Plan(
         plan_identifier="1",
@@ -107,7 +112,8 @@ def test_list_plans_filter_by_state() -> None:
         issues = FakeGitHubIssues(
             issues={1: plan_to_issue(open_plan), 2: plan_to_issue(closed_plan)}
         )
-        ctx = build_workspace_test_context(env, issues=issues)
+        github = FakeGitHub(issues=[plan_to_issue(open_plan), plan_to_issue(closed_plan)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Filter for open issues
         result = runner.invoke(cli, ["dash", "--state", "open"], obj=ctx)
@@ -122,6 +128,8 @@ def test_list_plans_filter_by_state() -> None:
 
 def test_list_plans_filter_by_labels() -> None:
     """Test filtering plan issues by labels with AND logic."""
+    from erk_shared.github.fake import FakeGitHub
+
     # Arrange
     plan_with_both = Plan(
         plan_identifier="1",
@@ -153,7 +161,8 @@ def test_list_plans_filter_by_labels() -> None:
         issues = FakeGitHubIssues(
             issues={1: plan_to_issue(plan_with_both), 2: plan_to_issue(plan_with_one)}
         )
-        ctx = build_workspace_test_context(env, issues=issues)
+        github = FakeGitHub(issues=[plan_to_issue(plan_with_both), plan_to_issue(plan_with_one)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Filter for both labels (AND logic)
         result = runner.invoke(
@@ -172,8 +181,11 @@ def test_list_plans_filter_by_labels() -> None:
 
 def test_list_plans_with_limit() -> None:
     """Test limiting the number of returned plan issues."""
+    from erk_shared.github.fake import FakeGitHub
+
     # Arrange
     plans_dict: dict[int, IssueInfo] = {}
+    issues_list: list[IssueInfo] = []
     for i in range(1, 6):
         plan = Plan(
             plan_identifier=str(i),
@@ -187,12 +199,15 @@ def test_list_plans_with_limit() -> None:
             updated_at=datetime(2024, 1, i, tzinfo=UTC),
             metadata={},
         )
-        plans_dict[i] = plan_to_issue(plan)
+        issue = plan_to_issue(plan)
+        plans_dict[i] = issue
+        issues_list.append(issue)
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues=plans_dict)
-        ctx = build_workspace_test_context(env, issues=issues)
+        github = FakeGitHub(issues=issues_list)
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
         result = runner.invoke(cli, ["dash", "--limit", "2"], obj=ctx)
@@ -204,6 +219,8 @@ def test_list_plans_with_limit() -> None:
 
 def test_list_plans_combined_filters() -> None:
     """Test combining multiple filters."""
+    from erk_shared.github.fake import FakeGitHub
+
     # Arrange
     matching_plan = Plan(
         plan_identifier="1",
@@ -251,7 +268,14 @@ def test_list_plans_combined_filters() -> None:
                 3: plan_to_issue(wrong_labels_plan),
             }
         )
-        ctx = build_workspace_test_context(env, issues=issues)
+        github = FakeGitHub(
+            issues=[
+                plan_to_issue(matching_plan),
+                plan_to_issue(wrong_state_plan),
+                plan_to_issue(wrong_labels_plan),
+            ]
+        )
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
         result = runner.invoke(
@@ -277,6 +301,8 @@ def test_list_plans_combined_filters() -> None:
 
 def test_list_plans_empty_results() -> None:
     """Test querying with filters that match no issues."""
+    from erk_shared.github.fake import FakeGitHub
+
     # Arrange
     plan = Plan(
         plan_identifier="1",
@@ -294,7 +320,8 @@ def test_list_plans_empty_results() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
-        ctx = build_workspace_test_context(env, issues=issues)
+        github = FakeGitHub(issues=[plan_to_issue(plan)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
         result = runner.invoke(cli, ["dash", "--state", "closed"], obj=ctx)
@@ -351,13 +378,16 @@ Implementation details here."""
     )
 
     # Configure fake GitHub issues
+    from erk_shared.github.fake import FakeGitHub
+
     issues = FakeGitHubIssues(
         issues={867: plan_to_issue(plan1), 868: plan_to_issue(plan2)},
     )
+    github = FakeGitHub(issues=[plan_to_issue(plan1), plan_to_issue(plan2)])
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        ctx = build_workspace_test_context(env, issues=issues)
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
         result = runner.invoke(cli, ["dash"], obj=ctx)
@@ -407,13 +437,16 @@ Issue updated with current worktree name."""
     )
 
     # Configure fake with issue
+    from erk_shared.github.fake import FakeGitHub
+
     issues = FakeGitHubIssues(
         issues={900: plan_to_issue(plan1)},
     )
+    github = FakeGitHub(issues=[plan_to_issue(plan1)])
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        ctx = build_workspace_test_context(env, issues=issues)
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
         result = runner.invoke(cli, ["dash"], obj=ctx)
@@ -475,8 +508,11 @@ def test_list_plans_shows_worktree_from_local_impl() -> None:
         )
 
         # Configure FakeGitHubIssues with issues (no comments)
+        from erk_shared.github.fake import FakeGitHub
+
         issues = FakeGitHubIssues(issues={950: plan_to_issue(plan1)}, comments={})
-        ctx = build_workspace_test_context(env, git=git, issues=issues)
+        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        ctx = build_workspace_test_context(env, git=git, issues=issues, github=github)
 
         # Act
         result = runner.invoke(cli, ["dash"], obj=ctx)
@@ -556,10 +592,13 @@ issue_number: 960
         )
 
         # Configure FakeGitHubIssues with issue and comment
+        from erk_shared.github.fake import FakeGitHub
+
         issues = FakeGitHubIssues(
             issues={960: plan_to_issue(plan1)}, comments={960: [github_comment]}
         )
-        ctx = build_workspace_test_context(env, git=git, issues=issues)
+        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        ctx = build_workspace_test_context(env, git=git, issues=issues, github=github)
 
         # Act
         result = runner.invoke(cli, ["dash"], obj=ctx)
@@ -606,8 +645,11 @@ Plan content."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         # No local worktrees with .impl folders
+        from erk_shared.github.fake import FakeGitHub
+
         issues = FakeGitHubIssues(issues={970: plan_to_issue(plan1)})
-        ctx = build_workspace_test_context(env, issues=issues)
+        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
         result = runner.invoke(cli, ["dash"], obj=ctx)
@@ -682,8 +724,11 @@ def test_list_plans_handles_multiple_local_worktrees() -> None:
         )
 
         # Configure FakeGitHubIssues with issue (no comments)
+        from erk_shared.github.fake import FakeGitHub
+
         issues = FakeGitHubIssues(issues={980: plan_to_issue(plan1)}, comments={})
-        ctx = build_workspace_test_context(env, git=git, issues=issues)
+        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        ctx = build_workspace_test_context(env, git=git, issues=issues, github=github)
 
         # Act
         result = runner.invoke(cli, ["dash"], obj=ctx)
@@ -714,8 +759,11 @@ def test_list_plans_shows_action_state_with_no_queue_label() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
+        from erk_shared.github.fake import FakeGitHub
+
         issues = FakeGitHubIssues(issues={1001: plan_to_issue(plan1)})
-        ctx = build_workspace_test_context(env, issues=issues)
+        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
         result = runner.invoke(cli, ["dash"], obj=ctx)
@@ -743,8 +791,11 @@ def test_list_plans_shows_pending_action_state() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
+        from erk_shared.github.fake import FakeGitHub
+
         issues = FakeGitHubIssues(issues={1002: plan_to_issue(plan1)}, comments={1002: []})
-        ctx = build_workspace_test_context(env, issues=issues)
+        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
         result = runner.invoke(cli, ["dash"], obj=ctx)
@@ -789,8 +840,11 @@ issue_number: 1003
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
+        from erk_shared.github.fake import FakeGitHub
+
         issues = FakeGitHubIssues(issues={1003: plan_to_issue(plan1)}, comments={1003: [comment]})
-        ctx = build_workspace_test_context(env, issues=issues)
+        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
         result = runner.invoke(cli, ["dash"], obj=ctx)
@@ -834,8 +888,11 @@ timestamp: "2024-11-23T12:00:00Z"
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
+        from erk_shared.github.fake import FakeGitHub
+
         issues = FakeGitHubIssues(issues={1004: plan_to_issue(plan1)}, comments={1004: [comment]})
-        ctx = build_workspace_test_context(env, issues=issues)
+        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
         result = runner.invoke(cli, ["dash"], obj=ctx)
@@ -879,8 +936,11 @@ timestamp: "2024-11-23T12:00:00Z"
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
+        from erk_shared.github.fake import FakeGitHub
+
         issues = FakeGitHubIssues(issues={1005: plan_to_issue(plan1)}, comments={1005: [comment]})
-        ctx = build_workspace_test_context(env, issues=issues)
+        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
         result = runner.invoke(cli, ["dash"], obj=ctx)
@@ -968,7 +1028,8 @@ last_dispatched_node_id: 'WFR_running'
             issues={1010: plan_to_issue(queued_plan), 1011: plan_to_issue(running_plan)},
         )
         github = FakeGitHub(
-            workflow_runs_by_node_id={"WFR_queued": queued_run, "WFR_running": running_run}
+            issues=[plan_to_issue(queued_plan), plan_to_issue(running_plan)],
+            workflow_runs_by_node_id={"WFR_queued": queued_run, "WFR_running": running_run},
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
@@ -1060,7 +1121,8 @@ last_dispatched_node_id: 'WFR_failed'
             issues={1020: plan_to_issue(success_plan), 1021: plan_to_issue(failed_plan)},
         )
         github = FakeGitHub(
-            workflow_runs_by_node_id={"WFR_success": success_run, "WFR_failed": failed_run}
+            issues=[plan_to_issue(success_plan), plan_to_issue(failed_plan)],
+            workflow_runs_by_node_id={"WFR_success": success_run, "WFR_failed": failed_run},
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
@@ -1157,8 +1219,8 @@ def test_list_plans_pr_column_open_pr() -> None:
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        # Act - Use --prs flag to show PR columns
-        result = runner.invoke(cli, ["dash", "--prs"], obj=ctx)
+        # Act - PR columns are always visible now
+        result = runner.invoke(cli, ["dash"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1208,8 +1270,8 @@ def test_list_plans_pr_column_draft_pr() -> None:
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        # Act - Use --prs flag to show PR columns
-        result = runner.invoke(cli, ["dash", "--prs"], obj=ctx)
+        # Act - PR columns are always visible now
+        result = runner.invoke(cli, ["dash"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1259,8 +1321,8 @@ def test_list_plans_pr_column_merged_pr() -> None:
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        # Act - Use --prs flag to show PR columns
-        result = runner.invoke(cli, ["dash", "--prs"], obj=ctx)
+        # Act - PR columns are always visible now
+        result = runner.invoke(cli, ["dash"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1310,8 +1372,8 @@ def test_list_plans_pr_column_closed_pr() -> None:
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        # Act - Use --prs flag to show PR columns
-        result = runner.invoke(cli, ["dash", "--prs"], obj=ctx)
+        # Act - PR columns are always visible now
+        result = runner.invoke(cli, ["dash"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1361,8 +1423,8 @@ def test_list_plans_pr_column_with_conflicts() -> None:
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        # Act - Use --prs flag to show PR columns
-        result = runner.invoke(cli, ["dash", "--prs"], obj=ctx)
+        # Act - PR columns are always visible now
+        result = runner.invoke(cli, ["dash"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1427,8 +1489,8 @@ def test_list_plans_pr_column_multiple_prs_prefers_open() -> None:
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        # Act - Use --prs flag to show PR columns
-        result = runner.invoke(cli, ["dash", "--prs"], obj=ctx)
+        # Act - PR columns are always visible now
+        result = runner.invoke(cli, ["dash"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1455,9 +1517,12 @@ def test_list_plans_pr_column_no_pr_linked() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
+        from erk_shared.github.fake import FakeGitHub
+
         issues = FakeGitHubIssues(issues={106: plan_to_issue(plan)})
+        github = FakeGitHub(issues=[plan_to_issue(plan)])
         # No PR linkages configured
-        ctx = build_workspace_test_context(env, issues=issues)
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
         result = runner.invoke(cli, ["dash"], obj=ctx)
@@ -1474,7 +1539,7 @@ def test_list_plans_pr_column_no_pr_linked() -> None:
 
 
 def test_list_plans_all_flag_shows_all_columns() -> None:
-    """Test that --all flag enables both PR and run columns."""
+    """Test that --all flag enables run columns (PR columns always visible)."""
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo, WorkflowRun
 
@@ -1540,16 +1605,16 @@ last_dispatched_node_id: 'WFR_all_flag'
         # Assert
         assert result.exit_code == 0
         assert "#200" in result.output
-        # PR columns should appear (from -P)
+        # PR columns always appear (no longer gated by flag)
         assert "#300" in result.output  # PR number
         assert "👀" in result.output  # Open PR emoji
         assert "✅" in result.output  # Checks passing
-        # Run columns should appear (from -r)
+        # Run columns should appear (from -r via --all)
         assert "99999" in result.output  # run-id
 
 
 def test_list_plans_all_flag_short_form() -> None:
-    """Test that -a short flag works same as --all."""
+    """Test that -a short flag works same as --all (enables run columns)."""
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo, WorkflowRun
 
@@ -1615,10 +1680,10 @@ last_dispatched_node_id: 'WFR_short_flag'
         # Assert
         assert result.exit_code == 0
         assert "#201" in result.output
-        # PR columns should appear
+        # PR columns always appear (no longer gated by flag)
         assert "#301" in result.output  # PR number
         assert "🎉" in result.output  # Merged PR emoji
-        # Run columns should appear
+        # Run columns should appear (from -r via -a)
         assert "88888" in result.output  # run-id
 
 

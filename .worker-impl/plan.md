@@ -33,12 +33,14 @@ Previously, fetching PR linkages required a separate API call (~1500ms), so the 
 ### Step 3: Update tests - Remove -P flag usage and skip_pr_linkages
 
 **Files:**
+
 - `tests/unit/services/test_plan_list_service.py` - Remove `skip_pr_linkages=True` from all test calls
 - `tests/commands/test_dash.py` - Remove tests that use `--prs` flag, update tests that check for PR columns
 
 ### Step 4: Update --all flag behavior
 
 The `--all/-a` flag currently sets both `prs=True` and `runs=True`. After this change:
+
 - Remove `prs = True` assignment (no longer needed)
 - Update help text to "Show all columns (equivalent to -r)" or "Show workflow run columns"
 - Consider if `-a` should just be an alias for `-r` now, or if it should remain for future extensibility

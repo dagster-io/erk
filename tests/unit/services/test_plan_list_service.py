@@ -14,8 +14,8 @@ from erk.core.services.plan_list_service import PlanListData, PlanListService
 class TestPlanListService:
     """Tests for PlanListService with injected fakes."""
 
-    def test_fetches_issues_with_skip_pr_linkages(self) -> None:
-        """Service uses GitHubIssues when skip_pr_linkages=True."""
+    def test_fetches_issues_with_empty_pr_linkages(self) -> None:
+        """Service uses unified query even when no PR linkages exist."""
         now = datetime.now(UTC)
         issue = IssueInfo(
             number=42,
@@ -29,7 +29,7 @@ class TestPlanListService:
             updated_at=now,
         )
         fake_issues = FakeGitHubIssues(issues={42: issue})
-        fake_github = FakeGitHub()
+        fake_github = FakeGitHub(issues=[issue])
 
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
@@ -37,7 +37,6 @@ class TestPlanListService:
             owner="owner",
             repo="repo",
             labels=["erk-plan"],
-            skip_pr_linkages=True,  # Light path
         )
 
         assert len(result.issues) == 1
@@ -102,7 +101,6 @@ class TestPlanListService:
             owner="owner",
             repo="repo",
             labels=["erk-plan"],
-            skip_pr_linkages=True,  # Light path
         )
 
         assert result.issues == []
@@ -150,15 +148,15 @@ class TestPlanListService:
         assert len(result.issues) == 1
         assert result.issues[0].title == "Open Plan"
 
-    def test_state_filter_with_light_path(self) -> None:
-        """Service passes state filter to GitHubIssues when skip_pr_linkages=True."""
+    def test_state_filter_closed(self) -> None:
+        """Service passes state filter to unified get_issues_with_pr_linkages for closed issues."""
         now = datetime.now(UTC)
         open_issue = IssueInfo(
             number=1,
             title="Open Plan",
             body="",
             state="OPEN",
-            url="",
+            url="https://github.com/owner/repo/issues/1",
             labels=["erk-plan"],
             assignees=[],
             created_at=now,
@@ -169,14 +167,14 @@ class TestPlanListService:
             title="Closed Plan",
             body="",
             state="CLOSED",
-            url="",
+            url="https://github.com/owner/repo/issues/2",
             labels=["erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
         )
         fake_issues = FakeGitHubIssues(issues={1: open_issue, 2: closed_issue})
-        fake_github = FakeGitHub()
+        fake_github = FakeGitHub(issues=[open_issue, closed_issue])
 
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
@@ -184,12 +182,11 @@ class TestPlanListService:
             owner="owner",
             repo="repo",
             labels=["erk-plan"],
-            state="open",
-            skip_pr_linkages=True,
+            state="closed",
         )
 
         assert len(result.issues) == 1
-        assert result.issues[0].title == "Open Plan"
+        assert result.issues[0].title == "Closed Plan"
 
 
 class TestWorkflowRunFetching:
