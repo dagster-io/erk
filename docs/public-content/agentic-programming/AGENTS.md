@@ -13,7 +13,7 @@ Articles in this collection follow a three-stage lifecycle:
 ### 📝 Draft Stage
 
 - Article written and saved to appropriate directory
-- File exists in repo (e.g., `docs/writing/30-days-of-agentic-programming/01-intro.md`)
+- File exists in repo (e.g., `docs/public-content/30-days-series/01-intro.md`)
 - Not yet posted publicly
 - Marked with 📝 in `articles/ideas.md`
 - **Criteria:** Has local file, but NO GitHub discussion link

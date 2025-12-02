@@ -13,10 +13,10 @@ This documentation serves two audiences:
 
 This section complements the existing `docs/agent/` folder:
 
-| Section                                | Purpose               | Focus                                                                   |
-| -------------------------------------- | --------------------- | ----------------------------------------------------------------------- |
-| **docs/agentic-engineering-patterns/** | Pattern catalog       | WHAT patterns are (naming, concepts), WHY they exist (design rationale) |
-| **docs/agent/**                        | Implementation guides | HOW to implement (step-by-step, technical details, code examples)       |
+| Section                                          | Purpose               | Focus                                                                   |
+| ------------------------------------------------ | --------------------- | ----------------------------------------------------------------------- |
+| **docs/developer/agentic-engineering-patterns/** | Pattern catalog       | WHAT patterns are (naming, concepts), WHY they exist (design rationale) |
+| **docs/agent/**                                  | Implementation guides | HOW to implement (step-by-step, technical details, code examples)       |
 
 Both sections serve complementary roles in the documentation architecture.
 

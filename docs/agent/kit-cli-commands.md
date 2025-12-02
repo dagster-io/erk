@@ -116,7 +116,7 @@ def execute_discover(session_id: str, cwd: Path) -> None:
 - Data transformation between formats
 - Pattern matching for structured input
 
-**Example:** See the [Kit CLI Push Down pattern](../agentic-engineering-patterns/kit-cli-push-down.md) for a complete example of moving bash parsing logic to tested Python commands.
+**Example:** See the [Kit CLI Push Down pattern](../developer/agentic-engineering-patterns/kit-cli-push-down.md) for a complete example of moving bash parsing logic to tested Python commands.
 
 ## LLM Responsibilities
 
