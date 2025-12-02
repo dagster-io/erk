@@ -256,15 +256,23 @@ def execute_pre_analysis(ops: GtKit | None = None) -> PreAnalysisResult | PreAna
 
     # Step 2.5: Check for merge conflicts (informational only, does not block)
     # First try GitHub API if PR exists (most accurate), then fallback to local git merge-tree
-    pr_number, pr_url = ops.github().get_pr_status(branch_name)
+    pr_status = ops.github().get_pr_status(repo_root, branch_name, debug=False)
 
     # Track conflict info (will be included in success result)
     has_conflicts = False
     conflict_details: dict[str, str] | None = None
 
-    if pr_number is not None:
+    if pr_status.pr_number is not None:
+        pr_number = pr_status.pr_number
         # PR exists - check mergeability
-        mergeable, merge_state = ops.github().get_pr_mergeability(pr_number)
+        mergeability = ops.github().get_pr_mergeability(repo_root, pr_number)
+        if mergeability is None:
+            # API error or PR not found - skip conflict check
+            mergeable = "UNKNOWN"
+            merge_state = "UNKNOWN"
+        else:
+            mergeable = mergeability.mergeable
+            merge_state = mergeability.merge_state_status
 
         if mergeable == "CONFLICTING":
             has_conflicts = True
@@ -605,24 +613,24 @@ def _execute_submit_only(
     click.echo("  ✓ Branch submitted to Graphite", err=True)
 
     # Wait for PR info
-    pr_info = None
     max_retries = 5
     retry_delays = [0.5, 1.0, 2.0, 4.0, 8.0]
+    repo_root = Path(ops.git().get_repository_root())
 
     click.echo("⏳ Waiting for PR info from GitHub API... (gh pr view)", err=True)
 
+    pr_status = ops.github().get_pr_status(repo_root, branch_name, debug=False)
     for attempt in range(max_retries):
         if attempt > 0:
             click.echo(f"   Attempt {attempt + 1}/{max_retries}...", err=True)
-        pr_info = ops.github().get_pr_info()
-        if pr_info is not None:
-            pr_num, _ = pr_info
-            click.echo(f"✓ PR info retrieved (PR #{pr_num})", err=True)
+            pr_status = ops.github().get_pr_status(repo_root, branch_name, debug=False)
+        if pr_status.pr_number is not None:
+            click.echo(f"✓ PR info retrieved (PR #{pr_status.pr_number})", err=True)
             break
         if attempt < max_retries - 1:
             time.sleep(retry_delays[attempt])
 
-    if pr_info is None:
+    if pr_status.pr_number is None:
         return PostAnalysisError(
             success=False,
             error_type="submit_failed",
@@ -630,9 +638,17 @@ def _execute_submit_only(
             details={"branch_name": branch_name},
         )
 
-    pr_number, pr_url = pr_info
-    graphite_url_result = ops.github().get_graphite_pr_url(pr_number)
-    graphite_url = graphite_url_result or ""
+    pr_number = pr_status.pr_number
+    # Get Graphite URL and construct PR URL
+    repo_info = ops.github().get_repo_info(repo_root)
+    if repo_info is not None:
+        pr_url = f"https://github.com/{repo_info.owner}/{repo_info.name}/pull/{pr_number}"
+        graphite_url = ops.main_graphite().get_graphite_url(
+            repo_info.owner, repo_info.name, pr_number
+        )
+    else:
+        pr_url = ""
+        graphite_url = ""
 
     return (pr_number, pr_url, graphite_url, branch_name)
 
@@ -680,8 +696,9 @@ def execute_preflight(
     pr_number, pr_url, graphite_url, branch_name = submit_result
 
     # Step 3: Get PR diff from GitHub API
+    repo_root = Path(ops.git().get_repository_root())
     click.echo(f"📊 Getting PR diff from GitHub... (gh pr diff {pr_number})", err=True)
-    pr_diff = ops.github().get_pr_diff(pr_number)
+    pr_diff = ops.github().get_pr_diff(repo_root, pr_number)
     diff_lines = len(pr_diff.splitlines())
     click.echo(f"✓ PR diff retrieved ({diff_lines} lines)", err=True)
 
@@ -791,9 +808,12 @@ def execute_finalize(
 
     final_body = pr_body + metadata_section
 
+    # Get repo root for GitHub operations
+    repo_root = Path(ops.git().get_repository_root())
+
     # Update PR metadata
     click.echo("📝 Updating PR metadata... (gh pr edit)", err=True)
-    if ops.github().update_pr_metadata(pr_title, final_body):
+    if ops.github().update_pr_title_and_body(repo_root, pr_number, pr_title, final_body):
         click.echo("✓ PR metadata updated", err=True)
     else:
         click.echo("⚠️  Failed to update PR metadata", err=True)
@@ -810,9 +830,16 @@ def execute_finalize(
 
     # Get PR info for result
     branch_name = ops.git().get_current_branch() or "unknown"
-    pr_url_result = ops.github().get_pr_info()
-    pr_url = pr_url_result[1] if pr_url_result else ""
-    graphite_url = ops.github().get_graphite_pr_url(pr_number) or ""
+    # Construct PR URL and get Graphite URL
+    repo_info = ops.github().get_repo_info(repo_root)
+    if repo_info is not None:
+        pr_url = f"https://github.com/{repo_info.owner}/{repo_info.name}/pull/{pr_number}"
+        graphite_url = ops.main_graphite().get_graphite_url(
+            repo_info.owner, repo_info.name, pr_number
+        )
+    else:
+        pr_url = ""
+        graphite_url = ""
 
     return FinalizeResult(
         success=True,

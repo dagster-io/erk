@@ -25,6 +25,7 @@ from erk_shared.github.types import (
     PRInfo,
     PRMergeability,
     PullRequestInfo,
+    RepoInfo,
     WorkflowRun,
     WorkflowRunConclusion,
     WorkflowRunStatus,
@@ -491,21 +492,31 @@ query {{
         *,
         squash: bool = True,
         verbose: bool = False,
-    ) -> None:
+        subject: str | None = None,
+        body: str | None = None,
+    ) -> bool:
         """Merge a pull request on GitHub via gh CLI."""
         cmd = ["gh", "pr", "merge", str(pr_number)]
         if squash:
             cmd.append("--squash")
+        if subject is not None:
+            cmd.extend(["--subject", subject])
+        if body is not None:
+            cmd.extend(["--body", body])
 
-        result = run_subprocess_with_context(
-            cmd,
-            operation_context=f"merge PR #{pr_number}",
-            cwd=repo_root,
-        )
+        try:
+            result = run_subprocess_with_context(
+                cmd,
+                operation_context=f"merge PR #{pr_number}",
+                cwd=repo_root,
+            )
 
-        # Show output in verbose mode
-        if verbose and result.stdout:
-            user_output(result.stdout)
+            # Show output in verbose mode
+            if verbose and result.stdout:
+                user_output(result.stdout)
+            return True
+        except RuntimeError:
+            return False
 
     def _generate_distinct_id(self) -> str:
         """Generate a random base36 ID for workflow dispatch correlation.
@@ -1419,3 +1430,114 @@ query {{
         stdout = execute_gh_command(cmd, repo_root)
         node_id = stdout.strip()
         return node_id if node_id else None
+
+    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get PR title by number using gh CLI.
+
+        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+        availability and authentication.
+        """
+        try:
+            cmd = [
+                "gh",
+                "pr",
+                "view",
+                str(pr_number),
+                "--json",
+                "title",
+                "-q",
+                ".title",
+            ]
+            stdout = execute_gh_command(cmd, repo_root)
+            title = stdout.strip()
+            return title if title else None
+        except (RuntimeError, FileNotFoundError):
+            return None
+
+    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
+        """Get PR body by number using gh CLI.
+
+        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+        availability and authentication.
+        """
+        try:
+            cmd = [
+                "gh",
+                "pr",
+                "view",
+                str(pr_number),
+                "--json",
+                "body",
+                "-q",
+                ".body",
+            ]
+            stdout = execute_gh_command(cmd, repo_root)
+            body = stdout.strip()
+            return body if body else None
+        except (RuntimeError, FileNotFoundError):
+            return None
+
+    def update_pr_title_and_body(
+        self, repo_root: Path, pr_number: int, title: str, body: str
+    ) -> bool:
+        """Update PR title and body using gh CLI.
+
+        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+        availability and authentication.
+        """
+        try:
+            cmd = [
+                "gh",
+                "pr",
+                "edit",
+                str(pr_number),
+                "--title",
+                title,
+                "--body",
+                body,
+            ]
+            execute_gh_command(cmd, repo_root)
+            return True
+        except (RuntimeError, FileNotFoundError):
+            return False
+
+    def mark_pr_ready(self, repo_root: Path, pr_number: int) -> bool:
+        """Mark a draft PR as ready for review using gh CLI.
+
+        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+        availability and authentication.
+        """
+        try:
+            cmd = ["gh", "pr", "ready", str(pr_number)]
+            execute_gh_command(cmd, repo_root)
+            return True
+        except (RuntimeError, FileNotFoundError):
+            return False
+
+    def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
+        """Get the diff for a PR using gh CLI.
+
+        Raises:
+            RuntimeError: If gh command fails
+        """
+        result = run_subprocess_with_context(
+            ["gh", "pr", "diff", str(pr_number)],
+            operation_context=f"get diff for PR #{pr_number}",
+            cwd=repo_root,
+        )
+        return result.stdout
+
+    def get_repo_info(self, repo_root: Path) -> RepoInfo | None:
+        """Get repository owner and name from GitHub CLI.
+
+        Uses `gh repo view --json owner,name` to get repo info.
+        """
+        try:
+            cmd = ["gh", "repo", "view", "--json", "owner,name"]
+            stdout = execute_gh_command(cmd, repo_root)
+            data = json.loads(stdout)
+            owner = data["owner"]["login"]
+            name = data["name"]
+            return RepoInfo(owner=owner, name=name)
+        except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError):
+            return None

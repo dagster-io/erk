@@ -123,8 +123,8 @@ def execute_land_pr(ops: GtKit | None = None) -> LandPrSuccess | LandPrError:
         )
 
     # Step 4: Check PR exists and is open
-    pr_info = kit_ops.github().get_pr_state()
-    if pr_info is None:
+    pr_status = kit_ops.github().get_pr_status(repo_root, branch_name, debug=False)
+    if pr_status.pr_number is None:
         return LandPrError(
             success=False,
             error_type="no_pr_found",
@@ -134,7 +134,8 @@ def execute_land_pr(ops: GtKit | None = None) -> LandPrSuccess | LandPrError:
             details={"current_branch": branch_name},
         )
 
-    pr_number, pr_state = pr_info
+    pr_number = pr_status.pr_number
+    pr_state = pr_status.state
     if pr_state != "OPEN":
         return LandPrError(
             success=False,
@@ -154,12 +155,12 @@ def execute_land_pr(ops: GtKit | None = None) -> LandPrSuccess | LandPrError:
     children = kit_ops.main_graphite().get_child_branches(kit_ops.git(), repo_root, branch_name)
 
     # Step 6: Get PR title and body for merge commit message
-    pr_title = kit_ops.github().get_pr_title()
-    pr_body = kit_ops.github().get_pr_body()
+    pr_title = kit_ops.github().get_pr_title(repo_root, pr_number)
+    pr_body = kit_ops.github().get_pr_body(repo_root, pr_number)
 
     # Merge with squash using title and body
     subject = f"{pr_title} (#{pr_number})" if pr_title else None
-    if not kit_ops.github().merge_pr(subject=subject, body=pr_body):
+    if not kit_ops.github().merge_pr(repo_root, pr_number, subject=subject, body=pr_body):
         return LandPrError(
             success=False,
             error_type="merge_failed",
