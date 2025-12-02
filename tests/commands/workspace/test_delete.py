@@ -66,25 +66,24 @@ def test_delete_dry_run_does_not_delete() -> None:
         assert test_ctx.git.path_exists(wt)
 
 
-def test_delete_dry_run_with_delete_stack() -> None:
-    """Test dry-run with --delete-stack flag prints but doesn't delete branches."""
+def test_delete_dry_run_with_branch() -> None:
+    """Test dry-run with --branch flag prints but doesn't delete branches."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_name = env.cwd.name
-        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-stack"
+        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-branch"
 
         # Build fake git ops with worktree info
         fake_git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature-2")]},
+            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature")]},
             git_common_dirs={env.cwd: env.git_dir},
         )
         git_ops = DryRunGit(fake_git_ops)
 
         # Build graphite ops with branch metadata
         branches = {
-            "main": BranchMetadata.trunk("main", children=["feature-1"]),
-            "feature-1": BranchMetadata.branch("feature-1", "main", children=["feature-2"]),
-            "feature-2": BranchMetadata.branch("feature-2", "feature-1"),
+            "main": BranchMetadata.trunk("main", children=["feature"]),
+            "feature": BranchMetadata.branch("feature", "main"),
         }
 
         test_ctx = env.build_context(
@@ -97,7 +96,7 @@ def test_delete_dry_run_with_delete_stack() -> None:
             existing_paths={wt},
         )
 
-        result = runner.invoke(cli, ["wt", "delete", "test-stack", "-f", "-s"], obj=test_ctx)
+        result = runner.invoke(cli, ["wt", "delete", "test-branch", "-f", "-b"], obj=test_ctx)
 
         assert_cli_success(result, "[DRY RUN]", "Would run: gt delete")
         assert len(fake_git_ops.deleted_branches) == 0  # No actual deletion
@@ -174,23 +173,23 @@ def test_delete_changes_directory_when_in_target_worktree() -> None:
         assert_cli_success(result, "Changing directory to repository root", str(env.cwd))
 
 
-def test_delete_with_delete_stack_handles_user_decline() -> None:
-    """Test that delete -s gracefully handles user declining gt delete prompt."""
+def test_delete_with_branch_handles_user_decline() -> None:
+    """Test that delete -b gracefully handles user declining gt delete prompt."""
     import subprocess
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_name = env.cwd.name
-        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-stack"
+        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-branch"
 
         # Build fake git ops with worktree info and configured exception
         fake_git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature-2")]},
+            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature")]},
             git_common_dirs={env.cwd: env.git_dir},
             delete_branch_raises={
-                "feature-1": subprocess.CalledProcessError(
+                "feature": subprocess.CalledProcessError(
                     returncode=1,
-                    cmd=["gt", "delete", "feature-1"],
+                    cmd=["gt", "delete", "feature"],
                     stderr=None,  # User decline doesn't produce stderr
                 )
             },
@@ -198,9 +197,8 @@ def test_delete_with_delete_stack_handles_user_decline() -> None:
 
         # Build graphite ops with branch metadata
         branches = {
-            "main": BranchMetadata.trunk("main", children=["feature-1"]),
-            "feature-1": BranchMetadata.branch("feature-1", "main", children=["feature-2"]),
-            "feature-2": BranchMetadata.branch("feature-2", "feature-1"),
+            "main": BranchMetadata.trunk("main", children=["feature"]),
+            "feature": BranchMetadata.branch("feature", "main"),
         }
 
         test_ctx = env.build_context(
@@ -212,73 +210,85 @@ def test_delete_with_delete_stack_handles_user_decline() -> None:
             existing_paths={wt},
         )
 
-        result = runner.invoke(cli, ["wt", "delete", "test-stack", "-s"], obj=test_ctx, input="y\n")
+        result = runner.invoke(
+            cli, ["wt", "delete", "test-branch", "-b"], obj=test_ctx, input="y\n"
+        )
 
         # Should NOT crash - should exit gracefully
         assert result.exit_code == 0, result.output
         assert "Skipped deletion" in result.output or "user declined" in result.output.lower()
-        assert "feature-2" not in fake_git_ops.deleted_branches  # Remaining branch not deleted
+        assert "feature" not in fake_git_ops.deleted_branches  # Branch not deleted
 
 
-def test_delete_with_delete_stack_handles_gt_not_found() -> None:
-    """Test that delete -s shows installation instructions when gt not found."""
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        repo_name = env.cwd.name
-        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-stack"
-
-        fake_git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature-1")]},
-            git_common_dirs={env.cwd: env.git_dir},
-            delete_branch_raises={
-                "feature-1": FileNotFoundError("gt command not found"),
-            },
-        )
-
-        branches = {
-            "main": BranchMetadata.trunk("main", children=["feature-1"]),
-            "feature-1": BranchMetadata.branch("feature-1", "main"),
-        }
-
-        test_ctx = env.build_context(
-            use_graphite=True,
-            git=fake_git_ops,
-            github=FakeGitHub(),
-            graphite=FakeGraphite(branches=branches),
-            shell=FakeShell(),
-            existing_paths={wt},
-        )
-
-        result = runner.invoke(cli, ["wt", "delete", "test-stack", "-f", "-s"], obj=test_ctx)
-
-        # For case-insensitive checks, verify we can find the patterns
-        output_lower = result.output.lower()
-        assert_cli_error(result, 1)
-        assert "gt" in output_lower
-        assert "install" in output_lower or "brew" in output_lower
-
-
-def test_delete_with_delete_stack_requires_graphite() -> None:
-    """Test that --delete-stack requires use_graphite to be enabled."""
+def test_delete_with_branch_without_graphite() -> None:
+    """Test that --branch works without Graphite enabled (uses git branch -d)."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_name = env.cwd.name
         wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-branch"
 
-        # Build context with use_graphite=False (default)
-        test_ctx = build_workspace_test_context(env, existing_paths={wt})
+        # Build fake git ops with worktree info
+        fake_git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature")]},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
 
-        # Execute: Run delete with --delete-stack when graphite is disabled
+        # Build context with use_graphite=False (default)
+        test_ctx = env.build_context(
+            use_graphite=False,
+            git=fake_git_ops,
+            github=FakeGitHub(),
+            shell=FakeShell(),
+            existing_paths={wt},
+        )
+
+        # Execute: Run delete with --branch when graphite is disabled
         result = runner.invoke(
             cli,
-            ["wt", "delete", "test-branch", "--delete-stack", "-f"],
+            ["wt", "delete", "test-branch", "--branch", "-f"],
             obj=test_ctx,
         )
 
-        # Assert: Command should fail with appropriate error
-        assert_cli_error(
-            result,
-            1,
-            "--delete-stack requires Graphite to be enabled",
-            "erk config set use_graphite true",
+        # Assert: Command should succeed and use git branch -d
+        assert_cli_success(result)
+        assert "feature" in fake_git_ops.deleted_branches
+
+
+def test_delete_with_branch_with_graphite() -> None:
+    """Test that --branch with Graphite enabled uses gt delete."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_name = env.cwd.name
+        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-branch"
+
+        # Build fake git ops with worktree info
+        fake_git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature")]},
+            git_common_dirs={env.cwd: env.git_dir},
         )
+
+        # Build graphite ops with branch metadata
+        branches = {
+            "main": BranchMetadata.trunk("main", children=["feature"]),
+            "feature": BranchMetadata.branch("feature", "main"),
+        }
+
+        test_ctx = env.build_context(
+            use_graphite=True,
+            git=fake_git_ops,
+            github=FakeGitHub(),
+            graphite=FakeGraphite(branches=branches),
+            shell=FakeShell(),
+            existing_paths={wt},
+        )
+
+        # Execute: Run delete with --branch when graphite is enabled
+        result = runner.invoke(
+            cli,
+            ["wt", "delete", "test-branch", "--branch", "-f"],
+            obj=test_ctx,
+        )
+
+        # Assert: Command should succeed and branch should be deleted
+        assert_cli_success(result)
+        assert "feature" in fake_git_ops.deleted_branches

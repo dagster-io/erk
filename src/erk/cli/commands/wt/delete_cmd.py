@@ -16,7 +16,6 @@ from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext, create_context, regenerate_context
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.core.worktree_utils import (
-    filter_non_trunk_branches,
     find_worktree_containing_path,
     get_worktree_branch,
 )
@@ -60,192 +59,222 @@ def _prune_worktrees_safe(git_ops: Git, repo_root: Path) -> None:
         pass
 
 
+def _escape_worktree_if_inside(
+    ctx: ErkContext, repo_root: Path, wt_path: Path, dry_run: bool
+) -> ErkContext:
+    """Change to repository root if currently inside the worktree being deleted.
+
+    Prevents the shell from being left in a deleted directory. Returns a new
+    context if directory was changed (context is immutable), otherwise returns
+    the original context.
+    """
+    if not ctx.git.path_exists(ctx.cwd):
+        return ctx
+
+    current_dir = ctx.cwd.resolve()
+    worktrees = ctx.git.list_worktrees(repo_root)
+    current_worktree_path = find_worktree_containing_path(worktrees, current_dir)
+
+    if current_worktree_path is None:
+        return ctx
+
+    if current_worktree_path.resolve() != wt_path.resolve():
+        return ctx
+
+    # Change to repository root before deletion
+    user_output(
+        click.style("ℹ️  ", fg="blue", bold=True)
+        + f"Changing directory to repository root: {click.style(str(repo_root), fg='cyan')}"
+    )
+
+    # Change directory using safe_chdir which handles both real and sentinel paths
+    if not dry_run and ctx.git.safe_chdir(repo_root):
+        # Regenerate context with new cwd (context is immutable)
+        return regenerate_context(ctx)
+
+    return ctx
+
+
+def _collect_branch_to_delete(
+    ctx: ErkContext, repo_root: Path, wt_path: Path, name: str
+) -> str | None:
+    """Get the branch checked out on the worktree, if any.
+
+    Returns the branch name, or None if in detached HEAD state.
+    """
+    worktrees = ctx.git.list_worktrees(repo_root)
+    worktree_branch = get_worktree_branch(worktrees, wt_path)
+
+    if worktree_branch is None:
+        user_output(
+            f"Warning: Worktree {name} is in detached HEAD state. Cannot delete branch.",
+        )
+        return None
+
+    return worktree_branch
+
+
+def _display_planned_operations(wt_path: Path, branch_to_delete: str | None) -> None:
+    """Display the operations that will be performed."""
+    user_output(click.style("📋 Planning to perform the following operations:", bold=True))
+    worktree_text = click.style(str(wt_path), fg="cyan")
+    user_output(f"  1. 🗑️  Delete worktree: {worktree_text}")
+    if branch_to_delete:
+        branch_text = click.style(branch_to_delete, fg="yellow")
+        user_output(f"  2. 🌳 Delete branch: {branch_text}")
+
+
+def _confirm_operations(force: bool, dry_run: bool) -> bool:
+    """Prompt for confirmation unless force or dry-run mode.
+
+    Returns True if operations should proceed, False if aborted.
+    """
+    if force or dry_run:
+        return True
+
+    prompt_text = click.style("Proceed with these operations?", fg="yellow", bold=True)
+    if not click.confirm(f"\n{prompt_text}", default=False):
+        user_output(click.style("⭕ Aborted.", fg="red", bold=True))
+        return False
+
+    return True
+
+
+def _delete_worktree_directory(ctx: ErkContext, repo_root: Path, wt_path: Path) -> None:
+    """Delete the worktree directory from filesystem.
+
+    First attempts git worktree remove, then manually deletes if still present.
+    This function encapsulates the legitimate error boundary for shutil.rmtree
+    because in pure test mode, the path may be a sentinel that doesn't exist
+    on the real filesystem.
+    """
+    # Try to delete via git first - this updates git's metadata when possible
+    _try_git_worktree_delete(ctx.git, repo_root, wt_path)
+
+    # Always manually delete directory if it still exists
+    if not ctx.git.path_exists(wt_path):
+        return
+
+    if ctx.dry_run:
+        user_output(f"[DRY RUN] Would delete directory: {wt_path}")
+        return
+
+    # Only call shutil.rmtree() if we're on a real filesystem.
+    # In pure test mode, we skip the actual deletion since it's a sentinel path.
+    # This violates LBYL because there's no reliable way to distinguish sentinel
+    # paths from real paths that have been deleted between the path_exists check
+    # and the rmtree call (race condition).
+    try:
+        shutil.rmtree(wt_path)
+    except OSError:
+        # Path doesn't exist on real filesystem (sentinel path), skip deletion
+        pass
+
+    # Prune worktree metadata to clean up any stale references
+    _prune_worktrees_safe(ctx.git, repo_root)
+
+
+def _delete_branch_at_error_boundary(
+    ctx: ErkContext,
+    repo_root: Path,
+    branch: str,
+    force: bool,
+    dry_run: bool,
+) -> None:
+    """Delete a branch after its worktree has been removed.
+
+    This function encapsulates a legitimate error boundary because:
+    1. `gt delete` prompts for user confirmation, which can be declined (exit 1)
+    2. `git branch -d` may fail if branch is not fully merged
+    3. There's no LBYL way to predict user's response to interactive prompt
+    4. This is a CLI error boundary - appropriate place per AGENTS.md
+
+    The exception handling distinguishes between user-declined (expected) and
+    actual errors (propagated as SystemExit).
+    """
+    use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
+    try:
+        if use_graphite:
+            ctx.git.delete_branch_with_graphite(repo_root, branch, force=force)
+        else:
+            ctx.git.delete_branch(repo_root, branch, force=force)
+        if not dry_run:
+            branch_text = click.style(branch, fg="green")
+            user_output(f"✅ Deleted branch: {branch_text}")
+    except subprocess.CalledProcessError as e:
+        _handle_branch_deletion_error(e, branch, force)
+
+
+def _handle_branch_deletion_error(
+    e: subprocess.CalledProcessError, branch: str, force: bool
+) -> None:
+    """Handle errors from branch deletion commands.
+
+    This function encapsulates the error boundary logic for branch deletion.
+    Exit code 1 with --force off typically means user declined the confirmation
+    prompt, which is expected behavior. Other errors are propagated as SystemExit.
+    """
+    branch_text = click.style(branch, fg="yellow")
+    if e.returncode == 1 and not force:
+        # User declined - this is expected behavior, not an error
+        user_output(
+            f"⭕ Skipped deletion of branch: {branch_text} (user declined or not eligible)"
+        )
+    else:
+        # Other error (branch doesn't exist, git failure, etc.)
+        error_detail = e.stderr.strip() if e.stderr else f"exit code {e.returncode}"
+        user_output(
+            click.style("Error: ", fg="red")
+            + f"Failed to delete branch {branch_text}: {error_detail}"
+        )
+        raise SystemExit(1) from e
+
+
 def _delete_worktree(
     ctx: ErkContext,
     name: str,
     force: bool,
-    delete_stack: bool,
+    delete_branch: bool,
     dry_run: bool,
     quiet: bool = False,
 ) -> None:
     """Internal function to delete a worktree.
 
-    Uses git worktree remove when possible, but falls back to direct rmtree
-    if git fails (e.g., worktree already deleted from git metadata but directory exists).
-    This is acceptable exception handling because there's no reliable way to check
-    a priori if git worktree remove will succeed - the worktree might be in various
-    states of partial deletion.
-
     Args:
         ctx: Erk context with git operations
         name: Name of the worktree to delete
-        force: Skip confirmation prompts
-        delete_stack: Delete all branches in the Graphite stack (requires Graphite)
+        force: Skip confirmation prompts and use -D for branch deletion
+        delete_branch: Delete the branch checked out on the worktree
         dry_run: Print what would be done without executing destructive operations
         quiet: Suppress planning output (still shows final confirmation)
     """
-    # Create dry-run context if needed
     if dry_run:
         ctx = create_context(dry_run=True)
 
-    # Validate worktree name before any operations
     validate_worktree_name_for_deletion(name)
 
-    # Use ctx.cwd which is kept up-to-date by regenerate_context() after directory changes.
-    # In pure test mode, ctx.cwd is a sentinel path; in production, it's updated
-    # by regenerate_context() to match the actual OS cwd after safe_chdir() calls.
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
     wt_path = worktree_path_for(repo.worktrees_dir, name)
 
-    # Check if worktree exists using git operations (works with both real and sentinel paths)
     Ensure.path_exists(ctx, wt_path, f"Worktree not found: {wt_path}")
 
-    # LBYL: Check if user is currently in the worktree being deleted
-    # If so, change to repository root before deletion to prevent
-    # shell from being in deleted directory
-    if ctx.git.path_exists(ctx.cwd):
-        current_dir = ctx.cwd.resolve()
-        worktrees = ctx.git.list_worktrees(repo.root)
-        current_worktree_path = find_worktree_containing_path(worktrees, current_dir)
+    ctx = _escape_worktree_if_inside(ctx, repo.root, wt_path, dry_run)
 
-        if (
-            current_worktree_path is not None
-            and current_worktree_path.resolve() == wt_path.resolve()
-        ):
-            # Change to repository root before deletion
-            safe_dir = repo.root
-            user_output(
-                click.style("ℹ️  ", fg="blue", bold=True)
-                + f"Changing directory to repository root: {click.style(str(safe_dir), fg='cyan')}"
-            )
+    branch_to_delete: str | None = None
+    if delete_branch:
+        branch_to_delete = _collect_branch_to_delete(ctx, repo.root, wt_path, name)
 
-            # Change directory using safe_chdir which handles both real and sentinel paths
-            if not dry_run and ctx.git.safe_chdir(safe_dir):
-                # Regenerate context with new cwd (context is immutable)
-                ctx = regenerate_context(ctx)
+    if not quiet:
+        _display_planned_operations(wt_path, branch_to_delete)
 
-    # Step 1: Collect all operations to perform
-    branches_to_delete: list[str] = []
-    if delete_stack:
-        use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
-        Ensure.invariant(
-            use_graphite,
-            "--delete-stack requires Graphite to be enabled. "
-            "Run 'erk config set use_graphite true'",
-        )
+    if not _confirm_operations(force, dry_run):
+        return
 
-        # Get the branches in the stack before deleting the worktree
-        worktrees = ctx.git.list_worktrees(repo.root)
-        worktree_branch = get_worktree_branch(worktrees, wt_path)
+    _delete_worktree_directory(ctx, repo.root, wt_path)
 
-        if worktree_branch is None:
-            user_output(
-                f"Warning: Worktree {name} is in detached HEAD state. "
-                "Cannot delete stack without a branch.",
-            )
-        else:
-            stack = ctx.graphite.get_branch_stack(ctx.git, repo.root, worktree_branch)
-            if stack is None:
-                user_output(
-                    f"Warning: Branch {worktree_branch} is not tracked by Graphite. "
-                    "Cannot delete stack.",
-                )
-            else:
-                # Get all branches and filter to non-trunk branches
-                all_branches = ctx.graphite.get_all_branches(ctx.git, repo.root)
-                if not all_branches:
-                    raise ValueError("Graphite cache not available")
-                branches_to_delete = filter_non_trunk_branches(all_branches, stack)
-
-                if not branches_to_delete:
-                    user_output("No branches to delete (all branches in stack are trunk branches).")
-
-    # Step 2: Display all planned operations
-    if not quiet:  # Only show planning if not in quiet mode
-        if branches_to_delete or True:
-            user_output(click.style("📋 Planning to perform the following operations:", bold=True))
-            worktree_text = click.style(str(wt_path), fg="cyan")
-            user_output(f"  1. 🗑️  Delete worktree: {worktree_text}")
-            if branches_to_delete:
-                user_output("  2. 🌳 Delete branches in stack:")
-                for branch in branches_to_delete:
-                    branch_text = click.style(branch, fg="yellow")
-                    user_output(f"     - {branch_text}")
-
-    # Step 3: Single confirmation prompt (unless --force or --dry-run)
-    if not force and not dry_run:
-        prompt_text = click.style("Proceed with these operations?", fg="yellow", bold=True)
-        if not click.confirm(f"\n{prompt_text}", default=False):
-            user_output(click.style("⭕ Aborted.", fg="red", bold=True))
-            return
-
-    # Step 4: Execute operations
-
-    # 4a. Try to delete via git first
-    # This updates git's metadata when possible
-    _try_git_worktree_delete(ctx.git, repo.root, wt_path)
-
-    # 4b. Always manually delete directory if it still exists
-    # (git worktree remove may have succeeded or failed, but directory might still be there)
-    # Use git_ops.path_exists() instead of .exists() to work with both real and sentinel paths
-    if ctx.git.path_exists(wt_path):
-        if ctx.dry_run:
-            user_output(f"[DRY RUN] Would delete directory: {wt_path}")
-        else:
-            # Only call shutil.rmtree() if we're on a real filesystem
-            # In pure test mode, we skip the actual deletion since it's a sentinel path
-            try:
-                shutil.rmtree(wt_path)
-            except OSError:
-                # Path doesn't exist on real filesystem (sentinel path), skip deletion
-                pass
-
-    # 4c. Prune worktree metadata to clean up any stale references
-    # This is important if git worktree remove failed or if we manually deleted
-    # Trust DryRunGit wrapper to handle dry-run behavior
-    _prune_worktrees_safe(ctx.git, repo.root)
-
-    # 4c. Delete stack branches (now that worktree is removed)
-    # Exception handling here is acceptable because:
-    # 1. gt delete prompts for user confirmation, which can be declined (exit 1)
-    # 2. There's no LBYL way to predict user's response to interactive prompt
-    # 3. This is a CLI error boundary - appropriate place per AGENTS.md
-    if branches_to_delete:
-        for branch in branches_to_delete:
-            try:
-                ctx.git.delete_branch_with_graphite(repo.root, branch, force=force)
-                if not dry_run:
-                    branch_text = click.style(branch, fg="green")
-                    user_output(f"✅ Deleted branch: {branch_text}")
-            except subprocess.CalledProcessError as e:
-                # User declined deletion or branch doesn't exist
-                # Exit code 1 typically means user said "no" to confirmation prompt
-                branch_text = click.style(branch, fg="yellow")
-                if e.returncode == 1 and not force:
-                    # User declined - this is expected behavior, not an error
-                    user_output(
-                        f"⭕ Skipped deletion of branch: {branch_text} "
-                        f"(user declined or not eligible)"
-                    )
-                    user_output("Remaining branches in stack were not deleted.")
-                    break  # Stop processing remaining branches
-                else:
-                    # Other error (branch doesn't exist, git failure, etc.)
-                    error_detail = e.stderr.strip() if e.stderr else f"exit code {e.returncode}"
-                    user_output(
-                        click.style("Error: ", fg="red")
-                        + f"Failed to delete branch {branch_text}: {error_detail}"
-                    )
-                    raise SystemExit(1) from e
-            except FileNotFoundError:
-                # gt command not found
-                user_output(
-                    click.style("Error: ", fg="red")
-                    + "'gt' command not found. Install Graphite CLI: "
-                    "brew install withgraphite/tap/graphite"
-                )
-                raise SystemExit(1) from None
+    if branch_to_delete:
+        _delete_branch_at_error_boundary(ctx, repo.root, branch_to_delete, force, dry_run)
 
     if not dry_run:
         path_text = click.style(str(wt_path), fg="green")
@@ -256,10 +285,10 @@ def _delete_worktree(
 @click.argument("name", metavar="NAME", shell_complete=complete_worktree_names)
 @click.option("-f", "--force", is_flag=True, help="Do not prompt for confirmation.")
 @click.option(
-    "-s",
-    "--delete-stack",
+    "-b",
+    "--branch",
     is_flag=True,
-    help="Delete all branches in the Graphite stack (requires Graphite).",
+    help="Delete the branch checked out on the worktree.",
 )
 @click.option(
     "--dry-run",
@@ -269,10 +298,10 @@ def _delete_worktree(
     help="Print what would be done without executing destructive operations.",
 )
 @click.pass_obj
-def delete_wt(ctx: ErkContext, name: str, force: bool, delete_stack: bool, dry_run: bool) -> None:
+def delete_wt(ctx: ErkContext, name: str, force: bool, branch: bool, dry_run: bool) -> None:
     """Delete the worktree directory.
 
-    With `-f/--force`, skips the confirmation prompt.
+    With `-f/--force`, skips the confirmation prompt and uses -D for branch deletion.
     Attempts `git worktree remove` before deleting the directory.
     """
-    _delete_worktree(ctx, name, force, delete_stack, dry_run)
+    _delete_worktree(ctx, name, force, branch, dry_run)
