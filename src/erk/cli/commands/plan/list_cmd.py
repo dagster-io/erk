@@ -27,7 +27,11 @@ from erk.core.display_utils import (
     format_workflow_run_id,
     get_workflow_run_state,
 )
+from erk.core.pr_utils import select_display_pr
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk.tui.app import ErkDashApp
+from erk.tui.data.provider import RealPlanDataProvider
+from erk.tui.data.types import PlanFilters
 
 
 def _issue_to_plan(issue: IssueInfo) -> Plan:
@@ -54,33 +58,6 @@ def _issue_to_plan(issue: IssueInfo) -> Plan:
         updated_at=issue.updated_at,
         metadata={"number": issue.number},
     )
-
-
-def select_display_pr(prs: list[PullRequestInfo]) -> PullRequestInfo | None:
-    """Select PR to display: prefer open, then merged, then closed.
-
-    Args:
-        prs: List of PRs sorted by created_at descending (most recent first)
-
-    Returns:
-        PR to display, or None if no PRs
-    """
-    # Check for open PRs (published or draft)
-    open_prs = [pr for pr in prs if pr.state in ("OPEN", "DRAFT")]
-    if open_prs:
-        return open_prs[0]  # Most recent open
-
-    # Fallback to merged PRs
-    merged_prs = [pr for pr in prs if pr.state == "MERGED"]
-    if merged_prs:
-        return merged_prs[0]  # Most recent merged
-
-    # Fallback to closed PRs
-    closed_prs = [pr for pr in prs if pr.state == "CLOSED"]
-    if closed_prs:
-        return closed_prs[0]  # Most recent closed
-
-    return None
 
 
 def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str | None) -> str:
@@ -202,6 +179,13 @@ def plan_list_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
         type=float,
         default=15.0,
         help="Refresh interval in seconds for watch mode (default: 15.0)",
+    )(f)
+    f = click.option(
+        "--interactive",
+        "-i",
+        is_flag=True,
+        default=False,
+        help="Interactive TUI mode with keyboard navigation",
     )(f)
     return f
 
@@ -518,6 +502,58 @@ def _run_watch_loop(
         live_display.stop()
 
 
+def _run_interactive_mode(
+    ctx: ErkContext,
+    label: tuple[str, ...],
+    state: str | None,
+    run_state: str | None,
+    runs: bool,
+    prs: bool,
+    limit: int | None,
+    interval: float,
+) -> None:
+    """Run interactive TUI mode.
+
+    Args:
+        ctx: ErkContext with all dependencies
+        label: Labels to filter by
+        state: State filter ("open", "closed", or None)
+        run_state: Workflow run state filter
+        runs: Whether to show run columns
+        prs: Whether to show PR columns
+        limit: Maximum number of results
+        interval: Refresh interval in seconds
+    """
+    repo = discover_repo_context(ctx, ctx.cwd)
+    ensure_erk_metadata_dir(repo)
+    repo_root = repo.root
+
+    # Resolve owner/repo from git remote
+    repo_info = ctx.github.get_repo_info(repo_root)
+    if repo_info is None:
+        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+        raise SystemExit(1)
+    owner, repo_name = repo_info
+
+    # Build labels - default to ["erk-plan"]
+    labels = label if label else ("erk-plan",)
+
+    # Create data provider and filters
+    provider = RealPlanDataProvider(ctx, repo_root, owner, repo_name)
+    filters = PlanFilters(
+        labels=labels,
+        state=state,
+        run_state=run_state,
+        limit=limit,
+        show_prs=prs,
+        show_runs=runs,
+    )
+
+    # Run the TUI app
+    app = ErkDashApp(provider, filters, refresh_interval=interval)
+    app.run()
+
+
 @click.command("dash")
 @plan_list_options
 @click.pass_obj
@@ -531,6 +567,7 @@ def dash(
     show_all: bool,
     watch: bool,
     interval: float,
+    interactive: bool,
 ) -> None:
     """Display plan dashboard with optional filters.
 
@@ -546,12 +583,18 @@ def dash(
         erk dash --runs
         erk dash --all
         erk dash -a
+        erk dash -i
+        erk dash --interactive
     """
     # Handle --all flag (equivalent to -r)
-    if show_all:
+    # Interactive mode implies --all for full dashboard view
+    prs = True  # Always show PRs
+    if show_all or interactive:
         runs = True
 
-    if watch:
+    if interactive:
+        _run_interactive_mode(ctx, label, state, run_state, runs, prs, limit, interval)
+    elif watch:
         live_display = RealLiveDisplay()
 
         def build_fn() -> tuple[Table | None, int]:
