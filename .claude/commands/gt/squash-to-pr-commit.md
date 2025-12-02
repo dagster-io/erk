@@ -1,0 +1,1 @@
+../../../packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/commands/gt/squash-to-pr-commit.md

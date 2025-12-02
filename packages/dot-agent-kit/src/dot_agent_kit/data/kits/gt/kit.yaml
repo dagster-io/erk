@@ -3,6 +3,9 @@ version: 0.1.0
 description: Graphite stack management with landing and submission commands
 license: See LICENSE.md
 kit_cli_commands:
+  - name: get-pr-commit-message
+    path: kit_cli_commands/gt/get_pr_commit_message.py
+    description: Extract commit message from PR body for squash operations
   - name: land-pr
     path: kit_cli_commands/gt/land_pr.py
     description: Land a single PR from Graphite stack without affecting upstack branches
@@ -23,6 +26,7 @@ artifacts:
     - commands/gt/pr-prep.md
     - commands/gt/pr-submit.md
     - commands/gt/pr-update.md
+    - commands/gt/squash-to-pr-commit.md
   skill:
     - skills/gt-graphite/SKILL.md
     - skills/gt-graphite/references/gt-reference.md
