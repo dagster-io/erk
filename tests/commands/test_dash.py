@@ -1620,3 +1620,45 @@ last_dispatched_node_id: 'WFR_short_flag'
         assert "🎉" in result.output  # Merged PR emoji
         # Run columns should appear
         assert "88888" in result.output  # run-id
+
+
+def test_dash_displays_impl_column_headers() -> None:
+    """Verify local-impl and remote-impl column headers render correctly."""
+    # Arrange - Create plan with local and remote impl timestamps
+    body_with_impl = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+last_local_impl_at: '2024-11-20T10:00:00Z'
+last_remote_impl_at: '2024-11-21T12:00:00Z'
+```
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    plan = Plan(
+        plan_identifier="1",
+        title="Test Plan",
+        body=body_with_impl,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/1",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"number": 1},
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
+        ctx = build_workspace_test_context(env, issues=issues)
+
+        # Act - Use --runs to show both local-impl and remote-impl columns
+        result = runner.invoke(cli, ["dash", "--runs"], obj=ctx)
+
+        # Assert - Column headers should appear in output
+        assert result.exit_code == 0
+        assert "local-impl" in result.output
+        assert "remote-impl" in result.output
