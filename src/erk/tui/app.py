@@ -4,8 +4,8 @@ import asyncio
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import click
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -17,6 +17,9 @@ from erk.tui.data.provider import PlanDataProvider
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
+
+if TYPE_CHECKING:
+    from erk.tui.context import ErkDashContext
 
 
 class HelpScreen(ModalScreen):
@@ -119,6 +122,8 @@ class ErkDashApp(App):
         provider: PlanDataProvider,
         filters: PlanFilters,
         refresh_interval: float = 15.0,
+        *,
+        dash_ctx: "ErkDashContext | None" = None,
     ) -> None:
         """Initialize the dashboard app.
 
@@ -126,11 +131,14 @@ class ErkDashApp(App):
             provider: Data provider for fetching plan data
             filters: Filter options for the plan list
             refresh_interval: Seconds between auto-refresh (0 to disable)
+            dash_ctx: Optional ErkDashContext for dependency injection.
+                If None, uses default browser behavior (click.launch).
         """
         super().__init__()
         self._provider = provider
         self._plan_filters = filters
         self._refresh_interval = refresh_interval
+        self._dash_ctx = dash_ctx
         self._table: PlanDataTable | None = None
         self._status_bar: StatusBar | None = None
         self._rows: list[PlanRowData] = []
@@ -250,7 +258,7 @@ class ErkDashApp(App):
             return
 
         if row.issue_url:
-            click.launch(row.issue_url)
+            self._launch_url(row.issue_url)
             if self._status_bar is not None:
                 self._status_bar.set_message(f"Opened issue #{row.issue_number}")
 
@@ -261,7 +269,7 @@ class ErkDashApp(App):
             return
 
         if row.pr_url:
-            click.launch(row.pr_url)
+            self._launch_url(row.pr_url)
             if self._status_bar is not None:
                 self._status_bar.set_message(f"Opened PR #{row.pr_number}")
         else:
@@ -323,6 +331,20 @@ class ErkDashApp(App):
         if self._table is None:
             return None
         return self._table.get_selected_row_data()
+
+    def _launch_url(self, url: str) -> None:
+        """Launch URL in browser using injected or default launcher.
+
+        Args:
+            url: The URL to open in the browser
+        """
+        if self._dash_ctx is not None:
+            self._dash_ctx.browser.launch(url)
+        else:
+            # Fallback for backwards compatibility (tests without dash_ctx)
+            import click
+
+            click.launch(url)
 
     @on(PlanDataTable.RowSelected)
     def on_row_selected(self, event: PlanDataTable.RowSelected) -> None:
