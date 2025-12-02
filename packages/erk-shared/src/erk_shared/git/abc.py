@@ -72,34 +72,31 @@ class Git(ABC):
         ...
 
     @abstractmethod
-    def detect_default_branch(self, repo_root: Path, configured: str | None = None) -> str:
-        """Detect the default branch (main or master).
+    def detect_trunk_branch(self, repo_root: Path) -> str:
+        """Auto-detect the trunk branch name for the repository.
+
+        Detects trunk by checking git's remote HEAD reference. Falls back to
+        checking for existence of common trunk branch names ('main', 'master').
+        Never fails - returns 'main' as final fallback if detection unsuccessful.
 
         Args:
             repo_root: Path to the repository root
-            configured: Optional configured trunk branch name. If provided, validates
-                       that this branch exists. If None, uses auto-detection.
 
         Returns:
-            The trunk branch name
-
-        Raises:
-            SystemExit: If configured branch doesn't exist or no trunk can be detected
+            Trunk branch name (e.g., 'main', 'master', or 'main' as fallback)
         """
         ...
 
     @abstractmethod
-    def get_trunk_branch(self, repo_root: Path) -> str:
-        """Get the trunk branch name for the repository.
-
-        Detects trunk by checking git's remote HEAD reference. Falls back to
-        checking for existence of common trunk branch names if detection fails.
+    def validate_trunk_branch(self, repo_root: Path, name: str) -> None:
+        """Validate that a configured trunk branch exists in the repository.
 
         Args:
             repo_root: Path to the repository root
+            name: Branch name to validate
 
-        Returns:
-            Trunk branch name (e.g., 'main', 'master')
+        Raises:
+            RuntimeError: If branch doesn't exist in repository
         """
         ...
 

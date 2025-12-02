@@ -6,7 +6,6 @@ in its constructor. Construct instances directly with keyword arguments.
 
 from pathlib import Path
 
-import click
 from erk_shared.git.abc import BranchSyncInfo, Git, WorktreeInfo
 
 
@@ -152,38 +151,28 @@ class FakeGit(Git):
         """Get the currently checked-out branch."""
         return self._current_branches.get(cwd)
 
-    def detect_default_branch(self, repo_root: Path, configured: str | None = None) -> str:
-        """Detect the default branch."""
-        # If configured trunk is provided, validate it exists
-        if configured is not None:
-            is_valid = (
-                repo_root in self._default_branches
-                and self._default_branches[repo_root] == configured
-            )
-            if is_valid:
-                return configured
-            # For testing, we check if ANY branch with that name exists
-            # In a real fake, we'd track all branches, but for simplicity
-            # we just validate against default
-            click.echo(
-                f"Error: Configured trunk branch '{configured}' does not exist in repository.\n"
-                f"Update your configuration in pyproject.toml or create the branch.",
-                err=True,
-            )
-            raise SystemExit(1)
-
-        # Auto-detection path
-        if repo_root in self._default_branches:
-            return self._default_branches[repo_root]
-        click.echo("Error: Could not find 'main' or 'master' branch.", err=True)
-        raise SystemExit(1)
-
-    def get_trunk_branch(self, repo_root: Path) -> str:
-        """Get the trunk branch name for the repository."""
+    def detect_trunk_branch(self, repo_root: Path) -> str:
+        """Auto-detect the trunk branch name for the repository."""
         if repo_root in self._trunk_branches:
             return self._trunk_branches[repo_root]
-        # Default to "main" if not configured
+        # Default to "main" if not configured (never fails)
         return "main"
+
+    def validate_trunk_branch(self, repo_root: Path, name: str) -> None:
+        """Validate that a configured trunk branch exists in the repository."""
+        # Check if the branch exists in our tracked branches
+        # For backward compatibility with tests, also check _default_branches
+        is_valid = (
+            (repo_root in self._trunk_branches and self._trunk_branches[repo_root] == name)
+            or (repo_root in self._default_branches and self._default_branches[repo_root] == name)
+            or (repo_root in self._local_branches and name in self._local_branches[repo_root])
+        )
+
+        if not is_valid:
+            raise RuntimeError(
+                f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
+                f"Update your configuration in pyproject.toml or create the branch."
+            )
 
     def list_local_branches(self, repo_root: Path) -> list[str]:
         """List all local branch names in the repository."""

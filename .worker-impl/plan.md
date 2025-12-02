@@ -8,11 +8,11 @@ Finish the in-progress consolidation of duplicate Git APIs for trunk branch dete
 
 The Git interface in `packages/erk-shared/src/erk_shared/git/abc.py` had two methods doing essentially the same thing:
 
-| Old Method | New Method | Purpose |
-|------------|------------|---------|
-| `detect_default_branch(repo_root, configured=None)` | Split into two below | Did both detection and validation |
-| `get_trunk_branch(repo_root)` | `detect_trunk_branch(repo_root)` | Auto-detect only, never fails |
-| (validation part) | `validate_trunk_branch(repo_root, name)` | Validate configured branch exists |
+| Old Method                                          | New Method                               | Purpose                           |
+| --------------------------------------------------- | ---------------------------------------- | --------------------------------- |
+| `detect_default_branch(repo_root, configured=None)` | Split into two below                     | Did both detection and validation |
+| `get_trunk_branch(repo_root)`                       | `detect_trunk_branch(repo_root)`         | Auto-detect only, never fails     |
+| (validation part)                                   | `validate_trunk_branch(repo_root, name)` | Validate configured branch exists |
 
 ## Completed Work
 
@@ -39,6 +39,7 @@ The Git interface in `packages/erk-shared/src/erk_shared/git/abc.py` had two met
 The file has ~10 tests for the old methods that need consolidation:
 
 **Tests to rename/update (detect_default_branch → detect_trunk_branch):**
+
 - `test_detect_default_branch_main` → `test_detect_trunk_branch_main`
 - `test_detect_default_branch_master` → `test_detect_trunk_branch_master`
 - `test_detect_default_branch_with_remote_head` → `test_detect_trunk_branch_with_remote_head`
@@ -46,6 +47,7 @@ The file has ~10 tests for the old methods that need consolidation:
 
 **Tests to rename (get_trunk_branch → detect_trunk_branch):**
 These are now duplicates of the above since both old methods consolidated into one:
+
 - `test_get_trunk_branch_with_symbolic_ref_main` - Duplicate, can be removed
 - `test_get_trunk_branch_with_symbolic_ref_master` - Duplicate, can be removed
 - `test_get_trunk_branch_with_symbolic_ref_custom` → Keep as `test_detect_trunk_branch_with_symbolic_ref_custom`
@@ -57,6 +59,7 @@ These are now duplicates of the above since both old methods consolidated into o
 ### Step 2: Run Tests
 
 Run the test suite to verify all changes work correctly:
+
 ```bash
 uv run pytest tests/core/detection/ tests/unit/fakes/test_fake_git.py tests/integration/test_real_git.py -v
 ```
@@ -64,6 +67,7 @@ uv run pytest tests/core/detection/ tests/unit/fakes/test_fake_git.py tests/inte
 ### Step 3: Run Type Checker
 
 Verify no type errors were introduced:
+
 ```bash
 uv run pyright
 ```
@@ -72,8 +76,8 @@ uv run pyright
 
 The new `detect_trunk_branch` has a different failure mode than the old `detect_default_branch`:
 
-| Scenario | Old Behavior | New Behavior |
-|----------|--------------|--------------|
+| Scenario                       | Old Behavior          | New Behavior                       |
+| ------------------------------ | --------------------- | ---------------------------------- |
 | Neither main nor master exists | Raises `RuntimeError` | Returns `"main"` (silent fallback) |
 
 This is intentional - auto-detection should be lenient. If validation is needed, use `validate_trunk_branch`.

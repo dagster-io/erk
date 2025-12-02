@@ -75,60 +75,12 @@ class RealGit(Git):
 
         return branch
 
-    def detect_default_branch(self, repo_root: Path, configured: str | None = None) -> str:
-        """Detect the default branch (main or master)."""
-        # If trunk is explicitly configured, validate and use it
-        if configured is not None:
-            result = subprocess.run(
-                ["git", "rev-parse", "--verify", configured],
-                cwd=repo_root,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if result.returncode == 0:
-                return configured
-            error_msg = (
-                f"Error: Configured trunk branch '{configured}' does not exist in repository.\n"
-                f"Update your configuration in pyproject.toml or create the branch."
-            )
-            raise RuntimeError(error_msg)
+    def detect_trunk_branch(self, repo_root: Path) -> str:
+        """Auto-detect the trunk branch name for the repository.
 
-        # Auto-detection: try remote HEAD first
-        result = subprocess.run(
-            ["git", "symbolic-ref", "refs/remotes/origin/HEAD"],
-            cwd=repo_root,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode == 0:
-            remote_head = result.stdout.strip()
-            if remote_head.startswith("refs/remotes/origin/"):
-                branch = remote_head.replace("refs/remotes/origin/", "")
-                return branch
-
-        # Fallback: check master first, then main
-        for candidate in ["master", "main"]:
-            result = subprocess.run(
-                ["git", "rev-parse", "--verify", candidate],
-                cwd=repo_root,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if result.returncode == 0:
-                return candidate
-
-        raise RuntimeError("Error: Could not find 'main' or 'master' branch.")
-
-    def get_trunk_branch(self, repo_root: Path) -> str:
-        """Get the trunk branch name for the repository.
-
-        Detects trunk by checking git's remote HEAD reference. Falls back to
-        checking for existence of common trunk branch names if detection fails.
+        Never fails - returns 'main' as final fallback if detection unsuccessful.
         """
-        # 1. Try git symbolic-ref to detect default branch
+        # 1. Try git symbolic-ref to detect default branch from remote HEAD
         result = subprocess.run(
             ["git", "symbolic-ref", "refs/remotes/origin/HEAD"],
             cwd=repo_root,
@@ -155,6 +107,26 @@ class RealGit(Git):
 
         # 3. Final fallback: 'main'
         return "main"
+
+    def validate_trunk_branch(self, repo_root: Path, name: str) -> None:
+        """Validate that a configured trunk branch exists in the repository.
+
+        Raises:
+            RuntimeError: If branch doesn't exist in repository
+        """
+        result = subprocess.run(
+            ["git", "rev-parse", "--verify", name],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            error_msg = (
+                f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
+                f"Update your configuration in pyproject.toml or create the branch."
+            )
+            raise RuntimeError(error_msg)
 
     def list_local_branches(self, repo_root: Path) -> list[str]:
         """List all local branch names in the repository."""
