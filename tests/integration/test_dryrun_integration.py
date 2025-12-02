@@ -74,7 +74,14 @@ show_pr_info = true
 
 
 def test_dryrun_read_operations_still_work(tmp_path: Path) -> None:
-    """Test that dry-run mode allows read operations."""
+    """Test that dry-run mode allows read operations.
+
+    Note: This test mocks _run_interactive_mode because Textual TUI apps
+    don't work properly with Click's CliRunner and can leave threads running,
+    causing pytest-xdist workers to hang.
+    """
+    from unittest.mock import patch
+
     repo = tmp_path / "repo"
     repo.mkdir()
     init_git_repo(repo, "main")
@@ -106,12 +113,17 @@ def test_dryrun_read_operations_still_work(tmp_path: Path) -> None:
     )
 
     runner = CliRunner()
-    # Dash should work even in dry-run mode since it's a read operation
-    # No need to os.chdir() since ctx.cwd is already set to repo
-    result = runner.invoke(cli, ["dash"], obj=ctx)
 
-    # Should succeed (read operations are not blocked)
-    assert result.exit_code == 0
+    # Mock _run_interactive_mode to verify CLI routing works without
+    # actually running the Textual TUI (which hangs in test environments)
+    with patch("erk.cli.commands.plan.list_cmd._run_interactive_mode") as mock_run:
+        # Dash should work even in dry-run mode since it's a read operation
+        # No need to os.chdir() since ctx.cwd is already set to repo
+        result = runner.invoke(cli, ["dash"], obj=ctx)
+
+        # Should succeed (read operations are not blocked)
+        assert result.exit_code == 0
+        assert mock_run.called
 
 
 def test_dryrun_git_delete_branch_prints_message(tmp_path: Path) -> None:

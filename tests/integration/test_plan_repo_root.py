@@ -9,6 +9,7 @@ instead of relying on ensure_erk_metadata_dir()'s return value.
 """
 
 from pathlib import Path
+from unittest.mock import patch
 
 from click.testing import CliRunner
 from erk_shared.github.fake import FakeGitHub
@@ -67,10 +68,29 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
         ctx = env.build_context(github=github, plan_list_service=plan_list_service)
 
         # Act: Run the dash command
-        result = runner.invoke(dash, obj=ctx)
+        # Mock ErkDashApp to prevent Textual TUI from launching and trigger data fetch
+        # (Textual apps hang in test environments without a real terminal)
+        from erk.tui.data.provider import PlanDataProvider
 
-        # Assert: Command should succeed
-        assert result.exit_code == 0, f"Command failed: {result.output}"
+        captured_provider: PlanDataProvider | None = None
+        captured_filters = None
+
+        class MockApp:
+            def __init__(self, provider, filters, refresh_interval):
+                nonlocal captured_provider, captured_filters
+                captured_provider = provider
+                captured_filters = filters
+
+            def run(self):
+                # Trigger a data fetch to exercise the GitHub code path
+                if captured_provider and captured_filters:
+                    captured_provider.fetch_plans(captured_filters)
+
+        with patch("erk.cli.commands.plan.list_cmd.ErkDashApp", MockApp):
+            result = runner.invoke(dash, obj=ctx)
+
+            # Assert: Command should succeed
+            assert result.exit_code == 0, f"Command failed: {result.output}"
 
         # Assert: repo_root passed to GitHub should be git root, NOT metadata dir
         assert captured_repo_root == env.cwd, (
