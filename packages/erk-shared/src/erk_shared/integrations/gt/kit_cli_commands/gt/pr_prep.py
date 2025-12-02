@@ -219,29 +219,9 @@ def execute_prep(session_id: str, ops: GtKit | None = None) -> PrepResult | Prep
 
     # Step 6: Get local diff (not PR diff - we haven't submitted yet)
     click.echo(f"  ↳ Getting diff from {parent_branch}...HEAD", err=True)
-    try:
-        # Get diff using git diff
-        result = subprocess.run(
-            ["git", "diff", f"{parent_branch}...HEAD"],
-            cwd=repo_root,
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        diff_content = result.stdout
-        diff_lines = len(diff_content.splitlines())
-        click.echo(f"  ✓ Diff retrieved ({diff_lines} lines)", err=True)
-    except subprocess.CalledProcessError as e:
-        return PrepError(
-            success=False,
-            error_type="squash_failed",
-            message="Failed to get diff",
-            details={
-                "branch_name": branch_name,
-                "parent_branch": parent_branch,
-                "error": e.stderr if hasattr(e, "stderr") else str(e),
-            },
-        )
+    diff_content = ops.git().get_diff_to_branch(repo_root, parent_branch)
+    diff_lines = len(diff_content.splitlines())
+    click.echo(f"  ✓ Diff retrieved ({diff_lines} lines)", err=True)
 
     # Step 7: Write diff to scratch file
     from erk_shared.scratch.scratch import write_scratch_file

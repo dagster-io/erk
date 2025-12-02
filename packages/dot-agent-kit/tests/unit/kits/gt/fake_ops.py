@@ -170,7 +170,14 @@ class FakeGitGtKitOps(Git):
 
     def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
         """Get diff between branch and HEAD."""
-        return ""
+        return (
+            "diff --git a/file.py b/file.py\n"
+            "--- a/file.py\n"
+            "+++ b/file.py\n"
+            "@@ -1,1 +1,1 @@\n"
+            "-old\n"
+            "+new"
+        )
 
     def simulate_conflict(self, base_branch: str, head_branch: str) -> None:
         """Configure fake to simulate conflicts for specific branch pair."""
