@@ -3,11 +3,11 @@
 from pathlib import Path
 
 import pytest
+from erk_shared.git.fake import FakeGit
 
 from erk.cli.commands.navigation_helpers import ensure_graphite_enabled
 from erk.core.config_store import GlobalConfig
 from erk.core.context import ErkContext
-from erk.core.git.fake import FakeGit
 
 
 class TestEnsureGraphiteEnabled:

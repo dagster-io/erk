@@ -17,13 +17,13 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import PullRequestInfo, WorkflowRun
 
 from erk.cli.commands.run.list_cmd import list_runs
-from erk.core.git.fake import FakeGit
 from tests.fakes.context import create_test_context
 
 

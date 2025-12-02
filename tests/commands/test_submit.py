@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
 from erk_shared.github.metadata import MetadataBlock, render_metadata_block
@@ -19,7 +20,6 @@ from erk.cli.commands.submit import (
     submit_cmd,
 )
 from erk.core.context import ErkContext
-from erk.core.git.fake import FakeGit
 from erk.core.repo_discovery import RepoContext
 from tests.fakes.issue_link_branches import FakeIssueLinkBranches
 

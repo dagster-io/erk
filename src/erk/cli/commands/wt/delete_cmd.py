@@ -217,9 +217,7 @@ def _handle_branch_deletion_error(
     branch_text = click.style(branch, fg="yellow")
     if e.returncode == 1 and not force:
         # User declined - this is expected behavior, not an error
-        user_output(
-            f"⭕ Skipped deletion of branch: {branch_text} (user declined or not eligible)"
-        )
+        user_output(f"⭕ Skipped deletion of branch: {branch_text} (user declined or not eligible)")
     else:
         # Other error (branch doesn't exist, git failure, etc.)
         error_detail = e.stderr.strip() if e.stderr else f"exit code {e.returncode}"

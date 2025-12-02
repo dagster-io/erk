@@ -194,8 +194,8 @@ def test_shell_integration_switch_invokes_successfully() -> None:
     from pathlib import Path
 
     from erk_shared.git.abc import WorktreeInfo
+    from erk_shared.git.fake import FakeGit
 
-    from erk.core.git.fake import FakeGit
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()
@@ -241,8 +241,8 @@ def test_shell_integration_switch_invokes_successfully() -> None:
 def test_shell_integration_checkout_invokes_successfully() -> None:
     """Test that __shell checkout invokes command successfully."""
     from erk_shared.git.abc import WorktreeInfo
+    from erk_shared.git.fake import FakeGit
 
-    from erk.core.git.fake import FakeGit
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()
@@ -340,8 +340,8 @@ def test_shell_integration_down_invokes_successfully() -> None:
 def test_shell_integration_create_invokes_successfully() -> None:
     """Test that __shell create invokes command successfully."""
     from erk_shared.git.abc import WorktreeInfo
+    from erk_shared.git.fake import FakeGit
 
-    from erk.core.git.fake import FakeGit
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()
@@ -367,8 +367,8 @@ def test_shell_integration_create_invokes_successfully() -> None:
 def test_shell_integration_consolidate_invokes_successfully() -> None:
     """Test that __shell consolidate invokes command successfully."""
     from erk_shared.git.abc import WorktreeInfo
+    from erk_shared.git.fake import FakeGit
 
-    from erk.core.git.fake import FakeGit
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()
@@ -399,8 +399,8 @@ def test_shell_handler_uses_stdout_not_output() -> None:
     to avoid mixing stderr messages with the script path.
     """
     from erk_shared.git.abc import WorktreeInfo
+    from erk_shared.git.fake import FakeGit
 
-    from erk.core.git.fake import FakeGit
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()
@@ -451,8 +451,8 @@ def test_shell_integration_shows_note_for_no_directory_change() -> None:
     directory change is needed. This clarifies expected behavior for users.
     """
     from erk_shared.git.abc import WorktreeInfo
+    from erk_shared.git.fake import FakeGit
 
-    from erk.core.git.fake import FakeGit
     from tests.test_utils.env_helpers import erk_inmem_env
 
     runner = CliRunner()
@@ -491,8 +491,8 @@ def test_shell_integration_create_from_current_branch_returns_script_path() -> N
     See: https://github.com/anthropics/erk/issues/XXX
     """
     from erk_shared.git.abc import WorktreeInfo
+    from erk_shared.git.fake import FakeGit
 
-    from erk.core.git.fake import FakeGit
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()

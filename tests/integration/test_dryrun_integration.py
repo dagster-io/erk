@@ -10,6 +10,9 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.dry_run import DryRunGit
+from erk_shared.git.fake import FakeGit
+from erk_shared.github.dry_run import DryRunGitHub
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import DryRunGitHubIssues, FakeGitHubIssues
 from erk_shared.integrations.graphite.dry_run import DryRunGraphite
@@ -18,9 +21,6 @@ from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk.cli.cli import cli
 from erk.core.config_store import GlobalConfig
 from erk.core.context import ErkContext, create_context
-from erk.core.git.dry_run import DryRunGit
-from erk.core.git.fake import FakeGit
-from erk.core.github.dry_run import DryRunGitHub
 from tests.fakes.shell import FakeShell
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.paths import sentinel_path

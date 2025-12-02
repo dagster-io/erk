@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import click
+
 from erk_shared.github.abc import GitHub
 from erk_shared.github.types import (
     GitHubRepoLocation,

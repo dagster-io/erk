@@ -6,9 +6,13 @@ from pathlib import Path
 import click
 import tomlkit
 from erk_shared.git.abc import Git
+from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.real import RealGit
 from erk_shared.github.abc import GitHub
+from erk_shared.github.dry_run import DryRunGitHub
 from erk_shared.github.issue_link_branches import IssueLinkBranches
+from erk_shared.github.issue_link_branches_dry_run import DryRunIssueLinkBranches
+from erk_shared.github.issue_link_branches_real import RealIssueLinkBranches
 from erk_shared.github.issues import DryRunGitHubIssues, GitHubIssues, RealGitHubIssues
 from erk_shared.github.real import RealGitHub
 from erk_shared.integrations.graphite.abc import Graphite
@@ -28,10 +32,6 @@ from erk.core.config_store import (
     GlobalConfig,
     RealConfigStore,
 )
-from erk.core.git.dry_run import DryRunGit
-from erk.core.github.dry_run import DryRunGitHub
-from erk.core.github.issue_link_branches_dry_run import DryRunIssueLinkBranches
-from erk.core.github.issue_link_branches_real import RealIssueLinkBranches
 from erk.core.planner.registry_abc import PlannerRegistry
 from erk.core.planner.registry_real import RealPlannerRegistry
 from erk.core.repo_discovery import (
@@ -105,7 +105,7 @@ class ErkContext:
 
         Example:
             Before (7 lines):
-            >>> from erk.core.git.fake import FakeGit
+            >>> from erk_shared.git.fake import FakeGit
             >>> from erk_shared.github.fake import FakeGitHub
             >>> from erk_shared.integrations.graphite.fake import FakeGraphite
             >>> from tests.fakes.shell import FakeShell
@@ -245,6 +245,7 @@ class ErkContext:
             For simple cases that only need git, use ErkContext.minimal()
             which is more concise.
         """
+        from erk_shared.git.fake import FakeGit
         from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
         from erk_shared.integrations.graphite.fake import FakeGraphite
@@ -259,7 +260,6 @@ class ErkContext:
         from tests.test_utils.paths import sentinel_path
 
         from erk.core.config_store import FakeConfigStore
-        from erk.core.git.fake import FakeGit
         from erk.core.planner.registry_fake import FakePlannerRegistry
 
         if git is None:

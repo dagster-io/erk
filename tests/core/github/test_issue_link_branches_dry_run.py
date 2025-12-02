@@ -6,7 +6,8 @@ correctly delegates reads and no-ops writes.
 
 from pathlib import Path
 
-from erk.core.github.issue_link_branches_dry_run import DryRunIssueLinkBranches
+from erk_shared.github.issue_link_branches_dry_run import DryRunIssueLinkBranches
+
 from tests.fakes.issue_link_branches import FakeIssueLinkBranches
 
 

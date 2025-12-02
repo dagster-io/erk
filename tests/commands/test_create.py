@@ -5,10 +5,10 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
 
 from erk.cli.cli import cli
-from erk.core.git.fake import FakeGit
 from tests.fakes.issue_link_branches import FakeIssueLinkBranches
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 

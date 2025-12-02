@@ -1,9 +1,9 @@
 """Tests for erk pr submit command."""
 
 from click.testing import CliRunner
+from erk_shared.git.fake import FakeGit
 
 from erk.cli.commands.pr import pr_group
-from erk.core.git.fake import FakeGit
 from tests.fakes.claude_executor import FakeClaudeExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env

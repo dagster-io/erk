@@ -4,11 +4,11 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import click
+from erk_shared.git.fake import FakeGit
 
 from erk.cli.commands.completions import complete_branch_names, complete_plan_files
 from erk.core.config_store import GlobalConfig
 from erk.core.context import ErkContext
-from erk.core.git.fake import FakeGit
 
 
 def test_complete_branch_names_local_branches(tmp_path: Path) -> None:

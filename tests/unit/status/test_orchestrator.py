@@ -24,10 +24,10 @@ import time
 from pathlib import Path
 
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.parallel.real import RealParallelTaskRunner
 
 from erk.core.context import ErkContext
-from erk.core.git.fake import FakeGit
 from erk.status.collectors.base import StatusCollector
 from erk.status.collectors.git import GitStatusCollector
 from erk.status.collectors.impl import PlanFileCollector

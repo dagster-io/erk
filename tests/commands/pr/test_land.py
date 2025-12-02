@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from click.testing import CliRunner
+from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 from erk_shared.integrations.gt.kit_cli_commands.gt.land_pr import (
@@ -12,7 +13,6 @@ from erk_shared.integrations.gt.kit_cli_commands.gt.land_pr import (
 )
 
 from erk.cli.commands.pr import pr_group
-from erk.core.git.fake import FakeGit
 from erk.core.repo_discovery import RepoContext
 from tests.test_utils.cli_helpers import assert_cli_error
 from tests.test_utils.env_helpers import erk_inmem_env

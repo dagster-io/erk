@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.impl_folder import save_issue_reference
@@ -18,7 +19,6 @@ from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.post_pr_comment import (
     create_pr_published_block,
     post_pr_comment,
 )
-from erk.core.git.fake import FakeGit
 
 
 def make_issue_info(number: int) -> IssueInfo:

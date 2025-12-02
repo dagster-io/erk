@@ -7,11 +7,11 @@ It displays: emoji + #number (no title, no plan summary).
 import pytest
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.fake import FakeGit
 from erk_shared.github.types import PullRequestInfo
 from erk_shared.integrations.graphite.fake import FakeGraphite
 
 from erk.cli.cli import cli
-from erk.core.git.fake import FakeGit
 from tests.test_utils.builders import PullRequestInfoBuilder
 from tests.test_utils.env_helpers import erk_inmem_env
 

@@ -6,10 +6,10 @@ including issue references for status display.
 
 from pathlib import Path
 
+from erk_shared.git.fake import FakeGit
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 
 from erk.core.context import ErkContext
-from erk.core.git.fake import FakeGit
 from erk.status.collectors.impl import PlanFileCollector
 
 

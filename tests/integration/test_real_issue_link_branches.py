@@ -11,9 +11,9 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from erk_shared.github.issue_link_branches_real import RealIssueLinkBranches
 from pytest import MonkeyPatch
 
-from erk.core.github.issue_link_branches_real import RealIssueLinkBranches
 from tests.integration.test_helpers import mock_subprocess_run
 
 # ============================================================================

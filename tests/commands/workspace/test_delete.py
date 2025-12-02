@@ -5,13 +5,13 @@ This file tests the delete command which removes a worktree workspace.
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.dry_run import DryRunGit
+from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 
 from erk.cli.cli import cli
-from erk.core.git.dry_run import DryRunGit
-from erk.core.git.fake import FakeGit
 from tests.fakes.shell import FakeShell
 from tests.test_utils.cli_helpers import assert_cli_error, assert_cli_success
 from tests.test_utils.context_builders import build_workspace_test_context

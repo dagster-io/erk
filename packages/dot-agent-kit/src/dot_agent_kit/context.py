@@ -68,17 +68,16 @@ class DotAgentContext:
 
         Example:
             >>> from erk_shared.github.issues import FakeGitHubIssues
-            >>> from erk.core.git.fake import FakeGit
+            >>> from erk_shared.git.fake import FakeGit
             >>> github = FakeGitHubIssues()
             >>> git_ops = FakeGit()
             >>> ctx = DotAgentContext.for_test(
             ...     github_issues=github, git=git_ops, debug=True
             ... )
         """
+        from erk_shared.git.fake import FakeGit
         from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
-
-        from erk.core.git.fake import FakeGit
 
         # Provide defaults - ensures non-None values for type checker
         resolved_github_issues: GitHubIssues = (

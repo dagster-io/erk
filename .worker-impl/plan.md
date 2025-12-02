@@ -8,20 +8,20 @@ Move wrapper implementations from `src/erk/core/git/` and `src/erk/core/github/`
 
 ### Git Module (3 files)
 
-| Source | Destination |
-|--------|-------------|
-| `src/erk/core/git/dry_run.py` | `erk_shared/git/dry_run.py` |
-| `src/erk/core/git/fake.py` | `erk_shared/git/fake.py` |
+| Source                         | Destination                  |
+| ------------------------------ | ---------------------------- |
+| `src/erk/core/git/dry_run.py`  | `erk_shared/git/dry_run.py`  |
+| `src/erk/core/git/fake.py`     | `erk_shared/git/fake.py`     |
 | `src/erk/core/git/printing.py` | `erk_shared/git/printing.py` |
 
 ### GitHub Module (4 files)
 
-| Source | Destination |
-|--------|-------------|
-| `src/erk/core/github/dry_run.py` | `erk_shared/github/dry_run.py` |
-| `src/erk/core/github/printing.py` | `erk_shared/github/printing.py` |
+| Source                                               | Destination                                        |
+| ---------------------------------------------------- | -------------------------------------------------- |
+| `src/erk/core/github/dry_run.py`                     | `erk_shared/github/dry_run.py`                     |
+| `src/erk/core/github/printing.py`                    | `erk_shared/github/printing.py`                    |
 | `src/erk/core/github/issue_link_branches_dry_run.py` | `erk_shared/github/issue_link_branches_dry_run.py` |
-| `src/erk/core/github/issue_link_branches_real.py` | `erk_shared/github/issue_link_branches_real.py` |
+| `src/erk/core/github/issue_link_branches_real.py`    | `erk_shared/github/issue_link_branches_real.py`    |
 
 ### Files to Delete (deprecated shims)
 
@@ -31,10 +31,12 @@ Move wrapper implementations from `src/erk/core/git/` and `src/erk/core/github/`
 ## Import Changes
 
 **59 files** import from `erk.core.git`:
+
 - Pattern: `from erk.core.git.fake import FakeGit` (65 occurrences)
 - Pattern: `from erk.core.git.dry_run import DryRunGit` (9 occurrences)
 
 **4 files** import from `erk.core.github`:
+
 - Pattern: `from erk.core.github.dry_run import DryRunGitHub`
 - Pattern: `from erk.core.github.issue_link_branches_*`
 
@@ -55,7 +57,7 @@ Move wrapper implementations from `src/erk/core/git/` and `src/erk/core/github/`
 3. Copy `src/erk/core/github/issue_link_branches_dry_run.py` → `packages/erk-shared/src/erk_shared/github/issue_link_branches_dry_run.py`
 4. Copy `src/erk/core/github/issue_link_branches_real.py` → `packages/erk-shared/src/erk_shared/github/issue_link_branches_real.py`
 
-### Step 3: Update erk_shared __init__.py files
+### Step 3: Update erk_shared **init**.py files
 
 Update `packages/erk-shared/src/erk_shared/git/__init__.py` to export new implementations.
 
@@ -64,6 +66,7 @@ Update `packages/erk-shared/src/erk_shared/github/__init__.py` to export new imp
 ### Step 4: Update all imports across codebase
 
 Replace import patterns:
+
 ```python
 # Git
 from erk.core.git.fake import FakeGit      → from erk_shared.git.fake import FakeGit
@@ -76,6 +79,7 @@ from erk.core.github.issue_link_branches_real import RealIssueLinkBranches → f
 ```
 
 Key files to update:
+
 - `src/erk/core/context.py` (production)
 - `tests/fakes/context.py`
 - `packages/dot-agent-kit/src/dot_agent_kit/context.py`
