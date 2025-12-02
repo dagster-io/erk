@@ -1,0 +1,81 @@
+/* Styles for erk dash interactive TUI */
+
+Screen {
+    background: $surface;
+}
+
+/* Plan table styling */
+PlanDataTable {
+    height: 1fr;
+    margin: 1 2;
+}
+
+PlanDataTable > .datatable--header {
+    background: $primary;
+    color: $text;
+    text-style: bold;
+}
+
+PlanDataTable > .datatable--cursor {
+    background: $accent;
+    color: $text;
+}
+
+PlanDataTable > .datatable--hover {
+    background: $surface-lighten-1;
+}
+
+/* Status bar styling */
+StatusBar {
+    dock: bottom;
+    height: 1;
+    background: $primary-background;
+    color: $text-muted;
+    padding: 0 1;
+}
+
+/* Help overlay styling */
+#help-container {
+    align: center middle;
+}
+
+#help-panel {
+    width: 60;
+    height: auto;
+    max-height: 80%;
+    background: $surface;
+    border: solid $primary;
+    padding: 1 2;
+}
+
+#help-title {
+    text-style: bold;
+    text-align: center;
+    margin-bottom: 1;
+}
+
+#help-content {
+    height: auto;
+}
+
+/* Loading indicator */
+#loading {
+    align: center middle;
+    height: 100%;
+    width: 100%;
+}
+
+#loading-message {
+    text-align: center;
+    color: $text-muted;
+}
+
+/* Header styling */
+#header {
+    dock: top;
+    height: 1;
+    background: $primary;
+    color: $text;
+    text-style: bold;
+    content-align: center middle;
+}
