@@ -33,7 +33,13 @@ Exit the session when done and confirm configuration.
 erk planner connect
 ```
 
-This SSHs into the codespace and launches Claude.
+This connects via SSH into the codespace and launches Claude directly.
+
+To open VS Code instead:
+
+```bash
+erk planner connect --vscode
+```
 
 ## Commands
 
