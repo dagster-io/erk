@@ -20,6 +20,7 @@ dependencies = [
     "python-frontmatter>=1.0.0",
     "tomlkit>=0.12.0",
     "textual>=3.0.0",
+    "pyperclip>=1.8.2",
     "dot-agent-kit",
     "erk-shared",
 ]

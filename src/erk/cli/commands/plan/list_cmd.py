@@ -12,6 +12,7 @@ from erk_shared.github.metadata import (
 )
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
 from erk_shared.impl_folder import read_issue_reference
+from erk_shared.integrations.clipboard.real import RealClipboard
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import Plan, PlanState
 from rich.console import Console, Group
@@ -532,7 +533,8 @@ def _run_interactive_mode(
 
     # Create data provider and filters
     location = GitHubRepoLocation(root=repo_root, repo_id=GitHubRepoId(owner, repo_name))
-    provider = RealPlanDataProvider(ctx, location)
+    clipboard = RealClipboard()
+    provider = RealPlanDataProvider(ctx, location, clipboard)
     filters = PlanFilters(
         labels=labels,
         state=state,
