@@ -79,3 +79,17 @@ StatusBar {
     text-style: bold;
     content-align: center middle;
 }
+
+/* Filter input styling - positioned above status bar */
+#filter-input {
+    dock: bottom;
+    height: 3;
+    display: none;
+    background: $primary;
+    border: solid $accent;
+    padding: 0 1;
+}
+
+#filter-input.visible {
+    display: block;
+}

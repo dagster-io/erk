@@ -97,6 +97,6 @@ class StatusBar(Static):
             parts.append(self._message)
 
         # Key hints
-        parts.append("Enter/o:issue  p:PR  c:checkout  r:refresh  q:quit  ?:help")
+        parts.append("Enter:open  p:PR  /:filter  c:checkout  r:refresh  q:quit  ?:help")
 
         self.update(" │ ".join(parts))
