@@ -225,15 +225,15 @@ class PrintingGitHub(PrintingBase, GitHub):
 
     def update_pr_title_and_body(
         self, repo_root: Path, pr_number: int, title: str, body: str
-    ) -> bool:
+    ) -> None:
         """Update PR title and body with printed output."""
         self._emit(self._format_command(f"gh pr edit {pr_number} --title <title> --body <body>"))
-        return self._wrapped.update_pr_title_and_body(repo_root, pr_number, title, body)
+        self._wrapped.update_pr_title_and_body(repo_root, pr_number, title, body)
 
-    def mark_pr_ready(self, repo_root: Path, pr_number: int) -> bool:
+    def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
         """Mark PR as ready with printed output."""
         self._emit(self._format_command(f"gh pr ready {pr_number}"))
-        return self._wrapped.mark_pr_ready(repo_root, pr_number)
+        self._wrapped.mark_pr_ready(repo_root, pr_number)
 
     def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
         """Get PR diff (read-only, no printing)."""
@@ -243,6 +243,6 @@ class PrintingGitHub(PrintingBase, GitHub):
         """Get PR mergeability status (read-only, no printing)."""
         return self._wrapped.get_pr_mergeability_status(repo_root, pr_number)
 
-    def get_repo_info(self, repo_root: Path) -> RepoInfo | None:
+    def get_repo_info(self, repo_root: Path) -> RepoInfo:
         """Get repository info (read-only, no printing)."""
         return self._wrapped.get_repo_info(repo_root)

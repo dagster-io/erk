@@ -5,7 +5,7 @@
 - [ ] **Improvement 1:** Unify `.worker-impl/` and `.impl/`
 - [ ] **Improvement 2:** Replace `distinct_id` with comment-based run discovery
 - [ ] **Improvement 3:** Consolidate metadata block types
-- [ ] **Improvement 4:** Use GitHub's native branch-to-issue linking
+- [x] **Improvement 4:** Use GitHub's native branch-to-issue linking
 - [ ] **Improvement 5:** Store plan in issue body (not split)
 - [ ] **Improvement 6:** Let workflow create PR
 
@@ -646,3 +646,60 @@ jobs:
 - [Plan Lifecycle](plan-lifecycle.md) - Current lifecycle documentation
 - [Planning Workflow](planning-workflow.md) - `.impl/` folder structure
 - [Kit CLI Commands](kit-cli-commands.md) - Available commands
+
+---
+
+## Implementation Log: Improvement 4
+
+**Status:** Complete
+**Implementation Period:** Nov 30 - Dec 1, 2025
+**PRs:** #1665, #1680, #1684, #1687, #1692, #1699, #1700, #1722, #1725, #1832
+
+### What Was Implemented
+
+Replaced custom `derive_branch_name_with_date()` with GitHub's native `gh issue develop` command across all branch-creating commands (submit, implement, wt create).
+
+**Key Changes:**
+
+- Branch naming changed from `my-feature-25-11-29-1430` to GitHub's native `123-my-feature` format
+- Implemented `IssueDevelopment` ABC with real/fake/dry-run implementations
+- Commands detect and reuse existing linked branches
+- ~200 lines of custom branch naming code removed
+- Eliminated `USE_GITHUB_NATIVE_BRANCH_LINKING` feature flag (always-on)
+- Removed "Closes #N" keyword approach in favor of native linking
+
+### Bugs Encountered & Fixed
+
+1. **Tab-separated output parsing** (#1680): `gh issue develop --list` outputs `branch\tURL`, not just branch name. Fixed by splitting on tab.
+
+2. **Branch/worktree name mismatch** (#1684): GitHub auto-generates branch names that could exceed 31 chars, breaking erk's naming invariants. Fixed by computing branch names explicitly and passing `--name` flag to `gh issue develop`.
+
+3. **Branch name collisions** (#1699): `gh issue develop` fails when branch already exists on remote. Fixed by adding `_ensure_unique_branch_name()` that appends numeric suffixes (-1, -2, etc.).
+
+4. **PR discovery mechanism** (#1692): Original implementation searched PR bodies for "Closes #N". Switched to using native `linkedBranches` GraphQL field for more robust discovery.
+
+### Lessons Learned
+
+1. **GitHub CLI output formats are not documented** - Had to discover tab-separated output through trial and error. Always test with real GitHub API, not just assumed formats.
+
+2. **`gh issue develop` fails on existing branches** - The command also corrupts git config when it fails. Must always verify branch/link existence before invoking.
+
+3. **Explicit is better than implicit** - Letting GitHub auto-generate branch names caused mismatches. Computing names explicitly with `--name` flag ensures predictable behavior.
+
+4. **Native features > custom implementations** - GitHub's native branch linking provides automatic PR-to-issue linking in the UI, "Development" sidebar integration, and auto-closure on merge - all without custom code.
+
+5. **GraphQL > REST for relationship queries** - The `linkedBranches` field provides reliable link discovery vs. searching PR bodies for keywords.
+
+### Files Deleted (Custom Code Removed)
+
+- `packages/erk-shared/src/erk_shared/naming.py` (partial - derive_branch_name_with_date)
+- `packages/dot-agent-kit/.../get_closing_text.py`
+- `packages/dot-agent-kit/.../get_pr_metadata.py`
+- `src/erk/cli/constants.py` - `USE_GITHUB_NATIVE_BRANCH_LINKING` flag
+
+### New Abstractions Added
+
+- `IssueDevelopment` ABC in `erk_shared/github/issue_link_branches.py`
+- Real/Fake/DryRun implementations following existing patterns
+- Kit CLI commands: `get-linked-branch`, `get-pr-for-branch`
+- Documentation: `docs/agent/github-branch-linking.md`
