@@ -13,6 +13,7 @@ Error Handling Philosophy:
 import json
 import secrets
 import string
+import subprocess
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -21,6 +22,7 @@ from typing import Any
 from erk_shared.debug import debug_log
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.types import IssueInfo
+from erk_shared.github.metadata_blocks import find_metadata_block
 from erk_shared.github.parsing import (
     execute_gh_command,
     parse_aggregated_check_counts,
@@ -529,17 +531,6 @@ query {{
         except RuntimeError:
             return False
 
-    def _generate_distinct_id(self) -> str:
-        """Generate a random base36 ID for workflow dispatch correlation.
-
-        Returns:
-            6-character base36 string (e.g., 'a1b2c3')
-        """
-        # Base36 alphabet: 0-9 and a-z
-        base36_chars = string.digits + string.ascii_lowercase
-        # Generate 6 random characters (~2.2 billion possibilities)
-        return "".join(secrets.choice(base36_chars) for _ in range(6))
-
     def trigger_workflow(
         self,
         repo_root: Path,
@@ -549,30 +540,26 @@ query {{
     ) -> str:
         """Trigger GitHub Actions workflow via gh CLI.
 
-        Generates a unique distinct_id internally, passes it to the workflow,
-        and uses it to reliably find the triggered run via displayTitle matching.
+        Triggers the workflow and polls for the run_id in the issue body.
+        The workflow updates the plan-header metadata block with
+        last_dispatched_run_id immediately after checkout.
 
         Args:
             repo_root: Repository root path
             workflow: Workflow file name (e.g., "implement-plan.yml")
-            inputs: Workflow inputs as key-value pairs
+            inputs: Workflow inputs as key-value pairs (must include "issue_number")
             ref: Branch or tag to run workflow from (default: repository default branch)
 
         Returns:
             The GitHub Actions run ID as a string
         """
-        # Generate distinct ID for reliable run matching
-        distinct_id = self._generate_distinct_id()
-        debug_log(f"trigger_workflow: workflow={workflow}, distinct_id={distinct_id}, ref={ref}")
+        debug_log(f"trigger_workflow: workflow={workflow}, ref={ref}")
 
         cmd = ["gh", "workflow", "run", workflow]
 
         # Add --ref flag if specified
         if ref:
             cmd.extend(["--ref", ref])
-
-        # Add distinct_id to workflow inputs automatically
-        cmd.extend(["-f", f"distinct_id={distinct_id}"])
 
         # Add caller-provided workflow inputs
         for key, value in inputs.items():
@@ -586,105 +573,113 @@ query {{
         )
         debug_log("trigger_workflow: workflow triggered successfully")
 
-        # Poll for the run by matching displayTitle containing the distinct ID
-        # The workflow uses run-name: "<issue_number>:<distinct_id>"
-        # GitHub API eventual consistency: fast path (5×1s) then slow path (10×2s)
-        max_attempts = 15
-        runs_data: list[dict[str, Any]] = []
+        # Poll for run_id in the issue body's plan-header metadata block
+        # The workflow updates the issue body with last_dispatched_run_id
+        issue_number = int(inputs["issue_number"])
+        return self._poll_for_workflow_run_id(repo_root, issue_number)
+
+    def _poll_for_workflow_run_id(
+        self,
+        repo_root: Path,
+        issue_number: int,
+        max_attempts: int = 15,
+    ) -> str:
+        """Poll issue body for workflow run_id in plan-header metadata block.
+
+        The workflow updates the issue body's plan-header block with
+        last_dispatched_run_id immediately after checkout.
+
+        Args:
+            repo_root: Repository root path
+            issue_number: GitHub issue number to poll
+            max_attempts: Maximum polling attempts (default: 15)
+
+        Returns:
+            The workflow run ID from the issue body
+
+        Raises:
+            RuntimeError: If run_id not found after max_attempts
+        """
+        debug_log(f"_poll_for_workflow_run_id: issue={issue_number}")
+
+        # Store initial run_id to detect when it changes
+        # Use a sentinel to distinguish "not yet checked" from "checked but was None"
+        initial_run_id: str | None = None
+        first_poll = True
+
         for attempt in range(max_attempts):
-            debug_log(f"trigger_workflow: polling attempt {attempt + 1}/{max_attempts}")
+            debug_log(f"_poll_for_workflow_run_id: attempt {attempt + 1}/{max_attempts}")
 
-            runs_cmd = [
-                "gh",
-                "run",
-                "list",
-                "--workflow",
-                workflow,
-                "--json",
-                "databaseId,status,conclusion,displayTitle",
-                "--limit",
-                "10",
-            ]
+            # Fetch issue body
+            issue_body = self._fetch_issue_body(repo_root, issue_number)
 
-            runs_result = run_subprocess_with_context(
-                runs_cmd,
-                operation_context=f"get run ID for workflow '{workflow}'",
-                cwd=repo_root,
-            )
+            # Look for plan-header block with last_dispatched_run_id
+            block = find_metadata_block(issue_body, "plan-header")
+            current_run_id: str | None = None
+            if block is not None:
+                current_run_id = block.data.get("last_dispatched_run_id")
 
-            runs_data = json.loads(runs_result.stdout)
-            debug_log(f"trigger_workflow: found {len(runs_data)} runs")
+            if first_poll:
+                # Record initial state (could be None or some old value)
+                initial_run_id = current_run_id
+                first_poll = False
+                debug_log(f"_poll_for_workflow_run_id: initial={initial_run_id}, waiting")
+            elif current_run_id is not None and current_run_id != initial_run_id:
+                # run_id changed from initial value - this is the new workflow's run_id
+                debug_log(f"_poll_for_workflow_run_id: found new run_id={current_run_id}")
+                return str(current_run_id)
 
-            # Validate response structure (must be a list)
-            if not isinstance(runs_data, list):
-                msg = (
-                    f"GitHub workflow '{workflow}' triggered but received invalid response format. "
-                    f"Expected JSON array, got: {type(runs_data).__name__}. "
-                    f"Raw output: {runs_result.stdout[:200]}"
-                )
-                raise RuntimeError(msg)
-
-            # Empty list is valid - workflow hasn't appeared yet, continue polling
-            if not runs_data:
-                # Continue to retry logic below
-                pass
-
-            # Find run by matching distinct_id in displayTitle
-            for run in runs_data:
-                conclusion = run.get("conclusion")
-                if conclusion in ("skipped", "cancelled"):
-                    continue
-
-                display_title = run.get("displayTitle", "")
-                # Check for match pattern: :<distinct_id> (new format: issue_number:distinct_id)
-                if f":{distinct_id}" in display_title:
-                    run_id = run["databaseId"]
-                    debug_log(f"trigger_workflow: found run {run_id}, title='{display_title}'")
-                    return str(run_id)
-
-            # No matching run found, retry if attempts remaining
+            # Retry with adaptive delay
             # Fast path: 1s delay for first 5 attempts, then 2s delay for remaining
             if attempt < max_attempts - 1:
                 delay = 1 if attempt < 5 else 2
                 self._time.sleep(delay)
 
-        # All attempts exhausted without finding matching run
+        # All attempts exhausted
         msg_parts = [
-            f"GitHub workflow triggered but could not find run ID after {max_attempts} attempts.",
+            f"Workflow started but run_id not found after {max_attempts} attempts.",
             "",
-            f"Workflow file: {workflow}",
-            f"Correlation ID: {distinct_id}",
+            f"Issue number: {issue_number}",
             "",
+            "Possible causes:",
+            "  • Workflow failed before updating issue body",
+            "  • GitHub API eventual consistency delay",
+            "  • Workflow does not have 'Update issue with workflow run ID' step",
+            "",
+            "Debug commands:",
+            f"  gh issue view {issue_number}",
         ]
 
-        if runs_data:
-            msg_parts.append(f"Found {len(runs_data)} recent runs, but none matched.")
-            msg_parts.append("Recent run titles:")
-            for run in runs_data[:5]:
-                title = run.get("displayTitle", "N/A")
-                status = run.get("status", "N/A")
-                msg_parts.append(f"  • {title} ({status})")
-            msg_parts.append("")
-        else:
-            msg_parts.append("No workflow runs found at all.")
-            msg_parts.append("")
-
-        msg_parts.extend(
-            [
-                "Possible causes:",
-                "  • GitHub API eventual consistency delay (rare but possible)",
-                "  • Workflow file doesn't use 'run-name' with distinct_id",
-                "  • All recent runs were cancelled/skipped",
-                "",
-                "Debug commands:",
-                f"  gh run list --workflow {workflow} --limit 10",
-                f"  gh workflow view {workflow}",
-            ]
-        )
-
         msg = "\n".join(msg_parts)
-        debug_log(f"trigger_workflow: exhausted all attempts, error: {msg}")
+        debug_log(f"_poll_for_workflow_run_id: exhausted all attempts, error: {msg}")
         raise RuntimeError(msg)
+
+    def _fetch_issue_body(self, repo_root: Path, issue_number: int) -> str:
+        """Fetch issue body text.
+
+        Args:
+            repo_root: Repository root path
+            issue_number: GitHub issue number
+
+        Returns:
+            Issue body as string (may be empty)
+        """
+        cmd = [
+            "gh",
+            "issue",
+            "view",
+            str(issue_number),
+            "--json",
+            "body",
+            "--jq",
+            ".body",
+        ]
+        result = run_subprocess_with_context(
+            cmd,
+            operation_context=f"fetch issue #{issue_number} body",
+            cwd=repo_root,
+        )
+        return result.stdout
 
     def create_pr(
         self,

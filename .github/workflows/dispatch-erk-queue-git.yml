@@ -6,7 +6,7 @@
 # "GitHub Actions is not permitted to create or approve pull requests"
 
 name: Dispatch Erk Queue (Git Only)
-run-name: "${{ inputs.issue_number }}:${{ inputs.distinct_id }}"
+run-name: "Issue #${{ inputs.issue_number }}: ${{ inputs.issue_title }}"
 
 on:
   workflow_dispatch:
@@ -17,10 +17,6 @@ on:
         type: string
       submitted_by:
         description: "GitHub username of the person who submitted the issue"
-        required: true
-        type: string
-      distinct_id:
-        description: "Unique identifier for run discovery (base36)"
         required: true
         type: string
       issue_title:
@@ -84,10 +80,15 @@ jobs:
           git config user.name "$SUBMITTED_BY"
           git config user.email "${SUBMITTED_BY}@users.noreply.github.com"
 
-      # Note: Dispatch info (run_id, node_id, dispatched_at) is now updated by
-      # `erk submit` immediately after triggering the workflow. This eliminates
-      # race conditions with mark-impl-started and ensures the node_id is always
-      # available for batch GraphQL queries in `erk dash`.
+      # Update issue body with run_id immediately after checkout
+      # This enables trigger_workflow() to poll for the run_id via issue body
+      - name: Update issue with workflow run ID
+        env:
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          source $HOME/.cargo/env
+          dot-agent run erk update-workflow-run-id "$ISSUE_NUMBER" "${{ github.run_id }}"
 
       - name: Detect trunk branch
         id: trunk
@@ -151,55 +152,7 @@ jobs:
           echo "Checked out branch: $BRANCH_NAME"
 
       # =================================================================
-      # PHASE 3: PR SETUP
-      # =================================================================
-      - name: Post workflow started comment
-        env:
-          ISSUE_NUMBER: ${{ inputs.issue_number }}
-          BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
-          PR_NUMBER: ${{ inputs.pr_number }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          STARTED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          WORKFLOW_RUN_ID="${{ github.run_id }}"
-          WORKFLOW_RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-          cat > comment_body.md <<EOF
-          ⚙️ GitHub Action Started
-
-          <details>
-          <summary>📋 Metadata</summary>
-
-          <!-- erk:metadata-block:workflow-started -->
-          \`\`\`yaml
-          schema: workflow-started
-          status: started
-          started_at: $STARTED_AT
-          workflow_run_id: "$WORKFLOW_RUN_ID"
-          workflow_run_url: $WORKFLOW_RUN_URL
-          branch_name: $BRANCH_NAME
-          issue_number: $ISSUE_NUMBER
-          \`\`\`
-          <!-- /erk:metadata-block:workflow-started -->
-
-          </details>
-
-          ---
-
-          Setup completed successfully.
-
-          **Branch:** \`$BRANCH_NAME\`
-          **PR:** [#$PR_NUMBER](https://github.com/${{ github.repository }}/pull/$PR_NUMBER)
-          **Status:** Ready for implementation
-
-          [View workflow run]($WORKFLOW_RUN_URL)
-          EOF
-
-          gh issue comment "$ISSUE_NUMBER" --body-file comment_body.md
-          rm -f comment_body.md
-
-      # =================================================================
-      # PHASE 4: IMPLEMENTATION
+      # PHASE 3: IMPLEMENTATION
       # =================================================================
       - name: Set up implementation folder
         run: |
@@ -241,7 +194,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       # =================================================================
-      # PHASE 5: SUBMISSION (Pure Git - no Graphite)
+      # PHASE 4: SUBMISSION (Pure Git - no Graphite)
       # =================================================================
       - name: Submit branch with proper commit message
         id: submit

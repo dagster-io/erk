@@ -878,27 +878,53 @@ def test_list_workflow_runs_missing_fields() -> None:
 
 
 # ============================================================================
-# trigger_workflow() Tests - Edge Cases for Polling Logic
+# trigger_workflow() Tests - Issue Body Polling
 # ============================================================================
 
 
-def test_trigger_workflow_handles_empty_list_during_polling(monkeypatch: MonkeyPatch) -> None:
-    """Test trigger_workflow continues polling when run list is empty."""
+def _make_issue_body_with_plan_header(run_id: str | None) -> str:
+    """Create a mock issue body with plan-header metadata block."""
+    if run_id:
+        run_id_line = f"last_dispatched_run_id: '{run_id}'"
+    else:
+        run_id_line = "last_dispatched_run_id: null"
+    return f"""# Test Plan
+
+Some plan content here.
+
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+schema_version: '2'
+created_at: '2024-01-15T10:00:00Z'
+created_by: test-user
+{run_id_line}
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+
+## Steps
+
+1. Do something
+2. Do something else
+"""
+
+
+def test_trigger_workflow_finds_run_id_when_it_changes(monkeypatch: MonkeyPatch) -> None:
+    """Test trigger_workflow detects when run_id changes in issue body."""
     repo_root = Path("/repo")
-    call_count = 0
-    captured_distinct_id = None
+    poll_count = 0
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        nonlocal call_count, captured_distinct_id
-        call_count += 1
+        nonlocal poll_count
 
-        # First call: gh workflow run (trigger) - capture distinct_id from inputs
+        # gh workflow run (trigger)
         if "workflow" in cmd and "run" in cmd:
-            # Extract distinct_id from the -f distinct_id=xxx argument
-            for i, arg in enumerate(cmd):
-                if arg == "-f" and i + 1 < len(cmd) and cmd[i + 1].startswith("distinct_id="):
-                    captured_distinct_id = cmd[i + 1].split("=", 1)[1]
-                    break
             return subprocess.CompletedProcess(
                 args=cmd,
                 returncode=0,
@@ -906,31 +932,26 @@ def test_trigger_workflow_handles_empty_list_during_polling(monkeypatch: MonkeyP
                 stderr="",
             )
 
-        # Second call: gh run list (returns empty list - workflow not appeared yet)
-        if call_count == 2:
+        # gh issue view (fetch issue body)
+        if "issue" in cmd and "view" in cmd:
+            poll_count += 1
+            # First poll: old run_id
+            if poll_count == 1:
+                return subprocess.CompletedProcess(
+                    args=cmd,
+                    returncode=0,
+                    stdout=_make_issue_body_with_plan_header("111111"),
+                    stderr="",
+                )
+            # Second poll: new run_id (workflow updated it)
             return subprocess.CompletedProcess(
                 args=cmd,
                 returncode=0,
-                stdout="[]",
+                stdout=_make_issue_body_with_plan_header("999999"),
                 stderr="",
             )
 
-        # Third call: gh run list (workflow appears now with captured distinct_id)
-        run_data = json.dumps(
-            [
-                {
-                    "databaseId": 123456,
-                    "displayTitle": f"Test workflow: issue-1:{captured_distinct_id}",
-                    "conclusion": None,
-                }
-            ]
-        )
-        return subprocess.CompletedProcess(
-            args=cmd,
-            returncode=0,
-            stdout=run_data,
-            stderr="",
-        )
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
@@ -940,17 +961,20 @@ def test_trigger_workflow_handles_empty_list_during_polling(monkeypatch: MonkeyP
             {"issue_number": "1"},
         )
 
-        # Should successfully find run ID after empty list
-        assert run_id == "123456"
-        assert call_count >= 3  # trigger + at least 2 polls
+        # Should find the new run_id after it changed
+        assert run_id == "999999"
+        assert poll_count >= 2  # At least 2 polls to detect change
 
 
-def test_trigger_workflow_errors_on_invalid_json_structure(monkeypatch: MonkeyPatch) -> None:
-    """Test trigger_workflow raises error when gh returns non-list JSON."""
+def test_trigger_workflow_handles_no_initial_run_id(monkeypatch: MonkeyPatch) -> None:
+    """Test trigger_workflow handles case where no run_id exists initially."""
     repo_root = Path("/repo")
+    poll_count = 0
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # First call: gh workflow run (trigger)
+        nonlocal poll_count
+
+        # gh workflow run (trigger)
         if "workflow" in cmd and "run" in cmd:
             return subprocess.CompletedProcess(
                 args=cmd,
@@ -959,36 +983,46 @@ def test_trigger_workflow_errors_on_invalid_json_structure(monkeypatch: MonkeyPa
                 stderr="",
             )
 
-        # Second call: gh run list (returns invalid JSON structure - dict instead of list)
-        return subprocess.CompletedProcess(
-            args=cmd,
-            returncode=0,
-            stdout='{"error": "invalid"}',
-            stderr="",
-        )
+        # gh issue view (fetch issue body)
+        if "issue" in cmd and "view" in cmd:
+            poll_count += 1
+            # First poll: no run_id yet
+            if poll_count == 1:
+                return subprocess.CompletedProcess(
+                    args=cmd,
+                    returncode=0,
+                    stdout=_make_issue_body_with_plan_header(None),
+                    stderr="",
+                )
+            # Second poll: run_id appears
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout=_make_issue_body_with_plan_header("123456"),
+                stderr="",
+            )
+
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
+        run_id = ops.trigger_workflow(
+            repo_root,
+            "test-workflow.yml",
+            {"issue_number": "1"},
+        )
 
-        # Should raise error for invalid response format
-        with pytest.raises(RuntimeError) as exc_info:
-            ops.trigger_workflow(
-                repo_root,
-                "test-workflow.yml",
-                {"issue_number": "1"},
-            )
-
-        error_msg = str(exc_info.value)
-        assert "invalid response format" in error_msg
-        assert "Expected JSON array" in error_msg
+        # Should find the run_id after it appears
+        assert run_id == "123456"
+        assert poll_count >= 2
 
 
-def test_trigger_workflow_timeout_after_max_attempts(monkeypatch: MonkeyPatch) -> None:
-    """Test trigger_workflow raises error after exhausting retry attempts."""
+def test_trigger_workflow_timeout_no_run_id_change(monkeypatch: MonkeyPatch) -> None:
+    """Test trigger_workflow times out when run_id never changes."""
     repo_root = Path("/repo")
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # First call: gh workflow run (trigger)
+        # gh workflow run (trigger)
         if "workflow" in cmd and "run" in cmd:
             return subprocess.CompletedProcess(
                 args=cmd,
@@ -997,16 +1031,18 @@ def test_trigger_workflow_timeout_after_max_attempts(monkeypatch: MonkeyPatch) -
                 stderr="",
             )
 
-        # All polling calls: return empty list (workflow never appears)
-        return subprocess.CompletedProcess(
-            args=cmd,
-            returncode=0,
-            stdout="[]",
-            stderr="",
-        )
+        # gh issue view - always returns same run_id (never changes)
+        if "issue" in cmd and "view" in cmd:
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout=_make_issue_body_with_plan_header("old-run-id"),
+                stderr="",
+            )
+
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        # Use FakeTime that never sleeps
         fake_time = FakeTime()
         ops = RealGitHub(fake_time)
 
@@ -1019,29 +1055,19 @@ def test_trigger_workflow_timeout_after_max_attempts(monkeypatch: MonkeyPatch) -
             )
 
         error_msg = str(exc_info.value)
-        assert "could not find run" in error_msg
-        assert "after 15 attempts" in error_msg
+        assert "run_id not found after 15 attempts" in error_msg
+        assert "Issue number: 1" in error_msg
         assert "Debug commands:" in error_msg
-        assert "gh run list --workflow test-workflow.yml" in error_msg
+        assert "gh issue view 1" in error_msg
 
 
-def test_trigger_workflow_skips_cancelled_runs(monkeypatch: MonkeyPatch) -> None:
-    """Test trigger_workflow skips runs with conclusion skipped/cancelled."""
+def test_trigger_workflow_timeout_no_plan_header(monkeypatch: MonkeyPatch) -> None:
+    """Test trigger_workflow times out when issue has no plan-header block."""
     repo_root = Path("/repo")
-    call_count = 0
-    captured_distinct_id = None
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        nonlocal call_count, captured_distinct_id
-        call_count += 1
-
-        # First call: gh workflow run (trigger) - capture distinct_id from inputs
+        # gh workflow run (trigger)
         if "workflow" in cmd and "run" in cmd:
-            # Extract distinct_id from the -f distinct_id=xxx argument
-            for i, arg in enumerate(cmd):
-                if arg == "-f" and i + 1 < len(cmd) and cmd[i + 1].startswith("distinct_id="):
-                    captured_distinct_id = cmd[i + 1].split("=", 1)[1]
-                    break
             return subprocess.CompletedProcess(
                 args=cmd,
                 returncode=0,
@@ -1049,54 +1075,27 @@ def test_trigger_workflow_skips_cancelled_runs(monkeypatch: MonkeyPatch) -> None
                 stderr="",
             )
 
-        # Second call: returns skipped and cancelled runs with captured distinct_id
-        if call_count == 2:
-            run_data = json.dumps(
-                [
-                    {
-                        "databaseId": 111,
-                        "displayTitle": f"Test: issue-1:{captured_distinct_id}",
-                        "conclusion": "skipped",
-                    },
-                    {
-                        "databaseId": 222,
-                        "displayTitle": f"Test: issue-1:{captured_distinct_id}",
-                        "conclusion": "cancelled",
-                    },
-                ]
-            )
+        # gh issue view - issue body has no plan-header block
+        if "issue" in cmd and "view" in cmd:
             return subprocess.CompletedProcess(
                 args=cmd,
                 returncode=0,
-                stdout=run_data,
+                stdout="# Just a regular issue\n\nNo metadata here.",
                 stderr="",
             )
 
-        # Third call: returns valid run with captured distinct_id
-        run_data = json.dumps(
-            [
-                {
-                    "databaseId": 333,
-                    "displayTitle": f"Test: issue-1:{captured_distinct_id}",
-                    "conclusion": None,
-                }
-            ]
-        )
-        return subprocess.CompletedProcess(
-            args=cmd,
-            returncode=0,
-            stdout=run_data,
-            stderr="",
-        )
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealGitHub(FakeTime())
-        run_id = ops.trigger_workflow(
-            repo_root,
-            "test-workflow.yml",
-            {"issue_number": "1"},
-        )
+        fake_time = FakeTime()
+        ops = RealGitHub(fake_time)
 
-        # Should find the non-skipped/cancelled run
-        assert run_id == "333"
-        assert call_count >= 3  # trigger + 2 polls
+        with pytest.raises(RuntimeError) as exc_info:
+            ops.trigger_workflow(
+                repo_root,
+                "test-workflow.yml",
+                {"issue_number": "1"},
+            )
+
+        error_msg = str(exc_info.value)
+        assert "run_id not found after 15 attempts" in error_msg

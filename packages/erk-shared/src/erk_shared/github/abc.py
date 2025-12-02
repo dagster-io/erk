@@ -172,10 +172,14 @@ class GitHub(ABC):
     ) -> str:
         """Trigger a GitHub Actions workflow via gh CLI.
 
+        Triggers the workflow and polls for the run_id in the issue body.
+        The workflow updates the plan-header metadata block with
+        last_dispatched_run_id immediately after checkout.
+
         Args:
             repo_root: Repository root directory
             workflow: Workflow filename (e.g., "implement-plan.yml")
-            inputs: Workflow inputs as key-value pairs
+            inputs: Workflow inputs as key-value pairs (must include "issue_number")
             ref: Branch or tag to run workflow from (default: repository default branch)
 
         Returns:
