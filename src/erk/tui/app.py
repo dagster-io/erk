@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import click
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding
