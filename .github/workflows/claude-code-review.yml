@@ -22,6 +22,7 @@ jobs:
     #   )
 
     runs-on: ubuntu-latest
+    timeout-minutes: 180
     permissions:
       contents: read
       pull-requests: write # Changed from 'read' to allow comment editing
