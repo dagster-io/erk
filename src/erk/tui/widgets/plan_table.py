@@ -1,5 +1,6 @@
 """Plan table widget for TUI dashboard."""
 
+from rich.text import Text
 from textual.events import Click
 from textual.message import Message
 from textual.widgets import DataTable
@@ -26,6 +27,27 @@ class PlanDataTable(DataTable):
             super().__init__()
             self.row_index = row_index
 
+    class RunIdClicked(Message):
+        """Posted when user clicks run-id column on a row with a run URL."""
+
+        def __init__(self, row_index: int) -> None:
+            super().__init__()
+            self.row_index = row_index
+
+    class PrClicked(Message):
+        """Posted when user clicks pr column on a row with a PR URL."""
+
+        def __init__(self, row_index: int) -> None:
+            super().__init__()
+            self.row_index = row_index
+
+    class PlanClicked(Message):
+        """Posted when user clicks plan column on a row with an issue URL."""
+
+        def __init__(self, row_index: int) -> None:
+            super().__init__()
+            self.row_index = row_index
+
     def __init__(self, plan_filters: PlanFilters) -> None:
         """Initialize table with column configuration based on filters.
 
@@ -35,7 +57,10 @@ class PlanDataTable(DataTable):
         super().__init__(cursor_type="row")
         self._plan_filters = plan_filters
         self._rows: list[PlanRowData] = []
+        self._plan_column_index: int = 0  # Always first column
+        self._pr_column_index: int | None = None
         self._local_wt_column_index: int | None = None
+        self._run_id_column_index: int | None = None
 
     @property
     def local_wt_column_index(self) -> int | None:
@@ -73,6 +98,7 @@ class PlanDataTable(DataTable):
         col_index += 1
         if self._plan_filters.show_prs:
             self.add_column("pr", key="pr")
+            self._pr_column_index = col_index
             col_index += 1
             self.add_column("chks", key="chks")
             col_index += 1
@@ -85,6 +111,7 @@ class PlanDataTable(DataTable):
             self.add_column("remote-impl", key="remote_impl")
             col_index += 1
             self.add_column("run-id", key="run_id")
+            self._run_id_column_index = col_index
             col_index += 1
             self.add_column("run-state", key="run_state")
 
@@ -126,7 +153,7 @@ class PlanDataTable(DataTable):
                 target_row = min(saved_cursor_row, len(rows) - 1)
                 self.move_cursor(row=target_row)
 
-    def _row_to_values(self, row: PlanRowData) -> tuple[str, ...]:
+    def _row_to_values(self, row: PlanRowData) -> tuple[str | Text, ...]:
         """Convert PlanRowData to table cell values.
 
         Args:
@@ -135,8 +162,10 @@ class PlanDataTable(DataTable):
         Returns:
             Tuple of cell values matching column order
         """
-        # Format issue number
-        plan_cell = f"#{row.issue_number}"
+        # Format issue number - colorize if clickable
+        plan_cell: str | Text = f"#{row.issue_number}"
+        if row.issue_url:
+            plan_cell = Text(plan_cell, style="cyan underline")
 
         # Format worktree
         if row.exists_locally:
@@ -145,16 +174,20 @@ class PlanDataTable(DataTable):
             wt_cell = "-"
 
         # Build values list based on columns
-        values: list[str] = [plan_cell, row.title]
+        values: list[str | Text] = [plan_cell, row.title]
         if self._plan_filters.show_prs:
-            # Strip Rich markup for plain text display in Textual
+            # Strip Rich markup and colorize if clickable
             pr_display = _strip_rich_markup(row.pr_display)
+            if row.pr_url:
+                pr_display = Text(pr_display, style="cyan underline")
             checks_display = _strip_rich_markup(row.checks_display)
             values.extend([pr_display, checks_display])
         values.extend([wt_cell, row.local_impl_display])
         if self._plan_filters.show_runs:
             remote_impl = _strip_rich_markup(row.remote_impl_display)
             run_id = _strip_rich_markup(row.run_id_display)
+            if row.run_url:
+                run_id = Text(run_id, style="cyan underline")
             run_state = _strip_rich_markup(row.run_state_display)
             values.extend([remote_impl, run_id, run_state])
 
@@ -172,23 +205,22 @@ class PlanDataTable(DataTable):
         return self._rows[cursor_row]
 
     def on_click(self, event: Click) -> None:
-        """Detect clicks on local-wt column and post message.
+        """Detect clicks on specific columns and post appropriate messages.
 
         Posts LocalWtClicked event if:
         - Click is on the local-wt column
         - The row has an existing local worktree (not '-')
 
-        Note: DataTable's click handling (row selection, cursor movement) happens
-        via internal _on_click method, not on_click, so we don't call super().
+        Posts RunIdClicked event if:
+        - Click is on the run-id column
+        - The row has a run URL
+
+        Stops event propagation to prevent default row selection behavior when
+        a column-specific click is detected.
 
         Args:
             event: Click event from Textual
         """
-        if self._local_wt_column_index is None:
-            return
-
-        # Convert screen offset to cell coordinate
-        # hover_coordinate is updated by the DataTable on mouse events
         coord = self.hover_coordinate
         if coord is None:
             return
@@ -196,10 +228,33 @@ class PlanDataTable(DataTable):
         row_index = coord.row
         col_index = coord.column
 
-        # Only post event if local-wt column AND worktree exists
-        if col_index == self._local_wt_column_index:
+        # Check plan column (issue number)
+        if col_index == self._plan_column_index:
+            if row_index < len(self._rows) and self._rows[row_index].issue_url:
+                self.post_message(self.PlanClicked(row_index))
+                event.stop()
+                return
+
+        # Check PR column
+        if self._pr_column_index is not None and col_index == self._pr_column_index:
+            if row_index < len(self._rows) and self._rows[row_index].pr_url:
+                self.post_message(self.PrClicked(row_index))
+                event.stop()
+                return
+
+        # Check local-wt column - post event if worktree exists
+        if self._local_wt_column_index is not None and col_index == self._local_wt_column_index:
             if row_index < len(self._rows) and self._rows[row_index].exists_locally:
                 self.post_message(self.LocalWtClicked(row_index))
+                event.stop()
+                return
+
+        # Check run-id column - post event if run URL exists
+        if self._run_id_column_index is not None and col_index == self._run_id_column_index:
+            if row_index < len(self._rows) and self._rows[row_index].run_url:
+                self.post_message(self.RunIdClicked(row_index))
+                event.stop()
+                return
 
 
 def _strip_rich_markup(text: str) -> str:

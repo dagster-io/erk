@@ -68,6 +68,7 @@ def make_plan_row(
     pr_url: str | None = None,
     worktree_name: str = "",
     exists_locally: bool = False,
+    run_url: str | None = None,
 ) -> PlanRowData:
     """Create a PlanRowData for testing with sensible defaults.
 
@@ -79,6 +80,7 @@ def make_plan_row(
         pr_url: URL to PR
         worktree_name: Local worktree name
         exists_locally: Whether worktree exists locally
+        run_url: URL to the GitHub Actions run
 
     Returns:
         PlanRowData populated with test data
@@ -104,4 +106,5 @@ def make_plan_row(
         remote_impl_display="-",
         run_id_display="-",
         run_state_display="-",
+        run_url=run_url,
     )

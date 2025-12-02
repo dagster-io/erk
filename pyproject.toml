@@ -23,6 +23,7 @@ dependencies = [
     "pyperclip>=1.8.2",
     "dot-agent-kit",
     "erk-shared",
+    "textual-dev>=1.8.0",
 ]
 
 [project.scripts]

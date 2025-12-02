@@ -329,6 +329,26 @@ class ErkDashApp(App):
         """Handle Enter/double-click on row - open issue."""
         self.action_open_issue()
 
+    @on(PlanDataTable.PlanClicked)
+    def on_plan_clicked(self, event: PlanDataTable.PlanClicked) -> None:
+        """Handle click on plan cell - open issue in browser."""
+        if event.row_index < len(self._rows):
+            row = self._rows[event.row_index]
+            if row.issue_url:
+                click.launch(row.issue_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened issue #{row.issue_number}")
+
+    @on(PlanDataTable.PrClicked)
+    def on_pr_clicked(self, event: PlanDataTable.PrClicked) -> None:
+        """Handle click on pr cell - open PR in browser."""
+        if event.row_index < len(self._rows):
+            row = self._rows[event.row_index]
+            if row.pr_url:
+                click.launch(row.pr_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened PR #{row.pr_number}")
+
     @on(PlanDataTable.LocalWtClicked)
     def on_local_wt_clicked(self, event: PlanDataTable.LocalWtClicked) -> None:
         """Handle click on local-wt cell - copy checkout command.
@@ -339,3 +359,15 @@ class ErkDashApp(App):
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
             self._copy_checkout_command(row)
+
+    @on(PlanDataTable.RunIdClicked)
+    def on_run_id_clicked(self, event: PlanDataTable.RunIdClicked) -> None:
+        """Handle click on run-id cell - open run in browser."""
+        if event.row_index < len(self._rows):
+            row = self._rows[event.row_index]
+            if row.run_url:
+                click.launch(row.run_url)
+                if self._status_bar is not None:
+                    # Extract run ID from URL to avoid Rich markup in status bar
+                    run_id = row.run_url.rsplit("/", 1)[-1]
+                    self._status_bar.set_message(f"Opened run {run_id}")
