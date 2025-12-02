@@ -108,11 +108,11 @@ def test_connect_warns_if_not_configured() -> None:
 
     # Should show warning about not configured
     assert "has not been configured yet" in result.output
-    # But still attempt to connect
+    # But still attempt to connect (via VS Code by default)
     mock_execvp.assert_called_once()
     call_args = mock_execvp.call_args
     assert call_args[0][0] == "gh"  # First arg is program name
-    assert "ssh" in call_args[0][1]
+    assert "code" in call_args[0][1]
 
 
 def test_connect_updates_last_connected_timestamp() -> None:
@@ -153,8 +153,8 @@ def test_connect_with_named_planner() -> None:
     assert "gh-name-2" in args_list
 
 
-def test_connect_executes_claude_command_with_craft_plan() -> None:
-    """Test that connect runs claude with /erk:craft-plan via SSH in a bash login shell."""
+def test_connect_default_opens_vscode() -> None:
+    """Test that connect (without --ssh) opens VS Code desktop."""
     planner = _make_planner(name="my-planner", gh_name="my-gh-codespace")
     registry = FakePlannerRegistry(planners=[planner], default_planner="my-planner")
     ctx = ErkContext.for_test(planner_registry=registry)
@@ -162,7 +162,33 @@ def test_connect_executes_claude_command_with_craft_plan() -> None:
     runner = CliRunner()
 
     with patch("os.execvp") as mock_execvp:
-        runner.invoke(cli, ["planner", "connect"], obj=ctx)
+        result = runner.invoke(cli, ["planner", "connect"], obj=ctx)
+
+    # Verify VS Code is opened
+    mock_execvp.assert_called_once()
+    call_args = mock_execvp.call_args
+    assert call_args[0][0] == "gh"
+    args_list = call_args[0][1]
+    assert args_list == ["gh", "codespace", "code", "-c", "my-gh-codespace"]
+
+    # Verify setup instructions are printed
+    assert "Opening VS Code..." in result.output
+    assert "Run in VS Code terminal:" in result.output
+    assert "git pull && uv sync && source .venv/bin/activate" in result.output
+    assert "--allow-dangerously-skip-permissions" in result.output
+    assert '"/erk:craft-plan"' in result.output
+
+
+def test_connect_with_ssh_flag_uses_ssh() -> None:
+    """Test that connect --ssh runs claude with /erk:craft-plan via SSH in a bash login shell."""
+    planner = _make_planner(name="my-planner", gh_name="my-gh-codespace")
+    registry = FakePlannerRegistry(planners=[planner], default_planner="my-planner")
+    ctx = ErkContext.for_test(planner_registry=registry)
+
+    runner = CliRunner()
+
+    with patch("os.execvp") as mock_execvp:
+        runner.invoke(cli, ["planner", "connect", "--ssh"], obj=ctx)
 
     # Verify the correct command was called
     mock_execvp.assert_called_once()
