@@ -39,6 +39,10 @@ class LazyGroup(click.Group):
         from dot_agent_kit.commands.kit.group import kit_group
         from dot_agent_kit.commands.kit_command.group import kit_command_group
         from dot_agent_kit.commands.md.group import md_group
+        from dot_agent_kit.commands.nomcp.group import nomcp_group
+        from dot_agent_kit.commands.nomcp.init import init as nomcp_init  # noqa: F401
+        from dot_agent_kit.commands.nomcp.inspect import inspect  # noqa: F401
+        from dot_agent_kit.commands.nomcp.skill import skill_group  # noqa: F401
         from dot_agent_kit.commands.status import st, status
 
         self.add_command(check.check)
@@ -53,6 +57,7 @@ class LazyGroup(click.Group):
         self.add_command(kit_group)
         self.add_command(kit_command_group)
         self.add_command(md_group)
+        self.add_command(nomcp_group)
 
         # Add 'run' as an alias for 'kit-command' for backwards compatibility
         # Users can use either 'dot-agent run' or 'dot-agent kit-command'
