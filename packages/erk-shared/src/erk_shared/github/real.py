@@ -3,6 +3,7 @@
 import json
 import secrets
 import string
+import subprocess
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -10,6 +11,7 @@ from typing import Any
 
 from erk_shared.debug import debug_log
 from erk_shared.github.abc import GitHub
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.parsing import (
     execute_gh_command,
     parse_aggregated_check_counts,
@@ -1419,3 +1421,278 @@ query {{
         stdout = execute_gh_command(cmd, repo_root)
         node_id = stdout.strip()
         return node_id if node_id else None
+
+    def get_issues_with_pr_linkages(
+        self,
+        repo_root: Path,
+        owner: str,
+        repo: str,
+        labels: list[str],
+        state: str | None = None,
+        limit: int | None = None,
+    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+        """Fetch issues and linked PRs in a single GraphQL query.
+
+        Uses repository.issues() connection with inline timelineItems
+        to get PR linkages in one API call.
+        """
+        query = self._build_issues_with_pr_linkages_query(owner, repo, labels, state, limit)
+        response = self._execute_batch_pr_query(query, repo_root)
+        return self._parse_issues_with_pr_linkages(response, owner, repo)
+
+    def _build_issues_with_pr_linkages_query(
+        self,
+        owner: str,
+        repo: str,
+        labels: list[str],
+        state: str | None,
+        limit: int | None,
+    ) -> str:
+        """Build GraphQL query to fetch issues with PR linkages.
+
+        Uses repository.issues() connection with timelineItems to get
+        cross-referenced PRs in a single query.
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            labels: Labels to filter by
+            state: Filter by state ("open", "closed", or None for all)
+            limit: Maximum issues to return (default: 100)
+
+        Returns:
+            GraphQL query string
+        """
+        # Build labels array for query
+        labels_json = json.dumps(labels)
+
+        # Build states filter
+        # Default to OPEN to match gh CLI behavior (gh issue list defaults to open)
+        if state is not None:
+            states_filter = f"states: [{state.upper()}]"
+        else:
+            states_filter = "states: [OPEN]"
+
+        # Build limit (default 30 matches gh CLI behavior)
+        effective_limit = limit if limit is not None else 30
+
+        # Define the fragment for PR linkage data
+        # Uses pre-aggregated count fields for ~15-30x smaller payload
+        fragment_definition = """fragment IssuePRLinkageFields on CrossReferencedEvent {
+  willCloseTarget
+  source {
+    ... on PullRequest {
+      number
+      state
+      url
+      isDraft
+      createdAt
+      statusCheckRollup {
+        state
+        contexts(last: 1) {
+          totalCount
+          checkRunCountsByState { state count }
+          statusContextCountsByState { state count }
+        }
+      }
+      mergeable
+    }
+  }
+}"""
+
+        # Build the query - construct issues args separately for line length
+        issues_args = f"labels: {labels_json}, {states_filter} first: {effective_limit}"
+        order_by = "orderBy: {field: UPDATED_AT, direction: DESC}"
+        query = f"""{fragment_definition}
+
+query {{
+  repository(owner: "{owner}", name: "{repo}") {{
+    issues({issues_args}, {order_by}) {{
+      nodes {{
+        number
+        title
+        body
+        state
+        url
+        labels(first: 100) {{ nodes {{ name }} }}
+        assignees(first: 100) {{ nodes {{ login }} }}
+        createdAt
+        updatedAt
+        timelineItems(itemTypes: [CROSS_REFERENCED_EVENT], first: 20) {{
+          nodes {{
+            ... on CrossReferencedEvent {{
+              ...IssuePRLinkageFields
+            }}
+          }}
+        }}
+      }}
+    }}
+  }}
+}}"""
+        return query
+
+    def _parse_issue_node(self, node: dict[str, Any]) -> IssueInfo | None:
+        """Parse a single issue node from GraphQL response.
+
+        Returns None if node is invalid or missing required fields.
+        """
+        issue_number = node.get("number")
+        if issue_number is None:
+            return None
+
+        created_at_str = node.get("createdAt", "")
+        updated_at_str = node.get("updatedAt", "")
+        created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+        updated_at = datetime.fromisoformat(updated_at_str.replace("Z", "+00:00"))
+
+        labels_data = node.get("labels", {}).get("nodes", [])
+        labels = [label.get("name", "") for label in labels_data if label]
+
+        assignees_data = node.get("assignees", {}).get("nodes", [])
+        assignees = [assignee.get("login", "") for assignee in assignees_data if assignee]
+
+        return IssueInfo(
+            number=issue_number,
+            title=node.get("title", ""),
+            body=node.get("body", ""),
+            state=node.get("state", "OPEN"),
+            url=node.get("url", ""),
+            labels=labels,
+            assignees=assignees,
+            created_at=created_at,
+            updated_at=updated_at,
+        )
+
+    def _parse_pr_from_timeline_event(
+        self, event: dict[str, Any], owner: str, repo: str
+    ) -> tuple[PullRequestInfo, str] | None:
+        """Parse PR info from a timeline CrossReferencedEvent.
+
+        Returns tuple of (PullRequestInfo, created_at_timestamp) or None if invalid.
+        """
+        if not event.get("willCloseTarget"):
+            return None
+
+        source = event.get("source")
+        if source is None:
+            return None
+
+        pr_number = source.get("number")
+        pr_state = source.get("state")
+        pr_url = source.get("url")
+        created_at_pr = source.get("createdAt")
+
+        # Skip if essential fields are missing (source may be Issue, not PR)
+        if pr_number is None or pr_state is None or pr_url is None or created_at_pr is None:
+            return None
+
+        checks_passing, checks_counts = self._parse_status_rollup(source.get("statusCheckRollup"))
+        has_conflicts = self._parse_mergeable_status(source.get("mergeable"))
+
+        pr_info = PullRequestInfo(
+            number=pr_number,
+            state=pr_state,
+            url=pr_url,
+            is_draft=source.get("isDraft", False),
+            title=None,
+            checks_passing=checks_passing,
+            owner=owner,
+            repo=repo,
+            has_conflicts=has_conflicts,
+            checks_counts=checks_counts,
+        )
+        return (pr_info, created_at_pr)
+
+    def _parse_status_rollup(
+        self, status_rollup: dict[str, Any] | None
+    ) -> tuple[bool | None, tuple[int, int] | None]:
+        """Parse checks status and counts from statusCheckRollup.
+
+        Returns (checks_passing, checks_counts).
+        """
+        if status_rollup is None:
+            return (None, None)
+
+        rollup_state = status_rollup.get("state")
+        checks_passing = None
+        if rollup_state == "SUCCESS":
+            checks_passing = True
+        elif rollup_state in ("FAILURE", "ERROR"):
+            checks_passing = False
+
+        checks_counts = None
+        contexts = status_rollup.get("contexts")
+        if contexts is not None and isinstance(contexts, dict):
+            total = contexts.get("totalCount", 0)
+            if total > 0:
+                checks_counts = parse_aggregated_check_counts(
+                    contexts.get("checkRunCountsByState", []),
+                    contexts.get("statusContextCountsByState", []),
+                    total,
+                )
+
+        return (checks_passing, checks_counts)
+
+    def _parse_mergeable_status(self, mergeable: str | None) -> bool | None:
+        """Parse has_conflicts from mergeable field."""
+        if mergeable == "CONFLICTING":
+            return True
+        if mergeable == "MERGEABLE":
+            return False
+        return None
+
+    def _parse_issues_with_pr_linkages(
+        self,
+        response: dict[str, Any],
+        owner: str,
+        repo: str,
+    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+        """Parse GraphQL response to extract issues and PR linkages."""
+        issues: list[IssueInfo] = []
+        pr_linkages: dict[int, list[PullRequestInfo]] = {}
+
+        nodes = response.get("data", {}).get("repository", {}).get("issues", {}).get("nodes", [])
+
+        for node in nodes:
+            if node is None:
+                continue
+
+            issue = self._parse_issue_node(node)
+            if issue is None:
+                continue
+            issues.append(issue)
+
+            # Parse PR linkages from timelineItems
+            timeline_nodes = node.get("timelineItems", {}).get("nodes", [])
+            prs_with_timestamps: list[tuple[PullRequestInfo, str]] = []
+
+            for event in timeline_nodes:
+                if event is None:
+                    continue
+                result = self._parse_pr_from_timeline_event(event, owner, repo)
+                if result is not None:
+                    prs_with_timestamps.append(result)
+
+            if prs_with_timestamps:
+                prs_with_timestamps.sort(key=lambda x: x[1], reverse=True)
+                pr_linkages[issue.number] = [pr for pr, _ in prs_with_timestamps]
+
+        return (issues, pr_linkages)
+
+    def get_repo_info(self, repo_root: Path) -> tuple[str, str] | None:
+        """Get repository owner and name via gh repo view.
+
+        Uses gh repo view which reads from local git remote config.
+        """
+        result = subprocess.run(
+            ["gh", "repo", "view", "--json", "owner,name"],
+            capture_output=True,
+            text=True,
+            cwd=repo_root,
+            check=False,
+        )
+        if result.returncode != 0:
+            return None
+
+        data = json.loads(result.stdout)
+        return (data["owner"]["login"], data["name"])

@@ -14,8 +14,8 @@ from erk.core.services.plan_list_service import PlanListData, PlanListService
 class TestPlanListService:
     """Tests for PlanListService with injected fakes."""
 
-    def test_fetches_issues_from_github_issues_integration(self) -> None:
-        """Service delegates issue fetching to GitHubIssues integration."""
+    def test_fetches_issues_with_skip_pr_linkages(self) -> None:
+        """Service uses GitHubIssues when skip_pr_linkages=True."""
         now = datetime.now(UTC)
         issue = IssueInfo(
             number=42,
@@ -34,15 +34,19 @@ class TestPlanListService:
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             repo_root=Path("/test/repo"),
+            owner="owner",
+            repo="repo",
             labels=["erk-plan"],
+            skip_pr_linkages=True,  # Light path
         )
 
         assert len(result.issues) == 1
         assert result.issues[0].number == 42
         assert result.issues[0].title == "Test Plan"
+        assert result.pr_linkages == {}
 
-    def test_fetches_pr_linkages_from_github_integration(self) -> None:
-        """Service delegates PR linkage fetching to GitHub integration."""
+    def test_fetches_issues_and_pr_linkages_unified(self) -> None:
+        """Service uses unified get_issues_with_pr_linkages for issues + PR linkages."""
         now = datetime.now(UTC)
         issue = IssueInfo(
             number=42,
@@ -65,15 +69,25 @@ class TestPlanListService:
             owner="owner",
             repo="repo",
         )
+        # Configure issues and pr_issue_linkages for unified query
+        fake_github = FakeGitHub(
+            issues=[issue],
+            pr_issue_linkages={42: [pr]},
+        )
         fake_issues = FakeGitHubIssues(issues={42: issue})
-        fake_github = FakeGitHub(pr_issue_linkages={42: [pr]})
 
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             repo_root=Path("/test/repo"),
             labels=["erk-plan"],
+            owner="owner",
+            repo="repo",
         )
 
+        # Unified path returns issues from get_issues_with_pr_linkages
+        assert len(result.issues) == 1
+        assert result.issues[0].number == 42
+        # PR linkages should be fetched together
         assert 42 in result.pr_linkages
         assert result.pr_linkages[42][0].number == 123
 
@@ -85,15 +99,59 @@ class TestPlanListService:
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             repo_root=Path("/test/repo"),
+            owner="owner",
+            repo="repo",
             labels=["erk-plan"],
+            skip_pr_linkages=True,  # Light path
         )
 
         assert result.issues == []
         assert result.pr_linkages == {}
         assert result.workflow_runs == {}
 
-    def test_state_filter_passed_to_integration(self) -> None:
-        """Service passes state filter to GitHubIssues integration."""
+    def test_state_filter_with_unified_path(self) -> None:
+        """Service passes state filter to unified get_issues_with_pr_linkages."""
+        now = datetime.now(UTC)
+        open_issue = IssueInfo(
+            number=1,
+            title="Open Plan",
+            body="",
+            state="OPEN",
+            url="https://github.com/owner/repo/issues/1",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+        )
+        closed_issue = IssueInfo(
+            number=2,
+            title="Closed Plan",
+            body="",
+            state="CLOSED",
+            url="https://github.com/owner/repo/issues/2",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+        )
+        # Configure both issues for the unified query
+        fake_github = FakeGitHub(issues=[open_issue, closed_issue])
+        fake_issues = FakeGitHubIssues(issues={1: open_issue, 2: closed_issue})
+
+        service = PlanListService(fake_github, fake_issues)
+        result = service.get_plan_list_data(
+            repo_root=Path("/test/repo"),
+            labels=["erk-plan"],
+            state="open",
+            owner="owner",
+            repo="repo",
+        )
+
+        assert len(result.issues) == 1
+        assert result.issues[0].title == "Open Plan"
+
+    def test_state_filter_with_light_path(self) -> None:
+        """Service passes state filter to GitHubIssues when skip_pr_linkages=True."""
         now = datetime.now(UTC)
         open_issue = IssueInfo(
             number=1,
@@ -123,8 +181,11 @@ class TestPlanListService:
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             repo_root=Path("/test/repo"),
+            owner="owner",
+            repo="repo",
             labels=["erk-plan"],
             state="open",
+            skip_pr_linkages=True,
         )
 
         assert len(result.issues) == 1
@@ -180,7 +241,9 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
             created_at=now,
         )
         fake_issues = FakeGitHubIssues(issues={42: issue})
+        # Configure both issues (for unified query) and workflow_runs_by_node_id
         fake_github = FakeGitHub(
+            issues=[issue],
             workflow_runs_by_node_id={"WFR_abc123": run},
         )
 
@@ -188,6 +251,8 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
         result = service.get_plan_list_data(
             repo_root=Path("/test/repo"),
             labels=["erk-plan"],
+            owner="owner",
+            repo="repo",
         )
 
         # Verify workflow run was fetched and mapped to issue
@@ -215,7 +280,7 @@ last_dispatched_node_id: 'WFR_abc123'
             title="Test Plan",
             body=issue_body,
             state="OPEN",
-            url="",
+            url="https://github.com/owner/repo/issues/42",
             labels=["erk-plan"],
             assignees=[],
             created_at=now,
@@ -229,13 +294,18 @@ last_dispatched_node_id: 'WFR_abc123'
             head_sha="abc",
         )
         fake_issues = FakeGitHubIssues(issues={42: issue})
-        fake_github = FakeGitHub(workflow_runs_by_node_id={"WFR_abc123": run})
+        fake_github = FakeGitHub(
+            issues=[issue],
+            workflow_runs_by_node_id={"WFR_abc123": run},
+        )
 
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             repo_root=Path("/test/repo"),
             labels=["erk-plan"],
             skip_workflow_runs=True,
+            owner="owner",
+            repo="repo",
         )
 
         # Workflow runs dict should be empty when skipped
@@ -249,19 +319,21 @@ last_dispatched_node_id: 'WFR_abc123'
             title="Test Plan",
             body="Plain body without metadata",
             state="OPEN",
-            url="",
+            url="https://github.com/owner/repo/issues/42",
             labels=["erk-plan"],
             assignees=[],
             created_at=now,
             updated_at=now,
         )
         fake_issues = FakeGitHubIssues(issues={42: issue})
-        fake_github = FakeGitHub()
+        fake_github = FakeGitHub(issues=[issue])
 
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             repo_root=Path("/test/repo"),
             labels=["erk-plan"],
+            owner="owner",
+            repo="repo",
         )
 
         # No workflow runs should be fetched (no node_ids to fetch)
@@ -287,7 +359,7 @@ last_dispatched_node_id: 'WFR_nonexistent'
             title="Test Plan",
             body=issue_body,
             state="OPEN",
-            url="",
+            url="https://github.com/owner/repo/issues/42",
             labels=["erk-plan"],
             assignees=[],
             created_at=now,
@@ -295,12 +367,14 @@ last_dispatched_node_id: 'WFR_nonexistent'
         )
         # No workflow runs configured - node_id won't be found
         fake_issues = FakeGitHubIssues(issues={42: issue})
-        fake_github = FakeGitHub()
+        fake_github = FakeGitHub(issues=[issue])
 
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             repo_root=Path("/test/repo"),
             labels=["erk-plan"],
+            owner="owner",
+            repo="repo",
         )
 
         # Issue should have None for workflow run (not found)

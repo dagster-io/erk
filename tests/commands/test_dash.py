@@ -1151,7 +1151,10 @@ def test_list_plans_pr_column_open_pr() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={100: plan_to_issue(plan)})
-        github = FakeGitHub(pr_issue_linkages={100: [pr]})
+        github = FakeGitHub(
+            issues=[plan_to_issue(plan)],
+            pr_issue_linkages={100: [pr]},
+        )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use --prs flag to show PR columns
@@ -1199,7 +1202,10 @@ def test_list_plans_pr_column_draft_pr() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={101: plan_to_issue(plan)})
-        github = FakeGitHub(pr_issue_linkages={101: [pr]})
+        github = FakeGitHub(
+            issues=[plan_to_issue(plan)],
+            pr_issue_linkages={101: [pr]},
+        )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use --prs flag to show PR columns
@@ -1247,7 +1253,10 @@ def test_list_plans_pr_column_merged_pr() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={102: plan_to_issue(plan)})
-        github = FakeGitHub(pr_issue_linkages={102: [pr]})
+        github = FakeGitHub(
+            issues=[plan_to_issue(plan)],
+            pr_issue_linkages={102: [pr]},
+        )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use --prs flag to show PR columns
@@ -1295,7 +1304,10 @@ def test_list_plans_pr_column_closed_pr() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={103: plan_to_issue(plan)})
-        github = FakeGitHub(pr_issue_linkages={103: [pr]})
+        github = FakeGitHub(
+            issues=[plan_to_issue(plan)],
+            pr_issue_linkages={103: [pr]},
+        )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use --prs flag to show PR columns
@@ -1343,7 +1355,10 @@ def test_list_plans_pr_column_with_conflicts() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={104: plan_to_issue(plan)})
-        github = FakeGitHub(pr_issue_linkages={104: [pr]})
+        github = FakeGitHub(
+            issues=[plan_to_issue(plan)],
+            pr_issue_linkages={104: [pr]},
+        )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use --prs flag to show PR columns
@@ -1406,7 +1421,10 @@ def test_list_plans_pr_column_multiple_prs_prefers_open() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={105: plan_to_issue(plan)})
         # PRs already sorted by created_at descending
-        github = FakeGitHub(pr_issue_linkages={105: [open_pr, closed_pr]})
+        github = FakeGitHub(
+            issues=[plan_to_issue(plan)],
+            pr_issue_linkages={105: [open_pr, closed_pr]},
+        )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use --prs flag to show PR columns
@@ -1510,6 +1528,7 @@ last_dispatched_node_id: 'WFR_all_flag'
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={200: plan_to_issue(plan)})
         github = FakeGitHub(
+            issues=[plan_to_issue(plan)],
             pr_issue_linkages={200: [pr]},
             workflow_runs_by_node_id={"WFR_all_flag": workflow_run},
         )
@@ -1584,6 +1603,7 @@ last_dispatched_node_id: 'WFR_short_flag'
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={201: plan_to_issue(plan)})
         github = FakeGitHub(
+            issues=[plan_to_issue(plan)],
             pr_issue_linkages={201: [pr]},
             workflow_runs_by_node_id={"WFR_short_flag": workflow_run},
         )

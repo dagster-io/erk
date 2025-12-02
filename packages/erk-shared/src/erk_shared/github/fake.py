@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import cast
 
 from erk_shared.github.abc import GitHub
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
     PRCheckoutInfo,
@@ -42,6 +43,7 @@ class FakeGitHub(GitHub):
         authenticated: bool = True,
         auth_username: str | None = "test-user",
         auth_hostname: str | None = "github.com",
+        issues: list[IssueInfo] | None = None,
     ) -> None:
         """Create FakeGitHub with pre-configured state.
 
@@ -61,6 +63,7 @@ class FakeGitHub(GitHub):
             authenticated: Whether gh CLI is authenticated (default True for test convenience)
             auth_username: Username returned by check_auth_status() (default "test-user")
             auth_hostname: Hostname returned by check_auth_status() (default "github.com")
+            issues: List of IssueInfo objects for get_issues_with_pr_linkages()
         """
         if prs is not None and pr_statuses is not None:
             msg = "Cannot specify both prs and pr_statuses"
@@ -100,6 +103,7 @@ class FakeGitHub(GitHub):
         self._authenticated = authenticated
         self._auth_username = auth_username
         self._auth_hostname = auth_hostname
+        self._issues = issues or []
         self._updated_pr_bases: list[tuple[int, str]] = []
         self._updated_pr_bodies: list[tuple[int, str]] = []
         self._merged_prs: list[int] = []
@@ -529,3 +533,61 @@ class FakeGitHub(GitHub):
 
         # Default: return a fake node_id for any run_id (convenience for tests)
         return f"WFR_fake_node_id_{run_id}"
+
+    def get_issues_with_pr_linkages(
+        self,
+        repo_root: Path,
+        owner: str,
+        repo: str,
+        labels: list[str],
+        state: str | None = None,
+        limit: int | None = None,
+    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+        """Get issues and PR linkages from pre-configured data.
+
+        Filters pre-configured issues by labels and state, then returns
+        matching PR linkages from pr_issue_linkages mapping.
+
+        Args:
+            repo_root: Repository root directory (ignored in fake)
+            owner: Repository owner (ignored in fake)
+            repo: Repository name (ignored in fake)
+            labels: Labels to filter by
+            state: Filter by state ("open", "closed", or None for OPEN default)
+            limit: Maximum issues to return (default: all)
+
+        Returns:
+            Tuple of (filtered_issues, pr_linkages for those issues)
+        """
+        # Default to OPEN to match gh CLI behavior (gh issue list defaults to open)
+        effective_state = state if state is not None else "open"
+
+        # Filter issues by labels
+        filtered_issues = []
+        for issue in self._issues:
+            # Check if issue has all required labels
+            if not all(label in issue.labels for label in labels):
+                continue
+            # Check state filter
+            if issue.state.lower() != effective_state.lower():
+                continue
+            filtered_issues.append(issue)
+
+        # Apply limit
+        effective_limit = limit if limit is not None else len(filtered_issues)
+        filtered_issues = filtered_issues[:effective_limit]
+
+        # Build PR linkages for filtered issues
+        pr_linkages: dict[int, list[PullRequestInfo]] = {}
+        for issue in filtered_issues:
+            if issue.number in self._pr_issue_linkages:
+                pr_linkages[issue.number] = self._pr_issue_linkages[issue.number]
+
+        return (filtered_issues, pr_linkages)
+
+    def get_repo_info(self, repo_root: Path) -> tuple[str, str] | None:
+        """Return pre-configured repo info.
+
+        Returns ("owner", "repo") for test convenience.
+        """
+        return ("owner", "repo")

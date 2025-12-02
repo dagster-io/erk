@@ -4,10 +4,12 @@ These tests verify that FakeGitHub correctly simulates GitHub operations,
 providing reliable test doubles for CLI tests.
 """
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import PRInfo, PullRequestInfo, WorkflowRun
 
 from tests.test_utils.paths import sentinel_path
@@ -649,3 +651,219 @@ def test_fake_github_get_workflow_run_node_id_prefers_node_id_mapping() -> None:
 
     # Should return real node_id from mapping, not generated one
     assert result == "WFR_real_node"
+
+
+def test_fake_github_get_issues_with_pr_linkages_empty() -> None:
+    """Test get_issues_with_pr_linkages returns empty when no issues configured."""
+    ops = FakeGitHub()
+
+    issues, pr_linkages = ops.get_issues_with_pr_linkages(
+        sentinel_path(),
+        owner="owner",
+        repo="repo",
+        labels=["erk-plan"],
+    )
+
+    assert issues == []
+    assert pr_linkages == {}
+
+
+def test_fake_github_get_issues_with_pr_linkages_filters_by_labels() -> None:
+    """Test get_issues_with_pr_linkages filters by required labels."""
+    now = datetime.now(UTC)
+    issue1 = IssueInfo(
+        number=1,
+        title="Plan Issue",
+        body="",
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/1",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+    issue2 = IssueInfo(
+        number=2,
+        title="Non-Plan Issue",
+        body="",
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/2",
+        labels=["bug"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+    ops = FakeGitHub(issues=[issue1, issue2])
+
+    issues, _ = ops.get_issues_with_pr_linkages(
+        sentinel_path(),
+        owner="owner",
+        repo="repo",
+        labels=["erk-plan"],
+    )
+
+    assert len(issues) == 1
+    assert issues[0].number == 1
+
+
+def test_fake_github_get_issues_with_pr_linkages_filters_by_state() -> None:
+    """Test get_issues_with_pr_linkages filters by state."""
+    now = datetime.now(UTC)
+    open_issue = IssueInfo(
+        number=1,
+        title="Open Plan",
+        body="",
+        state="OPEN",
+        url="",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+    closed_issue = IssueInfo(
+        number=2,
+        title="Closed Plan",
+        body="",
+        state="CLOSED",
+        url="",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+    ops = FakeGitHub(issues=[open_issue, closed_issue])
+
+    issues, _ = ops.get_issues_with_pr_linkages(
+        sentinel_path(),
+        owner="owner",
+        repo="repo",
+        labels=["erk-plan"],
+        state="open",
+    )
+
+    assert len(issues) == 1
+    assert issues[0].title == "Open Plan"
+
+
+def test_fake_github_get_issues_with_pr_linkages_returns_pr_linkages() -> None:
+    """Test get_issues_with_pr_linkages returns PR linkages for matching issues."""
+    now = datetime.now(UTC)
+    issue = IssueInfo(
+        number=42,
+        title="Test Plan",
+        body="",
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+    pr = PullRequestInfo(
+        number=123,
+        state="OPEN",
+        url="https://github.com/owner/repo/pull/123",
+        is_draft=False,
+        title="Implementation PR",
+        checks_passing=True,
+        owner="owner",
+        repo="repo",
+    )
+    ops = FakeGitHub(
+        issues=[issue],
+        pr_issue_linkages={42: [pr]},
+    )
+
+    issues, pr_linkages = ops.get_issues_with_pr_linkages(
+        sentinel_path(),
+        owner="owner",
+        repo="repo",
+        labels=["erk-plan"],
+    )
+
+    assert len(issues) == 1
+    assert 42 in pr_linkages
+    assert pr_linkages[42][0].number == 123
+
+
+def test_fake_github_get_issues_with_pr_linkages_respects_limit() -> None:
+    """Test get_issues_with_pr_linkages respects limit parameter."""
+    now = datetime.now(UTC)
+    issues = [
+        IssueInfo(
+            number=i,
+            title=f"Plan {i}",
+            body="",
+            state="OPEN",
+            url=f"https://github.com/owner/repo/issues/{i}",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+        )
+        for i in range(10)
+    ]
+    ops = FakeGitHub(issues=issues)
+
+    result_issues, _ = ops.get_issues_with_pr_linkages(
+        sentinel_path(),
+        owner="owner",
+        repo="repo",
+        labels=["erk-plan"],
+        limit=3,
+    )
+
+    assert len(result_issues) == 3
+
+
+def test_fake_github_get_issues_with_pr_linkages_no_linkages_for_filtered_issues() -> None:
+    """Test get_issues_with_pr_linkages doesn't return linkages for filtered-out issues."""
+    now = datetime.now(UTC)
+    issue1 = IssueInfo(
+        number=1,
+        title="Plan",
+        body="",
+        state="OPEN",
+        url="",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+    issue2 = IssueInfo(
+        number=2,
+        title="Bug",
+        body="",
+        state="OPEN",
+        url="",
+        labels=["bug"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+    pr = PullRequestInfo(
+        number=99,
+        state="OPEN",
+        url="",
+        is_draft=False,
+        title="PR for Bug",
+        checks_passing=True,
+        owner="owner",
+        repo="repo",
+    )
+    # Issue 2 has PR linkage but doesn't match label filter
+    ops = FakeGitHub(
+        issues=[issue1, issue2],
+        pr_issue_linkages={2: [pr]},
+    )
+
+    issues, pr_linkages = ops.get_issues_with_pr_linkages(
+        sentinel_path(),
+        owner="owner",
+        repo="repo",
+        labels=["erk-plan"],
+    )
+
+    # Only issue 1 matches, so no PR linkages should be returned
+    assert len(issues) == 1
+    assert 2 not in pr_linkages

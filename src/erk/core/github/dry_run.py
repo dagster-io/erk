@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from erk_shared.github.abc import GitHub
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
     PRCheckoutInfo,
@@ -180,3 +181,21 @@ class DryRunGitHub(GitHub):
     def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -> str | None:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_workflow_run_node_id(repo_root, run_id)
+
+    def get_issues_with_pr_linkages(
+        self,
+        repo_root: Path,
+        owner: str,
+        repo: str,
+        labels: list[str],
+        state: str | None = None,
+        limit: int | None = None,
+    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_issues_with_pr_linkages(
+            repo_root, owner, repo, labels, state=state, limit=limit
+        )
+
+    def get_repo_info(self, repo_root: Path) -> tuple[str, str] | None:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_repo_info(repo_root)

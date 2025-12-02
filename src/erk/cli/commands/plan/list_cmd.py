@@ -242,12 +242,21 @@ def _build_plans_table(
     # Determine if we need workflow runs (for display or filtering)
     needs_workflow_runs = runs or run_state is not None
 
+    # Resolve owner/repo from git remote
+    repo_info = ctx.github.get_repo_info(repo_root)
+    if repo_info is None:
+        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+        raise SystemExit(1)
+    owner, repo_name = repo_info
+
     # Use PlanListService for batched API calls
     # Skip workflow runs when not needed for better performance
     # Skip PR linkages when --prs flag is not set for better performance
     try:
         plan_data = ctx.plan_list_service.get_plan_list_data(
             repo_root=repo_root,
+            owner=owner,
+            repo=repo_name,
             labels=labels_list,
             state=state,
             limit=limit,
