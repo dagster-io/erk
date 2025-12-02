@@ -2,6 +2,10 @@
 
 Uses GraphQL nodes(ids: [...]) for O(1) batch lookup of workflow runs (~200ms for any N).
 All plan issues store last_dispatched_node_id in the plan-header metadata block.
+
+Performance optimization: When PR linkages are needed, uses unified GraphQL query via
+get_issues_with_pr_linkages() to fetch issues + PR linkages in a single API call (~600ms),
+instead of separate calls for issues (~500ms) and PR linkages (~1500ms).
 """
 
 from dataclasses import dataclass
@@ -10,7 +14,6 @@ from pathlib import Path
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues, IssueInfo
 from erk_shared.github.metadata import extract_plan_header_dispatch_info
-from erk_shared.github.parsing import github_repo_location_from_url
 from erk_shared.github.types import PullRequestInfo, WorkflowRun
 
 
@@ -49,7 +52,10 @@ class PlanListService:
 
     def get_plan_list_data(
         self,
+        *,
         repo_root: Path,
+        owner: str,
+        repo: str,
         labels: list[str],
         state: str | None = None,
         limit: int | None = None,
@@ -60,6 +66,8 @@ class PlanListService:
 
         Args:
             repo_root: Repository root directory
+            owner: Repository owner
+            repo: Repository name
             labels: Labels to filter issues by (e.g., ["erk-plan"])
             state: Filter by state ("open", "closed", or None for all)
             limit: Maximum number of issues to return (None for no limit)
@@ -69,19 +77,23 @@ class PlanListService:
         Returns:
             PlanListData containing issues, PR linkages, and workflow runs
         """
-        # Fetch issues using GitHubIssues integration
-        issues = self._github_issues.list_issues(repo_root, labels=labels, state=state, limit=limit)
-
-        # Extract issue numbers for batch operations
-        issue_numbers = [issue.number for issue in issues]
-
-        # Conditionally fetch PR linkages (skip for performance when not needed)
-        pr_linkages: dict[int, list[PullRequestInfo]] = {}
-        if not skip_pr_linkages and issues:
-            # Extract location from first issue URL
-            location = github_repo_location_from_url(repo_root, issues[0].url)
-            if location is not None:
-                pr_linkages = self._github.get_prs_linked_to_issues(location, issue_numbers)
+        # Decide which path to use based on skip_pr_linkages flag
+        if skip_pr_linkages:
+            # Light path: issues only (no PR linkages)
+            issues = self._github_issues.list_issues(
+                repo_root, labels=labels, state=state, limit=limit
+            )
+            pr_linkages: dict[int, list[PullRequestInfo]] = {}
+        else:
+            # Unified path: issues + PR linkages in one API call (~600ms instead of ~2s)
+            issues, pr_linkages = self._github.get_issues_with_pr_linkages(
+                repo_root,
+                owner,
+                repo,
+                labels,
+                state=state,
+                limit=limit,
+            )
 
         # Conditionally fetch workflow runs (skip for performance when not needed)
         workflow_runs: dict[int, WorkflowRun | None] = {}

@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
     PRCheckoutInfo,
@@ -397,5 +398,51 @@ class GitHub(ABC):
 
         Returns:
             GraphQL node ID (e.g., "WFR_kwLOPxC3hc8AAAAEnZK8rQ") or None if not found
+        """
+        ...
+
+    @abstractmethod
+    def get_issues_with_pr_linkages(
+        self,
+        repo_root: Path,
+        owner: str,
+        repo: str,
+        labels: list[str],
+        state: str | None = None,
+        limit: int | None = None,
+    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+        """Fetch issues and linked PRs in a single GraphQL query.
+
+        Uses repository.issues() connection with inline timelineItems
+        to get PR linkages in one API call. This is significantly faster
+        than separate calls for issues and PR linkages.
+
+        Args:
+            repo_root: Repository root directory
+            owner: Repository owner
+            repo: Repository name
+            labels: Labels to filter by (e.g., ["erk-plan"])
+            state: Filter by state ("open", "closed", or None for all)
+            limit: Maximum issues to return (default: 100)
+
+        Returns:
+            Tuple of (issues, pr_linkages) where:
+            - issues: List of IssueInfo objects
+            - pr_linkages: Mapping of issue_number -> list of linked PRs
+        """
+        ...
+
+    @abstractmethod
+    def get_repo_info(self, repo_root: Path) -> tuple[str, str] | None:
+        """Get repository owner and name.
+
+        Returns the owner/name for the repository at repo_root.
+        Uses local git remote configuration without network calls.
+
+        Args:
+            repo_root: Repository root directory
+
+        Returns:
+            Tuple of (owner, name) or None if cannot be determined
         """
         ...
