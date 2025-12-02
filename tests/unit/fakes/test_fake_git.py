@@ -78,12 +78,12 @@ def test_fake_gitops_get_current_branch() -> None:
     assert branch == "feature-branch"
 
 
-def test_fake_gitops_get_default_branch() -> None:
-    """Test that FakeGit returns configured default branch."""
+def test_fake_gitops_detect_trunk_branch() -> None:
+    """Test that FakeGit returns configured trunk branch."""
     repo_root = Path("/repo")
-    git_ops = FakeGit(default_branches={repo_root: "main"})
+    git_ops = FakeGit(trunk_branches={repo_root: "main"})
 
-    branch = git_ops.detect_default_branch(repo_root)
+    branch = git_ops.detect_trunk_branch(repo_root)
     assert branch == "main"
 
 

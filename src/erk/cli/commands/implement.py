@@ -360,7 +360,7 @@ def _prepare_plan_source_from_issue(
         )
 
     # Create or derive branch name for the issue using GitHub's native branch linking
-    trunk_branch = ctx.git.get_trunk_branch(repo_root)
+    trunk_branch = ctx.git.detect_trunk_branch(repo_root)
     # Compute branch name: truncate to 31 chars, then append timestamp suffix
     base_branch_name = sanitize_worktree_name(f"{issue_number}-{plan.title}")
     timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())

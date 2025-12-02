@@ -206,7 +206,7 @@ def _validate_issue_for_submit(
         raise SystemExit(1)
 
     # Derive branch name
-    trunk_branch = ctx.git.get_trunk_branch(repo.root)
+    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
     logger.debug("trunk_branch=%s", trunk_branch)
 
     # Compute branch name: truncate to 31 chars, then append timestamp suffix
@@ -287,7 +287,7 @@ def _submit_single_issue(
     branch_name = validated.branch_name
     branch_exists = validated.branch_exists
     pr_number = validated.pr_number
-    trunk_branch = ctx.git.get_trunk_branch(repo.root)
+    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
 
     if branch_exists:
         if pr_number is not None:

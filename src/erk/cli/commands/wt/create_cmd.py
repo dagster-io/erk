@@ -96,7 +96,7 @@ def ensure_worktree_for_branch(
         return existing_path, False
 
     # Get trunk branch for validation
-    trunk_branch = ctx.git.get_trunk_branch(repo.root)
+    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
 
     # Validate that we're not trying to create worktree for trunk branch
     Ensure.invariant(
@@ -714,7 +714,7 @@ def create_wt(
             raise SystemExit(1)
 
         # Create branch name using GitHub's native branch linking via `gh issue develop`
-        trunk_branch = ctx.git.get_trunk_branch(repo.root)
+        trunk_branch = ctx.git.detect_trunk_branch(repo.root)
         # Compute branch name that matches worktree naming convention
         # First truncate to 31 chars, then append timestamp suffix
         base_branch_name = sanitize_worktree_name(f"{issue_number_parsed}-{issue_info.title}")
@@ -752,7 +752,7 @@ def create_wt(
     )
 
     cfg = ctx.local_config
-    trunk_branch = ctx.git.get_trunk_branch(repo.root)
+    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
 
     # Validate that name is not trunk branch (should use root worktree)
     if name == trunk_branch:
@@ -809,7 +809,11 @@ def create_wt(
             to_branch = ref
         else:
             # Fall back to default branch (main/master)
-            to_branch = ctx.git.detect_default_branch(repo.root, trunk_branch)
+            if trunk_branch is not None:
+                ctx.git.validate_trunk_branch(repo.root, trunk_branch)
+                to_branch = trunk_branch
+            else:
+                to_branch = ctx.git.detect_trunk_branch(repo.root)
 
         # Check for edge case: can't move main to worktree then switch to main
         Ensure.invariant(

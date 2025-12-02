@@ -142,9 +142,17 @@ class FakeGitGtKitOps(Git):
         """Count commits in HEAD that are not in base_branch."""
         return len(self._state.commits)
 
-    def get_trunk_branch(self, repo_root: Path) -> str:
-        """Get the trunk branch name for the repository."""
+    def detect_trunk_branch(self, repo_root: Path) -> str:
+        """Auto-detect the trunk branch name for the repository."""
         return self._state.trunk_branch
+
+    def validate_trunk_branch(self, repo_root: Path, name: str) -> None:
+        """Validate that a configured trunk branch exists in the repository."""
+        if name != self._state.trunk_branch:
+            raise RuntimeError(
+                f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
+                f"Update your configuration in pyproject.toml or create the branch."
+            )
 
     def get_repository_root(self, cwd: Path) -> Path:
         """Fake repository root."""
@@ -193,10 +201,6 @@ class FakeGitGtKitOps(Git):
 
     # Stub implementations for unused Git ABC methods
     def list_worktrees(self, repo_root: Path) -> list:
-        """Stub."""
-        raise NotImplementedError
-
-    def detect_default_branch(self, repo_root: Path, configured: str | None = None) -> str:
         """Stub."""
         raise NotImplementedError
 

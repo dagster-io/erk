@@ -42,13 +42,13 @@ class PrintingGit(PrintingBase, Git):
         """Get current branch (read-only, no printing)."""
         return self._wrapped.get_current_branch(cwd)
 
-    def detect_default_branch(self, repo_root: Path, configured: str | None = None) -> str:
-        """Detect default branch (read-only, no printing)."""
-        return self._wrapped.detect_default_branch(repo_root, configured)
+    def detect_trunk_branch(self, repo_root: Path) -> str:
+        """Auto-detect trunk branch (read-only, no printing)."""
+        return self._wrapped.detect_trunk_branch(repo_root)
 
-    def get_trunk_branch(self, repo_root: Path) -> str:
-        """Get trunk branch (read-only, no printing)."""
-        return self._wrapped.get_trunk_branch(repo_root)
+    def validate_trunk_branch(self, repo_root: Path, name: str) -> None:
+        """Validate trunk branch (read-only, no printing)."""
+        return self._wrapped.validate_trunk_branch(repo_root, name)
 
     def list_local_branches(self, repo_root: Path) -> list[str]:
         """List local branches (read-only, no printing)."""

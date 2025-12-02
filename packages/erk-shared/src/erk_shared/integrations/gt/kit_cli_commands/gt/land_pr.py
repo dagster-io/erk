@@ -107,7 +107,7 @@ def execute_land_pr(ops: GtKit | None = None) -> LandPrSuccess | LandPrError:
         )
 
     # Step 3: Validate parent is trunk
-    trunk = kit_ops.git().get_trunk_branch(repo_root)
+    trunk = kit_ops.git().detect_trunk_branch(repo_root)
     if parent != trunk:
         return LandPrError(
             success=False,

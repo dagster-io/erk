@@ -242,7 +242,11 @@ def resolve_down_navigation(
     parent_branch = ctx.graphite.get_parent_branch(ctx.git, repo.root, current_branch)
     if parent_branch is None:
         # Check if we're already on trunk
-        detected_trunk = ctx.git.detect_default_branch(repo.root, trunk_branch)
+        if trunk_branch is not None:
+            ctx.git.validate_trunk_branch(repo.root, trunk_branch)
+            detected_trunk = trunk_branch
+        else:
+            detected_trunk = ctx.git.detect_trunk_branch(repo.root)
         if current_branch == detected_trunk:
             user_output(f"Already at the bottom of the stack (on trunk branch '{detected_trunk}')")
             raise SystemExit(1)
@@ -251,7 +255,11 @@ def resolve_down_navigation(
             raise SystemExit(1)
 
     # Check if parent is the trunk - if so, switch to root
-    detected_trunk = ctx.git.detect_default_branch(repo.root, trunk_branch)
+    if trunk_branch is not None:
+        ctx.git.validate_trunk_branch(repo.root, trunk_branch)
+        detected_trunk = trunk_branch
+    else:
+        detected_trunk = ctx.git.detect_trunk_branch(repo.root)
     if parent_branch == detected_trunk:
         # Check if trunk is checked out in root (repo.root path)
         trunk_wt_path = ctx.git.find_worktree_for_branch(repo.root, detected_trunk)

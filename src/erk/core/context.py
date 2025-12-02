@@ -86,7 +86,7 @@ class ErkContext:
         """
         if isinstance(self.repo, NoRepoSentinel):
             return None
-        return self.git.get_trunk_branch(self.repo.root)
+        return self.git.detect_trunk_branch(self.repo.root)
 
     @staticmethod
     def minimal(git: Git, cwd: Path, dry_run: bool = False) -> "ErkContext":
