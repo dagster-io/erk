@@ -245,9 +245,9 @@ class FakeGitHub(GitHub):
     ) -> str:
         """Record workflow trigger in mutation tracking list.
 
-        Note: In production, trigger_workflow() generates a distinct_id internally
-        and adds it to the inputs. Tests should verify the workflow was called
-        with expected inputs; the distinct_id is an internal implementation detail.
+        Note: In production, trigger_workflow() polls the issue body for
+        last_dispatched_run_id in the plan-header metadata block. The fake
+        returns a fixed run_id immediately for test simplicity.
 
         Also creates a WorkflowRun entry so get_workflow_run() can find it.
         This simulates the real behavior where triggering a workflow creates a run.
