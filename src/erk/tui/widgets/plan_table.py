@@ -183,7 +183,6 @@ class PlanDataTable(DataTable):
     def on_click(self, event: Click) -> None:
         """Detect clicks on specific columns and post appropriate messages.
 
-<<<<<<< HEAD
         Posts LocalWtClicked event if:
         - Click is on the local-wt column
         - The row has an existing local worktree (not '-')
@@ -192,15 +191,11 @@ class PlanDataTable(DataTable):
         - Click is on the run-id column
         - The row has a run URL
 
-        Note: DataTable's click handling (row selection, cursor movement) happens
-        via internal _on_click method, not on_click, so we don't call super().
+        Stops event propagation to prevent default row selection behavior when
+        a column-specific click is detected.
 
         Args:
             event: Click event from Textual
-=======
-        Detects clicks on specific columns to post custom messages.
-        Stops event propagation to prevent default row selection behavior.
->>>>>>> 982ee0d33 (Fix: Stop click event propagation to prevent RowSelected from firing)
         """
         coord = self.hover_coordinate
         if coord is None:
@@ -213,6 +208,8 @@ class PlanDataTable(DataTable):
         if self._local_wt_column_index is not None and col_index == self._local_wt_column_index:
             if row_index < len(self._rows) and self._rows[row_index].exists_locally:
                 self.post_message(self.LocalWtClicked(row_index))
+                event.stop()
+                return
 
         # Check run-id column - post event if run URL exists
         if self._run_id_column_index is not None and col_index == self._run_id_column_index:

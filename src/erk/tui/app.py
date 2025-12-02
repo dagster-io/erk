@@ -136,7 +136,6 @@ class ErkDashApp(App):
         self._rows: list[PlanRowData] = []
         self._refresh_task: asyncio.Task | None = None
         self._loading = True
-        self._handled_column_click = False
 
     def compose(self) -> ComposeResult:
         """Create the application layout."""
@@ -327,13 +326,7 @@ class ErkDashApp(App):
 
     @on(PlanDataTable.RowSelected)
     def on_row_selected(self, event: PlanDataTable.RowSelected) -> None:
-        """Handle Enter/double-click on row - open issue.
-
-        Skips if we just handled a column-specific click (e.g., run-id).
-        """
-        if self._handled_column_click:
-            self._handled_column_click = False
-            return
+        """Handle Enter/double-click on row - open issue."""
         self.action_open_issue()
 
     @on(PlanDataTable.LocalWtClicked)
@@ -350,7 +343,6 @@ class ErkDashApp(App):
     @on(PlanDataTable.RunIdClicked)
     def on_run_id_clicked(self, event: PlanDataTable.RunIdClicked) -> None:
         """Handle click on run-id cell - open run in browser."""
-        self._handled_column_click = True
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
             if row.run_url:
