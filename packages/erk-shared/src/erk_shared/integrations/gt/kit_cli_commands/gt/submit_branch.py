@@ -375,10 +375,7 @@ def execute_pre_analysis(ops: GtKit | None = None) -> PreAnalysisResult | PreAna
     )
 
 
-def build_pr_metadata_section(
-    impl_dir: Path,
-    pr_number: int | None = None,
-) -> str:
+def build_pr_metadata_section(pr_number: int) -> str:
     """Build metadata footer section for PR body.
 
     This section is appended AFTER the PR body content, not before.
@@ -388,27 +385,21 @@ def build_pr_metadata_section(
     (branches created with `gh issue develop` automatically close issues when merged).
 
     Args:
-        impl_dir: Path to .impl/ directory
-        pr_number: PR number (use None for placeholder)
+        pr_number: PR number
 
     Returns:
-        Metadata footer section as string (empty if no issue reference exists)
+        Metadata footer section as string
     """
-    # Only build metadata if we have an issue reference
-    if not has_issue_reference(impl_dir):
-        return ""
-
     metadata_parts: list[str] = []
 
     # Separator at start of footer
     metadata_parts.append("\n---\n")
 
-    # Checkout command (with placeholder or actual number)
-    pr_display = str(pr_number) if pr_number is not None else "__PLACEHOLDER_PR_NUMBER__"
+    # Checkout command
     metadata_parts.append(
         f"\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n"
         f"```\n"
-        f"erk pr checkout {pr_display}\n"
+        f"erk pr checkout {pr_number}\n"
         f"```\n"
     )
 
@@ -803,7 +794,7 @@ def execute_finalize(
             issue_number = issue_ref.issue_number
 
     # Build metadata section and combine with AI body
-    metadata_section = build_pr_metadata_section(impl_dir, pr_number=pr_number)
+    metadata_section = build_pr_metadata_section(pr_number=pr_number)
     # pr_body is guaranteed non-None here (either passed in or read from file, validated above)
     assert pr_body is not None
 
