@@ -96,17 +96,17 @@ def test_get_current_branch_non_git_directory(git_ops: GitSetup, tmp_path: Path)
     assert branch is None
 
 
-def test_detect_default_branch_main(git_ops: GitSetup) -> None:
-    """Test detecting default branch when it's main."""
-    default_branch = git_ops.git.detect_default_branch(git_ops.repo)
+def test_detect_trunk_branch_main(git_ops: GitSetup) -> None:
+    """Test detecting trunk branch when it's main."""
+    trunk_branch = git_ops.git.detect_trunk_branch(git_ops.repo)
 
-    assert default_branch == "main"
+    assert trunk_branch == "main"
 
 
-def test_detect_default_branch_master(
+def test_detect_trunk_branch_master(
     tmp_path: Path,
 ) -> None:
-    """Test detecting default branch when it's master using real git."""
+    """Test detecting trunk branch when it's master using real git."""
     from erk_shared.git.real import RealGit
 
     from tests.integration.conftest import init_git_repo
@@ -118,15 +118,15 @@ def test_detect_default_branch_master(
     init_git_repo(repo, "master")
     git_ops = RealGit()
 
-    default_branch = git_ops.detect_default_branch(repo)
+    trunk_branch = git_ops.detect_trunk_branch(repo)
 
-    assert default_branch == "master"
+    assert trunk_branch == "master"
 
 
-def test_detect_default_branch_with_remote_head(
+def test_detect_trunk_branch_with_remote_head(
     tmp_path: Path,
 ) -> None:
-    """Test detecting default branch using remote HEAD with real git."""
+    """Test detecting trunk branch using remote HEAD with real git."""
     from erk_shared.git.real import RealGit
 
     from tests.integration.conftest import init_git_repo
@@ -145,15 +145,15 @@ def test_detect_default_branch_with_remote_head(
 
     git_ops = RealGit()
 
-    default_branch = git_ops.detect_default_branch(repo)
+    trunk_branch = git_ops.detect_trunk_branch(repo)
 
-    assert default_branch == "main"
+    assert trunk_branch == "main"
 
 
-def test_detect_default_branch_neither_exists(
+def test_detect_trunk_branch_neither_exists(
     tmp_path: Path,
 ) -> None:
-    """Test default branch detection when neither main nor master exist using real git."""
+    """Test trunk branch detection returns 'main' when neither main nor master exist."""
     from erk_shared.git.real import RealGit
 
     from tests.integration.conftest import init_git_repo
@@ -169,12 +169,13 @@ def test_detect_default_branch_neither_exists(
 
     git_ops = RealGit()
 
-    with pytest.raises(RuntimeError, match="Could not find 'main' or 'master' branch"):
-        git_ops.detect_default_branch(repo)
+    # New behavior: returns "main" as final fallback
+    trunk_branch = git_ops.detect_trunk_branch(repo)
+    assert trunk_branch == "main"
 
 
-def test_get_trunk_branch_with_symbolic_ref_main(tmp_path: Path) -> None:
-    """Test get_trunk_branch detects main via symbolic-ref."""
+def test_validate_trunk_branch_exists(tmp_path: Path) -> None:
+    """Test validate_trunk_branch succeeds when branch exists."""
     from erk_shared.git.real import RealGit
 
     from tests.integration.conftest import init_git_repo
@@ -183,67 +184,14 @@ def test_get_trunk_branch_with_symbolic_ref_main(tmp_path: Path) -> None:
     repo.mkdir()
     init_git_repo(repo, "main")
 
-    # Set up remote HEAD to point to main
-    subprocess.run(
-        ["git", "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main"],
-        cwd=repo,
-        check=True,
-    )
-
     git_ops = RealGit()
-    trunk = git_ops.get_trunk_branch(repo)
+    result = git_ops.validate_trunk_branch(repo, "main")
 
-    assert trunk == "main"
-
-
-def test_get_trunk_branch_with_symbolic_ref_master(tmp_path: Path) -> None:
-    """Test get_trunk_branch detects master via symbolic-ref."""
-    from erk_shared.git.real import RealGit
-
-    from tests.integration.conftest import init_git_repo
-
-    repo = tmp_path / "repo"
-    repo.mkdir()
-    init_git_repo(repo, "master")
-
-    # Set up remote HEAD to point to master
-    subprocess.run(
-        ["git", "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/master"],
-        cwd=repo,
-        check=True,
-    )
-
-    git_ops = RealGit()
-    trunk = git_ops.get_trunk_branch(repo)
-
-    assert trunk == "master"
+    assert result == "main"
 
 
-def test_get_trunk_branch_with_symbolic_ref_custom(tmp_path: Path) -> None:
-    """Test get_trunk_branch detects custom trunk name via symbolic-ref."""
-    from erk_shared.git.real import RealGit
-
-    from tests.integration.conftest import init_git_repo
-
-    repo = tmp_path / "repo"
-    repo.mkdir()
-    init_git_repo(repo, "trunk")
-
-    # Set up remote HEAD to point to custom trunk name
-    subprocess.run(
-        ["git", "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/trunk"],
-        cwd=repo,
-        check=True,
-    )
-
-    git_ops = RealGit()
-    trunk = git_ops.get_trunk_branch(repo)
-
-    assert trunk == "trunk"
-
-
-def test_get_trunk_branch_fallback_to_main(tmp_path: Path) -> None:
-    """Test get_trunk_branch falls back to main when symbolic-ref fails."""
+def test_validate_trunk_branch_not_exists(tmp_path: Path) -> None:
+    """Test validate_trunk_branch raises RuntimeError when branch doesn't exist."""
     from erk_shared.git.real import RealGit
 
     from tests.integration.conftest import init_git_repo
@@ -252,73 +200,10 @@ def test_get_trunk_branch_fallback_to_main(tmp_path: Path) -> None:
     repo.mkdir()
     init_git_repo(repo, "main")
 
-    # Don't set up remote HEAD - test fallback logic
     git_ops = RealGit()
-    trunk = git_ops.get_trunk_branch(repo)
 
-    assert trunk == "main"
-
-
-def test_get_trunk_branch_fallback_to_master(tmp_path: Path) -> None:
-    """Test get_trunk_branch falls back to master when main doesn't exist."""
-    from erk_shared.git.real import RealGit
-
-    from tests.integration.conftest import init_git_repo
-
-    repo = tmp_path / "repo"
-    repo.mkdir()
-
-    # Initialize with master instead of main
-    init_git_repo(repo, "master")
-
-    # Don't set up remote HEAD - test fallback logic
-    git_ops = RealGit()
-    trunk = git_ops.get_trunk_branch(repo)
-
-    assert trunk == "master"
-
-
-def test_get_trunk_branch_both_branches_prefers_main(tmp_path: Path) -> None:
-    """Test get_trunk_branch prefers main when both main and master exist."""
-    from erk_shared.git.real import RealGit
-
-    from tests.integration.conftest import init_git_repo
-
-    repo = tmp_path / "repo"
-    repo.mkdir()
-    init_git_repo(repo, "main")
-
-    # Create master branch as well
-    subprocess.run(["git", "branch", "master"], cwd=repo, check=True)
-
-    # Don't set up remote HEAD - test fallback logic prefers main
-    git_ops = RealGit()
-    trunk = git_ops.get_trunk_branch(repo)
-
-    assert trunk == "main"
-
-
-def test_get_trunk_branch_final_fallback(tmp_path: Path) -> None:
-    """Test get_trunk_branch returns 'main' when neither main nor master exist."""
-    from erk_shared.git.real import RealGit
-
-    from tests.integration.conftest import init_git_repo
-
-    repo = tmp_path / "repo"
-    repo.mkdir()
-
-    # Initialize with custom trunk name
-    init_git_repo(repo, "trunk")
-
-    # Delete the trunk branch to simulate neither main nor master existing
-    subprocess.run(["git", "checkout", "--detach"], cwd=repo, check=True)
-    subprocess.run(["git", "branch", "-D", "trunk"], cwd=repo, check=True)
-
-    git_ops = RealGit()
-    trunk = git_ops.get_trunk_branch(repo)
-
-    # Per implementation, final fallback returns "main"
-    assert trunk == "main"
+    with pytest.raises(RuntimeError, match="does not exist in repository"):
+        git_ops.validate_trunk_branch(repo, "nonexistent")
 
 
 def test_get_git_common_dir_from_main_repo(git_ops: GitSetup) -> None:
