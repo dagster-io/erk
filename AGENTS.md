@@ -52,6 +52,7 @@
 | Delegate to agents from commands                 | → [docs/agent/command-agent-delegation.md](docs/agent/command-agent-delegation.md)     |
 | Work with session logs (~/.claude/projects/)     | → [docs/agent/claude-code-session-layout.md](docs/agent/claude-code-session-layout.md) |
 | Create hooks                                     | → [docs/agent/hooks.md](docs/agent/hooks.md)                                           |
+| Write temp files for AI workflows                | → [docs/agent/scratch-storage.md](docs/agent/scratch-storage.md)                       |
 | Understand project terms                         | → [docs/agent/glossary.md](docs/agent/glossary.md)                                     |
 | Navigate documentation                           | → [docs/agent/guide.md](docs/agent/guide.md)                                           |
 | View installed kits                              | → [@.agent/kits/kit-registry.md](.agent/kits/kit-registry.md)                          |

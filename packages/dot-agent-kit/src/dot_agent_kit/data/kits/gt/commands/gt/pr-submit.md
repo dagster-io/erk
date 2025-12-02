@@ -90,16 +90,24 @@ Execute the finalize command to update PR metadata.
 
 **IMPORTANT**: Use `--pr-body-file` instead of `--pr-body` to avoid shell escaping issues with multi-line content and special characters.
 
-1. Write the PR body to a scratch file (e.g., `.erk/scratch/<session-id>/pr-body.txt`)
+1. Write the PR body to the scratch directory using the **same session-id directory** where the diff file was written
 2. Pass the file path to finalize
 
+**Path construction**: The scratch directory is at `{repo_root}/.erk/scratch/<session-id>/`. The `diff_file` from preflight is already in this directory, so write `pr-body.txt` next to it. For example:
+
+- `diff_file` = `/path/to/repo/.erk/scratch/abc123/pr-diff-70363560.diff`
+- Write body to = `/path/to/repo/.erk/scratch/abc123/pr-body.txt`
+
+**NEVER use `/tmp/` for scratch files.** Always use the worktree-local `.erk/scratch/<session-id>/` directory.
+
 ```bash
-# Write PR body to scratch file first (using Write tool or similar)
+# Write PR body to scratch file first (using Write tool)
+# Use the same directory as diff_file from preflight
 # Then run finalize with the file path:
 dot-agent run gt pr-submit finalize \
     --pr-number {pr_number} \
     --pr-title "{pr_title}" \
-    --pr-body-file ".erk/scratch/<session-id>/pr-body.txt" \
+    --pr-body-file "{repo_root}/.erk/scratch/<session-id>/pr-body.txt" \
     --diff-file "{diff_file}" 2>&1
 ```
 
