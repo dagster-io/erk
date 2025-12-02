@@ -16,6 +16,7 @@ Stack on current branch **only when Graphite is enabled** (`use_graphite=True`).
 Two locations hardcode `trunk_branch` as the base:
 
 ### 1. `implement.py:363-374` - Branch creation via GitHub
+
 ```python
 trunk_branch = ctx.git.detect_trunk_branch(repo_root)  # Always trunk
 ...
@@ -26,6 +27,7 @@ dev_branch = ctx.issue_link_branches.create_development_branch(
 ```
 
 ### 2. `implement.py:573-582` - Worktree creation
+
 ```python
 add_worktree(
     ...
@@ -34,6 +36,7 @@ add_worktree(
 ```
 
 ### 3. `create_cmd.py:264-269` - Graphite tracking for existing branches
+
 ```python
 ctx.graphite.track_branch(path, branch, ref)  # ref=trunk_branch from caller
 ```

@@ -6,8 +6,18 @@ in its constructor. Construct instances directly with keyword arguments.
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import NamedTuple
 
 from erk_shared.github.issue_link_branches import DevelopmentBranch, IssueLinkBranches
+
+
+class CreateBranchCall(NamedTuple):
+    """Record of a create_development_branch call."""
+
+    repo_root: Path
+    issue_number: int
+    branch_name: str
+    base_branch: str | None
 
 
 @dataclass
@@ -19,6 +29,7 @@ class FakeIssueLinkBranches(IssueLinkBranches):
 
     Mutation tracking:
         - _created_branches: List of (issue_number, branch_name) tuples for created branches
+        - _create_calls: Full record of create_development_branch calls including base_branch
     """
 
     # Pre-configured state: mapping of issue_number -> branch_name
@@ -26,6 +37,7 @@ class FakeIssueLinkBranches(IssueLinkBranches):
 
     # Mutation tracking (private, read via property)
     _created_branches: list[tuple[int, str]] = field(default_factory=list)
+    _create_calls: list[CreateBranchCall] = field(default_factory=list)
 
     @property
     def created_branches(self) -> list[tuple[int, str]]:
@@ -35,6 +47,15 @@ class FakeIssueLinkBranches(IssueLinkBranches):
             List of (issue_number, branch_name) tuples
         """
         return list(self._created_branches)
+
+    @property
+    def create_calls(self) -> list[CreateBranchCall]:
+        """Read-only access to all create_development_branch calls.
+
+        Returns:
+            List of CreateBranchCall records with full call details
+        """
+        return list(self._create_calls)
 
     def create_development_branch(
         self,
@@ -52,6 +73,16 @@ class FakeIssueLinkBranches(IssueLinkBranches):
         Otherwise, uses the provided branch_name, stores it in existing_branches,
         tracks in _created_branches, and returns with already_existed=False.
         """
+        # Record the call with full parameters
+        self._create_calls.append(
+            CreateBranchCall(
+                repo_root=repo_root,
+                issue_number=issue_number,
+                branch_name=branch_name,
+                base_branch=base_branch,
+            )
+        )
+
         if issue_number in self.existing_branches:
             return DevelopmentBranch(
                 branch_name=self.existing_branches[issue_number],

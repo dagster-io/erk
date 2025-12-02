@@ -1334,3 +1334,96 @@ def test_yolo_flag_conflicts_with_script() -> None:
 
         assert result.exit_code != 0
         assert "mutually exclusive" in result.output
+
+
+# Graphite Stacking Tests
+
+
+def test_implement_from_worktree_stacks_on_current_branch_with_graphite() -> None:
+    """When Graphite enabled and on feature branch, stack on current branch."""
+    plan_issue = _create_sample_plan_issue("123")
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},  # On feature branch
+        )
+        store = FakePlanStore(plans={"123": plan_issue})
+        issue_dev = FakeIssueLinkBranches()
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            plan_store=store,
+            issue_link_branches=issue_dev,
+            use_graphite=True,  # Graphite enabled
+        )
+
+        result = runner.invoke(implement, ["123", "--script"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Verify branch was created with feature-branch as base
+        assert len(issue_dev.create_calls) == 1
+        assert issue_dev.create_calls[0].base_branch == "feature-branch"
+
+
+def test_implement_from_worktree_uses_trunk_without_graphite() -> None:
+    """When Graphite disabled, always use trunk as base even if on feature branch."""
+    plan_issue = _create_sample_plan_issue("123")
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},  # On feature branch
+        )
+        store = FakePlanStore(plans={"123": plan_issue})
+        issue_dev = FakeIssueLinkBranches()
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            plan_store=store,
+            issue_link_branches=issue_dev,
+            use_graphite=False,  # Graphite disabled
+        )
+
+        result = runner.invoke(implement, ["123", "--script"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Verify branch was created with main as base (not feature-branch)
+        assert len(issue_dev.create_calls) == 1
+        assert issue_dev.create_calls[0].base_branch == "main"
+
+
+def test_implement_from_trunk_uses_trunk_with_graphite() -> None:
+    """When on trunk branch, use trunk as base regardless of Graphite."""
+    plan_issue = _create_sample_plan_issue("123")
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},  # On trunk branch
+        )
+        store = FakePlanStore(plans={"123": plan_issue})
+        issue_dev = FakeIssueLinkBranches()
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            plan_store=store,
+            issue_link_branches=issue_dev,
+            use_graphite=True,  # Graphite enabled
+        )
+
+        result = runner.invoke(implement, ["123", "--script"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Verify branch was created with main as base (we're on trunk)
+        assert len(issue_dev.create_calls) == 1
+        assert issue_dev.create_calls[0].base_branch == "main"

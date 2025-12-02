@@ -34,6 +34,32 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 
 
+def _determine_base_branch(ctx: ErkContext, repo_root: Path) -> str:
+    """Determine the base branch for new worktree creation.
+
+    When Graphite is enabled and the user is on a non-trunk branch,
+    stack on the current branch. Otherwise, use trunk.
+
+    Args:
+        ctx: Erk context
+        repo_root: Repository root path
+
+    Returns:
+        Base branch name to use as ref for worktree creation
+    """
+    trunk_branch = ctx.git.detect_trunk_branch(repo_root)
+    use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
+
+    if not use_graphite:
+        return trunk_branch
+
+    current_branch = ctx.git.get_current_branch(ctx.cwd)
+    if current_branch and current_branch != trunk_branch:
+        return current_branch
+
+    return trunk_branch
+
+
 def _build_claude_command(slash_command: str, dangerous: bool) -> str:
     """Build a Claude CLI invocation for interactive mode.
 
@@ -310,7 +336,7 @@ class IssuePlanSource:
 
 
 def _prepare_plan_source_from_issue(
-    ctx: ErkContext, repo_root: Path, issue_number: str
+    ctx: ErkContext, repo_root: Path, issue_number: str, base_branch: str
 ) -> IssuePlanSource:
     """Prepare plan source from GitHub issue.
 
@@ -321,6 +347,7 @@ def _prepare_plan_source_from_issue(
         ctx: Erk context
         repo_root: Repository root path
         issue_number: GitHub issue number
+        base_branch: Base branch for creating the development branch
 
     Returns:
         IssuePlanSource with plan content, metadata, and linked branch name
@@ -360,7 +387,6 @@ def _prepare_plan_source_from_issue(
         )
 
     # Create or derive branch name for the issue using GitHub's native branch linking
-    trunk_branch = ctx.git.detect_trunk_branch(repo_root)
     # Compute branch name: truncate to 31 chars, then append timestamp suffix
     base_branch_name = sanitize_worktree_name(f"{issue_number}-{plan.title}")
     timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
@@ -370,7 +396,7 @@ def _prepare_plan_source_from_issue(
         repo_root,
         int(issue_number),
         branch_name=desired_branch_name,
-        base_branch=trunk_branch,
+        base_branch=base_branch,
     )
 
     if dev_branch.already_existed:
@@ -459,6 +485,7 @@ def _create_worktree_with_plan_content(
     dangerous: bool,
     no_interactive: bool,
     linked_branch_name: str | None = None,
+    base_branch: str,
 ) -> Path | None:
     """Create worktree with plan content.
 
@@ -472,6 +499,7 @@ def _create_worktree_with_plan_content(
         no_interactive: Whether to execute non-interactively
         linked_branch_name: Optional branch name from gh issue develop
                            (when provided, use this branch instead of creating new)
+        base_branch: Base branch to use as ref for worktree creation
 
     Returns:
         Path to created worktree, or None if dry-run mode
@@ -506,7 +534,6 @@ def _create_worktree_with_plan_content(
     wt_path = worktree_path_for(repo.worktrees_dir, name)
 
     # For linked branches, we use the existing branch; for others, validate it doesn't exist
-    trunk_branch = ctx.trunk_branch
     use_existing_branch = linked_branch_name is not None
 
     if not use_existing_branch:
@@ -564,7 +591,7 @@ def _create_worktree_with_plan_content(
     if use_existing_branch:
         ctx.feedback.info(f"Using linked branch '{branch}'...")
     else:
-        ctx.feedback.info(f"Creating branch '{branch}' from {trunk_branch}...")
+        ctx.feedback.info(f"Creating branch '{branch}' from {base_branch}...")
 
     # Respect global use_graphite config (matching erk create behavior)
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
@@ -575,7 +602,7 @@ def _create_worktree_with_plan_content(
         repo_root,
         wt_path,
         branch=branch,
-        ref=trunk_branch,
+        ref=base_branch,
         use_existing_branch=use_existing_branch,
         use_graphite=use_graphite,
         skip_remote_check=True,
@@ -685,8 +712,13 @@ def _implement_from_issue(
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
 
+    # Determine base branch (respects Graphite stacking)
+    base_branch = _determine_base_branch(ctx, repo.root)
+
     # Prepare plan source from issue (creates linked branch via gh issue develop)
-    issue_plan_source = _prepare_plan_source_from_issue(ctx, repo.root, issue_number)
+    issue_plan_source = _prepare_plan_source_from_issue(
+        ctx, repo.root, issue_number, base_branch=base_branch
+    )
 
     # Create worktree with plan content, using the linked branch name
     wt_path = _create_worktree_with_plan_content(
@@ -698,6 +730,7 @@ def _implement_from_issue(
         dangerous=dangerous,
         no_interactive=no_interactive,
         linked_branch_name=issue_plan_source.branch_name,
+        base_branch=base_branch,
     )
 
     # Early return for dry-run mode
@@ -762,6 +795,12 @@ def _implement_from_file(
         verbose: Whether to show raw output or filtered output
         executor: Claude CLI executor for command execution
     """
+    # Discover repo context
+    repo = discover_repo_context(ctx, ctx.cwd)
+
+    # Determine base branch (respects Graphite stacking)
+    base_branch = _determine_base_branch(ctx, repo.root)
+
     # Prepare plan source from file
     plan_source = _prepare_plan_source_from_file(ctx, plan_file)
 
@@ -774,6 +813,7 @@ def _implement_from_file(
         submit=submit,
         dangerous=dangerous,
         no_interactive=no_interactive,
+        base_branch=base_branch,
     )
 
     # Early return for dry-run mode
