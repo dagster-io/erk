@@ -11,8 +11,6 @@ Error Handling Philosophy:
 """
 
 import json
-import secrets
-import string
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -530,17 +528,6 @@ query {{
         except RuntimeError:
             return False
 
-    def _generate_distinct_id(self) -> str:
-        """Generate a random base36 ID for workflow dispatch correlation.
-
-        Returns:
-            6-character base36 string (e.g., 'a1b2c3')
-        """
-        # Base36 alphabet: 0-9 and a-z
-        base36_chars = string.digits + string.ascii_lowercase
-        # Generate 6 random characters (~2.2 billion possibilities)
-        return "".join(secrets.choice(base36_chars) for _ in range(6))
-
     def trigger_workflow(
         self,
         repo_root: Path,
@@ -548,144 +535,114 @@ query {{
         inputs: dict[str, str],
         ref: str | None = None,
     ) -> str:
-        """Trigger GitHub Actions workflow via gh CLI.
+        """Trigger a GitHub Actions workflow and poll for run ID from comment.
 
-        Generates a unique distinct_id internally, passes it to the workflow,
-        and uses it to reliably find the triggered run via displayTitle matching.
+        The workflow posts a workflow-started comment containing workflow_run_id.
+        This method polls issue comments to discover the run.
 
         Args:
-            repo_root: Repository root path
-            workflow: Workflow file name (e.g., "implement-plan.yml")
-            inputs: Workflow inputs as key-value pairs
+            repo_root: Repository root directory
+            workflow: Workflow filename (e.g., "implement-plan.yml")
+            inputs: Workflow inputs - MUST include "issue_number" for comment polling
             ref: Branch or tag to run workflow from (default: repository default branch)
 
         Returns:
             The GitHub Actions run ID as a string
         """
-        # Generate distinct ID for reliable run matching
-        distinct_id = self._generate_distinct_id()
-        debug_log(f"trigger_workflow: workflow={workflow}, distinct_id={distinct_id}, ref={ref}")
+        # Record trigger time for filtering stale comments
+        # Use injected time to enable testing with FakeTime
+        trigger_timestamp = self._time.now().strftime("%Y-%m-%dT%H:%M:%SZ")
 
+        debug_log(f"trigger_workflow: workflow={workflow}, ref={ref}")
+
+        # Build command (no distinct_id)
         cmd = ["gh", "workflow", "run", workflow]
-
-        # Add --ref flag if specified
         if ref:
             cmd.extend(["--ref", ref])
-
-        # Add distinct_id to workflow inputs automatically
-        cmd.extend(["-f", f"distinct_id={distinct_id}"])
-
-        # Add caller-provided workflow inputs
         for key, value in inputs.items():
             cmd.extend(["-f", f"{key}={value}"])
 
-        debug_log(f"trigger_workflow: executing command: {' '.join(cmd)}")
         run_subprocess_with_context(
             cmd,
             operation_context=f"trigger workflow '{workflow}'",
             cwd=repo_root,
         )
-        debug_log("trigger_workflow: workflow triggered successfully")
 
-        # Poll for the run by matching displayTitle containing the distinct ID
-        # The workflow uses run-name: "<issue_number>:<distinct_id>"
-        # GitHub API eventual consistency: fast path (5×1s) then slow path (10×2s)
-        max_attempts = 15
-        runs_data: list[dict[str, Any]] = []
+        # Extract issue_number for comment polling
+        issue_number_str = inputs.get("issue_number")
+        if issue_number_str is None:
+            raise RuntimeError("issue_number required in inputs for comment-based discovery")
+        issue_number = int(issue_number_str)
+
+        # Poll for workflow-started comment
+        return self._poll_for_workflow_started_comment(
+            repo_root, workflow, issue_number, trigger_timestamp
+        )
+
+    def _poll_for_workflow_started_comment(
+        self,
+        repo_root: Path,
+        workflow: str,
+        issue_number: int,
+        trigger_timestamp: str,
+        max_attempts: int = 15,
+    ) -> str:
+        """Poll issue comments for workflow-started metadata block."""
+        from erk_shared.github.status_history import extract_workflow_run_id
+
         for attempt in range(max_attempts):
-            debug_log(f"trigger_workflow: polling attempt {attempt + 1}/{max_attempts}")
+            comments = self._fetch_issue_comments(repo_root, issue_number)
 
-            runs_cmd = [
-                "gh",
-                "run",
-                "list",
-                "--workflow",
-                workflow,
-                "--json",
-                "databaseId,status,conclusion,displayTitle",
-                "--limit",
-                "10",
+            # Filter to comments after trigger time and extract run_id
+            recent_comments = [
+                c for c in comments if self._comment_is_after_timestamp(c, trigger_timestamp)
             ]
 
-            runs_result = run_subprocess_with_context(
-                runs_cmd,
-                operation_context=f"get run ID for workflow '{workflow}'",
-                cwd=repo_root,
-            )
+            if recent_comments:
+                run_id = extract_workflow_run_id([c["body"] for c in recent_comments])
+                if run_id:
+                    debug_log(f"trigger_workflow: found run {run_id}")
+                    return run_id
 
-            runs_data = json.loads(runs_result.stdout)
-            debug_log(f"trigger_workflow: found {len(runs_data)} runs")
-
-            # Validate response structure (must be a list)
-            if not isinstance(runs_data, list):
-                msg = (
-                    f"GitHub workflow '{workflow}' triggered but received invalid response format. "
-                    f"Expected JSON array, got: {type(runs_data).__name__}. "
-                    f"Raw output: {runs_result.stdout[:200]}"
-                )
-                raise RuntimeError(msg)
-
-            # Empty list is valid - workflow hasn't appeared yet, continue polling
-            if not runs_data:
-                # Continue to retry logic below
-                pass
-
-            # Find run by matching distinct_id in displayTitle
-            for run in runs_data:
-                conclusion = run.get("conclusion")
-                if conclusion in ("skipped", "cancelled"):
-                    continue
-
-                display_title = run.get("displayTitle", "")
-                # Check for match pattern: :<distinct_id> (new format: issue_number:distinct_id)
-                if f":{distinct_id}" in display_title:
-                    run_id = run["databaseId"]
-                    debug_log(f"trigger_workflow: found run {run_id}, title='{display_title}'")
-                    return str(run_id)
-
-            # No matching run found, retry if attempts remaining
-            # Fast path: 1s delay for first 5 attempts, then 2s delay for remaining
+            # Adaptive delay: 1s for first 5 attempts, then 2s
             if attempt < max_attempts - 1:
                 delay = 1 if attempt < 5 else 2
                 self._time.sleep(delay)
 
-        # All attempts exhausted without finding matching run
-        msg_parts = [
-            f"GitHub workflow triggered but could not find run ID after {max_attempts} attempts.",
-            "",
-            f"Workflow file: {workflow}",
-            f"Correlation ID: {distinct_id}",
-            "",
-        ]
-
-        if runs_data:
-            msg_parts.append(f"Found {len(runs_data)} recent runs, but none matched.")
-            msg_parts.append("Recent run titles:")
-            for run in runs_data[:5]:
-                title = run.get("displayTitle", "N/A")
-                status = run.get("status", "N/A")
-                msg_parts.append(f"  • {title} ({status})")
-            msg_parts.append("")
-        else:
-            msg_parts.append("No workflow runs found at all.")
-            msg_parts.append("")
-
-        msg_parts.extend(
-            [
-                "Possible causes:",
-                "  • GitHub API eventual consistency delay (rare but possible)",
-                "  • Workflow file doesn't use 'run-name' with distinct_id",
-                "  • All recent runs were cancelled/skipped",
-                "",
-                "Debug commands:",
-                f"  gh run list --workflow {workflow} --limit 10",
-                f"  gh workflow view {workflow}",
-            ]
+        # Build helpful error message
+        raise RuntimeError(
+            f"Workflow triggered but no workflow-started comment found "
+            f"for issue #{issue_number} after {max_attempts} attempts.\n\n"
+            "Possible causes:\n"
+            "  - Workflow failed before posting comment\n"
+            "  - GitHub API eventual consistency delays\n\n"
+            "Debug commands:\n"
+            f"  gh run list --workflow {workflow} --limit 10\n"
+            f"  gh issue view {issue_number} --comments"
         )
 
-        msg = "\n".join(msg_parts)
-        debug_log(f"trigger_workflow: exhausted all attempts, error: {msg}")
-        raise RuntimeError(msg)
+    def _fetch_issue_comments(self, repo_root: Path, issue_number: int) -> list[dict[str, str]]:
+        """Fetch issue comments with body and created_at."""
+        cmd = [
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/issues/{issue_number}/comments",
+            "--jq",
+            "[.[] | {body, created_at}]",
+        ]
+        result = run_subprocess_with_context(
+            cmd,
+            operation_context=f"fetch issue #{issue_number} comments",
+            cwd=repo_root,
+        )
+        if not result.stdout.strip():
+            return []
+        return json.loads(result.stdout)
+
+    def _comment_is_after_timestamp(self, comment: dict[str, str], trigger_timestamp: str) -> bool:
+        """Check if comment was created after trigger timestamp."""
+        created_at = comment.get("created_at", "")
+        return created_at >= trigger_timestamp
 
     def create_pr(
         self,

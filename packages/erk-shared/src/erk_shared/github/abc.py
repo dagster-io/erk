@@ -172,10 +172,14 @@ class GitHub(ABC):
     ) -> str:
         """Trigger a GitHub Actions workflow via gh CLI.
 
+        Triggers the workflow and polls for a workflow-started comment posted
+        by the workflow to the issue. The comment contains a metadata block
+        with the workflow_run_id.
+
         Args:
             repo_root: Repository root directory
             workflow: Workflow filename (e.g., "implement-plan.yml")
-            inputs: Workflow inputs as key-value pairs
+            inputs: Workflow inputs - MUST include "issue_number" for comment polling
             ref: Branch or tag to run workflow from (default: repository default branch)
 
         Returns:
