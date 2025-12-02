@@ -7,6 +7,8 @@ in its constructor. Construct instances directly with keyword arguments.
 from pathlib import Path
 from typing import Any
 
+from erk_shared.github.types import GitHubRepoLocation
+
 from erk.core.implementation_queue.github.abc import GitHubAdmin
 
 
@@ -43,16 +45,16 @@ class FakeGitHubAdmin(GitHubAdmin):
         # Mutation tracking
         self._set_permission_calls: list[tuple[Path, bool]] = []
 
-    def get_workflow_permissions(self, repo_root: Path) -> dict[str, Any]:
+    def get_workflow_permissions(self, location: GitHubRepoLocation) -> dict[str, Any]:
         """Return pre-configured workflow permissions."""
         return self._workflow_permissions
 
-    def set_workflow_pr_permissions(self, repo_root: Path, enabled: bool) -> None:
+    def set_workflow_pr_permissions(self, location: GitHubRepoLocation, enabled: bool) -> None:
         """Record permission change in mutation tracking list.
 
         Also updates internal state to simulate permission change.
         """
-        self._set_permission_calls.append((repo_root, enabled))
+        self._set_permission_calls.append((location.root, enabled))
         # Update internal state to match what GitHub would do
         self._workflow_permissions["can_approve_pull_request_reviews"] = enabled
 

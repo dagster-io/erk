@@ -414,9 +414,7 @@ class GitHub(ABC):
     @abstractmethod
     def get_issues_with_pr_linkages(
         self,
-        repo_root: Path,
-        owner: str,
-        repo: str,
+        location: GitHubRepoLocation,
         labels: list[str],
         state: str | None = None,
         limit: int | None = None,
@@ -428,9 +426,7 @@ class GitHub(ABC):
         than separate calls for issues and PR linkages.
 
         Args:
-            repo_root: Repository root directory
-            owner: Repository owner
-            repo: Repository name
+            location: GitHub repository location (local root + repo identity)
             labels: Labels to filter by (e.g., ["erk-plan"])
             state: Filter by state ("open", "closed", or None for all)
             limit: Maximum issues to return (default: 100)

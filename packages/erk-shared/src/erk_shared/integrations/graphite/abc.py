@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from erk_shared.git.abc import Git
-from erk_shared.github.types import PullRequestInfo
+from erk_shared.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.integrations.graphite.types import BranchMetadata
 
 
@@ -15,12 +15,11 @@ class Graphite(ABC):
     """
 
     @abstractmethod
-    def get_graphite_url(self, owner: str, repo: str, pr_number: int) -> str:
+    def get_graphite_url(self, repo_id: GitHubRepoId, pr_number: int) -> str:
         """Get Graphite PR URL for a pull request.
 
         Args:
-            owner: GitHub repository owner (e.g., "dagster-io")
-            repo: GitHub repository name (e.g., "erk")
+            repo_id: GitHub repository identity (owner and repo name)
             pr_number: GitHub PR number
 
         Returns:

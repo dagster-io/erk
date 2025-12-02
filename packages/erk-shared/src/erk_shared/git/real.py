@@ -731,3 +731,23 @@ class RealGit(Git):
             check=False,
         )
         return result.returncode != 0
+
+    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
+        """Get the URL for a git remote.
+
+        Raises:
+            ValueError: If remote doesn't exist or has no URL
+        """
+        result = subprocess.run(
+            ["git", "remote", "get-url", remote],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            raise ValueError(f"Remote '{remote}' not found in repository")
+        url = result.stdout.strip()
+        if not url:
+            raise ValueError(f"Remote '{remote}' has no URL configured")
+        return url

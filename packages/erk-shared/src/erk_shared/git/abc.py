@@ -592,3 +592,19 @@ class Git(ABC):
     def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
         """Check if merging would have conflicts using git merge-tree."""
         ...
+
+    @abstractmethod
+    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
+        """Get the URL for a git remote.
+
+        Args:
+            repo_root: Path to the repository root
+            remote: Remote name (defaults to "origin")
+
+        Returns:
+            Remote URL as a string
+
+        Raises:
+            ValueError: If remote doesn't exist or has no URL
+        """
+        ...

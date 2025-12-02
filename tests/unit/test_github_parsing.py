@@ -1,15 +1,63 @@
 """Unit tests for GitHub parsing functions with JSON fixtures."""
 
+import pytest
+
 from erk_shared.github.parsing import (
     _determine_checks_status,
     _extract_checks_counts,
     parse_aggregated_check_counts,
     parse_gh_auth_status_output,
+    parse_git_remote_url,
     parse_github_pr_list,
     parse_github_pr_status,
 )
 
 from tests.conftest import load_fixture
+
+# Tests for parse_git_remote_url
+
+
+def test_parse_git_remote_url_https_with_git():
+    """Test parsing HTTPS URL with .git suffix."""
+    result = parse_git_remote_url("https://github.com/dagster-io/erk.git")
+    assert result == ("dagster-io", "erk")
+
+
+def test_parse_git_remote_url_https_without_git():
+    """Test parsing HTTPS URL without .git suffix."""
+    result = parse_git_remote_url("https://github.com/dagster-io/erk")
+    assert result == ("dagster-io", "erk")
+
+
+def test_parse_git_remote_url_ssh_with_git():
+    """Test parsing SSH URL with .git suffix."""
+    result = parse_git_remote_url("git@github.com:dagster-io/erk.git")
+    assert result == ("dagster-io", "erk")
+
+
+def test_parse_git_remote_url_ssh_without_git():
+    """Test parsing SSH URL without .git suffix."""
+    result = parse_git_remote_url("git@github.com:dagster-io/erk")
+    assert result == ("dagster-io", "erk")
+
+
+def test_parse_git_remote_url_non_github():
+    """Test parsing non-GitHub URL raises ValueError."""
+    with pytest.raises(ValueError, match="Not a valid GitHub URL"):
+        parse_git_remote_url("https://gitlab.com/user/repo.git")
+
+
+def test_parse_git_remote_url_invalid_format():
+    """Test parsing invalid URL format raises ValueError."""
+    with pytest.raises(ValueError, match="Not a valid GitHub URL"):
+        parse_git_remote_url("not-a-valid-url")
+
+
+def test_parse_git_remote_url_github_with_subdirectory():
+    """Test parsing GitHub URL with subdirectory raises ValueError."""
+    with pytest.raises(ValueError, match="Not a valid GitHub URL"):
+        parse_git_remote_url("https://github.com/owner/repo/subdir")
+
 
 # Tests for parse_aggregated_check_counts
 

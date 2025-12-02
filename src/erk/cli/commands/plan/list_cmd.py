@@ -10,7 +10,7 @@ from erk_shared.github.metadata import (
     extract_plan_header_remote_impl_at,
     extract_plan_header_worktree_name,
 )
-from erk_shared.github.types import PullRequestInfo
+from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import Plan, PlanState
@@ -220,10 +220,9 @@ def _build_plans_table(
     # Skip workflow runs when not needed for better performance
     # PR linkages are always fetched via unified GraphQL query (no performance penalty)
     try:
+        location = GitHubRepoLocation(root=repo_root, repo_id=GitHubRepoId(owner, repo_name))
         plan_data = ctx.plan_list_service.get_plan_list_data(
-            repo_root=repo_root,
-            owner=owner,
-            repo=repo_name,
+            location=location,
             labels=labels_list,
             state=state,
             limit=limit,
@@ -346,7 +345,7 @@ def _build_plans_table(
             selected_pr = select_display_pr(issue_prs)
             if selected_pr is not None:
                 graphite_url = ctx.graphite.get_graphite_url(
-                    selected_pr.owner, selected_pr.repo, selected_pr.number
+                    GitHubRepoId(selected_pr.owner, selected_pr.repo), selected_pr.number
                 )
                 pr_cell = format_pr_cell(
                     selected_pr, use_graphite=use_graphite, graphite_url=graphite_url
@@ -532,7 +531,8 @@ def _run_interactive_mode(
     labels = label if label else ("erk-plan",)
 
     # Create data provider and filters
-    provider = RealPlanDataProvider(ctx, repo_root, owner, repo_name)
+    location = GitHubRepoLocation(root=repo_root, repo_id=GitHubRepoId(owner, repo_name))
+    provider = RealPlanDataProvider(ctx, location)
     filters = PlanFilters(
         labels=labels,
         state=state,

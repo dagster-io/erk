@@ -9,12 +9,11 @@ instead of separate calls for issues (~500ms) and PR linkages (~1500ms).
 """
 
 from dataclasses import dataclass
-from pathlib import Path
 
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues, IssueInfo
 from erk_shared.github.metadata import extract_plan_header_dispatch_info
-from erk_shared.github.types import PullRequestInfo, WorkflowRun
+from erk_shared.github.types import GitHubRepoLocation, PullRequestInfo, WorkflowRun
 
 
 @dataclass(frozen=True)
@@ -53,9 +52,7 @@ class PlanListService:
     def get_plan_list_data(
         self,
         *,
-        repo_root: Path,
-        owner: str,
-        repo: str,
+        location: GitHubRepoLocation,
         labels: list[str],
         state: str | None = None,
         limit: int | None = None,
@@ -64,9 +61,7 @@ class PlanListService:
         """Batch fetch all data needed for plan listing.
 
         Args:
-            repo_root: Repository root directory
-            owner: Repository owner
-            repo: Repository name
+            location: GitHub repository location (local root + repo identity)
             labels: Labels to filter issues by (e.g., ["erk-plan"])
             state: Filter by state ("open", "closed", or None for all)
             limit: Maximum number of issues to return (None for no limit)
@@ -77,9 +72,7 @@ class PlanListService:
         """
         # Always use unified path: issues + PR linkages in one API call (~600ms)
         issues, pr_linkages = self._github.get_issues_with_pr_linkages(
-            repo_root,
-            owner,
-            repo,
+            location,
             labels,
             state=state,
             limit=limit,
@@ -98,7 +91,7 @@ class PlanListService:
             # Batch fetch workflow runs via GraphQL nodes(ids: [...])
             if node_id_to_issue:
                 runs_by_node_id = self._github.get_workflow_runs_by_node_ids(
-                    repo_root,
+                    location.root,
                     list(node_id_to_issue.keys()),
                 )
                 for node_id, run in runs_by_node_id.items():

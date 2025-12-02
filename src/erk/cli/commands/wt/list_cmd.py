@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 from erk_shared.git.abc import BranchSyncInfo
-from erk_shared.github.types import PullRequestInfo
+from erk_shared.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.impl_folder import get_impl_path, read_issue_reference
 from rich.console import Console
 from rich.table import Table
@@ -252,7 +252,7 @@ def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool = False) -> None:
     root_branch_display = f"({root_branch})" if root_branch else "-"
     root_pr = prs.get(root_branch) if root_branch else None
     root_graphite_url = (
-        ctx.graphite.get_graphite_url(root_pr.owner, root_pr.repo, root_pr.number)
+        ctx.graphite.get_graphite_url(GitHubRepoId(root_pr.owner, root_pr.repo), root_pr.number)
         if root_pr
         else None
     )
@@ -292,7 +292,9 @@ def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool = False) -> None:
 
         # PR info from Graphite cache
         pr = prs.get(branch) if branch else None
-        graphite_url = ctx.graphite.get_graphite_url(pr.owner, pr.repo, pr.number) if pr else None
+        graphite_url = None
+        if pr:
+            graphite_url = ctx.graphite.get_graphite_url(GitHubRepoId(pr.owner, pr.repo), pr.number)
         pr_cell = _format_pr_cell(pr, use_graphite=use_graphite, graphite_url=graphite_url)
 
         # Sync status

@@ -3,6 +3,7 @@
 import click
 from erk_shared.github.emoji import format_checks_cell
 from erk_shared.github.parsing import github_repo_location_from_url
+from erk_shared.github.types import GitHubRepoId
 from erk_shared.output.output import user_output
 from rich.console import Console
 from rich.table import Table
@@ -109,9 +110,7 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
         # Format run-id with link
         workflow_url = None
         if location is not None:
-            workflow_url = (
-                f"https://github.com/{location.owner}/{location.repo}/actions/runs/{run.run_id}"
-            )
+            workflow_url = f"https://github.com/{location.repo_id.owner}/{location.repo_id.repo}/actions/runs/{run.run_id}"
         run_id_cell = format_workflow_run_id(run, workflow_url)
 
         # Format status
@@ -132,9 +131,7 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
             # New format - have issue number, try to get data
             issue_url = None
             if location is not None:
-                issue_url = (
-                    f"https://github.com/{location.owner}/{location.repo}/issues/{issue_num}"
-                )
+                issue_url = f"https://github.com/{location.repo_id.owner}/{location.repo_id.repo}/issues/{issue_num}"
             # Make plan number clickable
             if issue_url:
                 plan_cell = f"[link={issue_url}][cyan]#{issue_num}[/cyan][/link]"
@@ -161,7 +158,7 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
                 selected_pr = select_display_pr(prs)
                 if selected_pr is not None:
                     graphite_url = ctx.graphite.get_graphite_url(
-                        selected_pr.owner, selected_pr.repo, selected_pr.number
+                        GitHubRepoId(selected_pr.owner, selected_pr.repo), selected_pr.number
                     )
                     pr_cell = format_pr_cell(
                         selected_pr, use_graphite=use_graphite, graphite_url=graphite_url

@@ -9,6 +9,8 @@ from pathlib import Path
 
 from erk_shared.git.abc import Git
 from erk_shared.git.real import RealGit
+from erk_shared.github.parsing import parse_git_remote_url
+from erk_shared.github.types import GitHubRepoId
 
 
 @dataclass(frozen=True)
@@ -19,6 +21,7 @@ class RepoContext:
     repo_name: str
     repo_dir: Path  # ~/.erk/repos/<repo-name>
     worktrees_dir: Path  # ~/.erk/repos/<repo-name>/worktrees
+    github: GitHubRepoId | None = None  # None if not a GitHub repo or no remote
 
 
 @dataclass(frozen=True)
@@ -80,8 +83,22 @@ def discover_repo_or_sentinel(
     repo_dir = erk_root / "repos" / repo_name
     worktrees_dir = repo_dir / "worktrees"
 
+    # Extract GitHub identity from remote URL
+    repo_id: GitHubRepoId | None = None
+    try:
+        remote_url = ops.get_remote_url(root, "origin")
+        owner_repo = parse_git_remote_url(remote_url)
+        repo_id = GitHubRepoId(owner=owner_repo[0], repo=owner_repo[1])
+    except ValueError:
+        # No origin remote or not a GitHub URL - continue without GitHub identity
+        pass
+
     return RepoContext(
-        root=root, repo_name=repo_name, repo_dir=repo_dir, worktrees_dir=worktrees_dir
+        root=root,
+        repo_name=repo_name,
+        repo_dir=repo_dir,
+        worktrees_dir=worktrees_dir,
+        github=repo_id,
     )
 
 

@@ -7,7 +7,7 @@ in its constructor. Construct instances directly with keyword arguments.
 from pathlib import Path
 
 from erk_shared.git.abc import Git
-from erk_shared.github.types import PullRequestInfo
+from erk_shared.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 
@@ -71,9 +71,9 @@ class FakeGraphite(Graphite):
         self._auth_repo_info = auth_repo_info
         self._check_auth_status_calls: list[None] = []
 
-    def get_graphite_url(self, owner: str, repo: str, pr_number: int) -> str:
+    def get_graphite_url(self, repo_id: GitHubRepoId, pr_number: int) -> str:
         """Get Graphite PR URL (constructs URL directly)."""
-        return f"https://app.graphite.com/github/pr/{owner}/{repo}/{pr_number}"
+        return f"https://app.graphite.com/github/pr/{repo_id.owner}/{repo_id.repo}/{pr_number}"
 
     def sync(self, repo_root: Path, *, force: bool, quiet: bool) -> None:
         """Fake sync operation.

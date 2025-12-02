@@ -690,3 +690,17 @@ class FakeGit(Git):
         if not hasattr(self, "_merge_conflicts"):
             self._merge_conflicts: dict[tuple[str, str], bool] = {}
         return self._merge_conflicts.get((base_branch, head_branch), False)
+
+    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
+        """Get the URL for a git remote.
+
+        Raises:
+            ValueError: If remote doesn't exist or has no URL
+        """
+        # Return configured remote URL or raise
+        if not hasattr(self, "_remote_urls"):
+            self._remote_urls: dict[tuple[Path, str], str] = {}
+        url = self._remote_urls.get((repo_root, remote))
+        if url is None:
+            raise ValueError(f"Remote '{remote}' not found in repository")
+        return url

@@ -540,9 +540,7 @@ class FakeGitHub(GitHub):
 
     def get_issues_with_pr_linkages(
         self,
-        repo_root: Path,
-        owner: str,
-        repo: str,
+        location: GitHubRepoLocation,
         labels: list[str],
         state: str | None = None,
         limit: int | None = None,
@@ -553,9 +551,7 @@ class FakeGitHub(GitHub):
         matching PR linkages from pr_issue_linkages mapping.
 
         Args:
-            repo_root: Repository root directory (ignored in fake)
-            owner: Repository owner (ignored in fake)
-            repo: Repository name (ignored in fake)
+            location: GitHub repository location (ignored in fake)
             labels: Labels to filter by
             state: Filter by state ("open", "closed", or None for OPEN default)
             limit: Maximum issues to return (default: all)

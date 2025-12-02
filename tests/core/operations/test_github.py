@@ -3,6 +3,7 @@
 import pytest
 from erk_shared.github.parsing import _parse_github_pr_url, extract_owner_repo_from_github_url
 from erk_shared.github.real import RealGitHub
+from erk_shared.github.types import GitHubRepoId
 from erk_shared.integrations.time.fake import FakeTime
 
 
@@ -527,7 +528,7 @@ def test_build_issue_pr_linkage_query_structure() -> None:
     """Test that issue PR linkage query uses timelineItems with CrossReferencedEvent."""
     ops = RealGitHub(FakeTime())
 
-    query = ops._build_issue_pr_linkage_query([100, 200], "test-owner", "test-repo")
+    query = ops._build_issue_pr_linkage_query([100, 200], GitHubRepoId("test-owner", "test-repo"))
 
     # Validate basic GraphQL syntax
     assert "query {" in query
@@ -611,7 +612,7 @@ def test_parse_issue_pr_linkages_with_single_pr() -> None:
         }
     }
 
-    result = ops._parse_issue_pr_linkages(response, "owner", "repo")
+    result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
     assert 100 in result
     assert len(result[100]) == 1
@@ -669,7 +670,7 @@ def test_parse_issue_pr_linkages_with_multiple_prs() -> None:
         }
     }
 
-    result = ops._parse_issue_pr_linkages(response, "owner", "repo")
+    result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
     assert 100 in result
     assert len(result[100]) == 2
@@ -731,7 +732,7 @@ def test_parse_issue_pr_linkages_with_pr_linking_multiple_issues() -> None:
         }
     }
 
-    result = ops._parse_issue_pr_linkages(response, "owner", "repo")
+    result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
     # Both issues should have the same PR
     assert 100 in result
@@ -746,7 +747,7 @@ def test_parse_issue_pr_linkages_handles_empty_timeline() -> None:
 
     response = {"data": {"repository": {"issue_100": {"timelineItems": {"nodes": []}}}}}
 
-    result = ops._parse_issue_pr_linkages(response, "owner", "repo")
+    result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
     # Issue with no PRs should not appear in result
     assert 100 not in result
@@ -788,7 +789,7 @@ def test_parse_issue_pr_linkages_handles_null_nodes() -> None:
         }
     }
 
-    result = ops._parse_issue_pr_linkages(response, "owner", "repo")
+    result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
     # Should skip null nodes and process valid ones
     assert 100 in result
@@ -826,7 +827,7 @@ def test_parse_issue_pr_linkages_handles_missing_optional_fields() -> None:
         }
     }
 
-    result = ops._parse_issue_pr_linkages(response, "owner", "repo")
+    result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
     # Should handle missing fields gracefully
     assert 100 in result
@@ -880,7 +881,7 @@ def test_parse_issue_pr_linkages_filters_non_closing_prs() -> None:
         }
     }
 
-    result = ops._parse_issue_pr_linkages(response, "owner", "repo")
+    result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
     # Should only include the closing PR
     assert 100 in result
@@ -919,7 +920,7 @@ def test_parse_issue_pr_linkages_handles_issue_not_found() -> None:
         }
     }
 
-    result = ops._parse_issue_pr_linkages(response, "owner", "repo")
+    result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
     # Non-existent issue should be skipped
     assert 100 not in result

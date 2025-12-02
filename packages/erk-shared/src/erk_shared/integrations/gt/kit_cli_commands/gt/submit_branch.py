@@ -62,6 +62,7 @@ from typing import Literal, NamedTuple
 
 import click
 
+from erk_shared.github.types import GitHubRepoId
 from erk_shared.impl_folder import (
     has_issue_reference,
     read_issue_reference,
@@ -643,9 +644,8 @@ def _execute_submit_only(
     # Get Graphite URL using the main_graphite interface
     repo_info = ops.github().get_repo_info(repo_root)
     if repo_info is not None:
-        graphite_url = ops.main_graphite().get_graphite_url(
-            repo_info.owner, repo_info.name, pr_number
-        )
+        repo_id = GitHubRepoId(owner=repo_info.owner, repo=repo_info.name)
+        graphite_url = ops.main_graphite().get_graphite_url(repo_id, pr_number)
     else:
         graphite_url = ""
 
@@ -836,9 +836,8 @@ def execute_finalize(
     # Get Graphite URL using the main_graphite interface
     repo_info = ops.github().get_repo_info(repo_root)
     if repo_info is not None:
-        graphite_url = ops.main_graphite().get_graphite_url(
-            repo_info.owner, repo_info.name, pr_number
-        )
+        repo_id = GitHubRepoId(owner=repo_info.owner, repo=repo_info.name)
+        graphite_url = ops.main_graphite().get_graphite_url(repo_id, pr_number)
     else:
         graphite_url = ""
 

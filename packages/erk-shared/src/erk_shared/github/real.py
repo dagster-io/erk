@@ -31,6 +31,7 @@ from erk_shared.github.parsing import (
 from erk_shared.github.types import (
     BRANCH_NOT_AVAILABLE,
     DISPLAY_TITLE_NOT_AVAILABLE,
+    GitHubRepoId,
     GitHubRepoLocation,
     PRCheckoutInfo,
     PRInfo,
@@ -867,16 +868,16 @@ query {{
 
         try:
             # Build and execute GraphQL query to fetch all issues
-            query = self._build_issue_pr_linkage_query(issue_numbers, location.owner, location.repo)
+            query = self._build_issue_pr_linkage_query(issue_numbers, location.repo_id)
             response = self._execute_batch_pr_query(query, location.root)
 
             # Parse response and build inverse mapping
-            return self._parse_issue_pr_linkages(response, location.owner, location.repo)
+            return self._parse_issue_pr_linkages(response, location.repo_id)
         except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError, IndexError):
             # gh not installed, not authenticated, or parsing failed
             return {}
 
-    def _build_issue_pr_linkage_query(self, issue_numbers: list[int], owner: str, repo: str) -> str:
+    def _build_issue_pr_linkage_query(self, issue_numbers: list[int], repo_id: GitHubRepoId) -> str:
         """Build GraphQL query to fetch PRs linked to issues via timeline.
 
         Uses CrossReferencedEvent on issue timelines to find PRs that will close
@@ -888,8 +889,7 @@ query {{
 
         Args:
             issue_numbers: List of issue numbers to query
-            owner: Repository owner
-            repo: Repository name
+            repo_id: GitHub repository identity (owner and repo name)
 
         Returns:
             GraphQL query string
@@ -936,14 +936,14 @@ query {{
         query = f"""{fragment_definition}
 
 query {{
-  repository(owner: "{owner}", name: "{repo}") {{
+  repository(owner: "{repo_id.owner}", name: "{repo_id.repo}") {{
 {chr(10).join(issue_queries)}
   }}
 }}"""
         return query
 
     def _parse_issue_pr_linkages(
-        self, response: dict[str, Any], owner: str, repo: str
+        self, response: dict[str, Any], repo_id: GitHubRepoId
     ) -> dict[int, list[PullRequestInfo]]:
         """Parse GraphQL response from issue timeline query.
 
@@ -952,8 +952,7 @@ query {{
 
         Args:
             response: GraphQL response data
-            owner: Repository owner
-            repo: Repository name
+            repo_id: GitHub repository identity (owner and repo name)
 
         Returns:
             Mapping of issue_number -> list of PRs sorted by created_at descending
@@ -1039,8 +1038,8 @@ query {{
                     is_draft=is_draft if is_draft is not None else False,
                     title=None,  # Not fetched for efficiency
                     checks_passing=checks_passing,
-                    owner=owner,
-                    repo=repo,
+                    owner=repo_id.owner,
+                    repo=repo_id.repo,
                     has_conflicts=has_conflicts,
                     checks_counts=checks_counts,
                 )
@@ -1444,9 +1443,7 @@ query {{
 
     def get_issues_with_pr_linkages(
         self,
-        repo_root: Path,
-        owner: str,
-        repo: str,
+        location: GitHubRepoLocation,
         labels: list[str],
         state: str | None = None,
         limit: int | None = None,
@@ -1456,14 +1453,14 @@ query {{
         Uses repository.issues() connection with inline timelineItems
         to get PR linkages in one API call.
         """
-        query = self._build_issues_with_pr_linkages_query(owner, repo, labels, state, limit)
-        response = self._execute_batch_pr_query(query, repo_root)
-        return self._parse_issues_with_pr_linkages(response, owner, repo)
+        repo_id = location.repo_id
+        query = self._build_issues_with_pr_linkages_query(repo_id, labels, state, limit)
+        response = self._execute_batch_pr_query(query, location.root)
+        return self._parse_issues_with_pr_linkages(response, repo_id)
 
     def _build_issues_with_pr_linkages_query(
         self,
-        owner: str,
-        repo: str,
+        repo_id: GitHubRepoId,
         labels: list[str],
         state: str | None,
         limit: int | None,
@@ -1474,8 +1471,7 @@ query {{
         cross-referenced PRs in a single query.
 
         Args:
-            owner: Repository owner
-            repo: Repository name
+            repo_id: GitHub repository identity (owner and repo name)
             labels: Labels to filter by
             state: Filter by state ("open", "closed", or None for all)
             limit: Maximum issues to return (default: 100)
@@ -1526,7 +1522,7 @@ query {{
         query = f"""{fragment_definition}
 
 query {{
-  repository(owner: "{owner}", name: "{repo}") {{
+  repository(owner: "{repo_id.owner}", name: "{repo_id.repo}") {{
     issues({issues_args}, {order_by}) {{
       nodes {{
         number
@@ -1584,7 +1580,7 @@ query {{
         )
 
     def _parse_pr_from_timeline_event(
-        self, event: dict[str, Any], owner: str, repo: str
+        self, event: dict[str, Any], repo_id: GitHubRepoId
     ) -> tuple[PullRequestInfo, str] | None:
         """Parse PR info from a timeline CrossReferencedEvent.
 
@@ -1616,8 +1612,8 @@ query {{
             is_draft=source.get("isDraft", False),
             title=None,
             checks_passing=checks_passing,
-            owner=owner,
-            repo=repo,
+            owner=repo_id.owner,
+            repo=repo_id.repo,
             has_conflicts=has_conflicts,
             checks_counts=checks_counts,
         )
@@ -1664,8 +1660,7 @@ query {{
     def _parse_issues_with_pr_linkages(
         self,
         response: dict[str, Any],
-        owner: str,
-        repo: str,
+        repo_id: GitHubRepoId,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Parse GraphQL response to extract issues and PR linkages."""
         issues: list[IssueInfo] = []
@@ -1689,7 +1684,7 @@ query {{
             for event in timeline_nodes:
                 if event is None:
                     continue
-                result = self._parse_pr_from_timeline_event(event, owner, repo)
+                result = self._parse_pr_from_timeline_event(event, repo_id)
                 if result is not None:
                     prs_with_timestamps.append(result)
 

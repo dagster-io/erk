@@ -264,3 +264,7 @@ class DryRunGit(Git):
     def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
         """Check merge conflicts (read-only, delegates to wrapped)."""
         return self._wrapped.check_merge_conflicts(cwd, base_branch, head_branch)
+
+    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
+        """Get remote URL (read-only, delegates to wrapped)."""
+        return self._wrapped.get_remote_url(repo_root, remote)

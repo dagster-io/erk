@@ -1,7 +1,6 @@
 """Data provider for TUI plan table."""
 
 from abc import ABC, abstractmethod
-from pathlib import Path
 
 from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.github.issues import IssueInfo
@@ -10,7 +9,7 @@ from erk_shared.github.metadata import (
     extract_plan_header_remote_impl_at,
     extract_plan_header_worktree_name,
 )
-from erk_shared.github.types import PullRequestInfo, WorkflowRun
+from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -51,19 +50,15 @@ class RealPlanDataProvider(PlanDataProvider):
     Transforms PlanListData into PlanRowData for TUI display.
     """
 
-    def __init__(self, ctx: ErkContext, repo_root: Path, owner: str, repo: str) -> None:
+    def __init__(self, ctx: ErkContext, location: GitHubRepoLocation) -> None:
         """Initialize with context and repository info.
 
         Args:
             ctx: ErkContext with all dependencies
-            repo_root: Repository root directory
-            owner: Repository owner
-            repo: Repository name
+            location: GitHub repository location (local root + repo identity)
         """
         self._ctx = ctx
-        self._repo_root = repo_root
-        self._owner = owner
-        self._repo = repo
+        self._location = location
 
     def fetch_plans(self, filters: PlanFilters) -> list[PlanRowData]:
         """Fetch plans and transform to TUI row format.
@@ -80,9 +75,7 @@ class RealPlanDataProvider(PlanDataProvider):
         # Fetch data via PlanListService
         # Note: PR linkages are always fetched via unified GraphQL query (no performance penalty)
         plan_data = self._ctx.plan_list_service.get_plan_list_data(
-            repo_root=self._repo_root,
-            owner=self._owner,
-            repo=self._repo,
+            location=self._location,
             labels=list(filters.labels),
             state=filters.state,
             limit=filters.limit,
@@ -126,7 +119,7 @@ class RealPlanDataProvider(PlanDataProvider):
         """Build mapping of issue number to local worktree name."""
         _ensure_erk_metadata_dir_from_context(self._ctx.repo)
         worktree_by_issue: dict[int, str] = {}
-        worktrees = self._ctx.git.list_worktrees(self._repo_root)
+        worktrees = self._ctx.git.list_worktrees(self._location.root)
         for worktree in worktrees:
             impl_folder = worktree.path / ".impl"
             if impl_folder.exists() and impl_folder.is_dir():
@@ -189,7 +182,7 @@ class RealPlanDataProvider(PlanDataProvider):
             if selected_pr is not None:
                 pr_number = selected_pr.number
                 graphite_url = self._ctx.graphite.get_graphite_url(
-                    selected_pr.owner, selected_pr.repo, selected_pr.number
+                    GitHubRepoId(selected_pr.owner, selected_pr.repo), selected_pr.number
                 )
                 pr_url = graphite_url if use_graphite and graphite_url else selected_pr.url
                 emoji = get_pr_status_emoji(selected_pr)

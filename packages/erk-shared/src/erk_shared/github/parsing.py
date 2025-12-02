@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from erk_shared.github.types import GitHubRepoLocation, PRInfo, PullRequestInfo
+from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PRInfo, PullRequestInfo
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
@@ -205,6 +205,41 @@ def extract_owner_repo_from_github_url(url: str) -> tuple[str, str] | None:
     return None
 
 
+def parse_git_remote_url(url: str) -> tuple[str, str]:
+    """Extract (owner, repo) from a git remote URL.
+
+    Supports both HTTPS and SSH formats for GitHub URLs:
+        - HTTPS: https://github.com/owner/repo.git or https://github.com/owner/repo
+        - SSH: git@github.com:owner/repo.git
+
+    Args:
+        url: Git remote URL
+
+    Returns:
+        Tuple of (owner, repo)
+
+    Raises:
+        ValueError: If URL is not a valid GitHub URL
+
+    Example:
+        >>> parse_git_remote_url("https://github.com/dagster-io/erk.git")
+        ("dagster-io", "erk")
+        >>> parse_git_remote_url("git@github.com:dagster-io/erk.git")
+        ("dagster-io", "erk")
+    """
+    # Handle HTTPS format: https://github.com/owner/repo.git
+    https_match = re.match(r"https://github\.com/([^/]+)/([^/]+?)(?:\.git)?$", url)
+    if https_match:
+        return (https_match.group(1), https_match.group(2))
+
+    # Handle SSH format: git@github.com:owner/repo.git
+    ssh_match = re.match(r"git@github\.com:([^/]+)/([^/]+?)(?:\.git)?$", url)
+    if ssh_match:
+        return (ssh_match.group(1), ssh_match.group(2))
+
+    raise ValueError(f"Not a valid GitHub URL: {url}")
+
+
 def github_repo_location_from_url(root: Path, github_url: str) -> GitHubRepoLocation | None:
     """Create GitHubRepoLocation from a GitHub URL.
 
@@ -221,7 +256,7 @@ def github_repo_location_from_url(root: Path, github_url: str) -> GitHubRepoLoca
     owner_repo = extract_owner_repo_from_github_url(github_url)
     if owner_repo is None:
         return None
-    return GitHubRepoLocation(root=root, owner=owner_repo[0], repo=owner_repo[1])
+    return GitHubRepoLocation(root=root, repo_id=GitHubRepoId(owner_repo[0], owner_repo[1]))
 
 
 def parse_aggregated_check_counts(

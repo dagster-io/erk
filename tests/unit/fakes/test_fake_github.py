@@ -10,9 +10,17 @@ from pathlib import Path
 import pytest
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.types import PRInfo, PullRequestInfo, WorkflowRun
+from erk_shared.github.types import (
+    GitHubRepoId,
+    GitHubRepoLocation,
+    PRInfo,
+    PullRequestInfo,
+    WorkflowRun,
+)
 
 from tests.test_utils.paths import sentinel_path
+
+TEST_LOCATION = GitHubRepoLocation(root=sentinel_path(), repo_id=GitHubRepoId("owner", "repo"))
 
 
 def test_fake_github_ops_initialization() -> None:
@@ -658,9 +666,7 @@ def test_fake_github_get_issues_with_pr_linkages_empty() -> None:
     ops = FakeGitHub()
 
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
-        sentinel_path(),
-        owner="owner",
-        repo="repo",
+        TEST_LOCATION,
         labels=["erk-plan"],
     )
 
@@ -696,9 +702,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_labels() -> None:
     ops = FakeGitHub(issues=[issue1, issue2])
 
     issues, _ = ops.get_issues_with_pr_linkages(
-        sentinel_path(),
-        owner="owner",
-        repo="repo",
+        TEST_LOCATION,
         labels=["erk-plan"],
     )
 
@@ -734,9 +738,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_state() -> None:
     ops = FakeGitHub(issues=[open_issue, closed_issue])
 
     issues, _ = ops.get_issues_with_pr_linkages(
-        sentinel_path(),
-        owner="owner",
-        repo="repo",
+        TEST_LOCATION,
         labels=["erk-plan"],
         state="open",
     )
@@ -775,9 +777,7 @@ def test_fake_github_get_issues_with_pr_linkages_returns_pr_linkages() -> None:
     )
 
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
-        sentinel_path(),
-        owner="owner",
-        repo="repo",
+        TEST_LOCATION,
         labels=["erk-plan"],
     )
 
@@ -806,9 +806,7 @@ def test_fake_github_get_issues_with_pr_linkages_respects_limit() -> None:
     ops = FakeGitHub(issues=issues)
 
     result_issues, _ = ops.get_issues_with_pr_linkages(
-        sentinel_path(),
-        owner="owner",
-        repo="repo",
+        TEST_LOCATION,
         labels=["erk-plan"],
         limit=3,
     )
@@ -858,9 +856,7 @@ def test_fake_github_get_issues_with_pr_linkages_no_linkages_for_filtered_issues
     )
 
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
-        sentinel_path(),
-        owner="owner",
-        repo="repo",
+        TEST_LOCATION,
         labels=["erk-plan"],
     )
 

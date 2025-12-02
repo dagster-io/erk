@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from erk_shared.git.abc import Git
-from erk_shared.github.types import PullRequestInfo
+from erk_shared.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 
@@ -32,9 +32,9 @@ class DryRunGraphite(Graphite):
 
     # Read-only operations: delegate to wrapped implementation
 
-    def get_graphite_url(self, owner: str, repo: str, pr_number: int) -> str:
+    def get_graphite_url(self, repo_id: GitHubRepoId, pr_number: int) -> str:
         """Get Graphite PR URL (read-only, delegates to wrapped)."""
-        return self._wrapped.get_graphite_url(owner, repo, pr_number)
+        return self._wrapped.get_graphite_url(repo_id, pr_number)
 
     def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -> dict[str, PullRequestInfo]:
         """Get PR info from Graphite cache (read-only, delegates to wrapped)."""

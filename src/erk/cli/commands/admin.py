@@ -3,6 +3,7 @@
 from typing import Literal
 
 import click
+from erk_shared.github.types import GitHubRepoLocation
 from erk_shared.output.output import user_output
 
 from erk.cli.core import discover_repo_context
@@ -45,14 +46,21 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
     # Discover repository context
     repo = discover_repo_context(ctx, ctx.cwd)
 
+    # Check for GitHub identity
+    if repo.github is None:
+        user_output(click.style("Error: ", fg="red") + "Not a GitHub repository")
+        user_output("This command requires the repository to have a GitHub remote configured.")
+        raise SystemExit(1)
+
     # Create admin interface
     # TODO: Use injected admin from context when dry-run support is added
     admin = RealGitHubAdmin()
+    location = GitHubRepoLocation(root=repo.root, repo_id=repo.github)
 
     if action is None:
         # Display current setting
         try:
-            perms = admin.get_workflow_permissions(repo.root)
+            perms = admin.get_workflow_permissions(location)
             enabled = perms.get("can_approve_pull_request_reviews", False)
 
             user_output(click.style("GitHub Actions PR Creation Setting", bold=True))
@@ -85,7 +93,7 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
     elif action == "enable":
         # Enable PR creation
         try:
-            admin.set_workflow_pr_permissions(repo.root, enabled=True)
+            admin.set_workflow_pr_permissions(location, enabled=True)
 
             user_output(
                 click.style("✓", fg="green") + " Enabled PR creation for GitHub Actions workflows"
@@ -100,7 +108,7 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
     elif action == "disable":
         # Disable PR creation
         try:
-            admin.set_workflow_pr_permissions(repo.root, enabled=False)
+            admin.set_workflow_pr_permissions(location, enabled=False)
 
             user_output(
                 click.style("✓", fg="green") + " Disabled PR creation for GitHub Actions workflows"

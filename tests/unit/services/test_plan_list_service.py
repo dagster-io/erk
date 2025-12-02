@@ -6,9 +6,11 @@ from pathlib import Path
 import pytest
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
-from erk_shared.github.types import PullRequestInfo, WorkflowRun
+from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
 
 from erk.core.services.plan_list_service import PlanListData, PlanListService
+
+TEST_LOCATION = GitHubRepoLocation(root=Path("/test/repo"), repo_id=GitHubRepoId("owner", "repo"))
 
 
 class TestPlanListService:
@@ -33,9 +35,7 @@ class TestPlanListService:
 
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
-            repo_root=Path("/test/repo"),
-            owner="owner",
-            repo="repo",
+            location=TEST_LOCATION,
             labels=["erk-plan"],
         )
 
@@ -77,10 +77,8 @@ class TestPlanListService:
 
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
-            repo_root=Path("/test/repo"),
+            location=TEST_LOCATION,
             labels=["erk-plan"],
-            owner="owner",
-            repo="repo",
         )
 
         # Unified path returns issues from get_issues_with_pr_linkages
@@ -97,9 +95,7 @@ class TestPlanListService:
 
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
-            repo_root=Path("/test/repo"),
-            owner="owner",
-            repo="repo",
+            location=TEST_LOCATION,
             labels=["erk-plan"],
         )
 
@@ -138,11 +134,9 @@ class TestPlanListService:
 
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
-            repo_root=Path("/test/repo"),
+            location=TEST_LOCATION,
             labels=["erk-plan"],
             state="open",
-            owner="owner",
-            repo="repo",
         )
 
         assert len(result.issues) == 1
@@ -178,9 +172,7 @@ class TestPlanListService:
 
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
-            repo_root=Path("/test/repo"),
-            owner="owner",
-            repo="repo",
+            location=TEST_LOCATION,
             labels=["erk-plan"],
             state="closed",
         )
@@ -246,10 +238,8 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
 
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
-            repo_root=Path("/test/repo"),
+            location=TEST_LOCATION,
             labels=["erk-plan"],
-            owner="owner",
-            repo="repo",
         )
 
         # Verify workflow run was fetched and mapped to issue
@@ -298,11 +288,9 @@ last_dispatched_node_id: 'WFR_abc123'
 
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
-            repo_root=Path("/test/repo"),
+            location=TEST_LOCATION,
             labels=["erk-plan"],
             skip_workflow_runs=True,
-            owner="owner",
-            repo="repo",
         )
 
         # Workflow runs dict should be empty when skipped
@@ -327,10 +315,8 @@ last_dispatched_node_id: 'WFR_abc123'
 
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
-            repo_root=Path("/test/repo"),
+            location=TEST_LOCATION,
             labels=["erk-plan"],
-            owner="owner",
-            repo="repo",
         )
 
         # No workflow runs should be fetched (no node_ids to fetch)
@@ -368,10 +354,8 @@ last_dispatched_node_id: 'WFR_nonexistent'
 
         service = PlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
-            repo_root=Path("/test/repo"),
+            location=TEST_LOCATION,
             labels=["erk-plan"],
-            owner="owner",
-            repo="repo",
         )
 
         # Issue should have None for workflow run (not found)

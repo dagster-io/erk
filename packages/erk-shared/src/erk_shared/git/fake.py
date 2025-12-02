@@ -89,6 +89,7 @@ class FakeGit(Git):
         diff_to_branch: dict[tuple[Path, str], str] | None = None,
         merge_conflicts: dict[tuple[str, str], bool] | None = None,
         commits_ahead: dict[tuple[Path, str], int] | None = None,
+        remote_urls: dict[tuple[Path, str], str] | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -120,6 +121,7 @@ class FakeGit(Git):
             diff_to_branch: Mapping of (cwd, branch) -> diff output
             merge_conflicts: Mapping of (base_branch, head_branch) -> has conflicts bool
             commits_ahead: Mapping of (cwd, base_branch) -> commit count
+            remote_urls: Mapping of (repo_root, remote_name) -> remote URL
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -146,6 +148,7 @@ class FakeGit(Git):
         self._diff_to_branch = diff_to_branch or {}
         self._merge_conflicts = merge_conflicts or {}
         self._commits_ahead = commits_ahead or {}
+        self._remote_urls = remote_urls or {}
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -699,3 +702,14 @@ class FakeGit(Git):
     def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
         """Check if merging would have conflicts using git merge-tree."""
         return self._merge_conflicts.get((base_branch, head_branch), False)
+
+    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
+        """Get the URL for a git remote.
+
+        Raises:
+            ValueError: If remote doesn't exist or has no URL
+        """
+        url = self._remote_urls.get((repo_root, remote))
+        if url is None:
+            raise ValueError(f"Remote '{remote}' not found in repository")
+        return url

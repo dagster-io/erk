@@ -15,6 +15,7 @@ from erk_shared.git.fake import FakeGit
 from erk_shared.github.dry_run import DryRunGitHub
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import DryRunGitHubIssues, FakeGitHubIssues
+from erk_shared.github.types import GitHubRepoId
 from erk_shared.integrations.graphite.dry_run import DryRunGraphite
 from erk_shared.integrations.graphite.fake import FakeGraphite
 
@@ -266,7 +267,7 @@ def test_dryrun_graphite_operations(tmp_path: Path) -> None:
     ctx = create_context(dry_run=True)
 
     # Test read operations work (they delegate to wrapped implementation)
-    url = ctx.graphite.get_graphite_url("owner", "repo", 123)
+    url = ctx.graphite.get_graphite_url(GitHubRepoId("owner", "repo"), 123)
     assert isinstance(url, str)
     assert "graphite.com" in url
     from erk_shared.git.real import RealGit

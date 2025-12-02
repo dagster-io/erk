@@ -1,7 +1,8 @@
 """No-op wrapper for GitHub Actions admin operations."""
 
-from pathlib import Path
 from typing import Any
+
+from erk_shared.github.types import GitHubRepoLocation
 
 from erk.core.implementation_queue.github.abc import GitHubAdmin
 
@@ -24,11 +25,11 @@ class NoopGitHubAdmin(GitHubAdmin):
         """
         self._wrapped = wrapped
 
-    def get_workflow_permissions(self, repo_root: Path) -> dict[str, Any]:
+    def get_workflow_permissions(self, location: GitHubRepoLocation) -> dict[str, Any]:
         """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_workflow_permissions(repo_root)
+        return self._wrapped.get_workflow_permissions(location)
 
-    def set_workflow_pr_permissions(self, repo_root: Path, enabled: bool) -> None:
+    def set_workflow_pr_permissions(self, location: GitHubRepoLocation, enabled: bool) -> None:
         """No-op for setting workflow permissions in dry-run mode."""
         # Do nothing - prevents actual permission changes
         pass

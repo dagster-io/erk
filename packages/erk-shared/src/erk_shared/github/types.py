@@ -9,10 +9,9 @@ PRState = Literal["OPEN", "MERGED", "CLOSED", "NONE"]
 
 
 @dataclass(frozen=True)
-class GitHubRepoLocation:
-    """GitHub repository location combining local path with owner/repo identity."""
+class GitHubRepoId:
+    """GitHub repository identity (owner and repo name)."""
 
-    root: Path
     owner: str
     repo: str
 
@@ -23,6 +22,14 @@ class RepoInfo:
 
     owner: str
     name: str
+
+
+@dataclass(frozen=True)
+class GitHubRepoLocation:
+    """GitHub repository location combining local path with repo identity."""
+
+    root: Path
+    repo_id: GitHubRepoId
 
 
 # Workflow run status (lowercase, matches gh CLI and normalized GraphQL responses)

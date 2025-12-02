@@ -1,8 +1,9 @@
 """Abstract base class for GitHub Actions admin operations."""
 
 from abc import ABC, abstractmethod
-from pathlib import Path
 from typing import Any
+
+from erk_shared.github.types import GitHubRepoLocation
 
 
 class GitHubAdmin(ABC):
@@ -13,11 +14,11 @@ class GitHubAdmin(ABC):
     """
 
     @abstractmethod
-    def get_workflow_permissions(self, repo_root: Path) -> dict[str, Any]:
+    def get_workflow_permissions(self, location: GitHubRepoLocation) -> dict[str, Any]:
         """Get current workflow permissions from GitHub API.
 
         Args:
-            repo_root: Repository root directory
+            location: GitHub repository location (local root + repo identity)
 
         Returns:
             Dict with keys:
@@ -30,11 +31,11 @@ class GitHubAdmin(ABC):
         ...
 
     @abstractmethod
-    def set_workflow_pr_permissions(self, repo_root: Path, enabled: bool) -> None:
+    def set_workflow_pr_permissions(self, location: GitHubRepoLocation, enabled: bool) -> None:
         """Enable or disable PR creation via workflow permissions API.
 
         Args:
-            repo_root: Repository root directory
+            location: GitHub repository location (local root + repo identity)
             enabled: True to enable PR creation, False to disable
 
         Raises:

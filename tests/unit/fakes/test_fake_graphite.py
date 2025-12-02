@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 from erk_shared.git.fake import FakeGit
-from erk_shared.github.types import PullRequestInfo
+from erk_shared.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 
@@ -203,7 +203,7 @@ def test_fake_graphite_ops_get_graphite_url() -> None:
     """Test that get_graphite_url constructs correct URL."""
     ops = FakeGraphite()
 
-    url = ops.get_graphite_url("testowner", "testrepo", 456)
+    url = ops.get_graphite_url(GitHubRepoId("testowner", "testrepo"), 456)
 
     assert url == "https://app.graphite.com/github/pr/testowner/testrepo/456"
 

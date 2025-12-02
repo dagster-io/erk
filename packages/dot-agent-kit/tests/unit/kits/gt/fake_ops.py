@@ -351,6 +351,10 @@ class FakeGitGtKitOps(Git):
         """Stub."""
         return None
 
+    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
+        """Stub - raises ValueError since no remotes are configured."""
+        raise ValueError(f"Remote '{remote}' not found in repository")
+
     def read_file(self, path: Path) -> str:
         """Stub."""
         raise NotImplementedError

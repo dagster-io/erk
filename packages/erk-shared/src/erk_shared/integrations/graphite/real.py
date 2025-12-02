@@ -7,7 +7,7 @@ from pathlib import Path
 from subprocess import DEVNULL
 
 from erk_shared.git.abc import Git
-from erk_shared.github.types import PullRequestInfo
+from erk_shared.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.parsing import (
     parse_graphite_cache,
@@ -29,21 +29,20 @@ class RealGraphite(Graphite):
         """Initialize with empty cache for get_all_branches."""
         self._branches_cache: dict[str, BranchMetadata] | None = None
 
-    def get_graphite_url(self, owner: str, repo: str, pr_number: int) -> str:
+    def get_graphite_url(self, repo_id: GitHubRepoId, pr_number: int) -> str:
         """Get Graphite PR URL for a pull request.
 
         Constructs the Graphite URL directly from GitHub repo information.
         No subprocess calls or external dependencies required.
 
         Args:
-            owner: GitHub repository owner (e.g., "dagster-io")
-            repo: GitHub repository name (e.g., "erk")
+            repo_id: GitHub repository identity (owner and repo name)
             pr_number: GitHub PR number
 
         Returns:
             Graphite PR URL (e.g., "https://app.graphite.com/github/pr/dagster-io/erk/23")
         """
-        return f"https://app.graphite.com/github/pr/{owner}/{repo}/{pr_number}"
+        return f"https://app.graphite.com/github/pr/{repo_id.owner}/{repo_id.repo}/{pr_number}"
 
     def sync(self, repo_root: Path, *, force: bool, quiet: bool) -> None:
         """Run gt sync to synchronize with remote.

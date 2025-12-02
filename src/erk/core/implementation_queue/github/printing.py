@@ -1,8 +1,8 @@
 """Printing wrapper for GitHub Actions admin operations."""
 
-from pathlib import Path
 from typing import Any
 
+from erk_shared.github.types import GitHubRepoLocation
 from erk_shared.printing.base import PrintingBase
 
 from erk.core.implementation_queue.github.abc import GitHubAdmin
@@ -25,11 +25,11 @@ class PrintingGitHubAdmin(PrintingBase, GitHubAdmin):
 
     # Inherits __init__, _emit, and _format_command from PrintingBase
 
-    def get_workflow_permissions(self, repo_root: Path) -> dict[str, Any]:
+    def get_workflow_permissions(self, location: GitHubRepoLocation) -> dict[str, Any]:
         """Get workflow permissions (read-only, no printing)."""
-        return self._wrapped.get_workflow_permissions(repo_root)
+        return self._wrapped.get_workflow_permissions(location)
 
-    def set_workflow_pr_permissions(self, repo_root: Path, enabled: bool) -> None:
+    def set_workflow_pr_permissions(self, location: GitHubRepoLocation, enabled: bool) -> None:
         """Set workflow PR permissions with printed output."""
         self._emit(
             self._format_command(
@@ -37,4 +37,4 @@ class PrintingGitHubAdmin(PrintingBase, GitHubAdmin):
                 f"(can_approve_pull_request_reviews={str(enabled).lower()})"
             )
         )
-        self._wrapped.set_workflow_pr_permissions(repo_root, enabled)
+        self._wrapped.set_workflow_pr_permissions(location, enabled)

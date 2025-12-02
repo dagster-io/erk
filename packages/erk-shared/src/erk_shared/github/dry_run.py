@@ -187,17 +187,13 @@ class DryRunGitHub(GitHub):
 
     def get_issues_with_pr_linkages(
         self,
-        repo_root: Path,
-        owner: str,
-        repo: str,
+        location: GitHubRepoLocation,
         labels: list[str],
         state: str | None = None,
         limit: int | None = None,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_issues_with_pr_linkages(
-            repo_root, owner, repo, labels, state=state, limit=limit
-        )
+        return self._wrapped.get_issues_with_pr_linkages(location, labels, state=state, limit=limit)
 
     def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
         """Delegate read operation to wrapped implementation."""
