@@ -1,0 +1,66 @@
+# Scratch Storage
+
+Erk provides a worktree-local scratch directory for inter-process file passing during AI workflows.
+
+## Location
+
+```
+{repo_root}/.erk/scratch/<session-id>/
+```
+
+Each Claude session gets its own subdirectory, making debugging and auditing easier.
+
+## When to Use Scratch vs /tmp
+
+| Storage                      | Use For                               | Examples                             |
+| ---------------------------- | ------------------------------------- | ------------------------------------ |
+| `.erk/scratch/<session-id>/` | AI workflow intermediate files        | PR diffs, PR bodies, commit messages |
+| `/tmp/erk-*`                 | Shell scripts sourced by parent shell | Shell integration, recovery scripts  |
+| `/tmp/erk-debug.log`         | Global diagnostics                    | Debug logging                        |
+
+**Key distinction**: Scratch is scoped to worktree + session. /tmp is for files that must work from any directory.
+
+## API
+
+```python
+from erk_shared.scratch.scratch import get_scratch_dir, write_scratch_file
+
+# Get session directory
+scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
+
+# Write file with unique name
+file_path = write_scratch_file(
+    content="...",
+    session_id=session_id,
+    suffix=".diff",
+    prefix="pr-diff-",
+)
+```
+
+## Session ID
+
+Extract from the `SESSION_CONTEXT` hook reminder:
+
+```
+SESSION_CONTEXT: session_id=26eff64a-9edb-44cb-a5af-b8e0f1c7aab5
+```
+
+## Path Construction
+
+When preflight writes a file, finalize should use the **same directory**:
+
+```python
+# Extract directory from existing scratch file
+scratch_dir = diff_file.parent
+pr_body = scratch_dir / "pr-body.txt"
+```
+
+## Common Mistake
+
+```python
+# WRONG: AI workflow files in global /tmp
+Path("/tmp/pr-body-1927.txt")
+
+# RIGHT: AI workflow files in worktree scratch
+scratch_dir / "pr-body.txt"
+```

@@ -51,19 +51,20 @@ docs/
 
 ## Task-Based Navigation
 
-| Your Task                         | Start Here                                                                                                     |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Understanding erk terminology     | [glossary.md](glossary.md)                                                                                     |
-| Understanding plan lifecycle      | [plan-lifecycle.md](plan-lifecycle.md)                                                                         |
-| Understanding plan enrichment     | [plan-enrichment.md](plan-enrichment.md)                                                                       |
-| Cleaning up branches/worktrees    | [erk/branch-cleanup.md](erk/branch-cleanup.md)                                                                 |
-| Writing tests with fakes/ops      | [testing.md](testing.md)                                                                                       |
-| Using time.sleep() or delays      | [erk-architecture.md](erk-architecture.md#time-abstraction-for-testing)                                        |
-| Understanding or modifying hooks  | [hooks-erk.md](hooks-erk.md) (context-aware reminders) → General: [hooks.md](hooks.md)                         |
-| Creating command-agent delegation | [command-agent-delegation.md](command-agent-delegation.md)                                                     |
-| Implementing script mode          | [cli-script-mode.md](cli-script-mode.md)                                                                       |
-| Styling CLI output                | [cli-output-styling.md](cli-output-styling.md)                                                                 |
-| Working with session logs         | [claude-code-session-layout.md](claude-code-session-layout.md)                                                 |
-| Organizing CLI commands           | [cli-command-organization.md](cli-command-organization.md)                                                     |
-| Python coding standards           | Load `dignified-python` skill                                                                                  |
-| Understanding agentic programming | [../writing/agentic-programming/agentic-programming.md](../writing/agentic-programming/agentic-programming.md) |
+| Your Task                           | Start Here                                                                                                     |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Understanding erk terminology       | [glossary.md](glossary.md)                                                                                     |
+| Understanding plan lifecycle        | [plan-lifecycle.md](plan-lifecycle.md)                                                                         |
+| Understanding plan enrichment       | [plan-enrichment.md](plan-enrichment.md)                                                                       |
+| Cleaning up branches/worktrees      | [erk/branch-cleanup.md](erk/branch-cleanup.md)                                                                 |
+| Writing tests with fakes/ops        | [testing.md](testing.md)                                                                                       |
+| Using time.sleep() or delays        | [erk-architecture.md](erk-architecture.md#time-abstraction-for-testing)                                        |
+| Understanding or modifying hooks    | [hooks-erk.md](hooks-erk.md) (context-aware reminders) → General: [hooks.md](hooks.md)                         |
+| Creating command-agent delegation   | [command-agent-delegation.md](command-agent-delegation.md)                                                     |
+| Implementing script mode            | [cli-script-mode.md](cli-script-mode.md)                                                                       |
+| Styling CLI output                  | [cli-output-styling.md](cli-output-styling.md)                                                                 |
+| Working with session logs           | [claude-code-session-layout.md](claude-code-session-layout.md)                                                 |
+| Writing temp files for AI workflows | [scratch-storage.md](scratch-storage.md)                                                                       |
+| Organizing CLI commands             | [cli-command-organization.md](cli-command-organization.md)                                                     |
+| Python coding standards             | Load `dignified-python` skill                                                                                  |
+| Understanding agentic programming   | [../writing/agentic-programming/agentic-programming.md](../writing/agentic-programming/agentic-programming.md) |

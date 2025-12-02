@@ -66,7 +66,7 @@ Follow the shared diff analysis guide:
 **Input**:
 
 ```
-Diff file: /tmp/diff123.diff
+Diff file: /repos/my-project/.erk/scratch/abc123/pr-diff-70363560.diff
 Repository root: /repos/my-project
 Current branch: feature-auth
 Parent branch: main
