@@ -11,6 +11,8 @@
 | Document                                                                           | Read when...                                                                                                      |
 | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | [claude-code-session-layout.md](claude-code-session-layout.md)                     | working with session logs, parsing session logs, understanding ~/.claude/projects/ structure                      |
+| [command-optimization-patterns.md](command-optimization-patterns.md)               | reducing command file size, using @ reference in commands, modularizing command content                           |
+| [context-window-analysis.md](context-window-analysis.md)                           | analyzing context consumption, debugging context window blowout, understanding why session ran out of context     |
 | [cli-command-organization.md](cli-command-organization.md)                         | organizing CLI commands, understanding command structure, designing command hierarchies                           |
 | [cli-list-formatting.md](cli-list-formatting.md)                                   | formatting list output, designing list commands, ensuring consistent list display                                 |
 | [cli-output-styling.md](cli-output-styling.md)                                     | styling CLI output, using colors in CLI, formatting terminal output                                               |
@@ -30,5 +32,6 @@
 | [planning-workflow.md](planning-workflow.md)                                       | using .impl/ folders, understanding plan file structure, implementing plans                                       |
 | [rebase-test-infrastructure-conflicts.md](rebase-test-infrastructure-conflicts.md) | fixing merge conflicts in tests, resolving rebase conflicts, updating test infrastructure during merges           |
 | [scratch-storage.md](scratch-storage.md)                                           | writing temp files for AI workflows, passing files between processes, understanding scratch directory location    |
+| [session-log-tools.md](session-log-tools.md)                                       | finding session logs, inspecting agent execution, debugging session issues                                        |
 | [subprocess-wrappers.md](subprocess-wrappers.md)                                   | using subprocess wrappers, executing shell commands, understanding subprocess patterns                            |
 | [testing.md](testing.md)                                                           | writing tests with fakes, understanding ops pattern, running tests                                                |
