@@ -707,3 +707,100 @@ class TestPlanDetailScreen:
             assert detail_screen._row.pr_number == 456
             assert detail_screen._row.pr_title == "Test PR Title"
             assert detail_screen._row.pr_state == "OPEN"
+
+    @pytest.mark.asyncio
+    async def test_detail_modal_o_key_binding_exists(self) -> None:
+        """Detail modal has 'o' key bound to open_browser action."""
+        provider = FakePlanDataProvider(
+            [
+                make_plan_row(
+                    123,
+                    "Test Plan",
+                    pr_number=456,
+                    pr_url="https://github.com/test/repo/pull/456",
+                    issue_url="https://github.com/test/repo/issues/123",
+                )
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Open detail modal
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            detail_screen = app.screen_stack[-1]
+            assert isinstance(detail_screen, PlanDetailScreen)
+
+            # Verify 'o' key binding exists and maps to open_browser action
+            bindings = detail_screen._bindings
+            binding_actions = {key: binding.action for key, binding in bindings}
+            assert "o" in binding_actions
+            assert binding_actions["o"] == "open_browser"
+
+    @pytest.mark.asyncio
+    async def test_detail_modal_shows_worktree_info(self) -> None:
+        """Detail modal shows worktree information when worktree exists."""
+        provider = FakePlanDataProvider(
+            [
+                make_plan_row(
+                    123,
+                    "Test Plan",
+                    worktree_name="feature-branch",
+                    worktree_branch="feature-branch",
+                    exists_locally=True,
+                )
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            detail_screen = app.screen_stack[-1]
+            assert isinstance(detail_screen, PlanDetailScreen)
+            assert detail_screen._row.worktree_name == "feature-branch"
+            assert detail_screen._row.exists_locally is True
+
+    @pytest.mark.asyncio
+    async def test_detail_modal_shows_run_info(self) -> None:
+        """Detail modal shows run information when run exists."""
+        provider = FakePlanDataProvider(
+            [
+                make_plan_row(
+                    123,
+                    "Test Plan",
+                    run_id="12345678",
+                    run_status="completed",
+                    run_conclusion="success",
+                    run_url="https://github.com/test/repo/actions/runs/12345678",
+                )
+            ]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            detail_screen = app.screen_stack[-1]
+            assert isinstance(detail_screen, PlanDetailScreen)
+            assert detail_screen._row.run_id == "12345678"
+            assert detail_screen._row.run_status == "completed"
+            assert detail_screen._row.run_conclusion == "success"
