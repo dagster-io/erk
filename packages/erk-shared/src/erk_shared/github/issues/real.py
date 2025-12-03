@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.issues.types import CreateIssueResult, IssueInfo
+from erk_shared.github.issues.types import CreateIssueResult, IssueComment, IssueInfo
 from erk_shared.subprocess_utils import execute_gh_command
 
 
@@ -160,6 +160,30 @@ class RealGitHubIssues(GitHubIssues):
             return []
 
         return json.loads(stdout)
+
+    def get_issue_comments_with_urls(self, repo_root: Path, number: int) -> list[IssueComment]:
+        """Fetch all comments with their URLs for an issue using gh CLI.
+
+        Uses JSON array output format to preserve multi-line comment bodies
+        and extract html_url for each comment.
+
+        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+        on failures (not installed, not authenticated, issue not found).
+        """
+        cmd = [
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/issues/{number}/comments",
+            "--jq",
+            "[.[] | {body, url: .html_url}]",
+        ]
+        stdout = execute_gh_command(cmd, repo_root)
+
+        if not stdout.strip():
+            return []
+
+        data = json.loads(stdout)
+        return [IssueComment(body=item["body"], url=item["url"]) for item in data]
 
     def get_multiple_issue_comments(
         self, repo_root: Path, issue_numbers: list[int]

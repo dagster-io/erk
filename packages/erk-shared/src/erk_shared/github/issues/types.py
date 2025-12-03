@@ -30,3 +30,16 @@ class CreateIssueResult:
 
     number: int
     url: str
+
+
+@dataclass(frozen=True)
+class IssueComment:
+    """A comment on a GitHub issue.
+
+    Attributes:
+        body: Markdown body of the comment
+        url: Full GitHub URL to the comment (html_url)
+    """
+
+    body: str
+    url: str

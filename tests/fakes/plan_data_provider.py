@@ -66,9 +66,15 @@ def make_plan_row(
     issue_url: str | None = None,
     pr_number: int | None = None,
     pr_url: str | None = None,
+    pr_title: str | None = None,
+    pr_state: str | None = None,
     worktree_name: str = "",
+    worktree_branch: str | None = None,
     exists_locally: bool = False,
     run_url: str | None = None,
+    run_id: str | None = None,
+    run_status: str | None = None,
+    run_conclusion: str | None = None,
 ) -> PlanRowData:
     """Create a PlanRowData for testing with sensible defaults.
 
@@ -78,9 +84,15 @@ def make_plan_row(
         issue_url: URL to the issue (defaults to GitHub URL pattern)
         pr_number: PR number if linked
         pr_url: URL to PR
+        pr_title: PR title
+        pr_state: PR state (e.g., "OPEN", "MERGED")
         worktree_name: Local worktree name
+        worktree_branch: Branch name in worktree
         exists_locally: Whether worktree exists locally
         run_url: URL to the GitHub Actions run
+        run_id: Workflow run ID
+        run_status: Workflow run status
+        run_conclusion: Workflow run conclusion
 
     Returns:
         PlanRowData populated with test data
@@ -107,4 +119,14 @@ def make_plan_row(
         run_id_display="-",
         run_state_display="-",
         run_url=run_url,
+        full_title=title,
+        pr_title=pr_title,
+        pr_state=pr_state,
+        worktree_branch=worktree_branch,
+        last_local_impl_at=None,
+        last_remote_impl_at=None,
+        run_id=run_id,
+        run_status=run_status,
+        run_conclusion=run_conclusion,
+        log_entries=(),
     )

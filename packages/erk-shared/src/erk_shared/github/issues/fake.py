@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.issues.types import CreateIssueResult, IssueInfo
+from erk_shared.github.issues.types import CreateIssueResult, IssueComment, IssueInfo
 
 
 class FakeGitHubIssues(GitHubIssues):
@@ -20,6 +20,7 @@ class FakeGitHubIssues(GitHubIssues):
         next_issue_number: int = 1,
         labels: set[str] | None = None,
         comments: dict[int, list[str]] | None = None,
+        comments_with_urls: dict[int, list[IssueComment]] | None = None,
         username: str | None = "testuser",
     ) -> None:
         """Create FakeGitHubIssues with pre-configured state.
@@ -29,6 +30,7 @@ class FakeGitHubIssues(GitHubIssues):
             next_issue_number: Next issue number to assign (for predictable testing)
             labels: Set of existing label names in the repository
             comments: Mapping of issue number -> list of comment bodies
+            comments_with_urls: Mapping of issue number -> list of IssueComment
             username: GitHub username to return (default: "testuser", None means
                 not authenticated)
         """
@@ -36,6 +38,7 @@ class FakeGitHubIssues(GitHubIssues):
         self._next_issue_number = next_issue_number
         self._labels = labels or set()
         self._comments = comments or {}
+        self._comments_with_urls = comments_with_urls or {}
         self._username = username
         self._created_issues: list[tuple[str, str, list[str]]] = []
         self._added_comments: list[tuple[int, str]] = []
@@ -189,6 +192,14 @@ class FakeGitHubIssues(GitHubIssues):
             List of comment bodies, or empty list if no comments exist
         """
         return self._comments.get(number, [])
+
+    def get_issue_comments_with_urls(self, repo_root: Path, number: int) -> list[IssueComment]:
+        """Get comments with URLs for issue from fake storage.
+
+        Returns:
+            List of IssueComment objects, or empty list if no comments exist
+        """
+        return self._comments_with_urls.get(number, [])
 
     def get_multiple_issue_comments(
         self, repo_root: Path, issue_numbers: list[int]

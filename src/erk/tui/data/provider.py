@@ -1,6 +1,7 @@
 """Data provider for TUI plan table."""
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.github.issues import IssueInfo
@@ -133,10 +134,14 @@ class RealPlanDataProvider(PlanDataProvider):
 
         return rows
 
-    def _build_worktree_mapping(self) -> dict[int, str]:
-        """Build mapping of issue number to local worktree name."""
+    def _build_worktree_mapping(self) -> dict[int, tuple[str, str | None]]:
+        """Build mapping of issue number to (worktree name, branch).
+
+        Returns:
+            Mapping of issue number to tuple of (worktree_name, branch_name)
+        """
         _ensure_erk_metadata_dir_from_context(self._ctx.repo)
-        worktree_by_issue: dict[int, str] = {}
+        worktree_by_issue: dict[int, tuple[str, str | None]] = {}
         worktrees = self._ctx.git.list_worktrees(self._location.root)
         for worktree in worktrees:
             impl_folder = worktree.path / ".impl"
@@ -144,7 +149,10 @@ class RealPlanDataProvider(PlanDataProvider):
                 issue_ref = read_issue_reference(impl_folder)
                 if issue_ref is not None:
                     if issue_ref.issue_number not in worktree_by_issue:
-                        worktree_by_issue[issue_ref.issue_number] = worktree.path.name
+                        worktree_by_issue[issue_ref.issue_number] = (
+                            worktree.path.name,
+                            worktree.branch,
+                        )
         return worktree_by_issue
 
     def _build_row_data(
@@ -154,43 +162,56 @@ class RealPlanDataProvider(PlanDataProvider):
         issue_number: int,
         pr_linkages: dict[int, list[PullRequestInfo]],
         workflow_run: WorkflowRun | None,
-        worktree_by_issue: dict[int, str],
+        worktree_by_issue: dict[int, tuple[str, str | None]],
         use_graphite: bool,
     ) -> PlanRowData:
         """Build a single PlanRowData from plan and related data."""
-        # Truncate title
+        # Truncate title for display
         title = plan.title
         if len(title) > 50:
             title = title[:47] + "..."
 
+        # Store full title
+        full_title = plan.title
+
         # Worktree info
         worktree_name = ""
+        worktree_branch: str | None = None
         exists_locally = False
 
         if issue_number in worktree_by_issue:
-            worktree_name = worktree_by_issue[issue_number]
+            worktree_name, worktree_branch = worktree_by_issue[issue_number]
             exists_locally = True
 
         # Extract from issue body
+        local_impl_str: str | None = None
+        remote_impl_str: str | None = None
         if plan.body:
             extracted = extract_plan_header_worktree_name(plan.body)
             if extracted and not worktree_name:
                 worktree_name = extracted
-            last_local_impl_at = extract_plan_header_local_impl_at(plan.body)
-            last_remote_impl_at = extract_plan_header_remote_impl_at(plan.body)
-        else:
-            last_local_impl_at = None
-            last_remote_impl_at = None
+            local_impl_str = extract_plan_header_local_impl_at(plan.body)
+            remote_impl_str = extract_plan_header_remote_impl_at(plan.body)
+
+        # Parse ISO 8601 timestamps for storage
+        last_local_impl_at: datetime | None = None
+        last_remote_impl_at: datetime | None = None
+        if local_impl_str:
+            last_local_impl_at = datetime.fromisoformat(local_impl_str.replace("Z", "+00:00"))
+        if remote_impl_str:
+            last_remote_impl_at = datetime.fromisoformat(remote_impl_str.replace("Z", "+00:00"))
 
         # Format time displays
-        local_impl = format_relative_time(last_local_impl_at)
+        local_impl = format_relative_time(local_impl_str)
         local_impl_display = local_impl if local_impl else "-"
-        remote_impl = format_relative_time(last_remote_impl_at)
+        remote_impl = format_relative_time(remote_impl_str)
         remote_impl_display = remote_impl if remote_impl else "-"
 
         # PR info
         pr_number: int | None = None
         pr_url: str | None = None
+        pr_title: str | None = None
+        pr_state: str | None = None
         pr_display = "-"
         checks_display = "-"
 
@@ -199,6 +220,8 @@ class RealPlanDataProvider(PlanDataProvider):
             selected_pr = select_display_pr(issue_prs)
             if selected_pr is not None:
                 pr_number = selected_pr.number
+                pr_title = selected_pr.title
+                pr_state = selected_pr.state
                 graphite_url = self._ctx.graphite.get_graphite_url(
                     GitHubRepoId(selected_pr.owner, selected_pr.repo), selected_pr.number
                 )
@@ -208,11 +231,17 @@ class RealPlanDataProvider(PlanDataProvider):
                 checks_display = format_checks_cell(selected_pr)
 
         # Workflow run info
+        run_id: str | None = None
+        run_status: str | None = None
+        run_conclusion: str | None = None
         run_id_display = "-"
         run_state_display = "-"
         run_url: str | None = None
 
         if workflow_run is not None:
+            run_id = str(workflow_run.run_id)
+            run_status = workflow_run.status
+            run_conclusion = workflow_run.conclusion
             if plan.url:
                 parts = plan.url.split("/")
                 if len(parts) >= 5:
@@ -223,6 +252,9 @@ class RealPlanDataProvider(PlanDataProvider):
                     )
             run_id_display = format_workflow_run_id(workflow_run, run_url)
             run_state_display = format_workflow_outcome(workflow_run)
+
+        # Log entries (empty for now - will be fetched on demand in the modal)
+        log_entries: tuple[tuple[str, str, str], ...] = ()
 
         return PlanRowData(
             issue_number=issue_number,
@@ -239,6 +271,16 @@ class RealPlanDataProvider(PlanDataProvider):
             run_id_display=run_id_display,
             run_state_display=run_state_display,
             run_url=run_url,
+            full_title=full_title,
+            pr_title=pr_title,
+            pr_state=pr_state,
+            worktree_branch=worktree_branch,
+            last_local_impl_at=last_local_impl_at,
+            last_remote_impl_at=last_remote_impl_at,
+            run_id=run_id,
+            run_status=run_status,
+            run_conclusion=run_conclusion,
+            log_entries=log_entries,
         )
 
 

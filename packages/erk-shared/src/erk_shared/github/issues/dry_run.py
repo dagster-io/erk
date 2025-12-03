@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.issues.types import CreateIssueResult, IssueInfo
+from erk_shared.github.issues.types import CreateIssueResult, IssueComment, IssueInfo
 
 
 class DryRunGitHubIssues(GitHubIssues):
@@ -56,6 +56,10 @@ class DryRunGitHubIssues(GitHubIssues):
     def get_issue_comments(self, repo_root: Path, number: int) -> list[str]:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_issue_comments(repo_root, number)
+
+    def get_issue_comments_with_urls(self, repo_root: Path, number: int) -> list[IssueComment]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_issue_comments_with_urls(repo_root, number)
 
     def get_multiple_issue_comments(
         self, repo_root: Path, issue_numbers: list[int]

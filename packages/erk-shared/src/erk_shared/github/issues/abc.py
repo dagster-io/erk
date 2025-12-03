@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from erk_shared.github.issues.types import CreateIssueResult, IssueInfo
+from erk_shared.github.issues.types import CreateIssueResult, IssueComment, IssueInfo
 
 
 class GitHubIssues(ABC):
@@ -110,6 +110,22 @@ class GitHubIssues(ABC):
 
         Returns:
             List of comment bodies (markdown strings)
+
+        Raises:
+            RuntimeError: If gh CLI fails or issue not found
+        """
+        ...
+
+    @abstractmethod
+    def get_issue_comments_with_urls(self, repo_root: Path, number: int) -> list[IssueComment]:
+        """Fetch all comments with their URLs for an issue.
+
+        Args:
+            repo_root: Path to repository root
+            number: Issue number
+
+        Returns:
+            List of IssueComment objects with body and url
 
         Raises:
             RuntimeError: If gh CLI fails or issue not found

@@ -1,6 +1,7 @@
 """Data types for TUI components."""
 
 from dataclasses import dataclass
+from datetime import datetime
 
 
 @dataclass(frozen=True)
@@ -25,6 +26,16 @@ class PlanRowData:
         run_id_display: Formatted workflow run ID
         run_state_display: Formatted workflow run state
         run_url: URL to the GitHub Actions run page
+        full_title: Complete untruncated plan title
+        pr_title: PR title if linked
+        pr_state: PR state (e.g., "OPEN", "MERGED", "CLOSED")
+        worktree_branch: Branch name in the worktree (if exists locally)
+        last_local_impl_at: Raw timestamp for local impl
+        last_remote_impl_at: Raw timestamp for remote impl
+        run_id: Raw workflow run ID (for display and URL construction)
+        run_status: Workflow run status (e.g., "completed", "in_progress")
+        run_conclusion: Workflow run conclusion (e.g., "success", "failure", "cancelled")
+        log_entries: List of (event_name, timestamp, comment_url) for plan log
     """
 
     issue_number: int
@@ -41,6 +52,16 @@ class PlanRowData:
     run_id_display: str
     run_state_display: str
     run_url: str | None
+    full_title: str
+    pr_title: str | None
+    pr_state: str | None
+    worktree_branch: str | None
+    last_local_impl_at: datetime | None
+    last_remote_impl_at: datetime | None
+    run_id: str | None
+    run_status: str | None
+    run_conclusion: str | None
+    log_entries: tuple[tuple[str, str, str], ...]
 
 
 @dataclass(frozen=True)

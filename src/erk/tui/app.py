@@ -79,6 +79,7 @@ class HelpScreen(ModalScreen):
 
             with Vertical(classes="help-section"):
                 yield Label("Actions", classes="help-section-title")
+                yield Label("Space   View plan details", classes="help-binding")
                 yield Label("Enter/o Open PR (or issue if no PR)", classes="help-binding")
                 yield Label("p       Open PR in browser", classes="help-binding")
                 yield Label("c       Copy checkout command", classes="help-binding")
@@ -98,6 +99,144 @@ class HelpScreen(ModalScreen):
 
             yield Label("")
             yield Label("Press any key to close", id="help-footer")
+
+
+class PlanDetailScreen(ModalScreen):
+    """Modal screen showing detailed plan information."""
+
+    BINDINGS = [
+        Binding("escape", "dismiss", "Close"),
+        Binding("q", "dismiss", "Close"),
+        Binding("space", "dismiss", "Close"),
+    ]
+
+    DEFAULT_CSS = """
+    PlanDetailScreen {
+        align: center middle;
+    }
+
+    #detail-dialog {
+        width: 80;
+        height: auto;
+        max-height: 90%;
+        background: $surface;
+        border: solid $primary;
+        padding: 1 2;
+    }
+
+    #detail-title {
+        text-style: bold;
+        text-align: center;
+        margin-bottom: 1;
+        width: 100%;
+    }
+
+    .detail-section {
+        margin-top: 1;
+    }
+
+    .detail-section-title {
+        text-style: bold;
+        color: $primary;
+    }
+
+    .detail-row {
+        margin-left: 2;
+    }
+
+    #detail-footer {
+        text-align: center;
+        margin-top: 1;
+        color: $text-muted;
+    }
+    """
+
+    def __init__(self, row: PlanRowData) -> None:
+        """Initialize with plan row data.
+
+        Args:
+            row: PlanRowData containing all plan information
+        """
+        super().__init__()
+        self._row = row
+
+    def compose(self) -> ComposeResult:
+        """Create detail dialog content."""
+        with Vertical(id="detail-dialog"):
+            # Header with issue link
+            issue_link = f"Plan #{self._row.issue_number}"
+            if self._row.issue_url:
+                issue_link = f"[link={self._row.issue_url}]{issue_link}[/link]"
+            yield Label(issue_link, id="detail-title", markup=True)
+
+            # Title and Status
+            with Vertical(classes="detail-section"):
+                yield Label("Title", classes="detail-section-title")
+                yield Label(self._row.full_title, classes="detail-row")
+                status = self._row.issue_url.split("/")[-3] if self._row.issue_url else "unknown"
+                yield Label(f"Status: {status}", classes="detail-row")
+
+            # PR section
+            with Vertical(classes="detail-section"):
+                yield Label("PR", classes="detail-section-title")
+                if self._row.pr_number:
+                    pr_link = f"#{self._row.pr_number}"
+                    if self._row.pr_url:
+                        pr_link = f"[link={self._row.pr_url}]{pr_link}[/link]"
+                    yield Label(pr_link, classes="detail-row", markup=True)
+                    if self._row.pr_title:
+                        yield Label(f"Title: {self._row.pr_title}", classes="detail-row")
+                    if self._row.pr_state:
+                        yield Label(f"State: {self._row.pr_state}", classes="detail-row")
+                    if self._row.pr_number:
+                        checkout_cmd = f"erk pr co {self._row.pr_number}"
+                        yield Label(f"Checkout: {checkout_cmd}", classes="detail-row")
+                else:
+                    yield Label("-", classes="detail-row")
+
+            # Local section
+            with Vertical(classes="detail-section"):
+                yield Label("Local", classes="detail-section-title")
+                if self._row.worktree_name:
+                    yield Label(f"Worktree: {self._row.worktree_name}", classes="detail-row")
+                    if self._row.worktree_branch:
+                        yield Label(f"Branch: {self._row.worktree_branch}", classes="detail-row")
+                    status = "exists ✓" if self._row.exists_locally else "not found"
+                    yield Label(f"Status: {status}", classes="detail-row")
+                    yield Label(f"Last run: {self._row.local_impl_display}", classes="detail-row")
+                else:
+                    yield Label("-", classes="detail-row")
+
+            # Remote section
+            with Vertical(classes="detail-section"):
+                yield Label("Remote", classes="detail-section-title")
+                if self._row.run_id:
+                    run_display = f"Run: {self._row.run_id}"
+                    if self._row.run_url:
+                        run_display = f"[link={self._row.run_url}]{run_display}[/link]"
+                    yield Label(run_display, classes="detail-row", markup=True)
+                    yield Label(f"Last run: {self._row.remote_impl_display}", classes="detail-row")
+                    if self._row.run_status and self._row.run_conclusion:
+                        yield Label(
+                            f"Status: {self._row.run_status} ({self._row.run_conclusion})",
+                            classes="detail-row",
+                        )
+                    elif self._row.run_status:
+                        yield Label(f"Status: {self._row.run_status}", classes="detail-row")
+                else:
+                    yield Label("-", classes="detail-row")
+
+            # Log section (if log entries exist)
+            if self._row.log_entries:
+                with Vertical(classes="detail-section"):
+                    yield Label("Log", classes="detail-section-title")
+                    for event_name, timestamp, comment_url in self._row.log_entries:
+                        log_line = f"• {timestamp}  {event_name}"
+                        if comment_url:
+                            log_line = f"[link={comment_url}]{log_line}[/link]"
+                        yield Label(log_line, classes="detail-row", markup=True)
+
+            yield Label("Press Esc or Space to close", id="detail-footer")
 
 
 class ErkDashApp(App):
@@ -120,6 +259,7 @@ class ErkDashApp(App):
         Binding("p", "open_pr", "Open PR"),
         Binding("c", "copy_checkout", "Copy Checkout"),
         Binding("i", "show_implement", "Implement"),
+        Binding("space", "show_detail", "Detail"),
         Binding("slash", "start_filter", "Filter", key_display="/"),
     ]
 
@@ -264,6 +404,13 @@ class ErkDashApp(App):
     def action_help(self) -> None:
         """Show help screen."""
         self.push_screen(HelpScreen())
+
+    def action_show_detail(self) -> None:
+        """Show plan detail modal for selected row."""
+        row = self._get_selected_row()
+        if row is None:
+            return
+        self.push_screen(PlanDetailScreen(row))
 
     def action_cursor_down(self) -> None:
         """Move cursor down (vim j key)."""
