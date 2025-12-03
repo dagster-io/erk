@@ -111,3 +111,54 @@ def test_pr_auto_restack_aborts_on_semantic_conflict() -> None:
         assert "Semantic conflict detected" in result.output
         assert "interactive resolution" in result.output
         assert "claude /erk:auto-restack" in result.output
+
+
+def test_pr_auto_restack_passes_no_squash_flag() -> None:
+    """Test that --no-squash flag is passed to slash command."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        claude_executor = FakeClaudeExecutor(claude_available=True)
+
+        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+
+        result = runner.invoke(pr_group, ["auto-restack", "--no-squash"], obj=ctx)
+
+        assert result.exit_code == 0
+
+        # Verify the command includes --no-squash
+        assert len(claude_executor.executed_commands) == 1
+        command, _, _, _ = claude_executor.executed_commands[0]
+        assert command == "/erk:auto-restack --no-squash"
+
+
+def test_pr_auto_restack_squashes_by_default() -> None:
+    """Test that squash is NOT skipped by default (no --no-squash flag)."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        claude_executor = FakeClaudeExecutor(claude_available=True)
+
+        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+
+        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+
+        assert result.exit_code == 0
+
+        # Verify no --no-squash flag in command
+        assert len(claude_executor.executed_commands) == 1
+        command, _, _, _ = claude_executor.executed_commands[0]
+        assert command == "/erk:auto-restack"
+        assert "--no-squash" not in command

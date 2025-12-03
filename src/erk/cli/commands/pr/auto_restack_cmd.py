@@ -11,12 +11,18 @@ from erk.core.context import ErkContext
 
 
 @click.command("auto-restack")
+@click.option(
+    "--no-squash",
+    is_flag=True,
+    help="Skip squashing commits after restack.",
+)
 @click.pass_obj
-def pr_auto_restack(ctx: ErkContext) -> None:
+def pr_auto_restack(ctx: ErkContext, no_squash: bool) -> None:
     """Restack with AI-powered conflict resolution.
 
     Runs `gt restack` and automatically handles any merge conflicts that arise,
-    looping until the restack completes successfully.
+    looping until the restack completes successfully. After restacking, squashes
+    all commits into a single commit (use --no-squash to skip).
 
     Conflicts are classified as:
     - Semantic: Alerts user for manual decision
@@ -27,6 +33,9 @@ def pr_auto_restack(ctx: ErkContext) -> None:
     \b
       # Auto-restack with conflict resolution
       erk pr auto-restack
+
+      # Skip squashing after restack
+      erk pr auto-restack --no-squash
     """
     executor = ctx.claude_executor
 
@@ -47,9 +56,14 @@ def pr_auto_restack(ctx: ErkContext) -> None:
     success = True
     last_spinner: str | None = None
 
+    # Build command with optional --no-squash flag
+    command = "/erk:auto-restack"
+    if no_squash:
+        command = "/erk:auto-restack --no-squash"
+
     # Stream events and print content directly
     for event in executor.execute_command_streaming(
-        command="/erk:auto-restack",
+        command=command,
         worktree_path=worktree_path,
         dangerous=True,  # Restack modifies git state
     ):

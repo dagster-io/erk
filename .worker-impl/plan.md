@@ -120,17 +120,18 @@ def test_pr_auto_restack_squashes_by_default() -> None:
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
+| File                                          | Changes                                                                      |
+| --------------------------------------------- | ---------------------------------------------------------------------------- |
 | `src/erk/cli/commands/pr/auto_restack_cmd.py` | Add `--no-squash` flag, update docstring, conditionally build command string |
-| `.claude/commands/erk/auto-restack.md` | Add Arguments section, add Step 4.5 for squash |
-| `tests/commands/pr/test_auto_restack.py` | Add 2 tests for flag behavior |
+| `.claude/commands/erk/auto-restack.md`        | Add Arguments section, add Step 4.5 for squash                               |
+| `tests/commands/pr/test_auto_restack.py`      | Add 2 tests for flag behavior                                                |
 
 ---
 
 ## Summary
 
 The implementation is straightforward:
+
 1. CLI adds `--no-squash` flag -> appends to command string
 2. Slash command parses argument -> skips squash step if present
 3. Default behavior: squash after restack completes

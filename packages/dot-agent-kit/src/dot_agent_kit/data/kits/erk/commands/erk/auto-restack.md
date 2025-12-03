@@ -8,6 +8,10 @@ description: Automate Graphite restacking with intelligent conflict resolution
 
 This command runs `gt restack` and automatically handles any merge conflicts that arise, looping until the restack completes successfully.
 
+## Arguments
+
+- `--no-squash` - Skip the squash step after restacking (keep multiple commits)
+
 ## What This Command Does
 
 1. **Runs `gt restack`** - Starts the restack operation
@@ -17,7 +21,8 @@ This command runs `gt restack` and automatically handles any merge conflicts tha
    - **Mechanical conflicts**: Auto-resolves when safe
 4. **Continues restacking** - Stages files and runs `gt continue`
 5. **Loops until complete** - Repeats until no more conflicts
-6. **Verifies success** - Confirms clean git status
+6. **Squashes commits** - Combines all commits into one (unless `--no-squash` is passed)
+7. **Verifies success** - Confirms clean git status
 
 ## Implementation
 
@@ -61,6 +66,28 @@ gt continue
 ```
 
 4. **Loop back to Step 2** - Check if more conflicts arise
+
+### Step 4.5: Squash Commits (default behavior)
+
+After the restack completes successfully and BEFORE verifying completion:
+
+1. **Check if squash was disabled** - If `--no-squash` was passed, skip to Step 5
+2. **Count branch commits**:
+
+```bash
+git rev-list --count HEAD ^$(gt parent)
+```
+
+3. **Squash if 2+ commits** - If count >= 2, run:
+
+```bash
+gt squash --no-edit
+```
+
+4. **Handle squash conflicts** - If squash fails with conflicts:
+   - Apply the same conflict resolution logic from Step 3
+   - After resolving, continue with `git rebase --continue`
+   - Repeat until squash completes
 
 ### Step 5: Verify Completion
 
