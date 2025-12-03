@@ -102,11 +102,11 @@ def execute_finalize(
     final_body = pr_body + metadata_section
 
     # Get repo root for GitHub operations
-    repo_root = ops.git().get_repository_root(cwd)
+    repo_root = ops.git.get_repository_root(cwd)
 
     # Update PR metadata
     yield ProgressEvent("Updating PR metadata... (gh pr edit)")
-    ops.github().update_pr_title_and_body(repo_root, pr_number, pr_title, final_body)
+    ops.github.update_pr_title_and_body(repo_root, pr_number, pr_title, final_body)
     yield ProgressEvent("PR metadata updated", style="success")
 
     # Clean up temp diff file
@@ -120,14 +120,14 @@ def execute_finalize(
                 pass  # Ignore cleanup errors
 
     # Get PR info for result
-    branch_name = ops.git().get_current_branch(cwd) or "unknown"
-    pr_url_result = ops.github().get_pr_info_for_branch(repo_root, branch_name)
+    branch_name = ops.git.get_current_branch(cwd) or "unknown"
+    pr_url_result = ops.github.get_pr_info_for_branch(repo_root, branch_name)
     pr_url = pr_url_result[1] if pr_url_result else ""
     # Get Graphite URL using the main_graphite interface
-    repo_info = ops.github().get_repo_info(repo_root)
+    repo_info = ops.github.get_repo_info(repo_root)
     if repo_info is not None:
         repo_id = GitHubRepoId(owner=repo_info.owner, repo=repo_info.name)
-        graphite_url = ops.main_graphite().get_graphite_url(repo_id, pr_number)
+        graphite_url = ops.graphite.get_graphite_url(repo_id, pr_number)
     else:
         graphite_url = ""
 

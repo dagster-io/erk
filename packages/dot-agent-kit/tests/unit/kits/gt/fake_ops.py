@@ -9,6 +9,7 @@ Design:
 - Automatic state transitions (commit clears uncommitted files)
 - LBYL pattern: methods check state before operations
 - Returns match interface contracts exactly
+- Satisfies GtKit Protocol through structural typing
 """
 
 from dataclasses import dataclass, field
@@ -22,9 +23,6 @@ from erk_shared.github.types import PRMergeability
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
-from erk_shared.integrations.gt import (
-    GtKit,
-)
 
 
 @dataclass
@@ -50,10 +48,11 @@ class GitHubBuilderState:
     current_branch: str = "main"
 
 
-class FakeGtKitOps(GtKit):
+class FakeGtKitOps:
     """Fake composite operations for testing.
 
     Provides declarative setup methods for common test scenarios.
+    Satisfies the GtKit Protocol through structural typing.
     Uses lazy construction to build FakeGitHub from accumulated builder state.
     """
 
@@ -151,12 +150,14 @@ class FakeGtKitOps(GtKit):
             add_all_raises=self._git_add_all_raises,
         )
 
+    @property
     def git(self) -> Git:
         """Get the git operations interface (lazy construction)."""
         if self._git_instance is None:
             self._git_instance = self._build_fake_git()
         return self._git_instance
 
+    @property
     def github(self) -> GitHub:
         """Get the GitHub operations interface.
 
@@ -213,8 +214,9 @@ class FakeGtKitOps(GtKit):
             auth_hostname=self._github_builder_state.auth_hostname,
         )
 
-    def main_graphite(self) -> Graphite:
-        """Get the main Graphite operations interface."""
+    @property
+    def graphite(self) -> Graphite:
+        """Get the Graphite operations interface."""
         return self._main_graphite
 
     # Declarative setup methods

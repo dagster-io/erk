@@ -21,11 +21,11 @@ class TestRealGtKitOps:
     """Unit tests for RealGtKit composite operations."""
 
     def test_git(self) -> None:
-        """Test git() returns RealGit instance."""
+        """Test git attribute returns RealGit instance."""
         ops = RealGtKit()
 
         # Get git operations interface
-        git_ops = ops.git()
+        git_ops = ops.git
 
         # Verify return type matches interface contract
         from erk_shared.git.real import RealGit
@@ -33,13 +33,13 @@ class TestRealGtKitOps:
         assert isinstance(git_ops, RealGit)
 
     def test_github(self) -> None:
-        """Test github() returns a GitHub implementation."""
+        """Test github attribute returns a GitHub implementation."""
         from erk_shared.github.abc import GitHub
 
         ops = RealGtKit()
 
         # Get github operations interface
-        github_ops = ops.github()
+        github_ops = ops.github
 
         # Verify return type matches interface contract
         assert isinstance(github_ops, GitHub)

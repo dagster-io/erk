@@ -477,7 +477,7 @@ class TestExecuteFinalize:
         assert result.branch_name == "feature-branch"
 
         # Verify PR was updated using mutation tracking
-        github = ops.github()
+        github = ops.github
         assert (123, "Add new feature") in github.updated_pr_titles  # type: ignore[attr-defined]
         # Check body was updated (find the body in updated_pr_bodies list)
         bodies = [body for pr_num, body in github.updated_pr_bodies if pr_num == 123]  # type: ignore[attr-defined]
@@ -555,7 +555,7 @@ class TestExecuteFinalize:
         assert result.issue_number == 456
 
         # Verify PR body includes footer metadata using mutation tracking
-        github = ops.github()
+        github = ops.github
         # Find the body in updated_pr_bodies list
         bodies = [body for pr_num, body in github.updated_pr_bodies if pr_num == 123]  # type: ignore[attr-defined]
         assert len(bodies) > 0

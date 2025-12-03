@@ -218,7 +218,7 @@ class TestLandPrTitle:
         )
 
         # Verify the title can be fetched (using Path(".") as placeholder repo_root)
-        assert ops.github().get_pr_title(Path("."), 123) == "Add new feature"
+        assert ops.github.get_pr_title(Path("."), 123) == "Add new feature"
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
@@ -237,7 +237,7 @@ class TestLandPrTitle:
         )
 
         # Verify no title is set
-        assert ops.github().get_pr_title(Path("."), 123) is None
+        assert ops.github.get_pr_title(Path("."), 123) is None
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
@@ -254,7 +254,7 @@ class TestLandPrTitle:
         )
         # No PR configured
 
-        assert ops.github().get_pr_title(Path("."), 999) is None
+        assert ops.github.get_pr_title(Path("."), 999) is None
 
 
 class TestLandPrBody:
@@ -277,7 +277,7 @@ class TestLandPrBody:
 
         # Verify the body can be fetched
         expected_body = "This PR adds a new feature with detailed description."
-        assert ops.github().get_pr_body(Path("."), 123) == expected_body
+        assert ops.github.get_pr_body(Path("."), 123) == expected_body
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
@@ -296,7 +296,7 @@ class TestLandPrBody:
         )
 
         # Verify no body is set
-        assert ops.github().get_pr_body(Path("."), 123) is None
+        assert ops.github.get_pr_body(Path("."), 123) is None
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
@@ -313,7 +313,7 @@ class TestLandPrBody:
         )
         # No PR configured
 
-        assert ops.github().get_pr_body(Path("."), 999) is None
+        assert ops.github.get_pr_body(Path("."), 999) is None
 
     def test_land_pr_with_title_and_body(self, tmp_path: Path) -> None:
         """Test landing with both title and body for rich merge commit."""
@@ -337,8 +337,8 @@ class TestLandPrBody:
 
         # Verify both can be fetched
         expected_title = "Extract subprocess calls into reusable interface"
-        assert ops.github().get_pr_title(Path("."), 123) == expected_title
-        assert "Refactors" in ops.github().get_pr_body(Path("."), 123)  # type: ignore[operator]
+        assert ops.github.get_pr_title(Path("."), 123) == expected_title
+        assert "Refactors" in ops.github.get_pr_body(Path("."), 123)  # type: ignore[operator]
 
         result = render_events(execute_land_pr(ops, tmp_path))
 

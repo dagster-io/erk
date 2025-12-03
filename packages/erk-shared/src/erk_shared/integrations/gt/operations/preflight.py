@@ -54,7 +54,7 @@ def _run_gt_submit_with_progress(
     # Run submit in background thread
     def run_submit():
         try:
-            ops.main_graphite().submit_stack(repo_root, publish=True, restack=False, quiet=False)
+            ops.graphite.submit_stack(repo_root, publish=True, restack=False, quiet=False)
             result_holder.append(_SubmitResult(success=True))
         except RuntimeError as e:
             result_holder.append(_SubmitResult(success=False, error=e))
@@ -100,14 +100,14 @@ def _execute_submit_only(
         CompletionEvent with tuple of (pr_number, pr_url, graphite_url, branch_name) on success
         CompletionEvent with PostAnalysisError on failure
     """
-    branch_name = ops.git().get_current_branch(cwd) or "unknown"
+    branch_name = ops.git.get_current_branch(cwd) or "unknown"
 
     # Phase 1: Restack the stack
     yield ProgressEvent("Rebasing stack... (gt restack)")
     restack_start = time.time()
     try:
-        repo_root = ops.git().get_repository_root(cwd)
-        ops.main_graphite().restack(repo_root, no_interactive=True, quiet=False)
+        repo_root = ops.git.get_repository_root(cwd)
+        ops.graphite.restack(repo_root, no_interactive=True, quiet=False)
     except subprocess.CalledProcessError as e:
         # Check for restack errors (conflicts, etc.)
         has_output = hasattr(e, "stdout") and hasattr(e, "stderr")
@@ -157,7 +157,7 @@ def _execute_submit_only(
     def run_submit():
         nonlocal submit_result
         try:
-            ops.main_graphite().submit_stack(repo_root, publish=True, restack=False, quiet=False)
+            ops.graphite.submit_stack(repo_root, publish=True, restack=False, quiet=False)
             submit_result = _SubmitResult(success=True)
         except RuntimeError as e:
             submit_result = _SubmitResult(success=False, error=e)
@@ -286,14 +286,14 @@ def _execute_submit_only(
     pr_info = None
     max_retries = 5
     retry_delays = [0.5, 1.0, 2.0, 4.0, 8.0]
-    repo_root = ops.git().get_repository_root(cwd)
+    repo_root = ops.git.get_repository_root(cwd)
 
     yield ProgressEvent("Waiting for PR info from GitHub API... (gh pr view)")
 
     for attempt in range(max_retries):
         if attempt > 0:
             yield ProgressEvent(f"Attempt {attempt + 1}/{max_retries}...")
-        pr_info = ops.github().get_pr_info_for_branch(repo_root, branch_name)
+        pr_info = ops.github.get_pr_info_for_branch(repo_root, branch_name)
         if pr_info is not None:
             pr_num, _ = pr_info
             yield ProgressEvent(f"PR info retrieved (PR #{pr_num})", style="success")
@@ -314,10 +314,10 @@ def _execute_submit_only(
 
     pr_number, pr_url = pr_info
     # Get Graphite URL using the main_graphite interface
-    repo_info = ops.github().get_repo_info(repo_root)
+    repo_info = ops.github.get_repo_info(repo_root)
     if repo_info is not None:
         repo_id = GitHubRepoId(owner=repo_info.owner, repo=repo_info.name)
-        graphite_url = ops.main_graphite().get_graphite_url(repo_id, pr_number)
+        graphite_url = ops.graphite.get_graphite_url(repo_id, pr_number)
     else:
         graphite_url = ""
 
@@ -383,9 +383,9 @@ def execute_preflight(
     pr_number, pr_url, graphite_url, branch_name = submit_result
 
     # Step 3: Get PR diff from GitHub API
-    repo_root = ops.git().get_repository_root(cwd)
+    repo_root = ops.git.get_repository_root(cwd)
     yield ProgressEvent(f"Getting PR diff from GitHub... (gh pr diff {pr_number})")
-    pr_diff = ops.github().get_pr_diff(repo_root, pr_number)
+    pr_diff = ops.github.get_pr_diff(repo_root, pr_number)
     diff_lines = len(pr_diff.splitlines())
     yield ProgressEvent(f"PR diff retrieved ({diff_lines} lines)", style="success")
 
@@ -395,10 +395,8 @@ def execute_preflight(
         yield ProgressEvent("Diff truncated for size", style="warning")
 
     # Get repo root and branch info for AI prompt (needed before writing diff)
-    current_branch = ops.git().get_current_branch(cwd) or branch_name
-    parent_branch = (
-        ops.main_graphite().get_parent_branch(ops.git(), repo_root, current_branch) or "main"
-    )
+    current_branch = ops.git.get_current_branch(cwd) or branch_name
+    parent_branch = ops.graphite.get_parent_branch(ops.git, repo_root, current_branch) or "main"
 
     # Write diff to scratch file in repo .tmp/<session_id>/
     from erk_shared.scratch.scratch import write_scratch_file
