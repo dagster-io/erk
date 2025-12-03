@@ -67,16 +67,17 @@ For detailed reference, consult the documentation index which maps each document
 
 **Category quick reference:**
 
-| Category                                 | When to Read                                           |
-| ---------------------------------------- | ------------------------------------------------------ |
-| [Architecture](docs/agent/architecture/) | dry-run patterns, Protocol vs ABC, subprocess wrappers |
-| [CLI Development](docs/agent/cli/)       | command organization, output styling, script mode      |
-| [Planning](docs/agent/planning/)         | plan lifecycle, .impl/ folders, agent delegation       |
-| [Testing](docs/agent/testing/)           | erk fakes, rebase conflicts                            |
-| [Sessions](docs/agent/sessions/)         | session logs, context analysis                         |
-| [Hooks](docs/agent/hooks/)               | hook creation, erk-specific hooks                      |
-| [Kits](docs/agent/kits/)                 | kit CLI commands, kit architecture                     |
-| [Commands](docs/agent/commands/)         | slash command optimization, @ references               |
+| Category                                 | When to Read                                                               |
+| ---------------------------------------- | -------------------------------------------------------------------------- |
+| [Architecture](docs/agent/architecture/) | dry-run patterns, Protocol vs ABC, subprocess wrappers, GitHub URL parsing |
+| [CLI Development](docs/agent/cli/)       | command organization, output styling, script mode                          |
+| [Planning](docs/agent/planning/)         | plan lifecycle, .impl/ folders, agent delegation                           |
+| [Testing](docs/agent/testing/)           | erk fakes, rebase conflicts, import conflict resolution                    |
+| [Sessions](docs/agent/sessions/)         | session logs, context analysis                                             |
+| [Hooks](docs/agent/hooks/)               | hook creation, erk-specific hooks                                          |
+| [Kits](docs/agent/kits/)                 | kit CLI commands, kit architecture                                         |
+| [Commands](docs/agent/commands/)         | slash command optimization, @ references                                   |
+| [Erk](docs/agent/erk/)                   | erk workflows, Graphite branch setup                                       |
 
 **Root documents:**
 

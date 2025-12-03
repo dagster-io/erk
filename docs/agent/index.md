@@ -33,6 +33,7 @@
 | [erk-architecture.md](architecture/erk-architecture.md)       | Understanding dry-run patterns, context regeneration |
 | [protocol-vs-abc.md](architecture/protocol-vs-abc.md)         | Choosing between Protocol and ABC for interfaces     |
 | [subprocess-wrappers.md](architecture/subprocess-wrappers.md) | Executing shell commands, using subprocess wrappers  |
+| [github-parsing.md](architecture/github-parsing.md)           | Parsing GitHub URLs, extracting PR/issue numbers     |
 
 ### [CLI Development](cli/)
 
@@ -55,10 +56,11 @@
 
 ### [Testing](testing/)
 
-| Document                                           | Read when...                                      |
-| -------------------------------------------------- | ------------------------------------------------- |
-| [testing.md](testing/testing.md)                   | Using erk fakes (FakeGit, etc.), running tests    |
-| [rebase-conflicts.md](testing/rebase-conflicts.md) | ErkContext API changes, env_helpers during rebase |
+| Document                                                               | Read when...                                      |
+| ---------------------------------------------------------------------- | ------------------------------------------------- |
+| [testing.md](testing/testing.md)                                       | Using erk fakes (FakeGit, etc.), running tests    |
+| [rebase-conflicts.md](testing/rebase-conflicts.md)                     | ErkContext API changes, env_helpers during rebase |
+| [import-conflict-resolution.md](testing/import-conflict-resolution.md) | Resolving import conflicts during rebase          |
 
 ### [Sessions](sessions/)
 
@@ -96,9 +98,10 @@
 
 ### [Erk](erk/)
 
-| Document                                   | Read when...                       |
-| ------------------------------------------ | ---------------------------------- |
-| [branch-cleanup.md](erk/branch-cleanup.md) | Cleaning up branches and worktrees |
+| Document                                                 | Read when...                                  |
+| -------------------------------------------------------- | --------------------------------------------- |
+| [branch-cleanup.md](erk/branch-cleanup.md)               | Cleaning up branches and worktrees            |
+| [graphite-branch-setup.md](erk/graphite-branch-setup.md) | Submitting PRs with Graphite, no_parent error |
 
 ### [TUI](tui/)
 

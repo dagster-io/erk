@@ -715,6 +715,41 @@ except json.JSONDecodeError:
 
 ## Common Operations
 
+### Quick Session Listing
+
+List sessions by modification time to find recent activity:
+
+```bash
+# Find project directory for current path
+dot-agent run erk find-project-dir
+
+# Example output:
+# Project: -Users-schrockn--erk-repos-erk
+# Path: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk
+# Latest session: abc123-def456
+```
+
+List sessions sorted by modification time:
+
+```bash
+ls -lt ~/.claude/projects/-Users-schrockn--erk-repos-erk/*.jsonl | head -20
+```
+
+**File Size to Message Count Correlation:**
+
+| File Size | Approximate Messages |
+| --------- | -------------------- |
+| 10 KB     | ~5-10 messages       |
+| 50 KB     | ~25-50 messages      |
+| 100 KB    | ~50-100 messages     |
+| 500 KB    | ~200-400 messages    |
+
+These are rough estimates. Actual counts depend on:
+
+- Message length
+- Tool output verbosity
+- Number of tool calls per turn
+
 ### Get Project Directory for Current Working Directory
 
 ```python
