@@ -31,26 +31,60 @@
 
 **Check if loaded**: Look for `<command-message>The "{name}" skill is loading</command-message>` earlier in conversation
 
-## Quick Routing Table
+## Routing: What to Load Before Writing Code
 
-| If you're about to...                            | STOP! Check this instead                                      |
-| ------------------------------------------------ | ------------------------------------------------------------- |
-| Write Python code                                | → Load `dignified-python-313` skill FIRST                     |
-| Write or modify tests                            | → Load `fake-driven-testing` skill FIRST                      |
-| Run pytest, pyright, ruff, prettier, make, or gt | → Use `devrun` agent (Task tool), NOT Bash                    |
-| Work with Graphite stacks                        | → Load `gt-graphite` skill                                    |
-| Use dry-run, subprocess wrappers, Protocol/ABC   | → [Architecture](docs/agent/architecture/)                    |
-| Style output, organize commands, script mode     | → [CLI Development](docs/agent/cli/)                          |
-| Create plans, .impl/ folders, delegate to agents | → [Planning](docs/agent/planning/)                            |
-| Use erk fakes, fix rebase conflicts in tests     | → [Testing](docs/agent/testing/)                              |
-| Find session logs, debug context window          | → [Sessions](docs/agent/sessions/)                            |
-| Create hooks, erk-specific reminders             | → [Hooks](docs/agent/hooks/)                                  |
-| Build kit CLI commands, kit code structure       | → [Kits](docs/agent/kits/)                                    |
-| Reduce command size, use @ references            | → [Commands](docs/agent/commands/)                            |
-| Write or edit agent documentation                | → Load `agent-docs` skill FIRST                               |
-| Look up terminology or conventions               | → [glossary.md](docs/agent/glossary.md)                       |
-| Navigate documentation                           | → [guide.md](docs/agent/guide.md)                             |
-| View installed kits                              | → [@.agent/kits/kit-registry.md](.agent/kits/kit-registry.md) |
+### Tier 1: Mandatory Skills (ALWAYS Load First)
+
+These fundamentally change how you write code. Load before ANY code work:
+
+| Task                       | Action                            |
+| -------------------------- | --------------------------------- |
+| Writing Python             | Load `dignified-python-313` skill |
+| Writing or modifying tests | Load `fake-driven-testing` skill  |
+
+### Tier 2: Context-Specific Skills
+
+Load when the context applies:
+
+| Context                        | Action                   |
+| ------------------------------ | ------------------------ |
+| Graphite stacks, `gt` commands | Load `gt-graphite` skill |
+| Writing agent documentation    | Load `agent-docs` skill  |
+
+### Tier 3: Tool Routing
+
+Use agents instead of direct Bash:
+
+| Tools                                     | Route                          |
+| ----------------------------------------- | ------------------------------ |
+| pytest, pyright, ruff, prettier, make, gt | Use `devrun` agent (Task tool) |
+
+### Tier 4: Documentation Lookup
+
+For detailed reference, consult the documentation index which maps each document to specific "read when..." conditions:
+
+→ **[docs/agent/index.md](docs/agent/index.md)** - Complete document registry
+
+**Category quick reference:**
+
+| Category                                 | When to Read                                           |
+| ---------------------------------------- | ------------------------------------------------------ |
+| [Architecture](docs/agent/architecture/) | dry-run patterns, Protocol vs ABC, subprocess wrappers |
+| [CLI Development](docs/agent/cli/)       | command organization, output styling, script mode      |
+| [Planning](docs/agent/planning/)         | plan lifecycle, .impl/ folders, agent delegation       |
+| [Testing](docs/agent/testing/)           | erk fakes, rebase conflicts                            |
+| [Sessions](docs/agent/sessions/)         | session logs, context analysis                         |
+| [Hooks](docs/agent/hooks/)               | hook creation, erk-specific hooks                      |
+| [Kits](docs/agent/kits/)                 | kit CLI commands, kit architecture                     |
+| [Commands](docs/agent/commands/)         | slash command optimization, @ references               |
+
+**Root documents:**
+
+| Document                                       | When to Read             |
+| ---------------------------------------------- | ------------------------ |
+| [glossary.md](docs/agent/glossary.md)          | terminology, definitions |
+| [conventions.md](docs/agent/conventions.md)    | naming standards         |
+| [kit-registry.md](.agent/kits/kit-registry.md) | installed kits           |
 
 ## Graphite Stack Quick Reference
 
@@ -106,8 +140,5 @@ Core patterns for this codebase:
 
 ## Documentation Hub
 
-- **Navigation**: [docs/agent/guide.md](docs/agent/guide.md)
-- **Installed kits**: [@.agent/kits/kit-registry.md](.agent/kits/kit-registry.md)
-- **Python standards**: Load `dignified-python-313` skill
-- **Test architecture**: Load `fake-driven-testing` skill
-- **Graphite stacks**: Load `gt-graphite` skill
+- **Full navigation guide**: [docs/agent/guide.md](docs/agent/guide.md)
+- **Document index with "read when..." conditions**: [docs/agent/index.md](docs/agent/index.md)
