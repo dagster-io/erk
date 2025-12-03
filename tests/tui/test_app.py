@@ -707,3 +707,169 @@ class TestPlanDetailScreen:
             assert detail_screen._row.pr_number == 456
             assert detail_screen._row.pr_title == "Test PR Title"
             assert detail_screen._row.pr_state == "OPEN"
+
+
+class TestPlanDetailScreenCopyActions:
+    """Tests for PlanDetailScreen copy keyboard shortcuts."""
+
+    @pytest.mark.asyncio
+    async def test_copy_implement_shortcut_1(self) -> None:
+        """Pressing '1' in detail screen copies implement command."""
+        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            [make_plan_row(123, "Test Plan")],
+            clipboard=clipboard,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Open detail screen
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            # Press '1' to copy implement command
+            await pilot.press("1")
+            await pilot.pause()
+
+            assert clipboard.last_copied == "erk implement 123"
+
+    @pytest.mark.asyncio
+    async def test_copy_implement_dangerous_shortcut_2(self) -> None:
+        """Pressing '2' in detail screen copies implement --dangerous command."""
+        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            [make_plan_row(123, "Test Plan")],
+            clipboard=clipboard,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("2")
+            await pilot.pause()
+
+            assert clipboard.last_copied == "erk implement 123 --dangerous"
+
+    @pytest.mark.asyncio
+    async def test_copy_implement_yolo_shortcut_3(self) -> None:
+        """Pressing '3' in detail screen copies implement --yolo command."""
+        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            [make_plan_row(123, "Test Plan")],
+            clipboard=clipboard,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("3")
+            await pilot.pause()
+
+            assert clipboard.last_copied == "erk implement 123 --yolo"
+
+    @pytest.mark.asyncio
+    async def test_copy_submit_shortcut_4(self) -> None:
+        """Pressing '4' in detail screen copies submit command."""
+        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            [make_plan_row(123, "Test Plan")],
+            clipboard=clipboard,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("4")
+            await pilot.pause()
+
+            assert clipboard.last_copied == "erk submit 123"
+
+    @pytest.mark.asyncio
+    async def test_copy_checkout_shortcut_c_with_local_worktree(self) -> None:
+        """Pressing 'c' in detail screen copies checkout command for local worktree."""
+        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            [
+                make_plan_row(
+                    123,
+                    "Test Plan",
+                    worktree_name="feature-123",
+                    exists_locally=True,
+                )
+            ],
+            clipboard=clipboard,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("c")
+            await pilot.pause()
+
+            assert clipboard.last_copied == "erk co feature-123"
+
+    @pytest.mark.asyncio
+    async def test_copy_pr_checkout_shortcut_e(self) -> None:
+        """Pressing 'e' in detail screen copies PR checkout command."""
+        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            [
+                make_plan_row(
+                    123,
+                    "Test Plan",
+                    pr_number=456,
+                    exists_locally=False,
+                )
+            ],
+            clipboard=clipboard,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("e")
+            await pilot.pause()
+
+            assert clipboard.last_copied == "erk pr co 456"
+
+

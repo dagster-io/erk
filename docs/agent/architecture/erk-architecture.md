@@ -241,6 +241,63 @@ If you find code using `time.sleep()`:
 - **Dependency injection**: Follows erk's DI pattern for all integrations
 - **Consistent**: Same pattern as Git, GitHub, Graphite abstractions
 
+## TUI Exit-with-Command Pattern
+
+The TUI can request command execution after exit. This allows the TUI to trigger CLI commands that require a fresh terminal (not running inside Textual).
+
+### App Side (tui/app.py)
+
+```python
+class ErkDashApp(App):
+    def __init__(self, ...):
+        ...
+        self.exit_command: str | None = None  # Command to run after exit
+
+# In a ModalScreen:
+def _on_confirmed(self, result: bool | None) -> None:
+    if result is True:
+        app = self.app
+        if isinstance(app, ErkDashApp):
+            app.exit_command = "erk implement 123"
+        self.dismiss()
+        self.app.exit()
+```
+
+### CLI Side (cli/commands/list_cmd.py)
+
+```python
+app = ErkDashApp(provider, filters)
+app.run()
+
+# After TUI exits, check for command to execute
+if app.exit_command:
+    import os
+    import shlex
+    args = shlex.split(app.exit_command)
+    os.execvp(args[0], args)  # Replaces current process
+```
+
+### When to Use
+
+Use this pattern when:
+
+- TUI action requires fresh terminal output (not Textual rendering)
+- Command needs to run interactively after TUI closes
+- Chaining from TUI to another CLI command
+
+### Testing Considerations
+
+When mocking `ErkDashApp` in tests, include the `exit_command` attribute:
+
+```python
+class MockApp:
+    def __init__(self, provider, filters, refresh_interval):
+        self.exit_command: str | None = None  # Required attribute
+
+    def run(self):
+        pass
+```
+
 ## Design Principles
 
 These patterns reflect erk's core design principles:
