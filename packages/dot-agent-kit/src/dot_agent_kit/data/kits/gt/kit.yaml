@@ -26,6 +26,7 @@ artifacts:
     - agents/gt/commit-message-generator.md
     - agents/gt/gt-update-pr-submitter.md
   command:
+    - commands/gt/prepare-local.md
     - commands/gt/pr-prep.md
     - commands/gt/pr-submit.md
     - commands/gt/pr-update.md
