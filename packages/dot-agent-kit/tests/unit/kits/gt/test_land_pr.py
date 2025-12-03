@@ -1,6 +1,5 @@
 """Tests for land_pr kit CLI command using fake ops."""
 
-from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -97,12 +96,8 @@ class TestLandPrExecution:
     def test_land_pr_error_no_parent(self, tmp_path: Path) -> None:
         """Test error when parent branch cannot be determined."""
         # Setup: branch with no parent (orphaned)
-        ops = FakeGtKitOps().with_repo_root(str(tmp_path))
-        # Don't set parent relationship via main_graphite, so get_parent_branch returns None
-        # Use direct state manipulation for git and builder pattern for github
-        ops.git()._state = replace(ops.git().get_state(), current_branch="orphan-branch")  # type: ignore[attr-defined]
-        ops._github_builder_state.current_branch = "orphan-branch"
-        ops._github_instance = None  # Reset cache
+        # Use orphan_branch builder to set up a branch without parent tracking
+        ops = FakeGtKitOps().with_repo_root(str(tmp_path)).with_orphan_branch("orphan-branch")
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
@@ -171,11 +166,10 @@ class TestLandPrExecution:
         ops = (
             FakeGtKitOps()
             .with_repo_root(str(tmp_path))
+            .with_trunk_branch("master")
             .with_branch("feature-branch", parent="master")
             .with_pr(123, state="OPEN")
         )
-        # Configure git ops to return "master" as trunk
-        ops.git()._state = replace(ops.git().get_state(), trunk_branch="master")  # type: ignore[attr-defined]
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
@@ -190,10 +184,9 @@ class TestLandPrExecution:
         ops = (
             FakeGtKitOps()
             .with_repo_root(str(tmp_path))
+            .with_trunk_branch("master")
             .with_branch("feature-branch", parent="main")
         )
-        # Configure git ops to return "master" as trunk
-        ops.git()._state = replace(ops.git().get_state(), trunk_branch="master")  # type: ignore[attr-defined]
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
@@ -239,9 +232,8 @@ class TestLandPrEdgeCases:
 
     def test_land_pr_unknown_current_branch(self, tmp_path: Path) -> None:
         """Test when current branch cannot be determined."""
-        ops = FakeGtKitOps().with_repo_root(str(tmp_path))
-        # Set current_branch to empty to simulate failure
-        ops.git()._state = replace(ops.git().get_state(), current_branch="")  # type: ignore[attr-defined]
+        # Use with_no_branch to configure empty current branch
+        ops = FakeGtKitOps().with_repo_root(str(tmp_path)).with_no_branch()
 
         result = render_events(execute_land_pr(ops, tmp_path))
 

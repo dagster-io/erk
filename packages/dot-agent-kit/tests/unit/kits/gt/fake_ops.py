@@ -72,6 +72,7 @@ class FakeGtKitOps(GtKit):
         self._git_commits_ahead: dict[tuple[Path, str], int] = {}
         self._git_diff_to_branch: dict[tuple[Path, str], str] = {}
         self._git_merge_conflicts: dict[tuple[str, str], bool] = {}
+        self._git_add_all_raises: Exception | None = None
         self._git_instance: FakeGit | None = None
         self._repo_root: str = "/fake/repo/root"
 
@@ -147,6 +148,7 @@ class FakeGtKitOps(GtKit):
             commits_ahead=commits_ahead_expanded,
             diff_to_branch=diff_to_branch,
             merge_conflicts=self._git_merge_conflicts,
+            add_all_raises=self._git_add_all_raises,
         )
 
     def git(self) -> Git:
@@ -448,14 +450,14 @@ class FakeGtKitOps(GtKit):
     def with_add_failure(self) -> "FakeGtKitOps":
         """Configure git add to fail.
 
-        Note: FakeGit doesn't support add failures. This method is kept for
-        compatibility but has no effect. Tests using this may need updating.
-
         Returns:
             Self for chaining
         """
-        # FakeGit's add_all() is a no-op and doesn't support failure simulation
-        # This method is kept for API compatibility but does nothing
+        import subprocess
+
+        error = subprocess.CalledProcessError(returncode=1, cmd=["git", "add", "-A"])
+        self._git_add_all_raises = error
+        self._git_instance = None  # Reset cache
         return self
 
     def with_pr_update_failure(self) -> "FakeGtKitOps":

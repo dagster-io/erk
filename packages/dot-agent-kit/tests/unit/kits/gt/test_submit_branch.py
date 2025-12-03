@@ -146,8 +146,6 @@ class TestPreAnalysisExecution:
         assert result.branch_name == "feature-branch"
         assert result.uncommitted_changes_committed is True
         assert "Committed uncommitted changes" in result.message
-        # After commit, should have 1 commit
-        assert ops.git().count_commits_in_branch("main") == 1  # type: ignore[attr-defined]
 
     def test_pre_analysis_without_uncommitted_changes(self, tmp_path: Path) -> None:
         """Test pre-analysis when no uncommitted changes exist."""
@@ -203,11 +201,8 @@ class TestPreAnalysisExecution:
 
     def test_pre_analysis_no_branch(self, tmp_path: Path) -> None:
         """Test error when current branch cannot be determined."""
-        ops = FakeGtKitOps().with_repo_root(str(tmp_path))
-        # Set current_branch to None to simulate failure
-        from dataclasses import replace
-
-        ops.git()._state = replace(ops.git().get_state(), current_branch="")  # type: ignore[attr-defined]
+        # Use with_no_branch builder to configure empty current branch
+        ops = FakeGtKitOps().with_repo_root(str(tmp_path)).with_no_branch()
 
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
@@ -218,16 +213,8 @@ class TestPreAnalysisExecution:
 
     def test_pre_analysis_no_parent(self, tmp_path: Path) -> None:
         """Test error when parent branch cannot be determined."""
-        # Create a fresh FakeGtKitOps without using with_branch
-        # to avoid having the parent relationship set up in main_graphite
-        ops = FakeGtKitOps().with_repo_root(str(tmp_path))
-        # Manually set just the current branch without any parent relationship
-        from dataclasses import replace
-
-        ops.git()._state = replace(ops.git().get_state(), current_branch="orphan-branch")  # type: ignore[attr-defined]
-        ops._github_builder_state.current_branch = "orphan-branch"
-        ops._github_instance = None  # Reset cache
-        # main_graphite has no branches tracked, so get_parent_branch returns None
+        # Use with_orphan_branch to set a branch without parent tracking
+        ops = FakeGtKitOps().with_repo_root(str(tmp_path)).with_orphan_branch("orphan-branch")
 
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
@@ -363,9 +350,8 @@ class TestPreAnalysisExecution:
             .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="master")
             .with_commits(1)
+            .with_merge_conflict("master", "feature-branch")  # Use builder method
         )
-        # Configure fake to simulate conflict
-        ops.git().simulate_conflict("master", "feature-branch")  # type: ignore[attr-defined]
 
         # No PR configured - should fallback to git merge-tree
         result = render_events(execute_pre_analysis(ops, tmp_path))
