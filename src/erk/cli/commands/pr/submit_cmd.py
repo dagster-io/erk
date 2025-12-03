@@ -13,7 +13,7 @@ from erk.core.context import ErkContext
 @click.command("submit")
 @click.pass_obj
 def pr_submit(ctx: ErkContext) -> None:
-    """Submit current branch as a pull request.
+    """Submit PR with AI-generated commit message.
 
     Analyzes your changes, generates a commit message via AI, and
     creates a pull request using Graphite.

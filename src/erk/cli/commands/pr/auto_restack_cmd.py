@@ -13,7 +13,7 @@ from erk.core.context import ErkContext
 @click.command("auto-restack")
 @click.pass_obj
 def pr_auto_restack(ctx: ErkContext) -> None:
-    """Automate Graphite restacking with intelligent conflict resolution.
+    """Restack with AI-powered conflict resolution.
 
     Runs `gt restack` and automatically handles any merge conflicts that arise,
     looping until the restack completes successfully.

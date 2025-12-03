@@ -26,7 +26,7 @@ from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 )
 @click.pass_obj
 def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
-    """Checkout a pull request into a worktree.
+    """Checkout PR into a worktree for review.
 
     PR_REFERENCE can be a plain number (123) or GitHub URL
     (https://github.com/owner/repo/pull/123).

@@ -13,7 +13,7 @@ from erk.core.context import ErkContext
 @click.command("prepare-local")
 @click.pass_obj
 def pr_prepare_local(ctx: ErkContext) -> None:
-    """Prepare local branch for PR submission.
+    """Squash commits with AI-generated message (no push).
 
     Squashes commits and generates a commit message.
     Uses PR body if available, otherwise AI-generates from diff.

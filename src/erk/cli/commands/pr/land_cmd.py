@@ -33,10 +33,10 @@ from erk.core.context import ErkContext
 @click.option("--script", is_flag=True, help="Print only the activation script")
 @click.pass_obj
 def pr_land(ctx: ErkContext, script: bool) -> None:
-    """Land current PR and navigate to parent branch.
+    """Merge PR, switch to trunk, and delete branch/worktree.
 
-    Merges the current PR (must be one level from trunk), deletes the current
-    branch and worktree, navigates to trunk, and pulls the latest changes.
+    Merges the current PR (must be one level from trunk), navigates to trunk,
+    deletes the current branch and worktree, and pulls the latest changes.
 
     With shell integration (recommended):
       erk pr land

@@ -72,6 +72,8 @@ Check `git status` to confirm:
 
 Display success message with summary of what was resolved.
 
+**IMPORTANT: Do not suggest specific next actions** (like "push" or "submit PR"). The user knows what they were doing before the restack was needed. Just confirm the branch is ready.
+
 ## Error Handling
 
 ### Pre-commit Hook Failures
@@ -121,5 +123,5 @@ If a restack is already in progress when the command starts, it will detect this
 📦 Staged resolved files
 ▶️  Continuing restack...
 
-✅ Restack complete! All branches are up to date.
+✅ Restack complete! Your branch is ready.
 ```

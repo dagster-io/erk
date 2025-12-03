@@ -8,10 +8,9 @@ from erk.cli.commands.pr.checkout_cmd import pr_checkout
 from erk.cli.commands.pr.land_cmd import pr_land
 from erk.cli.commands.pr.prepare_local_cmd import pr_prepare_local
 from erk.cli.commands.pr.submit_cmd import pr_submit
-from erk.cli.help_formatter import GroupedCommandGroup
 
 
-@click.group("pr", cls=GroupedCommandGroup)
+@click.group("pr")
 def pr_group() -> None:
     """Manage pull requests."""
     pass
