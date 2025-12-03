@@ -1,4 +1,4 @@
-"""Publish to PyPI command."""
+"""Prepare release command - bump versions and build artifacts without publishing."""
 
 from pathlib import Path
 
@@ -8,13 +8,10 @@ from erk_dev.cli.output import user_output
 from erk_dev.commands.publish_to_pypi.shared import (
     build_all_packages,
     bump_patch_version,
-    commit_changes,
     ensure_branch_is_in_sync,
     filter_git_status,
     get_git_status,
     get_workspace_packages,
-    publish_all_packages,
-    push_to_remote,
     run_git_pull,
     run_uv_sync,
     synchronize_versions,
@@ -23,8 +20,21 @@ from erk_dev.commands.publish_to_pypi.shared import (
 )
 
 
-def publish_workflow(dry_run: bool) -> None:
-    """Execute the synchronized multi-package publishing workflow."""
+def prepare_release_workflow(dry_run: bool) -> None:
+    """Execute the prepare phase of the release workflow.
+
+    This includes:
+    - Validation (branch sync, uncommitted changes)
+    - Git pull
+    - Package discovery and version consistency check
+    - Version bump (patch increment)
+    - Version synchronization across all packages
+    - Dependency update (uv sync)
+    - Build packages to dist/
+    - Artifact validation
+
+    Does NOT commit, publish, or push. User should review changes and commit manually.
+    """
     if dry_run:
         user_output("[DRY RUN MODE - No changes will be made]\n")
 
@@ -38,6 +48,7 @@ def publish_workflow(dry_run: bool) -> None:
     packages = get_workspace_packages(repo_root)
     user_output(f"  ✓ Found {len(packages)} packages: {', '.join(pkg.name for pkg in packages)}")
 
+    # Check for uncommitted changes (excluding files that will be modified)
     status = get_git_status(repo_root)
     if status:
         excluded_files = {
@@ -53,11 +64,13 @@ def publish_workflow(dry_run: bool) -> None:
                 user_output(f"  {line}")
             raise SystemExit(1)
 
-    user_output("\nStarting synchronized publish workflow...\n")
+    user_output("\nStarting prepare release workflow...\n")
 
+    # Validate branch is in sync with upstream
     ensure_branch_is_in_sync(repo_root, dry_run)
     run_git_pull(repo_root, dry_run)
 
+    # Validate version consistency and bump
     old_version = validate_version_consistency(packages)
     user_output(f"  ✓ Current version: {old_version} (consistent)")
 
@@ -65,35 +78,40 @@ def publish_workflow(dry_run: bool) -> None:
     user_output(f"\nBumping version: {old_version} → {new_version}")
     synchronize_versions(packages, old_version, new_version, dry_run)
 
+    # Update dependencies
     run_uv_sync(repo_root, dry_run)
 
+    # Build and validate artifacts
     staging_dir = build_all_packages(packages, repo_root, dry_run)
     validate_build_artifacts(packages, staging_dir, new_version, dry_run)
 
-    publish_all_packages(packages, staging_dir, new_version, dry_run)
-
-    sha = commit_changes(repo_root, packages, new_version, dry_run)
-    user_output(f'\n✓ Committed: {sha} "Published {new_version}"')
-
-    push_to_remote(repo_root, dry_run)
-    user_output("✓ Pushed to origin")
-
-    user_output("\n✅ Successfully published:")
-    for pkg in packages:
-        user_output(f"  • {pkg.name} {new_version}")
+    # Summary
+    user_output("\n✅ Prepare release complete!")
+    user_output(f"  Version: {new_version}")
+    user_output(f"  Artifacts: {staging_dir}")
+    user_output("\nNext steps:")
+    user_output("  1. Review changes: git diff")
+    commit_msg = f"Bump version to {new_version}"
+    user_output(f"  2. Commit changes: git add -A && git commit -m '{commit_msg}'")
+    user_output("  3. Publish: make publish")
 
 
-def run_pep723_script(dry_run: bool) -> None:
-    """Compatibility shim for tests expecting script execution entrypoint."""
-    publish_workflow(dry_run)
-
-
-@click.command(name="publish-to-pypi")
+@click.command(name="prepare-release")
 @click.option("--dry-run", is_flag=True, help="Show what would be done without making changes")
-def publish_to_pypi_command(dry_run: bool) -> None:
-    """Publish packages to PyPI."""
+def prepare_release_command(dry_run: bool) -> None:
+    """Prepare a release by bumping versions and building artifacts.
+
+    This command handles the prepare phase of the release workflow:
+    - Validates repository state (branch sync, no uncommitted changes)
+    - Bumps patch version across all packages
+    - Updates dependencies with uv sync
+    - Builds all packages to dist/
+
+    After running this command, review the changes and commit manually,
+    then run 'make publish' to upload to PyPI.
+    """
     try:
-        run_pep723_script(dry_run)
+        prepare_release_workflow(dry_run)
     except KeyboardInterrupt:
         user_output("\n✗ Interrupted by user")
         raise SystemExit(130) from None
