@@ -1,4 +1,4 @@
-.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test fast-ci all-ci check md-check clean publish fix reinstall-erk-tools
+.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test fast-ci all-ci check md-check clean prepare publish fix reinstall-erk-tools
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -126,7 +126,14 @@ reinstall-erk-tools:
 	uv tool install --force -e .
 	cd packages/dot-agent-kit && uv tool install --force -e .
 
-# Publish packages to PyPI
-# Use erk-dev publish-to-pypi command instead (recommended)
-publish: build
-	erk-dev publish-to-pypi
+# Prepare release: bump version and build artifacts
+# This creates a committable state with version bumps and dist/ artifacts
+# After running this, review changes and commit manually before publishing
+prepare:
+	erk-dev prepare-release
+
+# Publish release: upload to PyPI and push to remote
+# Prerequisites: Must run 'make prepare' first, then manually commit changes
+# This validates artifacts exist, publishes to PyPI, and pushes to remote
+publish:
+	erk-dev publish-release
