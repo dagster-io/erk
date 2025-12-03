@@ -681,3 +681,7 @@ Documentation follows a progressive disclosure model:
 - One agent can serve multiple commands
 - Use appropriate model (haiku for orchestration)
 - Follow progressive disclosure (checklist → docs → implementation)
+
+## Related
+
+- **[CLI to Slash Command Delegation](cli-slash-command-delegation.md)** - When erk CLI commands delegate to slash commands via `ClaudeExecutor` (the layer above this pattern)

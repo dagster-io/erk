@@ -33,30 +33,32 @@
 
 ## Quick Routing Table
 
-| If you're about to...                            | STOP! Check this instead                                                               |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| Write Python code                                | → Load `dignified-python-313` skill FIRST                                              |
-| Write or modify tests                            | → Load `fake-driven-testing` skill FIRST                                               |
-| Run pytest, pyright, ruff, prettier, make, or gt | → Use `devrun` agent (Task tool), NOT Bash                                             |
-| Import time or use time.sleep()                  | → Use `context.time.sleep()` instead (see erk-architecture.md#time-abstraction)        |
-| Work with Graphite stacks                        | → Load `gt-graphite` skill for stack visualization and terminology                     |
-| Understand erk architecture patterns             | → [docs/agent/erk-architecture.md](docs/agent/erk-architecture.md)                     |
-| Use planning workflow (.impl/ folders)           | → [docs/agent/planning-workflow.md](docs/agent/planning-workflow.md)                   |
-| Understand full plan lifecycle                   | → [docs/agent/plan-lifecycle.md](docs/agent/plan-lifecycle.md)                         |
-| Understand plan enrichment workflow              | → [docs/agent/plan-enrichment.md](docs/agent/plan-enrichment.md)                       |
-| Style CLI output                                 | → [docs/agent/cli-output-styling.md](docs/agent/cli-output-styling.md)                 |
-| Implement script mode for shell integration      | → [docs/agent/cli-script-mode.md](docs/agent/cli-script-mode.md)                       |
-| Use subprocess wrappers                          | → [docs/agent/subprocess-wrappers.md](docs/agent/subprocess-wrappers.md)               |
-| Create kit CLI commands                          | → [docs/agent/kit-cli-commands.md](docs/agent/kit-cli-commands.md)                     |
-| Understand kit code architecture                 | → [docs/agent/kit-code-architecture.md](docs/agent/kit-code-architecture.md)           |
-| Delegate to agents from commands                 | → [docs/agent/command-agent-delegation.md](docs/agent/command-agent-delegation.md)     |
-| Work with session logs (~/.claude/projects/)     | → [docs/agent/claude-code-session-layout.md](docs/agent/claude-code-session-layout.md) |
-| Parse or analyze session logs                    | → [docs/agent/claude-code-session-layout.md](docs/agent/claude-code-session-layout.md) |
-| Create hooks                                     | → [docs/agent/hooks.md](docs/agent/hooks.md)                                           |
-| Write temp files for AI workflows                | → [docs/agent/scratch-storage.md](docs/agent/scratch-storage.md)                       |
-| Understand project terms                         | → [docs/agent/glossary.md](docs/agent/glossary.md)                                     |
-| Navigate documentation                           | → [docs/agent/guide.md](docs/agent/guide.md)                                           |
-| View installed kits                              | → [@.agent/kits/kit-registry.md](.agent/kits/kit-registry.md)                          |
+| If you're about to...                            | STOP! Check this instead                                                                   |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Write Python code                                | → Load `dignified-python-313` skill FIRST                                                  |
+| Write or modify tests                            | → Load `fake-driven-testing` skill FIRST                                                   |
+| Run pytest, pyright, ruff, prettier, make, or gt | → Use `devrun` agent (Task tool), NOT Bash                                                 |
+| Import time or use time.sleep()                  | → Use `context.time.sleep()` instead (see erk-architecture.md#time-abstraction)            |
+| Work with Graphite stacks                        | → Load `gt-graphite` skill for stack visualization and terminology                         |
+| Understand erk architecture patterns             | → [docs/agent/erk-architecture.md](docs/agent/erk-architecture.md)                         |
+| Use planning workflow (.impl/ folders)           | → [docs/agent/planning-workflow.md](docs/agent/planning-workflow.md)                       |
+| Understand full plan lifecycle                   | → [docs/agent/plan-lifecycle.md](docs/agent/plan-lifecycle.md)                             |
+| Understand plan enrichment workflow              | → [docs/agent/plan-enrichment.md](docs/agent/plan-enrichment.md)                           |
+| Style CLI output                                 | → [docs/agent/cli-output-styling.md](docs/agent/cli-output-styling.md)                     |
+| Implement script mode for shell integration      | → [docs/agent/cli-script-mode.md](docs/agent/cli-script-mode.md)                           |
+| Use subprocess wrappers                          | → [docs/agent/subprocess-wrappers.md](docs/agent/subprocess-wrappers.md)                   |
+| Create kit CLI commands                          | → [docs/agent/kit-cli-commands.md](docs/agent/kit-cli-commands.md)                         |
+| Understand kit code architecture                 | → [docs/agent/kit-code-architecture.md](docs/agent/kit-code-architecture.md)               |
+| Delegate to agents from commands                 | → [docs/agent/command-agent-delegation.md](docs/agent/command-agent-delegation.md)         |
+| Delegate CLI command to slash command            | → [docs/agent/cli-slash-command-delegation.md](docs/agent/cli-slash-command-delegation.md) |
+| Pass CLI flags to slash commands                 | → [docs/agent/cli-slash-command-delegation.md](docs/agent/cli-slash-command-delegation.md) |
+| Work with session logs (~/.claude/projects/)     | → [docs/agent/claude-code-session-layout.md](docs/agent/claude-code-session-layout.md)     |
+| Parse or analyze session logs                    | → [docs/agent/claude-code-session-layout.md](docs/agent/claude-code-session-layout.md)     |
+| Create hooks                                     | → [docs/agent/hooks.md](docs/agent/hooks.md)                                               |
+| Write temp files for AI workflows                | → [docs/agent/scratch-storage.md](docs/agent/scratch-storage.md)                           |
+| Understand project terms                         | → [docs/agent/glossary.md](docs/agent/glossary.md)                                         |
+| Navigate documentation                           | → [docs/agent/guide.md](docs/agent/guide.md)                                               |
+| View installed kits                              | → [@.agent/kits/kit-registry.md](.agent/kits/kit-registry.md)                              |
 
 ## Graphite Stack Quick Reference
 
