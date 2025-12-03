@@ -6,7 +6,7 @@ import click
 from erk_shared.github.parsing import github_repo_location_from_url
 from erk_shared.output.output import user_output
 
-from erk.cli.commands.plan.parsing import parse_issue_number
+from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
@@ -54,7 +54,7 @@ def close_plan(ctx: ErkContext, identifier: str) -> None:
     repo_root = repo.root  # Use git repository root for GitHub operations
 
     # Parse issue number - errors if invalid
-    number = parse_issue_number(identifier)
+    number = parse_issue_identifier(identifier)
 
     # Fetch plan - errors if not found
     try:

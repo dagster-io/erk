@@ -3,7 +3,7 @@
 import click
 from erk_shared.output.output import user_output
 
-from erk.cli.commands.plan.parsing import parse_issue_number
+from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.constants import (
     DOCS_EXTRACTED_LABEL,
     DOCS_EXTRACTED_LABEL_COLOR,
@@ -31,7 +31,7 @@ def extract_docs(ctx: ErkContext, identifier: str) -> None:
     repo_root = repo.root
 
     # Parse issue number
-    issue_number = parse_issue_number(identifier)
+    issue_number = parse_issue_identifier(identifier)
 
     # Ensure label exists in repo (create if needed)
     try:
