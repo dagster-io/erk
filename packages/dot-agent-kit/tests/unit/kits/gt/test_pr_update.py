@@ -140,6 +140,24 @@ class TestExecuteUpdatePr:
         assert result["success"] is False
         assert "Failed to submit update" in result["error"]
 
+    def test_update_pr_submit_diverged_detected(self) -> None:
+        """Test that 'updated remotely' errors return submit_diverged type."""
+        ops = (
+            FakeGtKitOps()
+            .with_branch("feature-branch", parent="main")
+            .with_commits(1)
+            .with_submit_failure(
+                stderr="Branch feature-branch has been updated remotely. Use gt sync."
+            )
+        )
+
+        result = execute_update_pr(ops)
+
+        assert result["success"] is False
+        assert result["error_type"] == "submit_diverged"
+        assert "diverged from remote" in result["error"]
+        assert "gt sync" in result["error"]
+
     def test_update_pr_add_fails(self) -> None:
         """Test error when git add fails."""
         ops = (
