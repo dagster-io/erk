@@ -198,6 +198,7 @@ yield Label(user_title, classes="row", markup=False)
 This applies to any `Label(..., markup=True)` or other widget accepting Rich markup strings.
 
 **Key patterns:**
+
 1. Use `escape_markup()` on display text to prevent `[brackets]` from being parsed
 2. Quote URLs and escape any `"` characters that might appear in them
 3. Set `markup=False` on Labels that show user content without links

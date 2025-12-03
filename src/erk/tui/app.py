@@ -11,7 +11,7 @@ from rich.markup import escape as escape_markup
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Container, Vertical
 from textual.events import Click
 from textual.screen import ModalScreen
 from textual.widgets import Header, Input, Label, Static
@@ -390,7 +390,9 @@ class PlanDetailScreen(ModalScreen):
             with Container(classes="info-row"):
                 yield Label("Issue", classes="info-label")
                 if self._row.issue_url:
-                    yield ClickableLink(f"#{self._row.issue_number}", self._row.issue_url, classes="info-value")
+                    yield ClickableLink(
+                        f"#{self._row.issue_number}", self._row.issue_url, classes="info-value"
+                    )
                 else:
                     yield Label(f"#{self._row.issue_number}", classes="info-value", markup=False)
 
@@ -399,7 +401,9 @@ class PlanDetailScreen(ModalScreen):
                 with Container(classes="info-row"):
                     yield Label("PR", classes="info-label")
                     if self._row.pr_url:
-                        yield ClickableLink(f"#{self._row.pr_number}", self._row.pr_url, classes="info-value")
+                        yield ClickableLink(
+                            f"#{self._row.pr_number}", self._row.pr_url, classes="info-value"
+                        )
                     else:
                         yield Label(f"#{self._row.pr_number}", classes="info-value", markup=False)
                     # PR state badge inline
@@ -421,14 +425,18 @@ class PlanDetailScreen(ModalScreen):
                 if self._row.local_impl_display and self._row.local_impl_display != "-":
                     with Container(classes="info-row"):
                         yield Label("Last local", classes="info-label")
-                        yield Label(self._row.local_impl_display, classes="info-value", markup=False)
+                        yield Label(
+                            self._row.local_impl_display, classes="info-value", markup=False
+                        )
 
             # Remote run info (if exists) - clickable run ID with status badge inline
             if self._row.run_id:
                 with Container(classes="info-row"):
                     yield Label("Run", classes="info-label")
                     if self._row.run_url:
-                        yield ClickableLink(self._row.run_id, self._row.run_url, classes="info-value")
+                        yield ClickableLink(
+                            self._row.run_id, self._row.run_url, classes="info-value"
+                        )
                     else:
                         yield Label(self._row.run_id, classes="info-value", markup=False)
                     # Run status badge inline
@@ -438,7 +446,9 @@ class PlanDetailScreen(ModalScreen):
                 if self._row.remote_impl_display and self._row.remote_impl_display != "-":
                     with Container(classes="info-row"):
                         yield Label("Last remote", classes="info-label")
-                        yield Label(self._row.remote_impl_display, classes="info-value", markup=False)
+                        yield Label(
+                            self._row.remote_impl_display, classes="info-value", markup=False
+                        )
 
             # Checkout command with copy button
             if self._row.pr_number or self._row.exists_locally:
