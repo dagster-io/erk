@@ -57,12 +57,10 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool) -> None:
     children = ctx.graphite.get_child_branches(ctx.git, repo.root, current_branch)
 
     # Check for navigation ambiguity when --delete-current is set
-    if delete_current and len(children) == 0:
-        user_output(
-            click.style("Error: ", fg="red") + "Cannot navigate up: already at top of stack"
-        )
-        user_output("Use 'gt branch delete' to delete this branch")
-        raise SystemExit(1)
+    Ensure.invariant(
+        not (delete_current and len(children) == 0),
+        "Cannot navigate up: already at top of stack. Use 'gt branch delete' to delete this branch",
+    )
 
     if delete_current and len(children) > 1:
         user_output(
