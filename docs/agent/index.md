@@ -102,6 +102,6 @@
 
 ### [TUI](tui/)
 
-| Document                               | Read when...                                           |
-| -------------------------------------- | ------------------------------------------------------ |
+| Document                                   | Read when...                                           |
+| ------------------------------------------ | ------------------------------------------------------ |
 | [textual-quirks.md](tui/textual-quirks.md) | Working with Textual TUI, avoiding common API pitfalls |

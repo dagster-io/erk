@@ -1,3 +1,11 @@
+---
+title: Textual API Quirks and Workarounds
+read_when:
+  - "working with Textual TUI framework"
+  - "debugging DataTable, App, or CSS issues in Textual"
+  - "writing tests for Textual applications"
+---
+
 # Textual API Quirks and Workarounds
 
 This document captures API quirks discovered while building the erk dash TUI with Textual.
