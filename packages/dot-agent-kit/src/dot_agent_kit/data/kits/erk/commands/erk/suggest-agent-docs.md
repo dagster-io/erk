@@ -112,6 +112,20 @@ For each documentation gap, create a full suggestion including a draft skeleton.
 | **Medium**      | Requires some additional exploration or synthesis          |
 | **Substantial** | Needs significant research, diagrams, or cross-referencing |
 
+**For Agent Docs, always include a routing entry:**
+
+The routing entry enables discoverability via the AGENTS.md routing table. Format:
+
+```
+| [Trigger phrase] | → [docs/agent/[name].md](docs/agent/[name].md) |
+```
+
+Good trigger phrases:
+
+- Start with action verbs: "Parse", "Work with", "Implement", "Debug"
+- Be specific to the use case, not the doc title
+- Match patterns in the existing AGENTS.md routing table
+
 ### Step 5: Confirm with User
 
 Before presenting final output, ask for confirmation:
@@ -141,10 +155,11 @@ Based on this session, the following documentation would improve future efficien
 
 ### 1. [Suggested Doc Title]
 
-**Type:** Agent Doc | Skill  
-**Location:** `docs/agent/[name].md` | `.claude/skills/[name]/`  
-**Action:** New doc | Update existing `[path]` | Merge into `[path]`  
-**Priority:** High | Medium | Low  
+**Type:** Agent Doc | Skill
+**Location:** `docs/agent/[name].md` | `.claude/skills/[name]/`
+**Routing:** `| [Trigger phrase] | → [docs/agent/[name].md](docs/agent/[name].md) |`
+**Action:** New doc | Update existing `[path]` | Merge into `[path]`
+**Priority:** High | Medium | Low
 **Effort:** Quick | Medium | Substantial
 
 **Why needed:** [Brief explanation tied to specific session patterns]
@@ -228,6 +243,7 @@ Based on this session, the following documentation would improve future efficien
 - **Focus on reusability**: Suggest docs that would help many future sessions
 - **Keep drafts actionable**: Draft content should be 60-70% complete, not just headers
 - **Prefer updates over new docs**: A single comprehensive doc beats many small ones
+- **Include routing**: Every Agent Doc suggestion must include an AGENTS.md routing entry
 
 ---
 

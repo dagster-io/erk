@@ -51,6 +51,7 @@
 | Understand kit code architecture                 | → [docs/agent/kit-code-architecture.md](docs/agent/kit-code-architecture.md)           |
 | Delegate to agents from commands                 | → [docs/agent/command-agent-delegation.md](docs/agent/command-agent-delegation.md)     |
 | Work with session logs (~/.claude/projects/)     | → [docs/agent/claude-code-session-layout.md](docs/agent/claude-code-session-layout.md) |
+| Parse or analyze session logs                    | → [docs/agent/claude-code-session-layout.md](docs/agent/claude-code-session-layout.md) |
 | Create hooks                                     | → [docs/agent/hooks.md](docs/agent/hooks.md)                                           |
 | Write temp files for AI workflows                | → [docs/agent/scratch-storage.md](docs/agent/scratch-storage.md)                       |
 | Understand project terms                         | → [docs/agent/glossary.md](docs/agent/glossary.md)                                     |
