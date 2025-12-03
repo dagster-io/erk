@@ -1,10 +1,25 @@
-"""Shim for idempotent_squash kit CLI command.
+"""Idempotent squash CLI command.
 
-The canonical implementation is in erk_shared.integrations.gt.kit_cli_commands.gt.idempotent_squash.
-This file exists only to provide the entry point for the kit CLI system.
-Import symbols directly from the canonical location.
+Squash commits on current branch (idempotent - skips if already single commit).
 """
 
-from erk_shared.integrations.gt.kit_cli_commands.gt.idempotent_squash import (
-    idempotent_squash as idempotent_squash,
-)
+import json
+from dataclasses import asdict
+from pathlib import Path
+
+import click
+from erk_shared.integrations.gt.cli import render_events
+from erk_shared.integrations.gt.operations.squash import execute_squash
+from erk_shared.integrations.gt.real import RealGtKit
+from erk_shared.integrations.gt.types import SquashError
+
+
+@click.command(name="idempotent-squash")
+def idempotent_squash() -> None:
+    """Squash commits on current branch (idempotent - skips if already single commit)."""
+    ops = RealGtKit()
+    cwd = Path.cwd()
+    result = render_events(execute_squash(ops, cwd))
+    click.echo(json.dumps(asdict(result), indent=2))
+    if isinstance(result, SquashError):
+        raise SystemExit(1)

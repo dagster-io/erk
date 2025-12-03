@@ -7,10 +7,7 @@ from click.testing import CliRunner
 from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
-from erk_shared.integrations.gt.kit_cli_commands.gt.land_pr import (
-    LandPrError,
-    LandPrSuccess,
-)
+from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
 
 from erk.cli.commands.pr import pr_group
 from erk.core.repo_discovery import RepoContext
@@ -59,7 +56,7 @@ def test_pr_land_success_navigates_to_trunk() -> None:
             message="Successfully merged PR #123 for branch feature-1",
         )
 
-        with patch("erk.cli.commands.pr.land_cmd.execute_land_pr", return_value=land_success):
+        with patch("erk.cli.commands.pr.land_cmd.render_events", return_value=land_success):
             result = runner.invoke(
                 pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False
             )
@@ -123,7 +120,7 @@ def test_pr_land_error_from_execute_land_pr() -> None:
             details={"current_branch": "feature-1"},
         )
 
-        with patch("erk.cli.commands.pr.land_cmd.execute_land_pr", return_value=land_error):
+        with patch("erk.cli.commands.pr.land_cmd.render_events", return_value=land_error):
             result = runner.invoke(pr_group, ["land"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "Branch must be exactly one level up from main")
@@ -252,7 +249,7 @@ def test_pr_land_with_trunk_in_worktree() -> None:
             message="Successfully merged PR #123",
         )
 
-        with patch("erk.cli.commands.pr.land_cmd.execute_land_pr", return_value=land_success):
+        with patch("erk.cli.commands.pr.land_cmd.render_events", return_value=land_success):
             result = runner.invoke(
                 pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False
             )
@@ -304,7 +301,7 @@ def test_pr_land_no_script_flag_shows_instructions() -> None:
             message="Successfully merged PR #123",
         )
 
-        with patch("erk.cli.commands.pr.land_cmd.execute_land_pr", return_value=land_success):
+        with patch("erk.cli.commands.pr.land_cmd.render_events", return_value=land_success):
             result = runner.invoke(pr_group, ["land"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
@@ -352,7 +349,7 @@ def test_pr_land_error_no_pr_found() -> None:
             details={"current_branch": "feature-1"},
         )
 
-        with patch("erk.cli.commands.pr.land_cmd.execute_land_pr", return_value=land_error):
+        with patch("erk.cli.commands.pr.land_cmd.render_events", return_value=land_error):
             result = runner.invoke(pr_group, ["land"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "No pull request found")
@@ -397,7 +394,7 @@ def test_pr_land_error_pr_not_open() -> None:
             details={"current_branch": "feature-1", "pr_state": "MERGED"},
         )
 
-        with patch("erk.cli.commands.pr.land_cmd.execute_land_pr", return_value=land_error):
+        with patch("erk.cli.commands.pr.land_cmd.render_events", return_value=land_error):
             result = runner.invoke(pr_group, ["land"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "Pull request is not open")
@@ -447,7 +444,7 @@ def test_pr_land_changes_directory_before_deletion() -> None:
             message="Successfully merged PR #123",
         )
 
-        with patch("erk.cli.commands.pr.land_cmd.execute_land_pr", return_value=land_success):
+        with patch("erk.cli.commands.pr.land_cmd.render_events", return_value=land_success):
             result = runner.invoke(
                 pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False
             )

@@ -86,11 +86,12 @@ packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/
 Always import from erk-shared:
 
 ```python
-# ✅ CORRECT
-from erk_shared.integrations.gt import RealGtKit
-from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import pr_submit
+# ✅ CORRECT - Import operations and types from erk-shared
+from erk_shared.integrations.gt.real import RealGtKit
+from erk_shared.integrations.gt.operations.preflight import execute_preflight
+from erk_shared.integrations.gt.types import PreflightResult
 
-# ❌ WRONG - don't import from kit location
+# ❌ WRONG - don't import from kit location (CLI wrappers)
 from dot_agent_kit.data.kits.gt.kit_cli_commands.gt.submit_branch import pr_submit
 ```
 
@@ -100,11 +101,15 @@ from dot_agent_kit.data.kits.gt.kit_cli_commands.gt.submit_branch import pr_subm
 def test_gt_kit_architecture() -> None:
     """Verify correct two-layer architecture."""
 
-    # Layer 1: Implementation exists in erk-shared
-    impl = Path("packages/erk-shared/src/erk_shared/integrations/gt/kit_cli_commands/gt/submit_branch.py")
-    assert impl.exists()
+    # Layer 1: Operations exist in erk-shared
+    ops = Path("packages/erk-shared/src/erk_shared/integrations/gt/operations/preflight.py")
+    assert ops.exists()
 
-    # Layer 2: Kit metadata exists in dot-agent-kit
+    # Layer 2: CLI wrappers exist in dot-agent-kit
+    cli = Path("packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/submit_branch.py")
+    assert cli.exists()
+
+    # Layer 3: Kit metadata exists in dot-agent-kit
     kit_yaml = Path("packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/kit.yaml")
     assert kit_yaml.exists()
 ```

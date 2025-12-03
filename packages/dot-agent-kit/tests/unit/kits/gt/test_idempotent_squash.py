@@ -6,11 +6,9 @@ are 2 or more commits. Single commit branches return success without modificatio
 
 from pathlib import Path
 
-from erk_shared.integrations.gt.kit_cli_commands.gt.idempotent_squash import (
-    SquashError,
-    SquashSuccess,
-    execute_squash,
-)
+from erk_shared.integrations.gt.cli import render_events
+from erk_shared.integrations.gt.operations.squash import execute_squash
+from erk_shared.integrations.gt.types import SquashError, SquashSuccess
 
 from tests.unit.kits.gt.fake_ops import FakeGtKitOps
 
@@ -27,7 +25,7 @@ class TestIdempotentSquash:
             .with_commits(0)
         )
 
-        result = execute_squash(ops=ops)
+        result = render_events(execute_squash(ops, tmp_path))
 
         assert isinstance(result, SquashError)
         assert result.success is False
@@ -43,7 +41,7 @@ class TestIdempotentSquash:
             .with_commits(1)
         )
 
-        result = execute_squash(ops=ops)
+        result = render_events(execute_squash(ops, tmp_path))
 
         assert isinstance(result, SquashSuccess)
         assert result.success is True
@@ -60,7 +58,7 @@ class TestIdempotentSquash:
             .with_commits(3)
         )
 
-        result = execute_squash(ops=ops)
+        result = render_events(execute_squash(ops, tmp_path))
 
         assert isinstance(result, SquashSuccess)
         assert result.success is True
@@ -78,7 +76,7 @@ class TestIdempotentSquash:
             .with_squash_conflict()
         )
 
-        result = execute_squash(ops=ops)
+        result = render_events(execute_squash(ops, tmp_path))
 
         assert isinstance(result, SquashError)
         assert result.success is False
@@ -95,7 +93,7 @@ class TestIdempotentSquash:
             .with_squash_failure(stderr="Something went wrong")
         )
 
-        result = execute_squash(ops=ops)
+        result = render_events(execute_squash(ops, tmp_path))
 
         assert isinstance(result, SquashError)
         assert result.success is False
@@ -111,7 +109,7 @@ class TestIdempotentSquash:
             .with_commits(2)
         )
 
-        result = execute_squash(ops=ops)
+        result = render_events(execute_squash(ops, tmp_path))
 
         assert isinstance(result, SquashSuccess)
         assert result.success is True
