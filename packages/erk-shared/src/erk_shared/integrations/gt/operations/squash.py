@@ -29,15 +29,15 @@ def execute_squash(
         CompletionEvent with SquashSuccess if squash succeeded or was unnecessary,
         or SquashError if squash failed.
     """
-    repo_root = ops.git().get_repository_root(cwd)
+    repo_root = ops.git.get_repository_root(cwd)
 
     # Step 1: Get trunk branch
     yield ProgressEvent("Detecting trunk branch...")
-    trunk = ops.git().detect_trunk_branch(repo_root)
+    trunk = ops.git.detect_trunk_branch(repo_root)
 
     # Step 2: Count commits
     yield ProgressEvent(f"Counting commits ahead of {trunk}...")
-    commit_count = ops.git().count_commits_ahead(cwd, trunk)
+    commit_count = ops.git.count_commits_ahead(cwd, trunk)
     if commit_count == 0:
         yield CompletionEvent(
             SquashError(
@@ -64,7 +64,7 @@ def execute_squash(
     # Step 4: Squash commits
     yield ProgressEvent(f"Squashing {commit_count} commits...")
     try:
-        ops.main_graphite().squash_branch(repo_root, quiet=True)
+        ops.graphite.squash_branch(repo_root, quiet=True)
     except subprocess.CalledProcessError as e:
         combined = (e.stdout if hasattr(e, "stdout") else "") + (
             e.stderr if hasattr(e, "stderr") else ""

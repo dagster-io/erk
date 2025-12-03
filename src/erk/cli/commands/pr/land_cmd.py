@@ -13,7 +13,6 @@ parent (trunk), and pulls the latest changes.
 import click
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
-from erk_shared.integrations.gt.real import RealGtKit
 from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
 from erk_shared.output.output import machine_output, user_output
 
@@ -22,6 +21,7 @@ from erk.cli.commands.navigation_helpers import (
     check_clean_working_tree,
     delete_branch_and_worktree,
     ensure_graphite_enabled,
+    resolve_up_navigation,
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -30,18 +30,24 @@ from erk.core.context import ErkContext
 
 @click.command("land")
 @click.option("--script", is_flag=True, help="Print only the activation script")
+@click.option("--up", is_flag=True, help="Navigate up to child branch instead of trunk")
 @click.pass_obj
-def pr_land(ctx: ErkContext, script: bool) -> None:
-    """Merge PR, switch to trunk, and delete branch/worktree.
+def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
+    """Merge PR, switch to trunk (or upstack with --up), and delete branch/worktree.
 
-    Merges the current PR (must be one level from trunk), navigates to trunk,
-    deletes the current branch and worktree, and pulls the latest changes.
+    Merges the current PR (must be one level from trunk), deletes the current
+    branch and worktree, then navigates to the destination and pulls changes.
+
+    By default, navigates to trunk. With --up, navigates to child branch instead,
+    enabling landing an entire stack one PR at a time.
 
     With shell integration (recommended):
-      erk pr land
+      erk pr land        # Navigate to trunk
+      erk pr land --up   # Navigate to child branch
 
     Without shell integration:
       source <(erk pr land --script)
+      source <(erk pr land --up --script)
 
     Requires:
     - Graphite enabled: 'erk config set use_graphite true'
@@ -67,7 +73,7 @@ def pr_land(ctx: ErkContext, script: bool) -> None:
     )
 
     # Step 1: Execute land-pr (merges the PR)
-    result = render_events(execute_land_pr(RealGtKit(), ctx.cwd))
+    result = render_events(execute_land_pr(ctx, ctx.cwd))
 
     if isinstance(result, LandPrError):
         user_output(click.style("Error: ", fg="red") + result.message)
@@ -80,23 +86,27 @@ def pr_land(ctx: ErkContext, script: bool) -> None:
         + f" Merged PR #{success_result.pr_number} [{success_result.branch_name}]"
     )
 
-    # Step 2: Navigate to trunk (since land-pr validates parent is trunk)
-    # The parent is always trunk after a successful land-pr
-    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
+    # Step 2: Navigate to destination (trunk or upstack)
+    worktrees = ctx.git.list_worktrees(repo.root)
 
-    # Find where trunk is checked out
-    trunk_wt_path = ctx.git.find_worktree_for_branch(repo.root, trunk_branch)
-
-    # Determine destination path (root repo or trunk worktree)
-    if trunk_wt_path is not None and trunk_wt_path == repo.root:
-        # Trunk is in root repository
-        dest_path = repo.root
-    elif trunk_wt_path is not None:
-        # Trunk has a dedicated worktree
-        dest_path = trunk_wt_path
+    if up:
+        # Navigate up to child branch
+        dest_branch, _was_created = resolve_up_navigation(ctx, repo, current_branch, worktrees)
+        target_wt_path = ctx.git.find_worktree_for_branch(repo.root, dest_branch)
+        dest_path = Ensure.not_none(target_wt_path, f"Worktree not found for '{dest_branch}'")
+        dest_description = f"upstack branch '{dest_branch}'"
     else:
-        # Trunk has no worktree, use root repo
-        dest_path = repo.root
+        # Navigate down to trunk (current behavior)
+        dest_branch = ctx.git.detect_trunk_branch(repo.root)
+        trunk_wt_path = ctx.git.find_worktree_for_branch(repo.root, dest_branch)
+
+        if trunk_wt_path is not None and trunk_wt_path == repo.root:
+            dest_path = repo.root
+        elif trunk_wt_path is not None:
+            dest_path = trunk_wt_path
+        else:
+            dest_path = repo.root
+        dest_description = "trunk"
 
     # Change to destination before deleting current worktree
     # This prevents "cwd no longer exists" errors if user doesn't source activation script
@@ -105,22 +115,21 @@ def pr_land(ctx: ErkContext, script: bool) -> None:
     # Step 3: Delete current branch and worktree
     delete_branch_and_worktree(ctx, repo.root, current_branch, current_worktree_path)
 
-    # Step 4: Pull latest changes on trunk
-    # Note: We pull from the destination path, not cwd (which is being deleted)
-    ctx.git.pull_branch(dest_path, "origin", trunk_branch, ff_only=True)
+    # Step 4: Pull latest changes on destination branch
+    ctx.git.pull_branch(dest_path, "origin", dest_branch, ff_only=True)
     user_output(click.style("✓", fg="green") + " Pulled latest changes")
 
     # Step 5: Output activation script or message
     if script:
         script_content = render_activation_script(
             worktree_path=dest_path,
-            final_message='echo "Landed PR and switched to trunk: $(pwd)"',
+            final_message=f'echo "Landed PR and switched to {dest_description}: $(pwd)"',
             comment="erk pr land activate-script",
         )
         activation_result = ctx.script_writer.write_activation_script(
             script_content,
             command_name="pr-land",
-            comment="activate trunk after landing",
+            comment=f"activate {dest_description} after landing",
         )
         machine_output(str(activation_result.path), nl=False)
     else:

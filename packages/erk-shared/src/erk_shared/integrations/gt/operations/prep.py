@@ -34,7 +34,7 @@ def execute_prep(
     """
     # Step 0a: Check Graphite authentication FIRST
     yield ProgressEvent("Checking Graphite authentication... (gt auth whoami)")
-    gt_authenticated, gt_username, _ = ops.main_graphite().check_auth_status()
+    gt_authenticated, gt_username, _ = ops.graphite.check_auth_status()
     if not gt_authenticated:
         yield CompletionEvent(
             PrepError(
@@ -52,7 +52,7 @@ def execute_prep(
 
     # Step 0b: Check GitHub authentication
     yield ProgressEvent("Checking GitHub authentication... (gh auth status)")
-    gh_authenticated, gh_username, _ = ops.github().check_auth_status()
+    gh_authenticated, gh_username, _ = ops.github.check_auth_status()
     if not gh_authenticated:
         yield CompletionEvent(
             PrepError(
@@ -70,7 +70,7 @@ def execute_prep(
 
     # Step 1: Get current branch
     yield ProgressEvent("Getting current branch...")
-    branch_name = ops.git().get_current_branch(cwd)
+    branch_name = ops.git.get_current_branch(cwd)
     if branch_name is None:
         yield CompletionEvent(
             PrepError(
@@ -84,8 +84,8 @@ def execute_prep(
 
     # Step 2: Get parent branch
     yield ProgressEvent("Getting parent branch...")
-    repo_root = ops.git().get_repository_root(cwd)
-    parent_branch = ops.main_graphite().get_parent_branch(ops.git(), repo_root, branch_name)
+    repo_root = ops.git.get_repository_root(cwd)
+    parent_branch = ops.graphite.get_parent_branch(ops.git, repo_root, branch_name)
     if parent_branch is None:
         yield CompletionEvent(
             PrepError(
@@ -101,7 +101,7 @@ def execute_prep(
     yield ProgressEvent("Checking for restack conflicts... (gt restack --dry-run)")
     try:
         # Run restack dry-run to check for conflicts
-        ops.main_graphite().restack(repo_root, no_interactive=True, quiet=True)
+        ops.graphite.restack(repo_root, no_interactive=True, quiet=True)
         yield ProgressEvent("No restack conflicts detected", style="success")
     except subprocess.CalledProcessError as e:
         # Check if failure was due to conflicts
@@ -129,7 +129,7 @@ def execute_prep(
 
     # Step 4: Count commits in branch
     yield ProgressEvent(f"Counting commits ahead of {parent_branch}...")
-    commit_count = ops.git().count_commits_ahead(cwd, parent_branch)
+    commit_count = ops.git.count_commits_ahead(cwd, parent_branch)
     if commit_count == 0:
         yield CompletionEvent(
             PrepError(
@@ -146,7 +146,7 @@ def execute_prep(
     if commit_count >= 2:
         yield ProgressEvent(f"Squashing {commit_count} commits... (gt squash --no-edit)")
         try:
-            ops.main_graphite().squash_branch(repo_root, quiet=False)
+            ops.graphite.squash_branch(repo_root, quiet=False)
             squashed = True
             yield ProgressEvent(f"Squashed {commit_count} commits into 1", style="success")
         except subprocess.CalledProcessError as e:
@@ -187,7 +187,7 @@ def execute_prep(
 
     # Step 6: Get local diff (not PR diff - we haven't submitted yet)
     yield ProgressEvent(f"Getting diff from {parent_branch}...HEAD")
-    diff_content = ops.git().get_diff_to_branch(repo_root, parent_branch)
+    diff_content = ops.git.get_diff_to_branch(repo_root, parent_branch)
     diff_lines = len(diff_content.splitlines())
     yield ProgressEvent(f"Diff retrieved ({diff_lines} lines)", style="success")
 

@@ -39,17 +39,17 @@ def execute_update_pr(
         - details: dict (if failed, for additional context)
     """
     # 1. Commit if uncommitted changes
-    if ops.git().has_uncommitted_changes(cwd):
+    if ops.git.has_uncommitted_changes(cwd):
         yield ProgressEvent("Staging uncommitted changes...")
         try:
-            ops.git().add_all(cwd)
+            ops.git.add_all(cwd)
         except subprocess.CalledProcessError:
             yield CompletionEvent({"success": False, "error": "Failed to stage changes"})
             return
 
         yield ProgressEvent("Committing changes...")
         try:
-            ops.git().commit(cwd, "Update changes")
+            ops.git.commit(cwd, "Update changes")
         except subprocess.CalledProcessError:
             yield CompletionEvent({"success": False, "error": "Failed to commit changes"})
             return
@@ -58,8 +58,8 @@ def execute_update_pr(
     # 2. Restack with conflict detection
     yield ProgressEvent("Restacking branch...")
     try:
-        repo_root = ops.git().get_repository_root(cwd)
-        ops.main_graphite().restack(repo_root, no_interactive=True, quiet=False)
+        repo_root = ops.git.get_repository_root(cwd)
+        ops.graphite.restack(repo_root, no_interactive=True, quiet=False)
     except subprocess.CalledProcessError as e:
         has_output = hasattr(e, "stdout") and hasattr(e, "stderr")
         combined_output = e.stdout + e.stderr if has_output else str(e)
@@ -93,7 +93,7 @@ def execute_update_pr(
     # 3. Submit update
     yield ProgressEvent("Submitting PR update...")
     try:
-        ops.main_graphite().submit_stack(repo_root, publish=True, restack=False, quiet=False)
+        ops.graphite.submit_stack(repo_root, publish=True, restack=False, quiet=False)
     except RuntimeError as e:
         error_str = str(e).lower()
         # Detect remote divergence - this requires manual resolution
@@ -115,12 +115,12 @@ def execute_update_pr(
 
     # 4. Fetch PR info after submission
     yield ProgressEvent("Fetching PR info...")
-    branch = ops.git().get_current_branch(cwd)
+    branch = ops.git.get_current_branch(cwd)
     if branch is None:
         yield CompletionEvent({"success": False, "error": "Could not determine current branch"})
         return
 
-    pr_info = ops.github().get_pr_info_for_branch(repo_root, branch)
+    pr_info = ops.github.get_pr_info_for_branch(repo_root, branch)
     if not pr_info:
         yield CompletionEvent(
             {"success": False, "error": "PR submission succeeded but failed to retrieve PR info"}

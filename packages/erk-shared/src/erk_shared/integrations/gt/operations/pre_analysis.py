@@ -33,7 +33,7 @@ def execute_pre_analysis(
     """
     # Step 0a: Check Graphite authentication FIRST (before any git operations)
     yield ProgressEvent("Checking Graphite authentication... (gt auth whoami)")
-    gt_authenticated, gt_username, _ = ops.main_graphite().check_auth_status()
+    gt_authenticated, gt_username, _ = ops.graphite.check_auth_status()
     if not gt_authenticated:
         yield CompletionEvent(
             PreAnalysisError(
@@ -51,7 +51,7 @@ def execute_pre_analysis(
 
     # Step 0b: Check GitHub authentication (required for PR operations)
     yield ProgressEvent("Checking GitHub authentication... (gh auth status)")
-    gh_authenticated, gh_username, _ = ops.github().check_auth_status()
+    gh_authenticated, gh_username, _ = ops.github.check_auth_status()
     if not gh_authenticated:
         yield CompletionEvent(
             PreAnalysisError(
@@ -69,10 +69,10 @@ def execute_pre_analysis(
 
     # Step 0c: Check for and commit uncommitted changes
     uncommitted_changes_committed = False
-    if ops.git().has_uncommitted_changes(cwd):
+    if ops.git.has_uncommitted_changes(cwd):
         yield ProgressEvent("Staging uncommitted changes... (git add -A)")
         try:
-            ops.git().add_all(cwd)
+            ops.git.add_all(cwd)
             yield ProgressEvent("Changes staged", style="success")
         except subprocess.CalledProcessError:
             yield CompletionEvent(
@@ -87,7 +87,7 @@ def execute_pre_analysis(
 
         yield ProgressEvent("Committing staged changes... (git commit)")
         try:
-            ops.git().commit(cwd, "WIP: Prepare for submission")
+            ops.git.commit(cwd, "WIP: Prepare for submission")
             uncommitted_changes_committed = True
             yield ProgressEvent("Uncommitted changes committed", style="success")
         except subprocess.CalledProcessError:
@@ -103,7 +103,7 @@ def execute_pre_analysis(
 
     # Step 1: Get current branch
     yield ProgressEvent("Getting current branch...")
-    branch_name = ops.git().get_current_branch(cwd)
+    branch_name = ops.git.get_current_branch(cwd)
 
     if branch_name is None:
         yield CompletionEvent(
@@ -118,8 +118,8 @@ def execute_pre_analysis(
 
     # Step 2: Get parent branch
     yield ProgressEvent("Getting parent branch...")
-    repo_root = ops.git().get_repository_root(cwd)
-    parent_branch = ops.main_graphite().get_parent_branch(ops.git(), repo_root, branch_name)
+    repo_root = ops.git.get_repository_root(cwd)
+    parent_branch = ops.graphite.get_parent_branch(ops.git, repo_root, branch_name)
 
     if parent_branch is None:
         yield CompletionEvent(
@@ -134,7 +134,7 @@ def execute_pre_analysis(
 
     # Step 2.5: Check for merge conflicts (informational only, does not block)
     # First try GitHub API if PR exists (most accurate), then fallback to local git merge-tree
-    pr_status_info = ops.github().get_pr_info_for_branch(repo_root, branch_name)
+    pr_status_info = ops.github.get_pr_info_for_branch(repo_root, branch_name)
 
     # Track conflict info (will be included in success result)
     has_conflicts = False
@@ -143,7 +143,7 @@ def execute_pre_analysis(
     if pr_status_info is not None:
         pr_number, pr_url = pr_status_info
         # PR exists - check mergeability
-        mergeable, merge_state = ops.github().get_pr_mergeability_status(repo_root, pr_number)
+        mergeable, merge_state = ops.github.get_pr_mergeability_status(repo_root, pr_number)
 
         if mergeable == "CONFLICTING":
             has_conflicts = True
@@ -167,7 +167,7 @@ def execute_pre_analysis(
 
     else:
         # No PR yet - fallback to local git merge-tree check
-        if ops.git().check_merge_conflicts(cwd, parent_branch, branch_name):
+        if ops.git.check_merge_conflicts(cwd, parent_branch, branch_name):
             has_conflicts = True
             conflict_details = {
                 "parent_branch": parent_branch,
@@ -180,7 +180,7 @@ def execute_pre_analysis(
 
     # Step 3: Count commits in branch
     yield ProgressEvent(f"Counting commits ahead of {parent_branch}...")
-    commit_count = ops.git().count_commits_ahead(cwd, parent_branch)
+    commit_count = ops.git.count_commits_ahead(cwd, parent_branch)
 
     if commit_count == 0:
         yield CompletionEvent(
@@ -198,7 +198,7 @@ def execute_pre_analysis(
     if commit_count >= 2:
         yield ProgressEvent(f"Squashing {commit_count} commits... (gt squash --no-edit)")
         try:
-            ops.main_graphite().squash_branch(repo_root, quiet=False)
+            ops.graphite.squash_branch(repo_root, quiet=False)
             squashed = True
             yield ProgressEvent(f"Squashed {commit_count} commits into 1", style="success")
         except subprocess.CalledProcessError as e:

@@ -1,11 +1,13 @@
-"""Abstract operations interfaces for GT kit subprocess commands.
+"""Structural typing interface for GT kit operations.
 
-This module defines ABC interfaces for Graphite (gt) and GitHub (gh) operations
-used by GT kit CLI commands. These interfaces enable dependency injection with
-in-memory fakes for testing while maintaining type safety.
+This module defines a Protocol interface for Graphite (gt) and GitHub (gh) operations
+used by GT kit CLI commands. Using Protocol enables structural typing, allowing any
+object with the required attributes (like ErkContext) to be used without explicit
+inheritance.
 
 Design:
-- Composite GtKit interface that combines Git, GitHub, and main_graphite()
+- Protocol-based GtKit interface that combines Git, GitHub, and Graphite attributes
+- Enables structural typing: ErkContext or any object with these attributes works
 - Return values match existing subprocess patterns (str | None, bool, etc.)
 - LBYL pattern: operations check state, return None/False on failure
 
@@ -13,44 +15,44 @@ Note: Git operations are provided by the core Git interface from erk_shared.git.
 GitHub operations use the main GitHub ABC from erk_shared.github.
 """
 
-from abc import ABC, abstractmethod
+from typing import Protocol
 
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.integrations.graphite.abc import Graphite
 
 
-class GtKit(ABC):
-    """Composite interface combining all GT kit operations.
+class GtKit(Protocol):
+    """Structural typing interface combining all GT kit operations.
 
-    This interface provides a single injection point for all git, Graphite,
+    This Protocol provides a single injection point for all git, Graphite,
     and GitHub operations used by GT kit CLI commands.
+
+    Uses Protocol for structural typing compatibility, meaning any object with
+    git, github, and graphite attributes (like ErkContext) can be used directly
+    without explicit inheritance.
 
     GitHub operations use the main GitHub ABC from erk_shared.github which
     provides methods that take repo_root as a parameter rather than operating
     on the "current" branch.
+
+    Note: Properties are used instead of bare attributes to make the Protocol
+    read-only compatible. This allows frozen dataclasses (like ErkContext) to
+    satisfy the Protocol - a read-only consumer accepts both read-only and
+    read-write providers.
     """
 
-    @abstractmethod
+    @property
     def git(self) -> Git:
-        """Get the git operations interface.
+        """Git operations interface."""
+        ...
 
-        Returns:
-            Git implementation
-        """
-
-    @abstractmethod
+    @property
     def github(self) -> GitHub:
-        """Get the GitHub operations interface.
+        """GitHub operations interface."""
+        ...
 
-        Returns:
-            GitHub implementation from erk_shared.github
-        """
-
-    @abstractmethod
-    def main_graphite(self) -> Graphite:
-        """Get the main Graphite operations interface.
-
-        Returns:
-            Graphite implementation for full graphite operations
-        """
+    @property
+    def graphite(self) -> Graphite:
+        """Graphite operations interface."""
+        ...

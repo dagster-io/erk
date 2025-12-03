@@ -30,14 +30,14 @@ def execute_land_pr(
     """
     # Step 1: Get current branch
     yield ProgressEvent("Getting current branch...")
-    branch_name = ops.git().get_current_branch(cwd)
+    branch_name = ops.git.get_current_branch(cwd)
     if branch_name is None:
         branch_name = "unknown"
 
     # Step 2: Get parent branch
     yield ProgressEvent("Getting parent branch...")
-    repo_root = ops.git().get_repository_root(cwd)
-    parent = ops.main_graphite().get_parent_branch(ops.git(), repo_root, branch_name)
+    repo_root = ops.git.get_repository_root(cwd)
+    parent = ops.graphite.get_parent_branch(ops.git, repo_root, branch_name)
 
     if parent is None:
         yield CompletionEvent(
@@ -52,7 +52,7 @@ def execute_land_pr(
 
     # Step 3: Validate parent is trunk
     yield ProgressEvent("Validating parent is trunk branch...")
-    trunk = ops.git().detect_trunk_branch(repo_root)
+    trunk = ops.git.detect_trunk_branch(repo_root)
     if parent != trunk:
         yield CompletionEvent(
             LandPrError(
@@ -74,7 +74,7 @@ def execute_land_pr(
 
     # Step 4: Check PR exists and is open
     yield ProgressEvent("Checking PR status...")
-    pr_state_info = ops.github().get_pr_state_for_branch(repo_root, branch_name)
+    pr_state_info = ops.github.get_pr_state_for_branch(repo_root, branch_name)
     if pr_state_info is None:
         yield CompletionEvent(
             LandPrError(
@@ -108,15 +108,19 @@ def execute_land_pr(
         )
         return
 
-    # Step 5: Get PR title and body for merge commit message
+    # Step 5: Get children branches
+    yield ProgressEvent("Getting child branches...")
+    children = ops.graphite.get_child_branches(ops.git, repo_root, branch_name)
+
+    # Step 6: Get PR title and body for merge commit message
     yield ProgressEvent("Getting PR metadata...")
-    pr_title = ops.github().get_pr_title(repo_root, pr_number)
-    pr_body = ops.github().get_pr_body(repo_root, pr_number)
+    pr_title = ops.github.get_pr_title(repo_root, pr_number)
+    pr_body = ops.github.get_pr_body(repo_root, pr_number)
 
     # Merge with squash using title and body
     yield ProgressEvent(f"Merging PR #{pr_number}...")
     subject = f"{pr_title} (#{pr_number})" if pr_title else None
-    if not ops.github().merge_pr(repo_root, pr_number, subject=subject, body=pr_body):
+    if not ops.github.merge_pr(repo_root, pr_number, subject=subject, body=pr_body):
         yield CompletionEvent(
             LandPrError(
                 success=False,
@@ -134,11 +138,45 @@ def execute_land_pr(
 
     yield ProgressEvent(f"PR #{pr_number} merged successfully", style="success")
 
+    # Step 7: Navigate to child if exactly one exists
+    child_branch = None
+    if len(children) == 1:
+        # Use git checkout to switch to the child branch
+        yield ProgressEvent(f"Navigating to child branch: {children[0]}...")
+        try:
+            ops.git.checkout_branch(cwd, children[0])
+            child_branch = children[0]
+            yield ProgressEvent(f"Switched to {child_branch}", style="success")
+        except Exception:
+            yield ProgressEvent(f"Failed to switch to {children[0]}", style="warning")
+
+    # Build success message with navigation info
+    if len(children) == 0:
+        message = f"Successfully merged PR #{pr_number} for branch {branch_name}"
+    elif len(children) == 1:
+        if child_branch:
+            message = (
+                f"Successfully merged PR #{pr_number} for branch {branch_name}\n"
+                f"Navigated to child branch: {child_branch}"
+            )
+        else:
+            message = (
+                f"Successfully merged PR #{pr_number} for branch {branch_name}\n"
+                f"Failed to navigate to child: {children[0]}"
+            )
+    else:
+        children_list = ", ".join(children)
+        message = (
+            f"Successfully merged PR #{pr_number} for branch {branch_name}\n"
+            f"Multiple children detected: {children_list}\n"
+            f"Run 'gt up' to navigate to a child branch"
+        )
+
     yield CompletionEvent(
         LandPrSuccess(
             success=True,
             pr_number=pr_number,
             branch_name=branch_name,
-            message=f"Successfully merged PR #{pr_number} for branch {branch_name}",
+            message=message,
         )
     )
