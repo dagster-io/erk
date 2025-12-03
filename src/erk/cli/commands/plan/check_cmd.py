@@ -1,7 +1,5 @@
 """Command to validate plan format against Schema v2 requirements."""
 
-from urllib.parse import urlparse
-
 import click
 from erk_shared.github.metadata import (
     PlanHeaderSchema,
@@ -11,34 +9,9 @@ from erk_shared.github.metadata import (
 from erk_shared.output.output import user_output
 
 from erk.cli.core import discover_repo_context
+from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
-
-
-def _parse_identifier(identifier: str) -> int:
-    """Parse issue number from number string or GitHub URL.
-
-    Args:
-        identifier: Issue number string (e.g., "42") or GitHub URL
-
-    Returns:
-        Issue number as integer
-
-    Raises:
-        ValueError: If identifier is invalid
-    """
-    if identifier.isdigit():
-        return int(identifier)
-
-    # Security: Use proper URL parsing to validate hostname
-    parsed = urlparse(identifier)
-    if parsed.hostname == "github.com" and parsed.path:
-        parts = parsed.path.rstrip("/").split("/")
-        if len(parts) >= 2 and parts[-2] == "issues":
-            if parts[-1].isdigit():
-                return int(parts[-1])
-
-    raise ValueError(f"Invalid identifier: {identifier}")
 
 
 @click.command("check")
@@ -58,12 +31,8 @@ def check_plan(ctx: ErkContext, identifier: str) -> None:
     ensure_erk_metadata_dir(repo)  # Ensure erk metadata directories exist
     repo_root = repo.root  # Use git repository root for GitHub operations
 
-    # Parse identifier
-    try:
-        issue_number = _parse_identifier(identifier)
-    except ValueError as e:
-        user_output(click.style("Error: ", fg="red") + str(e))
-        raise SystemExit(1) from e
+    # Parse identifier - raises click.ClickException if invalid
+    issue_number = parse_issue_identifier(identifier)
 
     user_output(f"Validating plan #{issue_number}...")
     user_output("")

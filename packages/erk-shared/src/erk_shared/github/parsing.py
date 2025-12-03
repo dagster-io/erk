@@ -289,6 +289,106 @@ def parse_aggregated_check_counts(
     return (passing, total_count)
 
 
+def parse_issue_number_from_url(url: str) -> int | None:
+    """Extract issue number from GitHub issue URL.
+
+    Args:
+        url: GitHub issue URL (e.g., "https://github.com/owner/repo/issues/123")
+
+    Returns:
+        Issue number as int, or None if URL doesn't match expected pattern.
+        Also handles URLs with query strings or fragments like
+        "https://github.com/owner/repo/issues/789#issuecomment-123"
+
+    Example:
+        >>> parse_issue_number_from_url("https://github.com/owner/repo/issues/123")
+        123
+        >>> parse_issue_number_from_url("https://github.com/owner/repo/issues/789#issuecomment-123")
+        789
+    """
+    match = re.match(r"https://github\.com/[^/]+/[^/]+/issues/(\d+)", url)
+    if match:
+        return int(match.group(1))
+    return None
+
+
+def parse_pr_number_from_url(url: str) -> int | None:
+    """Extract PR number from GitHub PR URL.
+
+    Args:
+        url: GitHub PR URL (e.g., "https://github.com/owner/repo/pull/123")
+
+    Returns:
+        PR number as int, or None if URL doesn't match expected pattern.
+        Also handles URLs with query strings or fragments like
+        "https://github.com/owner/repo/pull/789#issuecomment-123"
+
+    Example:
+        >>> parse_pr_number_from_url("https://github.com/owner/repo/pull/123")
+        123
+        >>> parse_pr_number_from_url("https://github.com/owner/repo/pull/789#issuecomment-123")
+        789
+    """
+    match = re.match(r"https://github\.com/[^/]+/[^/]+/pull/(\d+)", url)
+    if match:
+        return int(match.group(1))
+    return None
+
+
+def construct_workflow_run_url(owner: str, repo: str, run_id: int | str) -> str:
+    """Construct GitHub Actions workflow run URL.
+
+    Args:
+        owner: Repository owner
+        repo: Repository name
+        run_id: Workflow run ID (int or string)
+
+    Returns:
+        Workflow run URL
+
+    Example:
+        >>> construct_workflow_run_url("dagster-io", "erk", 1234567890)
+        "https://github.com/dagster-io/erk/actions/runs/1234567890"
+    """
+    return f"https://github.com/{owner}/{repo}/actions/runs/{run_id}"
+
+
+def construct_pr_url(owner: str, repo: str, pr_number: int) -> str:
+    """Construct GitHub PR URL.
+
+    Args:
+        owner: Repository owner
+        repo: Repository name
+        pr_number: PR number
+
+    Returns:
+        PR URL
+
+    Example:
+        >>> construct_pr_url("dagster-io", "erk", 123)
+        "https://github.com/dagster-io/erk/pull/123"
+    """
+    return f"https://github.com/{owner}/{repo}/pull/{pr_number}"
+
+
+def construct_issue_url(owner: str, repo: str, issue_number: int) -> str:
+    """Construct GitHub issue URL.
+
+    Args:
+        owner: Repository owner
+        repo: Repository name
+        issue_number: Issue number
+
+    Returns:
+        Issue URL
+
+    Example:
+        >>> construct_issue_url("dagster-io", "erk", 456)
+        "https://github.com/dagster-io/erk/issues/456"
+    """
+    return f"https://github.com/{owner}/{repo}/issues/{issue_number}"
+
+
 def parse_gh_auth_status_output(output: str) -> tuple[bool, str | None, str | None]:
     """Parse gh auth status output to extract authentication info.
 

@@ -21,6 +21,7 @@ from erk_shared.output.output import user_output
 from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.cli.ensure import Ensure
+from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.shell_utils import render_navigation_script
 from erk.cli.subprocess_utils import run_with_error_reporting
 from erk.core.context import ErkContext
@@ -362,49 +363,6 @@ def quote_env_value(value: str) -> str:
     return f'"{escaped}"'
 
 
-def parse_issue_number(issue_input: str) -> str:
-    """Parse GitHub issue number from URL or plain number.
-
-    Args:
-        issue_input: Either a plain issue number (e.g., "123") or a GitHub URL
-                    (e.g., "https://github.com/owner/repo/issues/456")
-
-    Returns:
-        Issue number as string
-
-    Raises:
-        SystemExit: If input format is invalid
-
-    Examples:
-        >>> parse_issue_number("123")
-        "123"
-        >>> parse_issue_number("https://github.com/owner/repo/issues/456")
-        "456"
-        >>> parse_issue_number("https://github.com/owner/repo/issues/789#issuecomment-123")
-        "789"
-    """
-    import re
-
-    # Pattern matches:
-    # - Optional "issues/" prefix
-    # - Digits
-    # - Optional query string or fragment
-    pattern = r"(?:issues/)?(\d+)(?:[?#].*)?$"
-    match = re.search(pattern, issue_input)
-
-    if not match:
-        user_output(
-            click.style("Error: ", fg="red")
-            + f"Invalid issue number or URL: {issue_input}\n\n"
-            + "Expected formats:\n"
-            + "  • Plain number: 123\n"
-            + "  • GitHub URL: https://github.com/owner/repo/issues/456"
-        )
-        raise SystemExit(1)
-
-    return match.group(1)
-
-
 def _create_json_response(
     *,
     worktree_name: str,
@@ -603,7 +561,7 @@ def create_wt(
         )
 
     # Initialize variables used in conditional blocks (for type checking)
-    issue_number_parsed: str | None = None
+    issue_number_parsed: int | None = None
     issue_info: IssueInfo | None = None
 
     # Handle --from-current-branch flag
@@ -649,8 +607,8 @@ def create_wt(
         Ensure.invariant(
             not name, "Cannot specify both NAME and --from-issue. Use one or the other."
         )
-        # Parse issue number from URL or plain number
-        issue_number_parsed = parse_issue_number(from_issue)
+        # Parse issue number from URL or plain number - raises click.ClickException if invalid
+        issue_number_parsed = parse_issue_identifier(from_issue)
         # Note: name will be derived from issue title after fetching
         # Defer fetch until after repo discovery below
         name = None  # Will be set after fetching issue
@@ -688,7 +646,7 @@ def create_wt(
 
         # Fetch issue using integration layer
         try:
-            issue_info = ctx.issues.get_issue(repo.root, int(issue_number_parsed))
+            issue_info = ctx.issues.get_issue(repo.root, issue_number_parsed)
         except RuntimeError as e:
             user_output(
                 click.style("Error: ", fg="red")
@@ -722,7 +680,7 @@ def create_wt(
         desired_branch_name = base_branch_name + timestamp_suffix
         dev_branch = ctx.issue_link_branches.create_development_branch(
             repo.root,
-            int(issue_number_parsed),
+            issue_number_parsed,
             branch_name=desired_branch_name,
             base_branch=trunk_branch,
         )
