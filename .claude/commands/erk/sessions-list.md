@@ -1,16 +1,3 @@
-# Create Session List Command
-
-## Objective
-
-Create a Claude command `/erk:sessions-list` that lists the 10 most recent sessions for the current worktree with session ID, date, and a brief summary.
-
-## Implementation
-
-### Step 1: Create the Command File
-
-**File:** `.claude/commands/erk/sessions-list.md`
-
-````markdown
 ---
 description: List recent sessions for the current worktree
 ---
@@ -24,7 +11,6 @@ Lists the 10 most recent Claude Code sessions associated with the current worktr
 ```bash
 /erk:sessions-list
 ```
-````
 
 ## Output
 
@@ -81,24 +67,4 @@ If no sessions found, display:
 
 ```
 No sessions found for this worktree.
-```
-
-```
-
-### Step 2: Test the Command
-
-Run `/erk:sessions-list` to verify output formatting.
-
-## Files to Create/Modify
-
-| File | Action |
-|------|--------|
-| `.claude/commands/erk/sessions-list.md` | Create new |
-
-## Notes
-
-- Uses existing `find-project-dir` kit CLI - no new Python code needed
-- Summary extraction reads only first 50 lines per session (fast)
-- Truncates summary to 60 chars for readability
-- Shows 8-char session ID prefix (enough to identify uniquely)
 ```
