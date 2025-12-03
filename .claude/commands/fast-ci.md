@@ -18,9 +18,10 @@ The `make fast-ci` target runs these checks in order:
 2. **format-check** - Ruff code formatting checks
 3. **prettier-check** - Markdown formatting checks
 4. **md-check** - AGENTS.md standard compliance validation
-5. **pyright** - Type checking
-6. **test** - Pytest unit tests only (fast feedback loop)
-7. **check** - Kit synchronization validation
+5. **docs-validate** - Agent documentation frontmatter validation
+6. **pyright** - Type checking
+7. **test** - Pytest unit tests only (fast feedback loop)
+8. **check** - Kit synchronization validation
 
 ## Iteration Process
 

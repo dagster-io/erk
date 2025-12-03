@@ -1,4 +1,4 @@
-.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test fast-ci all-ci check md-check clean publish fix reinstall-erk-tools
+.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test fast-ci all-ci check md-check docs-validate clean publish fix reinstall-erk-tools
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -76,6 +76,9 @@ check:
 md-check:
 	uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits"
 
+docs-validate:
+	uv run dot-agent docs validate
+
 # Removed: land-branch command has been deprecated
 # Removed: sync-dignified-python-universal (obsolete - shared content now referenced directly)
 
@@ -87,6 +90,7 @@ fast-ci:
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
 	echo "\n--- Markdown Check ---" && uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" || exit_code=1; \
+	echo "\n--- Docs Validate ---" && uv run dot-agent docs validate || exit_code=1; \
 	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
@@ -103,6 +107,7 @@ all-ci:
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
 	echo "\n--- Markdown Check ---" && uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" || exit_code=1; \
+	echo "\n--- Docs Validate ---" && uv run dot-agent docs validate || exit_code=1; \
 	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
 	echo "\n--- Integration Tests (erk) ---" && uv run pytest tests/integration/ -n auto || exit_code=1; \
