@@ -52,7 +52,6 @@ def test_pr_land_success_navigates_to_trunk() -> None:
             success=True,
             pr_number=123,
             branch_name="feature-1",
-            child_branch=None,
             message="Successfully merged PR #123 for branch feature-1",
         )
 
@@ -245,7 +244,6 @@ def test_pr_land_with_trunk_in_worktree() -> None:
             success=True,
             pr_number=123,
             branch_name="feature-1",
-            child_branch=None,
             message="Successfully merged PR #123",
         )
 
@@ -297,7 +295,6 @@ def test_pr_land_no_script_flag_shows_instructions() -> None:
             success=True,
             pr_number=123,
             branch_name="feature-1",
-            child_branch=None,
             message="Successfully merged PR #123",
         )
 
@@ -440,7 +437,6 @@ def test_pr_land_changes_directory_before_deletion() -> None:
             success=True,
             pr_number=123,
             branch_name="feature-1",
-            child_branch=None,
             message="Successfully merged PR #123",
         )
 

@@ -20,8 +20,8 @@ def runner() -> CliRunner:
 class TestLandPrExecution:
     """Tests for land_pr execution logic using fakes."""
 
-    def test_land_pr_success_no_children(self, tmp_path: Path) -> None:
-        """Test successfully landing a PR with no children."""
+    def test_land_pr_success(self, tmp_path: Path) -> None:
+        """Test successfully landing a PR."""
         # Setup: feature branch on main with open PR
         ops = (
             FakeGtKitOps()
@@ -36,45 +36,7 @@ class TestLandPrExecution:
         assert result.success is True
         assert result.pr_number == 123
         assert result.branch_name == "feature-branch"
-        assert result.child_branch is None
         assert "Successfully merged PR #123" in result.message
-
-    def test_land_pr_success_single_child(self, tmp_path: Path) -> None:
-        """Test successfully landing a PR with single child (auto-navigate)."""
-        # Setup: feature branch on main with PR and one child
-        ops = (
-            FakeGtKitOps()
-            .with_repo_root(str(tmp_path))
-            .with_branch("feature-branch", parent="main")
-            .with_pr(123, state="OPEN")
-            .with_children(["next-feature"])
-        )
-
-        result = render_events(execute_land_pr(ops, tmp_path))
-
-        assert isinstance(result, LandPrSuccess)
-        assert result.success is True
-        assert result.child_branch == "next-feature"
-        assert "Navigated to child branch: next-feature" in result.message
-
-    def test_land_pr_success_multiple_children(self, tmp_path: Path) -> None:
-        """Test successfully landing a PR with multiple children (no auto-navigate)."""
-        # Setup: feature branch on main with PR and multiple children
-        ops = (
-            FakeGtKitOps()
-            .with_repo_root(str(tmp_path))
-            .with_branch("feature-branch", parent="main")
-            .with_pr(123, state="OPEN")
-            .with_children(["feature-a", "feature-b"])
-        )
-
-        result = render_events(execute_land_pr(ops, tmp_path))
-
-        assert isinstance(result, LandPrSuccess)
-        assert result.success is True
-        assert result.child_branch is None
-        assert "Multiple children detected" in result.message
-        assert "feature-a, feature-b" in result.message
 
     def test_land_pr_error_parent_not_trunk(self, tmp_path: Path) -> None:
         """Test error when branch parent is not trunk."""

@@ -68,7 +68,6 @@ class LandPrSuccess:
     success: bool
     pr_number: int
     branch_name: str
-    child_branch: str | None
     message: str
 
 
