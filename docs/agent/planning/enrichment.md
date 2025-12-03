@@ -444,7 +444,7 @@ Plans describe WHAT to do, not HOW to code it.
 
 ## Related Documentation
 
-- **Planning Workflow**: [planning-workflow.md](planning-workflow.md) - `.impl/` folder structure and commands
-- **Hooks**: [hooks-erk.md](hooks-erk.md) - Understanding hook reminders during planning
-- **Glossary**: [glossary.md](glossary.md) - Definitions of erk terminology
-- **Documentation Guide**: [guide.md](guide.md) - Navigation hub for all agent docs
+- **Planning Workflow**: [workflow.md](workflow.md) - `.impl/` folder structure and commands
+- **Hooks**: [Erk Hooks](../hooks/erk.md) - Understanding hook reminders during planning
+- **Glossary**: [glossary.md](../glossary.md) - Definitions of erk terminology
+- **Documentation Guide**: [guide.md](../guide.md) - Navigation hub for all agent docs

@@ -327,4 +327,4 @@ console.print()  # Blank line after table
 
 ## See Also
 
-- [cli-script-mode.md](cli-script-mode.md) - Script mode for shell integration (suppressing diagnostics)
+- [script-mode.md](script-mode.md) - Script mode for shell integration (suppressing diagnostics)

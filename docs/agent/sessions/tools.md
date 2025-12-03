@@ -176,7 +176,7 @@ done
    - Large Glob results → narrow patterns
    - Command loaded multiple times → check command size
 
-See [context-window-analysis.md](context-window-analysis.md) for optimization strategies.
+See [context-analysis.md](context-analysis.md) for optimization strategies.
 
 ### Agent Subprocess Failed
 
@@ -214,7 +214,7 @@ See [context-window-analysis.md](context-window-analysis.md) for optimization st
 
 ## Session Log Format Reference
 
-For complete documentation of the JSONL format, entry types, and field specifications, see [claude-code-session-layout.md](claude-code-session-layout.md).
+For complete documentation of the JSONL format, entry types, and field specifications, see [layout.md](layout.md).
 
 Key points:
 
@@ -225,5 +225,5 @@ Key points:
 
 ## Related Documentation
 
-- [claude-code-session-layout.md](claude-code-session-layout.md) - Complete format specification
-- [context-window-analysis.md](context-window-analysis.md) - Analyzing context consumption
+- [layout.md](layout.md) - Complete format specification
+- [context-analysis.md](context-analysis.md) - Analyzing context consumption

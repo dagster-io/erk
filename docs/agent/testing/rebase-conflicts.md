@@ -1,19 +1,22 @@
 ---
-title: Resolving Test Infrastructure Conflicts
+title: Erk Test Rebase Conflicts
 read_when:
-  - "fixing merge conflicts in tests"
-  - "resolving rebase conflicts"
-  - "updating test infrastructure during merges"
+  - "fixing merge conflicts in erk tests"
+  - "ErkContext API changes during rebase"
+  - "env_helpers conflicts"
 ---
 
-# Resolving Test Infrastructure Merge Conflicts
+# Erk Test Rebase Conflicts
 
-**Knowledge extracted from**: 2025-01-10 merge conflict resolution session
+**For generic merge conflict resolution**: Use the `/erk:merge-conflicts-fix` command.
+
+This document covers **erk-specific test patterns** you'll encounter during rebases: ErkContext API evolution, env_helpers, parameter renames.
+
 **Time saved**: 8-12x faster with this guide (2 hours → 10-15 minutes)
 
 ## Quick Start
 
-When you encounter merge conflicts in test files during a rebase, follow this guide. Test infrastructure conflicts are usually **mechanical** (both branches fixing the same issue with different timing) rather than semantic.
+When you encounter merge conflicts in **erk test files** during a rebase, check this guide. Test infrastructure conflicts are usually **mechanical** (both branches fixing the same issue with different timing) rather than semantic.
 
 ### Pre-Flight Check
 
@@ -552,9 +555,9 @@ dfead85f - Migrates tests to use env_helpers.py
 
 ## Additional Resources
 
-- **Test patterns**: `docs/agent/testing.md`
+- **Test patterns**: [testing.md](testing.md)
 - **Test infrastructure**: `tests/AGENTS.md`
-- **Dignified Python**: Load `dignified-python` skill before editing
+- **Dignified Python**: Load `dignified-python-313` skill before editing
 - **Codebase standards**: `AGENTS.md`
 
 ## Session Metadata

@@ -188,6 +188,6 @@ done
 
 ## See Also
 
-- [erk-architecture.md](erk-architecture.md) - Worktree management in erk
-- [planning-workflow.md](planning-workflow.md) - Plan-based development workflow
+- [Architecture](../architecture/) - Worktree management in erk
+- [Planning](../planning/) - Plan-based development workflow
 - Load `gt-graphite` skill for Graphite stack management

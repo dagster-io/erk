@@ -10,21 +10,40 @@ read_when:
 
 ## Quick Navigation
 
-The documentation is organized by audience and purpose:
+The documentation is organized by topic category:
+
+### Documentation Categories
+
+| Category                      | Description                                      |
+| ----------------------------- | ------------------------------------------------ |
+| [Architecture](architecture/) | Core patterns, interfaces, subprocess wrappers   |
+| [CLI Development](cli/)       | Command organization, output styling, formatting |
+| [Planning](planning/)         | Plan lifecycle, enrichment, agent delegation     |
+| [Testing](testing/)           | Test architecture, fakes, rebase conflicts       |
+| [Sessions](sessions/)         | Session logs, context analysis, tools            |
+| [Hooks](hooks/)               | Hook system, erk-specific hooks                  |
+| [Kits](kits/)                 | Kit CLI commands, kit architecture               |
+| [Commands](commands/)         | Slash command optimization                       |
+| [Reference](reference/)       | GitHub integration, external references          |
+| [Erk](erk/)                   | Erk-specific workflows                           |
+
+### Root Documents
+
+- [glossary.md](glossary.md) - Project terminology and definitions
+- [conventions.md](conventions.md) - Naming conventions
+- [guide.md](guide.md) - This navigation guide
 
 ### For Agents (AI Assistants)
 
 **Python Coding Standards:**
 
-- Load the `dignified-python` skill for all Python coding standards
+- Load the `dignified-python-313` skill for all Python coding standards
 - Covers: exception handling, type annotations, imports, ABC patterns, file operations, CLI development
 
-**Erk-Specific Documentation:**
+**Testing:**
 
-- [glossary.md](glossary.md) - Project terminology and definitions
-- [testing.md](testing.md) - Testing architecture with fakes and ops patterns
-- [command-agent-delegation.md](command-agent-delegation.md) - Command-agent delegation pattern for workflow orchestration
-- [claude-code-session-layout.md](claude-code-session-layout.md) - Claude Code session log structure and format (`~/.claude/projects/`)
+- Load the `fake-driven-testing` skill for testing guidance
+- See [Testing](testing/) for reference documentation
 
 ### For Humans
 
@@ -34,45 +53,46 @@ The documentation is organized by audience and purpose:
 
 ## Project Planning Files
 
-**`.PLAN.md`** - Local implementation planning document
+**`.impl/`** - Local implementation planning folder
 
-- Located at repository root (`.PLAN.md`)
-- **In `.gitignore`** - Not tracked by git, local-only
-- Used for tracking multi-phase implementation progress
-- Updated as work progresses through phases
-- Format: Markdown with phase/step tracking, completion status, and next steps
-
-**Purpose**: Agents can read and update `.PLAN.md` to track implementation progress across sessions without cluttering git history with planning documents.
+- Contains `plan.md` (immutable reference) and `progress.md` (mutable tracking)
+- See [Planning](planning/) for workflow details
 
 ## Documentation Structure
 
 ```
-docs/
-├── agent/                      # Agent-focused reference
-│   ├── glossary.md            # Erk terminology
-│   ├── guide.md               # This file
-│   └── testing.md             # Testing patterns
-└── writing/                   # Human-readable guides
-    ├── agentic-programming/
-    └── schrockn-style/
+docs/agent/
+├── architecture/              # Core patterns and design
+├── cli/                       # CLI development
+├── commands/                  # Slash command patterns
+├── erk/                       # Erk-specific guides
+├── hooks/                     # Hook system
+├── kits/                      # Kit development
+├── planning/                  # Plan workflows
+├── reference/                 # External integrations
+├── sessions/                  # Session log tools
+├── testing/                   # Test architecture
+├── conventions.md             # Naming conventions
+├── glossary.md                # Terminology
+├── guide.md                   # This file
+└── index.md                   # Master index
 ```
 
 ## Task-Based Navigation
 
-| Your Task                           | Start Here                                                                                                     |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Understanding erk terminology       | [glossary.md](glossary.md)                                                                                     |
-| Understanding plan lifecycle        | [plan-lifecycle.md](plan-lifecycle.md)                                                                         |
-| Understanding plan enrichment       | [plan-enrichment.md](plan-enrichment.md)                                                                       |
-| Cleaning up branches/worktrees      | [erk/branch-cleanup.md](erk/branch-cleanup.md)                                                                 |
-| Writing tests with fakes/ops        | [testing.md](testing.md)                                                                                       |
-| Using time.sleep() or delays        | [erk-architecture.md](erk-architecture.md#time-abstraction-for-testing)                                        |
-| Understanding or modifying hooks    | [hooks-erk.md](hooks-erk.md) (context-aware reminders) → General: [hooks.md](hooks.md)                         |
-| Creating command-agent delegation   | [command-agent-delegation.md](command-agent-delegation.md)                                                     |
-| Implementing script mode            | [cli-script-mode.md](cli-script-mode.md)                                                                       |
-| Styling CLI output                  | [cli-output-styling.md](cli-output-styling.md)                                                                 |
-| Working with session logs           | [claude-code-session-layout.md](claude-code-session-layout.md)                                                 |
-| Writing temp files for AI workflows | [scratch-storage.md](scratch-storage.md)                                                                       |
-| Organizing CLI commands             | [cli-command-organization.md](cli-command-organization.md)                                                     |
-| Python coding standards             | Load `dignified-python` skill                                                                                  |
-| Understanding agentic programming   | [../writing/agentic-programming/agentic-programming.md](../writing/agentic-programming/agentic-programming.md) |
+| Your Task                           | Start Here                                                                               |
+| ----------------------------------- | ---------------------------------------------------------------------------------------- |
+| Understanding erk terminology       | [glossary.md](glossary.md)                                                               |
+| Understanding plan lifecycle        | [Planning](planning/)                                                                    |
+| Cleaning up branches/worktrees      | [erk/branch-cleanup.md](erk/branch-cleanup.md)                                           |
+| Writing tests with fakes            | [Testing](testing/) or load `fake-driven-testing` skill                                  |
+| Using time.sleep() or delays        | [Architecture](architecture/) - see erk-architecture.md#time-abstraction                 |
+| Understanding or modifying hooks    | [Hooks](hooks/)                                                                          |
+| Creating command-agent delegation   | [Planning](planning/) - see agent-delegation.md                                          |
+| Implementing script mode            | [CLI Development](cli/) - see script-mode.md                                             |
+| Styling CLI output                  | [CLI Development](cli/) - see output-styling.md                                          |
+| Working with session logs           | [Sessions](sessions/)                                                                    |
+| Writing temp files for AI workflows | [Planning](planning/) - see scratch-storage.md                                           |
+| Organizing CLI commands             | [CLI Development](cli/) - see command-organization.md                                    |
+| Python coding standards             | Load `dignified-python-313` skill                                                        |
+| Understanding agentic programming   | [../writing/agentic-programming/](../writing/agentic-programming/agentic-programming.md) |

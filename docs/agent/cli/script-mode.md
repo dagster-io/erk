@@ -260,6 +260,5 @@ Don't add script mode to:
 
 ## See Also
 
-- [cli-output-styling.md](cli-output-styling.md) - CLI output formatting guidelines
-- [shell-integration.md](shell-integration.md) - Shell integration architecture
-- [command-agent-delegation.md](command-agent-delegation.md) - Delegating to agents from commands
+- [output-styling.md](output-styling.md) - CLI output formatting guidelines
+- [Command Agent Delegation](../planning/agent-delegation.md) - Delegating to agents from commands

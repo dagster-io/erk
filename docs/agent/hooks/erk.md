@@ -10,7 +10,7 @@ read_when:
 
 Project-specific guide for using Claude Code hooks in the erk repository.
 
-**General Claude Code hooks reference**: [hooks.md](hooks.md)
+**General Claude Code hooks reference**: [hooks.md](hooks.md) (in same directory)
 
 ## How Hooks Work in This Project
 
@@ -362,4 +362,4 @@ dot-agent kit-command {kit-name} {hook-name}
 - **Official Hooks Guide**: https://code.claude.com/docs/en/hooks-guide.md
 - **dot-agent-kit Hook Development**: `../../packages/dot-agent-kit/docs/HOOKS.md`
 - **Kit System Overview**: `../../.agent/kits/README.md`
-- **Project Glossary**: `glossary.md`
+- **Project Glossary**: `../glossary.md`

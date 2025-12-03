@@ -635,7 +635,7 @@ gh run view 1234567890 --json displayTitle -q '.displayTitle' | cut -d: -f1
 
 ## Related Documentation
 
-- [Planning Workflow](planning-workflow.md) - `.impl/` folder structure and commands
-- [Plan Enrichment](plan-enrichment.md) - Context preservation in plans
-- [Kit CLI Commands](kit-cli-commands.md) - Available `dot-agent run erk` commands
-- [Glossary](glossary.md) - Erk terminology definitions
+- [Planning Workflow](workflow.md) - `.impl/` folder structure and commands
+- [Plan Enrichment](enrichment.md) - Context preservation in plans
+- [Kit CLI Commands](../kits/cli-commands.md) - Available `dot-agent run erk` commands
+- [Glossary](../glossary.md) - Erk terminology definitions

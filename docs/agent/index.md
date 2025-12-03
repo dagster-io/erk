@@ -2,36 +2,99 @@
 
 ## Categories
 
-| Category     | Documents      |
-| ------------ | -------------- |
-| [erk/](erk/) | branch-cleanup |
+| Category                      | Description                                      |
+| ----------------------------- | ------------------------------------------------ |
+| [Architecture](architecture/) | Core patterns, interfaces, subprocess wrappers   |
+| [CLI Development](cli/)       | Command organization, output styling, formatting |
+| [Planning](planning/)         | Plan lifecycle, enrichment, agent delegation     |
+| [Testing](testing/)           | Test architecture, fakes, rebase conflicts       |
+| [Sessions](sessions/)         | Session logs, context analysis, tools            |
+| [Hooks](hooks/)               | Hook system, erk-specific hooks                  |
+| [Kits](kits/)                 | Kit CLI commands, kit architecture               |
+| [Commands](commands/)         | Slash command optimization                       |
+| [Reference](reference/)       | GitHub integration, external references          |
+| [Erk](erk/)                   | Erk-specific workflows                           |
 
-## Uncategorized
+## Root Documents
 
-| Document                                                                           | Read when...                                                                                                      |
-| ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| [claude-code-session-layout.md](claude-code-session-layout.md)                     | working with session logs, parsing session logs, understanding ~/.claude/projects/ structure                      |
-| [command-optimization-patterns.md](command-optimization-patterns.md)               | reducing command file size, using @ reference in commands, modularizing command content                           |
-| [context-window-analysis.md](context-window-analysis.md)                           | analyzing context consumption, debugging context window blowout, understanding why session ran out of context     |
-| [cli-command-organization.md](cli-command-organization.md)                         | organizing CLI commands, understanding command structure, designing command hierarchies                           |
-| [cli-list-formatting.md](cli-list-formatting.md)                                   | formatting list output, designing list commands, ensuring consistent list display                                 |
-| [cli-output-styling.md](cli-output-styling.md)                                     | styling CLI output, using colors in CLI, formatting terminal output                                               |
-| [cli-script-mode.md](cli-script-mode.md)                                           | implementing script mode, suppressing diagnostic output, integrating with shell handlers                          |
-| [command-agent-delegation.md](command-agent-delegation.md)                         | delegating to agents from commands, implementing command-agent pattern, workflow orchestration                    |
-| [conventions.md](conventions.md)                                                   | naming functions or variables, creating CLI commands, naming Claude artifacts                                     |
-| [erk-architecture.md](erk-architecture.md)                                         | understanding erk architecture, implementing dry-run patterns, regenerating context after os.chdir                |
-| [github-branch-linking.md](github-branch-linking.md)                               | linking branches to issues, using gh issue develop, understanding branch-issue relationships                      |
-| [glossary.md](glossary.md)                                                         | understanding project terminology, confused about domain-specific terms, working with worktrees, plans, or stacks |
-| [guide.md](guide.md)                                                               | navigating erk documentation, finding where documentation lives, understanding doc organization                   |
-| [hooks-erk.md](hooks-erk.md)                                                       | working with erk-specific hooks, understanding context-aware reminders, modifying project hooks                   |
-| [hooks.md](hooks.md)                                                               | creating hooks, modifying hooks, understanding hook lifecycle                                                     |
-| [kit-cli-commands.md](kit-cli-commands.md)                                         | creating kit CLI commands, understanding Python/LLM boundary, implementing kit command patterns                   |
-| [kit-code-architecture.md](kit-code-architecture.md)                               | understanding kit code structure, creating kit CLI commands, organizing kit Python code                           |
-| [plan-enrichment.md](plan-enrichment.md)                                           | enriching a plan, adding metadata to plans, understanding plan enrichment workflow                                |
-| [plan-lifecycle.md](plan-lifecycle.md)                                             | creating a plan, closing a plan, understanding plan states                                                        |
-| [planning-workflow.md](planning-workflow.md)                                       | using .impl/ folders, understanding plan file structure, implementing plans                                       |
-| [rebase-test-infrastructure-conflicts.md](rebase-test-infrastructure-conflicts.md) | fixing merge conflicts in tests, resolving rebase conflicts, updating test infrastructure during merges           |
-| [scratch-storage.md](scratch-storage.md)                                           | writing temp files for AI workflows, passing files between processes, understanding scratch directory location    |
-| [session-log-tools.md](session-log-tools.md)                                       | finding session logs, inspecting agent execution, debugging session issues                                        |
-| [subprocess-wrappers.md](subprocess-wrappers.md)                                   | using subprocess wrappers, executing shell commands, understanding subprocess patterns                            |
-| [testing.md](testing.md)                                                           | writing tests with fakes, understanding ops pattern, running tests                                                |
+| Document                         | Read when...                                                |
+| -------------------------------- | ----------------------------------------------------------- |
+| [glossary.md](glossary.md)       | Understanding project terminology                           |
+| [conventions.md](conventions.md) | Naming functions, variables, CLI commands, Claude artifacts |
+| [guide.md](guide.md)             | Navigating documentation, finding docs                      |
+
+## Category Contents
+
+### [Architecture](architecture/)
+
+| Document                                                      | Read when...                                         |
+| ------------------------------------------------------------- | ---------------------------------------------------- |
+| [erk-architecture.md](architecture/erk-architecture.md)       | Understanding dry-run patterns, context regeneration |
+| [protocol-vs-abc.md](architecture/protocol-vs-abc.md)         | Choosing between Protocol and ABC for interfaces     |
+| [subprocess-wrappers.md](architecture/subprocess-wrappers.md) | Executing shell commands, using subprocess wrappers  |
+
+### [CLI Development](cli/)
+
+| Document                                               | Read when...                                           |
+| ------------------------------------------------------ | ------------------------------------------------------ |
+| [command-organization.md](cli/command-organization.md) | Organizing CLI commands, designing command hierarchies |
+| [output-styling.md](cli/output-styling.md)             | Styling CLI output, using colors                       |
+| [list-formatting.md](cli/list-formatting.md)           | Formatting list output, designing list commands        |
+| [script-mode.md](cli/script-mode.md)                   | Implementing script mode, shell integration            |
+
+### [Planning](planning/)
+
+| Document                                            | Read when...                                         |
+| --------------------------------------------------- | ---------------------------------------------------- |
+| [lifecycle.md](planning/lifecycle.md)               | Creating or closing plans, understanding plan states |
+| [enrichment.md](planning/enrichment.md)             | Adding metadata to plans, enrichment workflow        |
+| [workflow.md](planning/workflow.md)                 | Using .impl/ folders, implementing plans             |
+| [agent-delegation.md](planning/agent-delegation.md) | Delegating to agents from commands                   |
+| [scratch-storage.md](planning/scratch-storage.md)   | Writing temp files for AI workflows                  |
+
+### [Testing](testing/)
+
+| Document                                           | Read when...                                      |
+| -------------------------------------------------- | ------------------------------------------------- |
+| [testing.md](testing/testing.md)                   | Using erk fakes (FakeGit, etc.), running tests    |
+| [rebase-conflicts.md](testing/rebase-conflicts.md) | ErkContext API changes, env_helpers during rebase |
+
+### [Sessions](sessions/)
+
+| Document                                            | Read when...                                     |
+| --------------------------------------------------- | ------------------------------------------------ |
+| [layout.md](sessions/layout.md)                     | Understanding ~/.claude/projects/ structure      |
+| [tools.md](sessions/tools.md)                       | Finding session logs, inspecting agent execution |
+| [context-analysis.md](sessions/context-analysis.md) | Debugging context window issues                  |
+
+### [Hooks](hooks/)
+
+| Document                   | Read when...                                             |
+| -------------------------- | -------------------------------------------------------- |
+| [hooks.md](hooks/hooks.md) | Creating hooks, understanding hook lifecycle             |
+| [erk.md](hooks/erk.md)     | Working with erk-specific hooks, context-aware reminders |
+
+### [Kits](kits/)
+
+| Document                                          | Read when...                                      |
+| ------------------------------------------------- | ------------------------------------------------- |
+| [cli-commands.md](kits/cli-commands.md)           | Creating kit CLI commands, understanding patterns |
+| [code-architecture.md](kits/code-architecture.md) | Understanding kit code structure                  |
+
+### [Commands](commands/)
+
+| Document                                                      | Read when...                              |
+| ------------------------------------------------------------- | ----------------------------------------- |
+| [optimization-patterns.md](commands/optimization-patterns.md) | Reducing command size, using @ references |
+
+### [Reference](reference/)
+
+| Document                                                       | Read when...                                       |
+| -------------------------------------------------------------- | -------------------------------------------------- |
+| [github-branch-linking.md](reference/github-branch-linking.md) | Linking branches to issues, using gh issue develop |
+
+### [Erk](erk/)
+
+| Document                                   | Read when...                       |
+| ------------------------------------------ | ---------------------------------- |
+| [branch-cleanup.md](erk/branch-cleanup.md) | Cleaning up branches and worktrees |

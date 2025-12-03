@@ -652,7 +652,7 @@ Documentation follows a progressive disclosure model:
 1. **Quick reference** - AGENTS.md checklist entry
    - One line: "Creating command that orchestrates workflow → command-agent-delegation.md"
 
-2. **Pattern documentation** - This document (docs/agent/command-agent-delegation.md)
+2. **Pattern documentation** - This document (docs/agent/planning/agent-delegation.md)
    - Complete patterns, examples, anti-patterns
 
 3. **Implementation examples** - Actual commands and agents in codebase
@@ -663,7 +663,7 @@ Documentation follows a progressive disclosure model:
 **Navigation:**
 
 - `AGENTS.md` → Quick lookup during coding
-- `docs/agent/guide.md` → Navigation hub to all patterns
+- `docs/agent/guide.md` → Navigation hub to all documentation
 - This doc → Complete delegation pattern reference
 
 ## Summary
