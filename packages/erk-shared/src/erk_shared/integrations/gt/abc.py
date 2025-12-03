@@ -17,7 +17,6 @@ from abc import ABC, abstractmethod
 
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
-from erk_shared.integrations.graphite.abc import Graphite
 
 
 class GtKit(ABC):
@@ -45,12 +44,4 @@ class GtKit(ABC):
 
         Returns:
             GitHub implementation from erk_shared.github
-        """
-
-    @abstractmethod
-    def main_graphite(self) -> Graphite:
-        """Get the main Graphite operations interface.
-
-        Returns:
-            Graphite implementation for full graphite operations
         """
