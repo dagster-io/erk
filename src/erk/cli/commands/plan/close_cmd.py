@@ -1,13 +1,78 @@
 """Command to close a plan."""
 
+from pathlib import Path
 from urllib.parse import urlparse
 
 import click
+from erk_shared.github.parsing import github_repo_location_from_url
 from erk_shared.output.output import user_output
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+
+
+def _parse_issue_number(identifier: str) -> int:
+    """Parse issue number from identifier string.
+
+    Args:
+        identifier: Plan identifier (e.g., "42" or GitHub issue URL)
+
+    Returns:
+        Issue number as int
+
+    Raises:
+        click.ClickException: If identifier cannot be parsed as an issue number
+    """
+    if identifier.isdigit():
+        return int(identifier)
+
+    # Try to parse from GitHub URL
+    parsed = urlparse(identifier)
+    if parsed.scheme and parsed.hostname:
+        # This looks like a URL - check if it's a valid GitHub issue URL
+        if parsed.hostname == "github.com" and parsed.path:
+            parts = parsed.path.rstrip("/").split("/")
+            if len(parts) >= 2 and parts[-2] == "issues":
+                last_part = parts[-1]
+                if last_part.isdigit():
+                    return int(last_part)
+        # URL but wrong format
+        raise click.ClickException(
+            f"Invalid URL format: {identifier!r}. "
+            "Expected format: https://github.com/OWNER/REPO/issues/NUMBER"
+        )
+
+    raise click.ClickException(
+        f"Invalid plan identifier: {identifier!r}. "
+        "Expected an issue number (e.g., '42') or GitHub issue URL."
+    )
+
+
+def _close_linked_prs(
+    ctx: ErkContext,
+    repo_root: Path,
+    issue_number: int,
+    issue_url: str,
+) -> list[int]:
+    """Close all OPEN PRs linked to an issue.
+
+    Returns list of PR numbers that were closed.
+    """
+    location = github_repo_location_from_url(repo_root, issue_url)
+    if location is None:
+        return []
+    pr_linkages = ctx.github.get_prs_linked_to_issues(location, [issue_number])
+    linked_prs = pr_linkages.get(issue_number, [])
+
+    closed_prs: list[int] = []
+    for pr in linked_prs:
+        # Close all OPEN PRs (both drafts and non-drafts per user requirement)
+        if pr.state == "OPEN":
+            ctx.github.close_pr(repo_root, pr.number)
+            closed_prs.append(pr.number)
+
+    return closed_prs
 
 
 @click.command("close")
@@ -16,6 +81,8 @@ from erk.core.repo_discovery import ensure_erk_metadata_dir
 def close_plan(ctx: ErkContext, identifier: str) -> None:
     """Close a plan by issue number or GitHub URL.
 
+    Closes all OPEN PRs linked to the issue in addition to closing the issue itself.
+
     Args:
         identifier: Plan identifier (e.g., "42" or GitHub URL)
     """
@@ -23,26 +90,23 @@ def close_plan(ctx: ErkContext, identifier: str) -> None:
     ensure_erk_metadata_dir(repo)  # Ensure erk metadata directories exist
     repo_root = repo.root  # Use git repository root for GitHub operations
 
+    # Parse issue number - errors if invalid
+    number = _parse_issue_number(identifier)
+
+    # Fetch plan - errors if not found
     try:
-        ctx.plan_store.close_plan(repo_root, identifier)
+        plan = ctx.plan_store.get_plan(repo_root, str(number))
     except RuntimeError as e:
-        user_output(click.style("Error: ", fg="red") + str(e))
-        raise SystemExit(1) from e
+        raise click.ClickException(str(e)) from e
 
-    # Extract issue number for output
-    # Try to extract from identifier (either numeric or URL)
-    if identifier.isdigit():
-        number = identifier
-    else:
-        # Security: Use proper URL parsing to validate hostname
-        parsed = urlparse(identifier)
-        if parsed.hostname == "github.com" and parsed.path:
-            parts = parsed.path.rstrip("/").split("/")
-            if len(parts) >= 2 and parts[-2] == "issues":
-                number = parts[-1]
-            else:
-                number = identifier  # Fallback to showing identifier as-is
-        else:
-            number = identifier  # Fallback to showing identifier as-is
+    # Close linked PRs before closing the plan
+    closed_prs = _close_linked_prs(ctx, repo_root, number, plan.url)
 
+    # Close the plan (issue)
+    ctx.plan_store.close_plan(repo_root, identifier)
+
+    # Output
     user_output(f"Closed plan #{number}")
+    if closed_prs:
+        pr_list = ", ".join(f"#{pr}" for pr in closed_prs)
+        user_output(f"Closed {len(closed_prs)} linked PR(s): {pr_list}")
