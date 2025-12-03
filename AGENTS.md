@@ -49,6 +49,7 @@
 | Use subprocess wrappers                          | → [docs/agent/subprocess-wrappers.md](docs/agent/subprocess-wrappers.md)               |
 | Create kit CLI commands                          | → [docs/agent/kit-cli-commands.md](docs/agent/kit-cli-commands.md)                     |
 | Understand kit code architecture                 | → [docs/agent/kit-code-architecture.md](docs/agent/kit-code-architecture.md)           |
+| Share content between kit commands               | → [docs/agent/kit-shared-includes.md](docs/agent/kit-shared-includes.md)               |
 | Delegate to agents from commands                 | → [docs/agent/command-agent-delegation.md](docs/agent/command-agent-delegation.md)     |
 | Work with session logs (~/.claude/projects/)     | → [docs/agent/claude-code-session-layout.md](docs/agent/claude-code-session-layout.md) |
 | Parse or analyze session logs                    | → [docs/agent/claude-code-session-layout.md](docs/agent/claude-code-session-layout.md) |
