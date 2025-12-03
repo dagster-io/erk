@@ -62,39 +62,38 @@ class ClickableLink(Static):
             app._provider.browser.launch(self._url)
 
 
-class CopyButton(Static):
-    """A button that copies text to clipboard when clicked."""
+class CopyableLabel(Static):
+    """A label that copies text to clipboard when clicked, styled with orange/accent color."""
 
     DEFAULT_CSS = """
-    CopyButton {
-        color: $text;
-        padding: 0 1;
-        background: $primary;
-        margin-left: 1;
-        width: auto;
+    CopyableLabel {
+        color: $accent;
     }
-    CopyButton:hover {
-        background: $primary-lighten-1;
+    CopyableLabel:hover {
+        color: $accent-lighten-1;
+        text-style: bold;
     }
     """
 
-    def __init__(self, text_to_copy: str, **kwargs) -> None:
-        """Initialize copy button.
+    def __init__(self, label: str, text_to_copy: str, **kwargs) -> None:
+        """Initialize copyable label.
 
         Args:
+            label: Display text for the label (e.g., "[1]" or "erk pr co 2022")
             text_to_copy: Text to copy to clipboard when clicked
             **kwargs: Additional widget arguments
         """
-        super().__init__(" Copy ", **kwargs)
+        super().__init__(label, **kwargs)
         self._text_to_copy = text_to_copy
+        self._original_label = label
 
     def on_click(self, event: Click) -> None:
         """Copy text to clipboard when clicked."""
         event.stop()
         success = self._copy_to_clipboard()
         if success:
-            self.update(" Copied! ")
-            self.set_timer(1.5, lambda: self.update(" Copy "))
+            self.update("Copied!")
+            self.set_timer(1.5, lambda: self.update(self._original_label))
 
     def _copy_to_clipboard(self) -> bool:
         """Copy text to clipboard, finding the clipboard interface.
@@ -283,8 +282,9 @@ class PlanDetailScreen(ModalScreen):
     }
 
     .badge-local {
-        background: #388bfd;
-        color: white;
+        background: #58a6ff;
+        color: black;
+        text-style: bold;
     }
 
     .badge-dim {
@@ -347,19 +347,6 @@ class PlanDetailScreen(ModalScreen):
         color: $text-muted;
         text-style: bold italic;
         margin-top: 1;
-    }
-
-    .links-row {
-        layout: horizontal;
-        height: 1;
-    }
-
-    .link-item {
-        margin-right: 3;
-    }
-
-    .link-key {
-        color: $accent;
     }
 
     .command-row {
@@ -435,18 +422,24 @@ class PlanDetailScreen(ModalScreen):
 
     def action_open_issue(self) -> None:
         """Open the issue in browser."""
+        if self._browser is None:
+            return
         if self._row.issue_url:
-            click.launch(self._row.issue_url)
+            self._browser.launch(self._row.issue_url)
 
     def action_open_pr(self) -> None:
         """Open the PR in browser."""
+        if self._browser is None:
+            return
         if self._row.pr_url:
-            click.launch(self._row.pr_url)
+            self._browser.launch(self._row.pr_url)
 
     def action_open_run(self) -> None:
         """Open the workflow run in browser."""
+        if self._browser is None:
+            return
         if self._row.run_url:
-            click.launch(self._row.run_url)
+            self._browser.launch(self._row.run_url)
 
     def _copy_and_notify(self, text: str) -> None:
         """Copy text to clipboard and show notification.
@@ -503,7 +496,7 @@ class PlanDetailScreen(ModalScreen):
             # Divider
             yield Label("", id="detail-divider")
 
-            # INFO SECTION
+            # ISSUE/PR INFO SECTION
             # Issue Info - clickable issue number
             with Container(classes="info-row"):
                 yield Label("Issue", classes="info-label")
@@ -540,26 +533,7 @@ class PlanDetailScreen(ModalScreen):
                         yield Label("Checks", classes="info-label")
                         yield Label(self._row.checks_display, classes="info-value", markup=False)
 
-            # Worktree Info (if exists)
-            if self._row.worktree_name:
-                with Container(classes="info-row"):
-                    yield Label("Worktree", classes="info-label")
-                    yield Label(self._row.worktree_name, classes="info-value", markup=False)
-                    yield Label("Local ✓", classes="status-badge badge-local")
-
-                if self._row.worktree_branch:
-                    with Container(classes="info-row"):
-                        yield Label("Branch", classes="info-label")
-                        yield Label(self._row.worktree_branch, classes="info-value", markup=False)
-
-                if self._row.local_impl_display and self._row.local_impl_display != "-":
-                    with Container(classes="info-row"):
-                        yield Label("Last local", classes="info-label")
-                        yield Label(
-                            self._row.local_impl_display, classes="info-value", markup=False
-                        )
-
-            # Remote run info (if exists) - clickable run ID with status badge inline
+            # REMOTE RUN INFO SECTION (separate from worktree/local info)
             if self._row.run_id:
                 with Container(classes="info-row"):
                     yield Label("Run", classes="info-label")
@@ -575,64 +549,42 @@ class PlanDetailScreen(ModalScreen):
 
                 if self._row.remote_impl_display and self._row.remote_impl_display != "-":
                     with Container(classes="info-row"):
-                        yield Label("Last remote", classes="info-label")
+                        yield Label("Last remote impl", classes="info-label")
                         yield Label(
                             self._row.remote_impl_display, classes="info-value", markup=False
                         )
 
-            # LINKS SECTION
-            yield Label("LINKS", classes="section-header")
-            with Container(classes="links-row"):
-                yield Label("[i] Issue", classes="link-item")
-                if self._row.pr_number:
-                    yield Label("[p] PR", classes="link-item")
-                if self._row.run_url:
-                    yield Label("[r] Run", classes="link-item")
-                yield Label("[o] Open PR/Issue", classes="link-item")
-
             # COMMANDS SECTION (copy to clipboard)
+            # All items below use uniform orange labels that copy when clicked
             yield Label("COMMANDS (copy)", classes="section-header")
 
-            # Checkout commands - show available options
-            if self._row.exists_locally:
-                checkout_cmd = f"erk co {self._row.worktree_name}"
-                with Container(classes="command-row"):
-                    yield Label("[c]", classes="command-key")
-                    yield Label(checkout_cmd, classes="command-text")
-                    yield CopyButton(checkout_cmd)
-
+            # PR checkout command (if PR exists)
             if self._row.pr_number is not None:
                 pr_checkout_cmd = f"erk pr co {self._row.pr_number}"
                 with Container(classes="command-row"):
-                    yield Label("[e]", classes="command-key")
-                    yield Label(pr_checkout_cmd, classes="command-text")
-                    yield CopyButton(pr_checkout_cmd)
+                    yield CopyableLabel(pr_checkout_cmd, pr_checkout_cmd)
 
             # Implement commands
             implement_cmd = f"erk implement {self._row.issue_number}"
             with Container(classes="command-row"):
                 yield Label("[1]", classes="command-key")
-                yield Label(implement_cmd, classes="command-text")
-                yield CopyButton(implement_cmd)
+                yield CopyableLabel(implement_cmd, implement_cmd)
 
             dangerous_cmd = f"erk implement {self._row.issue_number} --dangerous"
             with Container(classes="command-row"):
                 yield Label("[2]", classes="command-key")
-                yield Label(dangerous_cmd, classes="command-text")
-                yield CopyButton(dangerous_cmd)
+                yield CopyableLabel(dangerous_cmd, dangerous_cmd)
 
             yolo_cmd = f"erk implement {self._row.issue_number} --yolo"
             with Container(classes="command-row"):
                 yield Label("[3]", classes="command-key")
-                yield Label(yolo_cmd, classes="command-text")
-                yield CopyButton(yolo_cmd)
+                yield CopyableLabel(yolo_cmd, yolo_cmd)
 
             # Submit command
             submit_cmd = f"erk submit {self._row.issue_number}"
             with Container(classes="command-row"):
                 yield Label("[4]", classes="command-key")
-                yield Label(submit_cmd, classes="command-text")
-                yield CopyButton(submit_cmd)
+                yield CopyableLabel(submit_cmd, submit_cmd)
 
             # Log entries (if any) - clickable timestamps
             if self._row.log_entries:
