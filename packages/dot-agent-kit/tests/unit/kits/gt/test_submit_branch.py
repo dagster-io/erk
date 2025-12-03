@@ -7,6 +7,7 @@ from unittest.mock import Mock, patch
 import pytest
 from click.testing import CliRunner
 from erk_shared.integrations.gt.cli import render_events
+from erk_shared.integrations.gt.fake_kit import FakeGtKitOps
 from erk_shared.integrations.gt.operations.finalize import (
     build_pr_metadata_section,
     execute_finalize,
@@ -20,8 +21,6 @@ from erk_shared.integrations.gt.types import (
     PreAnalysisResult,
     PreflightResult,
 )
-
-from tests.unit.kits.gt.fake_ops import FakeGtKitOps
 
 
 @pytest.fixture

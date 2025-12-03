@@ -14,6 +14,7 @@ Add comprehensive unit tests for the GT operations layer in `erk-shared` that as
 ### Step 1: Move FakeGtKitOps to erk-shared
 
 Move from `packages/dot-agent-kit/tests/unit/kits/gt/fake_ops.py` to `packages/erk-shared/src/erk_shared/integrations/gt/fake_kit.py`:
+
 - Move `GitHubBuilderState` dataclass
 - Move `FakeGtKitOps` class
 - Update dot-agent-kit tests to import from new location
@@ -23,6 +24,7 @@ Move from `packages/dot-agent-kit/tests/unit/kits/gt/fake_ops.py` to `packages/e
 Create test directory: `packages/erk-shared/tests/unit/integrations/gt/operations/`
 
 Files:
+
 - `__init__.py`
 - `conftest.py` - with `collect_events` helper:
 
@@ -41,7 +43,9 @@ def collect_events[T](generator: Generator[ProgressEvent | CompletionEvent[T]]) 
 ### Step 3: Write Tests for Each Operation
 
 #### test_prep.py (execute_prep)
+
 Test scenarios:
+
 - **Success path**: Auth OK, branch exists, parent exists, no conflicts, squash (or skip), diff extracted
   - Assert key events: "Authenticated as...", "No restack conflicts", "Diff retrieved"
 - **gt_not_authenticated**: Assert error before any git operations
@@ -54,7 +58,9 @@ Test scenarios:
 - **squash_failed**: Assert generic squash failure
 
 #### test_squash.py (execute_squash)
+
 Test scenarios:
+
 - **no_commits**: Error when no commits ahead of trunk
 - **single_commit**: Success with "already_single_commit" action
 - **multiple_commits**: Success with "squashed" action
@@ -62,7 +68,9 @@ Test scenarios:
 - **squash_failed**: Generic failure
 
 #### test_update_pr.py (execute_update_pr)
+
 Test scenarios:
+
 - **success_with_uncommitted**: Stage, commit, restack, submit, return PR info
 - **success_without_uncommitted**: Skip staging, proceed
 - **add_failure**: Stage fails
@@ -73,21 +81,26 @@ Test scenarios:
 - **submit_failure**: Generic submit failure
 
 #### test_finalize.py (execute_finalize)
+
 Test scenarios:
+
 - **success**: PR metadata updated, cleanup done
 - **validation_errors**: Neither/both pr_body and pr_body_file provided
 
 ### Step 4: Update dot-agent-kit Test Imports
 
 Update imports in:
+
 - `packages/dot-agent-kit/tests/unit/kits/gt/test_*.py`
 
 From:
+
 ```python
 from tests.unit.kits.gt.fake_ops import FakeGtKitOps
 ```
 
 To:
+
 ```python
 from erk_shared.integrations.gt.fake_kit import FakeGtKitOps
 ```
