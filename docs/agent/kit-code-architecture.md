@@ -13,16 +13,14 @@ Kit code lives in exactly TWO places:
 ```
 packages/erk-shared/src/erk_shared/integrations/gt/
 ├── __init__.py                      # Public exports
-├── abc.py                           # ABC interfaces
-├── real.py                          # Real implementations
-├── fake.py                          # Test fakes
+├── abc.py                           # GtKitContext dataclass + create_real_context() factory
+├── fake_kit.py                      # GtKitContextBuilder for tests
 ├── types.py                         # Type definitions
 ├── prompts.py                       # Utilities
-└── kit_cli_commands/
-    └── gt/
-        ├── submit_branch.py         # ACTUAL implementation (1000+ lines)
-        ├── land_branch.py
-        └── pr_update.py
+└── operations/
+    ├── preflight.py                 # Operation implementations
+    ├── finalize.py
+    └── ...
 ```
 
 **Rules**:
@@ -63,6 +61,9 @@ packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/
 ┌───────────────────────────────────────┐
 │ dot-agent-kit/data/kits/gt/           │
 │   ├── kit.yaml                        │
+│   ├── kit_cli_commands/gt/            │
+│   │   ├── submit_branch.py            │
+│   │   └── pr_update.py                │
 │   ├── agents/                         │
 │   ├── commands/                       │
 │   └── skills/                         │
@@ -70,14 +71,13 @@ packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/
 
 ┌───────────────────────────────────────┐
 │ erk-shared/integrations/gt/           │
-│   ├── abc.py                          │
-│   ├── real.py                         │
-│   ├── fake.py                         │
+│   ├── abc.py  (GtKitContext dataclass)│
+│   ├── fake_kit.py (GtKitContextBuilder)│
 │   ├── types.py                        │
-│   └── kit_cli_commands/gt/            │
-│       ├── submit_branch.py            │
-│       ├── land_pr.py                  │
-│       └── pr_update.py                │
+│   └── operations/                     │
+│       ├── preflight.py                │
+│       ├── finalize.py                 │
+│       └── ...                         │
 └───────────────────────────────────────┘
 ```
 
@@ -86,8 +86,9 @@ packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/
 Always import from erk-shared:
 
 ```python
-# ✅ CORRECT - Import operations and types from erk-shared
-from erk_shared.integrations.gt.real import RealGtKit
+# ✅ CORRECT - Import context, operations and types from erk-shared
+from erk_shared.integrations.gt import GtKitContext, create_real_context
+from erk_shared.integrations.gt.fake_kit import GtKitContextBuilder
 from erk_shared.integrations.gt.operations.preflight import execute_preflight
 from erk_shared.integrations.gt.types import PreflightResult
 
