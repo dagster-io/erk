@@ -14,6 +14,7 @@
 | [Commands](commands/)         | Slash command optimization                       |
 | [Reference](reference/)       | GitHub integration, external references          |
 | [Erk](erk/)                   | Erk-specific workflows                           |
+| [TUI](tui/)                   | Textual TUI development, quirks and workarounds  |
 
 ## Root Documents
 
@@ -98,3 +99,9 @@
 | Document                                   | Read when...                       |
 | ------------------------------------------ | ---------------------------------- |
 | [branch-cleanup.md](erk/branch-cleanup.md) | Cleaning up branches and worktrees |
+
+### [TUI](tui/)
+
+| Document                               | Read when...                                           |
+| -------------------------------------- | ------------------------------------------------------ |
+| [textual-quirks.md](tui/textual-quirks.md) | Working with Textual TUI, avoiding common API pitfalls |

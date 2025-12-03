@@ -12,6 +12,7 @@ from erk_shared.github.metadata import (
 )
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
 from erk_shared.impl_folder import read_issue_reference
+from erk_shared.integrations.browser.abc import BrowserLauncher
 from erk_shared.integrations.clipboard.abc import Clipboard
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -43,6 +44,16 @@ class PlanDataProvider(ABC):
         """
         ...
 
+    @property
+    @abstractmethod
+    def browser(self) -> BrowserLauncher:
+        """Get the browser launcher interface for opening URLs.
+
+        Returns:
+            BrowserLauncher interface for opening URLs in browser
+        """
+        ...
+
     @abstractmethod
     def fetch_plans(self, filters: PlanFilters) -> list[PlanRowData]:
         """Fetch plans matching the given filters.
@@ -62,22 +73,35 @@ class RealPlanDataProvider(PlanDataProvider):
     Transforms PlanListData into PlanRowData for TUI display.
     """
 
-    def __init__(self, ctx: ErkContext, location: GitHubRepoLocation, clipboard: Clipboard) -> None:
+    def __init__(
+        self,
+        ctx: ErkContext,
+        location: GitHubRepoLocation,
+        clipboard: Clipboard,
+        browser: BrowserLauncher,
+    ) -> None:
         """Initialize with context and repository info.
 
         Args:
             ctx: ErkContext with all dependencies
             location: GitHub repository location (local root + repo identity)
             clipboard: Clipboard interface for copy operations
+            browser: BrowserLauncher interface for opening URLs
         """
         self._ctx = ctx
         self._location = location
         self._clipboard = clipboard
+        self._browser = browser
 
     @property
     def clipboard(self) -> Clipboard:
         """Get the clipboard interface for copy operations."""
         return self._clipboard
+
+    @property
+    def browser(self) -> BrowserLauncher:
+        """Get the browser launcher interface for opening URLs."""
+        return self._browser
 
     def fetch_plans(self, filters: PlanFilters) -> list[PlanRowData]:
         """Fetch plans and transform to TUI row format.

@@ -1,5 +1,7 @@
 """Fake plan data provider for testing TUI components."""
 
+from erk_shared.integrations.browser.abc import BrowserLauncher
+from erk_shared.integrations.browser.fake import FakeBrowserLauncher
 from erk_shared.integrations.clipboard.abc import Clipboard
 from erk_shared.integrations.clipboard.fake import FakeClipboard
 
@@ -17,21 +19,29 @@ class FakePlanDataProvider(PlanDataProvider):
         self,
         plans: list[PlanRowData] | None = None,
         clipboard: Clipboard | None = None,
+        browser: BrowserLauncher | None = None,
     ) -> None:
         """Initialize with optional canned plan data.
 
         Args:
             plans: List of PlanRowData to return, or None for empty list
             clipboard: Clipboard interface, defaults to FakeClipboard()
+            browser: BrowserLauncher interface, defaults to FakeBrowserLauncher()
         """
         self._plans = plans or []
         self._fetch_count = 0
         self._clipboard = clipboard if clipboard is not None else FakeClipboard()
+        self._browser = browser if browser is not None else FakeBrowserLauncher()
 
     @property
     def clipboard(self) -> Clipboard:
         """Get the clipboard interface for copy operations."""
         return self._clipboard
+
+    @property
+    def browser(self) -> BrowserLauncher:
+        """Get the browser launcher interface for opening URLs."""
+        return self._browser
 
     def fetch_plans(self, filters: PlanFilters) -> list[PlanRowData]:
         """Return canned plan data.

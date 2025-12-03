@@ -6,7 +6,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import click
 from rich.markup import escape as escape_markup
 from textual import on
 from textual.app import App, ComposeResult
@@ -24,6 +23,7 @@ from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
 
 if TYPE_CHECKING:
+    from erk_shared.integrations.browser.abc import BrowserLauncher
     from erk_shared.integrations.clipboard.abc import Clipboard
 
 
@@ -54,7 +54,12 @@ class ClickableLink(Static):
     def on_click(self, event: Click) -> None:
         """Open URL in browser when clicked."""
         event.stop()
-        click.launch(self._url)
+        # Access browser through the app's provider (ErkDashApp)
+        from erk.tui.app import ErkDashApp as _ErkDashApp
+
+        app = self.app
+        if isinstance(app, _ErkDashApp):
+            app._provider.browser.launch(self._url)
 
 
 class CopyButton(Static):
@@ -327,16 +332,23 @@ class PlanDetailScreen(ModalScreen):
     }
     """
 
-    def __init__(self, row: PlanRowData, clipboard: "Clipboard | None" = None) -> None:
+    def __init__(
+        self,
+        row: PlanRowData,
+        clipboard: "Clipboard | None" = None,
+        browser: "BrowserLauncher | None" = None,
+    ) -> None:
         """Initialize with plan row data.
 
         Args:
             row: PlanRowData containing all plan information
             clipboard: Optional clipboard interface for copy operations
+            browser: Optional browser launcher interface for opening URLs
         """
         super().__init__()
         self._row = row
         self._clipboard = clipboard
+        self._browser = browser
 
     def _get_pr_state_badge(self) -> tuple[str, str]:
         """Get PR state display text and CSS class."""
@@ -369,10 +381,12 @@ class PlanDetailScreen(ModalScreen):
 
     def action_open_browser(self) -> None:
         """Open the plan (PR if available, otherwise issue) in browser."""
+        if self._browser is None:
+            return
         if self._row.pr_url:
-            click.launch(self._row.pr_url)
+            self._browser.launch(self._row.pr_url)
         elif self._row.issue_url:
-            click.launch(self._row.issue_url)
+            self._browser.launch(self._row.issue_url)
 
     def compose(self) -> ComposeResult:
         """Create detail dialog content."""
@@ -648,7 +662,11 @@ class ErkDashApp(App):
         row = self._get_selected_row()
         if row is None:
             return
-        self.push_screen(PlanDetailScreen(row, clipboard=self._provider.clipboard))
+        self.push_screen(
+            PlanDetailScreen(
+                row, clipboard=self._provider.clipboard, browser=self._provider.browser
+            )
+        )
 
     def action_cursor_down(self) -> None:
         """Move cursor down (vim j key)."""
@@ -706,11 +724,11 @@ class ErkDashApp(App):
             return
 
         if row.pr_url:
-            click.launch(row.pr_url)
+            self._provider.browser.launch(row.pr_url)
             if self._status_bar is not None:
                 self._status_bar.set_message(f"Opened PR #{row.pr_number}")
         elif row.issue_url:
-            click.launch(row.issue_url)
+            self._provider.browser.launch(row.issue_url)
             if self._status_bar is not None:
                 self._status_bar.set_message(f"Opened issue #{row.issue_number}")
 
@@ -721,7 +739,7 @@ class ErkDashApp(App):
             return
 
         if row.pr_url:
-            click.launch(row.pr_url)
+            self._provider.browser.launch(row.pr_url)
             if self._status_bar is not None:
                 self._status_bar.set_message(f"Opened PR #{row.pr_number}")
         else:
@@ -807,7 +825,7 @@ class ErkDashApp(App):
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
             if row.issue_url:
-                click.launch(row.issue_url)
+                self._provider.browser.launch(row.issue_url)
                 if self._status_bar is not None:
                     self._status_bar.set_message(f"Opened issue #{row.issue_number}")
 
@@ -817,7 +835,7 @@ class ErkDashApp(App):
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
             if row.pr_url:
-                click.launch(row.pr_url)
+                self._provider.browser.launch(row.pr_url)
                 if self._status_bar is not None:
                     self._status_bar.set_message(f"Opened PR #{row.pr_number}")
 
@@ -838,7 +856,7 @@ class ErkDashApp(App):
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
             if row.run_url:
-                click.launch(row.run_url)
+                self._provider.browser.launch(row.run_url)
                 if self._status_bar is not None:
                     # Extract run ID from URL to avoid Rich markup in status bar
                     run_id = row.run_url.rsplit("/", 1)[-1]
