@@ -62,39 +62,38 @@ class ClickableLink(Static):
             app._provider.browser.launch(self._url)
 
 
-class CopyButton(Static):
-    """A button that copies text to clipboard when clicked."""
+class CopyableLabel(Static):
+    """A label that copies text to clipboard when clicked, styled with orange/accent color."""
 
     DEFAULT_CSS = """
-    CopyButton {
-        color: $text;
-        padding: 0 1;
-        background: $primary;
-        margin-left: 1;
-        width: auto;
+    CopyableLabel {
+        color: $accent;
     }
-    CopyButton:hover {
-        background: $primary-lighten-1;
+    CopyableLabel:hover {
+        color: $accent-lighten-1;
+        text-style: bold;
     }
     """
 
-    def __init__(self, text_to_copy: str, **kwargs) -> None:
-        """Initialize copy button.
+    def __init__(self, label: str, text_to_copy: str, **kwargs) -> None:
+        """Initialize copyable label.
 
         Args:
+            label: Display text for the label (e.g., "[1]" or "erk pr co 2022")
             text_to_copy: Text to copy to clipboard when clicked
             **kwargs: Additional widget arguments
         """
-        super().__init__(" Copy ", **kwargs)
+        super().__init__(label, **kwargs)
         self._text_to_copy = text_to_copy
+        self._original_label = label
 
     def on_click(self, event: Click) -> None:
         """Copy text to clipboard when clicked."""
         event.stop()
         success = self._copy_to_clipboard()
         if success:
-            self.update(" Copied! ")
-            self.set_timer(1.5, lambda: self.update(" Copy "))
+            self.update("Copied!")
+            self.set_timer(1.5, lambda: self.update(self._original_label))
 
     def _copy_to_clipboard(self) -> bool:
         """Copy text to clipboard, finding the clipboard interface.
@@ -193,13 +192,25 @@ class HelpScreen(ModalScreen):
 
 
 class PlanDetailScreen(ModalScreen):
-    """Modal screen showing detailed plan information."""
+    """Modal screen showing detailed plan information as an Action Hub."""
 
     BINDINGS = [
+        # Navigation
         Binding("escape", "dismiss", "Close"),
         Binding("q", "dismiss", "Close"),
         Binding("space", "dismiss", "Close"),
+        # Links section
         Binding("o", "open_browser", "Open"),
+        Binding("i", "open_issue", "Issue"),
+        Binding("p", "open_pr", "PR"),
+        Binding("r", "open_run", "Run"),
+        # Copy section
+        Binding("c", "copy_checkout", "Checkout"),
+        Binding("e", "copy_pr_checkout", "PR Checkout"),
+        Binding("1", "copy_implement", "Implement"),
+        Binding("2", "copy_implement_dangerous", "Dangerous"),
+        Binding("3", "copy_implement_yolo", "Yolo"),
+        Binding("4", "copy_submit", "Submit"),
     ]
 
     DEFAULT_CSS = """
@@ -271,8 +282,9 @@ class PlanDetailScreen(ModalScreen):
     }
 
     .badge-local {
-        background: #388bfd;
-        color: white;
+        background: #58a6ff;
+        color: black;
+        text-style: bold;
     }
 
     .badge-dim {
@@ -329,6 +341,26 @@ class PlanDetailScreen(ModalScreen):
     .log-header {
         color: $text-muted;
         text-style: italic;
+    }
+
+    .section-header {
+        color: $text-muted;
+        text-style: bold italic;
+        margin-top: 1;
+    }
+
+    .command-row {
+        layout: horizontal;
+        height: 1;
+    }
+
+    .command-key {
+        color: $accent;
+        width: 4;
+    }
+
+    .command-text {
+        color: $text;
     }
     """
 
@@ -388,10 +420,74 @@ class PlanDetailScreen(ModalScreen):
         elif self._row.issue_url:
             self._browser.launch(self._row.issue_url)
 
+    def action_open_issue(self) -> None:
+        """Open the issue in browser."""
+        if self._browser is None:
+            return
+        if self._row.issue_url:
+            self._browser.launch(self._row.issue_url)
+
+    def action_open_pr(self) -> None:
+        """Open the PR in browser."""
+        if self._browser is None:
+            return
+        if self._row.pr_url:
+            self._browser.launch(self._row.pr_url)
+
+    def action_open_run(self) -> None:
+        """Open the workflow run in browser."""
+        if self._browser is None:
+            return
+        if self._row.run_url:
+            self._browser.launch(self._row.run_url)
+
+    def _copy_and_notify(self, text: str) -> None:
+        """Copy text to clipboard and show notification.
+
+        Args:
+            text: Text to copy to clipboard
+        """
+        if self._clipboard is not None:
+            self._clipboard.copy(text)
+        # Show brief notification via app's notify method
+        self.notify(f"Copied: {text}", timeout=2)
+
+    def action_copy_checkout(self) -> None:
+        """Copy local checkout command to clipboard."""
+        if self._row.exists_locally:
+            cmd = f"erk co {self._row.worktree_name}"
+            self._copy_and_notify(cmd)
+
+    def action_copy_pr_checkout(self) -> None:
+        """Copy PR checkout command to clipboard."""
+        if self._row.pr_number is not None:
+            cmd = f"erk pr co {self._row.pr_number}"
+            self._copy_and_notify(cmd)
+
+    def action_copy_implement(self) -> None:
+        """Copy basic implement command to clipboard."""
+        cmd = f"erk implement {self._row.issue_number}"
+        self._copy_and_notify(cmd)
+
+    def action_copy_implement_dangerous(self) -> None:
+        """Copy implement --dangerous command to clipboard."""
+        cmd = f"erk implement {self._row.issue_number} --dangerous"
+        self._copy_and_notify(cmd)
+
+    def action_copy_implement_yolo(self) -> None:
+        """Copy implement --yolo command to clipboard."""
+        cmd = f"erk implement {self._row.issue_number} --yolo"
+        self._copy_and_notify(cmd)
+
+    def action_copy_submit(self) -> None:
+        """Copy submit command to clipboard."""
+        cmd = f"erk submit {self._row.issue_number}"
+        self._copy_and_notify(cmd)
+
     def compose(self) -> ComposeResult:
-        """Create detail dialog content."""
+        """Create detail dialog content as an Action Hub."""
         with Vertical(id="detail-dialog"):
-            # Header: Plan number + title (not clickable - issue link is in info rows)
+            # Header: Plan number + title
             with Vertical(id="detail-header"):
                 plan_text = f"Plan #{self._row.issue_number}"
                 yield Label(plan_text, id="detail-plan-link")
@@ -400,6 +496,7 @@ class PlanDetailScreen(ModalScreen):
             # Divider
             yield Label("", id="detail-divider")
 
+            # ISSUE/PR INFO SECTION
             # Issue Info - clickable issue number
             with Container(classes="info-row"):
                 yield Label("Issue", classes="info-label")
@@ -424,26 +521,19 @@ class PlanDetailScreen(ModalScreen):
                     pr_text, pr_class = self._get_pr_state_badge()
                     yield Label(pr_text, classes=f"status-badge {pr_class}")
 
-            # Worktree Info (if exists)
-            if self._row.worktree_name:
-                with Container(classes="info-row"):
-                    yield Label("Worktree", classes="info-label")
-                    yield Label(self._row.worktree_name, classes="info-value", markup=False)
-                    yield Label("Local ✓", classes="status-badge badge-local")
-
-                if self._row.worktree_branch:
+                # PR title if different from issue title
+                if self._row.pr_title and self._row.pr_title != self._row.full_title:
                     with Container(classes="info-row"):
-                        yield Label("Branch", classes="info-label")
-                        yield Label(self._row.worktree_branch, classes="info-value", markup=False)
+                        yield Label("PR Title", classes="info-label")
+                        yield Label(self._row.pr_title, classes="info-value", markup=False)
 
-                if self._row.local_impl_display and self._row.local_impl_display != "-":
+                # Checks status
+                if self._row.checks_display and self._row.checks_display != "-":
                     with Container(classes="info-row"):
-                        yield Label("Last local", classes="info-label")
-                        yield Label(
-                            self._row.local_impl_display, classes="info-value", markup=False
-                        )
+                        yield Label("Checks", classes="info-label")
+                        yield Label(self._row.checks_display, classes="info-value", markup=False)
 
-            # Remote run info (if exists) - clickable run ID with status badge inline
+            # REMOTE RUN INFO SECTION (separate from worktree/local info)
             if self._row.run_id:
                 with Container(classes="info-row"):
                     yield Label("Run", classes="info-label")
@@ -459,23 +549,42 @@ class PlanDetailScreen(ModalScreen):
 
                 if self._row.remote_impl_display and self._row.remote_impl_display != "-":
                     with Container(classes="info-row"):
-                        yield Label("Last remote", classes="info-label")
+                        yield Label("Last remote impl", classes="info-label")
                         yield Label(
                             self._row.remote_impl_display, classes="info-value", markup=False
                         )
 
-            # Checkout command with copy button
-            if self._row.pr_number or self._row.exists_locally:
-                # Determine checkout command
-                if self._row.exists_locally:
-                    checkout_cmd = f"erk co {self._row.worktree_name}"
-                else:
-                    checkout_cmd = f"erk pr co {self._row.pr_number}"
+            # COMMANDS SECTION (copy to clipboard)
+            # All items below use uniform orange labels that copy when clicked
+            yield Label("COMMANDS (copy)", classes="section-header")
 
-                with Container(classes="copyable-row"):
-                    yield Label("Checkout", classes="info-label")
-                    yield Label(checkout_cmd, classes="copyable-text")
-                    yield CopyButton(checkout_cmd)
+            # PR checkout command (if PR exists)
+            if self._row.pr_number is not None:
+                pr_checkout_cmd = f"erk pr co {self._row.pr_number}"
+                with Container(classes="command-row"):
+                    yield CopyableLabel(pr_checkout_cmd, pr_checkout_cmd)
+
+            # Implement commands
+            implement_cmd = f"erk implement {self._row.issue_number}"
+            with Container(classes="command-row"):
+                yield Label("[1]", classes="command-key")
+                yield CopyableLabel(implement_cmd, implement_cmd)
+
+            dangerous_cmd = f"erk implement {self._row.issue_number} --dangerous"
+            with Container(classes="command-row"):
+                yield Label("[2]", classes="command-key")
+                yield CopyableLabel(dangerous_cmd, dangerous_cmd)
+
+            yolo_cmd = f"erk implement {self._row.issue_number} --yolo"
+            with Container(classes="command-row"):
+                yield Label("[3]", classes="command-key")
+                yield CopyableLabel(yolo_cmd, yolo_cmd)
+
+            # Submit command
+            submit_cmd = f"erk submit {self._row.issue_number}"
+            with Container(classes="command-row"):
+                yield Label("[4]", classes="command-key")
+                yield CopyableLabel(submit_cmd, submit_cmd)
 
             # Log entries (if any) - clickable timestamps
             if self._row.log_entries:
@@ -488,7 +597,7 @@ class PlanDetailScreen(ModalScreen):
                         else:
                             yield Label(log_text, classes="log-entry", markup=False)
 
-            yield Label("[Esc] Close  [o] Open in browser", id="detail-footer")
+            yield Label("Close", id="detail-footer")
 
 
 class ErkDashApp(App):
