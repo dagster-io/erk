@@ -9,10 +9,10 @@ from erk.cli.commands.planner.list_cmd import list_planners
 from erk.cli.commands.planner.register_cmd import register_planner
 from erk.cli.commands.planner.set_default_cmd import set_default_planner
 from erk.cli.commands.planner.unregister_cmd import unregister_planner
-from erk.cli.help_formatter import GroupedCommandGroup
+from erk.cli.help_formatter import ErkCommandGroup
 
 
-@click.group("planner", cls=GroupedCommandGroup, invoke_without_command=True)
+@click.group("planner", cls=ErkCommandGroup, grouped=False, invoke_without_command=True)
 @click.pass_context
 def planner_group(ctx: click.Context) -> None:
     """Manage planner boxes (GitHub Codespaces for remote planning).

@@ -5,17 +5,24 @@ import click
 from erk.cli.alias import get_aliases
 
 
-class GroupedCommandGroup(click.Group):
+class ErkCommandGroup(click.Group):
     """Click Group that organizes commands into logical sections in help output.
 
     Commands are organized into sections based on their usage patterns:
     - Core Navigation: Primary workflow commands
     - Command Groups: Organized subcommands
     - Quick Access: Backward compatibility aliases
+
+    Args:
+        grouped: If True, organize commands into sections. If False, show flat list.
     """
 
+    def __init__(self, grouped: bool = True, **kwargs: object) -> None:
+        super().__init__(**kwargs)  # type: ignore[arg-type]
+        self.grouped = grouped
+
     def format_commands(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
-        """Format commands into organized sections."""
+        """Format commands into organized sections or flat list."""
         show_hidden = getattr(ctx, "show_hidden", False)
 
         commands = []
@@ -41,6 +48,19 @@ class GroupedCommandGroup(click.Group):
         if not commands:
             return
 
+        # Flat output mode - single "Commands:" section
+        if not self.grouped:
+            # Filter out aliases (they'll be shown with their primary command)
+            primary_commands = [(n, c) for n, c in commands if n not in alias_map]
+            with formatter.section("Commands"):
+                self._format_command_list(ctx, formatter, primary_commands)
+
+            if hidden_commands:
+                with formatter.section("Deprecated (Hidden)"):
+                    self._format_command_list(ctx, formatter, hidden_commands)
+            return
+
+        # Grouped output mode - organize into sections
         # Define command organization (aliases now derived from decorator, not hardcoded)
         core_navigation = ["checkout", "up", "down"]
         command_groups = ["wt", "plan", "stack", "run", "admin", "config", "completion"]
@@ -105,14 +125,14 @@ class GroupedCommandGroup(click.Group):
         """Format a list of commands with their help text.
 
         Commands with aliases (declared via @alias decorator) are displayed
-        as 'checkout, co'.
+        as 'checkout (co)'.
         """
         rows = []
         for name, cmd in commands:
             # Get aliases for this command and format display name
             aliases = get_aliases(cmd)
             if aliases:
-                display_name = f"{name}, {', '.join(aliases)}"
+                display_name = f"{name} ({', '.join(aliases)})"
             else:
                 display_name = name
 

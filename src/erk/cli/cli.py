@@ -21,13 +21,13 @@ from erk.cli.commands.stack import stack_group
 from erk.cli.commands.submit import submit_cmd
 from erk.cli.commands.up import up_cmd
 from erk.cli.commands.wt import wt_group
-from erk.cli.help_formatter import GroupedCommandGroup
+from erk.cli.help_formatter import ErkCommandGroup
 from erk.core.context import create_context
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])  # terse help flags
 
 
-@click.group(cls=GroupedCommandGroup, context_settings=CONTEXT_SETTINGS)
+@click.group(cls=ErkCommandGroup, context_settings=CONTEXT_SETTINGS)
 @click.version_option(package_name="erk")
 @click.option("--debug", is_flag=True, help="Enable debug logging")
 @click.pass_context

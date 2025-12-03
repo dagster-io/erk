@@ -4,7 +4,7 @@ import click
 from click.testing import CliRunner
 
 from erk.cli.alias import ALIAS_ATTR, alias, get_aliases, register_with_aliases
-from erk.cli.help_formatter import GroupedCommandGroup
+from erk.cli.help_formatter import ErkCommandGroup
 
 
 def test_alias_decorator_stores_single_alias() -> None:
@@ -140,10 +140,10 @@ def test_alias_command_is_invocable() -> None:
 
 
 def test_help_formatter_shows_aliases_inline() -> None:
-    """GroupedCommandGroup shows aliases inline with primary command in help."""
+    """ErkCommandGroup shows aliases inline with primary command in help."""
     runner = CliRunner()
 
-    @click.group(cls=GroupedCommandGroup)
+    @click.group(cls=ErkCommandGroup)
     def cli() -> None:
         pass
 
@@ -157,15 +157,15 @@ def test_help_formatter_shows_aliases_inline() -> None:
     result = runner.invoke(cli, ["--help"])
     assert result.exit_code == 0
 
-    # Should show "checkout, co" format
-    assert "checkout, co" in result.output
+    # Should show "checkout (co)" format
+    assert "checkout (co)" in result.output
 
 
 def test_help_formatter_hides_alias_as_separate_entry() -> None:
-    """GroupedCommandGroup hides aliases from showing as separate commands."""
+    """ErkCommandGroup hides aliases from showing as separate commands."""
     runner = CliRunner()
 
-    @click.group(cls=GroupedCommandGroup)
+    @click.group(cls=ErkCommandGroup)
     def cli() -> None:
         pass
 

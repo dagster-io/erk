@@ -6,13 +6,13 @@ from erk.cli.cli import cli
 
 
 def test_help_shows_checkout_with_alias() -> None:
-    """Help output shows 'checkout, co' on a single line."""
+    """Help output shows 'checkout (co)' on a single line."""
     runner = CliRunner()
     result = runner.invoke(cli, ["--help"])
 
     assert result.exit_code == 0
-    # Should show combined format: "checkout, co"
-    assert "checkout, co" in result.output
+    # Should show combined format: "checkout (co)"
+    assert "checkout (co)" in result.output
 
 
 def test_help_shows_dash_command() -> None:
@@ -34,10 +34,10 @@ def test_help_does_not_show_co_as_separate_row() -> None:
     output_lines = result.output.split("\n")
 
     # Check that 'co' doesn't appear as standalone commands
-    # It should only appear as part of "checkout, co"
+    # It should only appear as part of "checkout (co)"
     for line in output_lines:
         # Skip lines that are the combined format
-        if "checkout, co" in line:
+        if "checkout (co)" in line:
             continue
         # Standalone alias would be at start of line with spaces
         stripped = line.strip()
