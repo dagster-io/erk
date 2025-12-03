@@ -11,3 +11,8 @@ DISPATCH_WORKFLOW_METADATA_NAME = "dispatch-erk-queue-git"
 DOCS_EXTRACTED_LABEL = "docs-extracted"
 DOCS_EXTRACTED_LABEL_DESCRIPTION = "Session logs analyzed for documentation improvements"
 DOCS_EXTRACTED_LABEL_COLOR = "5319E7"  # Purple
+
+# Extraction plan label (for plans that extract documentation from sessions)
+ERK_EXTRACTION_LABEL = "erk-extraction"
+ERK_EXTRACTION_LABEL_DESCRIPTION = "Documentation extraction plan"
+ERK_EXTRACTION_LABEL_COLOR = "D93F0B"  # Orange-red

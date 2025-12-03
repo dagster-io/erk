@@ -1146,6 +1146,9 @@ class PlanHeaderSchema(MetadataBlockSchema):
         last_dispatched_at: Updated by workflow (nullable)
         last_local_impl_at: Updated by local implementation, tracks last time (nullable)
         last_remote_impl_at: Updated by GitHub Actions, tracks last remote run (nullable)
+        plan_type: Type discriminator - "standard" (default) or "extraction"
+        source_plan_issues: For extraction plans, list of issue numbers analyzed
+        extraction_session_ids: For extraction plans, list of session IDs analyzed
     """
 
     def validate(self, data: dict[str, Any]) -> None:
@@ -1162,6 +1165,9 @@ class PlanHeaderSchema(MetadataBlockSchema):
             "last_dispatched_at",
             "last_local_impl_at",
             "last_remote_impl_at",
+            "plan_type",
+            "source_plan_issues",
+            "extraction_session_ids",
         }
 
         # Check required fields exist
@@ -1213,6 +1219,46 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 if not isinstance(data["last_remote_impl_at"], str):
                     raise ValueError("last_remote_impl_at must be a string or null")
 
+        # Validate plan_type field
+        valid_plan_types = {"standard", "extraction"}
+        if "plan_type" in data and data["plan_type"] is not None:
+            if not isinstance(data["plan_type"], str):
+                raise ValueError("plan_type must be a string or null")
+            if data["plan_type"] not in valid_plan_types:
+                raise ValueError(
+                    f"Invalid plan_type '{data['plan_type']}'. "
+                    f"Must be one of: {', '.join(sorted(valid_plan_types))}"
+                )
+
+        # Validate extraction mixin fields
+        if "source_plan_issues" in data and data["source_plan_issues"] is not None:
+            if not isinstance(data["source_plan_issues"], list):
+                raise ValueError("source_plan_issues must be a list or null")
+            for item in data["source_plan_issues"]:
+                if not isinstance(item, int):
+                    raise ValueError("source_plan_issues must contain only integers")
+                if item <= 0:
+                    raise ValueError("source_plan_issues must contain positive integers")
+
+        if "extraction_session_ids" in data and data["extraction_session_ids"] is not None:
+            if not isinstance(data["extraction_session_ids"], list):
+                raise ValueError("extraction_session_ids must be a list or null")
+            for item in data["extraction_session_ids"]:
+                if not isinstance(item, str):
+                    raise ValueError("extraction_session_ids must contain only strings")
+                if len(item) == 0:
+                    raise ValueError("extraction_session_ids must not contain empty strings")
+
+        # Validate extraction mixin: when plan_type is "extraction", mixin fields should be present
+        plan_type = data.get("plan_type")
+        if plan_type == "extraction":
+            if "source_plan_issues" not in data or data.get("source_plan_issues") is None:
+                raise ValueError("source_plan_issues is required when plan_type is 'extraction'")
+            if "extraction_session_ids" not in data or data.get("extraction_session_ids") is None:
+                raise ValueError(
+                    "extraction_session_ids is required when plan_type is 'extraction'"
+                )
+
         # Check for unexpected fields
         known_fields = required_fields | optional_fields
         unknown_fields = set(data.keys()) - known_fields
@@ -1233,6 +1279,9 @@ def create_plan_header_block(
     last_dispatched_at: str | None = None,
     last_local_impl_at: str | None = None,
     last_remote_impl_at: str | None = None,
+    plan_type: str | None = None,
+    source_plan_issues: list[int] | None = None,
+    extraction_session_ids: list[str] | None = None,
 ) -> MetadataBlock:
     """Create a plan-header metadata block with validation.
 
@@ -1245,6 +1294,9 @@ def create_plan_header_block(
         last_dispatched_at: Optional dispatch timestamp (set by workflow)
         last_local_impl_at: Optional local implementation timestamp (set by plan-implement)
         last_remote_impl_at: Optional remote implementation timestamp (set by GitHub Actions)
+        plan_type: Optional type discriminator ("standard" or "extraction")
+        source_plan_issues: For extraction plans, list of issue numbers analyzed
+        extraction_session_ids: For extraction plans, list of session IDs analyzed
 
     Returns:
         MetadataBlock with plan-header schema
@@ -1264,6 +1316,16 @@ def create_plan_header_block(
     if worktree_name is not None:
         data["worktree_name"] = worktree_name
 
+    # Include plan_type if provided (defaults to "standard" conceptually, but we don't store it)
+    if plan_type is not None:
+        data["plan_type"] = plan_type
+
+    # Include extraction mixin fields if provided
+    if source_plan_issues is not None:
+        data["source_plan_issues"] = source_plan_issues
+    if extraction_session_ids is not None:
+        data["extraction_session_ids"] = extraction_session_ids
+
     return create_metadata_block(
         key=schema.get_key(),
         data=data,
@@ -1281,6 +1343,9 @@ def format_plan_header_body(
     last_dispatched_at: str | None = None,
     last_local_impl_at: str | None = None,
     last_remote_impl_at: str | None = None,
+    plan_type: str | None = None,
+    source_plan_issues: list[int] | None = None,
+    extraction_session_ids: list[str] | None = None,
 ) -> str:
     """Format issue body with only metadata (schema version 2).
 
@@ -1296,6 +1361,9 @@ def format_plan_header_body(
         last_dispatched_at: Optional dispatch timestamp
         last_local_impl_at: Optional local implementation timestamp
         last_remote_impl_at: Optional remote implementation timestamp
+        plan_type: Optional type discriminator ("standard" or "extraction")
+        source_plan_issues: For extraction plans, list of issue numbers analyzed
+        extraction_session_ids: For extraction plans, list of session IDs analyzed
 
     Returns:
         Issue body string with metadata block only
@@ -1309,6 +1377,9 @@ def format_plan_header_body(
         last_dispatched_at=last_dispatched_at,
         last_local_impl_at=last_local_impl_at,
         last_remote_impl_at=last_remote_impl_at,
+        plan_type=plan_type,
+        source_plan_issues=source_plan_issues,
+        extraction_session_ids=extraction_session_ids,
     )
 
     return render_metadata_block(block)

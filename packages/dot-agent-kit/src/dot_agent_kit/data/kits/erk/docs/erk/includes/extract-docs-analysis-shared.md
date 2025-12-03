@@ -1,6 +1,6 @@
-# Suggest Agent Docs - Analysis Logic
+# Extract Agent Docs - Analysis Logic
 
-Shared analysis logic for `/erk:suggest-agent-docs` and `/erk:suggest-agent-docs-from-log` commands.
+Shared analysis logic for `/erk:extract-agent-docs` and `/erk:extract-agent-docs-from-log` commands.
 
 ## Two Categories of Documentation Needs
 
