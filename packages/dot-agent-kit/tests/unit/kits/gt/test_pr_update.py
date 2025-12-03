@@ -7,10 +7,10 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 from erk_shared.integrations.gt.cli import render_events
+from erk_shared.integrations.gt.fake_kit import FakeGtKitOps
 from erk_shared.integrations.gt.operations.update_pr import execute_update_pr
 
 from dot_agent_kit.data.kits.gt.kit_cli_commands.gt.pr_update import pr_update
-from tests.unit.kits.gt.fake_ops import FakeGtKitOps
 
 
 @pytest.fixture

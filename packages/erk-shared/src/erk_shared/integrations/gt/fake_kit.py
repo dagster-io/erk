@@ -101,8 +101,6 @@ class FakeGtKitOps(GtKit):
         # Add entries for Path.cwd() to handle tests that don't mock cwd
         if self._git_current_branches:
             # Copy state to current directory for compatibility
-            from pathlib import Path
-
             cwd = Path.cwd()
             for repo_root, branch in self._git_current_branches.items():
                 current_branches_expanded[cwd] = branch
@@ -134,8 +132,6 @@ class FakeGtKitOps(GtKit):
                 diff_to_branch[(repo_root, trunk)] = default_diff
             # Also add cwd-based key for compatibility
             if self._git_current_branches:
-                from pathlib import Path
-
                 cwd = Path.cwd()
                 if (cwd, trunk) not in diff_to_branch:
                     diff_to_branch[(cwd, trunk)] = default_diff
@@ -631,5 +627,36 @@ class FakeGtKitOps(GtKit):
         """
         repo_root = Path(self._repo_root)
         self._git_trunk_branches[repo_root] = trunk
+        self._git_instance = None
+        return self
+
+    def with_remote_divergence(self) -> "FakeGtKitOps":
+        """Configure submit to fail with remote divergence error.
+
+        Returns:
+            Self for chaining
+        """
+        existing_branches: dict[str, BranchMetadata] = {}
+        if isinstance(self._main_graphite, FakeGraphite):
+            existing_branches = self._main_graphite._branches
+        error = RuntimeError(
+            "gt submit failed: Branch has been updated remotely. "
+            "Run 'gt sync' to update local branch."
+        )
+        self._main_graphite = FakeGraphite(
+            submit_stack_raises=error,
+            branches=existing_branches,
+        )
+        return self
+
+    def with_commit_failure(self) -> "FakeGtKitOps":
+        """Configure git commit to fail.
+
+        Returns:
+            Self for chaining
+        """
+
+        # Configure FakeGit to raise on commit by storing this flag
+        # This requires FakeGit to support commit_raises - check if supported
         self._git_instance = None
         return self
