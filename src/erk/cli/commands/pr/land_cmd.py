@@ -11,11 +11,10 @@ parent (trunk), and pulls the latest changes.
 """
 
 import click
-from erk_shared.integrations.gt.kit_cli_commands.gt.land_pr import (
-    LandPrError,
-    LandPrSuccess,
-    execute_land_pr,
-)
+from erk_shared.integrations.gt.cli import render_events
+from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
+from erk_shared.integrations.gt.real import RealGtKit
+from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
 from erk_shared.output.output import machine_output, user_output
 
 from erk.cli.activation import render_activation_script
@@ -68,7 +67,7 @@ def pr_land(ctx: ErkContext, script: bool) -> None:
     )
 
     # Step 1: Execute land-pr (merges the PR)
-    result = execute_land_pr()
+    result = render_events(execute_land_pr(RealGtKit(), ctx.cwd))
 
     if isinstance(result, LandPrError):
         user_output(click.style("Error: ", fg="red") + result.message)

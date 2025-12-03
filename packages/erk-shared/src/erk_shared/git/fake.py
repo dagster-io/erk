@@ -90,6 +90,7 @@ class FakeGit(Git):
         merge_conflicts: dict[tuple[str, str], bool] | None = None,
         commits_ahead: dict[tuple[Path, str], int] | None = None,
         remote_urls: dict[tuple[Path, str], str] | None = None,
+        add_all_raises: Exception | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -122,6 +123,7 @@ class FakeGit(Git):
             merge_conflicts: Mapping of (base_branch, head_branch) -> has conflicts bool
             commits_ahead: Mapping of (cwd, base_branch) -> commit count
             remote_urls: Mapping of (repo_root, remote_name) -> remote URL
+            add_all_raises: Exception to raise when add_all() is called
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -149,6 +151,7 @@ class FakeGit(Git):
         self._merge_conflicts = merge_conflicts or {}
         self._commits_ahead = commits_ahead or {}
         self._remote_urls = remote_urls or {}
+        self._add_all_raises = add_all_raises
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -638,9 +641,19 @@ class FakeGit(Git):
         self._staged_files.extend(paths)
 
     def commit(self, cwd: Path, message: str) -> None:
-        """Record commit with staged changes."""
+        """Record commit with staged changes.
+
+        Also updates commits_ahead for the parent branch if state is tracked.
+        This ensures that test scenarios where uncommitted changes are committed
+        result in the expected commit count increase.
+        """
         self._commits.append((cwd, message, list(self._staged_files)))
         self._staged_files = []  # Clear staged files after commit
+
+        # Update commits_ahead for all tracked parent branches at this cwd
+        for (path, base_branch), count in list(self._commits_ahead.items()):
+            if path == cwd:
+                self._commits_ahead[(cwd, base_branch)] = count + 1
 
     def push_to_remote(
         self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False
@@ -674,10 +687,12 @@ class FakeGit(Git):
         return self._branch_last_commit_times.get(branch)
 
     def add_all(self, cwd: Path) -> None:
-        """Stage all changes for commit (git add -A)."""
-        # In the fake, just record that add_all was called
-        # No actual state mutation needed for tests
-        pass
+        """Stage all changes for commit (git add -A).
+
+        Raises configured exception if add_all_raises was set.
+        """
+        if self._add_all_raises is not None:
+            raise self._add_all_raises
 
     def amend_commit(self, cwd: Path, message: str) -> None:
         """Amend the current commit with a new message."""

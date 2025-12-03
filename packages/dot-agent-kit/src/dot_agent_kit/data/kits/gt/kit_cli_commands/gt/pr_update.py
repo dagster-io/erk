@@ -1,10 +1,28 @@
-"""Shim for pr_update kit CLI command.
+"""Graphite update-pr CLI command."""
 
-The canonical implementation is in erk_shared.integrations.gt.kit_cli_commands.gt.pr_update.
-This file exists only to provide the entry point for the kit CLI system.
-Import symbols directly from the canonical location.
-"""
+import json
+import sys
+from pathlib import Path
 
-from erk_shared.integrations.gt.kit_cli_commands.gt.pr_update import (
-    pr_update as pr_update,
-)
+import click
+from erk_shared.integrations.gt.cli import render_events
+from erk_shared.integrations.gt.operations.update_pr import execute_update_pr
+from erk_shared.integrations.gt.real import RealGtKit
+
+
+@click.command()
+def pr_update() -> None:
+    """Graphite update-pr workflow.
+
+    Usage:
+        dot-agent run gt pr-update
+    """
+    ops = RealGtKit()
+    cwd = Path.cwd()
+    result = render_events(execute_update_pr(ops, cwd))
+    print(json.dumps(result))
+    sys.exit(0 if result["success"] else 1)
+
+
+if __name__ == "__main__":
+    pr_update()

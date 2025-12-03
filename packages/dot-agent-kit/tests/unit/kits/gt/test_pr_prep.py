@@ -2,11 +2,9 @@
 
 from pathlib import Path
 
-from erk_shared.integrations.gt.kit_cli_commands.gt.pr_prep import (
-    PrepError,
-    PrepResult,
-    execute_prep,
-)
+from erk_shared.integrations.gt.cli import render_events
+from erk_shared.integrations.gt.operations.prep import execute_prep
+from erk_shared.integrations.gt.types import PrepError, PrepResult
 
 from tests.unit.kits.gt.fake_ops import FakeGtKitOps
 
@@ -24,7 +22,7 @@ class TestPrepExecution:
             .with_gt_unauthenticated()
         )
 
-        result = execute_prep(session_id="test-session", ops=ops)
+        result = render_events(execute_prep(ops, tmp_path, "test-session"))
 
         assert isinstance(result, PrepError)
         assert result.success is False
@@ -43,7 +41,7 @@ class TestPrepExecution:
             .with_gh_unauthenticated()
         )
 
-        result = execute_prep(session_id="test-session", ops=ops)
+        result = render_events(execute_prep(ops, tmp_path, "test-session"))
 
         assert isinstance(result, PrepError)
         assert result.success is False
@@ -63,7 +61,7 @@ class TestPrepExecution:
             .with_gh_unauthenticated()
         )
 
-        result = execute_prep(session_id="test-session", ops=ops)
+        result = render_events(execute_prep(ops, tmp_path, "test-session"))
 
         # When both are unauthenticated, gt should be reported first
         assert isinstance(result, PrepError)
@@ -73,7 +71,7 @@ class TestPrepExecution:
         """Test error when current branch cannot be determined."""
         ops = FakeGtKitOps().with_repo_root(str(tmp_path)).with_no_branch()
 
-        result = execute_prep(session_id="test-session", ops=ops)
+        result = render_events(execute_prep(ops, tmp_path, "test-session"))
 
         assert isinstance(result, PrepError)
         assert result.success is False
@@ -89,7 +87,7 @@ class TestPrepExecution:
             .with_commits(1)
         )
 
-        result = execute_prep(session_id="test-session", ops=ops)
+        result = render_events(execute_prep(ops, tmp_path, "test-session"))
 
         assert isinstance(result, PrepError)
         assert result.success is False
@@ -106,7 +104,7 @@ class TestPrepExecution:
             .with_commits(0)
         )
 
-        result = execute_prep(session_id="test-session", ops=ops)
+        result = render_events(execute_prep(ops, tmp_path, "test-session"))
 
         assert isinstance(result, PrepError)
         assert result.success is False
@@ -124,7 +122,7 @@ class TestPrepExecution:
             .with_commits(1)
         )
 
-        result = execute_prep(session_id="test-session", ops=ops)
+        result = render_events(execute_prep(ops, tmp_path, "test-session"))
 
         assert isinstance(result, PrepResult)
         assert result.success is True
@@ -143,7 +141,7 @@ class TestPrepExecution:
             .with_commits(3)
         )
 
-        result = execute_prep(session_id="test-session", ops=ops)
+        result = render_events(execute_prep(ops, tmp_path, "test-session"))
 
         assert isinstance(result, PrepResult)
         assert result.success is True
@@ -163,7 +161,7 @@ class TestPrepExecution:
             .with_restack_conflict()
         )
 
-        result = execute_prep(session_id="test-session", ops=ops)
+        result = render_events(execute_prep(ops, tmp_path, "test-session"))
 
         assert isinstance(result, PrepError)
         assert result.success is False
@@ -181,7 +179,7 @@ class TestPrepExecution:
             .with_squash_conflict()
         )
 
-        result = execute_prep(session_id="test-session", ops=ops)
+        result = render_events(execute_prep(ops, tmp_path, "test-session"))
 
         assert isinstance(result, PrepError)
         assert result.success is False
@@ -197,7 +195,7 @@ class TestPrepExecution:
             .with_commits(1)
         )
 
-        result = execute_prep(session_id="test-session", ops=ops)
+        result = render_events(execute_prep(ops, tmp_path, "test-session"))
 
         assert isinstance(result, PrepResult)
         assert result.success is True
@@ -220,7 +218,7 @@ class TestPrepExecution:
             .with_commits(2)
         )
 
-        result = execute_prep(session_id="test-session", ops=ops)
+        result = render_events(execute_prep(ops, tmp_path, "test-session"))
 
         assert isinstance(result, PrepResult)
         assert result.success is True

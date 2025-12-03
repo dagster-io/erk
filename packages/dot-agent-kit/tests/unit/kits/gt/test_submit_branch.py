@@ -6,12 +6,19 @@ from unittest.mock import Mock, patch
 
 import pytest
 from click.testing import CliRunner
-from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
+from erk_shared.integrations.gt.cli import render_events
+from erk_shared.integrations.gt.operations.finalize import (
+    build_pr_metadata_section,
+    execute_finalize,
+)
+from erk_shared.integrations.gt.operations.pre_analysis import execute_pre_analysis
+from erk_shared.integrations.gt.operations.preflight import execute_preflight
+from erk_shared.integrations.gt.types import (
+    FinalizeResult,
     PostAnalysisError,
     PreAnalysisError,
     PreAnalysisResult,
-    build_pr_metadata_section,
-    execute_pre_analysis,
+    PreflightResult,
 )
 
 from tests.unit.kits.gt.fake_ops import FakeGtKitOps
@@ -67,16 +74,17 @@ class TestBuildPRMetadataSection:
 class TestPreAnalysisExecution:
     """Tests for pre-analysis phase execution logic."""
 
-    def test_pre_analysis_gt_not_authenticated(self) -> None:
+    def test_pre_analysis_gt_not_authenticated(self, tmp_path: Path) -> None:
         """Test error when Graphite CLI is not authenticated."""
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(1)
             .with_gt_unauthenticated()
         )
 
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         assert isinstance(result, PreAnalysisError)
         assert result.success is False
@@ -85,16 +93,17 @@ class TestPreAnalysisExecution:
         assert result.details["fix"] == "Run 'gt auth' to authenticate with Graphite"
         assert result.details["authenticated"] is False
 
-    def test_pre_analysis_gh_not_authenticated(self) -> None:
+    def test_pre_analysis_gh_not_authenticated(self, tmp_path: Path) -> None:
         """Test error when GitHub CLI is not authenticated (gt is authenticated)."""
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(1)
             .with_gh_unauthenticated()
         )
 
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         assert isinstance(result, PreAnalysisError)
         assert result.success is False
@@ -103,17 +112,18 @@ class TestPreAnalysisExecution:
         assert result.details["fix"] == "Run 'gh auth login' to authenticate with GitHub"
         assert result.details["authenticated"] is False
 
-    def test_pre_analysis_gt_checked_before_gh(self) -> None:
+    def test_pre_analysis_gt_checked_before_gh(self, tmp_path: Path) -> None:
         """Test that Graphite authentication is checked before GitHub."""
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(1)
             .with_gt_unauthenticated()
             .with_gh_unauthenticated()
         )
 
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         # When both are unauthenticated, gt should be reported first
         assert isinstance(result, PreAnalysisError)
@@ -126,10 +136,10 @@ class TestPreAnalysisExecution:
             .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_uncommitted_files(["file.txt"])
-            .with_commits(1)  # Need at least 1 commit for pre_analysis to succeed
+            .with_commits(0)  # Start with no commits
         )
 
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         assert isinstance(result, PreAnalysisResult)
         assert result.success is True
@@ -137,15 +147,16 @@ class TestPreAnalysisExecution:
         assert result.uncommitted_changes_committed is True
         assert "Committed uncommitted changes" in result.message
 
-    def test_pre_analysis_without_uncommitted_changes(self) -> None:
+    def test_pre_analysis_without_uncommitted_changes(self, tmp_path: Path) -> None:
         """Test pre-analysis when no uncommitted changes exist."""
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(1)  # Single commit, no uncommitted files
         )
 
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         assert isinstance(result, PreAnalysisResult)
         assert result.success is True
@@ -154,15 +165,16 @@ class TestPreAnalysisExecution:
         assert result.squashed is False
         assert "Single commit, no squash needed" in result.message
 
-    def test_pre_analysis_with_multiple_commits(self) -> None:
+    def test_pre_analysis_with_multiple_commits(self, tmp_path: Path) -> None:
         """Test pre-analysis with 2+ commits (should squash)."""
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(3)  # Multiple commits
         )
 
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         assert isinstance(result, PreAnalysisResult)
         assert result.success is True
@@ -170,15 +182,16 @@ class TestPreAnalysisExecution:
         assert result.squashed is True
         assert "Squashed 3 commits into 1" in result.message
 
-    def test_pre_analysis_single_commit(self) -> None:
+    def test_pre_analysis_single_commit(self, tmp_path: Path) -> None:
         """Test pre-analysis with single commit (no squash needed)."""
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(1)  # Single commit
         )
 
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         assert isinstance(result, PreAnalysisResult)
         assert result.success is True
@@ -186,64 +199,68 @@ class TestPreAnalysisExecution:
         assert result.squashed is False
         assert "Single commit, no squash needed" in result.message
 
-    def test_pre_analysis_no_branch(self) -> None:
+    def test_pre_analysis_no_branch(self, tmp_path: Path) -> None:
         """Test error when current branch cannot be determined."""
-        ops = FakeGtKitOps().with_no_branch()
+        # Use with_no_branch builder to configure empty current branch
+        ops = FakeGtKitOps().with_repo_root(str(tmp_path)).with_no_branch()
 
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         assert isinstance(result, PreAnalysisError)
         assert result.success is False
         assert result.error_type == "no_branch"
         assert "Could not determine current branch" in result.message
 
-    def test_pre_analysis_no_parent(self) -> None:
+    def test_pre_analysis_no_parent(self, tmp_path: Path) -> None:
         """Test error when parent branch cannot be determined."""
-        # Create a fresh FakeGtKitOps with orphan branch (no parent)
-        ops = FakeGtKitOps().with_orphan_branch("orphan-branch")
+        # Use with_orphan_branch to set a branch without parent tracking
+        ops = FakeGtKitOps().with_repo_root(str(tmp_path)).with_orphan_branch("orphan-branch")
 
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         assert isinstance(result, PreAnalysisError)
         assert result.success is False
         assert result.error_type == "no_parent"
         assert "Could not determine parent branch" in result.message
 
-    def test_pre_analysis_no_commits(self) -> None:
+    def test_pre_analysis_no_commits(self, tmp_path: Path) -> None:
         """Test error when branch has no commits."""
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(0)  # No commits
         )
 
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         assert isinstance(result, PreAnalysisError)
         assert result.success is False
         assert result.error_type == "no_commits"
         assert "No commits found in branch" in result.message
 
-    def test_pre_analysis_squash_fails(self) -> None:
+    def test_pre_analysis_squash_fails(self, tmp_path: Path) -> None:
         """Test error when gt squash fails."""
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(3)  # Multiple commits to trigger squash
             .with_squash_failure()  # Configure squash to fail
         )
 
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         assert isinstance(result, PreAnalysisError)
         assert result.success is False
         assert result.error_type == "squash_failed"
         assert "Failed to squash commits" in result.message
 
-    def test_pre_analysis_detects_squash_conflict(self) -> None:
+    def test_pre_analysis_detects_squash_conflict(self, tmp_path: Path) -> None:
         """Test that squash conflicts are detected and reported correctly."""
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(3)  # Multiple commits to trigger squash
             .with_squash_failure(
@@ -255,7 +272,7 @@ class TestPreAnalysisExecution:
             )
         )
 
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         assert isinstance(result, PreAnalysisError)
         assert result.success is False
@@ -265,19 +282,20 @@ class TestPreAnalysisExecution:
         assert isinstance(stderr, str)
         assert "CONFLICT" in stderr
 
-    def test_pre_analysis_squash_conflict_preserves_output(self) -> None:
+    def test_pre_analysis_squash_conflict_preserves_output(self, tmp_path: Path) -> None:
         """Test that conflict errors include stdout/stderr for debugging."""
         test_stdout = "Some output"
         test_stderr = "CONFLICT (content): Merge conflict in README.md"
 
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(2)
             .with_squash_failure(stdout=test_stdout, stderr=test_stderr)
         )
 
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         assert isinstance(result, PreAnalysisError)
         assert result.error_type == "squash_conflict"
@@ -285,17 +303,18 @@ class TestPreAnalysisExecution:
         assert result.details["stderr"] == test_stderr
         assert result.details["branch_name"] == "feature-branch"
 
-    def test_pre_analysis_detects_pr_conflicts_from_github(self) -> None:
+    def test_pre_analysis_detects_pr_conflicts_from_github(self, tmp_path: Path) -> None:
         """Test that PR conflicts are detected and reported informational (not blocking)."""
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="master")
             .with_commits(1)
             .with_pr(123, url="https://github.com/org/repo/pull/123")
             .with_pr_conflicts(123)
         )
 
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         # Assert: Should succeed with conflict info included
         assert isinstance(result, PreAnalysisResult)
@@ -306,16 +325,17 @@ class TestPreAnalysisExecution:
         assert result.conflict_details["parent_branch"] == "master"
         assert result.conflict_details["detection_method"] == "github_api"
 
-    def test_pre_analysis_proceeds_when_no_conflicts(self) -> None:
+    def test_pre_analysis_proceeds_when_no_conflicts(self, tmp_path: Path) -> None:
         """Test that workflow proceeds normally when no conflicts exist."""
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="master")
             .with_commits(1)
             .with_pr(123, url="https://github.com/org/repo/pull/123")
         )
 
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         # Assert: Should succeed with no conflicts
         assert isinstance(result, PreAnalysisResult)
@@ -323,17 +343,18 @@ class TestPreAnalysisExecution:
         assert result.has_conflicts is False
         assert result.conflict_details is None
 
-    def test_pre_analysis_fallback_to_git_merge_tree(self) -> None:
+    def test_pre_analysis_fallback_to_git_merge_tree(self, tmp_path: Path) -> None:
         """Test fallback to git merge-tree when no PR exists (informational, not blocking)."""
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="master")
             .with_commits(1)
-            .with_merge_conflict("master", "feature-branch")
+            .with_merge_conflict("master", "feature-branch")  # Use builder method
         )
 
         # No PR configured - should fallback to git merge-tree
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         # Assert: Should succeed with conflict info via git merge-tree
         assert isinstance(result, PreAnalysisResult)
@@ -342,17 +363,18 @@ class TestPreAnalysisExecution:
         assert result.conflict_details is not None
         assert result.conflict_details["detection_method"] == "git_merge_tree"
 
-    def test_pre_analysis_proceeds_on_unknown_mergeability(self) -> None:
+    def test_pre_analysis_proceeds_on_unknown_mergeability(self, tmp_path: Path) -> None:
         """Test that UNKNOWN mergeability doesn't block workflow."""
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="master")
             .with_commits(1)
             .with_pr(123, url="https://github.com/org/repo/pull/123")
             .with_pr_mergeability(123, "UNKNOWN", "UNKNOWN")
         )
 
-        result = execute_pre_analysis(ops)
+        result = render_events(execute_pre_analysis(ops, tmp_path))
 
         # Assert: Should proceed with warning
         assert isinstance(result, PreAnalysisResult)
@@ -362,14 +384,9 @@ class TestPreAnalysisExecution:
 class TestExecutePreflight:
     """Tests for execute_preflight() function."""
 
-    @patch("erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch.time.sleep")
+    @patch("erk_shared.integrations.gt.operations.preflight.time.sleep")
     def test_preflight_success(self, mock_sleep: Mock, tmp_path: Path) -> None:
         """Test successful preflight execution."""
-        from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
-            PreflightResult,
-            execute_preflight,
-        )
-
         ops = (
             FakeGtKitOps()
             .with_repo_root(str(tmp_path))
@@ -378,7 +395,7 @@ class TestExecutePreflight:
             .with_pr(123, url="https://github.com/org/repo/pull/123")
         )
 
-        result = execute_preflight(ops, session_id="test-session-123")
+        result = render_events(execute_preflight(ops, tmp_path, "test-session-123"))
 
         assert isinstance(result, PreflightResult)
         assert result.success is True
@@ -395,40 +412,33 @@ class TestExecutePreflight:
         if diff_path.exists():
             diff_path.unlink()
 
-    def test_preflight_pre_analysis_error(self) -> None:
+    def test_preflight_pre_analysis_error(self, tmp_path: Path) -> None:
         """Test preflight returns error when pre-analysis fails."""
-        from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
-            PreAnalysisError,
-            execute_preflight,
-        )
-
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(1)
             .with_gt_unauthenticated()
         )
 
-        result = execute_preflight(ops, session_id="test-session-123")
+        result = render_events(execute_preflight(ops, tmp_path, "test-session-123"))
 
         assert isinstance(result, PreAnalysisError)
         assert result.error_type == "gt_not_authenticated"
 
-    @patch("erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch.time.sleep")
-    def test_preflight_submit_error(self, mock_sleep: Mock) -> None:
+    @patch("erk_shared.integrations.gt.operations.preflight.time.sleep")
+    def test_preflight_submit_error(self, mock_sleep: Mock, tmp_path: Path) -> None:
         """Test preflight returns error when submit fails."""
-        from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
-            execute_preflight,
-        )
-
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(1)
             .with_submit_failure(stderr="submit failed")
         )
 
-        result = execute_preflight(ops, session_id="test-session-123")
+        result = render_events(execute_preflight(ops, tmp_path, "test-session-123"))
 
         assert isinstance(result, PostAnalysisError)
         assert result.error_type == "submit_failed"
@@ -437,15 +447,11 @@ class TestExecutePreflight:
 class TestExecuteFinalize:
     """Tests for execute_finalize() function."""
 
-    def test_finalize_success(self) -> None:
+    def test_finalize_success(self, tmp_path: Path) -> None:
         """Test successful finalize execution."""
-        from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
-            FinalizeResult,
-            execute_finalize,
-        )
-
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(1)
             .with_pr(123, url="https://github.com/org/repo/pull/123")
@@ -453,12 +459,15 @@ class TestExecuteFinalize:
 
         pr_body = "This adds a great new feature"
 
-        result = execute_finalize(
-            pr_number=123,
-            pr_title="Add new feature",
-            pr_body=pr_body,
-            diff_file=None,
-            ops=ops,
+        result = render_events(
+            execute_finalize(
+                ops,
+                tmp_path,
+                pr_number=123,
+                pr_title="Add new feature",
+                pr_body=pr_body,
+                diff_file=None,
+            )
         )
 
         assert isinstance(result, FinalizeResult)
@@ -477,11 +486,6 @@ class TestExecuteFinalize:
 
     def test_finalize_cleans_up_diff_file(self, tmp_path: Path) -> None:
         """Test that finalize cleans up the temp diff file."""
-        from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
-            FinalizeResult,
-            execute_finalize,
-        )
-
         # Create a temp diff file
         diff_file = tmp_path / "test.diff"
         diff_file.write_text("test diff content", encoding="utf-8")
@@ -489,6 +493,7 @@ class TestExecuteFinalize:
 
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(1)
             .with_pr(123, url="https://github.com/org/repo/pull/123")
@@ -496,12 +501,15 @@ class TestExecuteFinalize:
 
         pr_body = "Description"
 
-        result = execute_finalize(
-            pr_number=123,
-            pr_title="Add feature",
-            pr_body=pr_body,
-            diff_file=str(diff_file),
-            ops=ops,
+        result = render_events(
+            execute_finalize(
+                ops,
+                tmp_path,
+                pr_number=123,
+                pr_title="Add feature",
+                pr_body=pr_body,
+                diff_file=str(diff_file),
+            )
         )
 
         assert isinstance(result, FinalizeResult)
@@ -511,11 +519,6 @@ class TestExecuteFinalize:
 
     def test_finalize_with_issue_reference(self, tmp_path: Path) -> None:
         """Test finalize includes metadata when issue reference exists."""
-        from erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch import (
-            FinalizeResult,
-            execute_finalize,
-        )
-
         # Create .impl/issue.json
         impl_dir = tmp_path / ".impl"
         impl_dir.mkdir()
@@ -528,6 +531,7 @@ class TestExecuteFinalize:
 
         ops = (
             FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(1)
             .with_pr(123, url="https://github.com/org/repo/pull/123")
@@ -535,18 +539,16 @@ class TestExecuteFinalize:
 
         pr_body = "Description"
 
-        # Mock Path.cwd() to return our temp directory
-        patch_path = "erk_shared.integrations.gt.kit_cli_commands.gt.submit_branch.Path.cwd"
-        with patch(patch_path) as mock_cwd:
-            mock_cwd.return_value = tmp_path
-
-            result = execute_finalize(
+        result = render_events(
+            execute_finalize(
+                ops,
+                tmp_path,
                 pr_number=123,
                 pr_title="Add feature",
                 pr_body=pr_body,
                 diff_file=None,
-                ops=ops,
             )
+        )
 
         assert isinstance(result, FinalizeResult)
         assert result.success is True
