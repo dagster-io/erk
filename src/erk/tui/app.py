@@ -4,14 +4,17 @@ import asyncio
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
+from rich.markup import escape as escape_markup
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Vertical
+from textual.containers import Container, Horizontal, Vertical
+from textual.events import Click
 from textual.screen import ModalScreen
-from textual.widgets import Header, Input, Label
+from textual.widgets import Header, Input, Label, Static
 
 from erk.tui.data.provider import PlanDataProvider
 from erk.tui.data.types import PlanFilters, PlanRowData
@@ -19,6 +22,89 @@ from erk.tui.filtering.logic import filter_plans
 from erk.tui.filtering.types import FilterMode, FilterState
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
+
+if TYPE_CHECKING:
+    from erk_shared.integrations.clipboard.abc import Clipboard
+
+
+class ClickableLink(Static):
+    """A clickable link widget that opens a URL in the browser."""
+
+    DEFAULT_CSS = """
+    ClickableLink {
+        color: $primary;
+        text-style: underline;
+    }
+    ClickableLink:hover {
+        color: $primary-lighten-2;
+    }
+    """
+
+    def __init__(self, text: str, url: str, **kwargs) -> None:
+        """Initialize clickable link.
+
+        Args:
+            text: Display text for the link
+            url: URL to open when clicked
+            **kwargs: Additional widget arguments
+        """
+        super().__init__(escape_markup(text), **kwargs)
+        self._url = url
+
+    def on_click(self, event: Click) -> None:
+        """Open URL in browser when clicked."""
+        event.stop()
+        click.launch(self._url)
+
+
+class CopyButton(Static):
+    """A button that copies text to clipboard when clicked."""
+
+    DEFAULT_CSS = """
+    CopyButton {
+        color: $text;
+        padding: 0 1;
+        background: $primary;
+        margin-left: 1;
+        width: auto;
+    }
+    CopyButton:hover {
+        background: $primary-lighten-1;
+    }
+    """
+
+    def __init__(self, text_to_copy: str, **kwargs) -> None:
+        """Initialize copy button.
+
+        Args:
+            text_to_copy: Text to copy to clipboard when clicked
+            **kwargs: Additional widget arguments
+        """
+        super().__init__(" Copy ", **kwargs)
+        self._text_to_copy = text_to_copy
+
+    def on_click(self, event: Click) -> None:
+        """Copy text to clipboard when clicked."""
+        event.stop()
+        success = self._copy_to_clipboard()
+        if success:
+            self.update(" Copied! ")
+            self.set_timer(1.5, lambda: self.update(" Copy "))
+
+    def _copy_to_clipboard(self) -> bool:
+        """Copy text to clipboard, finding the clipboard interface.
+
+        Returns:
+            True if copy succeeded, False otherwise.
+        """
+        # Access clipboard through the app's provider (ErkDashApp)
+        # Defer the isinstance check to avoid forward reference issues
+        from erk.tui.app import ErkDashApp as _ErkDashApp
+
+        app = self.app
+        if isinstance(app, _ErkDashApp):
+            return app._provider.clipboard.copy(self._text_to_copy)
+        return False
 
 
 class HelpScreen(ModalScreen):
@@ -108,6 +194,7 @@ class PlanDetailScreen(ModalScreen):
         Binding("escape", "dismiss", "Close"),
         Binding("q", "dismiss", "Close"),
         Binding("space", "dismiss", "Close"),
+        Binding("o", "open_browser", "Open"),
     ]
 
     DEFAULT_CSS = """
@@ -116,7 +203,8 @@ class PlanDetailScreen(ModalScreen):
     }
 
     #detail-dialog {
-        width: 80;
+        width: 80%;
+        max-width: 120;
         height: auto;
         max-height: 90%;
         background: $surface;
@@ -124,24 +212,96 @@ class PlanDetailScreen(ModalScreen):
         padding: 1 2;
     }
 
-    #detail-title {
-        text-style: bold;
-        text-align: center;
-        margin-bottom: 1;
+    #detail-header {
         width: 100%;
+        height: auto;
     }
 
-    .detail-section {
-        margin-top: 1;
-    }
-
-    .detail-section-title {
+    #detail-plan-link {
         text-style: bold;
-        color: $primary;
     }
 
-    .detail-row {
-        margin-left: 2;
+    #detail-title {
+        color: $text;
+    }
+
+    .status-badge {
+        margin-left: 1;
+        padding: 0 1;
+    }
+
+    .badge-open {
+        background: #238636;
+        color: white;
+    }
+
+    .badge-closed {
+        background: #8957e5;
+        color: white;
+    }
+
+    .badge-merged {
+        background: #8957e5;
+        color: white;
+    }
+
+    .badge-pr {
+        background: $primary;
+        color: white;
+    }
+
+    .badge-success {
+        background: #238636;
+        color: white;
+    }
+
+    .badge-failure {
+        background: #da3633;
+        color: white;
+    }
+
+    .badge-pending {
+        background: #9e6a03;
+        color: white;
+    }
+
+    .badge-local {
+        background: #388bfd;
+        color: white;
+    }
+
+    .badge-dim {
+        background: $surface-lighten-1;
+        color: $text-muted;
+    }
+
+    #detail-divider {
+        height: 1;
+        background: $primary-darken-2;
+    }
+
+    .info-row {
+        layout: horizontal;
+        height: 1;
+    }
+
+    .info-label {
+        color: $text-muted;
+        width: 12;
+    }
+
+    .info-value {
+        color: $text;
+        min-width: 20;
+    }
+
+    .copyable-row {
+        layout: horizontal;
+        height: 1;
+    }
+
+    .copyable-text {
+        color: $text;
     }
 
     #detail-footer {
@@ -149,94 +309,162 @@ class PlanDetailScreen(ModalScreen):
         margin-top: 1;
         color: $text-muted;
     }
+
+    .log-entry {
+        color: $text-muted;
+        margin-left: 1;
+    }
+
+    .log-section {
+        margin-top: 1;
+        max-height: 6;
+        overflow-y: auto;
+    }
+
+    .log-header {
+        color: $text-muted;
+        text-style: italic;
+    }
     """
 
-    def __init__(self, row: PlanRowData) -> None:
+    def __init__(self, row: PlanRowData, clipboard: "Clipboard | None" = None) -> None:
         """Initialize with plan row data.
 
         Args:
             row: PlanRowData containing all plan information
+            clipboard: Optional clipboard interface for copy operations
         """
         super().__init__()
         self._row = row
+        self._clipboard = clipboard
+
+    def _get_pr_state_badge(self) -> tuple[str, str]:
+        """Get PR state display text and CSS class."""
+        state = self._row.pr_state
+        if state == "MERGED":
+            return ("MERGED", "badge-merged")
+        elif state == "CLOSED":
+            return ("CLOSED", "badge-closed")
+        elif state == "OPEN":
+            return ("OPEN", "badge-open")
+        return ("PR", "badge-pr")
+
+    def _get_run_badge(self) -> tuple[str, str]:
+        """Get workflow run display text and CSS class."""
+        if not self._row.run_status:
+            return ("No runs", "badge-dim")
+
+        conclusion = self._row.run_conclusion
+        if conclusion == "success":
+            return ("✓ Passed", "badge-success")
+        elif conclusion == "failure":
+            return ("✗ Failed", "badge-failure")
+        elif conclusion == "cancelled":
+            return ("Cancelled", "badge-dim")
+        elif self._row.run_status == "in_progress":
+            return ("Running...", "badge-pending")
+        elif self._row.run_status == "queued":
+            return ("Queued", "badge-pending")
+        return (self._row.run_status, "badge-dim")
+
+    def action_open_browser(self) -> None:
+        """Open the plan (PR if available, otherwise issue) in browser."""
+        if self._row.pr_url:
+            click.launch(self._row.pr_url)
+        elif self._row.issue_url:
+            click.launch(self._row.issue_url)
 
     def compose(self) -> ComposeResult:
         """Create detail dialog content."""
         with Vertical(id="detail-dialog"):
-            # Header with issue link
-            issue_link = f"Plan #{self._row.issue_number}"
-            if self._row.issue_url:
-                issue_link = f"[link={self._row.issue_url}]{issue_link}[/link]"
-            yield Label(issue_link, id="detail-title", markup=True)
+            # Header: Plan number + title (not clickable - issue link is in info rows)
+            with Vertical(id="detail-header"):
+                plan_text = f"Plan #{self._row.issue_number}"
+                yield Label(plan_text, id="detail-plan-link")
+                yield Label(self._row.full_title, id="detail-title", markup=False)
 
-            # Title and Status
-            with Vertical(classes="detail-section"):
-                yield Label("Title", classes="detail-section-title")
-                yield Label(self._row.full_title, classes="detail-row")
-                status = self._row.issue_url.split("/")[-3] if self._row.issue_url else "unknown"
-                yield Label(f"Status: {status}", classes="detail-row")
+            # Divider
+            yield Label("", id="detail-divider")
 
-            # PR section
-            with Vertical(classes="detail-section"):
-                yield Label("PR", classes="detail-section-title")
-                if self._row.pr_number:
-                    pr_link = f"#{self._row.pr_number}"
+            # Issue Info - clickable issue number
+            with Container(classes="info-row"):
+                yield Label("Issue", classes="info-label")
+                if self._row.issue_url:
+                    yield ClickableLink(f"#{self._row.issue_number}", self._row.issue_url, classes="info-value")
+                else:
+                    yield Label(f"#{self._row.issue_number}", classes="info-value", markup=False)
+
+            # PR Info (if exists) - clickable PR number with state badge inline
+            if self._row.pr_number:
+                with Container(classes="info-row"):
+                    yield Label("PR", classes="info-label")
                     if self._row.pr_url:
-                        pr_link = f"[link={self._row.pr_url}]{pr_link}[/link]"
-                    yield Label(pr_link, classes="detail-row", markup=True)
-                    if self._row.pr_title:
-                        yield Label(f"Title: {self._row.pr_title}", classes="detail-row")
-                    if self._row.pr_state:
-                        yield Label(f"State: {self._row.pr_state}", classes="detail-row")
-                    if self._row.pr_number:
-                        checkout_cmd = f"erk pr co {self._row.pr_number}"
-                        yield Label(f"Checkout: {checkout_cmd}", classes="detail-row")
-                else:
-                    yield Label("-", classes="detail-row")
+                        yield ClickableLink(f"#{self._row.pr_number}", self._row.pr_url, classes="info-value")
+                    else:
+                        yield Label(f"#{self._row.pr_number}", classes="info-value", markup=False)
+                    # PR state badge inline
+                    pr_text, pr_class = self._get_pr_state_badge()
+                    yield Label(pr_text, classes=f"status-badge {pr_class}")
 
-            # Local section
-            with Vertical(classes="detail-section"):
-                yield Label("Local", classes="detail-section-title")
-                if self._row.worktree_name:
-                    yield Label(f"Worktree: {self._row.worktree_name}", classes="detail-row")
-                    if self._row.worktree_branch:
-                        yield Label(f"Branch: {self._row.worktree_branch}", classes="detail-row")
-                    status = "exists ✓" if self._row.exists_locally else "not found"
-                    yield Label(f"Status: {status}", classes="detail-row")
-                    yield Label(f"Last run: {self._row.local_impl_display}", classes="detail-row")
-                else:
-                    yield Label("-", classes="detail-row")
+            # Worktree Info (if exists)
+            if self._row.worktree_name:
+                with Container(classes="info-row"):
+                    yield Label("Worktree", classes="info-label")
+                    yield Label(self._row.worktree_name, classes="info-value", markup=False)
+                    yield Label("Local ✓", classes="status-badge badge-local")
 
-            # Remote section
-            with Vertical(classes="detail-section"):
-                yield Label("Remote", classes="detail-section-title")
-                if self._row.run_id:
-                    run_display = f"Run: {self._row.run_id}"
+                if self._row.worktree_branch:
+                    with Container(classes="info-row"):
+                        yield Label("Branch", classes="info-label")
+                        yield Label(self._row.worktree_branch, classes="info-value", markup=False)
+
+                if self._row.local_impl_display and self._row.local_impl_display != "-":
+                    with Container(classes="info-row"):
+                        yield Label("Last local", classes="info-label")
+                        yield Label(self._row.local_impl_display, classes="info-value", markup=False)
+
+            # Remote run info (if exists) - clickable run ID with status badge inline
+            if self._row.run_id:
+                with Container(classes="info-row"):
+                    yield Label("Run", classes="info-label")
                     if self._row.run_url:
-                        run_display = f"[link={self._row.run_url}]{run_display}[/link]"
-                    yield Label(run_display, classes="detail-row", markup=True)
-                    yield Label(f"Last run: {self._row.remote_impl_display}", classes="detail-row")
-                    if self._row.run_status and self._row.run_conclusion:
-                        yield Label(
-                            f"Status: {self._row.run_status} ({self._row.run_conclusion})",
-                            classes="detail-row",
-                        )
-                    elif self._row.run_status:
-                        yield Label(f"Status: {self._row.run_status}", classes="detail-row")
+                        yield ClickableLink(self._row.run_id, self._row.run_url, classes="info-value")
+                    else:
+                        yield Label(self._row.run_id, classes="info-value", markup=False)
+                    # Run status badge inline
+                    run_text, run_class = self._get_run_badge()
+                    yield Label(run_text, classes=f"status-badge {run_class}")
+
+                if self._row.remote_impl_display and self._row.remote_impl_display != "-":
+                    with Container(classes="info-row"):
+                        yield Label("Last remote", classes="info-label")
+                        yield Label(self._row.remote_impl_display, classes="info-value", markup=False)
+
+            # Checkout command with copy button
+            if self._row.pr_number or self._row.exists_locally:
+                # Determine checkout command
+                if self._row.exists_locally:
+                    checkout_cmd = f"erk co {self._row.worktree_name}"
                 else:
-                    yield Label("-", classes="detail-row")
+                    checkout_cmd = f"erk pr co {self._row.pr_number}"
 
-            # Log section (if log entries exist)
+                with Container(classes="copyable-row"):
+                    yield Label("Checkout", classes="info-label")
+                    yield Label(checkout_cmd, classes="copyable-text")
+                    yield CopyButton(checkout_cmd)
+
+            # Log entries (if any) - clickable timestamps
             if self._row.log_entries:
-                with Vertical(classes="detail-section"):
-                    yield Label("Log", classes="detail-section-title")
-                    for event_name, timestamp, comment_url in self._row.log_entries:
-                        log_line = f"• {timestamp}  {event_name}"
+                with Vertical(classes="log-section"):
+                    yield Label("Recent activity", classes="log-header")
+                    for event_name, timestamp, comment_url in self._row.log_entries[:5]:
+                        log_text = f"{timestamp}  {event_name}"
                         if comment_url:
-                            log_line = f"[link={comment_url}]{log_line}[/link]"
-                        yield Label(log_line, classes="detail-row", markup=True)
+                            yield ClickableLink(log_text, comment_url, classes="log-entry")
+                        else:
+                            yield Label(log_text, classes="log-entry", markup=False)
 
-            yield Label("Press Esc or Space to close", id="detail-footer")
+            yield Label("[Esc] Close  [o] Open in browser", id="detail-footer")
 
 
 class ErkDashApp(App):
@@ -410,7 +638,7 @@ class ErkDashApp(App):
         row = self._get_selected_row()
         if row is None:
             return
-        self.push_screen(PlanDetailScreen(row))
+        self.push_screen(PlanDetailScreen(row, clipboard=self._provider.clipboard))
 
     def action_cursor_down(self) -> None:
         """Move cursor down (vim j key)."""

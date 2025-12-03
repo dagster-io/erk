@@ -161,6 +161,47 @@ async def test_help_screen(self) -> None:
 
 **Solution**: For loading states, use a container and toggle visibility of children, or use `widget.styles.display = "none"` for complete removal from layout.
 
+## Rich Markup Quirks
+
+### URLs Must Be Quoted in Link Tags
+
+**Problem**: Rich markup's `[link=...]` syntax fails silently during widget creation but crashes at render time if the URL is unquoted:
+
+```python
+# WRONG - causes MarkupError at render time
+f"[link={url}]{text}[/link]"
+```
+
+**Error signature:**
+
+```
+MarkupError: Expected markup value (found '://github.com/...')
+```
+
+The `https` prefix appears to be consumed by the parser as a markup modifier.
+
+**Solution**: Always quote URLs in link tags and escape display text:
+
+```python
+from rich.markup import escape as escape_markup
+
+# CORRECT - escape display text, quote URL, handle special chars in URL
+def make_link(url: str, text: str) -> str:
+    escaped_text = escape_markup(text)
+    safe_url = url.replace('"', "%22")  # Escape quotes in URL
+    return f'[link="{safe_url}"]{escaped_text}[/link]'
+
+# Use markup=False for Labels with user-provided content that doesn't need links
+yield Label(user_title, classes="row", markup=False)
+```
+
+This applies to any `Label(..., markup=True)` or other widget accepting Rich markup strings.
+
+**Key patterns:**
+1. Use `escape_markup()` on display text to prevent `[brackets]` from being parsed
+2. Quote URLs and escape any `"` characters that might appear in them
+3. Set `markup=False` on Labels that show user content without links
+
 ## General Recommendations
 
 1. **Use type annotations** - Textual uses Reactives heavily; proper types catch issues early
