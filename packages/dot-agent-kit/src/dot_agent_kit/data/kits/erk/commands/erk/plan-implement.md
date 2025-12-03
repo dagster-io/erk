@@ -334,14 +334,17 @@ If no repo-specific CI configuration exists, skip automated CI and inform the us
    Run your project's CI manually before submitting.
 ```
 
-**After CI passes (or if .impl/ folder):**
+**After CI passes:**
 
 If in .worker-impl/ folder:
 
-1. Delete .worker-impl/ folder: `rm -rf .worker-impl/`
-2. Stage deletion: `git add .worker-impl/`
-3. Commit: `git commit -m "Clean up worker implementation artifacts after implementation"`
-4. Push: `git push`
+1. Delete .worker-impl/ folder FIRST: `rm -rf .worker-impl/`
+2. Stage ALL changes (implementation + folder deletion): `git add -A`
+3. Get the staged diff for commit message generation: `git diff --staged`
+4. Generate commit message from the diff (following diff-analysis-guide.md)
+   - **IMPORTANT:** The diff now correctly excludes .worker-impl/ files
+5. Create a single commit with the generated message
+6. Push: `git push`
 
 If in .impl/ folder:
 
@@ -353,11 +356,13 @@ If in .impl/ folder:
 
 **Only if .worker-impl/ was present:**
 
-Use gh CLI to create or update PR:
+Use gh CLI to create or update PR. The `--fill` flag will automatically use the commit message from the single implementation commit created in Step 9:
 
 ```bash
 gh pr create --fill --label "ai-generated" || gh pr edit --add-label "ai-generated"
 ```
+
+**Note:** The PR title and body will be derived from the commit message, which was generated from the staged diff (excluding .worker-impl/ files).
 
 ### Step 11: Output Format
 
