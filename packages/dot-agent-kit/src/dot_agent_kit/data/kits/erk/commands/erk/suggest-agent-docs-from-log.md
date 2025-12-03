@@ -53,25 +53,21 @@ dot-agent run erk find-project-dir
 
 The output contains the project directory path (e.g., `/Users/name/.claude/projects/-Users-name-code-myproject`).
 
-Next, list session logs to find one matching the provided session ID:
+The JSON output includes `session_logs` (list of session files) and `latest_session_id`. Session logs are stored directly in the project directory as flat files:
 
-```bash
-# List recent sessions for this project
-ls -la <project-dir>/sessions/
-```
+- Main sessions: `<session-id>.jsonl`
+- Agent logs: `agent-<agent-id>.jsonl`
 
-Session directories are named by session ID (e.g., `70e91b45-c320-442f-9ddc-7122098285ce/`).
+Match the provided session ID argument against filenames:
 
-Match the provided session ID argument:
+- If full ID provided: exact match on filename (without `.jsonl` extension)
+- If partial ID (8+ chars): prefix match on filename
 
-- If full ID provided: exact match
-- If partial ID (8+ chars): prefix match
-
-Once you find the matching session directory, preprocess it:
+Once you find the matching session file, preprocess it:
 
 ```bash
 # Preprocess the session log for analysis
-dot-agent run erk preprocess-session <project-dir>/sessions/<session-id>/logs/ --stdout
+dot-agent run erk preprocess-session <project-dir>/<session-id>.jsonl --stdout
 ```
 
 This outputs compressed XML with:
