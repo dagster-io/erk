@@ -871,5 +871,3 @@ class TestPlanDetailScreenCopyActions:
             await pilot.pause()
 
             assert clipboard.last_copied == "erk pr co 456"
-
-

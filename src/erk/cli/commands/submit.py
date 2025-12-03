@@ -12,7 +12,12 @@ from erk_shared.github.metadata import (
     render_erk_issue_event,
     update_plan_header_dispatch,
 )
-from erk_shared.github.parsing import github_repo_location_from_url
+from erk_shared.github.parsing import (
+    construct_pr_url,
+    construct_workflow_run_url,
+    extract_owner_repo_from_github_url,
+    github_repo_location_from_url,
+)
 from erk_shared.naming import (
     format_branch_timestamp_suffix,
     sanitize_worktree_name,
@@ -57,7 +62,7 @@ class SubmitResult:
     workflow_url: str
 
 
-def _construct_workflow_run_url(issue_url: str, run_id: str) -> str:
+def _build_workflow_run_url(issue_url: str, run_id: str) -> str:
     """Construct GitHub Actions workflow run URL from issue URL and run ID.
 
     Args:
@@ -67,13 +72,10 @@ def _construct_workflow_run_url(issue_url: str, run_id: str) -> str:
     Returns:
         Workflow run URL (e.g., https://github.com/owner/repo/actions/runs/1234567890)
     """
-    # Extract owner/repo from issue URL
-    # Pattern: https://github.com/owner/repo/issues/123
-    parts = issue_url.split("/")
-    if len(parts) >= 5:
-        owner = parts[-4]
-        repo = parts[-3]
-        return f"https://github.com/{owner}/{repo}/actions/runs/{run_id}"
+    owner_repo = extract_owner_repo_from_github_url(issue_url)
+    if owner_repo is not None:
+        owner, repo = owner_repo
+        return construct_workflow_run_url(owner, repo, run_id)
     return f"https://github.com/actions/runs/{run_id}"
 
 
@@ -89,7 +91,7 @@ def _strip_plan_markers(title: str) -> str:
     return result
 
 
-def _construct_pr_url(issue_url: str, pr_number: int) -> str:
+def _build_pr_url(issue_url: str, pr_number: int) -> str:
     """Construct GitHub PR URL from issue URL and PR number.
 
     Args:
@@ -99,13 +101,10 @@ def _construct_pr_url(issue_url: str, pr_number: int) -> str:
     Returns:
         PR URL (e.g., https://github.com/owner/repo/pull/456)
     """
-    # Extract owner/repo from issue URL
-    # Pattern: https://github.com/owner/repo/issues/123
-    parts = issue_url.split("/")
-    if len(parts) >= 5:
-        owner = parts[-4]
-        repo = parts[-3]
-        return f"https://github.com/{owner}/{repo}/pull/{pr_number}"
+    owner_repo = extract_owner_repo_from_github_url(issue_url)
+    if owner_repo is not None:
+        owner, repo = owner_repo
+        return construct_pr_url(owner, repo, pr_number)
     return f"https://github.com/pull/{pr_number}"
 
 
@@ -492,7 +491,7 @@ def _submit_single_issue(
     }
 
     # Create and post queued event comment
-    workflow_url = _construct_workflow_run_url(issue.url, run_id)
+    workflow_url = _build_workflow_run_url(issue.url, run_id)
     try:
         metadata_block = create_submission_queued_block(
             queued_at=queued_at,
@@ -525,7 +524,7 @@ def _submit_single_issue(
             + "Workflow is already running."
         )
 
-    pr_url = _construct_pr_url(issue.url, pr_number) if pr_number else None
+    pr_url = _build_pr_url(issue.url, pr_number) if pr_number else None
 
     return SubmitResult(
         issue_number=issue_number,
