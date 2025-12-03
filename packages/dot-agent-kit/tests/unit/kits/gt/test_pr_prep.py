@@ -3,10 +3,9 @@
 from pathlib import Path
 
 from erk_shared.integrations.gt.cli import render_events
+from erk_shared.integrations.gt.fake_kit import FakeGtKitOps
 from erk_shared.integrations.gt.operations.prep import execute_prep
 from erk_shared.integrations.gt.types import PrepError, PrepResult
-
-from tests.unit.kits.gt.fake_ops import FakeGtKitOps
 
 
 class TestPrepExecution:
