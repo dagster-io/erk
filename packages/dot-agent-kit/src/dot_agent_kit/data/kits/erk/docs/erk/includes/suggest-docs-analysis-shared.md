@@ -2,7 +2,21 @@
 
 Shared analysis logic for `/erk:suggest-agent-docs` and `/erk:suggest-agent-docs-from-log` commands.
 
-## Signals to Detect
+## Two Categories of Documentation Needs
+
+This command detects TWO distinct types of documentation gaps:
+
+### Category A: Exploration Friction (Learning Gaps)
+
+Documentation that would have made the session more efficient - things we had to discover through exploration.
+
+### Category B: Net New Implementation (Teaching Gaps)
+
+Documentation needed because we BUILT something new that future agents/users need to understand.
+
+---
+
+## Category A: Exploration Friction Signals
 
 Scan for these signals of missing documentation:
 
@@ -13,6 +27,30 @@ Scan for these signals of missing documentation:
 5. **Workflow corrections** - User had to redirect the agent's approach
 6. **External research** - WebSearch/WebFetch for info that could be local documentation
 7. **Context loading** - User provided project-specific context that could be pre-loaded
+
+## Category B: Net New Implementation Signals
+
+Scan for these signals that new code needs documentation:
+
+1. **New CLI commands** - Any new command needs at minimum: glossary entry, routing table update
+2. **New constants/labels** - Domain concepts introduced (e.g., new GitHub labels, status values)
+3. **New patterns introduced** - If the implementation establishes a pattern others should follow
+4. **New integration points** - APIs, webhooks, or interfaces that external code may consume
+5. **New configuration options** - Settings users need to know about
+6. **New file structures** - Directories or file conventions established
+
+### Category B Checklist
+
+For each net new implementation, consider:
+
+| What was added?   | Documentation action                             |
+| ----------------- | ------------------------------------------------ |
+| CLI command       | Update command reference, add routing entry      |
+| Constant/label    | Add to glossary                                  |
+| New pattern       | Document in relevant agent doc or create new one |
+| Config option     | Add to configuration guide                       |
+| New ABC/interface | Update architecture docs if significant          |
+| Test utilities    | Update testing docs if reusable                  |
 
 ## Categorization
 
@@ -78,16 +116,20 @@ Good trigger phrases:
 
 ## Output Format
 
-Display suggestions using this format:
+Display suggestions organized by category:
 
-`````markdown
+````markdown
 ## Documentation Suggestions
 
-Based on this session, the following documentation would improve future efficiency:
+Based on this session analysis:
 
 ---
 
-### 1. [Suggested Doc Title]
+## Category A: Exploration Friction (Learning Gaps)
+
+Documentation that would have made THIS session more efficient:
+
+### A1. [Suggested Doc Title]
 
 **Type:** Agent Doc | Skill
 **Location:** `docs/agent/[name].md` | `.claude/skills/[name]/`
@@ -96,54 +138,51 @@ Based on this session, the following documentation would improve future efficien
 **Priority:** High | Medium | Low
 **Effort:** Quick | Medium | Substantial
 
-**Why needed:** [Brief explanation tied to specific session patterns]
+**Why needed:** [Brief explanation tied to specific exploration patterns]
 
 **Draft content:**
 
-````markdown
+```markdown
 # [Title]
 
 ## Overview
 
-[One paragraph summary of what this doc covers and why it matters]
+[One paragraph summary]
 
-## [Main Section 1]
+## [Main Section]
 
-[Description of what goes here]
-
-- Key point 1
-- Key point 2
-
-## [Main Section 2]
-
-[Description of what goes here]
-
-```[language]
-// Code example placeholder
+[Content]
 ```
+
+---
+
+## Category B: Net New Implementation (Teaching Gaps)
+
+Documentation needed for what was BUILT this session:
+
+### B1. [Suggested Doc Title]
+
+**Type:** Glossary entry | Routing update | Agent Doc | Reference update
+**Location:** `[path to file]`
+**Action:** Update existing `[path]` | New section in `[path]`
+**Priority:** High | Medium | Low
+**Effort:** Quick | Medium | Substantial
+
+**What was implemented:** [Brief description of the new feature/component]
+
+**Draft content:**
+
+```markdown
+[Specific content to add]
+```
+
+---
+
+**Next steps:**
+
+- For Category A: Run `/erk:craft-plan` to create exploration docs
+- For Category B: Apply updates directly (usually quick glossary/routing updates)
 ````
-`````
-
-## Common Pitfalls
-
-- [Pitfall discovered this session]
-
-## Related
-
-- [Link to related doc if applicable]
-
-```
-
----
-
-### 2. [Next suggestion...]
-
-...
-
----
-
-**Next steps:** Run `/erk:craft-plan` with a selected suggestion to create the full documentation.
-```
 
 ## Anti-Pattern Guidance
 
@@ -192,6 +231,8 @@ The existing documentation appears to cover the patterns and workflows used.
 
 ## Example Signals and Responses
 
+### Category A Examples (Exploration Friction)
+
 | Signal                                           | Suggestion Type                    | Action           |
 | ------------------------------------------------ | ---------------------------------- | ---------------- |
 | Searched 10+ files to understand error handling  | Agent Doc: Error Handling Patterns | New doc          |
@@ -199,3 +240,14 @@ The existing documentation appears to cover the patterns and workflows used.
 | Found undocumented API pattern after exploration | Agent Doc: API Conventions         | Update existing  |
 | WebSearched for library config options           | Skill: [Library] Configuration     | New doc or merge |
 | User explained deployment process in detail      | Agent Doc: Deployment Guide        | New doc          |
+
+### Category B Examples (Net New Implementation)
+
+| What was implemented                   | Suggestion Type    | Action                        |
+| -------------------------------------- | ------------------ | ----------------------------- |
+| New CLI command `erk plan docs`        | Glossary + Routing | Update glossary.md, AGENTS.md |
+| New GitHub label `docs-extracted`      | Glossary entry     | Update glossary.md            |
+| New ABC interface for integration      | Architecture doc   | Update or create agent doc    |
+| New test utility `build_xyz_context()` | Testing doc        | Update testing patterns doc   |
+| New configuration option               | Config reference   | Update config docs            |
+| New constants in `constants.py`        | Glossary entries   | Update glossary.md            |
