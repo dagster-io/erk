@@ -15,7 +15,9 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from erk_shared.git.abc import Git
-from erk_shared.github.types import RepoInfo
+from erk_shared.github.abc import GitHub
+from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.types import PRMergeability
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
@@ -38,9 +40,13 @@ class GitState:
     repo_root: str = "/fake/repo/root"
 
 
-@dataclass(frozen=True)
-class GitHubState:
-    """Immutable GitHub PR state."""
+@dataclass
+class GitHubBuilderState:
+    """Mutable builder state for constructing FakeGitHub instances.
+
+    This dataclass accumulates configuration from builder methods
+    and is used to construct a FakeGitHub instance on demand.
+    """
 
     pr_numbers: dict[str, int] = field(default_factory=dict)
     pr_urls: dict[str, str] = field(default_factory=dict)
@@ -49,12 +55,12 @@ class GitHubState:
     pr_bodies: dict[int, str] = field(default_factory=dict)
     pr_diffs: dict[int, str] = field(default_factory=dict)
     pr_mergeability: dict[int, tuple[str, str]] = field(default_factory=dict)
-    merge_success: bool = True
-    pr_update_success: bool = True
-    pr_delay_attempts_until_visible: int = 0
+    merge_should_succeed: bool = True
+    pr_update_should_succeed: bool = True
     authenticated: bool = True
     auth_username: str | None = "test-user"
     auth_hostname: str | None = "github.com"
+    current_branch: str = "main"
 
 
 class FakeGitGtKitOps(Git):
@@ -360,210 +366,89 @@ class FakeGitGtKitOps(Git):
         raise NotImplementedError
 
 
-class FakeGitHubGtKitOps:
-    """Fake GitHub operations with in-memory state.
-
-    Note: This is a test-local fake that doesn't inherit from an ABC.
-    It provides a simplified interface for testing GT kit operations.
-    """
-
-    def __init__(self, state: GitHubState | None = None) -> None:
-        """Initialize with optional initial state."""
-        self._state = state if state is not None else GitHubState()
-        self._current_branch = "main"
-        self._pr_info_attempt_count = 0
-
-    def set_current_branch(self, branch: str) -> None:
-        """Set current branch (needed for context)."""
-        self._current_branch = branch
-
-    def get_state(self) -> GitHubState:
-        """Get current state (for testing assertions)."""
-        return self._state
-
-    def check_auth_status(self) -> tuple[bool, str | None, str | None]:
-        """Return pre-configured authentication status."""
-        if not self._state.authenticated:
-            return (False, None, None)
-        return (True, self._state.auth_username, self._state.auth_hostname)
-
-    def get_pr_info(self) -> tuple[int, str] | None:
-        """Get PR number and URL for current branch."""
-        # Simulate PR delay if configured
-        if self._state.pr_delay_attempts_until_visible > 0:
-            self._pr_info_attempt_count += 1
-            if self._pr_info_attempt_count <= self._state.pr_delay_attempts_until_visible:
-                return None
-
-        if self._current_branch not in self._state.pr_numbers:
-            return None
-
-        pr_number = self._state.pr_numbers[self._current_branch]
-        pr_url = self._state.pr_urls.get(
-            self._current_branch, f"https://github.com/repo/pull/{pr_number}"
-        )
-        return (pr_number, pr_url)
-
-    def get_pr_state(self) -> tuple[int, str] | None:
-        """Get PR number and state for current branch."""
-        if self._current_branch not in self._state.pr_numbers:
-            return None
-
-        pr_number = self._state.pr_numbers[self._current_branch]
-        pr_state = self._state.pr_states.get(self._current_branch, "OPEN")
-        return (pr_number, pr_state)
-
-    def update_pr_metadata(self, title: str, body: str) -> bool:
-        """Update PR title and body with configurable success/failure."""
-        if self._current_branch not in self._state.pr_numbers:
-            return False
-
-        if not self._state.pr_update_success:
-            return False
-
-        pr_number = self._state.pr_numbers[self._current_branch]
-
-        # Create new state with updated metadata
-        new_titles = {**self._state.pr_titles, pr_number: title}
-        new_bodies = {**self._state.pr_bodies, pr_number: body}
-        self._state = replace(self._state, pr_titles=new_titles, pr_bodies=new_bodies)
-        return True
-
-    def mark_pr_ready(self) -> bool:
-        """Mark PR as ready for review (fake always succeeds if PR exists)."""
-        if self._current_branch not in self._state.pr_numbers:
-            return False
-        # In the fake, marking as ready always succeeds if PR exists
-        return True
-
-    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
-        """Get the title of the PR (matches GitHub ABC interface)."""
-        return self._state.pr_titles.get(pr_number)
-
-    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
-        """Get the body of the PR (matches GitHub ABC interface)."""
-        return self._state.pr_bodies.get(pr_number)
-
-    def merge_pr(
-        self,
-        repo_root: Path,
-        pr_number: int,
-        *,
-        squash: bool = True,
-        verbose: bool = False,
-        subject: str | None = None,
-        body: str | None = None,
-    ) -> bool:
-        """Merge the PR with configurable success/failure (matches GitHub ABC interface)."""
-        return self._state.merge_success
-
-    def get_graphite_pr_url(self, pr_number: int) -> str | None:
-        """Get Graphite PR URL (fake returns test URL)."""
-        return f"https://app.graphite.com/github/pr/test-owner/test-repo/{pr_number}"
-
-    def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
-        """Get PR diff from configured state or return default."""
-        if pr_number in self._state.pr_diffs:
-            return self._state.pr_diffs[pr_number]
-        # Return a simple default diff
-        return (
-            "diff --git a/file.py b/file.py\n"
-            "--- a/file.py\n"
-            "+++ b/file.py\n"
-            "@@ -1,1 +1,1 @@\n"
-            "-old\n"
-            "+new"
-        )
-
-    def get_pr_status(self, branch: str) -> tuple[int | None, str | None]:
-        """Get PR number and URL for branch from fake state."""
-        if branch not in self._state.pr_numbers:
-            return (None, None)
-
-        pr_number = self._state.pr_numbers[branch]
-        pr_url = self._state.pr_urls.get(branch, f"https://github.com/repo/pull/{pr_number}")
-        return (pr_number, pr_url)
-
-    def get_pr_mergeability(self, pr_number: int) -> tuple[str, str]:
-        """Get PR mergeability status from fake state."""
-        # Default: MERGEABLE/CLEAN unless configured otherwise
-        return self._state.pr_mergeability.get(pr_number, ("MERGEABLE", "CLEAN"))
-
-    # Methods matching GitHub ABC interface (take repo_root as first param)
-
-    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR info for branch (matches GitHub ABC interface)."""
-        if branch not in self._state.pr_numbers:
-            return None
-        pr_number = self._state.pr_numbers[branch]
-        pr_url = self._state.pr_urls.get(branch, f"https://github.com/repo/pull/{pr_number}")
-        return (pr_number, pr_url)
-
-    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR state for branch (matches GitHub ABC interface)."""
-        if branch not in self._state.pr_numbers:
-            return None
-        pr_number = self._state.pr_numbers[branch]
-        pr_state = self._state.pr_states.get(branch, "OPEN")
-        return (pr_number, pr_state)
-
-    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
-        """Get PR mergeability status (matches GitHub ABC interface)."""
-        return self._state.pr_mergeability.get(pr_number, ("MERGEABLE", "CLEAN"))
-
-    def update_pr_title_and_body(
-        self, repo_root: Path, pr_number: int, title: str, body: str
-    ) -> bool:
-        """Update PR title and body (matches GitHub ABC interface)."""
-        if not self._state.pr_update_success:
-            return False
-
-        # Create new state with updated metadata
-        new_titles = {**self._state.pr_titles, pr_number: title}
-        new_bodies = {**self._state.pr_bodies, pr_number: body}
-        self._state = replace(self._state, pr_titles=new_titles, pr_bodies=new_bodies)
-        return True
-
-    def get_repo_info(self, repo_root: Path) -> RepoInfo | None:
-        """Get repo info (matches GitHub ABC interface).
-
-        Returns a fake RepoInfo for testing.
-        """
-        return RepoInfo(owner="test-owner", name="test-repo")
+# FakeGitHubGtKitOps has been removed - FakeGtKitOps now uses FakeGitHub directly
 
 
 class FakeGtKitOps(GtKit):
     """Fake composite operations for testing.
 
     Provides declarative setup methods for common test scenarios.
-
-    Note: Returns FakeGitGtKitOps and FakeGitHubGtKitOps for testability,
-    which have test-specific helper methods not in the production ABCs.
-    The github() method returns a test fake that doesn't implement the full
-    GitHub ABC, so uses type: ignore.
+    Uses lazy construction to build FakeGitHub from accumulated builder state.
     """
 
     def __init__(
         self,
         git_state: GitState | None = None,
-        github_state: GitHubState | None = None,
+        github_builder_state: GitHubBuilderState | None = None,
         main_graphite: Graphite | None = None,
     ) -> None:
         """Initialize with optional initial states."""
         self._git = FakeGitGtKitOps(git_state)
-        self._github = FakeGitHubGtKitOps(github_state)
+        self._github_builder_state = (
+            github_builder_state if github_builder_state is not None else GitHubBuilderState()
+        )
+        self._github_instance: FakeGitHub | None = None
         self._main_graphite = main_graphite if main_graphite is not None else FakeGraphite()
 
     def git(self) -> Git:
         """Get the git operations interface."""
         return self._git  # type: ignore[return-value]
 
-    def github(self) -> FakeGitHubGtKitOps:  # type: ignore[override]
+    def github(self) -> GitHub:
         """Get the GitHub operations interface.
 
-        Returns a test fake with helper methods not in the production ABC.
+        Constructs FakeGitHub lazily from accumulated builder state.
         """
-        return self._github
+        if self._github_instance is None:
+            self._github_instance = self._build_fake_github()
+        return self._github_instance
+
+    def _build_fake_github(self) -> FakeGitHub:
+        """Build FakeGitHub from accumulated builder state."""
+        from erk_shared.github.types import PullRequestInfo
+
+        # Build prs dict from pr_numbers, pr_urls, pr_states
+        prs: dict[str, PullRequestInfo] = {}
+        for branch, pr_number in self._github_builder_state.pr_numbers.items():
+            pr_url = self._github_builder_state.pr_urls.get(
+                branch, f"https://github.com/repo/pull/{pr_number}"
+            )
+            pr_state = self._github_builder_state.pr_states.get(branch, "OPEN")
+            pr_title = self._github_builder_state.pr_titles.get(pr_number)
+            prs[branch] = PullRequestInfo(
+                number=pr_number,
+                state=pr_state,
+                url=pr_url,
+                is_draft=False,
+                title=pr_title,
+                checks_passing=None,
+                owner="test-owner",
+                repo="test-repo",
+                has_conflicts=None,
+            )
+
+        # Build pr_mergeability dict with PRMergeability objects
+        pr_mergeability: dict[int, PRMergeability | None] = {}
+        for pr_number, (
+            mergeable,
+            merge_state,
+        ) in self._github_builder_state.pr_mergeability.items():
+            pr_mergeability[pr_number] = PRMergeability(
+                mergeable=mergeable, merge_state_status=merge_state
+            )
+
+        return FakeGitHub(
+            prs=prs,
+            pr_titles=self._github_builder_state.pr_titles,
+            pr_bodies_by_number=self._github_builder_state.pr_bodies,
+            pr_diffs=self._github_builder_state.pr_diffs,
+            pr_mergeability=pr_mergeability,
+            merge_should_succeed=self._github_builder_state.merge_should_succeed,
+            pr_update_should_succeed=self._github_builder_state.pr_update_should_succeed,
+            authenticated=self._github_builder_state.authenticated,
+            auth_username=self._github_builder_state.auth_username,
+            auth_hostname=self._github_builder_state.auth_hostname,
+        )
 
     def main_graphite(self) -> Graphite:
         """Get the main Graphite operations interface."""
@@ -585,8 +470,10 @@ class FakeGtKitOps(GtKit):
         git_state = self._git.get_state()
         self._git._state = replace(git_state, current_branch=branch)
 
-        # Update github state
-        self._github.set_current_branch(branch)
+        # Update github builder state
+        self._github_builder_state.current_branch = branch
+        # Reset cached instance since state changed
+        self._github_instance = None
 
         # Configure main_graphite fake to track the parent relationship
         if hasattr(self._main_graphite, "track_branch"):
@@ -656,30 +543,21 @@ class FakeGtKitOps(GtKit):
         Returns:
             Self for chaining
         """
-        gh_state = self._github.get_state()
-        branch = self._github._current_branch
+        branch = self._github_builder_state.current_branch
 
         if url is None:
             url = f"https://github.com/repo/pull/{number}"
 
-        new_pr_numbers = {**gh_state.pr_numbers, branch: number}
-        new_pr_urls = {**gh_state.pr_urls, branch: url}
-        new_pr_states = {**gh_state.pr_states, branch: state}
-        new_pr_titles = gh_state.pr_titles
-        new_pr_bodies = gh_state.pr_bodies
+        self._github_builder_state.pr_numbers[branch] = number
+        self._github_builder_state.pr_urls[branch] = url
+        self._github_builder_state.pr_states[branch] = state
         if title is not None:
-            new_pr_titles = {**gh_state.pr_titles, number: title}
+            self._github_builder_state.pr_titles[number] = title
         if body is not None:
-            new_pr_bodies = {**gh_state.pr_bodies, number: body}
+            self._github_builder_state.pr_bodies[number] = body
 
-        self._github._state = replace(
-            gh_state,
-            pr_numbers=new_pr_numbers,
-            pr_urls=new_pr_urls,
-            pr_states=new_pr_states,
-            pr_titles=new_pr_titles,
-            pr_bodies=new_pr_bodies,
-        )
+        # Reset cached instance since state changed
+        self._github_instance = None
         return self
 
     def with_children(self, children: list[str]) -> "FakeGtKitOps":
@@ -751,8 +629,9 @@ class FakeGtKitOps(GtKit):
         Returns:
             Self for chaining
         """
-        gh_state = self._github.get_state()
-        self._github._state = replace(gh_state, merge_success=False)
+        self._github_builder_state.merge_should_succeed = False
+        # Reset cached instance since state changed
+        self._github_instance = None
         return self
 
     def with_squash_failure(self, stdout: str = "", stderr: str = "") -> "FakeGtKitOps":
@@ -796,25 +675,9 @@ class FakeGtKitOps(GtKit):
         Returns:
             Self for chaining
         """
-        gh_state = self._github.get_state()
-        self._github._state = replace(gh_state, pr_update_success=False)
-        return self
-
-    def with_pr_delay(self, attempts_until_visible: int) -> "FakeGtKitOps":
-        """Configure PR to appear only after N get_pr_info() attempts.
-
-        Simulates GitHub API delay where PR is not immediately visible after creation.
-
-        Args:
-            attempts_until_visible: Number of attempts that return None before PR appears
-
-        Returns:
-            Self for chaining
-        """
-        gh_state = self._github.get_state()
-        self._github._state = replace(
-            gh_state, pr_delay_attempts_until_visible=attempts_until_visible
-        )
+        self._github_builder_state.pr_update_should_succeed = False
+        # Reset cached instance since state changed
+        self._github_instance = None
         return self
 
     def with_submit_success_but_nothing_submitted(self) -> "FakeGtKitOps":
@@ -865,13 +728,11 @@ class FakeGtKitOps(GtKit):
         Returns:
             Self for chaining
         """
-        gh_state = self._github.get_state()
-        self._github._state = replace(
-            gh_state,
-            authenticated=False,
-            auth_username=None,
-            auth_hostname=None,
-        )
+        self._github_builder_state.authenticated = False
+        self._github_builder_state.auth_username = None
+        self._github_builder_state.auth_hostname = None
+        # Reset cached instance since state changed
+        self._github_instance = None
         return self
 
     def with_pr_conflicts(self, pr_number: int) -> "FakeGtKitOps":
@@ -883,12 +744,9 @@ class FakeGtKitOps(GtKit):
         Returns:
             Self for chaining
         """
-        gh_state = self._github.get_state()
-        new_mergeability = {
-            **gh_state.pr_mergeability,
-            pr_number: ("CONFLICTING", "DIRTY"),
-        }
-        self._github._state = replace(gh_state, pr_mergeability=new_mergeability)
+        self._github_builder_state.pr_mergeability[pr_number] = ("CONFLICTING", "DIRTY")
+        # Reset cached instance since state changed
+        self._github_instance = None
         return self
 
     def with_pr_mergeability(
@@ -904,12 +762,9 @@ class FakeGtKitOps(GtKit):
         Returns:
             Self for chaining
         """
-        gh_state = self._github.get_state()
-        new_mergeability = {
-            **gh_state.pr_mergeability,
-            pr_number: (mergeable, merge_state),
-        }
-        self._github._state = replace(gh_state, pr_mergeability=new_mergeability)
+        self._github_builder_state.pr_mergeability[pr_number] = (mergeable, merge_state)
+        # Reset cached instance since state changed
+        self._github_instance = None
         return self
 
     def with_restack_conflict(self) -> "FakeGtKitOps":

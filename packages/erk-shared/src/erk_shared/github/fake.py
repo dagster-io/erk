@@ -45,6 +45,11 @@ class FakeGitHub(GitHub):
         auth_username: str | None = "test-user",
         auth_hostname: str | None = "github.com",
         issues: list[IssueInfo] | None = None,
+        pr_titles: dict[int, str] | None = None,
+        pr_bodies_by_number: dict[int, str] | None = None,
+        pr_diffs: dict[int, str] | None = None,
+        merge_should_succeed: bool = True,
+        pr_update_should_succeed: bool = True,
     ) -> None:
         """Create FakeGitHub with pre-configured state.
 
@@ -65,6 +70,11 @@ class FakeGitHub(GitHub):
             auth_username: Username returned by check_auth_status() (default "test-user")
             auth_hostname: Hostname returned by check_auth_status() (default "github.com")
             issues: List of IssueInfo objects for get_issues_with_pr_linkages()
+            pr_titles: Mapping of pr_number -> title for explicit title storage
+            pr_bodies_by_number: Mapping of pr_number -> body for explicit body storage
+            pr_diffs: Mapping of pr_number -> diff content
+            merge_should_succeed: Whether merge_pr() should succeed (default True)
+            pr_update_should_succeed: Whether PR updates should succeed (default True)
         """
         if prs is not None and pr_statuses is not None:
             msg = "Cannot specify both prs and pr_statuses"
@@ -105,8 +115,14 @@ class FakeGitHub(GitHub):
         self._auth_username = auth_username
         self._auth_hostname = auth_hostname
         self._issues = issues or []
+        self._pr_titles = pr_titles or {}
+        self._pr_bodies_by_number = pr_bodies_by_number or {}
+        self._pr_diffs = pr_diffs or {}
+        self._merge_should_succeed = merge_should_succeed
+        self._pr_update_should_succeed = pr_update_should_succeed
         self._updated_pr_bases: list[tuple[int, str]] = []
         self._updated_pr_bodies: list[tuple[int, str]] = []
+        self._updated_pr_titles: list[tuple[int, str]] = []
         self._merged_prs: list[int] = []
         self._closed_prs: list[int] = []
         self._get_prs_for_repo_calls: list[tuple[Path, bool]] = []
@@ -232,9 +248,13 @@ class FakeGitHub(GitHub):
         subject: str | None = None,
         body: str | None = None,
     ) -> bool:
-        """Record PR merge in mutation tracking list."""
-        self._merged_prs.append(pr_number)
-        return True
+        """Record PR merge in mutation tracking list.
+
+        Returns value of merge_should_succeed flag (default True).
+        """
+        if self._merge_should_succeed:
+            self._merged_prs.append(pr_number)
+        return self._merge_should_succeed
 
     def trigger_workflow(
         self,
@@ -312,6 +332,11 @@ class FakeGitHub(GitHub):
     def updated_pr_bodies(self) -> list[tuple[int, str]]:
         """Read-only access to tracked PR body updates for test assertions."""
         return self._updated_pr_bodies
+
+    @property
+    def updated_pr_titles(self) -> list[tuple[int, str]]:
+        """Read-only access to tracked PR title updates for test assertions."""
+        return self._updated_pr_titles
 
     @property
     def triggered_workflows(self) -> list[tuple[str, dict[str, str]]]:
@@ -608,9 +633,14 @@ class FakeGitHub(GitHub):
     def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
         """Get PR title by number from configured state.
 
-        Searches through configured PRs to find one matching the number.
-        Returns None if PR not found.
+        First checks explicit pr_titles storage, then searches through
+        configured PRs. Returns None if PR not found.
         """
+        # Check explicit title storage first
+        if pr_number in self._pr_titles:
+            return self._pr_titles[pr_number]
+
+        # Fall back to searching through PRs
         for pr in self._prs.values():
             if pr.number == pr_number:
                 return pr.title
@@ -619,14 +649,22 @@ class FakeGitHub(GitHub):
     def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
         """Get PR body by number from configured state.
 
-        Fake implementation returns None as PR bodies are not tracked.
+        Checks explicit pr_bodies_by_number storage.
+        Returns None if PR body not configured.
         """
-        return None
+        return self._pr_bodies_by_number.get(pr_number)
 
     def update_pr_title_and_body(
         self, repo_root: Path, pr_number: int, title: str, body: str
     ) -> None:
-        """Record PR title and body update in mutation tracking list."""
+        """Record PR title and body update in mutation tracking lists.
+
+        Raises RuntimeError if pr_update_should_succeed is False.
+        """
+        if not self._pr_update_should_succeed:
+            raise RuntimeError("PR update failed (configured to fail)")
+
+        self._updated_pr_titles.append((pr_number, title))
         self._updated_pr_bodies.append((pr_number, body))
 
     def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
@@ -634,10 +672,14 @@ class FakeGitHub(GitHub):
         pass
 
     def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
-        """Get the diff for a PR (returns simple fake diff).
+        """Get the diff for a PR from configured state or return default.
 
-        Returns a simple default diff for testing purposes.
+        First checks explicit pr_diffs storage. Returns a simple default
+        diff if not configured.
         """
+        if pr_number in self._pr_diffs:
+            return self._pr_diffs[pr_number]
+
         return (
             "diff --git a/file.py b/file.py\n"
             "--- a/file.py\n"

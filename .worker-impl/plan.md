@@ -7,6 +7,7 @@ Complete the consolidation of GitHub operations by removing legacy duplicate fak
 ## Background
 
 The original plan to "Merge GitHubGtKit into GitHub(ABC)" is **95% already implemented**:
+
 - GitHub(ABC) has all 32+ methods including GT-kit methods
 - GtKit.github() already returns `GitHub` (not a separate GitHubGtKit)
 - FakeGitHub implements the full ABC
@@ -28,6 +29,7 @@ The original plan to "Merge GitHubGtKit into GitHub(ABC)" is **95% already imple
 3. **`FakeGtKitOps.github()` returns `FakeGitHubGtKitOps`** instead of the unified `FakeGitHub`
 
 ### Why This Matters
+
 - Duplicated code (~500+ lines) across two files
 - `FakeGitHubGtKitOps` doesn't implement the full `GitHub` ABC (uses `# type: ignore`)
 - Inconsistent testing patterns between GT kit tests and other tests
@@ -39,6 +41,7 @@ The original plan to "Merge GitHubGtKit into GitHub(ABC)" is **95% already imple
 **File:** `packages/erk-shared/src/erk_shared/github/fake.py`
 
 Add constructor parameters to support GT-kit test scenarios:
+
 - `pr_titles: dict[int, str]` - explicit PR title storage
 - `pr_bodies_by_number: dict[int, str]` - explicit PR body storage
 - `pr_diffs: dict[int, str]` - PR diff content
@@ -46,9 +49,11 @@ Add constructor parameters to support GT-kit test scenarios:
 - `pr_update_should_succeed: bool` - control update success
 
 Add mutation tracking properties (some already exist):
+
 - `updated_pr_titles` - track title updates
 
 Modify existing methods:
+
 - `get_pr_body()` - return from `pr_bodies_by_number` if set
 - `merge_pr()` - respect `merge_should_succeed` flag
 
@@ -65,11 +70,13 @@ The builder methods like `.with_pr()`, `.with_merge_failure()`, `.with_pr_confli
 **File:** `packages/dot-agent-kit/tests/unit/kits/gt/fake_ops.py`
 
 Change:
+
 ```python
 def github(self) -> FakeGitHubGtKitOps:  # type: ignore[override]
 ```
 
 To:
+
 ```python
 def github(self) -> FakeGitHub:
 ```
@@ -79,11 +86,13 @@ This requires modifying how the builder methods work since `FakeGitHub` uses con
 ### Step 4: Migrate Builder Pattern
 
 The current `FakeGtKitOps` uses mutable builder pattern:
+
 ```python
 ops = FakeGtKitOps().with_pr(123, state="OPEN").with_merge_failure()
 ```
 
 The new approach needs to either:
+
 - Accumulate state, then construct `FakeGitHub` on first `github()` call
 - Or rebuild `FakeGitHub` on each builder method call
 
@@ -92,16 +101,19 @@ The new approach needs to either:
 ### Step 5: Update Tests
 
 **Files:**
+
 - `packages/dot-agent-kit/tests/unit/kits/gt/test_submit_branch.py`
 - `packages/dot-agent-kit/tests/unit/kits/gt/test_land_pr.py`
 - `packages/dot-agent-kit/tests/unit/kits/gt/test_pr_update.py`
 - `packages/dot-agent-kit/tests/unit/kits/gt/test_pr_prep.py`
 
 Most tests should work unchanged if the builder API is preserved. May need adjustments for:
+
 - Tests that call `ops.github().get_state()` - this method doesn't exist on `FakeGitHub`
 - Tests that access `GitHubState` fields directly
 
 Replace state assertions:
+
 ```python
 # Before
 github_state = ops.github().get_state()
@@ -116,11 +128,13 @@ assert (123, "New Title", "body") in ops.github().updated_pr_bodies
 ### Step 6: Delete Legacy Code
 
 **Files to modify:**
+
 - `packages/erk-shared/src/erk_shared/integrations/gt/fake.py`
   - Delete `GitHubState` dataclass
   - Delete `FakeGitHubGtKitOps` class
 
 **Files to delete:**
+
 - None - `fake_ops.py` still needed for `FakeGitGtKitOps` and `FakeGtKitOps`
 
 ### Step 7: Update Exports
@@ -131,12 +145,12 @@ Remove any exports of `GitHubState` or `FakeGitHubGtKitOps` if present.
 
 ## Critical Files
 
-| File | Action |
-|------|--------|
-| `packages/erk-shared/src/erk_shared/github/fake.py` | Add constructor params, modify methods |
-| `packages/dot-agent-kit/tests/unit/kits/gt/fake_ops.py` | Rewrite FakeGtKitOps to use FakeGitHub |
+| File                                                         | Action                                 |
+| ------------------------------------------------------------ | -------------------------------------- |
+| `packages/erk-shared/src/erk_shared/github/fake.py`          | Add constructor params, modify methods |
+| `packages/dot-agent-kit/tests/unit/kits/gt/fake_ops.py`      | Rewrite FakeGtKitOps to use FakeGitHub |
 | `packages/erk-shared/src/erk_shared/integrations/gt/fake.py` | Delete FakeGitHubGtKitOps, GitHubState |
-| `packages/dot-agent-kit/tests/unit/kits/gt/test_*.py` | Update state assertions (4 files) |
+| `packages/dot-agent-kit/tests/unit/kits/gt/test_*.py`        | Update state assertions (4 files)      |
 
 ## Testing Strategy
 

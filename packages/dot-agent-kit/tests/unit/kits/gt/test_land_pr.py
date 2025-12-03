@@ -89,9 +89,11 @@ class TestLandPrExecution:
         """Test error when parent branch cannot be determined."""
         # Setup: branch with no parent (orphaned)
         ops = FakeGtKitOps()
-        # Don't set parent relationship, so get_parent_branch returns None
+        # Don't set parent relationship via main_graphite, so get_parent_branch returns None
+        # Use direct state manipulation for git and builder pattern for github
         ops.git()._state = replace(ops.git().get_state(), current_branch="orphan-branch")  # type: ignore[attr-defined]
-        ops.github().set_current_branch("orphan-branch")
+        ops._github_builder_state.current_branch = "orphan-branch"
+        ops._github_instance = None  # Reset cache
 
         result = execute_land_pr(ops)
 

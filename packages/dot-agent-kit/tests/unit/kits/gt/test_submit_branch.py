@@ -211,7 +211,8 @@ class TestPreAnalysisExecution:
         from dataclasses import replace
 
         ops.git()._state = replace(ops.git().get_state(), current_branch="orphan-branch")  # type: ignore[attr-defined]
-        ops.github().set_current_branch("orphan-branch")
+        ops._github_builder_state.current_branch = "orphan-branch"
+        ops._github_instance = None  # Reset cache
         # main_graphite has no branches tracked, so get_parent_branch returns None
 
         result = execute_pre_analysis(ops)
@@ -476,10 +477,13 @@ class TestExecuteFinalize:
         assert result.pr_title == "Add new feature"
         assert result.branch_name == "feature-branch"
 
-        # Verify PR was updated
-        github_state = ops.github().get_state()
-        assert github_state.pr_titles[123] == "Add new feature"
-        assert "This adds a great new feature" in github_state.pr_bodies[123]
+        # Verify PR was updated using mutation tracking
+        github = ops.github()
+        assert (123, "Add new feature") in github.updated_pr_titles  # type: ignore[attr-defined]
+        # Check body was updated (find the body in updated_pr_bodies list)
+        bodies = [body for pr_num, body in github.updated_pr_bodies if pr_num == 123]  # type: ignore[attr-defined]
+        assert len(bodies) > 0
+        assert "This adds a great new feature" in bodies[0]
 
     def test_finalize_cleans_up_diff_file(self, tmp_path: Path) -> None:
         """Test that finalize cleans up the temp diff file."""
@@ -558,9 +562,12 @@ class TestExecuteFinalize:
         assert result.success is True
         assert result.issue_number == 456
 
-        # Verify PR body includes footer metadata
-        github_state = ops.github().get_state()
-        final_pr_body = github_state.pr_bodies[123]
+        # Verify PR body includes footer metadata using mutation tracking
+        github = ops.github()
+        # Find the body in updated_pr_bodies list
+        bodies = [body for pr_num, body in github.updated_pr_bodies if pr_num == 123]  # type: ignore[attr-defined]
+        assert len(bodies) > 0
+        final_pr_body = bodies[0]
         # Body comes first, then footer
         assert final_pr_body.startswith("Description")
         # Footer contains separator and checkout command (no Closes # - handled by native linking)

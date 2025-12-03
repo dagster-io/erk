@@ -92,7 +92,8 @@ class TestPrepExecution:
         ops.git()._state = replace(  # type: ignore[attr-defined]
             git_state, current_branch="orphan-branch", commits=["commit-1"]
         )
-        ops.github().set_current_branch("orphan-branch")
+        ops._github_builder_state.current_branch = "orphan-branch"
+        ops._github_instance = None  # Reset cache
 
         result = execute_prep(session_id="test-session", ops=ops)
 
