@@ -16,12 +16,12 @@ Guide for analyzing what consumes context during Claude Code sessions and identi
 
 These can be optimized through documentation and command design:
 
-| Consumer      | Typical Size | Optimization Strategy                                                                          |
-| ------------- | ------------ | ---------------------------------------------------------------------------------------------- |
-| Command text  | 5-15K chars  | Extract to `@` docs (see [command-optimization-patterns.md](command-optimization-patterns.md)) |
-| Skill content | 3-8K chars   | Modular sections, load on demand                                                               |
-| Agent prompts | 2-5K chars   | Use subagents for isolation                                                                    |
-| AGENTS.md     | 2-4K chars   | Keep routing-focused, link to detailed docs                                                    |
+| Consumer      | Typical Size | Optimization Strategy                                                                  |
+| ------------- | ------------ | -------------------------------------------------------------------------------------- |
+| Command text  | 5-15K chars  | Extract to `@` docs (see [Command Optimization](../commands/optimization-patterns.md)) |
+| Skill content | 3-8K chars   | Modular sections, load on demand                                                       |
+| Agent prompts | 2-5K chars   | Use subagents for isolation                                                            |
+| AGENTS.md     | 2-4K chars   | Keep routing-focused, link to detailed docs                                            |
 
 ### Intrinsic to Claude Code
 
@@ -83,7 +83,7 @@ Session logs live in `~/.claude/projects/<encoded-path>/`:
 - Path encoding: `/` → `-`, `.` → `-`, prepend `-`
 - Example: `/Users/foo/.erk/repos/erk` → `-Users-foo--erk-repos-erk`
 
-See [claude-code-session-layout.md](claude-code-session-layout.md) for complete format reference.
+See [layout.md](layout.md) for complete format reference.
 
 ### 2. Parse Tool Results
 
@@ -140,7 +140,7 @@ After (7K command + 3.5K external doc):
 @docs/execution-guide.md
 ```
 
-See [command-optimization-patterns.md](command-optimization-patterns.md) for complete pattern.
+See [Command Optimization](../commands/optimization-patterns.md) for complete pattern.
 
 ### Pattern: Use Subagent for Exploration
 
@@ -178,6 +178,6 @@ Read those 3 files
 
 ## Related Documentation
 
-- [claude-code-session-layout.md](claude-code-session-layout.md) - Session log format reference
-- [command-optimization-patterns.md](command-optimization-patterns.md) - The `@` reference pattern
-- [session-log-tools.md](session-log-tools.md) - CLI tools for session inspection
+- [layout.md](layout.md) - Session log format reference
+- [Command Optimization](../commands/optimization-patterns.md) - The `@` reference pattern
+- [tools.md](tools.md) - CLI tools for session inspection

@@ -31,33 +31,60 @@
 
 **Check if loaded**: Look for `<command-message>The "{name}" skill is loading</command-message>` earlier in conversation
 
-## Quick Routing Table
+## Routing: What to Load Before Writing Code
 
-| If you're about to...                            | STOP! Check this instead                                                               |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| Write Python code                                | → Load `dignified-python-313` skill FIRST                                              |
-| Write or modify tests                            | → Load `fake-driven-testing` skill FIRST                                               |
-| Run pytest, pyright, ruff, prettier, make, or gt | → Use `devrun` agent (Task tool), NOT Bash                                             |
-| Import time or use time.sleep()                  | → Use `context.time.sleep()` instead (see erk-architecture.md#time-abstraction)        |
-| Work with Graphite stacks                        | → Load `gt-graphite` skill for stack visualization and terminology                     |
-| Understand erk architecture patterns             | → [docs/agent/erk-architecture.md](docs/agent/erk-architecture.md)                     |
-| Design interface (Protocol vs ABC)               | → [docs/agent/protocol-vs-abc.md](docs/agent/protocol-vs-abc.md)                       |
-| Use planning workflow (.impl/ folders)           | → [docs/agent/planning-workflow.md](docs/agent/planning-workflow.md)                   |
-| Understand full plan lifecycle                   | → [docs/agent/plan-lifecycle.md](docs/agent/plan-lifecycle.md)                         |
-| Understand plan enrichment workflow              | → [docs/agent/plan-enrichment.md](docs/agent/plan-enrichment.md)                       |
-| Style CLI output                                 | → [docs/agent/cli-output-styling.md](docs/agent/cli-output-styling.md)                 |
-| Implement script mode for shell integration      | → [docs/agent/cli-script-mode.md](docs/agent/cli-script-mode.md)                       |
-| Use subprocess wrappers                          | → [docs/agent/subprocess-wrappers.md](docs/agent/subprocess-wrappers.md)               |
-| Create kit CLI commands                          | → [docs/agent/kit-cli-commands.md](docs/agent/kit-cli-commands.md)                     |
-| Understand kit code architecture                 | → [docs/agent/kit-code-architecture.md](docs/agent/kit-code-architecture.md)           |
-| Delegate to agents from commands                 | → [docs/agent/command-agent-delegation.md](docs/agent/command-agent-delegation.md)     |
-| Work with session logs (~/.claude/projects/)     | → [docs/agent/claude-code-session-layout.md](docs/agent/claude-code-session-layout.md) |
-| Parse or analyze session logs                    | → [docs/agent/claude-code-session-layout.md](docs/agent/claude-code-session-layout.md) |
-| Create hooks                                     | → [docs/agent/hooks.md](docs/agent/hooks.md)                                           |
-| Write temp files for AI workflows                | → [docs/agent/scratch-storage.md](docs/agent/scratch-storage.md)                       |
-| Understand project terms                         | → [docs/agent/glossary.md](docs/agent/glossary.md)                                     |
-| Navigate documentation                           | → [docs/agent/guide.md](docs/agent/guide.md)                                           |
-| View installed kits                              | → [@.agent/kits/kit-registry.md](.agent/kits/kit-registry.md)                          |
+### Tier 1: Mandatory Skills (ALWAYS Load First)
+
+These fundamentally change how you write code. Load before ANY code work:
+
+| Task                       | Action                            |
+| -------------------------- | --------------------------------- |
+| Writing Python             | Load `dignified-python-313` skill |
+| Writing or modifying tests | Load `fake-driven-testing` skill  |
+
+### Tier 2: Context-Specific Skills
+
+Load when the context applies:
+
+| Context                        | Action                   |
+| ------------------------------ | ------------------------ |
+| Graphite stacks, `gt` commands | Load `gt-graphite` skill |
+| Writing agent documentation    | Load `agent-docs` skill  |
+
+### Tier 3: Tool Routing
+
+Use agents instead of direct Bash:
+
+| Tools                                     | Route                          |
+| ----------------------------------------- | ------------------------------ |
+| pytest, pyright, ruff, prettier, make, gt | Use `devrun` agent (Task tool) |
+
+### Tier 4: Documentation Lookup
+
+For detailed reference, consult the documentation index which maps each document to specific "read when..." conditions:
+
+→ **[docs/agent/index.md](docs/agent/index.md)** - Complete document registry
+
+**Category quick reference:**
+
+| Category                                 | When to Read                                           |
+| ---------------------------------------- | ------------------------------------------------------ |
+| [Architecture](docs/agent/architecture/) | dry-run patterns, Protocol vs ABC, subprocess wrappers |
+| [CLI Development](docs/agent/cli/)       | command organization, output styling, script mode      |
+| [Planning](docs/agent/planning/)         | plan lifecycle, .impl/ folders, agent delegation       |
+| [Testing](docs/agent/testing/)           | erk fakes, rebase conflicts                            |
+| [Sessions](docs/agent/sessions/)         | session logs, context analysis                         |
+| [Hooks](docs/agent/hooks/)               | hook creation, erk-specific hooks                      |
+| [Kits](docs/agent/kits/)                 | kit CLI commands, kit architecture                     |
+| [Commands](docs/agent/commands/)         | slash command optimization, @ references               |
+
+**Root documents:**
+
+| Document                                       | When to Read             |
+| ---------------------------------------------- | ------------------------ |
+| [glossary.md](docs/agent/glossary.md)          | terminology, definitions |
+| [conventions.md](docs/agent/conventions.md)    | naming standards         |
+| [kit-registry.md](.agent/kits/kit-registry.md) | installed kits           |
 
 ## Graphite Stack Quick Reference
 
@@ -80,7 +107,7 @@ Core patterns for this codebase:
 - **Use ABC** when you want nominal typing with explicit inheritance. Ideal for implementation contracts like `Git`, `GitHub`, `Graphite` where you want to enforce that classes explicitly declare they implement the interface.
 - **Protocol with `@property`**: When a Protocol needs to accept frozen dataclasses (read-only attributes), use `@property` decorators instead of bare attributes. A read-only consumer accepts both read-only and read-write providers.
 
-**Full guide**: [docs/agent/erk-architecture.md](docs/agent/erk-architecture.md)
+**Full guide**: [Architecture](docs/agent/architecture/)
 
 ## Project Naming Conventions
 
@@ -95,7 +122,7 @@ Core patterns for this codebase:
 
 **Worktree Terminology:** Use "root worktree" (not "main worktree") to refer to the primary git worktree created with `git init`. This ensures "main" unambiguously refers to the branch name, since trunk branches can be named either "main" or "master". In code, use the `is_root` field to identify the root worktree.
 
-**CLI Command Organization:** Plan verbs are top-level (create, get, implement), worktree verbs are grouped under `erk wt`, stack verbs under `erk stack`. This follows the "plan is dominant noun" principle for ergonomic access to high-frequency operations. See [docs/agent/cli-command-organization.md](docs/agent/cli-command-organization.md) for complete decision framework.
+**CLI Command Organization:** Plan verbs are top-level (create, get, implement), worktree verbs are grouped under `erk wt`, stack verbs under `erk stack`. This follows the "plan is dominant noun" principle for ergonomic access to high-frequency operations. See [CLI Development](docs/agent/cli/) for complete decision framework.
 
 ## Project Constraints
 
@@ -113,8 +140,5 @@ Core patterns for this codebase:
 
 ## Documentation Hub
 
-- **Navigation**: [docs/agent/guide.md](docs/agent/guide.md)
-- **Installed kits**: [@.agent/kits/kit-registry.md](.agent/kits/kit-registry.md)
-- **Python standards**: Load `dignified-python-313` skill
-- **Test architecture**: Load `fake-driven-testing` skill
-- **Graphite stacks**: Load `gt-graphite` skill
+- **Full navigation guide**: [docs/agent/guide.md](docs/agent/guide.md)
+- **Document index with "read when..." conditions**: [docs/agent/index.md](docs/agent/index.md)

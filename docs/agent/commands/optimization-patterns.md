@@ -261,5 +261,5 @@ artifacts:
 
 ## Related Documentation
 
-- [context-window-analysis.md](context-window-analysis.md) - Analyzing context consumption
-- [command-agent-delegation.md](command-agent-delegation.md) - Delegating to agents (another optimization)
+- [Context Analysis](../sessions/context-analysis.md) - Analyzing context consumption
+- [Agent Delegation](../planning/agent-delegation.md) - Delegating to agents (another optimization)

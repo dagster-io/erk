@@ -47,4 +47,4 @@ In code, use the `is_root` field to identify the root worktree.
 
 Plan verbs are top-level (create, get, implement), worktree verbs are grouped under `erk wt`, stack verbs under `erk stack`. This follows the "plan is dominant noun" principle for ergonomic access to high-frequency operations.
 
-See [cli-command-organization.md](cli-command-organization.md) for the complete decision framework.
+See [CLI Development](cli/) for the complete decision framework.

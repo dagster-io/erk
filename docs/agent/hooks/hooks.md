@@ -25,7 +25,7 @@ Complete guide to Claude Code hooks: general capabilities and project-specific u
 
 **Part 2: Project-Specific Supplement**
 
-- See [hooks-erk.md](hooks-erk.md) for erk-specific usage
+- See [erk.md](erk.md) for erk-specific usage
 
 ## Part 1: General Guide (Claude Code Hooks)
 
@@ -408,7 +408,7 @@ if __name__ == "__main__":
 
 ## Part 2: Project-Specific Supplement
 
-For erk-specific hook usage, see **[hooks-erk.md](hooks-erk.md)**
+For erk-specific hook usage, see **[erk.md](erk.md)**
 
 This includes:
 
@@ -421,7 +421,7 @@ This includes:
 
 ## Additional Resources
 
-- **Project-Specific Supplement**: [hooks-erk.md](hooks-erk.md)
+- **Project-Specific Supplement**: [erk.md](erk.md)
 - **Official Claude Code Hooks**: https://code.claude.com/docs/en/hooks
 - **Official Hooks Guide**: https://code.claude.com/docs/en/hooks-guide.md
 - **dot-agent-kit Hook Development**: `../../packages/dot-agent-kit/docs/HOOKS.md`
