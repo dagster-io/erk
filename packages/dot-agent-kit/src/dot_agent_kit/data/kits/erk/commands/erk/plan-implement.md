@@ -324,6 +324,7 @@ dot-agent run erk mark-impl-ended 2>/dev/null || true
 ```
 
 This updates:
+
 - `.impl/local-run-state.json` with event="ended" timestamp
 - GitHub issue plan-header metadata with the ended event and metadata
 
