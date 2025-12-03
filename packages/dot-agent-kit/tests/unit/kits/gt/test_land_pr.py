@@ -1,6 +1,5 @@
 """Tests for land_pr kit CLI command using fake ops."""
 
-from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -72,10 +71,15 @@ class TestLandPrExecution:
         assert "Multiple children detected" in result.message
         assert "feature-a, feature-b" in result.message
 
-    def test_land_pr_error_parent_not_trunk(self) -> None:
+    def test_land_pr_error_parent_not_trunk(self, tmp_path: Path) -> None:
         """Test error when branch parent is not trunk."""
         # Setup: feature branch with parent other than trunk (main)
-        ops = FakeGtKitOps().with_branch("feature-branch", parent="develop")
+        ops = (
+            FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
+            .with_branch("feature-branch", parent="develop")
+            .with_pr(123, state="OPEN")
+        )
 
         result = execute_land_pr(ops)
 
@@ -88,12 +92,7 @@ class TestLandPrExecution:
     def test_land_pr_error_no_parent(self) -> None:
         """Test error when parent branch cannot be determined."""
         # Setup: branch with no parent (orphaned)
-        ops = FakeGtKitOps()
-        # Don't set parent relationship via main_graphite, so get_parent_branch returns None
-        # Use direct state manipulation for git and builder pattern for github
-        ops.git()._state = replace(ops.git().get_state(), current_branch="orphan-branch")  # type: ignore[attr-defined]
-        ops._github_builder_state.current_branch = "orphan-branch"
-        ops._github_instance = None  # Reset cache
+        ops = FakeGtKitOps().with_orphan_branch("orphan-branch")
 
         result = execute_land_pr(ops)
 
@@ -152,10 +151,11 @@ class TestLandPrExecution:
         """Test successfully landing a PR when trunk is 'master' instead of 'main'."""
         # Setup: feature branch on master with open PR, configure trunk as "master"
         ops = (
-            FakeGtKitOps().with_branch("feature-branch", parent="master").with_pr(123, state="OPEN")
+            FakeGtKitOps()
+            .with_trunk_branch("master")
+            .with_branch("feature-branch", parent="master")
+            .with_pr(123, state="OPEN")
         )
-        # Configure git ops to return "master" as trunk
-        ops.git()._state = replace(ops.git().get_state(), trunk_branch="master")  # type: ignore[attr-defined]
 
         result = execute_land_pr(ops)
 
@@ -164,12 +164,16 @@ class TestLandPrExecution:
         assert result.pr_number == 123
         assert result.branch_name == "feature-branch"
 
-    def test_land_pr_error_parent_not_trunk_with_master(self) -> None:
+    def test_land_pr_error_parent_not_trunk_with_master(self, tmp_path: Path) -> None:
         """Test error when branch parent is not trunk, with master as trunk."""
         # Setup: feature branch with parent "main" when trunk is "master"
-        ops = FakeGtKitOps().with_branch("feature-branch", parent="main")
-        # Configure git ops to return "master" as trunk
-        ops.git()._state = replace(ops.git().get_state(), trunk_branch="master")  # type: ignore[attr-defined]
+        ops = (
+            FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
+            .with_trunk_branch("master")
+            .with_branch("feature-branch", parent="main")
+            .with_pr(123, state="OPEN")
+        )
 
         result = execute_land_pr(ops)
 
@@ -212,9 +216,7 @@ class TestLandPrEdgeCases:
 
     def test_land_pr_unknown_current_branch(self) -> None:
         """Test when current branch cannot be determined."""
-        ops = FakeGtKitOps()
-        # Set current_branch to empty to simulate failure
-        ops.git()._state = replace(ops.git().get_state(), current_branch="")  # type: ignore[attr-defined]
+        ops = FakeGtKitOps().with_no_branch()
 
         result = execute_land_pr(ops)
 

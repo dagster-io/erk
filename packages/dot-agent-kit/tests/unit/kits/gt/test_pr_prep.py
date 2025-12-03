@@ -71,10 +71,7 @@ class TestPrepExecution:
 
     def test_prep_no_branch(self, tmp_path: Path) -> None:
         """Test error when current branch cannot be determined."""
-        from dataclasses import replace
-
-        ops = FakeGtKitOps().with_repo_root(str(tmp_path))
-        ops.git()._state = replace(ops.git().get_state(), current_branch="")  # type: ignore[attr-defined]
+        ops = FakeGtKitOps().with_repo_root(str(tmp_path)).with_no_branch()
 
         result = execute_prep(session_id="test-session", ops=ops)
 
@@ -85,15 +82,12 @@ class TestPrepExecution:
 
     def test_prep_no_parent_branch(self, tmp_path: Path) -> None:
         """Test error when parent branch cannot be determined."""
-        from dataclasses import replace
-
-        ops = FakeGtKitOps().with_repo_root(str(tmp_path))
-        git_state = ops.git().get_state()  # type: ignore[attr-defined]
-        ops.git()._state = replace(  # type: ignore[attr-defined]
-            git_state, current_branch="orphan-branch", commits=["commit-1"]
+        ops = (
+            FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
+            .with_orphan_branch("orphan-branch")
+            .with_commits(1)
         )
-        ops._github_builder_state.current_branch = "orphan-branch"
-        ops._github_instance = None  # Reset cache
 
         result = execute_prep(session_id="test-session", ops=ops)
 
