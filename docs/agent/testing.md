@@ -1,3 +1,11 @@
+---
+title: Test Architecture
+read_when:
+  - "writing tests with fakes"
+  - "understanding ops pattern"
+  - "running tests"
+---
+
 # Test Architecture: Coarse-Grained Dependency Injection
 
 ## Running Tests

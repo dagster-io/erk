@@ -1,3 +1,11 @@
+---
+title: Kit Code Architecture
+read_when:
+  - "understanding kit code structure"
+  - "creating kit CLI commands"
+  - "organizing kit Python code"
+---
+
 # Kit Code Architecture
 
 ## Two-Layer Architecture

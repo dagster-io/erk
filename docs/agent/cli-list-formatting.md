@@ -1,3 +1,11 @@
+---
+title: CLI List Formatting Standards
+read_when:
+  - "formatting list output"
+  - "designing list commands"
+  - "ensuring consistent list display"
+---
+
 # CLI List Formatting Standards
 
 This document defines the visual design principles for all list commands in the dot-agent-kit CLI, ensuring a consistent and user-friendly experience across `artifact list`, `hook list`, `kit list`, `kit search`, and `status`.

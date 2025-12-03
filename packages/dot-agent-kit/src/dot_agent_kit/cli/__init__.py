@@ -34,6 +34,7 @@ class LazyGroup(click.Group):
         from dot_agent_kit.commands import check
         from dot_agent_kit.commands.artifact.group import artifact_group
         from dot_agent_kit.commands.command import command
+        from dot_agent_kit.commands.docs.group import docs_group
         from dot_agent_kit.commands.hook.group import hook_group
         from dot_agent_kit.commands.init import init
         from dot_agent_kit.commands.kit.group import kit_group
@@ -49,6 +50,7 @@ class LazyGroup(click.Group):
 
         # Register command groups
         self.add_command(artifact_group)
+        self.add_command(docs_group)
         self.add_command(hook_group)
         self.add_command(kit_group)
         self.add_command(kit_command_group)

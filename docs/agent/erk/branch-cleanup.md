@@ -1,3 +1,11 @@
+---
+title: Branch Cleanup Guide
+read_when:
+  - "cleaning up branches"
+  - "removing dormant worktrees"
+  - "managing branch lifecycle"
+---
+
 # Branch Cleanup Guide
 
 This guide documents the process for identifying and cleaning up dormant local branches, including those tracked by Graphite and those with associated worktrees.

@@ -1,3 +1,11 @@
+---
+title: Claude Code Hooks Guide
+read_when:
+  - "creating hooks"
+  - "modifying hooks"
+  - "understanding hook lifecycle"
+---
+
 # Claude Code Hooks Guide
 
 Complete guide to Claude Code hooks: general capabilities and project-specific usage.

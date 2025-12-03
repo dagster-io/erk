@@ -1,3 +1,11 @@
+---
+title: Erk Glossary
+read_when:
+  - "understanding project terminology"
+  - "confused about domain-specific terms"
+  - "working with worktrees, plans, or stacks"
+---
+
 # Erk Glossary
 
 Definitive terminology reference for the erk project.

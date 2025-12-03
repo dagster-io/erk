@@ -1,3 +1,11 @@
+---
+title: CLI Script Mode
+read_when:
+  - "implementing script mode"
+  - "suppressing diagnostic output"
+  - "integrating with shell handlers"
+---
+
 # CLI Script Mode
 
 ## Overview

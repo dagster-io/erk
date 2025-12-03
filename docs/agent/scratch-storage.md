@@ -1,3 +1,11 @@
+---
+title: Scratch Storage
+read_when:
+  - "writing temp files for AI workflows"
+  - "passing files between processes"
+  - "understanding scratch directory location"
+---
+
 # Scratch Storage
 
 Erk provides a worktree-local scratch directory for inter-process file passing during AI workflows.

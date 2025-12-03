@@ -1,3 +1,11 @@
+---
+title: Erk Hooks
+read_when:
+  - "working with erk-specific hooks"
+  - "understanding context-aware reminders"
+  - "modifying project hooks"
+---
+
 # Claude Code Hooks in erk
 
 Project-specific guide for using Claude Code hooks in the erk repository.

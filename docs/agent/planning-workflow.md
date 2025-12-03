@@ -1,3 +1,11 @@
+---
+title: Planning Workflow
+read_when:
+  - "using .impl/ folders"
+  - "understanding plan file structure"
+  - "implementing plans"
+---
+
 # Planning Workflow
 
 This guide explains the `.impl/` folder protocol used in erk for managing implementation plans.

@@ -1,3 +1,11 @@
+---
+title: CLI Output Styling Guide
+read_when:
+  - "styling CLI output"
+  - "using colors in CLI"
+  - "formatting terminal output"
+---
+
 # CLI Output Styling Guide
 
 This guide defines the standard color scheme, emoji conventions, and output abstraction patterns for erk CLI commands.

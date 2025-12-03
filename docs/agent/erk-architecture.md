@@ -1,3 +1,11 @@
+---
+title: Erk Architecture Patterns
+read_when:
+  - "understanding erk architecture"
+  - "implementing dry-run patterns"
+  - "regenerating context after os.chdir"
+---
+
 # Erk Architecture Patterns
 
 This document describes the core architectural patterns specific to the erk codebase.

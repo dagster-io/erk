@@ -1,3 +1,11 @@
+---
+title: CLI Command Organization
+read_when:
+  - "organizing CLI commands"
+  - "understanding command structure"
+  - "designing command hierarchies"
+---
+
 # CLI Command Organization
 
 ## Design Philosophy: Plan-Oriented Interface

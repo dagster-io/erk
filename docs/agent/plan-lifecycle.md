@@ -1,3 +1,11 @@
+---
+title: Plan Lifecycle
+read_when:
+  - "creating a plan"
+  - "closing a plan"
+  - "understanding plan states"
+---
+
 # Plan Lifecycle
 
 Complete documentation for the erk plan lifecycle from creation through merge, using GitHub's native branch-to-issue linking.

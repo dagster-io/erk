@@ -1,3 +1,11 @@
+---
+title: Command-Agent Delegation
+read_when:
+  - "delegating to agents from commands"
+  - "implementing command-agent pattern"
+  - "workflow orchestration"
+---
+
 # Command-Agent Delegation Pattern
 
 ## Pattern Overview

@@ -1,3 +1,11 @@
+---
+title: Resolving Test Infrastructure Conflicts
+read_when:
+  - "fixing merge conflicts in tests"
+  - "resolving rebase conflicts"
+  - "updating test infrastructure during merges"
+---
+
 # Resolving Test Infrastructure Merge Conflicts
 
 **Knowledge extracted from**: 2025-01-10 merge conflict resolution session

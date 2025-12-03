@@ -1,3 +1,11 @@
+---
+title: GitHub Branch Linking
+read_when:
+  - "linking branches to issues"
+  - "using gh issue develop"
+  - "understanding branch-issue relationships"
+---
+
 # GitHub Native Branch Linking
 
 GitHub provides native branch-to-issue linking through the `gh issue develop` command. This feature creates a formal relationship between a branch and an issue, visible in the issue sidebar under "Development".

@@ -1,3 +1,11 @@
+---
+title: Claude Code Session Layout
+read_when:
+  - "working with session logs"
+  - "parsing session logs"
+  - "understanding ~/.claude/projects/ structure"
+---
+
 # Claude Code Session Layout
 
 Complete reference for the `~/.claude/projects/` directory structure and session log format used by Claude Code.

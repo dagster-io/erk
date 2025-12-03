@@ -1,3 +1,11 @@
+---
+title: Kit CLI Commands
+read_when:
+  - "creating kit CLI commands"
+  - "understanding Python/LLM boundary"
+  - "implementing kit command patterns"
+---
+
 # Kit CLI Commands - Python/LLM Boundary Standards
 
 This guide defines the boundary between Python and LLM responsibilities in kit CLI commands that interact with Claude Code.

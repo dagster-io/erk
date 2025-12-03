@@ -1,3 +1,11 @@
+---
+title: Subprocess Wrappers
+read_when:
+  - "using subprocess wrappers"
+  - "executing shell commands"
+  - "understanding subprocess patterns"
+---
+
 # Subprocess Execution Wrappers
 
 **NEVER use bare `subprocess.run(..., check=True)`. ALWAYS use wrapper functions.**

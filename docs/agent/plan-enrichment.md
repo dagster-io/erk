@@ -1,3 +1,11 @@
+---
+title: Plan Enrichment Guide
+read_when:
+  - "enriching a plan"
+  - "adding metadata to plans"
+  - "understanding plan enrichment workflow"
+---
+
 # Plan Enrichment Guide
 
 Complete guide to enriching implementation plans for autonomous execution. Learn when to enrich plans, how the process works, and what makes enriched plans more valuable.

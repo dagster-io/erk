@@ -1,3 +1,11 @@
+---
+title: Documentation Guide
+read_when:
+  - "navigating erk documentation"
+  - "finding where documentation lives"
+  - "understanding doc organization"
+---
+
 # Documentation Guide
 
 ## Quick Navigation
