@@ -10,17 +10,14 @@ from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.get_pr_body_footer import 
 )
 
 
-def test_get_pr_body_footer_outputs_checkout_and_graphite_steps() -> None:
-    """Test that footer includes checkout command and Graphite steps."""
+def test_get_pr_body_footer_outputs_combined_checkout_and_sync() -> None:
+    """Test that footer includes combined checkout and sync command."""
     runner = CliRunner()
 
     result = runner.invoke(get_pr_body_footer, ["--pr-number", "1895"])
 
     assert result.exit_code == 0
-    assert "erk pr checkout 1895" in result.output
-    assert "If using Graphite" in result.output
-    assert "gt track" in result.output
-    assert "gt squash && gt submit -f" in result.output
+    assert "erk pr checkout 1895 && erk pr sync" in result.output
     assert "---" in result.output
     assert "To checkout this PR" in result.output
 
@@ -42,5 +39,5 @@ def test_get_pr_body_footer_different_pr_numbers() -> None:
     result = runner.invoke(get_pr_body_footer, ["--pr-number", "42"])
 
     assert result.exit_code == 0
-    assert "erk pr checkout 42" in result.output
+    assert "erk pr checkout 42 && erk pr sync" in result.output
     assert "1895" not in result.output

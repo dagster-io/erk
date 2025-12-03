@@ -22,15 +22,7 @@ Examples:
     To checkout this PR in a fresh worktree and environment locally, run:
 
     ```
-    erk pr checkout 1895
-    ```
-
-    If using Graphite, the following steps are recommended to track and link the
-    branch to Graphite. The `erk` queue uses vanilla git in the remote worker.
-
-    ```
-    gt track
-    gt squash && gt submit -f
+    erk pr checkout 1895 && erk pr sync
     ```
 """
 
@@ -57,15 +49,7 @@ def get_pr_body_footer(pr_number: int) -> None:
 To checkout this PR in a fresh worktree and environment locally, run:
 
 ```
-erk pr checkout {pr_number}
-```
-
-If using Graphite, the following steps are recommended to track and link the
-branch to Graphite. The `erk` queue uses vanilla git in the remote worker.
-
-```
-gt track
-gt squash && gt submit -f
+erk pr checkout {pr_number} && erk pr sync
 ```
 """
     click.echo(output, nl=False)
