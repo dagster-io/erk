@@ -1,52 +1,15 @@
 """Command to close a plan."""
 
 from pathlib import Path
-from urllib.parse import urlparse
 
 import click
 from erk_shared.github.parsing import github_repo_location_from_url
 from erk_shared.output.output import user_output
 
+from erk.cli.commands.plan.parsing import parse_issue_number
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
-
-
-def _parse_issue_number(identifier: str) -> int:
-    """Parse issue number from identifier string.
-
-    Args:
-        identifier: Plan identifier (e.g., "42" or GitHub issue URL)
-
-    Returns:
-        Issue number as int
-
-    Raises:
-        click.ClickException: If identifier cannot be parsed as an issue number
-    """
-    if identifier.isdigit():
-        return int(identifier)
-
-    # Try to parse from GitHub URL
-    parsed = urlparse(identifier)
-    if parsed.scheme and parsed.hostname:
-        # This looks like a URL - check if it's a valid GitHub issue URL
-        if parsed.hostname == "github.com" and parsed.path:
-            parts = parsed.path.rstrip("/").split("/")
-            if len(parts) >= 2 and parts[-2] == "issues":
-                last_part = parts[-1]
-                if last_part.isdigit():
-                    return int(last_part)
-        # URL but wrong format
-        raise click.ClickException(
-            f"Invalid URL format: {identifier!r}. "
-            "Expected format: https://github.com/OWNER/REPO/issues/NUMBER"
-        )
-
-    raise click.ClickException(
-        f"Invalid plan identifier: {identifier!r}. "
-        "Expected an issue number (e.g., '42') or GitHub issue URL."
-    )
 
 
 def _close_linked_prs(
@@ -91,7 +54,7 @@ def close_plan(ctx: ErkContext, identifier: str) -> None:
     repo_root = repo.root  # Use git repository root for GitHub operations
 
     # Parse issue number - errors if invalid
-    number = _parse_issue_number(identifier)
+    number = parse_issue_number(identifier)
 
     # Fetch plan - errors if not found
     try:

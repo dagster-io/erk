@@ -14,22 +14,34 @@ Analyzes the current conversation to identify documentation gaps and suggest new
 
 Run this command after a session where you:
 
+**Category A - Exploration Friction (things that slowed you down):**
+
 - Had to explain the same concept multiple times
 - Went through trial-and-error to discover patterns
 - Explored the codebase extensively to find conventions
 - Were redirected by the user on your approach
 - Searched the web for information that could be local docs
 
+**Category B - Net New Implementation (things you built that need docs):**
+
+- Implemented new CLI commands
+- Added new constants, labels, or domain concepts
+- Created new patterns that others should follow
+- Added configuration options or integration points
+
 ## What You'll Get
 
-A structured list of documentation suggestions, each with:
+Suggestions organized by category:
 
-- **Title**: Descriptive name for the doc
-- **Type**: Agent Doc (`docs/agent/`) or Skill (`.claude/skills/`)
-- **Action**: New doc, update existing, or merge into existing
-- **Priority**: Effort/impact assessment
-- **Rationale**: Why this session suggests the doc is needed
-- **Draft content**: Skeleton ready to be fleshed out
+**Category A (Learning Gaps):**
+
+- Documentation that would have made THIS session faster
+- Usually agent docs or skills for patterns/workflows
+
+**Category B (Teaching Gaps):**
+
+- Documentation for what was BUILT this session
+- Usually glossary entries, routing updates, reference updates
 
 ---
 
