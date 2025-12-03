@@ -14,6 +14,7 @@ Document Category A learning gaps discovered during the extraction plan workflow
 **Priority:** Medium
 
 **Rationale:** During implementation, hit B904 lint error for `raise SystemExit(1)` inside an `except` block. The current doc shows the pattern but doesn't explain:
+
 - B904 requires explicit exception chaining in except blocks
 - When to use `from e` vs `from None`
 - That this is a mandatory lint rule, not just a best practice
@@ -22,7 +23,7 @@ Document Category A learning gaps discovered during the extraction plan workflow
 
 Add after the existing "Adding Context Before Re-raising" example (around line 114):
 
-```markdown
+````markdown
 ### Exception Chaining (B904 Lint Compliance)
 
 **Ruff rule B904** requires explicit exception chaining when raising inside an `except` block. This prevents losing the original traceback.
@@ -48,11 +49,14 @@ try:
 except ValueError:
     raise SystemExit(1)  # Lint error: missing 'from e' or 'from None'
 ```
+````
 
 **When to use each:**
+
 - `from e` - Preserve original exception for debugging
 - `from None` - Intentionally suppress original (e.g., transforming exception type)
-```
+
+````
 
 ### Item 2: Kit CLI Command JSON Output Pattern
 
@@ -81,7 +85,7 @@ click.echo(json.dumps({
     "issue_url": result.url,
     # ... operation-specific fields
 }))
-```
+````
 
 ### Error Response
 
@@ -122,6 +126,7 @@ def my_command() -> None:
         "result_url": result.url,
     }))
 ```
+
 ```
 
 ## Implementation Steps
@@ -131,3 +136,4 @@ def my_command() -> None:
 3. Read `docs/agent/kits/cli-commands.md`
 4. Add JSON output pattern section at end of file
 5. Run `make fast-ci` to verify no formatting issues
+```
