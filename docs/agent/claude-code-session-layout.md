@@ -291,6 +291,122 @@ agent_id = log_path.stem.replace("agent-", "")
 # agent-17cfd3f4.jsonl → 17cfd3f4
 ```
 
+## Session Lifecycle and Compaction
+
+Understanding how sessions evolve over time, especially during context compaction.
+
+### Session ID Persistence
+
+**Key Insight:** Session IDs persist across context compactions and summarizations.
+
+When a Claude Code conversation runs out of context window space, the system:
+
+1. Summarizes earlier parts of the conversation
+2. Continues with a condensed context
+3. **Keeps the same session ID**
+
+This means:
+
+- A single session log file can contain multiple "generations" of conversation
+- The session ID in `SESSION_CONTEXT` environment variable remains constant
+- Scratch files at `.erk/scratch/<session-id>/` remain accessible after compaction
+- Agent subprocesses spawned before and after compaction share the same parent session ID
+
+### What Happens During Compaction
+
+```
+Before Compaction:
+┌─────────────────────────────────────────────────┐
+│ Session: abc-123                                │
+│ Entry 1: user message                           │
+│ Entry 2: assistant response                     │
+│ Entry 3: tool result                            │
+│ ... (many entries)                              │
+│ Entry 500: user message                         │
+│ [Context window full]                           │
+└─────────────────────────────────────────────────┘
+
+After Compaction:
+┌─────────────────────────────────────────────────┐
+│ Session: abc-123  (SAME ID!)                    │
+│ Entry 501: type="summary" (condensed history)   │
+│ Entry 502: user message (continues normally)    │
+│ Entry 503: assistant response                   │
+│ ...                                             │
+└─────────────────────────────────────────────────┘
+```
+
+### Compaction Boundary Detection
+
+You can identify compaction boundaries by looking for `type: "summary"` entries:
+
+```python
+def find_compaction_boundaries(entries: list[dict]) -> list[int]:
+    """Find indices where context compaction occurred."""
+    return [
+        i for i, entry in enumerate(entries)
+        if entry.get("type") == "summary"
+    ]
+```
+
+### Implications for Tooling
+
+**Session-Aware Tools:**
+
+- Tools that track session state should handle compaction gracefully
+- Don't assume all context from earlier in the session is available
+- Scratch files persist and can bridge compaction boundaries
+
+**Agent Spawning:**
+
+- Agents spawned before compaction have access to full pre-compaction context
+- Agents spawned after compaction only see the summarized context
+- Both share the same parent session ID for correlation
+
+**Scratch Storage:**
+
+- Files at `.erk/scratch/<session-id>/` persist across compactions
+- Use scratch storage for data that must survive context loss
+- Session ID remains valid for the entire session lifetime
+
+### Example: Cross-Compaction Work
+
+```python
+import os
+from pathlib import Path
+
+def get_scratch_dir() -> Path | None:
+    """Get scratch directory that persists across compactions."""
+    session_id = get_current_session_id()
+    if not session_id:
+        return None
+
+    scratch_dir = Path.home() / ".erk" / "scratch" / session_id
+    scratch_dir.mkdir(parents=True, exist_ok=True)
+    return scratch_dir
+
+
+def save_work_state(state: dict) -> None:
+    """Save state that survives context compaction."""
+    scratch = get_scratch_dir()
+    if scratch:
+        state_file = scratch / "work_state.json"
+        state_file.write_text(json.dumps(state))
+
+
+def restore_work_state() -> dict | None:
+    """Restore state after context compaction."""
+    scratch = get_scratch_dir()
+    if not scratch:
+        return None
+
+    state_file = scratch / "work_state.json"
+    if state_file.exists():
+        return json.loads(state_file.read_text())
+
+    return None
+```
+
 ## Key Algorithms
 
 ### Finding Project Directory for Path
@@ -698,6 +814,200 @@ def find_agent_logs_for_session(
             continue
 
     return agent_logs
+```
+
+### Session Summarization Patterns
+
+Techniques for creating human-readable summaries from session logs.
+
+#### Extract Key Messages
+
+```python
+def extract_key_messages(
+    entries: list[dict],
+    include_tools: bool = False
+) -> list[dict]:
+    """Extract user and assistant text messages from session entries.
+
+    Args:
+        entries: Parsed JSONL entries from session log
+        include_tools: Whether to include tool use/result entries
+
+    Returns:
+        List of simplified message dicts with type and text
+    """
+    messages = []
+
+    for entry in entries:
+        entry_type = entry.get("type")
+
+        # Skip tool entries unless explicitly requested
+        if entry_type == "tool_result" and not include_tools:
+            continue
+
+        # Skip summary entries (compaction boundaries)
+        if entry_type == "summary":
+            continue
+
+        message = entry.get("message", {})
+        content = message.get("content", [])
+
+        # Extract text content
+        for item in content:
+            if item.get("type") == "text":
+                text = item.get("text", "").strip()
+                if text:
+                    messages.append({
+                        "type": entry_type,
+                        "text": text,
+                        "timestamp": message.get("timestamp")
+                    })
+
+    return messages
+```
+
+#### Identify Compaction Boundaries
+
+```python
+def split_by_compaction(entries: list[dict]) -> list[list[dict]]:
+    """Split session entries into segments separated by compaction.
+
+    Each segment represents a "generation" of the conversation
+    before context was summarized.
+
+    Returns:
+        List of entry lists, one per conversation segment
+    """
+    segments = []
+    current_segment = []
+
+    for entry in entries:
+        if entry.get("type") == "summary":
+            # Save current segment and start new one
+            if current_segment:
+                segments.append(current_segment)
+            current_segment = [entry]  # Include summary in new segment
+        else:
+            current_segment.append(entry)
+
+    # Don't forget the last segment
+    if current_segment:
+        segments.append(current_segment)
+
+    return segments
+```
+
+#### Create Session Summary
+
+```python
+def summarize_session(session_file: Path) -> dict:
+    """Create a structured summary of a session.
+
+    Returns:
+        Dict with session metadata and key events
+    """
+    entries = parse_session_log(session_file)
+
+    if not entries:
+        return {"error": "Empty session"}
+
+    # Basic metadata
+    session_id = entries[0].get("sessionId", "unknown")
+    first_timestamp = None
+    last_timestamp = None
+
+    for entry in entries:
+        ts = entry.get("message", {}).get("timestamp")
+        if ts:
+            if first_timestamp is None:
+                first_timestamp = ts
+            last_timestamp = ts
+
+    # Count entry types
+    type_counts = {}
+    for entry in entries:
+        t = entry.get("type", "unknown")
+        type_counts[t] = type_counts.get(t, 0) + 1
+
+    # Find compaction count
+    compaction_count = type_counts.get("summary", 0)
+
+    # Extract user requests (first line of each user message)
+    user_requests = []
+    for entry in entries:
+        if entry.get("type") == "user":
+            content = entry.get("message", {}).get("content", [])
+            for item in content:
+                if item.get("type") == "text":
+                    text = item.get("text", "").strip()
+                    # Take first line as summary
+                    first_line = text.split("\n")[0][:100]
+                    if first_line:
+                        user_requests.append(first_line)
+                    break
+
+    return {
+        "session_id": session_id,
+        "first_timestamp": first_timestamp,
+        "last_timestamp": last_timestamp,
+        "total_entries": len(entries),
+        "type_counts": type_counts,
+        "compaction_count": compaction_count,
+        "user_requests": user_requests[:10],  # First 10 requests
+    }
+```
+
+#### Find Session by ID and Summarize
+
+```python
+def summarize_session_by_id(session_id: str) -> dict | None:
+    """Find and summarize a session by its ID.
+
+    Searches all project directories for the session.
+    """
+    # Find project directory containing this session
+    project_dir = find_project_dir_for_session(session_id)
+    if not project_dir:
+        return None
+
+    # Find the session file
+    session_file = project_dir / f"{session_id}.jsonl"
+    if not session_file.exists():
+        # Try without extension (session ID might be filename)
+        for f in project_dir.glob("*.jsonl"):
+            if f.stem == session_id:
+                session_file = f
+                break
+        else:
+            return None
+
+    return summarize_session(session_file)
+```
+
+#### Example Output
+
+```python
+summary = summarize_session_by_id("abc123-def456")
+print(summary)
+# {
+#     "session_id": "abc123-def456",
+#     "first_timestamp": 1700000000.0,
+#     "last_timestamp": 1700003600.0,
+#     "total_entries": 245,
+#     "type_counts": {
+#         "user": 23,
+#         "assistant": 45,
+#         "tool_result": 177,
+#         "summary": 2
+#     },
+#     "compaction_count": 2,
+#     "user_requests": [
+#         "Run pytest tests",
+#         "Fix the failing test in test_auth.py",
+#         "Add type hints to the User class",
+#         ...
+#     ]
+# }
 ```
 
 ## Examples
