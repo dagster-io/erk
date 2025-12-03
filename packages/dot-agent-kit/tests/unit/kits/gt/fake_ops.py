@@ -11,10 +11,11 @@ Design:
 - Returns match interface contracts exactly
 """
 
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from erk_shared.git.abc import Git
+from erk_shared.git.fake import FakeGit
 from erk_shared.github.abc import GitHub
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRMergeability
@@ -24,20 +25,6 @@ from erk_shared.integrations.graphite.types import BranchMetadata
 from erk_shared.integrations.gt import (
     GtKit,
 )
-
-
-@dataclass(frozen=True)
-class GitState:
-    """Immutable git repository state."""
-
-    current_branch: str = "main"
-    uncommitted_files: list[str] = field(default_factory=list)
-    commits: list[str] = field(default_factory=list)
-    branch_parents: dict[str, str] = field(default_factory=dict)
-    add_success: bool = True
-    trunk_branch: str = "main"
-    tracked_files: list[str] = field(default_factory=list)
-    repo_root: str = "/fake/repo/root"
 
 
 @dataclass
@@ -63,312 +50,6 @@ class GitHubBuilderState:
     current_branch: str = "main"
 
 
-class FakeGitGtKitOps(Git):
-    """Fake git operations with in-memory state.
-
-    This fake implements the Git interface and provides additional methods
-    for backward compatibility with GitGtKit tests.
-    """
-
-    def __init__(self, state: GitState | None = None) -> None:
-        """Initialize with optional initial state."""
-        self._state = state if state is not None else GitState()
-
-    def get_state(self) -> GitState:
-        """Get current state (for testing assertions)."""
-        return self._state
-
-    def get_current_branch(self, cwd: Path) -> str | None:
-        """Get the name of the current branch."""
-        if not self._state.current_branch:
-            return None
-        return self._state.current_branch
-
-    def has_uncommitted_changes(self, cwd: Path) -> bool:
-        """Check if there are uncommitted changes."""
-        return len(self._state.uncommitted_files) > 0
-
-    def add_all(self, cwd: Path) -> None:
-        """Stage all changes for commit."""
-        import subprocess
-
-        if not self._state.add_success:
-            raise subprocess.CalledProcessError(1, ["git", "add", "-A"])
-
-        # Track staged files separately for proper simulation
-        # In a real git workflow, add_all stages files but doesn't commit them
-        # For our fake, we'll track this via a staged_files field
-        if not hasattr(self, "_staged_files"):
-            self._staged_files: list[str] = []
-        self._staged_files = list(self._state.uncommitted_files)
-
-    def commit(self, cwd: Path, message: str) -> None:
-        """Create a commit and clear uncommitted files."""
-        # Create new state with commit added and uncommitted files cleared
-        new_commits = [*self._state.commits, message]
-        # Track committed files in the state
-        tracked_files = getattr(self._state, "tracked_files", [])
-        new_tracked = list(set(tracked_files + self._state.uncommitted_files))
-        self._state = replace(
-            self._state, commits=new_commits, uncommitted_files=[], tracked_files=new_tracked
-        )
-        # Clear staged files after commit
-        if hasattr(self, "_staged_files"):
-            self._staged_files = []
-
-    def amend_commit(self, cwd: Path, message: str) -> None:
-        """Amend the current commit message and include any staged changes."""
-        import subprocess
-
-        if not self._state.commits:
-            raise subprocess.CalledProcessError(1, ["git", "commit", "--amend"])
-
-        # Replace last commit message
-        new_commits = [*self._state.commits[:-1], message]
-        # Amend should include staged files and clear uncommitted files
-        # (since they're now part of the amended commit)
-        tracked_files = getattr(self._state, "tracked_files", [])
-        new_tracked = list(set(tracked_files + self._state.uncommitted_files))
-        self._state = replace(
-            self._state, commits=new_commits, uncommitted_files=[], tracked_files=new_tracked
-        )
-        # Clear staged files after amend
-        if hasattr(self, "_staged_files"):
-            self._staged_files = []
-
-    def count_commits_in_branch(self, parent_branch: str) -> int:
-        """Count commits in current branch.
-
-        For fakes, this returns the total number of commits since we don't
-        track per-branch commit history in detail.
-        """
-        return len(self._state.commits)
-
-    def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
-        """Count commits in HEAD that are not in base_branch."""
-        return len(self._state.commits)
-
-    def detect_trunk_branch(self, repo_root: Path) -> str:
-        """Auto-detect the trunk branch name."""
-        return self._state.trunk_branch
-
-    def validate_trunk_branch(self, repo_root: Path, name: str) -> str:
-        """Validate that a configured trunk branch exists."""
-        if self._state.trunk_branch == name:
-            return name
-        error_msg = (
-            f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
-            f"Update your configuration in pyproject.toml or create the branch."
-        )
-        raise RuntimeError(error_msg)
-
-    def get_repository_root(self, cwd: Path) -> Path:
-        """Fake repository root."""
-        return Path(self._state.repo_root)
-
-    def get_diff_to_parent(self, parent_branch: str) -> str:
-        """Fake diff output."""
-        return (
-            "diff --git a/file.py b/file.py\n"
-            "--- a/file.py\n"
-            "+++ b/file.py\n"
-            "@@ -1,1 +1,1 @@\n"
-            "-old\n"
-            "+new"
-        )
-
-    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
-        """Fake conflict checker - returns False unless configured otherwise."""
-        # Check if fake has been configured to simulate conflicts
-        if hasattr(self, "_simulated_conflicts"):
-            return (base_branch, head_branch) in self._simulated_conflicts
-        return False
-
-    def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
-        """Get diff between branch and HEAD."""
-        return (
-            "diff --git a/file.py b/file.py\n"
-            "--- a/file.py\n"
-            "+++ b/file.py\n"
-            "@@ -1,1 +1,1 @@\n"
-            "-old\n"
-            "+new"
-        )
-
-    def simulate_conflict(self, base_branch: str, head_branch: str) -> None:
-        """Configure fake to simulate conflicts for specific branch pair."""
-        if not hasattr(self, "_simulated_conflicts"):
-            self._simulated_conflicts: set[tuple[str, str]] = set()
-        self._simulated_conflicts.add((base_branch, head_branch))
-
-    def get_git_common_dir(self, cwd: Path) -> Path | None:
-        """Fake git common directory - returns a path based on repo_root."""
-        return Path(self._state.repo_root) / ".git"
-
-    def get_branch_head(self, repo_root: Path, branch: str) -> str | None:
-        """Fake branch head - returns a static SHA for testing."""
-        # Return a fake SHA based on branch name for deterministic testing
-        return f"fake-sha-for-{branch}"
-
-    def checkout_branch(self, cwd: Path, branch: str) -> None:
-        """Fake branch checkout - updates current branch state."""
-        self._state = replace(self._state, current_branch=branch)
-
-    # Stub implementations for unused Git ABC methods
-    def list_worktrees(self, repo_root: Path) -> list:
-        """Stub."""
-        raise NotImplementedError
-
-    def list_local_branches(self, repo_root: Path) -> list[str]:
-        """Stub."""
-        raise NotImplementedError
-
-    def list_remote_branches(self, repo_root: Path) -> list[str]:
-        """Stub."""
-        raise NotImplementedError
-
-    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -> None:
-        """Stub."""
-        raise NotImplementedError
-
-    def has_staged_changes(self, repo_root: Path) -> bool:
-        """Stub."""
-        raise NotImplementedError
-
-    def is_worktree_clean(self, worktree_path: Path) -> bool:
-        """Stub."""
-        raise NotImplementedError
-
-    def add_worktree(
-        self,
-        repo_root: Path,
-        path: Path,
-        *,
-        branch: str | None = None,
-        ref: str | None = None,
-        create_branch: bool = False,
-    ) -> None:
-        """Stub."""
-        raise NotImplementedError
-
-    def move_worktree(self, repo_root: Path, old_path: Path, new_path: Path) -> None:
-        """Stub."""
-        raise NotImplementedError
-
-    def remove_worktree(self, repo_root: Path, path: Path, *, force: bool) -> None:
-        """Stub."""
-        raise NotImplementedError
-
-    def checkout_detached(self, cwd: Path, ref: str) -> None:
-        """Stub."""
-        raise NotImplementedError
-
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None:
-        """Stub."""
-        raise NotImplementedError
-
-    def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
-        """Stub."""
-        raise NotImplementedError
-
-    def delete_branch_with_graphite(self, repo_root: Path, branch: str, *, force: bool) -> None:
-        """Stub."""
-        raise NotImplementedError
-
-    def prune_worktrees(self, repo_root: Path) -> None:
-        """Stub."""
-        raise NotImplementedError
-
-    def path_exists(self, path: Path) -> bool:
-        """Stub."""
-        raise NotImplementedError
-
-    def is_dir(self, path: Path) -> bool:
-        """Stub."""
-        raise NotImplementedError
-
-    def safe_chdir(self, path: Path) -> bool:
-        """Stub."""
-        raise NotImplementedError
-
-    def is_branch_checked_out(self, repo_root: Path, branch: str) -> Path | None:
-        """Stub."""
-        raise NotImplementedError
-
-    def find_worktree_for_branch(self, repo_root: Path, branch: str) -> Path | None:
-        """Stub."""
-        raise NotImplementedError
-
-    def get_commit_message(self, repo_root: Path, commit_sha: str) -> str | None:
-        """Stub."""
-        raise NotImplementedError
-
-    def get_file_status(self, cwd: Path) -> tuple[list[str], list[str], list[str]]:
-        """Stub."""
-        raise NotImplementedError
-
-    def get_ahead_behind(self, cwd: Path, branch: str) -> tuple[int, int]:
-        """Stub."""
-        raise NotImplementedError
-
-    def get_all_branch_sync_info(self, repo_root: Path) -> dict:
-        """Stub."""
-        raise NotImplementedError
-
-    def get_recent_commits(self, cwd: Path, *, limit: int = 5) -> list[dict[str, str]]:
-        """Stub."""
-        raise NotImplementedError
-
-    def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
-        """Stub."""
-        raise NotImplementedError
-
-    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -> None:
-        """Stub."""
-        raise NotImplementedError
-
-    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -> bool:
-        """Stub."""
-        raise NotImplementedError
-
-    def set_branch_issue(self, repo_root: Path, branch: str, issue_number: int) -> None:
-        """Stub."""
-        raise NotImplementedError
-
-    def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
-        """Stub."""
-        raise NotImplementedError
-
-    def fetch_pr_ref(self, repo_root: Path, remote: str, pr_number: int, local_branch: str) -> None:
-        """Stub."""
-        raise NotImplementedError
-
-    def stage_files(self, cwd: Path, paths: list[str]) -> None:
-        """Stub."""
-        raise NotImplementedError
-
-    def push_to_remote(
-        self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False
-    ) -> None:
-        """Stub."""
-        raise NotImplementedError
-
-    def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
-        """Stub."""
-        return None
-
-    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
-        """Stub - raises ValueError since no remotes are configured."""
-        raise ValueError(f"Remote '{remote}' not found in repository")
-
-    def read_file(self, path: Path) -> str:
-        """Stub."""
-        raise NotImplementedError
-
-
-# FakeGitHubGtKitOps has been removed - FakeGtKitOps now uses FakeGitHub directly
-
-
 class FakeGtKitOps(GtKit):
     """Fake composite operations for testing.
 
@@ -378,21 +59,101 @@ class FakeGtKitOps(GtKit):
 
     def __init__(
         self,
-        git_state: GitState | None = None,
         github_builder_state: GitHubBuilderState | None = None,
         main_graphite: Graphite | None = None,
     ) -> None:
         """Initialize with optional initial states."""
-        self._git = FakeGitGtKitOps(git_state)
+        # State accumulators for FakeGit (lazy construction)
+        self._git_current_branches: dict[Path, str | None] = {}
+        self._git_trunk_branches: dict[Path, str] = {}
+        self._git_parent_branches: dict[Path, str] = {}  # Parent branch per repo (for Graphite)
+        self._git_repository_roots: dict[Path, Path] = {}
+        self._git_file_statuses: dict[Path, tuple[list[str], list[str], list[str]]] = {}
+        self._git_commits_ahead: dict[tuple[Path, str], int] = {}
+        self._git_diff_to_branch: dict[tuple[Path, str], str] = {}
+        self._git_merge_conflicts: dict[tuple[str, str], bool] = {}
+        self._git_instance: FakeGit | None = None
+        self._repo_root: str = "/fake/repo/root"
+
+        # GitHub builder state (lazy construction)
         self._github_builder_state = (
             github_builder_state if github_builder_state is not None else GitHubBuilderState()
         )
         self._github_instance: FakeGitHub | None = None
+
+        # Graphite instance
         self._main_graphite = main_graphite if main_graphite is not None else FakeGraphite()
 
+    def _build_fake_git(self) -> FakeGit:
+        """Build FakeGit from accumulated state.
+
+        For test compatibility, we duplicate state across all possible path variations
+        so tests work regardless of which path is used to query state.
+        """
+        # Duplicate current_branches across path variations for test compatibility
+        current_branches_expanded = dict(self._git_current_branches)
+        trunk_branches_expanded = dict(self._git_trunk_branches)
+        repository_roots_expanded = dict(self._git_repository_roots)
+        file_statuses_expanded = dict(self._git_file_statuses)
+        commits_ahead_expanded = dict(self._git_commits_ahead)
+
+        # Add entries for Path.cwd() to handle tests that don't mock cwd
+        if self._git_current_branches:
+            # Copy state to current directory for compatibility
+            from pathlib import Path
+
+            cwd = Path.cwd()
+            for repo_root, branch in self._git_current_branches.items():
+                current_branches_expanded[cwd] = branch
+                if repo_root in self._git_trunk_branches:
+                    trunk_branches_expanded[cwd] = self._git_trunk_branches[repo_root]
+                if repo_root in self._git_repository_roots:
+                    repository_roots_expanded[cwd] = self._git_repository_roots[repo_root]
+                if repo_root in self._git_file_statuses:
+                    file_statuses_expanded[cwd] = self._git_file_statuses[repo_root]
+                # Copy commits_ahead with cwd key
+                for (path, base), count in self._git_commits_ahead.items():
+                    if path == repo_root:
+                        commits_ahead_expanded[(cwd, base)] = count
+
+        # Provide default diff output for all repo roots
+        diff_to_branch = dict(self._git_diff_to_branch)
+        for repo_root in self._git_repository_roots:
+            # Add default diff for trunk branch if not specified
+            trunk = self._git_trunk_branches.get(repo_root, "main")
+            default_diff = (
+                "diff --git a/file.py b/file.py\n"
+                "--- a/file.py\n"
+                "+++ b/file.py\n"
+                "@@ -1,1 +1,1 @@\n"
+                "-old\n"
+                "+new"
+            )
+            if (repo_root, trunk) not in diff_to_branch:
+                diff_to_branch[(repo_root, trunk)] = default_diff
+            # Also add cwd-based key for compatibility
+            if self._git_current_branches:
+                from pathlib import Path
+
+                cwd = Path.cwd()
+                if (cwd, trunk) not in diff_to_branch:
+                    diff_to_branch[(cwd, trunk)] = default_diff
+
+        return FakeGit(
+            current_branches=current_branches_expanded,
+            trunk_branches=trunk_branches_expanded,
+            repository_roots=repository_roots_expanded,
+            file_statuses=file_statuses_expanded,
+            commits_ahead=commits_ahead_expanded,
+            diff_to_branch=diff_to_branch,
+            merge_conflicts=self._git_merge_conflicts,
+        )
+
     def git(self) -> Git:
-        """Get the git operations interface."""
-        return self._git  # type: ignore[return-value]
+        """Get the git operations interface (lazy construction)."""
+        if self._git_instance is None:
+            self._git_instance = self._build_fake_git()
+        return self._git_instance
 
     def github(self) -> GitHub:
         """Get the GitHub operations interface.
@@ -461,23 +222,35 @@ class FakeGtKitOps(GtKit):
 
         Args:
             branch: Branch name
-            parent: Parent branch name
+            parent: Parent branch name (for Graphite tracking, not trunk)
 
         Returns:
             Self for chaining
+
+        Note:
+            This only sets the parent for Graphite tracking. It does NOT set the
+            trunk branch. Use with_trunk_branch() to override the default trunk
+            (which is "main"). For example:
+            - with_branch("feature", parent="main") - feature branch on main trunk
+            - with_branch("feature", parent="develop") - feature branch on develop
+              (not trunk, will fail land_pr validation if trunk is "main")
         """
-        # Update git state
-        git_state = self._git.get_state()
-        self._git._state = replace(git_state, current_branch=branch)
+        repo_root = Path(self._repo_root)
+        self._git_current_branches[repo_root] = branch
+        # Store parent branch for with_commits to use
+        self._git_parent_branches[repo_root] = parent
+        # Do NOT set trunk here - trunk defaults to "main" in FakeGit.detect_trunk_branch()
+        # Use with_trunk_branch() to override if needed
+        # Ensure repository_roots is also set (needed for get_repository_root)
+        self._git_repository_roots[repo_root] = repo_root
+        self._git_instance = None  # Reset cache
 
         # Update github builder state
         self._github_builder_state.current_branch = branch
-        # Reset cached instance since state changed
         self._github_instance = None
 
-        # Configure main_graphite fake to track the parent relationship
+        # Configure graphite parent tracking
         if hasattr(self._main_graphite, "track_branch"):
-            repo_root = Path(self._git.get_state().repo_root)
             self._main_graphite.track_branch(repo_root, branch, parent)
 
         return self
@@ -491,8 +264,10 @@ class FakeGtKitOps(GtKit):
         Returns:
             Self for chaining
         """
-        git_state = self._git.get_state()
-        self._git._state = replace(git_state, uncommitted_files=files)
+        repo_root = Path(self._repo_root)
+        # FakeGit uses file_statuses: dict[Path, tuple[staged, modified, untracked]]
+        self._git_file_statuses[repo_root] = ([], files, [])  # files as modified
+        self._git_instance = None
         return self
 
     def with_repo_root(self, repo_root: str) -> "FakeGtKitOps":
@@ -504,8 +279,10 @@ class FakeGtKitOps(GtKit):
         Returns:
             Self for chaining
         """
-        git_state = self._git.get_state()
-        self._git._state = replace(git_state, repo_root=repo_root)
+        self._repo_root = repo_root
+        path = Path(repo_root)
+        self._git_repository_roots[path] = path
+        self._git_instance = None
         return self
 
     def with_commits(self, count: int) -> "FakeGtKitOps":
@@ -516,10 +293,19 @@ class FakeGtKitOps(GtKit):
 
         Returns:
             Self for chaining
+
+        Note:
+            Uses the parent branch from with_branch() for commit counting.
+            This matches how the code counts commits against the parent branch.
         """
-        git_state = self._git.get_state()
-        commits = [f"commit-{i}" for i in range(count)]
-        self._git._state = replace(git_state, commits=commits)
+        repo_root = Path(self._repo_root)
+        # FakeGit uses commits_ahead: dict[(Path, base_branch), int]
+        # Use parent branch if set, otherwise fall back to trunk or "main"
+        parent = self._git_parent_branches.get(repo_root)
+        if parent is None:
+            parent = self._git_trunk_branches.get(repo_root, "main")
+        self._git_commits_ahead[(repo_root, parent)] = count
+        self._git_instance = None
         return self
 
     def with_pr(
@@ -571,8 +357,8 @@ class FakeGtKitOps(GtKit):
         """
         # Track children relationships in main_graphite for each child
         if hasattr(self._main_graphite, "track_branch"):
-            current_branch = self._git.get_state().current_branch
-            repo_root = Path(self._git.get_state().repo_root)
+            repo_root = Path(self._repo_root)
+            current_branch = self._git_current_branches.get(repo_root) or "main"
             for child in children:
                 self._main_graphite.track_branch(repo_root, child, current_branch)
 
@@ -662,11 +448,14 @@ class FakeGtKitOps(GtKit):
     def with_add_failure(self) -> "FakeGtKitOps":
         """Configure git add to fail.
 
+        Note: FakeGit doesn't support add failures. This method is kept for
+        compatibility but has no effect. Tests using this may need updating.
+
         Returns:
             Self for chaining
         """
-        git_state = self._git.get_state()
-        self._git._state = replace(git_state, add_success=False)
+        # FakeGit's add_all() is a no-op and doesn't support failure simulation
+        # This method is kept for API compatibility but does nothing
         return self
 
     def with_pr_update_failure(self) -> "FakeGtKitOps":
@@ -786,3 +575,59 @@ class FakeGtKitOps(GtKit):
         return self.with_squash_failure(
             stderr="error: merge conflict in file.py\nCONFLICT (content): Merge conflict in file.py"
         )
+
+    def with_no_branch(self) -> "FakeGtKitOps":
+        """Configure state where current branch is empty/not determinable.
+
+        Returns:
+            Self for chaining
+        """
+        repo_root = Path(self._repo_root)
+        self._git_current_branches[repo_root] = None
+        self._git_instance = None
+        return self
+
+    def with_orphan_branch(self, branch: str) -> "FakeGtKitOps":
+        """Configure an orphan branch (no parent tracking in Graphite).
+
+        Args:
+            branch: Branch name
+
+        Returns:
+            Self for chaining
+        """
+        repo_root = Path(self._repo_root)
+        self._git_current_branches[repo_root] = branch
+        # Don't configure trunk or parent - simulates orphan
+        self._github_builder_state.current_branch = branch
+        self._github_instance = None
+        self._git_instance = None
+        return self
+
+    def with_merge_conflict(self, base_branch: str, head_branch: str) -> "FakeGtKitOps":
+        """Configure git to simulate merge conflicts between branches.
+
+        Args:
+            base_branch: Base branch name
+            head_branch: Head branch name
+
+        Returns:
+            Self for chaining
+        """
+        self._git_merge_conflicts[(base_branch, head_branch)] = True
+        self._git_instance = None
+        return self
+
+    def with_trunk_branch(self, trunk: str) -> "FakeGtKitOps":
+        """Set the trunk branch name (e.g., 'master' instead of 'main').
+
+        Args:
+            trunk: Trunk branch name
+
+        Returns:
+            Self for chaining
+        """
+        repo_root = Path(self._repo_root)
+        self._git_trunk_branches[repo_root] = trunk
+        self._git_instance = None
+        return self
