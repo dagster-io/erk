@@ -66,5 +66,6 @@ docs/
 | Working with session logs           | [claude-code-session-layout.md](claude-code-session-layout.md)                                                 |
 | Writing temp files for AI workflows | [scratch-storage.md](scratch-storage.md)                                                                       |
 | Organizing CLI commands             | [cli-command-organization.md](cli-command-organization.md)                                                     |
+| Adding artifacts to bundled kits    | [kit-artifact-dev-mode.md](kit-artifact-dev-mode.md)                                                           |
 | Python coding standards             | Load `dignified-python` skill                                                                                  |
 | Understanding agentic programming   | [../writing/agentic-programming/agentic-programming.md](../writing/agentic-programming/agentic-programming.md) |
