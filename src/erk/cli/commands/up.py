@@ -62,12 +62,11 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool) -> None:
         "Cannot navigate up: already at top of stack. Use 'gt branch delete' to delete this branch",
     )
 
-    if delete_current and len(children) > 1:
-        user_output(
-            click.style("Error: ", fg="red") + "Cannot navigate up: multiple child branches exist"
-        )
-        user_output("Use 'gt up' to interactively select a branch")
-        raise SystemExit(1)
+    Ensure.invariant(
+        not (delete_current and len(children) > 1),
+        "Cannot navigate up: multiple child branches exist. "
+        "Use 'gt up' to interactively select a branch",
+    )
 
     # Safety checks before navigation (if --delete-current flag is set)
     current_worktree_path = None
