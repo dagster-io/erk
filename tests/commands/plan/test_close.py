@@ -178,6 +178,42 @@ def test_close_plan_no_linked_prs() -> None:
         assert github.closed_prs == []
 
 
+def test_close_plan_invalid_identifier() -> None:
+    """Test closing a plan with invalid identifier fails with helpful error."""
+    # Arrange
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        store = FakePlanStore(plans={})
+        ctx = build_workspace_test_context(env, plan_store=store)
+
+        # Act
+        result = runner.invoke(cli, ["plan", "close", "not-a-number"], obj=ctx)
+
+        # Assert
+        assert result.exit_code != 0
+        assert "Invalid plan identifier" in result.output
+        assert "not-a-number" in result.output
+
+
+def test_close_plan_invalid_url_format() -> None:
+    """Test closing a plan with invalid URL format gives specific error."""
+    # Arrange
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        store = FakePlanStore(plans={})
+        ctx = build_workspace_test_context(env, plan_store=store)
+
+        # Act - GitHub URL but pointing to pulls instead of issues
+        result = runner.invoke(
+            cli, ["plan", "close", "https://github.com/owner/repo/pulls/42"], obj=ctx
+        )
+
+        # Assert
+        assert result.exit_code != 0
+        assert "Invalid URL format" in result.output
+        assert "https://github.com/OWNER/REPO/issues/NUMBER" in result.output
+
+
 def test_close_plan_reports_closed_prs() -> None:
     """Test closing a plan reports the closed PRs in output."""
     # Arrange

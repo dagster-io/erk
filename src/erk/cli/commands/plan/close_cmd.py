@@ -12,28 +12,41 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 
 
-def _parse_issue_number(identifier: str) -> int | None:
+def _parse_issue_number(identifier: str) -> int:
     """Parse issue number from identifier string.
 
     Args:
         identifier: Plan identifier (e.g., "42" or GitHub issue URL)
 
     Returns:
-        Issue number as int, or None if parsing fails
+        Issue number as int
+
+    Raises:
+        click.ClickException: If identifier cannot be parsed as an issue number
     """
     if identifier.isdigit():
         return int(identifier)
 
     # Try to parse from GitHub URL
     parsed = urlparse(identifier)
-    if parsed.hostname == "github.com" and parsed.path:
-        parts = parsed.path.rstrip("/").split("/")
-        if len(parts) >= 2 and parts[-2] == "issues":
-            last_part = parts[-1]
-            if last_part.isdigit():
-                return int(last_part)
+    if parsed.scheme and parsed.hostname:
+        # This looks like a URL - check if it's a valid GitHub issue URL
+        if parsed.hostname == "github.com" and parsed.path:
+            parts = parsed.path.rstrip("/").split("/")
+            if len(parts) >= 2 and parts[-2] == "issues":
+                last_part = parts[-1]
+                if last_part.isdigit():
+                    return int(last_part)
+        # URL but wrong format
+        raise click.ClickException(
+            f"Invalid URL format: {identifier!r}. "
+            "Expected format: https://github.com/OWNER/REPO/issues/NUMBER"
+        )
 
-    return None
+    raise click.ClickException(
+        f"Invalid plan identifier: {identifier!r}. "
+        "Expected an issue number (e.g., '42') or GitHub issue URL."
+    )
 
 
 def _close_linked_prs(
@@ -77,33 +90,23 @@ def close_plan(ctx: ErkContext, identifier: str) -> None:
     ensure_erk_metadata_dir(repo)  # Ensure erk metadata directories exist
     repo_root = repo.root  # Use git repository root for GitHub operations
 
-    # Parse issue number for PR lookup (before closing the plan)
+    # Parse issue number - errors if invalid
     number = _parse_issue_number(identifier)
 
-    # Fetch plan to get URL for PR lookup
-    plan = None
-    if number is not None:
-        try:
-            plan = ctx.plan_store.get_plan(repo_root, str(number))
-        except RuntimeError:
-            # Plan not found - will be reported by close_plan below
-            pass
+    # Fetch plan - errors if not found
+    try:
+        plan = ctx.plan_store.get_plan(repo_root, str(number))
+    except RuntimeError as e:
+        raise click.ClickException(str(e)) from e
+
+    # Close linked PRs before closing the plan
+    closed_prs = _close_linked_prs(ctx, repo_root, number, plan.url)
 
     # Close the plan (issue)
-    try:
-        ctx.plan_store.close_plan(repo_root, identifier)
-    except RuntimeError as e:
-        user_output(click.style("Error: ", fg="red") + str(e))
-        raise SystemExit(1) from e
-
-    # Close linked PRs (only if we have plan info)
-    closed_prs: list[int] = []
-    if number is not None and plan is not None:
-        closed_prs = _close_linked_prs(ctx, repo_root, number, plan.url)
+    ctx.plan_store.close_plan(repo_root, identifier)
 
     # Output
-    display_number = number if number is not None else identifier
-    user_output(f"Closed plan #{display_number}")
+    user_output(f"Closed plan #{number}")
     if closed_prs:
         pr_list = ", ".join(f"#{pr}" for pr in closed_prs)
         user_output(f"Closed {len(closed_prs)} linked PR(s): {pr_list}")
