@@ -77,6 +77,7 @@ class ListSessionsResult:
     current_session_id: str | None
     sessions: list[dict[str, str | float | int | bool]]
     project_dir: str
+    filtered_count: int  # Count of sessions filtered by --min-size
 
 
 @dataclass
@@ -232,22 +233,26 @@ def extract_summary(session_path: Path, max_length: int = 60) -> str:
 
 
 def _list_sessions_for_project(
-    project_dir: Path, current_session_id: str | None, limit: int = 10
-) -> list[SessionInfo]:
+    project_dir: Path,
+    current_session_id: str | None,
+    limit: int = 10,
+    min_size: int = 0,
+) -> tuple[list[SessionInfo], int]:
     """List sessions in project directory sorted by modification time.
 
     Args:
         project_dir: Path to Claude Code project directory
         current_session_id: Current session ID (for marking)
         limit: Maximum number of sessions to return
+        min_size: Minimum session size in bytes (filters out tiny sessions)
 
     Returns:
-        List of SessionInfo objects, newest first
+        Tuple of (sessions list, count of sessions filtered by min_size)
     """
     sessions: list[SessionInfo] = []
 
     if not project_dir.exists():
-        return sessions
+        return sessions, 0
 
     # Collect session files (exclude agent logs)
     session_files: list[tuple[Path, float]] = []
@@ -261,6 +266,13 @@ def _list_sessions_for_project(
 
         mtime = log_file.stat().st_mtime
         session_files.append((log_file, mtime))
+
+    # Filter by minimum size
+    filtered_count = 0
+    if min_size > 0:
+        unfiltered = session_files
+        session_files = [(f, m) for f, m in unfiltered if f.stat().st_size >= min_size]
+        filtered_count = len(unfiltered) - len(session_files)
 
     # Sort by mtime descending (newest first)
     session_files.sort(key=lambda x: x[1], reverse=True)
@@ -283,7 +295,7 @@ def _list_sessions_for_project(
             )
         )
 
-    return sessions
+    return sessions, filtered_count
 
 
 @click.command(name="list-sessions")
@@ -293,8 +305,14 @@ def _list_sessions_for_project(
     type=int,
     help="Maximum number of sessions to list",
 )
+@click.option(
+    "--min-size",
+    default=0,
+    type=int,
+    help="Minimum session size in bytes (filters out tiny sessions)",
+)
 @click.pass_context
-def list_sessions(ctx: click.Context, limit: int) -> None:
+def list_sessions(ctx: click.Context, limit: int, min_size: int) -> None:
     """List Claude Code sessions with metadata for the current project.
 
     Discovers sessions in the project directory, extracts metadata
@@ -324,7 +342,9 @@ def list_sessions(ctx: click.Context, limit: int) -> None:
     current_session_id = get_current_session_id()
 
     # List sessions
-    sessions = _list_sessions_for_project(project_dir, current_session_id, limit=limit)
+    sessions, filtered_count = _list_sessions_for_project(
+        project_dir, current_session_id, limit=limit, min_size=min_size
+    )
 
     # Build result
     result = ListSessionsResult(
@@ -337,6 +357,7 @@ def list_sessions(ctx: click.Context, limit: int) -> None:
         current_session_id=current_session_id,
         sessions=[asdict(s) for s in sessions],
         project_dir=str(project_dir),
+        filtered_count=filtered_count,
     )
 
     click.echo(json.dumps(asdict(result), indent=2))

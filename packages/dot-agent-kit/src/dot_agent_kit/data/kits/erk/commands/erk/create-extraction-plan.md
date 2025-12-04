@@ -71,18 +71,19 @@ Parse the context argument (if provided) for:
 
 **If no explicit session IDs provided:**
 
-Run the session discovery helper:
+Run the session discovery helper with size filtering to exclude tiny sessions:
 
 ```bash
-dot-agent run erk list-sessions
+dot-agent run erk list-sessions --min-size 1024
 ```
 
 The JSON output includes:
 
 - `branch_context.is_on_trunk`: Whether on main/master branch
 - `current_session_id`: Current session ID from SESSION_CONTEXT env
-- `sessions`: List of recent sessions with metadata
+- `sessions`: List of recent sessions with metadata (only meaningful sessions >= 1KB)
 - `project_dir`: Path to session logs
+- `filtered_count`: Number of tiny sessions filtered out
 
 **Behavior based on branch context:**
 
@@ -91,6 +92,28 @@ The JSON output includes:
 Use `current_session_id` only. Skip user prompt - analyze current conversation.
 
 **If `branch_context.is_on_trunk` is false (feature branch):**
+
+First, determine if the current session is "trivial" (< 1KB, typically just launching a command like this one). Check if the current session appears in the filtered results - if not, it was filtered out as tiny.
+
+**Common pattern**: User launches a fresh session solely to run `/erk:create-extraction-plan` on substantial work from a previous session. In this case, auto-select the substantial session(s) without prompting.
+
+**If current session is tiny AND exactly 1 substantial session exists:**
+
+Auto-select the substantial session without prompting. Briefly inform user:
+
+> "Auto-selected session [id] (current session is trivial, analyzing the substantial session)"
+
+**If current session is tiny AND 2+ substantial sessions exist:**
+
+Auto-select ALL substantial sessions without prompting. Briefly inform user:
+
+> "Auto-selected [N] sessions (current session is trivial, analyzing all substantial sessions)"
+
+**If current session is substantial AND exactly 1 total session (itself):**
+
+Proceed with current session analysis. No prompt needed.
+
+**If current session is substantial AND other substantial sessions exist:**
 
 Present sessions to user for selection:
 
@@ -103,6 +126,12 @@ Present sessions to user for selection:
 > Which sessions should I analyze? (1=current only, 2=all, or list session numbers like '1,3')"
 
 Wait for user selection before proceeding.
+
+**If 0 sessions remain after filtering (all tiny including current):**
+
+Use current session only despite being tiny. Inform user:
+
+> "No meaningful sessions found (all sessions were < 1KB). Analyzing current conversation anyway."
 
 **If explicit session IDs found in context:**
 
