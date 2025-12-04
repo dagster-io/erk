@@ -115,3 +115,51 @@ def test_pr_submit_fails_on_command_error() -> None:
         assert result.exit_code != 0
         # Error message from FakeClaudeExecutor
         assert "failed" in result.output.lower()
+
+
+def test_pr_submit_shows_error_on_no_output() -> None:
+    """Test that command fails when Claude produces no output."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        claude_executor = FakeClaudeExecutor(
+            claude_available=True,
+            simulated_no_output=True,
+        )
+
+        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+
+        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+
+        assert result.exit_code != 0
+        assert "no output" in result.output.lower()
+
+
+def test_pr_submit_shows_error_on_process_error() -> None:
+    """Test that command fails when Claude fails to start."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        claude_executor = FakeClaudeExecutor(
+            claude_available=True,
+            simulated_process_error="Failed to start: Permission denied",
+        )
+
+        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+
+        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+
+        assert result.exit_code != 0
+        assert "Permission denied" in result.output

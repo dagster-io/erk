@@ -55,6 +55,8 @@ class FakeClaudeExecutor(ClaudeExecutor):
         simulated_pr_title: str | None = None,
         simulated_issue_number: int | None = None,
         simulated_tool_events: list[str] | None = None,
+        simulated_no_output: bool = False,
+        simulated_process_error: str | None = None,
     ) -> None:
         """Initialize fake with predetermined behavior.
 
@@ -66,6 +68,8 @@ class FakeClaudeExecutor(ClaudeExecutor):
             simulated_pr_title: PR title to return (simulates PR metadata)
             simulated_issue_number: Issue number to return (simulates linked issue)
             simulated_tool_events: Tool event contents to emit (e.g., "Using...")
+            simulated_no_output: Whether to simulate Claude CLI producing no output
+            simulated_process_error: Error message to simulate process startup failure
         """
         self._claude_available = claude_available
         self._command_should_fail = command_should_fail
@@ -74,6 +78,8 @@ class FakeClaudeExecutor(ClaudeExecutor):
         self._simulated_pr_title = simulated_pr_title
         self._simulated_issue_number = simulated_issue_number
         self._simulated_tool_events = simulated_tool_events or []
+        self._simulated_no_output = simulated_no_output
+        self._simulated_process_error = simulated_process_error
         self._executed_commands: list[tuple[str, Path, bool, bool]] = []
         self._interactive_calls: list[tuple[Path, bool]] = []
 
@@ -108,6 +114,19 @@ class FakeClaudeExecutor(ClaudeExecutor):
             RuntimeError: If command_should_fail was set to True
         """
         self._executed_commands.append((command, worktree_path, dangerous, verbose))
+
+        # Process error takes precedence (simulates Popen failure)
+        if self._simulated_process_error is not None:
+            yield StreamEvent("process_error", self._simulated_process_error)
+            return
+
+        # No output simulation (simulates Claude CLI producing no output)
+        if self._simulated_no_output:
+            yield StreamEvent(
+                "no_output",
+                f"Claude command {command} completed but produced no output",
+            )
+            return
 
         if self._command_should_fail:
             yield StreamEvent("error", f"Claude command {command} failed (simulated failure)")

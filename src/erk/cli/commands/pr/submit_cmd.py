@@ -11,8 +11,9 @@ from erk.core.context import ErkContext
 
 
 @click.command("submit")
+@click.option("--debug", is_flag=True, help="Show diagnostic output")
 @click.pass_obj
-def pr_submit(ctx: ErkContext) -> None:
+def pr_submit(ctx: ErkContext, debug: bool) -> None:
     """Submit PR with AI-generated commit message.
 
     Analyzes your changes, generates a commit message via AI, and
@@ -49,6 +50,7 @@ def pr_submit(ctx: ErkContext) -> None:
         command="/gt:pr-submit",
         worktree_path=worktree_path,
         dangerous=False,
+        debug=debug,
     ):
         if event.event_type == "text":
             # Print text content directly (Claude's formatted output)
@@ -64,6 +66,14 @@ def pr_submit(ctx: ErkContext) -> None:
         elif event.event_type == "pr_url":
             pr_url = event.content
         elif event.event_type == "error":
+            click.echo(click.style(f"   ❌ {event.content}", fg="red"))
+            error_message = event.content
+            success = False
+        elif event.event_type == "no_output":
+            click.echo(click.style(f"   ⚠️  {event.content}", fg="yellow"))
+            error_message = event.content
+            success = False
+        elif event.event_type == "process_error":
             click.echo(click.style(f"   ❌ {event.content}", fg="red"))
             error_message = event.content
             success = False
