@@ -4,6 +4,7 @@ from pathlib import Path
 
 import click
 from erk_shared.git.abc import Git
+from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.output.output import user_output
 
 from erk.cli.commands.completions import complete_worktree_names
@@ -180,6 +181,7 @@ def _delete_branch_at_error_boundary(
     branch: str,
     force: bool,
     dry_run: bool,
+    graphite: Graphite,
 ) -> None:
     """Delete a branch after its worktree has been removed.
 
@@ -196,8 +198,15 @@ def _delete_branch_at_error_boundary(
     as RuntimeError with the original exception in __cause__.
     """
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
+
+    # Determine if branch is tracked by Graphite (LBYL check)
+    branch_is_tracked = False
+    if use_graphite:
+        all_branches = graphite.get_all_branches(ctx.git, repo_root)
+        branch_is_tracked = branch in all_branches
+
     try:
-        if use_graphite:
+        if branch_is_tracked:
             ctx.git.delete_branch_with_graphite(repo_root, branch, force=force)
         else:
             ctx.git.delete_branch(repo_root, branch, force=force)
@@ -289,7 +298,7 @@ def _delete_worktree(
         # User already confirmed via _confirm_operations(), so force=True for branch deletion
         # to avoid redundant Graphite prompt
         _delete_branch_at_error_boundary(
-            ctx, repo.root, branch_to_delete, force=True, dry_run=dry_run
+            ctx, repo.root, branch_to_delete, force=True, dry_run=dry_run, graphite=ctx.graphite
         )
 
     if not dry_run:

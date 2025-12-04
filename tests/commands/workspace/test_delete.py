@@ -245,3 +245,45 @@ def test_delete_with_branch_with_graphite() -> None:
         # Assert: Command should succeed and branch should be deleted
         assert_cli_success(result)
         assert "feature" in fake_git_ops.deleted_branches
+
+
+def test_delete_with_branch_graphite_enabled_but_untracked() -> None:
+    """Test --branch falls back to git branch -D when Graphite enabled but branch untracked."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_name = env.cwd.name
+        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-branch"
+
+        # Build fake git ops with worktree info
+        fake_git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="untracked-feature")]},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        # Build graphite ops WITHOUT the branch being tracked
+        # Only main is tracked, "untracked-feature" is not in Graphite's branches
+        branches = {
+            "main": BranchMetadata.trunk("main"),
+        }
+
+        test_ctx = env.build_context(
+            use_graphite=True,
+            git=fake_git_ops,
+            github=FakeGitHub(),
+            graphite=FakeGraphite(branches=branches),
+            shell=FakeShell(),
+            existing_paths={wt},
+        )
+
+        # Execute: Run delete with --branch when graphite is enabled but branch is not tracked
+        result = runner.invoke(
+            cli,
+            ["wt", "delete", "test-branch", "--branch", "-f"],
+            obj=test_ctx,
+        )
+
+        # Assert: Command should succeed and use git branch -D (not gt delete)
+        assert_cli_success(result)
+        assert "untracked-feature" in fake_git_ops.deleted_branches
+        # The branch should be deleted via git, not graphite
+        # Since FakeGit.delete_branch is used, the branch appears in deleted_branches
