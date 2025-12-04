@@ -36,6 +36,9 @@ class PlanRowData:
         run_status: Workflow run status (e.g., "completed", "in_progress")
         run_conclusion: Workflow run conclusion (e.g., "success", "failure", "cancelled")
         log_entries: List of (event_name, timestamp, comment_url) for plan log
+        last_local_impl_event: Event type - "started" or "ended"
+        last_local_impl_user: Username who ran implementation
+        last_local_impl_session: Claude Code session ID
     """
 
     issue_number: int
@@ -62,6 +65,9 @@ class PlanRowData:
     run_status: str | None
     run_conclusion: str | None
     log_entries: tuple[tuple[str, str, str], ...]
+    last_local_impl_event: str | None  # "started" or "ended"
+    last_local_impl_user: str | None  # Username who ran impl
+    last_local_impl_session: str | None  # Claude Code session ID
 
 
 @dataclass(frozen=True)

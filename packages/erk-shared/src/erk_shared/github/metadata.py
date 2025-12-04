@@ -1772,6 +1772,38 @@ def extract_plan_header_local_impl_event(issue_body: str) -> str | None:
     return block.data.get("last_local_impl_event")
 
 
+def extract_plan_header_local_impl_session(issue_body: str) -> str | None:
+    """Extract last_local_impl_session from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        last_local_impl_session (Claude Code session ID) if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get("last_local_impl_session")
+
+
+def extract_plan_header_local_impl_user(issue_body: str) -> str | None:
+    """Extract last_local_impl_user from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        last_local_impl_user (username who ran implementation) if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get("last_local_impl_user")
+
+
 def update_plan_header_remote_impl(
     issue_body: str,
     remote_impl_at: str,

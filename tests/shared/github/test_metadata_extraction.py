@@ -8,6 +8,9 @@ import pytest
 from erk_shared.github.metadata import (
     extract_plan_header_dispatch_info,
     extract_plan_header_local_impl_at,
+    extract_plan_header_local_impl_event,
+    extract_plan_header_local_impl_session,
+    extract_plan_header_local_impl_user,
     extract_plan_header_remote_impl_at,
     extract_plan_header_worktree_name,
     update_plan_header_remote_impl,
@@ -434,3 +437,305 @@ last_remote_impl_at: null
     # Should have the new remote impl timestamp
     remote_impl_at = extract_plan_header_remote_impl_at(result)
     assert remote_impl_at == "2025-11-28T10:00:00Z"
+
+
+# === Local Impl Event Extraction Tests ===
+
+
+def test_extract_plan_header_local_impl_event_started() -> None:
+    """Extract last_local_impl_event when set to 'started'."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2024-01-15T10:30:00Z'
+created_by: user123
+worktree_name: feature-branch-b-24-01-15
+last_dispatched_run_id: null
+last_dispatched_at: null
+last_local_impl_at: '2024-01-28T14:30:00Z'
+last_local_impl_event: started
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    result = extract_plan_header_local_impl_event(issue_body)
+    assert result == "started"
+
+
+def test_extract_plan_header_local_impl_event_ended() -> None:
+    """Extract last_local_impl_event when set to 'ended'."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2024-01-15T10:30:00Z'
+created_by: user123
+worktree_name: feature-branch-b-24-01-15
+last_dispatched_run_id: null
+last_dispatched_at: null
+last_local_impl_at: '2024-01-28T14:30:00Z'
+last_local_impl_event: ended
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    result = extract_plan_header_local_impl_event(issue_body)
+    assert result == "ended"
+
+
+def test_extract_plan_header_local_impl_event_null() -> None:
+    """Return None when last_local_impl_event is explicitly null."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2024-01-15T10:30:00Z'
+created_by: user123
+worktree_name: feature-branch-b-24-01-15
+last_dispatched_run_id: null
+last_dispatched_at: null
+last_local_impl_event: null
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    result = extract_plan_header_local_impl_event(issue_body)
+    assert result is None
+
+
+def test_extract_plan_header_local_impl_event_missing() -> None:
+    """Return None when last_local_impl_event field is missing."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2024-01-15T10:30:00Z'
+created_by: user123
+worktree_name: feature-branch-b-24-01-15
+last_dispatched_run_id: null
+last_dispatched_at: null
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    result = extract_plan_header_local_impl_event(issue_body)
+    assert result is None
+
+
+def test_extract_plan_header_local_impl_event_missing_block() -> None:
+    """Return None when plan-header block is missing."""
+    issue_body = """This is a plain issue body without any metadata blocks."""
+
+    result = extract_plan_header_local_impl_event(issue_body)
+    assert result is None
+
+
+# === Local Impl Session Extraction Tests ===
+
+
+def test_extract_plan_header_local_impl_session_found() -> None:
+    """Extract last_local_impl_session from plan-header block when present."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2024-01-15T10:30:00Z'
+created_by: user123
+worktree_name: feature-branch-b-24-01-15
+last_dispatched_run_id: null
+last_dispatched_at: null
+last_local_impl_at: '2024-01-28T14:30:00Z'
+last_local_impl_event: started
+last_local_impl_session: c34a7159-abcd-1234-5678-90abcdef1234
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    result = extract_plan_header_local_impl_session(issue_body)
+    assert result == "c34a7159-abcd-1234-5678-90abcdef1234"
+
+
+def test_extract_plan_header_local_impl_session_null() -> None:
+    """Return None when last_local_impl_session is explicitly null."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2024-01-15T10:30:00Z'
+created_by: user123
+worktree_name: feature-branch-b-24-01-15
+last_dispatched_run_id: null
+last_dispatched_at: null
+last_local_impl_session: null
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    result = extract_plan_header_local_impl_session(issue_body)
+    assert result is None
+
+
+def test_extract_plan_header_local_impl_session_missing() -> None:
+    """Return None when last_local_impl_session field is missing."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2024-01-15T10:30:00Z'
+created_by: user123
+worktree_name: feature-branch-b-24-01-15
+last_dispatched_run_id: null
+last_dispatched_at: null
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    result = extract_plan_header_local_impl_session(issue_body)
+    assert result is None
+
+
+def test_extract_plan_header_local_impl_session_missing_block() -> None:
+    """Return None when plan-header block is missing."""
+    issue_body = """This is a plain issue body without any metadata blocks."""
+
+    result = extract_plan_header_local_impl_session(issue_body)
+    assert result is None
+
+
+# === Local Impl User Extraction Tests ===
+
+
+def test_extract_plan_header_local_impl_user_found() -> None:
+    """Extract last_local_impl_user from plan-header block when present."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2024-01-15T10:30:00Z'
+created_by: user123
+worktree_name: feature-branch-b-24-01-15
+last_dispatched_run_id: null
+last_dispatched_at: null
+last_local_impl_at: '2024-01-28T14:30:00Z'
+last_local_impl_event: started
+last_local_impl_user: schrockn
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    result = extract_plan_header_local_impl_user(issue_body)
+    assert result == "schrockn"
+
+
+def test_extract_plan_header_local_impl_user_null() -> None:
+    """Return None when last_local_impl_user is explicitly null."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2024-01-15T10:30:00Z'
+created_by: user123
+worktree_name: feature-branch-b-24-01-15
+last_dispatched_run_id: null
+last_dispatched_at: null
+last_local_impl_user: null
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    result = extract_plan_header_local_impl_user(issue_body)
+    assert result is None
+
+
+def test_extract_plan_header_local_impl_user_missing() -> None:
+    """Return None when last_local_impl_user field is missing."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2024-01-15T10:30:00Z'
+created_by: user123
+worktree_name: feature-branch-b-24-01-15
+last_dispatched_run_id: null
+last_dispatched_at: null
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    result = extract_plan_header_local_impl_user(issue_body)
+    assert result is None
+
+
+def test_extract_plan_header_local_impl_user_missing_block() -> None:
+    """Return None when plan-header block is missing."""
+    issue_body = """This is a plain issue body without any metadata blocks."""
+
+    result = extract_plan_header_local_impl_user(issue_body)
+    assert result is None
+
+
+# === Combined Local Impl Fields Extraction Tests ===
+
+
+def test_extract_all_local_impl_fields_together() -> None:
+    """Extract all local impl fields from a block that has all of them."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2024-01-15T10:30:00Z'
+created_by: user123
+worktree_name: feature-branch-b-24-01-15
+last_dispatched_run_id: null
+last_dispatched_at: null
+last_local_impl_at: '2024-01-28T14:30:00Z'
+last_local_impl_event: started
+last_local_impl_session: c34a7159-abcd-1234-5678-90abcdef1234
+last_local_impl_user: schrockn
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    impl_at = extract_plan_header_local_impl_at(issue_body)
+    impl_event = extract_plan_header_local_impl_event(issue_body)
+    impl_session = extract_plan_header_local_impl_session(issue_body)
+    impl_user = extract_plan_header_local_impl_user(issue_body)
+
+    assert impl_at == "2024-01-28T14:30:00Z"
+    assert impl_event == "started"
+    assert impl_session == "c34a7159-abcd-1234-5678-90abcdef1234"
+    assert impl_user == "schrockn"
