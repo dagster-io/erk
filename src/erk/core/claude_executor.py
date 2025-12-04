@@ -36,6 +36,7 @@ class StreamEvent:
             - "issue_number": GitHub issue number
             - "error": Error with non-zero exit code
             - "no_output": Claude CLI produced no output (diagnostic info)
+            - "no_turns": Claude completed with num_turns=0 (likely hook blocking)
             - "process_error": Failed to start or timeout (Popen failure, timeout)
         content: The content of the event (text message, tool summary, spinner text,
             PR URL, PR number, PR title, issue number, or error/diagnostic details)
@@ -186,6 +187,9 @@ class ClaudeExecutor(ABC):
                 error_message = event.content
                 success = False
             elif event.event_type == "no_output":
+                error_message = event.content
+                success = False
+            elif event.event_type == "no_turns":
                 error_message = event.content
                 success = False
             elif event.event_type == "process_error":
@@ -395,6 +399,15 @@ class RealClaudeExecutor(ClaudeExecutor):
                 if issue_number_value is not None:
                     yield StreamEvent("issue_number", str(issue_number_value))
 
+                # Detect zero-turn completions (hook blocking)
+                num_turns = parsed.get("num_turns")
+                if num_turns is not None and num_turns == 0:
+                    diag = f"Claude command {command} completed without processing"
+                    diag += "\n  This usually means a hook blocked the command"
+                    diag += "\n  Run 'claude' directly to see hook error messages"
+                    diag += f"\n  Working directory: {worktree_path}"
+                    yield StreamEvent("no_turns", diag)
+
         if debug:
             print(
                 f"[DEBUG executor] stdout reading complete, total lines: {line_count}",
@@ -450,7 +463,7 @@ class RealClaudeExecutor(ClaudeExecutor):
 
     def _parse_stream_json_line(
         self, line: str, worktree_path: Path, command: str
-    ) -> dict[str, str | int | None] | None:
+    ) -> dict[str, str | int | bool | None] | None:
         """Parse a single stream-json line and extract relevant information.
 
         Args:
@@ -486,7 +499,7 @@ class RealClaudeExecutor(ClaudeExecutor):
         if data is None:
             return None
 
-        result: dict[str, str | int | None] = {
+        result: dict[str, str | int | bool | None] = {
             "text_content": None,
             "tool_summary": None,
             "spinner_update": None,
@@ -494,6 +507,9 @@ class RealClaudeExecutor(ClaudeExecutor):
             "pr_number": None,
             "pr_title": None,
             "issue_number": None,
+            "num_turns": None,
+            "is_error": None,
+            "result_text": None,
         }
 
         # stream-json format uses "type": "assistant" with nested "message" object
@@ -556,6 +572,16 @@ class RealClaudeExecutor(ClaudeExecutor):
                                 result["pr_title"] = pr_metadata["pr_title"]
                                 result["issue_number"] = pr_metadata.get("issue_number")
                                 break
+
+        # Parse type: result messages for num_turns (hook blocking detection)
+        if msg_type == "result":
+            num_turns = data.get("num_turns")
+            if num_turns is not None:
+                result["num_turns"] = num_turns
+            result["is_error"] = data.get("is_error", False)
+            result_text = data.get("result")
+            if result_text is not None:
+                result["result_text"] = result_text
 
         return result
 

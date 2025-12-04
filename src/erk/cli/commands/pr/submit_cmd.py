@@ -73,6 +73,17 @@ def pr_submit(ctx: ErkContext, debug: bool) -> None:
             click.echo(click.style(f"   ⚠️  {event.content}", fg="yellow"))
             error_message = event.content
             success = False
+        elif event.event_type == "no_turns":
+            click.echo(click.style(f"   ⚠️  {event.content}", fg="yellow"))
+            click.echo(
+                click.style(
+                    "   💡 Run 'claude /gt:pr-submit' directly to see hook errors",
+                    fg="yellow",
+                    dim=True,
+                )
+            )
+            error_message = event.content
+            success = False
         elif event.event_type == "process_error":
             click.echo(click.style(f"   ❌ {event.content}", fg="red"))
             error_message = event.content
