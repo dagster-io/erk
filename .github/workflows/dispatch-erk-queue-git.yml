@@ -236,6 +236,13 @@ jobs:
             echo "implementation_success=false" >> $GITHUB_OUTPUT
           fi
 
+          # Delete .worker-impl/ now - it's no longer needed (.impl/ has the copy)
+          # This prevents it from appearing in the submission diff
+          if [ -d .worker-impl/ ]; then
+            rm -rf .worker-impl/
+            echo "✓ Removed .worker-impl/ before submission"
+          fi
+
           exit 0
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -258,11 +265,7 @@ jobs:
           git config user.name "$SUBMITTED_BY"
           git config user.email "$SUBMITTED_BY@users.noreply.github.com"
 
-          # Stage only implementation changes (NOT .worker-impl/ deletion)
-          git add -A
-          git reset HEAD .worker-impl/  # Unstage .worker-impl/ so it's not in the diff
-
-          # Submit with pure git - AI sees only implementation changes
+          # Submit with pure git - .worker-impl/ was already deleted, so agent sees only impl changes
           claude --print \
             --model claude-sonnet-4-5-20250929 \
             --output-format stream-json \
@@ -270,18 +273,8 @@ jobs:
             --verbose \
             "/git:pr-push Implement issue #$ISSUE_NUMBER"
 
-          # Capture implementation commit SHA before cleanup commits
+          # Capture implementation commit SHA
           echo "impl_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-
-          # Now clean up .worker-impl/ in a separate commit (defensive - check if exists)
-          if [ -d .worker-impl/ ]; then
-            git rm -rf .worker-impl/
-            git commit -m "Remove .worker-impl/ folder after implementation"
-            git push origin "$BRANCH_NAME"
-            echo "✓ .worker-impl/ folder removed"
-          else
-            echo "⚠ .worker-impl/ folder not found - skipping cleanup"
-          fi
 
       - name: Mark PR ready for review
         if: steps.implement.outputs.implementation_success == 'true'
