@@ -44,10 +44,11 @@ def find_worktree_containing_path(worktrees: list[WorktreeInfo], target_path: Pa
     """Find which worktree contains the given path.
 
     Returns the most specific (deepest) match to handle nested worktrees correctly.
+    Handles symlink resolution differences (e.g., /var vs /private/var on macOS).
 
     Args:
         worktrees: List of WorktreeInfo objects to search
-        target_path: Path to check (should be resolved)
+        target_path: Path to check (will be resolved internally)
 
     Returns:
         Path to the worktree that contains target_path, or None if not found
@@ -61,12 +62,15 @@ def find_worktree_containing_path(worktrees: list[WorktreeInfo], target_path: Pa
     best_match: Path | None = None
     best_match_depth = -1
 
+    # Resolve target_path to handle symlinks consistently
+    resolved_target = target_path.resolve()
+
     for wt in worktrees:
         wt_path = wt.path.resolve()
 
         # Check if target_path is within this worktree
         # is_relative_to() returns True if target_path is under wt_path
-        if target_path.is_relative_to(wt_path):
+        if resolved_target.is_relative_to(wt_path):
             # Count path depth to find most specific match
             depth = len(wt_path.parts)
             if depth > best_match_depth:

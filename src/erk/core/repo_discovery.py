@@ -15,13 +15,34 @@ from erk_shared.github.types import GitHubRepoId
 
 @dataclass(frozen=True)
 class RepoContext:
-    """Represents a git repo root and its managed worktrees directory."""
+    """Represents a git repo root and its managed worktrees directory.
+
+    Attributes:
+        root: The actual working tree root (where git commands run).
+              For worktrees, this is the worktree directory.
+              For main repos, this equals main_repo_root.
+        repo_name: Name of the repository (derived from main_repo_root).
+        repo_dir: Path to erk metadata directory (~/.erk/repos/<repo-name>).
+        worktrees_dir: Path to worktrees directory (~/.erk/repos/<repo-name>/worktrees).
+        main_repo_root: The main repository root (for consistent metadata paths).
+                       For worktrees, this is the parent repo's root directory.
+                       For main repos, this equals root.
+                       Defaults to root for backwards compatibility.
+        github: GitHub repository identity, if available.
+    """
 
     root: Path
     repo_name: str
     repo_dir: Path  # ~/.erk/repos/<repo-name>
     worktrees_dir: Path  # ~/.erk/repos/<repo-name>/worktrees
+    main_repo_root: Path | None = None  # Defaults to root for backwards compatibility
     github: GitHubRepoId | None = None  # None if not a GitHub repo or no remote
+
+    def __post_init__(self) -> None:
+        """Set main_repo_root to root if not provided."""
+        if self.main_repo_root is None:
+            # Use object.__setattr__ because dataclass is frozen
+            object.__setattr__(self, "main_repo_root", self.root)
 
 
 @dataclass(frozen=True)
@@ -44,8 +65,8 @@ def discover_repo_or_sentinel(
     Returns a RepoContext pointing to the repo root and the worktrees directory
     for this repository, or NoRepoSentinel if not inside a git repo.
 
-    Note: Properly handles git worktrees by finding the main repository root,
-    not the worktree's .git file.
+    Note: For worktrees, `root` is the worktree directory (where git commands run),
+    while `repo_name` is derived from the main repository (for consistent metadata paths).
 
     Args:
         cwd: Current working directory to start search from
@@ -62,10 +83,18 @@ def discover_repo_or_sentinel(
 
     cur = cwd.resolve()
 
+    # root: the actual working tree root (where git commands should run)
+    # main_repo_root: the main repository root (for deriving repo_name and metadata paths)
     root: Path | None = None
+    main_repo_root: Path | None = None
+
     git_common_dir = ops.get_git_common_dir(cur)
     if git_common_dir is not None:
-        root = git_common_dir.parent.resolve()
+        # We're in a git repository (possibly a worktree)
+        # git_common_dir points to the main repo's .git directory
+        main_repo_root = git_common_dir.parent.resolve()
+        # Use --show-toplevel to get the actual worktree root
+        root = ops.get_repository_root(cur)
     else:
         for parent in [cur, *cur.parents]:
             git_path = parent / ".git"
@@ -74,12 +103,14 @@ def discover_repo_or_sentinel(
 
             if ops.is_dir(git_path):
                 root = parent
+                main_repo_root = parent
                 break
 
-    if root is None:
+    if root is None or main_repo_root is None:
         return NoRepoSentinel(message="Not inside a git repository (no .git found up the tree)")
 
-    repo_name = root.name
+    # Use main_repo_root for repo_name to ensure consistent metadata paths across worktrees
+    repo_name = main_repo_root.name
     repo_dir = erk_root / "repos" / repo_name
     worktrees_dir = repo_dir / "worktrees"
 
@@ -95,6 +126,7 @@ def discover_repo_or_sentinel(
 
     return RepoContext(
         root=root,
+        main_repo_root=main_repo_root,
         repo_name=repo_name,
         repo_dir=repo_dir,
         worktrees_dir=worktrees_dir,

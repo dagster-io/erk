@@ -1085,6 +1085,31 @@ use_graphite = true     # Auto-detected if gt CLI installed
 - No stack visualization
 - Still fully functional
 
+### Worktree Tracking Nuances
+
+When working with git worktrees, Graphite commands must be run from the correct directory context.
+
+#### How Metadata is Shared
+
+All worktrees share the same `.git` directory (via `.git` file pointing to `gitdir`):
+
+```
+repo/                          # Root worktree
+├── .git/                      # Actual git directory
+│   ├── .graphite_cache_persist
+│   ├── .graphite_pr_info
+│   └── .graphite_repo_config
+└── worktrees/
+    └── feature-x/             # Secondary worktree
+        └── .git               # File containing: gitdir: /repo/.git/worktrees/feature-x
+```
+
+**Implication**: Graphite metadata is shared across all worktrees. When `gt track` is called:
+
+- It writes to the shared `.graphite_cache_persist`
+- All worktrees see the same branch tracking state
+- But the command must be run from a directory where `gt` can resolve the git context
+
 ---
 
 ## Practical Examples
@@ -1323,6 +1348,125 @@ erk list --stacks
 #   ◯ main
 #   ◯ billing-model
 #   ◉ billing-service
+```
+
+---
+
+## Debugging Graphite Issues
+
+### Quick Diagnostics
+
+When Graphite commands fail or branches appear untracked:
+
+```bash
+# 1. Check if branch is tracked
+gt ls                          # Should show branch in stack
+gt branch info <branch>        # Shows parent and metadata
+
+# 2. Inspect metadata directly
+cat .git/.graphite_cache_persist | jq '.branches["<branch>"]'
+
+# 3. Verify Graphite initialization
+gt repo init --status          # Shows repo config state
+```
+
+### Common Symptoms and Fixes
+
+#### Branch Not Showing in `gt ls`
+
+**Symptom**: Branch exists in git but `gt ls` doesn't show it.
+
+**Diagnosis**:
+
+```bash
+# Check if branch exists in git
+git branch --list <branch>
+
+# Check if tracked by Graphite
+gt branch info <branch>
+# If error: "Branch '<branch>' is not tracked by Graphite"
+```
+
+**Fix**:
+
+```bash
+gt track --branch <branch> --parent <parent>
+```
+
+#### `gt pr` Fails with "Not Tracked"
+
+**Symptom**: `gt pr create` or `gt submit` fails because branch isn't in Graphite's cache.
+
+**Diagnosis**:
+
+```bash
+# Check metadata
+cat .git/.graphite_cache_persist | jq '.branches | keys'
+```
+
+**Fix**:
+
+```bash
+# Track the branch first
+gt track --branch <branch> --parent main
+# Then retry
+gt submit
+```
+
+#### Stack Shows Wrong Parent
+
+**Symptom**: Branch appears under wrong parent in `gt log`.
+
+**Diagnosis**:
+
+```bash
+gt branch info <branch>
+# Check "parent" field
+```
+
+**Fix**:
+
+```bash
+# Re-parent the branch
+gt move --onto <correct-parent>
+```
+
+### Inspecting Metadata Files
+
+For programmatic debugging:
+
+```python
+import json
+from pathlib import Path
+
+def inspect_graphite_state(repo_root: Path) -> None:
+    """Debug helper to inspect Graphite metadata."""
+    cache_file = repo_root / ".git" / ".graphite_cache_persist"
+
+    if not cache_file.exists():
+        print("No Graphite cache found - run 'gt repo init'")
+        return
+
+    data = json.loads(cache_file.read_text())
+
+    print("Tracked branches:")
+    for branch, meta in data.get("branches", {}).items():
+        parent = meta.get("parentBranchName", "none")
+        print(f"  {branch} -> {parent}")
+```
+
+### Recovery from Corrupted State
+
+If Graphite metadata becomes corrupted:
+
+```bash
+# Nuclear option: Re-initialize (loses stack relationships)
+rm .git/.graphite_cache_persist
+gt repo init
+
+# Then re-track branches manually
+gt track --branch feature-1 --parent main
+gt track --branch feature-2 --parent feature-1
 ```
 
 ---
