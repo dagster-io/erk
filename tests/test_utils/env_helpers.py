@@ -87,6 +87,7 @@ from click.testing import CliRunner
 from erk_shared.git.abc import Git, WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.types import GitHubRepoId
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 
@@ -131,6 +132,7 @@ class ErkIsolatedFsEnv:
             repo_name=root_worktree.name,
             repo_dir=erk_root / root_worktree.name,
             worktrees_dir=erk_root / root_worktree.name / "worktrees",
+            github=GitHubRepoId(owner="owner", repo="repo"),
         )
 
     @property
@@ -449,6 +451,7 @@ class ErkIsolatedFsEnv:
                     repo.root,
                     repo.repo_dir,
                 },
+                remote_urls={(self.cwd, "origin"): "https://github.com/owner/repo.git"},
             )
         else:
             from erk_shared.git.dry_run import DryRunGit
@@ -677,6 +680,7 @@ class ErkInMemEnv:
             repo_name=cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            github=GitHubRepoId(owner="owner", repo="repo"),
         )
 
     @property
@@ -873,6 +877,7 @@ class ErkInMemEnv:
                 current_branches={self.cwd: current_branch} if current_branch else {},
                 existing_paths=all_existing,
                 file_contents=file_contents or {},
+                remote_urls={(self.cwd, "origin"): "https://github.com/owner/repo.git"},
             )
         else:
             from erk_shared.git.dry_run import DryRunGit
