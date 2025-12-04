@@ -7,7 +7,7 @@
 - **[commands/](commands/)** — behavioral-triggers, optimization-patterns
 - **[erk/](erk/)** — branch-cleanup, graphite-branch-setup
 - **[hooks/](hooks/)** — erk, hooks
-- **[kits/](kits/)** — cli-commands, code-architecture, dependency-injection, push-down-pattern
+- **[kits/](kits/)** — cli-commands, code-architecture, dependency-injection, push-down-pattern, registry-discovery
 - **[planning/](planning/)** — agent-delegation, enrichment, lifecycle, plan-schema, scratch-storage, workflow
 - **[reference/](reference/)** — claude-cli-stream-json, github-branch-linking
 - **[sessions/](sessions/)** — context-analysis, layout, parallel-session-awareness, tools

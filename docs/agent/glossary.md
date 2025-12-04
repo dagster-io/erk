@@ -565,6 +565,24 @@ Test that uses fake implementations and isolated filesystem.
 
 ---
 
+## Kit Maintenance
+
+### Kit Consolidation
+
+When merging multiple kits into a unified kit:
+
+**Checklist**:
+
+1. ✅ Create unified `data/kits/{new-kit}/kit.yaml` with all artifacts
+2. ✅ Update `data/registry.yaml` - replace old entries with single new entry
+3. ✅ Delete orphaned kit directories (old kit dirs without kit.yaml)
+4. ✅ Verify: `dot-agent kit search` shows new unified kit
+5. ✅ Verify: All skills from old kits are loadable from new kit
+
+**Common failure mode**: Forgetting to update `registry.yaml` after consolidation causes old kit IDs to fail resolution (no `kit.yaml` in expected location).
+
+---
+
 ## Related Documentation
 
 - [AGENTS.md](../../AGENTS.md) - Coding standards
