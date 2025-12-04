@@ -47,6 +47,7 @@ dot-agent run erk create-extraction-plan \
 ```
 
 The command automatically:
+
 1. Writes the plan to `.erk/scratch/<session-id>/extraction-plan-*.md`
 2. Creates a GitHub issue with `erk-plan` + `erk-extraction` labels
 3. Sets `plan_type: extraction` in the plan-header metadata
