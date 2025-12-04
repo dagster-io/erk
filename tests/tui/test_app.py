@@ -152,23 +152,17 @@ class TestStatusBar:
         assert bar._message is None
 
 
-class TestCopyCheckoutCommand:
-    """Tests for the 'c' key copy checkout command functionality."""
+class TestClosePlanCommand:
+    """Tests for the 'c' key close plan functionality."""
 
     @pytest.mark.asyncio
-    async def test_copy_checkout_with_local_worktree(self) -> None:
-        """Pressing 'c' on row with local worktree copies 'erk co {worktree_name}'."""
-        clipboard = FakeClipboard()
+    async def test_close_plan_removes_from_list(self) -> None:
+        """Pressing 'c' closes the plan and removes it from the list."""
         provider = FakePlanDataProvider(
             plans=[
-                make_plan_row(
-                    123,
-                    "Feature",
-                    worktree_name="feature-branch",
-                    exists_locally=True,
-                )
+                make_plan_row(123, "Feature A"),
+                make_plan_row(456, "Feature B"),
             ],
-            clipboard=clipboard,
         )
         filters = PlanFilters.default()
         app = ErkDashApp(provider, filters, refresh_interval=0)
@@ -178,146 +172,23 @@ class TestCopyCheckoutCommand:
             await pilot.pause()
             await pilot.pause()
 
-            # Press 'c' to copy checkout command
+            # Initially should have 2 plans
+            assert len(provider._plans) == 2
+
+            # Press 'c' to close the selected plan
             await pilot.press("c")
             await pilot.pause()
+            await pilot.pause()
 
-            # Should have copied the worktree checkout command
-            assert clipboard.last_copied == "erk co feature-branch"
+            # Plan should be removed from the provider
+            assert len(provider._plans) == 1
+            assert provider._plans[0].issue_number == 456
 
     @pytest.mark.asyncio
-    async def test_copy_checkout_with_only_pr(self) -> None:
-        """Pressing 'c' on row with only PR copies 'erk pr co #{pr_number}'."""
-        clipboard = FakeClipboard()
+    async def test_close_plan_shows_status_message(self) -> None:
+        """Pressing 'c' shows confirmation message in status bar."""
         provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(
-                    123,
-                    "Feature",
-                    pr_number=456,
-                    exists_locally=False,
-                )
-            ],
-            clipboard=clipboard,
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            await pilot.press("c")
-            await pilot.pause()
-
-            assert clipboard.last_copied == "erk pr co 456"
-
-    @pytest.mark.asyncio
-    async def test_copy_checkout_with_neither_shows_error(self) -> None:
-        """Pressing 'c' on row with neither worktree nor PR shows error message."""
-        clipboard = FakeClipboard()
-        provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(
-                    123,
-                    "Feature",
-                    exists_locally=False,
-                )
-            ],
-            clipboard=clipboard,
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            await pilot.press("c")
-            await pilot.pause()
-
-            # No copy should have been made
-            assert clipboard.last_copied is None
-            # Status bar should show error message (tested via internal state)
-            status_bar = app.query_one(StatusBar)
-            assert status_bar._message == "No worktree or PR available for checkout"
-
-    @pytest.mark.asyncio
-    async def test_copy_checkout_prefers_local_worktree_over_pr(self) -> None:
-        """When both worktree and PR exist, prefers local worktree command."""
-        clipboard = FakeClipboard()
-        provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(
-                    123,
-                    "Feature",
-                    worktree_name="feature-branch",
-                    exists_locally=True,
-                    pr_number=456,
-                )
-            ],
-            clipboard=clipboard,
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            await pilot.press("c")
-            await pilot.pause()
-
-            # Should prefer worktree over PR
-            assert clipboard.last_copied == "erk co feature-branch"
-
-    @pytest.mark.asyncio
-    async def test_copy_checkout_clipboard_failure_shows_fallback(self) -> None:
-        """When clipboard fails, shows fallback message with command."""
-        clipboard = FakeClipboard(should_succeed=False)
-        provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(
-                    123,
-                    "Feature",
-                    worktree_name="feature-branch",
-                    exists_locally=True,
-                )
-            ],
-            clipboard=clipboard,
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            await pilot.press("c")
-            await pilot.pause()
-
-            # Clipboard was called but failed
-            assert clipboard.last_copied == "erk co feature-branch"
-            # Status bar should show fallback message
-            status_bar = app.query_one(StatusBar)
-            assert (
-                status_bar._message == "Clipboard unavailable. Copy manually: erk co feature-branch"
-            )
-
-    @pytest.mark.asyncio
-    async def test_copy_checkout_success_shows_confirmation(self) -> None:
-        """When clipboard succeeds, shows confirmation message."""
-        clipboard = FakeClipboard(should_succeed=True)
-        provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(
-                    123,
-                    "Feature",
-                    worktree_name="feature-branch",
-                    exists_locally=True,
-                )
-            ],
-            clipboard=clipboard,
+            plans=[make_plan_row(123, "Feature")],
         )
         filters = PlanFilters.default()
         app = ErkDashApp(provider, filters, refresh_interval=0)
@@ -330,7 +201,7 @@ class TestCopyCheckoutCommand:
             await pilot.pause()
 
             status_bar = app.query_one(StatusBar)
-            assert status_bar._message == "Copied: erk co feature-branch"
+            assert status_bar._message == "Closed plan #123"
 
 
 class TestFilterMode:

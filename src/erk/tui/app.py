@@ -172,7 +172,7 @@ class HelpScreen(ModalScreen):
                 yield Label("Space   View plan details", classes="help-binding")
                 yield Label("Enter/o Open PR (or issue if no PR)", classes="help-binding")
                 yield Label("p       Open PR in browser", classes="help-binding")
-                yield Label("c       Copy checkout command", classes="help-binding")
+                yield Label("c       Close plan (and linked PRs)", classes="help-binding")
                 yield Label("i       Show implement command", classes="help-binding")
 
             with Vertical(classes="help-section"):
@@ -618,7 +618,7 @@ class ErkDashApp(App):
         Binding("enter", "open_row", "Open"),
         Binding("o", "open_row", "Open", show=False),
         Binding("p", "open_pr", "Open PR"),
-        Binding("c", "copy_checkout", "Copy Checkout"),
+        Binding("c", "close_plan", "Close"),
         Binding("i", "show_implement", "Implement"),
         Binding("space", "show_detail", "Detail"),
         Binding("slash", "start_filter", "Filter", key_display="/"),
@@ -871,6 +871,31 @@ class ErkDashApp(App):
         if row is None:
             return
         self._copy_checkout_command(row)
+
+    def action_close_plan(self) -> None:
+        """Close the selected plan and its linked PRs."""
+        row = self._get_selected_row()
+        if row is None:
+            return
+
+        if row.issue_url is None:
+            if self._status_bar is not None:
+                self._status_bar.set_message("Cannot close plan: no issue URL")
+            return
+
+        # Perform the close operation
+        closed_prs = self._provider.close_plan(row.issue_number, row.issue_url)
+
+        # Show status message
+        if self._status_bar is not None:
+            if closed_prs:
+                pr_list = ", ".join(f"#{pr}" for pr in closed_prs)
+                self._status_bar.set_message(f"Closed plan #{row.issue_number} and PRs: {pr_list}")
+            else:
+                self._status_bar.set_message(f"Closed plan #{row.issue_number}")
+
+        # Refresh data to remove the closed plan from the list
+        self.action_refresh()
 
     def _copy_checkout_command(self, row: PlanRowData) -> None:
         """Copy appropriate checkout command based on row state.
