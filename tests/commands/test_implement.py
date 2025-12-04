@@ -717,6 +717,79 @@ def test_implement_plan_file_uses_git_when_graphite_disabled() -> None:
         assert len(git.added_worktrees) == 1
 
 
+def test_implement_from_issue_tracks_branch_with_graphite() -> None:
+    """Test erk implement calls ctx.graphite.track_branch() when use_graphite=True.
+
+    This mirrors test_create_from_issue_tracks_branch_with_graphite from test_create.py.
+    Verifies that when:
+    1. use_graphite=True in global config
+    2. erk implement <issue> is called
+    3. Then ctx.graphite.track_branch() is called with correct parameters
+
+    The key assertion is that track_branch is called with repo_root (not worktree path)
+    as the cwd argument, since Graphite metadata exists at the repo root.
+    """
+    from erk_shared.integrations.graphite.fake import FakeGraphite
+
+    plan_issue = _create_sample_plan_issue("500")
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        store = FakePlanStore(plans={"500": plan_issue})
+        issue_dev = FakeIssueLinkBranches()
+        fake_graphite = FakeGraphite()
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            plan_store=store,
+            issue_link_branches=issue_dev,
+            graphite=fake_graphite,
+            use_graphite=True,
+        )
+
+        result = runner.invoke(implement, ["#500", "--script"], obj=ctx)
+
+        # Assert: Command succeeded
+        if result.exit_code != 0:
+            print(f"stderr: {result.stderr if hasattr(result, 'stderr') else 'N/A'}")
+            print(f"stdout: {result.output}")
+        assert result.exit_code == 0
+
+        # Assert: Worktree was created
+        assert len(git.added_worktrees) == 1
+
+        # Assert: track_branch was called with correct parameters
+        # The branch is created via gh issue develop which tracks it with Graphite
+        assert len(fake_graphite.track_branch_calls) == 1, (
+            f"Expected 1 track_branch call, got {len(fake_graphite.track_branch_calls)}: "
+            f"{fake_graphite.track_branch_calls}"
+        )
+
+        cwd_path, branch_name, parent_branch = fake_graphite.track_branch_calls[0]
+
+        # Branch name should contain the issue number
+        assert "500" in branch_name, f"Branch name should contain issue number: {branch_name}"
+
+        # Parent should be trunk branch (main)
+        assert parent_branch == "main", f"Parent branch should be 'main', got: {parent_branch}"
+
+        # Critical: cwd_path should be repo_root, not the new worktree path
+        # This is the bug fix we're testing - track_branch must run from repo_root
+        # where Graphite metadata exists
+        worktree_path = git.added_worktrees[0][0]
+        assert cwd_path != worktree_path, (
+            f"track_branch should be called with repo_root, not worktree path. "
+            f"Got cwd_path={cwd_path}, worktree_path={worktree_path}"
+        )
+
+
 # Dangerous Flag Tests
 
 
