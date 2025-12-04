@@ -358,6 +358,22 @@ def consolidate_stack(
             user_output(click.style("⭕ Aborted", fg="red", bold=True))
             return
 
+    # Shell integration: generate script to activate new worktree BEFORE destructive operations
+    # This ensures the shell can navigate even if later steps fail (e.g., branch deletion).
+    # The handler will use this script instead of passthrough when available.
+    if name is not None and script and not dry_run:
+        script_content = render_activation_script(
+            worktree_path=target_worktree_path,
+            final_message='echo "✓ Went to consolidated worktree."',
+            comment="work activate-script (consolidate)",
+        )
+        activation_result = ctx.script_writer.write_activation_script(
+            script_content,
+            command_name="consolidate",
+            comment=f"activate {name}",
+        )
+        activation_result.output_for_shell_integration()
+
     # Remove worktrees and collect paths for progress output
     removed_paths: list[Path] = []
 
@@ -393,21 +409,9 @@ def consolidate_stack(
     if name is None:
         return  # No script needed when not switching worktrees
 
-    # Shell integration: generate script to activate new worktree
-    if script and not dry_run:
-        script_content = render_activation_script(
-            worktree_path=target_worktree_path,
-            final_message='echo "✓ Went to consolidated worktree."',
-            comment="work activate-script (consolidate)",
-        )
-        result = ctx.script_writer.write_activation_script(
-            script_content,
-            command_name="consolidate",
-            comment=f"activate {name}",
-        )
-        result.output_for_shell_integration()
-    elif not dry_run:
-        # Manual cd instruction when not in script mode
+    # Manual cd instruction when not in script mode
+    # (Script mode already output activation script earlier, before destructive operations)
+    if not script and not dry_run:
         user_output(f"Going to worktree: {click.style(name, fg='cyan', bold=True)}")
         user_output(f"\n{click.style('ℹ️', fg='blue')} Run this command to switch:")
         user_output(f"  cd {target_worktree_path}")
