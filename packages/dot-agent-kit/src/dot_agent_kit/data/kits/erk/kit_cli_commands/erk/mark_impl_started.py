@@ -28,9 +28,9 @@ Examples:
 import getpass
 import json
 import os
-from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Literal, TypedDict
 
 import click
 from erk_shared.env import in_github_actions
@@ -40,29 +40,29 @@ from erk_shared.github.metadata import (
 )
 from erk_shared.impl_folder import read_issue_reference, write_local_run_state
 
+from dot_agent_kit.cli.schema_formatting import json_output
 from dot_agent_kit.context_helpers import (
     require_github_issues,
     require_repo_root,
 )
 
 
-@dataclass(frozen=True)
-class MarkImplSuccess:
+class MarkImplSuccess(TypedDict):
     """Success response for mark impl started."""
 
-    success: bool
+    success: Literal[True]
     issue_number: int
 
 
-@dataclass(frozen=True)
-class MarkImplError:
+class MarkImplError(TypedDict):
     """Error response for mark impl started."""
 
-    success: bool
+    success: Literal[False]
     error_type: str
     message: str
 
 
+@json_output(MarkImplSuccess | MarkImplError)
 @click.command(name="mark-impl-started")
 @click.pass_context
 def mark_impl_started(ctx: click.Context) -> None:
@@ -86,12 +86,12 @@ def mark_impl_started(ctx: click.Context) -> None:
     impl_dir = Path.cwd() / ".impl"
     issue_ref = read_issue_reference(impl_dir)
     if issue_ref is None:
-        result = MarkImplError(
-            success=False,
-            error_type="no_issue_reference",
-            message="No issue reference found in .impl/issue.json",
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
+        result: MarkImplError = {
+            "success": False,
+            "error_type": "no_issue_reference",
+            "message": "No issue reference found in .impl/issue.json",
+        }
+        click.echo(json.dumps(result, indent=2))
         raise SystemExit(0)
 
     # Capture metadata
@@ -109,36 +109,36 @@ def mark_impl_started(ctx: click.Context) -> None:
             session_id=session_id,
         )
     except (FileNotFoundError, ValueError) as e:
-        result = MarkImplError(
-            success=False,
-            error_type="local_state_write_failed",
-            message=f"Failed to write local state: {e}",
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
+        result: MarkImplError = {
+            "success": False,
+            "error_type": "local_state_write_failed",
+            "message": f"Failed to write local state: {e}",
+        }
+        click.echo(json.dumps(result, indent=2))
         raise SystemExit(0) from None
 
     # Get GitHub Issues from context
     try:
         github_issues = require_github_issues(ctx)
     except SystemExit:
-        result = MarkImplError(
-            success=False,
-            error_type="context_not_initialized",
-            message="Context not initialized",
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
+        result = {
+            "success": False,
+            "error_type": "context_not_initialized",
+            "message": "Context not initialized",
+        }
+        click.echo(json.dumps(result, indent=2))
         raise SystemExit(0) from None
 
     # Fetch current issue
     try:
         issue = github_issues.get_issue(repo_root, issue_ref.issue_number)
     except RuntimeError as e:
-        result = MarkImplError(
-            success=False,
-            error_type="issue_not_found",
-            message=f"Issue #{issue_ref.issue_number} not found: {e}",
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
+        result = {
+            "success": False,
+            "error_type": "issue_not_found",
+            "message": f"Issue #{issue_ref.issue_number} not found: {e}",
+        }
+        click.echo(json.dumps(result, indent=2))
         raise SystemExit(0) from None
 
     # Update impl event based on environment
@@ -158,28 +158,28 @@ def mark_impl_started(ctx: click.Context) -> None:
             )
     except ValueError as e:
         # plan-header block not found (old format issue)
-        result = MarkImplError(
-            success=False,
-            error_type="no_plan_header_block",
-            message=str(e),
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
+        result = {
+            "success": False,
+            "error_type": "no_plan_header_block",
+            "message": str(e),
+        }
+        click.echo(json.dumps(result, indent=2))
         raise SystemExit(0) from None
 
     # Update issue body
     try:
         github_issues.update_issue_body(repo_root, issue_ref.issue_number, updated_body)
     except RuntimeError as e:
-        result = MarkImplError(
-            success=False,
-            error_type="github_api_failed",
-            message=f"Failed to update issue body: {e}",
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
+        result = {
+            "success": False,
+            "error_type": "github_api_failed",
+            "message": f"Failed to update issue body: {e}",
+        }
+        click.echo(json.dumps(result, indent=2))
         raise SystemExit(0) from None
 
-    result_success = MarkImplSuccess(
-        success=True,
-        issue_number=issue_ref.issue_number,
-    )
-    click.echo(json.dumps(asdict(result_success), indent=2))
+    result_success: MarkImplSuccess = {
+        "success": True,
+        "issue_number": issue_ref.issue_number,
+    }
+    click.echo(json.dumps(result_success, indent=2))

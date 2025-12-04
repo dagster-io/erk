@@ -44,25 +44,24 @@ Examples:
 
 import json
 import re
-from dataclasses import asdict, dataclass
-from typing import Literal
+from typing import Literal, TypedDict
 
 import click
 
+from dot_agent_kit.cli.schema_formatting import json_output
 
-@dataclass
-class ParsedIssue:
+
+class ParsedIssue(TypedDict):
     """Success result with parsed issue number."""
 
-    success: bool
+    success: Literal[True]
     issue_number: int
 
 
-@dataclass
-class ParseError:
+class ParseError(TypedDict):
     """Error result when issue reference cannot be parsed."""
 
-    success: bool
+    success: Literal[False]
     error: Literal["invalid_format", "invalid_number"]
     message: str
 
@@ -81,12 +80,12 @@ def _parse_issue_reference_impl(reference: str) -> ParsedIssue | ParseError:
     if reference.isdigit():
         issue_number = int(reference)
         if issue_number <= 0:
-            return ParseError(
-                success=False,
-                error="invalid_number",
-                message=f"Issue number must be positive (got {issue_number})",
-            )
-        return ParsedIssue(success=True, issue_number=issue_number)
+            return {
+                "success": False,
+                "error": "invalid_number",
+                "message": f"Issue number must be positive (got {issue_number})",
+            }
+        return {"success": True, "issue_number": issue_number}
 
     # Try GitHub URL format
     # Pattern: https://github.com/{owner}/{repo}/issues/{number}
@@ -95,21 +94,22 @@ def _parse_issue_reference_impl(reference: str) -> ParsedIssue | ParseError:
     if match:
         issue_number = int(match.group(1))
         if issue_number <= 0:
-            return ParseError(
-                success=False,
-                error="invalid_number",
-                message=f"Issue number must be positive (got {issue_number})",
-            )
-        return ParsedIssue(success=True, issue_number=issue_number)
+            return {
+                "success": False,
+                "error": "invalid_number",
+                "message": f"Issue number must be positive (got {issue_number})",
+            }
+        return {"success": True, "issue_number": issue_number}
 
     # Neither format matched
-    return ParseError(
-        success=False,
-        error="invalid_format",
-        message="Issue reference must be a number or GitHub URL (e.g., '776' or 'https://github.com/owner/repo/issues/776')",
-    )
+    return {
+        "success": False,
+        "error": "invalid_format",
+        "message": "Issue reference must be a number or GitHub URL (e.g., '776' or 'https://github.com/owner/repo/issues/776')",
+    }
 
 
+@json_output(ParsedIssue | ParseError)
 @click.command(name="parse-issue-reference")
 @click.argument("issue_reference")
 def parse_issue_reference(issue_reference: str) -> None:
@@ -121,8 +121,8 @@ def parse_issue_reference(issue_reference: str) -> None:
     result = _parse_issue_reference_impl(issue_reference)
 
     # Output JSON result
-    click.echo(json.dumps(asdict(result), indent=2))
+    click.echo(json.dumps(result, indent=2))
 
     # Exit with error code if parsing failed
-    if isinstance(result, ParseError):
+    if not result["success"]:
         raise SystemExit(1)

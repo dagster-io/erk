@@ -105,6 +105,103 @@ See [`update_pr.py`](../src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/updat
 
 All commands output JSON with `success` field and appropriate data/error fields. See canonical examples for complete structure.
 
+## Output Schema Documentation
+
+Kit CLI commands can expose their output schema in `--help` by defining an `OUTPUT_SCHEMA` module-level constant using TypedDict.
+
+### Convention
+
+Each kit CLI command module exports `OUTPUT_SCHEMA` as a module-level constant:
+
+```python
+from typing import Literal, TypedDict
+
+
+class ParsedIssue(TypedDict):
+    """Success result with parsed issue number."""
+    success: Literal[True]
+    issue_number: int
+
+
+class ParseError(TypedDict):
+    """Error result when issue reference cannot be parsed."""
+    success: Literal[False]
+    error: Literal["invalid_format", "invalid_number"]
+    message: str
+
+
+OUTPUT_SCHEMA = ParsedIssue | ParseError
+```
+
+### Help Output Format
+
+When `OUTPUT_SCHEMA` is defined, the schema is automatically appended to `--help`:
+
+```
+Usage: dot-agent run erk parse-issue-reference [OPTIONS] ISSUE_REFERENCE
+
+  Parse GitHub issue reference from plain number or URL.
+
+Options:
+  -h, --help  Show this message and exit.
+
+Output Schema:
+  ParsedIssue (success=true):
+    success: true
+    issue_number: int
+
+  ParseError (success=false):
+    success: false
+    error: "invalid_format" | "invalid_number"
+    message: str
+```
+
+### Migration Pattern
+
+To add schema documentation to an existing command:
+
+1. **Replace dataclass imports with TypedDict**:
+
+   ```python
+   # Before
+   from dataclasses import asdict, dataclass
+
+   # After
+   from typing import Literal, TypedDict
+   ```
+
+2. **Convert dataclasses to TypedDict**:
+
+   ```python
+   # Before
+   @dataclass
+   class ParsedIssue:
+       success: bool
+       issue_number: int
+
+   # After
+   class ParsedIssue(TypedDict):
+       success: Literal[True]
+       issue_number: int
+   ```
+
+3. **Add OUTPUT_SCHEMA constant**:
+
+   ```python
+   OUTPUT_SCHEMA = ParsedIssue | ParseError
+   ```
+
+4. **Update JSON output** (TypedDict is a dict, no `asdict()` needed):
+
+   ```python
+   # Before
+   click.echo(json.dumps(asdict(result), indent=2))
+
+   # After
+   result: ParsedIssue = {"success": True, "issue_number": 776}
+   click.echo(json.dumps(result, indent=2))
+   ```
+
 ## Registration
 
 Kit CLI commands must be registered in the kit's `kit.yaml` file in the `kit_cli_commands` section (not `artifacts`). See existing kit.yaml files for examples.

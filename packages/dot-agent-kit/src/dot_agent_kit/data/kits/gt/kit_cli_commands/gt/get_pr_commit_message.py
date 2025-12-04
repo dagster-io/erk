@@ -32,23 +32,22 @@ Examples:
 
 import json
 import subprocess
-from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypedDict
 
 import click
 
+from dot_agent_kit.cli.schema_formatting import json_output
 
-@dataclass
-class ExtractedMessage:
+
+class ExtractedMessage(TypedDict):
     """Success result with path to commit message file."""
 
     success: Literal[True]
     message_file: str
 
 
-@dataclass
-class ExtractError:
+class ExtractError(TypedDict):
     """Error result when message cannot be extracted."""
 
     success: Literal[False]
@@ -126,35 +125,38 @@ def _extract_commit_message_impl(session_id: str) -> ExtractedMessage | ExtractE
     pr_body = _get_pr_body()
 
     if pr_body is None:
-        return ExtractError(
-            success=False,
-            error="no_pr",
-            message="No PR found for current branch. Make sure you're on a branch with an open PR.",
-        )
+        return {
+            "success": False,
+            "error": "no_pr",
+            "message": (
+                "No PR found for current branch. Make sure you're on a branch with an open PR."
+            ),
+        }
 
     if not pr_body.strip():
-        return ExtractError(
-            success=False,
-            error="empty_body",
-            message="PR body is empty. Cannot extract commit message.",
-        )
+        return {
+            "success": False,
+            "error": "empty_body",
+            "message": "PR body is empty. Cannot extract commit message.",
+        }
 
     # Parse body to extract summary
     commit_message = _parse_pr_body_for_commit(pr_body)
 
     if not commit_message:
-        return ExtractError(
-            success=False,
-            error="no_summary",
-            message="Could not extract summary from PR body (only metadata found).",
-        )
+        return {
+            "success": False,
+            "error": "no_summary",
+            "message": "Could not extract summary from PR body (only metadata found).",
+        }
 
     # Write to scratch file
     message_file = _write_to_scratch(session_id, commit_message)
 
-    return ExtractedMessage(success=True, message_file=str(message_file))
+    return {"success": True, "message_file": str(message_file)}
 
 
+@json_output(ExtractedMessage | ExtractError)
 @click.command(name="get-pr-commit-message")
 @click.option(
     "--session-id",
@@ -171,8 +173,8 @@ def get_pr_commit_message(session_id: str) -> None:
     result = _extract_commit_message_impl(session_id)
 
     # Output JSON result
-    click.echo(json.dumps(asdict(result), indent=2))
+    click.echo(json.dumps(result, indent=2))
 
     # Exit with error code if extraction failed
-    if isinstance(result, ExtractError):
+    if not result["success"]:
         raise SystemExit(1)
