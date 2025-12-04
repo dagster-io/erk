@@ -7,6 +7,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.output import stream_auto_restack
 from erk.core.context import ErkContext
 
 
@@ -40,55 +41,11 @@ def pr_auto_restack(ctx: ErkContext) -> None:
     click.echo(click.style("   (Claude may take a moment to start)", dim=True))
     click.echo("")
 
-    worktree_path = Path.cwd()
+    result = stream_auto_restack(executor, Path.cwd())
 
-    # Track results from streaming events
-    error_message: str | None = None
-    success = True
-    last_spinner: str | None = None
+    if result.requires_interactive:
+        raise click.ClickException("Semantic conflict requires interactive resolution")
+    if not result.success:
+        raise click.ClickException(result.error_message or "Auto-restack failed")
 
-    # Stream events and print content directly
-    for event in executor.execute_command_streaming(
-        command="/erk:auto-restack",
-        worktree_path=worktree_path,
-        dangerous=True,  # Restack modifies git state
-    ):
-        if event.event_type == "text":
-            # Print text content directly (Claude's formatted output)
-            click.echo(event.content)
-        elif event.event_type == "tool":
-            # Check for user input prompts (semantic conflict requiring decision)
-            if "AskUserQuestion" in event.content:
-                click.echo("")
-                click.echo(
-                    click.style(
-                        "⚠️  Semantic conflict detected - requires interactive resolution",
-                        fg="yellow",
-                        bold=True,
-                    )
-                )
-                click.echo("")
-                click.echo("Claude needs your input to resolve this conflict.")
-                click.echo("Please run the restack manually in an interactive environment:")
-                click.echo("")
-                click.echo(click.style("    claude /erk:auto-restack", fg="cyan"))
-                click.echo("")
-                raise click.ClickException("Semantic conflict requires interactive resolution")
-            # Tool summaries with icon
-            click.echo(click.style(f"   ⚙️  {event.content}", fg="cyan", dim=True))
-        elif event.event_type == "spinner_update":
-            # Deduplicate spinner updates
-            if event.content != last_spinner:
-                click.echo(click.style(f"   ⏳ {event.content}", dim=True))
-                last_spinner = event.content
-        elif event.event_type == "error":
-            click.echo(click.style(f"   ❌ {event.content}", fg="red"))
-            error_message = event.content
-            success = False
-
-    if success:
-        click.echo("\n✅ Restack complete!")
-
-    if not success:
-        error_msg = error_message or "Auto-restack failed"
-        raise click.ClickException(error_msg)
+    click.echo("\n✅ Restack complete!")

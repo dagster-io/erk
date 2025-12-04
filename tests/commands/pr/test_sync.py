@@ -44,6 +44,7 @@ def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "feature-branch"},
             existing_paths={env.cwd, env.repo.worktrees_dir},
+            commits_ahead={(env.cwd, "main"): 2},  # Multiple commits to squash
         )
         # Simulate an existing commit that will be amended
         git._commits.append((env.cwd, "Original message", []))
@@ -55,7 +56,7 @@ def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
         assert result.exit_code == 0
         assert "Base branch: main" in result.output
         assert "Branch tracked with Graphite" in result.output
-        assert "Commits squashed" in result.output
+        assert "Squashed 2 commits into 1" in result.output
         assert "Commit message updated" in result.output
         assert "Restack complete" in result.output
         assert "synchronized with Graphite" in result.output
@@ -64,7 +65,7 @@ def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
         assert len(graphite.track_branch_calls) == 1
         assert graphite.track_branch_calls[0] == (env.cwd, "feature-branch", "main")
 
-        # Verify squash was called
+        # Verify squash was called (execute_squash calls graphite.squash_branch internally)
         assert len(graphite.squash_branch_calls) == 1
         assert graphite.squash_branch_calls[0][0] == env.cwd
 
@@ -260,7 +261,7 @@ def test_pr_sync_fails_when_cross_repo_fork(tmp_path: Path) -> None:
 
 
 def test_pr_sync_handles_squash_single_commit(tmp_path: Path) -> None:
-    """Test sync handles single-commit case gracefully (squash can fail)."""
+    """Test sync handles single-commit case gracefully (no squash needed)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
@@ -279,25 +280,27 @@ def test_pr_sync_handles_squash_single_commit(tmp_path: Path) -> None:
             pr_bases={111: "main"},
         )
 
-        # Squash raises "only one commit" error
-        graphite = FakeGraphite(
-            branches={},
-            squash_branch_raises=RuntimeError("only one commit on this branch"),
-        )
+        # No squash_branch_raises needed - execute_squash checks commit count first
+        graphite = FakeGraphite(branches={})
 
+        # Single commit ahead - execute_squash will skip squashing
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "single-commit-branch"},
+            commits_ahead={(env.cwd, "main"): 1},  # Single commit
         )
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
         result = runner.invoke(pr_group, ["sync"], obj=ctx)
 
-        # Should succeed despite squash "failure"
+        # Should succeed - execute_squash detects single commit and skips
         assert result.exit_code == 0
-        assert "Already squashed (single commit)" in result.output
+        assert "Already a single commit, no squash needed" in result.output
         assert "synchronized with Graphite" in result.output
+
+        # Verify squash was NOT called (single commit detected beforehand)
+        assert len(graphite.squash_branch_calls) == 0
 
 
 def test_pr_sync_handles_submit_failure_gracefully(tmp_path: Path) -> None:
@@ -329,6 +332,7 @@ def test_pr_sync_handles_submit_failure_gracefully(tmp_path: Path) -> None:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "feature-branch"},
+            commits_ahead={(env.cwd, "main"): 2},  # Commits to squash
         )
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
@@ -362,24 +366,30 @@ def test_pr_sync_squash_raises_unexpected_error(tmp_path: Path) -> None:
             pr_bases={333: "main"},
         )
 
-        # Squash raises unexpected error (not "only one commit")
+        # Squash raises unexpected error via CalledProcessError (what execute_squash catches)
+        import subprocess
+
+        error = subprocess.CalledProcessError(1, "gt squash")
+        error.stdout = ""
+        error.stderr = "unexpected squash error"
         graphite = FakeGraphite(
             branches={},
-            squash_branch_raises=RuntimeError("unexpected squash error"),
+            squash_branch_raises=error,
         )
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "feature-branch"},
+            commits_ahead={(env.cwd, "main"): 2},  # Multiple commits to trigger squash
         )
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
         result = runner.invoke(pr_group, ["sync"], obj=ctx)
 
-        # Should fail with exception
-        assert result.exit_code != 0
-        assert result.exception is not None
+        # Should fail with error message from execute_squash
+        assert result.exit_code == 1
+        assert "Failed to squash" in result.output
 
 
 def test_pr_sync_uses_correct_base_branch(tmp_path: Path) -> None:
@@ -404,9 +414,11 @@ def test_pr_sync_uses_correct_base_branch(tmp_path: Path) -> None:
 
         graphite = FakeGraphite(branches={})
 
+        # Note: commits_ahead uses the trunk branch detected by git, not PR base
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "hotfix-branch"},
+            commits_ahead={(env.cwd, "main"): 2},  # Commits ahead of detected trunk
         )
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
@@ -448,6 +460,7 @@ def test_pr_sync_updates_commit_with_title_only(tmp_path: Path) -> None:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "title-only-branch"},
+            commits_ahead={(env.cwd, "main"): 2},  # Commits to squash
         )
         git._commits.append((env.cwd, "Original message", []))
 
@@ -489,6 +502,7 @@ def test_pr_sync_skips_commit_update_when_no_title(tmp_path: Path) -> None:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "no-title-branch"},
+            commits_ahead={(env.cwd, "main"): 2},  # Commits to squash
         )
         git._commits.append((env.cwd, "Original message", []))
 
