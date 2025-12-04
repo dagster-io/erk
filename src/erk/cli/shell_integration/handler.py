@@ -66,6 +66,62 @@ class ShellIntegrationResult:
     exit_code: int
 
 
+def process_command_result(
+    exit_code: int,
+    stdout: str | None,
+    stderr: str | None,
+    command_name: str,
+) -> ShellIntegrationResult:
+    """Process command result and determine shell integration behavior.
+
+    This function implements the core logic for deciding whether to use a script
+    or passthrough based on command output. It prioritizes script availability
+    over exit code to handle destructive commands that output scripts early.
+
+    Args:
+        exit_code: Command exit code
+        stdout: Command stdout (expected to be script path if successful)
+        stderr: Command stderr (error messages)
+        command_name: Name of the command (for user messages)
+
+    Returns:
+        ShellIntegrationResult with passthrough, script, and exit_code
+    """
+    script_path = stdout.strip() if stdout else None
+
+    debug_log(f"Handler: Got script_path={script_path}, exit_code={exit_code}")
+
+    # Check if the script exists (only if we have a path)
+    script_exists = False
+    if script_path:
+        script_exists = Path(script_path).exists()
+        debug_log(f"Handler: Script exists? {script_exists}")
+
+    # If we have a valid script, use it even if command had errors.
+    # This handles destructive commands (like pr land) that output the script
+    # before failure. The shell can still navigate to the destination.
+    if script_path and script_exists:
+        # Forward stderr on failure so user sees error messages
+        if exit_code != 0 and stderr:
+            user_output(stderr, nl=False)
+        return ShellIntegrationResult(passthrough=False, script=script_path, exit_code=exit_code)
+
+    # No script available - if command failed, passthrough to show proper error
+    # Don't forward stderr here - the passthrough execution will show it
+    if exit_code != 0:
+        return ShellIntegrationResult(passthrough=True, script=None, exit_code=exit_code)
+
+    # Forward stderr messages to user (only for successful commands)
+    if stderr:
+        user_output(stderr, nl=False)
+
+    # Note when command completed successfully but no directory change is needed
+    if script_path is None or not script_path:
+        user_output(f"Note: '{command_name}' completed (no directory change needed)")
+
+    return ShellIntegrationResult(passthrough=False, script=script_path, exit_code=exit_code)
+
+
 def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellIntegrationResult:
     """Invoke a command with --script flag for shell integration.
 
@@ -99,33 +155,12 @@ def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellInt
         standalone_mode=False,
     )
 
-    exit_code = int(result.exit_code)
-
-    # If command failed, passthrough to show proper error
-    # Don't forward stderr here - the passthrough execution will show it
-    if exit_code != 0:
-        return ShellIntegrationResult(passthrough=True, script=None, exit_code=exit_code)
-
-    # Forward stderr messages to user (only for successful commands)
-    if result.stderr:
-        user_output(result.stderr, nl=False)
-
-    # Output is now a file path, not script content
-    # Click 8.2+ separates streams; result.stdout contains only stdout
-    script_path = result.stdout.strip() if result.stdout else None
-
-    debug_log(f"Handler: Got script_path={script_path}, exit_code={exit_code}")
-
-    # Check if the script exists (only if we have a path)
-    if script_path:
-        script_exists = Path(script_path).exists()
-        debug_log(f"Handler: Script exists? {script_exists}")
-
-    # Note when command completed successfully but no directory change is needed
-    if exit_code == 0 and (script_path is None or not script_path):
-        user_output(f"Note: '{command_name}' completed (no directory change needed)")
-
-    return ShellIntegrationResult(passthrough=False, script=script_path, exit_code=exit_code)
+    return process_command_result(
+        exit_code=int(result.exit_code),
+        stdout=result.stdout,
+        stderr=result.stderr,
+        command_name=command_name,
+    )
 
 
 def handle_shell_request(args: tuple[str, ...]) -> ShellIntegrationResult:

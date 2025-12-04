@@ -1,5 +1,7 @@
 """Unit tests for shell integration command routing."""
 
+from pathlib import Path
+
 from erk.cli.shell_integration.handler import (
     GLOBAL_FLAGS,
     SHELL_INTEGRATION_COMMANDS,
@@ -102,3 +104,110 @@ def test_only_global_flags_returns_passthrough() -> None:
 
     result = handle_shell_request(("--debug", "--verbose"))
     assert result.passthrough is True
+
+
+def test_process_command_result_uses_script_even_when_command_fails(tmp_path: Path) -> None:
+    """process_command_result should use script even if exit code is non-zero.
+
+    This test verifies the fix for shell integration stranding:
+    - Commands like 'pr land' output their activation script BEFORE destructive ops
+    - If a later step fails (e.g., git pull after worktree deletion), the script
+      is already in stdout
+    - Handler must check for a valid script path BEFORE checking exit code
+    - If a valid script exists, use it instead of passthrough
+
+    Without this fix:
+    1. pr land outputs script to stdout
+    2. pr land deletes worktree
+    3. git pull fails → non-zero exit
+    4. Handler sees exit_code != 0 → returns passthrough=True
+    5. Shell wrapper runs `command erk pr land` → fails (cwd gone)
+
+    With this fix:
+    1. pr land outputs script to stdout (early output)
+    2. pr land deletes worktree
+    3. git pull fails → non-zero exit
+    4. Handler sees script in stdout → uses it instead of passthrough
+    5. Shell runs script → navigates to destination
+    """
+    from erk.cli.shell_integration.handler import process_command_result
+
+    # Create a real temp file to simulate the activation script
+    script_file = tmp_path / "activation-script.sh"
+    script_file.write_text("cd /some/destination\n")
+
+    result = process_command_result(
+        exit_code=1,  # Command failed
+        stdout=str(script_file),  # But script was output
+        stderr="Error: git pull failed",
+        command_name="pr land",
+    )
+
+    # Key assertion: should NOT passthrough since we have a valid script
+    assert result.passthrough is False, (
+        "Should use script instead of passthrough when script exists"
+    )
+    assert result.script == str(script_file)
+    assert result.exit_code == 1  # Exit code should still reflect failure
+
+
+def test_process_command_result_passthroughs_on_failure_without_script() -> None:
+    """process_command_result should passthrough if command fails AND no script available.
+
+    This preserves existing behavior: when a command fails and there's no
+    activation script to use, the handler returns passthrough=True so the
+    shell wrapper can re-run the command for proper error display.
+    """
+    from erk.cli.shell_integration.handler import process_command_result
+
+    result = process_command_result(
+        exit_code=1,  # Command failed
+        stdout="",  # No script output
+        stderr="Error: validation failed",
+        command_name="checkout",
+    )
+
+    # Key assertion: should passthrough since no script and command failed
+    assert result.passthrough is True
+    assert result.script is None
+    assert result.exit_code == 1
+
+
+def test_process_command_result_passthroughs_when_script_path_doesnt_exist() -> None:
+    """process_command_result should passthrough if script path in stdout doesn't exist.
+
+    If stdout contains a path but the file doesn't exist (e.g., cleanup race condition),
+    should passthrough rather than returning an invalid script path.
+    """
+    from erk.cli.shell_integration.handler import process_command_result
+
+    result = process_command_result(
+        exit_code=1,  # Command failed
+        stdout="/nonexistent/path/to/script.sh",  # Path doesn't exist
+        stderr="Error: something failed",
+        command_name="checkout",
+    )
+
+    # Should passthrough since script file doesn't exist
+    assert result.passthrough is True
+    assert result.script is None
+    assert result.exit_code == 1
+
+
+def test_process_command_result_success_with_script(tmp_path: Path) -> None:
+    """process_command_result should return script on success."""
+    from erk.cli.shell_integration.handler import process_command_result
+
+    script_file = tmp_path / "activation-script.sh"
+    script_file.write_text("cd /destination\n")
+
+    result = process_command_result(
+        exit_code=0,
+        stdout=str(script_file),
+        stderr="",
+        command_name="checkout",
+    )
+
+    assert result.passthrough is False
+    assert result.script == str(script_file)
+    assert result.exit_code == 0

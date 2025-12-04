@@ -127,15 +127,9 @@ def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
     # A subprocess cannot change the parent shell's cwd.
     # The shell integration (activation script) handles the cd.
 
-    # Step 3: Delete current branch and worktree
-    delete_branch_and_worktree(ctx, repo.root, current_branch, current_worktree_path)
-
-    # Step 4: Pull latest changes on destination branch
-    ctx.git.pull_branch(dest_path, "origin", dest_branch, ff_only=True)
-    user_output(click.style("✓", fg="green") + " Pulled latest changes")
-
-    # Step 5: Output activation script
-    # Note: --script flag is now required (fail-fast check above), so we always output the script
+    # Step 3: Output activation script BEFORE destructive operations
+    # This ensures the shell can navigate even if later steps fail.
+    # The handler will use this script instead of passthrough when available.
     script_content = render_activation_script(
         worktree_path=dest_path,
         final_message=f'echo "Landed PR and switched to {dest_description}: $(pwd)"',
@@ -147,5 +141,13 @@ def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
         comment=f"activate {dest_description} after landing",
     )
     machine_output(str(activation_result.path), nl=False)
+
+    # Step 4: Delete current branch and worktree
+    delete_branch_and_worktree(ctx, repo.root, current_branch, current_worktree_path)
+
+    # Step 5: Pull latest changes on destination branch
+    # If this fails, the script is already output - shell can still navigate
+    ctx.git.pull_branch(dest_path, "origin", dest_branch, ff_only=True)
+    user_output(click.style("✓", fg="green") + " Pulled latest changes")
 
     raise SystemExit(0)
