@@ -9,6 +9,7 @@ artifacts:
     - commands/erk/submit-plan.md
     - commands/erk/auto-restack.md
     - commands/erk/create-extraction-plan.md
+    - commands/erk/save-plan.md
   agent:
     - agents/erk/issue-wt-creator.md
     - agents/erk/plan-extractor.md
@@ -110,6 +111,9 @@ kit_cli_commands:
   - name: list-sessions
     path: kit_cli_commands/erk/list_sessions.py
     description: List Claude Code sessions with metadata for the current project
+  - name: plan-save-reminder-hook
+    path: kit_cli_commands/erk/plan_save_reminder_hook.py
+    description: Detect recent plans and remind user to save to GitHub
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit
@@ -117,3 +121,9 @@ hooks:
     invocation: dot-agent kit-command erk session-id-injector-hook
     description: Injects session ID into conversation context for plan-related commands
     timeout: 30
+  - id: plan-save-reminder-hook
+    lifecycle: UserPromptSubmit
+    matcher: "*"
+    invocation: dot-agent kit-command erk plan-save-reminder-hook
+    description: Remind user to save plan to GitHub after plan mode
+    timeout: 5

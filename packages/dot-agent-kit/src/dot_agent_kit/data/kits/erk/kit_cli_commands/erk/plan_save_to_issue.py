@@ -1,11 +1,16 @@
 """Extract plan from ~/.claude/plans/ and create GitHub issue in one operation.
 
 Usage:
-    dot-agent run erk plan-save-to-issue [--format json|display] [--plan-file PATH]
+    dot-agent run erk plan-save-to-issue [OPTIONS]
 
 This command combines plan extraction and issue creation:
-1. Extract plan from specified file or latest from ~/.claude/plans/
+1. Extract plan from specified file, session-scoped lookup, or latest from ~/.claude/plans/
 2. Create GitHub issue with plan content
+
+Options:
+    --plan-file PATH: Use specific plan file (highest priority)
+    --session-id ID: Use session-scoped lookup to find plan by slug
+    (neither): Fall back to most recent plan by modification time
 
 Output:
     --format json (default): {"success": true, "issue_number": N, ...}
@@ -43,10 +48,17 @@ from dot_agent_kit.data.kits.erk.session_plan_extractor import get_latest_plan
     "--plan-file",
     type=click.Path(exists=True, path_type=Path),
     default=None,
-    help="Path to specific plan file (default: most recent in ~/.claude/plans/)",
+    help="Path to specific plan file (highest priority)",
+)
+@click.option(
+    "--session-id",
+    default=None,
+    help="Session ID for scoped plan lookup (uses slug from session logs)",
 )
 @click.pass_context
-def plan_save_to_issue(ctx: click.Context, output_format: str, plan_file: Path | None) -> None:
+def plan_save_to_issue(
+    ctx: click.Context, output_format: str, plan_file: Path | None, session_id: str | None
+) -> None:
     """Extract plan from ~/.claude/plans/ and create GitHub issue.
 
     Combines plan extraction and issue creation in a single operation.
@@ -56,11 +68,11 @@ def plan_save_to_issue(ctx: click.Context, output_format: str, plan_file: Path |
     repo_root = require_repo_root(ctx)
     cwd = Path.cwd()
 
-    # Step 1: Extract plan from specified file or latest from ~/.claude/plans/
+    # Step 1: Extract plan (priority: plan_file > session_id > most recent)
     if plan_file:
         plan = plan_file.read_text(encoding="utf-8")
     else:
-        plan = get_latest_plan(str(cwd), session_id=None)
+        plan = get_latest_plan(str(cwd), session_id=session_id)
 
     if not plan:
         if output_format == "display":

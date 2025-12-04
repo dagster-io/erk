@@ -34,6 +34,11 @@
             "type": "command",
             "command": "DOT_AGENT_KIT_ID=erk DOT_AGENT_HOOK_ID=session-id-injector-hook dot-agent kit-command erk session-id-injector-hook",
             "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "DOT_AGENT_KIT_ID=erk DOT_AGENT_HOOK_ID=plan-save-reminder-hook dot-agent kit-command erk plan-save-reminder-hook",
+            "timeout": 5
           }
         ]
       },

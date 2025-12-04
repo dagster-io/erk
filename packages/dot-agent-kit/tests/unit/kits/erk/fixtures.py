@@ -208,3 +208,26 @@ def create_session_file(path, entries: list[str]) -> None:
             # Parse JSON and write back as compact single-line
             data = json.loads(entry)
             f.write(json.dumps(data) + "\n")
+
+
+def create_session_entry(session_id: str, slug: str | None = None) -> str:
+    """Create a minimal JSONL session entry for testing.
+
+    Args:
+        session_id: The session ID for the entry
+        slug: Optional slug field (indicates plan mode)
+
+    Returns:
+        JSON string for the entry
+    """
+    import json
+
+    entry = {
+        "type": "assistant",
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "Test"}]},
+        "sessionId": session_id,
+        "timestamp": "2025-11-23T10:00:00.000Z",
+    }
+    if slug:
+        entry["slug"] = slug
+    return json.dumps(entry)

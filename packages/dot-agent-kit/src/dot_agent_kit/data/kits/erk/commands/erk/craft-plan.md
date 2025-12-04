@@ -4,6 +4,13 @@ description: Create a plan using Plan Mode and save to GitHub issue
 
 # /erk:craft-plan
 
+> **DEPRECATED**: This command is deprecated. Use native Plan Mode instead:
+>
+> 1. Claude will naturally enter Plan Mode for complex tasks
+> 2. After plan approval, run `/erk:save-plan` to save to GitHub
+>
+> This command will be removed in a future release.
+
 ## Goal
 
 **Create an implementation plan using Plan Mode, then automatically save to GitHub.**
