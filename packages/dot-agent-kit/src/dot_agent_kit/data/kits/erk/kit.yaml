@@ -114,9 +114,6 @@ kit_cli_commands:
   - name: plan-save-reminder-hook
     path: kit_cli_commands/erk/plan_save_reminder_hook.py
     description: Detect recent plans and remind user to save to GitHub
-  - name: exit-plan-mode-hook
-    path: kit_cli_commands/erk/exit_plan_mode_hook.py
-    description: Save plan to GitHub when ExitPlanMode is called
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit
@@ -130,9 +127,3 @@ hooks:
     invocation: dot-agent kit-command erk plan-save-reminder-hook
     description: Remind user to save plan to GitHub after plan mode
     timeout: 5
-  - id: exit-plan-mode-hook
-    lifecycle: PreToolUse
-    matcher: ExitPlanMode
-    invocation: dot-agent kit-command erk exit-plan-mode-hook
-    description: Auto-save plan to GitHub on Plan Mode exit
-    timeout: 30
