@@ -509,23 +509,3 @@ def test_noop_github_issues_get_issue_comments_delegates() -> None:
 
     # Should delegate to wrapped implementation
     assert result == ["First comment", "Second comment"]
-
-
-def test_noop_github_issues_get_multiple_issue_comments_delegates() -> None:
-    """Test DryRunGitHubIssues get_multiple_issue_comments delegates to wrapped implementation."""
-    comments = {
-        10: ["Comment on 10"],
-        20: ["First on 20", "Second on 20"],
-        30: [],
-    }
-    fake = FakeGitHubIssues(comments=comments)
-    noop = DryRunGitHubIssues(fake)
-
-    result = noop.get_multiple_issue_comments(sentinel_path(), [10, 20, 30])
-
-    # Should delegate to wrapped implementation
-    assert result == {
-        10: ["Comment on 10"],
-        20: ["First on 20", "Second on 20"],
-        30: [],
-    }

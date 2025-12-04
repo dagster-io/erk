@@ -185,55 +185,6 @@ class RealGitHubIssues(GitHubIssues):
         data = json.loads(stdout)
         return [IssueComment(body=item["body"], url=item["url"]) for item in data]
 
-    def get_multiple_issue_comments(
-        self, repo_root: Path, issue_numbers: list[int]
-    ) -> dict[int, list[str]]:
-        """Fetch comments for multiple issues using GraphQL batch query.
-
-        Uses GraphQL aliases to fetch all issue comments in a single API call,
-        dramatically improving performance (10-50x faster than individual calls).
-        """
-        if not issue_numbers:
-            return {}
-
-        # Get owner and repo name (GraphQL doesn't support {owner}/{repo} placeholders)
-        repo_info_cmd = ["gh", "repo", "view", "--json", "owner,name"]
-        repo_info_stdout = execute_gh_command(repo_info_cmd, repo_root)
-        repo_info = json.loads(repo_info_stdout)
-        owner = repo_info["owner"]["login"]
-        repo_name = repo_info["name"]
-
-        # Build GraphQL query with aliases for each issue
-        aliases = []
-        for i, num in enumerate(issue_numbers):
-            aliases.append(
-                f"issue{i}: issue(number: {num}) {{ "
-                f"number comments(first: 100) {{ nodes {{ body }} }} }}"
-            )
-
-        repo_query = f'repository(owner: "{owner}", name: "{repo_name}")'
-        query = f"query {{ {repo_query} {{ " + " ".join(aliases) + " } }"
-
-        cmd = ["gh", "api", "graphql", "-f", f"query={query}"]
-        stdout = execute_gh_command(cmd, repo_root)
-        data = json.loads(stdout)
-
-        # Parse results into dict[issue_number -> comments]
-        result: dict[int, list[str]] = {}
-        repository = data.get("data", {}).get("repository", {})
-
-        for i, num in enumerate(issue_numbers):
-            issue_data = repository.get(f"issue{i}")
-            if issue_data and issue_data.get("comments"):
-                comments = [
-                    node["body"] for node in issue_data["comments"]["nodes"] if node.get("body")
-                ]
-                result[num] = comments
-            else:
-                result[num] = []
-
-        return result
-
     def ensure_label_exists(
         self,
         repo_root: Path,

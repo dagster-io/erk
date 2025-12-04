@@ -133,28 +133,6 @@ class GitHubIssues(ABC):
         ...
 
     @abstractmethod
-    def get_multiple_issue_comments(
-        self, repo_root: Path, issue_numbers: list[int]
-    ) -> dict[int, list[str]]:
-        """Fetch comments for multiple issues in a single batch operation.
-
-        Uses GitHub GraphQL API to fetch all issue comments in one request,
-        significantly reducing API calls and improving performance.
-
-        Args:
-            repo_root: Path to repository root
-            issue_numbers: List of issue numbers to fetch comments for
-
-        Returns:
-            Mapping of issue number to list of comment bodies (markdown strings).
-            Issues without comments will have an empty list.
-
-        Raises:
-            RuntimeError: If gh CLI fails
-        """
-        ...
-
-    @abstractmethod
     def ensure_label_exists(
         self,
         repo_root: Path,

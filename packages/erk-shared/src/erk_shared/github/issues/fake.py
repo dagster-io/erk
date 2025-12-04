@@ -201,20 +201,6 @@ class FakeGitHubIssues(GitHubIssues):
         """
         return self._comments_with_urls.get(number, [])
 
-    def get_multiple_issue_comments(
-        self, repo_root: Path, issue_numbers: list[int]
-    ) -> dict[int, list[str]]:
-        """Get comments for multiple issues from fake storage.
-
-        Returns:
-            Mapping of issue number to list of comment bodies.
-            Issues without comments will have an empty list.
-        """
-        result: dict[int, list[str]] = {}
-        for num in issue_numbers:
-            result[num] = self._comments.get(num, [])
-        return result
-
     def ensure_label_exists(
         self,
         repo_root: Path,
