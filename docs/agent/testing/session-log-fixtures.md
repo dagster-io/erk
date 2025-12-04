@@ -8,7 +8,6 @@ read_when:
 
 # Session Log Test Fixtures
 
-
 Guide for creating realistic JSONL test fixtures that simulate Claude Code session logs.
 
 ## Overview
