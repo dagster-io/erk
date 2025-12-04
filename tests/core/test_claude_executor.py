@@ -3,8 +3,8 @@
 import json
 from pathlib import Path
 
-from erk.core.claude_executor import RealClaudeExecutor
-from erk.core.output_filter import extract_pr_metadata_from_text
+from erk_shared.integrations.claude.real import RealClaudeExecutor
+from erk_shared.output.output_filter import extract_pr_metadata_from_text
 
 
 def test_parse_stream_json_line_extracts_pr_metadata_from_string_content() -> None:

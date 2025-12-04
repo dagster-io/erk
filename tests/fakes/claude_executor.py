@@ -7,7 +7,12 @@ requiring the actual Claude CLI or using subprocess mocks.
 from collections.abc import Iterator
 from pathlib import Path
 
-from erk.core.claude_executor import ClaudeExecutor, CommandResult, StreamEvent
+from erk_shared.integrations.claude.abc import (
+    ClaudeExecutor,
+    CommandResult,
+    CommitMessageResult,
+    StreamEvent,
+)
 
 
 class FakeClaudeExecutor(ClaudeExecutor):
@@ -202,6 +207,23 @@ class FakeClaudeExecutor(ClaudeExecutor):
         This property is for test assertions only.
         """
         return self._executed_commands.copy()
+
+    def generate_commit_message(
+        self,
+        diff_file: Path,
+        repo_root: Path,
+        current_branch: str,
+        parent_branch: str,
+    ) -> CommitMessageResult:
+        """Return a simulated commit message result.
+
+        This method is required by the ClaudeExecutor ABC but is not
+        typically used in tests that focus on command execution.
+        """
+        return CommitMessageResult(
+            title="Test commit title",
+            body="Test commit body",
+        )
 
     @property
     def interactive_calls(self) -> list[tuple[Path, bool]]:

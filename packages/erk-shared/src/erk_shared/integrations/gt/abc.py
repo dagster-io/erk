@@ -6,35 +6,41 @@ object with the required attributes (like ErkContext) to be used without explici
 inheritance.
 
 Design:
-- Protocol-based GtKit interface that combines Git, GitHub, and Graphite attributes
+- Protocol-based GtKit interface that combines Git, GitHub, Graphite, and AI attributes
 - Enables structural typing: ErkContext or any object with these attributes works
 - Return values match existing subprocess patterns (str | None, bool, etc.)
 - LBYL pattern: operations check state, return None/False on failure
 
 Note: Git operations are provided by the core Git interface from erk_shared.git.abc.
 GitHub operations use the main GitHub ABC from erk_shared.github.
+Claude operations use the ClaudeExecutor ABC from erk_shared.integrations.claude.
 """
 
 from typing import Protocol
 
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
+from erk_shared.integrations.claude.abc import ClaudeExecutor
 from erk_shared.integrations.graphite.abc import Graphite
+from erk_shared.integrations.time.abc import Time
 
 
 class GtKit(Protocol):
     """Structural typing interface combining all GT kit operations.
 
     This Protocol provides a single injection point for all git, Graphite,
-    and GitHub operations used by GT kit CLI commands.
+    GitHub, and AI operations used by GT kit CLI commands.
 
     Uses Protocol for structural typing compatibility, meaning any object with
-    git, github, and graphite attributes (like ErkContext) can be used directly
-    without explicit inheritance.
+    git, github, graphite, and claude attributes can be used directly without
+    explicit inheritance.
 
     GitHub operations use the main GitHub ABC from erk_shared.github which
     provides methods that take repo_root as a parameter rather than operating
     on the "current" branch.
+
+    AI operations use the ClaudeExecutor ABC from erk_shared.integrations.claude for
+    both general Claude CLI execution and specific AI content generation.
 
     Note: Properties are used instead of bare attributes to make the Protocol
     read-only compatible. This allows frozen dataclasses (like ErkContext) to
@@ -55,4 +61,14 @@ class GtKit(Protocol):
     @property
     def graphite(self) -> Graphite:
         """Graphite operations interface."""
+        ...
+
+    @property
+    def claude(self) -> ClaudeExecutor:
+        """Claude CLI executor for AI operations."""
+        ...
+
+    @property
+    def time(self) -> Time:
+        """Time operations interface."""
         ...

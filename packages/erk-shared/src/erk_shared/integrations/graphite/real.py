@@ -335,7 +335,13 @@ class RealGraphite(Graphite):
         )
 
     def submit_stack(
-        self, repo_root: Path, *, publish: bool = False, restack: bool = False, quiet: bool = False
+        self,
+        repo_root: Path,
+        *,
+        publish: bool = False,
+        restack: bool = False,
+        quiet: bool = False,
+        force: bool = False,
     ) -> None:
         """Submit the current stack to create or update PRs."""
         cmd = ["gt", "submit", "--no-edit", "--no-interactive"]
@@ -344,6 +350,8 @@ class RealGraphite(Graphite):
             cmd.append("--publish")
         if restack:
             cmd.append("--restack")
+        if force:
+            cmd.append("--force")
 
         # Use 120-second timeout for network operations
         try:

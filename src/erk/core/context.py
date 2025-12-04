@@ -15,6 +15,8 @@ from erk_shared.github.issue_link_branches_dry_run import DryRunIssueLinkBranche
 from erk_shared.github.issue_link_branches_real import RealIssueLinkBranches
 from erk_shared.github.issues import DryRunGitHubIssues, GitHubIssues, RealGitHubIssues
 from erk_shared.github.real import RealGitHub
+from erk_shared.integrations.claude.abc import ClaudeExecutor
+from erk_shared.integrations.claude.real import RealClaudeExecutor
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.dry_run import DryRunGraphite
 from erk_shared.integrations.graphite.real import RealGraphite
@@ -25,7 +27,6 @@ from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.store import PlanStore
 
 from erk.cli.config import LoadedConfig, load_config
-from erk.core.claude_executor import ClaudeExecutor, RealClaudeExecutor
 from erk.core.completion import Completion, RealCompletion
 from erk.core.config_store import (
     ConfigStore,

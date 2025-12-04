@@ -2,7 +2,7 @@
 
 import json
 
-from erk.core.output_filter import extract_pr_metadata, extract_pr_url
+from erk_shared.output.output_filter import extract_pr_metadata, extract_pr_url
 
 
 def test_extract_pr_url_returns_url_when_present() -> None:

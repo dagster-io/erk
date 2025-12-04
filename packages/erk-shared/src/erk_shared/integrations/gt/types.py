@@ -227,3 +227,73 @@ class FinalizeResult:
     branch_name: str
     issue_number: int | None
     message: str
+
+
+# =============================================================================
+# Submit PR Operation Types (unified workflow)
+# =============================================================================
+
+SubmitPRErrorType = Literal[
+    "preflight_failed",
+    "ai_generation_failed",
+    "finalize_failed",
+]
+
+
+@dataclass
+class SubmitPRResult:
+    """Success result from unified PR submission.
+
+    Combines preflight + AI generation + finalize into a single result.
+    """
+
+    success: bool
+    pr_number: int
+    pr_url: str
+    pr_title: str
+    graphite_url: str
+    branch_name: str
+    issue_number: int | None
+    message: str
+
+
+@dataclass
+class SubmitPRError:
+    """Error result from unified PR submission."""
+
+    success: bool
+    error_type: SubmitPRErrorType
+    message: str
+    details: dict[str, str]
+
+    @staticmethod
+    def from_preflight(error: PreAnalysisError | PostAnalysisError) -> "SubmitPRError":
+        """Create SubmitPRError from a preflight error."""
+        details = {"original_error_type": error.error_type}
+        details.update({k: str(v) for k, v in error.details.items()})
+        return SubmitPRError(
+            success=False,
+            error_type="preflight_failed",
+            message=error.message,
+            details=details,
+        )
+
+    @staticmethod
+    def from_ai(message: str, details: dict[str, str] | None = None) -> "SubmitPRError":
+        """Create SubmitPRError from AI generation failure."""
+        return SubmitPRError(
+            success=False,
+            error_type="ai_generation_failed",
+            message=message,
+            details=details or {},
+        )
+
+    @staticmethod
+    def from_finalize(error: PostAnalysisError) -> "SubmitPRError":
+        """Create SubmitPRError from a finalize error."""
+        return SubmitPRError(
+            success=False,
+            error_type="finalize_failed",
+            message=error.message,
+            details={"original_error_type": error.error_type, **error.details},
+        )

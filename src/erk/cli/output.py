@@ -7,12 +7,11 @@ This module provides format_implement_summary and stream_command_with_feedback.
 import time
 from pathlib import Path
 
+from erk_shared.integrations.claude.abc import ClaudeExecutor, CommandResult
 from erk_shared.output.output import format_duration
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
-
-from erk.core.claude_executor import ClaudeExecutor, CommandResult
 
 
 def format_implement_summary(results: list[CommandResult], total_duration: float) -> Panel:
