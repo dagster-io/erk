@@ -41,7 +41,7 @@ Run `git status` to identify the state:
 For each conflicted file identified by `git status`:
 
 <!-- prettier-ignore -->
-@_conflict-resolution.md
+@../../docs/erk/includes/conflict-resolution.md
 
 ### Step 4: Continue the Restack
 
