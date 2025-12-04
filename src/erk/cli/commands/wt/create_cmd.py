@@ -1,7 +1,7 @@
 import json
 import shlex
 import subprocess
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable
 from pathlib import Path
 
 import click
@@ -26,6 +26,7 @@ from erk.cli.shell_utils import render_navigation_script
 from erk.cli.subprocess_utils import run_with_error_reporting
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+from erk.core.worktree_metadata import set_worktree_project
 
 
 def run_post_worktree_setup(
@@ -328,20 +329,36 @@ def add_worktree(
         ctx.git.add_worktree(repo_root, path, branch=None, ref=ref, create_branch=False)
 
 
-def make_env_content(cfg: LoadedConfig, *, worktree_path: Path, repo_root: Path, name: str) -> str:
+def make_env_content(
+    cfg: LoadedConfig,
+    *,
+    worktree_path: Path,
+    repo_root: Path,
+    name: str,
+    project_root: Path | None = None,
+    project_name: str | None = None,
+) -> str:
     """Render .env content using config templates.
 
     Substitution variables:
-      - {worktree_path}
-      - {repo_root}
-      - {name}
+      - {worktree_path}  - Path to the worktree directory
+      - {repo_root}      - Path to the git repository root
+      - {name}           - Worktree name
+      - {project_root}   - Path to project directory (if in project context)
+      - {project_name}   - Project name (if in project context)
     """
 
-    variables: Mapping[str, str] = {
+    variables: dict[str, str] = {
         "worktree_path": str(worktree_path),
         "repo_root": str(repo_root),
         "name": name,
     }
+
+    # Add project variables if available
+    if project_root is not None:
+        variables["project_root"] = str(project_root)
+    if project_name is not None:
+        variables["project_name"] = project_name
 
     lines: list[str] = []
     for key, template in cfg.env.items():
@@ -353,6 +370,12 @@ def make_env_content(cfg: LoadedConfig, *, worktree_path: Path, repo_root: Path,
     lines.append(f"WORKTREE_PATH={quote_env_value(str(worktree_path))}")
     lines.append(f"REPO_ROOT={quote_env_value(str(repo_root))}")
     lines.append(f"WORKTREE_NAME={quote_env_value(name)}")
+
+    # Add project env vars if available
+    if project_root is not None:
+        lines.append(f"PROJECT_ROOT={quote_env_value(str(project_root))}")
+    if project_name is not None:
+        lines.append(f"PROJECT_NAME={quote_env_value(project_name)}")
 
     return "\n".join(lines) + "\n"
 
@@ -853,9 +876,22 @@ def create_wt(
             skip_remote_check=skip_remote_check,
         )
 
-    # Write .env based on config
-    env_content = make_env_content(cfg, worktree_path=wt_path, repo_root=repo.root, name=name)
+    # Write .env based on config (with project variables if applicable)
+    project_root = wt_path / ctx.project.path_from_repo if ctx.project else None
+    project_name = ctx.project.name if ctx.project else None
+    env_content = make_env_content(
+        cfg,
+        worktree_path=wt_path,
+        repo_root=repo.root,
+        name=name,
+        project_root=project_root,
+        project_name=project_name,
+    )
     (wt_path / ".env").write_text(env_content, encoding="utf-8")
+
+    # Record project association if in a project context
+    if ctx.project is not None:
+        set_worktree_project(repo.repo_dir, name, ctx.project.path_from_repo)
 
     # Create impl folder if plan file provided
     # Track impl folder destination: set to .impl/ path only if

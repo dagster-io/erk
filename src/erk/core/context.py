@@ -34,6 +34,7 @@ from erk.core.config_store import (
 )
 from erk.core.planner.registry_abc import PlannerRegistry
 from erk.core.planner.registry_real import RealPlannerRegistry
+from erk.core.project_discovery import ProjectContext, discover_project
 from erk.core.repo_discovery import (
     NoRepoSentinel,
     RepoContext,
@@ -76,6 +77,7 @@ class ErkContext:
     global_config: GlobalConfig | None
     local_config: LoadedConfig
     repo: RepoContext | NoRepoSentinel
+    project: ProjectContext | None  # None if not in a project subdirectory
     dry_run: bool
 
     @property
@@ -169,6 +171,7 @@ class ErkContext:
             global_config=None,
             local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
             repo=NoRepoSentinel(),
+            project=None,
             dry_run=dry_run,
         )
 
@@ -193,6 +196,7 @@ class ErkContext:
         global_config: GlobalConfig | None = None,
         local_config: LoadedConfig | None = None,
         repo: RepoContext | NoRepoSentinel | None = None,
+        project: ProjectContext | None = None,
         dry_run: bool = False,
     ) -> "ErkContext":
         """Create test context with optional pre-configured integration classes.
@@ -349,6 +353,7 @@ class ErkContext:
             global_config=global_config,
             local_config=local_config,
             repo=repo,
+            project=project,
             dry_run=dry_run,
         )
 
@@ -479,21 +484,26 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
     erk_root = global_config.erk_root if global_config else Path.home() / "worktrees"
     repo = discover_repo_or_sentinel(cwd, erk_root, git)
 
-    # 6. Load local config (or defaults if no repo)
+    # 6. Discover project (if in a repo)
+    project: ProjectContext | None = None
+    if not isinstance(repo, NoRepoSentinel):
+        project = discover_project(cwd, repo.root, git)
+
+    # 7. Load local config (or defaults if no repo)
     if isinstance(repo, NoRepoSentinel):
         local_config = LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
     else:
         repo_dir = ensure_erk_metadata_dir(repo)
         local_config = load_config(repo_dir)
 
-    # 7. Choose feedback implementation based on mode
+    # 8. Choose feedback implementation based on mode
     feedback: UserFeedback
     if script:
         feedback = SuppressedFeedback()  # Suppress diagnostics
     else:
         feedback = InteractiveFeedback()  # Show all messages
 
-    # 8. Apply dry-run wrappers if needed
+    # 9. Apply dry-run wrappers if needed
     if dry_run:
         git = DryRunGit(git)
         graphite = DryRunGraphite(graphite)
@@ -501,7 +511,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
         issues = DryRunGitHubIssues(issues)
         issue_link_branches = DryRunIssueLinkBranches(issue_link_branches)
 
-    # 9. Create context with all values
+    # 10. Create context with all values
     return ErkContext(
         git=git,
         github=github,
@@ -522,6 +532,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
         global_config=global_config,
         local_config=local_config,
         repo=repo,
+        project=project,
         dry_run=dry_run,
     )
 

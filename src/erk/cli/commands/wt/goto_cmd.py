@@ -8,6 +8,7 @@ from erk.cli.commands.navigation_helpers import activate_root_repo, activate_wor
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+from erk.core.worktree_metadata import get_worktree_project
 
 
 @click.command("goto")
@@ -86,12 +87,25 @@ def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
         target_worktree, f"Worktree '{worktree_name}' not found in git worktree list"
     )
 
+    # Look up project path for this worktree
+    project_path = get_worktree_project(repo.repo_dir, worktree_name, ctx.git)
+    if project_path is not None:
+        # Navigate to project subdirectory within the worktree
+        target_path = worktree_path / project_path
+    else:
+        # Navigate to worktree root
+        target_path = worktree_path
+
     # Show worktree and branch info (only in non-script mode)
     if not script:
         branch_name = target_worktree.branch or "(detached HEAD)"
         styled_wt = click.style(worktree_name, fg="cyan", bold=True)
         styled_branch = click.style(branch_name, fg="yellow")
-        user_output(f"Went to worktree {styled_wt} [{styled_branch}]")
+        if project_path is not None:
+            styled_project = click.style(str(project_path), fg="magenta")
+            user_output(f"Went to worktree {styled_wt} [{styled_branch}] → {styled_project}")
+        else:
+            user_output(f"Went to worktree {styled_wt} [{styled_branch}]")
 
-    # Activate the worktree
-    activate_worktree(ctx, repo, worktree_path, script, "goto")
+    # Activate the worktree (at project path if applicable)
+    activate_worktree(ctx, repo, target_path, script, "goto")

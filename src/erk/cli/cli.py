@@ -15,6 +15,7 @@ from erk.cli.commands.plan.list_cmd import dash
 from erk.cli.commands.planner import planner_group
 from erk.cli.commands.pr import pr_group
 from erk.cli.commands.prepare_cwd_recovery import prepare_cwd_recovery_cmd
+from erk.cli.commands.project import project_group
 from erk.cli.commands.run import run_group
 from erk.cli.commands.shell_integration import hidden_shell_cmd
 from erk.cli.commands.stack import stack_group
@@ -54,6 +55,7 @@ cli.add_command(dash)
 cli.add_command(plan_group)
 cli.add_command(planner_group)
 cli.add_command(pr_group)
+cli.add_command(project_group)
 cli.add_command(run_group)
 cli.add_command(stack_group)
 cli.add_command(submit_cmd)
