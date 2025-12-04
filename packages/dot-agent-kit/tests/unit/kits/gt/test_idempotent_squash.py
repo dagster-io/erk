@@ -7,10 +7,9 @@ are 2 or more commits. Single commit branches return success without modificatio
 from pathlib import Path
 
 from erk_shared.integrations.gt.cli import render_events
+from erk_shared.integrations.gt.fake_kit import FakeGtKitOps
 from erk_shared.integrations.gt.operations.squash import execute_squash
 from erk_shared.integrations.gt.types import SquashError, SquashSuccess
-
-from tests.unit.kits.gt.fake_ops import FakeGtKitOps
 
 
 class TestIdempotentSquash:
