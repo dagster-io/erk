@@ -240,6 +240,62 @@ Don't add script mode to:
 - Commands with no directory changes
 - Commands that don't benefit from shell integration
 
+## Required vs Optional Script Mode
+
+Script mode is **required** (not optional) for commands that delete the current worktree.
+
+### Optional Script Mode
+
+For most commands, script mode is a convenience - it enables automatic directory switching. Without it, users can manually run `cd` or `erk checkout`:
+
+```bash
+# Without shell integration - still works, just requires manual cd
+$ erk create my-feature
+Created worktree: my-feature
+$ cd ~/erks/erk/my-feature  # Manual step
+
+# With shell integration - automatic cd
+$ erk create my-feature
+# Already in ~/erks/erk/my-feature
+```
+
+### Required Script Mode
+
+For commands that **delete the current worktree**, script mode is mandatory. Without it, the shell gets stranded in a deleted directory:
+
+| Command                     | Why Required                         |
+| --------------------------- | ------------------------------------ |
+| `erk pr land`               | Deletes worktree after landing PR    |
+| `erk down --delete-current` | Deletes current worktree, moves down |
+| `erk up --delete-current`   | Deletes current worktree, moves up   |
+| `erk rm` (in worktree)      | Deletes the current worktree         |
+
+### Implementation: Fail-Fast Without --script
+
+Commands requiring script mode should fail early with a helpful error:
+
+```python
+@click.command()
+@click.option("--script", is_flag=True, hidden=True)
+@click.pass_obj
+def land(ctx: ErkContext, script: bool) -> None:
+    """Land PR and delete worktree."""
+    if is_in_current_worktree(ctx) and not script:
+        raise click.ClickException(
+            "This command deletes the current worktree.\n\n"
+            "Use the shell wrapper: erk pr land\n"
+            "Or explicitly: source <(erk pr land --script)\n\n"
+            "See: erk init --shell"
+        )
+    # ... proceed with operation
+```
+
+**Why fail-fast?** Running without shell integration would "succeed" (PR lands, worktree deleted) but leave the user stranded. It's better to fail early with a clear message than to succeed and create a confusing state.
+
+### Cross-Reference
+
+For the underlying reason why this is necessary, see [Shell Integration Constraint](../architecture/shell-integration-constraint.md) - subprocesses cannot change parent shell cwd.
+
 ## Shell Integration Flow
 
 1. User runs command with shell wrapper: `erk implement 123`

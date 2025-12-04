@@ -37,6 +37,7 @@
 | [commandresult-extension-pattern.md](architecture/commandresult-extension-pattern.md) | Adding new fields to CommandResult, extending stream parsing                                       |
 | [sentinel-path-compatibility.md](architecture/sentinel-path-compatibility.md)         | Writing functions testable with FakeGit, sentinel path errors                                      |
 | [worktree-metadata.md](architecture/worktree-metadata.md)                             | Storing per-worktree metadata, worktrees.toml                                                      |
+| [shell-integration-constraint.md](architecture/shell-integration-constraint.md)       | Implementing commands that delete current worktree, subprocess cwd limitations                     |
 
 ### [CLI Development](cli/)
 
@@ -46,6 +47,7 @@
 | [output-styling.md](cli/output-styling.md)             | Styling CLI output, using colors                       |
 | [list-formatting.md](cli/list-formatting.md)           | Formatting list output, designing list commands        |
 | [script-mode.md](cli/script-mode.md)                   | Implementing script mode, shell integration            |
+| [shell-aliases.md](cli/shell-aliases.md)               | Setting up shell aliases, debugging shell integration  |
 | [template-variables.md](cli/template-variables.md)     | Using substitution variables in config, .env templates |
 
 ### [Planning](planning/)

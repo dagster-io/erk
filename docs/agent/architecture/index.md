@@ -12,13 +12,14 @@ Core architectural patterns and design decisions for the erk codebase.
 
 ## Quick Navigation
 
-| When you need to...               | Read this                                                        |
-| --------------------------------- | ---------------------------------------------------------------- |
-| Understand dry-run patterns or DI | [erk-architecture.md](erk-architecture.md)                       |
-| Choose between Protocol and ABC   | [protocol-vs-abc.md](protocol-vs-abc.md)                         |
-| Execute shell commands safely     | [subprocess-wrappers.md](subprocess-wrappers.md)                 |
-| Fix sentinel path test errors     | [sentinel-path-compatibility.md](sentinel-path-compatibility.md) |
-| Store per-worktree metadata       | [worktree-metadata.md](worktree-metadata.md)                     |
+| When you need to...               | Read this                                                          |
+| --------------------------------- | ------------------------------------------------------------------ |
+| Understand dry-run patterns or DI | [erk-architecture.md](erk-architecture.md)                         |
+| Choose between Protocol and ABC   | [protocol-vs-abc.md](protocol-vs-abc.md)                           |
+| Execute shell commands safely     | [subprocess-wrappers.md](subprocess-wrappers.md)                   |
+| Fix sentinel path test errors     | [sentinel-path-compatibility.md](sentinel-path-compatibility.md)   |
+| Store per-worktree metadata       | [worktree-metadata.md](worktree-metadata.md)                       |
+| Handle worktree-deleting commands | [shell-integration-constraint.md](shell-integration-constraint.md) |
 
 ## Documents in This Category
 
@@ -51,6 +52,12 @@ Pattern for making functions testable with `erk_inmem_env()` by adding optional 
 **File:** [worktree-metadata.md](worktree-metadata.md)
 
 Per-worktree metadata storage in `worktrees.toml`, including project associations and the API for reading/writing metadata.
+
+### Shell Integration Constraint
+
+**File:** [shell-integration-constraint.md](shell-integration-constraint.md)
+
+Explains the Unix process model limitation that prevents subprocesses from changing parent shell cwd, and patterns for implementing commands that delete the current worktree.
 
 ## Related Topics
 

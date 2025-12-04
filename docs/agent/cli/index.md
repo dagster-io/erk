@@ -19,6 +19,7 @@ Guidance for building and styling CLI commands in erk.
 | Style output with colors and formatting   | [output-styling.md](output-styling.md)             |
 | Format lists and tables                   | [list-formatting.md](list-formatting.md)           |
 | Implement shell integration (script mode) | [script-mode.md](script-mode.md)                   |
+| Set up shell aliases safely               | [shell-aliases.md](shell-aliases.md)               |
 | Configure .env templates and variables    | [template-variables.md](template-variables.md)     |
 
 ## Documents in This Category
@@ -52,6 +53,12 @@ Implementing script mode for shell integration, allowing commands to output shel
 **File:** [template-variables.md](template-variables.md)
 
 Reference for template variables available in `config.toml` and `project.toml` env sections, plus auto-generated environment variables.
+
+### Shell Aliases
+
+**File:** [shell-aliases.md](shell-aliases.md)
+
+Explains why direct aliases bypass shell integration and provides safe patterns for creating short commands that work with worktree-deleting operations.
 
 ## Related Topics
 

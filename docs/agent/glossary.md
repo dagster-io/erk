@@ -148,6 +148,41 @@ class ProjectContext:
 
 ---
 
+## Shell Concepts
+
+### Shell Integration
+
+A mechanism that allows erk commands to change the parent shell's working directory and environment.
+
+**Why needed**: A subprocess cannot change its parent's cwd (Unix process isolation). Without shell integration, commands that delete the current worktree leave the shell stranded in a deleted directory.
+
+**Components**:
+
+1. **Wrapper function** (`erk()`): Intercepts erk commands and sources activation scripts
+2. **`--script` flag**: Commands output activation script paths instead of diagnostics
+3. **Activation scripts**: Shell scripts that `cd` and set environment variables
+4. **Init scripts**: `~/.erk/shell/init.zsh` and `init.bash` define the wrapper function
+
+**Setup**:
+
+```bash
+erk init --shell
+source ~/.erk/shell/init.zsh  # or init.bash
+```
+
+**Verification**:
+
+```bash
+type erk
+# Expected: erk is a function (not a file path)
+```
+
+**⚠️ Alias Warning**: Direct aliases like `alias land='erk pr land'` bypass shell integration. Use functions or go through the `erk` wrapper. See [Shell Aliases](cli/shell-aliases.md) for safe patterns.
+
+**Related**: [Shell Integration Constraint](architecture/shell-integration-constraint.md) explains the Unix process model limitation.
+
+---
+
 ## Git & Graphite Concepts
 
 **For comprehensive gt documentation**: See [tools/gt.md](tools/gt.md)
