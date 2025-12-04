@@ -49,3 +49,4 @@ Techniques for analyzing context window usage and optimizing session efficiency.
 
 - [Planning](../planning/) - Sessions often contain plan implementations
 - [Commands](../commands/) - Command optimization affects session efficiency
+- [Testing](../testing/session-log-fixtures.md) - Creating session log fixtures for tests
