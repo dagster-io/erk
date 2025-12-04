@@ -217,27 +217,6 @@ class FakeGitHub(GitHub):
         # Default to MERGEABLE if not configured
         return PRMergeability(mergeable="MERGEABLE", merge_state_status="CLEAN")
 
-    def fetch_pr_titles_batch(
-        self, prs: dict[str, PullRequestInfo], repo_root: Path
-    ) -> dict[str, PullRequestInfo]:
-        """Fetch PR titles for all PRs in a single batched query.
-
-        Fake just returns the PRs as-is. We assume PRs already have titles
-        if configured. This method is a no-op that returns the input unchanged.
-        """
-        return prs
-
-    def enrich_prs_with_ci_status_batch(
-        self, prs: dict[str, PullRequestInfo], repo_root: Path
-    ) -> dict[str, PullRequestInfo]:
-        """Enrich PRs with CI status and mergeability using batched query.
-
-        Fake just returns the PRs as-is. We assume PRs already have CI status
-        and mergeability if configured. This method is a no-op that returns
-        the input unchanged.
-        """
-        return prs
-
     def merge_pr(
         self,
         repo_root: Path,
