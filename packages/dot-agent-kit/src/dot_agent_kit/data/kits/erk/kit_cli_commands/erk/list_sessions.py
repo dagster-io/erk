@@ -32,13 +32,14 @@ Examples:
 
 import json
 import os
-import subprocess
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import click
+from erk_shared.git.abc import Git
 
+from dot_agent_kit.context_helpers import require_git
 from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.find_project_dir import (
     ProjectError,
     find_project_info,
@@ -87,55 +88,18 @@ class ListSessionsError:
     help: str
 
 
-def get_branch_context(cwd: Path) -> BranchContext:
+def get_branch_context(git: Git, cwd: Path) -> BranchContext:
     """Get git branch context for determining session selection behavior.
 
     Args:
+        git: Git interface for branch operations
         cwd: Current working directory
 
     Returns:
         BranchContext with current branch, trunk branch, and trunk status
     """
-    # Get current branch
-    try:
-        result = subprocess.run(
-            ["git", "branch", "--show-current"],
-            capture_output=True,
-            text=True,
-            check=True,
-            cwd=cwd,
-        )
-        current_branch = result.stdout.strip()
-    except subprocess.CalledProcessError:
-        current_branch = ""
-
-    # Get trunk branch from remote HEAD
-    trunk_branch = "main"
-    try:
-        result = subprocess.run(
-            ["git", "symbolic-ref", "refs/remotes/origin/HEAD"],
-            capture_output=True,
-            text=True,
-            check=True,
-            cwd=cwd,
-        )
-        # Format: refs/remotes/origin/main or refs/remotes/origin/master
-        ref = result.stdout.strip()
-        if ref:
-            trunk_branch = ref.replace("refs/remotes/origin/", "")
-    except subprocess.CalledProcessError:
-        # Fallback: check if master exists
-        try:
-            subprocess.run(
-                ["git", "rev-parse", "--verify", "refs/heads/master"],
-                capture_output=True,
-                text=True,
-                check=True,
-                cwd=cwd,
-            )
-            trunk_branch = "master"
-        except subprocess.CalledProcessError:
-            trunk_branch = "main"
+    current_branch = git.get_current_branch(cwd) or ""
+    trunk_branch = git.detect_trunk_branch(cwd)
 
     return BranchContext(
         current_branch=current_branch,
@@ -329,12 +293,14 @@ def list_sessions(
     type=int,
     help="Maximum number of sessions to list",
 )
-def list_sessions_cli(limit: int) -> None:
+@click.pass_context
+def list_sessions_cli(ctx: click.Context, limit: int) -> None:
     """List Claude Code sessions with metadata for the current project.
 
     Discovers sessions in the project directory, extracts metadata
     (timestamps, summaries), and provides branch context.
     """
+    git = require_git(ctx)
     cwd = Path(os.getcwd())
 
     # Find project directory
@@ -352,7 +318,7 @@ def list_sessions_cli(limit: int) -> None:
     project_dir = Path(project_result.project_dir)
 
     # Get branch context
-    branch_context = get_branch_context(cwd)
+    branch_context = get_branch_context(git, cwd)
 
     # Get current session ID from environment
     current_session_id = get_current_session_id()

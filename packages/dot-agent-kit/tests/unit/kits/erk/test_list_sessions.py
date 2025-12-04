@@ -11,7 +11,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 from click.testing import CliRunner
+from erk_shared.git.fake import FakeGit
 
+from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.list_sessions import (
     extract_summary,
     format_display_time,
@@ -358,63 +360,25 @@ def test_list_sessions_nonexistent_directory(tmp_path: Path) -> None:
 
 def test_get_branch_context_on_feature_branch(tmp_path: Path) -> None:
     """Test branch context detection on feature branch."""
-    # Create a git repo
-    import subprocess
-
-    subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "config", "user.email", "test@test.com"],
-        cwd=tmp_path,
-        check=True,
-        capture_output=True,
-    )
-    subprocess.run(
-        ["git", "config", "user.name", "Test"], cwd=tmp_path, check=True, capture_output=True
+    git = FakeGit(
+        current_branches={tmp_path: "feature-xyz"},
+        trunk_branches={tmp_path: "main"},
     )
 
-    # Create initial commit on main
-    (tmp_path / "file.txt").write_text("content", encoding="utf-8")
-    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "commit", "-m", "initial"], cwd=tmp_path, check=True, capture_output=True
-    )
-
-    # Create and checkout feature branch
-    subprocess.run(
-        ["git", "checkout", "-b", "feature-xyz"], cwd=tmp_path, check=True, capture_output=True
-    )
-
-    context = get_branch_context(tmp_path)
+    context = get_branch_context(git, tmp_path)
     assert context.current_branch == "feature-xyz"
+    assert context.trunk_branch == "main"
     assert context.is_on_trunk is False
 
 
 def test_get_branch_context_on_main_branch(tmp_path: Path) -> None:
     """Test branch context detection on main branch."""
-    import subprocess
-
-    subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "config", "user.email", "test@test.com"],
-        cwd=tmp_path,
-        check=True,
-        capture_output=True,
-    )
-    subprocess.run(
-        ["git", "config", "user.name", "Test"], cwd=tmp_path, check=True, capture_output=True
+    git = FakeGit(
+        current_branches={tmp_path: "main"},
+        trunk_branches={tmp_path: "main"},
     )
 
-    # Create initial commit
-    (tmp_path / "file.txt").write_text("content", encoding="utf-8")
-    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "commit", "-m", "initial"], cwd=tmp_path, check=True, capture_output=True
-    )
-
-    # Rename branch to main (git init creates master on some systems)
-    subprocess.run(["git", "branch", "-M", "main"], cwd=tmp_path, check=True, capture_output=True)
-
-    context = get_branch_context(tmp_path)
+    context = get_branch_context(git, tmp_path)
     assert context.current_branch == "main"
     assert context.trunk_branch == "main"
     assert context.is_on_trunk is True
@@ -422,49 +386,41 @@ def test_get_branch_context_on_main_branch(tmp_path: Path) -> None:
 
 def test_get_branch_context_detects_master_trunk(tmp_path: Path) -> None:
     """Test that master is detected as trunk when it exists."""
-    import subprocess
-
-    subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "config", "user.email", "test@test.com"],
-        cwd=tmp_path,
-        check=True,
-        capture_output=True,
-    )
-    subprocess.run(
-        ["git", "config", "user.name", "Test"], cwd=tmp_path, check=True, capture_output=True
+    git = FakeGit(
+        current_branches={tmp_path: "master"},
+        trunk_branches={tmp_path: "master"},
     )
 
-    # Create initial commit on master
-    (tmp_path / "file.txt").write_text("content", encoding="utf-8")
-    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "commit", "-m", "initial"], cwd=tmp_path, check=True, capture_output=True
-    )
-    subprocess.run(["git", "branch", "-M", "master"], cwd=tmp_path, check=True, capture_output=True)
-
-    context = get_branch_context(tmp_path)
+    context = get_branch_context(git, tmp_path)
     assert context.current_branch == "master"
     assert context.trunk_branch == "master"
     assert context.is_on_trunk is True
 
 
 def test_get_branch_context_no_git_repo(tmp_path: Path) -> None:
-    """Test branch context in non-git directory."""
-    context = get_branch_context(tmp_path)
+    """Test branch context when no branch is available (defaults to empty)."""
+    # FakeGit with no current_branches configured returns None for get_current_branch
+    git = FakeGit()
+
+    context = get_branch_context(git, tmp_path)
     assert context.current_branch == ""
+    assert context.trunk_branch == "main"  # FakeGit defaults to "main"
     assert context.is_on_trunk is False
 
 
 def test_get_branch_context_empty_repo(tmp_path: Path) -> None:
-    """Test branch context in git repo with no commits."""
-    import subprocess
+    """Test branch context when current branch is None (empty/new repo)."""
+    # Simulates git repo with no commits (no current branch yet)
+    git = FakeGit(
+        current_branches={tmp_path: None},
+        trunk_branches={tmp_path: "main"},
+    )
 
-    subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
-
-    context = get_branch_context(tmp_path)
-    # In empty repo, branch may be empty or "main"/"master" depending on git version
-    assert context.is_on_trunk is (context.current_branch == context.trunk_branch)
+    context = get_branch_context(git, tmp_path)
+    # When current_branch is None, we get empty string (per or "" fallback)
+    assert context.current_branch == ""
+    assert context.trunk_branch == "main"
+    assert context.is_on_trunk is False
 
 
 # ============================================================================
@@ -496,32 +452,20 @@ def test_cli_success(tmp_path: Path, monkeypatch) -> None:
         encoding="utf-8",
     )
 
-    # Setup git repo
-    import subprocess
-
-    subprocess.run(["git", "init"], cwd=test_cwd, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "config", "user.email", "test@test.com"],
-        cwd=test_cwd,
-        check=True,
-        capture_output=True,
-    )
-    subprocess.run(
-        ["git", "config", "user.name", "Test"], cwd=test_cwd, check=True, capture_output=True
-    )
-    (test_cwd / "file.txt").write_text("content", encoding="utf-8")
-    subprocess.run(["git", "add", "."], cwd=test_cwd, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "commit", "-m", "initial"], cwd=test_cwd, check=True, capture_output=True
-    )
-
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+    # Create context with FakeGit configured for test_cwd
+    git = FakeGit(
+        current_branches={test_cwd: "feature-branch"},
+        trunk_branches={test_cwd: "main"},
+    )
+    context = DotAgentContext.for_test(git=git, cwd=test_cwd)
 
     runner = CliRunner()
     original_cwd = os.getcwd()
     try:
         os.chdir(test_cwd)
-        result = runner.invoke(list_sessions_cli, [])
+        result = runner.invoke(list_sessions_cli, [], obj=context)
 
         assert result.exit_code == 0
         output = json.loads(result.output)
@@ -542,11 +486,18 @@ def test_cli_project_not_found(tmp_path: Path, monkeypatch) -> None:
 
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
+    # Create context with FakeGit
+    git = FakeGit(
+        current_branches={test_dir: "main"},
+        trunk_branches={test_dir: "main"},
+    )
+    context = DotAgentContext.for_test(git=git, cwd=test_dir)
+
     runner = CliRunner()
     original_cwd = os.getcwd()
     try:
         os.chdir(test_dir)
-        result = runner.invoke(list_sessions_cli, [])
+        result = runner.invoke(list_sessions_cli, [], obj=context)
 
         assert result.exit_code == 1
         output = json.loads(result.output)
@@ -577,32 +528,20 @@ def test_cli_output_structure(tmp_path: Path, monkeypatch) -> None:
         encoding="utf-8",
     )
 
-    # Setup git repo
-    import subprocess
-
-    subprocess.run(["git", "init"], cwd=test_cwd, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "config", "user.email", "test@test.com"],
-        cwd=test_cwd,
-        check=True,
-        capture_output=True,
-    )
-    subprocess.run(
-        ["git", "config", "user.name", "Test"], cwd=test_cwd, check=True, capture_output=True
-    )
-    (test_cwd / "file.txt").write_text("content", encoding="utf-8")
-    subprocess.run(["git", "add", "."], cwd=test_cwd, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "commit", "-m", "initial"], cwd=test_cwd, check=True, capture_output=True
-    )
-
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+    # Create context with FakeGit
+    git = FakeGit(
+        current_branches={test_cwd: "feature-branch"},
+        trunk_branches={test_cwd: "main"},
+    )
+    context = DotAgentContext.for_test(git=git, cwd=test_cwd)
 
     runner = CliRunner()
     original_cwd = os.getcwd()
     try:
         os.chdir(test_cwd)
-        result = runner.invoke(list_sessions_cli, [])
+        result = runner.invoke(list_sessions_cli, [], obj=context)
 
         assert result.exit_code == 0
         output = json.loads(result.output)
@@ -657,32 +596,20 @@ def test_cli_limit_option(tmp_path: Path, monkeypatch) -> None:
         )
         time.sleep(0.001)
 
-    # Setup git repo
-    import subprocess
-
-    subprocess.run(["git", "init"], cwd=test_cwd, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "config", "user.email", "test@test.com"],
-        cwd=test_cwd,
-        check=True,
-        capture_output=True,
-    )
-    subprocess.run(
-        ["git", "config", "user.name", "Test"], cwd=test_cwd, check=True, capture_output=True
-    )
-    (test_cwd / "file.txt").write_text("content", encoding="utf-8")
-    subprocess.run(["git", "add", "."], cwd=test_cwd, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "commit", "-m", "initial"], cwd=test_cwd, check=True, capture_output=True
-    )
-
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+    # Create context with FakeGit
+    git = FakeGit(
+        current_branches={test_cwd: "feature-branch"},
+        trunk_branches={test_cwd: "main"},
+    )
+    context = DotAgentContext.for_test(git=git, cwd=test_cwd)
 
     runner = CliRunner()
     original_cwd = os.getcwd()
     try:
         os.chdir(test_cwd)
-        result = runner.invoke(list_sessions_cli, ["--limit", "3"])
+        result = runner.invoke(list_sessions_cli, ["--limit", "3"], obj=context)
 
         assert result.exit_code == 0
         output = json.loads(result.output)
@@ -716,32 +643,20 @@ def test_cli_marks_current_session(tmp_path: Path, monkeypatch) -> None:
         encoding="utf-8",
     )
 
-    # Setup git repo
-    import subprocess
-
-    subprocess.run(["git", "init"], cwd=test_cwd, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "config", "user.email", "test@test.com"],
-        cwd=test_cwd,
-        check=True,
-        capture_output=True,
-    )
-    subprocess.run(
-        ["git", "config", "user.name", "Test"], cwd=test_cwd, check=True, capture_output=True
-    )
-    (test_cwd / "file.txt").write_text("content", encoding="utf-8")
-    subprocess.run(["git", "add", "."], cwd=test_cwd, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "commit", "-m", "initial"], cwd=test_cwd, check=True, capture_output=True
-    )
-
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+    # Create context with FakeGit
+    git = FakeGit(
+        current_branches={test_cwd: "feature-branch"},
+        trunk_branches={test_cwd: "main"},
+    )
+    context = DotAgentContext.for_test(git=git, cwd=test_cwd)
 
     runner = CliRunner(env={"SESSION_CONTEXT": "session_id=current-session"})
     original_cwd = os.getcwd()
     try:
         os.chdir(test_cwd)
-        result = runner.invoke(list_sessions_cli, [])
+        result = runner.invoke(list_sessions_cli, [], obj=context)
 
         assert result.exit_code == 0
         output = json.loads(result.output)
