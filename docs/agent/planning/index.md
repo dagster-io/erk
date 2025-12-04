@@ -20,6 +20,7 @@ Implementation planning, agent delegation, and workflow patterns.
 | Use .impl/ folder workflows       | [workflow.md](workflow.md)                 |
 | Delegate to agents from commands  | [agent-delegation.md](agent-delegation.md) |
 | Write temp files for AI workflows | [scratch-storage.md](scratch-storage.md)   |
+| Understand plan issue structure   | [schema-v2.md](schema-v2.md)               |
 
 ## Documents in This Category
 
@@ -52,6 +53,12 @@ Patterns for delegating work to specialized agents from slash commands and workf
 **File:** [scratch-storage.md](scratch-storage.md)
 
 Conventions for temporary file storage during AI-assisted workflows.
+
+### Plan Schema v2
+
+**File:** [schema-v2.md](schema-v2.md)
+
+Reference for the erk plan issue structure (Schema v2), including plan-header and plan-body metadata blocks.
 
 ## Related Topics
 

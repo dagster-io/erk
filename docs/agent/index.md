@@ -54,6 +54,7 @@
 | [workflow.md](planning/workflow.md)                 | Using .impl/ folders, implementing plans             |
 | [agent-delegation.md](planning/agent-delegation.md) | Delegating to agents from commands                   |
 | [scratch-storage.md](planning/scratch-storage.md)   | Writing temp files for AI workflows                  |
+| [schema-v2.md](planning/schema-v2.md)               | Plan issue structure, metadata blocks, validation    |
 
 ### [Testing](testing/)
 

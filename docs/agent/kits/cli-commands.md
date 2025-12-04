@@ -727,3 +727,50 @@ def my_command() -> None:
         "result_url": result.url,
     }))
 ```
+
+## File Input Pattern for Kit CLI Commands
+
+Kit CLI commands that accept content as input use the `--plan-file` option for consistency:
+
+### Standard Pattern
+
+```python
+@click.option(
+    "--plan-file",
+    type=click.Path(exists=True, path_type=Path),
+    required=True,
+    help="Path to plan file to create issue from",
+)
+```
+
+### Why File Path Over Stdin
+
+1. **Consistency** - All kit commands use the same pattern
+2. **Visibility** - File path appears in command invocation (easier debugging)
+3. **Slash commands** - LLM writes to temp file, passes path (natural workflow)
+4. **Validation** - Click validates file exists before execution
+
+### Example Commands Using This Pattern
+
+| Command                  | Option        | Purpose                       |
+| ------------------------ | ------------- | ----------------------------- |
+| `plan-save-to-issue`     | `--plan-file` | Save plan from file to GitHub |
+| `create-extraction-plan` | `--plan-file` | Create extraction plan issue  |
+
+### In Slash Commands
+
+When a slash command needs to pass content to a kit CLI command:
+
+1. Write content to temp file (`/tmp/<command>-<id>.md`)
+2. Call kit CLI with `--plan-file` pointing to temp file
+3. Parse JSON result
+
+```markdown
+### Step N: Save to GitHub
+
+Write plan to temp file and call CLI:
+
+\`\`\`bash
+dot-agent run erk plan-save-to-issue --plan-file="/tmp/plan-session-abc123.md"
+\`\`\`
+```
