@@ -16,7 +16,6 @@ from erk_shared.github.parsing import (
     construct_pr_url,
     construct_workflow_run_url,
     extract_owner_repo_from_github_url,
-    github_repo_location_from_url,
 )
 from erk_shared.naming import (
     format_branch_timestamp_suffix,
@@ -143,17 +142,12 @@ def _close_orphaned_draft_prs(
     repo_root: Path,
     issue_number: int,
     keep_pr_number: int,
-    issue_url: str,
 ) -> list[int]:
     """Close old draft PRs linked to an issue, keeping the specified one.
 
     Returns list of PR numbers that were closed.
     """
-    location = github_repo_location_from_url(repo_root, issue_url)
-    if location is None:
-        return []
-    pr_linkages = ctx.github.get_prs_linked_to_issues(location, [issue_number])
-    linked_prs = pr_linkages.get(issue_number, [])
+    linked_prs = ctx.issues.get_prs_referencing_issue(repo_root, issue_number)
 
     closed_prs: list[int] = []
     for pr in linked_prs:
@@ -346,9 +340,7 @@ def _submit_single_issue(
             ctx.github.update_pr_body(repo.root, pr_number, footer_body)
 
             # Close any orphaned draft PRs
-            closed_prs = _close_orphaned_draft_prs(
-                ctx, repo.root, issue_number, pr_number, issue.url
-            )
+            closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)
             if closed_prs:
                 user_output(
                     click.style("✓", fg="green")
@@ -420,7 +412,7 @@ def _submit_single_issue(
         ctx.github.update_pr_body(repo.root, pr_number, footer_body)
 
         # Close any orphaned draft PRs for this issue
-        closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number, issue.url)
+        closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)
         if closed_prs:
             user_output(
                 click.style("✓", fg="green")

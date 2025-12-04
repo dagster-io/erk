@@ -4,7 +4,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.issues.types import CreateIssueResult, IssueComment, IssueInfo
+from erk_shared.github.issues.types import (
+    CreateIssueResult,
+    IssueComment,
+    IssueInfo,
+    PRReference,
+)
 
 
 class FakeGitHubIssues(GitHubIssues):
@@ -22,6 +27,7 @@ class FakeGitHubIssues(GitHubIssues):
         comments: dict[int, list[str]] | None = None,
         comments_with_urls: dict[int, list[IssueComment]] | None = None,
         username: str | None = "testuser",
+        pr_references: dict[int, list[PRReference]] | None = None,
     ) -> None:
         """Create FakeGitHubIssues with pre-configured state.
 
@@ -33,6 +39,8 @@ class FakeGitHubIssues(GitHubIssues):
             comments_with_urls: Mapping of issue number -> list of IssueComment
             username: GitHub username to return (default: "testuser", None means
                 not authenticated)
+            pr_references: Mapping of issue number -> list of PRReference for
+                get_prs_referencing_issue()
         """
         self._issues = issues or {}
         self._next_issue_number = next_issue_number
@@ -40,6 +48,7 @@ class FakeGitHubIssues(GitHubIssues):
         self._comments = comments or {}
         self._comments_with_urls = comments_with_urls or {}
         self._username = username
+        self._pr_references = pr_references or {}
         self._created_issues: list[tuple[str, str, list[str]]] = []
         self._added_comments: list[tuple[int, str]] = []
         self._created_labels: list[tuple[str, str, str]] = []
@@ -311,3 +320,16 @@ class FakeGitHubIssues(GitHubIssues):
             Username configured in constructor (default: "testuser")
         """
         return self._username
+
+    def get_prs_referencing_issue(
+        self,
+        repo_root: Path,
+        issue_number: int,
+    ) -> list[PRReference]:
+        """Get PRs referencing issue from configured state.
+
+        Returns:
+            List of PRReference from pr_references constructor arg,
+            or empty list if no references configured for this issue.
+        """
+        return self._pr_references.get(issue_number, [])

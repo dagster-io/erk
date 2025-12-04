@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import click
-from erk_shared.github.parsing import github_repo_location_from_url
 from erk_shared.output.output import user_output
 
 from erk.cli.core import discover_repo_context
@@ -16,17 +15,12 @@ def _close_linked_prs(
     ctx: ErkContext,
     repo_root: Path,
     issue_number: int,
-    issue_url: str,
 ) -> list[int]:
     """Close all OPEN PRs linked to an issue.
 
     Returns list of PR numbers that were closed.
     """
-    location = github_repo_location_from_url(repo_root, issue_url)
-    if location is None:
-        return []
-    pr_linkages = ctx.github.get_prs_linked_to_issues(location, [issue_number])
-    linked_prs = pr_linkages.get(issue_number, [])
+    linked_prs = ctx.issues.get_prs_referencing_issue(repo_root, issue_number)
 
     closed_prs: list[int] = []
     for pr in linked_prs:
@@ -58,12 +52,12 @@ def close_plan(ctx: ErkContext, identifier: str) -> None:
 
     # Fetch plan - errors if not found
     try:
-        plan = ctx.plan_store.get_plan(repo_root, str(number))
+        _plan = ctx.plan_store.get_plan(repo_root, str(number))
     except RuntimeError as e:
         raise click.ClickException(str(e)) from e
 
     # Close linked PRs before closing the plan
-    closed_prs = _close_linked_prs(ctx, repo_root, number, plan.url)
+    closed_prs = _close_linked_prs(ctx, repo_root, number)
 
     # Close the plan (issue)
     ctx.plan_store.close_plan(repo_root, identifier)

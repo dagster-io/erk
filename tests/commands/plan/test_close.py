@@ -4,11 +4,12 @@ from datetime import UTC, datetime
 
 from click.testing import CliRunner
 from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.issues.types import PRReference
 from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 
 from erk.cli.cli import cli
-from tests.test_utils.builders import PullRequestInfoBuilder
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 
@@ -80,16 +81,17 @@ def test_close_plan_closes_linked_open_prs() -> None:
     )
 
     # Create linked PRs (one draft, one non-draft, both OPEN)
-    open_draft_pr = PullRequestInfoBuilder(100, "feature-1").as_draft().build()
-    open_non_draft_pr = PullRequestInfoBuilder(101, "feature-2").build()
+    open_draft_pr = PRReference(number=100, state="OPEN", is_draft=True)
+    open_non_draft_pr = PRReference(number=101, state="OPEN", is_draft=False)
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         store = FakePlanStore(plans={"42": plan_issue})
-        github = FakeGitHub(
-            pr_issue_linkages={42: [open_draft_pr, open_non_draft_pr]},
+        github = FakeGitHub()
+        issues = FakeGitHubIssues(
+            pr_references={42: [open_draft_pr, open_non_draft_pr]},
         )
-        ctx = build_workspace_test_context(env, plan_store=store, github=github)
+        ctx = build_workspace_test_context(env, plan_store=store, github=github, issues=issues)
 
         # Act
         result = runner.invoke(cli, ["plan", "close", "42"], obj=ctx)
@@ -120,17 +122,18 @@ def test_close_plan_skips_closed_and_merged_prs() -> None:
     )
 
     # Create PRs in various states
-    open_pr = PullRequestInfoBuilder(100, "feature-1").build()
-    closed_pr = PullRequestInfoBuilder(101, "feature-2").as_closed().build()
-    merged_pr = PullRequestInfoBuilder(102, "feature-3").as_merged().build()
+    open_pr = PRReference(number=100, state="OPEN", is_draft=False)
+    closed_pr = PRReference(number=101, state="CLOSED", is_draft=False)
+    merged_pr = PRReference(number=102, state="MERGED", is_draft=False)
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         store = FakePlanStore(plans={"42": plan_issue})
-        github = FakeGitHub(
-            pr_issue_linkages={42: [open_pr, closed_pr, merged_pr]},
+        github = FakeGitHub()
+        issues = FakeGitHubIssues(
+            pr_references={42: [open_pr, closed_pr, merged_pr]},
         )
-        ctx = build_workspace_test_context(env, plan_store=store, github=github)
+        ctx = build_workspace_test_context(env, plan_store=store, github=github, issues=issues)
 
         # Act
         result = runner.invoke(cli, ["plan", "close", "42"], obj=ctx)
@@ -162,10 +165,11 @@ def test_close_plan_no_linked_prs() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         store = FakePlanStore(plans={"42": plan_issue})
-        github = FakeGitHub(
-            pr_issue_linkages={},  # No linked PRs
+        github = FakeGitHub()
+        issues = FakeGitHubIssues(
+            pr_references={},  # No linked PRs
         )
-        ctx = build_workspace_test_context(env, plan_store=store, github=github)
+        ctx = build_workspace_test_context(env, plan_store=store, github=github, issues=issues)
 
         # Act
         result = runner.invoke(cli, ["plan", "close", "42"], obj=ctx)
@@ -231,17 +235,18 @@ def test_close_plan_reports_closed_prs() -> None:
     )
 
     # Create multiple linked OPEN PRs
-    pr1 = PullRequestInfoBuilder(100, "feature-1").build()
-    pr2 = PullRequestInfoBuilder(200, "feature-2").build()
-    pr3 = PullRequestInfoBuilder(300, "feature-3").build()
+    pr1 = PRReference(number=100, state="OPEN", is_draft=False)
+    pr2 = PRReference(number=200, state="OPEN", is_draft=False)
+    pr3 = PRReference(number=300, state="OPEN", is_draft=False)
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         store = FakePlanStore(plans={"42": plan_issue})
-        github = FakeGitHub(
-            pr_issue_linkages={42: [pr1, pr2, pr3]},
+        github = FakeGitHub()
+        issues = FakeGitHubIssues(
+            pr_references={42: [pr1, pr2, pr3]},
         )
-        ctx = build_workspace_test_context(env, plan_store=store, github=github)
+        ctx = build_workspace_test_context(env, plan_store=store, github=github, issues=issues)
 
         # Act
         result = runner.invoke(cli, ["plan", "close", "42"], obj=ctx)

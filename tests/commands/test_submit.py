@@ -7,8 +7,8 @@ from click.testing import CliRunner
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
+from erk_shared.github.issues.types import PRReference
 from erk_shared.github.metadata import MetadataBlock, render_metadata_block
-from erk_shared.github.types import PullRequestInfo
 from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -561,39 +561,13 @@ def test_close_orphaned_draft_prs_closes_old_drafts(tmp_path: Path) -> None:
     # - PR #100: old draft (should be closed)
     # - PR #101: another old draft (should be closed)
     # - PR #999: the new PR we just created (should NOT be closed)
-    old_draft_pr = PullRequestInfo(
-        number=100,
-        state="OPEN",
-        url="https://github.com/owner/repo/pull/100",
-        is_draft=True,
-        title="Old draft",
-        checks_passing=None,
-        owner="owner",
-        repo="repo",
-    )
-    another_old_draft_pr = PullRequestInfo(
-        number=101,
-        state="OPEN",
-        url="https://github.com/owner/repo/pull/101",
-        is_draft=True,
-        title="Another old draft",
-        checks_passing=None,
-        owner="owner",
-        repo="repo",
-    )
-    new_pr = PullRequestInfo(
-        number=999,
-        state="OPEN",
-        url="https://github.com/owner/repo/pull/999",
-        is_draft=True,
-        title="New PR",
-        checks_passing=None,
-        owner="owner",
-        repo="repo",
-    )
+    old_draft_pr = PRReference(number=100, state="OPEN", is_draft=True)
+    another_old_draft_pr = PRReference(number=101, state="OPEN", is_draft=True)
+    new_pr = PRReference(number=999, state="OPEN", is_draft=True)
 
-    fake_github = FakeGitHub(
-        pr_issue_linkages={123: [old_draft_pr, another_old_draft_pr, new_pr]},
+    fake_github = FakeGitHub()
+    fake_issues = FakeGitHubIssues(
+        pr_references={123: [old_draft_pr, another_old_draft_pr, new_pr]},
     )
 
     repo_dir = tmp_path / ".erk" / "repos" / "repo"
@@ -606,6 +580,7 @@ def test_close_orphaned_draft_prs_closes_old_drafts(tmp_path: Path) -> None:
     ctx = ErkContext.for_test(
         cwd=repo_root,
         github=fake_github,
+        issues=fake_issues,
         repo=repo,
     )
 
@@ -614,7 +589,6 @@ def test_close_orphaned_draft_prs_closes_old_drafts(tmp_path: Path) -> None:
         repo_root,
         issue_number=123,
         keep_pr_number=999,
-        issue_url="https://github.com/owner/repo/issues/123",
     )
 
     # Should close old drafts but not the new PR
@@ -628,19 +602,11 @@ def test_close_orphaned_draft_prs_skips_non_drafts(tmp_path: Path) -> None:
     repo_root.mkdir()
 
     # Old PR that is NOT a draft - should not be closed
-    non_draft_pr = PullRequestInfo(
-        number=100,
-        state="OPEN",
-        url="https://github.com/owner/repo/pull/100",
-        is_draft=False,  # NOT a draft
-        title="Ready for review",
-        checks_passing=None,
-        owner="owner",
-        repo="repo",
-    )
+    non_draft_pr = PRReference(number=100, state="OPEN", is_draft=False)
 
-    fake_github = FakeGitHub(
-        pr_issue_linkages={123: [non_draft_pr]},
+    fake_github = FakeGitHub()
+    fake_issues = FakeGitHubIssues(
+        pr_references={123: [non_draft_pr]},
     )
 
     repo_dir = tmp_path / ".erk" / "repos" / "repo"
@@ -653,6 +619,7 @@ def test_close_orphaned_draft_prs_skips_non_drafts(tmp_path: Path) -> None:
     ctx = ErkContext.for_test(
         cwd=repo_root,
         github=fake_github,
+        issues=fake_issues,
         repo=repo,
     )
 
@@ -661,7 +628,6 @@ def test_close_orphaned_draft_prs_skips_non_drafts(tmp_path: Path) -> None:
         repo_root,
         issue_number=123,
         keep_pr_number=999,
-        issue_url="https://github.com/owner/repo/issues/123",
     )
 
     # Non-draft PR should not be closed
@@ -675,19 +641,11 @@ def test_close_orphaned_draft_prs_skips_already_closed(tmp_path: Path) -> None:
     repo_root.mkdir()
 
     # Old draft that is already closed - should not be closed again
-    closed_pr = PullRequestInfo(
-        number=100,
-        state="CLOSED",  # Already closed
-        url="https://github.com/owner/repo/pull/100",
-        is_draft=True,
-        title="Old closed PR",
-        checks_passing=None,
-        owner="owner",
-        repo="repo",
-    )
+    closed_pr = PRReference(number=100, state="CLOSED", is_draft=True)
 
-    fake_github = FakeGitHub(
-        pr_issue_linkages={123: [closed_pr]},
+    fake_github = FakeGitHub()
+    fake_issues = FakeGitHubIssues(
+        pr_references={123: [closed_pr]},
     )
 
     repo_dir = tmp_path / ".erk" / "repos" / "repo"
@@ -700,6 +658,7 @@ def test_close_orphaned_draft_prs_skips_already_closed(tmp_path: Path) -> None:
     ctx = ErkContext.for_test(
         cwd=repo_root,
         github=fake_github,
+        issues=fake_issues,
         repo=repo,
     )
 
@@ -708,7 +667,6 @@ def test_close_orphaned_draft_prs_skips_already_closed(tmp_path: Path) -> None:
         repo_root,
         issue_number=123,
         keep_pr_number=999,
-        issue_url="https://github.com/owner/repo/issues/123",
     )
 
     # Already-closed PR should not be closed again
@@ -722,9 +680,10 @@ def test_close_orphaned_draft_prs_no_linked_prs(tmp_path: Path) -> None:
     repo_root.mkdir()
 
     # No PRs linked to the issue
-    fake_github = FakeGitHub(
-        pr_issue_linkages={},  # Empty
+    fake_issues = FakeGitHubIssues(
+        pr_references={},  # Empty
     )
+    fake_github = FakeGitHub()
 
     repo_dir = tmp_path / ".erk" / "repos" / "repo"
     repo = RepoContext(
@@ -736,6 +695,7 @@ def test_close_orphaned_draft_prs_no_linked_prs(tmp_path: Path) -> None:
     ctx = ErkContext.for_test(
         cwd=repo_root,
         github=fake_github,
+        issues=fake_issues,
         repo=repo,
     )
 
@@ -744,7 +704,6 @@ def test_close_orphaned_draft_prs_no_linked_prs(tmp_path: Path) -> None:
         repo_root,
         issue_number=123,
         keep_pr_number=999,
-        issue_url="https://github.com/owner/repo/issues/123",
     )
 
     # No PRs to close
@@ -881,26 +840,22 @@ def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
     )
 
     # Old orphaned draft PR linked to this issue
-    old_draft_pr = PullRequestInfo(
+    old_draft_pr = PRReference(
         number=100,
         state="OPEN",
-        url="https://github.com/test-owner/test-repo/pull/100",
         is_draft=True,
-        title="Old draft",
-        checks_passing=None,
-        owner="test-owner",
-        repo="test-repo",
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    fake_github_issues = FakeGitHubIssues(
+        issues={123: issue},
+        pr_references={123: [old_draft_pr]},
+    )
     fake_plan_store = FakePlanStore(plans={"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
     )
-    fake_github = FakeGitHub(
-        pr_issue_linkages={123: [old_draft_pr]},
-    )
+    fake_github = FakeGitHub()
 
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(

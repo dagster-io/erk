@@ -3,7 +3,12 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from erk_shared.github.issues.types import CreateIssueResult, IssueComment, IssueInfo
+from erk_shared.github.issues.types import (
+    CreateIssueResult,
+    IssueComment,
+    IssueInfo,
+    PRReference,
+)
 
 
 class GitHubIssues(ABC):
@@ -226,5 +231,27 @@ class GitHubIssues(ABC):
         Note:
             This is a global operation (not repository-specific).
             Used for attribution in plan creation (created_by field).
+        """
+        ...
+
+    @abstractmethod
+    def get_prs_referencing_issue(
+        self,
+        repo_root: Path,
+        issue_number: int,
+    ) -> list[PRReference]:
+        """Get PRs that reference an issue via REST timeline API.
+
+        Returns lightweight PR info (number, state, is_draft) for PRs
+        that cross-reference this issue. Does not filter by willCloseTarget.
+
+        For erk-plan issues, any referencing PR is considered linked.
+
+        Args:
+            repo_root: Path to repository root
+            issue_number: Issue number to find referencing PRs for
+
+        Returns:
+            List of PRReference objects for PRs that reference the issue
         """
         ...

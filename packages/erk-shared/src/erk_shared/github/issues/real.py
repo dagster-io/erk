@@ -7,7 +7,12 @@ from pathlib import Path
 
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.label_cache import RealLabelCache
-from erk_shared.github.issues.types import CreateIssueResult, IssueComment, IssueInfo
+from erk_shared.github.issues.types import (
+    CreateIssueResult,
+    IssueComment,
+    IssueInfo,
+    PRReference,
+)
 from erk_shared.subprocess_utils import execute_gh_command
 
 
@@ -337,3 +342,36 @@ class RealGitHubIssues(GitHubIssues):
         if result.returncode != 0:
             return None
         return result.stdout.strip()
+
+    def get_prs_referencing_issue(
+        self,
+        repo_root: Path,
+        issue_number: int,
+    ) -> list[PRReference]:
+        """Get PRs referencing issue via REST timeline API.
+
+        Uses the timeline endpoint to find cross-referenced PRs.
+        """
+        cmd = [
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/issues/{issue_number}/timeline",
+            "--jq",
+            '[.[] | select(.event == "cross-referenced") '
+            "| select(.source.issue.pull_request) "
+            "| .source.issue | {number, state, is_draft: .draft}]",
+        ]
+        stdout = execute_gh_command(cmd, repo_root)
+
+        if not stdout.strip():
+            return []
+
+        data = json.loads(stdout)
+        return [
+            PRReference(
+                number=item["number"],
+                state=item["state"].upper(),  # Normalize to "OPEN"/"CLOSED"
+                is_draft=item.get("is_draft") or False,  # Handle null/missing
+            )
+            for item in data
+        ]

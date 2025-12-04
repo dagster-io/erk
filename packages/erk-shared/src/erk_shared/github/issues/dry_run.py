@@ -3,7 +3,12 @@
 from pathlib import Path
 
 from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.issues.types import CreateIssueResult, IssueComment, IssueInfo
+from erk_shared.github.issues.types import (
+    CreateIssueResult,
+    IssueComment,
+    IssueInfo,
+    PRReference,
+)
 
 
 class DryRunGitHubIssues(GitHubIssues):
@@ -88,3 +93,11 @@ class DryRunGitHubIssues(GitHubIssues):
     def get_current_username(self) -> str | None:
         """Delegate to wrapped implementation (read operation)."""
         return self._wrapped.get_current_username()
+
+    def get_prs_referencing_issue(
+        self,
+        repo_root: Path,
+        issue_number: int,
+    ) -> list[PRReference]:
+        """Delegate to wrapped implementation (read-only operation)."""
+        return self._wrapped.get_prs_referencing_issue(repo_root, issue_number)

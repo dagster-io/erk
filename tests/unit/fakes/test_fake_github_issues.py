@@ -905,3 +905,64 @@ def test_remove_label_from_issue_idempotent() -> None:
 
     updated_issue = issues.get_issue(sentinel_path(), 42)
     assert updated_issue.labels == ["other"]
+
+
+# ============================================================================
+# get_prs_referencing_issue() tests
+# ============================================================================
+
+
+def test_get_prs_referencing_issue_empty() -> None:
+    """Test get_prs_referencing_issue returns empty list when no PRs configured."""
+    issues = FakeGitHubIssues()
+
+    result = issues.get_prs_referencing_issue(sentinel_path(), 42)
+
+    assert result == []
+
+
+def test_get_prs_referencing_issue_returns_configured_prs() -> None:
+    """Test get_prs_referencing_issue returns pre-configured PRs."""
+    from erk_shared.github.issues.types import PRReference
+
+    pr_refs = {
+        42: [
+            PRReference(number=100, state="OPEN", is_draft=True),
+            PRReference(number=101, state="MERGED", is_draft=False),
+        ],
+        99: [
+            PRReference(number=200, state="CLOSED", is_draft=False),
+        ],
+    }
+    issues = FakeGitHubIssues(pr_references=pr_refs)
+
+    result = issues.get_prs_referencing_issue(sentinel_path(), 42)
+
+    assert len(result) == 2
+    assert result[0].number == 100
+    assert result[0].state == "OPEN"
+    assert result[0].is_draft is True
+    assert result[1].number == 101
+    assert result[1].state == "MERGED"
+    assert result[1].is_draft is False
+
+
+def test_get_prs_referencing_issue_different_issue_numbers() -> None:
+    """Test get_prs_referencing_issue returns correct PRs for each issue."""
+    from erk_shared.github.issues.types import PRReference
+
+    pr_refs = {
+        10: [PRReference(number=100, state="OPEN", is_draft=True)],
+        20: [PRReference(number=200, state="CLOSED", is_draft=False)],
+    }
+    issues = FakeGitHubIssues(pr_references=pr_refs)
+
+    result_10 = issues.get_prs_referencing_issue(sentinel_path(), 10)
+    result_20 = issues.get_prs_referencing_issue(sentinel_path(), 20)
+    result_30 = issues.get_prs_referencing_issue(sentinel_path(), 30)
+
+    assert len(result_10) == 1
+    assert result_10[0].number == 100
+    assert len(result_20) == 1
+    assert result_20[0].number == 200
+    assert result_30 == []  # No PRs configured for issue 30

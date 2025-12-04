@@ -43,3 +43,21 @@ class IssueComment:
 
     body: str
     url: str
+
+
+@dataclass(frozen=True)
+class PRReference:
+    """Lightweight PR reference from timeline cross-reference.
+
+    A simpler alternative to PullRequestInfo for cases where only
+    basic PR status is needed (e.g., closing linked PRs).
+
+    Attributes:
+        number: PR number
+        state: PR state ("OPEN", "CLOSED", "MERGED")
+        is_draft: Whether the PR is a draft
+    """
+
+    number: int
+    state: str  # "OPEN", "CLOSED", "MERGED"
+    is_draft: bool

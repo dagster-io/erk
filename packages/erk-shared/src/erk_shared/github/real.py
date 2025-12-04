@@ -854,10 +854,13 @@ query {{
         location: GitHubRepoLocation,
         issue_numbers: list[int],
     ) -> dict[int, list[PullRequestInfo]]:
-        """Get PRs linked to issues via GitHub's native branch linking.
+        """Get PRs linked to issues via CrossReferencedEvent timeline.
 
-        Uses linkedBranches GraphQL field to find branches created via
-        `gh issue develop`, then looks up PRs for those branches.
+        Uses GraphQL CrossReferencedEvent with willCloseTarget filter to find PRs
+        that will close each issue when merged. Used by erk dash for batch queries
+        with full PR data (CI status, mergeability).
+
+        For simpler single-issue queries, see GitHubIssues.get_prs_referencing_issue().
 
         Note: Uses try/except as an acceptable error boundary for handling gh CLI
         availability and authentication. We cannot reliably check gh installation
