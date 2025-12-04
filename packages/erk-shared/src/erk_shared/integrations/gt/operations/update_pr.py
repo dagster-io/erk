@@ -102,11 +102,7 @@ def execute_update_pr(
                 {
                     "success": False,
                     "error_type": "remote_divergence",
-                    "error": (
-                        "ABORT: Branch has diverged from remote. "
-                        "Run 'gt sync' or 'gt get' manually to resolve, then retry. "
-                        "Do NOT auto-sync."
-                    ),
+                    "error": "ABORT: Branch has diverged from remote. Manual resolution required.",
                 }
             )
             return

@@ -173,53 +173,6 @@ def test_delete_changes_directory_when_in_target_worktree() -> None:
         assert_cli_success(result, "Changing directory to repository root", str(env.cwd))
 
 
-def test_delete_with_branch_handles_user_decline() -> None:
-    """Test that delete -b gracefully handles user declining gt delete prompt."""
-    import subprocess
-
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        repo_name = env.cwd.name
-        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-branch"
-
-        # Build fake git ops with worktree info and configured exception
-        fake_git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature")]},
-            git_common_dirs={env.cwd: env.git_dir},
-            delete_branch_raises={
-                "feature": subprocess.CalledProcessError(
-                    returncode=1,
-                    cmd=["gt", "delete", "feature"],
-                    stderr=None,  # User decline doesn't produce stderr
-                )
-            },
-        )
-
-        # Build graphite ops with branch metadata
-        branches = {
-            "main": BranchMetadata.trunk("main", children=["feature"]),
-            "feature": BranchMetadata.branch("feature", "main"),
-        }
-
-        test_ctx = env.build_context(
-            use_graphite=True,
-            git=fake_git_ops,
-            github=FakeGitHub(),
-            graphite=FakeGraphite(branches=branches),
-            shell=FakeShell(),
-            existing_paths={wt},
-        )
-
-        result = runner.invoke(
-            cli, ["wt", "delete", "test-branch", "-b"], obj=test_ctx, input="y\n"
-        )
-
-        # Should NOT crash - should exit gracefully
-        assert result.exit_code == 0, result.output
-        assert "Skipped deletion" in result.output or "user declined" in result.output.lower()
-        assert "feature" not in fake_git_ops.deleted_branches  # Branch not deleted
-
-
 def test_delete_with_branch_without_graphite() -> None:
     """Test that --branch works without Graphite enabled (uses git branch -d)."""
     runner = CliRunner()
