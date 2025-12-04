@@ -12,6 +12,14 @@ kits:
     source_type: bundled
     description: Workstack Python 3.13+ coding standards with automatic suggestion hook
     version: "0.1.0"
+  - kit_id: erk
+    source_type: bundled
+    description: Erk implementation workflow commands for creating worktrees from plans and executing implementation
+    version: "0.3.1"
+  - kit_id: fake-driven-testing
+    source_type: bundled
+    description: 5-layer testing architecture with ABC-based fakes for integration boundaries
+    version: "0.1.0"
   - kit_id: gt
     source_type: bundled
     description: Graphite stack management with landing and submission commands

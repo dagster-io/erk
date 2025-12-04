@@ -162,7 +162,7 @@ Skip confirmation and output all suggestions immediately since the user explicit
 
 @../../docs/erk/includes/extract-plan-workflow-shared.md
 
-**Note:** Use the current session ID (from `SESSION_CONTEXT` reminder) as `<session-id>` in the extraction plan metadata.
+**Note:** The current session ID (from `SESSION_CONTEXT` reminder) is used both as the `--session-id` for scratch storage and in `--extraction-session-ids` metadata.
 
 ---
 
