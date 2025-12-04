@@ -1144,7 +1144,10 @@ class PlanHeaderSchema(MetadataBlockSchema):
         worktree_name: Set when worktree is created (nullable)
         last_dispatched_run_id: Updated by workflow, enables direct run lookup (nullable)
         last_dispatched_at: Updated by workflow (nullable)
-        last_local_impl_at: Updated by local implementation, tracks last time (nullable)
+        last_local_impl_at: Updated by local implementation, tracks last event timestamp (nullable)
+        last_local_impl_event: Event type - "started" or "ended" (nullable)
+        last_local_impl_session: Claude Code session ID from environment (nullable)
+        last_local_impl_user: User who ran the implementation (nullable)
         last_remote_impl_at: Updated by GitHub Actions, tracks last remote run (nullable)
         plan_type: Type discriminator - "standard" (default) or "extraction"
         source_plan_issues: For extraction plans, list of issue numbers analyzed
@@ -1164,6 +1167,9 @@ class PlanHeaderSchema(MetadataBlockSchema):
             "last_dispatched_node_id",
             "last_dispatched_at",
             "last_local_impl_at",
+            "last_local_impl_event",
+            "last_local_impl_session",
+            "last_local_impl_user",
             "last_remote_impl_at",
             "plan_type",
             "source_plan_issues",
@@ -1218,6 +1224,30 @@ class PlanHeaderSchema(MetadataBlockSchema):
             if data["last_remote_impl_at"] is not None:
                 if not isinstance(data["last_remote_impl_at"], str):
                     raise ValueError("last_remote_impl_at must be a string or null")
+
+        # Validate last_local_impl_event
+        if "last_local_impl_event" in data:
+            if data["last_local_impl_event"] is not None:
+                if not isinstance(data["last_local_impl_event"], str):
+                    raise ValueError("last_local_impl_event must be a string or null")
+                valid_events = {"started", "ended"}
+                if data["last_local_impl_event"] not in valid_events:
+                    event_value = data["last_local_impl_event"]
+                    raise ValueError(
+                        f"last_local_impl_event must be 'started' or 'ended', got '{event_value}'"
+                    )
+
+        # Validate last_local_impl_session
+        if "last_local_impl_session" in data:
+            if data["last_local_impl_session"] is not None:
+                if not isinstance(data["last_local_impl_session"], str):
+                    raise ValueError("last_local_impl_session must be a string or null")
+
+        # Validate last_local_impl_user
+        if "last_local_impl_user" in data:
+            if data["last_local_impl_user"] is not None:
+                if not isinstance(data["last_local_impl_user"], str):
+                    raise ValueError("last_local_impl_user must be a string or null")
 
         # Validate plan_type field
         valid_plan_types = {"standard", "extraction"}
@@ -1278,6 +1308,9 @@ def create_plan_header_block(
     last_dispatched_node_id: str | None = None,
     last_dispatched_at: str | None = None,
     last_local_impl_at: str | None = None,
+    last_local_impl_event: str | None = None,
+    last_local_impl_session: str | None = None,
+    last_local_impl_user: str | None = None,
     last_remote_impl_at: str | None = None,
     plan_type: str | None = None,
     source_plan_issues: list[int] | None = None,
@@ -1293,6 +1326,9 @@ def create_plan_header_block(
         last_dispatched_node_id: Optional GraphQL node ID (set by workflow, for batch queries)
         last_dispatched_at: Optional dispatch timestamp (set by workflow)
         last_local_impl_at: Optional local implementation timestamp (set by plan-implement)
+        last_local_impl_event: Optional event type ("started" or "ended")
+        last_local_impl_session: Optional Claude Code session ID
+        last_local_impl_user: Optional user who ran implementation
         last_remote_impl_at: Optional remote implementation timestamp (set by GitHub Actions)
         plan_type: Optional type discriminator ("standard" or "extraction")
         source_plan_issues: For extraction plans, list of issue numbers analyzed
@@ -1310,6 +1346,9 @@ def create_plan_header_block(
         "last_dispatched_node_id": last_dispatched_node_id,
         "last_dispatched_at": last_dispatched_at,
         "last_local_impl_at": last_local_impl_at,
+        "last_local_impl_event": last_local_impl_event,
+        "last_local_impl_session": last_local_impl_session,
+        "last_local_impl_user": last_local_impl_user,
         "last_remote_impl_at": last_remote_impl_at,
     }
     # Only include worktree_name if provided
@@ -1342,6 +1381,9 @@ def format_plan_header_body(
     last_dispatched_node_id: str | None = None,
     last_dispatched_at: str | None = None,
     last_local_impl_at: str | None = None,
+    last_local_impl_event: str | None = None,
+    last_local_impl_session: str | None = None,
+    last_local_impl_user: str | None = None,
     last_remote_impl_at: str | None = None,
     plan_type: str | None = None,
     source_plan_issues: list[int] | None = None,
@@ -1360,6 +1402,9 @@ def format_plan_header_body(
         last_dispatched_node_id: Optional GraphQL node ID (for batch queries)
         last_dispatched_at: Optional dispatch timestamp
         last_local_impl_at: Optional local implementation timestamp
+        last_local_impl_event: Optional event type ("started" or "ended")
+        last_local_impl_session: Optional Claude Code session ID
+        last_local_impl_user: Optional user who ran implementation
         last_remote_impl_at: Optional remote implementation timestamp
         plan_type: Optional type discriminator ("standard" or "extraction")
         source_plan_issues: For extraction plans, list of issue numbers analyzed
@@ -1376,6 +1421,9 @@ def format_plan_header_body(
         last_dispatched_node_id=last_dispatched_node_id,
         last_dispatched_at=last_dispatched_at,
         last_local_impl_at=last_local_impl_at,
+        last_local_impl_event=last_local_impl_event,
+        last_local_impl_session=last_local_impl_session,
+        last_local_impl_user=last_local_impl_user,
         last_remote_impl_at=last_remote_impl_at,
         plan_type=plan_type,
         source_plan_issues=source_plan_issues,
@@ -1654,6 +1702,74 @@ def extract_plan_header_local_impl_at(issue_body: str) -> str | None:
         return None
 
     return block.data.get("last_local_impl_at")
+
+
+def update_plan_header_local_impl_event(
+    issue_body: str,
+    local_impl_at: str,
+    event: str,
+    session_id: str | None,
+    user: str,
+) -> str:
+    """Update local implementation event fields in plan-header metadata block.
+
+    Updates all 4 local implementation fields atomically:
+    - last_local_impl_at (timestamp)
+    - last_local_impl_event ("started" or "ended")
+    - last_local_impl_session (Claude Code session ID)
+    - last_local_impl_user (user who ran implementation)
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        local_impl_at: ISO 8601 timestamp of local implementation
+        event: Event type ("started" or "ended")
+        session_id: Claude Code session ID (optional)
+        user: User who ran implementation
+
+    Returns:
+        Updated issue body with new local implementation event fields
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """
+    # Extract existing plan-header block
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    # Update all local impl fields atomically
+    updated_data = dict(block.data)
+    updated_data["last_local_impl_at"] = local_impl_at
+    updated_data["last_local_impl_event"] = event
+    updated_data["last_local_impl_session"] = session_id
+    updated_data["last_local_impl_user"] = user
+
+    # Validate updated data
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    # Create new block and render
+    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    # Replace block in full body
+    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+
+
+def extract_plan_header_local_impl_event(issue_body: str) -> str | None:
+    """Extract last_local_impl_event from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        last_local_impl_event ("started" or "ended") if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get("last_local_impl_event")
 
 
 def update_plan_header_remote_impl(

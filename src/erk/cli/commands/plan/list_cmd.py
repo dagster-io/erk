@@ -7,6 +7,7 @@ from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata import (
     extract_plan_header_local_impl_at,
+    extract_plan_header_local_impl_event,
     extract_plan_header_remote_impl_at,
     extract_plan_header_worktree_name,
 )
@@ -104,17 +105,31 @@ def format_worktree_name_cell(worktree_name: str, exists_locally: bool) -> str:
     return f"[yellow]{worktree_name}[/yellow]"
 
 
-def format_local_run_cell(last_local_impl_at: str | None) -> str:
-    """Format last local implementation timestamp as relative time.
+def format_local_run_cell(
+    last_local_impl_at: str | None,
+    last_local_impl_event: str | None,
+) -> str:
+    """Format last local implementation event as relative time with indicator.
 
     Args:
         last_local_impl_at: ISO timestamp of last local implementation, or None
+        last_local_impl_event: Event type ("started" or "ended"), or None
 
     Returns:
-        Relative time string (e.g., "2h ago") or "-" if no timestamp
+        Relative time string with event indicator (e.g., "⟳ 2h" or "✓ 2h") or "-" if no timestamp
     """
     relative_time = format_relative_time(last_local_impl_at)
-    return relative_time if relative_time else "-"
+    if not relative_time:
+        return "-"
+
+    # Add event indicator
+    if last_local_impl_event == "started":
+        return f"⟳ {relative_time}"
+    if last_local_impl_event == "ended":
+        return f"✓ {relative_time}"
+
+    # Fallback for missing event (backward compatibility)
+    return relative_time
 
 
 def format_remote_run_cell(last_remote_impl_at: str | None) -> str:
@@ -316,6 +331,7 @@ def _build_plans_table(
         worktree_name = ""
         exists_locally = False
         last_local_impl_at: str | None = None
+        last_local_impl_event: str | None = None
         last_remote_impl_at: str | None = None
 
         # Check local mapping first (worktree exists locally)
@@ -330,13 +346,14 @@ def _build_plans_table(
                 # If we don't have a local name yet, use the one from issue body
                 if not worktree_name:
                     worktree_name = extracted
-            # Extract implementation timestamps
+            # Extract implementation timestamps and event
             last_local_impl_at = extract_plan_header_local_impl_at(plan.body)
+            last_local_impl_event = extract_plan_header_local_impl_event(plan.body)
             last_remote_impl_at = extract_plan_header_remote_impl_at(plan.body)
 
         # Format the worktree cells
         worktree_name_cell = format_worktree_name_cell(worktree_name, exists_locally)
-        local_run_cell = format_local_run_cell(last_local_impl_at)
+        local_run_cell = format_local_run_cell(last_local_impl_at, last_local_impl_event)
         remote_run_cell = format_remote_run_cell(last_remote_impl_at)
 
         # Get PR info for this issue

@@ -315,6 +315,21 @@ After completing all implementation steps:
 
 4. **Address any failures** by returning to relevant implementation steps
 
+### Step 8.5: Mark Implementation Ended
+
+After completing all implementation work (but before CI/PR steps), mark the implementation as ended:
+
+```bash
+dot-agent run erk mark-impl-ended 2>/dev/null || true
+```
+
+This updates:
+
+- `.impl/local-run-state.json` with event="ended" timestamp
+- GitHub issue plan-header metadata with the ended event and metadata
+
+This step should be run after all code changes are complete but before any optional CI or PR submission steps.
+
 ### Step 9: Run CI and Fix Issues Iteratively
 
 Run iterative CI to validate all changes before completion.

@@ -292,6 +292,20 @@ class RunInfo:
     run_url: str
 
 
+@dataclass(frozen=True)
+class LocalRunState:
+    """Local implementation run state tracked in .impl/local-run-state.json.
+
+    Tracks the last local implementation event with metadata for fast local access
+    without requiring GitHub API calls.
+    """
+
+    last_event: str  # "started" or "ended"
+    timestamp: str  # ISO 8601 UTC timestamp
+    session_id: str | None  # Claude Code session ID (optional)
+    user: str  # User who ran the implementation
+
+
 def save_issue_reference(impl_dir: Path, issue_number: int, issue_url: str) -> None:
     """Save GitHub issue reference to .impl/issue.json.
 
@@ -519,3 +533,82 @@ claude --permission-mode acceptEdits "/erk:plan-implement"
     )
 
     github_issues.add_comment(repo_root, issue_number, comment_body)
+
+
+def read_local_run_state(impl_dir: Path) -> LocalRunState | None:
+    """Read local implementation run state from .impl/local-run-state.json.
+
+    Args:
+        impl_dir: Path to .impl/ directory
+
+    Returns:
+        LocalRunState if file exists and is valid, None otherwise
+    """
+    state_file = impl_dir / "local-run-state.json"
+
+    if not state_file.exists():
+        return None
+
+    # Gracefully handle JSON parsing errors (third-party API exception handling)
+    try:
+        data = json.loads(state_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+
+    # Validate required fields exist
+    required_fields = ["last_event", "timestamp", "user"]
+    missing_fields = [f for f in required_fields if f not in data]
+
+    if missing_fields:
+        return None
+
+    # Validate last_event value
+    if data["last_event"] not in {"started", "ended"}:
+        return None
+
+    return LocalRunState(
+        last_event=data["last_event"],
+        timestamp=data["timestamp"],
+        session_id=data.get("session_id"),
+        user=data["user"],
+    )
+
+
+def write_local_run_state(
+    impl_dir: Path,
+    last_event: str,
+    timestamp: str,
+    user: str,
+    session_id: str | None = None,
+) -> None:
+    """Write local implementation run state to .impl/local-run-state.json.
+
+    Args:
+        impl_dir: Path to .impl/ directory
+        last_event: Event type ("started" or "ended")
+        timestamp: ISO 8601 UTC timestamp
+        user: User who ran the implementation
+        session_id: Optional Claude Code session ID
+
+    Raises:
+        FileNotFoundError: If impl_dir doesn't exist
+        ValueError: If last_event is not "started" or "ended"
+    """
+    if not impl_dir.exists():
+        msg = f"Implementation directory does not exist: {impl_dir}"
+        raise FileNotFoundError(msg)
+
+    if last_event not in {"started", "ended"}:
+        msg = f"Invalid last_event '{last_event}'. Must be 'started' or 'ended'"
+        raise ValueError(msg)
+
+    state_file = impl_dir / "local-run-state.json"
+
+    data = {
+        "last_event": last_event,
+        "timestamp": timestamp,
+        "session_id": session_id,
+        "user": user,
+    }
+
+    state_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
