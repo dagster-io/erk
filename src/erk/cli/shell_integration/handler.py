@@ -107,10 +107,14 @@ def process_command_result(
             user_output(stderr, nl=False)
         return ShellIntegrationResult(passthrough=False, script=script_path, exit_code=exit_code)
 
-    # No script available - if command failed, passthrough to show proper error
-    # Don't forward stderr here - the passthrough execution will show it
+    # No script available - if command failed, forward the error and don't passthrough.
+    # Passthrough would run the command again WITHOUT --script, which for commands
+    # like 'pr land' would show a misleading "requires shell integration" error
+    # instead of the actual failure reason.
     if exit_code != 0:
-        return ShellIntegrationResult(passthrough=True, script=None, exit_code=exit_code)
+        if stderr:
+            user_output(stderr, nl=False)
+        return ShellIntegrationResult(passthrough=False, script=None, exit_code=exit_code)
 
     # Forward stderr messages to user (only for successful commands)
     if stderr:

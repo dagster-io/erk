@@ -151,12 +151,18 @@ def test_process_command_result_uses_script_even_when_command_fails(tmp_path: Pa
     assert result.exit_code == 1  # Exit code should still reflect failure
 
 
-def test_process_command_result_passthroughs_on_failure_without_script() -> None:
-    """process_command_result should passthrough if command fails AND no script available.
+def test_process_command_result_forwards_error_on_failure_without_script() -> None:
+    """process_command_result should forward error and NOT passthrough when command fails.
 
-    This preserves existing behavior: when a command fails and there's no
-    activation script to use, the handler returns passthrough=True so the
-    shell wrapper can re-run the command for proper error display.
+    When a shell-integrated command fails without producing a script, we must NOT
+    passthrough. Passthrough would re-run the command WITHOUT --script, which for
+    commands like 'pr land' shows a misleading "requires shell integration" error
+    instead of the actual failure reason (e.g., "PR is already merged").
+
+    The correct behavior is:
+    1. Forward the stderr (actual error message) to the user
+    2. Return passthrough=False so shell wrapper doesn't re-run
+    3. Return the exit code so shell wrapper exits with correct status
     """
     from erk.cli.shell_integration.handler import process_command_result
 
@@ -167,17 +173,19 @@ def test_process_command_result_passthroughs_on_failure_without_script() -> None
         command_name="checkout",
     )
 
-    # Key assertion: should passthrough since no script and command failed
-    assert result.passthrough is True
+    # Key assertion: should NOT passthrough - error was already forwarded
+    assert result.passthrough is False
     assert result.script is None
     assert result.exit_code == 1
 
 
-def test_process_command_result_passthroughs_when_script_path_doesnt_exist() -> None:
-    """process_command_result should passthrough if script path in stdout doesn't exist.
+def test_process_command_result_forwards_error_when_script_path_doesnt_exist() -> None:
+    """process_command_result should forward error when script path doesn't exist.
 
     If stdout contains a path but the file doesn't exist (e.g., cleanup race condition),
-    should passthrough rather than returning an invalid script path.
+    the command effectively failed to produce a usable script. We should forward the
+    error and NOT passthrough, for the same reason as the no-script case: passthrough
+    would re-run without --script and show misleading errors.
     """
     from erk.cli.shell_integration.handler import process_command_result
 
@@ -188,8 +196,8 @@ def test_process_command_result_passthroughs_when_script_path_doesnt_exist() -> 
         command_name="checkout",
     )
 
-    # Should passthrough since script file doesn't exist
-    assert result.passthrough is True
+    # Should NOT passthrough - error was forwarded, script path is invalid
+    assert result.passthrough is False
     assert result.script is None
     assert result.exit_code == 1
 
