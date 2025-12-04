@@ -7,6 +7,9 @@ from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata import (
     extract_plan_header_local_impl_at,
+    extract_plan_header_local_impl_event,
+    extract_plan_header_local_impl_session,
+    extract_plan_header_local_impl_user,
     extract_plan_header_remote_impl_at,
     extract_plan_header_worktree_name,
 )
@@ -210,12 +213,18 @@ class RealPlanDataProvider(PlanDataProvider):
         # Extract from issue body
         local_impl_str: str | None = None
         remote_impl_str: str | None = None
+        local_impl_event: str | None = None
+        local_impl_session: str | None = None
+        local_impl_user: str | None = None
         if plan.body:
             extracted = extract_plan_header_worktree_name(plan.body)
             if extracted and not worktree_name:
                 worktree_name = extracted
             local_impl_str = extract_plan_header_local_impl_at(plan.body)
             remote_impl_str = extract_plan_header_remote_impl_at(plan.body)
+            local_impl_event = extract_plan_header_local_impl_event(plan.body)
+            local_impl_session = extract_plan_header_local_impl_session(plan.body)
+            local_impl_user = extract_plan_header_local_impl_user(plan.body)
 
         # Parse ISO 8601 timestamps for storage
         last_local_impl_at: datetime | None = None
@@ -305,6 +314,9 @@ class RealPlanDataProvider(PlanDataProvider):
             run_status=run_status,
             run_conclusion=run_conclusion,
             log_entries=log_entries,
+            last_local_impl_event=local_impl_event,
+            last_local_impl_user=local_impl_user,
+            last_local_impl_session=local_impl_session,
         )
 
 

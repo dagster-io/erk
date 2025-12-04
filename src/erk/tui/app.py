@@ -549,10 +549,46 @@ class PlanDetailScreen(ModalScreen):
 
                 if self._row.remote_impl_display and self._row.remote_impl_display != "-":
                     with Container(classes="info-row"):
-                        yield Label("Last remote impl", classes="info-label")
+                        yield Label("Last remote", classes="info-label")
                         yield Label(
                             self._row.remote_impl_display, classes="info-value", markup=False
                         )
+
+            # LOCAL IMPLEMENTATION SECTION
+            if self._row.last_local_impl_at or self._row.last_local_impl_event:
+                # Status row with badge
+                with Container(classes="info-row"):
+                    yield Label("Local impl", classes="info-label")
+                    event = self._row.last_local_impl_event or "unknown"
+                    if event == "started":
+                        yield Label("Started", classes="info-value")
+                        yield Label("In Progress", classes="status-badge badge-pending")
+                    else:
+                        yield Label("Ended", classes="info-value")
+                        yield Label("Complete", classes="status-badge badge-success")
+
+                # Timestamp row
+                if self._row.local_impl_display and self._row.local_impl_display != "-":
+                    with Container(classes="info-row"):
+                        yield Label("When", classes="info-label")
+                        yield Label(
+                            self._row.local_impl_display, classes="info-value", markup=False
+                        )
+
+                # User row
+                if self._row.last_local_impl_user:
+                    with Container(classes="info-row"):
+                        yield Label("User", classes="info-label")
+                        yield Label(
+                            self._row.last_local_impl_user, classes="info-value", markup=False
+                        )
+
+                # Session row (truncated)
+                if self._row.last_local_impl_session:
+                    session_display = self._row.last_local_impl_session[:8] + "..."
+                    with Container(classes="info-row"):
+                        yield Label("Session", classes="info-label")
+                        yield Label(session_display, classes="info-value", markup=False)
 
             # COMMANDS SECTION (copy to clipboard)
             # All items below use uniform orange labels that copy when clicked
