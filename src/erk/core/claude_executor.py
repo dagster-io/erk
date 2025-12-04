@@ -8,6 +8,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import threading
 import time
 from abc import ABC, abstractmethod
@@ -15,16 +16,29 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 
+# Constants for process execution
+PROCESS_TIMEOUT_SECONDS = 600  # 10 minutes
+STDERR_JOIN_TIMEOUT = 5.0  # 5 seconds (increased from 1.0)
+
 
 @dataclass
 class StreamEvent:
     """Event emitted during streaming execution.
 
     Attributes:
-        event_type: Type of event ("text", "tool", "spinner_update", "pr_url",
-            "pr_number", "pr_title", "issue_number")
+        event_type: Type of event:
+            - "text": Text content from Claude
+            - "tool": Tool usage summary
+            - "spinner_update": Status update for spinner display
+            - "pr_url": Pull request URL
+            - "pr_number": Pull request number
+            - "pr_title": Pull request title
+            - "issue_number": GitHub issue number
+            - "error": Error with non-zero exit code
+            - "no_output": Claude CLI produced no output (diagnostic info)
+            - "process_error": Failed to start or timeout (Popen failure, timeout)
         content: The content of the event (text message, tool summary, spinner text,
-            PR URL, PR number, PR title, or issue number)
+            PR URL, PR number, PR title, issue number, or error/diagnostic details)
     """
 
     event_type: str
@@ -171,6 +185,12 @@ class ClaudeExecutor(ABC):
             elif event.event_type == "error":
                 error_message = event.content
                 success = False
+            elif event.event_type == "no_output":
+                error_message = event.content
+                success = False
+            elif event.event_type == "process_error":
+                error_message = event.content
+                success = False
 
         duration = time.time() - start_time
         return CommandResult(
@@ -260,21 +280,27 @@ class RealClaudeExecutor(ClaudeExecutor):
             return
 
         # Filtered mode - streaming with real-time parsing
-        import sys
-
         if debug:
             print(f"[DEBUG executor] Starting Popen with args: {cmd_args}", file=sys.stderr)
             print(f"[DEBUG executor] cwd: {worktree_path}", file=sys.stderr)
             sys.stderr.flush()
 
-        process = subprocess.Popen(
-            cmd_args,
-            cwd=worktree_path,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            bufsize=1,  # Line buffered
-        )
+        # Handle Popen errors (e.g., claude not found, permission denied)
+        try:
+            process = subprocess.Popen(
+                cmd_args,
+                cwd=worktree_path,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,  # Line buffered
+            )
+        except OSError as e:
+            yield StreamEvent(
+                "process_error",
+                f"Failed to start Claude CLI: {e}\nCommand: {' '.join(cmd_args)}",
+            )
+            return
 
         if debug:
             print(f"[DEBUG executor] Popen started, pid={process.pid}", file=sys.stderr)
@@ -376,17 +402,51 @@ class RealClaudeExecutor(ClaudeExecutor):
             )
             sys.stderr.flush()
 
-        # Wait for process to complete
-        returncode = process.wait()
+        # Wait for process to complete with timeout
+        try:
+            returncode = process.wait(timeout=PROCESS_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+            yield StreamEvent(
+                "process_error",
+                f"Claude command {command} timed out after {PROCESS_TIMEOUT_SECONDS // 60} minutes",
+            )
+            return
 
-        # Wait for stderr thread to finish
-        stderr_thread.join(timeout=1.0)
+        # Wait for stderr thread to finish with increased timeout
+        stderr_thread.join(timeout=STDERR_JOIN_TIMEOUT)
 
-        if returncode != 0:
-            error_msg = f"Claude command {command} failed with exit code {returncode}"
+        # Detect no output condition - yield before checking exit code
+        if line_count == 0:
+            diag = f"Claude command {command} completed but produced no output"
+            diag += f"\n  Exit code: {returncode}"
+            diag += f"\n  Working directory: {worktree_path}"
             if stderr_output:
-                error_msg += "\n" + "".join(stderr_output)
+                diag += "\n  Stderr:\n" + "".join(stderr_output)
+            yield StreamEvent("no_output", diag)
+
+            if returncode != 0:
+                yield StreamEvent("error", f"Exit code {returncode}")
+            return
+
+        # Enhanced error messages for non-zero exit codes
+        if returncode != 0:
+            error_msg = f"Claude command {command} failed"
+            error_msg += f"\n  Exit code: {returncode}"
+            error_msg += f"\n  Lines processed: {line_count}"
+            if stderr_output:
+                error_msg += "\n  Stderr:\n" + "".join(stderr_output).strip()
             yield StreamEvent("error", error_msg)
+
+        # Debug summary
+        if debug:
+            print("[DEBUG executor] === Summary ===", file=sys.stderr)
+            print(f"[DEBUG executor] Exit code: {returncode}", file=sys.stderr)
+            print(f"[DEBUG executor] Lines: {line_count}", file=sys.stderr)
+            if stderr_output:
+                print(f"[DEBUG executor] Stderr: {''.join(stderr_output)}", file=sys.stderr)
+            sys.stderr.flush()
 
     def _parse_stream_json_line(
         self, line: str, worktree_path: Path, command: str

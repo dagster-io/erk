@@ -197,6 +197,14 @@ def stream_command_with_feedback(
             console.print(f"  ! {event.content}", style="red")
             error_message = event.content
             success = False
+        elif event.event_type == "no_output":
+            console.print(f"  ⚠️ {event.content}", style="yellow")
+            error_message = event.content
+            success = False
+        elif event.event_type == "process_error":
+            console.print(f"  ❌ {event.content}", style="red")
+            error_message = event.content
+            success = False
 
     if debug:
         console.print(f"[DEBUG] Event stream complete. Total events: {event_count}", style="yellow")
@@ -288,6 +296,14 @@ def stream_auto_restack(
                 click.echo(click.style(f"   ⏳ {event.content}", dim=True))
                 last_spinner = event.content
         elif event.event_type == "error":
+            click.echo(click.style(f"   ❌ {event.content}", fg="red"))
+            error_message = event.content
+            success = False
+        elif event.event_type == "no_output":
+            click.echo(click.style(f"   ⚠️  {event.content}", fg="yellow"))
+            error_message = event.content
+            success = False
+        elif event.event_type == "process_error":
             click.echo(click.style(f"   ❌ {event.content}", fg="red"))
             error_message = event.content
             success = False
