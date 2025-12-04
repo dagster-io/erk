@@ -42,14 +42,13 @@ Examples:
     }
 """
 
-import json
 import re
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import Literal
 
 import click
 
-from dot_agent_kit.cli.schema import SchemaCommand, build_epilog
+from dot_agent_kit.cli.schema import kit_json_command
 
 
 @dataclass
@@ -112,23 +111,16 @@ def _parse_issue_reference_impl(reference: str) -> ParsedIssue | ParseError:
     )
 
 
-@click.command(
+@kit_json_command(
     name="parse-issue-reference",
-    cls=SchemaCommand,
-    epilog=build_epilog(ParsedIssue, ParseError),
+    results=[ParsedIssue, ParseError],
+    error_type=ParseError,
 )
 @click.argument("issue_reference")
-def parse_issue_reference(issue_reference: str) -> None:
+def parse_issue_reference(issue_reference: str) -> ParsedIssue | ParseError:
     """Parse GitHub issue reference from plain number or URL.
 
     Accepts either a plain issue number (e.g., "776") or a full GitHub URL
     (e.g., "https://github.com/owner/repo/issues/776").
     """
-    result = _parse_issue_reference_impl(issue_reference)
-
-    # Output JSON result
-    click.echo(json.dumps(asdict(result), indent=2))
-
-    # Exit with error code if parsing failed
-    if isinstance(result, ParseError):
-        raise SystemExit(1)
+    return _parse_issue_reference_impl(issue_reference)
