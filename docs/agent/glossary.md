@@ -101,6 +101,51 @@ The absolute path to a specific erk directory.
 
 **Code**: `worktree_path_for(repo.erks_dir, "my-feature")`
 
+### Project
+
+A subdirectory within a git repository that has its own erk configuration context.
+
+**Identification**: Contains `.erk/project.toml` file
+
+**Purpose**: Enables monorepo support where different subdirectories can have their own:
+
+- Environment variables
+- Post-create commands
+- Claude Code context (via `.claude/` directory in project)
+
+**Example structure**:
+
+```
+repo-root/
+├── .erk/config.toml              ← Repo-level config
+├── python_modules/
+│   └── my-project/
+│       ├── .erk/project.toml     ← Project config (identifies this as a project)
+│       └── .claude/CLAUDE.md     ← Project-specific Claude context
+```
+
+**Discovery**: `discover_project(cwd, repo_root)` walks up from current directory looking for `.erk/project.toml`
+
+**File**: `src/erk/core/project_discovery.py`
+
+### Project Context
+
+A frozen dataclass containing project information.
+
+**Definition**:
+
+```python
+@dataclass(frozen=True)
+class ProjectContext:
+    root: Path          # Absolute path to project directory
+    name: str           # Project name (defaults to directory name)
+    path_from_repo: Path  # Relative path from repo root
+```
+
+**Creation**: `discover_project(cwd, repo_root)`
+
+**File**: `src/erk/core/project_discovery.py`
+
 ---
 
 ## Git & Graphite Concepts
@@ -178,6 +223,42 @@ working_dir = "."
 ```
 
 **Access**: Via `load_config(erks_dir)` function.
+
+### Project Config
+
+Configuration stored in `{project_root}/.erk/project.toml`.
+
+**Scope**: Applies to worktrees created from this project directory.
+
+**Location**: `{repo_root}/{project_path}/.erk/project.toml`
+
+**Contents**:
+
+```toml
+# Optional: custom name (defaults to directory name)
+# name = "dagster-open-platform"
+
+[env]
+# Project-specific env vars (merged with repo-level)
+DAGSTER_HOME = "{project_root}"
+
+[post_create]
+# Runs AFTER repo-level commands, FROM project directory
+shell = "bash"
+commands = [
+  "source .venv/bin/activate",
+]
+```
+
+**Merge Rules** (when both repo and project config exist):
+
+| Field                  | Merge Behavior                                 |
+| ---------------------- | ---------------------------------------------- |
+| `env`                  | Project values override repo values            |
+| `post_create.commands` | Repo commands run first, then project commands |
+| `post_create.shell`    | Project shell overrides repo shell if set      |
+
+**File**: `src/erk/cli/config.py`
 
 ---
 

@@ -19,6 +19,7 @@ Guidance for building and styling CLI commands in erk.
 | Style output with colors and formatting   | [output-styling.md](output-styling.md)             |
 | Format lists and tables                   | [list-formatting.md](list-formatting.md)           |
 | Implement shell integration (script mode) | [script-mode.md](script-mode.md)                   |
+| Configure .env templates and variables    | [template-variables.md](template-variables.md)     |
 
 ## Documents in This Category
 
@@ -45,6 +46,12 @@ Patterns for formatting lists, tables, and structured data in CLI output.
 **File:** [script-mode.md](script-mode.md)
 
 Implementing script mode for shell integration, allowing commands to output shell-evaluable strings for workflow automation.
+
+### Template Variables
+
+**File:** [template-variables.md](template-variables.md)
+
+Reference for template variables available in `config.toml` and `project.toml` env sections, plus auto-generated environment variables.
 
 ## Related Topics
 
