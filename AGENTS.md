@@ -65,6 +65,15 @@ For detailed reference, consult the documentation index which maps each document
 
 → **[docs/agent/index.md](docs/agent/index.md)** - Complete document registry
 
+#### Including Documentation in Plans
+
+When creating implementation plans, include a "Related Documentation" section listing:
+
+- Skills to load before implementing
+- Docs relevant to the implementation approach
+
+This ensures implementing agents have access to documentation you discovered during planning.
+
 **Category quick reference:**
 
 - **[Architecture](docs/agent/architecture/)** — dry-run patterns, Protocol vs ABC, subprocess wrappers, GitHub URL parsing
