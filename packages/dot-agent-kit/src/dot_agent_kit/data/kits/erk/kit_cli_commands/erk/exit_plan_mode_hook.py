@@ -147,13 +147,8 @@ def _output_blocking_message(session_id: str) -> None:
     click.echo("", err=True)
     click.echo("If user chooses 'Save to GitHub':", err=True)
     click.echo("  1. Run /erk:save-plan", err=True)
-    click.echo("  2. Create saved marker:", err=True)
-    click.echo(
-        f"     mkdir -p .erk/scratch/{session_id} && "
-        f"touch .erk/scratch/{session_id}/plan-saved-to-github",
-        err=True,
-    )
-    click.echo("  3. Call ExitPlanMode", err=True)
+    click.echo("  2. STOP - Do NOT call ExitPlanMode. The save-plan command handles everything.", err=True)
+    click.echo("     Stay in plan mode and let the user exit manually if desired.", err=True)
     click.echo("", err=True)
     click.echo("If user chooses 'Implement now':", err=True)
     click.echo("  1. Create skip marker:", err=True)
@@ -190,13 +185,13 @@ def exit_plan_mode_hook() -> None:
         sys.exit(0)
 
     # Check for saved marker (user chose "Save to GitHub" - terminal action)
+    # Block ExitPlanMode to prevent plan approval dialog from appearing.
+    # The save-plan command already displayed success info.
     saved_marker = _get_saved_marker_path(session_id)
     if saved_marker and saved_marker.exists():
         saved_marker.unlink()  # Delete marker (one-time use)
-        click.echo("Plan already saved to GitHub, exiting without implementation")
-        click.echo("", err=True)
-        click.echo("PLAN_SAVED_NO_IMPLEMENT", err=True)
-        sys.exit(0)
+        click.echo("✅ Plan already saved to GitHub. Session complete - no further action needed.")
+        sys.exit(2)  # Block to prevent plan approval dialog
 
     # Check if plan exists for this session
     plan_file = _find_session_plan(session_id)

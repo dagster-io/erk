@@ -47,10 +47,10 @@ def test_skip_marker_present_deletes_and_allows(tmp_path: Path) -> None:
     assert not skip_marker.exists()
 
 
-def test_saved_marker_present_deletes_and_allows_without_implementation(
+def test_saved_marker_present_blocks_to_prevent_plan_dialog(
     tmp_path: Path,
 ) -> None:
-    """Test when saved marker exists - should delete marker and allow exit with special signal."""
+    """Test when saved marker exists - should block ExitPlanMode to prevent plan approval dialog."""
     runner = CliRunner()
 
     # Create saved marker (indicates plan was saved to GitHub)
@@ -68,9 +68,10 @@ def test_saved_marker_present_deletes_and_allows_without_implementation(
         stdin_data = json.dumps({"session_id": session_id})
         result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
 
-    assert result.exit_code == 0
+    # Exit 2 = block, prevents plan approval dialog from appearing
+    assert result.exit_code == 2
     assert "Plan already saved to GitHub" in result.output
-    assert "PLAN_SAVED_NO_IMPLEMENT" in result.output
+    assert "Session complete" in result.output
     # Marker should be deleted
     assert not saved_marker.exists()
 
@@ -140,9 +141,10 @@ def test_plan_exists_no_marker_blocks(tmp_path: Path) -> None:
     assert "(default)" in result.output
     assert "Does NOT proceed to implementation" in result.output
     assert "Implement now" in result.output
-    # Both marker paths should be documented
+    # Skip marker path should be documented (for "Implement now" flow)
     assert f".erk/scratch/{session_id}/skip-plan-save" in result.output
-    assert f".erk/scratch/{session_id}/plan-saved-to-github" in result.output
+    # Saved marker is NOT documented - /erk:save-plan handles it internally
+    assert "Do NOT call ExitPlanMode" in result.output
 
 
 def test_no_plan_allows_exit(tmp_path: Path) -> None:

@@ -109,7 +109,15 @@ Parse the JSON result.
        /erk:submit-plan
    ```
 
-3. Call `ExitPlanMode` to cleanly exit plan mode (the saved marker ensures no implementation is triggered)
+3. **IMPORTANT: Do NOT call ExitPlanMode.** Stay in plan mode and display:
+
+   ```
+   Plan saved. You can now:
+   - Exit plan mode manually (press Escape or use /clear)
+   - Or continue working in this session
+   ```
+
+   The interaction is complete - no further action needed from the assistant.
 
 **On failure**, display the error from the JSON result and suggest checking:
 
