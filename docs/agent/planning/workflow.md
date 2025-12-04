@@ -76,6 +76,67 @@ If you didn't use `erk implement` (which auto-implements), run the implementatio
 
 The agent reads `.impl/plan.md`, executes each phase, and updates `.impl/progress.md` as steps complete.
 
+## Plan Save Workflow
+
+When a user saves their plan to GitHub (via `/erk:save-plan`), the workflow should end cleanly without additional prompts.
+
+### Flow Diagram
+
+```
+┌─────────────────┐
+│  Plan Mode      │
+│  (plan created) │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ User: "Save to  │
+│ GitHub"         │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ /erk:save-plan  │
+│ - Create issue  │
+│ - Create marker │
+│ - Show success  │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ STOP            │  ← Do NOT call ExitPlanMode
+│ Stay in plan    │
+│ mode            │
+└─────────────────┘
+```
+
+### Key Principle: Don't Call ExitPlanMode After Saving
+
+After saving to GitHub:
+
+1. The marker file `plan-saved-to-github` is created
+2. Success message is displayed with next steps
+3. **Session stays in plan mode** - no ExitPlanMode call
+
+Why? ExitPlanMode shows a plan approval dialog. After saving, this dialog:
+
+- Serves no purpose (plan is already saved)
+- Requires unnecessary user interaction
+- Confuses the workflow
+
+### Safety Net: Hook Blocks ExitPlanMode
+
+If ExitPlanMode is called anyway (e.g., by mistake), the `exit-plan-mode-hook` detects the saved marker and blocks with exit 2:
+
+```python
+if saved_marker.exists():
+    saved_marker.unlink()
+    click.echo("✅ Plan saved to GitHub. Session complete.")
+    sys.exit(2)  # Block to prevent plan approval dialog
+```
+
+This ensures the plan dialog never appears after a successful save.
+
 ## Progress Tracking
 
 The `.impl/progress.md` file tracks completion status:

@@ -20,6 +20,7 @@ Complete guide to Claude Code hooks: general capabilities and project-specific u
 - [Matchers](#matchers)
 - [Configuration Structure](#configuration-structure)
 - [Output and Decision Control](#output-and-decision-control)
+- [Exit Code Decision Patterns](#exit-code-decision-patterns)
 - [Security Considerations](#security-considerations)
 - [Best Practices](#best-practices)
 
@@ -274,6 +275,42 @@ Return JSON with decision fields:
   }
 }
 ```
+
+### Exit Code Decision Patterns
+
+Hook exit codes control whether the tool proceeds, but the semantics are about **flow control**, not success/failure:
+
+| Exit Code | Meaning               | When to Use                                                   |
+| --------- | --------------------- | ------------------------------------------------------------- |
+| 0         | Allow tool to proceed | Tool should run its normal flow                               |
+| 2         | Block tool execution  | You've handled the situation; tool's default flow is unwanted |
+
+**Key Insight: Blocking as Success**
+
+Exit 2 (block) is often the RIGHT choice for successful terminal states:
+
+```python
+# Example: Plan already saved to GitHub
+if saved_marker.exists():
+    saved_marker.unlink()
+    click.echo("✅ Plan saved to GitHub. Session complete.")
+    sys.exit(2)  # BLOCK - prevents ExitPlanMode's plan approval dialog
+```
+
+Why block here? Because:
+
+1. The user's goal (save plan) is already accomplished
+2. The tool's default behavior (show plan approval dialog) serves no purpose
+3. Blocking prevents unwanted UI while the message communicates completion
+
+**Decision Framework:**
+
+Ask: "What happens if I allow the tool to proceed?"
+
+- If the tool's normal flow is helpful → Exit 0 (allow)
+- If the tool's normal flow is unnecessary/harmful → Exit 2 (block)
+
+The exit code is about **what should happen next**, not whether your hook succeeded.
 
 ### Security Considerations
 

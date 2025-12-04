@@ -1,4 +1,4 @@
-.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test fast-ci all-ci check md-check docs-validate clean publish fix reinstall-erk-tools
+.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test fast-ci all-ci check md-check kit-md-check docs-validate clean publish fix reinstall-erk-tools
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -76,6 +76,13 @@ check:
 md-check:
 	uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl"
 
+# Kit markdown check: Validate @ references in kit data files
+# These are excluded from md-check because they may have template-style references,
+# but we still want to validate that actual file includes are correct
+# NOTE: cd is required because the command validates from the current directory
+kit-md-check:
+	cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run dot-agent md check --check-links
+
 docs-validate:
 	uv run dot-agent docs validate
 
@@ -90,6 +97,8 @@ fast-ci:
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
 	echo "\n--- Markdown Check ---" && uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl" || exit_code=1; \
+	echo "\n--- Kit Markdown Check ---" && (cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run dot-agent md check --check-links) || exit_code=1; \
+	cd $(CURDIR); \
 	echo "\n--- Docs Validate ---" && uv run dot-agent docs validate || exit_code=1; \
 	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
@@ -107,6 +116,8 @@ all-ci:
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
 	echo "\n--- Markdown Check ---" && uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl" || exit_code=1; \
+	echo "\n--- Kit Markdown Check ---" && (cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run dot-agent md check --check-links) || exit_code=1; \
+	cd $(CURDIR); \
 	echo "\n--- Docs Validate ---" && uv run dot-agent docs validate || exit_code=1; \
 	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \

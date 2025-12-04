@@ -82,7 +82,7 @@ def pr_submit(ctx: ErkContext, debug: bool) -> None:
     if pr_url:
         styled_url = click.style(pr_url, fg="cyan", underline=True)
         clickable_url = f"\033]8;;{pr_url}\033\\{styled_url}\033]8;;\033\\"
-        click.echo(f"\n✅ {clickable_url}")
+        click.echo(f"\n✅ {clickable_url}\n")
 
     if not success:
         error_msg = error_message or "PR submission failed"
