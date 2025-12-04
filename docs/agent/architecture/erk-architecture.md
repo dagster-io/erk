@@ -298,6 +298,368 @@ class MockApp:
         pass
 ```
 
+## Integration Layer Directory Structure
+
+Erk uses a consistent directory structure for all integration layers (git, github, graphite, etc). Each integration follows the ABC/Real/Fake/DryRun pattern.
+
+### Standard Directory Layout
+
+```
+packages/erk-shared/src/erk_shared/
+├── git/                           # Core git integration
+│   ├── __init__.py                # Re-exports all implementations
+│   ├── abc.py                     # ABC interface definition
+│   ├── real.py                    # Production implementation
+│   ├── fake.py                    # In-memory test implementation
+│   ├── dry_run.py                 # No-op wrapper for dry-run mode
+│   └── printing.py                # (Optional) Wrapper that logs operations
+├── github/                        # GitHub API integration
+│   ├── __init__.py
+│   ├── abc.py
+│   ├── real.py
+│   └── fake.py
+└── integrations/                  # Domain-specific integrations
+    ├── erk_wt/                    # Erk worktree operations
+    │   ├── __init__.py
+    │   ├── abc.py
+    │   ├── real.py
+    │   └── fake.py
+    ├── graphite/                  # Graphite stack operations
+    │   ├── __init__.py
+    │   ├── abc.py
+    │   ├── real.py
+    │   └── fake.py
+    └── time/                      # Time abstraction
+        ├── __init__.py
+        ├── abc.py
+        ├── real.py
+        └── fake.py
+```
+
+### Standard Files
+
+**`abc.py`** - Interface definition:
+
+```python
+from abc import ABC, abstractmethod
+
+class MyIntegration(ABC):
+    """Abstract interface for MyIntegration operations."""
+
+    @abstractmethod
+    def do_operation(self, arg: str) -> str:
+        """Perform operation with given argument."""
+        ...
+```
+
+**`real.py`** - Production implementation:
+
+```python
+import subprocess
+from erk_shared.my_integration.abc import MyIntegration
+
+class RealMyIntegration(MyIntegration):
+    """Production implementation using subprocess."""
+
+    def do_operation(self, arg: str) -> str:
+        result = subprocess.run(
+            ["my-cli", "operation", arg],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout.strip()
+```
+
+**`fake.py`** - Test implementation:
+
+```python
+from erk_shared.my_integration.abc import MyIntegration
+
+class FakeMyIntegration(MyIntegration):
+    """In-memory fake for testing."""
+
+    def __init__(self) -> None:
+        self.operations_called: list[str] = []
+
+    def do_operation(self, arg: str) -> str:
+        self.operations_called.append(arg)
+        return f"fake-result-{arg}"
+```
+
+**`dry_run.py`** - No-op wrapper (optional):
+
+```python
+from erk_shared.my_integration.abc import MyIntegration
+
+class DryRunMyIntegration(MyIntegration):
+    """No-op wrapper that tracks but doesn't execute operations."""
+
+    def __init__(self, delegate: MyIntegration) -> None:
+        self.delegate = delegate
+        self.operations: list[str] = []
+
+    def do_operation(self, arg: str) -> str:
+        self.operations.append(f"do_operation({arg})")
+        return ""  # No-op, return empty or default value
+```
+
+**`__init__.py`** - Re-export pattern:
+
+```python
+"""MyIntegration operations."""
+
+from erk_shared.my_integration.abc import MyIntegration
+from erk_shared.my_integration.real import RealMyIntegration
+from erk_shared.my_integration.fake import FakeMyIntegration
+
+__all__ = [
+    "MyIntegration",      # ABC interface
+    "RealMyIntegration",  # Production implementation
+    "FakeMyIntegration",  # Test implementation
+]
+```
+
+### Integration Locations
+
+**Core integrations** (used across the codebase):
+
+- `packages/erk-shared/src/erk_shared/git/` - Git operations
+- `packages/erk-shared/src/erk_shared/github/` - GitHub API
+- `packages/erk-shared/src/erk_shared/graphite/` - Graphite stack operations
+
+**Domain integrations** (specific domains):
+
+- `packages/erk-shared/src/erk_shared/integrations/<name>/` - Domain-specific operations
+
+### When to Create a New Integration
+
+**Create a new integration when:**
+
+- Wrapping external CLI tool (git, gh, gt)
+- Wrapping external API (GitHub REST API)
+- Abstracting system operations (time, filesystem)
+- Isolating subprocess calls for testing
+
+**Extend existing integration when:**
+
+- Adding method to existing tool (e.g., new git operation)
+- Enhancing existing functionality
+- Operation fits natural domain of existing integration
+
+### Import Pattern
+
+**From consumers:**
+
+```python
+# Import from top-level package (uses __init__.py re-exports)
+from erk_shared.git import Git, RealGit, FakeGit
+from erk_shared.github import GitHub, RealGitHub, FakeGitHub
+from erk_shared.integrations.erk_wt import ErkWtKit, RealErkWtKit, FakeErkWtKit
+```
+
+**Not this:**
+
+```python
+# DON'T import from implementation files directly
+from erk_shared.git.real import RealGit  # Bypasses __init__.py
+```
+
+### Testing All Four Layers
+
+When adding a method to an integration ABC:
+
+1. **ABC**: Add abstract method signature
+2. **Real**: Implement with subprocess/API calls
+3. **Fake**: Implement with in-memory tracking
+4. **DryRun**: Add no-op wrapper (if integration has dry-run layer)
+
+**Example workflow:**
+
+```python
+# 1. ABC - Add method signature
+class Git(ABC):
+    @abstractmethod
+    def get_branch_upstream(self, path: Path, branch: str) -> str | None:
+        """Get upstream tracking branch."""
+        ...
+
+# 2. Real - Implement with git CLI
+class RealGit(Git):
+    def get_branch_upstream(self, path: Path, branch: str) -> str | None:
+        result = subprocess.run(
+            ["git", "-C", str(path), "rev-parse", "--abbrev-ref", f"{branch}@{{u}}"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return result.stdout.strip() if result.returncode == 0 else None
+
+# 3. Fake - Implement with in-memory state
+class FakeGit(Git):
+    def __init__(self) -> None:
+        self.upstream_branches: dict[str, str] = {}
+
+    def get_branch_upstream(self, path: Path, branch: str) -> str | None:
+        return self.upstream_branches.get(branch)
+
+# 4. DryRun - Add no-op wrapper
+class DryRunGit(Git):
+    def get_branch_upstream(self, path: Path, branch: str) -> str | None:
+        # Delegate to wrapped implementation (doesn't execute git)
+        return self.delegate.get_branch_upstream(path, branch)
+```
+
+### Migration Notes
+
+If you find code that should be an integration but isn't:
+
+1. **Create integration directory** with abc.py, real.py, fake.py
+2. **Extract subprocess calls** into Real implementation
+3. **Write Fake implementation** for testing
+4. **Update consumers** to use injected dependency instead of direct calls
+5. **Update tests** to use Fake instead of mocking subprocess
+
+## Branch Context Detection
+
+Commands that need to behave differently on trunk vs feature branches use the branch context pattern.
+
+### The BranchContext Pattern
+
+```python
+@dataclass(frozen=True)
+class BranchContext:
+    """Branch context information for current git repository.
+
+    Attributes:
+        is_on_trunk: True if current branch is trunk (main/master)
+        current_branch: Name of the current branch
+        trunk_branch: Name of the trunk branch (main or master)
+    """
+    is_on_trunk: bool
+    current_branch: str
+    trunk_branch: str
+```
+
+### Helper Function
+
+```python
+def get_branch_context(git: Git, path: Path) -> BranchContext:
+    """Determine branch context for a repository path.
+
+    Detects:
+    - Current branch name
+    - Trunk branch name (prefers 'main', falls back to 'master')
+    - Whether current branch is trunk
+
+    Args:
+        git: Git integration for querying branch information
+        path: Path to git repository or worktree
+
+    Returns:
+        BranchContext with trunk detection information
+    """
+    current_branch = git.get_current_branch(path)
+    trunk_branch = "main" if git.branch_exists(path, "main") else "master"
+    is_on_trunk = current_branch == trunk_branch
+
+    return BranchContext(
+        is_on_trunk=is_on_trunk,
+        current_branch=current_branch,
+        trunk_branch=trunk_branch,
+    )
+```
+
+### When to Use
+
+Use branch context when command behavior differs based on trunk vs feature branch:
+
+**Trunk branch behavior:**
+
+- Baseline operations (e.g., "show all open feature branches")
+- Repository-wide queries
+- Stack management from trunk perspective
+
+**Feature branch behavior:**
+
+- Feature-specific operations (e.g., "sessions for this feature")
+- Branch-relative queries
+- Single-branch workflows
+
+### Example Usage
+
+```python
+from erk_shared.branch_context import BranchContext, get_branch_context
+
+def list_relevant_items(git: Git, path: Path) -> list[str]:
+    """List items relevant to current branch context."""
+    branch_ctx = get_branch_context(git, path)
+
+    if branch_ctx.is_on_trunk:
+        # On trunk: show all feature branches
+        return git.list_branches(path, remotes=False)
+    else:
+        # On feature: show items for current feature only
+        return [branch_ctx.current_branch]
+```
+
+### Real-World Example
+
+From `list_sessions.py` (kit CLI command):
+
+```python
+# Get branch context to determine session filtering
+branch_ctx = get_branch_context(git, cwd)
+
+# Output includes branch context for downstream consumers
+output = {
+    "branch_context": {
+        "is_on_trunk": branch_ctx.is_on_trunk,
+        "current_branch": branch_ctx.current_branch,
+        "trunk_branch": branch_ctx.trunk_branch,
+    },
+    "sessions": sessions,  # Filtered based on branch context
+}
+```
+
+### Testing Branch Context
+
+```python
+def test_command_on_trunk() -> None:
+    """Test command behavior on trunk branch."""
+    fake_git = FakeGit()
+    fake_git.current_branch = "main"
+    fake_git.branches = {"main": "abc123"}
+
+    branch_ctx = get_branch_context(fake_git, Path("/repo"))
+
+    assert branch_ctx.is_on_trunk is True
+    assert branch_ctx.current_branch == "main"
+    assert branch_ctx.trunk_branch == "main"
+
+def test_command_on_feature() -> None:
+    """Test command behavior on feature branch."""
+    fake_git = FakeGit()
+    fake_git.current_branch = "feature-123"
+    fake_git.branches = {"main": "abc123", "feature-123": "def456"}
+
+    branch_ctx = get_branch_context(fake_git, Path("/repo"))
+
+    assert branch_ctx.is_on_trunk is False
+    assert branch_ctx.current_branch == "feature-123"
+    assert branch_ctx.trunk_branch == "main"
+```
+
+### Trunk Detection Logic
+
+The helper implements this precedence:
+
+1. **Check for 'main' branch** - Most common modern convention
+2. **Fall back to 'master'** - Legacy convention
+3. **Compare current branch** to detected trunk
+
+This ensures correct detection regardless of repository trunk name.
+
 ## Design Principles
 
 These patterns reflect erk's core design principles:

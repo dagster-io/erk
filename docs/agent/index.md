@@ -28,15 +28,15 @@
 
 ### [Architecture](architecture/)
 
-| Document                                                                              | Read when...                                                  |
-| ------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| [erk-architecture.md](architecture/erk-architecture.md)                               | Understanding dry-run patterns, context regeneration          |
-| [protocol-vs-abc.md](architecture/protocol-vs-abc.md)                                 | Choosing between Protocol and ABC for interfaces              |
-| [subprocess-wrappers.md](architecture/subprocess-wrappers.md)                         | Executing shell commands, using subprocess wrappers           |
-| [github-parsing.md](architecture/github-parsing.md)                                   | Parsing GitHub URLs, extracting PR/issue numbers              |
-| [commandresult-extension-pattern.md](architecture/commandresult-extension-pattern.md) | Adding new fields to CommandResult, extending stream parsing  |
-| [sentinel-path-compatibility.md](architecture/sentinel-path-compatibility.md)         | Writing functions testable with FakeGit, sentinel path errors |
-| [worktree-metadata.md](architecture/worktree-metadata.md)                             | Storing per-worktree metadata, worktrees.toml                 |
+| Document                                                                              | Read when...                                                                                       |
+| ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| [erk-architecture.md](architecture/erk-architecture.md)                               | Understanding dry-run patterns, context regeneration, integration layers, branch context detection |
+| [protocol-vs-abc.md](architecture/protocol-vs-abc.md)                                 | Choosing between Protocol and ABC for interfaces                                                   |
+| [subprocess-wrappers.md](architecture/subprocess-wrappers.md)                         | Executing shell commands, using subprocess wrappers                                                |
+| [github-parsing.md](architecture/github-parsing.md)                                   | Parsing GitHub URLs, extracting PR/issue numbers                                                   |
+| [commandresult-extension-pattern.md](architecture/commandresult-extension-pattern.md) | Adding new fields to CommandResult, extending stream parsing                                       |
+| [sentinel-path-compatibility.md](architecture/sentinel-path-compatibility.md)         | Writing functions testable with FakeGit, sentinel path errors                                      |
+| [worktree-metadata.md](architecture/worktree-metadata.md)                             | Storing per-worktree metadata, worktrees.toml                                                      |
 
 ### [CLI Development](cli/)
 
@@ -61,20 +61,21 @@
 
 ### [Testing](testing/)
 
-| Document                                                               | Read when...                                      |
-| ---------------------------------------------------------------------- | ------------------------------------------------- |
-| [testing.md](testing/testing.md)                                       | Using erk fakes (FakeGit, etc.), running tests    |
-| [rebase-conflicts.md](testing/rebase-conflicts.md)                     | ErkContext API changes, env_helpers during rebase |
-| [import-conflict-resolution.md](testing/import-conflict-resolution.md) | Resolving import conflicts during rebase          |
+| Document                                                               | Read when...                                               |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------- |
+| [testing.md](testing/testing.md)                                       | Using erk fakes (FakeGit, etc.), running tests             |
+| [kit-cli-testing.md](testing/kit-cli-testing.md)                       | Testing kit CLI commands, using DotAgentContext.for_test() |
+| [rebase-conflicts.md](testing/rebase-conflicts.md)                     | ErkContext API changes, env_helpers during rebase          |
+| [import-conflict-resolution.md](testing/import-conflict-resolution.md) | Resolving import conflicts during rebase                   |
 
 ### [Sessions](sessions/)
 
-| Document                                                                | Read when...                                          |
-| ----------------------------------------------------------------------- | ----------------------------------------------------- |
-| [layout.md](sessions/layout.md)                                         | Understanding ~/.claude/projects/ structure           |
-| [parallel-session-awareness.md](sessions/parallel-session-awareness.md) | Working with session-specific data, parallel sessions |
-| [tools.md](sessions/tools.md)                                           | Finding session logs, inspecting agent execution      |
-| [context-analysis.md](sessions/context-analysis.md)                     | Debugging context window issues                       |
+| Document                                                                | Read when...                                                                    |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [layout.md](sessions/layout.md)                                         | Understanding ~/.claude/projects/ structure                                     |
+| [parallel-session-awareness.md](sessions/parallel-session-awareness.md) | Working with session-specific data, parallel sessions                           |
+| [tools.md](sessions/tools.md)                                           | Finding session logs, inspecting agent execution, listing sessions for worktree |
+| [context-analysis.md](sessions/context-analysis.md)                     | Debugging context window issues                                                 |
 
 ### [Hooks](hooks/)
 
@@ -85,11 +86,12 @@
 
 ### [Kits](kits/)
 
-| Document                                          | Read when...                                            |
-| ------------------------------------------------- | ------------------------------------------------------- |
-| [cli-commands.md](kits/cli-commands.md)           | Creating kit CLI commands, understanding patterns       |
-| [code-architecture.md](kits/code-architecture.md) | Understanding kit code structure                        |
-| [push-down-pattern.md](kits/push-down-pattern.md) | Deciding what belongs in kit CLI vs agent, token saving |
+| Document                                                | Read when...                                                     |
+| ------------------------------------------------------- | ---------------------------------------------------------------- |
+| [cli-commands.md](kits/cli-commands.md)                 | Creating kit CLI commands, understanding patterns                |
+| [code-architecture.md](kits/code-architecture.md)       | Understanding kit code structure                                 |
+| [push-down-pattern.md](kits/push-down-pattern.md)       | Deciding what belongs in kit CLI vs agent, token saving          |
+| [dependency-injection.md](kits/dependency-injection.md) | Writing or testing kit CLI commands with git/github dependencies |
 
 ### [Commands](commands/)
 

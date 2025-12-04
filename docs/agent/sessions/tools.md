@@ -49,6 +49,49 @@ erk debug-agent 17cfd3f4
 erk debug-agent 17cfd3f4 --show-log
 ```
 
+### dot-agent run erk list-sessions
+
+Discover Claude Code sessions for the current worktree (kit CLI command).
+
+```bash
+# List sessions for current worktree
+dot-agent run erk list-sessions --format json
+```
+
+**Output format:**
+
+```json
+{
+  "branch_context": {
+    "is_on_trunk": false,
+    "current_branch": "feature-branch",
+    "trunk_branch": "main"
+  },
+  "current_session_id": "abc123-def456",
+  "sessions": [
+    {
+      "session_id": "abc123-def456",
+      "timestamp": "2024-01-15T10:30:00Z",
+      "path": "/Users/foo/.claude/projects/-Users-foo-code-myapp/abc123-def456.jsonl"
+    }
+  ],
+  "project_dir": "/Users/foo/.claude/projects/-Users-foo-code-myapp"
+}
+```
+
+**Branch context detection:**
+
+The `branch_context` field provides information about whether the current branch is trunk (main/master) or a feature branch. This affects command behavior:
+
+- **On trunk**: `is_on_trunk=true` - Used for baseline operations
+- **On feature branch**: `is_on_trunk=false` - Used for feature development workflows
+
+**Use cases:**
+
+- Finding sessions for extraction plans (`/erk:create-extraction-plan`)
+- Session discovery workflows (`/erk:sessions-list`)
+- Branch-aware command behavior
+
 ## Finding Session Logs
 
 ### By Current Directory
