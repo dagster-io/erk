@@ -147,7 +147,10 @@ def _output_blocking_message(session_id: str) -> None:
     click.echo("", err=True)
     click.echo("If user chooses 'Save to GitHub':", err=True)
     click.echo("  1. Run /erk:save-plan", err=True)
-    click.echo("  2. STOP - Do NOT call ExitPlanMode. The save-plan command handles everything.", err=True)
+    click.echo(
+        "  2. STOP - Do NOT call ExitPlanMode. The save-plan command handles everything.",
+        err=True,
+    )
     click.echo("     Stay in plan mode and let the user exit manually if desired.", err=True)
     click.echo("", err=True)
     click.echo("If user chooses 'Implement now':", err=True)
