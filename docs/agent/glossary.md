@@ -273,14 +273,26 @@ A frozen dataclass containing repository information.
 ```python
 @dataclass(frozen=True)
 class RepoContext:
-    root: Path        # Repo root directory
-    repo_name: str    # Repository name
-    erks_dir: Path    # Erks directory for this repo
+    root: Path            # Working tree root for git commands
+    main_repo_root: Path  # Main repository root (consistent across worktrees)
+    repo_name: str        # Repository name
+    erks_dir: Path        # Erks directory for this repo
 ```
 
 **Creation**: `discover_repo_context(ctx, Path.cwd())`
 
 **File**: `src/erk/cli/core.py`
+
+#### root vs main_repo_root
+
+- **`root`**: The working tree root where git commands should run. For worktrees, this is the worktree directory. For main repos, equals `main_repo_root`.
+
+- **`main_repo_root`**: The main repository root (consistent across all worktrees). Used for:
+  - Deriving `repo_name` for metadata paths
+  - Operations that need the root worktree (e.g., escaping from a worktree being deleted)
+  - Resolving "root" as a target in commands like `stack move root`
+
+**Key insight:** When running from a worktree, git commands use `root` (the worktree), but metadata and escaping use `main_repo_root` (the main repo).
 
 ### Erk Context
 
