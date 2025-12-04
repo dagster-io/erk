@@ -16,8 +16,8 @@ from erk_shared.git.abc import Git
 from erk_shared.git.real import RealGit
 from erk_shared.github.abc import GitHub
 from erk_shared.github.real import RealGitHub
-from erk_shared.integrations.ai.abc import ClaudeCLIExecutor
-from erk_shared.integrations.ai.real import RealClaudeCLIExecutor
+from erk_shared.integrations.claude.abc import ClaudeExecutor
+from erk_shared.integrations.claude.real import RealClaudeExecutor
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.real import RealGraphite
 from erk_shared.integrations.time.abc import Time
@@ -37,7 +37,7 @@ class RealGtKit:
     git: Git
     github: GitHub
     graphite: Graphite
-    ai: ClaudeCLIExecutor
+    claude: ClaudeExecutor
     time: Time
 
     def __init__(self) -> None:
@@ -46,4 +46,4 @@ class RealGtKit:
         self.git = RealGit()
         self.github = RealGitHub(time=self.time)
         self.graphite = RealGraphite()
-        self.ai = RealClaudeCLIExecutor()
+        self.claude = RealClaudeExecutor()

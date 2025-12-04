@@ -1,13 +1,13 @@
 """Submit current branch as a pull request.
 
-Uses Python operations with AI executor for commit message generation.
+Uses Python operations with Claude executor for commit message generation.
 """
 
 import uuid
 from pathlib import Path
 
 import click
-from erk_shared.integrations.ai.real import RealClaudeCLIExecutor
+from erk_shared.integrations.claude.real import RealClaudeExecutor
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.integrations.gt.operations.submit_pr import execute_submit_pr
 from erk_shared.integrations.gt.types import SubmitPRError, SubmitPRResult
@@ -25,9 +25,9 @@ def _generate_session_id() -> str:
 @click.option("-f", "--force", is_flag=True, help="Force push even if remote has diverged")
 @click.pass_obj
 def pr_submit(ctx: ErkContext, force: bool) -> None:
-    """Submit PR with AI-generated commit message.
+    """Submit PR with Claude-generated commit message.
 
-    Analyzes your changes, generates a commit message via AI, and
+    Analyzes your changes, generates a commit message via Claude, and
     creates a pull request using Graphite.
 
     Examples:
@@ -41,8 +41,8 @@ def pr_submit(ctx: ErkContext, force: bool) -> None:
     """
     click.echo(click.style("🚀 Submitting PR...", bold=True))
 
-    # Build GtKit from context components + real AI executor
-    ops = ContextGtKit.from_context(ctx, ai=RealClaudeCLIExecutor())
+    # Build GtKit from context components + real Claude executor
+    ops = ContextGtKit.from_context(ctx, claude=RealClaudeExecutor())
     cwd = Path.cwd()
     session_id = _generate_session_id()
 

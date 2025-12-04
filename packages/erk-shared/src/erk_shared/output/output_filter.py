@@ -6,6 +6,7 @@ verbose/noisy tool invocations.
 """
 
 import json
+import re
 from pathlib import Path
 
 
@@ -240,8 +241,6 @@ def extract_pr_metadata_from_text(text: str) -> dict[str, str | int | None]:
         >>> extract_pr_metadata_from_text(text)
         {'pr_url': 'https://github.com/o/r/pull/123', 'pr_number': 123, ...}
     """
-    import re
-
     result: dict[str, str | int | None] = {
         "pr_url": None,
         "pr_number": None,

@@ -4,7 +4,7 @@ This module provides execute_submit_pr which orchestrates the full PR submission
 workflow in Python:
 
 1. Preflight: auth checks, squash commits, submit to Graphite, extract diff
-2. AI Generation: generate commit message via ClaudeCLIExecutor
+2. AI Generation: generate commit message via ClaudeExecutor
 3. Finalize: update PR metadata with AI-generated content
 
 Key principle: Operations orchestrate. Claude generates content.
@@ -42,7 +42,7 @@ def execute_submit_pr(
     3. Finalize PR with generated message
 
     Args:
-        ops: GtKit for dependency injection (includes ai executor)
+        ops: GtKit for dependency injection (includes claude executor)
         cwd: Working directory (repository path)
         session_id: Claude session ID for scratch file isolation
         force: If True, force push even if remote has diverged
@@ -70,19 +70,19 @@ def execute_submit_pr(
 
     yield ProgressEvent("Preflight complete", style="success")
 
-    # Step 2: Generate commit message via AI
-    yield ProgressEvent("Generating commit message via AI...")
+    # Step 2: Generate commit message via Claude
+    yield ProgressEvent("Generating commit message via Claude...")
     try:
         diff_path = Path(preflight_result.diff_file)
         repo_root = Path(preflight_result.repo_root)
-        ai_result = ops.ai.generate_commit_message(
+        claude_result = ops.claude.generate_commit_message(
             diff_file=diff_path,
             repo_root=repo_root,
             current_branch=preflight_result.current_branch,
             parent_branch=preflight_result.parent_branch,
         )
-        title = ai_result.title
-        body = ai_result.body
+        title = claude_result.title
+        body = claude_result.body
         yield ProgressEvent("Commit message generated", style="success")
     except Exception as e:
         yield CompletionEvent(

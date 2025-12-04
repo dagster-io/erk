@@ -13,7 +13,7 @@ from click.testing import CliRunner
 from erk_shared.git.abc import Git
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.abc import GitHub
-from erk_shared.integrations.ai.abc import ClaudeCLIExecutor
+from erk_shared.integrations.claude.abc import ClaudeExecutor
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.integrations.gt.types import SubmitPRError, SubmitPRResult
@@ -30,7 +30,7 @@ class MockGtKit:
     git: Git
     github: GitHub
     graphite: Graphite
-    ai: ClaudeCLIExecutor
+    claude: ClaudeExecutor
     time: Time
 
 
@@ -74,7 +74,7 @@ def _mock_execute_submit_pr_success(
     """Mock execute_submit_pr that returns success."""
     yield ProgressEvent("Running preflight checks...")
     yield ProgressEvent("Preflight complete", style="success")
-    yield ProgressEvent("Generating commit message via AI...")
+    yield ProgressEvent("Generating commit message via Claude...")
     yield ProgressEvent("Commit message generated", style="success")
     yield ProgressEvent("Updating PR metadata...")
     yield ProgressEvent("PR metadata updated", style="success")

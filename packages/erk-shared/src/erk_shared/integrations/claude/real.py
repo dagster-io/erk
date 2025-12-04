@@ -1,215 +1,31 @@
-"""Claude CLI execution abstraction.
+"""Real implementation of Claude CLI executor.
 
-This module provides abstraction over Claude CLI execution, enabling
-dependency injection for testing without mock.patch.
+Uses subprocess to invoke Claude CLI for both streaming command execution
+and AI generation tasks. This implementation should only be used at runtime;
+tests should use FakeClaudeExecutor.
 """
 
 import json
 import os
 import shutil
 import subprocess
+import sys
 import threading
-import time
-from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from dataclasses import dataclass, field
 from pathlib import Path
 
-
-@dataclass
-class StreamEvent:
-    """Event emitted during streaming execution.
-
-    Attributes:
-        event_type: Type of event ("text", "tool", "spinner_update", "pr_url",
-            "pr_number", "pr_title", "issue_number")
-        content: The content of the event (text message, tool summary, spinner text,
-            PR URL, PR number, PR title, or issue number)
-    """
-
-    event_type: str
-    content: str
-
-
-@dataclass
-class CommandResult:
-    """Result of executing a Claude CLI command.
-
-    Attributes:
-        success: Whether the command completed successfully
-        pr_url: Pull request URL if one was created, None otherwise
-        pr_number: Pull request number if one was created, None otherwise
-        pr_title: Pull request title if one was created, None otherwise
-        issue_number: GitHub issue number if one was linked, None otherwise
-        duration_seconds: Execution time in seconds
-        error_message: Error description if command failed, None otherwise
-        filtered_messages: List of text messages and tool summaries for display
-    """
-
-    success: bool
-    pr_url: str | None
-    pr_number: int | None
-    pr_title: str | None
-    issue_number: int | None
-    duration_seconds: float
-    error_message: str | None
-    filtered_messages: list[str] = field(default_factory=list)
-
-
-class ClaudeExecutor(ABC):
-    """Abstract interface for Claude CLI execution.
-
-    This abstraction enables testing without mock.patch by making Claude
-    execution an injectable dependency.
-    """
-
-    @abstractmethod
-    def is_claude_available(self) -> bool:
-        """Check if Claude CLI is installed and available in PATH.
-
-        Returns:
-            True if Claude CLI is available, False otherwise.
-
-        Example:
-            >>> executor = RealClaudeExecutor()
-            >>> if executor.is_claude_available():
-            ...     print("Claude CLI is installed")
-        """
-        ...
-
-    @abstractmethod
-    def execute_command_streaming(
-        self,
-        command: str,
-        worktree_path: Path,
-        dangerous: bool,
-        verbose: bool = False,
-        debug: bool = False,
-    ) -> Iterator[StreamEvent]:
-        """Execute Claude CLI command and yield StreamEvents in real-time.
-
-        Args:
-            command: The slash command to execute (e.g., "/erk:plan-implement")
-            worktree_path: Path to worktree directory to run command in
-            dangerous: Whether to skip permission prompts
-            verbose: Whether to show raw output (True) or filtered output (False)
-            debug: Whether to emit debug output for stream parsing
-
-        Yields:
-            StreamEvent objects as they occur during execution
-
-        Example:
-            >>> executor = RealClaudeExecutor()
-            >>> for event in executor.execute_command_streaming(
-            ...     "/erk:plan-implement",
-            ...     Path("/repos/my-project"),
-            ...     dangerous=False
-            ... ):
-            ...     if event.event_type == "tool":
-            ...         print(f"Tool: {event.content}")
-        """
-        ...
-
-    def execute_command(
-        self,
-        command: str,
-        worktree_path: Path,
-        dangerous: bool,
-        verbose: bool = False,
-    ) -> CommandResult:
-        """Execute Claude CLI command and return final result (non-streaming).
-
-        This is a convenience method that collects all streaming events
-        and returns a final CommandResult. Use execute_command_streaming()
-        for real-time updates.
-
-        Args:
-            command: The slash command to execute (e.g., "/erk:plan-implement")
-            worktree_path: Path to worktree directory to run command in
-            dangerous: Whether to skip permission prompts
-            verbose: Whether to show raw output (True) or filtered output (False)
-
-        Returns:
-            CommandResult containing success status, PR URL, duration, and messages
-
-        Example:
-            >>> executor = RealClaudeExecutor()
-            >>> result = executor.execute_command(
-            ...     "/erk:plan-implement",
-            ...     Path("/repos/my-project"),
-            ...     dangerous=False
-            ... )
-            >>> if result.success:
-            ...     print(f"PR created: {result.pr_url}")
-        """
-        start_time = time.time()
-        filtered_messages: list[str] = []
-        pr_url: str | None = None
-        pr_number: int | None = None
-        pr_title: str | None = None
-        issue_number: int | None = None
-        error_message: str | None = None
-        success = True
-
-        for event in self.execute_command_streaming(command, worktree_path, dangerous, verbose):
-            if event.event_type == "text":
-                filtered_messages.append(event.content)
-            elif event.event_type == "tool":
-                filtered_messages.append(event.content)
-            elif event.event_type == "pr_url":
-                pr_url = event.content
-            elif event.event_type == "pr_number":
-                # Convert string back to int - safe because we control the source
-                if event.content.isdigit():
-                    pr_number = int(event.content)
-            elif event.event_type == "pr_title":
-                pr_title = event.content
-            elif event.event_type == "issue_number":
-                # Convert string back to int - safe because we control the source
-                if event.content.isdigit():
-                    issue_number = int(event.content)
-            elif event.event_type == "error":
-                error_message = event.content
-                success = False
-
-        duration = time.time() - start_time
-        return CommandResult(
-            success=success,
-            pr_url=pr_url,
-            pr_number=pr_number,
-            pr_title=pr_title,
-            issue_number=issue_number,
-            duration_seconds=duration,
-            error_message=error_message,
-            filtered_messages=filtered_messages,
-        )
-
-    @abstractmethod
-    def execute_interactive(self, worktree_path: Path, dangerous: bool) -> None:
-        """Execute Claude CLI in interactive mode by replacing current process.
-
-        Args:
-            worktree_path: Path to worktree directory to run in
-            dangerous: Whether to skip permission prompts
-
-        Raises:
-            RuntimeError: If Claude CLI is not available
-
-        Note:
-            In production (RealClaudeExecutor), this function never returns - the
-            process is replaced by Claude CLI via os.execvp. In testing
-            (FakeClaudeExecutor), this simulates the behavior without actually
-            replacing the process.
-
-        Example:
-            >>> executor = RealClaudeExecutor()
-            >>> executor.execute_interactive(
-            ...     Path("/repos/my-project"),
-            ...     dangerous=False
-            ... )
-            # Never returns in production - process is replaced
-        """
-        ...
+from erk_shared.integrations.claude.abc import (
+    ClaudeExecutor,
+    CommitMessageResult,
+    StreamEvent,
+)
+from erk_shared.output.output_filter import (
+    determine_spinner_status,
+    extract_pr_metadata,
+    extract_pr_metadata_from_text,
+    extract_text_content,
+    summarize_tool_use,
+)
 
 
 class RealClaudeExecutor(ClaudeExecutor):
@@ -260,8 +76,6 @@ class RealClaudeExecutor(ClaudeExecutor):
             return
 
         # Filtered mode - streaming with real-time parsing
-        import sys
-
         if debug:
             print(f"[DEBUG executor] Starting Popen with args: {cmd_args}", file=sys.stderr)
             print(f"[DEBUG executor] cwd: {worktree_path}", file=sys.stderr)
@@ -327,8 +141,6 @@ class RealClaudeExecutor(ClaudeExecutor):
                     yield StreamEvent("text", text_content)
 
                     # Also try to extract PR metadata from text (simpler than nested JSON)
-                    from erk.core.output_filter import extract_pr_metadata_from_text
-
                     text_metadata = extract_pr_metadata_from_text(text_content)
                     if text_metadata.get("pr_url"):
                         yield StreamEvent("pr_url", str(text_metadata["pr_url"]))
@@ -402,14 +214,6 @@ class RealClaudeExecutor(ClaudeExecutor):
             Dict with text_content, tool_summary, spinner_update, pr_url, pr_number,
             pr_title, and issue_number keys, or None if not JSON
         """
-        # Import here to avoid circular dependency
-        from erk.core.output_filter import (
-            determine_spinner_status,
-            extract_pr_metadata,
-            extract_text_content,
-            summarize_tool_use,
-        )
-
         if not line.strip():
             return None
 
@@ -527,3 +331,54 @@ class RealClaudeExecutor(ClaudeExecutor):
         # Replace current process with Claude
         os.execvp("claude", cmd_args)
         # Never returns - process is replaced
+
+    def generate_commit_message(
+        self,
+        diff_file: Path,
+        repo_root: Path,
+        current_branch: str,
+        parent_branch: str,
+    ) -> CommitMessageResult:
+        """Generate commit message by invoking Claude CLI.
+
+        Uses the commit-message-generator subagent to analyze the diff
+        and produce a structured commit message.
+        """
+        # Construct prompt for commit-message-generator subagent
+        prompt = f"""Use the Task tool to delegate to the commit-message-generator subagent:
+
+Task(
+    subagent_type="commit-message-generator",
+    description="Generate commit message from diff",
+    prompt="Analyze the git diff and generate a commit message.
+
+Diff file: {diff_file}
+Repository root: {repo_root}
+Current branch: {current_branch}
+Parent branch: {parent_branch}
+
+Use the Read tool to load the diff file."
+)
+
+Return ONLY the raw output from the subagent (the commit message text).
+Do NOT add any commentary, headers, or formatting around it."""
+
+        result = subprocess.run(
+            ["claude", "--print", "--output-format", "text", prompt],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+
+        output = result.stdout.strip()
+        if not output:
+            raise RuntimeError("AI generation returned empty output")
+
+        # Parse: first line is title, rest is body
+        lines = output.split("\n", 1)
+        title = lines[0].strip()
+        body = lines[1].strip() if len(lines) > 1 else ""
+
+        return CommitMessageResult(title=title, body=body)

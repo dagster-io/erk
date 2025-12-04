@@ -15,6 +15,7 @@ from typing import NamedTuple
 
 import click
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
+from erk_shared.integrations.claude.abc import ClaudeExecutor
 from erk_shared.naming import (
     ensure_unique_worktree_name_with_date,
     format_branch_timestamp_suffix,
@@ -29,7 +30,6 @@ from erk.cli.commands.completions import complete_plan_files
 from erk.cli.commands.wt.create_cmd import add_worktree, run_post_worktree_setup
 from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context, worktree_path_for
-from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 
@@ -184,10 +184,10 @@ def _execute_non_interactive_mode(
     """
     import time
 
+    from erk_shared.integrations.claude.abc import CommandResult
     from rich.console import Console
 
     from erk.cli.output import format_implement_summary, stream_command_with_feedback
-    from erk.core.claude_executor import CommandResult
 
     # Verify Claude is available
     if not executor.is_claude_available():

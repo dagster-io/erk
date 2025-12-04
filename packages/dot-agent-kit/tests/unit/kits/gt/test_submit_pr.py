@@ -8,7 +8,7 @@ This operation orchestrates the full PR submission workflow:
 
 from pathlib import Path
 
-from erk_shared.integrations.ai.fake import FakeClaudeCLIExecutor
+from erk_shared.integrations.claude.fake import FakeClaudeExecutor
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.operations.submit_pr import execute_submit_pr
 from erk_shared.integrations.gt.types import SubmitPRError, SubmitPRResult
@@ -18,12 +18,12 @@ from tests.unit.kits.gt.fake_ops import FakeGtKitOps
 
 def test_submit_pr_success(tmp_path: Path) -> None:
     """Test successful end-to-end PR submission."""
-    ai = FakeClaudeCLIExecutor(
+    claude = FakeClaudeExecutor(
         title="feat: Add new widget component",
         body="This PR adds a reusable widget component for the dashboard.",
     )
     ops = (
-        FakeGtKitOps(ai_executor=ai)
+        FakeGtKitOps(claude_executor=claude)
         .with_repo_root(str(tmp_path))
         .with_branch("feature-widget", parent="main")
         .with_commits(1)
@@ -40,18 +40,18 @@ def test_submit_pr_success(tmp_path: Path) -> None:
     assert result.branch_name == "feature-widget"
     assert "PR #42 submitted successfully" in result.message
 
-    # Verify AI was called
-    assert ai.call_count == 1
-    call = ai.generate_commit_message_calls[0]
+    # Verify Claude was called
+    assert claude.call_count == 1
+    call = claude.generate_commit_message_calls[0]
     assert call.current_branch == "feature-widget"
     assert call.parent_branch == "main"
 
 
 def test_submit_pr_with_force_flag(tmp_path: Path) -> None:
     """Test that force flag is passed through to submit_stack."""
-    ai = FakeClaudeCLIExecutor(title="Fix bug", body="Fixes the issue")
+    claude = FakeClaudeExecutor(title="Fix bug", body="Fixes the issue")
     ops = (
-        FakeGtKitOps(ai_executor=ai)
+        FakeGtKitOps(claude_executor=claude)
         .with_repo_root(str(tmp_path))
         .with_branch("fix-bug", parent="main")
         .with_commits(1)
@@ -140,9 +140,9 @@ def test_submit_pr_preflight_error_submit_failed(tmp_path: Path) -> None:
 
 def test_submit_pr_ai_generation_error(tmp_path: Path) -> None:
     """Test error when AI generation fails."""
-    ai = FakeClaudeCLIExecutor(should_raise=RuntimeError("Claude API unavailable"))
+    claude = FakeClaudeExecutor(should_raise=RuntimeError("Claude API unavailable"))
     ops = (
-        FakeGtKitOps(ai_executor=ai)
+        FakeGtKitOps(claude_executor=claude)
         .with_repo_root(str(tmp_path))
         .with_branch("feature", parent="main")
         .with_commits(1)
@@ -160,9 +160,9 @@ def test_submit_pr_ai_generation_error(tmp_path: Path) -> None:
 
 def test_submit_pr_finalize_error(tmp_path: Path) -> None:
     """Test error when finalize phase fails."""
-    ai = FakeClaudeCLIExecutor(title="Test", body="Body")
+    claude = FakeClaudeExecutor(title="Test", body="Body")
     ops = (
-        FakeGtKitOps(ai_executor=ai)
+        FakeGtKitOps(claude_executor=claude)
         .with_repo_root(str(tmp_path))
         .with_branch("feature", parent="main")
         .with_commits(1)
@@ -179,9 +179,9 @@ def test_submit_pr_finalize_error(tmp_path: Path) -> None:
 
 def test_submit_pr_multiple_commits_squashed(tmp_path: Path) -> None:
     """Test that multiple commits are squashed before submission."""
-    ai = FakeClaudeCLIExecutor(title="Squashed commit", body="All commits combined")
+    claude = FakeClaudeExecutor(title="Squashed commit", body="All commits combined")
     ops = (
-        FakeGtKitOps(ai_executor=ai)
+        FakeGtKitOps(claude_executor=claude)
         .with_repo_root(str(tmp_path))
         .with_branch("feature-multi", parent="main")
         .with_commits(5)  # Multiple commits
@@ -207,9 +207,9 @@ def test_submit_pr_with_issue_reference(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    ai = FakeClaudeCLIExecutor(title="Fix issue", body="Resolves the bug")
+    claude = FakeClaudeExecutor(title="Fix issue", body="Resolves the bug")
     ops = (
-        FakeGtKitOps(ai_executor=ai)
+        FakeGtKitOps(claude_executor=claude)
         .with_repo_root(str(tmp_path))
         .with_branch("fix-issue-456", parent="main")
         .with_commits(1)
