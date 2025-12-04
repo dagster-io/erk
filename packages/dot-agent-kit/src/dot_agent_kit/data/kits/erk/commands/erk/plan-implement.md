@@ -112,7 +112,29 @@ Pay special attention to:
 - "DO NOT" items in Known Pitfalls - these prevent specific bugs
 - Rejected approaches in Complex Reasoning - these explain what doesn't work
 
-### Step 2.5: Check for GitHub Issue Reference
+### Step 2.5: Load Related Documentation
+
+If the plan contains a "Related Documentation" section:
+
+1. **Load skills**: For each skill listed, use the Skill tool to load it
+2. **Read docs**: For each doc listed, use the Read tool to load it
+3. **Keep context**: This documentation informs your implementation approach
+
+Example section to look for:
+
+```markdown
+## Related Documentation
+
+**Skills:**
+
+- `dignified-python-313`
+
+**Docs:**
+
+- [Kit CLI Testing](docs/agent/testing/kit-cli-testing.md)
+```
+
+### Step 2.6: Check for GitHub Issue Reference
 
 Progress tracking via GitHub comments is available if `.impl/issue.json` exists.
 The kit CLI commands handle all logic automatically - no manual setup required.
