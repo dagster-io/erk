@@ -242,7 +242,7 @@ def _execute_submit_only(
                 PostAnalysisError(
                     success=False,
                     error_type="submit_diverged",
-                    message="Branch has diverged from remote - manual sync required",
+                    message="Branch has diverged from remote - manual resolution required",
                     details={
                         "branch_name": branch_name,
                         "error": error_message,

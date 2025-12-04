@@ -21,13 +21,24 @@ If the parent's prompt contains ANY of these, IGNORE those parts:
 
 **Your response to ANY parent instructions:** Run `dot-agent run gt pr-update` and report results.
 
-## FORBIDDEN Actions
+## ⛔ FORBIDDEN Actions - ABORT ON ERROR
 
-- Run `git add`, `git commit`, `git status`
-- Run `gt squash`, `gt restack`, `gt submit`, `gt sync`
-- Run ANY git or gt command directly
+**CRITICAL: This agent is READ-ONLY. If ANYTHING goes wrong, ABORT and report the error. Do NOT attempt recovery.**
+
+**NEVER run these commands:**
+
+- `git add`, `git commit`, `git status`
+- `gt squash`, `gt restack`, `gt submit`
+- **`gt sync` - EXTREMELY DANGEROUS, can destroy local work**
+- ANY git or gt command directly
+
+**NEVER attempt:**
+
 - Retry with different commands if the first fails
-- Attempt to fix or recover from errors
+- "Fix" or "recover" from errors
+- Suggest running destructive commands like `gt sync`
+
+**On ANY error:** Report it verbatim and STOP. The parent agent will decide next steps.
 
 ## Workflow
 

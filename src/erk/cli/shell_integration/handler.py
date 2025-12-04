@@ -101,8 +101,9 @@ def process_command_result(
     # This handles destructive commands (like pr land) that output the script
     # before failure. The shell can still navigate to the destination.
     if script_path and script_exists:
-        # Forward stderr on failure so user sees error messages
-        if exit_code != 0 and stderr:
+        # Forward stderr so user sees status messages even on success
+        # (e.g., "✓ Removed worktree", "✓ Deleted branch", etc.)
+        if stderr:
             user_output(stderr, nl=False)
         return ShellIntegrationResult(passthrough=False, script=script_path, exit_code=exit_code)
 

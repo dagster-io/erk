@@ -4,6 +4,7 @@ This file tests the consolidate command which removes worktrees containing
 branches from the current Graphite stack.
 """
 
+import pytest
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
@@ -1033,4 +1034,92 @@ def test_consolidate_with_name_changes_directory_in_non_script_mode() -> None:
         # The new worktree path should be in the chdir history
         assert any(expected_new_path == path for path in test_ctx.git.chdir_history), (
             f"Should have changed to new worktree {expected_new_path}"
+        )
+
+
+def test_consolidate_with_name_outputs_script_even_when_branch_delete_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test consolidate --name outputs script even when temp branch deletion fails.
+
+    This is the key bug fix: when delete_branch fails AFTER source worktree deletion,
+    the script should already have been output so shell can navigate.
+
+    Without the fix:
+    1. Create new worktree
+    2. Remove source worktree (shell now in deleted dir!)
+    3. Delete temp branch fails → no script output → shell stranded
+
+    With the fix:
+    1. Create new worktree
+    2. Output script ← early output
+    3. Remove source worktree
+    4. Delete temp branch fails → script already output → shell can navigate
+    """
+    import subprocess
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        # Mock time.time() to get predictable temp branch name
+        mock_timestamp = 1234567890
+        monkeypatch.setattr("time.time", lambda: mock_timestamp)
+
+        # Configure graphite with stack (main -> feature-1 -> feature-2)
+        graphite_ops = FakeGraphite(stacks={"feature-2": ["main", "feature-1", "feature-2"]})
+
+        # Current worktree on feature-2
+        worktrees = {env.cwd: [WorktreeInfo(path=env.cwd, branch="feature-2")]}
+
+        # Configure git to fail when deleting the temp branch
+        temp_branch_name = f"temp-consolidate-{mock_timestamp}"
+        git_ops = FakeGit(
+            worktrees=worktrees,
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feature-2"},
+            delete_branch_raises={
+                temp_branch_name: subprocess.CalledProcessError(
+                    1, f"git branch -D {temp_branch_name}", stderr="fatal: Cannot delete branch"
+                )
+            },
+        )
+        test_ctx = build_workspace_test_context(
+            env,
+            use_graphite=True,
+            git=git_ops,
+            graphite=graphite_ops,
+        )
+
+        # Run consolidate with --name flag in script mode
+        result = runner.invoke(
+            cli, ["stack", "consolidate", "--name", "my-stack", "--script", "-f"], obj=test_ctx
+        )
+
+        # Command should exit with non-zero code due to branch delete failure
+        assert result.exit_code != 0
+
+        # Verify script was written by the script writer
+        assert env.script_writer.written_scripts, (
+            f"Script should have been written before failure. Output: {result.output}"
+        )
+
+        # Key verification: Script path IS output in stdout (before failure)
+        # The script path is output via output_for_shell_integration() and appears in stdout
+        script_path = list(env.script_writer.written_scripts.keys())[0]
+        assert str(script_path) in result.stdout, (
+            f"Script path should be in stdout. Script: {script_path}, stdout: {result.stdout}"
+        )
+
+        # Verify source worktree WAS removed (deletion happened before the failure)
+        # The source worktree is env.cwd
+        assert env.cwd.resolve() in test_ctx.git.removed_worktrees, (
+            "Source worktree should have been removed"
+        )
+
+        # Verify script content IS valid (navigates to new worktree)
+        script_content = list(env.script_writer.written_scripts.values())[0]
+        expected_new_path = (
+            env.erk_root / "repos" / env.root_worktree.name / "worktrees" / "my-stack"
+        )
+        assert str(expected_new_path) in script_content, (
+            f"Script should navigate to new worktree. Content: {script_content}"
         )
