@@ -1,6 +1,10 @@
 """Unit tests for shell integration command routing."""
 
-from erk.cli.shell_integration.handler import SHELL_INTEGRATION_COMMANDS
+from erk.cli.shell_integration.handler import (
+    GLOBAL_FLAGS,
+    SHELL_INTEGRATION_COMMANDS,
+    handle_shell_request,
+)
 
 
 def test_pr_land_compound_command_registered() -> None:
@@ -61,3 +65,40 @@ def test_legacy_aliases_registered() -> None:
 
     for alias in expected_aliases:
         assert alias in SHELL_INTEGRATION_COMMANDS, f"Missing legacy alias: {alias}"
+
+
+def test_global_flags_stripped_before_command_matching() -> None:
+    """Global flags like --debug should not prevent command recognition.
+
+    When running 'erk --debug pr land', the handler receives args like
+    ('--debug', 'pr', 'land'). Without stripping global flags, the handler
+    tries to match '--debug pr' as a compound command (not found), then
+    '--debug' as a single command (not found), and falls back to passthrough.
+
+    This test verifies that global flags are stripped before command matching,
+    so 'pr land' is correctly recognized as a compound command.
+    """
+    # With --help present, the handler should recognize 'pr land' and passthrough
+    # (since --help causes passthrough behavior for recognized commands)
+    result = handle_shell_request(("--debug", "pr", "land", "--help"))
+    assert result.passthrough is True
+
+    # Multiple global flags should all be stripped
+    result = handle_shell_request(("--debug", "--verbose", "pr", "land", "--help"))
+    assert result.passthrough is True
+
+
+def test_global_flags_constant_contains_expected_flags() -> None:
+    """Verify GLOBAL_FLAGS contains all expected top-level flags."""
+    expected_flags = ["--debug", "--dry-run", "--verbose", "-v"]
+    for flag in expected_flags:
+        assert flag in GLOBAL_FLAGS, f"Missing global flag: {flag}"
+
+
+def test_only_global_flags_returns_passthrough() -> None:
+    """If args contain only global flags, handler should passthrough."""
+    result = handle_shell_request(("--debug",))
+    assert result.passthrough is True
+
+    result = handle_shell_request(("--debug", "--verbose"))
+    assert result.passthrough is True

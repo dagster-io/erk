@@ -28,6 +28,10 @@ from erk.core.context import create_context
 PASSTHROUGH_MARKER: Final[str] = "__ERK_PASSTHROUGH__"
 PASSTHROUGH_COMMANDS: Final[set[str]] = {"sync"}
 
+# Global flags that should be stripped from args before command matching
+# These are top-level flags that don't affect which command is being invoked
+GLOBAL_FLAGS: Final[set[str]] = {"--debug", "--dry-run", "--verbose", "-v"}
+
 # Commands that support shell integration (directory switching)
 # Uses compound keys for subcommands (e.g., "wt create" instead of just "create")
 # Also supports legacy top-level aliases for backward compatibility
@@ -129,15 +133,24 @@ def handle_shell_request(args: tuple[str, ...]) -> ShellIntegrationResult:
     if len(args) == 0:
         return ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
 
+    # Strip global flags from the beginning of args before command matching
+    # This ensures commands like "erk --debug pr land" are recognized correctly
+    args_list = list(args)
+    while args_list and args_list[0] in GLOBAL_FLAGS:
+        args_list.pop(0)
+
+    if len(args_list) == 0:
+        return ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
+
     # Try compound command first (e.g., "wt create", "stack consolidate")
-    if len(args) >= 2:
-        compound_name = f"{args[0]} {args[1]}"
+    if len(args_list) >= 2:
+        compound_name = f"{args_list[0]} {args_list[1]}"
         if compound_name in SHELL_INTEGRATION_COMMANDS:
-            return _invoke_hidden_command(compound_name, tuple(args[2:]))
+            return _invoke_hidden_command(compound_name, tuple(args_list[2:]))
 
     # Fall back to single command
-    command_name = args[0]
-    command_args = args[1:] if len(args) > 1 else ()
+    command_name = args_list[0]
+    command_args = tuple(args_list[1:]) if len(args_list) > 1 else ()
     return _invoke_hidden_command(command_name, command_args)
 
 
