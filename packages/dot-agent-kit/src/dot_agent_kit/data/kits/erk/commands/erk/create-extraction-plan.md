@@ -71,18 +71,19 @@ Parse the context argument (if provided) for:
 
 **If no explicit session IDs provided:**
 
-Run the session discovery helper:
+Run the session discovery helper with size filtering to exclude tiny sessions:
 
 ```bash
-dot-agent run erk list-sessions
+dot-agent run erk list-sessions --min-size 1024
 ```
 
 The JSON output includes:
 
 - `branch_context.is_on_trunk`: Whether on main/master branch
 - `current_session_id`: Current session ID from SESSION_CONTEXT env
-- `sessions`: List of recent sessions with metadata
+- `sessions`: List of recent sessions with metadata (only meaningful sessions >= 1KB)
 - `project_dir`: Path to session logs
+- `filtered_count`: Number of tiny sessions filtered out
 
 **Behavior based on branch context:**
 
@@ -91,6 +92,22 @@ The JSON output includes:
 Use `current_session_id` only. Skip user prompt - analyze current conversation.
 
 **If `branch_context.is_on_trunk` is false (feature branch):**
+
+Check the `filtered_count` and number of sessions returned:
+
+**If exactly 1 session remains after filtering:**
+
+Auto-select that session without prompting. Briefly inform user:
+
+> "Auto-selected session [id] (only meaningful session found, [N] tiny sessions filtered)"
+
+**If 0 sessions remain after filtering:**
+
+Use current session only. Inform user:
+
+> "No previous meaningful sessions found (all sessions were < 1KB)"
+
+**If 2+ sessions remain:**
 
 Present sessions to user for selection:
 
