@@ -189,92 +189,60 @@ Skip confirmation and output all suggestions immediately since the user explicit
 
 ### Step 6: Format Plan Content
 
-Format the selected suggestions as an implementation plan:
+Format the selected suggestions as an implementation plan with this structure:
 
-```markdown
-# Plan: Documentation Extraction from Session
-
-## Objective
-
-Extract documentation improvements identified from session analysis.
-
-## Source Information
-
-- **Source Plan Issues:** [List issue numbers if analyzing a plan session, or empty list]
-- **Extraction Session IDs:** ["<session-id>"]
-
-## Documentation Items
-
-### Item 1: [Title from suggestion]
-
-**Type:** [Agent Doc | Skill | Glossary entry | etc.]
-**Location:** `[path]`
-**Action:** [New doc | Update existing | Merge into]
-**Priority:** [High | Medium | Low]
-
-**Content:**
-[The draft content from the suggestion]
-
-### Item 2: [Title]
-
-...
-```
+- **Objective**: Brief statement of what documentation will be added/improved
+- **Source Information**: Session ID(s) that were analyzed
+- **Documentation Items**: Each suggestion should include:
+  - Type (Category A or B)
+  - Location (where in the docs structure)
+  - Action (add, update, create)
+  - Priority (based on effort and impact)
+  - Content (the actual draft content)
 
 ### Step 7: Create Extraction Plan Issue
 
-Extract the session ID from the `SESSION_CONTEXT` hook reminder in your context, then run the kit CLI command with the plan content directly:
+**CRITICAL: Use this exact CLI command. Do NOT use `gh issue create` directly.**
+
+Get the session ID from the `SESSION_CONTEXT` reminder in your conversation context.
 
 ```bash
 dot-agent run erk create-extraction-plan \
     --plan-content="<the formatted plan content>" \
-    --session-id="<session-id>" \
-    --extraction-session-ids="<session-id>"
+    --session-id="<session-id-from-SESSION_CONTEXT>" \
+    --extraction-session-ids="<comma-separated-session-ids-that-were-analyzed>"
 ```
 
-The command automatically:
+This command automatically:
 
-1. Writes the plan to `.erk/scratch/<session-id>/extraction-plan-*.md`
-2. Creates a GitHub issue with `erk-plan` + `erk-extraction` labels
-3. Sets `plan_type: extraction` in the plan-header metadata
-4. Includes `source_plan_issues` and `extraction_session_ids` for tracking
+1. Writes plan to `.erk/scratch/<session-id>/extraction-plan.md`
+2. Creates GitHub issue with `erk-plan` + `erk-extraction` labels
+3. Sets `plan_type: extraction` in plan-header metadata
 
-Parse the JSON result to get `issue_number` and `issue_url`.
+**Note:** The current session ID (from `SESSION_CONTEXT` reminder) is used as `--session-id` for scratch storage. The `--extraction-session-ids` should list all session IDs that were analyzed (may differ from current session).
 
-**Note:** The current session ID (from `SESSION_CONTEXT` reminder) is used both as the `--session-id` for scratch storage and in `--extraction-session-ids` metadata.
+### Step 8: Verify and Output
 
-### Step 7.5: Verify Issue Structure
-
-Run the plan check command to validate the issue conforms to Schema v2:
+Run verification to ensure the issue was created with proper Schema v2 compliance:
 
 ```bash
 erk plan check <issue_number>
 ```
 
-This validates:
-
-- plan-header metadata block present in issue body
-- plan-header has required fields
-- First comment exists
-- plan-body content extractable from first comment
-
-**If verification fails:** Display the check output and warn the user that the issue may need manual correction.
-
-### Step 8: Output Next Steps
-
-After issue creation and verification, display:
+Display next steps:
 
 ```
-✅ Extraction plan created and saved to GitHub
+✅ Extraction plan saved to GitHub
 
-**Issue:** [title]
-           [issue_url]
+**Issue:** [title from result]
+           [url from result]
 
 **Next steps:**
 
 View the plan:
     gh issue view [issue_number] --web
 
-Implement the extraction:
+Implement the plan:
     erk implement [issue_number]
 
 Submit for remote implementation:
