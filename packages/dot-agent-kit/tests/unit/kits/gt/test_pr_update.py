@@ -165,7 +165,7 @@ class TestExecuteUpdatePr:
         assert result["success"] is False
         assert result["error_type"] == "remote_divergence"
         assert "ABORT" in result["error"]
-        assert "Do NOT auto-sync" in result["error"]
+        assert "Manual resolution required" in result["error"]
 
     def test_update_pr_add_fails(self, tmp_path: Path) -> None:
         """Test error when git add fails."""
