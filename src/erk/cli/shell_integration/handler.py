@@ -13,6 +13,7 @@ from erk.cli.commands.checkout import checkout_cmd
 from erk.cli.commands.down import down_cmd
 from erk.cli.commands.implement import implement
 from erk.cli.commands.pr import pr_group
+from erk.cli.commands.pr.land_cmd import pr_land
 from erk.cli.commands.prepare_cwd_recovery import generate_recovery_script
 from erk.cli.commands.stack.consolidate_cmd import consolidate_stack
 from erk.cli.commands.up import up_cmd
@@ -38,6 +39,8 @@ SHELL_INTEGRATION_COMMANDS: Final[dict[str, Command]] = {
     "down": down_cmd,
     "implement": implement,
     "pr": pr_group,
+    # Subcommands under pr
+    "pr land": pr_land,
     # Legacy top-level aliases (for backward compatibility)
     "create": create_wt,
     "goto": goto_wt,
