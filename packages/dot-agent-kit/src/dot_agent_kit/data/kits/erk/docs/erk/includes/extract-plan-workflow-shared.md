@@ -2,9 +2,9 @@
 
 Shared extraction plan workflow for `/erk:extract-agent-docs` and `/erk:extract-agent-docs-from-log` commands.
 
-## Step 6: Format as Extraction Plan
+## Step 6: Format and Write Plan to Temp File
 
-Format the selected suggestions as an implementation plan:
+Format the selected suggestions as an implementation plan and write to a temp file:
 
 ```markdown
 # Plan: Documentation Extraction from Session
@@ -35,32 +35,62 @@ Extract documentation improvements identified from session analysis.
 ...
 ```
 
+Write this plan content to `/tmp/extraction-plan-<session-id>.md` using the Write tool.
+
 ## Step 7: Create Extraction Plan Issue
 
 Run the kit CLI command to create the extraction plan issue:
 
 ```bash
-dot-agent run erk create-extraction-plan --source-plan-issues="" --extraction-session-ids="<session-id>"
+dot-agent run erk create-extraction-plan \
+    --plan-file="/tmp/extraction-plan-<session-id>.md" \
+    --source-plan-issues="" \
+    --extraction-session-ids="<session-id>"
 ```
 
-Pass the plan content via stdin. The command will:
+Parse the JSON result to get `issue_number` and `issue_url`.
+
+The command will:
 
 1. Create a GitHub issue with `erk-plan` + `erk-extraction` labels
 2. Set `plan_type: extraction` in the plan-header metadata
 3. Include `source_plan_issues` and `extraction_session_ids` for tracking
 
+## Step 7.5: Verify Issue Structure
+
+Run the plan check command to validate the issue conforms to Schema v2:
+
+```bash
+erk plan check <issue_number>
+```
+
+This validates:
+
+- plan-header metadata block present in issue body
+- plan-header has required fields
+- First comment exists
+- plan-body content extractable from first comment
+
+**If verification fails:** Display the check output and warn the user that the issue may need manual correction.
+
 ## Step 8: Output Next Steps
 
-After issue creation, display:
+After issue creation and verification, display:
 
 ```
-✅ Extraction plan created: #<issue_number>
-   URL: <issue_url>
+✅ Extraction plan created and saved to GitHub
+
+**Issue:** [title]
+           [issue_url]
 
 **Next steps:**
-1. Review the plan in GitHub
-2. Create a worktree: `erk implement <issue_number>` or `erk wt create --from-plan <issue_number>`
-3. Implement the documentation changes
-4. When done, run: `erk plan extraction complete <issue_number>`
-   This will mark the source plans as docs-extracted
+
+View the plan:
+    gh issue view [issue_number] --web
+
+Implement the extraction:
+    erk implement [issue_number]
+
+Submit for remote implementation:
+    erk submit [issue_number]
 ```

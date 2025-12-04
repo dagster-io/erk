@@ -1,7 +1,8 @@
-"""Create extraction plan issue from stdin with proper metadata.
+"""Create extraction plan issue from file with proper metadata.
 
 Usage:
-    echo "<plan content>" | dot-agent run erk create-extraction-plan \
+    dot-agent run erk create-extraction-plan \
+        --plan-file="/tmp/extraction-plan.md" \
         --source-plan-issues="123,456" \
         --extraction-session-ids="abc123,def456"
 
@@ -15,8 +16,8 @@ Output:
 """
 
 import json
-import sys
 from datetime import UTC, datetime
+from pathlib import Path
 
 import click
 from erk_shared.github.metadata import (
@@ -29,6 +30,12 @@ from dot_agent_kit.context_helpers import require_github_issues, require_repo_ro
 
 
 @click.command(name="create-extraction-plan")
+@click.option(
+    "--plan-file",
+    type=click.Path(exists=True, path_type=Path),
+    required=True,
+    help="Path to plan file to create issue from",
+)
 @click.option(
     "--source-plan-issues",
     type=str,
@@ -44,12 +51,13 @@ from dot_agent_kit.context_helpers import require_github_issues, require_repo_ro
 @click.pass_context
 def create_extraction_plan(
     ctx: click.Context,
+    plan_file: Path,
     source_plan_issues: str,
     extraction_session_ids: str,
 ) -> None:
-    """Create extraction plan issue from stdin with proper metadata.
+    """Create extraction plan issue from file with proper metadata.
 
-    Reads plan content from stdin and creates a GitHub issue with:
+    Reads plan content from file and creates a GitHub issue with:
     - erk-plan and erk-extraction labels
     - plan_type: extraction in metadata
     - Source tracking information
@@ -58,14 +66,10 @@ def create_extraction_plan(
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
 
-    # Read plan content from stdin
-    if sys.stdin.isatty():
-        click.echo(json.dumps({"success": False, "error": "No plan content provided on stdin"}))
-        raise SystemExit(1)
-
-    plan_content = sys.stdin.read().strip()
+    # Read plan content from file
+    plan_content = plan_file.read_text(encoding="utf-8").strip()
     if not plan_content:
-        click.echo(json.dumps({"success": False, "error": "Empty plan content provided"}))
+        click.echo(json.dumps({"success": False, "error": "Empty plan content in file"}))
         raise SystemExit(1)
 
     # Parse source plan issues
