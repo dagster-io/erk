@@ -5,6 +5,7 @@ by the at_reference module. It checks that referenced files exist and
 that fragment anchors (if specified) match headings in target files.
 """
 
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -66,6 +67,38 @@ def heading_to_anchor(heading: str) -> str:
     text = text.strip("-")
 
     return text
+
+
+def _resolve_relative_path_from_symlink(
+    file_path_str: str,
+    source_file: Path,
+) -> Path:
+    """Resolve relative @ reference path from source file location.
+
+    When source_file is a symlink, resolves from the symlink's location
+    (not the target's location) to match Claude Code's behavior.
+
+    Uses os.path.normpath to normalize .. and . components without
+    following symlinks, unlike Path.resolve() which follows them.
+
+    Args:
+        file_path_str: The relative path string from the @ reference
+        source_file: Path to the source file (may be a symlink)
+
+    Returns:
+        Normalized path without following symlinks
+    """
+    # Get the literal parent path without following symlinks
+    parent = source_file.parent
+
+    # Construct the path
+    raw_path = parent / file_path_str
+
+    # Normalize .. and . components manually without following symlinks
+    # os.path.normpath doesn't follow symlinks, unlike Path.resolve()
+    normalized = Path(os.path.normpath(str(raw_path)))
+
+    return normalized
 
 
 def extract_anchors(file_path: Path) -> set[str]:
@@ -142,10 +175,10 @@ def validate_at_reference(
         resolved_path = repo_root / file_path_str
     else:
         # Relative path - relative to source file's directory
-        resolved_path = source_file.parent / file_path_str
-
-    # Normalize the path
-    resolved_path = resolved_path.resolve() if resolved_path.exists() else resolved_path
+        # Use symlink-aware resolution to match Claude Code's behavior:
+        # When source_file is a symlink, resolve from the symlink's location,
+        # not where it points to
+        resolved_path = _resolve_relative_path_from_symlink(file_path_str, source_file)
 
     # Check if file exists
     file_missing = not resolved_path.exists()

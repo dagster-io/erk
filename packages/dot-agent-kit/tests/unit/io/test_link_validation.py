@@ -378,3 +378,163 @@ Some content.
         assert len(broken) == 1
         assert broken[0].error_type == "missing_file"
         assert "missing.md" in str(broken[0].resolved_path)
+
+
+class TestSymlinkSourceValidation:
+    """Tests for @ reference validation when source file is a symlink.
+
+    These tests verify that when a symlinked file contains @ references with
+    relative paths, validation resolves paths from the symlink's location,
+    not from the symlink target's location. This matches Claude Code's behavior.
+    """
+
+    def test_symlink_source_relative_path_missing(self, tmp_path: Path) -> None:
+        """Relative path that doesn't exist from symlink location is detected.
+
+        When a symlink at .claude/commands/foo.md points to packages/kit/commands/foo.md,
+        and the file contains @../../docs/bar.md, the reference should be validated
+        from .claude/commands/ (where the symlink is), not from packages/kit/commands/
+        (where the target is).
+        """
+        # Create target file with @ reference
+        target_dir = tmp_path / "packages" / "kit" / "commands"
+        target_dir.mkdir(parents=True)
+        target = target_dir / "foo.md"
+        target.write_text("@../../docs/bar.md", encoding="utf-8")
+
+        # Create the file at target's relative location (packages/docs/bar.md)
+        # This is where ../../docs/bar.md would resolve to from the target
+        (tmp_path / "packages" / "docs").mkdir(parents=True)
+        (tmp_path / "packages" / "docs" / "bar.md").write_text("# Bar", encoding="utf-8")
+
+        # Create symlink in different location (.claude/commands/)
+        symlink_dir = tmp_path / ".claude" / "commands"
+        symlink_dir.mkdir(parents=True)
+        symlink = symlink_dir / "foo.md"
+        # Create relative symlink to the target
+        symlink.symlink_to("../../packages/kit/commands/foo.md")
+
+        # Validate from symlink - should FAIL because ../../docs/bar.md
+        # from .claude/commands/ doesn't exist (would resolve to <tmp_path>/docs/bar.md)
+        ref = AtReference(
+            raw_text="@../../docs/bar.md",
+            file_path="../../docs/bar.md",
+            fragment=None,
+            line_number=1,
+        )
+
+        broken = validate_at_reference(ref, symlink, tmp_path)
+        assert len(broken) == 1
+        assert broken[0].error_type == "missing_file"
+
+    def test_symlink_source_with_parallel_structure_passes(self, tmp_path: Path) -> None:
+        """Reference works when parallel structure exists at symlink location.
+
+        When both the symlink and a parallel docs symlink exist, the reference
+        should resolve correctly from the symlink's location.
+        """
+        # Create target files in packages/
+        target_dir = tmp_path / "packages" / "kit" / "commands"
+        target_dir.mkdir(parents=True)
+        target = target_dir / "foo.md"
+        target.write_text("@../../docs/bar.md", encoding="utf-8")
+
+        (tmp_path / "packages" / "docs").mkdir(parents=True)
+        (tmp_path / "packages" / "docs" / "bar.md").write_text("# Bar", encoding="utf-8")
+
+        # Create symlink structure that mirrors the target structure
+        (tmp_path / ".claude" / "commands").mkdir(parents=True)
+        (tmp_path / ".claude" / "commands" / "foo.md").symlink_to(
+            "../../packages/kit/commands/foo.md"
+        )
+
+        # Create docs at the location where ../../docs/bar.md from .claude/commands/
+        # would resolve to (which is <tmp_path>/docs/bar.md)
+        (tmp_path / "docs").mkdir(parents=True)
+        (tmp_path / "docs" / "bar.md").write_text("# Bar", encoding="utf-8")
+
+        symlink = tmp_path / ".claude" / "commands" / "foo.md"
+        ref = AtReference(
+            raw_text="@../../docs/bar.md",
+            file_path="../../docs/bar.md",
+            fragment=None,
+            line_number=1,
+        )
+
+        # Should pass because ../../docs/bar.md from .claude/commands/
+        # resolves to docs/bar.md which exists
+        broken = validate_at_reference(ref, symlink, tmp_path)
+        assert len(broken) == 0
+
+    def test_non_symlink_file_still_works(self, tmp_path: Path) -> None:
+        """Verify regular (non-symlink) files still work correctly."""
+        # Create a regular file with relative reference
+        source_dir = tmp_path / "docs"
+        source_dir.mkdir()
+        source = source_dir / "guide.md"
+        source.write_text("@../README.md", encoding="utf-8")
+
+        # Create the target file
+        (tmp_path / "README.md").write_text("# README", encoding="utf-8")
+
+        ref = AtReference(
+            raw_text="@../README.md",
+            file_path="../README.md",
+            fragment=None,
+            line_number=1,
+        )
+
+        broken = validate_at_reference(ref, source, tmp_path)
+        assert len(broken) == 0
+
+    def test_symlink_with_simple_sibling_reference(self, tmp_path: Path) -> None:
+        """Test symlink source with simple sibling file reference."""
+        # Create target directory with two files
+        target_dir = tmp_path / "packages" / "kit" / "commands"
+        target_dir.mkdir(parents=True)
+        (target_dir / "foo.md").write_text("@bar.md", encoding="utf-8")
+        (target_dir / "bar.md").write_text("# Bar", encoding="utf-8")
+
+        # Create symlink in .claude/commands/
+        symlink_dir = tmp_path / ".claude" / "commands"
+        symlink_dir.mkdir(parents=True)
+        symlink = symlink_dir / "foo.md"
+        symlink.symlink_to("../../packages/kit/commands/foo.md")
+
+        # bar.md doesn't exist at symlink location, so validation should fail
+        ref = AtReference(
+            raw_text="@bar.md",
+            file_path="bar.md",
+            fragment=None,
+            line_number=1,
+        )
+
+        broken = validate_at_reference(ref, symlink, tmp_path)
+        assert len(broken) == 1
+        assert broken[0].error_type == "missing_file"
+
+    def test_symlink_with_sibling_symlink_passes(self, tmp_path: Path) -> None:
+        """Test symlink source passes when sibling symlink also exists."""
+        # Create target directory with two files
+        target_dir = tmp_path / "packages" / "kit" / "commands"
+        target_dir.mkdir(parents=True)
+        (target_dir / "foo.md").write_text("@bar.md", encoding="utf-8")
+        (target_dir / "bar.md").write_text("# Bar", encoding="utf-8")
+
+        # Create symlinks in .claude/commands/ for both files
+        symlink_dir = tmp_path / ".claude" / "commands"
+        symlink_dir.mkdir(parents=True)
+        (symlink_dir / "foo.md").symlink_to("../../packages/kit/commands/foo.md")
+        (symlink_dir / "bar.md").symlink_to("../../packages/kit/commands/bar.md")
+
+        symlink = symlink_dir / "foo.md"
+        ref = AtReference(
+            raw_text="@bar.md",
+            file_path="bar.md",
+            fragment=None,
+            line_number=1,
+        )
+
+        # bar.md exists at symlink location (as a symlink), so should pass
+        broken = validate_at_reference(ref, symlink, tmp_path)
+        assert len(broken) == 0
