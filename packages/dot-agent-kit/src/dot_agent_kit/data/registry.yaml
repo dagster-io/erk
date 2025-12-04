@@ -4,14 +4,10 @@ kits:
     source_type: bundled
     description: Consolidated development tool runner agent with integrated tool documentation for pytest, pyright, ruff, prettier, make, and gt
     version: "0.1.0"
-  - kit_id: dignified-python-310
+  - kit_id: dignified-python
     source_type: bundled
-    description: Workstack Python 3.10-3.12 coding standards with automatic suggestion hook
-    version: "0.1.0"
-  - kit_id: dignified-python-313
-    source_type: bundled
-    description: Workstack Python 3.13+ coding standards with automatic suggestion hook
-    version: "0.1.0"
+    description: Version-aware Python coding standards with automatic version detection
+    version: "0.2.0"
   - kit_id: erk
     source_type: bundled
     description: Erk implementation workflow commands for creating worktrees from plans and executing implementation
