@@ -399,7 +399,7 @@ class TestGenerateRootIndex:
         assert "*No documentation files found.*" in content
 
     def test_generate_with_uncategorized(self) -> None:
-        """Generate index with uncategorized docs."""
+        """Generate index with uncategorized docs using bullet list format."""
         from dot_agent_kit.operations.agent_docs import DocInfo
 
         docs = [
@@ -407,11 +407,13 @@ class TestGenerateRootIndex:
         ]
         content = generate_root_index(docs, [])
         assert "## Uncategorized" in content
-        assert "[glossary.md](glossary.md)" in content
-        assert "understanding terms" in content
+        # Bullet list format: - **[link](link)** — description
+        assert "- **[glossary.md](glossary.md)** — understanding terms" in content
+        # No table syntax
+        assert "|" not in content
 
     def test_generate_with_categories(self) -> None:
-        """Generate index with categories."""
+        """Generate index with categories using bullet list format."""
         from dot_agent_kit.operations.agent_docs import CategoryInfo, DocInfo
 
         categories = [
@@ -422,15 +424,17 @@ class TestGenerateRootIndex:
         ]
         content = generate_root_index([], categories)
         assert "## Categories" in content
-        assert "[planning/](planning/)" in content
-        assert "lifecycle" in content
+        # Bullet list format: - **[link](link)** — doc names
+        assert "- **[planning/](planning/)** — lifecycle" in content
+        # No table syntax
+        assert "|" not in content
 
 
 class TestGenerateCategoryIndex:
     """Tests for generate_category_index function."""
 
     def test_generate_category_index(self) -> None:
-        """Generate category index with docs."""
+        """Generate category index with docs using bullet list format."""
         from dot_agent_kit.operations.agent_docs import CategoryInfo, DocInfo
 
         category = CategoryInfo(
@@ -447,9 +451,11 @@ class TestGenerateCategoryIndex:
         )
         content = generate_category_index(category)
         assert "# Planning Documentation" in content
-        assert "[lifecycle.md](lifecycle.md)" in content
-        assert "[enrichment.md](enrichment.md)" in content
-        assert "creating plans" in content
+        # Bullet list format: - **[link](link)** — description
+        assert "- **[lifecycle.md](lifecycle.md)** — creating plans" in content
+        assert "- **[enrichment.md](enrichment.md)** — enriching plans" in content
+        # No table syntax
+        assert "|" not in content
 
     def test_title_formatting(self) -> None:
         """Format category name as title case."""
@@ -461,6 +467,10 @@ class TestGenerateCategoryIndex:
         )
         content = generate_category_index(category)
         assert "# Cli Patterns Documentation" in content
+        # Bullet list format
+        assert "- **[a.md](a.md)** — x" in content
+        # No table syntax
+        assert "|" not in content
 
 
 class TestSyncAgentDocs:
@@ -483,11 +493,13 @@ class TestSyncAgentDocs:
         assert len(result.created) == 1
         assert "index.md" in result.created[0]
 
-        # Verify file was created
+        # Verify file was created with bullet list format
         index_path = agent_docs / "index.md"
         assert index_path.exists()
         content = index_path.read_text(encoding="utf-8")
-        assert "[glossary.md](glossary.md)" in content
+        assert "- **[glossary.md](glossary.md)** — terms" in content
+        # No table syntax
+        assert "|" not in content
 
     def test_sync_creates_category_index(self, tmp_path: Path) -> None:
         """Create category index when 2+ docs in subdirectory."""

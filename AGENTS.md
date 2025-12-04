@@ -43,27 +43,21 @@
 
 These fundamentally change how you write code. Load before ANY code work:
 
-| Task                       | Action                            |
-| -------------------------- | --------------------------------- |
-| Writing Python             | Load `dignified-python-313` skill |
-| Writing or modifying tests | Load `fake-driven-testing` skill  |
+- **Writing Python** → Load `dignified-python-313` skill
+- **Writing or modifying tests** → Load `fake-driven-testing` skill
 
 ### Tier 2: Context-Specific Skills
 
 Load when the context applies:
 
-| Context                        | Action                   |
-| ------------------------------ | ------------------------ |
-| Graphite stacks, `gt` commands | Load `gt-graphite` skill |
-| Writing agent documentation    | Load `agent-docs` skill  |
+- **Graphite stacks, `gt` commands** → Load `gt-graphite` skill
+- **Writing agent documentation** → Load `agent-docs` skill
 
 ### Tier 3: Tool Routing
 
 Use agents instead of direct Bash:
 
-| Tools                                     | Route                          |
-| ----------------------------------------- | ------------------------------ |
-| pytest, pyright, ruff, prettier, make, gt | Use `devrun` agent (Task tool) |
+- **pytest, pyright, ruff, prettier, make, gt** → Use `devrun` agent (Task tool)
 
 ### Tier 4: Documentation Lookup
 
@@ -73,25 +67,21 @@ For detailed reference, consult the documentation index which maps each document
 
 **Category quick reference:**
 
-| Category                                 | When to Read                                                               |
-| ---------------------------------------- | -------------------------------------------------------------------------- |
-| [Architecture](docs/agent/architecture/) | dry-run patterns, Protocol vs ABC, subprocess wrappers, GitHub URL parsing |
-| [CLI Development](docs/agent/cli/)       | command organization, output styling, script mode                          |
-| [Planning](docs/agent/planning/)         | plan lifecycle, .impl/ folders, agent delegation, scratch storage          |
-| [Testing](docs/agent/testing/)           | erk fakes, rebase conflicts, import conflict resolution                    |
-| [Sessions](docs/agent/sessions/)         | session logs, parallel session patterns, context analysis                  |
-| [Hooks](docs/agent/hooks/)               | hook creation, erk-specific hooks                                          |
-| [Kits](docs/agent/kits/)                 | kit CLI commands, kit architecture                                         |
-| [Commands](docs/agent/commands/)         | slash command optimization, @ references                                   |
-| [Erk](docs/agent/erk/)                   | erk workflows, Graphite branch setup                                       |
+- **[Architecture](docs/agent/architecture/)** — dry-run patterns, Protocol vs ABC, subprocess wrappers, GitHub URL parsing
+- **[CLI Development](docs/agent/cli/)** — command organization, output styling, script mode
+- **[Planning](docs/agent/planning/)** — plan lifecycle, .impl/ folders, agent delegation, scratch storage
+- **[Testing](docs/agent/testing/)** — erk fakes, rebase conflicts, import conflict resolution
+- **[Sessions](docs/agent/sessions/)** — session logs, parallel session patterns, context analysis
+- **[Hooks](docs/agent/hooks/)** — hook creation, erk-specific hooks
+- **[Kits](docs/agent/kits/)** — kit CLI commands, kit architecture
+- **[Commands](docs/agent/commands/)** — slash command optimization, @ references
+- **[Erk](docs/agent/erk/)** — erk workflows, Graphite branch setup
 
 **Root documents:**
 
-| Document                                       | When to Read             |
-| ---------------------------------------------- | ------------------------ |
-| [glossary.md](docs/agent/glossary.md)          | terminology, definitions |
-| [conventions.md](docs/agent/conventions.md)    | naming standards         |
-| [kit-registry.md](.agent/kits/kit-registry.md) | installed kits           |
+- **[glossary.md](docs/agent/glossary.md)** — terminology, definitions
+- **[conventions.md](docs/agent/conventions.md)** — naming standards
+- **[kit-registry.md](.agent/kits/kit-registry.md)** — installed kits
 
 ## Graphite Stack Quick Reference
 

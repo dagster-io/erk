@@ -275,6 +275,9 @@ def generate_root_index(
 ) -> str:
     """Generate content for the root index.md file.
 
+    Uses bullet list format instead of tables to avoid merge conflicts.
+    Each entry is independent - no separator rows that span all entries.
+
     Args:
         uncategorized: Docs at the root level.
         categories: List of category directories with their docs.
@@ -287,21 +290,17 @@ def generate_root_index(
     if categories:
         lines.append("## Categories")
         lines.append("")
-        lines.append("| Category | Documents |")
-        lines.append("|----------|-----------|")
         for category in categories:
             doc_names = ", ".join(Path(d.rel_path).stem for d in category.docs)
-            lines.append(f"| [{category.name}/]({category.name}/) | {doc_names} |")
+            lines.append(f"- **[{category.name}/]({category.name}/)** — {doc_names}")
         lines.append("")
 
     if uncategorized:
         lines.append("## Uncategorized")
         lines.append("")
-        lines.append("| Document | Read when... |")
-        lines.append("|----------|--------------|")
         for doc in uncategorized:
             read_when = ", ".join(doc.frontmatter.read_when)
-            lines.append(f"| [{doc.rel_path}]({doc.rel_path}) | {read_when} |")
+            lines.append(f"- **[{doc.rel_path}]({doc.rel_path})** — {read_when}")
         lines.append("")
 
     if not categories and not uncategorized:
@@ -314,6 +313,9 @@ def generate_root_index(
 def generate_category_index(category: CategoryInfo) -> str:
     """Generate content for a category's index.md file.
 
+    Uses bullet list format instead of tables to avoid merge conflicts.
+    Each entry is independent - no separator rows that span all entries.
+
     Args:
         category: Category information with docs.
 
@@ -324,14 +326,12 @@ def generate_category_index(category: CategoryInfo) -> str:
     title = category.name.replace("-", " ").replace("_", " ").title()
 
     lines = [f"# {title} Documentation", ""]
-    lines.append("| Document | Read when... |")
-    lines.append("|----------|--------------|")
 
     for doc in category.docs:
         # Use just the filename for relative links within category
         filename = Path(doc.rel_path).name
         read_when = ", ".join(doc.frontmatter.read_when)
-        lines.append(f"| [{filename}]({filename}) | {read_when} |")
+        lines.append(f"- **[{filename}]({filename})** — {read_when}")
 
     lines.append("")
     return "\n".join(lines)

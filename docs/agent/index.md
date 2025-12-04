@@ -2,123 +2,22 @@
 
 ## Categories
 
-| Category                      | Description                                      |
-| ----------------------------- | ------------------------------------------------ |
-| [Architecture](architecture/) | Core patterns, interfaces, subprocess wrappers   |
-| [CLI Development](cli/)       | Command organization, output styling, formatting |
-| [Planning](planning/)         | Plan lifecycle, enrichment, agent delegation     |
-| [Testing](testing/)           | Test architecture, fakes, rebase conflicts       |
-| [Sessions](sessions/)         | Session logs, context analysis, tools            |
-| [Hooks](hooks/)               | Hook system, erk-specific hooks                  |
-| [Kits](kits/)                 | Kit CLI commands, kit architecture               |
-| [Commands](commands/)         | Slash command optimization                       |
-| [Reference](reference/)       | GitHub integration, external references          |
-| [Erk](erk/)                   | Erk-specific workflows                           |
-| [TUI](tui/)                   | Textual TUI development, quirks and workarounds  |
+- **[architecture/](architecture/)** — commandresult-extension-pattern, erk-architecture, github-parsing, protocol-vs-abc, sentinel-path-compatibility, subprocess-wrappers, worktree-metadata
+- **[cli/](cli/)** — command-organization, list-formatting, output-styling, script-mode, template-variables
+- **[commands/](commands/)** — behavioral-triggers, optimization-patterns
+- **[erk/](erk/)** — branch-cleanup, graphite-branch-setup
+- **[hooks/](hooks/)** — erk, hooks
+- **[kits/](kits/)** — cli-commands, code-architecture, dependency-injection, push-down-pattern
+- **[planning/](planning/)** — agent-delegation, enrichment, lifecycle, plan-schema, scratch-storage, workflow
+- **[reference/](reference/)** — claude-cli-stream-json, github-branch-linking
+- **[sessions/](sessions/)** — context-analysis, layout, parallel-session-awareness, tools
+- **[testing/](testing/)** — import-conflict-resolution, kit-cli-testing, rebase-conflicts, session-log-fixtures, testing
+- **[tui/](tui/)** — textual-quirks
 
-## Root Documents
+## Uncategorized
 
-| Document                         | Read when...                                                |
-| -------------------------------- | ----------------------------------------------------------- |
-| [glossary.md](glossary.md)       | Understanding project terminology                           |
-| [conventions.md](conventions.md) | Naming functions, variables, CLI commands, Claude artifacts |
-| [guide.md](guide.md)             | Navigating documentation, finding docs                      |
-
-## Category Contents
-
-### [Architecture](architecture/)
-
-| Document                                                                              | Read when...                                                                                       |
-| ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| [erk-architecture.md](architecture/erk-architecture.md)                               | Understanding dry-run patterns, context regeneration, integration layers, branch context detection |
-| [protocol-vs-abc.md](architecture/protocol-vs-abc.md)                                 | Choosing between Protocol and ABC for interfaces                                                   |
-| [subprocess-wrappers.md](architecture/subprocess-wrappers.md)                         | Executing shell commands, using subprocess wrappers                                                |
-| [github-parsing.md](architecture/github-parsing.md)                                   | Parsing GitHub URLs, extracting PR/issue numbers                                                   |
-| [commandresult-extension-pattern.md](architecture/commandresult-extension-pattern.md) | Adding new fields to CommandResult, extending stream parsing                                       |
-| [sentinel-path-compatibility.md](architecture/sentinel-path-compatibility.md)         | Writing functions testable with FakeGit, sentinel path errors                                      |
-| [worktree-metadata.md](architecture/worktree-metadata.md)                             | Storing per-worktree metadata, worktrees.toml                                                      |
-| [shell-integration-constraint.md](architecture/shell-integration-constraint.md)       | Implementing commands that delete current worktree, subprocess cwd limitations                     |
-
-### [CLI Development](cli/)
-
-| Document                                               | Read when...                                           |
-| ------------------------------------------------------ | ------------------------------------------------------ |
-| [command-organization.md](cli/command-organization.md) | Organizing CLI commands, designing command hierarchies |
-| [output-styling.md](cli/output-styling.md)             | Styling CLI output, using colors                       |
-| [list-formatting.md](cli/list-formatting.md)           | Formatting list output, designing list commands        |
-| [script-mode.md](cli/script-mode.md)                   | Implementing script mode, shell integration            |
-| [shell-aliases.md](cli/shell-aliases.md)               | Setting up shell aliases, debugging shell integration  |
-| [template-variables.md](cli/template-variables.md)     | Using substitution variables in config, .env templates |
-
-### [Planning](planning/)
-
-| Document                                            | Read when...                                         |
-| --------------------------------------------------- | ---------------------------------------------------- |
-| [lifecycle.md](planning/lifecycle.md)               | Creating or closing plans, understanding plan states |
-| [enrichment.md](planning/enrichment.md)             | Adding metadata to plans, enrichment workflow        |
-| [workflow.md](planning/workflow.md)                 | Using .impl/ folders, implementing plans             |
-| [agent-delegation.md](planning/agent-delegation.md) | Delegating to agents from commands                   |
-| [scratch-storage.md](planning/scratch-storage.md)   | Writing temp files for AI workflows                  |
-| [plan-schema.md](planning/plan-schema.md)           | Plan issue structure, metadata blocks, validation    |
-
-### [Testing](testing/)
-
-| Document                                                               | Read when...                                               |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------- |
-| [testing.md](testing/testing.md)                                       | Using erk fakes (FakeGit, etc.), running tests             |
-| [kit-cli-testing.md](testing/kit-cli-testing.md)                       | Testing kit CLI commands, using DotAgentContext.for_test() |
-| [rebase-conflicts.md](testing/rebase-conflicts.md)                     | ErkContext API changes, env_helpers during rebase          |
-| [import-conflict-resolution.md](testing/import-conflict-resolution.md) | Resolving import conflicts during rebase                   |
-| [session-log-fixtures.md](testing/session-log-fixtures.md)             | Creating JSONL fixtures for session parsing tests          |
-
-### [Sessions](sessions/)
-
-| Document                                                                | Read when...                                                                    |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| [layout.md](sessions/layout.md)                                         | Understanding ~/.claude/projects/ structure                                     |
-| [parallel-session-awareness.md](sessions/parallel-session-awareness.md) | Working with session-specific data, parallel sessions                           |
-| [tools.md](sessions/tools.md)                                           | Finding session logs, inspecting agent execution, listing sessions for worktree |
-| [context-analysis.md](sessions/context-analysis.md)                     | Debugging context window issues                                                 |
-
-### [Hooks](hooks/)
-
-| Document                   | Read when...                                             |
-| -------------------------- | -------------------------------------------------------- |
-| [hooks.md](hooks/hooks.md) | Creating hooks, understanding hook lifecycle             |
-| [erk.md](hooks/erk.md)     | Working with erk-specific hooks, context-aware reminders |
-
-### [Kits](kits/)
-
-| Document                                                | Read when...                                                     |
-| ------------------------------------------------------- | ---------------------------------------------------------------- |
-| [cli-commands.md](kits/cli-commands.md)                 | Creating kit CLI commands, understanding patterns                |
-| [code-architecture.md](kits/code-architecture.md)       | Understanding kit code structure                                 |
-| [push-down-pattern.md](kits/push-down-pattern.md)       | Deciding what belongs in kit CLI vs agent, token saving          |
-| [dependency-injection.md](kits/dependency-injection.md) | Writing or testing kit CLI commands with git/github dependencies |
-
-### [Commands](commands/)
-
-| Document                                                      | Read when...                                            |
-| ------------------------------------------------------------- | ------------------------------------------------------- |
-| [behavioral-triggers.md](commands/behavioral-triggers.md)     | Adding documentation routing rules, preventing mistakes |
-| [optimization-patterns.md](commands/optimization-patterns.md) | Reducing command size, using @ references               |
-
-### [Reference](reference/)
-
-| Document                                                         | Read when...                                               |
-| ---------------------------------------------------------------- | ---------------------------------------------------------- |
-| [github-branch-linking.md](reference/github-branch-linking.md)   | Linking branches to issues, using gh issue develop         |
-| [claude-cli-stream-json.md](reference/claude-cli-stream-json.md) | Parsing Claude CLI output, extracting stream-json metadata |
-
-### [Erk](erk/)
-
-| Document                                                 | Read when...                                  |
-| -------------------------------------------------------- | --------------------------------------------- |
-| [branch-cleanup.md](erk/branch-cleanup.md)               | Cleaning up branches and worktrees            |
-| [graphite-branch-setup.md](erk/graphite-branch-setup.md) | Submitting PRs with Graphite, no_parent error |
-
-### [TUI](tui/)
-
-| Document                                   | Read when...                                           |
-| ------------------------------------------ | ------------------------------------------------------ |
-| [textual-quirks.md](tui/textual-quirks.md) | Working with Textual TUI, avoiding common API pitfalls |
+- **[conventions.md](conventions.md)** — naming functions or variables, creating CLI commands, naming Claude artifacts
+- **[glossary.md](glossary.md)** — understanding project terminology, confused about domain-specific terms, working with worktrees, plans, or stacks
+- **[guide.md](guide.md)** — navigating erk documentation, finding where documentation lives, understanding doc organization
+- **[textual-tui-testing.md](textual-tui-testing.md)** — testing Textual TUI components, writing tests for ModalScreen, testing keyboard bindings, using Pilot API for async tests
+- **[textual-widget-development.md](textual-widget-development.md)** — creating Textual widgets, adding ModalScreen dialogs, implementing keyboard bindings, writing Textual CSS styles
