@@ -74,7 +74,7 @@ check:
 	uv run dot-agent check
 
 md-check:
-	uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits"
+	uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl"
 
 docs-validate:
 	uv run dot-agent docs validate
@@ -89,7 +89,7 @@ fast-ci:
 	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
-	echo "\n--- Markdown Check ---" && uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" || exit_code=1; \
+	echo "\n--- Markdown Check ---" && uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl" || exit_code=1; \
 	echo "\n--- Docs Validate ---" && uv run dot-agent docs validate || exit_code=1; \
 	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
@@ -106,7 +106,7 @@ all-ci:
 	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
-	echo "\n--- Markdown Check ---" && uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" || exit_code=1; \
+	echo "\n--- Markdown Check ---" && uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl" || exit_code=1; \
 	echo "\n--- Docs Validate ---" && uv run dot-agent docs validate || exit_code=1; \
 	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
