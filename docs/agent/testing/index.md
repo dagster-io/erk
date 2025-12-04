@@ -19,8 +19,8 @@ This category contains erk-specific test reference material.
 | Understand testing philosophy    | Load `fake-driven-testing` skill                   |
 | Use erk fakes (FakeGit, etc.)    | [testing.md](testing.md)                           |
 | Run erk test commands            | [testing.md](testing.md)                           |
-| Create session log test fixtures | [session-log-fixtures.md](session-log-fixtures.md) |
 | Fix rebase conflicts in tests    | [rebase-conflicts.md](rebase-conflicts.md)         |
+| Create session log test fixtures | [session-log-fixtures.md](session-log-fixtures.md) |
 
 ## Documents in This Category
 

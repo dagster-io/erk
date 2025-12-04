@@ -67,6 +67,7 @@
 | [kit-cli-testing.md](testing/kit-cli-testing.md)                       | Testing kit CLI commands, using DotAgentContext.for_test() |
 | [rebase-conflicts.md](testing/rebase-conflicts.md)                     | ErkContext API changes, env_helpers during rebase          |
 | [import-conflict-resolution.md](testing/import-conflict-resolution.md) | Resolving import conflicts during rebase                   |
+| [session-log-fixtures.md](testing/session-log-fixtures.md)             | Creating JSONL fixtures for session parsing tests          |
 
 ### [Sessions](sessions/)
 
