@@ -36,12 +36,12 @@ Instead of embedding mechanical computation in prompts, push it down to kit CLI 
 
 **If it requires understanding meaning → use LLM. If it's mechanical transformation → use kit CLI.**
 
-| Push to Kit CLI | Keep in Agent |
-|-----------------|---------------|
-| Parsing/validation (URLs, formats, paths) | Semantic analysis (summarizing, naming) |
-| Data extraction (JSON/YAML, filtering) | Content generation (docs, code, messages) |
-| Deterministic operations (file queries, transforms) | Complex reasoning (trade-offs, ambiguity) |
-| Token reduction (compressing, pre-filtering) | Decision-making (planning, interpretation) |
+| Push to Kit CLI                                     | Keep in Agent                              |
+| --------------------------------------------------- | ------------------------------------------ |
+| Parsing/validation (URLs, formats, paths)           | Semantic analysis (summarizing, naming)    |
+| Data extraction (JSON/YAML, filtering)              | Content generation (docs, code, messages)  |
+| Deterministic operations (file queries, transforms) | Complex reasoning (trade-offs, ambiguity)  |
+| Token reduction (compressing, pre-filtering)        | Decision-making (planning, interpretation) |
 
 ## Before and After
 
