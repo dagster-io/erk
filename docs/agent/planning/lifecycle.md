@@ -95,9 +95,9 @@ erk plan create --file my-plan.md
 
 This creates a GitHub Issue directly from the plan file.
 
-### Plan Storage: Schema v2
+### Plan Storage
 
-Plans are stored in GitHub Issues using Schema v2:
+Plans are stored in GitHub Issues:
 
 - **Issue body**: Contains `plan-header` metadata block
 - **First comment**: Contains `plan-body` with full plan content in collapsible details

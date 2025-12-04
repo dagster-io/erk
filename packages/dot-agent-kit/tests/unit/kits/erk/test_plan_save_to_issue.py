@@ -80,8 +80,8 @@ def test_plan_save_to_issue_no_plan() -> None:
     assert "No plan found" in output["error"]
 
 
-def test_plan_save_to_issue_schema_v2() -> None:
-    """Verify schema v2 format (metadata in body, plan in comment)."""
+def test_plan_save_to_issue_format() -> None:
+    """Verify plan format (metadata in body, plan in comment)."""
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
@@ -99,14 +99,14 @@ def test_plan_save_to_issue_schema_v2() -> None:
 
     assert result.exit_code == 0
 
-    # Verify schema v2: metadata in body
+    # Verify: metadata in body
     assert len(fake_gh.created_issues) == 1
     _title, body, _labels = fake_gh.created_issues[0]
     assert "plan-header" in body
     assert "schema_version: '2'" in body
     assert "Step 1" not in body  # Plan NOT in body
 
-    # Verify schema v2: plan in first comment
+    # Verify: plan in first comment
     assert len(fake_gh.added_comments) == 1
     _issue_num, comment = fake_gh.added_comments[0]
     assert "Step 1" in comment

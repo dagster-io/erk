@@ -414,14 +414,14 @@ def test_close_plan_not_found() -> None:
 
 
 # ============================================================================
-# Schema v2 tests (plan in comment, not issue body)
+# Plan extraction tests (plan in comment, metadata in issue body)
 # ============================================================================
 
 
-def test_get_plan_schema_v2_extracts_from_first_comment() -> None:
-    """Test schema v2: plan content is extracted from first comment.
+def test_get_plan_extracts_from_first_comment() -> None:
+    """Test plan content is extracted from first comment.
 
-    Schema version 2 stores only metadata in issue body and the actual
+    Plans store only metadata in issue body and the actual
     plan content in the first comment wrapped with markers.
     """
     metadata_body = """<!-- erk:metadata-block:plan-header -->
@@ -463,7 +463,7 @@ More details.
     assert "erk:metadata-block:plan-header" not in result.body
 
 
-def test_get_plan_schema_v2_multiline_comment_preserved() -> None:
+def test_get_plan_multiline_comment_preserved() -> None:
     """Test that multi-line plan content in comment is fully preserved.
 
     This is the critical bug fix test. The bug was that multi-line comment
@@ -510,12 +510,8 @@ def test_get_plan_schema_v2_multiline_comment_preserved() -> None:
     assert result.body != "metadata only"
 
 
-def test_get_plan_schema_v2_fallback_to_body_without_comment() -> None:
-    """Test fallback to issue body when no comments have plan markers.
-
-    This maintains backward compatibility with schema v1 issues where
-    plan content was in the issue body directly.
-    """
+def test_get_plan_fallback_to_body_without_comment() -> None:
+    """Test fallback to issue body when no comments have plan markers."""
     plan_body = """# Plan: Old Style Plan
 
 ## Step 1
@@ -539,7 +535,7 @@ This is an old-style plan in the issue body."""
     assert result.body == plan_body
 
 
-def test_get_plan_schema_v2_fallback_when_no_comments() -> None:
+def test_get_plan_fallback_when_no_comments() -> None:
     """Test fallback to issue body when issue has no comments."""
     plan_body = """# Plan: No Comments
 
@@ -634,6 +630,6 @@ schema_version: '2'
     store = GitHubPlanStore(fake_github)
 
     # Should NOT raise error - the metadata body is not empty
-    # (It's valid to have plan content in the issue body for schema v1)
+    # (Fallback uses issue body if no plan markers in comments)
     result = store.get_plan(Path("/fake/repo"), "302")
     assert result.body == metadata_body

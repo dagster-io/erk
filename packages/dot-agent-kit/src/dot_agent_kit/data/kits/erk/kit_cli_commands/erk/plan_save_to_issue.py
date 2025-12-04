@@ -5,7 +5,7 @@ Usage:
 
 This command combines plan extraction and issue creation:
 1. Extract plan from specified file or latest from ~/.claude/plans/
-2. Create GitHub issue with plan content (schema v2 format)
+2. Create GitHub issue with plan content
 
 Output:
     --format json (default): {"success": true, "issue_number": N, ...}
@@ -50,7 +50,6 @@ def plan_save_to_issue(ctx: click.Context, output_format: str, plan_file: Path |
     """Extract plan from ~/.claude/plans/ and create GitHub issue.
 
     Combines plan extraction and issue creation in a single operation.
-    Uses schema v2 format (metadata in body, plan in first comment).
     """
     # Get GitHub Issues from context
     github = require_github_issues(ctx)
