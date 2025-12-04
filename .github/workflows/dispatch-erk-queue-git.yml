@@ -6,7 +6,7 @@
 # "GitHub Actions is not permitted to create or approve pull requests"
 
 name: Dispatch Erk Queue (Git Only)
-run-name: "${{ inputs.issue_number }}:${{ inputs.distinct_id }}"
+run-name: "Issue #${{ inputs.issue_number }}: ${{ inputs.issue_title }}"
 
 on:
   workflow_dispatch:
@@ -17,10 +17,6 @@ on:
         type: string
       submitted_by:
         description: "GitHub username of the person who submitted the issue"
-        required: true
-        type: string
-      distinct_id:
-        description: "Unique identifier for run discovery (base36)"
         required: true
         type: string
       issue_title:
@@ -56,6 +52,27 @@ jobs:
         with:
           token: ${{ secrets.ERK_QUEUE_GH_PAT }}
           fetch-depth: 0
+
+      - name: Post workflow run ID for discovery
+        env:
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          STARTED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          WORKFLOW_RUN_ID="${{ github.run_id }}"
+
+          cat > discovery_comment.md <<EOF
+          <!-- erk:metadata-block:workflow-started -->
+          \`\`\`yaml
+          schema: workflow-started
+          started_at: $STARTED_AT
+          workflow_run_id: "$WORKFLOW_RUN_ID"
+          \`\`\`
+          <!-- /erk:metadata-block:workflow-started -->
+          EOF
+
+          gh issue comment "$ISSUE_NUMBER" --body-file discovery_comment.md
+          rm -f discovery_comment.md
 
       - name: Setup all tools
         run: |
@@ -154,7 +171,7 @@ jobs:
       # =================================================================
       # PHASE 3: PR SETUP
       # =================================================================
-      - name: Post workflow started comment
+      - name: Post workflow status comment
         env:
           ISSUE_NUMBER: ${{ inputs.issue_number }}
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}

@@ -878,27 +878,38 @@ def test_list_workflow_runs_missing_fields() -> None:
 
 
 # ============================================================================
-# trigger_workflow() Tests - Edge Cases for Polling Logic
+# trigger_workflow() Tests - Comment-Based Run Discovery
 # ============================================================================
 
 
-def test_trigger_workflow_handles_empty_list_during_polling(monkeypatch: MonkeyPatch) -> None:
-    """Test trigger_workflow continues polling when run list is empty."""
+def _build_workflow_started_comment(run_id: str, started_at: str) -> str:
+    """Build a workflow-started comment body with metadata block.
+
+    Uses the expected format with <details> structure that parse_metadata_blocks expects.
+    """
+    return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:workflow-started -->
+<details>
+<summary><code>workflow-started</code></summary>
+
+```yaml
+
+started_at: {started_at}
+workflow_run_id: "{run_id}"
+
+```
+
+</details>
+<!-- /erk:metadata-block:workflow-started -->"""
+
+
+def test_trigger_workflow_finds_run_from_comment_metadata(monkeypatch: MonkeyPatch) -> None:
+    """Test trigger_workflow finds run ID from workflow-started comment."""
     repo_root = Path("/repo")
-    call_count = 0
-    captured_distinct_id = None
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        nonlocal call_count, captured_distinct_id
-        call_count += 1
-
-        # First call: gh workflow run (trigger) - capture distinct_id from inputs
+        # gh workflow run (trigger)
         if "workflow" in cmd and "run" in cmd:
-            # Extract distinct_id from the -f distinct_id=xxx argument
-            for i, arg in enumerate(cmd):
-                if arg == "-f" and i + 1 < len(cmd) and cmd[i + 1].startswith("distinct_id="):
-                    captured_distinct_id = cmd[i + 1].split("=", 1)[1]
-                    break
             return subprocess.CompletedProcess(
                 args=cmd,
                 returncode=0,
@@ -906,8 +917,57 @@ def test_trigger_workflow_handles_empty_list_during_polling(monkeypatch: MonkeyP
                 stderr="",
             )
 
-        # Second call: gh run list (returns empty list - workflow not appeared yet)
-        if call_count == 2:
+        # gh api (fetch comments)
+        # Comment timestamp must be after FakeTime default (2024-01-15 14:30:00)
+        if "api" in cmd:
+            comments = [
+                {
+                    "body": _build_workflow_started_comment("123456789", "2024-01-15T14:30:05Z"),
+                    "created_at": "2024-01-15T14:30:05Z",
+                }
+            ]
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout=json.dumps(comments),
+                stderr="",
+            )
+
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub(FakeTime())
+        run_id = ops.trigger_workflow(
+            repo_root,
+            "test-workflow.yml",
+            {"issue_number": "42"},
+        )
+
+        assert run_id == "123456789"
+
+
+def test_trigger_workflow_handles_empty_comments_then_finds_run(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Test trigger_workflow continues polling when no comments initially."""
+    repo_root = Path("/repo")
+    call_count = 0
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        nonlocal call_count
+        call_count += 1
+
+        # gh workflow run (trigger)
+        if "workflow" in cmd and "run" in cmd:
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout="",
+                stderr="",
+            )
+
+        # First API call: return empty comments
+        if "api" in cmd and call_count == 2:
             return subprocess.CompletedProcess(
                 args=cmd,
                 returncode=0,
@@ -915,42 +975,46 @@ def test_trigger_workflow_handles_empty_list_during_polling(monkeypatch: MonkeyP
                 stderr="",
             )
 
-        # Third call: gh run list (workflow appears now with captured distinct_id)
-        run_data = json.dumps(
-            [
+        # Second API call: return comment with workflow-started metadata
+        # Comment timestamp must be after FakeTime default (2024-01-15 14:30:00)
+        if "api" in cmd:
+            comments = [
                 {
-                    "databaseId": 123456,
-                    "displayTitle": f"Test workflow: issue-1:{captured_distinct_id}",
-                    "conclusion": None,
+                    "body": _build_workflow_started_comment("987654321", "2024-01-15T14:30:10Z"),
+                    "created_at": "2024-01-15T14:30:10Z",
                 }
             ]
-        )
-        return subprocess.CompletedProcess(
-            args=cmd,
-            returncode=0,
-            stdout=run_data,
-            stderr="",
-        )
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout=json.dumps(comments),
+                stderr="",
+            )
+
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
         run_id = ops.trigger_workflow(
             repo_root,
             "test-workflow.yml",
-            {"issue_number": "1"},
+            {"issue_number": "42"},
         )
 
-        # Should successfully find run ID after empty list
-        assert run_id == "123456"
-        assert call_count >= 3  # trigger + at least 2 polls
+        assert run_id == "987654321"
+        assert call_count >= 3  # trigger + at least 2 API calls
 
 
-def test_trigger_workflow_errors_on_invalid_json_structure(monkeypatch: MonkeyPatch) -> None:
-    """Test trigger_workflow raises error when gh returns non-list JSON."""
+def test_trigger_workflow_ignores_stale_comments(monkeypatch: MonkeyPatch) -> None:
+    """Test trigger_workflow ignores comments created before trigger time."""
     repo_root = Path("/repo")
+    call_count = 0
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # First call: gh workflow run (trigger)
+        nonlocal call_count
+        call_count += 1
+
+        # gh workflow run (trigger)
         if "workflow" in cmd and "run" in cmd:
             return subprocess.CompletedProcess(
                 args=cmd,
@@ -959,28 +1023,117 @@ def test_trigger_workflow_errors_on_invalid_json_structure(monkeypatch: MonkeyPa
                 stderr="",
             )
 
-        # Second call: gh run list (returns invalid JSON structure - dict instead of list)
-        return subprocess.CompletedProcess(
-            args=cmd,
-            returncode=0,
-            stdout='{"error": "invalid"}',
-            stderr="",
-        )
+        # First API call: return only stale comment (created before trigger)
+        if "api" in cmd and call_count == 2:
+            comments = [
+                {
+                    "body": _build_workflow_started_comment("old_run_id", "2020-01-01T00:00:00Z"),
+                    "created_at": "2020-01-01T00:00:00Z",  # Old timestamp
+                }
+            ]
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout=json.dumps(comments),
+                stderr="",
+            )
+
+        # Second API call: return fresh comment (created after trigger)
+        if "api" in cmd:
+            comments = [
+                {
+                    "body": _build_workflow_started_comment("old_run_id", "2020-01-01T00:00:00Z"),
+                    "created_at": "2020-01-01T00:00:00Z",  # Old timestamp
+                },
+                {
+                    "body": _build_workflow_started_comment("new_run_id", "2099-12-31T23:59:59Z"),
+                    "created_at": "2099-12-31T23:59:59Z",  # Future timestamp (after trigger)
+                },
+            ]
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout=json.dumps(comments),
+                stderr="",
+            )
+
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
+        run_id = ops.trigger_workflow(
+            repo_root,
+            "test-workflow.yml",
+            {"issue_number": "42"},
+        )
 
-        # Should raise error for invalid response format
-        with pytest.raises(RuntimeError) as exc_info:
-            ops.trigger_workflow(
-                repo_root,
-                "test-workflow.yml",
-                {"issue_number": "1"},
+        # Should find the new run, not the old one
+        assert run_id == "new_run_id"
+
+
+def test_trigger_workflow_ignores_comments_without_metadata(monkeypatch: MonkeyPatch) -> None:
+    """Test trigger_workflow ignores comments without workflow-started metadata."""
+    repo_root = Path("/repo")
+    call_count = 0
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        nonlocal call_count
+        call_count += 1
+
+        # gh workflow run (trigger)
+        if "workflow" in cmd and "run" in cmd:
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout="",
+                stderr="",
             )
 
-        error_msg = str(exc_info.value)
-        assert "invalid response format" in error_msg
-        assert "Expected JSON array" in error_msg
+        # First API call: return regular comment without metadata
+        if "api" in cmd and call_count == 2:
+            comments = [
+                {
+                    "body": "This is just a regular comment without metadata",
+                    "created_at": "2099-12-31T23:59:59Z",
+                }
+            ]
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout=json.dumps(comments),
+                stderr="",
+            )
+
+        # Second API call: return comment with metadata
+        if "api" in cmd:
+            comments = [
+                {
+                    "body": "This is just a regular comment without metadata",
+                    "created_at": "2099-12-31T23:59:59Z",
+                },
+                {
+                    "body": _build_workflow_started_comment("123456", "2099-12-31T23:59:59Z"),
+                    "created_at": "2099-12-31T23:59:59Z",
+                },
+            ]
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout=json.dumps(comments),
+                stderr="",
+            )
+
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub(FakeTime())
+        run_id = ops.trigger_workflow(
+            repo_root,
+            "test-workflow.yml",
+            {"issue_number": "42"},
+        )
+
+        assert run_id == "123456"
 
 
 def test_trigger_workflow_timeout_after_max_attempts(monkeypatch: MonkeyPatch) -> None:
@@ -988,7 +1141,7 @@ def test_trigger_workflow_timeout_after_max_attempts(monkeypatch: MonkeyPatch) -
     repo_root = Path("/repo")
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # First call: gh workflow run (trigger)
+        # gh workflow run (trigger)
         if "workflow" in cmd and "run" in cmd:
             return subprocess.CompletedProcess(
                 args=cmd,
@@ -997,106 +1150,56 @@ def test_trigger_workflow_timeout_after_max_attempts(monkeypatch: MonkeyPatch) -
                 stderr="",
             )
 
-        # All polling calls: return empty list (workflow never appears)
-        return subprocess.CompletedProcess(
-            args=cmd,
-            returncode=0,
-            stdout="[]",
-            stderr="",
-        )
+        # All API calls: return empty comments (no workflow-started comment ever appears)
+        if "api" in cmd:
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout="[]",
+                stderr="",
+            )
+
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        # Use FakeTime that never sleeps
         fake_time = FakeTime()
         ops = RealGitHub(fake_time)
 
-        # Should raise error after max attempts
         with pytest.raises(RuntimeError) as exc_info:
             ops.trigger_workflow(
                 repo_root,
                 "test-workflow.yml",
-                {"issue_number": "1"},
+                {"issue_number": "42"},
             )
 
         error_msg = str(exc_info.value)
-        assert "could not find run" in error_msg
+        assert "no workflow-started comment found" in error_msg
         assert "after 15 attempts" in error_msg
-        assert "Debug commands:" in error_msg
-        assert "gh run list --workflow test-workflow.yml" in error_msg
+        assert "gh issue view 42 --comments" in error_msg
 
 
-def test_trigger_workflow_skips_cancelled_runs(monkeypatch: MonkeyPatch) -> None:
-    """Test trigger_workflow skips runs with conclusion skipped/cancelled."""
+def test_trigger_workflow_requires_issue_number(monkeypatch: MonkeyPatch) -> None:
+    """Test trigger_workflow raises error when issue_number is missing from inputs."""
     repo_root = Path("/repo")
-    call_count = 0
-    captured_distinct_id = None
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        nonlocal call_count, captured_distinct_id
-        call_count += 1
-
-        # First call: gh workflow run (trigger) - capture distinct_id from inputs
-        if "workflow" in cmd and "run" in cmd:
-            # Extract distinct_id from the -f distinct_id=xxx argument
-            for i, arg in enumerate(cmd):
-                if arg == "-f" and i + 1 < len(cmd) and cmd[i + 1].startswith("distinct_id="):
-                    captured_distinct_id = cmd[i + 1].split("=", 1)[1]
-                    break
-            return subprocess.CompletedProcess(
-                args=cmd,
-                returncode=0,
-                stdout="",
-                stderr="",
-            )
-
-        # Second call: returns skipped and cancelled runs with captured distinct_id
-        if call_count == 2:
-            run_data = json.dumps(
-                [
-                    {
-                        "databaseId": 111,
-                        "displayTitle": f"Test: issue-1:{captured_distinct_id}",
-                        "conclusion": "skipped",
-                    },
-                    {
-                        "databaseId": 222,
-                        "displayTitle": f"Test: issue-1:{captured_distinct_id}",
-                        "conclusion": "cancelled",
-                    },
-                ]
-            )
-            return subprocess.CompletedProcess(
-                args=cmd,
-                returncode=0,
-                stdout=run_data,
-                stderr="",
-            )
-
-        # Third call: returns valid run with captured distinct_id
-        run_data = json.dumps(
-            [
-                {
-                    "databaseId": 333,
-                    "displayTitle": f"Test: issue-1:{captured_distinct_id}",
-                    "conclusion": None,
-                }
-            ]
-        )
+        # gh workflow run (trigger) succeeds
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout=run_data,
+            stdout="",
             stderr="",
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
-        run_id = ops.trigger_workflow(
-            repo_root,
-            "test-workflow.yml",
-            {"issue_number": "1"},
-        )
 
-        # Should find the non-skipped/cancelled run
-        assert run_id == "333"
-        assert call_count >= 3  # trigger + 2 polls
+        with pytest.raises(RuntimeError) as exc_info:
+            ops.trigger_workflow(
+                repo_root,
+                "test-workflow.yml",
+                {"branch_name": "feature-1"},  # No issue_number
+            )
+
+        error_msg = str(exc_info.value)
+        assert "issue_number required" in error_msg
