@@ -163,3 +163,30 @@ def test_pr_submit_shows_error_on_process_error() -> None:
 
         assert result.exit_code != 0
         assert "Permission denied" in result.output
+
+
+def test_pr_submit_shows_error_on_zero_turns() -> None:
+    """Test that command fails when Claude completes with zero turns (hook blocking)."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        claude_executor = FakeClaudeExecutor(
+            claude_available=True,
+            simulated_zero_turns=True,
+        )
+
+        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+
+        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+
+        assert result.exit_code != 0
+        assert "completed without processing" in result.output
+        assert "hook blocked" in result.output
+        # Should include helpful suggestion
+        assert "Run 'claude" in result.output or "claude /gt:pr-submit" in result.output

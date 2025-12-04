@@ -56,6 +56,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         simulated_issue_number: int | None = None,
         simulated_tool_events: list[str] | None = None,
         simulated_no_output: bool = False,
+        simulated_zero_turns: bool = False,
         simulated_process_error: str | None = None,
     ) -> None:
         """Initialize fake with predetermined behavior.
@@ -69,6 +70,8 @@ class FakeClaudeExecutor(ClaudeExecutor):
             simulated_issue_number: Issue number to return (simulates linked issue)
             simulated_tool_events: Tool event contents to emit (e.g., "Using...")
             simulated_no_output: Whether to simulate Claude CLI producing no output
+            simulated_zero_turns: Whether to simulate Claude completing with num_turns=0
+                (hook blocking scenario)
             simulated_process_error: Error message to simulate process startup failure
         """
         self._claude_available = claude_available
@@ -79,6 +82,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         self._simulated_issue_number = simulated_issue_number
         self._simulated_tool_events = simulated_tool_events or []
         self._simulated_no_output = simulated_no_output
+        self._simulated_zero_turns = simulated_zero_turns
         self._simulated_process_error = simulated_process_error
         self._executed_commands: list[tuple[str, Path, bool, bool]] = []
         self._interactive_calls: list[tuple[Path, bool]] = []
@@ -126,6 +130,15 @@ class FakeClaudeExecutor(ClaudeExecutor):
                 "no_output",
                 f"Claude command {command} completed but produced no output",
             )
+            return
+
+        # Zero turns simulation (simulates hook blocking)
+        if self._simulated_zero_turns:
+            diag = f"Claude command {command} completed without processing"
+            diag += "\n  This usually means a hook blocked the command"
+            diag += "\n  Run 'claude' directly to see hook error messages"
+            diag += f"\n  Working directory: {worktree_path}"
+            yield StreamEvent("no_turns", diag)
             return
 
         if self._command_should_fail:

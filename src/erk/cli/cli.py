@@ -7,6 +7,7 @@ from erk.cli.commands.admin import admin_group
 from erk.cli.commands.checkout import checkout_cmd
 from erk.cli.commands.completion import completion_group
 from erk.cli.commands.config import config_group
+from erk.cli.commands.doctor import doctor_cmd
 from erk.cli.commands.down import down_cmd
 from erk.cli.commands.implement import implement
 from erk.cli.commands.init import init_cmd
@@ -48,6 +49,7 @@ cli.add_command(admin_group)
 register_with_aliases(cli, checkout_cmd)  # Has @alias("co")
 cli.add_command(completion_group)
 cli.add_command(config_group)
+cli.add_command(doctor_cmd)
 cli.add_command(down_cmd)
 cli.add_command(implement)
 cli.add_command(init_cmd)

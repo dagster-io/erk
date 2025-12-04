@@ -132,6 +132,82 @@ def test_parse_stream_json_line_handles_empty_list_content() -> None:
     assert result["pr_url"] is None
 
 
+def test_parse_stream_json_line_extracts_result_num_turns() -> None:
+    """Test that _parse_stream_json_line extracts num_turns from type: result messages."""
+    executor = RealClaudeExecutor()
+    worktree_path = Path("/test/repo")
+    command = "/gt:pr-submit"
+
+    # Simulate a result message with num_turns: 0 (hook blocking scenario)
+    line = json.dumps(
+        {
+            "type": "result",
+            "subtype": "success",
+            "is_error": False,
+            "duration_ms": 478,
+            "num_turns": 0,
+        }
+    )
+
+    result = executor._parse_stream_json_line(line, worktree_path, command)
+
+    assert result is not None
+    assert result["num_turns"] == 0
+    assert result["is_error"] is False
+
+
+def test_parse_stream_json_line_extracts_result_with_positive_turns() -> None:
+    """Test that _parse_stream_json_line extracts num_turns from successful result."""
+    executor = RealClaudeExecutor()
+    worktree_path = Path("/test/repo")
+    command = "/gt:pr-submit"
+
+    # Simulate a successful result with positive num_turns
+    line = json.dumps(
+        {
+            "type": "result",
+            "subtype": "success",
+            "is_error": False,
+            "duration_ms": 5000,
+            "num_turns": 5,
+            "result": "Command completed successfully",
+        }
+    )
+
+    result = executor._parse_stream_json_line(line, worktree_path, command)
+
+    assert result is not None
+    assert result["num_turns"] == 5
+    assert result["is_error"] is False
+    assert result["result_text"] == "Command completed successfully"
+
+
+def test_parse_stream_json_line_extracts_result_error() -> None:
+    """Test that _parse_stream_json_line handles error results."""
+    executor = RealClaudeExecutor()
+    worktree_path = Path("/test/repo")
+    command = "/gt:pr-submit"
+
+    # Simulate an error result
+    line = json.dumps(
+        {
+            "type": "result",
+            "subtype": "error",
+            "is_error": True,
+            "duration_ms": 100,
+            "num_turns": 1,
+            "result": "An error occurred",
+        }
+    )
+
+    result = executor._parse_stream_json_line(line, worktree_path, command)
+
+    assert result is not None
+    assert result["num_turns"] == 1
+    assert result["is_error"] is True
+    assert result["result_text"] == "An error occurred"
+
+
 def test_extract_pr_metadata_from_text_extracts_all_fields() -> None:
     """Test that extract_pr_metadata_from_text extracts PR info from agent output."""
     # Simulate typical agent text output with title
