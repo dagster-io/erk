@@ -107,14 +107,18 @@ All commands output JSON with `success` field and appropriate data/error fields.
 
 ## Output Schema Documentation
 
-Kit CLI commands can expose their output schema in `--help` by defining an `OUTPUT_SCHEMA` module-level constant using TypedDict.
+Kit CLI commands can expose their output schema in `--help` using the `@json_output` decorator with TypedDict.
 
 ### Convention
 
-Each kit CLI command module exports `OUTPUT_SCHEMA` as a module-level constant:
+Use the `@json_output` decorator on the Click command to document the JSON output schema:
 
 ```python
 from typing import Literal, TypedDict
+
+import click
+
+from dot_agent_kit.cli.schema_formatting import json_output
 
 
 class ParsedIssue(TypedDict):
@@ -130,12 +134,16 @@ class ParseError(TypedDict):
     message: str
 
 
-OUTPUT_SCHEMA = ParsedIssue | ParseError
+@json_output(ParsedIssue | ParseError)
+@click.command()
+def parse_issue_reference():
+    """Parse GitHub issue reference from plain number or URL."""
+    ...
 ```
 
 ### Help Output Format
 
-When `OUTPUT_SCHEMA` is defined, the schema is automatically appended to `--help`:
+When `@json_output` is applied, the schema is automatically appended to `--help`:
 
 ```
 Usage: dot-agent run erk parse-issue-reference [OPTIONS] ISSUE_REFERENCE
@@ -160,44 +168,40 @@ Output Schema:
 
 To add schema documentation to an existing command:
 
-1. **Replace dataclass imports with TypedDict**:
+1. **Add imports**:
 
    ```python
-   # Before
-   from dataclasses import asdict, dataclass
-
-   # After
    from typing import Literal, TypedDict
+
+   from dot_agent_kit.cli.schema_formatting import json_output
    ```
 
-2. **Convert dataclasses to TypedDict**:
+2. **Define TypedDict schemas**:
 
    ```python
-   # Before
-   @dataclass
-   class ParsedIssue:
-       success: bool
-       issue_number: int
-
-   # After
    class ParsedIssue(TypedDict):
        success: Literal[True]
        issue_number: int
+
+   class ParseError(TypedDict):
+       success: Literal[False]
+       error: str
+       message: str
    ```
 
-3. **Add OUTPUT_SCHEMA constant**:
+3. **Apply @json_output decorator**:
 
    ```python
-   OUTPUT_SCHEMA = ParsedIssue | ParseError
+   @json_output(ParsedIssue | ParseError)
+   @click.command()
+   def my_command():
+       """Command description."""
+       ...
    ```
 
-4. **Update JSON output** (TypedDict is a dict, no `asdict()` needed):
+4. **Return TypedDict instances** (TypedDict is a dict, no `asdict()` needed):
 
    ```python
-   # Before
-   click.echo(json.dumps(asdict(result), indent=2))
-
-   # After
    result: ParsedIssue = {"success": True, "issue_number": 776}
    click.echo(json.dumps(result, indent=2))
    ```

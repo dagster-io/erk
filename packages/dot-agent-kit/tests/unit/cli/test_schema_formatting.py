@@ -329,7 +329,7 @@ Output Schema:
 
 
 class TestRealWorldSchemas:
-    """Tests with real-world-like OUTPUT_SCHEMA patterns."""
+    """Tests with real-world-like @json_output schema patterns."""
 
     def test_mark_impl_success_error_pattern(self) -> None:
         """Test the pattern used in mark_impl_started.py."""

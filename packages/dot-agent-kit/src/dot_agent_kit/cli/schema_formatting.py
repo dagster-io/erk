@@ -28,14 +28,13 @@ from typing import Any, Literal, get_args, get_origin, get_type_hints
 
 import click
 
-# Type hint for type parameters that can include Literal, UnionType, etc.
-TypeHint = Any
-
 # Attribute name used to store schema on decorated commands
 JSON_OUTPUT_SCHEMA_ATTR = "_json_output_schema"
 
 
-def json_output(schema: TypeHint) -> Callable[[click.Command], click.Command]:
+def json_output(
+    schema: Any,  # TypedDict or Union of TypedDicts (e.g., Success | Error)
+) -> Callable[[click.Command], click.Command]:
     """Decorator to mark a kit CLI command as having typed JSON output.
 
     This decorator:
@@ -81,7 +80,9 @@ def json_output(schema: TypeHint) -> Callable[[click.Command], click.Command]:
     return decorator
 
 
-def get_json_output_schema(cmd: click.Command) -> TypeHint | None:
+def get_json_output_schema(
+    cmd: click.Command,
+) -> Any | None:  # Returns TypedDict or Union of TypedDicts
     """Get the JSON output schema from a decorated command.
 
     Args:
@@ -93,7 +94,9 @@ def get_json_output_schema(cmd: click.Command) -> TypeHint | None:
     return getattr(cmd, JSON_OUTPUT_SCHEMA_ATTR, None)
 
 
-def format_type_for_schema(type_hint: TypeHint) -> str:
+def format_type_for_schema(
+    type_hint: Any,  # type, Literal, UnionType, etc.
+) -> str:
     """Format a type hint for schema display.
 
     Args:
@@ -217,11 +220,13 @@ def format_typeddict_for_schema(cls: type, indent: int = 2) -> list[str]:
     return lines
 
 
-def format_schema_for_help(schema_type: TypeHint) -> str:
-    """Format an OUTPUT_SCHEMA type for help output.
+def format_schema_for_help(
+    schema_type: Any,  # TypedDict or Union of TypedDicts
+) -> str:
+    """Format a schema type for help output.
 
     Args:
-        schema_type: The OUTPUT_SCHEMA type (TypedDict or Union of TypedDicts)
+        schema_type: A TypedDict or Union of TypedDicts
 
     Returns:
         Formatted schema block for help text
