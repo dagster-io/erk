@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import click
-from erk_shared.github.issues.label_cache import RealLabelCache
+from erk_shared.github.issues import RealGitHubIssues, RealLabelCache
 from erk_shared.github.metadata import format_plan_content_comment, format_plan_header_body
 from erk_shared.output.output import user_output
 from erk_shared.plan_utils import extract_title_from_plan
@@ -83,7 +83,8 @@ def create_plan(
     )
 
     # Ensure erk-plan label exists (with cache to avoid redundant API calls)
-    label_cache = RealLabelCache(repo_root)
+    # Only create cache for real implementations (not fakes in tests)
+    label_cache = RealLabelCache(repo_root) if isinstance(ctx.issues, RealGitHubIssues) else None
     try:
         ctx.issues.ensure_label_exists(
             repo_root,

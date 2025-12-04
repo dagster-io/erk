@@ -15,7 +15,7 @@ import json
 import sys
 
 import click
-from erk_shared.github.issues.label_cache import RealLabelCache
+from erk_shared.github.issues import RealGitHubIssues, RealLabelCache
 from erk_shared.github.metadata import format_plan_issue_body
 from erk_shared.plan_utils import extract_title_from_plan
 
@@ -64,7 +64,8 @@ def create_plan_from_context(ctx: click.Context) -> None:
     initial_body = plan.strip()
 
     # Ensure label exists (ABC interface, with cache to avoid redundant API calls)
-    label_cache = RealLabelCache(repo_root)
+    # Only create cache for real implementations (not fakes in tests)
+    label_cache = RealLabelCache(repo_root) if isinstance(github, RealGitHubIssues) else None
     try:
         github.ensure_label_exists(
             repo_root=repo_root,

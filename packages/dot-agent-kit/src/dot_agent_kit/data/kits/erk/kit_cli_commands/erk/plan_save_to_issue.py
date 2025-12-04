@@ -21,7 +21,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import click
-from erk_shared.github.issues.label_cache import RealLabelCache
+from erk_shared.github.issues import RealGitHubIssues, RealLabelCache
 from erk_shared.github.metadata import (
     format_plan_content_comment,
     format_plan_header_body,
@@ -96,7 +96,8 @@ def plan_save_to_issue(ctx: click.Context, output_format: str, plan_file: Path |
     )
 
     # Step 5: Ensure erk-plan label exists (with cache to avoid redundant API calls)
-    label_cache = RealLabelCache(repo_root)
+    # Only create cache for real implementations (not fakes in tests)
+    label_cache = RealLabelCache(repo_root) if isinstance(github, RealGitHubIssues) else None
     try:
         github.ensure_label_exists(
             repo_root=repo_root,

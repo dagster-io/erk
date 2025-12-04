@@ -1,7 +1,7 @@
 """Command to mark a plan as having been analyzed for documentation."""
 
 import click
-from erk_shared.github.issues.label_cache import RealLabelCache
+from erk_shared.github.issues import RealGitHubIssues, RealLabelCache
 from erk_shared.output.output import user_output
 
 from erk.cli.constants import (
@@ -35,7 +35,8 @@ def extract_docs(ctx: ErkContext, identifier: str) -> None:
     issue_number = parse_issue_identifier(identifier)
 
     # Ensure label exists in repo (create if needed, with cache to avoid redundant API calls)
-    label_cache = RealLabelCache(repo_root)
+    # Only create cache for real implementations (not fakes in tests)
+    label_cache = RealLabelCache(repo_root) if isinstance(ctx.issues, RealGitHubIssues) else None
     try:
         ctx.issues.ensure_label_exists(
             repo_root,
