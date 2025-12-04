@@ -57,6 +57,18 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "DOT_AGENT_KIT_ID=erk DOT_AGENT_HOOK_ID=exit-plan-mode-hook dot-agent kit-command erk exit-plan-mode-hook",
+            "timeout": 30
+          }
+        ]
+      }
     ]
   }
 }

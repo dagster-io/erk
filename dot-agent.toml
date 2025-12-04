@@ -100,6 +100,14 @@ invocation = "dot-agent kit-command erk plan-save-reminder-hook"
 description = "Remind user to save plan to GitHub after plan mode"
 timeout = 5
 
+[[kits.erk.hooks]]
+id = "exit-plan-mode-hook"
+lifecycle = "PreToolUse"
+matcher = "ExitPlanMode"
+invocation = "dot-agent kit-command erk exit-plan-mode-hook"
+description = "Auto-save plan to GitHub on Plan Mode exit"
+timeout = 30
+
 [kits.gt]
 kit_id = "gt"
 source_type = "bundled"
