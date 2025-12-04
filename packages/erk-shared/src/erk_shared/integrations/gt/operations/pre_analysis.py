@@ -51,7 +51,7 @@ def execute_pre_analysis(
 
     # Step 0b: Check GitHub authentication (required for PR operations)
     yield ProgressEvent("Checking GitHub authentication... (gh auth status)")
-    gh_authenticated, gh_username, _ = ops.github.check_auth_status()
+    gh_authenticated, gh_username, _ = ops.github.auth.check_auth_status()
     if not gh_authenticated:
         yield CompletionEvent(
             PreAnalysisError(
@@ -134,7 +134,7 @@ def execute_pre_analysis(
 
     # Step 2.5: Check for merge conflicts (informational only, does not block)
     # First try GitHub API if PR exists (most accurate), then fallback to local git merge-tree
-    pr_status_info = ops.github.get_pr_info_for_branch(repo_root, branch_name)
+    pr_status_info = ops.github.pr.get_pr_info_for_branch(repo_root, branch_name)
 
     # Track conflict info (will be included in success result)
     has_conflicts = False
@@ -143,7 +143,7 @@ def execute_pre_analysis(
     if pr_status_info is not None:
         pr_number, pr_url = pr_status_info
         # PR exists - check mergeability
-        mergeable, merge_state = ops.github.get_pr_mergeability_status(repo_root, pr_number)
+        mergeable, merge_state = ops.github.pr.get_pr_mergeability_status(repo_root, pr_number)
 
         if mergeable == "CONFLICTING":
             has_conflicts = True

@@ -31,7 +31,7 @@ def unextract_docs(ctx: ErkContext, identifier: str) -> None:
 
     # Remove label from issue
     try:
-        ctx.issues.remove_label_from_issue(repo_root, issue_number, DOCS_EXTRACTED_LABEL)
+        ctx.github.issue.remove_label_from_issue(repo_root, issue_number, DOCS_EXTRACTED_LABEL)
     except RuntimeError as e:
         raise click.ClickException(f"Failed to remove label from issue #{issue_number}: {e}") from e
 

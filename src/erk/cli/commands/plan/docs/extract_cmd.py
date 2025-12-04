@@ -35,7 +35,7 @@ def extract_docs(ctx: ErkContext, identifier: str) -> None:
 
     # Ensure label exists in repo (create if needed)
     try:
-        ctx.issues.ensure_label_exists(
+        ctx.github.issue.ensure_label_exists(
             repo_root,
             DOCS_EXTRACTED_LABEL,
             DOCS_EXTRACTED_LABEL_DESCRIPTION,
@@ -46,7 +46,7 @@ def extract_docs(ctx: ErkContext, identifier: str) -> None:
 
     # Add label to issue (idempotent)
     try:
-        ctx.issues.ensure_label_on_issue(repo_root, issue_number, DOCS_EXTRACTED_LABEL)
+        ctx.github.issue.ensure_label_on_issue(repo_root, issue_number, DOCS_EXTRACTED_LABEL)
     except RuntimeError as e:
         raise click.ClickException(f"Failed to add label to issue #{issue_number}: {e}") from e
 

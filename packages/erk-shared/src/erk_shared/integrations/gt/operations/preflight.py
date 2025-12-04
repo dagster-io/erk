@@ -293,7 +293,7 @@ def _execute_submit_only(
     for attempt in range(max_retries):
         if attempt > 0:
             yield ProgressEvent(f"Attempt {attempt + 1}/{max_retries}...")
-        pr_info = ops.github.get_pr_info_for_branch(repo_root, branch_name)
+        pr_info = ops.github.pr.get_pr_info_for_branch(repo_root, branch_name)
         if pr_info is not None:
             pr_num, _ = pr_info
             yield ProgressEvent(f"PR info retrieved (PR #{pr_num})", style="success")
@@ -314,7 +314,7 @@ def _execute_submit_only(
 
     pr_number, pr_url = pr_info
     # Get Graphite URL using the main_graphite interface
-    repo_info = ops.github.get_repo_info(repo_root)
+    repo_info = ops.github.repo.get_repo_info(repo_root)
     if repo_info is not None:
         repo_id = GitHubRepoId(owner=repo_info.owner, repo=repo_info.name)
         graphite_url = ops.graphite.get_graphite_url(repo_id, pr_number)
@@ -385,7 +385,7 @@ def execute_preflight(
     # Step 3: Get PR diff from GitHub API
     repo_root = ops.git.get_repository_root(cwd)
     yield ProgressEvent(f"Getting PR diff from GitHub... (gh pr diff {pr_number})")
-    pr_diff = ops.github.get_pr_diff(repo_root, pr_number)
+    pr_diff = ops.github.pr.get_pr_diff(repo_root, pr_number)
     diff_lines = len(pr_diff.splitlines())
     yield ProgressEvent(f"PR diff retrieved ({diff_lines} lines)", style="success")
 

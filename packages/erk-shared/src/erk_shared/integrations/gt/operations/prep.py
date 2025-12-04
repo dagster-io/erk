@@ -52,7 +52,7 @@ def execute_prep(
 
     # Step 0b: Check GitHub authentication
     yield ProgressEvent("Checking GitHub authentication... (gh auth status)")
-    gh_authenticated, gh_username, _ = ops.github.check_auth_status()
+    gh_authenticated, gh_username, _ = ops.github.auth.check_auth_status()
     if not gh_authenticated:
         yield CompletionEvent(
             PrepError(

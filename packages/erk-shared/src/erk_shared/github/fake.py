@@ -1,31 +1,44 @@
 """Fake GitHub operations for testing.
 
-FakeGitHub is an in-memory implementation that accepts pre-configured state
-in its constructor. Construct instances directly with keyword arguments.
+DEPRECATED: This module provides backward compatibility for code using the old
+monolithic FakeGitHub class. New code should use the composite gateway pattern:
+
+    from erk_shared.github.gateway import GitHubGateway, create_fake_github_gateway
+    from erk_shared.github.pr.fake import FakeGitHubPrGateway
+
+The FakeGitHub class is a thin wrapper that delegates to the new sub-gateways.
 """
 
 from pathlib import Path
-from typing import cast
 
 from erk_shared.github.abc import GitHub
-from erk_shared.github.issues.types import IssueInfo
+from erk_shared.github.auth.fake import FakeGitHubAuthGateway
+from erk_shared.github.gateway import GitHubGateway, create_fake_github_gateway
+from erk_shared.github.issue.fake import FakeGitHubIssueGateway
+from erk_shared.github.issue.types import IssueInfo
+from erk_shared.github.pr.fake import FakeGitHubPrGateway
+from erk_shared.github.repo.fake import FakeGitHubRepoGateway
+from erk_shared.github.run.fake import FakeGitHubRunGateway
 from erk_shared.github.types import (
     GitHubRepoLocation,
     PRCheckoutInfo,
     PRInfo,
     PRMergeability,
-    PRState,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
 )
+from erk_shared.github.workflow.fake import FakeGitHubWorkflowGateway
 
 
 class FakeGitHub(GitHub):
-    """In-memory fake implementation of GitHub operations.
+    """DEPRECATED: Backward-compatible wrapper around the new sub-gateway pattern.
 
-    This class has NO public setup methods. All state is provided via constructor
-    using keyword arguments with sensible defaults (empty dicts).
+    This class delegates to FakeGitHubPrGateway, FakeGitHubRunGateway, etc.
+    New code should use create_fake_github_gateway() instead.
+
+    The constructor signature is preserved for backward compatibility with
+    existing tests.
     """
 
     def __init__(
@@ -53,190 +66,138 @@ class FakeGitHub(GitHub):
     ) -> None:
         """Create FakeGitHub with pre-configured state.
 
-        Args:
-            prs: Mapping of branch name -> PullRequestInfo
-            pr_statuses: Legacy parameter for backward compatibility.
-                        Mapping of branch name -> (state, pr_number, title)
-            pr_bases: Mapping of pr_number -> base_branch
-            pr_mergeability: Mapping of pr_number -> PRMergeability (None for API errors)
-            workflow_runs: List of WorkflowRun objects to return from list_workflow_runs
-            workflow_runs_by_node_id: Mapping of GraphQL node_id -> WorkflowRun for
-                                     get_workflow_runs_by_node_ids()
-            run_logs: Mapping of run_id -> log string
-            pr_issue_linkages: Mapping of issue_number -> list[PullRequestInfo]
-            polled_run_id: Run ID to return from poll_for_workflow_run (None for timeout)
-            pr_checkout_infos: Mapping of pr_number -> PRCheckoutInfo
-            authenticated: Whether gh CLI is authenticated (default True for test convenience)
-            auth_username: Username returned by check_auth_status() (default "test-user")
-            auth_hostname: Hostname returned by check_auth_status() (default "github.com")
-            issues: List of IssueInfo objects for get_issues_with_pr_linkages()
-            pr_titles: Mapping of pr_number -> title for explicit title storage
-            pr_bodies_by_number: Mapping of pr_number -> body for explicit body storage
-            pr_diffs: Mapping of pr_number -> diff content
-            merge_should_succeed: Whether merge_pr() should succeed (default True)
-            pr_update_should_succeed: Whether PR updates should succeed (default True)
+        DEPRECATED: Use create_fake_github_gateway() with individual sub-gateway
+        fakes instead.
         """
-        if prs is not None and pr_statuses is not None:
-            msg = "Cannot specify both prs and pr_statuses"
-            raise ValueError(msg)
+        # Create sub-gateways with the provided configuration
+        self._pr = FakeGitHubPrGateway(
+            prs=prs,
+            pr_statuses=pr_statuses,
+            pr_bases=pr_bases,
+            pr_mergeability=pr_mergeability,
+            pr_issue_linkages=pr_issue_linkages,
+            pr_checkout_infos=pr_checkout_infos,
+            pr_titles=pr_titles,
+            pr_bodies_by_number=pr_bodies_by_number,
+            pr_diffs=pr_diffs,
+            merge_should_succeed=merge_should_succeed,
+            pr_update_should_succeed=pr_update_should_succeed,
+            issues=issues or [],
+        )
+        self._run = FakeGitHubRunGateway(
+            workflow_runs=workflow_runs,
+            workflow_runs_by_node_id=workflow_runs_by_node_id,
+            run_logs=run_logs,
+        )
+        self._workflow = FakeGitHubWorkflowGateway(
+            polled_run_id=polled_run_id,
+        )
+        self._auth = FakeGitHubAuthGateway(
+            authenticated=authenticated,
+            username=auth_username,
+            hostname=auth_hostname,
+        )
+        self._issue = FakeGitHubIssueGateway(
+            issues={issue.number: issue for issue in (issues or [])},
+        )
+        self._repo = FakeGitHubRepoGateway()
 
-        if pr_statuses is not None:
-            # Convert legacy pr_statuses format to PullRequestInfo
-            self._prs = {}
-            for branch, (state, pr_number, title) in pr_statuses.items():
-                if pr_number is not None:
-                    # Handle None state - default to "OPEN"
-                    resolved_state = state if state is not None and state != "NONE" else "OPEN"
-                    self._prs[branch] = PullRequestInfo(
-                        number=pr_number,
-                        state=resolved_state,
-                        url=f"https://github.com/owner/repo/pull/{pr_number}",
-                        is_draft=False,
-                        title=title,
-                        checks_passing=None,
-                        owner="owner",
-                        repo="repo",
-                        has_conflicts=None,
-                    )
-            self._pr_statuses = pr_statuses
-        else:
-            self._prs = prs or {}
-            self._pr_statuses = None
+        # Store reference to runs list for trigger_workflow to add to
+        self._workflow_runs = workflow_runs if workflow_runs is not None else []
 
-        self._pr_bases = pr_bases or {}
-        self._pr_mergeability = pr_mergeability or {}
-        self._workflow_runs = workflow_runs or []
-        self._workflow_runs_by_node_id = workflow_runs_by_node_id or {}
-        self._run_logs = run_logs or {}
-        self._pr_issue_linkages = pr_issue_linkages or {}
-        self._polled_run_id = polled_run_id
-        self._pr_checkout_infos = pr_checkout_infos or {}
-        self._authenticated = authenticated
-        self._auth_username = auth_username
-        self._auth_hostname = auth_hostname
-        self._issues = issues or []
-        self._pr_titles = pr_titles or {}
-        self._pr_bodies_by_number = pr_bodies_by_number or {}
-        self._pr_diffs = pr_diffs or {}
-        self._merge_should_succeed = merge_should_succeed
-        self._pr_update_should_succeed = pr_update_should_succeed
-        self._updated_pr_bases: list[tuple[int, str]] = []
-        self._updated_pr_bodies: list[tuple[int, str]] = []
-        self._updated_pr_titles: list[tuple[int, str]] = []
-        self._merged_prs: list[int] = []
-        self._closed_prs: list[int] = []
-        self._get_prs_for_repo_calls: list[tuple[Path, bool]] = []
-        self._get_pr_status_calls: list[tuple[Path, str]] = []
-        self._triggered_workflows: list[tuple[str, dict[str, str]]] = []
-        self._poll_attempts: list[tuple[str, str, int, int]] = []
-        self._check_auth_status_calls: list[None] = []
-        self._created_prs: list[tuple[str, str, str, str | None, bool]] = []
+    # =========================================================================
+    # Properties delegating to sub-gateways
+    # =========================================================================
 
     @property
     def merged_prs(self) -> list[int]:
         """List of PR numbers that were merged."""
-        return self._merged_prs
+        return self._pr.merged_prs
 
     @property
     def closed_prs(self) -> list[int]:
         """Read-only access to tracked PR closures for test assertions."""
-        return self._closed_prs
+        return self._pr.closed_prs
 
     @property
     def get_prs_for_repo_calls(self) -> list[tuple[Path, bool]]:
-        """Read-only access to tracked get_prs_for_repo() calls for test assertions.
-
-        Returns list of (repo_root, include_checks) tuples.
-        """
-        return self._get_prs_for_repo_calls
+        """Read-only access to tracked get_prs_for_repo() calls."""
+        return self._pr.get_prs_for_repo_calls
 
     @property
     def get_pr_status_calls(self) -> list[tuple[Path, str]]:
-        """Read-only access to tracked get_pr_status() calls for test assertions.
+        """Read-only access to tracked get_pr_status() calls."""
+        return self._pr.get_pr_status_calls
 
-        Returns list of (repo_root, branch) tuples.
-        """
-        return self._get_pr_status_calls
+    @property
+    def created_prs(self) -> list[tuple[str, str, str, str | None, bool]]:
+        """Read-only access to tracked PR creations."""
+        return self._pr.created_prs
+
+    @property
+    def updated_pr_bases(self) -> list[tuple[int, str]]:
+        """Read-only access to tracked PR base updates."""
+        return self._pr.updated_pr_bases
+
+    @property
+    def updated_pr_bodies(self) -> list[tuple[int, str]]:
+        """Read-only access to tracked PR body updates."""
+        return self._pr.updated_pr_bodies
+
+    @property
+    def updated_pr_titles(self) -> list[tuple[int, str]]:
+        """Read-only access to tracked PR title updates."""
+        return self._pr.updated_pr_titles
+
+    @property
+    def triggered_workflows(self) -> list[tuple[str, dict[str, str]]]:
+        """Read-only access to tracked workflow triggers."""
+        # Strip the ref from the new format for backward compat
+        return [(w, i) for w, i, _ref in self._workflow.triggered_workflows]
+
+    @property
+    def poll_attempts(self) -> list[tuple[str, str, int, int]]:
+        """Read-only access to tracked poll attempts."""
+        return self._workflow.poll_attempts
+
+    @property
+    def check_auth_status_calls(self) -> list[None]:
+        """Get the list of check_auth_status() calls that were made."""
+        return self._auth.check_auth_status_calls
+
+    # =========================================================================
+    # PR operations - delegate to FakeGitHubPrGateway
+    # =========================================================================
 
     def get_prs_for_repo(
         self, repo_root: Path, *, include_checks: bool
     ) -> dict[str, PullRequestInfo]:
-        """Get PR information for all branches (returns pre-configured data).
-
-        The include_checks parameter is accepted but ignored - fake returns the
-        same pre-configured data regardless of this parameter.
-        """
-        self._get_prs_for_repo_calls.append((repo_root, include_checks))
-        return self._prs
+        return self._pr.get_prs_for_repo(repo_root, include_checks=include_checks)
 
     def get_pr_status(self, repo_root: Path, branch: str, *, debug: bool) -> PRInfo:
-        """Get PR status from configured PRs.
-
-        Returns PRInfo("NONE", None, None) if branch not found.
-        """
-        # Support legacy pr_statuses format
-        if self._pr_statuses is not None:
-            result = self._pr_statuses.get(branch)
-            if result is None:
-                return PRInfo("NONE", None, None)
-            state, pr_number, title = result
-            # Convert None state to "NONE" for consistency
-            if state is None:
-                state = "NONE"
-            return PRInfo(cast(PRState, state), pr_number, title)
-
-        pr = self._prs.get(branch)
-        if pr is None:
-            return PRInfo("NONE", None, None)
-        # PullRequestInfo has: number, state, url, is_draft, title, checks_passing
-        # Return state, number, and title as expected by PRInfo
-        return PRInfo(cast(PRState, pr.state), pr.number, pr.title)
+        return self._pr.get_pr_status(repo_root, branch, debug=debug)
 
     def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
-        """Get current base branch of a PR from configured state.
-
-        Returns None if PR number not found.
-        """
-        return self._pr_bases.get(pr_number)
+        return self._pr.get_pr_base_branch(repo_root, pr_number)
 
     def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -> None:
-        """Record PR base branch update in mutation tracking list."""
-        self._updated_pr_bases.append((pr_number, new_base))
+        self._pr.update_pr_base_branch(repo_root, pr_number, new_base)
 
     def update_pr_body(self, repo_root: Path, pr_number: int, body: str) -> None:
-        """Record PR body update in mutation tracking list."""
-        self._updated_pr_bodies.append((pr_number, body))
+        self._pr.update_pr_body(repo_root, pr_number, body)
 
     def get_pr_mergeability(self, repo_root: Path, pr_number: int) -> PRMergeability | None:
-        """Get PR mergeability status from configured state.
-
-        Returns configured mergeability or defaults to MERGEABLE if not configured.
-        """
-        if pr_number in self._pr_mergeability:
-            return self._pr_mergeability[pr_number]
-        # Default to MERGEABLE if not configured
-        return PRMergeability(mergeable="MERGEABLE", merge_state_status="CLEAN")
+        return self._pr.get_pr_mergeability(repo_root, pr_number)
 
     def fetch_pr_titles_batch(
         self, prs: dict[str, PullRequestInfo], repo_root: Path
     ) -> dict[str, PullRequestInfo]:
-        """Fetch PR titles for all PRs in a single batched query.
-
-        Fake just returns the PRs as-is. We assume PRs already have titles
-        if configured. This method is a no-op that returns the input unchanged.
-        """
-        return prs
+        return self._pr.fetch_pr_titles_batch(prs, repo_root)
 
     def enrich_prs_with_ci_status_batch(
         self, prs: dict[str, PullRequestInfo], repo_root: Path
     ) -> dict[str, PullRequestInfo]:
-        """Enrich PRs with CI status and mergeability using batched query.
-
-        Fake just returns the PRs as-is. We assume PRs already have CI status
-        and mergeability if configured. This method is a no-op that returns
-        the input unchanged.
-        """
-        return prs
+        return self._pr.enrich_prs_with_ci_status_batch(prs, repo_root)
 
     def merge_pr(
         self,
@@ -248,49 +209,9 @@ class FakeGitHub(GitHub):
         subject: str | None = None,
         body: str | None = None,
     ) -> bool:
-        """Record PR merge in mutation tracking list.
-
-        Returns value of merge_should_succeed flag (default True).
-        """
-        if self._merge_should_succeed:
-            self._merged_prs.append(pr_number)
-        return self._merge_should_succeed
-
-    def trigger_workflow(
-        self,
-        repo_root: Path,
-        workflow: str,
-        inputs: dict[str, str],
-        ref: str | None = None,
-    ) -> str:
-        """Record workflow trigger in mutation tracking list.
-
-        Note: In production, trigger_workflow() generates a distinct_id internally
-        and adds it to the inputs. Tests should verify the workflow was called
-        with expected inputs; the distinct_id is an internal implementation detail.
-
-        Also creates a WorkflowRun entry so get_workflow_run() can find it.
-        This simulates the real behavior where triggering a workflow creates a run.
-
-        Returns:
-            A fake run ID for testing
-        """
-        self._triggered_workflows.append((workflow, inputs))
-        run_id = "1234567890"
-        # Create a WorkflowRun entry so get_workflow_run() can find it
-        # Use branch_name from inputs if available
-        branch = inputs.get("branch_name", "main")
-        triggered_run = WorkflowRun(
-            run_id=run_id,
-            status="queued",
-            conclusion=None,
-            branch=branch,
-            head_sha="abc123",
-            node_id=f"WFR_{run_id}",
+        return self._pr.merge_pr(
+            repo_root, pr_number, squash=squash, verbose=verbose, subject=subject, body=body
         )
-        # Prepend to list so it's found first (most recent)
-        self._workflow_runs.insert(0, triggered_run)
-        return run_id
 
     def create_pr(
         self,
@@ -302,156 +223,110 @@ class FakeGitHub(GitHub):
         *,
         draft: bool = False,
     ) -> int:
-        """Record PR creation in mutation tracking list.
-
-        Returns:
-            A fake PR number for testing
-        """
-        self._created_prs.append((branch, title, body, base, draft))
-        # Return a fake PR number
-        return 999
-
-    @property
-    def created_prs(self) -> list[tuple[str, str, str, str | None, bool]]:
-        """Read-only access to tracked PR creations for test assertions.
-
-        Returns list of (branch, title, body, base, draft) tuples.
-        """
-        return self._created_prs
+        return self._pr.create_pr(repo_root, branch, title, body, base, draft=draft)
 
     def close_pr(self, repo_root: Path, pr_number: int) -> None:
-        """Record PR closure in mutation tracking list."""
-        self._closed_prs.append(pr_number)
-
-    @property
-    def updated_pr_bases(self) -> list[tuple[int, str]]:
-        """Read-only access to tracked PR base updates for test assertions."""
-        return self._updated_pr_bases
-
-    @property
-    def updated_pr_bodies(self) -> list[tuple[int, str]]:
-        """Read-only access to tracked PR body updates for test assertions."""
-        return self._updated_pr_bodies
-
-    @property
-    def updated_pr_titles(self) -> list[tuple[int, str]]:
-        """Read-only access to tracked PR title updates for test assertions."""
-        return self._updated_pr_titles
-
-    @property
-    def triggered_workflows(self) -> list[tuple[str, dict[str, str]]]:
-        """Read-only access to tracked workflow triggers for test assertions."""
-        return self._triggered_workflows
-
-    def list_workflow_runs(
-        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
-    ) -> list[WorkflowRun]:
-        """List workflow runs for a specific workflow (returns pre-configured data).
-
-        Returns the pre-configured list of workflow runs. The workflow, limit and user
-        parameters are accepted but ignored - fake returns all pre-configured runs.
-        """
-        return self._workflow_runs
-
-    def get_workflow_run(self, repo_root: Path, run_id: str) -> WorkflowRun | None:
-        """Get details for a specific workflow run by ID (returns pre-configured data).
-
-        Args:
-            repo_root: Repository root directory (ignored in fake)
-            run_id: GitHub Actions run ID to lookup
-
-        Returns:
-            WorkflowRun if found in pre-configured data, None otherwise
-        """
-        for run in self._workflow_runs:
-            if run.run_id == run_id:
-                return run
-        return None
-
-    def get_run_logs(self, repo_root: Path, run_id: str) -> str:
-        """Return pre-configured log string for run_id.
-
-        Raises RuntimeError if run_id not found, mimicking gh CLI behavior.
-        """
-        if run_id not in self._run_logs:
-            msg = f"Run {run_id} not found"
-            raise RuntimeError(msg)
-        return self._run_logs[run_id]
+        self._pr.close_pr(repo_root, pr_number)
 
     def get_prs_linked_to_issues(
         self,
         location: GitHubRepoLocation,
         issue_numbers: list[int],
     ) -> dict[int, list[PullRequestInfo]]:
-        """Get PRs linked to issues (returns pre-configured data).
+        return self._pr.get_prs_linked_to_issues(location, issue_numbers)
 
-        Returns only the mappings for issues in issue_numbers that have
-        pre-configured PR linkages. Issues without linkages are omitted.
+    def get_pr_checkout_info(self, repo_root: Path, pr_number: int) -> PRCheckoutInfo | None:
+        return self._pr.get_pr_checkout_info(repo_root, pr_number)
 
-        The location parameter is accepted but ignored - fake returns
-        pre-configured data regardless of the location.
-        """
-        result = {}
-        for issue_num in issue_numbers:
-            if issue_num in self._pr_issue_linkages:
-                result[issue_num] = self._pr_issue_linkages[issue_num]
-        return result
+    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        return self._pr.get_pr_info_for_branch(repo_root, branch)
+
+    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
+        return self._pr.get_pr_state_for_branch(repo_root, branch)
+
+    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
+        return self._pr.get_pr_title(repo_root, pr_number)
+
+    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
+        return self._pr.get_pr_body(repo_root, pr_number)
+
+    def update_pr_title_and_body(
+        self, repo_root: Path, pr_number: int, title: str, body: str
+    ) -> None:
+        self._pr.update_pr_title_and_body(repo_root, pr_number, title, body)
+
+    def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
+        self._pr.mark_pr_ready(repo_root, pr_number)
+
+    def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
+        return self._pr.get_pr_diff(repo_root, pr_number)
+
+    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
+        return self._pr.get_pr_mergeability_status(repo_root, pr_number)
+
+    def get_issues_with_pr_linkages(
+        self,
+        location: GitHubRepoLocation,
+        labels: list[str],
+        state: str | None = None,
+        limit: int | None = None,
+    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+        return self._pr.get_issues_with_pr_linkages(location, labels, state, limit)
+
+    # =========================================================================
+    # Run operations - delegate to FakeGitHubRunGateway
+    # =========================================================================
+
+    def list_workflow_runs(
+        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+    ) -> list[WorkflowRun]:
+        return self._run.list_workflow_runs(repo_root, workflow, limit, user=user)
+
+    def get_workflow_run(self, repo_root: Path, run_id: str) -> WorkflowRun | None:
+        return self._run.get_workflow_run(repo_root, run_id)
+
+    def get_run_logs(self, repo_root: Path, run_id: str) -> str:
+        return self._run.get_run_logs(repo_root, run_id)
 
     def get_workflow_runs_by_branches(
         self, repo_root: Path, workflow: str, branches: list[str]
     ) -> dict[str, WorkflowRun | None]:
-        """Get the most relevant workflow run for each branch.
+        return self._run.get_workflow_runs_by_branches(repo_root, workflow, branches)
 
-        Returns a mapping of branch name -> WorkflowRun for branches that have
-        matching workflow runs. Uses priority: in_progress/queued > failed > success > other.
+    def get_workflow_runs_by_node_ids(
+        self,
+        repo_root: Path,
+        node_ids: list[str],
+    ) -> dict[str, WorkflowRun | None]:
+        return self._run.get_workflow_runs_by_node_ids(repo_root, node_ids)
 
-        The workflow parameter is accepted but ignored - fake returns runs from
-        all pre-configured workflow runs regardless of workflow name.
-        """
-        if not branches:
-            return {}
+    def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -> str | None:
+        return self._run.get_workflow_run_node_id(repo_root, run_id)
 
-        # Group runs by branch
-        runs_by_branch: dict[str, list[WorkflowRun]] = {}
-        for run in self._workflow_runs:
-            if run.branch in branches:
-                if run.branch not in runs_by_branch:
-                    runs_by_branch[run.branch] = []
-                runs_by_branch[run.branch].append(run)
+    # =========================================================================
+    # Workflow operations - delegate to FakeGitHubWorkflowGateway
+    # =========================================================================
 
-        # Select most relevant run for each branch
-        result: dict[str, WorkflowRun | None] = {}
-        for branch in branches:
-            if branch not in runs_by_branch:
-                continue
-
-            branch_runs = runs_by_branch[branch]
-
-            # Priority 1: in_progress or queued (active runs)
-            active_runs = [r for r in branch_runs if r.status in ("in_progress", "queued")]
-            if active_runs:
-                result[branch] = active_runs[0]
-                continue
-
-            # Priority 2: failed completed runs
-            failed_runs = [
-                r for r in branch_runs if r.status == "completed" and r.conclusion == "failure"
-            ]
-            if failed_runs:
-                result[branch] = failed_runs[0]
-                continue
-
-            # Priority 3: successful completed runs (most recent = first in list)
-            completed_runs = [r for r in branch_runs if r.status == "completed"]
-            if completed_runs:
-                result[branch] = completed_runs[0]
-                continue
-
-            # Priority 4: any other runs (unknown status, etc.)
-            if branch_runs:
-                result[branch] = branch_runs[0]
-
-        return result
+    def trigger_workflow(
+        self,
+        repo_root: Path,
+        workflow: str,
+        inputs: dict[str, str],
+        ref: str | None = None,
+    ) -> str:
+        run_id = self._workflow.trigger_workflow(repo_root, workflow, inputs, ref)
+        # Also add to run gateway's list so get_workflow_run can find it
+        branch = inputs.get("branch_name", "main")
+        triggered_run = WorkflowRun(
+            run_id=run_id,
+            status="queued",
+            conclusion=None,
+            branch=branch,
+            head_sha="abc123",
+            node_id=f"WFR_{run_id}",
+        )
+        self._run._workflow_runs.insert(0, triggered_run)
+        return run_id
 
     def poll_for_workflow_run(
         self,
@@ -461,246 +336,41 @@ class FakeGitHub(GitHub):
         timeout: int = 30,
         poll_interval: int = 2,
     ) -> str | None:
-        """Return pre-configured run ID without sleeping.
-
-        Tracks poll attempts for test assertions but returns immediately
-        without actual polling delays.
-
-        Args:
-            repo_root: Repository root directory (ignored)
-            workflow: Workflow filename (ignored)
-            branch_name: Expected branch name (ignored)
-            timeout: Maximum seconds to poll (ignored)
-            poll_interval: Seconds between poll attempts (ignored)
-
-        Returns:
-            Pre-configured run ID or None for timeout simulation
-        """
-        self._poll_attempts.append((workflow, branch_name, timeout, poll_interval))
-        return self._polled_run_id
-
-    @property
-    def poll_attempts(self) -> list[tuple[str, str, int, int]]:
-        """Read-only access to tracked poll attempts for test assertions.
-
-        Returns list of (workflow, branch_name, timeout, poll_interval) tuples.
-        """
-        return self._poll_attempts
-
-    def get_pr_checkout_info(self, repo_root: Path, pr_number: int) -> PRCheckoutInfo | None:
-        """Get PR checkout info from pre-configured state.
-
-        Returns None if pr_number not found in pr_checkout_infos mapping.
-        """
-        return self._pr_checkout_infos.get(pr_number)
-
-    def check_auth_status(self) -> tuple[bool, str | None, str | None]:
-        """Return pre-configured authentication status.
-
-        Tracks calls for verification.
-
-        Returns:
-            Tuple of (is_authenticated, username, hostname)
-        """
-        self._check_auth_status_calls.append(None)
-
-        if not self._authenticated:
-            return (False, None, None)
-
-        return (True, self._auth_username, self._auth_hostname)
-
-    @property
-    def check_auth_status_calls(self) -> list[None]:
-        """Get the list of check_auth_status() calls that were made.
-
-        Returns list of None values (one per call, no arguments tracked).
-
-        This property is for test assertions only.
-        """
-        return self._check_auth_status_calls
-
-    def get_workflow_runs_by_node_ids(
-        self,
-        repo_root: Path,
-        node_ids: list[str],
-    ) -> dict[str, WorkflowRun | None]:
-        """Get workflow runs by GraphQL node IDs (returns pre-configured data).
-
-        Looks up each node_id in the pre-configured workflow_runs_by_node_id mapping.
-
-        Args:
-            repo_root: Repository root directory (ignored in fake)
-            node_ids: List of GraphQL node IDs to lookup
-
-        Returns:
-            Mapping of node_id -> WorkflowRun or None if not found
-        """
-        return {node_id: self._workflow_runs_by_node_id.get(node_id) for node_id in node_ids}
-
-    def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -> str | None:
-        """Get node ID for a workflow run (returns pre-configured fake data).
-
-        Looks up the run_id in the pre-configured workflow_runs_by_node_id mapping
-        (reverse lookup) to find the corresponding node_id.
-
-        Args:
-            repo_root: Repository root directory (ignored in fake)
-            run_id: GitHub Actions run ID
-
-        Returns:
-            Node ID if found in pre-configured data, or a generated fake node_id
-        """
-        # Reverse lookup: find node_id by run_id
-        for node_id, run in self._workflow_runs_by_node_id.items():
-            if run is not None and run.run_id == run_id:
-                return node_id
-
-        # If not in node_id mapping, check regular workflow runs and generate fake node_id
-        for run in self._workflow_runs:
-            if run.run_id == run_id:
-                return f"WFR_fake_node_id_{run_id}"
-
-        # Default: return a fake node_id for any run_id (convenience for tests)
-        return f"WFR_fake_node_id_{run_id}"
-
-    def get_issues_with_pr_linkages(
-        self,
-        location: GitHubRepoLocation,
-        labels: list[str],
-        state: str | None = None,
-        limit: int | None = None,
-    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
-        """Get issues and PR linkages from pre-configured data.
-
-        Filters pre-configured issues by labels and state, then returns
-        matching PR linkages from pr_issue_linkages mapping.
-
-        Args:
-            location: GitHub repository location (ignored in fake)
-            labels: Labels to filter by
-            state: Filter by state ("open", "closed", or None for OPEN default)
-            limit: Maximum issues to return (default: all)
-
-        Returns:
-            Tuple of (filtered_issues, pr_linkages for those issues)
-        """
-        # Default to OPEN to match gh CLI behavior (gh issue list defaults to open)
-        effective_state = state if state is not None else "open"
-
-        # Filter issues by labels
-        filtered_issues = []
-        for issue in self._issues:
-            # Check if issue has all required labels
-            if not all(label in issue.labels for label in labels):
-                continue
-            # Check state filter
-            if issue.state.lower() != effective_state.lower():
-                continue
-            filtered_issues.append(issue)
-
-        # Apply limit
-        effective_limit = limit if limit is not None else len(filtered_issues)
-        filtered_issues = filtered_issues[:effective_limit]
-
-        # Build PR linkages for filtered issues
-        pr_linkages: dict[int, list[PullRequestInfo]] = {}
-        for issue in filtered_issues:
-            if issue.number in self._pr_issue_linkages:
-                pr_linkages[issue.number] = self._pr_issue_linkages[issue.number]
-
-        return (filtered_issues, pr_linkages)
-
-    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR number and URL for a specific branch from configured state.
-
-        Returns None if branch not found in configured PRs.
-        """
-        pr = self._prs.get(branch)
-        if pr is None:
-            return None
-        return (pr.number, pr.url)
-
-    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR number and state for a specific branch from configured state.
-
-        Returns None if branch not found in configured PRs.
-        """
-        pr = self._prs.get(branch)
-        if pr is None:
-            return None
-        return (pr.number, pr.state)
-
-    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
-        """Get PR title by number from configured state.
-
-        First checks explicit pr_titles storage, then searches through
-        configured PRs. Returns None if PR not found.
-        """
-        # Check explicit title storage first
-        if pr_number in self._pr_titles:
-            return self._pr_titles[pr_number]
-
-        # Fall back to searching through PRs
-        for pr in self._prs.values():
-            if pr.number == pr_number:
-                return pr.title
-        return None
-
-    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
-        """Get PR body by number from configured state.
-
-        Checks explicit pr_bodies_by_number storage.
-        Returns None if PR body not configured.
-        """
-        return self._pr_bodies_by_number.get(pr_number)
-
-    def update_pr_title_and_body(
-        self, repo_root: Path, pr_number: int, title: str, body: str
-    ) -> None:
-        """Record PR title and body update in mutation tracking lists.
-
-        Raises RuntimeError if pr_update_should_succeed is False.
-        """
-        if not self._pr_update_should_succeed:
-            raise RuntimeError("PR update failed (configured to fail)")
-
-        self._updated_pr_titles.append((pr_number, title))
-        self._updated_pr_bodies.append((pr_number, body))
-
-    def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
-        """Mark a draft PR as ready for review (fake is a no-op)."""
-        pass
-
-    def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
-        """Get the diff for a PR from configured state or return default.
-
-        First checks explicit pr_diffs storage. Returns a simple default
-        diff if not configured.
-        """
-        if pr_number in self._pr_diffs:
-            return self._pr_diffs[pr_number]
-
-        return (
-            "diff --git a/file.py b/file.py\n"
-            "--- a/file.py\n"
-            "+++ b/file.py\n"
-            "@@ -1,1 +1,1 @@\n"
-            "-old\n"
-            "+new"
+        return self._workflow.poll_for_workflow_run(
+            repo_root, workflow, branch_name, timeout, poll_interval
         )
 
-    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
-        """Get PR mergeability status from configured state.
+    # =========================================================================
+    # Auth operations - delegate to FakeGitHubAuthGateway
+    # =========================================================================
 
-        Returns configured mergeability or defaults to ("MERGEABLE", "CLEAN").
-        """
-        if pr_number in self._pr_mergeability:
-            mergeability = self._pr_mergeability[pr_number]
-            if mergeability is None:
-                return ("UNKNOWN", "UNKNOWN")
-            return (mergeability.mergeable, mergeability.merge_state_status)
-        return ("MERGEABLE", "CLEAN")
+    def check_auth_status(self) -> tuple[bool, str | None, str | None]:
+        return self._auth.check_auth_status()
+
+    # =========================================================================
+    # Repo operations - delegate to FakeGitHubRepoGateway
+    # =========================================================================
 
     def get_repo_info(self, repo_root: Path) -> RepoInfo:
-        """Get repository owner and name (returns test defaults)."""
-        return RepoInfo(owner="test-owner", name="test-repo")
+        return self._repo.get_repo_info(repo_root)
+
+
+# =============================================================================
+# Re-exports for migration convenience
+# =============================================================================
+# These allow importing new types from the old location during migration.
+
+__all__ = [
+    # Legacy (backward compat)
+    "FakeGitHub",
+    # New composite gateway
+    "GitHubGateway",
+    "create_fake_github_gateway",
+    # New sub-gateway fakes
+    "FakeGitHubAuthGateway",
+    "FakeGitHubPrGateway",
+    "FakeGitHubIssueGateway",
+    "FakeGitHubRunGateway",
+    "FakeGitHubWorkflowGateway",
+    "FakeGitHubRepoGateway",
+]

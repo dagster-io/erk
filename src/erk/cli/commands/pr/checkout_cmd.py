@@ -51,7 +51,7 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
 
     # Get PR checkout info from GitHub
     ctx.feedback.info(f"Fetching PR #{pr_number}...")
-    pr_info = ctx.github.get_pr_checkout_info(repo.root, pr_number)
+    pr_info = ctx.github.pr.get_pr_checkout_info(repo.root, pr_number)
     if pr_info is None:
         ctx.feedback.error(
             f"Could not find PR #{pr_number}\n\n"

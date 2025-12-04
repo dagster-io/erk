@@ -26,6 +26,7 @@ The documentation is organized by topic category:
 | [Commands](commands/)         | Slash command optimization                       |
 | [Reference](reference/)       | GitHub integration, external references          |
 | [Erk](erk/)                   | Erk-specific workflows                           |
+| [Migrations](migrations/)     | Temporary docs for active code migrations        |
 
 ### Root Documents
 
@@ -68,6 +69,7 @@ docs/agent/
 ├── erk/                       # Erk-specific guides
 ├── hooks/                     # Hook system
 ├── kits/                      # Kit development
+├── migrations/                # Temporary migration docs (dated, with removal criteria)
 ├── planning/                  # Plan workflows
 ├── reference/                 # External integrations
 ├── sessions/                  # Session log tools

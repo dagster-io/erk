@@ -120,7 +120,7 @@ def execute_update_pr(
         yield CompletionEvent({"success": False, "error": "Could not determine current branch"})
         return
 
-    pr_info = ops.github.get_pr_info_for_branch(repo_root, branch)
+    pr_info = ops.github.pr.get_pr_info_for_branch(repo_root, branch)
     if not pr_info:
         yield CompletionEvent(
             {"success": False, "error": "PR submission succeeded but failed to retrieve PR info"}

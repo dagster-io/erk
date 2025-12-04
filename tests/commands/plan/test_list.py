@@ -3,8 +3,15 @@
 from datetime import UTC, datetime
 
 from click.testing import CliRunner
+from erk_shared.github.auth.fake import FakeGitHubAuthGateway
 from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.gateway import GitHubGateway
+from erk_shared.github.issue.fake import FakeGitHubIssueGateway
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
+from erk_shared.github.pr.fake import FakeGitHubPrGateway
+from erk_shared.github.repo.fake import FakeGitHubRepoGateway
+from erk_shared.github.run.fake import FakeGitHubRunGateway
+from erk_shared.github.workflow.fake import FakeGitHubWorkflowGateway
 from erk_shared.plan_store.types import Plan, PlanState
 
 from erk.cli.cli import cli
@@ -261,12 +268,17 @@ last_dispatched_node_id: 'WFR_all_flag'
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues(issues={200: plan_to_issue(plan)})
-        github = FakeGitHub(
-            issues=[plan_to_issue(plan)],
-            workflow_runs_by_node_id={"WFR_all_flag": workflow_run},
+        issue_info = plan_to_issue(plan)
+        # Use new GitHubGateway pattern with properly configured sub-gateways
+        github = GitHubGateway(
+            auth=FakeGitHubAuthGateway(),
+            pr=FakeGitHubPrGateway(issues=[issue_info]),
+            issue=FakeGitHubIssueGateway(issues={200: issue_info}),
+            run=FakeGitHubRunGateway(workflow_runs_by_node_id={"WFR_all_flag": workflow_run}),
+            workflow=FakeGitHubWorkflowGateway(),
+            repo=FakeGitHubRepoGateway(),
         )
-        ctx = build_workspace_test_context(env, issues=issues, github=github)
+        ctx = build_workspace_test_context(env, github=github)
 
         result = runner.invoke(cli, ["plan", "list", "--all"], obj=ctx)
 
@@ -314,12 +326,17 @@ last_dispatched_node_id: 'WFR_short_flag'
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues(issues={201: plan_to_issue(plan)})
-        github = FakeGitHub(
-            issues=[plan_to_issue(plan)],
-            workflow_runs_by_node_id={"WFR_short_flag": workflow_run},
+        issue_info = plan_to_issue(plan)
+        # Use new GitHubGateway pattern with properly configured sub-gateways
+        github = GitHubGateway(
+            auth=FakeGitHubAuthGateway(),
+            pr=FakeGitHubPrGateway(issues=[issue_info]),
+            issue=FakeGitHubIssueGateway(issues={201: issue_info}),
+            run=FakeGitHubRunGateway(workflow_runs_by_node_id={"WFR_short_flag": workflow_run}),
+            workflow=FakeGitHubWorkflowGateway(),
+            repo=FakeGitHubRepoGateway(),
         )
-        ctx = build_workspace_test_context(env, issues=issues, github=github)
+        ctx = build_workspace_test_context(env, github=github)
 
         result = runner.invoke(cli, ["plan", "list", "-a"], obj=ctx)
 

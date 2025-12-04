@@ -392,7 +392,7 @@ def _prepare_plan_source_from_issue(
     timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
     desired_branch_name = base_branch_name + timestamp_suffix
     # Use GitHub's native branch linking via `gh issue develop`
-    dev_branch = ctx.issue_link_branches.create_development_branch(
+    dev_branch = ctx.github.issue.create_development_branch(
         repo_root,
         int(issue_number),
         branch_name=desired_branch_name,

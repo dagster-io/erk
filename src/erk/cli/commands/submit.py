@@ -152,7 +152,7 @@ def _close_orphaned_draft_prs(
     location = github_repo_location_from_url(repo_root, issue_url)
     if location is None:
         return []
-    pr_linkages = ctx.github.get_prs_linked_to_issues(location, [issue_number])
+    pr_linkages = ctx.github.pr.get_prs_linked_to_issues(location, [issue_number])
     linked_prs = pr_linkages.get(issue_number, [])
 
     closed_prs: list[int] = []
@@ -160,7 +160,7 @@ def _close_orphaned_draft_prs(
         # Close orphaned drafts: draft PRs that are OPEN and not the one we just created
         # Any draft PR linked to an erk-plan issue is fair game to close
         if pr.is_draft and pr.state == "OPEN" and pr.number != keep_pr_number:
-            ctx.github.close_pr(repo_root, pr.number)
+            ctx.github.pr.close_pr(repo_root, pr.number)
             closed_prs.append(pr.number)
 
     return closed_prs
@@ -181,7 +181,7 @@ def _validate_issue_for_submit(
     """
     # Fetch issue from GitHub
     try:
-        issue = ctx.issues.get_issue(repo.root, issue_number)
+        issue = ctx.github.issue.get_issue(repo.root, issue_number)
     except RuntimeError as e:
         user_output(click.style("Error: ", fg="red") + str(e))
         raise SystemExit(1) from None
@@ -229,7 +229,7 @@ def _validate_issue_for_submit(
         desired_branch_name,
         trunk_branch,
     )
-    dev_branch = ctx.issue_link_branches.create_development_branch(
+    dev_branch = ctx.github.issue.create_development_branch(
         repo.root,
         issue_number,
         branch_name=desired_branch_name,
@@ -254,7 +254,7 @@ def _validate_issue_for_submit(
 
     pr_number: int | None = None
     if branch_exists:
-        pr_status = ctx.github.get_pr_status(repo.root, branch_name, debug=False)
+        pr_status = ctx.github.pr.get_pr_status(repo.root, branch_name, debug=False)
         if pr_status.pr_number is not None:
             pr_number = pr_status.pr_number
 
@@ -324,7 +324,7 @@ def _submit_single_issue(
                 f"This PR will be marked ready for review after implementation completes."
             )
             pr_title = _strip_plan_markers(issue.title)
-            pr_number = ctx.github.create_pr(
+            pr_number = ctx.github.pr.create_pr(
                 repo_root=repo.root,
                 branch=branch_name,
                 title=pr_title,
@@ -343,7 +343,7 @@ def _submit_single_issue(
                 f"erk pr checkout {pr_number}\n"
                 f"```"
             )
-            ctx.github.update_pr_body(repo.root, pr_number, footer_body)
+            ctx.github.pr.update_pr_body(repo.root, pr_number, footer_body)
 
             # Close any orphaned draft PRs
             closed_prs = _close_orphaned_draft_prs(
@@ -398,7 +398,7 @@ def _submit_single_issue(
             f"This PR will be marked ready for review after implementation completes."
         )
         pr_title = _strip_plan_markers(issue.title)
-        pr_number = ctx.github.create_pr(
+        pr_number = ctx.github.pr.create_pr(
             repo_root=repo.root,
             branch=branch_name,
             title=pr_title,
@@ -417,7 +417,7 @@ def _submit_single_issue(
             f"erk pr checkout {pr_number}\n"
             f"```"
         )
-        ctx.github.update_pr_body(repo.root, pr_number, footer_body)
+        ctx.github.pr.update_pr_body(repo.root, pr_number, footer_body)
 
         # Close any orphaned draft PRs for this issue
         closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number, issue.url)
@@ -449,7 +449,7 @@ def _submit_single_issue(
     user_output("")
     user_output(f"Triggering workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
     user_output(f"  Display name: {DISPATCH_WORKFLOW_METADATA_NAME}")
-    run_id = ctx.github.trigger_workflow(
+    run_id = ctx.github.workflow.trigger_workflow(
         repo_root=repo.root,
         workflow=DISPATCH_WORKFLOW_NAME,
         inputs={
@@ -464,18 +464,18 @@ def _submit_single_issue(
 
     # Write dispatch metadata synchronously to fix race condition with erk dash
     # This ensures the issue body has the run info before we return to the user
-    node_id = ctx.github.get_workflow_run_node_id(repo.root, run_id)
+    node_id = ctx.github.run.get_workflow_run_node_id(repo.root, run_id)
     if node_id is not None:
         try:
             # Fetch fresh issue body and update dispatch metadata
-            fresh_issue = ctx.issues.get_issue(repo.root, issue_number)
+            fresh_issue = ctx.github.issue.get_issue(repo.root, issue_number)
             updated_body = update_plan_header_dispatch(
                 issue_body=fresh_issue.body,
                 run_id=run_id,
                 node_id=node_id,
                 dispatched_at=queued_at,
             )
-            ctx.issues.update_issue_body(repo.root, issue_number, updated_body)
+            ctx.github.issue.update_issue_body(repo.root, issue_number, updated_body)
             user_output(click.style("✓", fg="green") + " Dispatch metadata written to issue")
         except Exception as e:
             # Log warning but don't block - workflow is already triggered
@@ -514,7 +514,7 @@ def _submit_single_issue(
         )
 
         user_output("Posting queued event comment...")
-        ctx.issues.add_comment(repo.root, issue_number, comment_body)
+        ctx.github.issue.add_comment(repo.root, issue_number, comment_body)
         user_output(click.style("✓", fg="green") + " Queued event comment posted")
     except Exception as e:
         # Log warning but don't block - workflow is already triggered
@@ -577,7 +577,7 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...]) -> None:
         raise SystemExit(1)
 
     # Get GitHub username (authentication already validated)
-    _, username, _ = ctx.github.check_auth_status()
+    _, username, _ = ctx.github.auth.check_auth_status()
     submitted_by = username or "unknown"
 
     # Phase 1: Validate ALL issues upfront (atomic - fail fast before any side effects)

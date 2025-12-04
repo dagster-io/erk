@@ -12,9 +12,15 @@ from pathlib import Path
 from unittest.mock import patch
 
 from click.testing import CliRunner
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues import IssueInfo
+from erk_shared.github.auth.fake import FakeGitHubAuthGateway
+from erk_shared.github.gateway import GitHubGateway
+from erk_shared.github.issue.fake import FakeGitHubIssueGateway
+from erk_shared.github.issues.types import IssueInfo
+from erk_shared.github.pr.fake import FakeGitHubPrGateway
+from erk_shared.github.repo.fake import FakeGitHubRepoGateway
+from erk_shared.github.run.fake import FakeGitHubRunGateway
 from erk_shared.github.types import GitHubRepoLocation, PullRequestInfo
+from erk_shared.github.workflow.fake import FakeGitHubWorkflowGateway
 from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -46,7 +52,7 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
         # Track which directory is passed to GitHub operations
         captured_repo_root: Path | None = None
 
-        class TrackingGitHub(FakeGitHub):
+        class TrackingPrGateway(FakeGitHubPrGateway):
             def get_issues_with_pr_linkages(
                 self,
                 location: GitHubRepoLocation,
@@ -58,11 +64,17 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
                 captured_repo_root = location.root
                 return [], {}  # Return empty results
 
-        github = TrackingGitHub()
+        tracking_pr = TrackingPrGateway()
+        github = GitHubGateway(
+            auth=FakeGitHubAuthGateway(),
+            pr=tracking_pr,
+            issue=FakeGitHubIssueGateway(),
+            run=FakeGitHubRunGateway(),
+            workflow=FakeGitHubWorkflowGateway(),
+            repo=FakeGitHubRepoGateway(),
+        )
         # Create PlanListService with tracking GitHub
-        from erk_shared.github.issues import FakeGitHubIssues
-
-        plan_list_service = PlanListService(github, FakeGitHubIssues())
+        plan_list_service = PlanListService(github)
         ctx = env.build_context(github=github, plan_list_service=plan_list_service)
 
         # Act: Run the dash command

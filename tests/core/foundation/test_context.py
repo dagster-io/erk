@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.gateway import GitHubGateway
 from erk_shared.integrations.graphite.fake import FakeGraphite
 
 from erk.core.config_store import GlobalConfig
@@ -39,7 +40,8 @@ def test_context_initialization_and_attributes() -> None:
 
     assert ctx.git is git_ops
     assert ctx.global_config == global_config
-    assert ctx.github is github_ops
+    # github_ops is wrapped in a GitHubGateway
+    assert isinstance(ctx.github, GitHubGateway)
     assert ctx.graphite is graphite_ops
     assert ctx.shell is shell_ops
     assert ctx.dry_run is False
@@ -102,7 +104,7 @@ def test_minimal_factory_creates_fake_ops() -> None:
     ctx = ErkContext.minimal(git_ops, cwd)
 
     # All other ops should be fake implementations
-    assert isinstance(ctx.github, FakeGitHub)
+    assert isinstance(ctx.github, GitHubGateway)  # Uses composite with fake sub-gateways
     assert isinstance(ctx.graphite, FakeGraphite)
     assert isinstance(ctx.shell, FakeShell)
 
@@ -112,7 +114,7 @@ def test_for_test_factory_creates_context_with_defaults() -> None:
     ctx = ErkContext.for_test()
 
     assert isinstance(ctx.git, FakeGit)
-    assert isinstance(ctx.github, FakeGitHub)
+    assert isinstance(ctx.github, GitHubGateway)  # Uses composite with fake sub-gateways
     assert isinstance(ctx.graphite, FakeGraphite)
     assert isinstance(ctx.shell, FakeShell)
     assert ctx.cwd == sentinel_path()
@@ -136,7 +138,8 @@ def test_for_test_factory_accepts_custom_ops() -> None:
     )
 
     assert ctx.git is git_ops
-    assert ctx.github is github_ops
+    # github_ops is wrapped in a GitHubGateway
+    assert isinstance(ctx.github, GitHubGateway)
     assert ctx.cwd == cwd
 
 

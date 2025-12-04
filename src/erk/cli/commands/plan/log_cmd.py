@@ -145,7 +145,7 @@ def plan_log(ctx: ErkContext, identifier: str, output_json: bool) -> None:
         issue_number = int(plan.plan_identifier)
 
         # Fetch all comments for the plan issue
-        comment_bodies = ctx.issues.get_issue_comments(repo_root, issue_number)
+        comment_bodies = ctx.github.issue.get_issue_comments(repo_root, issue_number)
 
         # Extract events from all comments
         events = _extract_events_from_comments(comment_bodies)

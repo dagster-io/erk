@@ -26,7 +26,7 @@ def list_unextracted(ctx: ErkContext) -> None:
 
     # Query all closed issues with erk-plan label
     try:
-        issues = ctx.issues.list_issues(
+        issues = ctx.github.issue.list_issues(
             repo_root,
             labels=[ERK_PLAN_LABEL],
             state="closed",

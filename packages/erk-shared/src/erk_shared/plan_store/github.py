@@ -10,7 +10,8 @@ from datetime import UTC
 from pathlib import Path
 from urllib.parse import urlparse
 
-from erk_shared.github.issues import GitHubIssues, IssueInfo
+from erk_shared.github.gateway import GitHubGateway
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata import extract_plan_from_comment
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.plan_store.types import Plan, PlanQuery, PlanState
@@ -26,13 +27,13 @@ class GitHubPlanStore(PlanStore):
     - For old-format issues: body contains plan content directly (backward compatible)
     """
 
-    def __init__(self, github_issues: GitHubIssues):
-        """Initialize GitHubPlanStore with GitHub issues interface.
+    def __init__(self, github: GitHubGateway):
+        """Initialize GitHubPlanStore with GitHub gateway.
 
         Args:
-            github_issues: GitHubIssues implementation to use for issue operations
+            github: GitHubGateway composite for all GitHub operations
         """
-        self._github_issues = github_issues
+        self._github = github
 
     def get_plan(self, repo_root: Path, plan_identifier: str) -> Plan:
         """Fetch plan from GitHub by identifier.
@@ -58,10 +59,10 @@ class GitHubPlanStore(PlanStore):
             RuntimeError: If gh CLI fails or plan not found
         """
         issue_number = int(plan_identifier)
-        issue_info = self._github_issues.get_issue(repo_root, issue_number)
+        issue_info = self._github.issue.get_issue(repo_root, issue_number)
 
         # Fetch first comment (always fresh - no caching)
-        comments = self._github_issues.get_issue_comments(repo_root, issue_number)
+        comments = self._github.issue.get_issue_comments(repo_root, issue_number)
 
         # Try to extract plan content from first comment (schema version 2)
         plan_body = None
@@ -103,8 +104,8 @@ class GitHubPlanStore(PlanStore):
         elif query.state == PlanState.CLOSED:
             state_str = "closed"
 
-        # Use GitHubIssues native limit support for efficient querying
-        issues = self._github_issues.list_issues(
+        # Use GitHubIssueGateway native limit support for efficient querying
+        issues = self._github.issue.list_issues(
             repo_root,
             labels=query.labels,
             state=state_str,
@@ -136,10 +137,10 @@ class GitHubPlanStore(PlanStore):
 
         # Add comment before closing
         comment_body = "Plan completed via erk plan close"
-        self._github_issues.add_comment(repo_root, number, comment_body)
+        self._github.issue.add_comment(repo_root, number, comment_body)
 
         # Close the issue
-        self._github_issues.close_issue(repo_root, number)
+        self._github.issue.close_issue(repo_root, number)
 
     def _parse_identifier(self, identifier: str) -> int:
         """Parse identifier to extract issue number.

@@ -33,8 +33,8 @@ class TestRealGtKitOps:
         assert isinstance(git_ops, RealGit)
 
     def test_github(self) -> None:
-        """Test github attribute returns a GitHub implementation."""
-        from erk_shared.github.abc import GitHub
+        """Test github attribute returns a GitHubGateway composite."""
+        from erk_shared.github.gateway import GitHubGateway
 
         ops = RealGtKit()
 
@@ -42,4 +42,4 @@ class TestRealGtKitOps:
         github_ops = ops.github
 
         # Verify return type matches interface contract
-        assert isinstance(github_ops, GitHub)
+        assert isinstance(github_ops, GitHubGateway)

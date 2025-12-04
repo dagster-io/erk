@@ -646,7 +646,7 @@ def create_wt(
 
         # Fetch issue using integration layer
         try:
-            issue_info = ctx.issues.get_issue(repo.root, issue_number_parsed)
+            issue_info = ctx.github.issue.get_issue(repo.root, issue_number_parsed)
         except RuntimeError as e:
             user_output(
                 click.style("Error: ", fg="red")
@@ -678,7 +678,7 @@ def create_wt(
         base_branch_name = sanitize_worktree_name(f"{issue_number_parsed}-{issue_info.title}")
         timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
         desired_branch_name = base_branch_name + timestamp_suffix
-        dev_branch = ctx.issue_link_branches.create_development_branch(
+        dev_branch = ctx.github.issue.create_development_branch(
             repo.root,
             issue_number_parsed,
             branch_name=desired_branch_name,

@@ -17,9 +17,14 @@ from pathlib import Path
 
 from erk_shared.git.abc import Git
 from erk_shared.git.fake import FakeGit
-from erk_shared.github.abc import GitHub
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PRMergeability
+from erk_shared.github.auth.fake import FakeGitHubAuthGateway
+from erk_shared.github.gateway import GitHubGateway
+from erk_shared.github.issue.fake import FakeGitHubIssueGateway
+from erk_shared.github.pr.fake import FakeGitHubPrGateway
+from erk_shared.github.repo.fake import FakeGitHubRepoGateway
+from erk_shared.github.run.fake import FakeGitHubRunGateway
+from erk_shared.github.types import PRMergeability, PullRequestInfo
+from erk_shared.github.workflow.fake import FakeGitHubWorkflowGateway
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
@@ -79,7 +84,7 @@ class FakeGtKitOps:
         self._github_builder_state = (
             github_builder_state if github_builder_state is not None else GitHubBuilderState()
         )
-        self._github_instance: FakeGitHub | None = None
+        self._github_instance: GitHubGateway | None = None
 
         # Graphite instance
         self._main_graphite = main_graphite if main_graphite is not None else FakeGraphite()
@@ -158,19 +163,17 @@ class FakeGtKitOps:
         return self._git_instance
 
     @property
-    def github(self) -> GitHub:
+    def github(self) -> GitHubGateway:
         """Get the GitHub operations interface.
 
-        Constructs FakeGitHub lazily from accumulated builder state.
+        Constructs GitHubGateway lazily from accumulated builder state.
         """
         if self._github_instance is None:
             self._github_instance = self._build_fake_github()
         return self._github_instance
 
-    def _build_fake_github(self) -> FakeGitHub:
-        """Build FakeGitHub from accumulated builder state."""
-        from erk_shared.github.types import PullRequestInfo
-
+    def _build_fake_github(self) -> GitHubGateway:
+        """Build GitHubGateway from accumulated builder state."""
         # Build prs dict from pr_numbers, pr_urls, pr_states
         prs: dict[str, PullRequestInfo] = {}
         for branch, pr_number in self._github_builder_state.pr_numbers.items():
@@ -201,7 +204,8 @@ class FakeGtKitOps:
                 mergeable=mergeable, merge_state_status=merge_state
             )
 
-        return FakeGitHub(
+        # Create FakeGitHubPrGateway with accumulated state
+        pr_gateway = FakeGitHubPrGateway(
             prs=prs,
             pr_titles=self._github_builder_state.pr_titles,
             pr_bodies_by_number=self._github_builder_state.pr_bodies,
@@ -209,9 +213,28 @@ class FakeGtKitOps:
             pr_mergeability=pr_mergeability,
             merge_should_succeed=self._github_builder_state.merge_should_succeed,
             pr_update_should_succeed=self._github_builder_state.pr_update_should_succeed,
+        )
+
+        # Create FakeGitHubAuthGateway with authentication state
+        auth_gateway = FakeGitHubAuthGateway(
             authenticated=self._github_builder_state.authenticated,
-            auth_username=self._github_builder_state.auth_username,
-            auth_hostname=self._github_builder_state.auth_hostname,
+            username=self._github_builder_state.auth_username,
+            hostname=self._github_builder_state.auth_hostname,
+        )
+
+        # Create other minimal fake gateways
+        issue_gateway = FakeGitHubIssueGateway()
+        run_gateway = FakeGitHubRunGateway()
+        workflow_gateway = FakeGitHubWorkflowGateway()
+        repo_gateway = FakeGitHubRepoGateway()
+
+        return GitHubGateway(
+            auth=auth_gateway,
+            pr=pr_gateway,
+            issue=issue_gateway,
+            run=run_gateway,
+            workflow=workflow_gateway,
+            repo=repo_gateway,
         )
 
     @property
