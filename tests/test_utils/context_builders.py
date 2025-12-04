@@ -46,10 +46,21 @@ def build_workspace_test_context(
     """
     # Only create default git if not provided in kwargs
     if "git" not in kwargs:
-        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        git_ops = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
+        )
         if dry_run:
             git_ops = DryRunGit(git_ops)
         kwargs["git"] = git_ops
+    else:
+        # Ensure custom git has remote_urls configured for repo discovery
+        git_ops = kwargs["git"]
+        unwrapped = git_ops._wrapped if isinstance(git_ops, DryRunGit) else git_ops
+        if hasattr(unwrapped, "_remote_urls"):
+            # Add default remote URL if not already set for env.cwd
+            if (env.cwd, "origin") not in unwrapped._remote_urls:
+                unwrapped._remote_urls[(env.cwd, "origin")] = "https://github.com/owner/repo.git"
 
     # Provide defaults for other integrations if not in kwargs
     if "github" not in kwargs:

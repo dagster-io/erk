@@ -11,6 +11,7 @@ from collections.abc import Generator
 from pathlib import Path
 from typing import NamedTuple
 
+from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.types import GitHubRepoId
 from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 from erk_shared.integrations.gt.abc import GtKit
@@ -313,13 +314,11 @@ def _execute_submit_only(
         return
 
     pr_number, pr_url = pr_info
-    # Get Graphite URL using the main_graphite interface
-    repo_info = ops.github.get_repo_info(repo_root)
-    if repo_info is not None:
-        repo_id = GitHubRepoId(owner=repo_info.owner, repo=repo_info.name)
-        graphite_url = ops.graphite.get_graphite_url(repo_id, pr_number)
-    else:
-        graphite_url = ""
+    # Get Graphite URL by parsing repo identity from git remote URL (no API call)
+    remote_url = ops.git.get_remote_url(repo_root, "origin")
+    owner, repo_name = parse_git_remote_url(remote_url)
+    repo_id = GitHubRepoId(owner=owner, repo=repo_name)
+    graphite_url = ops.graphite.get_graphite_url(repo_id, pr_number)
 
     yield CompletionEvent((pr_number, pr_url, graphite_url, branch_name))
 

@@ -225,13 +225,12 @@ def _build_plans_table(
     # Determine if we need workflow runs (for display or filtering)
     needs_workflow_runs = runs or run_state is not None
 
-    # Resolve owner/repo from git remote
-    repo_info = ctx.github.get_repo_info(repo_root)
-    if repo_info is None:
+    # Get owner/repo from RepoContext (already populated via git remote URL parsing)
+    if repo.github is None:
         user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
         raise SystemExit(1)
-    owner = repo_info.owner
-    repo_name = repo_info.name
+    owner = repo.github.owner
+    repo_name = repo.github.repo
 
     # Use PlanListService for batched API calls
     # Skip workflow runs when not needed for better performance
@@ -538,13 +537,12 @@ def _run_interactive_mode(
     ensure_erk_metadata_dir(repo)
     repo_root = repo.root
 
-    # Resolve owner/repo from git remote
-    repo_info = ctx.github.get_repo_info(repo_root)
-    if repo_info is None:
+    # Get owner/repo from RepoContext (already populated via git remote URL parsing)
+    if repo.github is None:
         user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
         raise SystemExit(1)
-    owner = repo_info.owner
-    repo_name = repo_info.name
+    owner = repo.github.owner
+    repo_name = repo.github.repo
 
     # Build labels - default to ["erk-plan"]
     labels = label if label else ("erk-plan",)

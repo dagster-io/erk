@@ -72,6 +72,7 @@ class FakeGtKitOps:
         self._git_diff_to_branch: dict[tuple[Path, str], str] = {}
         self._git_merge_conflicts: dict[tuple[str, str], bool] = {}
         self._git_add_all_raises: Exception | None = None
+        self._git_remote_urls: dict[tuple[Path, str], str] = {}
         self._git_instance: FakeGit | None = None
         self._repo_root: str = "/fake/repo/root"
 
@@ -148,6 +149,7 @@ class FakeGtKitOps:
             diff_to_branch=diff_to_branch,
             merge_conflicts=self._git_merge_conflicts,
             add_all_raises=self._git_add_all_raises,
+            remote_urls=self._git_remote_urls,
         )
 
     @property
@@ -633,5 +635,20 @@ class FakeGtKitOps:
         """
         repo_root = Path(self._repo_root)
         self._git_trunk_branches[repo_root] = trunk
+        self._git_instance = None
+        return self
+
+    def with_remote_url(self, url: str, remote: str = "origin") -> "FakeGtKitOps":
+        """Set the URL for a git remote.
+
+        Args:
+            url: Remote URL (e.g., 'https://github.com/org/repo.git')
+            remote: Remote name (default: 'origin')
+
+        Returns:
+            Self for chaining
+        """
+        repo_root = Path(self._repo_root)
+        self._git_remote_urls[(repo_root, remote)] = url
         self._git_instance = None
         return self
