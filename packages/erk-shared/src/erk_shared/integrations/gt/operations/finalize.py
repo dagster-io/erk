@@ -110,6 +110,14 @@ def execute_finalize(
     ops.github.update_pr_title_and_body(repo_root, pr_number, pr_title, final_body)
     yield ProgressEvent("PR metadata updated", style="success")
 
+    # Amend local commit with PR title and body (without metadata footer)
+    yield ProgressEvent("Updating local commit message...")
+    commit_message = pr_title
+    if pr_body:
+        commit_message = f"{pr_title}\n\n{pr_body}"
+    ops.git.amend_commit(repo_root, commit_message)
+    yield ProgressEvent("Local commit message updated", style="success")
+
     # Clean up temp diff file
     if diff_file is not None:
         diff_path = Path(diff_file)

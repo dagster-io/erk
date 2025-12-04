@@ -571,3 +571,77 @@ class TestExecuteFinalize:
         assert "erk pr checkout 123" in final_pr_body
         # Closes # is NOT included - GitHub handles this via native branch linking
         assert "Closes #" not in final_pr_body
+
+    def test_finalize_amends_local_commit(self, tmp_path: Path) -> None:
+        """Test that finalize amends local commit with PR title and body."""
+        ops = (
+            FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
+            .with_remote_url("https://github.com/org/repo.git")
+            .with_branch("feature-branch", parent="main")
+            .with_commits(1)
+            .with_pr(123, url="https://github.com/org/repo/pull/123")
+        )
+
+        # Seed the FakeGit with an initial commit to amend
+        fake_git = ops.git
+        fake_git._commits.append((tmp_path, "Original message", []))  # type: ignore[attr-defined]
+
+        pr_title = "Add new feature"
+        pr_body = "This PR adds a great new feature"
+
+        result = render_events(
+            execute_finalize(
+                ops,
+                tmp_path,
+                pr_number=123,
+                pr_title=pr_title,
+                pr_body=pr_body,
+                diff_file=None,
+            )
+        )
+
+        assert isinstance(result, FinalizeResult)
+        assert result.success is True
+
+        # Verify local commit was amended with title and body
+        assert len(fake_git._commits) == 1  # type: ignore[attr-defined]
+        amended_message = fake_git._commits[-1][1]  # type: ignore[attr-defined]
+        assert amended_message == "Add new feature\n\nThis PR adds a great new feature"
+
+    def test_finalize_amends_commit_with_title_only(self, tmp_path: Path) -> None:
+        """Test finalize amends commit correctly when PR has no body."""
+        ops = (
+            FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
+            .with_remote_url("https://github.com/org/repo.git")
+            .with_branch("feature-branch", parent="main")
+            .with_commits(1)
+            .with_pr(123, url="https://github.com/org/repo/pull/123")
+        )
+
+        # Seed the FakeGit with an initial commit to amend
+        fake_git = ops.git
+        fake_git._commits.append((tmp_path, "Original message", []))  # type: ignore[attr-defined]
+
+        pr_title = "Fix bug"
+        pr_body = ""  # Empty body
+
+        result = render_events(
+            execute_finalize(
+                ops,
+                tmp_path,
+                pr_number=123,
+                pr_title=pr_title,
+                pr_body=pr_body,
+                diff_file=None,
+            )
+        )
+
+        assert isinstance(result, FinalizeResult)
+        assert result.success is True
+
+        # Verify local commit was amended with title only (no body)
+        assert len(fake_git._commits) == 1  # type: ignore[attr-defined]
+        amended_message = fake_git._commits[-1][1]  # type: ignore[attr-defined]
+        assert amended_message == "Fix bug"
