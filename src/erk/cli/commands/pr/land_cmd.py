@@ -72,6 +72,21 @@ def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
         f"Cannot find worktree for current branch '{current_branch}'.",
     )
 
+    # Validate shell integration for worktree deletion
+    # This check happens BEFORE any destructive operations (PR merge, worktree deletion)
+    # A subprocess cannot change its parent shell's working directory, so without
+    # shell integration, the shell will be stranded in the deleted worktree directory.
+    if not script:
+        user_output(
+            click.style("Error: ", fg="red")
+            + "This command deletes the current worktree and requires shell integration.\n\n"
+            + "Options:\n"
+            + "  1. Use shell integration: erk pr land\n"
+            + "     (Requires 'erk init --shell' setup)\n\n"
+            + "  2. Use --script flag: source <(erk pr land --script)\n"
+        )
+        raise SystemExit(1)
+
     # Step 1: Execute land-pr (merges the PR)
     result = render_events(execute_land_pr(ctx, ctx.cwd))
 
@@ -108,9 +123,9 @@ def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
             dest_path = repo.root
         dest_description = "trunk"
 
-    # Change to destination before deleting current worktree
-    # This prevents "cwd no longer exists" errors if user doesn't source activation script
-    ctx.git.safe_chdir(dest_path)
+    # NOTE: We intentionally do NOT call safe_chdir() here.
+    # A subprocess cannot change the parent shell's cwd.
+    # The shell integration (activation script) handles the cd.
 
     # Step 3: Delete current branch and worktree
     delete_branch_and_worktree(ctx, repo.root, current_branch, current_worktree_path)
@@ -119,25 +134,18 @@ def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
     ctx.git.pull_branch(dest_path, "origin", dest_branch, ff_only=True)
     user_output(click.style("✓", fg="green") + " Pulled latest changes")
 
-    # Step 5: Output activation script or message
-    if script:
-        script_content = render_activation_script(
-            worktree_path=dest_path,
-            final_message=f'echo "Landed PR and switched to {dest_description}: $(pwd)"',
-            comment="erk pr land activate-script",
-        )
-        activation_result = ctx.script_writer.write_activation_script(
-            script_content,
-            command_name="pr-land",
-            comment=f"activate {dest_description} after landing",
-        )
-        machine_output(str(activation_result.path), nl=False)
-    else:
-        user_output(f"\nWent to: {dest_path}")
-        user_output(
-            "\nShell integration not detected. "
-            "Run 'erk init --shell' to set up automatic activation."
-        )
-        user_output("Or use: source <(erk pr land --script)")
+    # Step 5: Output activation script
+    # Note: --script flag is now required (fail-fast check above), so we always output the script
+    script_content = render_activation_script(
+        worktree_path=dest_path,
+        final_message=f'echo "Landed PR and switched to {dest_description}: $(pwd)"',
+        comment="erk pr land activate-script",
+    )
+    activation_result = ctx.script_writer.write_activation_script(
+        script_content,
+        command_name="pr-land",
+        comment=f"activate {dest_description} after landing",
+    )
+    machine_output(str(activation_result.path), nl=False)
 
     raise SystemExit(0)

@@ -129,7 +129,7 @@ def test_pr_land_error_from_execute_land_pr() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(pr_group, ["land"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "Branch must be exactly one level up from main")
 
@@ -282,8 +282,14 @@ def test_pr_land_with_trunk_in_worktree() -> None:
         assert "feature-1" in git_ops.deleted_branches
 
 
-def test_pr_land_no_script_flag_shows_instructions() -> None:
-    """Test pr land without --script shows manual instructions."""
+def test_pr_land_no_script_flag_fails_fast() -> None:
+    """Test pr land without --script fails before any destructive operations.
+
+    When shell integration is bypassed (e.g., via alias), we fail fast BEFORE
+    merging the PR or deleting the worktree, because:
+    - A subprocess cannot change the parent shell's cwd
+    - The shell would be stranded in the deleted worktree directory
+    """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -336,10 +342,15 @@ def test_pr_land_no_script_flag_shows_instructions() -> None:
 
         result = runner.invoke(pr_group, ["land"], obj=test_ctx, catch_exceptions=False)
 
-        assert result.exit_code == 0
-        assert "Merged PR #123" in result.output
-        assert "Shell integration not detected" in result.output
+        # Should fail with clear error about needing shell integration
+        assert result.exit_code == 1
+        assert "requires shell integration" in result.output
         assert "source <(erk pr land --script)" in result.output
+
+        # CRITICAL: No destructive operations should have happened
+        assert len(github_ops.merged_prs) == 0, "PR should NOT be merged without shell integration"
+        assert len(git_ops.removed_worktrees) == 0, "Worktree should NOT be deleted"
+        assert len(git_ops.deleted_branches) == 0, "Branch should NOT be deleted"
 
 
 def test_pr_land_error_no_pr_found() -> None:
@@ -378,7 +389,7 @@ def test_pr_land_error_no_pr_found() -> None:
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(pr_group, ["land"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "No pull request found")
 
@@ -433,16 +444,17 @@ def test_pr_land_error_pr_not_open() -> None:
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(pr_group, ["land"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "Pull request is not open")
 
 
-def test_pr_land_changes_directory_before_deletion() -> None:
-    """Test pr land changes to trunk before deleting current worktree.
+def test_pr_land_does_not_call_safe_chdir() -> None:
+    """Test pr land does NOT call safe_chdir (it's ineffective).
 
-    This prevents "cwd no longer exists" errors when the user doesn't source
-    the activation script after landing a PR that deletes their current worktree.
+    A subprocess cannot change the parent shell's working directory.
+    The shell integration (activation script) handles the cd, so calling
+    safe_chdir() in the Python process is misleading and unnecessary.
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -498,9 +510,10 @@ def test_pr_land_changes_directory_before_deletion() -> None:
 
         assert result.exit_code == 0
 
-        # Verify safe_chdir was called to trunk (repo root) before deletion
-        assert len(git_ops.chdir_history) >= 1, "Should chdir to trunk before deletion"
-        assert env.cwd in git_ops.chdir_history, "Should chdir to trunk (repo root)"
+        # Verify safe_chdir was NOT called (it's ineffective, shell integration handles cd)
+        assert len(git_ops.chdir_history) == 0, (
+            "Should NOT call safe_chdir (activation script handles cd)"
+        )
 
 
 def test_pr_land_with_up_flag_navigates_to_child() -> None:
@@ -635,7 +648,9 @@ def test_pr_land_with_up_flag_no_children_fails() -> None:
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(pr_group, ["land", "--up"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            pr_group, ["land", "--up", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         # Should fail because no children exist
         assert_cli_error(result, 1, "Already at the top of the stack", "no child branches")
@@ -705,7 +720,9 @@ def test_pr_land_with_up_flag_multiple_children_fails() -> None:
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(pr_group, ["land", "--up"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            pr_group, ["land", "--up", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         # Should fail because multiple children exist
         assert_cli_error(result, 1, "multiple children")
