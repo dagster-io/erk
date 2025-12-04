@@ -69,7 +69,10 @@ Project directories use **deterministic path encoding**:
   → ~/.claude/projects/-Users-foo--erk-repos-erk-worktrees-feature-branch
 ```
 
-**Implementation:** See `encode_path_to_project_folder()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/find_project_dir.py:87-108`
+**Implementation:**
+
+- Primary: `encode_path_to_project_folder()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/find_project_dir.py:87-108`
+- Session extraction: `_encode_path_to_project_folder()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/session_plan_extractor.py:17-28` (uses cwd_hint optimization)
 
 ### Complete Directory Tree
 
@@ -232,6 +235,44 @@ Each line is a JSON object representing one entry in the conversation:
   }
 }
 ```
+
+#### Plan Mode Entry (with slug)
+
+When Plan Mode is exited (user approves plan), the assistant entry includes a `slug` field identifying the saved plan:
+
+```json
+{
+  "parentUuid": "parent_002",
+  "sessionId": "abc11111-2222-3333-4444-555555555555",
+  "type": "assistant",
+  "slug": "my-feature-plan",
+  "message": {
+    "role": "assistant",
+    "content": [
+      { "type": "text", "text": "I'll create a plan for this feature." }
+    ]
+  },
+  "cwd": "/projects/myapp",
+  "gitBranch": "main"
+}
+```
+
+**Key characteristics:**
+
+- **Location**: The `slug` field appears as a top-level field on `type: "assistant"` entries
+- **Timing**: Added when Plan Mode is exited (plan approved and saved)
+- **Value**: Corresponds to plan filename without `.md` extension
+- **Plan file**: `~/.claude/plans/{slug}.md`
+
+**Session-scoped plan lookup:**
+
+The slug field enables session-scoped plan extraction:
+
+1. Parse session JSONL for entries matching the current `sessionId`
+2. Find assistant entries with a `slug` field
+3. Use the most recent slug to locate the plan file
+
+**Implementation:** See `extract_slugs_from_session()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/session_plan_extractor.py:101-148`
 
 ## Session and Agent IDs
 
@@ -496,6 +537,69 @@ def find_project_dir_for_session(session_id: str) -> Path | None:
 ```
 
 **Implementation:** See `find_project_dir_for_session()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/debug_agent.py:42-80`
+
+### cwd_hint Optimization Pattern
+
+**Use Case:** Accelerate session lookup when the working directory is known
+
+**Problem:** Finding a project directory by session ID requires scanning all project directories in `~/.claude/projects/`. With many projects (e.g., 1,476 directories), this takes 378ms-1.6s.
+
+**Solution:** Use `cwd_hint` parameter to enable O(1) lookup:
+
+```python
+def find_project_dir_for_session(
+    session_id: str,
+    cwd_hint: str | None = None
+) -> Path | None:
+    """Find project directory for session, optionally using cwd hint.
+
+    Args:
+        session_id: The session ID to search for
+        cwd_hint: Working directory path for O(1) lookup optimization
+    """
+    projects_dir = Path.home() / ".claude" / "projects"
+    if not projects_dir.exists():
+        return None
+
+    # Fast path: encode cwd_hint to compute project directory directly
+    if cwd_hint:
+        encoded = "-" + cwd_hint.replace("/", "-").replace(".", "-").lstrip("-")
+        hint_project_dir = projects_dir / encoded
+        if hint_project_dir.exists() and hint_project_dir.is_dir():
+            if _check_session_in_project(hint_project_dir, session_id):
+                return hint_project_dir
+
+    # Slow path: scan all project directories
+    for project_dir in projects_dir.iterdir():
+        if not project_dir.is_dir():
+            continue
+        if _check_session_in_project(project_dir, session_id):
+            return project_dir
+
+    return None
+```
+
+**Performance comparison:**
+
+| Scenario            | Time Complexity | Typical Time         |
+| ------------------- | --------------- | -------------------- |
+| Without cwd_hint    | O(n)            | 378ms-1.6s (n=1,476) |
+| With correct hint   | O(1)            | ~0.1ms               |
+| With incorrect hint | O(n)            | Same as without      |
+
+**When to use cwd_hint:**
+
+- **Always provide it** when the working directory is available (e.g., from environment)
+- The function gracefully falls back to full scan if hint is wrong
+- No penalty for providing an incorrect hint (just loses the optimization)
+
+**Where cwd_hint is available:**
+
+- CLI commands: `Path.cwd()` or command arguments
+- Kit commands: Working directory from context
+- Agent subprocesses: `cwd` field in session log entries
+
+**Implementation:** See `find_project_dir_for_session()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/session_plan_extractor.py:65-98`
 
 ### Discovering Latest Session
 

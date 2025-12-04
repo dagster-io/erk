@@ -1,12 +1,13 @@
 ---
 title: Session Log Test Fixtures
 read_when:
-  - "creating test fixtures for session logs"
-  - "testing session-scoped features"
-  - "mocking Claude Code session behavior"
+  - "creating JSONL fixtures for session log tests"
+  - "testing session plan extraction"
+  - "writing integration tests for session parsing"
 ---
 
 # Session Log Test Fixtures
+
 
 Guide for creating realistic JSONL test fixtures that simulate Claude Code session logs.
 
