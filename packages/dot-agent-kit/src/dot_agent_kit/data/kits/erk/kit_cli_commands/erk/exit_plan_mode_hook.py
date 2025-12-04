@@ -37,14 +37,14 @@ def _get_session_id_from_stdin() -> str | None:
     return None
 
 
-def _get_skip_marker_path(session_id: str) -> Path | None:
-    """Get skip marker path in .erk/scratch/<session_id>/.
+def _get_scratch_dir(session_id: str) -> Path | None:
+    """Get scratch directory path in .erk/scratch/<session_id>/.
 
     Args:
         session_id: The session ID to build the path for
 
     Returns:
-        Path to skip marker file, or None if not in a git repo
+        Path to scratch directory, or None if not in a git repo
     """
     try:
         result = subprocess.run(
@@ -54,9 +54,42 @@ def _get_skip_marker_path(session_id: str) -> Path | None:
             check=True,
         )
         repo_root = Path(result.stdout.strip())
-        return repo_root / ".erk" / "scratch" / session_id / "skip-plan-save"
+        return repo_root / ".erk" / "scratch" / session_id
     except subprocess.CalledProcessError:
         return None
+
+
+def _get_skip_marker_path(session_id: str) -> Path | None:
+    """Get skip marker path in .erk/scratch/<session_id>/.
+
+    Args:
+        session_id: The session ID to build the path for
+
+    Returns:
+        Path to skip marker file, or None if not in a git repo
+    """
+    scratch_dir = _get_scratch_dir(session_id)
+    if scratch_dir is None:
+        return None
+    return scratch_dir / "skip-plan-save"
+
+
+def _get_saved_marker_path(session_id: str) -> Path | None:
+    """Get saved marker path in .erk/scratch/<session_id>/.
+
+    The saved marker indicates the plan was already saved to GitHub,
+    so exit should proceed without triggering implementation.
+
+    Args:
+        session_id: The session ID to build the path for
+
+    Returns:
+        Path to saved marker file, or None if not in a git repo
+    """
+    scratch_dir = _get_scratch_dir(session_id)
+    if scratch_dir is None:
+        return None
+    return scratch_dir / "plan-saved-to-github"
 
 
 def _find_session_plan(session_id: str) -> Path | None:
@@ -101,14 +134,34 @@ def _output_blocking_message(session_id: str) -> None:
     click.echo('  "Would you like to save this plan to GitHub first, or implement now?"', err=True)
     click.echo("", err=True)
     click.echo("Options:", err=True)
-    click.echo('  - "Save to GitHub": Run /erk:save-plan, then call ExitPlanMode again', err=True)
-    click.echo('  - "Implement now": Create skip marker, then call ExitPlanMode again', err=True)
-    click.echo("", err=True)
-    click.echo("If user chooses 'Implement now', run this command first:", err=True)
     click.echo(
-        f"  mkdir -p .erk/scratch/{session_id} && touch .erk/scratch/{session_id}/skip-plan-save",
+        '  - "Save to GitHub" (default): Save plan to GitHub and stop. '
+        "Does NOT proceed to implementation.",
         err=True,
     )
+    click.echo(
+        '  - "Implement now": Skip saving, proceed directly to implementation.',
+        err=True,
+    )
+    click.echo("", err=True)
+    click.echo("If user chooses 'Save to GitHub':", err=True)
+    click.echo("  1. Run /erk:save-plan", err=True)
+    click.echo("  2. Create saved marker:", err=True)
+    click.echo(
+        f"     mkdir -p .erk/scratch/{session_id} && "
+        f"touch .erk/scratch/{session_id}/plan-saved-to-github",
+        err=True,
+    )
+    click.echo("  3. Call ExitPlanMode", err=True)
+    click.echo("", err=True)
+    click.echo("If user chooses 'Implement now':", err=True)
+    click.echo("  1. Create skip marker:", err=True)
+    click.echo(
+        f"     mkdir -p .erk/scratch/{session_id} && "
+        f"touch .erk/scratch/{session_id}/skip-plan-save",
+        err=True,
+    )
+    click.echo("  2. Call ExitPlanMode", err=True)
 
 
 @click.command(name="exit-plan-mode-hook")
@@ -128,11 +181,20 @@ def exit_plan_mode_hook() -> None:
         click.echo("No session context available, allowing exit")
         sys.exit(0)
 
-    # Check for skip marker first
+    # Check for skip marker first (user chose "Implement now")
     skip_marker = _get_skip_marker_path(session_id)
     if skip_marker and skip_marker.exists():
         skip_marker.unlink()  # Delete marker (one-time use)
         click.echo("Skip marker found, allowing exit")
+        sys.exit(0)
+
+    # Check for saved marker (user chose "Save to GitHub" - terminal action)
+    saved_marker = _get_saved_marker_path(session_id)
+    if saved_marker and saved_marker.exists():
+        saved_marker.unlink()  # Delete marker (one-time use)
+        click.echo("Plan already saved to GitHub, exiting without implementation")
+        click.echo("", err=True)
+        click.echo("PLAN_SAVED_NO_IMPLEMENT", err=True)
         sys.exit(0)
 
     # Check if plan exists for this session
