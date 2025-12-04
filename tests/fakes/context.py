@@ -3,8 +3,7 @@
 from pathlib import Path
 
 from erk_shared.git.fake import FakeGit
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues import GitHubIssues
+from erk_shared.github.gateway import GitHubGateway, create_fake_github_gateway
 from erk_shared.integrations.graphite.fake import FakeGraphite
 
 from erk.cli.config import LoadedConfig
@@ -19,8 +18,7 @@ from tests.fakes.shell import FakeShell
 
 def create_test_context(
     git: FakeGit | None = None,
-    github: FakeGitHub | None = None,
-    issues: GitHubIssues | None = None,
+    github: GitHubGateway | None = None,
     graphite: FakeGraphite | None = None,
     shell: FakeShell | None = None,
     claude_executor: ClaudeExecutor | None = None,
@@ -40,10 +38,8 @@ def create_test_context(
     Args:
         git: Optional FakeGit with test configuration.
                 If None, creates empty FakeGit.
-        github: Optional FakeGitHub with test configuration.
-                   If None, creates empty FakeGitHub.
-        issues: Optional GitHubIssues implementation (Real/Fake/DryRun).
-                   If None, creates empty FakeGitHubIssues.
+        github: Optional GitHubGateway with test configuration.
+                   If None, creates default fake gateway via create_fake_github_gateway().
         graphite: Optional FakeGraphite with test configuration.
                      If None, creates empty FakeGraphite.
         shell: Optional FakeShell with test configuration.
@@ -72,23 +68,19 @@ def create_test_context(
         >>> git = FakeGit(default_branches={Path("/repo"): "main"})
         >>> ctx = create_test_context(git=git)
 
-        # With pre-configured global config
-        >>> from erk.core.config_store import GlobalConfig
-        >>> config = GlobalConfig(
-        ...     erk_root=Path("/tmp/erks"),
-        ...     use_graphite=False,
-        ...     shell_setup_complete=False,
-        ...     show_pr_info=True,
-        ... )
-        >>> ctx = create_test_context(global_config=config)
+        # With custom PR gateway
+        >>> from erk_shared.github.pr.fake import FakeGitHubPrGateway
+        >>> from erk_shared.github.gateway import create_fake_github_gateway
+        >>> pr = FakeGitHubPrGateway(pr_issue_linkages={42: [pr1, pr2]})
+        >>> github = create_fake_github_gateway(pr=pr)
+        >>> ctx = create_test_context(github=github)
 
         # Without any ops (empty fakes)
         >>> ctx = create_test_context()
     """
     return ErkContext.for_test(
         git=git,
-        github=github,
-        issues=issues,
+        github=github or create_fake_github_gateway(),
         graphite=graphite,
         shell=shell,
         claude_executor=claude_executor,

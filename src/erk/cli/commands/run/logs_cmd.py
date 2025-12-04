@@ -29,7 +29,7 @@ def logs_run(ctx: ErkContext, run_id: str | None) -> None:
             ctx.git.get_current_branch(ctx.cwd), "Could not determine current branch"
         )
 
-        runs = ctx.github.list_workflow_runs(repo.root, "implement-plan.yml", limit=50)
+        runs = ctx.github.run.list_workflow_runs(repo.root, "implement-plan.yml", limit=50)
         branch_runs = [r for r in runs if r.branch == current_branch]
 
         if not branch_runs:
@@ -46,7 +46,7 @@ def logs_run(ctx: ErkContext, run_id: str | None) -> None:
         )
 
     try:
-        log_output = ctx.github.get_run_logs(repo.root, run_id)
+        log_output = ctx.github.run.get_run_logs(repo.root, run_id)
         # Direct output - logs go to stdout for piping
         click.echo(log_output)
     except RuntimeError as e:

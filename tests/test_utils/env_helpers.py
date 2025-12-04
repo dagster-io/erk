@@ -86,7 +86,7 @@ from pathlib import Path
 from click.testing import CliRunner
 from erk_shared.git.abc import Git, WorktreeInfo
 from erk_shared.git.fake import FakeGit
-from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.gateway import GitHubGateway, create_fake_github_gateway
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 
@@ -379,7 +379,7 @@ class ErkIsolatedFsEnv:
         show_pr_info: bool = True,
         git: Git | None = None,
         graphite: FakeGraphite | None = None,
-        github: FakeGitHub | None = None,
+        github: GitHubGateway | None = None,
         shell: FakeShell | None = None,
         repo: RepoContext | None = None,
         dry_run: bool = False,
@@ -496,8 +496,9 @@ class ErkIsolatedFsEnv:
         if graphite is None:
             graphite = FakeGraphite()
 
+        # Use default fake gateway if none provided
         if github is None:
-            github = FakeGitHub()
+            github = create_fake_github_gateway()
 
         if shell is None:
             shell = FakeShell()
@@ -790,7 +791,7 @@ class ErkInMemEnv:
         show_pr_info: bool = True,
         git: Git | None = None,
         graphite: FakeGraphite | None = None,
-        github: FakeGitHub | None = None,
+        github: GitHubGateway | None = None,
         shell: FakeShell | None = None,
         repo: RepoContext | None = None,
         existing_paths: set[Path] | None = None,
@@ -911,8 +912,9 @@ class ErkInMemEnv:
         if graphite is None:
             graphite = FakeGraphite()
 
+        # Use default fake gateway if none provided
         if github is None:
-            github = FakeGitHub()
+            github = create_fake_github_gateway()
 
         if shell is None:
             shell = FakeShell()

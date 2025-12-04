@@ -25,14 +25,14 @@ def _close_linked_prs(
     location = github_repo_location_from_url(repo_root, issue_url)
     if location is None:
         return []
-    pr_linkages = ctx.github.get_prs_linked_to_issues(location, [issue_number])
+    pr_linkages = ctx.github.pr.get_prs_linked_to_issues(location, [issue_number])
     linked_prs = pr_linkages.get(issue_number, [])
 
     closed_prs: list[int] = []
     for pr in linked_prs:
         # Close all OPEN PRs (both drafts and non-drafts per user requirement)
         if pr.state == "OPEN":
-            ctx.github.close_pr(repo_root, pr.number)
+            ctx.github.pr.close_pr(repo_root, pr.number)
             closed_prs.append(pr.number)
 
     return closed_prs

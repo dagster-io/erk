@@ -226,7 +226,7 @@ def _build_plans_table(
     needs_workflow_runs = runs or run_state is not None
 
     # Resolve owner/repo from git remote
-    repo_info = ctx.github.get_repo_info(repo_root)
+    repo_info = ctx.github.repo.get_repo_info(repo_root)
     if repo_info is None:
         user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
         raise SystemExit(1)
@@ -539,7 +539,7 @@ def _run_interactive_mode(
     repo_root = repo.root
 
     # Resolve owner/repo from git remote
-    repo_info = ctx.github.get_repo_info(repo_root)
+    repo_info = ctx.github.repo.get_repo_info(repo_root)
     if repo_info is None:
         user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
         raise SystemExit(1)

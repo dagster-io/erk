@@ -10,8 +10,8 @@ instead of separate calls for issues (~500ms) and PR linkages (~1500ms).
 
 from dataclasses import dataclass
 
-from erk_shared.github.abc import GitHub
-from erk_shared.github.issues import GitHubIssues, IssueInfo
+from erk_shared.github.gateway import GitHubGateway
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata import extract_plan_header_dispatch_info
 from erk_shared.github.types import GitHubRepoLocation, PullRequestInfo, WorkflowRun
 
@@ -34,20 +34,18 @@ class PlanListData:
 class PlanListService:
     """Service for efficiently fetching plan list data.
 
-    Composes GitHub and GitHubIssues integrations to batch fetch all data
+    Composes GitHubGateway sub-gateways to batch fetch all data
     needed for plan listing. Uses GraphQL nodes(ids: [...]) for efficient
     batch lookup of workflow runs by node_id.
     """
 
-    def __init__(self, github: GitHub, github_issues: GitHubIssues) -> None:
-        """Initialize PlanListService with required integrations.
+    def __init__(self, github: GitHubGateway) -> None:
+        """Initialize PlanListService with GitHub gateway.
 
         Args:
-            github: GitHub integration for PR and workflow operations
-            github_issues: GitHub issues integration for issue operations
+            github: GitHubGateway composite for all GitHub operations
         """
         self._github = github
-        self._github_issues = github_issues
 
     def get_plan_list_data(
         self,
@@ -71,7 +69,7 @@ class PlanListService:
             PlanListData containing issues, PR linkages, and workflow runs
         """
         # Always use unified path: issues + PR linkages in one API call (~600ms)
-        issues, pr_linkages = self._github.get_issues_with_pr_linkages(
+        issues, pr_linkages = self._github.pr.get_issues_with_pr_linkages(
             location,
             labels,
             state=state,
@@ -90,7 +88,7 @@ class PlanListService:
 
             # Batch fetch workflow runs via GraphQL nodes(ids: [...])
             if node_id_to_issue:
-                runs_by_node_id = self._github.get_workflow_runs_by_node_ids(
+                runs_by_node_id = self._github.run.get_workflow_runs_by_node_ids(
                     location.root,
                     list(node_id_to_issue.keys()),
                 )

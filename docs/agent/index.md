@@ -15,6 +15,7 @@
 | [Reference](reference/)       | GitHub integration, external references          |
 | [Erk](erk/)                   | Erk-specific workflows                           |
 | [TUI](tui/)                   | Textual TUI development, quirks and workarounds  |
+| [Migrations](migrations/)     | Temporary docs for active code migrations        |
 
 ## Root Documents
 
@@ -35,6 +36,7 @@
 | [subprocess-wrappers.md](architecture/subprocess-wrappers.md)                         | Executing shell commands, using subprocess wrappers          |
 | [github-parsing.md](architecture/github-parsing.md)                                   | Parsing GitHub URLs, extracting PR/issue numbers             |
 | [commandresult-extension-pattern.md](architecture/commandresult-extension-pattern.md) | Adding new fields to CommandResult, extending stream parsing |
+| [github-gateway.md](architecture/github-gateway.md)                                   | Working with GitHub API, composite gateway pattern           |
 
 ### [CLI Development](cli/)
 
@@ -110,3 +112,12 @@
 | Document                                   | Read when...                                           |
 | ------------------------------------------ | ------------------------------------------------------ |
 | [textual-quirks.md](tui/textual-quirks.md) | Working with Textual TUI, avoiding common API pitfalls |
+
+### [Migrations](migrations/)
+
+> Temporary documentation for active code migrations. See [migrations/README.md](migrations/README.md) for lifecycle and format.
+
+| Document                                                                              | Read when...                                    |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| [2024-12-github-gateway-migration.md](migrations/2024-12-github-gateway-migration.md) | Migrating code to new GitHubGateway composite   |
+| [2024-12-erkcontext-legacy-compat.md](migrations/2024-12-erkcontext-legacy-compat.md) | Understanding ErkContext backwards compat shims |

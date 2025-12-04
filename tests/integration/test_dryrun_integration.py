@@ -70,7 +70,8 @@ show_pr_info = true
     assert type(ctx.global_config).__name__ == "GlobalConfig"
     # Config loading resolves paths, so compare resolved paths
     assert ctx.global_config.erk_root == erk_root.resolve()
-    assert "DryRun" in type(ctx.github).__name__
+    # GitHub uses composite gateway (not wrapped with DryRun)
+    assert type(ctx.github).__name__ == "GitHubGateway"
     assert "DryRun" in type(ctx.graphite).__name__
 
 

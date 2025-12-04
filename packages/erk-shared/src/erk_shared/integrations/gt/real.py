@@ -14,8 +14,13 @@ Design:
 
 from erk_shared.git.abc import Git
 from erk_shared.git.real import RealGit
-from erk_shared.github.abc import GitHub
-from erk_shared.github.real import RealGitHub
+from erk_shared.github.auth.real import RealGitHubAuthGateway
+from erk_shared.github.gateway import GitHubGateway
+from erk_shared.github.issue.real import RealGitHubIssueGateway
+from erk_shared.github.pr.real import RealGitHubPrGateway
+from erk_shared.github.repo.real import RealGitHubRepoGateway
+from erk_shared.github.run.real import RealGitHubRunGateway
+from erk_shared.github.workflow.real import RealGitHubWorkflowGateway
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.real import RealGraphite
 from erk_shared.integrations.time.real import RealTime
@@ -27,16 +32,24 @@ class RealGtKit:
     Combines real git, GitHub, and Graphite operations for production use.
     Satisfies the GtKit Protocol through structural typing.
 
-    GitHub operations now use the main RealGitHub from erk_shared.github
-    which provides repo_root-based methods.
+    GitHub operations use the GitHubGateway composite which provides access to
+    sub-gateways (pr, issue, run, workflow, auth, repo) for different operations.
     """
 
     git: Git
-    github: GitHub
+    github: GitHubGateway
     graphite: Graphite
 
     def __init__(self) -> None:
         """Initialize real operations instances."""
+        time = RealTime()
         self.git = RealGit()
-        self.github = RealGitHub(time=RealTime())
+        self.github = GitHubGateway(
+            auth=RealGitHubAuthGateway(),
+            pr=RealGitHubPrGateway(),
+            issue=RealGitHubIssueGateway(),
+            run=RealGitHubRunGateway(time),
+            workflow=RealGitHubWorkflowGateway(time),
+            repo=RealGitHubRepoGateway(),
+        )
         self.graphite = RealGraphite()

@@ -4,11 +4,35 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
+from erk_shared.github.auth.fake import FakeGitHubAuthGateway
+from erk_shared.github.gateway import GitHubGateway
+from erk_shared.github.issue.fake import FakeGitHubIssueGateway
+from erk_shared.github.issues.types import IssueInfo
+from erk_shared.github.pr.fake import FakeGitHubPrGateway
+from erk_shared.github.repo.fake import FakeGitHubRepoGateway
+from erk_shared.github.run.fake import FakeGitHubRunGateway
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
+from erk_shared.github.workflow.fake import FakeGitHubWorkflowGateway
 
 from erk.core.services.plan_list_service import PlanListData, PlanListService
+
+
+def _create_github_gateway(
+    *,
+    issues: list[IssueInfo] | None = None,
+    pr_issue_linkages: dict[int, list[PullRequestInfo]] | None = None,
+    workflow_runs_by_node_id: dict[str, WorkflowRun] | None = None,
+) -> GitHubGateway:
+    """Helper to create GitHubGateway with specified sub-gateway configurations."""
+    return GitHubGateway(
+        auth=FakeGitHubAuthGateway(),
+        pr=FakeGitHubPrGateway(issues=issues, pr_issue_linkages=pr_issue_linkages),
+        issue=FakeGitHubIssueGateway(),
+        run=FakeGitHubRunGateway(workflow_runs_by_node_id=workflow_runs_by_node_id),
+        workflow=FakeGitHubWorkflowGateway(),
+        repo=FakeGitHubRepoGateway(),
+    )
+
 
 TEST_LOCATION = GitHubRepoLocation(root=Path("/test/repo"), repo_id=GitHubRepoId("owner", "repo"))
 
@@ -30,10 +54,9 @@ class TestPlanListService:
             created_at=now,
             updated_at=now,
         )
-        fake_issues = FakeGitHubIssues(issues={42: issue})
-        fake_github = FakeGitHub(issues=[issue])
+        github = _create_github_gateway(issues=[issue])
 
-        service = PlanListService(fake_github, fake_issues)
+        service = PlanListService(github)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
@@ -69,13 +92,12 @@ class TestPlanListService:
             repo="repo",
         )
         # Configure issues and pr_issue_linkages for unified query
-        fake_github = FakeGitHub(
+        github = _create_github_gateway(
             issues=[issue],
             pr_issue_linkages={42: [pr]},
         )
-        fake_issues = FakeGitHubIssues(issues={42: issue})
 
-        service = PlanListService(fake_github, fake_issues)
+        service = PlanListService(github)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
@@ -90,10 +112,9 @@ class TestPlanListService:
 
     def test_empty_issues_returns_empty_data(self) -> None:
         """Service returns empty data when no issues match."""
-        fake_issues = FakeGitHubIssues()
-        fake_github = FakeGitHub()
+        github = _create_github_gateway()
 
-        service = PlanListService(fake_github, fake_issues)
+        service = PlanListService(github)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
@@ -129,10 +150,9 @@ class TestPlanListService:
             updated_at=now,
         )
         # Configure both issues for the unified query
-        fake_github = FakeGitHub(issues=[open_issue, closed_issue])
-        fake_issues = FakeGitHubIssues(issues={1: open_issue, 2: closed_issue})
+        github = _create_github_gateway(issues=[open_issue, closed_issue])
 
-        service = PlanListService(fake_github, fake_issues)
+        service = PlanListService(github)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
@@ -167,10 +187,9 @@ class TestPlanListService:
             created_at=now,
             updated_at=now,
         )
-        fake_issues = FakeGitHubIssues(issues={1: open_issue, 2: closed_issue})
-        fake_github = FakeGitHub(issues=[open_issue, closed_issue])
+        github = _create_github_gateway(issues=[open_issue, closed_issue])
 
-        service = PlanListService(fake_github, fake_issues)
+        service = PlanListService(github)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
@@ -229,14 +248,13 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
             display_title="42:abc123",
             created_at=now,
         )
-        fake_issues = FakeGitHubIssues(issues={42: issue})
         # Configure both issues (for unified query) and workflow_runs_by_node_id
-        fake_github = FakeGitHub(
+        github = _create_github_gateway(
             issues=[issue],
             workflow_runs_by_node_id={"WFR_abc123": run},
         )
 
-        service = PlanListService(fake_github, fake_issues)
+        service = PlanListService(github)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
@@ -280,13 +298,12 @@ last_dispatched_node_id: 'WFR_abc123'
             branch="main",
             head_sha="abc",
         )
-        fake_issues = FakeGitHubIssues(issues={42: issue})
-        fake_github = FakeGitHub(
+        github = _create_github_gateway(
             issues=[issue],
             workflow_runs_by_node_id={"WFR_abc123": run},
         )
 
-        service = PlanListService(fake_github, fake_issues)
+        service = PlanListService(github)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
@@ -310,10 +327,9 @@ last_dispatched_node_id: 'WFR_abc123'
             created_at=now,
             updated_at=now,
         )
-        fake_issues = FakeGitHubIssues(issues={42: issue})
-        fake_github = FakeGitHub(issues=[issue])
+        github = _create_github_gateway(issues=[issue])
 
-        service = PlanListService(fake_github, fake_issues)
+        service = PlanListService(github)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
@@ -349,10 +365,9 @@ last_dispatched_node_id: 'WFR_nonexistent'
             updated_at=now,
         )
         # No workflow runs configured - node_id won't be found
-        fake_issues = FakeGitHubIssues(issues={42: issue})
-        fake_github = FakeGitHub(issues=[issue])
+        github = _create_github_gateway(issues=[issue])
 
-        service = PlanListService(fake_github, fake_issues)
+        service = PlanListService(github)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],

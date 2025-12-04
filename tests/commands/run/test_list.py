@@ -18,13 +18,32 @@ from pathlib import Path
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
+from erk_shared.github.gateway import GitHubGateway, create_fake_github_gateway
+from erk_shared.github.issue.fake import FakeGitHubIssueGateway
+from erk_shared.github.issue.types import IssueInfo
+from erk_shared.github.pr.fake import FakeGitHubPrGateway
+from erk_shared.github.run.fake import FakeGitHubRunGateway
 from erk_shared.github.types import PullRequestInfo, WorkflowRun
 
 from erk.cli.commands.run.list_cmd import list_runs
 from tests.fakes.context import create_test_context
+
+
+def _make_github_gateway(
+    *,
+    workflow_runs: list[WorkflowRun] | None = None,
+    issues: dict[int, IssueInfo] | None = None,
+    pr_issue_linkages: dict[int, list[PullRequestInfo]] | None = None,
+) -> GitHubGateway:
+    """Helper to create GitHubGateway with common test configuration."""
+    return create_fake_github_gateway(
+        run=FakeGitHubRunGateway(workflow_runs=workflow_runs or []),
+        issue=FakeGitHubIssueGateway(issues=issues or {}),
+        pr=FakeGitHubPrGateway(
+            issues=list((issues or {}).values()),
+            pr_issue_linkages=pr_issue_linkages,
+        ),
+    )
 
 
 def test_list_runs_empty_state(tmp_path: Path) -> None:
@@ -38,8 +57,8 @@ def test_list_runs_empty_state(tmp_path: Path) -> None:
         current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
     )
-    github_ops = FakeGitHub(workflow_runs=[])  # Empty runs
-    ctx = create_test_context(git=git_ops, github=github_ops, cwd=repo_root)
+    github = _make_github_gateway(workflow_runs=[])
+    ctx = create_test_context(git=git_ops, github=github, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -74,8 +93,6 @@ def test_list_runs_single_success_run_with_issue_linkage(tmp_path: Path) -> None
             display_title="142:abc456",  # New format: issue_number:distinct_id
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
     # Create issue for linkage
     issues = {
         142: IssueInfo(
@@ -90,9 +107,9 @@ def test_list_runs_single_success_run_with_issue_linkage(tmp_path: Path) -> None
             updated_at=now,
         ),
     }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    github = _make_github_gateway(workflow_runs=workflow_runs, issues=issues)
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -150,8 +167,6 @@ def test_list_runs_multiple_runs_different_statuses(tmp_path: Path) -> None:
             display_title="144:ghi",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
     # Create issues for linkage
     issues = {
         142: IssueInfo(
@@ -188,9 +203,9 @@ def test_list_runs_multiple_runs_different_statuses(tmp_path: Path) -> None:
             updated_at=now,
         ),
     }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    github = _make_github_gateway(workflow_runs=workflow_runs, issues=issues)
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -236,10 +251,9 @@ def test_list_runs_run_without_issue_linkage(tmp_path: Path) -> None:
             display_title="Add user authentication [abc123]",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-    issues_ops = FakeGitHubIssues(issues={})
+    github = _make_github_gateway(workflow_runs=workflow_runs, issues={})
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -288,8 +302,6 @@ def test_list_runs_default_filters_out_runs_without_plans(tmp_path: Path) -> Non
             display_title="Add feature [def456]",  # Cannot be parsed
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
     issues = {
         142: IssueInfo(
             number=142,
@@ -303,9 +315,9 @@ def test_list_runs_default_filters_out_runs_without_plans(tmp_path: Path) -> Non
             updated_at=now,
         ),
     }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    github = _make_github_gateway(workflow_runs=workflow_runs, issues=issues)
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -355,7 +367,6 @@ def test_list_runs_with_show_legacy_flag_shows_all_runs(tmp_path: Path) -> None:
             display_title="Add feature [def456]",  # Cannot be parsed
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
 
     issues = {
         142: IssueInfo(
@@ -370,9 +381,9 @@ def test_list_runs_with_show_legacy_flag_shows_all_runs(tmp_path: Path) -> None:
             updated_at=now,
         ),
     }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    github = _make_github_gateway(workflow_runs=workflow_runs, issues=issues)
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -427,11 +438,6 @@ def test_list_runs_with_pr_linkage(tmp_path: Path) -> None:
         has_conflicts=False,
     )
 
-    github_ops = FakeGitHub(
-        workflow_runs=workflow_runs,
-        pr_issue_linkages={142: [pr_info]},
-    )
-
     issues = {
         142: IssueInfo(
             number=142,
@@ -445,9 +451,13 @@ def test_list_runs_with_pr_linkage(tmp_path: Path) -> None:
             updated_at=now,
         ),
     }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    github = _make_github_gateway(
+        workflow_runs=workflow_runs,
+        issues=issues,
+        pr_issue_linkages={142: [pr_info]},
+    )
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -485,8 +495,6 @@ def test_list_runs_handles_queued_status(tmp_path: Path) -> None:
             display_title="142:abc",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
     issues = {
         142: IssueInfo(
             number=142,
@@ -500,9 +508,9 @@ def test_list_runs_handles_queued_status(tmp_path: Path) -> None:
             updated_at=now,
         ),
     }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    github = _make_github_gateway(workflow_runs=workflow_runs, issues=issues)
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -538,8 +546,6 @@ def test_list_runs_handles_cancelled_status(tmp_path: Path) -> None:
             display_title="142:abc",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
     issues = {
         142: IssueInfo(
             number=142,
@@ -553,9 +559,9 @@ def test_list_runs_handles_cancelled_status(tmp_path: Path) -> None:
             updated_at=now,
         ),
     }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    github = _make_github_gateway(workflow_runs=workflow_runs, issues=issues)
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -596,8 +602,6 @@ def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
             display_title="142:abc",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
     issues = {
         142: IssueInfo(
             number=142,
@@ -611,9 +615,9 @@ def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
             updated_at=now,
         ),
     }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    github = _make_github_gateway(workflow_runs=workflow_runs, issues=issues)
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -674,8 +678,6 @@ def test_list_runs_filters_missing_issue_data(tmp_path: Path) -> None:
             display_title="143:ghi789",  # Issue 143 has empty title
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
     # Only create issues 142 (valid) and 143 (empty title)
     issues = {
         142: IssueInfo(
@@ -701,9 +703,9 @@ def test_list_runs_filters_missing_issue_data(tmp_path: Path) -> None:
             updated_at=now,
         ),
     }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    github = _make_github_gateway(workflow_runs=workflow_runs, issues=issues)
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github, cwd=repo_root)
 
     runner = CliRunner()
 
@@ -749,8 +751,6 @@ def test_list_runs_displays_submission_time(tmp_path: Path) -> None:
             created_at=timestamp,
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
     issues = {
         142: IssueInfo(
             number=142,
@@ -764,9 +764,9 @@ def test_list_runs_displays_submission_time(tmp_path: Path) -> None:
             updated_at=timestamp,
         ),
     }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    github = _make_github_gateway(workflow_runs=workflow_runs, issues=issues)
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github, cwd=repo_root)
     runner = CliRunner()
 
     # Act
@@ -806,8 +806,6 @@ def test_list_runs_handles_missing_timestamp(tmp_path: Path) -> None:
             created_at=None,  # Missing timestamp
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
-
     issues = {
         142: IssueInfo(
             number=142,
@@ -821,9 +819,9 @@ def test_list_runs_handles_missing_timestamp(tmp_path: Path) -> None:
             updated_at=now,
         ),
     }
-    issues_ops = FakeGitHubIssues(issues=issues)
+    github = _make_github_gateway(workflow_runs=workflow_runs, issues=issues)
 
-    ctx = create_test_context(git=git_ops, github=github_ops, issues=issues_ops, cwd=repo_root)
+    ctx = create_test_context(git=git_ops, github=github, cwd=repo_root)
     runner = CliRunner()
 
     # Act

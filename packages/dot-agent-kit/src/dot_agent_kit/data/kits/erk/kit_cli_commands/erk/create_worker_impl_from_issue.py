@@ -25,7 +25,14 @@ import json
 from pathlib import Path
 
 import click
-from erk_shared.github.issues import RealGitHubIssues
+from erk_shared.github.auth.real import RealGitHubAuthGateway
+from erk_shared.github.gateway import GitHubGateway
+from erk_shared.github.issue.real import RealGitHubIssueGateway
+from erk_shared.github.pr.real import RealGitHubPrGateway
+from erk_shared.github.repo.real import RealGitHubRepoGateway
+from erk_shared.github.run.real import RealGitHubRunGateway
+from erk_shared.github.workflow.real import RealGitHubWorkflowGateway
+from erk_shared.integrations.time.real import RealTime
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.worker_impl_folder import create_worker_impl_folder
 
@@ -55,8 +62,16 @@ def create_worker_impl_from_issue(
 
     # Direct instantiation of required dependencies (avoids erk import)
     # This allows the command to work when run via dot-agent without uv
-    github_issues = RealGitHubIssues()
-    plan_store = GitHubPlanStore(github_issues)
+    time = RealTime()
+    github = GitHubGateway(
+        auth=RealGitHubAuthGateway(),
+        pr=RealGitHubPrGateway(),
+        issue=RealGitHubIssueGateway(),
+        run=RealGitHubRunGateway(time),
+        workflow=RealGitHubWorkflowGateway(time),
+        repo=RealGitHubRepoGateway(),
+    )
+    plan_store = GitHubPlanStore(github)
 
     # Fetch plan from GitHub (raises RuntimeError if not found)
     try:

@@ -30,7 +30,7 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
     repo = discover_repo_context(ctx, ctx.cwd)
 
     # 1. Fetch workflow runs from dispatch workflow
-    runs = ctx.github.list_workflow_runs(repo.root, DISPATCH_WORKFLOW_NAME)
+    runs = ctx.github.run.list_workflow_runs(repo.root, DISPATCH_WORKFLOW_NAME)
 
     # Handle empty state
     if not runs:
@@ -52,7 +52,7 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
             issue_numbers.append(issue_num)
 
     # 3. Fetch issues for titles (using issues interface)
-    issues = ctx.issues.list_issues(repo.root, labels=["erk-plan"])
+    issues = ctx.github.issue.list_issues(repo.root, labels=["erk-plan"])
     issue_map = {issue.number: issue for issue in issues}
 
     # Second filtering pass - remove runs where we can't display title
@@ -89,7 +89,7 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
     # 4. Batch fetch PRs linked to issues
     pr_linkages: dict[int, list] = {}
     if issue_numbers and location is not None:
-        pr_linkages = ctx.github.get_prs_linked_to_issues(location, issue_numbers)
+        pr_linkages = ctx.github.pr.get_prs_linked_to_issues(location, issue_numbers)
 
     # Determine use_graphite for URL selection
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False

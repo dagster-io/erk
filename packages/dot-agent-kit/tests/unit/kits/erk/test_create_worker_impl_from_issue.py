@@ -41,12 +41,7 @@ def test_create_worker_impl_from_issue_success(
     # Mock GitHubPlanStore to return our fake
     monkeypatch.setattr(
         "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_worker_impl_from_issue.GitHubPlanStore",
-        lambda github_issues: fake_plan_store,
-    )
-    # Mock RealGitHubIssues (not used since GitHubPlanStore is mocked)
-    monkeypatch.setattr(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_worker_impl_from_issue.RealGitHubIssues",
-        lambda: None,
+        lambda github: fake_plan_store,
     )
 
     # Act: Run command
@@ -87,12 +82,7 @@ def test_create_worker_impl_from_issue_plan_not_found(
     # Mock GitHubPlanStore to return our empty fake
     monkeypatch.setattr(
         "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_worker_impl_from_issue.GitHubPlanStore",
-        lambda github_issues: fake_plan_store,
-    )
-    # Mock RealGitHubIssues (not used since GitHubPlanStore is mocked)
-    monkeypatch.setattr(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_worker_impl_from_issue.RealGitHubIssues",
-        lambda: None,
+        lambda github: fake_plan_store,
     )
 
     # Act: Run command with non-existent issue
@@ -140,12 +130,7 @@ def test_create_worker_impl_from_issue_uses_cwd_when_no_repo_root(
     # Mock GitHubPlanStore to return our fake
     monkeypatch.setattr(
         "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_worker_impl_from_issue.GitHubPlanStore",
-        lambda github_issues: fake_plan_store,
-    )
-    # Mock RealGitHubIssues (not used since GitHubPlanStore is mocked)
-    monkeypatch.setattr(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_worker_impl_from_issue.RealGitHubIssues",
-        lambda: None,
+        lambda github: fake_plan_store,
     )
 
     # Mock Path.cwd() to return tmp_path

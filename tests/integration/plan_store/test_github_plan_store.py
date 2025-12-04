@@ -1,14 +1,42 @@
-"""Unit tests for GitHubPlanStore using FakeGitHubIssues."""
+"""Unit tests for GitHubPlanStore using FakeGitHubIssueGateway."""
 
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.auth.fake import FakeGitHubAuthGateway
+from erk_shared.github.gateway import GitHubGateway
+from erk_shared.github.issue.fake import FakeGitHubIssueGateway
+from erk_shared.github.issue.types import IssueInfo
+from erk_shared.github.pr.fake import FakeGitHubPrGateway
+from erk_shared.github.repo.fake import FakeGitHubRepoGateway
+from erk_shared.github.run.fake import FakeGitHubRunGateway
+from erk_shared.github.workflow.fake import FakeGitHubWorkflowGateway
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.types import PlanQuery, PlanState
 
 from tests.test_utils.github_helpers import create_test_issue
+
+
+def _create_github_gateway(
+    *,
+    issues: dict[int, IssueInfo] | None = None,
+    comments: dict[int, list[str]] | None = None,
+) -> GitHubGateway:
+    """Create GitHubGateway with FakeGitHubIssueGateway for testing.
+
+    Args:
+        issues: Mapping of issue number -> IssueInfo
+        comments: Mapping of issue number -> list of comment bodies
+    """
+    return GitHubGateway(
+        auth=FakeGitHubAuthGateway(),
+        pr=FakeGitHubPrGateway(),
+        issue=FakeGitHubIssueGateway(issues=issues, comments=comments),
+        run=FakeGitHubRunGateway(),
+        workflow=FakeGitHubWorkflowGateway(),
+        repo=FakeGitHubRepoGateway(),
+    )
 
 
 def test_get_plan_success() -> None:
@@ -23,8 +51,8 @@ def test_get_plan_success() -> None:
         created_at=datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC),
         updated_at=datetime(2024, 1, 16, 14, 45, 0, tzinfo=UTC),
     )
-    fake_github = FakeGitHubIssues(issues={42: issue})
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues={42: issue})
+    store = GitHubPlanStore(github)
 
     result = store.get_plan(Path("/fake/repo"), "42")
 
@@ -50,8 +78,8 @@ def test_get_plan_closed_state() -> None:
         state="CLOSED",
         updated_at=datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC),
     )
-    fake_github = FakeGitHubIssues(issues={100: issue})
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues={100: issue})
+    store = GitHubPlanStore(github)
 
     result = store.get_plan(Path("/fake/repo"), "100")
 
@@ -68,8 +96,8 @@ def test_get_plan_empty_body_raises() -> None:
         number=50,
         title="Issue without body",
     )
-    fake_github = FakeGitHubIssues(issues={50: issue})
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues={50: issue})
+    store = GitHubPlanStore(github)
 
     with pytest.raises(RuntimeError, match="Plan content is empty"):
         store.get_plan(Path("/fake/repo"), "50")
@@ -77,8 +105,8 @@ def test_get_plan_empty_body_raises() -> None:
 
 def test_get_plan_not_found() -> None:
     """Test error handling when issue is not found."""
-    fake_github = FakeGitHubIssues(issues={})
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues={})
+    store = GitHubPlanStore(github)
 
     with pytest.raises(RuntimeError, match="Issue #999 not found"):
         store.get_plan(Path("/fake/repo"), "999")
@@ -99,8 +127,8 @@ def test_list_plans_no_filters() -> None:
         created_at=datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC),
     )
-    fake_github = FakeGitHubIssues(issues={1: issue1, 2: issue2})
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues={1: issue1, 2: issue2})
+    store = GitHubPlanStore(github)
 
     query = PlanQuery()
     results = store.list_plans(Path("/fake/repo"), query)
@@ -124,10 +152,10 @@ def test_list_plans_with_labels() -> None:
         created_at=datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC),
     )
-    fake_github = FakeGitHubIssues(issues={1: issue1, 2: issue2})
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues={1: issue1, 2: issue2})
+    store = GitHubPlanStore(github)
 
-    # Note: FakeGitHubIssues doesn't implement label filtering,
+    # Note: FakeGitHubIssueGateway implements label filtering with AND logic,
     # so this test verifies the call succeeds rather than filtering behavior
     query = PlanQuery(labels=["erk-plan", "erk-queue"])
     results = store.list_plans(Path("/fake/repo"), query)
@@ -146,8 +174,8 @@ def test_list_plans_with_state_open() -> None:
         created_at=datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC),
     )
-    fake_github = FakeGitHubIssues(issues={1: issue1, 2: issue2})
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues={1: issue1, 2: issue2})
+    store = GitHubPlanStore(github)
 
     query = PlanQuery(state=PlanState.OPEN)
     results = store.list_plans(Path("/fake/repo"), query)
@@ -168,8 +196,8 @@ def test_list_plans_with_state_closed() -> None:
         created_at=datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC),
     )
-    fake_github = FakeGitHubIssues(issues={1: issue1, 2: issue2})
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues={1: issue1, 2: issue2})
+    store = GitHubPlanStore(github)
 
     query = PlanQuery(state=PlanState.CLOSED)
     results = store.list_plans(Path("/fake/repo"), query)
@@ -191,8 +219,8 @@ def test_list_plans_with_limit() -> None:
         )
         for i in range(1, 11)
     }
-    fake_github = FakeGitHubIssues(issues=issues)
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues=issues)
+    store = GitHubPlanStore(github)
 
     query = PlanQuery(limit=3)
     results = store.list_plans(Path("/fake/repo"), query)
@@ -216,8 +244,8 @@ def test_list_plans_combined_filters() -> None:
         created_at=datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC),
     )
-    fake_github = FakeGitHubIssues(issues={1: issue1, 2: issue2})
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues={1: issue1, 2: issue2})
+    store = GitHubPlanStore(github)
 
     query = PlanQuery(
         labels=["erk-plan"],
@@ -239,8 +267,8 @@ def test_timestamp_parsing_with_z_suffix() -> None:
         created_at=datetime(2024, 1, 15, 10, 30, 45, tzinfo=UTC),
         updated_at=datetime(2024, 1, 16, 14, 20, 30, tzinfo=UTC),
     )
-    fake_github = FakeGitHubIssues(issues={1: issue})
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues={1: issue})
+    store = GitHubPlanStore(github)
 
     result = store.get_plan(Path("/fake/repo"), "1")
 
@@ -257,8 +285,8 @@ def test_label_extraction() -> None:
         body="Plan content for label test",
         labels=["erk-plan", "erk-queue", "enhancement"],
     )
-    fake_github = FakeGitHubIssues(issues={1: issue})
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues={1: issue})
+    store = GitHubPlanStore(github)
 
     result = store.get_plan(Path("/fake/repo"), "1")
 
@@ -274,8 +302,8 @@ def test_assignee_extraction() -> None:
         body="Plan content for assignee test",
         assignees=["alice", "bob", "charlie"],
     )
-    fake_github = FakeGitHubIssues(issues={1: issue})
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues={1: issue})
+    store = GitHubPlanStore(github)
 
     result = store.get_plan(Path("/fake/repo"), "1")
 
@@ -290,8 +318,8 @@ def test_metadata_preserves_github_number() -> None:
         title="Test",
         body="Plan content for metadata test",
     )
-    fake_github = FakeGitHubIssues(issues={42: issue})
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues={42: issue})
+    store = GitHubPlanStore(github)
 
     result = store.get_plan(Path("/fake/repo"), "42")
 
@@ -304,8 +332,8 @@ def test_metadata_preserves_github_number() -> None:
 
 def test_get_provider_name() -> None:
     """Test getting the provider name."""
-    fake_github = FakeGitHubIssues()
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway()
+    store = GitHubPlanStore(github)
     assert store.get_provider_name() == "github"
 
 
@@ -330,8 +358,8 @@ def test_list_plans_passes_limit_to_interface() -> None:
             updated_at=now,
         ),
     }
-    fake_github = FakeGitHubIssues(issues=issues)
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues=issues)
+    store = GitHubPlanStore(github)
 
     # Query with limit=1
     query = PlanQuery(labels=["erk-plan"], limit=1)
@@ -348,16 +376,24 @@ def test_close_plan_with_issue_number() -> None:
         title="Test Issue",
         body="Test body",
     )
-    fake_github = FakeGitHubIssues(issues={42: issue})
-    store = GitHubPlanStore(fake_github)
+    issue_gateway = FakeGitHubIssueGateway(issues={42: issue})
+    github = GitHubGateway(
+        auth=FakeGitHubAuthGateway(),
+        pr=FakeGitHubPrGateway(),
+        issue=issue_gateway,
+        run=FakeGitHubRunGateway(),
+        workflow=FakeGitHubWorkflowGateway(),
+        repo=FakeGitHubRepoGateway(),
+    )
+    store = GitHubPlanStore(github)
 
     store.close_plan(Path("/fake/repo"), "42")
 
     # Verify issue was closed
-    assert 42 in fake_github.closed_issues
+    assert 42 in issue_gateway.closed_issues
     # Verify comment was added
-    assert len(fake_github.added_comments) == 1
-    assert fake_github.added_comments[0] == (42, "Plan completed via erk plan close")
+    assert len(issue_gateway.added_comments) == 1
+    assert issue_gateway.added_comments[0] == (42, "Plan completed via erk plan close")
 
 
 def test_close_plan_with_github_url() -> None:
@@ -367,16 +403,24 @@ def test_close_plan_with_github_url() -> None:
         title="Test Issue",
         body="Test body",
     )
-    fake_github = FakeGitHubIssues(issues={123: issue})
-    store = GitHubPlanStore(fake_github)
+    issue_gateway = FakeGitHubIssueGateway(issues={123: issue})
+    github = GitHubGateway(
+        auth=FakeGitHubAuthGateway(),
+        pr=FakeGitHubPrGateway(),
+        issue=issue_gateway,
+        run=FakeGitHubRunGateway(),
+        workflow=FakeGitHubWorkflowGateway(),
+        repo=FakeGitHubRepoGateway(),
+    )
+    store = GitHubPlanStore(github)
 
     store.close_plan(Path("/fake/repo"), "https://github.com/org/repo/issues/123")
 
     # Verify issue was closed
-    assert 123 in fake_github.closed_issues
+    assert 123 in issue_gateway.closed_issues
     # Verify comment was added
-    assert len(fake_github.added_comments) == 1
-    assert fake_github.added_comments[0] == (123, "Plan completed via erk plan close")
+    assert len(issue_gateway.added_comments) == 1
+    assert issue_gateway.added_comments[0] == (123, "Plan completed via erk plan close")
 
 
 def test_close_plan_with_trailing_slash() -> None:
@@ -386,19 +430,27 @@ def test_close_plan_with_trailing_slash() -> None:
         title="Test Issue",
         body="Test body",
     )
-    fake_github = FakeGitHubIssues(issues={456: issue})
-    store = GitHubPlanStore(fake_github)
+    issue_gateway = FakeGitHubIssueGateway(issues={456: issue})
+    github = GitHubGateway(
+        auth=FakeGitHubAuthGateway(),
+        pr=FakeGitHubPrGateway(),
+        issue=issue_gateway,
+        run=FakeGitHubRunGateway(),
+        workflow=FakeGitHubWorkflowGateway(),
+        repo=FakeGitHubRepoGateway(),
+    )
+    store = GitHubPlanStore(github)
 
     store.close_plan(Path("/fake/repo"), "https://github.com/org/repo/issues/456/")
 
     # Verify issue was closed
-    assert 456 in fake_github.closed_issues
+    assert 456 in issue_gateway.closed_issues
 
 
 def test_close_plan_invalid_identifier() -> None:
     """Test error handling for invalid identifier."""
-    fake_github = FakeGitHubIssues(issues={})
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues={})
+    store = GitHubPlanStore(github)
 
     with pytest.raises(RuntimeError, match="Invalid identifier format"):
         store.close_plan(Path("/fake/repo"), "not-a-number")
@@ -406,8 +458,8 @@ def test_close_plan_invalid_identifier() -> None:
 
 def test_close_plan_not_found() -> None:
     """Test error handling when issue doesn't exist."""
-    fake_github = FakeGitHubIssues(issues={})
-    store = GitHubPlanStore(fake_github)
+    github = _create_github_gateway(issues={})
+    store = GitHubPlanStore(github)
 
     with pytest.raises(RuntimeError, match="Issue #999 not found"):
         store.close_plan(Path("/fake/repo"), "999")
@@ -447,11 +499,11 @@ More details.
         title="Plan: Test Implementation",
         body=metadata_body,
     )
-    fake_github = FakeGitHubIssues(
+    github = _create_github_gateway(
         issues={42: issue},
         comments={42: [plan_comment]},  # First comment contains plan
     )
-    store = GitHubPlanStore(fake_github)
+    store = GitHubPlanStore(github)
 
     result = store.get_plan(Path("/fake/repo"), "42")
 
@@ -493,11 +545,11 @@ def test_get_plan_schema_v2_multiline_comment_preserved() -> None:
         title="Plan: Fix GitHub Actions",
         body="metadata only",
     )
-    fake_github = FakeGitHubIssues(
+    github = _create_github_gateway(
         issues={1221: issue},
         comments={1221: [plan_comment]},
     )
-    store = GitHubPlanStore(fake_github)
+    store = GitHubPlanStore(github)
 
     result = store.get_plan(Path("/fake/repo"), "1221")
 
@@ -527,11 +579,11 @@ This is an old-style plan in the issue body."""
         body=plan_body,
     )
     # No comments, or comments without plan markers
-    fake_github = FakeGitHubIssues(
+    github = _create_github_gateway(
         issues={100: issue},
         comments={100: ["A regular comment without markers"]},
     )
-    store = GitHubPlanStore(fake_github)
+    store = GitHubPlanStore(github)
 
     result = store.get_plan(Path("/fake/repo"), "100")
 
@@ -550,11 +602,11 @@ This plan has no comments at all."""
         title="Plan: No Comments",
         body=plan_body,
     )
-    fake_github = FakeGitHubIssues(
+    github = _create_github_gateway(
         issues={200: issue},
         comments={},  # No comments
     )
-    store = GitHubPlanStore(fake_github)
+    store = GitHubPlanStore(github)
 
     result = store.get_plan(Path("/fake/repo"), "200")
 
@@ -579,11 +631,11 @@ def test_get_plan_empty_body_raises_error() -> None:
         title="Plan: Empty Content",
         body="",  # Empty body
     )
-    fake_github = FakeGitHubIssues(
+    github = _create_github_gateway(
         issues={300: issue},
         comments={},  # No comments
     )
-    store = GitHubPlanStore(fake_github)
+    store = GitHubPlanStore(github)
 
     with pytest.raises(RuntimeError, match="Plan content is empty"):
         store.get_plan(Path("/fake/repo"), "300")
@@ -596,11 +648,11 @@ def test_get_plan_whitespace_only_body_raises_error() -> None:
         title="Plan: Whitespace Only",
         body="   \n\n  \t  ",  # Only whitespace
     )
-    fake_github = FakeGitHubIssues(
+    github = _create_github_gateway(
         issues={301: issue},
         comments={},
     )
-    store = GitHubPlanStore(fake_github)
+    store = GitHubPlanStore(github)
 
     with pytest.raises(RuntimeError, match="Plan content is empty"):
         store.get_plan(Path("/fake/repo"), "301")
@@ -627,11 +679,11 @@ schema_version: '2'
     )
     # Comment exists but without plan markers, so extraction returns None
     # and we fall back to metadata-only body
-    fake_github = FakeGitHubIssues(
+    github = _create_github_gateway(
         issues={302: issue},
         comments={302: ["A regular comment without plan markers"]},
     )
-    store = GitHubPlanStore(fake_github)
+    store = GitHubPlanStore(github)
 
     # Should NOT raise error - the metadata body is not empty
     # (It's valid to have plan content in the issue body for schema v1)

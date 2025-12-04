@@ -42,7 +42,7 @@ def check_plan(ctx: ErkContext, identifier: str) -> None:
 
     # Fetch issue from GitHub
     try:
-        issue = ctx.issues.get_issue(repo_root, issue_number)
+        issue = ctx.github.issue.get_issue(repo_root, issue_number)
     except RuntimeError as e:
         user_output(click.style("Error: ", fg="red") + f"Failed to fetch issue: {e}")
         raise SystemExit(1) from e
@@ -68,7 +68,7 @@ def check_plan(ctx: ErkContext, identifier: str) -> None:
 
     # Check 3: First comment exists
     try:
-        comments = ctx.issues.get_issue_comments(repo_root, issue_number)
+        comments = ctx.github.issue.get_issue_comments(repo_root, issue_number)
     except RuntimeError as e:
         user_output(click.style("Error: ", fg="red") + f"Failed to fetch comments: {e}")
         raise SystemExit(1) from e

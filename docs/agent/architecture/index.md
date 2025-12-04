@@ -17,6 +17,7 @@ Core architectural patterns and design decisions for the erk codebase.
 | Understand dry-run patterns or DI | [erk-architecture.md](erk-architecture.md)       |
 | Choose between Protocol and ABC   | [protocol-vs-abc.md](protocol-vs-abc.md)         |
 | Execute shell commands safely     | [subprocess-wrappers.md](subprocess-wrappers.md) |
+| Work with GitHub API operations   | [github-gateway.md](github-gateway.md)           |
 
 ## Documents in This Category
 
@@ -37,6 +38,12 @@ Decision framework for choosing between Protocol (structural typing) and ABC (no
 **File:** [subprocess-wrappers.md](subprocess-wrappers.md)
 
 Two-layer pattern for subprocess execution: integration layer (`run_subprocess_with_context`) and CLI layer (`run_with_error_reporting`) wrappers.
+
+### GitHub Gateway Architecture
+
+**File:** [github-gateway.md](github-gateway.md)
+
+Composite gateway pattern for GitHub operations, organizing functionality into 6 sub-gateways (auth, pr, issue, run, workflow, repo) aligned with the `gh` CLI command hierarchy.
 
 ## Related Topics
 

@@ -410,7 +410,7 @@ class Ensure:
             >>> pr_info = ctx.github.get_pr_status(repo.root, branch)
         """
         Ensure.gh_installed()
-        is_authenticated, username, _ = ctx.github.check_auth_status()
+        is_authenticated, username, _ = ctx.github.auth.check_auth_status()
 
         if not is_authenticated:
             user_output(

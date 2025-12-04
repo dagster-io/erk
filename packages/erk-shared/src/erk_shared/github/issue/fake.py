@@ -1,0 +1,384 @@
+"""Fake GitHub issue operations for testing."""
+
+from datetime import UTC, datetime
+from pathlib import Path
+
+from erk_shared.github.issue.abc import GitHubIssueGateway
+from erk_shared.github.issue.types import (
+    CreateIssueResult,
+    DevelopmentBranch,
+    IssueComment,
+    IssueInfo,
+)
+
+
+class FakeGitHubIssueGateway(GitHubIssueGateway):
+    """In-memory fake implementation of GitHub issue operations.
+
+    Consolidates FakeGitHubIssues + FakeIssueLinkBranches.
+    All state is provided via constructor using keyword arguments.
+    """
+
+    def __init__(
+        self,
+        *,
+        issues: dict[int, IssueInfo] | None = None,
+        next_issue_number: int = 1,
+        labels: set[str] | None = None,
+        comments: dict[int, list[str]] | None = None,
+        comments_with_urls: dict[int, list[IssueComment]] | None = None,
+        linked_branches: dict[int, str] | None = None,
+    ) -> None:
+        """Create FakeGitHubIssueGateway with pre-configured state.
+
+        Args:
+            issues: Mapping of issue number -> IssueInfo
+            next_issue_number: Next issue number to assign (for predictable testing)
+            labels: Set of existing label names in the repository
+            comments: Mapping of issue number -> list of comment bodies
+            comments_with_urls: Mapping of issue number -> list of IssueComment
+            linked_branches: Mapping of issue number -> linked branch name
+        """
+        self._issues = issues or {}
+        self._next_issue_number = next_issue_number
+        self._labels = labels or set()
+        self._comments = comments or {}
+        self._comments_with_urls = comments_with_urls or {}
+        self._linked_branches = linked_branches or {}
+
+        # Mutation tracking
+        self._created_issues: list[tuple[str, str, list[str]]] = []
+        self._added_comments: list[tuple[int, str]] = []
+        self._created_labels: list[tuple[str, str, str]] = []
+        self._closed_issues: list[int] = []
+        self._created_branches: list[tuple[int, str, str | None]] = []
+
+    # --- Issue CRUD operations ---
+
+    def create_issue(
+        self, repo_root: Path, title: str, body: str, labels: list[str]
+    ) -> CreateIssueResult:
+        """Create issue in fake storage and track mutation."""
+        issue_number = self._next_issue_number
+        self._next_issue_number += 1
+
+        # Create realistic fake URL for testing
+        url = f"https://github.com/test-owner/test-repo/issues/{issue_number}"
+
+        now = datetime.now(UTC)
+        self._issues[issue_number] = IssueInfo(
+            number=issue_number,
+            title=title,
+            body=body,
+            state="OPEN",
+            url=url,
+            labels=labels,
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+        )
+        self._created_issues.append((title, body, labels))
+
+        return CreateIssueResult(number=issue_number, url=url)
+
+    def get_issue(self, repo_root: Path, number: int) -> IssueInfo:
+        """Get issue from fake storage.
+
+        Raises:
+            RuntimeError: If issue number not found (simulates gh CLI error)
+        """
+        if number not in self._issues:
+            msg = f"Issue #{number} not found"
+            raise RuntimeError(msg)
+        return self._issues[number]
+
+    def list_issues(
+        self,
+        repo_root: Path,
+        labels: list[str] | None = None,
+        state: str | None = None,
+        limit: int | None = None,
+    ) -> list[IssueInfo]:
+        """Query issues from fake storage.
+
+        Filters issues by labels (AND logic) and state.
+        """
+        issues = list(self._issues.values())
+
+        # Filter by labels (AND logic - issue must have ALL specified labels)
+        if labels:
+            label_set = set(labels)
+            issues = [issue for issue in issues if label_set.issubset(set(issue.labels))]
+
+        if state and state != "all":
+            state_upper = state.upper()
+            issues = [issue for issue in issues if issue.state == state_upper]
+
+        if limit is not None:
+            issues = issues[:limit]
+
+        return issues
+
+    def close_issue(self, repo_root: Path, number: int) -> None:
+        """Close issue in fake storage.
+
+        Raises:
+            RuntimeError: If issue number not found (simulates gh CLI error)
+        """
+        if number not in self._issues:
+            msg = f"Issue #{number} not found"
+            raise RuntimeError(msg)
+
+        # Update issue state to closed
+        current_issue = self._issues[number]
+        self._issues[number] = IssueInfo(
+            number=current_issue.number,
+            title=current_issue.title,
+            body=current_issue.body,
+            state="closed",
+            url=current_issue.url,
+            labels=current_issue.labels,
+            assignees=current_issue.assignees,
+            created_at=current_issue.created_at,
+            updated_at=current_issue.updated_at,
+        )
+        self._closed_issues.append(number)
+
+    # --- Issue body operations ---
+
+    def update_issue_body(self, repo_root: Path, number: int, body: str) -> None:
+        """Update issue body in fake storage.
+
+        Raises:
+            RuntimeError: If issue number not found (simulates gh CLI error)
+        """
+        if number not in self._issues:
+            msg = f"Issue #{number} not found"
+            raise RuntimeError(msg)
+
+        # Update the issue body in-place (creates new IssueInfo with updated body)
+        old_issue = self._issues[number]
+        updated_issue = IssueInfo(
+            number=old_issue.number,
+            title=old_issue.title,
+            body=body,  # New body
+            state=old_issue.state,
+            url=old_issue.url,
+            labels=old_issue.labels,
+            assignees=old_issue.assignees,
+            created_at=old_issue.created_at,
+            updated_at=datetime.now(UTC),  # Update timestamp
+        )
+        self._issues[number] = updated_issue
+
+    # --- Comment operations ---
+
+    def add_comment(self, repo_root: Path, number: int, body: str) -> None:
+        """Record comment in mutation tracking.
+
+        Raises:
+            RuntimeError: If issue number not found (simulates gh CLI error)
+        """
+        if number not in self._issues:
+            msg = f"Issue #{number} not found"
+            raise RuntimeError(msg)
+        self._added_comments.append((number, body))
+
+    def get_issue_comments(self, repo_root: Path, number: int) -> list[str]:
+        """Get comments for issue from fake storage.
+
+        Returns:
+            List of comment bodies, or empty list if no comments exist
+        """
+        return self._comments.get(number, [])
+
+    def get_issue_comments_with_urls(self, repo_root: Path, number: int) -> list[IssueComment]:
+        """Get comments with URLs for issue from fake storage.
+
+        Returns:
+            List of IssueComment objects, or empty list if no comments exist
+        """
+        return self._comments_with_urls.get(number, [])
+
+    def get_multiple_issue_comments(
+        self, repo_root: Path, issue_numbers: list[int]
+    ) -> dict[int, list[str]]:
+        """Get comments for multiple issues from fake storage.
+
+        Returns:
+            Mapping of issue number to list of comment bodies.
+            Issues without comments will have an empty list.
+        """
+        result: dict[int, list[str]] = {}
+        for num in issue_numbers:
+            result[num] = self._comments.get(num, [])
+        return result
+
+    # --- Label operations ---
+
+    def ensure_label_exists(
+        self,
+        repo_root: Path,
+        label: str,
+        description: str,
+        color: str,
+    ) -> None:
+        """Ensure label exists in fake storage, creating if needed."""
+        if label not in self._labels:
+            self._labels.add(label)
+            self._created_labels.append((label, description, color))
+
+    def ensure_label_on_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
+        """Ensure label is present on issue in fake storage (idempotent).
+
+        Raises:
+            RuntimeError: If issue number not found (simulates gh CLI error)
+        """
+        if issue_number not in self._issues:
+            msg = f"Issue #{issue_number} not found"
+            raise RuntimeError(msg)
+
+        # Get current issue and create updated version with new label (if not present)
+        current_issue = self._issues[issue_number]
+        if label not in current_issue.labels:
+            updated_labels = current_issue.labels + [label]
+            self._issues[issue_number] = IssueInfo(
+                number=current_issue.number,
+                title=current_issue.title,
+                body=current_issue.body,
+                state=current_issue.state,
+                url=current_issue.url,
+                labels=updated_labels,
+                assignees=current_issue.assignees,
+                created_at=current_issue.created_at,
+                updated_at=current_issue.updated_at,
+            )
+
+    def remove_label_from_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
+        """Remove label from issue in fake storage.
+
+        Raises:
+            RuntimeError: If issue number not found (simulates gh CLI error)
+        """
+        if issue_number not in self._issues:
+            msg = f"Issue #{issue_number} not found"
+            raise RuntimeError(msg)
+
+        # Get current issue and create updated version without the label
+        current_issue = self._issues[issue_number]
+        if label in current_issue.labels:
+            updated_labels = [lbl for lbl in current_issue.labels if lbl != label]
+            self._issues[issue_number] = IssueInfo(
+                number=current_issue.number,
+                title=current_issue.title,
+                body=current_issue.body,
+                state=current_issue.state,
+                url=current_issue.url,
+                labels=updated_labels,
+                assignees=current_issue.assignees,
+                created_at=current_issue.created_at,
+                updated_at=current_issue.updated_at,
+            )
+
+    # --- Development branch operations (from IssueLinkBranches) ---
+
+    def create_development_branch(
+        self,
+        repo_root: Path,
+        issue_number: int,
+        *,
+        branch_name: str,
+        base_branch: str | None = None,
+    ) -> DevelopmentBranch:
+        """Create development branch in fake storage.
+
+        If a linked branch already exists for the issue, returns that branch
+        with already_existed=True.
+        """
+        # Check for existing linked branch first
+        existing = self._linked_branches.get(issue_number)
+        if existing is not None:
+            return DevelopmentBranch(
+                branch_name=existing,
+                issue_number=issue_number,
+                already_existed=True,
+            )
+
+        # Create new linked branch
+        self._linked_branches[issue_number] = branch_name
+        self._created_branches.append((issue_number, branch_name, base_branch))
+
+        return DevelopmentBranch(
+            branch_name=branch_name,
+            issue_number=issue_number,
+            already_existed=False,
+        )
+
+    def get_linked_branch(
+        self,
+        repo_root: Path,
+        issue_number: int,
+    ) -> str | None:
+        """Get existing development branch linked to an issue.
+
+        Returns branch name if a linked branch exists, None otherwise.
+        """
+        return self._linked_branches.get(issue_number)
+
+    # --- Mutation tracking properties ---
+
+    @property
+    def created_issues(self) -> list[tuple[str, str, list[str]]]:
+        """Read-only access to created issues for test assertions.
+
+        Returns list of (title, body, labels) tuples.
+        """
+        return self._created_issues
+
+    @property
+    def added_comments(self) -> list[tuple[int, str]]:
+        """Read-only access to added comments for test assertions.
+
+        Returns list of (issue_number, body) tuples.
+        """
+        return self._added_comments
+
+    @property
+    def created_labels(self) -> list[tuple[str, str, str]]:
+        """Read-only access to created labels for test assertions.
+
+        Returns list of (label, description, color) tuples.
+        """
+        return self._created_labels
+
+    @property
+    def closed_issues(self) -> list[int]:
+        """Read-only access to closed issues for test assertions.
+
+        Returns list of issue numbers that were closed.
+        """
+        return self._closed_issues
+
+    @property
+    def created_branches(self) -> list[tuple[int, str, str | None]]:
+        """Read-only access to created development branches for test assertions.
+
+        Returns list of (issue_number, branch_name, base_branch) tuples.
+        """
+        return self._created_branches
+
+    @property
+    def labels(self) -> set[str]:
+        """Read-only access to label names in the repository.
+
+        Returns set of label names.
+        """
+        return self._labels.copy()
+
+    @property
+    def issues(self) -> dict[int, IssueInfo]:
+        """Read-only access to all issues for test assertions.
+
+        Returns dict of issue_number -> IssueInfo.
+        """
+        return self._issues.copy()

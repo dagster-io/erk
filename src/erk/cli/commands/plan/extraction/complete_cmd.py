@@ -38,7 +38,7 @@ def complete_extraction(ctx: ErkContext, identifier: str) -> None:
 
     # Fetch the extraction plan issue to read its metadata
     try:
-        issue_info = ctx.issues.get_issue(repo_root, issue_number)
+        issue_info = ctx.github.issue.get_issue(repo_root, issue_number)
     except RuntimeError as e:
         raise click.ClickException(f"Failed to fetch issue #{issue_number}: {e}") from e
 
@@ -68,7 +68,7 @@ def complete_extraction(ctx: ErkContext, identifier: str) -> None:
 
     # Ensure docs-extracted label exists
     try:
-        ctx.issues.ensure_label_exists(
+        ctx.github.issue.ensure_label_exists(
             repo_root,
             DOCS_EXTRACTED_LABEL,
             DOCS_EXTRACTED_LABEL_DESCRIPTION,
@@ -81,7 +81,9 @@ def complete_extraction(ctx: ErkContext, identifier: str) -> None:
     marked_count = 0
     for source_issue_number in source_plan_issues:
         try:
-            ctx.issues.ensure_label_on_issue(repo_root, source_issue_number, DOCS_EXTRACTED_LABEL)
+            ctx.github.issue.ensure_label_on_issue(
+                repo_root, source_issue_number, DOCS_EXTRACTED_LABEL
+            )
             user_output(f"  Marked plan #{source_issue_number} as docs-extracted")
             marked_count += 1
         except RuntimeError as e:

@@ -83,7 +83,7 @@ def create_plan(
 
     # Ensure erk-plan label exists
     try:
-        ctx.issues.ensure_label_exists(
+        ctx.github.issue.ensure_label_exists(
             repo_root,
             label="erk-plan",
             description="Implementation plan tracked by erk",
@@ -100,7 +100,7 @@ def create_plan(
     timestamp = datetime.now(UTC).isoformat()
 
     # Get creator from GitHub authentication
-    creator = ctx.issues.get_current_username()
+    creator = ctx.github.auth.get_current_username()
     if not creator:
         creator = "unknown"
 
@@ -113,7 +113,7 @@ def create_plan(
     # Create the issue (add [erk-plan] suffix for visibility)
     issue_title = f"{title} [erk-plan]"
     try:
-        result = ctx.issues.create_issue(
+        result = ctx.github.issue.create_issue(
             repo_root=repo_root,
             title=issue_title,
             body=issue_body,
@@ -126,7 +126,7 @@ def create_plan(
     # Add plan content as first comment (Schema V2 format)
     try:
         comment_body = format_plan_content_comment(content)
-        ctx.issues.add_comment(repo_root, result.number, comment_body)
+        ctx.github.issue.add_comment(repo_root, result.number, comment_body)
     except RuntimeError as e:
         user_output(
             click.style("Warning: ", fg="yellow")

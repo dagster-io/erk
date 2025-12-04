@@ -8,13 +8,13 @@ import tomlkit
 from erk_shared.git.abc import Git
 from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.real import RealGit
-from erk_shared.github.abc import GitHub
-from erk_shared.github.dry_run import DryRunGitHub
-from erk_shared.github.issue_link_branches import IssueLinkBranches
-from erk_shared.github.issue_link_branches_dry_run import DryRunIssueLinkBranches
-from erk_shared.github.issue_link_branches_real import RealIssueLinkBranches
-from erk_shared.github.issues import DryRunGitHubIssues, GitHubIssues, RealGitHubIssues
-from erk_shared.github.real import RealGitHub
+from erk_shared.github.auth.real import RealGitHubAuthGateway
+from erk_shared.github.gateway import GitHubGateway
+from erk_shared.github.issue.real import RealGitHubIssueGateway
+from erk_shared.github.pr.real import RealGitHubPrGateway
+from erk_shared.github.repo.real import RealGitHubRepoGateway
+from erk_shared.github.run.real import RealGitHubRunGateway
+from erk_shared.github.workflow.real import RealGitHubWorkflowGateway
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.dry_run import DryRunGraphite
 from erk_shared.integrations.graphite.real import RealGraphite
@@ -58,9 +58,7 @@ class ErkContext:
     """
 
     git: Git
-    github: GitHub
-    issues: GitHubIssues
-    issue_link_branches: IssueLinkBranches
+    github: GitHubGateway
     plan_store: PlanStore
     graphite: Graphite
     shell: Shell
@@ -106,12 +104,12 @@ class ErkContext:
         Example:
             Before (7 lines):
             >>> from erk_shared.git.fake import FakeGit
-            >>> from erk_shared.github.fake import FakeGitHub
+            >>> from erk_shared.github.gateway import GitHubGateway
             >>> from erk_shared.integrations.graphite.fake import FakeGraphite
             >>> from tests.fakes.shell import FakeShell
             >>> ctx = ErkContext(
             ...     git=git,
-            ...     github=FakeGitHub(),
+            ...     github=create_fake_github_gateway(),
             ...     graphite=FakeGraphite(),
             ...     shell=FakeShell(),
             ...     cwd=cwd,
@@ -121,7 +119,6 @@ class ErkContext:
             ...     ),
             ...     repo=NoRepoSentinel(),
             ...     dry_run=False,
-            ...     trunk_branch=None,
             ... )
 
             After (1 line):
@@ -131,14 +128,17 @@ class ErkContext:
             For more complex test setup with custom configs or multiple integration classes,
             use ErkContext.for_test() instead.
         """
-        from erk_shared.github.fake import FakeGitHub
-        from erk_shared.github.issues import FakeGitHubIssues
+        from erk_shared.github.auth.fake import FakeGitHubAuthGateway
+        from erk_shared.github.issue.fake import FakeGitHubIssueGateway
+        from erk_shared.github.pr.fake import FakeGitHubPrGateway
+        from erk_shared.github.repo.fake import FakeGitHubRepoGateway
+        from erk_shared.github.run.fake import FakeGitHubRunGateway
+        from erk_shared.github.workflow.fake import FakeGitHubWorkflowGateway
         from erk_shared.integrations.graphite.fake import FakeGraphite
         from erk_shared.integrations.time.fake import FakeTime
         from erk_shared.plan_store.fake import FakePlanStore
         from tests.fakes.claude_executor import FakeClaudeExecutor
         from tests.fakes.completion import FakeCompletion
-        from tests.fakes.issue_link_branches import FakeIssueLinkBranches
         from tests.fakes.script_writer import FakeScriptWriter
         from tests.fakes.shell import FakeShell
         from tests.fakes.user_feedback import FakeUserFeedback
@@ -146,14 +146,17 @@ class ErkContext:
         from erk.core.config_store import FakeConfigStore
         from erk.core.planner.registry_fake import FakePlannerRegistry
 
-        fake_github = FakeGitHub()
-        fake_issues = FakeGitHubIssues()
-        fake_issue_link_branches = FakeIssueLinkBranches()
+        fake_github = GitHubGateway(
+            auth=FakeGitHubAuthGateway(),
+            pr=FakeGitHubPrGateway(),
+            issue=FakeGitHubIssueGateway(),
+            run=FakeGitHubRunGateway(),
+            workflow=FakeGitHubWorkflowGateway(),
+            repo=FakeGitHubRepoGateway(),
+        )
         return ErkContext(
             git=git,
             github=fake_github,
-            issues=fake_issues,
-            issue_link_branches=fake_issue_link_branches,
             plan_store=FakePlanStore(),
             graphite=FakeGraphite(),
             shell=FakeShell(),
@@ -163,7 +166,7 @@ class ErkContext:
             config_store=FakeConfigStore(config=None),
             script_writer=FakeScriptWriter(),
             feedback=FakeUserFeedback(),
-            plan_list_service=PlanListService(fake_github, fake_issues),
+            plan_list_service=PlanListService(fake_github),
             planner_registry=FakePlannerRegistry(),
             cwd=cwd,
             global_config=None,
@@ -175,9 +178,7 @@ class ErkContext:
     @staticmethod
     def for_test(
         git: Git | None = None,
-        github: GitHub | None = None,
-        issues: GitHubIssues | None = None,
-        issue_link_branches: IssueLinkBranches | None = None,
+        github: GitHubGateway | None = None,
         plan_store: PlanStore | None = None,
         graphite: Graphite | None = None,
         shell: Shell | None = None,
@@ -194,6 +195,9 @@ class ErkContext:
         local_config: LoadedConfig | None = None,
         repo: RepoContext | NoRepoSentinel | None = None,
         dry_run: bool = False,
+        # Legacy parameters for backwards compatibility
+        issues: object | None = None,  # FakeGitHubIssues
+        issue_link_branches: object | None = None,  # FakeIssueLinkBranches
     ) -> "ErkContext":
         """Create test context with optional pre-configured integration classes.
 
@@ -203,14 +207,10 @@ class ErkContext:
 
         Args:
             git: Optional Git implementation. If None, creates empty FakeGit.
-            github: Optional GitHub implementation. If None, creates empty FakeGitHub.
-            issues: Optional GitHubIssues implementation.
-                       If None, creates empty FakeGitHubIssues.
-            graphite: Optional Graphite implementation.
-                         If None, creates empty FakeGraphite.
+            github: Optional GitHubGateway composite. If None, creates default fake gateway.
+            graphite: Optional Graphite implementation. If None, creates empty FakeGraphite.
             shell: Optional Shell implementation. If None, creates empty FakeShell.
-            completion: Optional Completion implementation.
-                           If None, creates empty FakeCompletion.
+            completion: Optional Completion implementation. If None, creates empty FakeCompletion.
             config_store: Optional ConfigStore implementation.
                               If None, creates FakeConfigStore with test config.
             script_writer: Optional ScriptWriter implementation.
@@ -233,7 +233,7 @@ class ErkContext:
 
             Complex case with multiple integration classes:
             >>> git = FakeGit(default_branches={Path("/repo"): "main"})
-            >>> github = FakeGitHub(prs={123: PR(...)})
+            >>> github = create_fake_github_gateway(pr=FakeGitHubPrGateway(...))
             >>> graphite = FakeGraphite(stack_info={"feature": StackInfo(...)})
             >>> ctx = ErkContext.for_test(
             ...     git=git,
@@ -246,14 +246,17 @@ class ErkContext:
             which is more concise.
         """
         from erk_shared.git.fake import FakeGit
-        from erk_shared.github.fake import FakeGitHub
-        from erk_shared.github.issues import FakeGitHubIssues
+        from erk_shared.github.auth.fake import FakeGitHubAuthGateway
+        from erk_shared.github.issue.fake import FakeGitHubIssueGateway
+        from erk_shared.github.pr.fake import FakeGitHubPrGateway
+        from erk_shared.github.repo.fake import FakeGitHubRepoGateway
+        from erk_shared.github.run.fake import FakeGitHubRunGateway
+        from erk_shared.github.workflow.fake import FakeGitHubWorkflowGateway
         from erk_shared.integrations.graphite.fake import FakeGraphite
         from erk_shared.integrations.time.fake import FakeTime
         from erk_shared.plan_store.fake import FakePlanStore
         from tests.fakes.claude_executor import FakeClaudeExecutor
         from tests.fakes.completion import FakeCompletion
-        from tests.fakes.issue_link_branches import FakeIssueLinkBranches
         from tests.fakes.script_writer import FakeScriptWriter
         from tests.fakes.shell import FakeShell
         from tests.fakes.user_feedback import FakeUserFeedback
@@ -265,14 +268,64 @@ class ErkContext:
         if git is None:
             git = FakeGit()
 
-        if github is None:
-            github = FakeGitHub()
+        # Handle legacy parameters for backwards compatibility
+        # If `issues` or `issue_link_branches` are provided, construct GitHubGateway
+        if issues is not None or issue_link_branches is not None:
+            # Extract issues list from FakeGitHubIssues for the pr sub-gateway
+            # PlanListService.get_plan_list_data() calls github.pr.get_issues_with_pr_linkages()
+            issues_list = list(getattr(issues, "_issues", {}).values()) if issues else []
 
-        if issues is None:
-            issues = FakeGitHubIssues()
+            # Create a composite issue gateway that delegates to both legacy fakes
+            # This preserves mutation tracking on both the FakeGitHubIssues (for issue CRUD)
+            # and FakeIssueLinkBranches (for branch operations)
+            issue_sub_gateway = _LegacyIssueGatewayComposite(
+                issues_fake=issues,
+                branch_fake=issue_link_branches,
+            )
 
-        if issue_link_branches is None:
-            issue_link_branches = FakeIssueLinkBranches()
+            # If a FakeGitHub was also passed, use it as the pr sub-gateway
+            # to preserve mutation tracking (e.g., created_prs)
+            if github is not None:
+                pr_sub_gateway = github  # type: ignore[assignment]
+                run_sub_gateway = github  # type: ignore[assignment]
+                workflow_sub_gateway = github  # type: ignore[assignment]
+                auth_sub_gateway = github  # type: ignore[assignment]
+                repo_sub_gateway = FakeGitHubRepoGateway()
+            else:
+                pr_sub_gateway = FakeGitHubPrGateway(issues=issues_list)
+                run_sub_gateway = FakeGitHubRunGateway()
+                workflow_sub_gateway = FakeGitHubWorkflowGateway()
+                auth_sub_gateway = FakeGitHubAuthGateway()
+                repo_sub_gateway = FakeGitHubRepoGateway()
+
+            github = GitHubGateway(
+                auth=auth_sub_gateway,  # type: ignore[arg-type]
+                pr=pr_sub_gateway,  # type: ignore[arg-type]
+                issue=issue_sub_gateway,  # type: ignore[arg-type]
+                run=run_sub_gateway,  # type: ignore[arg-type]
+                workflow=workflow_sub_gateway,  # type: ignore[arg-type]
+                repo=repo_sub_gateway,
+            )
+        elif github is None:
+            github = GitHubGateway(
+                auth=FakeGitHubAuthGateway(),
+                pr=FakeGitHubPrGateway(),
+                issue=FakeGitHubIssueGateway(),
+                run=FakeGitHubRunGateway(),
+                workflow=FakeGitHubWorkflowGateway(),
+                repo=FakeGitHubRepoGateway(),
+            )
+        elif not isinstance(github, GitHubGateway):
+            # github is a FakeGitHub (old style) - wrap it in GitHubGateway
+            # Use FakeGitHub for all sub-gateways to preserve mutation tracking
+            github = GitHubGateway(
+                auth=github,  # type: ignore[arg-type]
+                pr=github,  # type: ignore[arg-type]
+                issue=github,  # type: ignore[arg-type]
+                run=github,  # type: ignore[arg-type]
+                workflow=github,  # type: ignore[arg-type]
+                repo=FakeGitHubRepoGateway(),
+            )
 
         if plan_store is None:
             plan_store = FakePlanStore()
@@ -299,7 +352,7 @@ class ErkContext:
             feedback = FakeUserFeedback()
 
         if plan_list_service is None:
-            plan_list_service = PlanListService(github, issues)
+            plan_list_service = PlanListService(github)
 
         if planner_registry is None:
             planner_registry = FakePlannerRegistry()
@@ -325,15 +378,11 @@ class ErkContext:
         if dry_run:
             git = DryRunGit(git)
             graphite = DryRunGraphite(graphite)
-            github = DryRunGitHub(github)
-            issues = DryRunGitHubIssues(issues)
-            issue_link_branches = DryRunIssueLinkBranches(issue_link_branches)
+            # Note: dry-run for GitHubGateway not yet implemented
 
         return ErkContext(
             git=git,
             github=github,
-            issues=issues,
-            issue_link_branches=issue_link_branches,
             plan_store=plan_store,
             graphite=graphite,
             shell=shell,
@@ -351,6 +400,112 @@ class ErkContext:
             repo=repo,
             dry_run=dry_run,
         )
+
+
+class _LegacyIssueGatewayComposite:
+    """Composite that delegates to legacy FakeGitHubIssues and FakeIssueLinkBranches.
+
+    This class provides backwards compatibility for tests that use the old
+    separate fakes for issue CRUD and branch linking operations.
+
+    Methods are delegated as follows:
+    - Issue CRUD operations -> issues_fake (FakeGitHubIssues)
+    - Branch linking operations -> branch_fake (FakeIssueLinkBranches)
+      If no branch_fake provided, uses a default FakeGitHubIssueGateway
+    """
+
+    def __init__(
+        self, issues_fake: object | None = None, branch_fake: object | None = None
+    ) -> None:
+        self._issues_fake = issues_fake
+        self._branch_fake = branch_fake
+        # Create a default branch handler if none provided
+        self._default_branch_handler: object | None = None
+
+    # Issue CRUD operations - delegate to issues_fake
+    def create_issue(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if self._issues_fake is not None:
+            return self._issues_fake.create_issue(*args, **kwargs)  # type: ignore[union-attr]
+        raise NotImplementedError("No issues_fake provided")
+
+    def get_issue(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if self._issues_fake is not None:
+            return self._issues_fake.get_issue(*args, **kwargs)  # type: ignore[union-attr]
+        raise NotImplementedError("No issues_fake provided")
+
+    def list_issues(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if self._issues_fake is not None:
+            return self._issues_fake.list_issues(*args, **kwargs)  # type: ignore[union-attr]
+        raise NotImplementedError("No issues_fake provided")
+
+    def close_issue(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if self._issues_fake is not None:
+            return self._issues_fake.close_issue(*args, **kwargs)  # type: ignore[union-attr]
+        raise NotImplementedError("No issues_fake provided")
+
+    def update_issue_body(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if self._issues_fake is not None:
+            return self._issues_fake.update_issue_body(*args, **kwargs)  # type: ignore[union-attr]
+        raise NotImplementedError("No issues_fake provided")
+
+    def add_comment(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if self._issues_fake is not None:
+            return self._issues_fake.add_comment(*args, **kwargs)  # type: ignore[union-attr]
+        raise NotImplementedError("No issues_fake provided")
+
+    def get_issue_comments(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if self._issues_fake is not None:
+            return self._issues_fake.get_issue_comments(*args, **kwargs)  # type: ignore[union-attr]
+        raise NotImplementedError("No issues_fake provided")
+
+    def get_issue_comments_with_urls(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if self._issues_fake is not None:
+            return self._issues_fake.get_issue_comments_with_urls(*args, **kwargs)  # type: ignore[union-attr]
+        raise NotImplementedError("No issues_fake provided")
+
+    def get_multiple_issue_comments(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if self._issues_fake is not None:
+            return self._issues_fake.get_multiple_issue_comments(*args, **kwargs)  # type: ignore[union-attr]
+        raise NotImplementedError("No issues_fake provided")
+
+    def ensure_label_exists(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if self._issues_fake is not None:
+            return self._issues_fake.ensure_label_exists(*args, **kwargs)  # type: ignore[union-attr]
+        raise NotImplementedError("No issues_fake provided")
+
+    def ensure_label_on_issue(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if self._issues_fake is not None:
+            return self._issues_fake.ensure_label_on_issue(*args, **kwargs)  # type: ignore[union-attr]
+        raise NotImplementedError("No issues_fake provided")
+
+    def remove_label_from_issue(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if self._issues_fake is not None:
+            return self._issues_fake.remove_label_from_issue(*args, **kwargs)  # type: ignore[union-attr]
+        raise NotImplementedError("No issues_fake provided")
+
+    def _get_branch_handler(self) -> object:
+        """Get the handler for branch operations, creating default if needed."""
+        if self._branch_fake is not None:
+            return self._branch_fake
+        if self._issues_fake is not None and hasattr(
+            self._issues_fake, "create_development_branch"
+        ):
+            return self._issues_fake
+        # Lazy-create default handler if needed
+        if self._default_branch_handler is None:
+            from erk_shared.github.issue.fake import FakeGitHubIssueGateway
+
+            self._default_branch_handler = FakeGitHubIssueGateway()
+        return self._default_branch_handler
+
+    # Branch linking operations - delegate to branch_fake or default handler
+    def create_development_branch(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        handler = self._get_branch_handler()
+        return handler.create_development_branch(*args, **kwargs)  # type: ignore[union-attr]
+
+    def get_linked_branch(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        handler = self._get_branch_handler()
+        return handler.get_linked_branch(*args, **kwargs)  # type: ignore[union-attr]
 
 
 def write_trunk_to_pyproject(repo_root: Path, trunk: str, git: Git | None = None) -> None:
@@ -468,11 +623,18 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
     time: Time = RealTime()
     git: Git = RealGit()
     graphite: Graphite = RealGraphite()
-    github: GitHub = RealGitHub(time)
-    issues: GitHubIssues = RealGitHubIssues()
-    issue_link_branches: IssueLinkBranches = RealIssueLinkBranches()
-    plan_store: PlanStore = GitHubPlanStore(issues)
-    plan_list_service: PlanListService = PlanListService(github, issues)
+
+    # Create GitHubGateway composite with all real sub-gateways
+    github_gateway = GitHubGateway(
+        auth=RealGitHubAuthGateway(),
+        pr=RealGitHubPrGateway(),
+        issue=RealGitHubIssueGateway(),
+        run=RealGitHubRunGateway(time),
+        workflow=RealGitHubWorkflowGateway(time),
+        repo=RealGitHubRepoGateway(),
+    )
+    plan_store: PlanStore = GitHubPlanStore(github_gateway)
+    plan_list_service: PlanListService = PlanListService(github_gateway)
 
     # 5. Discover repo (only needs cwd, erk_root, git)
     # If global_config is None, use placeholder path for repo discovery
@@ -497,16 +659,12 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
     if dry_run:
         git = DryRunGit(git)
         graphite = DryRunGraphite(graphite)
-        github = DryRunGitHub(github)
-        issues = DryRunGitHubIssues(issues)
-        issue_link_branches = DryRunIssueLinkBranches(issue_link_branches)
+        # Note: dry-run for GitHubGateway not yet implemented
 
     # 9. Create context with all values
     return ErkContext(
         git=git,
-        github=github,
-        issues=issues,
-        issue_link_branches=issue_link_branches,
+        github=github_gateway,
         plan_store=plan_store,
         graphite=graphite,
         shell=RealShell(),

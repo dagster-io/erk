@@ -18,7 +18,7 @@ GitHub operations use the main GitHub ABC from erk_shared.github.
 from typing import Protocol
 
 from erk_shared.git.abc import Git
-from erk_shared.github.abc import GitHub
+from erk_shared.github.gateway import GitHubGateway
 from erk_shared.integrations.graphite.abc import Graphite
 
 
@@ -32,9 +32,8 @@ class GtKit(Protocol):
     git, github, and graphite attributes (like ErkContext) can be used directly
     without explicit inheritance.
 
-    GitHub operations use the main GitHub ABC from erk_shared.github which
-    provides methods that take repo_root as a parameter rather than operating
-    on the "current" branch.
+    GitHub operations use the GitHubGateway composite which provides access to
+    sub-gateways (pr, issue, run, workflow, auth, repo) for different operations.
 
     Note: Properties are used instead of bare attributes to make the Protocol
     read-only compatible. This allows frozen dataclasses (like ErkContext) to
@@ -48,8 +47,8 @@ class GtKit(Protocol):
         ...
 
     @property
-    def github(self) -> GitHub:
-        """GitHub operations interface."""
+    def github(self) -> GitHubGateway:
+        """GitHub operations composite gateway."""
         ...
 
     @property

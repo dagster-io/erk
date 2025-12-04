@@ -476,11 +476,11 @@ class TestExecuteFinalize:
         assert result.pr_title == "Add new feature"
         assert result.branch_name == "feature-branch"
 
-        # Verify PR was updated using mutation tracking
-        github = ops.github
-        assert (123, "Add new feature") in github.updated_pr_titles  # type: ignore[attr-defined]
+        # Verify PR was updated using mutation tracking on the pr sub-gateway
+        pr_gateway = ops.github.pr
+        assert (123, "Add new feature") in pr_gateway.updated_pr_titles  # type: ignore[attr-defined]
         # Check body was updated (find the body in updated_pr_bodies list)
-        bodies = [body for pr_num, body in github.updated_pr_bodies if pr_num == 123]  # type: ignore[attr-defined]
+        bodies = [body for pr_num, body in pr_gateway.updated_pr_bodies if pr_num == 123]  # type: ignore[attr-defined]
         assert len(bodies) > 0
         assert "This adds a great new feature" in bodies[0]
 
@@ -554,10 +554,10 @@ class TestExecuteFinalize:
         assert result.success is True
         assert result.issue_number == 456
 
-        # Verify PR body includes footer metadata using mutation tracking
-        github = ops.github
+        # Verify PR body includes footer metadata using mutation tracking on the pr sub-gateway
+        pr_gateway = ops.github.pr
         # Find the body in updated_pr_bodies list
-        bodies = [body for pr_num, body in github.updated_pr_bodies if pr_num == 123]  # type: ignore[attr-defined]
+        bodies = [body for pr_num, body in pr_gateway.updated_pr_bodies if pr_num == 123]  # type: ignore[attr-defined]
         assert len(bodies) > 0
         final_pr_body = bodies[0]
         # Body comes first, then footer
