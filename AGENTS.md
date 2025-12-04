@@ -15,6 +15,8 @@
 
 **CRITICAL: NEVER commit directly to `master`. Always create a feature branch first.**
 
+**CRITICAL: Before writing to `/tmp/`** → Read [scratch-storage.md](docs/agent/planning/scratch-storage.md) first. AI workflow files (diffs, PR bodies, plans) belong in `.erk/scratch/<session-id>/`, NOT `/tmp/`.
+
 **Load these skills FIRST:**
 
 - **Python code** → `dignified-python-313` skill (LBYL, modern types, ABC interfaces)
@@ -71,7 +73,7 @@ For detailed reference, consult the documentation index which maps each document
 | ---------------------------------------- | -------------------------------------------------------------------------- |
 | [Architecture](docs/agent/architecture/) | dry-run patterns, Protocol vs ABC, subprocess wrappers, GitHub URL parsing |
 | [CLI Development](docs/agent/cli/)       | command organization, output styling, script mode                          |
-| [Planning](docs/agent/planning/)         | plan lifecycle, .impl/ folders, agent delegation                           |
+| [Planning](docs/agent/planning/)         | plan lifecycle, .impl/ folders, agent delegation, scratch storage          |
 | [Testing](docs/agent/testing/)           | erk fakes, rebase conflicts, import conflict resolution                    |
 | [Sessions](docs/agent/sessions/)         | session logs, context analysis                                             |
 | [Hooks](docs/agent/hooks/)               | hook creation, erk-specific hooks                                          |

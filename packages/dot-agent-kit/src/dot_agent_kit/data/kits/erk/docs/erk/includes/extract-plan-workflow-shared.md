@@ -2,9 +2,9 @@
 
 Shared extraction plan workflow for `/erk:extract-agent-docs` and `/erk:extract-agent-docs-from-log` commands.
 
-## Step 6: Format and Write Plan to Temp File
+## Step 6: Format and Write Plan to Scratch Directory
 
-Format the selected suggestions as an implementation plan and write to a temp file:
+Format the selected suggestions as an implementation plan and write to the scratch directory:
 
 ```markdown
 # Plan: Documentation Extraction from Session
@@ -35,7 +35,17 @@ Extract documentation improvements identified from session analysis.
 ...
 ```
 
-Write this plan content to `/tmp/extraction-plan-<session-id>.md` using the Write tool.
+**Scratch directory location**: `{repo_root}/.erk/scratch/<session-id>/`
+
+Extract the session ID from the `SESSION_CONTEXT` hook reminder in your context, then write the plan content to:
+
+```
+{repo_root}/.erk/scratch/<session-id>/extraction-plan.md
+```
+
+Use the Write tool to create this file. The scratch directory is worktree-local and session-scoped.
+
+**NEVER use `/tmp/` for AI workflow files.** Always use the scratch directory.
 
 ## Step 7: Create Extraction Plan Issue
 
@@ -43,7 +53,7 @@ Run the kit CLI command to create the extraction plan issue:
 
 ```bash
 dot-agent run erk create-extraction-plan \
-    --plan-file="/tmp/extraction-plan-<session-id>.md" \
+    --plan-file="{repo_root}/.erk/scratch/<session-id>/extraction-plan.md" \
     --source-plan-issues="" \
     --extraction-session-ids="<session-id>"
 ```
