@@ -8,7 +8,6 @@ from pathlib import Path
 
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.operations.squash import execute_squash
-from erk_shared.integrations.gt.types import SquashError, SquashSuccess
 
 from tests.unit.kits.gt.fake_ops import FakeGtKitOps
 
@@ -27,10 +26,9 @@ class TestIdempotentSquash:
 
         result = render_events(execute_squash(ops, tmp_path))
 
-        assert isinstance(result, SquashError)
-        assert result.success is False
-        assert result.error == "no_commits"
-        assert "No commits found ahead of" in result.message
+        assert result["success"] is False
+        assert result["error"] == "no_commits"
+        assert "No commits found ahead of" in result["message"]
 
     def test_single_commit_returns_success_no_op(self, tmp_path: Path) -> None:
         """Test single commit returns success without squashing."""
@@ -43,11 +41,10 @@ class TestIdempotentSquash:
 
         result = render_events(execute_squash(ops, tmp_path))
 
-        assert isinstance(result, SquashSuccess)
-        assert result.success is True
-        assert result.action == "already_single_commit"
-        assert result.commit_count == 1
-        assert "Already a single commit, no squash needed" in result.message
+        assert result["success"] is True
+        assert result["action"] == "already_single_commit"
+        assert result["commit_count"] == 1
+        assert "Already a single commit, no squash needed" in result["message"]
 
     def test_multiple_commits_squashes_successfully(self, tmp_path: Path) -> None:
         """Test multiple commits get squashed."""
@@ -60,11 +57,10 @@ class TestIdempotentSquash:
 
         result = render_events(execute_squash(ops, tmp_path))
 
-        assert isinstance(result, SquashSuccess)
-        assert result.success is True
-        assert result.action == "squashed"
-        assert result.commit_count == 3
-        assert "Squashed 3 commits into 1" in result.message
+        assert result["success"] is True
+        assert result["action"] == "squashed"
+        assert result["commit_count"] == 3
+        assert "Squashed 3 commits into 1" in result["message"]
 
     def test_squash_conflict_returns_error(self, tmp_path: Path) -> None:
         """Test error when squash has merge conflicts."""
@@ -78,10 +74,9 @@ class TestIdempotentSquash:
 
         result = render_events(execute_squash(ops, tmp_path))
 
-        assert isinstance(result, SquashError)
-        assert result.success is False
-        assert result.error == "squash_conflict"
-        assert "Merge conflicts detected during squash" in result.message
+        assert result["success"] is False
+        assert result["error"] == "squash_conflict"
+        assert "Merge conflicts detected during squash" in result["message"]
 
     def test_squash_failure_returns_error(self, tmp_path: Path) -> None:
         """Test error when squash fails for non-conflict reason."""
@@ -95,10 +90,9 @@ class TestIdempotentSquash:
 
         result = render_events(execute_squash(ops, tmp_path))
 
-        assert isinstance(result, SquashError)
-        assert result.success is False
-        assert result.error == "squash_failed"
-        assert "Failed to squash" in result.message
+        assert result["success"] is False
+        assert result["error"] == "squash_failed"
+        assert "Failed to squash" in result["message"]
 
     def test_two_commits_squashes(self, tmp_path: Path) -> None:
         """Test that exactly 2 commits triggers squash."""
@@ -111,8 +105,7 @@ class TestIdempotentSquash:
 
         result = render_events(execute_squash(ops, tmp_path))
 
-        assert isinstance(result, SquashSuccess)
-        assert result.success is True
-        assert result.action == "squashed"
-        assert result.commit_count == 2
-        assert "Squashed 2 commits into 1" in result.message
+        assert result["success"] is True
+        assert result["action"] == "squashed"
+        assert result["commit_count"] == 2
+        assert "Squashed 2 commits into 1" in result["message"]

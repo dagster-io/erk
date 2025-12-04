@@ -39,26 +39,24 @@ def execute_squash(
     yield ProgressEvent(f"Counting commits ahead of {trunk}...")
     commit_count = ops.git.count_commits_ahead(cwd, trunk)
     if commit_count == 0:
-        yield CompletionEvent(
-            SquashError(
-                success=False,
-                error="no_commits",
-                message=f"No commits found ahead of {trunk}.",
-            )
-        )
+        error: SquashError = {
+            "success": False,
+            "error": "no_commits",
+            "message": f"No commits found ahead of {trunk}.",
+        }
+        yield CompletionEvent(error)
         return
 
     # Step 3: If already single commit, return success with no-op
     if commit_count == 1:
         yield ProgressEvent("Already a single commit, no squash needed.", style="success")
-        yield CompletionEvent(
-            SquashSuccess(
-                success=True,
-                action="already_single_commit",
-                commit_count=1,
-                message="Already a single commit, no squash needed.",
-            )
-        )
+        result: SquashSuccess = {
+            "success": True,
+            "action": "already_single_commit",
+            "commit_count": 1,
+            "message": "Already a single commit, no squash needed.",
+        }
+        yield CompletionEvent(result)
         return
 
     # Step 4: Squash commits
@@ -70,30 +68,27 @@ def execute_squash(
             e.stderr if hasattr(e, "stderr") else ""
         )
         if "conflict" in combined.lower():
-            yield CompletionEvent(
-                SquashError(
-                    success=False,
-                    error="squash_conflict",
-                    message="Merge conflicts detected during squash.",
-                )
-            )
+            conflict_error: SquashError = {
+                "success": False,
+                "error": "squash_conflict",
+                "message": "Merge conflicts detected during squash.",
+            }
+            yield CompletionEvent(conflict_error)
             return
         stderr = e.stderr if hasattr(e, "stderr") else ""
-        yield CompletionEvent(
-            SquashError(
-                success=False,
-                error="squash_failed",
-                message=f"Failed to squash: {stderr.strip()}",
-            )
-        )
+        fail_error: SquashError = {
+            "success": False,
+            "error": "squash_failed",
+            "message": f"Failed to squash: {stderr.strip()}",
+        }
+        yield CompletionEvent(fail_error)
         return
 
     yield ProgressEvent(f"Squashed {commit_count} commits into 1.", style="success")
-    yield CompletionEvent(
-        SquashSuccess(
-            success=True,
-            action="squashed",
-            commit_count=commit_count,
-            message=f"Squashed {commit_count} commits into 1.",
-        )
-    )
+    success: SquashSuccess = {
+        "success": True,
+        "action": "squashed",
+        "commit_count": commit_count,
+        "message": f"Squashed {commit_count} commits into 1.",
+    }
+    yield CompletionEvent(success)

@@ -116,33 +116,31 @@ def _execute_submit_only(
 
         # Check for merge conflicts
         if "conflict" in combined_lower or "merge conflict" in combined_lower:
-            yield CompletionEvent(
-                PostAnalysisError(
-                    success=False,
-                    error_type="submit_conflict",
-                    message="Merge conflicts detected during stack rebase",
-                    details={
-                        "branch_name": branch_name,
-                        "stdout": e.stdout if hasattr(e, "stdout") else "",
-                        "stderr": e.stderr if hasattr(e, "stderr") else str(e),
-                    },
-                )
-            )
-            return
-
-        # Generic restack failure
-        yield CompletionEvent(
-            PostAnalysisError(
-                success=False,
-                error_type="submit_failed",
-                message="Failed to restack branch",
-                details={
+            conflict_error: PostAnalysisError = {
+                "success": False,
+                "error_type": "submit_conflict",
+                "message": "Merge conflicts detected during stack rebase",
+                "details": {
                     "branch_name": branch_name,
                     "stdout": e.stdout if hasattr(e, "stdout") else "",
                     "stderr": e.stderr if hasattr(e, "stderr") else str(e),
                 },
-            )
-        )
+            }
+            yield CompletionEvent(conflict_error)
+            return
+
+        # Generic restack failure
+        restack_error: PostAnalysisError = {
+            "success": False,
+            "error_type": "submit_failed",
+            "message": "Failed to restack branch",
+            "details": {
+                "branch_name": branch_name,
+                "stdout": e.stdout if hasattr(e, "stdout") else "",
+                "stderr": e.stderr if hasattr(e, "stderr") else str(e),
+            },
+        }
+        yield CompletionEvent(restack_error)
         return
 
     restack_elapsed = int(time.time() - restack_start)
@@ -191,93 +189,87 @@ def _execute_submit_only(
         nothing_to_submit = "Nothing to submit!" in error_message
         no_changes = "does not introduce any changes" in error_message
         if nothing_to_submit or no_changes:
-            yield CompletionEvent(
-                PostAnalysisError(
-                    success=False,
-                    error_type="submit_empty_parent",
-                    message=(
-                        "Stack contains an empty parent branch that was already merged. "
-                        "Run 'gt track --parent <trunk>' to reparent this branch, "
-                        "then 'gt restack'."
-                    ),
-                    details={
-                        "branch_name": branch_name,
-                        "error": error_message,
-                    },
-                )
-            )
-            return
-
-        if "conflict" in error_lower or "merge conflict" in error_lower:
-            yield CompletionEvent(
-                PostAnalysisError(
-                    success=False,
-                    error_type="submit_conflict",
-                    message="Merge conflicts detected during branch submission",
-                    details={
-                        "branch_name": branch_name,
-                        "error": error_message,
-                    },
-                )
-            )
-            return
-
-        if "merged but the merged commits are not contained" in error_message:
-            yield CompletionEvent(
-                PostAnalysisError(
-                    success=False,
-                    error_type="submit_merged_parent",
-                    message="Parent branches have been merged but are not in main trunk",
-                    details={
-                        "branch_name": branch_name,
-                        "error": error_message,
-                    },
-                )
-            )
-            return
-
-        if "updated remotely" in error_lower or "must sync" in error_lower:
-            yield CompletionEvent(
-                PostAnalysisError(
-                    success=False,
-                    error_type="submit_diverged",
-                    message="Branch has diverged from remote - manual sync required",
-                    details={
-                        "branch_name": branch_name,
-                        "error": error_message,
-                    },
-                )
-            )
-            return
-
-        if "timed out after 120 seconds" in error_message:
-            yield CompletionEvent(
-                PostAnalysisError(
-                    success=False,
-                    error_type="submit_timeout",
-                    message=(
-                        "gt submit timed out after 120 seconds. "
-                        "Check network connectivity and try again."
-                    ),
-                    details={
-                        "branch_name": branch_name,
-                        "error": error_message,
-                    },
-                )
-            )
-            return
-
-        yield CompletionEvent(
-            PostAnalysisError(
-                success=False,
-                error_type="submit_failed",
-                message="Failed to submit branch with gt submit",
-                details={
+            empty_parent_error: PostAnalysisError = {
+                "success": False,
+                "error_type": "submit_empty_parent",
+                "message": (
+                    "Stack contains an empty parent branch that was already merged. "
+                    "Run 'gt track --parent <trunk>' to reparent this branch, "
+                    "then 'gt restack'."
+                ),
+                "details": {
                     "branch_name": branch_name,
                     "error": error_message,
                 },
-            )
-        )
+            }
+            yield CompletionEvent(empty_parent_error)
+            return
+
+        if "conflict" in error_lower or "merge conflict" in error_lower:
+            submit_conflict_error: PostAnalysisError = {
+                "success": False,
+                "error_type": "submit_conflict",
+                "message": "Merge conflicts detected during branch submission",
+                "details": {
+                    "branch_name": branch_name,
+                    "error": error_message,
+                },
+            }
+            yield CompletionEvent(submit_conflict_error)
+            return
+
+        if "merged but the merged commits are not contained" in error_message:
+            merged_parent_error: PostAnalysisError = {
+                "success": False,
+                "error_type": "submit_merged_parent",
+                "message": "Parent branches have been merged but are not in main trunk",
+                "details": {
+                    "branch_name": branch_name,
+                    "error": error_message,
+                },
+            }
+            yield CompletionEvent(merged_parent_error)
+            return
+
+        if "updated remotely" in error_lower or "must sync" in error_lower:
+            diverged_error: PostAnalysisError = {
+                "success": False,
+                "error_type": "submit_diverged",
+                "message": "Branch has diverged from remote - manual sync required",
+                "details": {
+                    "branch_name": branch_name,
+                    "error": error_message,
+                },
+            }
+            yield CompletionEvent(diverged_error)
+            return
+
+        if "timed out after 120 seconds" in error_message:
+            timeout_error: PostAnalysisError = {
+                "success": False,
+                "error_type": "submit_timeout",
+                "message": (
+                    "gt submit timed out after 120 seconds. "
+                    "Check network connectivity and try again."
+                ),
+                "details": {
+                    "branch_name": branch_name,
+                    "error": error_message,
+                },
+            }
+            yield CompletionEvent(timeout_error)
+            return
+
+        generic_error: PostAnalysisError = {
+            "success": False,
+            "error_type": "submit_failed",
+            "message": "Failed to submit branch with gt submit",
+            "details": {
+                "branch_name": branch_name,
+                "error": error_message,
+            },
+        }
+        yield CompletionEvent(generic_error)
         return
 
     yield ProgressEvent("Branch submitted to Graphite", style="success")
@@ -302,14 +294,13 @@ def _execute_submit_only(
             time.sleep(retry_delays[attempt])
 
     if pr_info is None:
-        yield CompletionEvent(
-            PostAnalysisError(
-                success=False,
-                error_type="submit_failed",
-                message="PR was submitted but could not retrieve PR info from GitHub",
-                details={"branch_name": branch_name},
-            )
-        )
+        no_pr_info_error: PostAnalysisError = {
+            "success": False,
+            "error_type": "submit_failed",
+            "message": "PR was submitted but could not retrieve PR info from GitHub",
+            "details": {"branch_name": branch_name},
+        }
+        yield CompletionEvent(no_pr_info_error)
         return
 
     pr_number, pr_url = pr_info
@@ -358,7 +349,8 @@ def execute_preflight(
             pre_result = event.result
         else:
             yield event
-    if pre_result is None or isinstance(pre_result, PreAnalysisError):
+    # Check for None or error result (TypedDict with success=False)
+    if pre_result is None or pre_result["success"] is False:
         if pre_result is not None:
             yield CompletionEvent(pre_result)
         return
@@ -373,13 +365,16 @@ def execute_preflight(
             submit_result = event.result
         else:
             yield event
-    if submit_result is None or isinstance(submit_result, PostAnalysisError):
+    # submit_result is either a tuple (success) or a PostAnalysisError dict (failure)
+    if submit_result is None or (isinstance(submit_result, dict) and not submit_result["success"]):
         if submit_result is not None:
             yield CompletionEvent(submit_result)
         return
     submit_elapsed = int(time.time() - submit_start)
     yield ProgressEvent(f"Branch submitted ({submit_elapsed}s)", style="success")
 
+    # At this point submit_result is a tuple (narrowed from union)
+    assert isinstance(submit_result, tuple)
     pr_number, pr_url, graphite_url, branch_name = submit_result
 
     # Step 3: Get PR diff from GitHub API
@@ -420,18 +415,17 @@ def execute_preflight(
         if issue_ref is not None:
             issue_number = issue_ref.issue_number
 
-    yield CompletionEvent(
-        PreflightResult(
-            success=True,
-            pr_number=pr_number,
-            pr_url=pr_url,
-            graphite_url=graphite_url,
-            branch_name=branch_name,
-            diff_file=diff_file,
-            repo_root=str(repo_root),
-            current_branch=current_branch,
-            parent_branch=parent_branch,
-            issue_number=issue_number,
-            message=f"Preflight complete for branch: {branch_name}\nPR #{pr_number}: {pr_url}",
-        )
-    )
+    result: PreflightResult = {
+        "success": True,
+        "pr_number": pr_number,
+        "pr_url": pr_url,
+        "graphite_url": graphite_url,
+        "branch_name": branch_name,
+        "diff_file": diff_file,
+        "repo_root": str(repo_root),
+        "current_branch": current_branch,
+        "parent_branch": parent_branch,
+        "issue_number": issue_number,
+        "message": f"Preflight complete for branch: {branch_name}\nPR #{pr_number}: {pr_url}",
+    }
+    yield CompletionEvent(result)

@@ -131,15 +131,14 @@ def execute_finalize(
     else:
         graphite_url = ""
 
-    yield CompletionEvent(
-        FinalizeResult(
-            success=True,
-            pr_number=pr_number,
-            pr_url=pr_url,
-            pr_title=pr_title,
-            graphite_url=graphite_url,
-            branch_name=branch_name,
-            issue_number=issue_number,
-            message=f"Successfully updated PR #{pr_number}: {pr_url}",
-        )
-    )
+    result: FinalizeResult = {
+        "success": True,
+        "pr_number": pr_number,
+        "pr_url": pr_url,
+        "pr_title": pr_title,
+        "graphite_url": graphite_url,
+        "branch_name": branch_name,
+        "issue_number": issue_number,
+        "message": f"Successfully updated PR #{pr_number}: {pr_url}",
+    }
+    yield CompletionEvent(result)

@@ -13,13 +13,6 @@ from erk_shared.integrations.gt.operations.finalize import (
 )
 from erk_shared.integrations.gt.operations.pre_analysis import execute_pre_analysis
 from erk_shared.integrations.gt.operations.preflight import execute_preflight
-from erk_shared.integrations.gt.types import (
-    FinalizeResult,
-    PostAnalysisError,
-    PreAnalysisError,
-    PreAnalysisResult,
-    PreflightResult,
-)
 
 from tests.unit.kits.gt.fake_ops import FakeGtKitOps
 
@@ -86,12 +79,11 @@ class TestPreAnalysisExecution:
 
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
-        assert isinstance(result, PreAnalysisError)
-        assert result.success is False
-        assert result.error_type == "gt_not_authenticated"
-        assert "Graphite CLI (gt) is not authenticated" in result.message
-        assert result.details["fix"] == "Run 'gt auth' to authenticate with Graphite"
-        assert result.details["authenticated"] is False
+        assert result["success"] is False
+        assert result["error_type"] == "gt_not_authenticated"
+        assert "Graphite CLI (gt) is not authenticated" in result["message"]
+        assert result["details"]["fix"] == "Run 'gt auth' to authenticate with Graphite"
+        assert result["details"]["authenticated"] is False
 
     def test_pre_analysis_gh_not_authenticated(self, tmp_path: Path) -> None:
         """Test error when GitHub CLI is not authenticated (gt is authenticated)."""
@@ -105,12 +97,11 @@ class TestPreAnalysisExecution:
 
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
-        assert isinstance(result, PreAnalysisError)
-        assert result.success is False
-        assert result.error_type == "gh_not_authenticated"
-        assert "GitHub CLI (gh) is not authenticated" in result.message
-        assert result.details["fix"] == "Run 'gh auth login' to authenticate with GitHub"
-        assert result.details["authenticated"] is False
+        assert result["success"] is False
+        assert result["error_type"] == "gh_not_authenticated"
+        assert "GitHub CLI (gh) is not authenticated" in result["message"]
+        assert result["details"]["fix"] == "Run 'gh auth login' to authenticate with GitHub"
+        assert result["details"]["authenticated"] is False
 
     def test_pre_analysis_gt_checked_before_gh(self, tmp_path: Path) -> None:
         """Test that Graphite authentication is checked before GitHub."""
@@ -126,8 +117,8 @@ class TestPreAnalysisExecution:
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
         # When both are unauthenticated, gt should be reported first
-        assert isinstance(result, PreAnalysisError)
-        assert result.error_type == "gt_not_authenticated"
+        assert result["success"] is False
+        assert result["error_type"] == "gt_not_authenticated"
 
     def test_pre_analysis_with_uncommitted_changes(self, tmp_path: Path) -> None:
         """Test pre-analysis when uncommitted changes exist (should commit them)."""
@@ -141,11 +132,10 @@ class TestPreAnalysisExecution:
 
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
-        assert isinstance(result, PreAnalysisResult)
-        assert result.success is True
-        assert result.branch_name == "feature-branch"
-        assert result.uncommitted_changes_committed is True
-        assert "Committed uncommitted changes" in result.message
+        assert result["success"] is True
+        assert result["branch_name"] == "feature-branch"
+        assert result["uncommitted_changes_committed"] is True
+        assert "Committed uncommitted changes" in result["message"]
 
     def test_pre_analysis_without_uncommitted_changes(self, tmp_path: Path) -> None:
         """Test pre-analysis when no uncommitted changes exist."""
@@ -158,12 +148,11 @@ class TestPreAnalysisExecution:
 
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
-        assert isinstance(result, PreAnalysisResult)
-        assert result.success is True
-        assert result.uncommitted_changes_committed is False
-        assert result.commit_count == 1
-        assert result.squashed is False
-        assert "Single commit, no squash needed" in result.message
+        assert result["success"] is True
+        assert result["uncommitted_changes_committed"] is False
+        assert result["commit_count"] == 1
+        assert result["squashed"] is False
+        assert "Single commit, no squash needed" in result["message"]
 
     def test_pre_analysis_with_multiple_commits(self, tmp_path: Path) -> None:
         """Test pre-analysis with 2+ commits (should squash)."""
@@ -176,11 +165,10 @@ class TestPreAnalysisExecution:
 
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
-        assert isinstance(result, PreAnalysisResult)
-        assert result.success is True
-        assert result.commit_count == 3
-        assert result.squashed is True
-        assert "Squashed 3 commits into 1" in result.message
+        assert result["success"] is True
+        assert result["commit_count"] == 3
+        assert result["squashed"] is True
+        assert "Squashed 3 commits into 1" in result["message"]
 
     def test_pre_analysis_single_commit(self, tmp_path: Path) -> None:
         """Test pre-analysis with single commit (no squash needed)."""
@@ -193,11 +181,10 @@ class TestPreAnalysisExecution:
 
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
-        assert isinstance(result, PreAnalysisResult)
-        assert result.success is True
-        assert result.commit_count == 1
-        assert result.squashed is False
-        assert "Single commit, no squash needed" in result.message
+        assert result["success"] is True
+        assert result["commit_count"] == 1
+        assert result["squashed"] is False
+        assert "Single commit, no squash needed" in result["message"]
 
     def test_pre_analysis_no_branch(self, tmp_path: Path) -> None:
         """Test error when current branch cannot be determined."""
@@ -206,10 +193,9 @@ class TestPreAnalysisExecution:
 
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
-        assert isinstance(result, PreAnalysisError)
-        assert result.success is False
-        assert result.error_type == "no_branch"
-        assert "Could not determine current branch" in result.message
+        assert result["success"] is False
+        assert result["error_type"] == "no_branch"
+        assert "Could not determine current branch" in result["message"]
 
     def test_pre_analysis_no_parent(self, tmp_path: Path) -> None:
         """Test error when parent branch cannot be determined."""
@@ -218,10 +204,9 @@ class TestPreAnalysisExecution:
 
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
-        assert isinstance(result, PreAnalysisError)
-        assert result.success is False
-        assert result.error_type == "no_parent"
-        assert "Could not determine parent branch" in result.message
+        assert result["success"] is False
+        assert result["error_type"] == "no_parent"
+        assert "Could not determine parent branch" in result["message"]
 
     def test_pre_analysis_no_commits(self, tmp_path: Path) -> None:
         """Test error when branch has no commits."""
@@ -234,10 +219,9 @@ class TestPreAnalysisExecution:
 
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
-        assert isinstance(result, PreAnalysisError)
-        assert result.success is False
-        assert result.error_type == "no_commits"
-        assert "No commits found in branch" in result.message
+        assert result["success"] is False
+        assert result["error_type"] == "no_commits"
+        assert "No commits found in branch" in result["message"]
 
     def test_pre_analysis_squash_fails(self, tmp_path: Path) -> None:
         """Test error when gt squash fails."""
@@ -251,10 +235,9 @@ class TestPreAnalysisExecution:
 
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
-        assert isinstance(result, PreAnalysisError)
-        assert result.success is False
-        assert result.error_type == "squash_failed"
-        assert "Failed to squash commits" in result.message
+        assert result["success"] is False
+        assert result["error_type"] == "squash_failed"
+        assert "Failed to squash commits" in result["message"]
 
     def test_pre_analysis_detects_squash_conflict(self, tmp_path: Path) -> None:
         """Test that squash conflicts are detected and reported correctly."""
@@ -274,11 +257,10 @@ class TestPreAnalysisExecution:
 
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
-        assert isinstance(result, PreAnalysisError)
-        assert result.success is False
-        assert result.error_type == "squash_conflict"
-        assert "Merge conflicts detected while squashing commits" in result.message
-        stderr = result.details["stderr"]
+        assert result["success"] is False
+        assert result["error_type"] == "squash_conflict"
+        assert "Merge conflicts detected while squashing commits" in result["message"]
+        stderr = result["details"]["stderr"]
         assert isinstance(stderr, str)
         assert "CONFLICT" in stderr
 
@@ -297,11 +279,11 @@ class TestPreAnalysisExecution:
 
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
-        assert isinstance(result, PreAnalysisError)
-        assert result.error_type == "squash_conflict"
-        assert result.details["stdout"] == test_stdout
-        assert result.details["stderr"] == test_stderr
-        assert result.details["branch_name"] == "feature-branch"
+        assert result["success"] is False
+        assert result["error_type"] == "squash_conflict"
+        assert result["details"]["stdout"] == test_stdout
+        assert result["details"]["stderr"] == test_stderr
+        assert result["details"]["branch_name"] == "feature-branch"
 
     def test_pre_analysis_detects_pr_conflicts_from_github(self, tmp_path: Path) -> None:
         """Test that PR conflicts are detected and reported informational (not blocking)."""
@@ -317,13 +299,13 @@ class TestPreAnalysisExecution:
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
         # Assert: Should succeed with conflict info included
-        assert isinstance(result, PreAnalysisResult)
-        assert result.success is True
-        assert result.has_conflicts is True
-        assert result.conflict_details is not None
-        assert result.conflict_details["pr_number"] == "123"
-        assert result.conflict_details["parent_branch"] == "master"
-        assert result.conflict_details["detection_method"] == "github_api"
+        assert result["success"] is True
+        assert result.get("has_conflicts") is True
+        conflict_details = result.get("conflict_details")
+        assert conflict_details is not None
+        assert conflict_details["pr_number"] == "123"
+        assert conflict_details["parent_branch"] == "master"
+        assert conflict_details["detection_method"] == "github_api"
 
     def test_pre_analysis_proceeds_when_no_conflicts(self, tmp_path: Path) -> None:
         """Test that workflow proceeds normally when no conflicts exist."""
@@ -338,10 +320,9 @@ class TestPreAnalysisExecution:
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
         # Assert: Should succeed with no conflicts
-        assert isinstance(result, PreAnalysisResult)
-        assert result.success is True
-        assert result.has_conflicts is False
-        assert result.conflict_details is None
+        assert result["success"] is True
+        assert result.get("has_conflicts") is False
+        assert result.get("conflict_details") is None
 
     def test_pre_analysis_fallback_to_git_merge_tree(self, tmp_path: Path) -> None:
         """Test fallback to git merge-tree when no PR exists (informational, not blocking)."""
@@ -357,11 +338,11 @@ class TestPreAnalysisExecution:
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
         # Assert: Should succeed with conflict info via git merge-tree
-        assert isinstance(result, PreAnalysisResult)
-        assert result.success is True
-        assert result.has_conflicts is True
-        assert result.conflict_details is not None
-        assert result.conflict_details["detection_method"] == "git_merge_tree"
+        assert result["success"] is True
+        assert result.get("has_conflicts") is True
+        conflict_details = result.get("conflict_details")
+        assert conflict_details is not None
+        assert conflict_details["detection_method"] == "git_merge_tree"
 
     def test_pre_analysis_proceeds_on_unknown_mergeability(self, tmp_path: Path) -> None:
         """Test that UNKNOWN mergeability doesn't block workflow."""
@@ -377,8 +358,7 @@ class TestPreAnalysisExecution:
         result = render_events(execute_pre_analysis(ops, tmp_path))
 
         # Assert: Should proceed with warning
-        assert isinstance(result, PreAnalysisResult)
-        assert result.success is True
+        assert result["success"] is True
 
 
 class TestExecutePreflight:
@@ -397,18 +377,17 @@ class TestExecutePreflight:
 
         result = render_events(execute_preflight(ops, tmp_path, "test-session-123"))
 
-        assert isinstance(result, PreflightResult)
-        assert result.success is True
-        assert result.pr_number == 123
-        assert result.pr_url == "https://github.com/org/repo/pull/123"
-        assert result.branch_name == "feature-branch"
-        assert ".erk/scratch/test-session-123/" in result.diff_file
-        assert result.diff_file.endswith(".diff")
-        assert result.current_branch == "feature-branch"
-        assert result.parent_branch == "main"
+        assert result["success"] is True
+        assert result["pr_number"] == 123
+        assert result["pr_url"] == "https://github.com/org/repo/pull/123"
+        assert result["branch_name"] == "feature-branch"
+        assert ".erk/scratch/test-session-123/" in result["diff_file"]
+        assert result["diff_file"].endswith(".diff")
+        assert result["current_branch"] == "feature-branch"
+        assert result["parent_branch"] == "main"
 
         # Clean up temp file
-        diff_path = Path(result.diff_file)
+        diff_path = Path(result["diff_file"])
         if diff_path.exists():
             diff_path.unlink()
 
@@ -424,8 +403,8 @@ class TestExecutePreflight:
 
         result = render_events(execute_preflight(ops, tmp_path, "test-session-123"))
 
-        assert isinstance(result, PreAnalysisError)
-        assert result.error_type == "gt_not_authenticated"
+        assert result["success"] is False
+        assert result["error_type"] == "gt_not_authenticated"
 
     @patch("erk_shared.integrations.gt.operations.preflight.time.sleep")
     def test_preflight_submit_error(self, mock_sleep: Mock, tmp_path: Path) -> None:
@@ -440,8 +419,8 @@ class TestExecutePreflight:
 
         result = render_events(execute_preflight(ops, tmp_path, "test-session-123"))
 
-        assert isinstance(result, PostAnalysisError)
-        assert result.error_type == "submit_failed"
+        assert result["success"] is False
+        assert result["error_type"] == "submit_failed"
 
 
 class TestExecuteFinalize:
@@ -470,11 +449,10 @@ class TestExecuteFinalize:
             )
         )
 
-        assert isinstance(result, FinalizeResult)
-        assert result.success is True
-        assert result.pr_number == 123
-        assert result.pr_title == "Add new feature"
-        assert result.branch_name == "feature-branch"
+        assert result["success"] is True
+        assert result["pr_number"] == 123
+        assert result["pr_title"] == "Add new feature"
+        assert result["branch_name"] == "feature-branch"
 
         # Verify PR was updated using mutation tracking
         github = ops.github
@@ -512,8 +490,7 @@ class TestExecuteFinalize:
             )
         )
 
-        assert isinstance(result, FinalizeResult)
-        assert result.success is True
+        assert result["success"] is True
         # Diff file should be cleaned up
         assert not diff_file.exists()
 
@@ -550,9 +527,8 @@ class TestExecuteFinalize:
             )
         )
 
-        assert isinstance(result, FinalizeResult)
-        assert result.success is True
-        assert result.issue_number == 456
+        assert result["success"] is True
+        assert result["issue_number"] == 456
 
         # Verify PR body includes footer metadata using mutation tracking
         github = ops.github
