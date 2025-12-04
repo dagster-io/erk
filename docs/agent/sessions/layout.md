@@ -164,6 +164,7 @@ Each line is a JSON object representing one entry in the conversation:
 | `gitBranch`     | string | Current git branch           | Optional metadata                    |
 | `usage`         | object | Token usage statistics       | Typically stripped during processing |
 | `file-snapshot` | object | File state capture           | For file history tracking            |
+| `slug`          | string | Plan mode identifier         | Maps to `~/.claude/plans/{slug}.md`  |
 
 ### Entry Types
 

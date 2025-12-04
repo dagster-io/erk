@@ -19,6 +19,8 @@
 
 **CRITICAL: Before writing to `/tmp/`** → Read [scratch-storage.md](docs/agent/planning/scratch-storage.md) first. AI workflow files (diffs, PR bodies, plans) belong in `.erk/scratch/<session-id>/`, NOT `/tmp/`.
 
+**CRITICAL: When working with session-specific data** → Read [parallel-session-awareness.md](docs/agent/sessions/parallel-session-awareness.md) first. Multiple sessions can run in parallel. NEVER use "most recent by mtime" for session data lookup - always scope by session ID.
+
 **Load these skills FIRST:**
 
 - **Python code** → `dignified-python-313` skill (LBYL, modern types, ABC interfaces)
@@ -77,7 +79,7 @@ For detailed reference, consult the documentation index which maps each document
 | [CLI Development](docs/agent/cli/)       | command organization, output styling, script mode                          |
 | [Planning](docs/agent/planning/)         | plan lifecycle, .impl/ folders, agent delegation, scratch storage          |
 | [Testing](docs/agent/testing/)           | erk fakes, rebase conflicts, import conflict resolution                    |
-| [Sessions](docs/agent/sessions/)         | session logs, context analysis                                             |
+| [Sessions](docs/agent/sessions/)         | session logs, parallel session patterns, context analysis                  |
 | [Hooks](docs/agent/hooks/)               | hook creation, erk-specific hooks                                          |
 | [Kits](docs/agent/kits/)                 | kit CLI commands, kit architecture                                         |
 | [Commands](docs/agent/commands/)         | slash command optimization, @ references                                   |
