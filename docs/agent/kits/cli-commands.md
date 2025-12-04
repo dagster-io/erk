@@ -672,3 +672,58 @@ If you see warnings during kit loading, check:
 2. **"Command file not found"** - Path in kit.yaml doesn't exist
 3. **"Failed to import command"** - Python import error in the command file
 4. **"Invalid command"** - Validation error (name format, path, description)
+
+## JSON Output Pattern for Kit CLI Commands
+
+Kit CLI commands that produce machine-readable output follow a consistent pattern:
+
+### Success Response
+
+```python
+click.echo(json.dumps({
+    "success": True,
+    "issue_number": result.number,
+    "issue_url": result.url,
+    # ... operation-specific fields
+}))
+```
+
+### Error Response
+
+```python
+click.echo(json.dumps({
+    "success": False,
+    "error": "Human-readable error message",
+}))
+raise SystemExit(1)  # Use exit code 1 for errors
+```
+
+### Pattern Details
+
+1. **Always include `success` field** - Boolean indicating operation result
+2. **Error uses `error` field** - Human-readable message for LLM to report
+3. **Exit codes** - 0 for success, 1 for errors
+4. **Use `click.echo()`** - Not `print()`, for Click integration
+5. **Single JSON line** - No pretty-printing for machine parsing
+
+### Example: Full Pattern
+
+```python
+@click.command(name="my-command")
+def my_command() -> None:
+    """Do something and report result."""
+    if not valid_input:
+        click.echo(json.dumps({
+            "success": False,
+            "error": "Invalid input provided",
+        }))
+        raise SystemExit(1)
+
+    result = do_work()
+
+    click.echo(json.dumps({
+        "success": True,
+        "result_id": result.id,
+        "result_url": result.url,
+    }))
+```

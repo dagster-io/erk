@@ -113,6 +113,37 @@ except yaml.YAMLError as e:
     raise ValueError(f"Failed to parse config file {config_file}: {e}") from e
 ```
 
+### Exception Chaining (B904 Lint Compliance)
+
+**Ruff rule B904** requires explicit exception chaining when raising inside an `except` block. This prevents losing the original traceback.
+
+```python
+# ✅ CORRECT: Chain to preserve context
+try:
+    parse_config(path)
+except ValueError as e:
+    click.echo(json.dumps({"success": False, "error": str(e)}))
+    raise SystemExit(1) from e  # Preserves traceback
+
+# ✅ CORRECT: Explicitly break chain when intentional
+try:
+    fetch_from_cache(key)
+except KeyError:
+    # Original exception is not relevant to caller
+    raise ValueError(f"Unknown key: {key}") from None
+
+# ❌ WRONG: Missing exception chain (B904 violation)
+try:
+    parse_config(path)
+except ValueError:
+    raise SystemExit(1)  # Lint error: missing 'from e' or 'from None'
+```
+
+**When to use each:**
+
+- `from e` - Preserve original exception for debugging
+- `from None` - Intentionally suppress original (e.g., transforming exception type)
+
 ### Exception Anti-Patterns
 
 **❌ Never swallow exceptions silently**

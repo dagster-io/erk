@@ -10,16 +10,34 @@ This command runs `gt restack` and automatically handles any merge conflicts tha
 
 ## What This Command Does
 
-1. **Runs `gt restack`** - Starts the restack operation
-2. **Checks for conflicts** - Monitors `git status` for conflicted files
-3. **Resolves conflicts intelligently** - Distinguishes between:
+1. **Squashes commits** - Consolidates all commits into one before restacking
+2. **Runs `gt restack`** - Starts the restack operation
+3. **Checks for conflicts** - Monitors `git status` for conflicted files
+4. **Resolves conflicts intelligently** - Distinguishes between:
    - **Semantic conflicts**: Alerts user for manual decision
    - **Mechanical conflicts**: Auto-resolves when safe
-4. **Continues restacking** - Stages files and runs `gt continue`
-5. **Loops until complete** - Repeats until no more conflicts
-6. **Verifies success** - Confirms clean git status
+5. **Continues restacking** - Stages files and runs `gt continue`
+6. **Loops until complete** - Repeats until no more conflicts
+7. **Verifies success** - Confirms clean git status
 
 ## Implementation
+
+### Step 0: Squash Commits First
+
+Before restacking, squash all commits into one to simplify conflict resolution:
+
+```bash
+dot-agent run gt idempotent-squash --format json
+```
+
+Parse the JSON result:
+
+- If `success: true` with `action: "squashed"` or `action: "already_single_commit"`: Continue to Step 1
+- If `success: false` with `error: "squash_conflict"`: Report the squash conflict and stop
+- If `success: false` with `error: "no_commits"`: Report no commits ahead of trunk and stop
+- If `success: false` with other error: Report the error and stop
+
+This ensures only a single commit needs to be rebased, minimizing potential conflicts.
 
 ### Step 1: Start the Restack
 
