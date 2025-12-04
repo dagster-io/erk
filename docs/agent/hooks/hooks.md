@@ -242,6 +242,36 @@ if __name__ == "__main__":
     validate()
 ```
 
+#### Blocking to Redirect Pattern
+
+Use exit code 2 strategically to redirect Claude's behavior. Instead of just stopping an action, you can instruct Claude to take an alternative approach:
+
+**Example (redirect to ask user):**
+
+```python
+#!/usr/bin/env python3
+import sys
+import click
+
+@click.command()
+def validate_action() -> None:
+    if needs_user_confirmation():
+        click.echo("❌ Action requires user confirmation")
+        click.echo("")
+        click.echo("Use the AskUserQuestion tool to ask the user:")
+        click.echo('  - Option A: "Save to GitHub"')
+        click.echo('  - Option B: "Implement immediately"')
+        sys.exit(2)  # Block - Claude will see instructions
+
+    # Allow action
+    click.echo("✅ Action permitted")
+
+if __name__ == "__main__":
+    validate_action()
+```
+
+The output message becomes Claude's instruction for what to do instead.
+
 #### Prompt-Based Hook Output
 
 Return JSON with decision fields:
@@ -381,6 +411,37 @@ The exit code is about **what should happen next**, not whether your hook succee
 4. **Test in context**: Trigger hook through normal workflow
 5. **Debug with `--debug`**: Use `claude --debug` to see hook execution
 6. **Iterate**: Refine based on actual usage patterns
+
+#### State Coordination with Skip Markers
+
+When a hook needs to allow future operations after user confirmation, use a skip marker file:
+
+**Pattern:**
+
+1. Hook checks for marker file → if exists, delete and allow
+2. Hook blocks if no marker → Claude asks user
+3. On user confirmation, Claude creates marker file
+4. Next invocation succeeds
+
+**Implementation:**
+
+```python
+def _get_skip_marker_path(session_id: str, repo_root: Path) -> Path:
+    return repo_root / ".erk" / "scratch" / session_id / "skip-plan-save"
+
+def check_and_consume_marker(session_id: str, repo_root: Path) -> bool:
+    marker = _get_skip_marker_path(session_id, repo_root)
+    if marker.exists():
+        marker.unlink()  # Consume marker
+        return True
+    return False
+```
+
+**Use cases:**
+
+- "Confirm once, proceed" workflows
+- User-acknowledged bypasses
+- One-time permission grants
 
 #### Example: Well-Designed Hook
 

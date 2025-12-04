@@ -53,7 +53,7 @@ packages/dot-agent-kit/src/dot_agent_kit/data/kits/{kit-name}/
 
 ## Current Hooks
 
-This repository includes 3 hooks, all on `UserPromptSubmit` lifecycle:
+This repository includes 4 hooks:
 
 ### 1. devrun-reminder-hook
 
@@ -113,6 +113,32 @@ NOTE: Guides test placement, fake usage, integration class architecture patterns
 **Why**: Ensures tests follow project testing architecture (fake-driven testing, proper test categorization).
 
 **Location**: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/fake-driven-testing/`
+
+### 4. exit-plan-mode-hook
+
+**Matcher**: `ExitPlanMode` (PreToolUse event)
+
+**Purpose**: Prompt user to save or implement plan before exiting Plan Mode
+
+**Behavior**:
+
+- If plan exists for session and no skip marker → Block and instruct Claude to use AskUserQuestion
+- If skip marker exists → Delete marker and allow exit
+- If no plan → Allow exit
+
+**Output (when blocking)**:
+
+```
+❌ Plan detected but not saved
+
+Use AskUserQuestion to ask the user:
+- Option A: Save to GitHub
+- Option B: Implement immediately
+```
+
+**Why**: Prevents losing unsaved plans when exiting Plan Mode. Uses exit code 2 to redirect Claude to ask user preference.
+
+**Location**: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/exit_plan_mode_hook.py`
 
 ## Common Tasks
 

@@ -12,10 +12,9 @@ erk() {
   # Passthrough mode: run the original command directly
   [ "$script_path" = "__ERK_PASSTHROUGH__" ] && { command erk "$@"; return; }
 
-  # If __shell returned non-zero, error messages are already sent to stderr
-  [ $exit_status -ne 0 ] && return $exit_status
-
-  # Source the script file if it exists
+  # Source the script file if it exists, regardless of exit code.
+  # This matches Python handler logic: use script even if command had errors.
+  # The script contains important state changes (like cd to target dir).
   if [ -n "$script_path" ] && [ -f "$script_path" ]; then
     source "$script_path"
     local source_exit=$?
@@ -27,4 +26,7 @@ erk() {
 
     return $source_exit
   fi
+
+  # Only return exit_status if no script was provided
+  [ $exit_status -ne 0 ] && return $exit_status
 }

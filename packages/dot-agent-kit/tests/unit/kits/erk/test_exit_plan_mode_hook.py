@@ -52,6 +52,7 @@ def test_saved_marker_present_blocks_to_prevent_plan_dialog(
 ) -> None:
     """Test when saved marker exists - should block ExitPlanMode to prevent plan approval dialog."""
     runner = CliRunner()
+    session_id = "session-abc123"
 
     # Create saved marker (indicates plan was saved to GitHub)
     session_id = "session-abc123"
