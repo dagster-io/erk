@@ -104,9 +104,6 @@ kit_cli_commands:
   - name: get-pr-body-footer
     path: kit_cli_commands/erk/get_pr_body_footer.py
     description: Generate PR body footer with checkout command for remote implementations
-  - name: create-extraction-plan
-    path: kit_cli_commands/erk/create_extraction_plan.py
-    description: Create extraction plan issue from stdin with erk-plan and erk-extraction labels
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit

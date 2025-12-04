@@ -37,13 +37,16 @@ Extract documentation improvements identified from session analysis.
 
 ## Step 7: Create Extraction Plan Issue
 
-Run the kit CLI command to create the extraction plan issue:
+1. Write the plan content to a temp file
+2. Run the kit CLI command to create the extraction plan issue:
 
 ```bash
-dot-agent run erk create-extraction-plan --source-plan-issues="" --extraction-session-ids="<session-id>"
+dot-agent run erk plan-save-to-issue --format json --plan-file /tmp/extraction-plan.md \
+  --plan-type=extraction \
+  --extraction-session-ids="<session-id>"
 ```
 
-Pass the plan content via stdin. The command will:
+The command will:
 
 1. Create a GitHub issue with `erk-plan` + `erk-extraction` labels
 2. Set `plan_type: extraction` in the plan-header metadata

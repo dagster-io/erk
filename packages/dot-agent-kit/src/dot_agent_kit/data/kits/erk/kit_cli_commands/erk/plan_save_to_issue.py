@@ -2,10 +2,18 @@
 
 Usage:
     dot-agent run erk plan-save-to-issue [--format json|display] [--plan-file PATH]
+    dot-agent run erk plan-save-to-issue --plan-file /tmp/plan.md \
+        --plan-type=extraction \
+        --extraction-session-ids="<session-id>"
 
 This command combines plan extraction and issue creation:
 1. Extract plan from specified file or latest from ~/.claude/plans/
 2. Create GitHub issue with plan content (schema v2 format)
+
+For extraction plans (--plan-type=extraction):
+- Adds erk-extraction label in addition to erk-plan
+- Uses [erk-plan] [erk-extraction] suffix in title
+- Includes plan_type, source_plan_issues, extraction_session_ids in metadata
 
 Output:
     --format json (default): {"success": true, "issue_number": N, ...}
@@ -45,8 +53,33 @@ from dot_agent_kit.data.kits.erk.session_plan_extractor import get_latest_plan
     default=None,
     help="Path to specific plan file (default: most recent in ~/.claude/plans/)",
 )
+@click.option(
+    "--plan-type",
+    type=click.Choice(["standard", "extraction"]),
+    default=None,
+    help="Plan type (standard or extraction). Extraction plans get additional labels.",
+)
+@click.option(
+    "--source-plan-issues",
+    type=str,
+    default="",
+    help="Comma-separated list of source plan issue numbers (for extraction plans)",
+)
+@click.option(
+    "--extraction-session-ids",
+    type=str,
+    default="",
+    help="Comma-separated list of session IDs analyzed (for extraction plans)",
+)
 @click.pass_context
-def plan_save_to_issue(ctx: click.Context, output_format: str, plan_file: Path | None) -> None:
+def plan_save_to_issue(
+    ctx: click.Context,
+    output_format: str,
+    plan_file: Path | None,
+    plan_type: str | None,
+    source_plan_issues: str,
+    extraction_session_ids: str,
+) -> None:
     """Extract plan from ~/.claude/plans/ and create GitHub issue.
 
     Combines plan extraction and issue creation in a single operation.
@@ -77,6 +110,39 @@ def plan_save_to_issue(ctx: click.Context, output_format: str, plan_file: Path |
     # Step 2: Extract title
     title = extract_title_from_plan(plan)
 
+    # Step 2.5: Parse extraction plan options
+    parsed_source_issues: list[int] = []
+    if source_plan_issues:
+        for part in source_plan_issues.split(","):
+            part = part.strip()
+            if part:
+                try:
+                    parsed_source_issues.append(int(part))
+                except ValueError as e:
+                    error_msg = f"Invalid issue number in --source-plan-issues: {part}"
+                    if output_format == "display":
+                        click.echo(f"Error: {error_msg}", err=True)
+                    else:
+                        click.echo(json.dumps({"success": False, "error": error_msg}))
+                    raise SystemExit(1) from e
+
+    parsed_session_ids: list[str] = []
+    if extraction_session_ids:
+        for part in extraction_session_ids.split(","):
+            part = part.strip()
+            if part:
+                parsed_session_ids.append(part)
+
+    # Validate extraction plan requirements
+    is_extraction = plan_type == "extraction"
+    if is_extraction and not parsed_session_ids:
+        error_msg = "At least one --extraction-session-ids is required for extraction plans"
+        if output_format == "display":
+            click.echo(f"Error: {error_msg}", err=True)
+        else:
+            click.echo(json.dumps({"success": False, "error": error_msg}))
+        raise SystemExit(1)
+
     # Step 3: Get GitHub username
     username = github.get_current_username()
     if username is None:
@@ -92,9 +158,13 @@ def plan_save_to_issue(ctx: click.Context, output_format: str, plan_file: Path |
     formatted_body = format_plan_header_body(
         created_at=created_at,
         created_by=username,
+        plan_type=plan_type if is_extraction else None,
+        source_plan_issues=parsed_source_issues if is_extraction else None,
+        extraction_session_ids=parsed_session_ids if is_extraction else None,
     )
 
-    # Step 5: Ensure erk-plan label exists
+    # Step 5: Ensure labels exist
+    labels = ["erk-plan"]
     try:
         github.ensure_label_exists(
             repo_root=repo_root,
@@ -102,18 +172,30 @@ def plan_save_to_issue(ctx: click.Context, output_format: str, plan_file: Path |
             description="Implementation plan for manual execution",
             color="0E8A16",
         )
+        # For extraction plans, also ensure erk-extraction label exists
+        if is_extraction:
+            github.ensure_label_exists(
+                repo_root=repo_root,
+                label="erk-extraction",
+                description="Documentation extraction plan",
+                color="D93F0B",
+            )
+            labels.append("erk-extraction")
     except RuntimeError as e:
-        error_msg = f"Failed to ensure label exists: {e}"
+        error_msg = f"Failed to ensure labels exist: {e}"
         if output_format == "display":
             click.echo(f"Error: {error_msg}", err=True)
         else:
             click.echo(json.dumps({"success": False, "error": error_msg}))
         raise SystemExit(1) from e
 
-    # Step 6: Create issue (with [erk-plan] suffix for visibility)
-    issue_title = f"{title} [erk-plan]"
+    # Step 6: Create issue (with [erk-plan] or [erk-plan] [erk-extraction] suffix)
+    if is_extraction:
+        issue_title = f"{title} [erk-plan] [erk-extraction]"
+    else:
+        issue_title = f"{title} [erk-plan]"
     try:
-        result = github.create_issue(repo_root, issue_title, formatted_body, labels=["erk-plan"])
+        result = github.create_issue(repo_root, issue_title, formatted_body, labels=labels)
     except RuntimeError as e:
         error_msg = f"Failed to create GitHub issue: {e}"
         if output_format == "display":
@@ -153,15 +235,20 @@ def plan_save_to_issue(ctx: click.Context, output_format: str, plan_file: Path |
         click.echo(f"Plan saved to GitHub issue #{result.number}")
         click.echo(f"URL: {result.url}")
         click.echo(f"Enrichment: {'Yes' if is_enriched else 'No'}")
+        if is_extraction:
+            click.echo("Plan type: extraction")
+            click.echo(f"Source plan issues: {parsed_source_issues}")
+            click.echo(f"Extraction session IDs: {parsed_session_ids}")
     else:
-        click.echo(
-            json.dumps(
-                {
-                    "success": True,
-                    "issue_number": result.number,
-                    "issue_url": result.url,
-                    "title": title,
-                    "enriched": is_enriched,
-                }
-            )
-        )
+        output_data: dict[str, object] = {
+            "success": True,
+            "issue_number": result.number,
+            "issue_url": result.url,
+            "title": title,
+            "enriched": is_enriched,
+        }
+        if is_extraction:
+            output_data["plan_type"] = "extraction"
+            output_data["source_plan_issues"] = parsed_source_issues
+            output_data["extraction_session_ids"] = parsed_session_ids
+        click.echo(json.dumps(output_data))
