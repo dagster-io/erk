@@ -28,12 +28,13 @@
 
 ### [Architecture](architecture/)
 
-| Document                                                      | Read when...                                         |
-| ------------------------------------------------------------- | ---------------------------------------------------- |
-| [erk-architecture.md](architecture/erk-architecture.md)       | Understanding dry-run patterns, context regeneration |
-| [protocol-vs-abc.md](architecture/protocol-vs-abc.md)         | Choosing between Protocol and ABC for interfaces     |
-| [subprocess-wrappers.md](architecture/subprocess-wrappers.md) | Executing shell commands, using subprocess wrappers  |
-| [github-parsing.md](architecture/github-parsing.md)           | Parsing GitHub URLs, extracting PR/issue numbers     |
+| Document                                                                              | Read when...                                                 |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| [erk-architecture.md](architecture/erk-architecture.md)                               | Understanding dry-run patterns, context regeneration         |
+| [protocol-vs-abc.md](architecture/protocol-vs-abc.md)                                 | Choosing between Protocol and ABC for interfaces             |
+| [subprocess-wrappers.md](architecture/subprocess-wrappers.md)                         | Executing shell commands, using subprocess wrappers          |
+| [github-parsing.md](architecture/github-parsing.md)                                   | Parsing GitHub URLs, extracting PR/issue numbers             |
+| [commandresult-extension-pattern.md](architecture/commandresult-extension-pattern.md) | Adding new fields to CommandResult, extending stream parsing |
 
 ### [CLI Development](cli/)
 
@@ -92,9 +93,10 @@
 
 ### [Reference](reference/)
 
-| Document                                                       | Read when...                                       |
-| -------------------------------------------------------------- | -------------------------------------------------- |
-| [github-branch-linking.md](reference/github-branch-linking.md) | Linking branches to issues, using gh issue develop |
+| Document                                                         | Read when...                                               |
+| ---------------------------------------------------------------- | ---------------------------------------------------------- |
+| [github-branch-linking.md](reference/github-branch-linking.md)   | Linking branches to issues, using gh issue develop         |
+| [claude-cli-stream-json.md](reference/claude-cli-stream-json.md) | Parsing Claude CLI output, extracting stream-json metadata |
 
 ### [Erk](erk/)
 
