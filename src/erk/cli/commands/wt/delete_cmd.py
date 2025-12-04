@@ -133,7 +133,7 @@ def _confirm_operations(force: bool, dry_run: bool) -> bool:
         return True
 
     prompt_text = click.style("Proceed with these operations?", fg="yellow", bold=True)
-    if not click.confirm(f"\n{prompt_text}", default=False):
+    if not click.confirm(f"\n{prompt_text}", default=True):
         user_output(click.style("⭕ Aborted.", fg="red", bold=True))
         return False
 

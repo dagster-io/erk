@@ -2,7 +2,7 @@
 
 ## Categories
 
-- **[architecture/](architecture/)** — commandresult-extension-pattern, erk-architecture, github-parsing, protocol-vs-abc, sentinel-path-compatibility, subprocess-wrappers, worktree-metadata
+- **[architecture/](architecture/)** — at-reference-resolution, commandresult-extension-pattern, erk-architecture, github-parsing, pathlib-symlinks, protocol-vs-abc, sentinel-path-compatibility, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
 - **[cli/](cli/)** — command-organization, list-formatting, output-styling, script-mode, template-variables
 - **[commands/](commands/)** — behavioral-triggers, optimization-patterns
 - **[erk/](erk/)** — branch-cleanup, graphite-branch-setup
