@@ -87,9 +87,10 @@
 
 ### [Commands](commands/)
 
-| Document                                                      | Read when...                              |
-| ------------------------------------------------------------- | ----------------------------------------- |
-| [optimization-patterns.md](commands/optimization-patterns.md) | Reducing command size, using @ references |
+| Document                                                      | Read when...                                            |
+| ------------------------------------------------------------- | ------------------------------------------------------- |
+| [behavioral-triggers.md](commands/behavioral-triggers.md)     | Adding documentation routing rules, preventing mistakes |
+| [optimization-patterns.md](commands/optimization-patterns.md) | Reducing command size, using @ references               |
 
 ### [Reference](reference/)
 

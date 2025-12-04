@@ -9,6 +9,8 @@
 
 ## ⚠️ CRITICAL: Before Writing Any Code
 
+<!-- These are BEHAVIORAL TRIGGERS: rules that detect action patterns and route to documentation -->
+
 **CRITICAL: NEVER search, read, or access `/Users/schrockn/` directory**
 
 **CRITICAL: NEVER use raw `pip install`. Always use `uv` for package management.**
