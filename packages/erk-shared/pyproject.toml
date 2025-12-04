@@ -3,7 +3,7 @@ name = "erk-shared"
 version = "0.1.0"
 description = "Shared utilities and interfaces for erk and dot-agent-kit"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "pyyaml>=6.0",
     "python-frontmatter>=1.0.0",
@@ -19,6 +19,6 @@ packages = ["src/erk_shared"]
 
 [tool.pyright]
 include = ["src", "tests"]
-pythonVersion = "3.13"
+pythonVersion = "3.12"
 typeCheckingMode = "strict"
 reportPrivateUsage = false
