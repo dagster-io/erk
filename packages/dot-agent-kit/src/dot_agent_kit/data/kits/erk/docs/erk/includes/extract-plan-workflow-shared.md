@@ -4,7 +4,7 @@ Shared extraction plan workflow for `/erk:extract-agent-docs` and `/erk:extract-
 
 ## Step 6: Format as Extraction Plan
 
-Format the selected suggestions as an implementation plan:
+Format the selected suggestions as an implementation plan in markdown:
 
 ```markdown
 # Plan: Documentation Extraction from Session
@@ -37,17 +37,26 @@ Extract documentation improvements identified from session analysis.
 
 ## Step 7: Create Extraction Plan Issue
 
+**CRITICAL: Use the kit CLI command.** Do NOT manually create a GitHub issue with `gh issue create` - this will result in incorrect metadata format.
+
 Run the kit CLI command to create the extraction plan issue:
 
 ```bash
-dot-agent run erk create-extraction-plan --source-plan-issues="" --extraction-session-ids="<session-id>"
+echo "<plan_content>" | dot-agent run erk create-extraction-plan --source-plan-issues="" --extraction-session-ids="<session-id>"
 ```
 
 Pass the plan content via stdin. The command will:
 
 1. Create a GitHub issue with `erk-plan` + `erk-extraction` labels
-2. Set `plan_type: extraction` in the plan-header metadata
-3. Include `source_plan_issues` and `extraction_session_ids` for tracking
+2. Create the issue body with a `plan-header` metadata block containing `schema_version`, `created_at`, `created_by`, `plan_type: extraction`, etc.
+3. Add the plan content as a **first comment** wrapped in a `plan-body` metadata block
+
+**Expected issue structure:**
+
+- **Issue body**: Only contains `plan-header` metadata block (compact, for fast querying)
+- **First comment**: Contains `plan-body` metadata block with the full implementation plan
+
+This matches the schema version 2 format used by standard plan issues. See [issue #2066](https://github.com/dagster-io/erk/issues/2066) for an example of the correct format.
 
 ## Step 8: Output Next Steps
 
