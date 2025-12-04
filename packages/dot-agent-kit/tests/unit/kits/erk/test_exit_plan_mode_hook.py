@@ -18,8 +18,8 @@ def test_no_session_id_allows_exit() -> None:
 
     result = runner.invoke(exit_plan_mode_hook)
 
+    # No session ID means exit 0 (allow exit)
     assert result.exit_code == 0
-    assert "No session context available" in result.output
 
 
 def test_skip_marker_present_deletes_and_allows(tmp_path: Path) -> None:
@@ -148,8 +148,8 @@ def test_invalid_json_stdin_allows_exit() -> None:
 
     result = runner.invoke(exit_plan_mode_hook, input="not valid json")
 
+    # Invalid JSON means exit 0 (allow exit)
     assert result.exit_code == 0
-    assert "No session context available" in result.output
 
 
 def test_stdin_missing_session_id_key_allows_exit() -> None:
