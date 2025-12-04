@@ -58,58 +58,45 @@ def pr_sync(ctx: ErkContext) -> None:
     # Step 1: Validate preconditions
     Ensure.gh_authenticated(ctx)
     Ensure.gt_authenticated(ctx)
-
-    if isinstance(ctx.repo, NoRepoSentinel):
-        ctx.feedback.error("Not in a git repository")
-        raise SystemExit(1)
+    Ensure.invariant(
+        not isinstance(ctx.repo, NoRepoSentinel),
+        "Not in a git repository",
+    )
+    assert not isinstance(ctx.repo, NoRepoSentinel)  # Type narrowing for pyright
     repo: RepoContext = ctx.repo
 
     # Check we're on a branch (not detached HEAD)
-    current_branch = ctx.git.get_current_branch(ctx.cwd)
-    if current_branch is None:
-        user_output(
-            click.style("Error: ", fg="red") + "Not on a branch - checkout a branch before syncing"
-        )
-        raise SystemExit(1)
+    current_branch = Ensure.not_none(
+        ctx.git.get_current_branch(ctx.cwd),
+        "Not on a branch - checkout a branch before syncing",
+    )
 
     # Step 2: Check if PR exists and get status
     pr_info = ctx.github.get_pr_status(repo.root, current_branch, debug=False)
-    if pr_info.state == "NONE":
-        user_output(
-            click.style("Error: ", fg="red")
-            + f"No pull request found for branch '{current_branch}'"
-        )
-        raise SystemExit(1)
-
-    # Check PR state (must be OPEN)
-    if pr_info.state != "OPEN":
-        user_output(
-            click.style("Error: ", fg="red")
-            + f"Cannot sync {pr_info.state} PR - only OPEN PRs can be synchronized"
-        )
-        raise SystemExit(1)
+    Ensure.invariant(
+        pr_info.state != "NONE",
+        f"No pull request found for branch '{current_branch}'",
+    )
+    Ensure.invariant(
+        pr_info.state == "OPEN",
+        f"Cannot sync {pr_info.state} PR - only OPEN PRs can be synchronized",
+    )
 
     # Get PR number for further checks
-    pr_number = pr_info.pr_number
-    if pr_number is None:
-        user_output(
-            click.style("Error: ", fg="red")
-            + f"Could not determine PR number for branch '{current_branch}'"
-        )
-        raise SystemExit(1)
+    pr_number = Ensure.not_none(
+        pr_info.pr_number,
+        f"Could not determine PR number for branch '{current_branch}'",
+    )
 
     # Check if PR is from a fork (cross-repo)
-    pr_checkout_info = ctx.github.get_pr_checkout_info(repo.root, pr_number)
-    if pr_checkout_info is None:
-        user_output(click.style("Error: ", fg="red") + f"Could not fetch PR #{pr_number} details")
-        raise SystemExit(1)
-
-    if pr_checkout_info.is_cross_repository:
-        user_output(
-            click.style("Error: ", fg="red")
-            + "Cannot sync fork PRs - Graphite cannot track branches from forks"
-        )
-        raise SystemExit(1)
+    pr_checkout_info = Ensure.not_none(
+        ctx.github.get_pr_checkout_info(repo.root, pr_number),
+        f"Could not fetch PR #{pr_number} details",
+    )
+    Ensure.invariant(
+        not pr_checkout_info.is_cross_repository,
+        "Cannot sync fork PRs - Graphite cannot track branches from forks",
+    )
 
     # Step 3: Check if already tracked by Graphite (idempotent)
     parent_branch = ctx.graphite.get_parent_branch(ctx.git, repo.root, current_branch)
@@ -135,12 +122,8 @@ def pr_sync(ctx: ErkContext) -> None:
     for event in execute_squash(ctx, repo.root):
         if isinstance(event, CompletionEvent):
             squash_result = event.result
-    if squash_result is None:
-        user_output(click.style("Error: ", fg="red") + "Squash operation produced no result")
-        raise SystemExit(1)
-    if isinstance(squash_result, SquashError):
-        user_output(click.style("Error: ", fg="red") + squash_result.message)
-        raise SystemExit(1)
+    squash_result = Ensure.not_none(squash_result, "Squash operation produced no result")
+    Ensure.invariant(not isinstance(squash_result, SquashError), squash_result.message)
     user_output(click.style("✓", fg="green") + f" {squash_result.message}")
 
     # Step 6b: Update commit message with PR title/body
@@ -169,14 +152,12 @@ def pr_sync(ctx: ErkContext) -> None:
             )
             # Delegate to auto-restack via Claude executor
             executor = ctx.claude_executor
-            if not executor.is_claude_available():
-                user_output(
-                    click.style("Error: ", fg="red")
-                    + "Claude CLI not found - cannot auto-resolve conflicts\n\n"
-                    + "Install from: https://claude.com/download\n"
-                    + "Or resolve conflicts manually with: gt restack"
-                )
-                raise SystemExit(1)
+            Ensure.invariant(
+                executor.is_claude_available(),
+                "Claude CLI not found - cannot auto-resolve conflicts\n\n"
+                "Install from: https://claude.com/download\n"
+                "Or resolve conflicts manually with: gt restack",
+            )
 
             user_output("")
             user_output(click.style("🔄 Auto-restacking via Claude...", bold=True))
@@ -184,13 +165,8 @@ def pr_sync(ctx: ErkContext) -> None:
             user_output("")
 
             result = stream_auto_restack(executor, Path.cwd())
-            if result.requires_interactive:
-                raise SystemExit(1)
-            if not result.success:
-                user_output(
-                    click.style("Error: ", fg="red") + (result.error_message or "Auto-restack failed")
-                )
-                raise SystemExit(1)
+            Ensure.invariant(not result.requires_interactive, "Semantic conflict requires interactive resolution")
+            Ensure.invariant(result.success, result.error_message or "Auto-restack failed")
             user_output("")
             user_output(click.style("✓", fg="green") + " Auto-restack complete")
         else:
