@@ -69,11 +69,12 @@
 
 ### [Sessions](sessions/)
 
-| Document                                            | Read when...                                     |
-| --------------------------------------------------- | ------------------------------------------------ |
-| [layout.md](sessions/layout.md)                     | Understanding ~/.claude/projects/ structure      |
-| [tools.md](sessions/tools.md)                       | Finding session logs, inspecting agent execution |
-| [context-analysis.md](sessions/context-analysis.md) | Debugging context window issues                  |
+| Document                                                                | Read when...                                          |
+| ----------------------------------------------------------------------- | ----------------------------------------------------- |
+| [layout.md](sessions/layout.md)                                         | Understanding ~/.claude/projects/ structure           |
+| [parallel-session-awareness.md](sessions/parallel-session-awareness.md) | Working with session-specific data, parallel sessions |
+| [tools.md](sessions/tools.md)                                           | Finding session logs, inspecting agent execution      |
+| [context-analysis.md](sessions/context-analysis.md)                     | Debugging context window issues                       |
 
 ### [Hooks](hooks/)
 
@@ -84,10 +85,11 @@
 
 ### [Kits](kits/)
 
-| Document                                          | Read when...                                      |
-| ------------------------------------------------- | ------------------------------------------------- |
-| [cli-commands.md](kits/cli-commands.md)           | Creating kit CLI commands, understanding patterns |
-| [code-architecture.md](kits/code-architecture.md) | Understanding kit code structure                  |
+| Document                                          | Read when...                                            |
+| ------------------------------------------------- | ------------------------------------------------------- |
+| [cli-commands.md](kits/cli-commands.md)           | Creating kit CLI commands, understanding patterns       |
+| [code-architecture.md](kits/code-architecture.md) | Understanding kit code structure                        |
+| [push-down-pattern.md](kits/push-down-pattern.md) | Deciding what belongs in kit CLI vs agent, token saving |
 
 ### [Commands](commands/)
 
