@@ -452,6 +452,7 @@ class TestExecuteFinalize:
         ops = (
             FakeGtKitOps()
             .with_repo_root(str(tmp_path))
+            .with_remote_url("https://github.com/org/repo.git")
             .with_branch("feature-branch", parent="main")
             .with_commits(1)
             .with_pr(123, url="https://github.com/org/repo/pull/123")
@@ -494,6 +495,7 @@ class TestExecuteFinalize:
         ops = (
             FakeGtKitOps()
             .with_repo_root(str(tmp_path))
+            .with_remote_url("https://github.com/org/repo.git")
             .with_branch("feature-branch", parent="main")
             .with_commits(1)
             .with_pr(123, url="https://github.com/org/repo/pull/123")
@@ -532,6 +534,7 @@ class TestExecuteFinalize:
         ops = (
             FakeGtKitOps()
             .with_repo_root(str(tmp_path))
+            .with_remote_url("https://github.com/org/repo.git")
             .with_branch("feature-branch", parent="main")
             .with_commits(1)
             .with_pr(123, url="https://github.com/org/repo/pull/123")
