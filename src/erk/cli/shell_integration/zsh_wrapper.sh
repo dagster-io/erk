@@ -12,19 +12,22 @@ erk() {
   # Passthrough mode: run the original command directly
   [ "$script_path" = "__ERK_PASSTHROUGH__" ] && { command erk "$@"; return; }
 
-  # If __shell returned non-zero, error messages are already sent to stderr
-  [ $exit_status -ne 0 ] && return $exit_status
-
-  # Source the script file if it exists
+  # Source the script file if it exists (even on non-zero exit)
+  # Destructive commands output scripts BEFORE operations that might fail,
+  # so the shell can navigate even if later steps error.
   if [ -n "$script_path" ] && [ -f "$script_path" ]; then
     source "$script_path"
-    local source_exit=$?
 
     # Clean up unless ERK_KEEP_SCRIPTS is set
     if [ -z "$ERK_KEEP_SCRIPTS" ]; then
       rm -f "$script_path"
     fi
 
-    return $source_exit
+    # Preserve original command's exit code (not source's exit code)
+    # so callers know if the underlying command failed
+    return $exit_status
   fi
+
+  # No script to source - propagate exit status
+  return $exit_status
 }
