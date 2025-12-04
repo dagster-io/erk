@@ -339,11 +339,9 @@ def test_pr_sync_handles_submit_failure_gracefully(tmp_path: Path) -> None:
 
         result = runner.invoke(pr_group, ["sync"], obj=ctx)
 
-        # Should succeed but show warning
-        assert result.exit_code == 0
-        assert "Submit failed" in result.output
-        assert "run 'gt submit' manually" in result.output
-        assert "now tracked by Graphite" in result.output
+        # Submit failure should fail the command
+        assert result.exit_code == 1
+        assert "network error" in str(result.exception)
 
 
 def test_pr_sync_squash_raises_unexpected_error(tmp_path: Path) -> None:
