@@ -1,0 +1,4 @@
+{"type":"file-history-snapshot","messageId":"msg_001","snapshot":{"trackedFileBackups":{}}}
+{"parentUuid":"parent_001","sessionId":"aaa11111-2222-3333-4444-555555555555","type":"user","message":{"role":"user","content":[{"type":"text","text":"Create a plan for the feature"}]},"cwd":"/projects/alpha","gitBranch":"main"}
+{"parentUuid":"parent_002","sessionId":"aaa11111-2222-3333-4444-555555555555","type":"assistant","slug":"alpha-feature-plan","message":{"role":"assistant","content":[{"type":"text","text":"I'll create a plan for this feature."}]},"cwd":"/projects/alpha","gitBranch":"main"}
+{"parentUuid":"parent_003","sessionId":"aaa11111-2222-3333-4444-555555555555","type":"user","message":{"role":"user","content":[{"type":"text","text":"Looks good, proceed"}]},"cwd":"/projects/alpha","gitBranch":"main"}

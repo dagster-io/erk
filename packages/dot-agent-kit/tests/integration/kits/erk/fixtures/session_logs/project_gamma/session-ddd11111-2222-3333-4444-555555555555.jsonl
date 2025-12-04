@@ -1,0 +1,6 @@
+{"type":"file-history-snapshot","messageId":"msg_030","snapshot":{"trackedFileBackups":{}}}
+{"parentUuid":"parent_030","sessionId":"ddd11111-2222-3333-4444-555555555555","type":"user","message":{"role":"user","content":[{"type":"text","text":"First planning session"}]},"cwd":"/projects/gamma","gitBranch":"main"}
+{"parentUuid":"parent_031","sessionId":"ddd11111-2222-3333-4444-555555555555","type":"assistant","slug":"gamma-first","message":{"role":"assistant","content":[{"type":"text","text":"First plan created."}]},"cwd":"/projects/gamma","gitBranch":"main"}
+{"parentUuid":"parent_032","sessionId":"ddd11111-2222-3333-4444-555555555555","type":"user","message":{"role":"user","content":[{"type":"text","text":"Actually, let me revise"}]},"cwd":"/projects/gamma","gitBranch":"main"}
+{"parentUuid":"parent_033","sessionId":"ddd11111-2222-3333-4444-555555555555","type":"assistant","slug":"gamma-second","message":{"role":"assistant","content":[{"type":"text","text":"Revised plan created."}]},"cwd":"/projects/gamma","gitBranch":"main"}
+{"parentUuid":"parent_034","sessionId":"ddd11111-2222-3333-4444-555555555555","type":"user","message":{"role":"user","content":[{"type":"text","text":"Perfect"}]},"cwd":"/projects/gamma","gitBranch":"main"}

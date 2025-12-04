@@ -14,15 +14,63 @@ import os
 from pathlib import Path
 
 
-def find_project_dir_for_session(session_id: str) -> Path | None:
+def _encode_path_to_project_folder(path: str) -> str:
+    """Encode a filesystem path to Claude project folder name.
+
+    Applies deterministic encoding: prepend '-', replace '/' and '.' with '-'.
+
+    Args:
+        path: Absolute filesystem path
+
+    Returns:
+        Encoded project folder name
+    """
+    return "-" + path.replace("/", "-").replace(".", "-").lstrip("-")
+
+
+def _check_session_in_project(project_dir: Path, session_id: str) -> bool:
+    """Check if a session ID exists in a project directory.
+
+    Args:
+        project_dir: Path to project directory
+        session_id: Session ID to search for
+
+    Returns:
+        True if session found, False otherwise
+    """
+    for jsonl_file in project_dir.glob("*.jsonl"):
+        if jsonl_file.name.startswith("agent-"):
+            continue
+
+        try:
+            with open(jsonl_file, encoding="utf-8") as f:
+                for i, line in enumerate(f):
+                    if i >= 10:
+                        break
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        entry = json.loads(line)
+                        if entry.get("sessionId") == session_id:
+                            return True
+                    except json.JSONDecodeError:
+                        continue
+        except OSError:
+            continue
+
+    return False
+
+
+def find_project_dir_for_session(session_id: str, cwd_hint: str | None = None) -> Path | None:
     """Find the project directory containing logs for a session ID.
 
-    Searches ~/.claude/projects/ directories for session logs
-    matching the given session ID. Only checks the first 10 lines
-    of each JSONL file to quickly match sessions.
+    Uses cwd_hint for O(1) lookup when available. Falls back to scanning
+    all project directories if hint not provided or doesn't match.
 
     Args:
         session_id: The session ID to search for
+        cwd_hint: Optional current working directory as optimization hint
 
     Returns:
         Path to the project directory if found, None otherwise
@@ -31,38 +79,26 @@ def find_project_dir_for_session(session_id: str) -> Path | None:
     if not projects_dir.exists():
         return None
 
+    # Fast path: use cwd hint to directly compute project directory
+    if cwd_hint:
+        encoded = _encode_path_to_project_folder(cwd_hint)
+        hint_project_dir = projects_dir / encoded
+        if hint_project_dir.exists() and hint_project_dir.is_dir():
+            if _check_session_in_project(hint_project_dir, session_id):
+                return hint_project_dir
+
+    # Slow path: scan all project directories
     for project_dir in projects_dir.iterdir():
         if not project_dir.is_dir():
             continue
 
-        for jsonl_file in project_dir.glob("*.jsonl"):
-            # Skip agent session files
-            if jsonl_file.name.startswith("agent-"):
-                continue
-
-            # Check first 10 lines for session ID match
-            try:
-                with open(jsonl_file, encoding="utf-8") as f:
-                    for i, line in enumerate(f):
-                        if i >= 10:
-                            break
-                        line = line.strip()
-                        if not line:
-                            continue
-                        try:
-                            entry = json.loads(line)
-                            if entry.get("sessionId") == session_id:
-                                return project_dir
-                        except json.JSONDecodeError:
-                            continue
-            except OSError:
-                # Skip files we can't read
-                continue
+        if _check_session_in_project(project_dir, session_id):
+            return project_dir
 
     return None
 
 
-def extract_slugs_from_session(session_id: str) -> list[str]:
+def extract_slugs_from_session(session_id: str, cwd_hint: str | None = None) -> list[str]:
     """Extract plan slugs from session log entries.
 
     Searches session logs for entries with the given session ID
@@ -71,11 +107,12 @@ def extract_slugs_from_session(session_id: str) -> list[str]:
 
     Args:
         session_id: The session ID to search for
+        cwd_hint: Optional current working directory for faster lookup
 
     Returns:
         List of slugs in occurrence order (last = most recent)
     """
-    project_dir = find_project_dir_for_session(session_id)
+    project_dir = find_project_dir_for_session(session_id, cwd_hint=cwd_hint)
     if not project_dir:
         return []
 

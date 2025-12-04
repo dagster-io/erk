@@ -1,21 +1,30 @@
 """Integration tests for plan extraction from ~/.claude/plans/.
 
 Layer 4: Business logic tests using realistic file fixtures.
-Tests the workflow of reading the most recent plan file.
+Tests the workflow of reading the most recent plan file and session-scoped
+plan extraction using realistic JSONL session logs.
 
 Note: The plan-extractor agent (not this module) is responsible for
 semantic validation that the plan matches conversation context.
 """
 
+import shutil
 import time
 from pathlib import Path
 
+import pytest
+
 from dot_agent_kit.data.kits.erk.session_plan_extractor import (
+    extract_slugs_from_session,
+    find_project_dir_for_session,
     get_latest_plan,
 )
 from tests.unit.kits.erk.fixtures import (
     SAMPLE_PLAN_CONTENT,
 )
+
+# Path to fixture session logs
+FIXTURES_DIR = Path(__file__).parent / "fixtures" / "session_logs"
 
 # ===============================================
 # Helpers
@@ -223,3 +232,211 @@ def test_plan_selection_by_mtime_not_name(tmp_path: Path, monkeypatch) -> None:
 
     # Should return "aaa-newest" because it's most recent, not "zzz-oldest"
     assert result == SAMPLE_PLAN_CONTENT
+
+
+# ===============================================
+# Session-Scoped Plan Extraction Integration Tests
+# Using realistic JSONL fixtures from fixtures/session_logs/
+# ===============================================
+
+
+@pytest.fixture
+def mock_claude_projects(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Set up mock ~/.claude/projects/ with fixture session logs.
+
+    Copies fixture directories to tmp_path/.claude/projects/ and
+    patches Path.home() to return tmp_path.
+
+    Returns:
+        Path to tmp_path (mock home directory)
+    """
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+    # Create .claude/projects directory
+    projects_dir = tmp_path / ".claude" / "projects"
+    projects_dir.mkdir(parents=True)
+
+    # Copy fixture directories to mock projects
+    for fixture_project in FIXTURES_DIR.iterdir():
+        if fixture_project.is_dir() and fixture_project.name != "__pycache__":
+            dest = projects_dir / fixture_project.name
+            shutil.copytree(fixture_project, dest)
+
+    return tmp_path
+
+
+class TestFindProjectDirForSession:
+    """Integration tests for find_project_dir_for_session with real fixtures."""
+
+    def test_finds_project_for_session_in_single_file(self, mock_claude_projects: Path) -> None:
+        """Test finding project when session is in a single file."""
+        session_id = "aaa11111-2222-3333-4444-555555555555"
+
+        result = find_project_dir_for_session(session_id)
+
+        assert result is not None
+        assert result.name == "project_alpha"
+
+    def test_finds_correct_project_among_multiple(self, mock_claude_projects: Path) -> None:
+        """Test finding correct project when multiple projects exist."""
+        # Session bbb is in project_beta
+        result = find_project_dir_for_session("bbb11111-2222-3333-4444-555555555555")
+        assert result is not None
+        assert result.name == "project_beta"
+
+        # Session ccc is also in project_beta (different session file)
+        result = find_project_dir_for_session("ccc11111-2222-3333-4444-555555555555")
+        assert result is not None
+        assert result.name == "project_beta"
+
+        # Session ddd is in project_gamma
+        result = find_project_dir_for_session("ddd11111-2222-3333-4444-555555555555")
+        assert result is not None
+        assert result.name == "project_gamma"
+
+    def test_returns_none_for_nonexistent_session(self, mock_claude_projects: Path) -> None:
+        """Test returns None when session ID doesn't exist anywhere."""
+        result = find_project_dir_for_session("nonexistent-session-id")
+        assert result is None
+
+    def test_cwd_hint_accelerates_lookup(self, mock_claude_projects: Path) -> None:
+        """Test that cwd_hint provides faster lookup when correct."""
+        session_id = "aaa11111-2222-3333-4444-555555555555"
+
+        # With correct hint - should find it
+        result = find_project_dir_for_session(session_id, cwd_hint="/projects/alpha")
+        assert result is not None
+        assert result.name == "project_alpha"
+
+    def test_cwd_hint_falls_back_when_wrong(self, mock_claude_projects: Path) -> None:
+        """Test fallback to full scan when cwd_hint doesn't match."""
+        session_id = "aaa11111-2222-3333-4444-555555555555"
+
+        # With wrong hint - should still find via fallback
+        result = find_project_dir_for_session(session_id, cwd_hint="/wrong/path")
+        assert result is not None
+        assert result.name == "project_alpha"
+
+
+class TestExtractSlugsFromSession:
+    """Integration tests for extract_slugs_from_session with real fixtures."""
+
+    def test_extracts_single_slug(self, mock_claude_projects: Path) -> None:
+        """Test extracting single slug from session."""
+        session_id = "aaa11111-2222-3333-4444-555555555555"
+
+        slugs = extract_slugs_from_session(session_id)
+
+        assert slugs == ["alpha-feature-plan"]
+
+    def test_extracts_multiple_slugs_in_order(self, mock_claude_projects: Path) -> None:
+        """Test extracting multiple slugs preserves order."""
+        session_id = "ddd11111-2222-3333-4444-555555555555"
+
+        slugs = extract_slugs_from_session(session_id)
+
+        # Should be in occurrence order
+        assert slugs == ["gamma-first", "gamma-second"]
+
+    def test_returns_empty_for_session_without_slugs(self, mock_claude_projects: Path) -> None:
+        """Test returns empty list when session has no plan mode entries."""
+        session_id = "eee11111-2222-3333-4444-555555555555"
+
+        slugs = extract_slugs_from_session(session_id)
+
+        assert slugs == []
+
+    def test_ignores_agent_files(self, mock_claude_projects: Path) -> None:
+        """Test that agent-*.jsonl files are ignored."""
+        session_id = "fff11111-2222-3333-4444-555555555555"
+
+        slugs = extract_slugs_from_session(session_id)
+
+        # Should only find slug from main session, not from agent file
+        assert slugs == ["epsilon-main-plan"]
+        assert "agent-should-be-ignored" not in slugs
+
+    def test_different_sessions_return_different_slugs(self, mock_claude_projects: Path) -> None:
+        """Test that different sessions in same project return their own slugs."""
+        # Session bbb has beta-plan-one
+        slugs_bbb = extract_slugs_from_session("bbb11111-2222-3333-4444-555555555555")
+        assert slugs_bbb == ["beta-plan-one"]
+
+        # Session ccc has beta-plan-two
+        slugs_ccc = extract_slugs_from_session("ccc11111-2222-3333-4444-555555555555")
+        assert slugs_ccc == ["beta-plan-two"]
+
+    def test_cwd_hint_used_for_faster_lookup(self, mock_claude_projects: Path) -> None:
+        """Test that cwd_hint is passed through for performance."""
+        session_id = "aaa11111-2222-3333-4444-555555555555"
+
+        # With hint
+        slugs = extract_slugs_from_session(session_id, cwd_hint="/projects/alpha")
+
+        assert slugs == ["alpha-feature-plan"]
+
+
+class TestGetLatestPlanWithSessionId:
+    """Integration tests for get_latest_plan with session_id parameter."""
+
+    def test_session_scoped_lookup_finds_correct_plan(self, mock_claude_projects: Path) -> None:
+        """Test that session_id finds plan via slug, not mtime."""
+        # Create plans directory with multiple plans
+        plans_dir = mock_claude_projects / ".claude" / "plans"
+        plans_dir.mkdir(parents=True)
+
+        # Create plan matching alpha session's slug
+        alpha_plan = plans_dir / "alpha-feature-plan.md"
+        alpha_plan.write_text("# Alpha Plan\nAlpha content", encoding="utf-8")
+
+        # Create a newer plan (by mtime)
+        time.sleep(0.01)
+        newer_plan = plans_dir / "newer-plan.md"
+        newer_plan.write_text("# Newer Plan\nNewer content", encoding="utf-8")
+
+        # Session-scoped lookup should return alpha plan, not newer
+        result = get_latest_plan("/any", session_id="aaa11111-2222-3333-4444-555555555555")
+
+        assert result == "# Alpha Plan\nAlpha content"
+
+    def test_session_with_multiple_slugs_uses_most_recent(self, mock_claude_projects: Path) -> None:
+        """Test that most recent slug is used when session has multiple."""
+        plans_dir = mock_claude_projects / ".claude" / "plans"
+        plans_dir.mkdir(parents=True)
+
+        # Create both plans for gamma session
+        (plans_dir / "gamma-first.md").write_text("# First Plan", encoding="utf-8")
+        (plans_dir / "gamma-second.md").write_text("# Second Plan", encoding="utf-8")
+
+        # Should return second (most recent slug)
+        result = get_latest_plan("/any", session_id="ddd11111-2222-3333-4444-555555555555")
+
+        assert result == "# Second Plan"
+
+    def test_falls_back_to_mtime_when_no_slug(self, mock_claude_projects: Path) -> None:
+        """Test fallback to mtime when session has no slug."""
+        plans_dir = mock_claude_projects / ".claude" / "plans"
+        plans_dir.mkdir(parents=True)
+
+        # Create a plan (session eee has no slugs)
+        only_plan = plans_dir / "fallback-plan.md"
+        only_plan.write_text(SAMPLE_PLAN_CONTENT, encoding="utf-8")
+
+        # Should fall back to mtime selection
+        result = get_latest_plan("/any", session_id="eee11111-2222-3333-4444-555555555555")
+
+        assert result == SAMPLE_PLAN_CONTENT
+
+    def test_falls_back_when_slug_plan_file_missing(self, mock_claude_projects: Path) -> None:
+        """Test fallback when slug exists but plan file doesn't."""
+        plans_dir = mock_claude_projects / ".claude" / "plans"
+        plans_dir.mkdir(parents=True)
+
+        # Create a different plan (not matching alpha's slug)
+        fallback = plans_dir / "different-plan.md"
+        fallback.write_text(SAMPLE_PLAN_CONTENT, encoding="utf-8")
+
+        # alpha-feature-plan.md doesn't exist, should fall back
+        result = get_latest_plan("/any", session_id="aaa11111-2222-3333-4444-555555555555")
+
+        assert result == SAMPLE_PLAN_CONTENT

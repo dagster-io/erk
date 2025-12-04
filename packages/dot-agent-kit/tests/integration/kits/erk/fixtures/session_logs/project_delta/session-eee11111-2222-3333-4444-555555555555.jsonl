@@ -1,0 +1,4 @@
+{"type":"file-history-snapshot","messageId":"msg_040","snapshot":{"trackedFileBackups":{}}}
+{"parentUuid":"parent_040","sessionId":"eee11111-2222-3333-4444-555555555555","type":"user","message":{"role":"user","content":[{"type":"text","text":"Just coding, no plans"}]},"cwd":"/projects/delta","gitBranch":"main"}
+{"parentUuid":"parent_041","sessionId":"eee11111-2222-3333-4444-555555555555","type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"I'll help you code."}]},"cwd":"/projects/delta","gitBranch":"main"}
+{"parentUuid":"parent_042","sessionId":"eee11111-2222-3333-4444-555555555555","type":"user","message":{"role":"user","content":[{"type":"text","text":"Thanks"}]},"cwd":"/projects/delta","gitBranch":"main"}

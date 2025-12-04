@@ -1,0 +1,3 @@
+{"type":"file-history-snapshot","messageId":"msg_050","snapshot":{"trackedFileBackups":{}}}
+{"parentUuid":"parent_050","sessionId":"fff11111-2222-3333-4444-555555555555","type":"user","message":{"role":"user","content":[{"type":"text","text":"Main session"}]},"cwd":"/projects/epsilon","gitBranch":"main"}
+{"parentUuid":"parent_051","sessionId":"fff11111-2222-3333-4444-555555555555","type":"assistant","slug":"epsilon-main-plan","message":{"role":"assistant","content":[{"type":"text","text":"Creating plan."}]},"cwd":"/projects/epsilon","gitBranch":"main"}
