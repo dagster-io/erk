@@ -324,11 +324,12 @@ def _execute_submit_only(
     pr_number, pr_url = pr_info
     # Get Graphite URL using the main_graphite interface
     repo_info = ops.github.get_repo_info(repo_root)
-    if repo_info is not None:
-        repo_id = GitHubRepoId(owner=repo_info.owner, repo=repo_info.name)
-        graphite_url = ops.graphite.get_graphite_url(repo_id, pr_number)
-    else:
-        graphite_url = ""
+
+    if repo_info is None:
+        raise RuntimeError("Failed to get repo info from GitHub")
+
+    repo_id = GitHubRepoId(owner=repo_info.owner, repo=repo_info.name)
+    graphite_url = ops.graphite.get_graphite_url(repo_id, pr_number)
 
     yield CompletionEvent((pr_number, pr_url, graphite_url, branch_name))
 
