@@ -64,21 +64,49 @@ You are creating an extraction plan from session analysis.
 
 ### Step 0: Determine Source and Context
 
-Parse the context argument (if provided) to determine:
+Parse the context argument (if provided) for:
 
 1. **Session IDs** - Look for patterns like "session abc123" or UUID-like strings
 2. **Steering context** - Remaining text provides focus for the extraction analysis
 
-**If session IDs found:**
+**If no explicit session IDs provided:**
 
-Load and preprocess the session logs:
+Run the session discovery helper:
 
 ```bash
-# Get the project directory for this codebase
-dot-agent run erk find-project-dir
+dot-agent run erk list-sessions
 ```
 
-The JSON output includes `session_logs` (list of session files) and `latest_session_id`. Session logs are stored directly in the project directory as flat files:
+The JSON output includes:
+
+- `branch_context.is_on_trunk`: Whether on main/master branch
+- `current_session_id`: Current session ID from SESSION_CONTEXT env
+- `sessions`: List of recent sessions with metadata
+- `project_dir`: Path to session logs
+
+**Behavior based on branch context:**
+
+**If `branch_context.is_on_trunk` is true (on main/master):**
+
+Use `current_session_id` only. Skip user prompt - analyze current conversation.
+
+**If `branch_context.is_on_trunk` is false (feature branch):**
+
+Present sessions to user for selection:
+
+> "Found these sessions for this worktree:
+>
+> 1. [Dec 3, 11:38 AM] 4f852cdc... - how many session ids does... (current)
+> 2. [Dec 3, 11:35 AM] d8f6bb38... - no rexporting due to backwards...
+> 3. [Dec 3, 11:28 AM] d82e9306... - /gt:pr-submit
+>
+> Which sessions should I analyze? (1=current only, 2=all, or list session numbers like '1,3')"
+
+Wait for user selection before proceeding.
+
+**If explicit session IDs found in context:**
+
+Load and preprocess the session logs. Session logs are stored in `project_dir` as flat files:
 
 - Main sessions: `<session-id>.jsonl`
 - Agent logs: `agent-<agent-id>.jsonl`
@@ -88,10 +116,6 @@ Match session IDs against filenames (full or partial prefix match), then preproc
 ```bash
 dot-agent run erk preprocess-session <project-dir>/<session-id>.jsonl --stdout
 ```
-
-**If no session IDs found:**
-
-Analyze the current conversation. Use steering context (if any) to focus the analysis.
 
 ### Step 0.5: Verify Existing Documentation
 
