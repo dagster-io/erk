@@ -20,3 +20,27 @@ Scratchpad for facts to be organized into proper documentation later.
 
 - Minute-level granularity is sufficient; collisions are rare in practice
 - If collision occurs, a number suffix is added automatically
+
+---
+
+## GitHub Planning Feature Flag
+
+**Config key:** `github_planning`
+
+**Default:** `true` (enabled)
+
+**Toggle:**
+
+```bash
+erk config set github_planning false  # disable
+erk config set github_planning true   # enable
+```
+
+**What it controls:**
+
+When enabled, erk modifies Claude Code's plan mode behavior:
+
+- Injects session IDs into prompts for tracking
+- Prompts to save plans to GitHub issues when exiting plan mode
+
+When disabled, plan mode behaves normally without erk's GitHub integration hooks. Use this if you want standard Claude Code plan mode without the GitHub workflow.

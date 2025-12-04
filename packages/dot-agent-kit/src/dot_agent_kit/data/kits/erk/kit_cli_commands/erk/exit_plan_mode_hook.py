@@ -17,11 +17,25 @@ import json
 import os
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import click
 
 from dot_agent_kit.data.kits.erk.session_plan_extractor import extract_slugs_from_session
+
+
+def _is_github_planning_enabled() -> bool:
+    """Check if github_planning is enabled in ~/.erk/config.toml.
+
+    Returns True (enabled) if config doesn't exist or flag is missing.
+    """
+    config_path = Path.home() / ".erk" / "config.toml"
+    if not config_path.exists():
+        return True  # Default enabled
+
+    data = tomllib.loads(config_path.read_text(encoding="utf-8"))
+    return bool(data.get("github_planning", True))
 
 
 def _get_session_id_from_stdin() -> str | None:
@@ -174,6 +188,10 @@ def exit_plan_mode_hook() -> None:
         0: Success - allow exit (no plan, skip marker, or no session)
         2: Block - plan exists, prompt user for action
     """
+    # Early exit if github_planning is disabled
+    if not _is_github_planning_enabled():
+        sys.exit(0)
+
     session_id = _get_session_id_from_stdin()
 
     if not session_id:

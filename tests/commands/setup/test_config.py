@@ -122,6 +122,7 @@ def test_config_list_not_in_git_repo() -> None:
             use_graphite=False,
             show_pr_info=True,
             shell_setup_complete=False,
+            github_planning=True,
         )
 
         test_ctx = ErkContext.for_test(
@@ -524,3 +525,79 @@ def test_config_get_post_create_invalid_key_format() -> None:
         assert result.exit_code == 1
         assert "Error:" in result.output
         assert "Invalid key" in result.output
+
+
+def test_config_list_displays_github_planning() -> None:
+    """Test that config list displays github_planning value."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo_dir = env.setup_repo_structure()
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(cli, ["config", "list"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "github_planning=true" in result.output
+
+
+def test_config_get_github_planning() -> None:
+    """Test getting github_planning config value."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        test_ctx = env.build_context(
+            git=git_ops,
+        )
+
+        result = runner.invoke(cli, ["config", "get", "github_planning"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "true" in result.output.strip()
+
+
+def test_config_set_github_planning() -> None:
+    """Test setting github_planning config value."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        test_ctx = env.build_context(
+            git=git_ops,
+        )
+
+        # Set to false
+        result = runner.invoke(cli, ["config", "set", "github_planning", "false"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "Set github_planning=false" in result.output
+
+        # Verify it was saved to the config store
+        saved_config = test_ctx.config_store.load()
+        assert saved_config.github_planning is False
+
+
+def test_config_set_github_planning_invalid_value() -> None:
+    """Test that setting github_planning with invalid value fails."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        test_ctx = env.build_context(
+            git=git_ops,
+        )
+
+        result = runner.invoke(cli, ["config", "set", "github_planning", "invalid"], obj=test_ctx)
+
+        assert result.exit_code == 1
+        assert "Invalid boolean value" in result.output

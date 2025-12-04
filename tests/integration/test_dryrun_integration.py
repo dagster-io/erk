@@ -100,6 +100,7 @@ def test_dryrun_read_operations_still_work(tmp_path: Path) -> None:
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=False,  # This test is about dry-run operations, not PR info
+        github_planning=True,
     )
 
     # Wrap fakes in dry-run wrappers

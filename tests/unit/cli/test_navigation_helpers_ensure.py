@@ -34,6 +34,7 @@ class TestEnsureGraphiteEnabled:
             use_graphite=True,  # Graphite enabled
             shell_setup_complete=False,
             show_pr_info=False,
+            github_planning=True,
         )
 
         ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
@@ -62,6 +63,7 @@ class TestEnsureGraphiteEnabled:
             use_graphite=False,  # Graphite disabled
             shell_setup_complete=False,
             show_pr_info=False,
+            github_planning=True,
         )
 
         ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
@@ -121,6 +123,7 @@ class TestEnsureGraphiteEnabled:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=False,
+            github_planning=True,
         )
 
         ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)

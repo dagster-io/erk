@@ -30,6 +30,7 @@ def build_ctx(repo_root: Path | None, erk_root: Path, cwd: Path | None = None) -
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=True,
+        github_planning=True,
     )
     return create_test_context(
         git=git_ops,

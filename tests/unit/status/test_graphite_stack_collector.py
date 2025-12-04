@@ -37,6 +37,7 @@ def setup_stack_collector(
         use_graphite=use_graphite,
         shell_setup_complete=False,
         show_pr_info=True,
+        github_planning=True,
     )
     ctx = create_test_context(
         git=git_ops,
@@ -233,6 +234,7 @@ def test_graphite_stack_collector_is_available(
         use_graphite=use_graphite,
         shell_setup_complete=False,
         show_pr_info=True,
+        github_planning=True,
     )
     ctx = create_test_context(global_config=global_config)
     collector = GraphiteStackCollector()

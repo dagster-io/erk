@@ -516,6 +516,7 @@ class ErkIsolatedFsEnv:
                 show_pr_info=show_pr_info,
                 shell_setup_complete=False,
                 erk_root=self.erk_root,
+                github_planning=True,
             )
 
         # Build and return context
@@ -933,6 +934,7 @@ class ErkInMemEnv:
                 show_pr_info=show_pr_info,
                 shell_setup_complete=False,
                 erk_root=self.erk_root,
+                github_planning=True,
             )
 
         # Build and return context

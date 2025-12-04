@@ -25,6 +25,7 @@ def test_context_initialization_and_attributes() -> None:
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=True,
+        github_planning=True,
     )
 
     ctx = ErkContext.for_test(
@@ -52,6 +53,7 @@ def test_context_is_frozen() -> None:
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=True,
+        github_planning=True,
     )
     ctx = ErkContext.for_test(
         git=FakeGit(),

@@ -162,6 +162,7 @@ def test_current_handles_missing_git_gracefully(tmp_path: Path) -> None:
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=True,
+        github_planning=True,
     )
     global_config_ops = FakeConfigStore(config=global_config)
 
@@ -215,6 +216,7 @@ def test_current_handles_nested_worktrees(tmp_path: Path) -> None:
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=True,
+        github_planning=True,
     )
     global_config_ops = FakeConfigStore(config=global_config)
 

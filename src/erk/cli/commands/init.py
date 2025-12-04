@@ -35,6 +35,7 @@ def create_and_save_global_config(
         use_graphite=use_graphite,
         shell_setup_complete=shell_setup_complete,
         show_pr_info=True,
+        github_planning=True,
     )
     ctx.config_store.save(config)
     return config
@@ -192,6 +193,7 @@ def init_cmd(
                 use_graphite=ctx.global_config.use_graphite,
                 shell_setup_complete=True,
                 show_pr_info=ctx.global_config.show_pr_info,
+                github_planning=ctx.global_config.github_planning,
             )
             try:
                 ctx.config_store.save(new_config)
@@ -320,6 +322,7 @@ def init_cmd(
                         use_graphite=fresh_config.use_graphite,
                         shell_setup_complete=True,
                         show_pr_info=fresh_config.show_pr_info,
+                        github_planning=fresh_config.github_planning,
                     )
                     try:
                         ctx.config_store.save(new_config)

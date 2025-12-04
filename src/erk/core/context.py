@@ -314,6 +314,7 @@ class ErkContext:
                 use_graphite=False,
                 shell_setup_complete=False,
                 show_pr_info=True,
+                github_planning=True,
             )
 
         if config_store is None:

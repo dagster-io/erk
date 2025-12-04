@@ -54,6 +54,7 @@ def test_find_worktrees_containing_branch_no_match(tmp_path: Path) -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         ),
         github=FakeGitHub(),
         graphite=graphite_ops,

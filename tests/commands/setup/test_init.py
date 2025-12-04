@@ -152,6 +152,7 @@ def test_init_skips_global_with_repo_flag() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
 
         global_config_ops = FakeConfigStore(config=global_config)
@@ -207,6 +208,7 @@ def test_init_auto_preset_detects_dagster() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
 
         global_config_ops = FakeConfigStore(config=global_config)
@@ -242,6 +244,7 @@ def test_init_auto_preset_uses_generic_fallback() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
 
         global_config_ops = FakeConfigStore(config=global_config)
@@ -272,6 +275,7 @@ def test_init_explicit_preset_dagster() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
 
         global_config_ops = FakeConfigStore(config=global_config)
@@ -302,6 +306,7 @@ def test_init_explicit_preset_generic() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
 
         global_config_ops = FakeConfigStore(config=global_config)
@@ -330,6 +335,7 @@ def test_init_list_presets_displays_available() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
 
         global_config_ops = FakeConfigStore(config=global_config)
@@ -360,6 +366,7 @@ def test_init_invalid_preset_fails() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
 
         global_config_ops = FakeConfigStore(config=global_config)
@@ -388,6 +395,7 @@ def test_init_creates_config_at_erks_dir() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
 
         global_config_ops = FakeConfigStore(config=global_config)
@@ -420,6 +428,7 @@ def test_init_repo_flag_creates_config_at_root() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
 
         global_config_ops = FakeConfigStore(config=global_config)
@@ -456,6 +465,7 @@ def test_init_force_overwrites_existing_config() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
 
         global_config_ops = FakeConfigStore(config=global_config)
@@ -493,6 +503,7 @@ def test_init_fails_without_force_when_exists() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
 
         global_config_ops = FakeConfigStore(config=global_config)
@@ -531,6 +542,7 @@ def test_init_adds_env_to_gitignore() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -570,6 +582,7 @@ def test_init_skips_gitignore_entries_if_declined() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -606,6 +619,7 @@ def test_init_handles_missing_gitignore() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -643,6 +657,7 @@ def test_init_preserves_gitignore_formatting() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -708,6 +723,7 @@ def test_init_shell_flag_only_setup() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
 
         global_config_ops = FakeConfigStore(config=global_config)
@@ -981,6 +997,7 @@ def test_init_not_in_git_repo_fails() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
 
         global_config_ops = FakeConfigStore(config=global_config)
@@ -1010,6 +1027,7 @@ def test_shell_setup_confirmation_declined_with_shell_flag() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
 
         global_config_ops = FakeConfigStore(config=global_config)
@@ -1046,6 +1064,7 @@ def test_shell_setup_confirmation_accepted_with_shell_flag() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
 
         global_config_ops = FakeConfigStore(config=global_config)
@@ -1113,6 +1132,7 @@ def test_shell_setup_permission_error_with_shell_flag() -> None:
             use_graphite=False,
             shell_setup_complete=False,
             show_pr_info=True,
+            github_planning=True,
         )
 
         # Create a ConfigStore that raises PermissionError on save

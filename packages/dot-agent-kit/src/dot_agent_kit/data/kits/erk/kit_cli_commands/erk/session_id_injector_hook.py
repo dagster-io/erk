@@ -8,13 +8,32 @@ This command is invoked via dot-agent run erk session-id-injector-hook.
 
 import json
 import sys
+import tomllib
+from pathlib import Path
 
 import click
+
+
+def _is_github_planning_enabled() -> bool:
+    """Check if github_planning is enabled in ~/.erk/config.toml.
+
+    Returns True (enabled) if config doesn't exist or flag is missing.
+    """
+    config_path = Path.home() / ".erk" / "config.toml"
+    if not config_path.exists():
+        return True  # Default enabled
+
+    data = tomllib.loads(config_path.read_text(encoding="utf-8"))
+    return bool(data.get("github_planning", True))
 
 
 @click.command(name="session-id-injector-hook")
 def session_id_injector_hook() -> None:
     """Inject session ID into conversation context when relevant."""
+    # Early exit if github_planning is disabled - output nothing
+    if not _is_github_planning_enabled():
+        return
+
     # Attempt to read session context from stdin (if Claude Code provides it)
     session_id = None
 

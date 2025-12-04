@@ -402,6 +402,7 @@ class WorktreeScenario:
             use_graphite=self._use_graphite,
             shell_setup_complete=False,
             show_pr_info=self._show_pr_info,
+            github_planning=True,
         )
 
         self.shell = FakeShell()
