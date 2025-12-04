@@ -1,14 +1,14 @@
 ---
-title: Plan Schema v2 Reference
+title: Plan Schema Reference
 read_when:
   - "understanding plan issue structure"
   - "debugging plan validation errors"
   - "working with plan-header or plan-body blocks"
 ---
 
-# Plan Schema v2 Reference
+# Plan Schema Reference
 
-Complete reference for the erk plan issue structure (Schema v2).
+Complete reference for the erk plan issue structure.
 
 ## Overview
 
@@ -50,11 +50,10 @@ last_remote_impl_at: null
 
 **Required fields:**
 
-| Field            | Type   | Description                    |
-| ---------------- | ------ | ------------------------------ |
-| `schema_version` | string | Always "2" for this format     |
-| `created_at`     | string | ISO 8601 timestamp of creation |
-| `created_by`     | string | GitHub username of creator     |
+| Field        | Type   | Description                    |
+| ------------ | ------ | ------------------------------ |
+| `created_at` | string | ISO 8601 timestamp of creation |
+| `created_by` | string | GitHub username of creator     |
 
 **Optional fields:**
 

@@ -1135,10 +1135,10 @@ def extract_metadata_value(
 
 @dataclass(frozen=True)
 class PlanHeaderSchema(MetadataBlockSchema):
-    """Schema for plan-header blocks (issue body metadata in schema version 2).
+    """Schema for plan-header blocks.
 
     Fields:
-        schema_version: Always "2" for this format
+        schema_version: Internal version identifier
         created_at: ISO 8601 timestamp of plan creation
         created_by: GitHub username of plan creator
         worktree_name: Set when worktree is created (nullable)
@@ -1597,7 +1597,7 @@ def extract_plan_header_worktree_name(issue_body: str) -> str | None:
         issue_body: Issue body containing plan-header block
 
     Returns:
-        worktree_name if found, None otherwise (indicates schema v1 or missing block)
+        worktree_name if found, None if block is missing or field is unset
     """
     block = find_metadata_block(issue_body, "plan-header")
     if block is None:

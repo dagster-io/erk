@@ -470,7 +470,7 @@ created_by: username
 
 ### Implementation Notes
 
-**Migration:** Existing Schema v2 issues can be migrated:
+**Migration:** Existing issues can be migrated to body storage:
 
 ```python
 def migrate_to_body_storage(issue_number: int) -> None:

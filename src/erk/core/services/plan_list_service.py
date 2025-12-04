@@ -18,7 +18,7 @@ from erk_shared.github.types import GitHubRepoLocation, PullRequestInfo, Workflo
 
 @dataclass(frozen=True)
 class PlanListData:
-    """Combined data for plan listing (schema v2 only).
+    """Combined data for plan listing.
 
     Attributes:
         issues: List of IssueInfo objects

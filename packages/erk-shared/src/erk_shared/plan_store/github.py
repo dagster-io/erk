@@ -180,7 +180,7 @@ class GitHubPlanStore(PlanStore):
 
         Args:
             issue_info: IssueInfo from GitHubIssues interface
-            plan_body: Plan content (extracted from comment for schema v2, or from body for v1)
+            plan_body: Plan content extracted from comment, or issue body as fallback.
                        If None, uses issue_info.body (for list_plans compatibility)
 
         Returns:

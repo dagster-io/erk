@@ -338,7 +338,7 @@ def _build_plans_table(
             worktree_name = worktree_by_issue[issue_number]
             exists_locally = True
 
-        # Extract from issue body (schema v2 only) - worktree may or may not exist locally
+        # Extract from issue body - worktree may or may not exist locally
         if plan.body:
             extracted = extract_plan_header_worktree_name(plan.body)
             if extracted:

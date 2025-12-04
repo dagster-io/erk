@@ -213,11 +213,11 @@ def test_create_ensures_label_exists(tmp_path) -> None:
         assert color == "0E8A16"
 
 
-def test_create_uses_schema_v2(tmp_path) -> None:
-    """Test that created issue uses Schema V2 format (metadata body + plan comment)."""
+def test_create_uses_current_schema(tmp_path) -> None:
+    """Test that created issue uses current schema format (metadata body + plan comment)."""
     # Arrange
     plan_file = tmp_path / "plan.md"
-    plan_content = "# Schema V2 Test\n\nPlan content"
+    plan_content = "# Schema Test\n\nPlan content"
     plan_file.write_text(plan_content, encoding="utf-8")
 
     runner = CliRunner()
@@ -231,7 +231,7 @@ def test_create_uses_schema_v2(tmp_path) -> None:
         # Assert
         assert result.exit_code == 0
 
-        # Verify Schema V2 structure
+        # Verify schema structure
         title, body, labels = issues.created_issues[0]
 
         # Issue body should contain plan-header metadata block
