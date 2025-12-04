@@ -6,7 +6,6 @@ import pytest
 from click.testing import CliRunner
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
-from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
 
 from tests.unit.kits.gt.fake_ops import FakeGtKitOps
 
@@ -32,11 +31,10 @@ class TestLandPrExecution:
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
-        assert isinstance(result, LandPrSuccess)
-        assert result.success is True
-        assert result.pr_number == 123
-        assert result.branch_name == "feature-branch"
-        assert "Successfully merged PR #123" in result.message
+        assert result["success"] is True
+        assert result["pr_number"] == 123
+        assert result["branch_name"] == "feature-branch"
+        assert "Successfully merged PR #123" in result["message"]
 
     def test_land_pr_error_parent_not_trunk(self, tmp_path: Path) -> None:
         """Test error when branch parent is not trunk."""
@@ -49,11 +47,10 @@ class TestLandPrExecution:
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
-        assert isinstance(result, LandPrError)
-        assert result.success is False
-        assert result.error_type == "parent_not_trunk"
-        assert "must be exactly one level up from main" in result.message
-        assert result.details["parent_branch"] == "develop"
+        assert result["success"] is False
+        assert result["error_type"] == "parent_not_trunk"
+        assert "must be exactly one level up from main" in result["message"]
+        assert result["details"]["parent_branch"] == "develop"
 
     def test_land_pr_error_no_parent(self, tmp_path: Path) -> None:
         """Test error when parent branch cannot be determined."""
@@ -63,10 +60,9 @@ class TestLandPrExecution:
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
-        assert isinstance(result, LandPrError)
-        assert result.success is False
-        assert result.error_type == "parent_not_trunk"
-        assert "Could not determine parent branch" in result.message
+        assert result["success"] is False
+        assert result["error_type"] == "parent_not_trunk"
+        assert "Could not determine parent branch" in result["message"]
 
     def test_land_pr_error_no_pr(self, tmp_path: Path) -> None:
         """Test error when no PR exists for the branch."""
@@ -80,11 +76,10 @@ class TestLandPrExecution:
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
-        assert isinstance(result, LandPrError)
-        assert result.success is False
-        assert result.error_type == "no_pr_found"
-        assert "No pull request found" in result.message
-        assert "gt submit" in result.message
+        assert result["success"] is False
+        assert result["error_type"] == "no_pr_found"
+        assert "No pull request found" in result["message"]
+        assert "gt submit" in result["message"]
 
     def test_land_pr_error_pr_not_open(self, tmp_path: Path) -> None:
         """Test error when PR exists but is not open."""
@@ -98,11 +93,10 @@ class TestLandPrExecution:
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
-        assert isinstance(result, LandPrError)
-        assert result.success is False
-        assert result.error_type == "pr_not_open"
-        assert "Pull request is not open" in result.message
-        assert "MERGED" in result.message
+        assert result["success"] is False
+        assert result["error_type"] == "pr_not_open"
+        assert "Pull request is not open" in result["message"]
+        assert "MERGED" in result["message"]
 
     def test_land_pr_error_merge_failed(self, tmp_path: Path) -> None:
         """Test error when PR merge fails."""
@@ -117,10 +111,9 @@ class TestLandPrExecution:
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
-        assert isinstance(result, LandPrError)
-        assert result.success is False
-        assert result.error_type == "merge_failed"
-        assert "Failed to merge PR #123" in result.message
+        assert result["success"] is False
+        assert result["error_type"] == "merge_failed"
+        assert "Failed to merge PR #123" in result["message"]
 
     def test_land_pr_with_master_trunk(self, tmp_path: Path) -> None:
         """Test successfully landing a PR when trunk is 'master' instead of 'main'."""
@@ -135,10 +128,9 @@ class TestLandPrExecution:
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
-        assert isinstance(result, LandPrSuccess)
-        assert result.success is True
-        assert result.pr_number == 123
-        assert result.branch_name == "feature-branch"
+        assert result["success"] is True
+        assert result["pr_number"] == 123
+        assert result["branch_name"] == "feature-branch"
 
     def test_land_pr_error_parent_not_trunk_with_master(self, tmp_path: Path) -> None:
         """Test error when branch parent is not trunk, with master as trunk."""
@@ -152,11 +144,10 @@ class TestLandPrExecution:
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
-        assert isinstance(result, LandPrError)
-        assert result.success is False
-        assert result.error_type == "parent_not_trunk"
-        assert "must be exactly one level up from master" in result.message
-        assert result.details["parent_branch"] == "main"
+        assert result["success"] is False
+        assert result["error_type"] == "parent_not_trunk"
+        assert "must be exactly one level up from master" in result["message"]
+        assert result["details"]["parent_branch"] == "main"
 
 
 class TestLandPrCLI:
@@ -189,8 +180,8 @@ class TestLandPrEdgeCases:
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
-        assert isinstance(result, LandPrError)
-        assert result.error_type == "pr_not_open"
+        assert result["success"] is False
+        assert result["error_type"] == "pr_not_open"
 
     def test_land_pr_unknown_current_branch(self, tmp_path: Path) -> None:
         """Test when current branch cannot be determined."""
@@ -200,8 +191,8 @@ class TestLandPrEdgeCases:
         result = render_events(execute_land_pr(ops, tmp_path))
 
         # Should handle gracefully with "unknown" branch name
-        assert isinstance(result, LandPrError)
-        assert result.details["current_branch"] == "unknown"
+        assert result["success"] is False
+        assert result["details"]["current_branch"] == "unknown"
 
 
 class TestLandPrTitle:
@@ -222,9 +213,8 @@ class TestLandPrTitle:
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
-        assert isinstance(result, LandPrSuccess)
-        assert result.success is True
-        assert result.pr_number == 123
+        assert result["success"] is True
+        assert result["pr_number"] == 123
 
     def test_land_pr_success_without_pr_title(self, tmp_path: Path) -> None:
         """Test landing succeeds even when no PR title is set."""
@@ -242,8 +232,7 @@ class TestLandPrTitle:
         result = render_events(execute_land_pr(ops, tmp_path))
 
         # Should still succeed - title is optional
-        assert isinstance(result, LandPrSuccess)
-        assert result.success is True
+        assert result["success"] is True
 
     def test_get_pr_title_returns_none_when_no_pr(self, tmp_path: Path) -> None:
         """Test get_pr_title returns None when no PR exists."""
@@ -281,9 +270,8 @@ class TestLandPrBody:
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
-        assert isinstance(result, LandPrSuccess)
-        assert result.success is True
-        assert result.pr_number == 123
+        assert result["success"] is True
+        assert result["pr_number"] == 123
 
     def test_land_pr_success_without_pr_body(self, tmp_path: Path) -> None:
         """Test landing succeeds even when no PR body is set."""
@@ -301,8 +289,7 @@ class TestLandPrBody:
         result = render_events(execute_land_pr(ops, tmp_path))
 
         # Should still succeed - body is optional
-        assert isinstance(result, LandPrSuccess)
-        assert result.success is True
+        assert result["success"] is True
 
     def test_get_pr_body_returns_none_when_no_pr(self, tmp_path: Path) -> None:
         """Test get_pr_body returns None when no PR exists."""
@@ -342,5 +329,4 @@ class TestLandPrBody:
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
-        assert isinstance(result, LandPrSuccess)
-        assert result.success is True
+        assert result["success"] is True

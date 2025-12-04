@@ -1,7 +1,6 @@
 """Type definitions for GT kit operations."""
 
-from dataclasses import dataclass
-from typing import Literal, NamedTuple
+from typing import Literal, NamedTuple, NotRequired, TypedDict
 
 
 class CommandResult(NamedTuple):
@@ -23,8 +22,7 @@ class CommandResult(NamedTuple):
 # =============================================================================
 
 
-@dataclass
-class SquashSuccess:
+class SquashSuccess(TypedDict):
     """Success result from idempotent squash."""
 
     success: Literal[True]
@@ -33,8 +31,7 @@ class SquashSuccess:
     message: str
 
 
-@dataclass
-class SquashError:
+class SquashError(TypedDict):
     """Error result from idempotent squash."""
 
     success: Literal[False]
@@ -46,7 +43,7 @@ class SquashError:
 # Update PR Operation Types
 # =============================================================================
 
-# Update PR uses dict[str, Any] for flexibility, no specific dataclasses needed
+# Update PR uses dict[str, Any] for flexibility, no specific types needed
 
 
 # =============================================================================
@@ -61,21 +58,19 @@ LandPrErrorType = Literal[
 ]
 
 
-@dataclass
-class LandPrSuccess:
+class LandPrSuccess(TypedDict):
     """Success result from landing a PR."""
 
-    success: bool
+    success: Literal[True]
     pr_number: int
     branch_name: str
     message: str
 
 
-@dataclass
-class LandPrError:
+class LandPrError(TypedDict):
     """Error result from landing a PR."""
 
-    success: bool
+    success: Literal[False]
     error_type: LandPrErrorType
     message: str
     details: dict[str, str | int | list[str]]
@@ -97,11 +92,10 @@ PrepErrorType = Literal[
 ]
 
 
-@dataclass
-class PrepResult:
+class PrepResult(TypedDict):
     """Success result from prep phase."""
 
-    success: bool
+    success: Literal[True]
     diff_file: str
     repo_root: str
     current_branch: str
@@ -111,11 +105,10 @@ class PrepResult:
     message: str
 
 
-@dataclass
-class PrepError:
+class PrepError(TypedDict):
     """Error result from prep phase."""
 
-    success: bool
+    success: Literal[False]
     error_type: PrepErrorType
     message: str
     details: dict[str, str | bool]
@@ -149,36 +142,33 @@ PostAnalysisErrorType = Literal[
 ]
 
 
-@dataclass
-class PreAnalysisResult:
+class PreAnalysisResult(TypedDict):
     """Success result from pre-analysis phase."""
 
-    success: bool
+    success: Literal[True]
     branch_name: str
     parent_branch: str
     commit_count: int
     squashed: bool
     uncommitted_changes_committed: bool
     message: str
-    has_conflicts: bool = False
-    conflict_details: dict[str, str] | None = None
+    has_conflicts: NotRequired[bool]
+    conflict_details: NotRequired[dict[str, str] | None]
 
 
-@dataclass
-class PreAnalysisError:
+class PreAnalysisError(TypedDict):
     """Error result from pre-analysis phase."""
 
-    success: bool
+    success: Literal[False]
     error_type: PreAnalysisErrorType
     message: str
     details: dict[str, str | bool]
 
 
-@dataclass
-class PostAnalysisResult:
+class PostAnalysisResult(TypedDict):
     """Success result from post-analysis phase."""
 
-    success: bool
+    success: Literal[True]
     pr_number: int | None
     pr_url: str
     pr_title: str
@@ -188,21 +178,19 @@ class PostAnalysisResult:
     message: str
 
 
-@dataclass
-class PostAnalysisError:
+class PostAnalysisError(TypedDict):
     """Error result from post-analysis phase."""
 
-    success: bool
+    success: Literal[False]
     error_type: PostAnalysisErrorType
     message: str
     details: dict[str, str]
 
 
-@dataclass
-class PreflightResult:
+class PreflightResult(TypedDict):
     """Result from preflight phase (pre-analysis + submit + diff extraction)."""
 
-    success: bool
+    success: Literal[True]
     pr_number: int
     pr_url: str
     graphite_url: str
@@ -215,11 +203,10 @@ class PreflightResult:
     message: str
 
 
-@dataclass
-class FinalizeResult:
+class FinalizeResult(TypedDict):
     """Result from finalize phase (update PR metadata)."""
 
-    success: bool
+    success: Literal[True]
     pr_number: int
     pr_url: str
     pr_title: str

@@ -56,17 +56,18 @@ Examples:
 
 import json
 import os
-from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Literal, TypedDict
 
 import click
 
+from dot_agent_kit.cli.schema_formatting import json_output
 
-@dataclass
-class ProjectInfo:
+
+class ProjectInfo(TypedDict):
     """Success result with project information."""
 
-    success: bool
+    success: Literal[True]
     project_dir: str
     cwd: str
     encoded_path: str
@@ -74,11 +75,10 @@ class ProjectInfo:
     latest_session_id: str | None
 
 
-@dataclass
-class ProjectError:
+class ProjectError(TypedDict):
     """Error result when project directory not found."""
 
-    success: bool
+    success: Literal[False]
     error: str
     help: str
     context: dict[str, str]
@@ -119,31 +119,31 @@ def find_project_info(path: Path) -> ProjectInfo | ProjectError:
     """
     projects_dir = Path.home() / ".claude" / "projects"
     if not projects_dir.exists():
-        return ProjectError(
-            success=False,
-            error="Claude Code projects directory not found",
-            help="~/.claude/projects/ does not exist. Is Claude Code installed?",
-            context={
+        return {
+            "success": False,
+            "error": "Claude Code projects directory not found",
+            "help": "~/.claude/projects/ does not exist. Is Claude Code installed?",
+            "context": {
                 "path": str(path),
                 "projects_dir": str(projects_dir),
             },
-        )
+        }
 
     # Encode path and find project directory
     encoded_path = encode_path_to_project_folder(path)
     project_dir = projects_dir / encoded_path
 
     if not project_dir.exists():
-        return ProjectError(
-            success=False,
-            error="Project directory not found",
-            help=f"No Claude Code project found for {path}",
-            context={
+        return {
+            "success": False,
+            "error": "Project directory not found",
+            "help": f"No Claude Code project found for {path}",
+            "context": {
                 "path": str(path),
                 "encoded_path": encoded_path,
                 "expected_dir": str(project_dir),
             },
-        )
+        }
 
     # Find all session logs (main sessions and agent logs)
     session_logs = []
@@ -164,16 +164,17 @@ def find_project_info(path: Path) -> ProjectInfo | ProjectError:
     # Sort logs for consistent output
     session_logs.sort()
 
-    return ProjectInfo(
-        success=True,
-        project_dir=str(project_dir),
-        cwd=str(path),
-        encoded_path=encoded_path,
-        session_logs=session_logs,
-        latest_session_id=latest_session[0] if latest_session else None,
-    )
+    return {
+        "success": True,
+        "project_dir": str(project_dir),
+        "cwd": str(path),
+        "encoded_path": encoded_path,
+        "session_logs": session_logs,
+        "latest_session_id": latest_session[0] if latest_session else None,
+    }
 
 
+@json_output(ProjectInfo | ProjectError)
 @click.command(name="find-project-dir")
 @click.option(
     "--path",
@@ -200,8 +201,8 @@ def find_project_dir(path: Path | None, json_output: bool) -> None:
     result = find_project_info(path)
 
     # Always output JSON (the --json flag is for future extensibility)
-    click.echo(json.dumps(asdict(result), indent=2))
+    click.echo(json.dumps(result, indent=2))
 
     # Exit with error code if not found
-    if isinstance(result, ProjectError):
+    if not result["success"]:
         raise SystemExit(1)

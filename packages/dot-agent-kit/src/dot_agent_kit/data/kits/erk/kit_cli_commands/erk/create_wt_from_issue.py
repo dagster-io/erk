@@ -30,8 +30,8 @@ Examples:
     (same as above)
 """
 
-from dataclasses import dataclass
 from pathlib import Path
+from typing import NamedTuple
 
 import click
 from erk_shared.github.metadata import update_plan_header_worktree_name
@@ -39,8 +39,7 @@ from erk_shared.impl_folder import save_issue_reference
 from erk_shared.integrations.erk_wt import ErkWtKit
 
 
-@dataclass
-class WorktreeCreationSuccess:
+class WorktreeCreationSuccess(NamedTuple):
     """Successful worktree creation result.
 
     Attributes:

@@ -36,17 +36,16 @@ def execute_prep(
     yield ProgressEvent("Checking Graphite authentication... (gt auth whoami)")
     gt_authenticated, gt_username, _ = ops.graphite.check_auth_status()
     if not gt_authenticated:
-        yield CompletionEvent(
-            PrepError(
-                success=False,
-                error_type="gt_not_authenticated",
-                message="Graphite CLI (gt) is not authenticated",
-                details={
-                    "fix": "Run 'gt auth' to authenticate with Graphite",
-                    "authenticated": False,
-                },
-            )
-        )
+        gt_error: PrepError = {
+            "success": False,
+            "error_type": "gt_not_authenticated",
+            "message": "Graphite CLI (gt) is not authenticated",
+            "details": {
+                "fix": "Run 'gt auth' to authenticate with Graphite",
+                "authenticated": False,
+            },
+        }
+        yield CompletionEvent(gt_error)
         return
     yield ProgressEvent(f"Authenticated as {gt_username}", style="success")
 
@@ -54,17 +53,16 @@ def execute_prep(
     yield ProgressEvent("Checking GitHub authentication... (gh auth status)")
     gh_authenticated, gh_username, _ = ops.github.check_auth_status()
     if not gh_authenticated:
-        yield CompletionEvent(
-            PrepError(
-                success=False,
-                error_type="gh_not_authenticated",
-                message="GitHub CLI (gh) is not authenticated",
-                details={
-                    "fix": "Run 'gh auth login' to authenticate with GitHub",
-                    "authenticated": False,
-                },
-            )
-        )
+        gh_error: PrepError = {
+            "success": False,
+            "error_type": "gh_not_authenticated",
+            "message": "GitHub CLI (gh) is not authenticated",
+            "details": {
+                "fix": "Run 'gh auth login' to authenticate with GitHub",
+                "authenticated": False,
+            },
+        }
+        yield CompletionEvent(gh_error)
         return
     yield ProgressEvent(f"Authenticated as {gh_username}", style="success")
 
@@ -72,14 +70,13 @@ def execute_prep(
     yield ProgressEvent("Getting current branch...")
     branch_name = ops.git.get_current_branch(cwd)
     if branch_name is None:
-        yield CompletionEvent(
-            PrepError(
-                success=False,
-                error_type="no_branch",
-                message="Could not determine current branch",
-                details={"branch_name": "unknown"},
-            )
-        )
+        no_branch_error: PrepError = {
+            "success": False,
+            "error_type": "no_branch",
+            "message": "Could not determine current branch",
+            "details": {"branch_name": "unknown"},
+        }
+        yield CompletionEvent(no_branch_error)
         return
 
     # Step 2: Get parent branch
@@ -87,14 +84,13 @@ def execute_prep(
     repo_root = ops.git.get_repository_root(cwd)
     parent_branch = ops.graphite.get_parent_branch(ops.git, repo_root, branch_name)
     if parent_branch is None:
-        yield CompletionEvent(
-            PrepError(
-                success=False,
-                error_type="no_parent",
-                message=f"Could not determine parent branch for: {branch_name}",
-                details={"branch_name": branch_name},
-            )
-        )
+        no_parent_error: PrepError = {
+            "success": False,
+            "error_type": "no_parent",
+            "message": f"Could not determine parent branch for: {branch_name}",
+            "details": {"branch_name": branch_name},
+        }
+        yield CompletionEvent(no_parent_error)
         return
 
     # Step 3: Check for restack conflicts (CRITICAL - abort if any)
@@ -108,21 +104,20 @@ def execute_prep(
         stderr = e.stderr if hasattr(e, "stderr") else ""
         combined_output = (e.stdout if hasattr(e, "stdout") else "") + stderr
         if "conflict" in combined_output.lower() or "merge conflict" in combined_output.lower():
-            yield CompletionEvent(
-                PrepError(
-                    success=False,
-                    error_type="restack_conflict",
-                    message=(
-                        "Restack conflicts detected. Run 'gt restack' to resolve conflicts first."
-                    ),
-                    details={
-                        "branch_name": branch_name,
-                        "parent_branch": parent_branch,
-                        "stdout": e.stdout if hasattr(e, "stdout") else "",
-                        "stderr": stderr,
-                    },
-                )
-            )
+            restack_error: PrepError = {
+                "success": False,
+                "error_type": "restack_conflict",
+                "message": (
+                    "Restack conflicts detected. Run 'gt restack' to resolve conflicts first."
+                ),
+                "details": {
+                    "branch_name": branch_name,
+                    "parent_branch": parent_branch,
+                    "stdout": e.stdout if hasattr(e, "stdout") else "",
+                    "stderr": stderr,
+                },
+            }
+            yield CompletionEvent(restack_error)
             return
         # Generic restack check failure - proceed anyway
         yield ProgressEvent("Could not verify restack status, proceeding", style="warning")
@@ -131,14 +126,13 @@ def execute_prep(
     yield ProgressEvent(f"Counting commits ahead of {parent_branch}...")
     commit_count = ops.git.count_commits_ahead(cwd, parent_branch)
     if commit_count == 0:
-        yield CompletionEvent(
-            PrepError(
-                success=False,
-                error_type="no_commits",
-                message=f"No commits found in branch: {branch_name}",
-                details={"branch_name": branch_name, "parent_branch": parent_branch},
-            )
-        )
+        no_commits_error: PrepError = {
+            "success": False,
+            "error_type": "no_commits",
+            "message": f"No commits found in branch: {branch_name}",
+            "details": {"branch_name": branch_name, "parent_branch": parent_branch},
+        }
+        yield CompletionEvent(no_commits_error)
         return
 
     # Step 5: Squash commits only if 2+ commits
@@ -154,35 +148,33 @@ def execute_prep(
             stderr = e.stderr if hasattr(e, "stderr") else ""
             combined_output = (e.stdout if hasattr(e, "stdout") else "") + stderr
             if "conflict" in combined_output.lower() or "merge conflict" in combined_output.lower():
-                yield CompletionEvent(
-                    PrepError(
-                        success=False,
-                        error_type="squash_conflict",
-                        message="Merge conflicts detected while squashing commits",
-                        details={
-                            "branch_name": branch_name,
-                            "commit_count": str(commit_count),
-                            "stdout": e.stdout if hasattr(e, "stdout") else "",
-                            "stderr": stderr,
-                        },
-                    )
-                )
-                return
-
-            # Generic squash failure
-            yield CompletionEvent(
-                PrepError(
-                    success=False,
-                    error_type="squash_failed",
-                    message="Failed to squash commits",
-                    details={
+                squash_conflict_error: PrepError = {
+                    "success": False,
+                    "error_type": "squash_conflict",
+                    "message": "Merge conflicts detected while squashing commits",
+                    "details": {
                         "branch_name": branch_name,
                         "commit_count": str(commit_count),
                         "stdout": e.stdout if hasattr(e, "stdout") else "",
                         "stderr": stderr,
                     },
-                )
-            )
+                }
+                yield CompletionEvent(squash_conflict_error)
+                return
+
+            # Generic squash failure
+            squash_failed_error: PrepError = {
+                "success": False,
+                "error_type": "squash_failed",
+                "message": "Failed to squash commits",
+                "details": {
+                    "branch_name": branch_name,
+                    "commit_count": str(commit_count),
+                    "stdout": e.stdout if hasattr(e, "stdout") else "",
+                    "stderr": stderr,
+                },
+            }
+            yield CompletionEvent(squash_failed_error)
             return
 
     # Step 6: Get local diff (not PR diff - we haven't submitted yet)
@@ -213,15 +205,14 @@ def execute_prep(
         message_parts.append("Single commit, no squash needed")
     message = "\n".join(message_parts)
 
-    yield CompletionEvent(
-        PrepResult(
-            success=True,
-            diff_file=diff_file,
-            repo_root=str(repo_root),
-            current_branch=branch_name,
-            parent_branch=parent_branch,
-            commit_count=commit_count,
-            squashed=squashed,
-            message=message,
-        )
-    )
+    result: PrepResult = {
+        "success": True,
+        "diff_file": diff_file,
+        "repo_root": str(repo_root),
+        "current_branch": branch_name,
+        "parent_branch": parent_branch,
+        "commit_count": commit_count,
+        "squashed": squashed,
+        "message": message,
+    }
+    yield CompletionEvent(result)

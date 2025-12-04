@@ -35,17 +35,16 @@ def execute_pre_analysis(
     yield ProgressEvent("Checking Graphite authentication... (gt auth whoami)")
     gt_authenticated, gt_username, _ = ops.graphite.check_auth_status()
     if not gt_authenticated:
-        yield CompletionEvent(
-            PreAnalysisError(
-                success=False,
-                error_type="gt_not_authenticated",
-                message="Graphite CLI (gt) is not authenticated",
-                details={
-                    "fix": "Run 'gt auth' to authenticate with Graphite",
-                    "authenticated": False,
-                },
-            )
-        )
+        gt_error: PreAnalysisError = {
+            "success": False,
+            "error_type": "gt_not_authenticated",
+            "message": "Graphite CLI (gt) is not authenticated",
+            "details": {
+                "fix": "Run 'gt auth' to authenticate with Graphite",
+                "authenticated": False,
+            },
+        }
+        yield CompletionEvent(gt_error)
         return
     yield ProgressEvent(f"Authenticated as {gt_username}", style="success")
 
@@ -53,17 +52,16 @@ def execute_pre_analysis(
     yield ProgressEvent("Checking GitHub authentication... (gh auth status)")
     gh_authenticated, gh_username, _ = ops.github.check_auth_status()
     if not gh_authenticated:
-        yield CompletionEvent(
-            PreAnalysisError(
-                success=False,
-                error_type="gh_not_authenticated",
-                message="GitHub CLI (gh) is not authenticated",
-                details={
-                    "fix": "Run 'gh auth login' to authenticate with GitHub",
-                    "authenticated": False,
-                },
-            )
-        )
+        gh_error: PreAnalysisError = {
+            "success": False,
+            "error_type": "gh_not_authenticated",
+            "message": "GitHub CLI (gh) is not authenticated",
+            "details": {
+                "fix": "Run 'gh auth login' to authenticate with GitHub",
+                "authenticated": False,
+            },
+        }
+        yield CompletionEvent(gh_error)
         return
     yield ProgressEvent(f"Authenticated as {gh_username}", style="success")
 
@@ -75,14 +73,13 @@ def execute_pre_analysis(
             ops.git.add_all(cwd)
             yield ProgressEvent("Changes staged", style="success")
         except subprocess.CalledProcessError:
-            yield CompletionEvent(
-                PreAnalysisError(
-                    success=False,
-                    error_type="squash_failed",
-                    message="Failed to stage uncommitted changes",
-                    details={"reason": "git add failed"},
-                )
-            )
+            add_error: PreAnalysisError = {
+                "success": False,
+                "error_type": "squash_failed",
+                "message": "Failed to stage uncommitted changes",
+                "details": {"reason": "git add failed"},
+            }
+            yield CompletionEvent(add_error)
             return
 
         yield ProgressEvent("Committing staged changes... (git commit)")
@@ -91,14 +88,13 @@ def execute_pre_analysis(
             uncommitted_changes_committed = True
             yield ProgressEvent("Uncommitted changes committed", style="success")
         except subprocess.CalledProcessError:
-            yield CompletionEvent(
-                PreAnalysisError(
-                    success=False,
-                    error_type="squash_failed",
-                    message="Failed to commit uncommitted changes",
-                    details={"reason": "git commit failed"},
-                )
-            )
+            commit_error: PreAnalysisError = {
+                "success": False,
+                "error_type": "squash_failed",
+                "message": "Failed to commit uncommitted changes",
+                "details": {"reason": "git commit failed"},
+            }
+            yield CompletionEvent(commit_error)
             return
 
     # Step 1: Get current branch
@@ -106,14 +102,13 @@ def execute_pre_analysis(
     branch_name = ops.git.get_current_branch(cwd)
 
     if branch_name is None:
-        yield CompletionEvent(
-            PreAnalysisError(
-                success=False,
-                error_type="no_branch",
-                message="Could not determine current branch",
-                details={"branch_name": "unknown"},
-            )
-        )
+        no_branch_error: PreAnalysisError = {
+            "success": False,
+            "error_type": "no_branch",
+            "message": "Could not determine current branch",
+            "details": {"branch_name": "unknown"},
+        }
+        yield CompletionEvent(no_branch_error)
         return
 
     # Step 2: Get parent branch
@@ -122,14 +117,13 @@ def execute_pre_analysis(
     parent_branch = ops.graphite.get_parent_branch(ops.git, repo_root, branch_name)
 
     if parent_branch is None:
-        yield CompletionEvent(
-            PreAnalysisError(
-                success=False,
-                error_type="no_parent",
-                message=f"Could not determine parent branch for: {branch_name}",
-                details={"branch_name": branch_name},
-            )
-        )
+        no_parent_error: PreAnalysisError = {
+            "success": False,
+            "error_type": "no_parent",
+            "message": f"Could not determine parent branch for: {branch_name}",
+            "details": {"branch_name": branch_name},
+        }
+        yield CompletionEvent(no_parent_error)
         return
 
     # Step 2.5: Check for merge conflicts (informational only, does not block)
@@ -183,14 +177,13 @@ def execute_pre_analysis(
     commit_count = ops.git.count_commits_ahead(cwd, parent_branch)
 
     if commit_count == 0:
-        yield CompletionEvent(
-            PreAnalysisError(
-                success=False,
-                error_type="no_commits",
-                message=f"No commits found in branch: {branch_name}",
-                details={"branch_name": branch_name, "parent_branch": parent_branch},
-            )
-        )
+        no_commits_error: PreAnalysisError = {
+            "success": False,
+            "error_type": "no_commits",
+            "message": f"No commits found in branch: {branch_name}",
+            "details": {"branch_name": branch_name, "parent_branch": parent_branch},
+        }
+        yield CompletionEvent(no_commits_error)
         return
 
     # Step 4: Run gt squash only if 2+ commits
@@ -206,35 +199,33 @@ def execute_pre_analysis(
             stderr = e.stderr if hasattr(e, "stderr") else ""
             combined_output = (e.stdout if hasattr(e, "stdout") else "") + stderr
             if "conflict" in combined_output.lower() or "merge conflict" in combined_output.lower():
-                yield CompletionEvent(
-                    PreAnalysisError(
-                        success=False,
-                        error_type="squash_conflict",
-                        message="Merge conflicts detected while squashing commits",
-                        details={
-                            "branch_name": branch_name,
-                            "commit_count": str(commit_count),
-                            "stdout": e.stdout if hasattr(e, "stdout") else "",
-                            "stderr": stderr,
-                        },
-                    )
-                )
-                return
-
-            # Generic squash failure (not conflict-related)
-            yield CompletionEvent(
-                PreAnalysisError(
-                    success=False,
-                    error_type="squash_failed",
-                    message="Failed to squash commits",
-                    details={
+                squash_conflict_error: PreAnalysisError = {
+                    "success": False,
+                    "error_type": "squash_conflict",
+                    "message": "Merge conflicts detected while squashing commits",
+                    "details": {
                         "branch_name": branch_name,
                         "commit_count": str(commit_count),
                         "stdout": e.stdout if hasattr(e, "stdout") else "",
                         "stderr": stderr,
                     },
-                )
-            )
+                }
+                yield CompletionEvent(squash_conflict_error)
+                return
+
+            # Generic squash failure (not conflict-related)
+            squash_failed_error: PreAnalysisError = {
+                "success": False,
+                "error_type": "squash_failed",
+                "message": "Failed to squash commits",
+                "details": {
+                    "branch_name": branch_name,
+                    "commit_count": str(commit_count),
+                    "stdout": e.stdout if hasattr(e, "stdout") else "",
+                    "stderr": stderr,
+                },
+            }
+            yield CompletionEvent(squash_failed_error)
             return
 
     # Build success message
@@ -251,16 +242,15 @@ def execute_pre_analysis(
     message = "\n".join(message_parts)
 
     yield ProgressEvent("Pre-analysis complete", style="success")
-    yield CompletionEvent(
-        PreAnalysisResult(
-            success=True,
-            branch_name=branch_name,
-            parent_branch=parent_branch,
-            commit_count=commit_count,
-            squashed=squashed,
-            uncommitted_changes_committed=uncommitted_changes_committed,
-            message=message,
-            has_conflicts=has_conflicts,
-            conflict_details=conflict_details,
-        )
-    )
+    result: PreAnalysisResult = {
+        "success": True,
+        "branch_name": branch_name,
+        "parent_branch": parent_branch,
+        "commit_count": commit_count,
+        "squashed": squashed,
+        "uncommitted_changes_committed": uncommitted_changes_committed,
+        "message": message,
+        "has_conflicts": has_conflicts,
+        "conflict_details": conflict_details,
+    }
+    yield CompletionEvent(result)

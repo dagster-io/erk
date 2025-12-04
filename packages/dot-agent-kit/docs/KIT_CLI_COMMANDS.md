@@ -105,6 +105,107 @@ See [`update_pr.py`](../src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/updat
 
 All commands output JSON with `success` field and appropriate data/error fields. See canonical examples for complete structure.
 
+## Output Schema Documentation
+
+Kit CLI commands can expose their output schema in `--help` using the `@json_output` decorator with TypedDict.
+
+### Convention
+
+Use the `@json_output` decorator on the Click command to document the JSON output schema:
+
+```python
+from typing import Literal, TypedDict
+
+import click
+
+from dot_agent_kit.cli.schema_formatting import json_output
+
+
+class ParsedIssue(TypedDict):
+    """Success result with parsed issue number."""
+    success: Literal[True]
+    issue_number: int
+
+
+class ParseError(TypedDict):
+    """Error result when issue reference cannot be parsed."""
+    success: Literal[False]
+    error: Literal["invalid_format", "invalid_number"]
+    message: str
+
+
+@json_output(ParsedIssue | ParseError)
+@click.command()
+def parse_issue_reference():
+    """Parse GitHub issue reference from plain number or URL."""
+    ...
+```
+
+### Help Output Format
+
+When `@json_output` is applied, the schema is automatically appended to `--help`:
+
+```
+Usage: dot-agent run erk parse-issue-reference [OPTIONS] ISSUE_REFERENCE
+
+  Parse GitHub issue reference from plain number or URL.
+
+Options:
+  -h, --help  Show this message and exit.
+
+Output Schema:
+  ParsedIssue (success=true):
+    success: true
+    issue_number: int
+
+  ParseError (success=false):
+    success: false
+    error: "invalid_format" | "invalid_number"
+    message: str
+```
+
+### Migration Pattern
+
+To add schema documentation to an existing command:
+
+1. **Add imports**:
+
+   ```python
+   from typing import Literal, TypedDict
+
+   from dot_agent_kit.cli.schema_formatting import json_output
+   ```
+
+2. **Define TypedDict schemas**:
+
+   ```python
+   class ParsedIssue(TypedDict):
+       success: Literal[True]
+       issue_number: int
+
+   class ParseError(TypedDict):
+       success: Literal[False]
+       error: str
+       message: str
+   ```
+
+3. **Apply @json_output decorator**:
+
+   ```python
+   @json_output(ParsedIssue | ParseError)
+   @click.command()
+   def my_command():
+       """Command description."""
+       ...
+   ```
+
+4. **Return TypedDict instances** (TypedDict is a dict, no `asdict()` needed):
+
+   ```python
+   result: ParsedIssue = {"success": True, "issue_number": 776}
+   click.echo(json.dumps(result, indent=2))
+   ```
+
 ## Registration
 
 Kit CLI commands must be registered in the kit's `kit.yaml` file in the `kit_cli_commands` section (not `artifacts`). See existing kit.yaml files for examples.

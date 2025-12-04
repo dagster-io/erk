@@ -1,17 +1,19 @@
 """Create git commit and submit current branch with Graphite (two-phase) CLI command."""
 
 import json
-from dataclasses import asdict
 from pathlib import Path
 
 import click
+from dot_agent_kit.cli.schema_formatting import json_output
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.operations.finalize import execute_finalize
 from erk_shared.integrations.gt.operations.preflight import execute_preflight
 from erk_shared.integrations.gt.real import RealGtKit
 from erk_shared.integrations.gt.types import (
+    FinalizeResult,
     PostAnalysisError,
     PreAnalysisError,
+    PreflightResult,
 )
 
 
@@ -21,6 +23,7 @@ def pr_submit() -> None:
     pass
 
 
+@json_output(PreflightResult | PreAnalysisError | PostAnalysisError)
 @click.command()
 @click.option(
     "--session-id",
@@ -38,18 +41,21 @@ def preflight(session_id: str) -> None:
         ops = RealGtKit()
         cwd = Path.cwd()
         result = render_events(execute_preflight(ops, cwd, session_id))
-        click.echo(json.dumps(asdict(result), indent=2))
+        click.echo(json.dumps(result, indent=2))
 
-        if isinstance(result, (PreAnalysisError, PostAnalysisError)):
+        if not result["success"]:
             raise SystemExit(1)
     except KeyboardInterrupt:
         click.echo("\nInterrupted by user", err=True)
         raise SystemExit(130) from None
+    except SystemExit:
+        raise
     except Exception as e:
         click.echo(f"Unexpected error: {e}", err=True)
         raise SystemExit(1) from None
 
 
+@json_output(FinalizeResult | PostAnalysisError)
 @click.command()
 @click.option("--pr-number", required=True, type=int, help="PR number to update")
 @click.option("--pr-title", required=True, help="AI-generated PR title")
@@ -79,9 +85,9 @@ def finalize(
         result = render_events(
             execute_finalize(ops, cwd, pr_number, pr_title, pr_body, pr_body_file, diff_file)
         )
-        click.echo(json.dumps(asdict(result), indent=2))
+        click.echo(json.dumps(result, indent=2))
 
-        if isinstance(result, PostAnalysisError):
+        if not result["success"]:
             raise SystemExit(1)
     except ValueError as e:
         click.echo(f"Validation error: {e}", err=True)
@@ -89,6 +95,8 @@ def finalize(
     except KeyboardInterrupt:
         click.echo("\nInterrupted by user", err=True)
         raise SystemExit(130) from None
+    except SystemExit:
+        raise
     except Exception as e:
         click.echo(f"Unexpected error: {e}", err=True)
         raise SystemExit(1) from None

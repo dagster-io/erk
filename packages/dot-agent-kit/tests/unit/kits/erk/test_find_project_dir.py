@@ -9,8 +9,6 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.find_project_dir import (
-    ProjectError,
-    ProjectInfo,
     encode_path_to_project_folder,
     find_project_dir,
     find_project_info,
@@ -86,18 +84,17 @@ def test_find_project_info_success(tmp_path: Path, monkeypatch) -> None:
     result = find_project_info(test_cwd)
 
     # Assertions
-    assert isinstance(result, ProjectInfo)
-    assert result.success is True
-    assert result.project_dir == str(project_dir)
-    assert result.cwd == str(test_cwd)
-    assert result.encoded_path == encoded_name
-    assert sorted(result.session_logs) == [
+    assert result["success"] is True
+    assert result["project_dir"] == str(project_dir)
+    assert result["cwd"] == str(test_cwd)
+    assert result["encoded_path"] == encoded_name
+    assert sorted(result["session_logs"]) == [
         "abc123.jsonl",
         "agent-17cfd3f4.jsonl",
         "def456.jsonl",
     ]
     # Latest should be one of the main sessions (not agent log)
-    assert result.latest_session_id in ["abc123", "def456"]
+    assert result["latest_session_id"] in ["abc123", "def456"]
 
 
 def test_find_project_info_with_hidden_directory(tmp_path: Path, monkeypatch) -> None:
@@ -118,9 +115,8 @@ def test_find_project_info_with_hidden_directory(tmp_path: Path, monkeypatch) ->
 
     result = find_project_info(test_cwd)
 
-    assert isinstance(result, ProjectInfo)
-    assert result.success is True
-    assert result.encoded_path == encoded_name
+    assert result["success"] is True
+    assert result["encoded_path"] == encoded_name
 
 
 def test_find_project_info_exact_matching_no_false_positives(tmp_path: Path, monkeypatch) -> None:
@@ -146,14 +142,14 @@ def test_find_project_info_exact_matching_no_false_positives(tmp_path: Path, mon
 
     # Test that each path matches only its own project directory
     result1 = find_project_info(path1)
-    assert isinstance(result1, ProjectInfo)
-    assert result1.project_dir == str(projects_dir / encoded1)
-    assert result1.session_logs == ["session1.jsonl"]
+    assert result1["success"] is True
+    assert result1["project_dir"] == str(projects_dir / encoded1)
+    assert result1["session_logs"] == ["session1.jsonl"]
 
     result2 = find_project_info(path2)
-    assert isinstance(result2, ProjectInfo)
-    assert result2.project_dir == str(projects_dir / encoded2)
-    assert result2.session_logs == ["session2.jsonl"]
+    assert result2["success"] is True
+    assert result2["project_dir"] == str(projects_dir / encoded2)
+    assert result2["session_logs"] == ["session2.jsonl"]
 
 
 def test_find_project_info_latest_session_is_main_not_agent(tmp_path: Path, monkeypatch) -> None:
@@ -185,8 +181,8 @@ def test_find_project_info_latest_session_is_main_not_agent(tmp_path: Path, monk
     result = find_project_info(test_cwd)
 
     # Latest should be main session, NOT agent log
-    assert isinstance(result, ProjectInfo)
-    assert result.latest_session_id == "main123"
+    assert result["success"] is True
+    assert result["latest_session_id"] == "main123"
 
 
 def test_find_project_info_no_sessions() -> None:
@@ -205,10 +201,9 @@ def test_find_project_info_project_not_found(tmp_path: Path, monkeypatch) -> Non
 
     result = find_project_info(tmp_path / "nonexistent")
 
-    assert isinstance(result, ProjectError)
-    assert result.success is False
-    assert result.error == "Project directory not found"
-    assert "nonexistent" in result.help
+    assert result["success"] is False
+    assert result["error"] == "Project directory not found"
+    assert "nonexistent" in result["help"]
 
 
 def test_find_project_info_claude_projects_missing(tmp_path: Path, monkeypatch) -> None:
@@ -217,10 +212,9 @@ def test_find_project_info_claude_projects_missing(tmp_path: Path, monkeypatch) 
 
     result = find_project_info(tmp_path / "some" / "path")
 
-    assert isinstance(result, ProjectError)
-    assert result.success is False
-    assert result.error == "Claude Code projects directory not found"
-    assert "Is Claude Code installed?" in result.help
+    assert result["success"] is False
+    assert result["error"] == "Claude Code projects directory not found"
+    assert "Is Claude Code installed?" in result["help"]
 
 
 def test_find_project_info_sorts_session_logs(tmp_path: Path, monkeypatch) -> None:
@@ -242,8 +236,8 @@ def test_find_project_info_sorts_session_logs(tmp_path: Path, monkeypatch) -> No
 
     result = find_project_info(test_cwd)
 
-    assert isinstance(result, ProjectInfo)
-    assert result.session_logs == ["aaa.jsonl", "mmm.jsonl", "zzz.jsonl"]
+    assert result["success"] is True
+    assert result["session_logs"] == ["aaa.jsonl", "mmm.jsonl", "zzz.jsonl"]
 
 
 # ============================================================================

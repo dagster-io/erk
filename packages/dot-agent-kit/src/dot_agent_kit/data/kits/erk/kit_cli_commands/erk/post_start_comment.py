@@ -23,8 +23,8 @@ Examples:
 
 import json
 import subprocess
-from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Literal, TypedDict
 
 import click
 from erk_shared.github.metadata import (
@@ -36,26 +36,25 @@ from erk_shared.impl_folder import (
     read_issue_reference,
 )
 
+from dot_agent_kit.cli.schema_formatting import json_output
 from dot_agent_kit.context_helpers import (
     require_github_issues,
     require_repo_root,
 )
 
 
-@dataclass(frozen=True)
-class StartSuccess:
+class StartSuccess(TypedDict):
     """Success response for start comment posting."""
 
-    success: bool
+    success: Literal[True]
     issue_number: int
     total_steps: int
 
 
-@dataclass(frozen=True)
-class StartError:
+class StartError(TypedDict):
     """Error response for start comment posting."""
 
-    success: bool
+    success: Literal[False]
     error_type: str
     message: str
 
@@ -111,6 +110,7 @@ def get_branch_name() -> str | None:
         return None
 
 
+@json_output(StartSuccess | StartError)
 @click.command(name="post-start-comment")
 @click.pass_context
 def post_start_comment(ctx: click.Context) -> None:
@@ -127,56 +127,56 @@ def post_start_comment(ctx: click.Context) -> None:
     impl_dir = Path.cwd() / ".impl"
     issue_ref = read_issue_reference(impl_dir)
     if issue_ref is None:
-        result = StartError(
-            success=False,
-            error_type="no_issue_reference",
-            message="No issue reference found in .impl/issue.json",
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
+        result: StartError = {
+            "success": False,
+            "error_type": "no_issue_reference",
+            "message": "No issue reference found in .impl/issue.json",
+        }
+        click.echo(json.dumps(result, indent=2))
         raise SystemExit(0)
 
     # Get worktree name
     worktree_name = get_worktree_name()
     if worktree_name is None:
-        result = StartError(
-            success=False,
-            error_type="worktree_detection_failed",
-            message="Could not determine worktree name from git",
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
+        result = {
+            "success": False,
+            "error_type": "worktree_detection_failed",
+            "message": "Could not determine worktree name from git",
+        }
+        click.echo(json.dumps(result, indent=2))
         raise SystemExit(0)
 
     # Get branch name
     branch_name = get_branch_name()
     if branch_name is None:
-        result = StartError(
-            success=False,
-            error_type="branch_detection_failed",
-            message="Could not determine branch name from git",
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
+        result = {
+            "success": False,
+            "error_type": "branch_detection_failed",
+            "message": "Could not determine branch name from git",
+        }
+        click.echo(json.dumps(result, indent=2))
         raise SystemExit(0)
 
     # Read total steps from progress.md frontmatter
     progress_file = impl_dir / "progress.md"
     if not progress_file.exists():
-        result = StartError(
-            success=False,
-            error_type="no_progress_file",
-            message=f"Progress file not found: {progress_file}",
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
+        result = {
+            "success": False,
+            "error_type": "no_progress_file",
+            "message": f"Progress file not found: {progress_file}",
+        }
+        click.echo(json.dumps(result, indent=2))
         raise SystemExit(0)
 
     content = progress_file.read_text(encoding="utf-8")
     frontmatter = parse_progress_frontmatter(content)
     if frontmatter is None:
-        result = StartError(
-            success=False,
-            error_type="invalid_progress_format",
-            message="Invalid YAML frontmatter in progress.md",
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
+        result = {
+            "success": False,
+            "error_type": "invalid_progress_format",
+            "message": "Invalid YAML frontmatter in progress.md",
+        }
+        click.echo(json.dumps(result, indent=2))
         raise SystemExit(0)
 
     total_steps = frontmatter["total_steps"]
@@ -204,29 +204,29 @@ def post_start_comment(ctx: click.Context) -> None:
     try:
         github = require_github_issues(ctx)
     except SystemExit:
-        result = StartError(
-            success=False,
-            error_type="context_not_initialized",
-            message="Context not initialized",
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
+        result = {
+            "success": False,
+            "error_type": "context_not_initialized",
+            "message": "Context not initialized",
+        }
+        click.echo(json.dumps(result, indent=2))
         raise SystemExit(0) from None
 
     # Post comment to GitHub
     try:
         github.add_comment(repo_root, issue_ref.issue_number, comment_body)
-        result = StartSuccess(
-            success=True,
-            issue_number=issue_ref.issue_number,
-            total_steps=total_steps,
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
+        success_result: StartSuccess = {
+            "success": True,
+            "issue_number": issue_ref.issue_number,
+            "total_steps": total_steps,
+        }
+        click.echo(json.dumps(success_result, indent=2))
         raise SystemExit(0) from None
     except RuntimeError as e:
-        result = StartError(
-            success=False,
-            error_type="github_api_failed",
-            message=str(e),
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
+        result = {
+            "success": False,
+            "error_type": "github_api_failed",
+            "message": str(e),
+        }
+        click.echo(json.dumps(result, indent=2))
         raise SystemExit(0) from None

@@ -1,15 +1,197 @@
 """Tests for kit command loading with error isolation and lazy loading."""
 
 from pathlib import Path
+from typing import Literal, TypedDict
 
 import click
 import pytest
 
+from dot_agent_kit.cli.schema_formatting import (
+    format_schema_for_help,
+    format_type_for_schema,
+    format_typeddict_for_schema,
+    is_typeddict,
+)
 from dot_agent_kit.commands.kit_command.group import (
     LazyKitGroup,
     _load_single_kit_commands,
 )
 from dot_agent_kit.models.kit import KitCliCommandDefinition, KitManifest
+
+# ============================================================================
+# Test TypedDicts for schema formatting tests
+# ============================================================================
+
+
+class SuccessResult(TypedDict):
+    """Success result."""
+
+    success: Literal[True]
+    value: int
+
+
+class ErrorResult(TypedDict):
+    """Error result."""
+
+    success: Literal[False]
+    error: Literal["not_found", "invalid"]
+    message: str
+
+
+class SimpleResult(TypedDict):
+    """Simple result with basic types."""
+
+    name: str
+    count: int
+    enabled: bool
+    items: list[str]
+
+
+# ============================================================================
+# Tests for format_type_for_schema
+# ============================================================================
+
+
+def test_format_type_basic_str() -> None:
+    """Test formatting basic str type."""
+    assert format_type_for_schema(str) == "str"
+
+
+def test_format_type_basic_int() -> None:
+    """Test formatting basic int type."""
+    assert format_type_for_schema(int) == "int"
+
+
+def test_format_type_basic_bool() -> None:
+    """Test formatting basic bool type."""
+    assert format_type_for_schema(bool) == "bool"
+
+
+def test_format_type_basic_float() -> None:
+    """Test formatting basic float type."""
+    assert format_type_for_schema(float) == "float"
+
+
+def test_format_type_literal_true() -> None:
+    """Test formatting Literal[True]."""
+    assert format_type_for_schema(Literal[True]) == "true"
+
+
+def test_format_type_literal_false() -> None:
+    """Test formatting Literal[False]."""
+    assert format_type_for_schema(Literal[False]) == "false"
+
+
+def test_format_type_literal_string() -> None:
+    """Test formatting Literal with string value."""
+    assert format_type_for_schema(Literal["error"]) == '"error"'
+
+
+def test_format_type_literal_multiple_strings() -> None:
+    """Test formatting Literal with multiple string values."""
+    result = format_type_for_schema(Literal["not_found", "invalid"])
+    assert result == '"not_found" | "invalid"'
+
+
+def test_format_type_union() -> None:
+    """Test formatting Union type."""
+    result = format_type_for_schema(str | int)
+    assert result == "str | int"
+
+
+def test_format_type_list() -> None:
+    """Test formatting list type."""
+    assert format_type_for_schema(list[str]) == "list[str]"
+
+
+def test_format_type_dict() -> None:
+    """Test formatting dict type."""
+    assert format_type_for_schema(dict[str, int]) == "dict[str, int]"
+
+
+# ============================================================================
+# Tests for is_typeddict
+# ============================================================================
+
+
+def test_is_typeddict_with_typeddict() -> None:
+    """Test is_typeddict returns True for TypedDict."""
+    assert is_typeddict(SuccessResult) is True
+
+
+def test_is_typeddict_with_regular_class() -> None:
+    """Test is_typeddict returns False for regular class."""
+
+    class RegularClass:
+        pass
+
+    assert is_typeddict(RegularClass) is False
+
+
+def test_is_typeddict_with_dict() -> None:
+    """Test is_typeddict returns False for plain dict."""
+    assert is_typeddict(dict) is False
+
+
+# ============================================================================
+# Tests for format_typeddict_for_schema
+# ============================================================================
+
+
+def test_format_typeddict_with_success_true() -> None:
+    """Test formatting TypedDict with success=True."""
+    lines = format_typeddict_for_schema(SuccessResult)
+    assert "  SuccessResult (success=true):" in lines
+    assert "    success: true" in lines
+    assert "    value: int" in lines
+
+
+def test_format_typeddict_with_success_false() -> None:
+    """Test formatting TypedDict with success=False."""
+    lines = format_typeddict_for_schema(ErrorResult)
+    assert "  ErrorResult (success=false):" in lines
+    assert "    success: false" in lines
+    assert '    error: "not_found" | "invalid"' in lines
+    assert "    message: str" in lines
+
+
+def test_format_typeddict_simple() -> None:
+    """Test formatting TypedDict without success field."""
+    lines = format_typeddict_for_schema(SimpleResult)
+    assert "  SimpleResult:" in lines
+    assert "    name: str" in lines
+    assert "    count: int" in lines
+    assert "    enabled: bool" in lines
+    assert "    items: list[str]" in lines
+
+
+# ============================================================================
+# Tests for format_schema_for_help
+# ============================================================================
+
+
+def test_format_schema_single_typeddict() -> None:
+    """Test formatting schema with single TypedDict."""
+    result = format_schema_for_help(SimpleResult)
+    assert "Output Schema:" in result
+    assert "SimpleResult:" in result
+    assert "name: str" in result
+
+
+def test_format_schema_union_typeddicts() -> None:
+    """Test formatting schema with Union of TypedDicts."""
+    result = format_schema_for_help(SuccessResult | ErrorResult)
+    assert "Output Schema:" in result
+    assert "SuccessResult (success=true):" in result
+    assert "ErrorResult (success=false):" in result
+
+
+def test_format_schema_includes_all_fields() -> None:
+    """Test that all fields are included in schema output."""
+    result = format_schema_for_help(ErrorResult)
+    assert "success: false" in result
+    assert 'error: "not_found" | "invalid"' in result
+    assert "message: str" in result
 
 
 @pytest.fixture

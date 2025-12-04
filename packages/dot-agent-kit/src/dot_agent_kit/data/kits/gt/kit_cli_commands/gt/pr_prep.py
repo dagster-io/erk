@@ -1,16 +1,17 @@
 """Prepare branch for PR submission CLI command."""
 
 import json
-from dataclasses import asdict
 from pathlib import Path
 
 import click
+from dot_agent_kit.cli.schema_formatting import json_output
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.operations.prep import execute_prep
 from erk_shared.integrations.gt.real import RealGtKit
-from erk_shared.integrations.gt.types import PrepError
+from erk_shared.integrations.gt.types import PrepError, PrepResult
 
 
+@json_output(PrepResult | PrepError)
 @click.command()
 @click.option(
     "--session-id",
@@ -27,9 +28,9 @@ def pr_prep(session_id: str) -> None:
         ops = RealGtKit()
         cwd = Path.cwd()
         result = render_events(execute_prep(ops, cwd, session_id))
-        click.echo(json.dumps(asdict(result), indent=2))
+        click.echo(json.dumps(result, indent=2))
 
-        if isinstance(result, PrepError):
+        if not result["success"]:
             raise SystemExit(1)
     except KeyboardInterrupt:
         click.echo("\nInterrupted by user", err=True)
