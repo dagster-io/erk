@@ -147,6 +147,12 @@ class LazyKitGroup(click.Group):
             # Add the command to the kit's group
             self.add_command(command_func, name=command_def.name)
 
+            # Override short_help with description from kit.yaml if provided
+            if command_def.description:
+                cmd = self.commands.get(command_def.name)
+                if cmd:
+                    cmd.short_help = command_def.description
+
         # Validate that at least one command was successfully loaded
         commands_loaded = len(self.commands) - commands_before
         if commands_loaded == 0:
