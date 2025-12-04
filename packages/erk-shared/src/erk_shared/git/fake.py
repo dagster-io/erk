@@ -168,8 +168,27 @@ class FakeGit(Git):
         self._pushed_branches: list[tuple[str, str, bool]] = []
 
     def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
-        """List all worktrees in the repository."""
-        return self._worktrees.get(repo_root, [])
+        """List all worktrees in the repository.
+
+        Mimics `git worktree list` behavior:
+        - Can be called from any worktree path or the main repo root
+        - Returns the same worktree list regardless of which path is used
+        - Handles symlink resolution differences (e.g., /var vs /private/var on macOS)
+        """
+        resolved_root = repo_root.resolve()
+
+        # Check exact match first (with symlink resolution)
+        for key, worktree_list in self._worktrees.items():
+            if key.resolve() == resolved_root:
+                return worktree_list
+
+        # Check if repo_root is one of the worktree paths in any list
+        for key, worktree_list in self._worktrees.items():
+            for wt_info in worktree_list:
+                if wt_info.path.resolve() == resolved_root:
+                    return worktree_list
+
+        return []
 
     def get_current_branch(self, cwd: Path) -> str | None:
         """Get the currently checked-out branch."""
@@ -225,8 +244,27 @@ class FakeGit(Git):
             self._local_branches[repo_root].append(branch)
 
     def get_git_common_dir(self, cwd: Path) -> Path | None:
-        """Get the common git directory."""
-        return self._git_common_dirs.get(cwd)
+        """Get the common git directory.
+
+        Mimics `git rev-parse --git-common-dir` behavior:
+        1. First checks explicit mapping for cwd or ancestors
+        2. Handles symlink resolution differences (e.g., /var vs /private/var on macOS)
+        3. Returns None if not in a git repository
+        """
+        # Build a resolved-key lookup for symlink handling
+        resolved_lookup = {k.resolve(): v for k, v in self._git_common_dirs.items()}
+        resolved_cwd = cwd.resolve()
+
+        # Check exact match first
+        if resolved_cwd in resolved_lookup:
+            return resolved_lookup[resolved_cwd]
+
+        # Walk up parent directories to find a match
+        for parent in resolved_cwd.parents:
+            if parent in resolved_lookup:
+                return resolved_lookup[parent]
+
+        return None
 
     def has_staged_changes(self, repo_root: Path) -> bool:
         """Report whether the repository has staged changes."""
@@ -706,9 +744,47 @@ class FakeGit(Git):
         return self._commits_ahead.get((cwd, base_branch), 0)
 
     def get_repository_root(self, cwd: Path) -> Path:
-        """Get the repository root directory."""
-        # Return configured root for this cwd, or default to cwd as fallback
-        return self._repository_roots.get(cwd, cwd)
+        """Get the repository root directory.
+
+        Mimics `git rev-parse --show-toplevel` behavior:
+        1. First checks explicit repository_roots mapping
+        2. Falls back to finding the deepest worktree path that contains cwd
+        3. Falls back to deriving root from git_common_dirs (parent of .git directory)
+        4. Returns cwd as last resort if no match found
+        5. Handles symlink resolution differences (e.g., /var vs /private/var on macOS)
+        """
+        resolved_cwd = cwd.resolve()
+
+        # Check explicit mapping first (with symlink resolution)
+        resolved_roots = {k.resolve(): v for k, v in self._repository_roots.items()}
+        if resolved_cwd in resolved_roots:
+            return resolved_roots[resolved_cwd]
+
+        # Infer from worktrees: find the deepest worktree path that contains cwd
+        # This mimics git --show-toplevel returning the worktree root from subdirectories
+        best_match: Path | None = None
+        for worktree_list in self._worktrees.values():
+            for wt_info in worktree_list:
+                wt_path = wt_info.path.resolve()
+                # Check if cwd is the worktree path or a subdirectory of it
+                if resolved_cwd == wt_path or wt_path in resolved_cwd.parents:
+                    # Prefer deeper paths (more specific match)
+                    if best_match is None or len(wt_path.parts) > len(best_match.parts):
+                        best_match = wt_path
+
+        if best_match is not None:
+            return best_match
+
+        # Fallback: derive from git_common_dirs (parent of .git directory is repo root)
+        # This handles the case where we're in a subdirectory of a normal repo (not a worktree)
+        git_common_dir = self.get_git_common_dir(cwd)
+        if git_common_dir is not None:
+            # For normal repos, git_common_dir is the .git directory
+            # Its parent is the repository root
+            return git_common_dir.parent
+
+        # Last resort: return cwd itself
+        return cwd
 
     def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
         """Get diff between branch and HEAD."""

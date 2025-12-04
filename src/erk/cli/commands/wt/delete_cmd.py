@@ -257,7 +257,9 @@ def _delete_worktree(
 
     Ensure.path_exists(ctx, wt_path, f"Worktree not found: {wt_path}")
 
-    ctx = _escape_worktree_if_inside(ctx, repo.root, wt_path, dry_run)
+    # main_repo_root is always set by RepoContext.__post_init__, but pyright doesn't know
+    main_repo = repo.main_repo_root if repo.main_repo_root else repo.root
+    ctx = _escape_worktree_if_inside(ctx, main_repo, wt_path, dry_run)
 
     branch_to_delete: str | None = None
     if delete_branch:

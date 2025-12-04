@@ -7,7 +7,7 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
-from erk.core.worktree_utils import find_current_worktree, is_root_worktree
+from erk.core.worktree_utils import find_current_worktree
 
 
 @click.command("current", hidden=True)
@@ -28,7 +28,8 @@ def current_wt(ctx: ErkContext) -> None:
         find_current_worktree(worktrees, current_dir), "Not in an erk worktree"
     )
 
-    if is_root_worktree(wt_info.path, repo.root):
+    # Use WorktreeInfo.is_root which is set by git when listing worktrees
+    if wt_info.is_root:
         user_output("root")
     else:
         user_output(wt_info.path.name)
