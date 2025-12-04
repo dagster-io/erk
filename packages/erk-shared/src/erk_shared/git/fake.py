@@ -92,6 +92,7 @@ class FakeGit(Git):
         commits_ahead: dict[tuple[Path, str], int] | None = None,
         remote_urls: dict[tuple[Path, str], str] | None = None,
         add_all_raises: Exception | None = None,
+        pull_branch_raises: Exception | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -125,6 +126,7 @@ class FakeGit(Git):
             commits_ahead: Mapping of (cwd, base_branch) -> commit count
             remote_urls: Mapping of (repo_root, remote_name) -> remote URL
             add_all_raises: Exception to raise when add_all() is called
+            pull_branch_raises: Exception to raise when pull_branch() is called
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -153,6 +155,7 @@ class FakeGit(Git):
         self._commits_ahead = commits_ahead or {}
         self._remote_urls = remote_urls or {}
         self._add_all_raises = add_all_raises
+        self._pull_branch_raises = pull_branch_raises
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -464,6 +467,8 @@ class FakeGit(Git):
     def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -> None:
         """Pull a specific branch from a remote (tracks mutation)."""
         self._pulled_branches.append((remote, branch, ff_only))
+        if self._pull_branch_raises is not None:
+            raise self._pull_branch_raises
 
     def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -> bool:
         """Check if a branch exists on a remote (fake implementation).

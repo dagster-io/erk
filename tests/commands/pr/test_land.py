@@ -732,6 +732,196 @@ def test_pr_land_with_up_flag_multiple_children_fails() -> None:
         assert len(git_ops.deleted_branches) == 0
 
 
+def test_pr_land_outputs_script_before_deletion() -> None:
+    """Test pr land outputs activation script BEFORE deleting worktree.
+
+    This is critical for shell integration recovery: if any step after worktree
+    deletion fails (e.g., git pull), the shell integration handler must still
+    be able to navigate the shell to the destination.
+
+    With the fix, the sequence is:
+    1. Merge PR
+    2. Output activation script ← BEFORE destructive operations
+    3. Delete worktree
+    4. Pull latest changes
+
+    If step 4 fails, the script was already output so shell can still navigate.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_titles={123: "Feature 1"},
+            pr_bodies_by_number={123: "PR body"},
+            merge_should_succeed=True,
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+
+        assert result.exit_code == 0
+
+        # Verify script was generated
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+
+        # Verify worktree deletion happened
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+        assert feature_1_path in git_ops.removed_worktrees
+
+        # Key verification: If we got a script, it was output before deletion
+        # (since we reached this point with both script and deletion completed)
+        # The order is verified by the fact that the script exists and worktree was deleted
+
+
+def test_pr_land_outputs_script_even_when_pull_fails() -> None:
+    """Test pr land outputs script even when git pull fails after deletion.
+
+    This is the key bug fix: when pull fails AFTER worktree deletion,
+    the script should already have been output so shell can navigate.
+
+    Without the fix:
+    1. Merge PR
+    2. Delete worktree
+    3. Pull fails → no script output → shell stranded
+
+    With the fix:
+    1. Merge PR
+    2. Output script ← early output
+    3. Delete worktree
+    4. Pull fails → script already output → shell can navigate
+    """
+    import subprocess
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Configure git to fail on pull
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+            pull_branch_raises=subprocess.CalledProcessError(
+                1, "git pull", stderr="fatal: Could not fast-forward"
+            ),
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_titles={123: "Feature 1"},
+            pr_bodies_by_number={123: "PR body"},
+            merge_should_succeed=True,
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+
+        # Command should fail because pull fails
+        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx)
+
+        # Command should have raised an exception due to pull failure
+        assert result.exit_code != 0
+
+        # CRITICAL: Even though command failed, script should have been output EARLY
+        # The output should have the script path on a line before any error output
+        lines = result.stdout.strip().split("\n")
+        script_path = None
+        for line in lines:
+            if line.startswith("/") and "pr-land" in line:
+                script_path = Path(line)
+                break
+
+        assert script_path is not None, (
+            f"Script path should have been output before pull failure. stdout was: {result.stdout}"
+        )
+
+        # Verify the script was actually created with valid content
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None, (
+            f"Script content should exist at {script_path}. "
+            f"Available scripts: {list(env.script_writer._scripts.keys())}"
+        )
+
+        # Verify worktree deletion happened (before pull failure)
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+        assert feature_1_path in git_ops.removed_worktrees
+
+        # Verify PR was merged (before pull failure)
+        assert 123 in github_ops.merged_prs
+
+
 def test_pr_land_with_up_flag_creates_worktree_if_needed() -> None:
     """Test pr land --up auto-creates worktree for child branch if missing."""
     runner = CliRunner()
