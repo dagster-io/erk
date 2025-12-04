@@ -24,9 +24,33 @@ from erk_shared.integrations.gt.types import SquashError
 from erk_shared.output.output import user_output
 
 from erk.cli.ensure import Ensure
-from erk.cli.output import stream_auto_restack
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+
+
+def _squash_commits(ctx: ErkContext, repo_root: Path) -> None:
+    """Squash all commits on the current branch into one."""
+    user_output("Squashing commits...")
+    squash_result = None
+    for event in execute_squash(ctx, repo_root):
+        if isinstance(event, CompletionEvent):
+            squash_result = event.result
+    squash_result = Ensure.not_none(squash_result, "Squash operation produced no result")
+    Ensure.invariant(not isinstance(squash_result, SquashError), squash_result.message)
+    user_output(click.style("✓", fg="green") + f" {squash_result.message}")
+
+
+def _update_commit_message_from_pr(ctx: ErkContext, repo_root: Path, pr_number: int) -> None:
+    """Update the commit message with PR title and body from GitHub."""
+    pr_title = ctx.github.get_pr_title(repo_root, pr_number)
+    pr_body = ctx.github.get_pr_body(repo_root, pr_number)
+    if pr_title:
+        commit_message = pr_title
+        if pr_body:
+            commit_message = f"{pr_title}\n\n{pr_body}"
+        user_output("Updating commit message from PR...")
+        ctx.git.amend_commit(repo_root, commit_message)
+        user_output(click.style("✓", fg="green") + " Commit message updated")
 
 
 @click.command("sync")
@@ -117,73 +141,20 @@ def pr_sync(ctx: ErkContext) -> None:
     user_output(click.style("✓", fg="green") + " Branch tracked with Graphite")
 
     # Step 6: Squash commits (idempotent)
-    user_output("Squashing commits...")
-    squash_result = None
-    for event in execute_squash(ctx, repo.root):
-        if isinstance(event, CompletionEvent):
-            squash_result = event.result
-    squash_result = Ensure.not_none(squash_result, "Squash operation produced no result")
-    Ensure.invariant(not isinstance(squash_result, SquashError), squash_result.message)
-    user_output(click.style("✓", fg="green") + f" {squash_result.message}")
+    _squash_commits(ctx, repo.root)
 
     # Step 6b: Update commit message with PR title/body
-    pr_title = ctx.github.get_pr_title(repo.root, pr_number)
-    pr_body = ctx.github.get_pr_body(repo.root, pr_number)
-    if pr_title:
-        commit_message = pr_title
-        if pr_body:
-            commit_message = f"{pr_title}\n\n{pr_body}"
-        user_output("Updating commit message from PR...")
-        ctx.git.amend_commit(repo.root, commit_message)
-        user_output(click.style("✓", fg="green") + " Commit message updated")
+    _update_commit_message_from_pr(ctx, repo.root, pr_number)
 
-    # Step 7: Restack with auto-conflict resolution
+    # Step 7: Restack
     user_output("Restacking...")
-    try:
-        ctx.graphite.restack(repo.root, no_interactive=True, quiet=True)
-        user_output(click.style("✓", fg="green") + " Restack complete")
-    except RuntimeError as e:
-        # If restack fails with conflicts, delegate to auto-restack
-        error_message = str(e).lower()
-        if "conflict" in error_message or "merge" in error_message:
-            user_output(
-                click.style("⚠", fg="yellow")
-                + " Restack encountered conflicts - delegating to auto-restack..."
-            )
-            # Delegate to auto-restack via Claude executor
-            executor = ctx.claude_executor
-            Ensure.invariant(
-                executor.is_claude_available(),
-                "Claude CLI not found - cannot auto-resolve conflicts\n\n"
-                "Install from: https://claude.com/download\n"
-                "Or resolve conflicts manually with: gt restack",
-            )
+    ctx.graphite.restack(repo.root, no_interactive=True, quiet=True)
+    user_output(click.style("✓", fg="green") + " Restack complete")
 
-            user_output("")
-            user_output(click.style("🔄 Auto-restacking via Claude...", bold=True))
-            user_output(click.style("   (Claude may take a moment to start)", dim=True))
-            user_output("")
-
-            result = stream_auto_restack(executor, Path.cwd())
-            Ensure.invariant(not result.requires_interactive, "Semantic conflict requires interactive resolution")
-            Ensure.invariant(result.success, result.error_message or "Auto-restack failed")
-            user_output("")
-            user_output(click.style("✓", fg="green") + " Auto-restack complete")
-        else:
-            # Some other error - re-raise
-            raise
-
-    # Step 8: Submit with force to link with Graphite
+    # Step 8: Submit to link with Graphite
     user_output("Submitting to link with Graphite...")
-    try:
-        ctx.graphite.submit_stack(repo.root, quiet=True)
-        user_output(click.style("✓", fg="green") + f" PR #{pr_number} synchronized with Graphite")
-    except RuntimeError as e:
-        # Submit can fail - show error and continue
-        user_output(
-            click.style("⚠", fg="yellow")
-            + f" Submit failed: {e}\nYou may need to run 'gt submit' manually."
-        )
+    ctx.graphite.submit_stack(repo.root, quiet=True)
+    user_output(click.style("✓", fg="green") + f" PR #{pr_number} synchronized with Graphite")
 
     user_output(f"\nBranch '{current_branch}' is now tracked by Graphite.")
     user_output("You can now use: gt pr, gt land, etc.")
