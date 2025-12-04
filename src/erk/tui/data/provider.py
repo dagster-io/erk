@@ -10,6 +10,7 @@ from erk_shared.github.metadata import (
     extract_plan_header_remote_impl_at,
     extract_plan_header_worktree_name,
 )
+from erk_shared.github.parsing import github_repo_location_from_url
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.integrations.browser.abc import BrowserLauncher
@@ -63,6 +64,19 @@ class PlanDataProvider(ABC):
 
         Returns:
             List of PlanRowData objects for display
+        """
+        ...
+
+    @abstractmethod
+    def close_plan(self, issue_number: int, issue_url: str) -> list[int]:
+        """Close a plan and its linked PRs.
+
+        Args:
+            issue_number: The issue number to close
+            issue_url: The issue URL for PR linkage lookup
+
+        Returns:
+            List of PR numbers that were also closed
         """
         ...
 
@@ -157,6 +171,48 @@ class RealPlanDataProvider(PlanDataProvider):
             rows.append(row)
 
         return rows
+
+    def close_plan(self, issue_number: int, issue_url: str) -> list[int]:
+        """Close a plan and its linked PRs.
+
+        Args:
+            issue_number: The issue number to close
+            issue_url: The issue URL for PR linkage lookup
+
+        Returns:
+            List of PR numbers that were also closed
+        """
+        # Close linked PRs first
+        closed_prs = self._close_linked_prs(issue_number, issue_url)
+
+        # Close the plan (issue)
+        self._ctx.plan_store.close_plan(self._location.root, str(issue_number))
+
+        return closed_prs
+
+    def _close_linked_prs(self, issue_number: int, issue_url: str) -> list[int]:
+        """Close all OPEN PRs linked to an issue.
+
+        Args:
+            issue_number: The issue number
+            issue_url: The issue URL for location lookup
+
+        Returns:
+            List of PR numbers that were closed
+        """
+        location = github_repo_location_from_url(self._location.root, issue_url)
+        if location is None:
+            return []
+        pr_linkages = self._ctx.github.get_prs_linked_to_issues(location, [issue_number])
+        linked_prs = pr_linkages.get(issue_number, [])
+
+        closed_prs: list[int] = []
+        for pr in linked_prs:
+            if pr.state == "OPEN":
+                self._ctx.github.close_pr(self._location.root, pr.number)
+                closed_prs.append(pr.number)
+
+        return closed_prs
 
     def _build_worktree_mapping(self) -> dict[int, tuple[str, str | None]]:
         """Build mapping of issue number to (worktree name, branch).

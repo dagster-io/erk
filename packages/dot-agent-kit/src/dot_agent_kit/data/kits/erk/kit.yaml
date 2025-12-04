@@ -8,6 +8,7 @@ artifacts:
     - commands/erk/merge-conflicts-fix.md
     - commands/erk/submit-plan.md
     - commands/erk/auto-restack.md
+    - commands/erk/create-extraction-plan.md
   agent:
     - agents/erk/issue-wt-creator.md
     - agents/erk/plan-extractor.md
@@ -15,6 +16,9 @@ artifacts:
     - docs/erk/EXAMPLES.md
     - docs/erk/includes/create-github-issue.md
     - docs/erk/includes/enrichment-process.md
+    - docs/erk/includes/extract-docs-analysis-shared.md
+    - docs/erk/includes/extract-plan-workflow-shared.md
+    - docs/erk/includes/planning/extract-plan-from-session.md
     - docs/erk/includes/planning/next-steps-output.md
     - docs/erk/includes/session-file-location.md
     - docs/erk/includes/success-output-format.md
@@ -100,6 +104,9 @@ kit_cli_commands:
   - name: get-pr-body-footer
     path: kit_cli_commands/erk/get_pr_body_footer.py
     description: Generate PR body footer with checkout command for remote implementations
+  - name: create-extraction-plan
+    path: kit_cli_commands/erk/create_extraction_plan.py
+    description: Create extraction plan issue from stdin with erk-plan and erk-extraction labels
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit

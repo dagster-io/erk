@@ -68,6 +68,21 @@ class FakePlanDataProvider(PlanDataProvider):
         """
         self._plans = plans
 
+    def close_plan(self, issue_number: int, issue_url: str) -> list[int]:
+        """Fake close plan implementation.
+
+        Removes the plan from the internal list and tracks the closure.
+
+        Args:
+            issue_number: The issue number to close
+            issue_url: The issue URL (unused in fake)
+
+        Returns:
+            Empty list (no PRs closed in fake)
+        """
+        self._plans = [p for p in self._plans if p.issue_number != issue_number]
+        return []
+
 
 def make_plan_row(
     issue_number: int,
