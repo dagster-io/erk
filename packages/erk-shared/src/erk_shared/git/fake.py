@@ -4,6 +4,7 @@ FakeGit is an in-memory implementation that accepts pre-configured state
 in its constructor. Construct instances directly with keyword arguments.
 """
 
+import subprocess
 from pathlib import Path
 
 from erk_shared.git.abc import BranchSyncInfo, Git, WorktreeInfo
@@ -379,10 +380,18 @@ class FakeGit(Git):
         pass
 
     def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
-        """Delete a local branch (mutates internal state for test assertions)."""
+        """Delete a local branch (mutates internal state for test assertions).
+
+        If delete_branch_raises contains a CalledProcessError, it is wrapped in
+        RuntimeError to match run_subprocess_with_context behavior.
+        """
         # Check if we should raise an exception for this branch
         if branch_name in self._delete_branch_raises:
-            raise self._delete_branch_raises[branch_name]
+            exc = self._delete_branch_raises[branch_name]
+            # Wrap CalledProcessError in RuntimeError to match run_subprocess_with_context
+            if isinstance(exc, subprocess.CalledProcessError):
+                raise RuntimeError(f"Failed to delete branch {branch_name}") from exc
+            raise exc
 
         self._deleted_branches.append(branch_name)
 
@@ -390,10 +399,16 @@ class FakeGit(Git):
         """Track which branches were deleted (mutates internal state).
 
         Raises configured exception if branch is in delete_branch_raises mapping.
+        If delete_branch_raises contains a CalledProcessError, it is wrapped in
+        RuntimeError to match run_subprocess_with_context behavior.
         """
         # Check if we should raise an exception for this branch
         if branch in self._delete_branch_raises:
-            raise self._delete_branch_raises[branch]
+            exc = self._delete_branch_raises[branch]
+            # Wrap CalledProcessError in RuntimeError to match run_subprocess_with_context
+            if isinstance(exc, subprocess.CalledProcessError):
+                raise RuntimeError(f"Failed to delete branch {branch}") from exc
+            raise exc
 
         self._deleted_branches.append(branch)
 

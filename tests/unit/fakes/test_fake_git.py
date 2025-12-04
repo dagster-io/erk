@@ -421,7 +421,11 @@ def test_fake_gitops_detached_checkouts_tracking() -> None:
 
 
 def test_fake_gitops_delete_branch_with_graphite_raises() -> None:
-    """Test that FakeGit can raise configured exceptions on delete."""
+    """Test that FakeGit wraps CalledProcessError in RuntimeError on delete.
+
+    This matches run_subprocess_with_context behavior where CalledProcessError
+    is caught and re-raised as RuntimeError with the original in __cause__.
+    """
     import subprocess
 
     import pytest
@@ -438,12 +442,14 @@ def test_fake_gitops_delete_branch_with_graphite_raises() -> None:
 
     repo_root = Path("/fake/repo")
 
-    # Should raise the configured exception
-    with pytest.raises(subprocess.CalledProcessError) as exc_info:
+    # Should raise RuntimeError wrapping the CalledProcessError
+    with pytest.raises(RuntimeError) as exc_info:
         git_ops.delete_branch_with_graphite(repo_root, "test-branch", force=False)
 
-    assert exc_info.value.returncode == 1
-    assert "test-branch" in exc_info.value.cmd
+    # Original CalledProcessError should be accessible via __cause__
+    assert isinstance(exc_info.value.__cause__, subprocess.CalledProcessError)
+    assert exc_info.value.__cause__.returncode == 1
+    assert "test-branch" in exc_info.value.__cause__.cmd
 
     # Other branches should not raise
     git_ops.delete_branch_with_graphite(repo_root, "other-branch", force=False)

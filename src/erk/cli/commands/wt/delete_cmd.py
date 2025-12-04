@@ -191,6 +191,9 @@ def _delete_branch_at_error_boundary(
 
     The exception handling distinguishes between user-declined (expected) and
     actual errors (propagated as SystemExit).
+
+    Note: run_subprocess_with_context catches CalledProcessError and re-raises
+    as RuntimeError with the original exception in __cause__.
     """
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
     try:
@@ -201,29 +204,38 @@ def _delete_branch_at_error_boundary(
         if not dry_run:
             branch_text = click.style(branch, fg="green")
             user_output(f"✅ Deleted branch: {branch_text}")
-    except subprocess.CalledProcessError as e:
+    except RuntimeError as e:
         _handle_branch_deletion_error(e, branch, force)
 
 
-def _handle_branch_deletion_error(
-    e: subprocess.CalledProcessError, branch: str, force: bool
-) -> None:
+def _handle_branch_deletion_error(e: RuntimeError, branch: str, force: bool) -> None:
     """Handle errors from branch deletion commands.
 
     This function encapsulates the error boundary logic for branch deletion.
     Exit code 1 with --force off typically means user declined the confirmation
     prompt, which is expected behavior. Other errors are propagated as SystemExit.
+
+    Args:
+        e: RuntimeError from run_subprocess_with_context, with the original
+           CalledProcessError accessible via e.__cause__
+        branch: Name of the branch that failed to delete
+        force: Whether --force flag was used
     """
     branch_text = click.style(branch, fg="yellow")
-    if e.returncode == 1 and not force:
+
+    # Extract returncode from the original CalledProcessError in __cause__
+    returncode: int | None = None
+    if isinstance(e.__cause__, subprocess.CalledProcessError):
+        returncode = e.__cause__.returncode
+
+    if returncode == 1 and not force:
         # User declined - this is expected behavior, not an error
         user_output(f"⭕ Skipped deletion of branch: {branch_text} (user declined or not eligible)")
     else:
         # Other error (branch doesn't exist, git failure, etc.)
-        error_detail = e.stderr.strip() if e.stderr else f"exit code {e.returncode}"
+        # The RuntimeError message already contains stderr from run_subprocess_with_context
         user_output(
-            click.style("Error: ", fg="red")
-            + f"Failed to delete branch {branch_text}: {error_detail}"
+            click.style("Error: ", fg="red") + f"Failed to delete branch {branch_text}: {e}"
         )
         raise SystemExit(1) from e
 
