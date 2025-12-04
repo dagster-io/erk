@@ -282,6 +282,17 @@ class RepoContext:
 
 **File**: `src/erk/cli/core.py`
 
+#### RepoContext.root vs RepoContext.main_repo_root
+
+- **`root`**: The working tree root where git commands should run. For worktrees, this is the worktree directory. For main repos, equals `main_repo_root`.
+
+- **`main_repo_root`**: The main repository root (consistent across all worktrees). Used for:
+  - Deriving `repo_name` for metadata paths
+  - Operations that need the root worktree (e.g., escaping from a worktree being deleted)
+  - Resolving "root" as a target in commands like `stack move root`
+
+**Key insight:** When running from a worktree, git commands use `root` (the worktree), but metadata and escaping use `main_repo_root` (the main repo).
+
 ### Erk Context
 
 A frozen dataclass containing all injected dependencies.

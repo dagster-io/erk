@@ -65,6 +65,37 @@ git.removed_worktrees: list[Path]
 git.checked_out_branches: list[tuple[Path, str]]
 ```
 
+#### FakeGit Path Resolution
+
+FakeGit methods that accept paths perform intelligent lookups:
+
+**`get_git_common_dir(cwd)`** - Walks up parent directories to find a match, handles symlink resolution (macOS `/var` vs `/private/var`).
+
+**`get_repository_root(cwd)`** - Resolution order:
+
+1. Explicit `repository_roots` mapping
+2. Inferred from `worktrees` (finds deepest worktree containing cwd)
+3. Derived from `git_common_dirs` (parent of .git directory)
+4. Falls back to cwd
+
+**`list_worktrees(repo_root)`** - Can be called from any worktree path or main repo, not just the dict key.
+
+**Common Gotcha:** When testing subdirectories of worktrees, you often don't need to configure `repository_roots` explicitly - FakeGit infers it from the `worktrees` configuration.
+
+```python
+# Testing from a subdirectory of a worktree
+git_ops = FakeGit(
+    worktrees={
+        main_repo: [
+            WorktreeInfo(path=main_repo, branch="main", is_root=True),
+            WorktreeInfo(path=worktree_path, branch="feature", is_root=False),
+        ]
+    },
+    git_common_dirs={subdirectory: main_repo / ".git"},
+    # No need for repository_roots - inferred from worktrees
+)
+```
+
 ### FakeConfigStore
 
 ```python
@@ -112,6 +143,19 @@ shell = FakeShell(
     installed_tools: dict[str, str] = {},
 )
 ```
+
+### macOS Symlink Resolution
+
+On macOS, `/tmp` and `/var` are symlinks to `/private/tmp` and `/private/var`. When paths are resolved:
+
+- `Path("/tmp/foo").resolve()` → `/private/tmp/foo`
+- `Path("/var/folders/...").resolve()` → `/private/var/folders/...`
+
+**Impact on tests:** If FakeGit is configured with unresolved paths but the code under test calls `.resolve()`, lookups fail.
+
+**FakeGit handles this automatically** - all path lookups resolve both the input and configured paths before comparison. You generally don't need to worry about this.
+
+**If you see path mismatch errors:** Ensure FakeGit's path resolution methods are being used (they handle symlinks), not direct dict lookups.
 
 ## Fixture Selection Guide
 
