@@ -40,6 +40,7 @@ from erk_shared.github.metadata import (
 )
 from erk_shared.impl_folder import read_issue_reference, write_local_run_state
 
+from dot_agent_kit.cli.schema import SchemaCommand, build_epilog
 from dot_agent_kit.context_helpers import (
     require_github_issues,
     require_repo_root,
@@ -63,7 +64,11 @@ class MarkImplError:
     message: str
 
 
-@click.command(name="mark-impl-started")
+@click.command(
+    name="mark-impl-started",
+    cls=SchemaCommand,
+    epilog=build_epilog(MarkImplSuccess, MarkImplError),
+)
 @click.pass_context
 def mark_impl_started(ctx: click.Context) -> None:
     """Update implementation started event in GitHub issue and local state file.

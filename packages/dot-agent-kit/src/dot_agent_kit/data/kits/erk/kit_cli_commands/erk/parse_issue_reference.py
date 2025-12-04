@@ -49,6 +49,8 @@ from typing import Literal
 
 import click
 
+from dot_agent_kit.cli.schema import SchemaCommand, build_epilog
+
 
 @dataclass
 class ParsedIssue:
@@ -110,7 +112,11 @@ def _parse_issue_reference_impl(reference: str) -> ParsedIssue | ParseError:
     )
 
 
-@click.command(name="parse-issue-reference")
+@click.command(
+    name="parse-issue-reference",
+    cls=SchemaCommand,
+    epilog=build_epilog(ParsedIssue, ParseError),
+)
 @click.argument("issue_reference")
 def parse_issue_reference(issue_reference: str) -> None:
     """Parse GitHub issue reference from plain number or URL.

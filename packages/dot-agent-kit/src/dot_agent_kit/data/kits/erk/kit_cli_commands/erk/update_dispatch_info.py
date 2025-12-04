@@ -17,6 +17,7 @@ from dataclasses import asdict, dataclass
 import click
 from erk_shared.github.metadata import update_plan_header_dispatch
 
+from dot_agent_kit.cli.schema import SchemaCommand, build_epilog
 from dot_agent_kit.context_helpers import (
     require_github_issues,
     require_repo_root,
@@ -42,7 +43,11 @@ class UpdateError:
     message: str
 
 
-@click.command(name="update-dispatch-info")
+@click.command(
+    name="update-dispatch-info",
+    cls=SchemaCommand,
+    epilog=build_epilog(UpdateSuccess, UpdateError),
+)
 @click.argument("issue_number", type=int)
 @click.argument("run_id")
 @click.argument("node_id")
