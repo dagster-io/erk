@@ -253,8 +253,9 @@ def test_list_sessions_finds_all_sessions(tmp_path: Path) -> None:
             encoding="utf-8",
         )
 
-    sessions = _list_sessions_for_project(project_dir, None, limit=10)
+    sessions, filtered_count = _list_sessions_for_project(project_dir, None, limit=10)
     assert len(sessions) == 3
+    assert filtered_count == 0
 
 
 def test_list_sessions_excludes_agent_logs(tmp_path: Path) -> None:
@@ -272,9 +273,10 @@ def test_list_sessions_excludes_agent_logs(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    sessions = _list_sessions_for_project(project_dir, None, limit=10)
+    sessions, filtered_count = _list_sessions_for_project(project_dir, None, limit=10)
     assert len(sessions) == 1
     assert sessions[0].session_id == "main123"
+    assert filtered_count == 0
 
 
 def test_list_sessions_sorted_by_mtime(tmp_path: Path) -> None:
@@ -290,10 +292,11 @@ def test_list_sessions_sorted_by_mtime(tmp_path: Path) -> None:
     new = project_dir / "new.jsonl"
     new.write_text(json.dumps({"type": "user", "message": {"content": "New"}}), encoding="utf-8")
 
-    sessions = _list_sessions_for_project(project_dir, None, limit=10)
+    sessions, filtered_count = _list_sessions_for_project(project_dir, None, limit=10)
     assert len(sessions) == 2
     assert sessions[0].session_id == "new"  # Newest first
     assert sessions[1].session_id == "old"
+    assert filtered_count == 0
 
 
 def test_list_sessions_respects_limit(tmp_path: Path) -> None:
@@ -309,8 +312,9 @@ def test_list_sessions_respects_limit(tmp_path: Path) -> None:
         )
         time.sleep(0.001)  # Ensure different mtimes
 
-    sessions = _list_sessions_for_project(project_dir, None, limit=5)
+    sessions, filtered_count = _list_sessions_for_project(project_dir, None, limit=5)
     assert len(sessions) == 5
+    assert filtered_count == 0
 
 
 def test_list_sessions_marks_current(tmp_path: Path) -> None:
@@ -327,13 +331,14 @@ def test_list_sessions_marks_current(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    sessions = _list_sessions_for_project(project_dir, "current123", limit=10)
+    sessions, filtered_count = _list_sessions_for_project(project_dir, "current123", limit=10)
 
     current = next(s for s in sessions if s.session_id == "current123")
     other = next(s for s in sessions if s.session_id == "other456")
 
     assert current.is_current is True
     assert other.is_current is False
+    assert filtered_count == 0
 
 
 def test_list_sessions_empty_directory(tmp_path: Path) -> None:
@@ -341,16 +346,18 @@ def test_list_sessions_empty_directory(tmp_path: Path) -> None:
     project_dir = tmp_path / "project"
     project_dir.mkdir()
 
-    sessions = _list_sessions_for_project(project_dir, None, limit=10)
+    sessions, filtered_count = _list_sessions_for_project(project_dir, None, limit=10)
     assert sessions == []
+    assert filtered_count == 0
 
 
 def test_list_sessions_nonexistent_directory(tmp_path: Path) -> None:
     """Test handling of nonexistent directory."""
     project_dir = tmp_path / "nonexistent"
 
-    sessions = _list_sessions_for_project(project_dir, None, limit=10)
+    sessions, filtered_count = _list_sessions_for_project(project_dir, None, limit=10)
     assert sessions == []
+    assert filtered_count == 0
 
 
 # ============================================================================
@@ -666,5 +673,103 @@ def test_cli_marks_current_session(tmp_path: Path, monkeypatch) -> None:
 
         assert current["is_current"] is True
         assert other["is_current"] is False
+    finally:
+        os.chdir(original_cwd)
+
+
+# ============================================================================
+# 7. Size Filtering Tests (4 tests)
+# ============================================================================
+
+
+def test_list_sessions_min_size_filters_tiny_sessions(tmp_path: Path) -> None:
+    """Test that --min-size filters out tiny sessions."""
+    project_dir = tmp_path / "project"
+    project_dir.mkdir()
+
+    # Create a tiny session (< 100 bytes)
+    (project_dir / "tiny.jsonl").write_text("x", encoding="utf-8")
+
+    # Create a larger session (> 1KB)
+    large_content = json.dumps({"type": "user", "message": {"content": "x" * 2000}})
+    (project_dir / "large.jsonl").write_text(large_content, encoding="utf-8")
+
+    sessions, filtered_count = _list_sessions_for_project(project_dir, None, limit=10, min_size=100)
+
+    assert len(sessions) == 1
+    assert sessions[0].session_id == "large"
+    assert filtered_count == 1
+
+
+def test_list_sessions_min_size_zero_no_filtering(tmp_path: Path) -> None:
+    """Test that min_size=0 (default) does not filter."""
+    project_dir = tmp_path / "project"
+    project_dir.mkdir()
+
+    (project_dir / "tiny.jsonl").write_text("x", encoding="utf-8")
+    (project_dir / "large.jsonl").write_text("x" * 1000, encoding="utf-8")
+
+    sessions, filtered_count = _list_sessions_for_project(project_dir, None, limit=10, min_size=0)
+
+    assert len(sessions) == 2
+    assert filtered_count == 0
+
+
+def test_list_sessions_all_filtered(tmp_path: Path) -> None:
+    """Test when all sessions are filtered by size."""
+    project_dir = tmp_path / "project"
+    project_dir.mkdir()
+
+    (project_dir / "tiny1.jsonl").write_text("x", encoding="utf-8")
+    (project_dir / "tiny2.jsonl").write_text("xx", encoding="utf-8")
+
+    sessions, filtered_count = _list_sessions_for_project(
+        project_dir, None, limit=10, min_size=1000
+    )
+
+    assert len(sessions) == 0
+    assert filtered_count == 2
+
+
+def test_cli_min_size_option(tmp_path: Path, monkeypatch) -> None:
+    """Test CLI --min-size option."""
+    # Setup project directory structure
+    projects_dir = tmp_path / ".claude" / "projects"
+    projects_dir.mkdir(parents=True)
+
+    test_cwd = tmp_path / "test"
+    test_cwd.mkdir()
+
+    from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.find_project_dir import (
+        encode_path_to_project_folder,
+    )
+
+    encoded_name = encode_path_to_project_folder(test_cwd)
+    project_dir = projects_dir / encoded_name
+    project_dir.mkdir()
+
+    # Create tiny and large sessions
+    (project_dir / "tiny.jsonl").write_text("x", encoding="utf-8")
+    large_content = json.dumps({"type": "user", "message": {"content": "x" * 2000}})
+    (project_dir / "large.jsonl").write_text(large_content, encoding="utf-8")
+
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+    git = FakeGit(
+        current_branches={test_cwd: "feature"},
+        trunk_branches={test_cwd: "main"},
+    )
+    context = DotAgentContext.for_test(git=git, cwd=test_cwd)
+
+    runner = CliRunner()
+    original_cwd = os.getcwd()
+    try:
+        os.chdir(test_cwd)
+        result = runner.invoke(list_sessions, ["--min-size", "100"], obj=context)
+
+        assert result.exit_code == 0
+        output = json.loads(result.output)
+        assert len(output["sessions"]) == 1
+        assert output["filtered_count"] == 1
     finally:
         os.chdir(original_cwd)

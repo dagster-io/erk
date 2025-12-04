@@ -47,6 +47,63 @@ def test_skip_marker_present_deletes_and_allows(tmp_path: Path) -> None:
     assert not skip_marker.exists()
 
 
+def test_saved_marker_present_deletes_and_allows_without_implementation(
+    tmp_path: Path,
+) -> None:
+    """Test when saved marker exists - should delete marker and allow exit with special signal."""
+    runner = CliRunner()
+
+    # Create saved marker (indicates plan was saved to GitHub)
+    session_id = "session-abc123"
+    marker_dir = tmp_path / ".erk" / "scratch" / session_id
+    marker_dir.mkdir(parents=True)
+    saved_marker = marker_dir / "plan-saved-to-github"
+    saved_marker.touch()
+
+    # Mock git to return our tmp_path as repo root
+    mock_git_result = MagicMock()
+    mock_git_result.stdout = str(tmp_path) + "\n"
+
+    with patch("subprocess.run", return_value=mock_git_result):
+        stdin_data = json.dumps({"session_id": session_id})
+        result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
+
+    assert result.exit_code == 0
+    assert "Plan already saved to GitHub" in result.output
+    assert "PLAN_SAVED_NO_IMPLEMENT" in result.output
+    # Marker should be deleted
+    assert not saved_marker.exists()
+
+
+def test_skip_marker_takes_precedence_over_saved_marker(tmp_path: Path) -> None:
+    """Test that skip marker is checked before saved marker."""
+    runner = CliRunner()
+
+    # Create both markers
+    session_id = "session-abc123"
+    marker_dir = tmp_path / ".erk" / "scratch" / session_id
+    marker_dir.mkdir(parents=True)
+    skip_marker = marker_dir / "skip-plan-save"
+    skip_marker.touch()
+    saved_marker = marker_dir / "plan-saved-to-github"
+    saved_marker.touch()
+
+    # Mock git to return our tmp_path as repo root
+    mock_git_result = MagicMock()
+    mock_git_result.stdout = str(tmp_path) + "\n"
+
+    with patch("subprocess.run", return_value=mock_git_result):
+        stdin_data = json.dumps({"session_id": session_id})
+        result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
+
+    assert result.exit_code == 0
+    # Skip marker should be processed first
+    assert "Skip marker found" in result.output
+    # Skip marker deleted, saved marker untouched
+    assert not skip_marker.exists()
+    assert saved_marker.exists()
+
+
 def test_plan_exists_no_marker_blocks(tmp_path: Path) -> None:
     """Test when plan exists but no skip marker - should block with instructions."""
     runner = CliRunner()
@@ -78,9 +135,14 @@ def test_plan_exists_no_marker_blocks(tmp_path: Path) -> None:
     assert result.exit_code == 2
     assert "PLAN SAVE PROMPT" in result.output
     assert "AskUserQuestion" in result.output
+    # Updated messaging: Save to GitHub is default and terminal
     assert "Save to GitHub" in result.output
+    assert "(default)" in result.output
+    assert "Does NOT proceed to implementation" in result.output
     assert "Implement now" in result.output
+    # Both marker paths should be documented
     assert f".erk/scratch/{session_id}/skip-plan-save" in result.output
+    assert f".erk/scratch/{session_id}/plan-saved-to-github" in result.output
 
 
 def test_no_plan_allows_exit(tmp_path: Path) -> None:

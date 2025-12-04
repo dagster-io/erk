@@ -72,32 +72,44 @@ Parse the JSON result.
 
 ### Step 4: Handle Result
 
-**On success**, display:
+**On success**:
 
-```
-✅ Plan saved to GitHub
+1. Create the saved marker to signal that the plan was saved (prevents implementation on exit):
 
-**Issue:** [title from result]
-           [url from result]
+   ```bash
+   mkdir -p .erk/scratch/<SESSION_ID> && touch .erk/scratch/<SESSION_ID>/plan-saved-to-github
+   ```
 
-**Next steps:**
+   Where `<SESSION_ID>` is the UUID extracted from Step 1.
 
-View the plan:
-    gh issue view [issue_number] --web
+2. Display:
 
-Implement the plan:
-    erk implement [issue_number]
+   ```
+   ✅ Plan saved to GitHub
 
-Implement the plan interactively with --dangerously-skip-permissions:
-    erk implement [issue_number] --dangerous
+   **Issue:** [title from result]
+              [url from result]
 
-Implement the plan non-interactively with --dangerously-skip-permissions and submit pr:
-    erk implement [issue_number] --yolo
+   **Next steps:**
 
-Submit the plan for remote implementation:
-    erk submit [issue_number]
-    /erk:submit-plan
-```
+   View the plan:
+       gh issue view [issue_number] --web
+
+   Implement the plan:
+       erk implement [issue_number]
+
+   Implement the plan interactively with --dangerously-skip-permissions:
+       erk implement [issue_number] --dangerous
+
+   Implement the plan non-interactively with --dangerously-skip-permissions and submit pr:
+       erk implement [issue_number] --yolo
+
+   Submit the plan for remote implementation:
+       erk submit [issue_number]
+       /erk:submit-plan
+   ```
+
+3. Call `ExitPlanMode` to cleanly exit plan mode (the saved marker ensures no implementation is triggered)
 
 **On failure**, display the error from the JSON result and suggest checking:
 
