@@ -1,10 +1,20 @@
-"""Create extraction plan issue from file with proper metadata.
+"""Create extraction plan issue from file or content with proper metadata.
 
-Usage:
+Usage (new - preferred):
     dot-agent run erk create-extraction-plan \
-        --plan-file="/tmp/extraction-plan.md" \
+        --plan-content="# Plan Title..." \
+        --session-id="abc123" \
+        --extraction-session-ids="abc123,def456"
+
+Usage (legacy - file path):
+    dot-agent run erk create-extraction-plan \
+        --plan-file=".erk/scratch/<session-id>/extraction-plan.md" \
         --source-plan-issues="123,456" \
         --extraction-session-ids="abc123,def456"
+
+The --plan-content option is preferred because it:
+1. Automatically writes to .erk/scratch/<session-id>/extraction-plan.md
+2. Prevents agents from accidentally using /tmp/
 
 This command:
 1. Creates GitHub issue with erk-plan + erk-extraction labels
@@ -25,6 +35,7 @@ from erk_shared.github.metadata import (
     format_plan_header_body,
 )
 from erk_shared.plan_utils import extract_title_from_plan
+from erk_shared.scratch.scratch import write_scratch_file
 
 from dot_agent_kit.context_helpers import require_github_issues, require_repo_root
 
@@ -33,8 +44,20 @@ from dot_agent_kit.context_helpers import require_github_issues, require_repo_ro
 @click.option(
     "--plan-file",
     type=click.Path(exists=True, path_type=Path),
-    required=True,
-    help="Path to plan file to create issue from",
+    default=None,
+    help="Path to plan file to create issue from (use --plan-content instead)",
+)
+@click.option(
+    "--plan-content",
+    type=str,
+    default=None,
+    help="Plan content to create issue from (preferred over --plan-file)",
+)
+@click.option(
+    "--session-id",
+    type=str,
+    default=None,
+    help="Session ID for scratch directory (required with --plan-content)",
 )
 @click.option(
     "--source-plan-issues",
@@ -51,25 +74,80 @@ from dot_agent_kit.context_helpers import require_github_issues, require_repo_ro
 @click.pass_context
 def create_extraction_plan(
     ctx: click.Context,
-    plan_file: Path,
+    plan_file: Path | None,
+    plan_content: str | None,
+    session_id: str | None,
     source_plan_issues: str,
     extraction_session_ids: str,
 ) -> None:
-    """Create extraction plan issue from file with proper metadata.
+    """Create extraction plan issue from content or file with proper metadata.
 
-    Reads plan content from file and creates a GitHub issue with:
+    Reads plan content from --plan-content or --plan-file and creates a GitHub issue with:
     - erk-plan and erk-extraction labels
     - plan_type: extraction in metadata
     - Source tracking information
+
+    When using --plan-content, the content is automatically written to
+    .erk/scratch/<session-id>/extraction-plan.md
     """
     # Get GitHub Issues from context
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
 
-    # Read plan content from file
-    plan_content = plan_file.read_text(encoding="utf-8").strip()
-    if not plan_content:
-        click.echo(json.dumps({"success": False, "error": "Empty plan content in file"}))
+    # Validate options: must provide either --plan-content or --plan-file
+    if plan_content is None and plan_file is None:
+        click.echo(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": "Must provide either --plan-content or --plan-file",
+                }
+            )
+        )
+        raise SystemExit(1)
+
+    if plan_content is not None and plan_file is not None:
+        click.echo(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": "Cannot provide both --plan-content and --plan-file",
+                }
+            )
+        )
+        raise SystemExit(1)
+
+    # Handle --plan-content: requires --session-id, writes to scratch
+    if plan_content is not None:
+        if session_id is None:
+            click.echo(
+                json.dumps(
+                    {
+                        "success": False,
+                        "error": "--session-id is required when using --plan-content",
+                    }
+                )
+            )
+            raise SystemExit(1)
+
+        # Write to scratch directory
+        scratch_path = write_scratch_file(
+            plan_content,
+            session_id=session_id,
+            suffix=".md",
+            prefix="extraction-plan-",
+            repo_root=repo_root,
+        )
+        content = plan_content.strip()
+    else:
+        # Handle --plan-file: read content from file
+        # plan_file is guaranteed to be not None here
+        assert plan_file is not None  # for type checker
+        content = plan_file.read_text(encoding="utf-8").strip()
+        scratch_path = None
+
+    if not content:
+        click.echo(json.dumps({"success": False, "error": "Empty plan content"}))
         raise SystemExit(1)
 
     # Parse source plan issues
@@ -125,7 +203,7 @@ def create_extraction_plan(
         raise SystemExit(1)
 
     # Extract title from plan
-    title = extract_title_from_plan(plan_content)
+    title = extract_title_from_plan(content)
 
     # Prepare metadata with extraction plan fields
     created_at = datetime.now(UTC).isoformat()
@@ -165,7 +243,7 @@ def create_extraction_plan(
         raise SystemExit(1) from e
 
     # Add plan as first comment
-    plan_comment = format_plan_content_comment(plan_content)
+    plan_comment = format_plan_content_comment(content)
     try:
         github.add_comment(repo_root, result.number, plan_comment)
     except RuntimeError as e:
@@ -183,16 +261,15 @@ def create_extraction_plan(
         raise SystemExit(1) from e
 
     # Output success
-    click.echo(
-        json.dumps(
-            {
-                "success": True,
-                "issue_number": result.number,
-                "issue_url": result.url,
-                "title": title,
-                "plan_type": "extraction",
-                "source_plan_issues": source_issues,
-                "extraction_session_ids": session_ids,
-            }
-        )
-    )
+    output: dict[str, object] = {
+        "success": True,
+        "issue_number": result.number,
+        "issue_url": result.url,
+        "title": title,
+        "plan_type": "extraction",
+        "source_plan_issues": source_issues,
+        "extraction_session_ids": session_ids,
+    }
+    if scratch_path is not None:
+        output["scratch_path"] = str(scratch_path)
+    click.echo(json.dumps(output))

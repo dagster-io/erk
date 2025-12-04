@@ -2,9 +2,9 @@
 
 Shared extraction plan workflow for `/erk:extract-agent-docs` and `/erk:extract-agent-docs-from-log` commands.
 
-## Step 6: Format and Write Plan to Scratch Directory
+## Step 6: Format Plan Content
 
-Format the selected suggestions as an implementation plan and write to the scratch directory:
+Format the selected suggestions as an implementation plan:
 
 ```markdown
 # Plan: Documentation Extraction from Session
@@ -35,36 +35,24 @@ Extract documentation improvements identified from session analysis.
 ...
 ```
 
-**Scratch directory location**: `{repo_root}/.erk/scratch/<session-id>/`
-
-Extract the session ID from the `SESSION_CONTEXT` hook reminder in your context, then write the plan content to:
-
-```
-{repo_root}/.erk/scratch/<session-id>/extraction-plan.md
-```
-
-Use the Write tool to create this file. The scratch directory is worktree-local and session-scoped.
-
-**NEVER use `/tmp/` for AI workflow files.** Always use the scratch directory.
-
 ## Step 7: Create Extraction Plan Issue
 
-Run the kit CLI command to create the extraction plan issue:
+Extract the session ID from the `SESSION_CONTEXT` hook reminder in your context, then run the kit CLI command with the plan content directly:
 
 ```bash
 dot-agent run erk create-extraction-plan \
-    --plan-file="{repo_root}/.erk/scratch/<session-id>/extraction-plan.md" \
-    --source-plan-issues="" \
+    --plan-content="<the formatted plan content>" \
+    --session-id="<session-id>" \
     --extraction-session-ids="<session-id>"
 ```
 
+The command automatically:
+1. Writes the plan to `.erk/scratch/<session-id>/extraction-plan-*.md`
+2. Creates a GitHub issue with `erk-plan` + `erk-extraction` labels
+3. Sets `plan_type: extraction` in the plan-header metadata
+4. Includes `source_plan_issues` and `extraction_session_ids` for tracking
+
 Parse the JSON result to get `issue_number` and `issue_url`.
-
-The command will:
-
-1. Create a GitHub issue with `erk-plan` + `erk-extraction` labels
-2. Set `plan_type: extraction` in the plan-header metadata
-3. Include `source_plan_issues` and `extraction_session_ids` for tracking
 
 ## Step 7.5: Verify Issue Structure
 
