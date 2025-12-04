@@ -248,7 +248,7 @@ def test_build_batch_pr_query_includes_mergeability():
     owner = "test-owner"
     repo = "test-repo"
 
-    query = github_ops._build_batch_pr_query(pr_numbers, owner, repo)
+    query = github_ops._pr._build_batch_pr_query(pr_numbers, owner, repo)
 
     # Verify query contains fragment definition with both CI and mergeability fields
     assert "fragment PRCICheckFields on PullRequest" in query
@@ -271,7 +271,7 @@ def test_parse_pr_mergeability_conflicting():
     """Test parsing CONFLICTING mergeability status."""
     github_ops = RealGitHub(FakeTime())
     pr_data = {"mergeable": "CONFLICTING", "mergeStateStatus": "DIRTY"}
-    result = github_ops._parse_pr_mergeability(pr_data)
+    result = github_ops._pr._parse_pr_mergeability(pr_data)
     assert result is True
 
 
@@ -279,7 +279,7 @@ def test_parse_pr_mergeability_mergeable():
     """Test parsing MERGEABLE mergeability status."""
     github_ops = RealGitHub(FakeTime())
     pr_data = {"mergeable": "MERGEABLE", "mergeStateStatus": "CLEAN"}
-    result = github_ops._parse_pr_mergeability(pr_data)
+    result = github_ops._pr._parse_pr_mergeability(pr_data)
     assert result is False
 
 
@@ -287,14 +287,14 @@ def test_parse_pr_mergeability_unknown():
     """Test parsing UNKNOWN mergeability status."""
     github_ops = RealGitHub(FakeTime())
     pr_data = {"mergeable": "UNKNOWN", "mergeStateStatus": "UNKNOWN"}
-    result = github_ops._parse_pr_mergeability(pr_data)
+    result = github_ops._pr._parse_pr_mergeability(pr_data)
     assert result is None
 
 
 def test_parse_pr_mergeability_none_input():
     """Test parsing None input."""
     github_ops = RealGitHub(FakeTime())
-    result = github_ops._parse_pr_mergeability(None)
+    result = github_ops._pr._parse_pr_mergeability(None)
     assert result is None
 
 
@@ -302,5 +302,5 @@ def test_parse_pr_mergeability_missing_field():
     """Test parsing data with missing mergeable field."""
     github_ops = RealGitHub(FakeTime())
     pr_data = {"mergeStateStatus": "CLEAN"}
-    result = github_ops._parse_pr_mergeability(pr_data)
+    result = github_ops._pr._parse_pr_mergeability(pr_data)
     assert result is None

@@ -203,13 +203,13 @@ class RealPlanDataProvider(PlanDataProvider):
         location = github_repo_location_from_url(self._location.root, issue_url)
         if location is None:
             return []
-        pr_linkages = self._ctx.github.get_prs_linked_to_issues(location, [issue_number])
+        pr_linkages = self._ctx.github.pr.get_prs_linked_to_issues(location, [issue_number])
         linked_prs = pr_linkages.get(issue_number, [])
 
         closed_prs: list[int] = []
         for pr in linked_prs:
             if pr.state == "OPEN":
-                self._ctx.github.close_pr(self._location.root, pr.number)
+                self._ctx.github.pr.close_pr(self._location.root, pr.number)
                 closed_prs.append(pr.number)
 
         return closed_prs

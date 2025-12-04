@@ -129,7 +129,7 @@ def test_build_batch_pr_query_uses_aggregated_count_fields() -> None:
     """
     ops = RealGitHub(FakeTime())
 
-    query = ops._build_batch_pr_query([123], "owner", "repo")
+    query = ops._pr._build_batch_pr_query([123], "owner", "repo")
 
     # Critical: contexts should use aggregated count fields, not nodes with inline fragments
     assert "contexts(last: 1) {" in query  # Only need 1 for metadata
@@ -147,7 +147,7 @@ def test_build_batch_pr_query_structure() -> None:
     """Test that GraphQL query has correct overall structure with named fragments."""
     ops = RealGitHub(FakeTime())
 
-    query = ops._build_batch_pr_query([123, 456], "test-owner", "test-repo")
+    query = ops._pr._build_batch_pr_query([123, 456], "test-owner", "test-repo")
 
     # Validate fragment definition is present
     assert "fragment PRCICheckFields on PullRequest {" in query
@@ -180,7 +180,7 @@ def test_build_batch_pr_query_multiple_prs() -> None:
     ops = RealGitHub(FakeTime())
 
     pr_numbers = [100, 200, 300]
-    query = ops._build_batch_pr_query(pr_numbers, "owner", "repo")
+    query = ops._pr._build_batch_pr_query(pr_numbers, "owner", "repo")
 
     # Each PR should have a unique alias
     for pr_num in pr_numbers:
@@ -226,7 +226,7 @@ def test_parse_pr_ci_status_handles_invalid_contexts_type() -> None:
     }
 
     # Parser should handle this gracefully and return None
-    result = ops._parse_pr_ci_status(invalid_response)
+    result = ops._pr._parse_pr_ci_status(invalid_response)
     assert result is None
 
 
@@ -259,7 +259,7 @@ def test_parse_pr_ci_status_with_correct_structure() -> None:
     }
 
     # Parser should successfully extract and parse CI status
-    result = ops._parse_pr_ci_status(correct_response)
+    result = ops._pr._parse_pr_ci_status(correct_response)
     assert result is True  # All checks passing (3/3)
 
 
@@ -290,7 +290,7 @@ def test_parse_pr_ci_status_with_failing_checks() -> None:
     }
 
     # Parser should detect failing check (1/3 passing)
-    result = ops._parse_pr_ci_status(response)
+    result = ops._pr._parse_pr_ci_status(response)
     assert result is False
 
 
@@ -321,7 +321,7 @@ def test_parse_pr_ci_status_with_pending_checks() -> None:
     }
 
     # Parser should detect incomplete check (1/2 passing)
-    result = ops._parse_pr_ci_status(response)
+    result = ops._pr._parse_pr_ci_status(response)
     assert result is False
 
 
@@ -329,7 +329,7 @@ def test_build_title_batch_query_structure() -> None:
     """Test that title query has correct structure with only number and title fields."""
     ops = RealGitHub(FakeTime())
 
-    query = ops._build_title_batch_query([123, 456], "test-owner", "test-repo")
+    query = ops._pr._build_title_batch_query([123, 456], "test-owner", "test-repo")
 
     # Validate basic GraphQL syntax
     assert "query {" in query
@@ -400,7 +400,7 @@ def test_fetch_pr_titles_batch_enriches_titles(monkeypatch: pytest.MonkeyPatch) 
     }
 
     # Mock _execute_batch_pr_query to return our response
-    monkeypatch.setattr(ops, "_execute_batch_pr_query", lambda query, repo_root: mock_response)
+    monkeypatch.setattr(ops._pr, "_execute_batch_pr_query", lambda query, repo_root: mock_response)
 
     # Execute
     result = ops.fetch_pr_titles_batch(prs, Path("/repo"))
@@ -471,7 +471,7 @@ def test_fetch_pr_titles_batch_partial_failure(monkeypatch: pytest.MonkeyPatch) 
         }
     }
 
-    monkeypatch.setattr(ops, "_execute_batch_pr_query", lambda query, repo_root: mock_response)
+    monkeypatch.setattr(ops._pr, "_execute_batch_pr_query", lambda query, repo_root: mock_response)
 
     result = ops.fetch_pr_titles_batch(prs, Path("/repo"))
 
@@ -515,7 +515,7 @@ def test_fetch_pr_titles_batch_missing_title_field(monkeypatch: pytest.MonkeyPat
         }
     }
 
-    monkeypatch.setattr(ops, "_execute_batch_pr_query", lambda query, repo_root: mock_response)
+    monkeypatch.setattr(ops._pr, "_execute_batch_pr_query", lambda query, repo_root: mock_response)
 
     result = ops.fetch_pr_titles_batch(prs, Path("/repo"))
 
@@ -528,7 +528,9 @@ def test_build_issue_pr_linkage_query_structure() -> None:
     """Test that issue PR linkage query uses timelineItems with CrossReferencedEvent."""
     ops = RealGitHub(FakeTime())
 
-    query = ops._build_issue_pr_linkage_query([100, 200], GitHubRepoId("test-owner", "test-repo"))
+    query = ops._pr._build_issue_pr_linkage_query(
+        [100, 200], GitHubRepoId("test-owner", "test-repo")
+    )
 
     # Validate basic GraphQL syntax
     assert "query {" in query
@@ -612,7 +614,7 @@ def test_parse_issue_pr_linkages_with_single_pr() -> None:
         }
     }
 
-    result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
+    result = ops._pr._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
     assert 100 in result
     assert len(result[100]) == 1
@@ -670,7 +672,7 @@ def test_parse_issue_pr_linkages_with_multiple_prs() -> None:
         }
     }
 
-    result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
+    result = ops._pr._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
     assert 100 in result
     assert len(result[100]) == 2
@@ -732,7 +734,7 @@ def test_parse_issue_pr_linkages_with_pr_linking_multiple_issues() -> None:
         }
     }
 
-    result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
+    result = ops._pr._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
     # Both issues should have the same PR
     assert 100 in result
@@ -747,7 +749,7 @@ def test_parse_issue_pr_linkages_handles_empty_timeline() -> None:
 
     response = {"data": {"repository": {"issue_100": {"timelineItems": {"nodes": []}}}}}
 
-    result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
+    result = ops._pr._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
     # Issue with no PRs should not appear in result
     assert 100 not in result
@@ -789,7 +791,7 @@ def test_parse_issue_pr_linkages_handles_null_nodes() -> None:
         }
     }
 
-    result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
+    result = ops._pr._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
     # Should skip null nodes and process valid ones
     assert 100 in result
@@ -827,7 +829,7 @@ def test_parse_issue_pr_linkages_handles_missing_optional_fields() -> None:
         }
     }
 
-    result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
+    result = ops._pr._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
     # Should handle missing fields gracefully
     assert 100 in result
@@ -881,7 +883,7 @@ def test_parse_issue_pr_linkages_filters_non_closing_prs() -> None:
         }
     }
 
-    result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
+    result = ops._pr._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
     # Should only include the closing PR
     assert 100 in result
@@ -920,7 +922,7 @@ def test_parse_issue_pr_linkages_handles_issue_not_found() -> None:
         }
     }
 
-    result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
+    result = ops._pr._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
     # Non-existent issue should be skipped
     assert 100 not in result
