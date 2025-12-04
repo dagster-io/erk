@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk_shared.github.issues.abc import GitHubIssues
+from erk_shared.github.issues.label_cache import LabelCache
 from erk_shared.github.issues.types import CreateIssueResult, IssueComment, IssueInfo
 
 
@@ -221,8 +222,13 @@ class FakeGitHubIssues(GitHubIssues):
         label: str,
         description: str,
         color: str,
+        label_cache: LabelCache | None = None,
     ) -> None:
-        """Ensure label exists in fake storage, creating if needed."""
+        """Ensure label exists in fake storage, creating if needed.
+
+        Note: The label_cache parameter is accepted for API compatibility but
+        is not used - fakes don't make API calls so caching provides no benefit.
+        """
         if label not in self._labels:
             self._labels.add(label)
             self._created_labels.append((label, description, color))

@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from erk_shared.github.issues.abc import GitHubIssues
+from erk_shared.github.issues.label_cache import LabelCache
 from erk_shared.github.issues.types import CreateIssueResult, IssueComment, IssueInfo
 
 
@@ -73,6 +74,7 @@ class DryRunGitHubIssues(GitHubIssues):
         label: str,
         description: str,
         color: str,
+        label_cache: LabelCache | None = None,
     ) -> None:
         """No-op for ensuring label exists in dry-run mode."""
 

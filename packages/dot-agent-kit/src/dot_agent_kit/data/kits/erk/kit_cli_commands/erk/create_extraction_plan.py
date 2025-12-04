@@ -19,6 +19,7 @@ import sys
 from datetime import UTC, datetime
 
 import click
+from erk_shared.github.issues.label_cache import RealLabelCache
 from erk_shared.github.metadata import (
     format_plan_content_comment,
     format_plan_header_body,
@@ -133,20 +134,23 @@ def create_extraction_plan(
         extraction_session_ids=session_ids,
     )
 
-    # Ensure labels exist
+    # Ensure labels exist (with cache to avoid redundant API calls)
     labels = ["erk-plan", "erk-extraction"]
+    label_cache = RealLabelCache(repo_root)
     try:
         github.ensure_label_exists(
             repo_root=repo_root,
             label="erk-plan",
             description="Implementation plan for manual execution",
             color="0E8A16",
+            label_cache=label_cache,
         )
         github.ensure_label_exists(
             repo_root=repo_root,
             label="erk-extraction",
             description="Documentation extraction plan",
             color="D93F0B",
+            label_cache=label_cache,
         )
     except RuntimeError as e:
         click.echo(json.dumps({"success": False, "error": f"Failed to ensure labels exist: {e}"}))

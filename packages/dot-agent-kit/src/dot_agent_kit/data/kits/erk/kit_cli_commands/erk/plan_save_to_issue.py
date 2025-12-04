@@ -21,6 +21,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import click
+from erk_shared.github.issues.label_cache import RealLabelCache
 from erk_shared.github.metadata import (
     format_plan_content_comment,
     format_plan_header_body,
@@ -94,13 +95,15 @@ def plan_save_to_issue(ctx: click.Context, output_format: str, plan_file: Path |
         created_by=username,
     )
 
-    # Step 5: Ensure erk-plan label exists
+    # Step 5: Ensure erk-plan label exists (with cache to avoid redundant API calls)
+    label_cache = RealLabelCache(repo_root)
     try:
         github.ensure_label_exists(
             repo_root=repo_root,
             label="erk-plan",
             description="Implementation plan for manual execution",
             color="0E8A16",
+            label_cache=label_cache,
         )
     except RuntimeError as e:
         error_msg = f"Failed to ensure label exists: {e}"

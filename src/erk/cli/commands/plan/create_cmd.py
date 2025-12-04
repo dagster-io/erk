@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import click
+from erk_shared.github.issues.label_cache import RealLabelCache
 from erk_shared.github.metadata import format_plan_content_comment, format_plan_header_body
 from erk_shared.output.output import user_output
 from erk_shared.plan_utils import extract_title_from_plan
@@ -81,13 +82,15 @@ def create_plan(
         title.strip(), "Could not extract title from plan. Use --title to specify one."
     )
 
-    # Ensure erk-plan label exists
+    # Ensure erk-plan label exists (with cache to avoid redundant API calls)
+    label_cache = RealLabelCache(repo_root)
     try:
         ctx.issues.ensure_label_exists(
             repo_root,
             label="erk-plan",
             description="Implementation plan tracked by erk",
             color="0E8A16",  # Green
+            label_cache=label_cache,
         )
     except RuntimeError as e:
         user_output(click.style("Error: ", fg="red") + f"Failed to ensure label exists: {e}")

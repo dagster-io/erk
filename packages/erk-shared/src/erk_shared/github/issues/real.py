@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 from erk_shared.github.issues.abc import GitHubIssues
+from erk_shared.github.issues.label_cache import LabelCache
 from erk_shared.github.issues.types import CreateIssueResult, IssueComment, IssueInfo
 from erk_shared.subprocess_utils import execute_gh_command
 
@@ -240,13 +241,18 @@ class RealGitHubIssues(GitHubIssues):
         label: str,
         description: str,
         color: str,
+        label_cache: LabelCache | None = None,
     ) -> None:
         """Ensure label exists in repository, creating it if needed.
 
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated).
         """
-        # Check if label exists
+        # Fast path: if cached, skip API call entirely
+        if label_cache is not None and label_cache.has(label):
+            return
+
+        # Check if label exists via API
         check_cmd = [
             "gh",
             "label",
@@ -258,19 +264,28 @@ class RealGitHubIssues(GitHubIssues):
         ]
         stdout = execute_gh_command(check_cmd, repo_root)
 
-        # If label doesn't exist (empty output), create it
-        if not stdout.strip():
-            create_cmd = [
-                "gh",
-                "label",
-                "create",
-                label,
-                "--description",
-                description,
-                "--color",
-                color,
-            ]
-            execute_gh_command(create_cmd, repo_root)
+        if stdout.strip():
+            # Label exists - cache it for future calls
+            if label_cache is not None:
+                label_cache.add(label)
+            return
+
+        # Create label
+        create_cmd = [
+            "gh",
+            "label",
+            "create",
+            label,
+            "--description",
+            description,
+            "--color",
+            color,
+        ]
+        execute_gh_command(create_cmd, repo_root)
+
+        # Cache newly created label
+        if label_cache is not None:
+            label_cache.add(label)
 
     def ensure_label_on_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
         """Ensure label is present on issue using gh CLI (idempotent).
