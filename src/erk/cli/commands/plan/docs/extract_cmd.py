@@ -1,7 +1,6 @@
 """Command to mark a plan as having been analyzed for documentation."""
 
 import click
-from erk_shared.github.issues import RealGitHubIssues, RealLabelCache
 from erk_shared.output.output import user_output
 
 from erk.cli.constants import (
@@ -34,16 +33,13 @@ def extract_docs(ctx: ErkContext, identifier: str) -> None:
     # Parse issue number
     issue_number = parse_issue_identifier(identifier)
 
-    # Ensure label exists in repo (create if needed, with cache to avoid redundant API calls)
-    # Only create cache for real implementations (not fakes in tests)
-    label_cache = RealLabelCache(repo_root) if isinstance(ctx.issues, RealGitHubIssues) else None
+    # Ensure label exists in repo (create if needed)
     try:
         ctx.issues.ensure_label_exists(
             repo_root,
             DOCS_EXTRACTED_LABEL,
             DOCS_EXTRACTED_LABEL_DESCRIPTION,
             DOCS_EXTRACTED_LABEL_COLOR,
-            label_cache=label_cache,
         )
     except RuntimeError as e:
         raise click.ClickException(f"Failed to ensure label exists: {e}") from e

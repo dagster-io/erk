@@ -3,7 +3,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from erk_shared.github.issues.label_cache import LabelCache
 from erk_shared.github.issues.types import CreateIssueResult, IssueComment, IssueInfo
 
 
@@ -162,7 +161,6 @@ class GitHubIssues(ABC):
         label: str,
         description: str,
         color: str,
-        label_cache: LabelCache | None = None,
     ) -> None:
         """Ensure a label exists in the repository, creating it if needed.
 
@@ -171,8 +169,6 @@ class GitHubIssues(ABC):
             label: Label name to ensure exists
             description: Label description (used if creating)
             color: Label color hex code without '#' (used if creating)
-            label_cache: Optional cache to avoid redundant API calls. When provided
-                and the label is cached, skips the API call entirely.
 
         Raises:
             RuntimeError: If gh CLI fails (not installed, not authenticated, or command error)

@@ -1,7 +1,6 @@
 """Command to complete an extraction plan and mark source plans as extracted."""
 
 import click
-from erk_shared.github.issues import RealGitHubIssues, RealLabelCache
 from erk_shared.github.metadata import find_metadata_block
 from erk_shared.output.output import user_output
 
@@ -67,16 +66,13 @@ def complete_extraction(ctx: ErkContext, identifier: str) -> None:
             "Cannot determine which plans to mark as extracted."
         )
 
-    # Ensure docs-extracted label exists (with cache to avoid redundant API calls)
-    # Only create cache for real implementations (not fakes in tests)
-    label_cache = RealLabelCache(repo_root) if isinstance(ctx.issues, RealGitHubIssues) else None
+    # Ensure docs-extracted label exists
     try:
         ctx.issues.ensure_label_exists(
             repo_root,
             DOCS_EXTRACTED_LABEL,
             DOCS_EXTRACTED_LABEL_DESCRIPTION,
             DOCS_EXTRACTED_LABEL_COLOR,
-            label_cache=label_cache,
         )
     except RuntimeError as e:
         raise click.ClickException(f"Failed to ensure label exists: {e}") from e
