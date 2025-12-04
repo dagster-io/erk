@@ -1,18 +1,30 @@
 """Submit current branch as a pull request.
 
-Delegates to the /gt:pr-submit slash command via Claude CLI.
+Uses Python operations with AI executor for commit message generation.
 """
 
+import uuid
 from pathlib import Path
 
 import click
+from erk_shared.integrations.ai.real import RealClaudeCLIExecutor
+from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.integrations.gt.operations.submit_pr import execute_submit_pr
+from erk_shared.integrations.gt.types import SubmitPRError, SubmitPRResult
 
+from erk.cli.commands.pr.adapters import ContextGtKit
 from erk.core.context import ErkContext
 
 
+def _generate_session_id() -> str:
+    """Generate a unique session ID for scratch file isolation."""
+    return uuid.uuid4().hex
+
+
 @click.command("submit")
+@click.option("-f", "--force", is_flag=True, help="Force push even if remote has diverged")
 @click.pass_obj
-def pr_submit(ctx: ErkContext) -> None:
+def pr_submit(ctx: ErkContext, force: bool) -> None:
     """Submit PR with AI-generated commit message.
 
     Analyzes your changes, generates a commit message via AI, and
@@ -23,57 +35,49 @@ def pr_submit(ctx: ErkContext) -> None:
     \b
       # Submit PR
       erk pr submit
+
+      # Force push if remote has diverged
+      erk pr submit --force
     """
-    executor = ctx.claude_executor
+    click.echo(click.style("🚀 Submitting PR...", bold=True))
 
-    # Verify Claude is available
-    if not executor.is_claude_available():
-        raise click.ClickException(
-            "Claude CLI not found\n\nInstall from: https://claude.com/download"
-        )
+    # Build GtKit from context components + real AI executor
+    ops = ContextGtKit.from_context(ctx, ai=RealClaudeCLIExecutor())
+    cwd = Path.cwd()
+    session_id = _generate_session_id()
 
-    click.echo(click.style("🚀 Submitting PR via Claude...", bold=True))
-    click.echo(click.style("   (Claude may take a moment to start)", dim=True))
-    click.echo("")
-
-    worktree_path = Path.cwd()
-
-    # Track results from streaming events
-    pr_url: str | None = None
-    error_message: str | None = None
-    success = True
-    last_spinner: str | None = None
-
-    # Stream events and print content directly
-    for event in executor.execute_command_streaming(
-        command="/gt:pr-submit",
-        worktree_path=worktree_path,
-        dangerous=False,
-    ):
-        if event.event_type == "text":
-            # Print text content directly (Claude's formatted output)
-            click.echo(event.content)
-        elif event.event_type == "tool":
-            # Tool summaries with icon
-            click.echo(click.style(f"   ⚙️  {event.content}", fg="cyan", dim=True))
-        elif event.event_type == "spinner_update":
-            # Deduplicate spinner updates
-            if event.content != last_spinner:
-                click.echo(click.style(f"   ⏳ {event.content}", dim=True))
-                last_spinner = event.content
-        elif event.event_type == "pr_url":
-            pr_url = event.content
-        elif event.event_type == "error":
-            click.echo(click.style(f"   ❌ {event.content}", fg="red"))
-            error_message = event.content
-            success = False
-
-    # Final PR link with clickable URL
-    if pr_url:
-        styled_url = click.style(pr_url, fg="cyan", underline=True)
-        clickable_url = f"\033]8;;{pr_url}\033\\{styled_url}\033]8;;\033\\"
-        click.echo(f"\n✅ {clickable_url}")
-
-    if not success:
-        error_msg = error_message or "PR submission failed"
-        raise click.ClickException(error_msg)
+    # Execute the unified submit workflow
+    for event in execute_submit_pr(ops, cwd, session_id, force=force):
+        if isinstance(event, ProgressEvent):
+            # Display progress with appropriate styling
+            style_map = {
+                "success": "green",
+                "warning": "yellow",
+                "error": "red",
+                "info": None,
+            }
+            fg_color = style_map.get(event.style)
+            prefix = "   " if event.style != "error" else "❌ "
+            click.echo(click.style(f"{prefix}{event.message}", fg=fg_color))
+        elif isinstance(event, CompletionEvent):
+            result = event.result
+            if isinstance(result, SubmitPRResult):
+                # Success - display PR URLs
+                click.echo("")
+                styled_url = click.style(result.pr_url, fg="cyan", underline=True)
+                clickable_url = f"\033]8;;{result.pr_url}\033\\{styled_url}\033]8;;\033\\"
+                click.echo(f"✅ {clickable_url}")
+                if result.graphite_url:
+                    styled_graphite = click.style(result.graphite_url, fg="blue", underline=True)
+                    clickable_graphite = (
+                        f"\033]8;;{result.graphite_url}\033\\{styled_graphite}\033]8;;\033\\"
+                    )
+                    click.echo(f"   Graphite: {clickable_graphite}")
+            elif isinstance(result, SubmitPRError):
+                # Error - display error details and exit
+                click.echo("")
+                click.echo(click.style(f"❌ {result.error_type}: {result.message}", fg="red"))
+                if result.details:
+                    for key, value in result.details.items():
+                        click.echo(click.style(f"   {key}: {value}", fg="red", dim=True))
+                raise click.ClickException(result.message)

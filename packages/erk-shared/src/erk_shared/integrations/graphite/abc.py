@@ -181,7 +181,13 @@ class Graphite(ABC):
 
     @abstractmethod
     def submit_stack(
-        self, repo_root: Path, *, publish: bool = False, restack: bool = False, quiet: bool = False
+        self,
+        repo_root: Path,
+        *,
+        publish: bool = False,
+        restack: bool = False,
+        quiet: bool = False,
+        force: bool = False,
     ) -> None:
         """Submit the current stack to create or update PRs.
 
@@ -194,6 +200,7 @@ class Graphite(ABC):
             publish: If True, mark PRs as ready for review (not draft)
             restack: If True, restack before submitting
             quiet: If True, suppress output
+            force: If True, force push even if remote has diverged
 
         Raises:
             RuntimeError: If gt submit fails or times out

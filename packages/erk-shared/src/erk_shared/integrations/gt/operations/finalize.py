@@ -106,7 +106,18 @@ def execute_finalize(
 
     # Update PR metadata
     yield ProgressEvent("Updating PR metadata... (gh pr edit)")
-    ops.github.update_pr_title_and_body(repo_root, pr_number, pr_title, final_body)
+    try:
+        ops.github.update_pr_title_and_body(repo_root, pr_number, pr_title, final_body)
+    except RuntimeError as e:
+        yield CompletionEvent(
+            PostAnalysisError(
+                success=False,
+                error_type="pr_update_failed",
+                message=f"Failed to update PR metadata: {e}",
+                details={"pr_number": str(pr_number), "error": str(e)},
+            )
+        )
+        return
     yield ProgressEvent("PR metadata updated", style="success")
 
     # Clean up temp diff file

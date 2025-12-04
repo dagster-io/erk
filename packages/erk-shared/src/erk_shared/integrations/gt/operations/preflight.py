@@ -92,8 +92,15 @@ def _run_gt_submit_with_progress(
 def _execute_submit_only(
     ops: GtKit,
     cwd: Path,
+    *,
+    force: bool = False,
 ) -> Generator[ProgressEvent | CompletionEvent[tuple[int, str, str, str] | PostAnalysisError]]:
     """Submit branch and wait for PR info, without modifying commit message.
+
+    Args:
+        ops: GtKit for dependency injection.
+        cwd: Working directory (repository path).
+        force: If True, force push even if remote has diverged.
 
     Yields:
         ProgressEvent for status updates
@@ -157,7 +164,9 @@ def _execute_submit_only(
     def run_submit():
         nonlocal submit_result
         try:
-            ops.graphite.submit_stack(repo_root, publish=True, restack=False, quiet=False)
+            ops.graphite.submit_stack(
+                repo_root, publish=True, restack=False, quiet=False, force=force
+            )
             submit_result = _SubmitResult(success=True)
         except RuntimeError as e:
             submit_result = _SubmitResult(success=False, error=e)
@@ -299,7 +308,7 @@ def _execute_submit_only(
             yield ProgressEvent(f"PR info retrieved (PR #{pr_num})", style="success")
             break
         if attempt < max_retries - 1:
-            time.sleep(retry_delays[attempt])
+            ops.time.sleep(retry_delays[attempt])
 
     if pr_info is None:
         yield CompletionEvent(
@@ -328,6 +337,8 @@ def execute_preflight(
     ops: GtKit,
     cwd: Path,
     session_id: str,
+    *,
+    force: bool = False,
 ) -> Generator[
     ProgressEvent | CompletionEvent[PreflightResult | PreAnalysisError | PostAnalysisError]
 ]:
@@ -342,6 +353,7 @@ def execute_preflight(
         session_id: Claude session ID for scratch file isolation. Writes diff
             to .tmp/<session_id>/ in repo root (readable by subagents without
             permission prompts).
+        force: If True, force push even if remote has diverged.
 
     Yields:
         ProgressEvent for status updates
@@ -368,7 +380,7 @@ def execute_preflight(
     yield ProgressEvent("Submitting PR...")
     submit_start = time.time()
     submit_result = None
-    for event in _execute_submit_only(ops, cwd):
+    for event in _execute_submit_only(ops, cwd, force=force):
         if isinstance(event, CompletionEvent):
             submit_result = event.result
         else:

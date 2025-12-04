@@ -20,9 +20,13 @@ from erk_shared.git.fake import FakeGit
 from erk_shared.github.abc import GitHub
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRMergeability
+from erk_shared.integrations.ai.abc import ClaudeCLIExecutor
+from erk_shared.integrations.ai.fake import FakeClaudeCLIExecutor
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
+from erk_shared.integrations.time.abc import Time
+from erk_shared.integrations.time.fake import FakeTime
 
 
 @dataclass
@@ -60,6 +64,8 @@ class FakeGtKitOps:
         self,
         github_builder_state: GitHubBuilderState | None = None,
         main_graphite: Graphite | None = None,
+        ai_executor: ClaudeCLIExecutor | None = None,
+        time: Time | None = None,
     ) -> None:
         """Initialize with optional initial states."""
         # State accumulators for FakeGit (lazy construction)
@@ -83,6 +89,12 @@ class FakeGtKitOps:
 
         # Graphite instance
         self._main_graphite = main_graphite if main_graphite is not None else FakeGraphite()
+
+        # AI executor instance
+        self._ai_executor = ai_executor if ai_executor is not None else FakeClaudeCLIExecutor()
+
+        # Time instance
+        self._time = time if time is not None else FakeTime()
 
     def _build_fake_git(self) -> FakeGit:
         """Build FakeGit from accumulated state.
@@ -218,6 +230,16 @@ class FakeGtKitOps:
     def graphite(self) -> Graphite:
         """Get the Graphite operations interface."""
         return self._main_graphite
+
+    @property
+    def ai(self) -> ClaudeCLIExecutor:
+        """Get the AI executor interface."""
+        return self._ai_executor
+
+    @property
+    def time(self) -> Time:
+        """Get the time operations interface."""
+        return self._time
 
     # Declarative setup methods
 

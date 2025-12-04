@@ -23,6 +23,7 @@ from erk.cli.commands.navigation_helpers import (
     ensure_graphite_enabled,
     resolve_up_navigation,
 )
+from erk.cli.commands.pr.adapters import ContextGtKit
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
@@ -73,7 +74,9 @@ def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
     )
 
     # Step 1: Execute land-pr (merges the PR)
-    result = render_events(execute_land_pr(ctx, ctx.cwd))
+    # Use ContextGtKit adapter with NoOpAIExecutor since land-pr doesn't use AI
+    ops = ContextGtKit.from_context(ctx)
+    result = render_events(execute_land_pr(ops, ctx.cwd))
 
     if isinstance(result, LandPrError):
         user_output(click.style("Error: ", fg="red") + result.message)
