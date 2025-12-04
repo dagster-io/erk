@@ -28,13 +28,15 @@
 
 ### [Architecture](architecture/)
 
-| Document                                                                              | Read when...                                                 |
-| ------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| [erk-architecture.md](architecture/erk-architecture.md)                               | Understanding dry-run patterns, context regeneration         |
-| [protocol-vs-abc.md](architecture/protocol-vs-abc.md)                                 | Choosing between Protocol and ABC for interfaces             |
-| [subprocess-wrappers.md](architecture/subprocess-wrappers.md)                         | Executing shell commands, using subprocess wrappers          |
-| [github-parsing.md](architecture/github-parsing.md)                                   | Parsing GitHub URLs, extracting PR/issue numbers             |
-| [commandresult-extension-pattern.md](architecture/commandresult-extension-pattern.md) | Adding new fields to CommandResult, extending stream parsing |
+| Document                                                                              | Read when...                                                  |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [erk-architecture.md](architecture/erk-architecture.md)                               | Understanding dry-run patterns, context regeneration          |
+| [protocol-vs-abc.md](architecture/protocol-vs-abc.md)                                 | Choosing between Protocol and ABC for interfaces              |
+| [subprocess-wrappers.md](architecture/subprocess-wrappers.md)                         | Executing shell commands, using subprocess wrappers           |
+| [github-parsing.md](architecture/github-parsing.md)                                   | Parsing GitHub URLs, extracting PR/issue numbers              |
+| [commandresult-extension-pattern.md](architecture/commandresult-extension-pattern.md) | Adding new fields to CommandResult, extending stream parsing  |
+| [sentinel-path-compatibility.md](architecture/sentinel-path-compatibility.md)         | Writing functions testable with FakeGit, sentinel path errors |
+| [worktree-metadata.md](architecture/worktree-metadata.md)                             | Storing per-worktree metadata, worktrees.toml                 |
 
 ### [CLI Development](cli/)
 
@@ -44,6 +46,7 @@
 | [output-styling.md](cli/output-styling.md)             | Styling CLI output, using colors                       |
 | [list-formatting.md](cli/list-formatting.md)           | Formatting list output, designing list commands        |
 | [script-mode.md](cli/script-mode.md)                   | Implementing script mode, shell integration            |
+| [template-variables.md](cli/template-variables.md)     | Using substitution variables in config, .env templates |
 
 ### [Planning](planning/)
 

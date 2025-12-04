@@ -12,11 +12,13 @@ Core architectural patterns and design decisions for the erk codebase.
 
 ## Quick Navigation
 
-| When you need to...               | Read this                                        |
-| --------------------------------- | ------------------------------------------------ |
-| Understand dry-run patterns or DI | [erk-architecture.md](erk-architecture.md)       |
-| Choose between Protocol and ABC   | [protocol-vs-abc.md](protocol-vs-abc.md)         |
-| Execute shell commands safely     | [subprocess-wrappers.md](subprocess-wrappers.md) |
+| When you need to...               | Read this                                                        |
+| --------------------------------- | ---------------------------------------------------------------- |
+| Understand dry-run patterns or DI | [erk-architecture.md](erk-architecture.md)                       |
+| Choose between Protocol and ABC   | [protocol-vs-abc.md](protocol-vs-abc.md)                         |
+| Execute shell commands safely     | [subprocess-wrappers.md](subprocess-wrappers.md)                 |
+| Fix sentinel path test errors     | [sentinel-path-compatibility.md](sentinel-path-compatibility.md) |
+| Store per-worktree metadata       | [worktree-metadata.md](worktree-metadata.md)                     |
 
 ## Documents in This Category
 
@@ -37,6 +39,18 @@ Decision framework for choosing between Protocol (structural typing) and ABC (no
 **File:** [subprocess-wrappers.md](subprocess-wrappers.md)
 
 Two-layer pattern for subprocess execution: integration layer (`run_subprocess_with_context`) and CLI layer (`run_with_error_reporting`) wrappers.
+
+### Sentinel Path Compatibility
+
+**File:** [sentinel-path-compatibility.md](sentinel-path-compatibility.md)
+
+Pattern for making functions testable with `erk_inmem_env()` by adding optional `git_ops` parameters instead of direct `.exists()` calls.
+
+### Worktree Metadata Storage
+
+**File:** [worktree-metadata.md](worktree-metadata.md)
+
+Per-worktree metadata storage in `worktrees.toml`, including project associations and the API for reading/writing metadata.
 
 ## Related Topics
 

@@ -113,6 +113,33 @@ shell = FakeShell(
 )
 ```
 
+## Fixture Selection Guide
+
+### When to Use Each Fixture
+
+| Fixture               | Use When                           | Key Characteristic             |
+| --------------------- | ---------------------------------- | ------------------------------ |
+| `erk_isolated_fs_env` | Command does real filesystem ops   | Creates real temp directories  |
+| `erk_inmem_env`       | Testing pure logic with fakes only | Uses sentinel paths (not real) |
+| `cli_test_repo`       | Testing real git operations        | Creates actual git repository  |
+
+### Common Mistake: Sentinel Path Errors
+
+If you see `"Called .exists() on sentinel path"`:
+
+- You're using `erk_inmem_env()` but code is doing real filesystem checks
+- **Fix**: Switch to `erk_isolated_fs_env(runner)`
+
+### Decision Tree
+
+```
+Does the code under test:
+├── Create/write files directly? → erk_isolated_fs_env()
+├── Call .exists()/.is_dir() on paths? → erk_isolated_fs_env()
+├── Only use injected fakes? → erk_inmem_env()
+└── Need real git commands? → cli_test_repo()
+```
+
 ## Test Context Helpers
 
 ### create_test_context()
