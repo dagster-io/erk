@@ -231,7 +231,7 @@ def extract_summary(session_path: Path, max_length: int = 60) -> str:
     return ""
 
 
-def list_sessions(
+def _list_sessions_for_project(
     project_dir: Path, current_session_id: str | None, limit: int = 10
 ) -> list[SessionInfo]:
     """List sessions in project directory sorted by modification time.
@@ -294,7 +294,7 @@ def list_sessions(
     help="Maximum number of sessions to list",
 )
 @click.pass_context
-def list_sessions_cli(ctx: click.Context, limit: int) -> None:
+def list_sessions(ctx: click.Context, limit: int) -> None:
     """List Claude Code sessions with metadata for the current project.
 
     Discovers sessions in the project directory, extracts metadata
@@ -324,7 +324,7 @@ def list_sessions_cli(ctx: click.Context, limit: int) -> None:
     current_session_id = get_current_session_id()
 
     # List sessions
-    sessions = list_sessions(project_dir, current_session_id, limit=limit)
+    sessions = _list_sessions_for_project(project_dir, current_session_id, limit=limit)
 
     # Build result
     result = ListSessionsResult(

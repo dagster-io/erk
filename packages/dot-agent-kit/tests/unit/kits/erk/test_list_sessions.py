@@ -15,13 +15,13 @@ from erk_shared.git.fake import FakeGit
 
 from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.list_sessions import (
+    _list_sessions_for_project,
     extract_summary,
     format_display_time,
     format_relative_time,
     get_branch_context,
     get_current_session_id,
     list_sessions,
-    list_sessions_cli,
 )
 
 # ============================================================================
@@ -253,7 +253,7 @@ def test_list_sessions_finds_all_sessions(tmp_path: Path) -> None:
             encoding="utf-8",
         )
 
-    sessions = list_sessions(project_dir, None, limit=10)
+    sessions = _list_sessions_for_project(project_dir, None, limit=10)
     assert len(sessions) == 3
 
 
@@ -272,7 +272,7 @@ def test_list_sessions_excludes_agent_logs(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    sessions = list_sessions(project_dir, None, limit=10)
+    sessions = _list_sessions_for_project(project_dir, None, limit=10)
     assert len(sessions) == 1
     assert sessions[0].session_id == "main123"
 
@@ -290,7 +290,7 @@ def test_list_sessions_sorted_by_mtime(tmp_path: Path) -> None:
     new = project_dir / "new.jsonl"
     new.write_text(json.dumps({"type": "user", "message": {"content": "New"}}), encoding="utf-8")
 
-    sessions = list_sessions(project_dir, None, limit=10)
+    sessions = _list_sessions_for_project(project_dir, None, limit=10)
     assert len(sessions) == 2
     assert sessions[0].session_id == "new"  # Newest first
     assert sessions[1].session_id == "old"
@@ -309,7 +309,7 @@ def test_list_sessions_respects_limit(tmp_path: Path) -> None:
         )
         time.sleep(0.001)  # Ensure different mtimes
 
-    sessions = list_sessions(project_dir, None, limit=5)
+    sessions = _list_sessions_for_project(project_dir, None, limit=5)
     assert len(sessions) == 5
 
 
@@ -327,7 +327,7 @@ def test_list_sessions_marks_current(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    sessions = list_sessions(project_dir, "current123", limit=10)
+    sessions = _list_sessions_for_project(project_dir, "current123", limit=10)
 
     current = next(s for s in sessions if s.session_id == "current123")
     other = next(s for s in sessions if s.session_id == "other456")
@@ -341,7 +341,7 @@ def test_list_sessions_empty_directory(tmp_path: Path) -> None:
     project_dir = tmp_path / "project"
     project_dir.mkdir()
 
-    sessions = list_sessions(project_dir, None, limit=10)
+    sessions = _list_sessions_for_project(project_dir, None, limit=10)
     assert sessions == []
 
 
@@ -349,7 +349,7 @@ def test_list_sessions_nonexistent_directory(tmp_path: Path) -> None:
     """Test handling of nonexistent directory."""
     project_dir = tmp_path / "nonexistent"
 
-    sessions = list_sessions(project_dir, None, limit=10)
+    sessions = _list_sessions_for_project(project_dir, None, limit=10)
     assert sessions == []
 
 
@@ -465,7 +465,7 @@ def test_cli_success(tmp_path: Path, monkeypatch) -> None:
     original_cwd = os.getcwd()
     try:
         os.chdir(test_cwd)
-        result = runner.invoke(list_sessions_cli, [], obj=context)
+        result = runner.invoke(list_sessions, [], obj=context)
 
         assert result.exit_code == 0
         output = json.loads(result.output)
@@ -497,7 +497,7 @@ def test_cli_project_not_found(tmp_path: Path, monkeypatch) -> None:
     original_cwd = os.getcwd()
     try:
         os.chdir(test_dir)
-        result = runner.invoke(list_sessions_cli, [], obj=context)
+        result = runner.invoke(list_sessions, [], obj=context)
 
         assert result.exit_code == 1
         output = json.loads(result.output)
@@ -541,7 +541,7 @@ def test_cli_output_structure(tmp_path: Path, monkeypatch) -> None:
     original_cwd = os.getcwd()
     try:
         os.chdir(test_cwd)
-        result = runner.invoke(list_sessions_cli, [], obj=context)
+        result = runner.invoke(list_sessions, [], obj=context)
 
         assert result.exit_code == 0
         output = json.loads(result.output)
@@ -609,7 +609,7 @@ def test_cli_limit_option(tmp_path: Path, monkeypatch) -> None:
     original_cwd = os.getcwd()
     try:
         os.chdir(test_cwd)
-        result = runner.invoke(list_sessions_cli, ["--limit", "3"], obj=context)
+        result = runner.invoke(list_sessions, ["--limit", "3"], obj=context)
 
         assert result.exit_code == 0
         output = json.loads(result.output)
@@ -656,7 +656,7 @@ def test_cli_marks_current_session(tmp_path: Path, monkeypatch) -> None:
     original_cwd = os.getcwd()
     try:
         os.chdir(test_cwd)
-        result = runner.invoke(list_sessions_cli, [], obj=context)
+        result = runner.invoke(list_sessions, [], obj=context)
 
         assert result.exit_code == 0
         output = json.loads(result.output)

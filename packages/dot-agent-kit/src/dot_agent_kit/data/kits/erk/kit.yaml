@@ -107,6 +107,9 @@ kit_cli_commands:
   - name: create-extraction-plan
     path: kit_cli_commands/erk/create_extraction_plan.py
     description: Create extraction plan issue from stdin with erk-plan and erk-extraction labels
+  - name: list-sessions
+    path: kit_cli_commands/erk/list_sessions.py
+    description: List Claude Code sessions with metadata for the current project
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit
