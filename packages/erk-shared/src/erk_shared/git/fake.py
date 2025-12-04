@@ -183,7 +183,7 @@ class FakeGit(Git):
                 return worktree_list
 
         # Check if repo_root is one of the worktree paths in any list
-        for key, worktree_list in self._worktrees.items():
+        for worktree_list in self._worktrees.values():
             for wt_info in worktree_list:
                 if wt_info.path.resolve() == resolved_root:
                     return worktree_list
