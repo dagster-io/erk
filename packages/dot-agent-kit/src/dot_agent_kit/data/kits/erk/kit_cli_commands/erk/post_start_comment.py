@@ -21,9 +21,8 @@ Examples:
     {"success": false, "error_type": "no_issue_reference", "message": "..."}
 """
 
-import json
 import subprocess
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 
 import click
@@ -36,6 +35,7 @@ from erk_shared.impl_folder import (
     read_issue_reference,
 )
 
+from dot_agent_kit.cli.schema import kit_json_command
 from dot_agent_kit.context_helpers import (
     require_github_issues,
     require_repo_root,
@@ -111,9 +111,13 @@ def get_branch_name() -> str | None:
         return None
 
 
-@click.command(name="post-start-comment")
-@click.pass_context
-def post_start_comment(ctx: click.Context) -> None:
+@kit_json_command(
+    name="post-start-comment",
+    results=[StartSuccess, StartError],
+    error_type=StartError,
+    exit_on_error=False,
+)
+def post_start_comment(ctx: click.Context) -> StartSuccess | StartError:
     """Post start comment to GitHub issue with complete implementation context.
 
     Reads plan from .impl/plan.md, progress from .impl/progress.md,
@@ -127,57 +131,47 @@ def post_start_comment(ctx: click.Context) -> None:
     impl_dir = Path.cwd() / ".impl"
     issue_ref = read_issue_reference(impl_dir)
     if issue_ref is None:
-        result = StartError(
+        return StartError(
             success=False,
             error_type="no_issue_reference",
             message="No issue reference found in .impl/issue.json",
         )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0)
 
     # Get worktree name
     worktree_name = get_worktree_name()
     if worktree_name is None:
-        result = StartError(
+        return StartError(
             success=False,
             error_type="worktree_detection_failed",
             message="Could not determine worktree name from git",
         )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0)
 
     # Get branch name
     branch_name = get_branch_name()
     if branch_name is None:
-        result = StartError(
+        return StartError(
             success=False,
             error_type="branch_detection_failed",
             message="Could not determine branch name from git",
         )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0)
 
     # Read total steps from progress.md frontmatter
     progress_file = impl_dir / "progress.md"
     if not progress_file.exists():
-        result = StartError(
+        return StartError(
             success=False,
             error_type="no_progress_file",
             message=f"Progress file not found: {progress_file}",
         )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0)
 
     content = progress_file.read_text(encoding="utf-8")
     frontmatter = parse_progress_frontmatter(content)
     if frontmatter is None:
-        result = StartError(
+        return StartError(
             success=False,
             error_type="invalid_progress_format",
             message="Invalid YAML frontmatter in progress.md",
         )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0)
 
     total_steps = frontmatter["total_steps"]
 
@@ -204,29 +198,23 @@ def post_start_comment(ctx: click.Context) -> None:
     try:
         github = require_github_issues(ctx)
     except SystemExit:
-        result = StartError(
+        return StartError(
             success=False,
             error_type="context_not_initialized",
             message="Context not initialized",
         )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0) from None
 
     # Post comment to GitHub
     try:
         github.add_comment(repo_root, issue_ref.issue_number, comment_body)
-        result = StartSuccess(
+        return StartSuccess(
             success=True,
             issue_number=issue_ref.issue_number,
             total_steps=total_steps,
         )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0) from None
     except RuntimeError as e:
-        result = StartError(
+        return StartError(
             success=False,
             error_type="github_api_failed",
             message=str(e),
         )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0) from None

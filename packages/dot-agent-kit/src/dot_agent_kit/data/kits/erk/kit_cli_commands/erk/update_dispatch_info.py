@@ -11,12 +11,12 @@ Exit Codes:
     1: Error (issue not found, invalid inputs, no plan-header block)
 """
 
-import json
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 
 import click
 from erk_shared.github.metadata import update_plan_header_dispatch
 
+from dot_agent_kit.cli.schema import kit_json_command
 from dot_agent_kit.context_helpers import (
     require_github_issues,
     require_repo_root,
@@ -42,19 +42,23 @@ class UpdateError:
     message: str
 
 
-@click.command(name="update-dispatch-info")
+@kit_json_command(
+    name="update-dispatch-info",
+    results=[UpdateSuccess, UpdateError],
+    error_type=UpdateError,
+    exit_on_error=False,
+)
 @click.argument("issue_number", type=int)
 @click.argument("run_id")
 @click.argument("node_id")
 @click.argument("dispatched_at")
-@click.pass_context
 def update_dispatch_info(
     ctx: click.Context,
     issue_number: int,
     run_id: str,
     node_id: str,
     dispatched_at: str,
-) -> None:
+) -> UpdateSuccess | UpdateError:
     """Update dispatch info in GitHub issue plan-header metadata.
 
     Fetches the issue, updates the plan-header block with last_dispatched_run_id,
@@ -71,13 +75,11 @@ def update_dispatch_info(
     try:
         issue = github_issues.get_issue(repo_root, issue_number)
     except RuntimeError as e:
-        result = UpdateError(
+        return UpdateError(
             success=False,
             error="issue_not_found",
             message=f"Issue #{issue_number} not found: {e}",
         )
-        click.echo(json.dumps(asdict(result)), err=True)
-        raise SystemExit(1) from None
 
     # Update dispatch info
     try:
@@ -89,30 +91,25 @@ def update_dispatch_info(
         )
     except ValueError as e:
         # plan-header block not found (old format issue)
-        result = UpdateError(
+        return UpdateError(
             success=False,
             error="no_plan_header_block",
             message=str(e),
         )
-        click.echo(json.dumps(asdict(result)), err=True)
-        raise SystemExit(1) from None
 
     # Update issue body
     try:
         github_issues.update_issue_body(repo_root, issue_number, updated_body)
     except RuntimeError as e:
-        result = UpdateError(
+        return UpdateError(
             success=False,
             error="github_api_failed",
             message=f"Failed to update issue body: {e}",
         )
-        click.echo(json.dumps(asdict(result)), err=True)
-        raise SystemExit(1) from None
 
-    result_success = UpdateSuccess(
+    return UpdateSuccess(
         success=True,
         issue_number=issue_number,
         run_id=run_id,
         node_id=node_id,
     )
-    click.echo(json.dumps(asdict(result_success)))

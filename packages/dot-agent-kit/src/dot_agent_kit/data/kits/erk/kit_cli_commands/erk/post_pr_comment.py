@@ -21,8 +21,7 @@ Examples:
     {"success": false, "error_type": "no_issue_reference", "message": "..."}
 """
 
-import json
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 
 import click
@@ -33,6 +32,7 @@ from erk_shared.github.metadata import (
 )
 from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 
+from dot_agent_kit.cli.schema import kit_json_command
 from dot_agent_kit.context_helpers import (
     require_git,
     require_github_issues,
@@ -87,11 +87,17 @@ def create_pr_published_block(
     return create_metadata_block(key="erk-pr-published", data=data)
 
 
-@click.command(name="post-pr-comment")
+@kit_json_command(
+    name="post-pr-comment",
+    results=[PrCommentSuccess, PrCommentError],
+    error_type=PrCommentError,
+    exit_on_error=False,
+)
 @click.option("--pr-url", required=True, help="GitHub PR URL")
 @click.option("--pr-number", required=True, type=int, help="GitHub PR number")
-@click.pass_context
-def post_pr_comment(ctx: click.Context, pr_url: str, pr_number: int) -> None:
+def post_pr_comment(
+    ctx: click.Context, pr_url: str, pr_number: int
+) -> PrCommentSuccess | PrCommentError:
     """Post PR link comment to GitHub issue.
 
     Posts a comment to the linked GitHub issue (from .impl/issue.json) with
@@ -111,34 +117,28 @@ def post_pr_comment(ctx: click.Context, pr_url: str, pr_number: int) -> None:
     impl_dir = Path.cwd() / ".impl"
 
     if not has_issue_reference(impl_dir):
-        result = PrCommentError(
+        return PrCommentError(
             success=False,
             error_type="no_issue_reference",
             message="No issue reference found in .impl/issue.json",
         )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0)
 
     issue_ref = read_issue_reference(impl_dir)
     if issue_ref is None:
-        result = PrCommentError(
+        return PrCommentError(
             success=False,
             error_type="invalid_issue_reference",
             message="Could not read .impl/issue.json",
         )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0)
 
     # Get branch name using Git abstraction
     branch_name = git.get_current_branch(Path.cwd())
     if branch_name is None:
-        result = PrCommentError(
+        return PrCommentError(
             success=False,
             error_type="branch_detection_failed",
             message="Could not determine branch name from git",
         )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0)
 
     # Generate timestamp
     timestamp = datetime.now(UTC).isoformat()
@@ -165,29 +165,23 @@ def post_pr_comment(ctx: click.Context, pr_url: str, pr_number: int) -> None:
     try:
         github = require_github_issues(ctx)
     except SystemExit:
-        result = PrCommentError(
+        return PrCommentError(
             success=False,
             error_type="context_not_initialized",
             message="Context not initialized",
         )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0) from None
 
     # Post comment to GitHub
     try:
         github.add_comment(repo_root, issue_ref.issue_number, comment_body)
-        result_success = PrCommentSuccess(
+        return PrCommentSuccess(
             success=True,
             issue_number=issue_ref.issue_number,
             pr_number=pr_number,
         )
-        click.echo(json.dumps(asdict(result_success), indent=2))
-        raise SystemExit(0) from None
     except RuntimeError as e:
-        result = PrCommentError(
+        return PrCommentError(
             success=False,
             error_type="github_api_failed",
             message=str(e),
         )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(0) from None
