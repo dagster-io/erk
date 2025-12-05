@@ -164,11 +164,18 @@ def _validate_issue_for_submit(
     ctx: ErkContext,
     repo: RepoContext,
     issue_number: int,
+    base_branch: str,
 ) -> ValidatedIssue:
     """Validate a single issue for submission.
 
     Fetches the issue, validates constraints, derives branch name, and checks
     if branch/PR already exist.
+
+    Args:
+        ctx: ErkContext with git operations
+        repo: Repository context
+        issue_number: GitHub issue number to validate
+        base_branch: Base branch for PR (trunk or custom feature branch)
 
     Raises:
         SystemExit: If issue doesn't exist, missing label, or closed.
@@ -198,9 +205,8 @@ def _validate_issue_for_submit(
         )
         raise SystemExit(1)
 
-    # Derive branch name
-    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
-    logger.debug("trunk_branch=%s", trunk_branch)
+    # Use provided base_branch instead of detecting trunk
+    logger.debug("base_branch=%s", base_branch)
 
     # Compute branch name: truncate to 31 chars, then append timestamp suffix
     base_branch_name = sanitize_worktree_name(f"{issue_number}-{issue.title}")
@@ -221,13 +227,13 @@ def _validate_issue_for_submit(
         repo.root,
         issue_number,
         desired_branch_name,
-        trunk_branch,
+        base_branch,
     )
     dev_branch = ctx.issue_link_branches.create_development_branch(
         repo.root,
         issue_number,
         branch_name=desired_branch_name,
-        base_branch=trunk_branch,
+        base_branch=base_branch,
     )
     logger.debug(
         "create_development_branch returned: branch_name=%s, already_existed=%s",
@@ -267,10 +273,19 @@ def _submit_single_issue(
     validated: ValidatedIssue,
     submitted_by: str,
     original_branch: str,
+    base_branch: str,
 ) -> SubmitResult:
     """Submit a single validated issue for implementation.
 
     Creates branch/PR if needed and triggers workflow.
+
+    Args:
+        ctx: ErkContext with git operations
+        repo: Repository context
+        validated: Validated issue information
+        submitted_by: GitHub username of submitter
+        original_branch: Original branch name (to restore after)
+        base_branch: Base branch for PR (trunk or custom feature branch)
 
     Returns:
         SubmitResult with URLs and identifiers.
@@ -280,7 +295,6 @@ def _submit_single_issue(
     branch_name = validated.branch_name
     branch_exists = validated.branch_exists
     pr_number = validated.pr_number
-    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
 
     if branch_exists:
         if pr_number is not None:
@@ -323,7 +337,7 @@ def _submit_single_issue(
                 branch=branch_name,
                 title=pr_title,
                 body=pr_body,
-                base=trunk_branch,
+                base=base_branch,
                 draft=True,
             )
             user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
@@ -354,13 +368,13 @@ def _submit_single_issue(
             user_output(click.style("✓", fg="green") + " Local branch cleaned up")
     else:
         # Create branch and initial commit
-        user_output(f"Creating branch from origin/{trunk_branch}...")
+        user_output(f"Creating branch from origin/{base_branch}...")
 
-        # Fetch trunk branch
-        ctx.git.fetch_branch(repo.root, "origin", trunk_branch)
+        # Fetch base branch
+        ctx.git.fetch_branch(repo.root, "origin", base_branch)
 
-        # Create and checkout new branch from trunk
-        ctx.git.create_branch(repo.root, branch_name, f"origin/{trunk_branch}")
+        # Create and checkout new branch from base
+        ctx.git.create_branch(repo.root, branch_name, f"origin/{base_branch}")
         ctx.git.checkout_branch(repo.root, branch_name)
 
         # Get plan content and create .worker-impl/ folder
@@ -395,7 +409,7 @@ def _submit_single_issue(
             branch=branch_name,
             title=pr_title,
             body=pr_body,
-            base=trunk_branch,
+            base=base_branch,
             draft=True,
         )
         user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
@@ -531,8 +545,14 @@ def _submit_single_issue(
 
 @click.command("submit")
 @click.argument("issue_numbers", type=int, nargs=-1, required=True)
+@click.option(
+    "--base",
+    type=str,
+    default=None,
+    help="Base branch for PR (defaults to current branch).",
+)
 @click.pass_obj
-def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...]) -> None:
+def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None) -> None:
     """Submit issues for remote AI implementation via GitHub Actions.
 
     Creates branch and draft PR locally (for correct commit attribution),
@@ -544,6 +564,7 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...]) -> None:
     Example:
         erk submit 123
         erk submit 123 456 789
+        erk submit 123 --base master
 
     Requires:
         - All issues must have erk-plan label
@@ -559,7 +580,7 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...]) -> None:
     else:
         repo = discover_repo_context(ctx, ctx.cwd)
 
-    # Save current state
+    # Save current state (needed for both default base and restoration)
     original_branch = ctx.git.get_current_branch(repo.root)
     if original_branch is None:
         user_output(
@@ -567,6 +588,17 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...]) -> None:
             + "Not on a branch (detached HEAD state). Cannot submit from here."
         )
         raise SystemExit(1)
+
+    # Validate base branch if provided, otherwise default to current branch (LBYL)
+    if base is not None:
+        if not ctx.git.branch_exists_on_remote(repo.root, "origin", base):
+            user_output(
+                click.style("Error: ", fg="red") + f"Base branch '{base}' does not exist on remote"
+            )
+            raise SystemExit(1)
+        target_branch = base
+    else:
+        target_branch = original_branch
 
     # Get GitHub username (authentication already validated)
     _, username, _ = ctx.github.check_auth_status()
@@ -579,7 +611,7 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...]) -> None:
     validated: list[ValidatedIssue] = []
     for issue_number in issue_numbers:
         user_output(f"Validating issue #{issue_number}...")
-        validated_issue = _validate_issue_for_submit(ctx, repo, issue_number)
+        validated_issue = _validate_issue_for_submit(ctx, repo, issue_number, target_branch)
         validated.append(validated_issue)
 
     user_output("")
@@ -599,7 +631,7 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...]) -> None:
         else:
             user_output(f"Submitting issue #{v.number}...")
         user_output("")
-        result = _submit_single_issue(ctx, repo, v, submitted_by, original_branch)
+        result = _submit_single_issue(ctx, repo, v, submitted_by, original_branch, target_branch)
         results.append(result)
         user_output("")
 
