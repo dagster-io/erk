@@ -23,6 +23,9 @@ def build_pr_metadata_section(pr_number: int, issue_number: int | None = None) -
     It contains essential metadata: issue closing reference (if linked to a plan)
     and checkout command.
 
+    Note: Issue closing is handled via commit message keywords ("Closes #N")
+    added by the gt finalize process.
+
     Args:
         pr_number: PR number
         issue_number: Optional issue number to close (from .impl/issue.json)

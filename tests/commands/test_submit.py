@@ -15,13 +15,11 @@ from erk_shared.plan_store.types import Plan, PlanState
 from erk.cli.commands.submit import (
     ERK_PLAN_LABEL,
     _close_orphaned_draft_prs,
-    _ensure_unique_branch_name,
     _strip_plan_markers,
     submit_cmd,
 )
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
-from tests.fakes.issue_link_branches import FakeIssueLinkBranches
 
 
 def _make_plan_body(content: str = "Implementation details...") -> str:
@@ -78,8 +76,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
         trunk_branches={repo_root: "master"},
     )
     fake_github = FakeGitHub()
-    fake_issue_dev = FakeIssueLinkBranches()
-
+    
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
         root=repo_root,
@@ -92,7 +89,6 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
         git=fake_git,
         github=fake_github,
         issues=fake_github_issues,
-        issue_link_branches=fake_issue_dev,
         plan_store=fake_plan_store,
         repo=repo,
     )
@@ -107,8 +103,13 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     # Branch name is sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
     expected_branch = "123-implement-feature-x-01-15-1430"
 
-    # Verify branch was created via gh issue develop
-    assert fake_issue_dev.created_branches == [(123, expected_branch)]
+    # Verify branch was created via git (from origin/<current_branch>)
+    # Note: submit defaults to current branch as base, not trunk_branch
+    assert len(fake_git.created_branches) == 1
+    created_repo, created_branch, created_base = fake_git.created_branches[0]
+    assert created_repo == repo_root
+    assert created_branch == expected_branch
+    assert created_base == "origin/main"  # Uses current branch as base
 
     # Verify branch was pushed
     assert len(fake_git.pushed_branches) == 1
@@ -123,7 +124,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     assert branch_name == expected_branch
     assert title == "Implement feature X"
     assert draft is True
-    # PR body contains plan reference (not Closes #N - handled by native branch linking)
+    # PR body contains plan reference
     assert "**Plan:** #123" in body
 
     # Verify workflow was triggered
@@ -135,73 +136,6 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     # Verify local branch was cleaned up
     assert len(fake_git._deleted_branches) == 1
     assert expected_branch in fake_git._deleted_branches
-
-
-def test_submit_skips_branch_creation_when_exists(tmp_path: Path) -> None:
-    """Test submit skips branch/PR creation when branch already exists on remote."""
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-
-    now = datetime.now(UTC)
-    issue = IssueInfo(
-        number=123,
-        title="Implement feature X",
-        body=_make_plan_body(),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-    )
-
-    # Pre-existing branch from previous gh issue develop
-    expected_branch = "123-existing-branch"
-
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    # FakeIssueLinkBranches with existing branch for issue 123
-    fake_issue_dev = FakeIssueLinkBranches(existing_branches={123: expected_branch})
-    fake_git = FakeGit(
-        current_branches={repo_root: "main"},
-        trunk_branches={repo_root: "master"},
-        # Simulate branch existing on remote
-        remote_branches={repo_root: [f"origin/{expected_branch}"]},
-    )
-    # Set up PR status for existing branch
-    fake_github = FakeGitHub(pr_statuses={expected_branch: ("OPEN", 456, "Implement feature X")})
-
-    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
-    repo = RepoContext(
-        root=repo_root,
-        repo_name="test-repo",
-        repo_dir=repo_dir,
-        worktrees_dir=repo_dir / "worktrees",
-    )
-    ctx = ErkContext.for_test(
-        cwd=repo_root,
-        git=fake_git,
-        github=fake_github,
-        issues=fake_github_issues,
-        issue_link_branches=fake_issue_dev,
-        repo=repo,
-    )
-
-    runner = CliRunner()
-    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
-
-    assert result.exit_code == 0, result.output
-    assert "PR #456 already exists" in result.output
-    assert "Skipping branch/PR creation" in result.output
-
-    # Verify no new branch was created (existing branch was reused)
-    assert fake_issue_dev.created_branches == []
-
-    # Verify no branch/PR was created
-    assert len(fake_git.pushed_branches) == 0
-    assert len(fake_github.created_prs) == 0
-
-    # Workflow should still be triggered
-    assert len(fake_github.triggered_workflows) == 1
 
 
 def test_submit_missing_erk_plan_label(tmp_path: Path) -> None:
@@ -711,103 +645,6 @@ def test_close_orphaned_draft_prs_no_linked_prs(tmp_path: Path) -> None:
     assert fake_github.closed_prs == []
 
 
-def test_submit_creates_pr_when_branch_exists_but_no_pr(tmp_path: Path) -> None:
-    """Test submit adds empty commit and creates PR when branch exists but no PR."""
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-
-    now = datetime.now(UTC)
-    issue = IssueInfo(
-        number=123,
-        title="Implement feature X",
-        body=_make_plan_body(),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-    )
-
-    # Pre-existing branch from previous gh issue develop (no PR though)
-    expected_branch = "123-existing-branch"
-
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    # FakeIssueLinkBranches with existing branch for issue 123
-    fake_issue_dev = FakeIssueLinkBranches(existing_branches={123: expected_branch})
-    fake_git = FakeGit(
-        current_branches={repo_root: "main"},
-        trunk_branches={repo_root: "master"},
-        # Simulate branch existing on remote
-        remote_branches={repo_root: [f"origin/{expected_branch}"]},
-    )
-    # No PR status for this branch (pr_statuses is empty)
-    fake_github = FakeGitHub()
-
-    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
-    repo = RepoContext(
-        root=repo_root,
-        repo_name="test-repo",
-        repo_dir=repo_dir,
-        worktrees_dir=repo_dir / "worktrees",
-    )
-    ctx = ErkContext.for_test(
-        cwd=repo_root,
-        git=fake_git,
-        github=fake_github,
-        issues=fake_github_issues,
-        issue_link_branches=fake_issue_dev,
-        repo=repo,
-    )
-
-    runner = CliRunner()
-    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
-
-    assert result.exit_code == 0, result.output
-    assert "exists but no PR. Adding placeholder commit" in result.output
-    assert "Placeholder commit pushed" in result.output
-    assert "Draft PR #999 created" in result.output
-    assert "Local branch cleaned up" in result.output
-
-    # Verify no new branch was created via gh issue develop (existing branch was reused)
-    assert fake_issue_dev.created_branches == []
-
-    # Verify empty commit was created
-    assert len(fake_git.commits) == 1
-    cwd, message, staged_files = fake_git.commits[0]
-    assert "[erk-plan] Initialize implementation for issue #123" in message
-    assert staged_files == []  # Empty commit has no staged files
-
-    # Verify branch was pushed after commit
-    assert len(fake_git.pushed_branches) == 1
-    remote, branch, set_upstream = fake_git.pushed_branches[0]
-    assert remote == "origin"
-    assert branch == expected_branch
-
-    # Verify draft PR was created
-    assert len(fake_github.created_prs) == 1
-    branch_name, title, body, base, draft = fake_github.created_prs[0]
-    assert branch_name == expected_branch
-    assert title == "Implement feature X"
-    assert draft is True
-    # PR body contains plan reference (not Closes #N - handled by native branch linking)
-    assert "**Plan:** #123" in body
-
-    # Verify PR body was updated with checkout footer
-    assert len(fake_github.updated_pr_bodies) == 1
-    pr_number, updated_body = fake_github.updated_pr_bodies[0]
-    assert pr_number == 999
-    assert "erk pr checkout 999" in updated_body
-
-    # Verify local branch was cleaned up (checkout original, delete local)
-    assert len(fake_git._checked_out_branches) == 2  # branch checkout + restore to original
-    assert len(fake_git._deleted_branches) == 1
-    assert expected_branch in fake_git._deleted_branches
-
-    # Workflow should still be triggered
-    assert len(fake_github.triggered_workflows) == 1
-
-
 def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
     """Test submit command closes orphaned draft PRs after creating new one."""
     repo_root = tmp_path / "repo"
@@ -881,241 +718,6 @@ def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
 
     # Verify old draft was closed
     assert fake_github.closed_prs == [100]
-
-
-def test_ensure_unique_branch_name_returns_original_when_available(tmp_path: Path) -> None:
-    """Test _ensure_unique_branch_name returns original name if not on remote."""
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-
-    # No remote branches configured - name is available
-    fake_git = FakeGit(remote_branches={repo_root: []})
-
-    repo_dir = tmp_path / ".erk" / "repos" / "repo"
-    repo = RepoContext(
-        root=repo_root,
-        repo_name="repo",
-        repo_dir=repo_dir,
-        worktrees_dir=repo_dir / "worktrees",
-    )
-    ctx = ErkContext.for_test(cwd=repo_root, git=fake_git, repo=repo)
-
-    result = _ensure_unique_branch_name(ctx, repo_root, "123-feature-11-30-1200")
-
-    assert result == "123-feature-11-30-1200"
-
-
-def test_ensure_unique_branch_name_adds_suffix_on_collision(tmp_path: Path) -> None:
-    """Test _ensure_unique_branch_name adds -1 suffix when branch exists."""
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-
-    # Branch already exists on remote
-    fake_git = FakeGit(remote_branches={repo_root: ["origin/123-feature-11-30-1200"]})
-
-    repo_dir = tmp_path / ".erk" / "repos" / "repo"
-    repo = RepoContext(
-        root=repo_root,
-        repo_name="repo",
-        repo_dir=repo_dir,
-        worktrees_dir=repo_dir / "worktrees",
-    )
-    ctx = ErkContext.for_test(cwd=repo_root, git=fake_git, repo=repo)
-
-    result = _ensure_unique_branch_name(ctx, repo_root, "123-feature-11-30-1200")
-
-    assert result == "123-feature-11-30-1200-1"
-
-
-def test_ensure_unique_branch_name_increments_suffix(tmp_path: Path) -> None:
-    """Test _ensure_unique_branch_name increments suffix until unique."""
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-
-    # Base name AND -1 suffix already exist
-    fake_git = FakeGit(
-        remote_branches={
-            repo_root: [
-                "origin/123-feature-11-30-1200",
-                "origin/123-feature-11-30-1200-1",
-                "origin/123-feature-11-30-1200-2",
-            ]
-        }
-    )
-
-    repo_dir = tmp_path / ".erk" / "repos" / "repo"
-    repo = RepoContext(
-        root=repo_root,
-        repo_name="repo",
-        repo_dir=repo_dir,
-        worktrees_dir=repo_dir / "worktrees",
-    )
-    ctx = ErkContext.for_test(cwd=repo_root, git=fake_git, repo=repo)
-
-    result = _ensure_unique_branch_name(ctx, repo_root, "123-feature-11-30-1200")
-
-    assert result == "123-feature-11-30-1200-3"
-
-
-def test_submit_handles_local_branch_already_exists(tmp_path: Path) -> None:
-    """Test submit handles case where branch exists on remote AND locally.
-
-    This tests the scenario where a previous failed run left a local branch
-    that wasn't cleaned up. The command should not crash when trying to
-    create a tracking branch that already exists locally.
-    """
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-
-    now = datetime.now(UTC)
-    issue = IssueInfo(
-        number=123,
-        title="Implement feature X",
-        body=_make_plan_body(),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-    )
-
-    # Pre-existing branch from previous gh issue develop (no PR though)
-    expected_branch = "123-existing-branch"
-
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    # FakeIssueLinkBranches with existing branch for issue 123
-    fake_issue_dev = FakeIssueLinkBranches(existing_branches={123: expected_branch})
-    fake_git = FakeGit(
-        current_branches={repo_root: "main"},
-        trunk_branches={repo_root: "master"},
-        # Branch exists on remote
-        remote_branches={repo_root: [f"origin/{expected_branch}"]},
-        # Branch ALSO exists locally (e.g., from previous failed run)
-        local_branches={repo_root: [expected_branch]},
-    )
-    # No PR status for this branch (pr_statuses is empty)
-    fake_github = FakeGitHub()
-
-    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
-    repo = RepoContext(
-        root=repo_root,
-        repo_name="test-repo",
-        repo_dir=repo_dir,
-        worktrees_dir=repo_dir / "worktrees",
-    )
-    ctx = ErkContext.for_test(
-        cwd=repo_root,
-        git=fake_git,
-        github=fake_github,
-        issues=fake_github_issues,
-        issue_link_branches=fake_issue_dev,
-        repo=repo,
-    )
-
-    runner = CliRunner()
-    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
-
-    # Should succeed without crashing
-    assert result.exit_code == 0, result.output
-    assert "exists but no PR. Adding placeholder commit" in result.output
-    assert "Placeholder commit pushed" in result.output
-    assert "Draft PR #999 created" in result.output
-
-    # Verify no tracking branch was created (since local branch already exists)
-    assert fake_git.created_tracking_branches == []
-
-    # Verify branch was still checked out (reusing existing local branch)
-    assert (repo_root, expected_branch) in fake_git._checked_out_branches
-
-    # Verify commit was created
-    assert len(fake_git.commits) == 1
-
-    # Workflow should still be triggered
-    assert len(fake_github.triggered_workflows) == 1
-
-
-def test_submit_handles_branch_name_collision(tmp_path: Path) -> None:
-    """Test submit adds numeric suffix when branch already exists on remote."""
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-
-    now = datetime.now(UTC)
-    issue = IssueInfo(
-        number=123,
-        title="My Feature",
-        body=_make_plan_body(),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-    )
-
-    plan = Plan(
-        plan_identifier="123",
-        title="My Feature",
-        body=_make_plan_body(),
-        state=PlanState.OPEN,
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        metadata={},
-    )
-
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
-
-    # The expected branch name based on sanitize_worktree_name + timestamp suffix
-    # "123-my-feature" + "-01-15-1430" = "123-my-feature-01-15-1430"
-    # Simulate this branch already existing on remote
-    expected_base_branch = "123-my-feature-01-15-1430"
-
-    fake_git = FakeGit(
-        current_branches={repo_root: "main"},
-        trunk_branches={repo_root: "master"},
-        # The base branch name already exists on remote
-        remote_branches={repo_root: [f"origin/{expected_base_branch}"]},
-    )
-    fake_github = FakeGitHub()
-    fake_issue_dev = FakeIssueLinkBranches()
-
-    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
-    repo = RepoContext(
-        root=repo_root,
-        repo_name="test-repo",
-        repo_dir=repo_dir,
-        worktrees_dir=repo_dir / "worktrees",
-    )
-    ctx = ErkContext.for_test(
-        cwd=repo_root,
-        git=fake_git,
-        github=fake_github,
-        issues=fake_github_issues,
-        issue_link_branches=fake_issue_dev,
-        plan_store=fake_plan_store,
-        repo=repo,
-    )
-
-    runner = CliRunner()
-    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
-
-    assert result.exit_code == 0, result.output
-    assert "issue(s) submitted successfully!" in result.output
-
-    # Verify branch was created with -1 suffix due to collision
-    expected_branch_with_suffix = f"{expected_base_branch}-1"
-    assert fake_issue_dev.created_branches == [(123, expected_branch_with_suffix)]
-
-    # Verify branch was pushed with the suffixed name
-    assert len(fake_git.pushed_branches) == 1
-    remote, branch, set_upstream = fake_git.pushed_branches[0]
-    assert remote == "origin"
-    assert branch == expected_branch_with_suffix
-    assert set_upstream is True
 
 
 def test_submit_multiple_issues_success(tmp_path: Path) -> None:
@@ -1195,8 +797,7 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
         trunk_branches={repo_root: "master"},
     )
     fake_github = FakeGitHub()
-    fake_issue_dev = FakeIssueLinkBranches()
-
+    
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
         root=repo_root,
@@ -1209,7 +810,6 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
         git=fake_git,
         github=fake_github,
         issues=fake_github_issues,
-        issue_link_branches=fake_issue_dev,
         plan_store=fake_plan_store,
         repo=repo,
     )
@@ -1222,11 +822,12 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
     assert "#123: Feature A" in result.output
     assert "#456: Feature B" in result.output
 
-    # Verify both branches were created
-    assert len(fake_issue_dev.created_branches) == 2
-    issue_numbers_created = [b[0] for b in fake_issue_dev.created_branches]
-    assert 123 in issue_numbers_created
-    assert 456 in issue_numbers_created
+    # Verify both branches were created via git
+    assert len(fake_git.created_branches) == 2
+    created_branch_names = [b[1] for b in fake_git.created_branches]
+    # Branch names include issue number prefix
+    assert any("123-" in name for name in created_branch_names)
+    assert any("456-" in name for name in created_branch_names)
 
     # Verify both workflows were triggered
     assert len(fake_github.triggered_workflows) == 2
@@ -1269,8 +870,7 @@ def test_submit_multiple_issues_atomic_validation_failure(tmp_path: Path) -> Non
         trunk_branches={repo_root: "master"},
     )
     fake_github = FakeGitHub()
-    fake_issue_dev = FakeIssueLinkBranches()
-
+    
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
         root=repo_root,
@@ -1283,7 +883,6 @@ def test_submit_multiple_issues_atomic_validation_failure(tmp_path: Path) -> Non
         git=fake_git,
         github=fake_github,
         issues=fake_github_issues,
-        issue_link_branches=fake_issue_dev,
         repo=repo,
     )
 
@@ -1337,8 +936,7 @@ def test_submit_single_issue_still_works(tmp_path: Path) -> None:
         trunk_branches={repo_root: "master"},
     )
     fake_github = FakeGitHub()
-    fake_issue_dev = FakeIssueLinkBranches()
-
+    
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
         root=repo_root,
@@ -1351,7 +949,6 @@ def test_submit_single_issue_still_works(tmp_path: Path) -> None:
         git=fake_git,
         github=fake_github,
         issues=fake_github_issues,
-        issue_link_branches=fake_issue_dev,
         plan_store=fake_plan_store,
         repo=repo,
     )
@@ -1364,8 +961,8 @@ def test_submit_single_issue_still_works(tmp_path: Path) -> None:
     assert "1 issue(s) submitted successfully!" in result.output
     assert "Workflow:" in result.output
 
-    # Verify branch was created
-    assert len(fake_issue_dev.created_branches) == 1
+    # Verify branch was created via git
+    assert len(fake_git.created_branches) == 1
 
     # Verify workflow was triggered
     assert len(fake_github.triggered_workflows) == 1
@@ -1409,8 +1006,7 @@ def test_submit_updates_dispatch_info_in_issue(tmp_path: Path) -> None:
         trunk_branches={repo_root: "master"},
     )
     fake_github = FakeGitHub()
-    fake_issue_dev = FakeIssueLinkBranches()
-
+    
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
         root=repo_root,
@@ -1423,7 +1019,6 @@ def test_submit_updates_dispatch_info_in_issue(tmp_path: Path) -> None:
         git=fake_git,
         github=fake_github,
         issues=fake_github_issues,
-        issue_link_branches=fake_issue_dev,
         plan_store=fake_plan_store,
         repo=repo,
     )
@@ -1486,8 +1081,7 @@ def test_submit_warns_when_node_id_not_available(tmp_path: Path) -> None:
             return None
 
     fake_github = FakeGitHubNoNodeId()
-    fake_issue_dev = FakeIssueLinkBranches()
-
+    
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
         root=repo_root,
@@ -1500,7 +1094,6 @@ def test_submit_warns_when_node_id_not_available(tmp_path: Path) -> None:
         git=fake_git,
         github=fake_github,
         issues=fake_github_issues,
-        issue_link_branches=fake_issue_dev,
         plan_store=fake_plan_store,
         repo=repo,
     )
@@ -1557,8 +1150,7 @@ def test_submit_with_custom_base_branch(tmp_path: Path) -> None:
         remote_branches={repo_root: ["origin/feature/parent-branch"]},
     )
     fake_github = FakeGitHub()
-    fake_issue_dev = FakeIssueLinkBranches()
-
+    
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
         root=repo_root,
@@ -1571,7 +1163,6 @@ def test_submit_with_custom_base_branch(tmp_path: Path) -> None:
         git=fake_git,
         github=fake_github,
         issues=fake_github_issues,
-        issue_link_branches=fake_issue_dev,
         plan_store=fake_plan_store,
         repo=repo,
     )
@@ -1587,15 +1178,11 @@ def test_submit_with_custom_base_branch(tmp_path: Path) -> None:
     branch_name, title, body, base, draft = fake_github.created_prs[0]
     assert base == "feature/parent-branch"  # NOT "master"
 
-    # Verify development branch was created from custom base
-    assert len(fake_issue_dev.created_branches) == 1
-    issue_num, branch = fake_issue_dev.created_branches[0]
-    assert issue_num == 123
-    # Verify the development branch was created with the custom base
-    # (FakeIssueLinkBranches records all calls in create_calls)
-    assert len(fake_issue_dev.create_calls) == 1
-    call = fake_issue_dev.create_calls[0]
-    assert call.base_branch == "feature/parent-branch"
+    # Verify branch was created via git (FakeGit tracks created branches)
+    assert len(fake_git.created_branches) == 1
+    created_repo, created_branch, created_base = fake_git.created_branches[0]
+    assert created_repo == repo_root
+    assert created_base == "origin/feature/parent-branch"
 
 
 def test_submit_with_invalid_base_branch(tmp_path: Path) -> None:
