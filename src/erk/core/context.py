@@ -12,6 +12,8 @@ from erk_shared.github.abc import GitHub
 from erk_shared.github.dry_run import DryRunGitHub
 from erk_shared.github.issues import DryRunGitHubIssues, GitHubIssues, RealGitHubIssues
 from erk_shared.github.real import RealGitHub
+from erk_shared.integrations.claude.abc import ClaudeSessionDetector
+from erk_shared.integrations.claude.real import RealClaudeSessionDetector
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.dry_run import DryRunGraphite
 from erk_shared.integrations.graphite.real import RealGraphite
@@ -62,6 +64,7 @@ class ErkContext:
     graphite: Graphite
     shell: Shell
     claude_executor: ClaudeExecutor
+    claude_session_detector: ClaudeSessionDetector
     completion: Completion
     time: Time
     config_store: ConfigStore
@@ -131,6 +134,7 @@ class ErkContext:
         """
         from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
+        from erk_shared.integrations.claude.fake import FakeClaudeSessionDetector
         from erk_shared.integrations.graphite.fake import FakeGraphite
         from erk_shared.integrations.time.fake import FakeTime
         from erk_shared.plan_store.fake import FakePlanStore
@@ -153,6 +157,7 @@ class ErkContext:
             graphite=FakeGraphite(),
             shell=FakeShell(),
             claude_executor=FakeClaudeExecutor(),
+            claude_session_detector=FakeClaudeSessionDetector(),
             completion=FakeCompletion(),
             time=FakeTime(),
             config_store=FakeConfigStore(config=None),
@@ -177,6 +182,7 @@ class ErkContext:
         graphite: Graphite | None = None,
         shell: Shell | None = None,
         claude_executor: ClaudeExecutor | None = None,
+        claude_session_detector: ClaudeSessionDetector | None = None,
         completion: Completion | None = None,
         time: Time | None = None,
         config_store: ConfigStore | None = None,
@@ -244,6 +250,7 @@ class ErkContext:
         from erk_shared.git.fake import FakeGit
         from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
+        from erk_shared.integrations.claude.fake import FakeClaudeSessionDetector
         from erk_shared.integrations.graphite.fake import FakeGraphite
         from erk_shared.integrations.time.fake import FakeTime
         from erk_shared.plan_store.fake import FakePlanStore
@@ -277,6 +284,9 @@ class ErkContext:
 
         if claude_executor is None:
             claude_executor = FakeClaudeExecutor()
+
+        if claude_session_detector is None:
+            claude_session_detector = FakeClaudeSessionDetector()
 
         if completion is None:
             completion = FakeCompletion()
@@ -329,6 +339,7 @@ class ErkContext:
             graphite=graphite,
             shell=shell,
             claude_executor=claude_executor,
+            claude_session_detector=claude_session_detector,
             completion=completion,
             time=time,
             config_store=config_store,
@@ -505,6 +516,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
         graphite=graphite,
         shell=RealShell(),
         claude_executor=RealClaudeExecutor(),
+        claude_session_detector=RealClaudeSessionDetector(),
         completion=RealCompletion(),
         time=time,
         config_store=RealConfigStore(),
