@@ -156,7 +156,7 @@ class RealShell(Shell):
             "--print",
             "--permission-mode",
             "bypassPermissions",
-            "/erk:create-extraction-plan",
+            "/erk:create-raw-extraction-plan",
         ]
 
         result = subprocess.run(
