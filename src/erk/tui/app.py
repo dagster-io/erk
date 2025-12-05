@@ -5,11 +5,11 @@ import time
 from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from rich.markup import escape as escape_markup
 from textual import on
-from textual.app import App, ComposeResult
+from textual.app import App, ComposeResult, SystemCommand
 from textual.binding import Binding
 from textual.containers import Container, Vertical
 from textual.events import Click
@@ -217,14 +217,6 @@ class PlanDetailScreen(ModalScreen):
         Binding("3", "copy_implement_yolo", "Yolo"),
         Binding("4", "copy_submit", "Submit"),
     ]
-
-    def get_system_commands(self, screen: Screen) -> Iterator[Any]:
-        """Override to hide default system commands (Keys, Quit, Screenshot, Theme).
-
-        Returns an empty iterator so only our custom plan commands appear in the palette.
-        """
-        # Empty iterator - yield nothing to hide system commands from this modal
-        return iter(())
 
     DEFAULT_CSS = """
     PlanDetailScreen {
@@ -715,6 +707,16 @@ class ErkDashApp(App):
         Binding("i", "show_implement", "Implement"),
         Binding("slash", "start_filter", "Filter", key_display="/"),
     ]
+
+    def get_system_commands(self, screen: Screen) -> Iterator[SystemCommand]:
+        """Return system commands, hiding them on modal screens.
+
+        Hides Keys, Quit, Screenshot, Theme from command palette when on
+        PlanDetailScreen modal so only plan-specific commands appear.
+        """
+        if isinstance(screen, PlanDetailScreen):
+            return iter(())
+        yield from super().get_system_commands(screen)
 
     def __init__(
         self,
