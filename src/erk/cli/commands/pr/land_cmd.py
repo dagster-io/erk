@@ -8,6 +8,9 @@ This command replicates the shell function:
 
 It merges the current PR, deletes the current worktree/branch, navigates to the
 parent (trunk), and pulls the latest changes.
+
+After merging, it spawns Claude in non-interactive mode to create a documentation
+extraction plan from the session logs.
 """
 
 import click
@@ -26,6 +29,34 @@ from erk.cli.commands.navigation_helpers import (
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+
+
+def _run_extraction_plan(ctx: ErkContext) -> bool:
+    """Spawn Claude to create documentation extraction plan.
+
+    Uses the ClaudeExecutor from context to execute the extraction command.
+
+    Returns True on success, False on failure.
+    """
+    user_output("Creating documentation extraction plan...")
+
+    result = ctx.claude_executor.execute_command(
+        command="/erk:land-extraction",
+        worktree_path=ctx.cwd,
+        dangerous=True,  # Skip permission prompts for non-interactive execution
+        verbose=False,
+    )
+
+    if not result.success:
+        user_output(
+            click.style("Error: ", fg="red") + "Extraction plan creation failed"
+        )
+        if result.error_message:
+            user_output(result.error_message)
+        return False
+
+    user_output(click.style("✓", fg="green") + " Extraction plan created")
+    return True
 
 
 @click.command("land")
@@ -101,7 +132,17 @@ def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
         + f" Merged PR #{success_result.pr_number} [{success_result.branch_name}]"
     )
 
-    # Step 2: Navigate to destination (trunk or upstack)
+    # Step 2: Create documentation extraction plan
+    # Run after merge but before deletion - if extraction fails, stop here
+    # (PR is merged but worktree is preserved for investigation)
+    if not _run_extraction_plan(ctx):
+        user_output(
+            click.style("Warning: ", fg="yellow")
+            + "Extraction failed. PR merged but worktree preserved for investigation."
+        )
+        raise SystemExit(1)
+
+    # Step 3: Determine navigation destination (trunk or upstack)
     worktrees = ctx.git.list_worktrees(repo.root)
 
     if up:
@@ -127,7 +168,7 @@ def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
     # A subprocess cannot change the parent shell's cwd.
     # The shell integration (activation script) handles the cd.
 
-    # Step 3: Output activation script BEFORE destructive operations
+    # Step 4: Output activation script BEFORE destructive operations
     # This ensures the shell can navigate even if later steps fail.
     # The handler will use this script instead of passthrough when available.
     script_content = render_activation_script(
@@ -142,10 +183,10 @@ def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
     )
     machine_output(str(activation_result.path), nl=False)
 
-    # Step 4: Delete current branch and worktree
+    # Step 5: Delete current branch and worktree
     delete_branch_and_worktree(ctx, repo.root, current_branch, current_worktree_path)
 
-    # Step 5: Pull latest changes on destination branch
+    # Step 6: Pull latest changes on destination branch
     # If this fails, the script is already output - shell can still navigate
     ctx.git.pull_branch(dest_path, "origin", dest_branch, ff_only=True)
     user_output(click.style("✓", fg="green") + " Pulled latest changes")
