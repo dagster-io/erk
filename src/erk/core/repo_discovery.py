@@ -9,6 +9,7 @@ from pathlib import Path
 
 from erk_shared.git.abc import Git
 from erk_shared.git.real import RealGit
+from erk_shared.git.remotes import GitRemotes, RealGitRemotes
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.types import GitHubRepoId
 
@@ -58,7 +59,10 @@ class NoRepoSentinel:
 
 
 def discover_repo_or_sentinel(
-    cwd: Path, erk_root: Path, git_ops: Git | None = None
+    cwd: Path,
+    erk_root: Path,
+    git_ops: Git | None = None,
+    git_remotes: GitRemotes | None = None,
 ) -> RepoContext | NoRepoSentinel:
     """Walk up from `cwd` to find a directory containing `.git`.
 
@@ -72,11 +76,13 @@ def discover_repo_or_sentinel(
         cwd: Current working directory to start search from
         erk_root: Global erks root directory (from config)
         git_ops: Git operations interface (defaults to RealGit)
+        git_remotes: GitRemotes operations interface (defaults to RealGitRemotes)
 
     Returns:
         RepoContext if inside a git repository, NoRepoSentinel otherwise
     """
     ops = git_ops if git_ops is not None else RealGit()
+    remotes = git_remotes if git_remotes is not None else RealGitRemotes()
 
     if not ops.path_exists(cwd):
         return NoRepoSentinel(message=f"Start path '{cwd}' does not exist")
@@ -117,11 +123,11 @@ def discover_repo_or_sentinel(
     # Extract GitHub identity from remote URL
     repo_id: GitHubRepoId | None = None
     try:
-        remote_url = ops.get_remote_url(root, "origin")
+        remote_url = remotes.get_remote_url(root, "origin")
         owner_repo = parse_git_remote_url(remote_url)
         repo_id = GitHubRepoId(owner=owner_repo[0], repo=owner_repo[1])
-    except ValueError:
-        # No origin remote or not a GitHub URL - continue without GitHub identity
+    except (ValueError, FileNotFoundError, OSError):
+        # No origin remote, not a GitHub URL, or filesystem error - continue without GitHub identity
         pass
 
     return RepoContext(

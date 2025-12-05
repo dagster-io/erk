@@ -8,6 +8,7 @@ import tomlkit
 from erk_shared.git.abc import Git
 from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.real import RealGit
+from erk_shared.git.remotes import DryRunGitRemotes, GitRemotes, RealGitRemotes
 from erk_shared.github.abc import GitHub
 from erk_shared.github.dry_run import DryRunGitHub
 from erk_shared.github.issue_link_branches import IssueLinkBranches
@@ -59,6 +60,7 @@ class ErkContext:
     """
 
     git: Git
+    git_remotes: GitRemotes
     github: GitHub
     issues: GitHubIssues
     issue_link_branches: IssueLinkBranches
@@ -133,6 +135,7 @@ class ErkContext:
             For more complex test setup with custom configs or multiple integration classes,
             use ErkContext.for_test() instead.
         """
+        from erk_shared.git.remotes import FakeGitRemotes
         from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
         from erk_shared.integrations.graphite.fake import FakeGraphite
@@ -153,6 +156,7 @@ class ErkContext:
         fake_issue_link_branches = FakeIssueLinkBranches()
         return ErkContext(
             git=git,
+            git_remotes=FakeGitRemotes(),
             github=fake_github,
             issues=fake_issues,
             issue_link_branches=fake_issue_link_branches,
@@ -178,6 +182,7 @@ class ErkContext:
     @staticmethod
     def for_test(
         git: Git | None = None,
+        git_remotes: GitRemotes | None = None,
         github: GitHub | None = None,
         issues: GitHubIssues | None = None,
         issue_link_branches: IssueLinkBranches | None = None,
@@ -207,6 +212,8 @@ class ErkContext:
 
         Args:
             git: Optional Git implementation. If None, creates empty FakeGit.
+            git_remotes: Optional GitRemotes implementation.
+                        If None, creates empty FakeGitRemotes.
             github: Optional GitHub implementation. If None, creates empty FakeGitHub.
             issues: Optional GitHubIssues implementation.
                        If None, creates empty FakeGitHubIssues.
@@ -250,6 +257,7 @@ class ErkContext:
             which is more concise.
         """
         from erk_shared.git.fake import FakeGit
+        from erk_shared.git.remotes import FakeGitRemotes
         from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
         from erk_shared.integrations.graphite.fake import FakeGraphite
@@ -268,6 +276,9 @@ class ErkContext:
 
         if git is None:
             git = FakeGit()
+
+        if git_remotes is None:
+            git_remotes = FakeGitRemotes()
 
         if github is None:
             github = FakeGitHub()
@@ -329,6 +340,7 @@ class ErkContext:
         # Apply dry-run wrappers if needed (matching production behavior)
         if dry_run:
             git = DryRunGit(git)
+            git_remotes = DryRunGitRemotes(git_remotes)
             graphite = DryRunGraphite(graphite)
             github = DryRunGitHub(github)
             issues = DryRunGitHubIssues(issues)
@@ -336,6 +348,7 @@ class ErkContext:
 
         return ErkContext(
             git=git,
+            git_remotes=git_remotes,
             github=github,
             issues=issues,
             issue_link_branches=issue_link_branches,
@@ -473,6 +486,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
     # Create time first so it can be injected into other classes
     time: Time = RealTime()
     git: Git = RealGit()
+    git_remotes: GitRemotes = RealGitRemotes()
     graphite: Graphite = RealGraphite()
     github: GitHub = RealGitHub(time)
     issues: GitHubIssues = RealGitHubIssues()
@@ -480,10 +494,10 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
     plan_store: PlanStore = GitHubPlanStore(issues)
     plan_list_service: PlanListService = PlanListService(github, issues)
 
-    # 5. Discover repo (only needs cwd, erk_root, git)
+    # 5. Discover repo (only needs cwd, erk_root, git, git_remotes)
     # If global_config is None, use placeholder path for repo discovery
     erk_root = global_config.erk_root if global_config else Path.home() / "worktrees"
-    repo = discover_repo_or_sentinel(cwd, erk_root, git)
+    repo = discover_repo_or_sentinel(cwd, erk_root, git, git_remotes)
 
     # 6. Discover project (if in a repo)
     project: ProjectContext | None = None
@@ -507,6 +521,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
     # 9. Apply dry-run wrappers if needed
     if dry_run:
         git = DryRunGit(git)
+        git_remotes = DryRunGitRemotes(git_remotes)
         graphite = DryRunGraphite(graphite)
         github = DryRunGitHub(github)
         issues = DryRunGitHubIssues(issues)
@@ -515,6 +530,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
     # 10. Create context with all values
     return ErkContext(
         git=git,
+        git_remotes=git_remotes,
         github=github,
         issues=issues,
         issue_link_branches=issue_link_branches,

@@ -1,6 +1,6 @@
-"""Unit tests for RealGit with mocked subprocess calls.
+"""Unit tests for RealGit and RealGitRemotes with mocked subprocess calls.
 
-These tests verify that RealGit correctly constructs subprocess commands
+These tests verify that RealGit and RealGitRemotes correctly construct subprocess commands
 for external tools (git) without actually executing them.
 """
 
@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from erk_shared.git.real import RealGit
+from erk_shared.git.remotes import RealGitRemotes
 
 
 def test_list_remote_branches() -> None:
@@ -107,7 +108,7 @@ def test_branch_exists_on_remote_when_exists() -> None:
         )
 
         # Act: Call the method
-        ops = RealGit()
+        ops = RealGitRemotes()
         exists = ops.branch_exists_on_remote(Path("/test/repo"), "origin", "feature-branch")
 
         # Assert: Verify command construction
@@ -133,7 +134,7 @@ def test_branch_exists_on_remote_when_not_exists() -> None:
         )
 
         # Act: Call the method
-        ops = RealGit()
+        ops = RealGitRemotes()
         exists = ops.branch_exists_on_remote(Path("/test/repo"), "origin", "nonexistent-branch")
 
         # Assert: Verify command construction
@@ -155,7 +156,7 @@ def test_branch_exists_on_remote_with_whitespace() -> None:
         )
 
         # Act: Call the method
-        ops = RealGit()
+        ops = RealGitRemotes()
         exists = ops.branch_exists_on_remote(Path("/test/repo"), "origin", "feature-branch")
 
         # Assert: Verify result (whitespace stripped before checking)

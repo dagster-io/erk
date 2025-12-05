@@ -4,6 +4,7 @@ from pathlib import Path
 
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
+from erk_shared.git.remotes import FakeGitRemotes
 
 from erk.core.repo_discovery import RepoContext, discover_repo_or_sentinel
 
@@ -21,7 +22,12 @@ def test_discover_repo_extracts_github_identity_https(tmp_path: Path):
         remote_urls={(repo_root, "origin"): "https://github.com/dagster-io/erk.git"},
     )
 
-    result = discover_repo_or_sentinel(repo_root, erk_root, git_ops)
+    # Configure FakeGitRemotes with matching remote URL
+    git_remotes = FakeGitRemotes(
+        remote_urls={repo_root: {"origin": "https://github.com/dagster-io/erk.git"}}
+    )
+
+    result = discover_repo_or_sentinel(repo_root, erk_root, git_ops, git_remotes)
 
     assert isinstance(result, RepoContext)
     assert result.github is not None
@@ -42,7 +48,12 @@ def test_discover_repo_extracts_github_identity_ssh(tmp_path: Path):
         remote_urls={(repo_root, "origin"): "git@github.com:dagster-io/erk.git"},
     )
 
-    result = discover_repo_or_sentinel(repo_root, erk_root, git_ops)
+    # Configure FakeGitRemotes with matching remote URL
+    git_remotes = FakeGitRemotes(
+        remote_urls={repo_root: {"origin": "git@github.com:dagster-io/erk.git"}}
+    )
+
+    result = discover_repo_or_sentinel(repo_root, erk_root, git_ops, git_remotes)
 
     assert isinstance(result, RepoContext)
     assert result.github is not None
@@ -63,7 +74,12 @@ def test_discover_repo_no_github_identity_non_github_remote(tmp_path: Path):
         remote_urls={(repo_root, "origin"): "https://gitlab.com/user/repo.git"},
     )
 
-    result = discover_repo_or_sentinel(repo_root, erk_root, git_ops)
+    # Configure FakeGitRemotes with matching remote URL
+    git_remotes = FakeGitRemotes(
+        remote_urls={repo_root: {"origin": "https://gitlab.com/user/repo.git"}}
+    )
+
+    result = discover_repo_or_sentinel(repo_root, erk_root, git_ops, git_remotes)
 
     assert isinstance(result, RepoContext)
     assert result.github is None
@@ -117,8 +133,13 @@ def test_discover_repo_in_worktree_returns_worktree_root(tmp_path: Path):
         remote_urls={(main_repo, "origin"): "https://github.com/dagster-io/erk.git"},
     )
 
+    # Configure FakeGitRemotes with matching remote URL (keyed by worktree_path for git commands)
+    git_remotes = FakeGitRemotes(
+        remote_urls={worktree_path: {"origin": "https://github.com/dagster-io/erk.git"}}
+    )
+
     # Act: discover repo from worktree
-    result = discover_repo_or_sentinel(worktree_path, erk_root, git_ops)
+    result = discover_repo_or_sentinel(worktree_path, erk_root, git_ops, git_remotes)
 
     # Assert
     assert isinstance(result, RepoContext)
@@ -147,7 +168,12 @@ def test_discover_repo_in_main_repo_returns_main_repo_root(tmp_path: Path):
         remote_urls={(main_repo, "origin"): "https://github.com/dagster-io/erk.git"},
     )
 
-    result = discover_repo_or_sentinel(main_repo, erk_root, git_ops)
+    # Configure FakeGitRemotes with matching remote URL
+    git_remotes = FakeGitRemotes(
+        remote_urls={main_repo: {"origin": "https://github.com/dagster-io/erk.git"}}
+    )
+
+    result = discover_repo_or_sentinel(main_repo, erk_root, git_ops, git_remotes)
 
     assert isinstance(result, RepoContext)
     assert result.root == main_repo

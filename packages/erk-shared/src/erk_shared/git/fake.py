@@ -460,26 +460,6 @@ class FakeGit(Git):
         commits = self._recent_commits.get(cwd, [])
         return commits[:limit]
 
-    def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
-        """Fetch a specific branch from a remote (tracks mutation)."""
-        self._fetched_branches.append((remote, branch))
-
-    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -> None:
-        """Pull a specific branch from a remote (tracks mutation)."""
-        self._pulled_branches.append((remote, branch, ff_only))
-        if self._pull_branch_raises is not None:
-            raise self._pull_branch_raises
-
-    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -> bool:
-        """Check if a branch exists on a remote (fake implementation).
-
-        Returns True if the branch exists in the configured remote branches.
-        Checks for the branch in format: remote/branch (e.g., origin/feature).
-        """
-        remote_branches = self._remote_branches.get(repo_root, [])
-        remote_ref = f"{remote}/{branch}"
-        return remote_ref in remote_branches
-
     @property
     def deleted_branches(self) -> list[str]:
         """Get the list of branches that have been deleted.
@@ -679,21 +659,6 @@ class FakeGit(Git):
         """Get branch-issue association from fake storage."""
         return self._branch_issues.get(branch)
 
-    def fetch_pr_ref(self, repo_root: Path, remote: str, pr_number: int, local_branch: str) -> None:
-        """Record PR ref fetch in fake storage (mutates internal state).
-
-        Simulates fetching a PR ref by creating a local branch. In real git,
-        this would fetch refs/pull/<number>/head and create the branch.
-        """
-        # Track the fetch for test assertions
-        self._fetched_branches.append((remote, f"pull/{pr_number}/head"))
-
-        # In the fake, we simulate branch creation by adding to local branches
-        if repo_root not in self._local_branches:
-            self._local_branches[repo_root] = []
-        if local_branch not in self._local_branches[repo_root]:
-            self._local_branches[repo_root].append(local_branch)
-
     def stage_files(self, cwd: Path, paths: list[str]) -> None:
         """Record staged files for commit."""
         self._staged_files.extend(paths)
@@ -712,12 +677,6 @@ class FakeGit(Git):
         for (path, base_branch), count in list(self._commits_ahead.items()):
             if path == cwd:
                 self._commits_ahead[(cwd, base_branch)] = count + 1
-
-    def push_to_remote(
-        self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False
-    ) -> None:
-        """Record push to remote."""
-        self._pushed_branches.append((remote, branch, set_upstream))
 
     @property
     def staged_files(self) -> list[str]:
@@ -813,14 +772,3 @@ class FakeGit(Git):
     def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
         """Check if merging would have conflicts using git merge-tree."""
         return self._merge_conflicts.get((base_branch, head_branch), False)
-
-    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
-        """Get the URL for a git remote.
-
-        Raises:
-            ValueError: If remote doesn't exist or has no URL
-        """
-        url = self._remote_urls.get((repo_root, remote))
-        if url is None:
-            raise ValueError(f"Remote '{remote}' not found in repository")
-        return url

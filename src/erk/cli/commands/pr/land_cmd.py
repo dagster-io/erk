@@ -147,7 +147,7 @@ def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
 
     # Step 5: Pull latest changes on destination branch
     # If this fails, the script is already output - shell can still navigate
-    ctx.git.pull_branch(dest_path, "origin", dest_branch, ff_only=True)
+    ctx.git_remotes.pull_branch(dest_path, "origin", dest_branch, ff_only=True)
     user_output(click.style("✓", fg="green") + " Pulled latest changes")
 
     raise SystemExit(0)

@@ -549,38 +549,6 @@ class RealGit(Git):
 
         return commits
 
-    def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
-        """Fetch a specific branch from a remote."""
-        run_subprocess_with_context(
-            ["git", "fetch", remote, branch],
-            operation_context=f"fetch branch '{branch}' from remote '{remote}'",
-            cwd=repo_root,
-        )
-
-    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -> None:
-        """Pull a specific branch from a remote."""
-        cmd = ["git", "pull"]
-        if ff_only:
-            cmd.append("--ff-only")
-        cmd.extend([remote, branch])
-
-        run_subprocess_with_context(
-            cmd,
-            operation_context=f"pull branch '{branch}' from remote '{remote}'",
-            cwd=repo_root,
-        )
-
-    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -> bool:
-        """Check if a branch exists on a remote."""
-        result = subprocess.run(
-            ["git", "ls-remote", remote, branch],
-            cwd=repo_root,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        return bool(result.stdout.strip())
-
     def set_branch_issue(self, repo_root: Path, branch: str, issue_number: int) -> None:
         """Associate a GitHub issue number with a branch via git config."""
         run_subprocess_with_context(
@@ -615,17 +583,6 @@ class RealGit(Git):
             # Config value exists but is not a valid integer
             return None
 
-    def fetch_pr_ref(self, repo_root: Path, remote: str, pr_number: int, local_branch: str) -> None:
-        """Fetch a PR ref into a local branch.
-
-        Uses GitHub's special refs/pull/<number>/head reference.
-        """
-        run_subprocess_with_context(
-            ["git", "fetch", remote, f"pull/{pr_number}/head:{local_branch}"],
-            operation_context=f"fetch PR #{pr_number} into branch '{local_branch}'",
-            cwd=repo_root,
-        )
-
     def stage_files(self, cwd: Path, paths: list[str]) -> None:
         """Stage specific files for commit."""
         run_subprocess_with_context(
@@ -639,21 +596,6 @@ class RealGit(Git):
         run_subprocess_with_context(
             ["git", "commit", "--allow-empty", "-m", message],
             operation_context="create commit",
-            cwd=cwd,
-        )
-
-    def push_to_remote(
-        self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False
-    ) -> None:
-        """Push a branch to a remote."""
-        cmd = ["git", "push"]
-        if set_upstream:
-            cmd.append("-u")
-        cmd.extend([remote, branch])
-
-        run_subprocess_with_context(
-            cmd,
-            operation_context=f"push branch '{branch}' to remote '{remote}'",
             cwd=cwd,
         )
 
@@ -731,23 +673,3 @@ class RealGit(Git):
             check=False,
         )
         return result.returncode != 0
-
-    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
-        """Get the URL for a git remote.
-
-        Raises:
-            ValueError: If remote doesn't exist or has no URL
-        """
-        result = subprocess.run(
-            ["git", "remote", "get-url", remote],
-            cwd=repo_root,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            raise ValueError(f"Remote '{remote}' not found in repository")
-        url = result.stdout.strip()
-        if not url:
-            raise ValueError(f"Remote '{remote}' has no URL configured")
-        return url

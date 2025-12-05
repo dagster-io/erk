@@ -40,7 +40,7 @@ def test_pr_checkout_same_repo_branch_exists_on_remote() -> None:
         assert result.exit_code == 0
         assert "Created worktree for PR #123" in result.output
         # Verify fetch was called
-        assert ("origin", "feature-branch") in git.fetched_branches
+        assert ("origin", "feature-branch") in ctx.git_remotes.fetched_branches
         # Verify tracking branch was created
         assert ("feature-branch", "origin/feature-branch") in git.created_tracking_branches
         # Verify worktree was added
@@ -72,7 +72,7 @@ def test_pr_checkout_same_repo_branch_already_local() -> None:
 
         assert result.exit_code == 0
         # No fetch needed since branch exists locally
-        assert len(git.fetched_branches) == 0
+        assert len(ctx.git_remotes.fetched_branches) == 0
         assert len(git.created_tracking_branches) == 0
         # Worktree should still be created
         assert len(git.added_worktrees) == 1
@@ -104,7 +104,7 @@ def test_pr_checkout_cross_repository_fork() -> None:
         assert result.exit_code == 0
         assert "Created worktree for PR #789" in result.output
         # Should fetch via PR ref, not regular branch
-        assert ("origin", "pull/789/head") in git.fetched_branches
+        assert ("origin", "pull/789/head") in ctx.git_remotes.fetched_branches
         # Worktree should be at pr/789 path
         worktree_path = Path(git.added_worktrees[0][0])
         assert "pr" in worktree_path.parts[-1] or worktree_path.name == "789"

@@ -18,6 +18,7 @@ GitHub operations use the main GitHub ABC from erk_shared.github.
 from typing import Protocol
 
 from erk_shared.git.abc import Git
+from erk_shared.git.remotes import GitRemotes
 from erk_shared.github.abc import GitHub
 from erk_shared.integrations.graphite.abc import Graphite
 
@@ -45,6 +46,11 @@ class GtKit(Protocol):
     @property
     def git(self) -> Git:
         """Git operations interface."""
+        ...
+
+    @property
+    def git_remotes(self) -> GitRemotes:
+        """Git remote operations interface."""
         ...
 
     @property

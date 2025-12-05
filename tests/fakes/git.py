@@ -138,8 +138,6 @@ class FakeGit(Git):
         self._removed_worktrees: list[Path] = []
         self._checked_out_branches: list[tuple[Path, str]] = []
         self._detached_checkouts: list[tuple[Path, str]] = []
-        self._fetched_branches: list[tuple[str, str]] = []
-        self._pulled_branches: list[tuple[str, str, bool]] = []
         self._chdir_history: list[Path] = []
         self._created_tracking_branches: list[tuple[str, str]] = []
 
@@ -377,24 +375,6 @@ class FakeGit(Git):
         commits = self._recent_commits.get(cwd, [])
         return commits[:limit]
 
-    def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
-        """Fetch a specific branch from a remote (tracks mutation)."""
-        self._fetched_branches.append((remote, branch))
-
-    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -> None:
-        """Pull a specific branch from a remote (tracks mutation)."""
-        self._pulled_branches.append((remote, branch, ff_only))
-
-    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -> bool:
-        """Check if a branch exists on a remote (fake implementation).
-
-        Returns True if the branch exists in the configured remote branches.
-        Checks for the branch in format: remote/branch (e.g., origin/feature).
-        """
-        remote_branches = self._remote_branches.get(repo_root, [])
-        remote_ref = f"{remote}/{branch}"
-        return remote_ref in remote_branches
-
     @property
     def deleted_branches(self) -> list[str]:
         """Get the list of branches that have been deleted.
@@ -437,24 +417,6 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return self._detached_checkouts.copy()
-
-    @property
-    def fetched_branches(self) -> list[tuple[str, str]]:
-        """Get list of branches fetched during test.
-
-        Returns list of (remote, branch) tuples.
-        This property is for test assertions only.
-        """
-        return self._fetched_branches.copy()
-
-    @property
-    def pulled_branches(self) -> list[tuple[str, str, bool]]:
-        """Get list of branches pulled during test.
-
-        Returns list of (remote, branch, ff_only) tuples.
-        This property is for test assertions only.
-        """
-        return self._pulled_branches.copy()
 
     @property
     def chdir_history(self) -> list[Path]:
@@ -594,11 +556,6 @@ class FakeGit(Git):
         """Get branch-issue association from fake storage."""
         return self._branch_issues.get(branch)
 
-    def fetch_pr_ref(self, repo_root: Path, remote: str, pr_number: int, local_branch: str) -> None:
-        """Fetch a PR ref into a local branch (tracks mutation)."""
-        # Track similar to fetch_branch but with PR ref format
-        self._fetched_branches.append((remote, f"pull/{pr_number}/head"))
-
     def stage_files(self, cwd: Path, paths: list[str]) -> None:
         """Stage files for commit (tracks mutation)."""
         # Track staged files for test assertions
@@ -613,15 +570,6 @@ class FakeGit(Git):
             self._commits: list[tuple[Path, str]] = []
         self._commits.append((cwd, message))
 
-    def push_to_remote(
-        self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False
-    ) -> None:
-        """Push branch to remote (tracks mutation)."""
-        # Track pushed branches for test assertions
-        if not hasattr(self, "_pushed_branches"):
-            self._pushed_branches: list[tuple[str, str, bool]] = []
-        self._pushed_branches.append((remote, branch, set_upstream))
-
     @property
     def staged_files(self) -> list[str]:
         """Get list of staged files."""
@@ -635,13 +583,6 @@ class FakeGit(Git):
         if not hasattr(self, "_commits"):
             self._commits = []
         return self._commits.copy()
-
-    @property
-    def pushed_branches(self) -> list[tuple[str, str, bool]]:
-        """Get list of branches pushed during test."""
-        if not hasattr(self, "_pushed_branches"):
-            self._pushed_branches = []
-        return self._pushed_branches.copy()
 
     def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
         """Get the author date of the most recent commit unique to a branch."""
@@ -690,17 +631,3 @@ class FakeGit(Git):
         if not hasattr(self, "_merge_conflicts"):
             self._merge_conflicts: dict[tuple[str, str], bool] = {}
         return self._merge_conflicts.get((base_branch, head_branch), False)
-
-    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
-        """Get the URL for a git remote.
-
-        Raises:
-            ValueError: If remote doesn't exist or has no URL
-        """
-        # Return configured remote URL or raise
-        if not hasattr(self, "_remote_urls"):
-            self._remote_urls: dict[tuple[Path, str], str] = {}
-        url = self._remote_urls.get((repo_root, remote))
-        if url is None:
-            raise ValueError(f"Remote '{remote}' not found in repository")
-        return url

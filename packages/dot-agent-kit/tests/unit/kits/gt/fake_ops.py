@@ -17,6 +17,7 @@ from pathlib import Path
 
 from erk_shared.git.abc import Git
 from erk_shared.git.fake import FakeGit
+from erk_shared.git.remotes import FakeGitRemotes, GitRemotes
 from erk_shared.github.abc import GitHub
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRMergeability
@@ -74,6 +75,7 @@ class FakeGtKitOps:
         self._git_add_all_raises: Exception | None = None
         self._git_remote_urls: dict[tuple[Path, str], str] = {}
         self._git_instance: FakeGit | None = None
+        self._git_remotes_instance: FakeGitRemotes | None = None
         self._repo_root: str = "/fake/repo/root"
 
         # GitHub builder state (lazy construction)
@@ -158,6 +160,19 @@ class FakeGtKitOps:
         if self._git_instance is None:
             self._git_instance = self._build_fake_git()
         return self._git_instance
+
+    @property
+    def git_remotes(self) -> GitRemotes:
+        """Get the git remotes operations interface (lazy construction)."""
+        if self._git_remotes_instance is None:
+            # Build remote_branches and remote_urls from _git_remote_urls
+            remote_urls: dict[Path, dict[str, str]] = {}
+            for (repo_root, remote), url in self._git_remote_urls.items():
+                if repo_root not in remote_urls:
+                    remote_urls[repo_root] = {}
+                remote_urls[repo_root][remote] = url
+            self._git_remotes_instance = FakeGitRemotes(remote_urls=remote_urls)
+        return self._git_remotes_instance
 
     @property
     def github(self) -> GitHub:
@@ -651,4 +666,5 @@ class FakeGtKitOps:
         repo_root = Path(self._repo_root)
         self._git_remote_urls[(repo_root, remote)] = url
         self._git_instance = None
+        self._git_remotes_instance = None  # Reset cache
         return self

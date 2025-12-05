@@ -189,21 +189,6 @@ class DryRunGit(Git):
         """Get recent commits (read-only, delegates to wrapped)."""
         return self._wrapped.get_recent_commits(cwd, limit=limit)
 
-    def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
-        """No-op for fetching branch in dry-run mode."""
-        # Do nothing - prevents actual fetch execution
-        pass
-
-    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -> None:
-        """No-op for pulling branch in dry-run mode."""
-        # Do nothing - prevents actual pull execution
-        pass
-
-    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -> bool:
-        """No-op check - always returns True in dry-run mode."""
-        # Return True to allow dry-run to continue
-        return True
-
     def set_branch_issue(self, repo_root: Path, branch: str, issue_number: int) -> None:
         """No-op for setting branch issue in dry-run mode."""
         # Do nothing - prevents actual git config write
@@ -213,11 +198,6 @@ class DryRunGit(Git):
         """Get branch issue (read-only, delegates to wrapped)."""
         return self._wrapped.get_branch_issue(repo_root, branch)
 
-    def fetch_pr_ref(self, repo_root: Path, remote: str, pr_number: int, local_branch: str) -> None:
-        """No-op for fetching PR ref in dry-run mode."""
-        # Do nothing - prevents actual fetch execution
-        pass
-
     def stage_files(self, cwd: Path, paths: list[str]) -> None:
         """No-op for staging files in dry-run mode."""
         # Do nothing - prevents actual file staging
@@ -226,13 +206,6 @@ class DryRunGit(Git):
     def commit(self, cwd: Path, message: str) -> None:
         """No-op for committing in dry-run mode."""
         # Do nothing - prevents actual commit creation
-        pass
-
-    def push_to_remote(
-        self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False
-    ) -> None:
-        """No-op for pushing in dry-run mode."""
-        # Do nothing - prevents actual push execution
         pass
 
     def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
@@ -264,7 +237,3 @@ class DryRunGit(Git):
     def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
         """Check merge conflicts (read-only, delegates to wrapped)."""
         return self._wrapped.check_merge_conflicts(cwd, base_branch, head_branch)
-
-    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
-        """Get remote URL (read-only, delegates to wrapped)."""
-        return self._wrapped.get_remote_url(repo_root, remote)

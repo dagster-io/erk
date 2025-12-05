@@ -126,12 +126,12 @@ def _ensure_unique_branch_name(
     Returns:
         Unique branch name (original if available, or with -1, -2, etc. suffix)
     """
-    if not ctx.git.branch_exists_on_remote(repo_root, "origin", base_name):
+    if not ctx.git_remotes.branch_exists_on_remote(repo_root, "origin", base_name):
         return base_name
 
     for i in range(1, 100):
         candidate = f"{base_name}-{i}"
-        if not ctx.git.branch_exists_on_remote(repo_root, "origin", candidate):
+        if not ctx.git_remotes.branch_exists_on_remote(repo_root, "origin", candidate):
             return candidate
 
     raise RuntimeError(f"Could not find unique branch name after 100 attempts: {base_name}")
@@ -243,7 +243,7 @@ def _validate_issue_for_submit(
         user_output(f"Created linked branch: {click.style(branch_name, fg='cyan')}")
 
     # Check if branch already exists on remote and has a PR
-    branch_exists = ctx.git.branch_exists_on_remote(repo.root, "origin", branch_name)
+    branch_exists = ctx.git_remotes.branch_exists_on_remote(repo.root, "origin", branch_name)
     logger.debug("branch_exists_on_remote(%s)=%s", branch_name, branch_exists)
 
     pr_number: int | None = None
@@ -293,7 +293,7 @@ def _submit_single_issue(
             user_output(f"Branch '{branch_name}' exists but no PR. Adding placeholder commit...")
 
             # Fetch and checkout the remote branch locally
-            ctx.git.fetch_branch(repo.root, "origin", branch_name)
+            ctx.git_remotes.fetch_branch(repo.root, "origin", branch_name)
 
             # Only create tracking branch if it doesn't exist locally (LBYL)
             local_branches = ctx.git.list_local_branches(repo.root)
@@ -307,7 +307,7 @@ def _submit_single_issue(
                 repo.root,
                 f"[erk-plan] Initialize implementation for issue #{issue_number}",
             )
-            ctx.git.push_to_remote(repo.root, "origin", branch_name)
+            ctx.git_remotes.push_to_remote(repo.root, "origin", branch_name)
             user_output(click.style("✓", fg="green") + " Placeholder commit pushed")
 
             # Now create the PR
@@ -357,7 +357,7 @@ def _submit_single_issue(
         user_output(f"Creating branch from origin/{trunk_branch}...")
 
         # Fetch trunk branch
-        ctx.git.fetch_branch(repo.root, "origin", trunk_branch)
+        ctx.git_remotes.fetch_branch(repo.root, "origin", trunk_branch)
 
         # Create and checkout new branch from trunk
         ctx.git.create_branch(repo.root, branch_name, f"origin/{trunk_branch}")
@@ -378,7 +378,7 @@ def _submit_single_issue(
         # Stage, commit, and push
         ctx.git.stage_files(repo.root, [".worker-impl"])
         ctx.git.commit(repo.root, f"Add plan for issue #{issue_number}")
-        ctx.git.push_to_remote(repo.root, "origin", branch_name, set_upstream=True)
+        ctx.git_remotes.push_to_remote(repo.root, "origin", branch_name, set_upstream=True)
         user_output(click.style("✓", fg="green") + " Branch pushed to remote")
 
         # Create draft PR
