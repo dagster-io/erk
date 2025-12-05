@@ -4,6 +4,9 @@ read_when:
   - "choosing between Protocol and ABC for interface design"
   - "designing interfaces with structural vs nominal typing"
   - "working with frozen dataclasses and Protocol @property patterns"
+tripwires:
+  - action: "creating Protocol with bare attributes for frozen dataclasses"
+    warning: "Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors."
 ---
 
 # Protocol vs ABC: Interface Design Guide

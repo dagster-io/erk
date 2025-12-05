@@ -11,7 +11,11 @@ from pathlib import Path
 
 import yaml
 
-from dot_agent_kit.models.agent_doc import AgentDocFrontmatter, AgentDocValidationResult
+from dot_agent_kit.models.agent_doc import (
+    AgentDocFrontmatter,
+    AgentDocValidationResult,
+    Tripwire,
+)
 
 AGENT_DOCS_DIR = "docs/agent"
 FRONTMATTER_PATTERN = re.compile(r"^---\s*\n(.*?)\n---", re.DOTALL)
@@ -39,6 +43,50 @@ def parse_frontmatter(content: str) -> tuple[dict[str, object] | None, str | Non
         return parsed, None
     except yaml.YAMLError as e:
         return None, f"Invalid YAML: {e}"
+
+
+def _validate_tripwires(
+    tripwires_data: object,
+) -> tuple[list[Tripwire], list[str]]:
+    """Validate the tripwires field from frontmatter.
+
+    Args:
+        tripwires_data: Raw tripwires data from YAML.
+
+    Returns:
+        Tuple of (tripwires, errors). If validation succeeds,
+        errors is empty and tripwires contains parsed Tripwire objects.
+    """
+    errors: list[str] = []
+    tripwires: list[Tripwire] = []
+
+    if not isinstance(tripwires_data, list):
+        errors.append("Field 'tripwires' must be a list")
+        return [], errors
+
+    for i, item in enumerate(tripwires_data):
+        if not isinstance(item, dict):
+            errors.append(f"Field 'tripwires[{i}]' must be an object")
+            continue
+
+        action = item.get("action")
+        warning = item.get("warning")
+
+        if not action:
+            errors.append(f"Field 'tripwires[{i}].action' is required")
+        elif not isinstance(action, str):
+            errors.append(f"Field 'tripwires[{i}].action' must be a string")
+
+        if not warning:
+            errors.append(f"Field 'tripwires[{i}].warning' is required")
+        elif not isinstance(warning, str):
+            errors.append(f"Field 'tripwires[{i}].warning' must be a string")
+
+        # Only create Tripwire if both fields are valid strings
+        if isinstance(action, str) and action and isinstance(warning, str) and warning:
+            tripwires.append(Tripwire(action=action, warning=warning))
+
+    return tripwires, errors
 
 
 def validate_agent_doc_frontmatter(
@@ -75,6 +123,13 @@ def validate_agent_doc_frontmatter(
             if not isinstance(item, str):
                 errors.append(f"Field 'read_when[{i}]' must be a string")
 
+    # Check tripwires (optional)
+    tripwires: list[Tripwire] = []
+    tripwires_data = data.get("tripwires")
+    if tripwires_data is not None:
+        tripwires, tripwire_errors = _validate_tripwires(tripwires_data)
+        errors.extend(tripwire_errors)
+
     if errors:
         return None, errors
 
@@ -84,6 +139,7 @@ def validate_agent_doc_frontmatter(
     return AgentDocFrontmatter(
         title=title,
         read_when=read_when,
+        tripwires=tripwires,
     ), []
 
 
@@ -213,12 +269,106 @@ class SyncResult:
         updated: List of index files that were updated.
         unchanged: List of index files that didn't need changes.
         skipped_invalid: Number of docs skipped due to invalid frontmatter.
+        tripwires_count: Number of tripwires collected and generated.
     """
 
     created: list[str]
     updated: list[str]
     unchanged: list[str]
     skipped_invalid: int
+    tripwires_count: int = 0
+
+
+@dataclass(frozen=True)
+class CollectedTripwire:
+    """A tripwire collected from an agent documentation file.
+
+    Attributes:
+        action: The action pattern that triggers.
+        warning: Brief explanation of why and what to do instead.
+        doc_path: Relative path from docs/agent/.
+        doc_title: Human-readable document title.
+    """
+
+    action: str
+    warning: str
+    doc_path: str
+    doc_title: str
+
+
+def collect_tripwires(project_root: Path) -> list[CollectedTripwire]:
+    """Collect all tripwires from agent documentation frontmatter.
+
+    Args:
+        project_root: Path to the project root.
+
+    Returns:
+        List of collected tripwires with their source documentation info.
+    """
+    agent_docs_root = project_root / AGENT_DOCS_DIR
+    if not agent_docs_root.exists():
+        return []
+
+    files = discover_agent_docs(agent_docs_root)
+    tripwires: list[CollectedTripwire] = []
+
+    for file_path in files:
+        result = validate_agent_doc_file(file_path, agent_docs_root)
+        if not result.is_valid or result.frontmatter is None:
+            continue
+
+        rel_path = str(file_path.relative_to(agent_docs_root))
+
+        for tripwire in result.frontmatter.tripwires:
+            tripwires.append(
+                CollectedTripwire(
+                    action=tripwire.action,
+                    warning=tripwire.warning,
+                    doc_path=rel_path,
+                    doc_title=result.frontmatter.title,
+                )
+            )
+
+    return tripwires
+
+
+def generate_tripwires_doc(tripwires: list[CollectedTripwire]) -> str:
+    """Generate content for the tripwires.md file.
+
+    Args:
+        tripwires: List of collected tripwires.
+
+    Returns:
+        Generated markdown content for the tripwires reference document.
+    """
+    lines = [
+        "---",
+        "title: Generated Tripwires",
+        "read_when:",
+        '  - "checking tripwire rules"',
+        "---",
+        "",
+        "# Tripwires",
+        "",
+        "Action-triggered rules that fire when you're about to perform specific actions.",
+        "",
+    ]
+
+    if not tripwires:
+        lines.append("*No tripwires defined.*")
+        lines.append("")
+        return "\n".join(lines)
+
+    for tripwire in tripwires:
+        # Format: **CRITICAL: Before [action]** → Read [doc-path] first. [warning]
+        lines.append(
+            f"**CRITICAL: Before {tripwire.action}** → "
+            f"Read [{tripwire.doc_title}]({tripwire.doc_path}) first. "
+            f"{tripwire.warning}"
+        )
+        lines.append("")
+
+    return "\n".join(lines)
 
 
 def collect_valid_docs(project_root: Path) -> tuple[list[DocInfo], list[CategoryInfo], int]:
@@ -341,7 +491,8 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool = False) -> SyncResult:
     """Sync agent documentation index files from frontmatter.
 
     Generates index.md files for the root docs/agent/ directory and
-    each subdirectory (category) that contains 2+ docs.
+    each subdirectory (category) that contains 2+ docs. Also generates
+    the docs/agent/generated/tripwires.md file from tripwire definitions.
 
     Args:
         project_root: Path to the project root.
@@ -376,11 +527,29 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool = False) -> SyncResult:
             category_index_path, category_content, created, updated, unchanged, dry_run
         )
 
+    # Collect and generate tripwires
+    tripwires = collect_tripwires(project_root)
+    tripwires_count = len(tripwires)
+
+    if tripwires:
+        tripwires_path = agent_docs_root / "tripwires.md"
+        tripwires_content = generate_tripwires_doc(tripwires)
+        _update_generated_file(
+            tripwires_path,
+            tripwires_content,
+            created,
+            updated,
+            unchanged,
+            dry_run,
+            agent_docs_root,
+        )
+
     return SyncResult(
         created=created,
         updated=updated,
         unchanged=unchanged,
         skipped_invalid=invalid_count,
+        tripwires_count=tripwires_count,
     )
 
 
@@ -417,4 +586,43 @@ def _update_index_file(
 
     if not dry_run:
         index_path.write_text(content, encoding="utf-8")
+    updated.append(rel_path)
+
+
+def _update_generated_file(
+    file_path: Path,
+    content: str,
+    created: list[str],
+    updated: list[str],
+    unchanged: list[str],
+    dry_run: bool,
+    agent_docs_root: Path,
+) -> None:
+    """Update a generated file if content changed.
+
+    Args:
+        file_path: Path to the generated file.
+        content: New content to write.
+        created: List to append if file was created.
+        updated: List to append if file was updated.
+        unchanged: List to append if file was unchanged.
+        dry_run: If True, don't actually write.
+        agent_docs_root: Path to docs/agent/ for relative path calculation.
+    """
+    rel_path = str(file_path.relative_to(agent_docs_root.parent.parent))
+
+    if not file_path.exists():
+        if not dry_run:
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            file_path.write_text(content, encoding="utf-8")
+        created.append(rel_path)
+        return
+
+    existing = file_path.read_text(encoding="utf-8")
+    if existing == content:
+        unchanged.append(rel_path)
+        return
+
+    if not dry_run:
+        file_path.write_text(content, encoding="utf-8")
     updated.append(rel_path)

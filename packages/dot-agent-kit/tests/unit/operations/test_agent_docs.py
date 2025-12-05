@@ -2,12 +2,15 @@
 
 from pathlib import Path
 
-from dot_agent_kit.models.agent_doc import AgentDocFrontmatter
+from dot_agent_kit.models.agent_doc import AgentDocFrontmatter, Tripwire
 from dot_agent_kit.operations.agent_docs import (
+    CollectedTripwire,
+    collect_tripwires,
     collect_valid_docs,
     discover_agent_docs,
     generate_category_index,
     generate_root_index,
+    generate_tripwires_doc,
     parse_frontmatter,
     sync_agent_docs,
     validate_agent_doc_file,
@@ -576,3 +579,288 @@ class TestSyncAgentDocs:
         result = sync_agent_docs(tmp_path)
         assert len(result.updated) == 1
         assert len(result.created) == 0
+
+    def test_sync_generates_tripwires_file(self, tmp_path: Path) -> None:
+        """Sync generates tripwires.md when tripwires exist."""
+        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs.mkdir(parents=True)
+        _create_doc_with_tripwires(
+            agent_docs / "storage.md",
+            "Storage",
+            ["storage patterns"],
+            [{"action": "writing to /tmp/", "warning": "Use scratch instead."}],
+        )
+
+        result = sync_agent_docs(tmp_path)
+        assert result.tripwires_count == 1
+
+        # Verify tripwires file was created
+        tripwires_path = agent_docs / "tripwires.md"
+        assert tripwires_path.exists()
+
+        content = tripwires_path.read_text(encoding="utf-8")
+        assert "writing to /tmp/" in content
+        assert "Use scratch instead." in content
+
+
+def _create_doc_with_tripwires(
+    path: Path,
+    title: str,
+    read_when: list[str],
+    tripwires: list[dict[str, str]],
+) -> None:
+    """Helper to create a doc file with tripwires in frontmatter."""
+    read_when_yaml = "\n".join(f'  - "{item}"' for item in read_when)
+    tripwires_yaml = ""
+    if tripwires:
+        tripwires_yaml = "tripwires:\n"
+        for tw in tripwires:
+            tripwires_yaml += f'  - action: "{tw["action"]}"\n'
+            tripwires_yaml += f'    warning: "{tw["warning"]}"\n'
+    content = f"""---
+title: {title}
+read_when:
+{read_when_yaml}
+{tripwires_yaml}---
+
+# {title}
+"""
+    path.write_text(content, encoding="utf-8")
+
+
+class TestTripwireValidation:
+    """Tests for tripwire validation in frontmatter."""
+
+    def test_validate_tripwires_valid(self) -> None:
+        """Validate correctly structured tripwires."""
+        data = {
+            "title": "Test Document",
+            "read_when": ["when testing"],
+            "tripwires": [
+                {"action": "writing to /tmp/", "warning": "Use scratch storage."},
+                {"action": "using mtime", "warning": "Use session ID instead."},
+            ],
+        }
+        frontmatter, errors = validate_agent_doc_frontmatter(data)
+        assert len(errors) == 0
+        assert frontmatter is not None
+        assert len(frontmatter.tripwires) == 2
+        assert frontmatter.tripwires[0].action == "writing to /tmp/"
+        assert frontmatter.tripwires[0].warning == "Use scratch storage."
+        assert frontmatter.tripwires[1].action == "using mtime"
+        assert frontmatter.tripwires[1].warning == "Use session ID instead."
+
+    def test_validate_tripwires_missing_action(self) -> None:
+        """Detect missing action field in tripwire."""
+        data = {
+            "title": "Test Document",
+            "read_when": ["when testing"],
+            "tripwires": [
+                {"warning": "Some warning"},  # Missing action
+            ],
+        }
+        frontmatter, errors = validate_agent_doc_frontmatter(data)
+        assert frontmatter is None
+        assert any("tripwires[0].action" in e and "required" in e for e in errors)
+
+    def test_validate_tripwires_missing_warning(self) -> None:
+        """Detect missing warning field in tripwire."""
+        data = {
+            "title": "Test Document",
+            "read_when": ["when testing"],
+            "tripwires": [
+                {"action": "some action"},  # Missing warning
+            ],
+        }
+        frontmatter, errors = validate_agent_doc_frontmatter(data)
+        assert frontmatter is None
+        assert any("tripwires[0].warning" in e and "required" in e for e in errors)
+
+    def test_validate_tripwires_optional(self) -> None:
+        """Docs without tripwires are valid."""
+        data = {
+            "title": "Test Document",
+            "read_when": ["when testing"],
+        }
+        frontmatter, errors = validate_agent_doc_frontmatter(data)
+        assert len(errors) == 0
+        assert frontmatter is not None
+        assert frontmatter.tripwires == []
+
+    def test_validate_tripwires_not_list(self) -> None:
+        """Detect when tripwires is not a list."""
+        data = {
+            "title": "Test Document",
+            "read_when": ["when testing"],
+            "tripwires": "not a list",
+        }
+        frontmatter, errors = validate_agent_doc_frontmatter(data)
+        assert frontmatter is None
+        assert any("tripwires" in e and "must be a list" in e for e in errors)
+
+    def test_validate_tripwires_item_not_object(self) -> None:
+        """Detect when tripwire item is not an object."""
+        data = {
+            "title": "Test Document",
+            "read_when": ["when testing"],
+            "tripwires": ["not an object"],
+        }
+        frontmatter, errors = validate_agent_doc_frontmatter(data)
+        assert frontmatter is None
+        assert any("tripwires[0]" in e and "must be an object" in e for e in errors)
+
+
+class TestCollectTripwires:
+    """Tests for collect_tripwires function."""
+
+    def test_collect_no_directory(self, tmp_path: Path) -> None:
+        """Return empty list when directory doesn't exist."""
+        tripwires = collect_tripwires(tmp_path)
+        assert tripwires == []
+
+    def test_collect_tripwires_from_docs(self, tmp_path: Path) -> None:
+        """Collect tripwires from multiple docs."""
+        agent_docs = tmp_path / "docs" / "agent"
+        planning = agent_docs / "planning"
+        planning.mkdir(parents=True)
+
+        _create_doc_with_tripwires(
+            planning / "storage.md",
+            "Storage",
+            ["storage patterns"],
+            [
+                {"action": "writing to /tmp/", "warning": "Use scratch instead."},
+                {"action": "temp files", "warning": "Scope to session."},
+            ],
+        )
+        _create_doc_with_tripwires(
+            planning / "sessions.md",
+            "Sessions",
+            ["session handling"],
+            [{"action": "using mtime", "warning": "Use session ID."}],
+        )
+
+        tripwires = collect_tripwires(tmp_path)
+        assert len(tripwires) == 3
+
+        actions = [tw.action for tw in tripwires]
+        assert "writing to /tmp/" in actions
+        assert "temp files" in actions
+        assert "using mtime" in actions
+
+    def test_collect_tripwires_with_doc_info(self, tmp_path: Path) -> None:
+        """Collected tripwires include source doc information."""
+        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs.mkdir(parents=True)
+
+        _create_doc_with_tripwires(
+            agent_docs / "guide.md",
+            "My Guide",
+            ["reading guide"],
+            [{"action": "some action", "warning": "some warning"}],
+        )
+
+        tripwires = collect_tripwires(tmp_path)
+        assert len(tripwires) == 1
+        assert tripwires[0].doc_path == "guide.md"
+        assert tripwires[0].doc_title == "My Guide"
+
+
+class TestGenerateTripwiresDoc:
+    """Tests for generate_tripwires_doc function."""
+
+    def test_generate_empty_tripwires(self) -> None:
+        """Generate content when no tripwires."""
+        content = generate_tripwires_doc([])
+        assert "# Tripwires" in content
+        assert "*No tripwires defined.*" in content
+        # Should have frontmatter
+        assert "---" in content
+        assert "title: Generated Tripwires" in content
+        assert "read_when:" in content
+
+    def test_generate_tripwires_doc(self) -> None:
+        """Generate content with tripwires."""
+        tripwires = [
+            CollectedTripwire(
+                action="writing to /tmp/",
+                warning="Use scratch storage.",
+                doc_path="planning/storage.md",
+                doc_title="Storage Guide",
+            ),
+            CollectedTripwire(
+                action="using mtime lookup",
+                warning="Use session ID instead.",
+                doc_path="sessions/parallel.md",
+                doc_title="Parallel Sessions",
+            ),
+        ]
+        content = generate_tripwires_doc(tripwires)
+
+        # Should have frontmatter
+        assert "---" in content
+        assert "title: Generated Tripwires" in content
+        assert "read_when:" in content
+        # Should have tripwires content
+        assert "# Tripwires" in content
+        assert "**CRITICAL: Before writing to /tmp/**" in content
+        assert "[Storage Guide](planning/storage.md)" in content
+        assert "Use scratch storage." in content
+        assert "**CRITICAL: Before using mtime lookup**" in content
+        assert "[Parallel Sessions](sessions/parallel.md)" in content
+        assert "Use session ID instead." in content
+
+
+class TestTripwireModel:
+    """Tests for Tripwire dataclass."""
+
+    def test_tripwire_creation(self) -> None:
+        """Create a tripwire with action and warning."""
+        tw = Tripwire(action="writing to /tmp/", warning="Use scratch.")
+        assert tw.action == "writing to /tmp/"
+        assert tw.warning == "Use scratch."
+
+    def test_tripwire_immutable(self) -> None:
+        """Tripwire is immutable (frozen)."""
+        tw = Tripwire(action="test", warning="test")
+        try:
+            tw.action = "modified"  # type: ignore
+            msg = "Should have raised FrozenInstanceError"
+            raise AssertionError(msg)
+        except AttributeError:
+            pass  # Expected - frozen dataclass
+
+
+class TestAgentDocFrontmatterWithTripwires:
+    """Tests for AgentDocFrontmatter with tripwires field."""
+
+    def test_frontmatter_with_tripwires(self) -> None:
+        """Create frontmatter with tripwires."""
+        tripwires = [
+            Tripwire(action="action1", warning="warning1"),
+            Tripwire(action="action2", warning="warning2"),
+        ]
+        frontmatter = AgentDocFrontmatter(
+            title="Test",
+            read_when=["testing"],
+            tripwires=tripwires,
+        )
+        assert len(frontmatter.tripwires) == 2
+        assert frontmatter.tripwires[0].action == "action1"
+
+    def test_frontmatter_default_empty_tripwires(self) -> None:
+        """Frontmatter defaults to empty tripwires list."""
+        frontmatter = AgentDocFrontmatter(
+            title="Test",
+            read_when=["testing"],
+        )
+        assert frontmatter.tripwires == []
+
+    def test_frontmatter_is_valid_with_tripwires(self) -> None:
+        """is_valid still works with tripwires."""
+        frontmatter = AgentDocFrontmatter(
+            title="Test",
+            read_when=["testing"],
+            tripwires=[Tripwire(action="a", warning="w")],
+        )
+        assert frontmatter.is_valid() is True

@@ -61,20 +61,25 @@ def sync_command(*, dry_run: bool) -> None:
 
     if sync_result.created:
         action = "Would create" if dry_run else "Created"
-        user_output(f"{action} {len(sync_result.created)} index file(s):")
+        user_output(f"{action} {len(sync_result.created)} file(s):")
         for path in sync_result.created:
             user_output(f"  + {path}")
         user_output()
 
     if sync_result.updated:
         action = "Would update" if dry_run else "Updated"
-        user_output(f"{action} {len(sync_result.updated)} index file(s):")
+        user_output(f"{action} {len(sync_result.updated)} file(s):")
         for path in sync_result.updated:
             user_output(f"  ~ {path}")
         user_output()
 
     if sync_result.unchanged:
-        user_output(f"Unchanged: {len(sync_result.unchanged)} index file(s)")
+        user_output(f"Unchanged: {len(sync_result.unchanged)} file(s)")
+        user_output()
+
+    # Report tripwires
+    if sync_result.tripwires_count > 0:
+        user_output(f"Tripwires: {sync_result.tripwires_count} collected")
         user_output()
 
     if sync_result.skipped_invalid > 0:
@@ -89,7 +94,7 @@ def sync_command(*, dry_run: bool) -> None:
 
     # Summary
     if total_changes == 0 and sync_result.skipped_invalid == 0:
-        user_output(click.style("✓ All index files are up to date", fg="green"))
+        user_output(click.style("✓ All files are up to date", fg="green"))
     elif total_changes > 0:
         if dry_run:
             user_output(click.style(f"Would make {total_changes} change(s)", fg="cyan", bold=True))
