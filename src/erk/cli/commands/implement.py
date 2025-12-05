@@ -9,6 +9,7 @@ Both modes create a worktree and invoke Claude for implementation.
 
 import re
 import shlex
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
@@ -591,28 +592,15 @@ def _delete_worktree_for_force(ctx: ErkContext, repo_root: Path, wt_path: Path) 
 
     This reuses patterns from wt/delete_cmd.py for worktree cleanup.
     """
-    import shutil
-
     # Try git worktree remove first
-    try:
-        ctx.git.remove_worktree(repo_root, wt_path, force=True)
-    except Exception:
-        # Git removal failed - manual cleanup will handle it
-        pass
+    ctx.git.remove_worktree(repo_root, wt_path, force=True)
 
-    # Manually delete directory if still exists
+    # Manually delete directory if still exists (e.g., if git worktree remove didn't fully clean up)
     if ctx.git.path_exists(wt_path):
-        try:
-            shutil.rmtree(wt_path)
-        except OSError:
-            # Path doesn't exist on real filesystem (sentinel path)
-            pass
+        shutil.rmtree(wt_path)
 
     # Prune worktree metadata
-    try:
-        ctx.git.prune_worktrees(repo_root)
-    except Exception:
-        pass
+    ctx.git.prune_worktrees(repo_root)
 
 
 def _delete_branch_for_force(ctx: ErkContext, repo_root: Path, branch: str) -> None:
