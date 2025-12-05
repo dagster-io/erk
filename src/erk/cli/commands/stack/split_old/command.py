@@ -198,7 +198,7 @@ def split_cmd(
     check_uncommitted_changes(ctx, current_worktree, force, dry_run)
 
     # 6. Create split plan
-    all_worktrees = ctx.git.list_worktrees(repo.root)
+    all_worktrees = ctx.git_worktrees.list_worktrees(repo.root)
     plan = create_split_plan(
         stack_branches=stack_to_split,
         trunk_branch=trunk_branch,
@@ -226,7 +226,7 @@ def split_cmd(
     if dry_run:
         results = [(branch, plan.target_paths[branch]) for branch in plan.branches_to_split]
     else:
-        results = execute_split_plan(plan, ctx.git)
+        results = execute_split_plan(plan, ctx.git_worktrees)
 
     # 10. Display results
     display_results(results, dry_run)

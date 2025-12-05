@@ -201,7 +201,7 @@ def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool = False) -> None:
     current_dir = ctx.cwd
 
     # Get worktree info
-    worktrees = ctx.git.list_worktrees(repo.root)
+    worktrees = ctx.git_worktrees.list_worktrees(repo.root)
 
     # Fetch all branch sync info in a single git call (batch operation for performance)
     all_sync_info = ctx.git.get_all_branch_sync_info(repo.root)

@@ -75,7 +75,7 @@ def delete_branch_and_worktree(
     """
 
     # Remove the worktree
-    ctx.git.remove_worktree(repo_root, worktree_path, force=True)
+    ctx.git_worktrees.remove_worktree(repo_root, worktree_path, force=True)
     user_output(f"✓ Removed worktree: {click.style(str(worktree_path), fg='green')}")
 
     # Delete the branch using Git abstraction
@@ -83,7 +83,7 @@ def delete_branch_and_worktree(
     user_output(f"✓ Deleted branch: {click.style(branch, fg='yellow')}")
 
     # Prune worktree metadata
-    ctx.git.prune_worktrees(repo_root)
+    ctx.git_worktrees.prune_worktrees(repo_root)
 
 
 def activate_root_repo(ctx: ErkContext, repo: RepoContext, script: bool, command_name: str) -> None:
@@ -205,7 +205,7 @@ def resolve_up_navigation(
     target_branch = children[0]
 
     # Check if target branch has a worktree, create if necessary
-    target_wt_path = ctx.git.find_worktree_for_branch(repo.root, target_branch)
+    target_wt_path = ctx.git_worktrees.find_worktree_for_branch(repo.root, target_branch)
     if target_wt_path is None:
         # Auto-create worktree for target branch
         _worktree_path, was_created = ensure_worktree_for_branch(ctx, repo, target_branch)
@@ -254,7 +254,7 @@ def resolve_down_navigation(
     detected_trunk = ctx.git.detect_trunk_branch(repo.root)
     if parent_branch == detected_trunk:
         # Check if trunk is checked out in root (repo.root path)
-        trunk_wt_path = ctx.git.find_worktree_for_branch(repo.root, detected_trunk)
+        trunk_wt_path = ctx.git_worktrees.find_worktree_for_branch(repo.root, detected_trunk)
         if trunk_wt_path is not None and trunk_wt_path == repo.root:
             # Trunk is in root repository, not in a dedicated worktree
             return "root", False
@@ -267,7 +267,7 @@ def resolve_down_navigation(
             return parent_branch, False
     else:
         # Parent is not trunk, check if it has a worktree
-        target_wt_path = ctx.git.find_worktree_for_branch(repo.root, parent_branch)
+        target_wt_path = ctx.git_worktrees.find_worktree_for_branch(repo.root, parent_branch)
         if target_wt_path is None:
             # Auto-create worktree for parent branch
             _worktree_path, was_created = ensure_worktree_for_branch(ctx, repo, parent_branch)

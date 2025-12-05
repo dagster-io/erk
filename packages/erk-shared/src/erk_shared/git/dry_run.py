@@ -6,7 +6,7 @@ operations while delegating read-only operations to the wrapped implementation.
 
 from pathlib import Path
 
-from erk_shared.git.abc import BranchSyncInfo, Git, WorktreeInfo
+from erk_shared.git.abc import BranchSyncInfo, Git
 from erk_shared.output.output import user_output
 
 # ============================================================================
@@ -39,10 +39,6 @@ class DryRunGit(Git):
 
     # Read-only operations: delegate to wrapped implementation
 
-    def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
-        """List all worktrees (read-only, delegates to wrapped)."""
-        return self._wrapped.list_worktrees(repo_root)
-
     def get_current_branch(self, cwd: Path) -> str | None:
         """Get current branch (read-only, delegates to wrapped)."""
         return self._wrapped.get_current_branch(cwd)
@@ -67,10 +63,6 @@ class DryRunGit(Git):
         """No-op for creating tracking branch in dry-run mode."""
         # Do nothing - prevents actual tracking branch creation
         pass
-
-    def get_git_common_dir(self, cwd: Path) -> Path | None:
-        """Get git common directory (read-only, delegates to wrapped)."""
-        return self._wrapped.get_git_common_dir(cwd)
 
     def checkout_branch(self, cwd: Path, branch: str) -> None:
         """No-op for checkout in dry-run mode."""
@@ -105,42 +97,10 @@ class DryRunGit(Git):
         """Check if worktree is clean (read-only, delegates to wrapped)."""
         return self._wrapped.is_worktree_clean(worktree_path)
 
-    def add_worktree(
-        self,
-        repo_root: Path,
-        path: Path,
-        *,
-        branch: str | None,
-        ref: str | None,
-        create_branch: bool,
-    ) -> None:
-        """Print dry-run message instead of adding worktree."""
-        if branch and create_branch:
-            base_ref = ref or "HEAD"
-            user_output(f"[DRY RUN] Would run: git worktree add -b {branch} {path} {base_ref}")
-        elif branch:
-            user_output(f"[DRY RUN] Would run: git worktree add {path} {branch}")
-        else:
-            base_ref = ref or "HEAD"
-            user_output(f"[DRY RUN] Would run: git worktree add {path} {base_ref}")
-
-    def move_worktree(self, repo_root: Path, old_path: Path, new_path: Path) -> None:
-        """Print dry-run message instead of moving worktree."""
-        user_output(f"[DRY RUN] Would run: git worktree move {old_path} {new_path}")
-
-    def remove_worktree(self, repo_root: Path, path: Path, *, force: bool) -> None:
-        """Print dry-run message instead of removing worktree."""
-        force_flag = "--force " if force else ""
-        user_output(f"[DRY RUN] Would run: git worktree remove {force_flag}{path}")
-
     def delete_branch_with_graphite(self, repo_root: Path, branch: str, *, force: bool) -> None:
         """Print dry-run message instead of deleting branch."""
         force_flag = "-f " if force else ""
         user_output(f"[DRY RUN] Would run: gt delete {force_flag}{branch}")
-
-    def prune_worktrees(self, repo_root: Path) -> None:
-        """Print dry-run message instead of pruning worktrees."""
-        user_output("[DRY RUN] Would run: git worktree prune")
 
     def path_exists(self, path: Path) -> bool:
         """Check if path exists (read-only, delegates to wrapped)."""
@@ -156,14 +116,6 @@ class DryRunGit(Git):
         if would_succeed:
             user_output(f"[DRY RUN] Would run: cd {path}")
         return False  # Never actually change directory in dry-run
-
-    def is_branch_checked_out(self, repo_root: Path, branch: str) -> Path | None:
-        """Check if branch is checked out (read-only, delegates to wrapped)."""
-        return self._wrapped.is_branch_checked_out(repo_root, branch)
-
-    def find_worktree_for_branch(self, repo_root: Path, branch: str) -> Path | None:
-        """Find worktree path for branch (read-only, delegates to wrapped)."""
-        return self._wrapped.find_worktree_for_branch(repo_root, branch)
 
     def get_branch_head(self, repo_root: Path, branch: str) -> str | None:
         """Get branch head commit SHA (read-only, delegates to wrapped)."""

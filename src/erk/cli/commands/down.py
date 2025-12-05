@@ -58,7 +58,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool) -> None:
     current_worktree_path = None
     if delete_current:
         current_worktree_path = Ensure.not_none(
-            ctx.git.find_worktree_for_branch(repo.root, current_branch),
+            ctx.git_worktrees.find_worktree_for_branch(repo.root, current_branch),
             f"Cannot find worktree for current branch '{current_branch}'.",
         )
 
@@ -68,7 +68,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool) -> None:
         verify_pr_closed_or_merged(ctx, repo.root, current_branch)
 
     # Get all worktrees for checking if target has a worktree
-    worktrees = ctx.git.list_worktrees(repo.root)
+    worktrees = ctx.git_worktrees.list_worktrees(repo.root)
 
     # Resolve navigation to get target branch or 'root' (may auto-create worktree)
     target_name, was_created = resolve_down_navigation(
@@ -113,7 +113,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool) -> None:
 
     # Resolve target branch to actual worktree path
     target_wt_path = Ensure.not_none(
-        ctx.git.find_worktree_for_branch(repo.root, target_name),
+        ctx.git_worktrees.find_worktree_for_branch(repo.root, target_name),
         f"Branch '{target_name}' has no worktree. This should not happen.",
     )
 

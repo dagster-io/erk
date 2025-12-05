@@ -68,7 +68,7 @@ def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
     )
 
     current_worktree_path = Ensure.not_none(
-        ctx.git.find_worktree_for_branch(repo.root, current_branch),
+        ctx.git_worktrees.find_worktree_for_branch(repo.root, current_branch),
         f"Cannot find worktree for current branch '{current_branch}'.",
     )
 
@@ -102,18 +102,18 @@ def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
     )
 
     # Step 2: Navigate to destination (trunk or upstack)
-    worktrees = ctx.git.list_worktrees(repo.root)
+    worktrees = ctx.git_worktrees.list_worktrees(repo.root)
 
     if up:
         # Navigate up to child branch
         dest_branch, _was_created = resolve_up_navigation(ctx, repo, current_branch, worktrees)
-        target_wt_path = ctx.git.find_worktree_for_branch(repo.root, dest_branch)
+        target_wt_path = ctx.git_worktrees.find_worktree_for_branch(repo.root, dest_branch)
         dest_path = Ensure.not_none(target_wt_path, f"Worktree not found for '{dest_branch}'")
         dest_description = f"upstack branch '{dest_branch}'"
     else:
         # Navigate down to trunk (current behavior)
         dest_branch = ctx.git.detect_trunk_branch(repo.root)
-        trunk_wt_path = ctx.git.find_worktree_for_branch(repo.root, dest_branch)
+        trunk_wt_path = ctx.git_worktrees.find_worktree_for_branch(repo.root, dest_branch)
 
         if trunk_wt_path is not None and trunk_wt_path == repo.root:
             dest_path = repo.root

@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 
 import click
-from erk_shared.git.abc import Git
+from erk_shared.git.worktrees import GitWorktrees
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.output.output import user_output
 
@@ -22,7 +22,7 @@ from erk.core.worktree_utils import (
 )
 
 
-def _try_git_worktree_delete(git_ops: Git, repo_root: Path, wt_path: Path) -> bool:
+def _try_git_worktree_delete(git_ops: GitWorktrees, repo_root: Path, wt_path: Path) -> bool:
     """Attempt git worktree remove, returning success status.
 
     This function violates LBYL norms because there's no reliable way to
@@ -45,7 +45,7 @@ def _try_git_worktree_delete(git_ops: Git, repo_root: Path, wt_path: Path) -> bo
         return False
 
 
-def _prune_worktrees_safe(git_ops: Git, repo_root: Path) -> None:
+def _prune_worktrees_safe(git_ops: GitWorktrees, repo_root: Path) -> None:
     """Prune worktree metadata, ignoring errors if nothing to prune.
 
     This function violates LBYL norms because git worktree prune can fail
@@ -73,7 +73,7 @@ def _escape_worktree_if_inside(
         return ctx
 
     current_dir = ctx.cwd.resolve()
-    worktrees = ctx.git.list_worktrees(repo_root)
+    worktrees = ctx.git_worktrees.list_worktrees(repo_root)
     current_worktree_path = find_worktree_containing_path(worktrees, current_dir)
 
     if current_worktree_path is None:
@@ -103,7 +103,7 @@ def _collect_branch_to_delete(
 
     Returns the branch name, or None if in detached HEAD state.
     """
-    worktrees = ctx.git.list_worktrees(repo_root)
+    worktrees = ctx.git_worktrees.list_worktrees(repo_root)
     worktree_branch = get_worktree_branch(worktrees, wt_path)
 
     if worktree_branch is None:
@@ -150,7 +150,7 @@ def _delete_worktree_directory(ctx: ErkContext, repo_root: Path, wt_path: Path) 
     on the real filesystem.
     """
     # Try to delete via git first - this updates git's metadata when possible
-    _try_git_worktree_delete(ctx.git, repo_root, wt_path)
+    _try_git_worktree_delete(ctx.git_worktrees, repo_root, wt_path)
 
     # Always manually delete directory if it still exists
     if not ctx.git.path_exists(wt_path):
@@ -172,7 +172,7 @@ def _delete_worktree_directory(ctx: ErkContext, repo_root: Path, wt_path: Path) 
         pass
 
     # Prune worktree metadata to clean up any stale references
-    _prune_worktrees_safe(ctx.git, repo_root)
+    _prune_worktrees_safe(ctx.git_worktrees, repo_root)
 
 
 def _delete_branch_at_error_boundary(

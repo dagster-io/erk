@@ -136,7 +136,7 @@ class StatusOrchestrator:
         Returns:
             List of WorktreeDisplayInfo for other worktrees
         """
-        worktrees = ctx.git.list_worktrees(repo_root)
+        worktrees = ctx.git_worktrees.list_worktrees(repo_root)
 
         # Check paths exist before resolution to avoid OSError
         if not current_path.exists():

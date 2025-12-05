@@ -72,7 +72,7 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
         branch_name = pr_info.head_ref_name
 
     # Check if branch already exists in a worktree
-    existing_worktree = ctx.git.find_worktree_for_branch(repo.root, branch_name)
+    existing_worktree = ctx.git_worktrees.find_worktree_for_branch(repo.root, branch_name)
     if existing_worktree is not None:
         # Branch already exists in a worktree - activate it
         if script:
@@ -117,7 +117,7 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
 
     # Create worktree
     worktree_path = worktree_path_for(repo.worktrees_dir, branch_name)
-    ctx.git.add_worktree(
+    ctx.git_worktrees.add_worktree(
         repo.root,
         worktree_path,
         branch=branch_name,

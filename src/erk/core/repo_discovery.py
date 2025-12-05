@@ -9,6 +9,7 @@ from pathlib import Path
 
 from erk_shared.git.abc import Git
 from erk_shared.git.real import RealGit
+from erk_shared.git.worktrees import GitWorktrees, RealGitWorktrees
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.types import GitHubRepoId
 
@@ -58,7 +59,10 @@ class NoRepoSentinel:
 
 
 def discover_repo_or_sentinel(
-    cwd: Path, erk_root: Path, git_ops: Git | None = None
+    cwd: Path,
+    erk_root: Path,
+    git_ops: Git | None = None,
+    git_worktrees: GitWorktrees | None = None,
 ) -> RepoContext | NoRepoSentinel:
     """Walk up from `cwd` to find a directory containing `.git`.
 
@@ -72,11 +76,13 @@ def discover_repo_or_sentinel(
         cwd: Current working directory to start search from
         erk_root: Global erks root directory (from config)
         git_ops: Git operations interface (defaults to RealGit)
+        git_worktrees: GitWorktrees operations interface (defaults to RealGitWorktrees)
 
     Returns:
         RepoContext if inside a git repository, NoRepoSentinel otherwise
     """
     ops = git_ops if git_ops is not None else RealGit()
+    worktrees = git_worktrees if git_worktrees is not None else RealGitWorktrees()
 
     if not ops.path_exists(cwd):
         return NoRepoSentinel(message=f"Start path '{cwd}' does not exist")
@@ -88,7 +94,7 @@ def discover_repo_or_sentinel(
     root: Path | None = None
     main_repo_root: Path | None = None
 
-    git_common_dir = ops.get_git_common_dir(cur)
+    git_common_dir = worktrees.get_git_common_dir(cur)
     if git_common_dir is not None:
         # We're in a git repository (possibly a worktree)
         # git_common_dir points to the main repo's .git directory

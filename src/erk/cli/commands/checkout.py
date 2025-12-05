@@ -35,7 +35,7 @@ def try_switch_root_worktree(ctx: ErkContext, repo: RepoContext, branch: str) ->
         return None
 
     # Find root worktree
-    worktrees = ctx.git.list_worktrees(repo.root)
+    worktrees = ctx.git_worktrees.list_worktrees(repo.root)
     root_worktree = None
     for wt in worktrees:
         if wt.is_root:
@@ -272,7 +272,7 @@ def checkout_cmd(ctx: ErkContext, branch: str, script: bool) -> None:
     ensure_erk_metadata_dir(repo)
 
     # Get all worktrees
-    worktrees = ctx.git.list_worktrees(repo.root)
+    worktrees = ctx.git_worktrees.list_worktrees(repo.root)
 
     # Find worktrees containing the target branch
     matching_worktrees = find_worktrees_containing_branch(ctx, repo.root, worktrees, branch)
@@ -287,7 +287,7 @@ def checkout_cmd(ctx: ErkContext, branch: str, script: bool) -> None:
         root_path = try_switch_root_worktree(ctx, repo, branch)
         if root_path is not None:
             # Successfully switched root to trunk - refresh and jump to it
-            worktrees = ctx.git.list_worktrees(repo.root)
+            worktrees = ctx.git_worktrees.list_worktrees(repo.root)
             matching_worktrees = find_worktrees_containing_branch(ctx, repo.root, worktrees, branch)
         else:
             # Root not available or not trunk - auto-create worktree
@@ -296,7 +296,7 @@ def checkout_cmd(ctx: ErkContext, branch: str, script: bool) -> None:
             )
 
             # Refresh worktree list to include the newly created worktree
-            worktrees = ctx.git.list_worktrees(repo.root)
+            worktrees = ctx.git_worktrees.list_worktrees(repo.root)
             matching_worktrees = find_worktrees_containing_branch(ctx, repo.root, worktrees, branch)
 
         # Fall through to jump to the worktree

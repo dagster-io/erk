@@ -276,7 +276,7 @@ def check_repository(ctx: ErkContext) -> CheckResult:
 
     # Check if we're in a git repo
     try:
-        git_dir = ctx.git.get_git_common_dir(cwd)
+        git_dir = ctx.git_worktrees.get_git_common_dir(cwd)
         if git_dir is None:
             return CheckResult(
                 name="repository",

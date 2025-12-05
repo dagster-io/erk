@@ -196,7 +196,7 @@ def consolidate_stack(
     # This will be used in create_consolidation_plan() below
 
     # Get all worktrees
-    all_worktrees = ctx.git.list_worktrees(repo.root)
+    all_worktrees = ctx.git_worktrees.list_worktrees(repo.root)
 
     # Validate --name argument if provided
     if name is not None:
@@ -271,7 +271,7 @@ def consolidate_stack(
 
             # Create new worktree with original branch
             # (now available since source is on temp branch)
-            ctx.git.add_worktree(
+            ctx.git_worktrees.add_worktree(
                 repo.root,
                 new_worktree_path,
                 branch=current_branch,
@@ -378,12 +378,12 @@ def consolidate_stack(
     removed_paths: list[Path] = []
 
     for wt in worktrees_to_remove:
-        ctx.git.remove_worktree(repo.root, wt.path, force=True)
+        ctx.git_worktrees.remove_worktree(repo.root, wt.path, force=True)
         removed_paths.append(wt.path)
 
     # Remove source worktree if a new worktree was created
     if name is not None:
-        ctx.git.remove_worktree(repo.root, current_worktree.resolve(), force=True)
+        ctx.git_worktrees.remove_worktree(repo.root, current_worktree.resolve(), force=True)
         removed_paths.append(current_worktree)
 
         # Delete temporary branch after source worktree is removed
@@ -397,7 +397,7 @@ def consolidate_stack(
 
     # Prune stale worktree metadata after all removals
     # (explicit call now that remove_worktree no longer auto-prunes)
-    ctx.git.prune_worktrees(repo.root)
+    ctx.git_worktrees.prune_worktrees(repo.root)
 
     user_output(f"\n{click.style('✅ Consolidation complete', fg='green', bold=True)}")
     user_output()

@@ -52,7 +52,7 @@ def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
 
     if not ctx.git.path_exists(worktree_path):
         # Show available worktrees
-        worktrees = ctx.git.list_worktrees(repo.root)
+        worktrees = ctx.git_worktrees.list_worktrees(repo.root)
         available_names = ["root"]
         for wt in worktrees:
             if not wt.is_root:
@@ -76,7 +76,7 @@ def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
         raise SystemExit(1)
 
     # Get branch info for this worktree
-    worktrees = ctx.git.list_worktrees(repo.root)
+    worktrees = ctx.git_worktrees.list_worktrees(repo.root)
     target_worktree = None
     for wt in worktrees:
         if wt.path == worktree_path:

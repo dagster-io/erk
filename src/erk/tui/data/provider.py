@@ -222,7 +222,7 @@ class RealPlanDataProvider(PlanDataProvider):
         """
         _ensure_erk_metadata_dir_from_context(self._ctx.repo)
         worktree_by_issue: dict[int, tuple[str, str | None]] = {}
-        worktrees = self._ctx.git.list_worktrees(self._location.root)
+        worktrees = self._ctx.git_worktrees.list_worktrees(self._location.root)
         for worktree in worktrees:
             impl_folder = worktree.path / ".impl"
             if impl_folder.exists() and impl_folder.is_dir():

@@ -62,11 +62,6 @@ class Git(ABC):
     """
 
     @abstractmethod
-    def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
-        """List all worktrees in the repository."""
-        ...
-
-    @abstractmethod
     def get_current_branch(self, cwd: Path) -> str | None:
         """Get the currently checked-out branch."""
         ...
@@ -145,11 +140,6 @@ class Git(ABC):
         ...
 
     @abstractmethod
-    def get_git_common_dir(self, cwd: Path) -> Path | None:
-        """Get the common git directory."""
-        ...
-
-    @abstractmethod
     def has_staged_changes(self, repo_root: Path) -> bool:
         """Check if the repository has staged changes."""
         ...
@@ -178,43 +168,6 @@ class Git(ABC):
 
         Returns:
             True if worktree is clean (no uncommitted, staged, or untracked files)
-        """
-        ...
-
-    @abstractmethod
-    def add_worktree(
-        self,
-        repo_root: Path,
-        path: Path,
-        *,
-        branch: str | None,
-        ref: str | None,
-        create_branch: bool,
-    ) -> None:
-        """Add a new git worktree.
-
-        Args:
-            repo_root: Path to the git repository root
-            path: Path where the worktree should be created
-            branch: Branch name (None creates detached HEAD or uses ref)
-            ref: Git ref to base worktree on (None defaults to HEAD when creating branches)
-            create_branch: True to create new branch, False to checkout existing
-        """
-        ...
-
-    @abstractmethod
-    def move_worktree(self, repo_root: Path, old_path: Path, new_path: Path) -> None:
-        """Move a worktree to a new location."""
-        ...
-
-    @abstractmethod
-    def remove_worktree(self, repo_root: Path, path: Path, *, force: bool) -> None:
-        """Remove a worktree.
-
-        Args:
-            repo_root: Path to the git repository root
-            path: Path to the worktree to remove
-            force: True to force removal even if worktree has uncommitted changes
         """
         ...
 
@@ -253,11 +206,6 @@ class Git(ABC):
     @abstractmethod
     def delete_branch_with_graphite(self, repo_root: Path, branch: str, *, force: bool) -> None:
         """Delete a branch using Graphite's gt delete command."""
-        ...
-
-    @abstractmethod
-    def prune_worktrees(self, repo_root: Path) -> None:
-        """Prune stale worktree metadata."""
         ...
 
     @abstractmethod
@@ -308,32 +256,6 @@ class Git(ABC):
 
         Returns:
             True if directory change succeeded, False otherwise
-        """
-        ...
-
-    @abstractmethod
-    def is_branch_checked_out(self, repo_root: Path, branch: str) -> Path | None:
-        """Check if a branch is already checked out in any worktree.
-
-        Args:
-            repo_root: Path to the git repository root
-            branch: Branch name to check
-
-        Returns:
-            Path to the worktree where branch is checked out, or None if not checked out.
-        """
-        ...
-
-    @abstractmethod
-    def find_worktree_for_branch(self, repo_root: Path, branch: str) -> Path | None:
-        """Find worktree path for given branch name.
-
-        Args:
-            repo_root: Repository root path
-            branch: Branch name to search for
-
-        Returns:
-            Path to worktree if branch is checked out, None otherwise
         """
         ...
 
