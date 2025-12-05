@@ -9,16 +9,16 @@ from erk.core.context import ErkContext
 
 @click.command("connect")
 @click.argument("name", required=False)
-@click.option("--ssh", is_flag=True, help="Connect via SSH instead of VS Code")
+@click.option("--vscode", is_flag=True, help="Connect via VS Code instead of SSH")
 @click.pass_obj
-def connect_planner(ctx: ErkContext, name: str | None, ssh: bool) -> None:
+def connect_planner(ctx: ErkContext, name: str | None, vscode: bool) -> None:
     """Connect to a planner box.
 
     If NAME is provided, connects to that planner. Otherwise, connects
     to the default planner.
 
-    By default, opens VS Code desktop to prevent idle timeout. Use --ssh
-    to connect via SSH and launch Claude directly.
+    By default, connects via SSH and launches Claude directly. Use --vscode
+    to open VS Code desktop instead (prevents idle timeout).
     """
     # Get planner by name or default
     if name is not None:
@@ -47,8 +47,20 @@ def connect_planner(ctx: ErkContext, name: str | None, ssh: bool) -> None:
     # Update last connected timestamp
     ctx.planner_registry.update_last_connected(planner.name, ctx.time.now())
 
-    if ssh:
-        # Connect via gh codespace ssh with claude command
+    if vscode:
+        # Open VS Code desktop (prevents idle timeout)
+        click.echo("Opening VS Code...", err=True)
+        click.echo("", err=True)
+        click.echo("Run in VS Code terminal:", err=True)
+        click.echo("  git pull && uv sync && source .venv/bin/activate", err=True)
+        click.echo(
+            '  claude --allow-dangerously-skip-permissions --verbose "/erk:craft-plan"',
+            err=True,
+        )
+
+        os.execvp("gh", ["gh", "codespace", "code", "-c", planner.gh_name])
+    else:
+        # Default: Connect via gh codespace ssh with claude command
         click.echo(f"Connecting to planner '{planner.name}' via SSH...", err=True)
 
         # Replace current process with ssh session
@@ -80,15 +92,3 @@ def connect_planner(ctx: ErkContext, name: str | None, ssh: bool) -> None:
                 remote_command,
             ],
         )
-    else:
-        # Default: Open VS Code desktop (prevents idle timeout)
-        click.echo("Opening VS Code...", err=True)
-        click.echo("", err=True)
-        click.echo("Run in VS Code terminal:", err=True)
-        click.echo("  git pull && uv sync && source .venv/bin/activate", err=True)
-        click.echo(
-            '  claude --allow-dangerously-skip-permissions --verbose "/erk:craft-plan"',
-            err=True,
-        )
-
-        os.execvp("gh", ["gh", "codespace", "code", "-c", planner.gh_name])
