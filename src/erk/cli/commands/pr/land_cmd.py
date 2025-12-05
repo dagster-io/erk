@@ -101,6 +101,7 @@ def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
         raise SystemExit(1)
 
     # Step 1: Execute land-pr (merges the PR)
+    # render_events() uses click.echo() + sys.stderr.flush() for immediate unbuffered output
     result = render_events(execute_land_pr(ctx, ctx.cwd))
 
     if isinstance(result, LandPrError):
@@ -121,8 +122,11 @@ def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
     extraction_success = True  # Default: proceed with deletion
     if extract:
         try:
-            ctx.shell.run_claude_extraction_plan(ctx.cwd)
-            user_output(click.style("✓", fg="green") + " Created documentation extraction plan")
+            issue_url = ctx.shell.run_claude_extraction_plan(ctx.cwd)
+            msg = click.style("✓", fg="green") + " Created documentation extraction plan"
+            if issue_url:
+                msg += f"\n  {issue_url}"
+            user_output(msg)
         except subprocess.CalledProcessError as e:
             extraction_success = False
             user_output(

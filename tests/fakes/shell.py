@@ -48,6 +48,7 @@ class FakeShell(Shell):
         detected_shell: tuple[str, Path] | None = None,
         installed_tools: dict[str, str] | None = None,
         claude_extraction_raises: bool = False,
+        extraction_plan_url: str | None = None,
     ) -> None:
         """Initialize fake with predetermined shell and tool availability.
 
@@ -58,11 +59,14 @@ class FakeShell(Shell):
                 this mapping will return None from get_installed_tool_path()
             claude_extraction_raises: If True, run_claude_extraction_plan raises
                 subprocess.CalledProcessError. If False, completes successfully.
+            extraction_plan_url: URL to return from run_claude_extraction_plan().
+                Only used if claude_extraction_raises is False.
         """
         self._detected_shell = detected_shell
         self._installed_tools = installed_tools or {}
         self._sync_calls: list[tuple[Path, bool, bool]] = []
         self._claude_extraction_raises = claude_extraction_raises
+        self._extraction_plan_url = extraction_plan_url
         self._extraction_calls: list[Path] = []
 
     def detect_shell(self) -> tuple[str, Path] | None:
@@ -91,11 +95,12 @@ class FakeShell(Shell):
         """
         return self._sync_calls.copy()
 
-    def run_claude_extraction_plan(self, cwd: Path) -> None:
+    def run_claude_extraction_plan(self, cwd: Path) -> str | None:
         """Track call to run_claude_extraction_plan without executing anything.
 
         This method records the call parameters for test assertions.
         Raises subprocess.CalledProcessError if configured to do so.
+        Returns the configured extraction_plan_url on success.
         """
         import subprocess
 
@@ -106,6 +111,7 @@ class FakeShell(Shell):
                 cmd=["claude", "/erk:create-extraction-plan"],
                 stderr="Simulated extraction failure",
             )
+        return self._extraction_plan_url
 
     @property
     def extraction_calls(self) -> list[Path]:

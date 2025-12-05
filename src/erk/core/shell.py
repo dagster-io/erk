@@ -5,6 +5,7 @@ the current shell and checking if command-line tools are installed. This abstrac
 enables dependency injection for testing without mock.patch.
 """
 
+import json
 import os
 import shutil
 import subprocess
@@ -102,7 +103,7 @@ class Shell(ABC):
         ...
 
     @abstractmethod
-    def run_claude_extraction_plan(self, cwd: Path) -> None:
+    def run_claude_extraction_plan(self, cwd: Path) -> str | None:
         """Run Claude CLI to create an extraction plan from session logs.
 
         This spawns Claude in non-interactive mode to analyze session logs
@@ -112,6 +113,10 @@ class Shell(ABC):
 
         Args:
             cwd: Directory to run Claude in (typically the worktree being landed)
+
+        Returns:
+            The GitHub issue URL if extraction succeeded and returned JSON with issue_url,
+            None if JSON parsing fails or issue_url not present.
 
         Raises:
             subprocess.CalledProcessError: If Claude CLI execution fails.
@@ -156,11 +161,12 @@ class RealShell(Shell):
             capture_output=not verbose,
         )
 
-    def run_claude_extraction_plan(self, cwd: Path) -> None:
+    def run_claude_extraction_plan(self, cwd: Path) -> str | None:
         """Run Claude CLI to create an extraction plan from session logs.
 
         Spawns Claude in non-interactive mode with permission bypass to
-        automatically create an extraction plan.
+        automatically create an extraction plan. Returns the issue URL
+        if present in the JSON output.
         """
         cmd = [
             "claude",
@@ -170,10 +176,21 @@ class RealShell(Shell):
             "/erk:create-extraction-plan",
         ]
 
-        subprocess.run(
+        result = subprocess.run(
             cmd,
             cwd=cwd,
             check=True,
             capture_output=True,
             text=True,
         )
+
+        # Parse JSON output to extract issue_url
+        # Return None if parsing fails or issue_url not present
+        try:
+            data = json.loads(result.stdout)
+            issue_url = data.get("issue_url")
+            if isinstance(issue_url, str):
+                return issue_url
+            return None
+        except json.JSONDecodeError:
+            return None
