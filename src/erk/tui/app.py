@@ -1,6 +1,7 @@
 """Main Textual application for erk dash interactive mode."""
 
 import asyncio
+import subprocess
 import time
 from collections.abc import Iterator
 from datetime import datetime
@@ -8,7 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from rich.markup import escape as escape_markup
-from textual import on
+from textual import on, work
 from textual.app import App, ComposeResult, SystemCommand
 from textual.binding import Binding
 from textual.containers import Container, Vertical
@@ -23,6 +24,7 @@ from erk.tui.data.provider import PlanDataProvider
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.filtering.logic import filter_plans
 from erk.tui.filtering.types import FilterMode, FilterState
+from erk.tui.widgets.command_output import CommandOutputPanel
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
 
@@ -375,6 +377,7 @@ class PlanDetailScreen(ModalScreen):
         clipboard: "Clipboard | None" = None,
         browser: "BrowserLauncher | None" = None,
         executor: CommandExecutor | None = None,
+        repo_root: Path | None = None,
     ) -> None:
         """Initialize with plan row data.
 
@@ -383,12 +386,16 @@ class PlanDetailScreen(ModalScreen):
             clipboard: Optional clipboard interface for copy operations
             browser: Optional browser launcher interface for opening URLs
             executor: Optional command executor for palette commands
+            repo_root: Path to repository root for running commands
         """
         super().__init__()
         self._row = row
         self._clipboard = clipboard
         self._browser = browser
         self._executor = executor
+        self._repo_root = repo_root
+        self._output_panel: CommandOutputPanel | None = None
+        self._command_running = False
 
     def _get_pr_state_badge(self) -> tuple[str, str]:
         """Get PR state display text and CSS class."""
@@ -492,6 +499,86 @@ class PlanDetailScreen(ModalScreen):
         cmd = f"erk submit {self._row.issue_number}"
         self._copy_and_notify(cmd)
 
+    async def action_dismiss(self, result: object = None) -> None:
+        """Dismiss the modal, blocking while command is running.
+
+        Args:
+            result: Optional result to pass to dismiss (unused, for API compat)
+        """
+        # Block while command is running
+        if self._command_running:
+            return
+
+        # If panel exists and completed, refresh data if successful
+        if self._output_panel is not None:
+            if self._output_panel.is_completed:
+                if self._executor and self._output_panel.succeeded:
+                    self._executor.refresh_data()
+                await self._flush_next_callbacks()
+                self.dismiss(result)
+            return
+
+        # Normal dismiss
+        await self._flush_next_callbacks()
+        self.dismiss(result)
+
+    def run_streaming_command(
+        self,
+        command: list[str],
+        cwd: Path,
+        title: str,
+    ) -> None:
+        """Run command with live output in bottom panel.
+
+        Args:
+            command: Command to run as list of arguments
+            cwd: Working directory for the command
+            title: Title to display in the output panel
+        """
+        # Create and mount output panel
+        self._output_panel = CommandOutputPanel(title)
+        dialog = self.query_one("#detail-dialog")
+        dialog.mount(self._output_panel)
+        self._command_running = True
+
+        # Run subprocess in worker thread
+        self._stream_subprocess(command, cwd)
+
+    @work(thread=True)
+    def _stream_subprocess(self, command: list[str], cwd: Path) -> None:
+        """Worker: stream subprocess output to panel.
+
+        Args:
+            command: Command to run
+            cwd: Working directory
+        """
+        # Capture panel reference at start (won't be None since run_streaming_command sets it)
+        panel = self._output_panel
+        if panel is None:
+            self._command_running = False
+            return
+
+        process = subprocess.Popen(
+            command,
+            cwd=cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        if process.stdout is not None:
+            for line in process.stdout:
+                self.app.call_from_thread(
+                    panel.append_line,
+                    line.rstrip(),
+                )
+
+        return_code = process.wait()
+        success = return_code == 0
+        self.app.call_from_thread(panel.set_completed, success)
+        self._command_running = False
+
     def execute_command(self, command_id: str) -> None:
         """Execute a command from the palette.
 
@@ -569,14 +656,14 @@ class PlanDetailScreen(ModalScreen):
                     self.dismiss()
 
         elif command_id == "submit_to_queue":
-            if row.issue_url:
-                executor.notify(f"Submitting plan #{row.issue_number} to queue...")
-                executor.submit_to_queue(row.issue_number, row.issue_url)
-                executor.notify(f"Submitted plan #{row.issue_number} to queue")
-                executor.refresh_data()
-                # Close modal after submission (only when running in app context)
-                if self.is_attached:
-                    self.dismiss()
+            if row.issue_url and self._repo_root is not None:
+                # Use streaming output for submit command
+                self.run_streaming_command(
+                    ["erk", "submit", str(row.issue_number)],
+                    cwd=self._repo_root,
+                    title=f"Submitting Plan #{row.issue_number}",
+                )
+                # Don't dismiss - user must press Esc after completion
 
     def compose(self) -> ComposeResult:
         """Create detail dialog content as an Action Hub."""
@@ -892,6 +979,7 @@ class ErkDashApp(App):
                 clipboard=self._provider.clipboard,
                 browser=self._provider.browser,
                 executor=executor,
+                repo_root=self._provider.repo_root,
             )
         )
 
