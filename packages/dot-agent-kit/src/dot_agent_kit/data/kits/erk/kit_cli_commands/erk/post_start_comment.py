@@ -36,6 +36,7 @@ from erk_shared.impl_folder import (
     read_issue_reference,
 )
 
+from dot_agent_kit.cli.schema import SchemaCommand, build_epilog
 from dot_agent_kit.context_helpers import (
     require_github_issues,
     require_repo_root,
@@ -111,7 +112,11 @@ def get_branch_name() -> str | None:
         return None
 
 
-@click.command(name="post-start-comment")
+@click.command(
+    name="post-start-comment",
+    cls=SchemaCommand,
+    epilog=build_epilog(StartSuccess, StartError),
+)
 @click.pass_context
 def post_start_comment(ctx: click.Context) -> None:
     """Post start comment to GitHub issue with complete implementation context.
