@@ -170,8 +170,8 @@ def _output_blocking_message(session_id: str) -> None:
     click.echo("If user chooses 'Implement now':", err=True)
     click.echo("  1. Create skip marker:", err=True)
     click.echo(
-        f"     mkdir -p .erk/scratch/{session_id} && "
-        f"touch .erk/scratch/{session_id}/skip-plan-save",
+        f"     dot-agent run erk touch-scratch-marker --session-id {session_id} "
+        f"--marker skip-plan-save",
         err=True,
     )
     click.echo("  2. Call ExitPlanMode", err=True)
