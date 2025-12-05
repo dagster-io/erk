@@ -551,7 +551,6 @@ def _handle_force_delete(
     wt_exists: bool,
     branch_exists: bool,
     force_delete: ForceDeleteOptions,
-    dry_run: bool,
 ) -> None:
     """Handle --force flag by prompting for confirmation and deleting existing resources.
 
@@ -563,7 +562,6 @@ def _handle_force_delete(
         wt_exists: Whether worktree directory exists
         branch_exists: Whether branch exists
         force_delete: Options for which resources to force-delete
-        dry_run: Whether in dry-run mode
 
     Raises:
         SystemExit: If user declines confirmation
@@ -584,7 +582,7 @@ def _handle_force_delete(
         user_output(f"  • {item}")
 
     # Prompt for confirmation
-    if not dry_run:
+    if not ctx.dry_run:
         prompt_text = click.style("Proceed with deletion?", fg="yellow", bold=True)
         if not click.confirm(f"\n{prompt_text}", default=False, err=True):
             user_output(click.style("⭕ Aborted.", fg="red", bold=True))
@@ -592,7 +590,7 @@ def _handle_force_delete(
 
     # Perform deletions
     if wt_exists and force_delete.worktree:
-        if dry_run:
+        if ctx.dry_run:
             user_output(f"[DRY RUN] Would delete worktree: {wt_path}")
         else:
             ctx.feedback.info(f"Deleting existing worktree: {wt_path.name}...")
@@ -600,7 +598,7 @@ def _handle_force_delete(
             ctx.feedback.success(f"✓ Deleted worktree: {wt_path.name}")
 
     if branch_exists and force_delete.branch:
-        if dry_run:
+        if ctx.dry_run:
             user_output(f"[DRY RUN] Would delete branch: {branch}")
         else:
             ctx.feedback.info(f"Deleting existing branch: {branch}...")
@@ -642,7 +640,6 @@ def _create_worktree_with_plan_content(
     *,
     plan_source: PlanSource,
     worktree_name: str | None,
-    dry_run: bool,
     submit: bool,
     dangerous: bool,
     no_interactive: bool,
@@ -656,7 +653,6 @@ def _create_worktree_with_plan_content(
         ctx: Erk context
         plan_source: Plan source with content and metadata
         worktree_name: Optional custom worktree name
-        dry_run: Whether to perform dry run
         submit: Whether to auto-submit PR after implementation
         dangerous: Whether to skip permission prompts
         no_interactive: Whether to execute non-interactively
@@ -720,7 +716,6 @@ def _create_worktree_with_plan_content(
                     wt_exists=wt_exists,
                     branch_exists=branch_exists,
                     force_delete=force_delete,
-                    dry_run=dry_run,
                 )
             else:
                 # No --force flag - show error with suggestion
@@ -734,7 +729,7 @@ def _create_worktree_with_plan_content(
                 )
 
     # Handle dry-run mode
-    if dry_run:
+    if ctx.dry_run:
         dry_run_header = click.style("Dry-run mode:", fg="cyan", bold=True)
         user_output(dry_run_header + " No changes will be made\n")
 
@@ -863,7 +858,6 @@ def _implement_from_issue(
     *,
     issue_number: str,
     worktree_name: str | None,
-    dry_run: bool,
     submit: bool,
     dangerous: bool,
     script: bool,
@@ -877,7 +871,6 @@ def _implement_from_issue(
         ctx: Erk context
         issue_number: GitHub issue number
         worktree_name: Optional custom worktree name
-        dry_run: Whether to perform dry run
         submit: Whether to auto-submit PR after implementation
         dangerous: Whether to skip permission prompts
         script: Whether to output activation script
@@ -902,7 +895,6 @@ def _implement_from_issue(
         ctx,
         plan_source=issue_plan_source.plan_source,
         worktree_name=worktree_name,
-        dry_run=dry_run,
         submit=submit,
         dangerous=dangerous,
         no_interactive=no_interactive,
@@ -950,7 +942,6 @@ def _implement_from_file(
     *,
     plan_file: Path,
     worktree_name: str | None,
-    dry_run: bool,
     submit: bool,
     dangerous: bool,
     script: bool,
@@ -965,7 +956,6 @@ def _implement_from_file(
         ctx: Erk context
         plan_file: Path to plan file
         worktree_name: Optional custom worktree name
-        dry_run: Whether to perform dry run
         submit: Whether to auto-submit PR after implementation
         dangerous: Whether to skip permission prompts
         script: Whether to output activation script
@@ -988,7 +978,6 @@ def _implement_from_file(
         ctx,
         plan_source=plan_source,
         worktree_name=worktree_name,
-        dry_run=dry_run,
         submit=submit,
         dangerous=dangerous,
         no_interactive=no_interactive,
@@ -1152,6 +1141,13 @@ def implement(
     # Validate flag combinations
     _validate_flags(submit, no_interactive, script)
 
+    # Recreate context with dry-run mode if needed
+    # Only recreate if --dry-run flag is passed AND context is not already in dry-run mode
+    if dry_run and not ctx.dry_run:
+        from erk.core.context import create_context
+
+        ctx = create_context(dry_run=True)
+
     # Create force delete options from --force flag (set at entry point for clarity)
     force_delete = ForceDeleteOptions.from_force_flag(force)
 
@@ -1176,7 +1172,6 @@ def implement(
             ctx,
             issue_number=target_info.issue_number,
             worktree_name=worktree_name,
-            dry_run=dry_run,
             submit=submit,
             dangerous=dangerous,
             script=script,
@@ -1191,7 +1186,6 @@ def implement(
             ctx,
             plan_file=plan_file,
             worktree_name=worktree_name,
-            dry_run=dry_run,
             submit=submit,
             dangerous=dangerous,
             script=script,

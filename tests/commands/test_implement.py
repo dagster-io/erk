@@ -295,9 +295,9 @@ def test_implement_from_issue_dry_run() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, dry_run=True, git=git, plan_store=store)
 
-        result = runner.invoke(implement, ["#42", "--dry-run"], obj=ctx)
+        result = runner.invoke(implement, ["#42"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Dry-run mode" in result.output
@@ -424,13 +424,13 @@ def test_implement_from_plan_file_dry_run() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        ctx = build_workspace_test_context(env, git=git)
+        ctx = build_workspace_test_context(env, dry_run=True, git=git)
 
         # Create plan file
         plan_file = env.cwd / "feature-plan.md"
         plan_file.write_text("# Plan", encoding="utf-8")
 
-        result = runner.invoke(implement, [str(plan_file), "--dry-run"], obj=ctx)
+        result = runner.invoke(implement, [str(plan_file)], obj=ctx)
 
         assert result.exit_code == 0
         assert "Dry-run mode" in result.output
@@ -637,10 +637,10 @@ def test_implement_submit_with_dry_run() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, dry_run=True, git=git, plan_store=store)
 
         result = runner.invoke(
-            implement, ["#42", "--no-interactive", "--submit", "--dry-run"], obj=ctx
+            implement, ["#42", "--no-interactive", "--submit"], obj=ctx
         )
 
         assert result.exit_code == 0
@@ -913,9 +913,9 @@ def test_implement_with_dangerous_flag_in_dry_run() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, dry_run=True, git=git, plan_store=store)
 
-        result = runner.invoke(implement, ["#42", "--dangerous", "--dry-run"], obj=ctx)
+        result = runner.invoke(implement, ["#42", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Dry-run mode" in result.output
@@ -944,11 +944,11 @@ def test_implement_with_dangerous_and_submit_in_dry_run() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, dry_run=True, git=git, plan_store=store)
 
         result = runner.invoke(
             implement,
-            ["#42", "--dangerous", "--no-interactive", "--submit", "--dry-run"],
+            ["#42", "--dangerous", "--no-interactive", "--submit"],
             obj=ctx,
         )
 
@@ -1273,16 +1273,16 @@ def test_dry_run_shows_execution_mode() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, dry_run=True, git=git, plan_store=store)
 
         # Test with interactive mode (default)
-        result = runner.invoke(implement, ["#42", "--dry-run"], obj=ctx)
+        result = runner.invoke(implement, ["#42"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Execution mode: interactive" in result.output
 
         # Test with non-interactive mode
-        result = runner.invoke(implement, ["#42", "--dry-run", "--no-interactive"], obj=ctx)
+        result = runner.invoke(implement, ["#42", "--no-interactive"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Execution mode: non-interactive" in result.output
@@ -1300,10 +1300,10 @@ def test_dry_run_shows_command_sequence() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, dry_run=True, git=git, plan_store=store)
 
         # Without --submit (single command)
-        result = runner.invoke(implement, ["#42", "--dry-run", "--no-interactive"], obj=ctx)
+        result = runner.invoke(implement, ["#42", "--no-interactive"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Command sequence:" in result.output
@@ -1312,7 +1312,7 @@ def test_dry_run_shows_command_sequence() -> None:
 
         # With --submit (three commands)
         result = runner.invoke(
-            implement, ["#42", "--dry-run", "--no-interactive", "--submit"], obj=ctx
+            implement, ["#42", "--no-interactive", "--submit"], obj=ctx
         )
 
         assert result.exit_code == 0
@@ -1368,9 +1368,9 @@ def test_yolo_flag_in_dry_run() -> None:
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, dry_run=True, git=git, plan_store=store)
 
-        result = runner.invoke(implement, ["#42", "--yolo", "--dry-run"], obj=ctx)
+        result = runner.invoke(implement, ["#42", "--yolo"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Dry-run mode" in result.output
@@ -1690,16 +1690,16 @@ def test_implement_force_dry_run_shows_would_delete() -> None:
             local_branches={env.cwd: ["main", "my-feature"]},
             default_branches={env.cwd: "main"},
         )
-        ctx = build_workspace_test_context(env, git=git)
+        ctx = build_workspace_test_context(env, dry_run=True, git=git)
 
         # Create plan file
         plan_file = env.cwd / "my-feature-plan.md"
         plan_file.write_text("# Plan", encoding="utf-8")
 
-        # Use -f with --dry-run
+        # Use -f with dry-run context
         result = runner.invoke(
             implement,
-            [str(plan_file), "--worktree-name", "my-feature", "-f", "--dry-run"],
+            [str(plan_file), "--worktree-name", "my-feature", "-f"],
             obj=ctx,
         )
 
