@@ -28,6 +28,7 @@ class FakeGraphite(Graphite):
         track_branch_raises: Exception | None = None,
         squash_branch_raises: Exception | None = None,
         submit_stack_raises: Exception | None = None,
+        continue_restack_raises: Exception | None = None,
         pr_info: dict[str, PullRequestInfo] | None = None,
         branches: dict[str, BranchMetadata] | None = None,
         stacks: dict[str, list[str]] | None = None,
@@ -44,6 +45,7 @@ class FakeGraphite(Graphite):
             track_branch_raises: Exception to raise when track_branch() is called
             squash_branch_raises: Exception to raise when squash_branch() is called
             submit_stack_raises: Exception to raise when submit_stack() is called
+            continue_restack_raises: Exception to raise when continue_restack() is called
             pr_info: Mapping of branch name -> PullRequestInfo for get_prs_from_graphite()
             branches: Mapping of branch name -> BranchMetadata for get_all_branches()
             stacks: Mapping of branch name -> stack (list of branches from trunk to leaf)
@@ -57,12 +59,14 @@ class FakeGraphite(Graphite):
         self._track_branch_raises = track_branch_raises
         self._squash_branch_raises = squash_branch_raises
         self._submit_stack_raises = submit_stack_raises
+        self._continue_restack_raises = continue_restack_raises
         self._sync_calls: list[tuple[Path, bool, bool]] = []
         self._restack_calls: list[tuple[Path, bool, bool]] = []
         self._submit_branch_calls: list[tuple[Path, str, bool]] = []
         self._track_branch_calls: list[tuple[Path, str, str]] = []
         self._squash_branch_calls: list[tuple[Path, bool]] = []
         self._submit_stack_calls: list[tuple[Path, bool, bool, bool, bool]] = []
+        self._continue_restack_calls: list[tuple[Path, bool]] = []
         self._pr_info = pr_info if pr_info is not None else {}
         self._branches = branches if branches is not None else {}
         self._stacks = stacks if stacks is not None else {}
@@ -293,3 +297,17 @@ class FakeGraphite(Graphite):
         Returns list of (repo_root, publish, restack, quiet, force) tuples.
         """
         return self._submit_stack_calls
+
+    def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
+        """Track continue_restack calls and optionally raise."""
+        self._continue_restack_calls.append((repo_root, quiet))
+        if self._continue_restack_raises is not None:
+            raise self._continue_restack_raises
+
+    @property
+    def continue_restack_calls(self) -> list[tuple[Path, bool]]:
+        """Get the list of continue_restack() calls.
+
+        Returns list of (repo_root, quiet) tuples.
+        """
+        return self._continue_restack_calls

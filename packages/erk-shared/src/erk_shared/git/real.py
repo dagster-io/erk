@@ -754,3 +754,46 @@ class RealGit(Git):
         if not url:
             raise ValueError(f"Remote '{remote}' has no URL configured")
         return url
+
+    def get_conflicted_files(self, cwd: Path) -> list[str]:
+        """Parse git status --porcelain for UU/AA/DD/AU/UA/DU/UD status codes."""
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return []
+
+        conflict_codes = {"UU", "AA", "DD", "AU", "UA", "DU", "UD"}
+        conflicted = []
+        for line in result.stdout.strip().split("\n"):
+            if not line:
+                continue
+            status = line[:2]
+            if status in conflict_codes:
+                # File path starts at position 3
+                conflicted.append(line[3:])
+        return conflicted
+
+    def is_rebase_in_progress(self, cwd: Path) -> bool:
+        """Check for .git/rebase-merge or .git/rebase-apply directories."""
+        git_common_dir = self.get_git_common_dir(cwd)
+        if git_common_dir is None:
+            return False
+        rebase_merge = git_common_dir / "rebase-merge"
+        rebase_apply = git_common_dir / "rebase-apply"
+        return rebase_merge.exists() or rebase_apply.exists()
+
+    def rebase_continue(self, cwd: Path) -> None:
+        """Run git rebase --continue."""
+        subprocess.run(
+            ["git", "rebase", "--continue"],
+            cwd=cwd,
+            check=True,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "GIT_EDITOR": "true"},  # Auto-accept commit messages
+        )

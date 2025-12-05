@@ -248,3 +248,20 @@ class Graphite(ABC):
         if branch not in all_branches:
             return []
         return all_branches[branch].children
+
+    @abstractmethod
+    def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
+        """Continue an in-progress gt restack (gt continue).
+
+        This is used after manually resolving merge conflicts during a restack
+        operation. The gt continue command tells Graphite to proceed with the
+        rebase using the resolved files.
+
+        Args:
+            repo_root: Repository root directory
+            quiet: If True, suppress output
+
+        Raises:
+            subprocess.CalledProcessError: If continue fails (e.g., unresolved conflicts)
+        """
+        ...

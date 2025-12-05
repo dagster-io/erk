@@ -21,6 +21,15 @@ kit_cli_commands:
   - name: pr-update
     path: kit_cli_commands/gt/pr_update.py
     description: Update PR by staging changes, committing, restacking, and submitting
+  - name: restack-preflight
+    path: kit_cli_commands/gt/restack_preflight.py
+    description: Squash and restack branch, detecting conflicts for manual resolution
+  - name: restack-continue
+    path: kit_cli_commands/gt/restack_continue.py
+    description: Stage resolved files and continue restack
+  - name: restack-finalize
+    path: kit_cli_commands/gt/restack_finalize.py
+    description: Verify restack completed cleanly
 artifacts:
   agent:
     - agents/gt/gt-update-pr-submitter.md

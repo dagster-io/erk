@@ -26,6 +26,17 @@ from erk_shared.integrations.graphite.types import BranchMetadata
 
 
 @dataclass
+class GitBuilderState:
+    """Mutable builder state for constructing FakeGit instances."""
+
+    conflicted_files: list[str] = field(default_factory=list)
+    rebase_in_progress: bool = False
+    rebase_continue_raises: Exception | None = None
+    existing_paths: set[Path] = field(default_factory=set)
+    dirty_worktrees: set[Path] = field(default_factory=set)
+
+
+@dataclass
 class GitHubBuilderState:
     """Mutable builder state for constructing FakeGitHub instances.
 
@@ -59,6 +70,7 @@ class FakeGtKitOps:
     def __init__(
         self,
         github_builder_state: GitHubBuilderState | None = None,
+        git_builder_state: GitBuilderState | None = None,
         main_graphite: Graphite | None = None,
     ) -> None:
         """Initialize with optional initial states."""
@@ -75,6 +87,11 @@ class FakeGtKitOps:
         self._git_remote_urls: dict[tuple[Path, str], str] = {}
         self._git_instance: FakeGit | None = None
         self._repo_root: str = "/fake/repo/root"
+
+        # Git builder state for restack-related tests
+        self._git_builder_state = (
+            git_builder_state if git_builder_state is not None else GitBuilderState()
+        )
 
         # GitHub builder state (lazy construction)
         self._github_builder_state = (
@@ -150,6 +167,11 @@ class FakeGtKitOps:
             merge_conflicts=self._git_merge_conflicts,
             add_all_raises=self._git_add_all_raises,
             remote_urls=self._git_remote_urls,
+            conflicted_files=self._git_builder_state.conflicted_files,
+            rebase_in_progress=self._git_builder_state.rebase_in_progress,
+            rebase_continue_raises=self._git_builder_state.rebase_continue_raises,
+            existing_paths=self._git_builder_state.existing_paths or None,
+            dirty_worktrees=self._git_builder_state.dirty_worktrees or None,
         )
 
     @property
@@ -650,5 +672,65 @@ class FakeGtKitOps:
         """
         repo_root = Path(self._repo_root)
         self._git_remote_urls[(repo_root, remote)] = url
+        self._git_instance = None
+        return self
+
+    def with_conflicts(self, files: list[str]) -> "FakeGtKitOps":
+        """Set conflicted files from git status.
+
+        Args:
+            files: List of file paths with conflicts
+
+        Returns:
+            Self for chaining
+        """
+        self._git_builder_state.conflicted_files = files
+        self._git_builder_state.rebase_in_progress = True
+        self._git_instance = None
+        return self
+
+    def with_rebase_in_progress(self, in_progress: bool = True) -> "FakeGtKitOps":
+        """Set whether a rebase is in progress.
+
+        Args:
+            in_progress: Whether rebase is in progress
+
+        Returns:
+            Self for chaining
+        """
+        self._git_builder_state.rebase_in_progress = in_progress
+        self._git_instance = None
+        return self
+
+    def with_continue_restack_failure(self, stderr: str = "") -> "FakeGtKitOps":
+        """Configure continue_restack to fail.
+
+        Args:
+            stderr: Error message to include
+
+        Returns:
+            Self for chaining
+        """
+        # Configure main_graphite to raise RuntimeError for continue_restack
+        existing_branches: dict[str, BranchMetadata] = {}
+        if isinstance(self._main_graphite, FakeGraphite):
+            existing_branches = self._main_graphite._branches
+        error = RuntimeError(f"gt continue failed: {stderr}")
+        self._main_graphite = FakeGraphite(
+            continue_restack_raises=error,
+            branches=existing_branches,
+        )
+        return self
+
+    def with_clean_working_tree(self) -> "FakeGtKitOps":
+        """Configure a clean working tree (no uncommitted changes).
+
+        Returns:
+            Self for chaining
+        """
+        repo_root = Path(self._repo_root)
+        self._git_file_statuses[repo_root] = ([], [], [])  # All empty
+        # Add to existing_paths so is_worktree_clean returns True
+        self._git_builder_state.existing_paths.add(repo_root)
         self._git_instance = None
         return self

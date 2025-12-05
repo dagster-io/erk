@@ -227,3 +227,84 @@ class FinalizeResult:
     branch_name: str
     issue_number: int | None
     message: str
+
+
+# =============================================================================
+# Auto-Restack Operation Types
+# =============================================================================
+
+RestackPreflightErrorType = Literal[
+    "squash_conflict",
+    "squash_failed",
+    "no_commits",
+    "restack_failed",
+    "not_in_repo",
+]
+
+
+@dataclass(frozen=True)
+class RestackPreflightSuccess:
+    """Success result from restack preflight."""
+
+    success: Literal[True]
+    has_conflicts: bool
+    conflicts: list[str]  # File paths
+    branch_name: str
+    message: str
+
+
+@dataclass(frozen=True)
+class RestackPreflightError:
+    """Error result from restack preflight."""
+
+    success: Literal[False]
+    error_type: RestackPreflightErrorType
+    message: str
+    details: dict[str, str]
+
+
+RestackContinueErrorType = Literal["stage_failed", "continue_failed"]
+
+
+@dataclass(frozen=True)
+class RestackContinueSuccess:
+    """Success result from restack continue."""
+
+    success: Literal[True]
+    restack_complete: bool
+    has_conflicts: bool
+    conflicts: list[str]  # New conflict files
+    branch_name: str
+    message: str
+
+
+@dataclass(frozen=True)
+class RestackContinueError:
+    """Error result from restack continue."""
+
+    success: Literal[False]
+    error_type: RestackContinueErrorType
+    message: str
+    details: dict[str, str]
+
+
+RestackFinalizeErrorType = Literal["rebase_still_in_progress", "dirty_working_tree"]
+
+
+@dataclass(frozen=True)
+class RestackFinalizeSuccess:
+    """Success result from restack finalize."""
+
+    success: Literal[True]
+    branch_name: str
+    message: str
+
+
+@dataclass(frozen=True)
+class RestackFinalizeError:
+    """Error result from restack finalize."""
+
+    success: Literal[False]
+    error_type: RestackFinalizeErrorType
+    message: str
+    details: dict[str, str]

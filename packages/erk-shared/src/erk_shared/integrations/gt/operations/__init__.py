@@ -13,6 +13,9 @@ from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
 from erk_shared.integrations.gt.operations.pre_analysis import execute_pre_analysis
 from erk_shared.integrations.gt.operations.preflight import execute_preflight
 from erk_shared.integrations.gt.operations.prep import execute_prep
+from erk_shared.integrations.gt.operations.restack_continue import execute_restack_continue
+from erk_shared.integrations.gt.operations.restack_finalize import execute_restack_finalize
+from erk_shared.integrations.gt.operations.restack_preflight import execute_restack_preflight
 from erk_shared.integrations.gt.operations.squash import execute_squash
 from erk_shared.integrations.gt.operations.update_pr import execute_update_pr
 
@@ -22,6 +25,9 @@ __all__ = [
     "execute_pre_analysis",
     "execute_preflight",
     "execute_prep",
+    "execute_restack_continue",
+    "execute_restack_finalize",
+    "execute_restack_preflight",
     "execute_squash",
     "execute_update_pr",
 ]
