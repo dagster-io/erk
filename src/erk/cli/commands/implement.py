@@ -293,6 +293,29 @@ class PlanSource:
     dry_run_description: str
 
 
+@dataclass(frozen=True)
+class ForceDeleteOptions:
+    """Options for force-deleting existing worktree/branch.
+
+    Attributes:
+        worktree: Whether to delete existing worktree with same name
+        branch: Whether to delete existing branch with same name
+    """
+
+    worktree: bool = False
+    branch: bool = False
+
+    @classmethod
+    def from_force_flag(cls, force: bool) -> "ForceDeleteOptions":
+        """Create options from --force flag value."""
+        return cls(worktree=force, branch=force)
+
+    @property
+    def any_enabled(self) -> bool:
+        """Return True if any force delete option is enabled."""
+        return self.worktree or self.branch
+
+
 def _detect_target_type(target: str) -> TargetInfo:
     """Detect whether target is an issue number, issue URL, or file path.
 
@@ -527,8 +550,7 @@ def _handle_force_delete(
     branch: str,
     wt_exists: bool,
     branch_exists: bool,
-    delete_existing_wt: bool,
-    delete_existing_br: bool,
+    force_delete: ForceDeleteOptions,
     dry_run: bool,
 ) -> None:
     """Handle --force flag by prompting for confirmation and deleting existing resources.
@@ -540,8 +562,7 @@ def _handle_force_delete(
         branch: Branch name
         wt_exists: Whether worktree directory exists
         branch_exists: Whether branch exists
-        delete_existing_wt: Whether to delete worktree if it exists
-        delete_existing_br: Whether to delete branch if it exists
+        force_delete: Options for which resources to force-delete
         dry_run: Whether in dry-run mode
 
     Raises:
@@ -549,9 +570,9 @@ def _handle_force_delete(
     """
     # Build list of what will be deleted
     deletions: list[str] = []
-    if wt_exists and delete_existing_wt:
+    if wt_exists and force_delete.worktree:
         deletions.append(f"worktree: {click.style(str(wt_path), fg='cyan')}")
-    if branch_exists and delete_existing_br:
+    if branch_exists and force_delete.branch:
         deletions.append(f"branch: {click.style(branch, fg='yellow')}")
 
     if not deletions:
@@ -570,7 +591,7 @@ def _handle_force_delete(
             raise SystemExit(1)
 
     # Perform deletions
-    if wt_exists and delete_existing_wt:
+    if wt_exists and force_delete.worktree:
         if dry_run:
             user_output(f"[DRY RUN] Would delete worktree: {wt_path}")
         else:
@@ -578,7 +599,7 @@ def _handle_force_delete(
             _delete_worktree_for_force(ctx, repo_root, wt_path)
             ctx.feedback.success(f"✓ Deleted worktree: {wt_path.name}")
 
-    if branch_exists and delete_existing_br:
+    if branch_exists and force_delete.branch:
         if dry_run:
             user_output(f"[DRY RUN] Would delete branch: {branch}")
         else:
@@ -627,8 +648,7 @@ def _create_worktree_with_plan_content(
     no_interactive: bool,
     linked_branch_name: str | None = None,
     base_branch: str,
-    delete_existing_wt: bool = False,
-    delete_existing_br: bool = False,
+    force_delete: ForceDeleteOptions | None = None,
 ) -> Path | None:
     """Create worktree with plan content.
 
@@ -643,12 +663,13 @@ def _create_worktree_with_plan_content(
         linked_branch_name: Optional branch name from gh issue develop
                            (when provided, use this branch instead of creating new)
         base_branch: Base branch to use as ref for worktree creation
-        delete_existing_wt: Whether to delete existing worktree with confirmation
-        delete_existing_br: Whether to delete existing branch with confirmation
+        force_delete: Options for force-deleting existing worktree/branch
 
     Returns:
         Path to created worktree, or None if dry-run mode
     """
+    if force_delete is None:
+        force_delete = ForceDeleteOptions()
     # Discover repository context
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
@@ -689,7 +710,7 @@ def _create_worktree_with_plan_content(
 
         # Handle conflicts with --force flag
         if branch_exists or wt_exists:
-            if delete_existing_wt or delete_existing_br:
+            if force_delete.any_enabled:
                 # Prompt for confirmation and delete what exists
                 _handle_force_delete(
                     ctx,
@@ -698,8 +719,7 @@ def _create_worktree_with_plan_content(
                     branch=branch,
                     wt_exists=wt_exists,
                     branch_exists=branch_exists,
-                    delete_existing_wt=delete_existing_wt,
-                    delete_existing_br=delete_existing_br,
+                    force_delete=force_delete,
                     dry_run=dry_run,
                 )
             else:
@@ -936,8 +956,7 @@ def _implement_from_file(
     script: bool,
     no_interactive: bool,
     verbose: bool,
-    delete_existing_wt: bool,
-    delete_existing_br: bool,
+    force_delete: ForceDeleteOptions,
     executor: ClaudeExecutor,
 ) -> None:
     """Implement feature from plan file.
@@ -952,8 +971,7 @@ def _implement_from_file(
         script: Whether to output activation script
         no_interactive: Whether to execute non-interactively
         verbose: Whether to show raw output or filtered output
-        delete_existing_wt: Whether to delete existing worktree with confirmation
-        delete_existing_br: Whether to delete existing branch with confirmation
+        force_delete: Options for force-deleting existing worktree/branch
         executor: Claude CLI executor for command execution
     """
     # Discover repo context
@@ -975,8 +993,7 @@ def _implement_from_file(
         dangerous=dangerous,
         no_interactive=no_interactive,
         base_branch=base_branch,
-        delete_existing_wt=delete_existing_wt,
-        delete_existing_br=delete_existing_br,
+        force_delete=force_delete,
     )
 
     # Early return for dry-run mode
@@ -1135,10 +1152,8 @@ def implement(
     # Validate flag combinations
     _validate_flags(submit, no_interactive, script)
 
-    # Expand --force into explicit delete flags (set at entry point for clarity)
-    # These control whether to delete existing worktree/branch with same name
-    delete_existing_wt = force
-    delete_existing_br = force
+    # Create force delete options from --force flag (set at entry point for clarity)
+    force_delete = ForceDeleteOptions.from_force_flag(force)
 
     # Detect target type
     target_info = _detect_target_type(target)
@@ -1182,7 +1197,6 @@ def implement(
             script=script,
             no_interactive=no_interactive,
             verbose=verbose,
-            delete_existing_wt=delete_existing_wt,
-            delete_existing_br=delete_existing_br,
+            force_delete=force_delete,
             executor=ctx.claude_executor,
         )
