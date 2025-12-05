@@ -116,6 +116,29 @@ def _collect_branch_to_delete(
     return worktree_branch
 
 
+def _check_no_active_claude_session(ctx: ErkContext, wt_path: Path) -> None:
+    """Check that no active Claude Code session is using the worktree.
+
+    This is a safety check to prevent deleting a worktree that has an active
+    Claude Code session running in it. The check uses lsof to detect if any
+    Claude process has files open in the worktree directory.
+
+    Args:
+        ctx: Erk context with claude_session_detector
+        wt_path: Path to the worktree to check
+
+    Raises:
+        SystemExit: If an active Claude session is detected
+    """
+    if ctx.claude_session_detector.has_active_session(wt_path):
+        user_output(
+            click.style("Error: ", fg="red", bold=True)
+            + f"Cannot delete worktree: active Claude Code session detected in {wt_path}"
+        )
+        user_output("\nPlease exit the Claude session before deleting this worktree.")
+        raise SystemExit(1)
+
+
 def _display_planned_operations(wt_path: Path, branch_to_delete: str | None) -> None:
     """Display the operations that will be performed."""
     user_output(click.style("📋 Planning to perform the following operations:", bold=True))
@@ -281,6 +304,9 @@ def _delete_worktree(
 
     # Check for pending extraction marker
     check_pending_extraction_marker(wt_path, force)
+
+    # Safety check: prevent deleting worktree with active Claude session
+    _check_no_active_claude_session(ctx, wt_path)
 
     # main_repo_root is always set by RepoContext.__post_init__, but pyright doesn't know
     main_repo = repo.main_repo_root if repo.main_repo_root else repo.root
