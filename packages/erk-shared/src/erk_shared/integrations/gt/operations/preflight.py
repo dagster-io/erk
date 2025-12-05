@@ -13,7 +13,6 @@ from typing import NamedTuple
 
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.types import GitHubRepoId
-from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 from erk_shared.integrations.gt.abc import GtKit
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.integrations.gt.operations.pre_analysis import execute_pre_analysis
@@ -411,13 +410,12 @@ def execute_preflight(
     )
     yield ProgressEvent(f"Diff written to {diff_file}", style="success")
 
-    # Get issue reference if present
+    # Get issue reference using shared resolution
+    from erk_shared.impl_folder import resolve_issue_number
+
     impl_dir = cwd / ".impl"
-    issue_number: int | None = None
-    if has_issue_reference(impl_dir):
-        issue_ref = read_issue_reference(impl_dir)
-        if issue_ref is not None:
-            issue_number = issue_ref.issue_number
+    branch_name_for_issue = ops.git.get_current_branch(cwd) or current_branch
+    issue_number = resolve_issue_number(impl_dir, branch_name_for_issue)
 
     yield CompletionEvent(
         PreflightResult(

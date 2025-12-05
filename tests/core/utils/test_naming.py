@@ -8,6 +8,7 @@ from erk_shared.naming import (
     derive_branch_name_from_title,
     ensure_unique_worktree_name,
     extract_trailing_number,
+    parse_issue_number_from_branch,
     sanitize_branch_component,
     sanitize_worktree_name,
     strip_plan_from_filename,
@@ -354,3 +355,20 @@ def test_derive_branch_name_truncates_to_30_chars() -> None:
     result = derive_branch_name_from_title(long_name)
     assert len(result) == 30
     assert not result.endswith("-")  # No trailing hyphens after truncation
+
+
+def test_parse_issue_number_from_branch_with_number() -> None:
+    """Test extracting issue number from branch names with leading number."""
+    assert parse_issue_number_from_branch("1747-unify-worker-impl-11-30-1640") == 1747
+    assert parse_issue_number_from_branch("1751-create-submitservice-11-30-1653") == 1751
+    assert parse_issue_number_from_branch("42-feature") == 42
+    assert parse_issue_number_from_branch("123-fix-bug") == 123
+
+
+def test_parse_issue_number_from_branch_without_number() -> None:
+    """Test that branches without leading numbers return None."""
+    assert parse_issue_number_from_branch("feature-branch") is None
+    assert parse_issue_number_from_branch("master") is None
+    assert parse_issue_number_from_branch("main") is None
+    assert parse_issue_number_from_branch("improve-nudges") is None
+    assert parse_issue_number_from_branch("develop") is None

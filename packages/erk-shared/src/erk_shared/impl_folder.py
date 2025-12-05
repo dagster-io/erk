@@ -386,6 +386,35 @@ def has_issue_reference(impl_dir: Path) -> bool:
     return issue_file.exists()
 
 
+def resolve_issue_number(impl_dir: Path, branch_name: str | None) -> int | None:
+    """Resolve issue number from available sources.
+
+    Resolution priority:
+    1. .impl/issue.json (explicit issue reference)
+    2. Branch name parsing (convention: {issue_number}-{slug}-{date})
+
+    Args:
+        impl_dir: Path to .impl/ directory
+        branch_name: Current git branch name (or None)
+
+    Returns:
+        Issue number if found from any source, None otherwise
+    """
+    from erk_shared.naming import parse_issue_number_from_branch
+
+    # Priority 1: Try .impl/issue.json
+    if has_issue_reference(impl_dir):
+        issue_ref = read_issue_reference(impl_dir)
+        if issue_ref is not None:
+            return issue_ref.issue_number
+
+    # Priority 2: Parse from branch name
+    if branch_name is not None:
+        return parse_issue_number_from_branch(branch_name)
+
+    return None
+
+
 def read_run_info(impl_dir: Path) -> RunInfo | None:
     """Read GitHub Actions run info from .impl/run-info.json.
 

@@ -10,7 +10,6 @@ from pathlib import Path
 
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.types import GitHubRepoId
-from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 from erk_shared.integrations.gt.abc import GtKit
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.integrations.gt.types import FinalizeResult, PostAnalysisError
@@ -92,14 +91,12 @@ def execute_finalize(
             raise ValueError(f"PR body file does not exist: {pr_body_file}")
         pr_body = pr_body_file.read_text(encoding="utf-8")
 
-    # Get impl directory for metadata
-    impl_dir = cwd / ".impl"
+    # Get issue number using shared resolution
+    from erk_shared.impl_folder import resolve_issue_number
 
-    issue_number: int | None = None
-    if has_issue_reference(impl_dir):
-        issue_ref = read_issue_reference(impl_dir)
-        if issue_ref is not None:
-            issue_number = issue_ref.issue_number
+    impl_dir = cwd / ".impl"
+    branch_name = ops.git.get_current_branch(cwd)
+    issue_number = resolve_issue_number(impl_dir, branch_name)
 
     # Build metadata section and combine with AI body
     metadata_section = build_pr_metadata_section(pr_number=pr_number, issue_number=issue_number)

@@ -500,3 +500,25 @@ def derive_branch_name_from_title(title: str) -> str:
     branch_name = branch_name.rstrip("-")
 
     return branch_name
+
+
+def parse_issue_number_from_branch(branch_name: str) -> int | None:
+    """Extract issue number from branch name if present.
+
+    Branch naming convention: {issue_number}-{slug}-{MM-DD-HHMM}
+    Examples:
+        "1747-unify-worker-impl-11-30-1640" -> 1747
+        "1751-create-submitservice-11-30-1653" -> 1751
+        "feature-branch" -> None (no leading number)
+        "master" -> None
+
+    Args:
+        branch_name: Git branch name
+
+    Returns:
+        Issue number as int, or None if branch doesn't start with a number
+    """
+    match = re.match(r"^(\d+)-", branch_name)
+    if match:
+        return int(match.group(1))
+    return None
