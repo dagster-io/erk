@@ -219,10 +219,12 @@ class PlanDetailScreen(ModalScreen):
     ]
 
     def get_system_commands(self, screen: Screen) -> Iterator[Any]:
-        """Override to hide default system commands (Keys, Quit, Screenshot, Theme)."""
-        # Return empty iterator - we only want our custom commands in this modal
-        return
-        yield  # Make this a generator that yields nothing
+        """Override to hide default system commands (Keys, Quit, Screenshot, Theme).
+
+        Returns an empty iterator so only our custom plan commands appear in the palette.
+        """
+        # Empty iterator - yield nothing to hide system commands from this modal
+        return iter(())
 
     DEFAULT_CSS = """
     PlanDetailScreen {
