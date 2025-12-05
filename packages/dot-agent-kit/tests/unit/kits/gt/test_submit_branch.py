@@ -566,11 +566,11 @@ class TestExecuteFinalize:
         final_pr_body = bodies[0]
         # Body comes first, then footer
         assert final_pr_body.startswith("Description")
-        # Footer contains separator and checkout command (no Closes # - handled by native linking)
+        # Footer contains separator, issue closing reference, and checkout command
         assert "---" in final_pr_body
         assert "erk pr checkout 123" in final_pr_body
-        # Closes # is NOT included - GitHub handles this via native branch linking
-        assert "Closes #" not in final_pr_body
+        # Closes #N is included when issue reference exists
+        assert "Closes #456" in final_pr_body
 
     def test_finalize_amends_local_commit(self, tmp_path: Path) -> None:
         """Test that finalize amends local commit with PR title and body."""

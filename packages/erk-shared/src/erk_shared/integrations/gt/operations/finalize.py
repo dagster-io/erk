@@ -16,17 +16,16 @@ from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.integrations.gt.types import FinalizeResult, PostAnalysisError
 
 
-def build_pr_metadata_section(pr_number: int) -> str:
+def build_pr_metadata_section(pr_number: int, issue_number: int | None = None) -> str:
     """Build metadata footer section for PR body.
 
     This section is appended AFTER the PR body content, not before.
-    It contains only essential metadata: checkout command.
-
-    Note: Issue closing is now handled via GitHub's native branch linking
-    (branches created with `gh issue develop` automatically close issues when merged).
+    It contains essential metadata: issue closing reference (if linked to a plan)
+    and checkout command.
 
     Args:
         pr_number: PR number
+        issue_number: Optional issue number to close (from .impl/issue.json)
 
     Returns:
         Metadata footer section as string
@@ -35,6 +34,10 @@ def build_pr_metadata_section(pr_number: int) -> str:
 
     # Separator at start of footer
     metadata_parts.append("\n---\n")
+
+    # Issue closing reference (if linked to a plan)
+    if issue_number is not None:
+        metadata_parts.append(f"\nCloses #{issue_number}\n")
 
     # Checkout command
     metadata_parts.append(
@@ -96,7 +99,7 @@ def execute_finalize(
             issue_number = issue_ref.issue_number
 
     # Build metadata section and combine with AI body
-    metadata_section = build_pr_metadata_section(pr_number=pr_number)
+    metadata_section = build_pr_metadata_section(pr_number=pr_number, issue_number=issue_number)
     # pr_body is guaranteed non-None here (either passed in or read from file, validated above)
     assert pr_body is not None
 
