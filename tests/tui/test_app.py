@@ -152,12 +152,18 @@ class TestStatusBar:
         assert bar._message is None
 
 
-class TestClosePlanCommand:
-    """Tests for the 'c' key close plan functionality."""
+class TestClosePlanViaCommandPalette:
+    """Tests for close plan functionality via command palette.
+
+    Note: The top-level 'c' binding was removed. Close plan is now accessible
+    via the command palette in the plan detail modal (Space → Ctrl+P → "Close Plan").
+    The execute_command tests in tests/tui/commands/test_execute_command.py
+    cover the close_plan command execution. These tests verify the integration.
+    """
 
     @pytest.mark.asyncio
-    async def test_close_plan_removes_from_list(self) -> None:
-        """Pressing 'c' closes the plan and removes it from the list."""
+    async def test_close_plan_not_accessible_via_c_key(self) -> None:
+        """Top-level 'c' key should no longer close plans."""
         provider = FakePlanDataProvider(
             plans=[
                 make_plan_row(123, "Feature A"),
@@ -175,33 +181,13 @@ class TestClosePlanCommand:
             # Initially should have 2 plans
             assert len(provider._plans) == 2
 
-            # Press 'c' to close the selected plan
+            # Press 'c' - should NOT close plan (binding removed)
             await pilot.press("c")
             await pilot.pause()
             await pilot.pause()
 
-            # Plan should be removed from the provider
-            assert len(provider._plans) == 1
-            assert provider._plans[0].issue_number == 456
-
-    @pytest.mark.asyncio
-    async def test_close_plan_shows_status_message(self) -> None:
-        """Pressing 'c' shows confirmation message in status bar."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Feature")],
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            await pilot.press("c")
-            await pilot.pause()
-
-            status_bar = app.query_one(StatusBar)
-            assert status_bar._message == "Closed plan #123"
+            # Plans should remain unchanged
+            assert len(provider._plans) == 2
 
 
 class TestFilterMode:
