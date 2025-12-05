@@ -153,3 +153,104 @@ def test_real_shell_ops_run_erk_sync_propagates_error():
         except RuntimeError as e:
             assert "Failed to execute erk sync subprocess" in str(e)
             assert "sync failed" in str(e)
+
+
+def test_real_shell_run_claude_extraction_plan_parses_json_from_mixed_output():
+    """Test that run_claude_extraction_plan extracts JSON from mixed output.
+
+    Claude CLI with --print mode outputs conversation text before the final JSON.
+    This test verifies the fix that searches through lines to find valid JSON.
+    """
+    ops = RealShell()
+    cwd = Path("/test/repo")
+
+    # Mock subprocess to return mixed output (conversation + JSON)
+    mock_result = MagicMock()
+    mock_result.stdout = (
+        "Thinking about the plan...\n"
+        "Creating extraction plan...\n"
+        '{"issue_url": "https://github.com/user/repo/issues/123"}\n'
+    )
+
+    with patch("erk.core.shell.subprocess.run") as mock_run:
+        mock_run.return_value = mock_result
+
+        result = ops.run_claude_extraction_plan(cwd)
+
+        assert result == "https://github.com/user/repo/issues/123"
+
+
+def test_real_shell_run_claude_extraction_plan_handles_pure_json():
+    """Test that run_claude_extraction_plan works with pure JSON output."""
+    ops = RealShell()
+    cwd = Path("/test/repo")
+
+    # Mock subprocess to return pure JSON
+    mock_result = MagicMock()
+    mock_result.stdout = '{"issue_url": "https://github.com/user/repo/issues/456"}\n'
+
+    with patch("erk.core.shell.subprocess.run") as mock_run:
+        mock_run.return_value = mock_result
+
+        result = ops.run_claude_extraction_plan(cwd)
+
+        assert result == "https://github.com/user/repo/issues/456"
+
+
+def test_real_shell_run_claude_extraction_plan_returns_none_on_invalid_json():
+    """Test that run_claude_extraction_plan returns None when JSON is invalid."""
+    ops = RealShell()
+    cwd = Path("/test/repo")
+
+    # Mock subprocess to return invalid output
+    mock_result = MagicMock()
+    mock_result.stdout = "No valid JSON here\nJust text\n"
+
+    with patch("erk.core.shell.subprocess.run") as mock_run:
+        mock_run.return_value = mock_result
+
+        result = ops.run_claude_extraction_plan(cwd)
+
+        assert result is None
+
+
+def test_real_shell_run_claude_extraction_plan_returns_none_when_missing_issue_url():
+    """Test that run_claude_extraction_plan returns None when issue_url is missing."""
+    ops = RealShell()
+    cwd = Path("/test/repo")
+
+    # Mock subprocess to return JSON without issue_url
+    mock_result = MagicMock()
+    mock_result.stdout = '{"success": true, "message": "Done"}\n'
+
+    with patch("erk.core.shell.subprocess.run") as mock_run:
+        mock_run.return_value = mock_result
+
+        result = ops.run_claude_extraction_plan(cwd)
+
+        assert result is None
+
+
+def test_real_shell_run_claude_extraction_plan_finds_json_from_end():
+    """Test that run_claude_extraction_plan searches from end of output.
+
+    When multiple lines contain text, it should find the last valid JSON line.
+    """
+    ops = RealShell()
+    cwd = Path("/test/repo")
+
+    # Mock subprocess with multiple lines, JSON at end
+    mock_result = MagicMock()
+    mock_result.stdout = (
+        "Starting process...\n"
+        "Analyzing code...\n"
+        "Creating plan...\n"
+        '{"issue_url": "https://github.com/user/repo/issues/789"}\n'
+    )
+
+    with patch("erk.core.shell.subprocess.run") as mock_run:
+        mock_run.return_value = mock_result
+
+        result = ops.run_claude_extraction_plan(cwd)
+
+        assert result == "https://github.com/user/repo/issues/789"

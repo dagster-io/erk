@@ -155,3 +155,68 @@ def test_fake_shell_ops_sync_calls_returns_copy() -> None:
     # Original should be unchanged
     assert len(ops.sync_calls) == 1
     assert ops.sync_calls[0] == (repo_root, True, False)
+
+
+def test_fake_shell_ops_run_claude_extraction_plan_success() -> None:
+    """Test that run_claude_extraction_plan returns configured URL."""
+    ops = FakeShell(extraction_plan_url="https://github.com/user/repo/issues/123")
+    cwd = Path("/test/repo")
+
+    result = ops.run_claude_extraction_plan(cwd)
+
+    assert result == "https://github.com/user/repo/issues/123"
+    assert len(ops.extraction_calls) == 1
+    assert ops.extraction_calls[0] == cwd
+
+
+def test_fake_shell_ops_run_claude_extraction_plan_none() -> None:
+    """Test that run_claude_extraction_plan returns None when not configured."""
+    ops = FakeShell()
+    cwd = Path("/test/repo")
+
+    result = ops.run_claude_extraction_plan(cwd)
+
+    assert result is None
+    assert len(ops.extraction_calls) == 1
+
+
+def test_fake_shell_ops_run_claude_extraction_plan_raises() -> None:
+    """Test that run_claude_extraction_plan raises when configured to do so."""
+    import subprocess
+
+    ops = FakeShell(claude_extraction_raises=True)
+    cwd = Path("/test/repo")
+
+    try:
+        ops.run_claude_extraction_plan(cwd)
+        raise AssertionError("Expected CalledProcessError to be raised")
+    except subprocess.CalledProcessError as e:
+        assert e.returncode == 1
+        assert "Simulated extraction failure" in e.stderr
+
+    assert len(ops.extraction_calls) == 1
+
+
+def test_fake_shell_ops_extraction_calls_empty_initially() -> None:
+    """Test that extraction_calls starts empty."""
+    ops = FakeShell()
+
+    assert ops.extraction_calls == []
+
+
+def test_fake_shell_ops_extraction_calls_returns_copy() -> None:
+    """Test that extraction_calls property returns a copy."""
+    ops = FakeShell(extraction_plan_url="https://github.com/user/repo/issues/123")
+    cwd = Path("/test/repo")
+
+    ops.run_claude_extraction_plan(cwd)
+
+    # Get the extraction_calls list
+    calls = ops.extraction_calls
+
+    # Try to modify it
+    calls.append(Path("/fake"))
+
+    # Original should be unchanged
+    assert len(ops.extraction_calls) == 1
+    assert ops.extraction_calls[0] == cwd

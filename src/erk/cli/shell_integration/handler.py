@@ -1,11 +1,11 @@
 import os
 import shlex
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
 
 from click import Command
-from click.testing import CliRunner
 from erk_shared.debug import debug_log
 from erk_shared.output.output import user_output
 
@@ -104,8 +104,8 @@ def process_command_result(
     # This handles destructive commands (like pr land) that output the script
     # before failure. The shell can still navigate to the destination.
     if script_path and script_exists:
-        # Forward stderr so user sees status messages even on success
-        # (e.g., "✓ Removed worktree", "✓ Deleted branch", etc.)
+        # stderr already streamed to terminal during command execution (when using subprocess)
+        # Only forward if captured (when using CliRunner for tests)
         if stderr:
             user_output(stderr, nl=False)
         return ShellIntegrationResult(passthrough=False, script=script_path, exit_code=exit_code)
@@ -124,7 +124,8 @@ def process_command_result(
             user_output(f"Error: {exception}")
         return ShellIntegrationResult(passthrough=False, script=None, exit_code=exit_code)
 
-    # Forward stderr messages to user (only for successful commands)
+    # stderr already streamed to terminal during command execution (when using subprocess)
+    # Only forward if captured (when using CliRunner for tests)
     if stderr:
         user_output(stderr, nl=False)
 
@@ -160,20 +161,24 @@ def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellInt
     # Clean up stale scripts before running (opportunistic cleanup)
     cleanup_stale_scripts(max_age_seconds=STALE_SCRIPT_MAX_AGE_SECONDS)
 
-    runner = CliRunner()
-    result = runner.invoke(
-        command,
-        script_args,
-        obj=create_context(dry_run=False, script=True),
-        standalone_mode=False,
+    # Build full command with erk prefix
+    cmd_parts = ["erk", *command_name.split(), *script_args]
+
+    # Run subprocess: stderr goes to terminal (live), stdout captured for script path
+    result = subprocess.run(
+        cmd_parts,
+        stdout=subprocess.PIPE,  # Capture stdout for script path
+        stderr=None,  # Let stderr pass through to terminal for live feedback
+        text=True,
+        check=False,  # Don't raise on non-zero exit, handle via exit code
     )
 
     return process_command_result(
-        exit_code=int(result.exit_code),
+        exit_code=result.returncode,
         stdout=result.stdout,
-        stderr=result.stderr,
+        stderr=None,  # stderr already went to terminal
         command_name=command_name,
-        exception=result.exception,
+        exception=None,
     )
 
 
