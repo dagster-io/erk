@@ -151,3 +151,6 @@ reinstall-erk-tools:
 # Use erk-dev publish-to-pypi command instead (recommended)
 publish: build
 	erk-dev publish-to-pypi
+
+pull_master:
+	git -C /Users/schrockn/code/erk pull origin master
