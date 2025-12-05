@@ -22,6 +22,7 @@ Parse the JSON output to get:
 - `sessions` list with metadata
 - `project_dir` for session log paths
 - `branch_context.is_on_trunk` for selection logic
+- `branch_context.branch_name` for session labeling
 
 ### Step 2: Auto-Select Sessions
 
@@ -45,46 +46,67 @@ Capture the output XML. If multiple sessions, concatenate them with session ID h
 
 ### Step 4: Create Issue with Raw Context
 
-Get session ID from SESSION_CONTEXT reminder. Create GitHub issue:
+Get session ID from SESSION_CONTEXT reminder and branch name from discovery output.
+
+**Session Content Formatting:**
+
+Use the `render_session_content_blocks` function from `erk_shared.github.metadata` to format the session XML:
+
+```python
+from erk_shared.github.metadata import render_session_content_blocks
+
+# Get branch name for labeling (e.g., "fix-auth-bug")
+session_label = branch_context.get("branch_name")
+
+# Render session content as metadata blocks with XML code fences
+# Automatically handles chunking if content exceeds GitHub limits
+comment_bodies = render_session_content_blocks(
+    session_xml_content,
+    session_label=session_label,
+    extraction_hints=["Session data for future documentation extraction"],
+)
+```
+
+This produces properly formatted metadata blocks:
+
+- XML wrapped in code fences (prevents markdown rendering issues)
+- Collapsible `<details>` sections
+- Numbered chunks if content exceeds 64K limit (e.g., "Session Data (1/3)")
+- Session label in summary (branch name)
+
+**Create the issue:**
 
 ```bash
 dot-agent run erk create-extraction-plan \
-    --plan-content="<content>" \
+    --plan-content="<issue-body-content>" \
     --session-id="<current-session-id>" \
     --extraction-session-ids="<comma-separated-session-ids>"
 ```
 
-Where `<content>` should be:
+Where `<issue-body-content>` should be a brief description (the session content goes in comments):
 
 ```markdown
 # Raw Session Context
 
 This issue contains raw preprocessed session data from the landed PR.
 
-## Session XML
-
-<the preprocessed XML content>
+See comments below for session XML content.
 ```
 
-**Size limit handling (65,536 char max for issue comments):**
+**If multiple comment bodies are returned (chunked content):**
 
-1. If the CLI returns an error related to content size, warn the user
-2. Truncate content to 65,000 characters (leaving buffer)
-3. Add truncation notice at the end of content
-4. Retry with truncated content
+Post each as a separate comment to the created issue:
+
+```bash
+gh issue comment <issue-number> --body "<comment-body>"
+```
 
 ### Step 5: Output Result
 
 Output JSON to stdout for the caller to parse:
 
 ```json
-{ "issue_url": "<the-created-issue-url>" }
-```
-
-If content was truncated, also display a warning to stderr:
-
-```
-Warning: Session content truncated to 65,000 characters (original: X chars)
+{ "issue_url": "<the-created-issue-url>", "chunks": <number-of-comments> }
 ```
 
 If no sessions were found or preprocessing failed, output:
