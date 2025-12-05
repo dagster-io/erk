@@ -352,3 +352,105 @@ def test_process_command_result_with_contaminated_stdout_fails(tmp_path: Path) -
         assert not Path(result.script).exists(), (
             "Returned script path should not exist when stdout is contaminated"
         )
+
+
+def test_process_command_result_displays_exception_when_stderr_empty() -> None:
+    """process_command_result should display exception when stderr is empty.
+
+    Regression test for issue #2267: Shell integration swallows Click errors.
+
+    When running 'erk implement --dangerous --worktree-name test' (missing TARGET),
+    Click stores the MissingParameter exception in result.exception but leaves
+    stderr empty. Without this fix, the user sees no error message - silent exit.
+
+    The fix: When exit_code != 0 and stderr is empty, check for exception and
+    display it to the user.
+    """
+    from unittest.mock import patch
+
+    from erk.cli.shell_integration.handler import process_command_result
+
+    # Simulate Click's MissingParameter exception
+    class FakeMissingParameter(Exception):
+        def __init__(self) -> None:
+            super().__init__("Missing parameter: target")
+
+    exception = FakeMissingParameter()
+
+    with patch("erk.cli.shell_integration.handler.user_output") as mock_output:
+        result = process_command_result(
+            exit_code=2,  # Click uses exit code 2 for usage errors
+            stdout="",
+            stderr=None,  # Empty stderr - the bug scenario
+            command_name="implement",
+            exception=exception,
+        )
+
+        # Verify exception message was displayed
+        # Note: user_output always routes to stderr internally, so we just check it was called
+        mock_output.assert_called_once()
+        call_args = mock_output.call_args
+        assert "Missing parameter: target" in call_args[0][0]
+
+    # Result should indicate failure without passthrough
+    assert result.passthrough is False
+    assert result.script is None
+    assert result.exit_code == 2
+
+
+def test_process_command_result_prefers_stderr_over_exception() -> None:
+    """process_command_result should prefer stderr over exception when both exist.
+
+    If stderr has content, display that instead of the exception. This preserves
+    existing behavior where stderr messages are forwarded.
+    """
+    from unittest.mock import patch
+
+    from erk.cli.shell_integration.handler import process_command_result
+
+    exception = Exception("Exception message")
+
+    with patch("erk.cli.shell_integration.handler.user_output") as mock_output:
+        result = process_command_result(
+            exit_code=1,
+            stdout="",
+            stderr="Error from stderr",
+            command_name="checkout",
+            exception=exception,
+        )
+
+        # Verify stderr was displayed, not the exception
+        mock_output.assert_called_once()
+        call_args = mock_output.call_args
+        assert "Error from stderr" in call_args[0][0]
+        # Should NOT contain exception message
+        assert "Exception message" not in str(call_args)
+
+    assert result.passthrough is False
+    assert result.exit_code == 1
+
+
+def test_process_command_result_no_output_when_no_stderr_no_exception() -> None:
+    """process_command_result should not call user_output when no error info.
+
+    When exit_code != 0 but both stderr and exception are None/empty,
+    don't call user_output at all (no message to display).
+    """
+    from unittest.mock import patch
+
+    from erk.cli.shell_integration.handler import process_command_result
+
+    with patch("erk.cli.shell_integration.handler.user_output") as mock_output:
+        result = process_command_result(
+            exit_code=1,
+            stdout="",
+            stderr=None,
+            command_name="checkout",
+            exception=None,  # No exception either
+        )
+
+        # Verify user_output was NOT called
+        mock_output.assert_not_called()
+
+    assert result.passthrough is False
+    assert result.exit_code == 1
