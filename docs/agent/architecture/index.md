@@ -1,6 +1,8 @@
 # Architecture Documentation
 
 - **[at-reference-resolution.md](at-reference-resolution.md)** — modifying @ reference validation, debugging broken @ references in symlinked files, understanding why validation passes but Claude Code fails
+- **[claude-cli-integration.md](claude-cli-integration.md)** — invoking Claude Code CLI from Python, spawning Claude agents from CLI commands, understanding Claude subprocess patterns
+- **[command-boundaries.md](command-boundaries.md)** — deciding between agent and CLI commands, understanding command boundaries, choosing implementation approach
 - **[commandresult-extension-pattern.md](commandresult-extension-pattern.md)** — adding new field to CommandResult, extending CommandResult dataclass, adding metadata extraction, implementing new CommandResult field
 - **[erk-architecture.md](erk-architecture.md)** — understanding erk architecture, implementing dry-run patterns, regenerating context after os.chdir
 - **[github-parsing.md](github-parsing.md)** — parsing GitHub URLs, extracting PR or issue numbers from URLs, understanding github parsing layers
