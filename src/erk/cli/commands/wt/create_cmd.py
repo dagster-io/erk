@@ -649,8 +649,6 @@ def create_wt(
             raise SystemExit(1)
 
     # Track if name came from plan file (will need unique naming with date suffix)
-    # Note: from_issue uses gh issue develop which creates a unique branch name,
-    # so it doesn't need the date suffix treatment
     is_plan_derived = from_plan is not None
 
     # Discover repo context (needed for all paths)
@@ -694,29 +692,18 @@ def create_wt(
             )
             raise SystemExit(1)
 
-        # Create branch name using GitHub's native branch linking via `gh issue develop`
+        # Create branch name: truncate to 31 chars, then append timestamp suffix
         trunk_branch = ctx.git.detect_trunk_branch(repo.root)
-        # Compute branch name that matches worktree naming convention
-        # First truncate to 31 chars, then append timestamp suffix
         base_branch_name = sanitize_worktree_name(f"{issue_number_parsed}-{issue_info.title}")
         timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
-        desired_branch_name = base_branch_name + timestamp_suffix
-        dev_branch = ctx.issue_link_branches.create_development_branch(
-            repo.root,
-            issue_number_parsed,
-            branch_name=desired_branch_name,
-            base_branch=trunk_branch,
-        )
-        linked_branch_name = dev_branch.branch_name
+        branch_name = base_branch_name + timestamp_suffix
 
-        if dev_branch.already_existed:
-            user_output(f"Using existing linked branch: {linked_branch_name}")
-        else:
-            user_output(f"Created linked branch: {linked_branch_name}")
+        # Create branch directly via git
+        ctx.git.create_branch(repo.root, branch_name, trunk_branch)
+        user_output(f"Created branch: {branch_name}")
 
-        # Use the linked branch name for the worktree name
-        # (already has timestamp suffix, sanitize_worktree_name will preserve it)
-        name = sanitize_worktree_name(linked_branch_name)
+        # Use the branch name for the worktree name
+        name = sanitize_worktree_name(branch_name)
 
     # At this point, name should always be set
     assert name is not None, "name must be set by now"
@@ -846,7 +833,7 @@ def create_wt(
             skip_remote_check=skip_remote_check,
         )
     elif linked_branch_name:
-        # Issue-based worktree: use the branch created by gh issue develop
+        # Issue-based worktree: use the branch created for this issue
         use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
         add_worktree(
             ctx,

@@ -350,7 +350,7 @@ class IssuePlanSource:
 
     Attributes:
         plan_source: The base PlanSource with content and metadata
-        branch_name: The linked development branch name from gh issue develop
+        branch_name: The development branch name for this issue
         already_existed: Whether the branch already existed
     """
 
@@ -364,8 +364,7 @@ def _prepare_plan_source_from_issue(
 ) -> IssuePlanSource:
     """Prepare plan source from GitHub issue.
 
-    Uses `gh issue develop` to create a branch linked to the issue,
-    which makes the branch appear in the issue sidebar under "Development".
+    Creates a branch for the issue and fetches plan content.
 
     Args:
         ctx: Erk context
@@ -374,7 +373,7 @@ def _prepare_plan_source_from_issue(
         base_branch: Base branch for creating the development branch
 
     Returns:
-        IssuePlanSource with plan content, metadata, and linked branch name
+        IssuePlanSource with plan content, metadata, and branch name
 
     Raises:
         SystemExit: If issue not found or doesn't have erk-plan label
@@ -410,26 +409,17 @@ def _prepare_plan_source_from_issue(
             + "Proceeding anyway..."
         )
 
-    # Create or derive branch name for the issue using GitHub's native branch linking
-    # Compute branch name: truncate to 31 chars, then append timestamp suffix
+    # Create branch name: truncate to 31 chars, then append timestamp suffix
     base_branch_name = sanitize_worktree_name(f"{issue_number}-{plan.title}")
     timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
-    desired_branch_name = base_branch_name + timestamp_suffix
-    # Use GitHub's native branch linking via `gh issue develop`
-    dev_branch = ctx.issue_link_branches.create_development_branch(
-        repo_root,
-        int(issue_number),
-        branch_name=desired_branch_name,
-        base_branch=base_branch,
-    )
+    branch_name = base_branch_name + timestamp_suffix
 
-    if dev_branch.already_existed:
-        ctx.feedback.info(f"Using existing linked branch: {dev_branch.branch_name}")
-    else:
-        ctx.feedback.info(f"Created linked branch: {dev_branch.branch_name}")
+    # Create branch directly via git
+    ctx.git.create_branch(repo_root, branch_name, base_branch)
+    ctx.feedback.info(f"Created branch: {branch_name}")
 
     # Use the branch name as the base name for the worktree
-    base_name = sanitize_worktree_name(dev_branch.branch_name)
+    base_name = sanitize_worktree_name(branch_name)
 
     dry_run_desc = f"Would create worktree from issue #{issue_number}\n  Title: {plan.title}"
 
@@ -441,8 +431,8 @@ def _prepare_plan_source_from_issue(
 
     return IssuePlanSource(
         plan_source=plan_source,
-        branch_name=dev_branch.branch_name,
-        already_existed=dev_branch.already_existed,
+        branch_name=branch_name,
+        already_existed=False,  # Always new branch since we create it directly
     )
 
 
@@ -660,7 +650,7 @@ def _create_worktree_with_plan_content(
         submit: Whether to auto-submit PR after implementation
         dangerous: Whether to skip permission prompts
         no_interactive: Whether to execute non-interactively
-        linked_branch_name: Optional branch name from gh issue develop
+        linked_branch_name: Optional branch name for issue-based worktrees
                            (when provided, use this branch instead of creating new)
         base_branch: Base branch to use as ref for worktree creation
         force_delete: Options for force-deleting existing worktree/branch
@@ -676,11 +666,11 @@ def _create_worktree_with_plan_content(
     repo_root = repo.root
 
     # Determine branch name and worktree name
-    # - linked_branch_name: use the GitHub-linked branch for the worktree
+    # - linked_branch_name: use the issue-linked branch for the worktree
     # - worktree_name: user override for worktree directory name (not branch)
     # - base_name: fallback derived from plan file or issue title
     if linked_branch_name:
-        # For issue mode: always use the branch created by gh issue develop
+        # For issue mode: always use the branch created for this issue
         branch = linked_branch_name
         # But allow --worktree-name to override the directory name
         if worktree_name:
@@ -766,7 +756,7 @@ def _create_worktree_with_plan_content(
 
     # Output worktree creation diagnostic
     if use_existing_branch:
-        ctx.feedback.info(f"Using linked branch '{branch}'...")
+        ctx.feedback.info(f"Using branch '{branch}'...")
     else:
         ctx.feedback.info(f"Creating branch '{branch}' from {base_branch}...")
 
@@ -892,12 +882,12 @@ def _implement_from_issue(
     # Determine base branch (respects Graphite stacking)
     base_branch = _determine_base_branch(ctx, repo.root)
 
-    # Prepare plan source from issue (creates linked branch via gh issue develop)
+    # Prepare plan source from issue (creates branch via git)
     issue_plan_source = _prepare_plan_source_from_issue(
         ctx, repo.root, issue_number, base_branch=base_branch
     )
 
-    # Create worktree with plan content, using the linked branch name
+    # Create worktree with plan content, using the branch name
     wt_path = _create_worktree_with_plan_content(
         ctx,
         plan_source=issue_plan_source.plan_source,

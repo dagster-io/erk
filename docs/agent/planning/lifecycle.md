@@ -8,7 +8,7 @@ read_when:
 
 # Plan Lifecycle
 
-Complete documentation for the erk plan lifecycle from creation through merge, using GitHub's native branch-to-issue linking.
+Complete documentation for the erk plan lifecycle from creation through merge.
 
 ## Table of Contents
 
@@ -26,7 +26,7 @@ Complete documentation for the erk plan lifecycle from creation through merge, u
 
 ## Executive Summary
 
-The erk plan lifecycle manages implementation plans from creation through automated execution and PR merge, using GitHub's native branch-to-issue linking via `gh issue develop`.
+The erk plan lifecycle manages implementation plans from creation through automated execution and PR merge.
 
 ### Lifecycle Overview
 
@@ -37,9 +37,9 @@ The erk plan lifecycle manages implementation plans from creation through automa
 └─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
        │                  │                   │                   │                   │
        ▼                  ▼                   ▼                   ▼                   ▼
- GitHub Issue       gh issue develop      GitHub Actions      Code Changes        Issue Closed
- with erk-plan      creates linked        finds existing      committed           via PR merge
- label              branch + PR           PR and executes     and pushed
+ GitHub Issue       git branch            GitHub Actions      Code Changes        Issue Closed
+ with erk-plan      creates branch        finds existing      committed           via commit
+ label              + draft PR            PR and executes     and pushed          message
 ```
 
 ### Key File Locations at a Glance
@@ -162,21 +162,17 @@ Before submission, the command validates:
 2. **State check**: Issue must be OPEN (not closed)
 3. **Clean working directory**: No uncommitted changes
 
-### Branch Creation via `gh issue develop`
+### Branch Creation
 
-Branches are created using GitHub's native `gh issue develop` command:
+Branches are created directly via git:
 
 ```bash
-gh issue develop <issue_number> --base <trunk_branch> --name <branch_name>
+git branch <branch_name> <base_branch>
 ```
 
-This creates a branch linked to the issue that appears in the GitHub issue sidebar under "Development", providing automatic tracking without custom metadata.
-
-**Branch naming**: Erk computes the branch name explicitly using `sanitize_worktree_name()` with a timestamp suffix, then passes it via `--name` flag. This ensures branch names match worktree naming conventions (31-char max + `-MM-DD-HHMM` suffix).
+**Branch naming**: Erk computes the branch name using `sanitize_worktree_name()` with a timestamp suffix. This ensures branch names match worktree naming conventions (31-char max + `-MM-DD-HHMM` suffix).
 
 **Example**: Issue #123 "Add user authentication" → `123-add-user-authentic-11-30-1430`
-
-**Reusing existing branches**: If a branch already exists for the issue, `gh issue develop --list` is used to discover it rather than creating a duplicate.
 
 ### `.worker-impl/` Folder Creation
 
@@ -209,7 +205,7 @@ A draft PR is created locally (for correct commit attribution):
 - **Body**: Includes checkout instructions and metadata
 - **State**: Draft (marked ready after implementation)
 
-**Note**: GitHub automatically links the PR to its issue via the native branch linking created by `gh issue develop`. No explicit "Closes #N" keyword is needed.
+**Note**: The PR body includes `**Plan:** #<issue_number>` to link back to the issue. Issue closing is handled via commit message keywords ("Closes #N") when the PR is merged.
 
 ### `distinct_id` Generation
 
@@ -270,7 +266,6 @@ This ensures only one implementation runs per issue at a time.
 
 #### Phase 2: Find PR & Checkout Branch
 
-- Find linked branch via `gh issue develop --list <issue_number>` (native GitHub linking)
 - Find existing PR via `gh pr list --head <branch_name>` (by branch, not body search)
 - Checkout the implementation branch
 - Update `.worker-impl/` with fresh plan content (for reruns)
@@ -429,9 +424,9 @@ This is needed because workflow dispatch doesn't trigger PR workflows.
 
 ### Auto-Close on Merge
 
-GitHub automatically closes the linked issue when the PR is merged. This is enabled by the native branch-to-issue linking created via `gh issue develop`.
+GitHub automatically closes the linked issue when the PR is merged if the commit message contains "Closes #N" or similar keywords.
 
-**No explicit "Closes #N" keyword is required** - GitHub tracks the relationship through its native branch linking feature, which appears in the issue sidebar under "Development".
+The `gt finalize` command (used during PR finalization) adds the closing keyword to the commit message, ensuring the issue is closed when the PR merges.
 
 ---
 
@@ -439,30 +434,16 @@ GitHub automatically closes the linked issue when the PR is merged. This is enab
 
 Entities are connected through GitHub's native linking and deterministic metadata.
 
-### Branch → Issue (Native GitHub Linking)
+### Branch → Issue
 
-Branches are linked to issues via GitHub's native `gh issue develop`:
-
-```bash
-gh issue develop <issue_number> --base <trunk_branch> --name <branch_name>
-```
-
-This creates a branch that appears in the GitHub issue sidebar under "Development", providing automatic bidirectional linking maintained by GitHub.
-
-To discover existing linked branches:
-
-```bash
-gh issue develop --list <issue_number>
-```
+Branches are named with the issue number prefix (e.g., `123-feature-name-01-15-1430`), making the association clear but not relying on GitHub's native branch linking.
 
 ### PR → Issue
 
-PRs are linked to issues through GitHub's native branch linking:
+PRs are linked to issues through:
 
-- The branch was created with `gh issue develop`, linking it to the issue
-- GitHub displays this link in the issue sidebar under "Development"
-- GitHub automatically closes the issue when the PR merges
-- No explicit "Closes #N" keyword is required
+- **PR body**: Contains `**Plan:** #<issue_number>` reference
+- **Commit message**: The `gt finalize` command adds "Closes #N" keyword to ensure issue closure on merge
 
 ### Issue → Workflow Run
 
@@ -587,11 +568,11 @@ issue_number: 123 # optional
 # Get issue details
 gh issue view 123 --json title,body,comments,labels
 
-# Find linked branch
-gh issue develop --list 123
+# Find branches for this issue (by naming convention: 123-*)
+git branch -r | grep "origin/123-"
 
-# Find associated PR (via branch, not body search)
-BRANCH=$(gh issue develop --list 123 | head -1 | cut -f1)
+# Find associated PR (by branch name)
+BRANCH=$(git branch -r | grep "origin/123-" | head -1 | sed 's/origin\///')
 gh pr list --head "$BRANCH"
 
 # Find workflow runs
