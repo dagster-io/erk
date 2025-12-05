@@ -335,9 +335,10 @@ def stream_auto_restack(
     """Stream auto-restack command via Claude executor with live feedback.
 
     Handles the /erk:auto-restack command execution with:
-    - Live output streaming
+    - Live output streaming with visual feedback
     - Semantic conflict detection (AskUserQuestion)
     - Deduped spinner updates
+    - Rich console output with start/end markers
 
     Args:
         executor: Claude CLI executor
@@ -346,9 +347,16 @@ def stream_auto_restack(
     Returns:
         AutoRestackResult with success status and error details
     """
+    import time
+
     error_message: str | None = None
     success = True
     last_spinner: str | None = None
+    start_time = time.time()
+
+    # Print start marker with bold styling
+    click.echo(click.style("--- /erk:auto-restack ---", bold=True))
+    click.echo("")
 
     for event in executor.execute_command_streaming(
         command="/erk:auto-restack",
@@ -396,5 +404,15 @@ def stream_auto_restack(
             click.echo(click.style(f"   ❌ {event.content}", fg="red"))
             error_message = event.content
             success = False
+
+    # Calculate duration and print end marker
+    duration = time.time() - start_time
+    duration_str = format_duration(duration)
+
+    click.echo("")
+    if success:
+        click.echo(click.style(f"--- Done ({duration_str}) ---", fg="green", bold=True))
+    else:
+        click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True))
 
     return AutoRestackResult(success=success, error_message=error_message)

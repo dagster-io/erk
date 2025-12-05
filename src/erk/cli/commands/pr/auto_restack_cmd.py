@@ -37,10 +37,6 @@ def pr_auto_restack(ctx: ErkContext) -> None:
             "Claude CLI not found\n\nInstall from: https://claude.com/download"
         )
 
-    click.echo(click.style("🔄 Auto-restacking via Claude...", bold=True))
-    click.echo(click.style("   (Claude may take a moment to start)", dim=True))
-    click.echo("")
-
     result = stream_auto_restack(executor, Path.cwd())
 
     if result.requires_interactive:
