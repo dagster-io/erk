@@ -23,29 +23,28 @@ PASSTHROUGH_COMMANDS: Final[set[str]] = {"sync"}
 GLOBAL_FLAGS: Final[set[str]] = {"--debug", "--dry-run", "--verbose", "-v"}
 
 # Commands that support shell integration (directory switching)
-# Uses compound keys for subcommands (e.g., "wt create" instead of just "create")
-# Also supports legacy top-level aliases for backward compatibility
-# Values are the command strings to use when invoking via subprocess
-SHELL_INTEGRATION_COMMANDS: Final[set[str]] = {
-    # Top-level commands
-    "checkout",
-    "co",  # Alias for checkout
-    "up",
-    "down",
-    "implement",
+# Maps command names (as received from shell) to CLI command paths (for subprocess)
+# Keys are what the shell handler receives, values are what gets passed to subprocess
+SHELL_INTEGRATION_COMMANDS: Final[dict[str, list[str]]] = {
+    # Top-level commands (key matches CLI path)
+    "checkout": ["checkout"],
+    "co": ["checkout"],  # Alias for checkout
+    "up": ["up"],
+    "down": ["down"],
+    "implement": ["implement"],
     # Subcommands under pr
-    "pr land",
-    "pr checkout",
-    "pr co",  # Alias for pr checkout
-    # Legacy top-level aliases (for backward compatibility)
-    "create",
-    "goto",
-    "consolidate",
+    "pr land": ["pr", "land"],
+    "pr checkout": ["pr", "checkout"],
+    "pr co": ["pr", "checkout"],  # Alias for pr checkout
+    # Legacy top-level aliases (map to actual CLI paths)
+    "create": ["wt", "create"],
+    "goto": ["wt", "goto"],
+    "consolidate": ["stack", "consolidate"],
     # Subcommands under wt
-    "wt create",
-    "wt goto",
+    "wt create": ["wt", "create"],
+    "wt goto": ["wt", "goto"],
     # Subcommands under stack
-    "stack consolidate",
+    "stack consolidate": ["stack", "consolidate"],
 }
 
 
@@ -141,7 +140,8 @@ def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellInt
     if "-h" in args or "--help" in args or "--script" in args or "--dry-run" in args:
         return ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
 
-    if command_name not in SHELL_INTEGRATION_COMMANDS:
+    cli_cmd_parts = SHELL_INTEGRATION_COMMANDS.get(command_name)
+    if cli_cmd_parts is None:
         if command_name in PASSTHROUGH_COMMANDS:
             return _build_passthrough_script(command_name, args)
         return ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
@@ -149,10 +149,9 @@ def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellInt
     # Clean up stale scripts before running (opportunistic cleanup)
     cleanup_stale_scripts(max_age_seconds=STALE_SCRIPT_MAX_AGE_SECONDS)
 
-    # Build full command: erk <command_name parts> <args> --script
-    # For compound commands like "pr land", command_name is "pr land"
-    cmd_parts = command_name.split()
-    cmd = ["erk", *cmd_parts, *args, "--script"]
+    # Build full command: erk <cli_cmd_parts> <args> --script
+    # cli_cmd_parts contains the actual CLI path (e.g., ["wt", "create"] for "create")
+    cmd = ["erk", *cli_cmd_parts, *args, "--script"]
 
     debug_log(f"Handler: Running subprocess: {cmd}")
 
