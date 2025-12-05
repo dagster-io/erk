@@ -89,6 +89,52 @@ Kit CLI commands follow two distinct patterns based on complexity:
 
 ## Code Structure
 
+### Using the @kit_json_command Decorator
+
+Kit CLI commands should use the `@kit_json_command` decorator for consistent JSON output and schema documentation:
+
+```python
+from dataclasses import dataclass
+import click
+from dot_agent_kit.cli.schema import kit_json_command
+
+@dataclass
+class SuccessResult:
+    success: bool
+    message: str
+
+@dataclass
+class ErrorResult:
+    success: bool
+    error: str
+
+@kit_json_command(
+    name="my-command",
+    results=[SuccessResult, ErrorResult],
+    error_type=ErrorResult,
+    exit_on_error=True,  # or False for graceful degradation
+)
+@click.option("--value", required=True)
+def my_command(ctx: click.Context, value: str) -> SuccessResult | ErrorResult:
+    """My command description."""
+    if value == "valid":
+        return SuccessResult(success=True, message="OK")
+    return ErrorResult(success=False, error="Invalid value")
+```
+
+**Key features:**
+
+- Automatically passes Click context as first parameter
+- Handles JSON serialization of dataclass results
+- Generates schema documentation in `--help` output
+- Controls exit codes: `exit_on_error=True` exits 1 on errors, `exit_on_error=False` always exits 0 (for `|| true` patterns)
+
+**When to use `exit_on_error=False`:**
+
+- Commands that support graceful degradation (e.g., optional issue tracking)
+- Commands invoked with `|| true` pattern in slash commands
+- Examples: `mark-impl-started`, `mark-impl-ended`, `post-start-comment`
+
 ### Canonical Examples
 
 **Study these files to understand patterns - they are the authoritative implementations**:

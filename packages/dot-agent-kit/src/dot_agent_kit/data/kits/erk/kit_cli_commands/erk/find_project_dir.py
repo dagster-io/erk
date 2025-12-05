@@ -54,12 +54,13 @@ Examples:
     }
 """
 
-import json
 import os
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 
 import click
+
+from dot_agent_kit.cli.schema import kit_json_command
 
 
 @dataclass
@@ -174,7 +175,11 @@ def find_project_info(path: Path) -> ProjectInfo | ProjectError:
     )
 
 
-@click.command(name="find-project-dir")
+@kit_json_command(
+    name="find-project-dir",
+    results=[ProjectInfo, ProjectError],
+    error_type=ProjectError,
+)
 @click.option(
     "--path",
     type=click.Path(exists=True, path_type=Path),
@@ -186,7 +191,9 @@ def find_project_info(path: Path) -> ProjectInfo | ProjectError:
     is_flag=True,
     help="Output in JSON format",
 )
-def find_project_dir(path: Path | None, json_output: bool) -> None:
+def find_project_dir(
+    ctx: click.Context, path: Path | None, json_output: bool
+) -> ProjectInfo | ProjectError:
     """Find Claude Code project directory for a filesystem path.
 
     This command maps filesystem paths to Claude Code project directories
@@ -196,12 +203,5 @@ def find_project_dir(path: Path | None, json_output: bool) -> None:
     if path is None:
         path = Path(os.getcwd())
 
-    # Find project information
-    result = find_project_info(path)
-
-    # Always output JSON (the --json flag is for future extensibility)
-    click.echo(json.dumps(asdict(result), indent=2))
-
-    # Exit with error code if not found
-    if isinstance(result, ProjectError):
-        raise SystemExit(1)
+    # Find project information and return it
+    return find_project_info(path)

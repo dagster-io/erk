@@ -30,13 +30,14 @@ Examples:
     }
 """
 
-import json
 import subprocess
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
 import click
+
+from dot_agent_kit.cli.schema import kit_json_command
 
 
 @dataclass
@@ -155,24 +156,21 @@ def _extract_commit_message_impl(session_id: str) -> ExtractedMessage | ExtractE
     return ExtractedMessage(success=True, message_file=str(message_file))
 
 
-@click.command(name="get-pr-commit-message")
+@kit_json_command(
+    name="get-pr-commit-message",
+    results=[ExtractedMessage, ExtractError],
+    error_type=ExtractError,
+)
 @click.option(
     "--session-id",
     required=True,
     help="Session ID for scratch directory (from SESSION_CONTEXT)",
 )
-def get_pr_commit_message(session_id: str) -> None:
+def get_pr_commit_message(ctx: click.Context, session_id: str) -> ExtractedMessage | ExtractError:
     """Extract commit message from PR body for squash operations.
 
     Fetches the PR body and parses it to extract the summary,
     stripping the metadata footer (checkout instructions, etc.)
     Writes the message to .erk/scratch/<session-id>/pr-commit-message.txt
     """
-    result = _extract_commit_message_impl(session_id)
-
-    # Output JSON result
-    click.echo(json.dumps(asdict(result), indent=2))
-
-    # Exit with error code if extraction failed
-    if isinstance(result, ExtractError):
-        raise SystemExit(1)
+    return _extract_commit_message_impl(session_id)

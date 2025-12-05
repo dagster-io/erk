@@ -173,7 +173,7 @@ def test_update_dispatch_info_issue_not_found() -> None:
         obj=DotAgentContext.for_test(github_issues=fake_gh),
     )
 
-    assert result.exit_code == 1
+    assert result.exit_code == 0  # Graceful degradation (exit_on_error=False)
     output = json.loads(result.output)
     assert output["success"] is False
     assert output["error"] == "issue_not_found"
@@ -195,7 +195,7 @@ This is an issue created before plan-header blocks were introduced.
         obj=DotAgentContext.for_test(github_issues=fake_gh),
     )
 
-    assert result.exit_code == 1
+    assert result.exit_code == 0  # Graceful degradation (exit_on_error=False)
     output = json.loads(result.output)
     assert output["success"] is False
     assert output["error"] == "no_plan_header_block"
@@ -218,7 +218,7 @@ def test_update_dispatch_info_github_api_failure() -> None:
         obj=DotAgentContext.for_test(github_issues=fake_gh),
     )
 
-    assert result.exit_code == 1
+    assert result.exit_code == 0  # Graceful degradation (exit_on_error=False)
     output = json.loads(result.output)
     assert output["success"] is False
     assert output["error"] == "github_api_failed"
@@ -275,7 +275,7 @@ def test_json_output_structure_error() -> None:
         obj=DotAgentContext.for_test(github_issues=fake_gh),
     )
 
-    assert result.exit_code == 1
+    assert result.exit_code == 0  # Graceful degradation (exit_on_error=False)
     output = json.loads(result.output)
 
     # Verify expected keys
