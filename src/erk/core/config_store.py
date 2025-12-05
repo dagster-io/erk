@@ -25,6 +25,24 @@ class GlobalConfig:
     show_pr_info: bool
     github_planning: bool
 
+    @staticmethod
+    def test(
+        erk_root: Path,
+        *,
+        use_graphite: bool = True,
+        shell_setup_complete: bool = True,
+        show_pr_info: bool = True,
+        github_planning: bool = True,
+    ) -> "GlobalConfig":
+        """Create a GlobalConfig with sensible test defaults."""
+        return GlobalConfig(
+            erk_root=erk_root,
+            use_graphite=use_graphite,
+            shell_setup_complete=shell_setup_complete,
+            show_pr_info=show_pr_info,
+            github_planning=github_planning,
+        )
+
 
 class ConfigStore(ABC):
     """Abstract interface for global config operations.

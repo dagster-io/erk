@@ -32,12 +32,8 @@ def setup_stack_collector(
         **(git_kwargs or {}),
     )
     graphite_ops = FakeGraphite(**(graphite_kwargs or {}))
-    global_config = GlobalConfig(
-        erk_root=Path("/fake/erks"),
-        use_graphite=use_graphite,
-        shell_setup_complete=False,
-        show_pr_info=True,
-        github_planning=True,
+    global_config = GlobalConfig.test(
+        Path("/fake/erks"), use_graphite=use_graphite, shell_setup_complete=False
     )
     ctx = create_test_context(
         git=git_ops,
@@ -229,12 +225,8 @@ def test_graphite_stack_collector_is_available(
     if path_exists:
         worktree_path.mkdir()
 
-    global_config = GlobalConfig(
-        erk_root=Path("/fake/erks"),
-        use_graphite=use_graphite,
-        shell_setup_complete=False,
-        show_pr_info=True,
-        github_planning=True,
+    global_config = GlobalConfig.test(
+        Path("/fake/erks"), use_graphite=use_graphite, shell_setup_complete=False
     )
     ctx = create_test_context(global_config=global_config)
     collector = GraphiteStackCollector()

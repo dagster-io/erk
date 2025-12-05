@@ -27,12 +27,11 @@ def test_complete_branch_names_local_branches(tmp_path: Path) -> None:
         git_common_dirs={repo_root: git_dir},
     )
 
-    global_config = GlobalConfig(
-        erk_root=erk_root,
+    global_config = GlobalConfig.test(
+        erk_root,
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=False,
-        github_planning=True,
     )
 
     ctx_obj = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
@@ -66,12 +65,11 @@ def test_complete_branch_names_remote_branches_strip_prefix(tmp_path: Path) -> N
         git_common_dirs={repo_root: git_dir},
     )
 
-    global_config = GlobalConfig(
-        erk_root=erk_root,
+    global_config = GlobalConfig.test(
+        erk_root,
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=False,
-        github_planning=True,
     )
 
     ctx_obj = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
@@ -105,12 +103,11 @@ def test_complete_branch_names_deduplication(tmp_path: Path) -> None:
         git_common_dirs={repo_root: git_dir},
     )
 
-    global_config = GlobalConfig(
-        erk_root=erk_root,
+    global_config = GlobalConfig.test(
+        erk_root,
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=False,
-        github_planning=True,
     )
 
     ctx_obj = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
@@ -145,12 +142,11 @@ def test_complete_branch_names_filters_by_prefix(tmp_path: Path) -> None:
         git_common_dirs={repo_root: git_dir},
     )
 
-    global_config = GlobalConfig(
-        erk_root=erk_root,
+    global_config = GlobalConfig.test(
+        erk_root,
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=False,
-        github_planning=True,
     )
 
     ctx_obj = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
@@ -223,12 +219,11 @@ def test_complete_plan_files_finds_markdown_files(tmp_path: Path) -> None:
         git_common_dirs={repo_root: git_dir},
     )
 
-    global_config = GlobalConfig(
-        erk_root=erk_root,
+    global_config = GlobalConfig.test(
+        erk_root,
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=False,
-        github_planning=True,
     )
 
     ctx_obj = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
@@ -266,12 +261,11 @@ def test_complete_plan_files_no_markdown_files(tmp_path: Path) -> None:
         git_common_dirs={repo_root: git_dir},
     )
 
-    global_config = GlobalConfig(
-        erk_root=erk_root,
+    global_config = GlobalConfig.test(
+        erk_root,
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=False,
-        github_planning=True,
     )
 
     ctx_obj = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
@@ -310,12 +304,11 @@ def test_complete_plan_files_filters_by_prefix(tmp_path: Path) -> None:
         git_common_dirs={repo_root: git_dir},
     )
 
-    global_config = GlobalConfig(
-        erk_root=erk_root,
+    global_config = GlobalConfig.test(
+        erk_root,
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=False,
-        github_planning=True,
     )
 
     ctx_obj = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
@@ -388,12 +381,11 @@ def test_complete_plan_files_returns_sorted_results(tmp_path: Path) -> None:
         git_common_dirs={repo_root: git_dir},
     )
 
-    global_config = GlobalConfig(
-        erk_root=erk_root,
+    global_config = GlobalConfig.test(
+        erk_root,
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=False,
-        github_planning=True,
     )
 
     ctx_obj = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)

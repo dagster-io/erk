@@ -137,12 +137,8 @@ def test_create_with_both_name_and_plan_fails() -> None:
         )
 
         # Create global config with erk_root
-        global_config = GlobalConfig(
-            erk_root=env.erk_root,
-            use_graphite=False,
-            shell_setup_complete=False,
-            show_pr_info=True,
-            github_planning=True,
+        global_config = GlobalConfig.test(
+            env.erk_root, use_graphite=False, shell_setup_complete=False
         )
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -182,12 +178,8 @@ def test_create_rejects_reserved_name_root() -> None:
         )
 
         # Create global config with erk_root
-        global_config = GlobalConfig(
-            erk_root=env.erk_root,
-            use_graphite=False,
-            shell_setup_complete=False,
-            show_pr_info=True,
-            github_planning=True,
+        global_config = GlobalConfig.test(
+            env.erk_root, use_graphite=False, shell_setup_complete=False
         )
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -231,12 +223,8 @@ def test_create_rejects_reserved_name_root_case_insensitive() -> None:
         )
 
         # Create global config with erk_root
-        global_config = GlobalConfig(
-            erk_root=env.erk_root,
-            use_graphite=False,
-            shell_setup_complete=False,
-            show_pr_info=True,
-            github_planning=True,
+        global_config = GlobalConfig.test(
+            env.erk_root, use_graphite=False, shell_setup_complete=False
         )
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -280,12 +268,8 @@ def test_create_rejects_main_as_worktree_name() -> None:
         )
 
         # Create global config with erk_root
-        global_config = GlobalConfig(
-            erk_root=env.erk_root,
-            use_graphite=False,
-            shell_setup_complete=False,
-            show_pr_info=True,
-            github_planning=True,
+        global_config = GlobalConfig.test(
+            env.erk_root, use_graphite=False, shell_setup_complete=False
         )
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -330,12 +314,8 @@ def test_create_rejects_master_as_worktree_name() -> None:
         )
 
         # Create global config with erk_root
-        global_config = GlobalConfig(
-            erk_root=env.erk_root,
-            use_graphite=False,
-            shell_setup_complete=False,
-            show_pr_info=True,
-            github_planning=True,
+        global_config = GlobalConfig.test(
+            env.erk_root, use_graphite=False, shell_setup_complete=False
         )
         global_config_ops = FakeConfigStore(config=global_config)
 

@@ -397,12 +397,11 @@ class WorktreeScenario:
         # PRs now come from Graphite, not GitHub
         self.graphite = FakeGraphite(stacks=self._graphite_stacks, pr_info=self._prs)
 
-        global_config = GlobalConfig(
-            erk_root=self.erk_root,
+        global_config = GlobalConfig.test(
+            self.erk_root,
             use_graphite=self._use_graphite,
             shell_setup_complete=False,
             show_pr_info=self._show_pr_info,
-            github_planning=True,
         )
 
         self.shell = FakeShell()

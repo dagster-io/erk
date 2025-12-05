@@ -74,12 +74,7 @@ def create_test_context(
 
         # With pre-configured global config
         >>> from erk.core.config_store import GlobalConfig
-        >>> config = GlobalConfig(
-        ...     erk_root=Path("/tmp/erks"),
-        ...     use_graphite=False,
-        ...     shell_setup_complete=False,
-        ...     show_pr_info=True,
-        ... )
+        >>> config = GlobalConfig.test(Path("/tmp/erks"))
         >>> ctx = create_test_context(global_config=config)
 
         # Without any ops (empty fakes)

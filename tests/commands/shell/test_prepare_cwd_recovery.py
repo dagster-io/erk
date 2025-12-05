@@ -28,12 +28,8 @@ def build_ctx(repo_root: Path | None, erk_root: Path, cwd: Path | None = None) -
 
     git_ops = FakeGit(git_common_dirs=git_common_dirs, existing_paths=existing_paths)
     script_writer = FakeScriptWriter()
-    global_config_ops = GlobalConfig(
-        erk_root=erk_root,
-        use_graphite=False,
-        shell_setup_complete=False,
-        show_pr_info=True,
-        github_planning=True,
+    global_config_ops = GlobalConfig.test(
+        erk_root, use_graphite=False, shell_setup_complete=False
     )
     return create_test_context(
         git=git_ops,

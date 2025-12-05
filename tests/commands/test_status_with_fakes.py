@@ -91,12 +91,11 @@ def test_status_cmd_in_subdirectory_of_worktree(tmp_path: Path) -> None:
         ahead_behind={(worktree_path, "feature"): (0, 0), (subdir, "feature"): (0, 0)},
         recent_commits={worktree_path: [], subdir: []},
     )
-    global_config = GlobalConfig(
-        erk_root=tmp_path / "erks",
+    global_config = GlobalConfig.test(
+        tmp_path / "erks",
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=False,
-        github_planning=True,
     )
     ctx = create_test_context(git=git_ops, global_config=global_config, cwd=subdir)
 
@@ -180,12 +179,8 @@ def test_status_cmd_not_in_git_repo(tmp_path: Path) -> None:
         worktrees={},
     )
 
-    global_config = GlobalConfig(
-        erk_root=tmp_path / "erks",
-        use_graphite=False,
-        shell_setup_complete=False,
-        show_pr_info=True,
-        github_planning=True,
+    global_config = GlobalConfig.test(
+        tmp_path / "erks", use_graphite=False, shell_setup_complete=False
     )
 
     ctx = create_test_context(git=git_ops, global_config=global_config)

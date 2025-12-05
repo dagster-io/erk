@@ -68,12 +68,11 @@ def setup_collector(
         graphite_ops_kwargs["pr_info"] = prs
     graphite_ops = FakeGraphite(**graphite_ops_kwargs)
 
-    global_config = GlobalConfig(
-        erk_root=Path("/fake/erks"),
+    global_config = GlobalConfig.test(
+        Path("/fake/erks"),
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=show_pr_info,
-        github_planning=True,
     )
     ctx = create_test_context(
         git=git_ops,
@@ -273,12 +272,11 @@ def test_github_pr_collector_is_available(
     if path_exists:
         worktree_path.mkdir()
 
-    global_config = GlobalConfig(
-        erk_root=Path("/fake/erks"),
+    global_config = GlobalConfig.test(
+        Path("/fake/erks"),
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=show_pr_info,
-        github_planning=True,
     )
     ctx = create_test_context(global_config=global_config)
     collector = GitHubPRCollector()

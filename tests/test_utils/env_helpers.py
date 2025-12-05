@@ -27,7 +27,7 @@ Usage Pattern:
             erk_root.mkdir()
 
             git = FakeGit(git_common_dirs={cwd: git_dir})
-            global_config_ops = GlobalConfig(...)
+            global_config = GlobalConfig.test(...)
             test_ctx = ErkContext.for_test(cwd=cwd, ...)
 
             result = runner.invoke(cli, ["command"], obj=test_ctx)
@@ -39,7 +39,7 @@ Usage Pattern:
         runner = CliRunner()
         with erk_isolated_fs_env(runner) as env:
             git = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-            global_config_ops = GlobalConfig(...)
+            global_config = GlobalConfig.test(...)
             script_writer=env.script_writer,
             test_ctx = ErkContext.for_test(cwd=env.cwd, ...)
 
@@ -511,12 +511,11 @@ class ErkIsolatedFsEnv:
             global_config = kwargs.pop("global_config")
         else:
             # Create default global config
-            global_config = GlobalConfig(
+            global_config = GlobalConfig.test(
+                self.erk_root,
                 use_graphite=use_graphite,
                 show_pr_info=show_pr_info,
                 shell_setup_complete=False,
-                erk_root=self.erk_root,
-                github_planning=True,
             )
 
         # Build and return context
@@ -929,12 +928,11 @@ class ErkInMemEnv:
             global_config = kwargs.pop("global_config")
         else:
             # Create default global config
-            global_config = GlobalConfig(
+            global_config = GlobalConfig.test(
+                self.erk_root,
                 use_graphite=use_graphite,
                 show_pr_info=show_pr_info,
                 shell_setup_complete=False,
-                erk_root=self.erk_root,
-                github_planning=True,
             )
 
         # Build and return context

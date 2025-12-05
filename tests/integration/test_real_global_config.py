@@ -6,8 +6,35 @@ import pytest
 from erk.cli.commands.init import create_and_save_global_config
 from erk.cli.commands.wt.create_cmd import make_env_content
 from erk.cli.config import load_config
+from erk.core.config_store import GlobalConfig
 from erk.core.init_utils import discover_presets
 from tests.fakes.shell import FakeShell
+
+
+def test_global_config_test_factory_method(tmp_path: Path) -> None:
+    """Test GlobalConfig.test() factory method creates config with defaults."""
+    config = GlobalConfig.test(tmp_path / "erks")
+
+    assert config.erk_root == tmp_path / "erks"
+    assert config.use_graphite is True
+    assert config.shell_setup_complete is True
+    assert config.show_pr_info is True
+    assert config.github_planning is True
+
+
+def test_global_config_test_factory_with_overrides(tmp_path: Path) -> None:
+    """Test GlobalConfig.test() factory method respects overrides."""
+    config = GlobalConfig.test(
+        tmp_path / "erks",
+        use_graphite=False,
+        shell_setup_complete=False,
+    )
+
+    assert config.erk_root == tmp_path / "erks"
+    assert config.use_graphite is False
+    assert config.shell_setup_complete is False
+    assert config.show_pr_info is True  # Still default
+    assert config.github_planning is True  # Still default
 
 
 def test_load_config_defaults(tmp_path: Path) -> None:

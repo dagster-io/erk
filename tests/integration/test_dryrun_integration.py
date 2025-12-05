@@ -95,12 +95,11 @@ def test_dryrun_read_operations_still_work(tmp_path: Path) -> None:
         git_common_dirs={repo: repo / ".git"},
         existing_paths={repo, repo / ".git", tmp_path / "erks"},
     )
-    global_config_ops = GlobalConfig(
-        erk_root=tmp_path / "erks",
+    global_config_ops = GlobalConfig.test(
+        tmp_path / "erks",
         use_graphite=False,
         shell_setup_complete=False,
         show_pr_info=False,  # This test is about dry-run operations, not PR info
-        github_planning=True,
     )
 
     # Wrap fakes in dry-run wrappers
