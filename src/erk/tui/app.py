@@ -173,10 +173,9 @@ class HelpScreen(ModalScreen):
 
             with Vertical(classes="help-section"):
                 yield Label("Actions", classes="help-section-title")
-                yield Label("Space   View plan details", classes="help-binding")
-                yield Label("Enter/o Open PR (or issue if no PR)", classes="help-binding")
+                yield Label("Enter   View plan details", classes="help-binding")
+                yield Label("o       Open PR (or issue if no PR)", classes="help-binding")
                 yield Label("p       Open PR in browser", classes="help-binding")
-                yield Label("c       Close plan (and linked PRs)", classes="help-binding")
                 yield Label("i       Show implement command", classes="help-binding")
 
             with Vertical(classes="help-section"):
@@ -706,13 +705,12 @@ class ErkDashApp(App):
         Binding("?", "help", "Help"),
         Binding("j", "cursor_down", "Down", show=False),
         Binding("k", "cursor_up", "Up", show=False),
-        Binding("enter", "open_row", "Open"),
+        Binding("enter", "show_detail", "Detail"),
         Binding("o", "open_row", "Open", show=False),
         Binding("p", "open_pr", "Open PR"),
         # NOTE: 'c' binding removed - close_plan now accessible via command palette
-        # in the plan detail modal (Space → Ctrl+P → "Close Plan")
+        # in the plan detail modal (Enter → Ctrl+P → "Close Plan")
         Binding("i", "show_implement", "Implement"),
-        Binding("space", "show_detail", "Detail"),
         Binding("slash", "start_filter", "Filter", key_display="/"),
     ]
 
@@ -1043,8 +1041,8 @@ class ErkDashApp(App):
 
     @on(PlanDataTable.RowSelected)
     def on_row_selected(self, event: PlanDataTable.RowSelected) -> None:
-        """Handle Enter/double-click on row - open PR or issue."""
-        self.action_open_row()
+        """Handle Enter/double-click on row - show plan details."""
+        self.action_show_detail()
 
     @on(Input.Changed, "#filter-input")
     def on_filter_changed(self, event: Input.Changed) -> None:
