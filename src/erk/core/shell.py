@@ -7,6 +7,7 @@ enables dependency injection for testing without mock.patch.
 
 import os
 import shutil
+import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -164,8 +165,6 @@ class RealShell(Shell):
         Spawns Claude in non-interactive mode with permission bypass to
         automatically create an extraction plan.
         """
-        import subprocess
-
         # Check if Claude CLI is installed
         claude_path = self.get_installed_tool_path("claude")
         if claude_path is None:
