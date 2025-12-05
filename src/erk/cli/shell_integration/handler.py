@@ -1,24 +1,14 @@
 import os
 import shlex
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
 
-from click import Command
-from click.testing import CliRunner
 from erk_shared.debug import debug_log
 from erk_shared.output.output import user_output
 
-from erk.cli.commands.checkout import checkout_cmd
-from erk.cli.commands.down import down_cmd
-from erk.cli.commands.implement import implement
-from erk.cli.commands.pr.checkout_cmd import pr_checkout
-from erk.cli.commands.pr.land_cmd import pr_land
 from erk.cli.commands.prepare_cwd_recovery import generate_recovery_script
-from erk.cli.commands.stack.consolidate_cmd import consolidate_stack
-from erk.cli.commands.up import up_cmd
-from erk.cli.commands.wt.create_cmd import create_wt
-from erk.cli.commands.wt.goto_cmd import goto_wt
 from erk.cli.shell_utils import (
     STALE_SCRIPT_MAX_AGE_SECONDS,
     cleanup_stale_scripts,
@@ -33,28 +23,28 @@ PASSTHROUGH_COMMANDS: Final[set[str]] = {"sync"}
 GLOBAL_FLAGS: Final[set[str]] = {"--debug", "--dry-run", "--verbose", "-v"}
 
 # Commands that support shell integration (directory switching)
-# Uses compound keys for subcommands (e.g., "wt create" instead of just "create")
-# Also supports legacy top-level aliases for backward compatibility
-SHELL_INTEGRATION_COMMANDS: Final[dict[str, Command]] = {
-    # Top-level commands
-    "checkout": checkout_cmd,
-    "co": checkout_cmd,  # Alias
-    "up": up_cmd,
-    "down": down_cmd,
-    "implement": implement,
+# Maps command names (as received from shell) to CLI command paths (for subprocess)
+# Keys are what the shell handler receives, values are what gets passed to subprocess
+SHELL_INTEGRATION_COMMANDS: Final[dict[str, list[str]]] = {
+    # Top-level commands (key matches CLI path)
+    "checkout": ["checkout"],
+    "co": ["checkout"],  # Alias for checkout
+    "up": ["up"],
+    "down": ["down"],
+    "implement": ["implement"],
     # Subcommands under pr
-    "pr land": pr_land,
-    "pr checkout": pr_checkout,
-    "pr co": pr_checkout,  # Alias
-    # Legacy top-level aliases (for backward compatibility)
-    "create": create_wt,
-    "goto": goto_wt,
-    "consolidate": consolidate_stack,
+    "pr land": ["pr", "land"],
+    "pr checkout": ["pr", "checkout"],
+    "pr co": ["pr", "checkout"],  # Alias for pr checkout
+    # Legacy top-level aliases (map to actual CLI paths)
+    "create": ["wt", "create"],
+    "goto": ["wt", "goto"],
+    "consolidate": ["stack", "consolidate"],
     # Subcommands under wt
-    "wt create": create_wt,
-    "wt goto": goto_wt,
+    "wt create": ["wt", "create"],
+    "wt goto": ["wt", "goto"],
     # Subcommands under stack
-    "stack consolidate": consolidate_stack,
+    "stack consolidate": ["stack", "consolidate"],
 }
 
 
@@ -139,41 +129,49 @@ def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellInt
     """Invoke a command with --script flag for shell integration.
 
     If args contain help flags or explicit --script, passthrough to regular command.
-    Otherwise, add --script flag and capture the activation script.
+    Otherwise, add --script flag and run as subprocess with live stderr streaming.
+
+    Uses subprocess.run instead of CliRunner to allow stderr (user messages)
+    to stream directly to the terminal in real-time, while capturing stdout
+    (the activation script path) for shell integration.
     """
     # Check if help flags, --script, or --dry-run are present - these should pass through
     # Dry-run mode should show output directly, not via shell integration
     if "-h" in args or "--help" in args or "--script" in args or "--dry-run" in args:
         return ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
 
-    command = SHELL_INTEGRATION_COMMANDS.get(command_name)
-    if command is None:
+    cli_cmd_parts = SHELL_INTEGRATION_COMMANDS.get(command_name)
+    if cli_cmd_parts is None:
         if command_name in PASSTHROUGH_COMMANDS:
             return _build_passthrough_script(command_name, args)
         return ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
 
-    # Add --script flag to get activation script
-    script_args = list(args) + ["--script"]
-
-    debug_log(f"Handler: Invoking {command_name} with args: {script_args}")
-
     # Clean up stale scripts before running (opportunistic cleanup)
     cleanup_stale_scripts(max_age_seconds=STALE_SCRIPT_MAX_AGE_SECONDS)
 
-    runner = CliRunner()
-    result = runner.invoke(
-        command,
-        script_args,
-        obj=create_context(dry_run=False, script=True),
-        standalone_mode=False,
+    # Build full command: erk <cli_cmd_parts> <args> --script
+    # cli_cmd_parts contains the actual CLI path (e.g., ["wt", "create"] for "create")
+    cmd = ["erk", *cli_cmd_parts, *args, "--script"]
+
+    debug_log(f"Handler: Running subprocess: {cmd}")
+
+    # Run subprocess with:
+    # - stdout captured (contains activation script path)
+    # - stderr passed through to terminal (live streaming of user messages)
+    result = subprocess.run(
+        cmd,
+        stdout=subprocess.PIPE,  # Capture stdout for script path
+        stderr=None,  # Let stderr pass through to terminal (live streaming)
+        text=True,
+        check=False,  # Don't raise on non-zero exit
     )
 
     return process_command_result(
-        exit_code=int(result.exit_code),
+        exit_code=result.returncode,
         stdout=result.stdout,
-        stderr=result.stderr,
+        stderr=None,  # stderr already shown to user
         command_name=command_name,
-        exception=result.exception,
+        exception=None,  # No exception from subprocess
     )
 
 

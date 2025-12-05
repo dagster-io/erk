@@ -273,22 +273,20 @@ def test_process_command_result_success_with_script(tmp_path: Path) -> None:
 def test_process_command_result_separates_stdout_from_stderr(tmp_path: Path) -> None:
     """Verify stdout/stderr separation for script path extraction.
 
-    Regression test for bug where CliRunner's default mix_stderr=True caused
-    user messages (stderr) to be mixed into stdout, corrupting script path
-    extraction. This test verifies the fix: process_command_result receives
+    Regression test for bug where stderr was mixed with stdout, corrupting script
+    path extraction. This test verifies the fix: process_command_result receives
     already-separated stdout/stderr and correctly extracts the script path.
 
     The bug scenario:
     1. Command outputs user progress messages to stderr (via user_output())
     2. Command outputs script path to stdout (via machine_output())
-    3. CliRunner with mix_stderr=True combines them into result.stdout
-    4. Handler tries to extract script path: script_path = result.stdout.strip()
-    5. Gets multi-line garbage instead of just the script path
-    6. Path(garbage).exists() returns False
-    7. No script is returned to shell wrapper
-    8. User is stranded in deleted directory
+    3. If stderr gets mixed into stdout, handler can't extract script path
+    4. Path(garbage).exists() returns False
+    5. No script is returned to shell wrapper
+    6. User is stranded in deleted directory
 
-    Fix: Use CliRunner(mix_stderr=False) to keep stdout/stderr separate.
+    Fix: Use subprocess with stderr=None (passthrough to terminal) and only
+    capture stdout (which contains the activation script path).
     """
     from erk.cli.shell_integration.handler import process_command_result
 
@@ -313,14 +311,14 @@ def test_process_command_result_separates_stdout_from_stderr(tmp_path: Path) -> 
 
     # Note: This test verifies process_command_result's behavior with
     # pre-separated stdout/stderr. The actual separation happens in
-    # _invoke_hidden_command via CliRunner(mix_stderr=False).
+    # _invoke_hidden_command via subprocess.run with stderr=None (passthrough).
 
 
 def test_process_command_result_with_contaminated_stdout_fails(tmp_path: Path) -> None:
     """Verify that mixed stdout/stderr causes script extraction to fail.
 
-    This test demonstrates WHY mix_stderr=False is needed: when stderr is
-    mixed into stdout, the script path becomes unextractable garbage.
+    This test demonstrates WHY stderr must not be mixed into stdout: when
+    stderr is mixed into stdout, the script path becomes unextractable garbage.
     """
     from erk.cli.shell_integration.handler import process_command_result
 
@@ -328,7 +326,7 @@ def test_process_command_result_with_contaminated_stdout_fails(tmp_path: Path) -
     script_file = tmp_path / "activation-script.sh"
     script_file.write_text("cd /some/destination\n", encoding="utf-8")
 
-    # Simulate what USED TO happen with mix_stderr=True (the bug):
+    # Simulate what would happen if stderr was mixed into stdout (the bug):
     # stdout contains user messages PLUS the script path
     contaminated_stdout = f"✓ Removed worktree\n✓ Deleted branch\n{script_file}\n"
 
