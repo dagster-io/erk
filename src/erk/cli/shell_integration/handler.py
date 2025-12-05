@@ -72,6 +72,7 @@ def process_command_result(
     stdout: str | None,
     stderr: str | None,
     command_name: str,
+    exception: BaseException | None = None,
 ) -> ShellIntegrationResult:
     """Process command result and determine shell integration behavior.
 
@@ -84,6 +85,7 @@ def process_command_result(
         stdout: Command stdout (expected to be script path if successful)
         stderr: Command stderr (error messages)
         command_name: Name of the command (for user messages)
+        exception: Exception from CliRunner result (e.g., Click's MissingParameter)
 
     Returns:
         ShellIntegrationResult with passthrough, script, and exit_code
@@ -115,6 +117,11 @@ def process_command_result(
     if exit_code != 0:
         if stderr:
             user_output(stderr, nl=False)
+        elif exception is not None:
+            # Handle Click exceptions that don't go to stderr (e.g., MissingParameter)
+            # When using standalone_mode=False, Click stores usage errors in result.exception
+            # but leaves stderr empty, causing silent exits without this handling.
+            user_output(f"Error: {exception}")
         return ShellIntegrationResult(passthrough=False, script=None, exit_code=exit_code)
 
     # Forward stderr messages to user (only for successful commands)
@@ -166,6 +173,7 @@ def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellInt
         stdout=result.stdout,
         stderr=result.stderr,
         command_name=command_name,
+        exception=result.exception,
     )
 
 
