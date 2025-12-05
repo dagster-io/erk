@@ -221,7 +221,7 @@ def test_implement_from_issue_with_custom_name() -> None:
         )
 
         result = runner.invoke(
-            implement, ["#42", "--worktree-name", "my-custom-feature", "--script"], obj=ctx
+            implement, ["#42", "--wt-name", "my-custom-feature", "--script"], obj=ctx
         )
 
         assert result.exit_code == 0
@@ -229,6 +229,41 @@ def test_implement_from_issue_with_custom_name() -> None:
 
         worktree_path, _ = git.added_worktrees[0]
         assert "my-custom-feature" in str(worktree_path)
+
+
+def test_implement_issue_with_linked_branch_wt_name_creates_new_branch() -> None:
+    """Test that --wt-name creates new branch even when issue has linked branch."""
+    plan_issue = _create_sample_plan_issue()
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Setup: Issue #42 has existing linked branch "42-original-branch"
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "42-original-branch"]},
+            default_branches={env.cwd: "main"},
+        )
+        store = FakePlanStore(plans={"42": plan_issue})
+        # Pre-configure existing linked branch for issue #42
+        issue_dev = FakeIssueLinkBranches(existing_branches={42: "42-original-branch"})
+        ctx = build_workspace_test_context(
+            env, git=git, plan_store=store, issue_link_branches=issue_dev
+        )
+
+        # When: User provides --wt-name
+        result = runner.invoke(
+            implement, ["#42", "--wt-name", "my-new-attempt", "--script"], obj=ctx
+        )
+
+        # Then: Should create NEW branch "my-new-attempt", not use "42-original-branch"
+        assert result.exit_code == 0
+        assert "my-new-attempt" in result.output
+
+        worktree_path, branch_name = git.added_worktrees[0]
+        assert "my-new-attempt" in str(worktree_path)
+        assert branch_name == "my-new-attempt"
+        # Verify it did NOT use the linked branch
+        assert branch_name != "42-original-branch"
 
 
 def test_implement_from_issue_fails_without_erk_plan_label() -> None:
@@ -360,7 +395,7 @@ def test_implement_from_plan_file_with_custom_name() -> None:
         plan_file.write_text("# Plan", encoding="utf-8")
 
         result = runner.invoke(
-            implement, [str(plan_file), "--worktree-name", "custom-name", "--script"], obj=ctx
+            implement, [str(plan_file), "--wt-name", "custom-name", "--script"], obj=ctx
         )
 
         assert result.exit_code == 0
@@ -445,11 +480,10 @@ def test_implement_from_plan_file_dry_run() -> None:
 
 
 def test_implement_issue_mode_uses_linked_branch_not_worktree_name() -> None:
-    """Test that issue mode uses gh issue develop branch, ignoring --worktree-name for branch.
+    """Test that issue mode without --wt-name uses gh issue develop branch.
 
-    With gh issue develop integration, the branch is always created/used by GitHub.
-    The --worktree-name flag only affects the worktree directory name, not the branch.
-    This allows users to customize the directory while maintaining proper issue-branch linking.
+    With gh issue develop integration, the branch is created/used by GitHub.
+    Without --wt-name, the linked branch name is used for both worktree and branch.
     """
     plan_issue = _create_sample_plan_issue()
 
@@ -457,7 +491,7 @@ def test_implement_issue_mode_uses_linked_branch_not_worktree_name() -> None:
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "existing-branch"]},
+            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
         store = FakePlanStore(plans={"42": plan_issue})
@@ -466,21 +500,18 @@ def test_implement_issue_mode_uses_linked_branch_not_worktree_name() -> None:
             env, git=git, plan_store=store, issue_link_branches=issue_dev
         )
 
-        # Even though "existing-branch" exists, issue mode uses a computed branch name
-        # (e.g., "42-add-authentication-feature-01-15-1430") so this should succeed - the
-        # worktree name is "existing-branch" but the branch is derived from issue title
-        result = runner.invoke(
-            implement, ["#42", "--worktree-name", "existing-branch", "--script"], obj=ctx
-        )
+        # Issue mode without --wt-name: uses computed branch name from issue
+        result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
 
-        # Should succeed because the branch doesn't conflict with "existing-branch"
+        # Should succeed and use the GitHub-linked branch
         assert result.exit_code == 0
         assert "Created worktree" in result.output
 
-        # Verify worktree was created with custom name but linked branch
+        # Verify worktree was created with linked branch name
         assert len(git.added_worktrees) == 1
-        worktree_path, _ = git.added_worktrees[0]
-        assert "existing-branch" in str(worktree_path)
+        worktree_path, branch_name = git.added_worktrees[0]
+        # Branch name is computed from issue title by FakeIssueLinkBranches
+        assert branch_name.startswith("42-")
 
 
 def test_implement_fails_when_branch_exists_file_mode() -> None:
@@ -498,14 +529,12 @@ def test_implement_fails_when_branch_exists_file_mode() -> None:
         plan_file = env.cwd / "feature-plan.md"
         plan_file.write_text("# Plan", encoding="utf-8")
 
-        result = runner.invoke(
-            implement, [str(plan_file), "--worktree-name", "existing-branch"], obj=ctx
-        )
+        result = runner.invoke(implement, [str(plan_file), "--wt-name", "existing-branch"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Error" in result.output
         assert "already exists" in result.output
-        # Should tell user to choose different name (not suggest --worktree-name)
+        # Should tell user to choose different name with --wt-name
         assert "Please choose a different name" in result.output
         assert len(git.added_worktrees) == 0
 

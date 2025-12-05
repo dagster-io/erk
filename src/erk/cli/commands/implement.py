@@ -479,7 +479,7 @@ def _create_worktree_with_plan_content(
     ctx: ErkContext,
     *,
     plan_source: PlanSource,
-    worktree_name: str | None,
+    wt_name: str | None,
     dry_run: bool,
     submit: bool,
     dangerous: bool,
@@ -492,7 +492,7 @@ def _create_worktree_with_plan_content(
     Args:
         ctx: Erk context
         plan_source: Plan source with content and metadata
-        worktree_name: Optional custom worktree name
+        wt_name: Optional custom worktree and branch name
         dry_run: Whether to perform dry run
         submit: Whether to auto-submit PR after implementation
         dangerous: Whether to skip permission prompts
@@ -510,21 +510,23 @@ def _create_worktree_with_plan_content(
     repo_root = repo.root
 
     # Determine branch name and worktree name
+    # - wt_name: user explicitly provided name - use for BOTH worktree and branch
+    #   (creates new branch)
     # - linked_branch_name: use the GitHub-linked branch for the worktree
-    # - worktree_name: user override for worktree directory name (not branch)
     # - base_name: fallback derived from plan file or issue title
-    if linked_branch_name:
-        # For issue mode: always use the branch created by gh issue develop
-        branch = linked_branch_name
-        # But allow --worktree-name to override the directory name
-        if worktree_name:
-            name = sanitize_worktree_name(worktree_name)
-        else:
-            name = sanitize_worktree_name(linked_branch_name)
-    elif worktree_name:
-        name = sanitize_worktree_name(worktree_name)
+    if wt_name:
+        # User explicitly provided name - use for BOTH worktree and branch
+        # This creates a new branch, ignoring any existing linked branch
+        name = sanitize_worktree_name(wt_name)
         branch = name
+        # Clear linked_branch_name so downstream logic creates new branch
+        linked_branch_name = None
+    elif linked_branch_name:
+        # No user override - use the GitHub-linked branch
+        branch = linked_branch_name
+        name = sanitize_worktree_name(linked_branch_name)
     else:
+        # Auto-generate name from plan source
         name = ensure_unique_worktree_name_with_date(
             plan_source.base_name, repo.worktrees_dir, ctx.git
         )
@@ -541,18 +543,18 @@ def _create_worktree_with_plan_content(
         local_branches = ctx.git.list_local_branches(repo_root)
         if branch in local_branches:
             # Different error messages based on whether name was explicitly provided
-            if worktree_name:
+            if wt_name:
                 # User explicitly provided this name - tell them to choose different one
                 ctx.feedback.error(
                     f"Error: Branch '{branch}' already exists.\n"
-                    + "Please choose a different name with --worktree-name."
+                    + "Please choose a different name with --wt-name."
                 )
             else:
                 # Auto-generated name conflicted - suggest using explicit name
                 ctx.feedback.error(
                     f"Error: Branch '{branch}' already exists.\n"
                     + "Cannot create worktree with existing branch name.\n"
-                    + "Use --worktree-name to specify a different name."
+                    + "Use --wt-name to specify a different name."
                 )
             raise SystemExit(1)
 
@@ -685,7 +687,7 @@ def _implement_from_issue(
     ctx: ErkContext,
     *,
     issue_number: str,
-    worktree_name: str | None,
+    wt_name: str | None,
     dry_run: bool,
     submit: bool,
     dangerous: bool,
@@ -699,7 +701,7 @@ def _implement_from_issue(
     Args:
         ctx: Erk context
         issue_number: GitHub issue number
-        worktree_name: Optional custom worktree name
+        wt_name: Optional custom worktree and branch name
         dry_run: Whether to perform dry run
         submit: Whether to auto-submit PR after implementation
         dangerous: Whether to skip permission prompts
@@ -724,7 +726,7 @@ def _implement_from_issue(
     wt_path = _create_worktree_with_plan_content(
         ctx,
         plan_source=issue_plan_source.plan_source,
-        worktree_name=worktree_name,
+        wt_name=wt_name,
         dry_run=dry_run,
         submit=submit,
         dangerous=dangerous,
@@ -772,7 +774,7 @@ def _implement_from_file(
     ctx: ErkContext,
     *,
     plan_file: Path,
-    worktree_name: str | None,
+    wt_name: str | None,
     dry_run: bool,
     submit: bool,
     dangerous: bool,
@@ -786,7 +788,7 @@ def _implement_from_file(
     Args:
         ctx: Erk context
         plan_file: Path to plan file
-        worktree_name: Optional custom worktree name
+        wt_name: Optional custom worktree and branch name
         dry_run: Whether to perform dry run
         submit: Whether to auto-submit PR after implementation
         dangerous: Whether to skip permission prompts
@@ -808,7 +810,7 @@ def _implement_from_file(
     wt_path = _create_worktree_with_plan_content(
         ctx,
         plan_source=plan_source,
-        worktree_name=worktree_name,
+        wt_name=wt_name,
         dry_run=dry_run,
         submit=submit,
         dangerous=dangerous,
@@ -852,10 +854,13 @@ def _implement_from_file(
 @click.command("implement")
 @click.argument("target", shell_complete=complete_plan_files)
 @click.option(
-    "--worktree-name",
+    "--wt-name",
     type=str,
     default=None,
-    help="Override worktree name (optional, auto-generated if not provided)",
+    help=(
+        "Override name for both worktree directory and branch "
+        "(creates new branch, ignores linked branch)"
+    ),
 )
 @click.option(
     "--dry-run",
@@ -901,7 +906,7 @@ def _implement_from_file(
 def implement(
     ctx: ErkContext,
     target: str,
-    worktree_name: str | None,
+    wt_name: str | None,
     dry_run: bool,
     submit: bool,
     dangerous: bool,
@@ -984,7 +989,7 @@ def implement(
         _implement_from_issue(
             ctx,
             issue_number=target_info.issue_number,
-            worktree_name=worktree_name,
+            wt_name=wt_name,
             dry_run=dry_run,
             submit=submit,
             dangerous=dangerous,
@@ -999,7 +1004,7 @@ def implement(
         _implement_from_file(
             ctx,
             plan_file=plan_file,
-            worktree_name=worktree_name,
+            wt_name=wt_name,
             dry_run=dry_run,
             submit=submit,
             dangerous=dangerous,
