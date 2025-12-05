@@ -157,7 +157,9 @@ def test_current_handles_missing_git_gracefully(tmp_path: Path) -> None:
     git_ops = FakeGit(git_common_dirs={})
 
     # Create global config
-    global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
+    global_config = GlobalConfig.test(
+        erk_root, use_graphite=False, shell_setup_complete=False
+    )
     global_config_ops = FakeConfigStore(config=global_config)
 
     ctx = ErkContext.for_test(
@@ -205,7 +207,9 @@ def test_current_handles_nested_worktrees(tmp_path: Path) -> None:
     )
 
     # Create global config
-    global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
+    global_config = GlobalConfig.test(
+        erk_root, use_graphite=False, shell_setup_complete=False
+    )
     global_config_ops = FakeConfigStore(config=global_config)
 
     ctx = ErkContext.for_test(
