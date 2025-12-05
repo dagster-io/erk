@@ -147,9 +147,7 @@ def test_init_skips_global_with_repo_flag() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -199,9 +197,7 @@ def test_init_auto_preset_detects_dagster() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -231,9 +227,7 @@ def test_init_auto_preset_uses_generic_fallback() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -258,9 +252,7 @@ def test_init_explicit_preset_dagster() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -285,9 +277,7 @@ def test_init_explicit_preset_generic() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -337,9 +327,7 @@ def test_init_invalid_preset_fails() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -362,9 +350,7 @@ def test_init_creates_config_at_erks_dir() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -391,9 +377,7 @@ def test_init_repo_flag_creates_config_at_root() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -424,9 +408,7 @@ def test_init_force_overwrites_existing_config() -> None:
         config_path.write_text("# Old config\n", encoding="utf-8")
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -458,9 +440,7 @@ def test_init_fails_without_force_when_exists() -> None:
         config_path.write_text("# Existing config\n", encoding="utf-8")
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -493,9 +473,7 @@ def test_init_adds_env_to_gitignore() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
         global_config_ops = FakeConfigStore(config=global_config)
 
         test_ctx = env.build_context(
@@ -529,9 +507,7 @@ def test_init_skips_gitignore_entries_if_declined() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
         global_config_ops = FakeConfigStore(config=global_config)
 
         test_ctx = env.build_context(
@@ -562,9 +538,7 @@ def test_init_handles_missing_gitignore() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
         global_config_ops = FakeConfigStore(config=global_config)
 
         test_ctx = env.build_context(
@@ -596,9 +570,7 @@ def test_init_preserves_gitignore_formatting() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
         global_config_ops = FakeConfigStore(config=global_config)
 
         test_ctx = env.build_context(
@@ -658,9 +630,7 @@ def test_init_shell_flag_only_setup() -> None:
         bashrc = Path.home() / ".bashrc"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -954,9 +924,7 @@ def test_shell_setup_confirmation_declined_with_shell_flag() -> None:
         bashrc = Path.home() / ".bashrc"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -987,9 +955,7 @@ def test_shell_setup_confirmation_accepted_with_shell_flag() -> None:
         bashrc = Path.home() / ".bashrc"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -1051,9 +1017,7 @@ def test_shell_setup_permission_error_with_shell_flag() -> None:
         bashrc = Path.home() / ".bashrc"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(
-            erk_root, use_graphite=False, shell_setup_complete=False
-        )
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
         # Create a ConfigStore that raises PermissionError on save
         class PermissionErrorConfigStore(FakeConfigStore):
