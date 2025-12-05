@@ -185,6 +185,32 @@ def some_method(self) -> None:
 self.notify("Copied: erk implement 123", timeout=2)
 ```
 
+## RichLog for Streaming Output
+
+Use `RichLog` for scrollable, auto-updating output displays:
+
+```python
+from textual.widgets import RichLog
+
+class CommandOutputPanel(Static):
+    """Panel showing live command output."""
+
+    def compose(self) -> ComposeResult:
+        yield RichLog(id="output", wrap=True, markup=True)
+
+    def append_line(self, line: str) -> None:
+        """Add a line to the output log."""
+        log = self.query_one("#output", RichLog)
+        log.write(line)
+```
+
+`RichLog` features:
+
+- Auto-scrolling to bottom as content is added
+- Rich markup support for colored output
+- Efficient for high-frequency updates
+- `wrap=True` enables word wrapping
+
 ## Example Files
 
 - `src/erk/tui/app.py` - Main app with ModalScreens (HelpScreen, PlanDetailScreen, ConfirmationDialog)

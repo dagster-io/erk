@@ -12,12 +12,11 @@
 - **[reference/](reference/)** — claude-cli-stream-json
 - **[sessions/](sessions/)** — context-analysis, layout, parallel-session-awareness, tools
 - **[testing/](testing/)** — import-conflict-resolution, kit-cli-testing, rebase-conflicts, session-log-fixtures, testing
-- **[tui/](tui/)** — command-palette, textual-quirks
+- **[textual/](textual/)** — background-workers, quirks, testing, widget-development
+- **[tui/](tui/)** — command-palette
 
 ## Uncategorized
 
 - **[conventions.md](conventions.md)** — naming functions or variables, creating CLI commands, naming Claude artifacts
 - **[glossary.md](glossary.md)** — understanding project terminology, confused about domain-specific terms, working with worktrees, plans, or stacks
 - **[guide.md](guide.md)** — navigating erk documentation, finding where documentation lives, understanding doc organization
-- **[textual-tui-testing.md](textual-tui-testing.md)** — testing Textual TUI components, writing tests for ModalScreen, testing keyboard bindings, using Pilot API for async tests
-- **[textual-widget-development.md](textual-widget-development.md)** — creating Textual widgets, adding ModalScreen dialogs, implementing keyboard bindings, writing Textual CSS styles
