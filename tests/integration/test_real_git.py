@@ -19,7 +19,7 @@ from tests.integration.conftest import (
 
 def test_list_worktrees_single_repo(git_ops: GitSetup) -> None:
     """Test listing worktrees returns only main repository when no worktrees exist."""
-    worktrees = git_ops.git.list_worktrees(git_ops.repo)
+    worktrees = git_ops.git_worktrees.list_worktrees(git_ops.repo)
 
     assert len(worktrees) == 1
     assert worktrees[0].path == git_ops.repo
@@ -28,7 +28,7 @@ def test_list_worktrees_single_repo(git_ops: GitSetup) -> None:
 
 def test_list_worktrees_multiple(git_ops_with_worktrees: GitWithWorktrees) -> None:
     """Test listing worktrees with multiple worktrees."""
-    worktrees = git_ops_with_worktrees.git.list_worktrees(git_ops_with_worktrees.repo)
+    worktrees = git_ops_with_worktrees.git_worktrees.list_worktrees(git_ops_with_worktrees.repo)
 
     assert len(worktrees) == 3
 
@@ -44,7 +44,7 @@ def test_list_worktrees_multiple(git_ops_with_worktrees: GitWithWorktrees) -> No
 
 def test_list_worktrees_detached_head(git_ops_with_detached: GitWithDetached) -> None:
     """Test listing worktrees includes detached HEAD worktree with None branch."""
-    worktrees = git_ops_with_detached.git.list_worktrees(git_ops_with_detached.repo)
+    worktrees = git_ops_with_detached.git_worktrees.list_worktrees(git_ops_with_detached.repo)
 
     assert len(worktrees) == 2
     detached_wt = next(wt for wt in worktrees if wt.path == git_ops_with_detached.detached_wt)
@@ -208,7 +208,7 @@ def test_validate_trunk_branch_not_exists(tmp_path: Path) -> None:
 
 def test_get_git_common_dir_from_main_repo(git_ops: GitSetup) -> None:
     """Test getting git common dir from main repository."""
-    git_dir = git_ops.git.get_git_common_dir(git_ops.repo)
+    git_dir = git_ops.git_worktrees.get_git_common_dir(git_ops.repo)
 
     assert git_dir is not None
     assert git_dir == git_ops.repo / ".git"
@@ -218,7 +218,7 @@ def test_get_git_common_dir_from_worktree(git_ops_with_worktrees: GitWithWorktre
     """Test getting git common dir from worktree returns shared .git directory."""
     wt = git_ops_with_worktrees.worktrees[0]
 
-    git_dir = git_ops_with_worktrees.git.get_git_common_dir(wt)
+    git_dir = git_ops_with_worktrees.git_worktrees.get_git_common_dir(wt)
 
     assert git_dir is not None
     assert git_dir == git_ops_with_worktrees.repo / ".git"
@@ -229,7 +229,7 @@ def test_get_git_common_dir_non_git_directory(git_ops: GitSetup, tmp_path: Path)
     non_git = tmp_path / "not-a-repo"
     non_git.mkdir()
 
-    git_dir = git_ops.git.get_git_common_dir(non_git)
+    git_dir = git_ops.git_worktrees.get_git_common_dir(non_git)
 
     assert git_dir is None
 
@@ -245,7 +245,7 @@ def test_add_worktree_with_existing_branch(
         check=True,
     )
 
-    git_ops_with_existing_branch.git.add_worktree(
+    git_ops_with_existing_branch.git_worktrees.add_worktree(
         git_ops_with_existing_branch.repo,
         git_ops_with_existing_branch.wt_path,
         branch="feature",
@@ -266,7 +266,7 @@ def test_add_worktree_create_new_branch(
     git_ops_with_existing_branch: GitWithExistingBranch,
 ) -> None:
     """Test adding worktree with new branch creation."""
-    git_ops_with_existing_branch.git.add_worktree(
+    git_ops_with_existing_branch.git_worktrees.add_worktree(
         git_ops_with_existing_branch.repo,
         git_ops_with_existing_branch.wt_path,
         branch="new-feature",
@@ -287,7 +287,7 @@ def test_add_worktree_from_specific_ref(
     tmp_path: Path,
 ) -> None:
     """Test adding worktree from specific ref using real git."""
-    from erk_shared.git.real import RealGit
+    from erk_shared.git.worktrees.real import RealGitWorktrees
 
     from tests.integration.conftest import init_git_repo
 
@@ -305,16 +305,16 @@ def test_add_worktree_from_specific_ref(
     # Create branch at main
     subprocess.run(["git", "branch", "old-main", "HEAD~1"], cwd=repo, check=True)
 
-    git_ops = RealGit()
+    git_worktrees = RealGitWorktrees()
 
-    git_ops.add_worktree(repo, wt, branch="test-branch", ref="old-main", create_branch=True)
+    git_worktrees.add_worktree(repo, wt, branch="test-branch", ref="old-main", create_branch=True)
 
     assert wt.exists()
 
 
 def test_add_worktree_detached(git_ops_with_existing_branch: GitWithExistingBranch) -> None:
     """Test adding detached worktree."""
-    git_ops_with_existing_branch.git.add_worktree(
+    git_ops_with_existing_branch.git_worktrees.add_worktree(
         git_ops_with_existing_branch.repo,
         git_ops_with_existing_branch.wt_path,
         branch=None,
@@ -338,13 +338,15 @@ def test_move_worktree(git_ops_with_worktrees: GitWithWorktrees) -> None:
     new_base_path = git_ops_with_worktrees.repo.parent / "new"
     new_base_path.mkdir(parents=True, exist_ok=True)
 
-    git_ops_with_worktrees.git.move_worktree(git_ops_with_worktrees.repo, old_path, new_base_path)
+    git_ops_with_worktrees.git_worktrees.move_worktree(
+        git_ops_with_worktrees.repo, old_path, new_base_path
+    )
 
     # Verify old path doesn't exist
     assert not old_path.exists()
 
     # Verify git still tracks it correctly
-    worktrees = git_ops_with_worktrees.git.list_worktrees(git_ops_with_worktrees.repo)
+    worktrees = git_ops_with_worktrees.git_worktrees.list_worktrees(git_ops_with_worktrees.repo)
     moved_wt = next(wt for wt in worktrees if wt.branch == "feature-1")
     # Git moves to new/wt1 (subdirectory)
     assert moved_wt.path in [new_base_path, new_base_path / old_path.name]
@@ -358,10 +360,12 @@ def test_remove_worktree(git_ops_with_worktrees: GitWithWorktrees) -> None:
     if not wt.exists():
         wt.mkdir(parents=True, exist_ok=True)
 
-    git_ops_with_worktrees.git.remove_worktree(git_ops_with_worktrees.repo, wt, force=False)
+    git_ops_with_worktrees.git_worktrees.remove_worktree(
+        git_ops_with_worktrees.repo, wt, force=False
+    )
 
     # Verify it's removed
-    worktrees = git_ops_with_worktrees.git.list_worktrees(git_ops_with_worktrees.repo)
+    worktrees = git_ops_with_worktrees.git_worktrees.list_worktrees(git_ops_with_worktrees.repo)
     assert len(worktrees) == 2  # Only main and feature-2 remain
     assert worktrees[0].branch == "main"
 
@@ -378,10 +382,12 @@ def test_remove_worktree_with_force(git_ops_with_worktrees: GitWithWorktrees) ->
     (wt / "dirty.txt").write_text("uncommitted\n", encoding="utf-8")
 
     # Remove with force
-    git_ops_with_worktrees.git.remove_worktree(git_ops_with_worktrees.repo, wt, force=True)
+    git_ops_with_worktrees.git_worktrees.remove_worktree(
+        git_ops_with_worktrees.repo, wt, force=True
+    )
 
     # Verify it's removed
-    worktrees = git_ops_with_worktrees.git.list_worktrees(git_ops_with_worktrees.repo)
+    worktrees = git_ops_with_worktrees.git_worktrees.list_worktrees(git_ops_with_worktrees.repo)
     assert len(worktrees) == 2  # Only main and feature-2 remain
     assert worktrees[0].branch == "main"
 

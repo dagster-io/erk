@@ -152,10 +152,10 @@ def test_dryrun_git_delete_branch_prints_message(tmp_path: Path) -> None:
         check=True,
     )
     assert "feature-branch" in result.stdout
-    from erk_shared.git.real import RealGit
+    from erk_shared.git.worktrees.real import RealGitWorktrees
 
-    real_ops = RealGit()
-    git_dir = real_ops.get_git_common_dir(repo)
+    real_worktrees = RealGitWorktrees()
+    git_dir = real_worktrees.get_git_common_dir(repo)
     if git_dir is not None:
         ctx.git.delete_branch_with_graphite(git_dir.parent, "feature-branch", force=True)
 
@@ -180,14 +180,14 @@ def test_dryrun_git_add_worktree_prints_message(tmp_path: Path) -> None:
 
     new_wt = tmp_path / "new-worktree"
     # This should print a dry-run message but not create the worktree
-    ctx.git.add_worktree(repo, new_wt, branch="new-feature", ref=None, create_branch=True)
+    ctx.git_worktrees.add_worktree(repo, new_wt, branch="new-feature", ref=None, create_branch=True)
 
     # Verify the worktree wasn't actually created
     assert not new_wt.exists()
-    from erk_shared.git.real import RealGit
+    from erk_shared.git.worktrees.real import RealGitWorktrees
 
-    real_ops = RealGit()
-    worktrees = real_ops.list_worktrees(repo)
+    real_worktrees = RealGitWorktrees()
+    worktrees = real_worktrees.list_worktrees(repo)
     assert len(worktrees) == 1  # Only main repo
     assert not any(wt.path == new_wt for wt in worktrees)
 
@@ -209,14 +209,14 @@ def test_dryrun_git_remove_worktree_prints_message(tmp_path: Path) -> None:
     ctx = create_context(dry_run=True)
 
     # Try to remove via dry-run
-    ctx.git.remove_worktree(repo, wt, force=False)
+    ctx.git_worktrees.remove_worktree(repo, wt, force=False)
 
     # Verify the worktree still exists
     assert wt.exists()
-    from erk_shared.git.real import RealGit
+    from erk_shared.git.worktrees.real import RealGitWorktrees
 
-    real_ops = RealGit()
-    worktrees = real_ops.list_worktrees(repo)
+    real_worktrees = RealGitWorktrees()
+    worktrees = real_worktrees.list_worktrees(repo)
     assert len(worktrees) == 2
     assert any(wt_info.path == wt for wt_info in worktrees)
 
