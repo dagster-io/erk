@@ -62,7 +62,7 @@ Suggestions organized by category:
 
 You are creating an extraction plan from session analysis.
 
-### Step 0: Determine Source and Context
+### Step 1: Determine Source and Context
 
 Parse the context argument (if provided) for:
 
@@ -146,7 +146,7 @@ Match session IDs against filenames (full or partial prefix match), then preproc
 dot-agent run erk preprocess-session <project-dir>/<session-id>.jsonl --stdout
 ```
 
-### Step 0.5: Verify Existing Documentation
+### Step 2: Verify Existing Documentation
 
 Before analyzing gaps, scan the project for existing documentation:
 
@@ -163,11 +163,55 @@ ls -la *.md README* CONTRIBUTING* 2>/dev/null
 
 Create a mental inventory of what's already documented. For each potential suggestion later, verify it doesn't substantially overlap with existing docs.
 
-### Step 1-4: Analyze Session
+### Step 3: Mine Full Session Context
+
+**CRITICAL**: Session analysis must examine the FULL conversation, not just recent messages.
+
+**Compaction Awareness:**
+
+Long sessions may have been "compacted" - earlier messages summarized to save context. However:
+
+- The pre-compaction messages are still part of the SAME LOGICAL CONVERSATION
+- Valuable research, discoveries, and reasoning often occurred BEFORE compaction
+- Look for compaction markers and explicitly include pre-compaction content in your analysis
+- Session logs (`.jsonl` files) contain the full uncompacted conversation
+
+**Subagent Mining:**
+
+The Task tool spawns specialized subagents (Explore, Plan, etc.) that often do the most valuable work:
+
+1. **Identify all Task tool invocations** - Look for `<invoke name="Task">` blocks
+2. **Read subagent outputs** - Each Task returns a detailed report with discoveries
+3. **Mine Explore agents** - These do codebase exploration and document what they found
+4. **Mine Plan agents** - These reason through approaches and capture design decisions
+5. **Don't just summarize** - Extract the specific insights, patterns, and learnings discovered
+
+**What to look for in subagent outputs:**
+
+- Files they read and what they learned from them
+- Patterns they discovered in the codebase
+- Design decisions they reasoned through
+- External documentation they fetched (WebFetch, WebSearch)
+- Comparisons between different approaches
+
+**Example mining:**
+
+If a Plan agent's output contains:
+
+> "The existing provider pattern in data/provider.py uses ABC with abstract methods.
+> This follows erk's fake-driven testing pattern where FakeProvider implements the same interface."
+
+This indicates:
+
+- ABC pattern documentation might need updating
+- The fake-driven-testing skill connection was discovered
+- This is Category A (learning) if not documented, or confirms existing docs if it is
+
+### Steps 4-7: Analyze Session
 
 @../../docs/erk/includes/extract-docs-analysis-shared.md
 
-### Step 5: Confirm with User
+### Step 8: Confirm with User
 
 **If analyzing current conversation (no session IDs in context):**
 
@@ -187,7 +231,7 @@ Wait for user response before generating full output.
 
 Skip confirmation and output all suggestions immediately since the user explicitly chose to analyze specific session(s).
 
-### Step 6: Format Plan Content
+### Step 9: Format Plan Content
 
 Format the selected suggestions as an implementation plan with this structure:
 
@@ -200,7 +244,7 @@ Format the selected suggestions as an implementation plan with this structure:
   - Priority (based on effort and impact)
   - Content (the actual draft content)
 
-### Step 7: Create Extraction Plan Issue
+### Step 10: Create Extraction Plan Issue
 
 **CRITICAL: Use this exact CLI command. Do NOT use `gh issue create` directly.**
 
@@ -221,7 +265,7 @@ This command automatically:
 
 **Note:** The current session ID (from `SESSION_CONTEXT` reminder) is used as `--session-id` for scratch storage. The `--extraction-session-ids` should list all session IDs that were analyzed (may differ from current session).
 
-### Step 8: Verify and Output
+### Step 11: Verify and Output
 
 Run verification to ensure the issue was created with proper Schema v2 compliance:
 
