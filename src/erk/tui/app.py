@@ -2,9 +2,10 @@
 
 import asyncio
 import time
+from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from rich.markup import escape as escape_markup
 from textual import on
@@ -12,9 +13,12 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical
 from textual.events import Click
-from textual.screen import ModalScreen
+from textual.screen import ModalScreen, Screen
 from textual.widgets import Header, Input, Label, Static
 
+from erk.tui.commands.executor import CommandExecutor
+from erk.tui.commands.provider import PlanCommandProvider
+from erk.tui.commands.real_executor import RealCommandExecutor
 from erk.tui.data.provider import PlanDataProvider
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.filtering.logic import filter_plans
@@ -194,6 +198,8 @@ class HelpScreen(ModalScreen):
 class PlanDetailScreen(ModalScreen):
     """Modal screen showing detailed plan information as an Action Hub."""
 
+    COMMANDS = {PlanCommandProvider}  # Register command provider for palette
+
     BINDINGS = [
         # Navigation
         Binding("escape", "dismiss", "Close"),
@@ -212,6 +218,12 @@ class PlanDetailScreen(ModalScreen):
         Binding("3", "copy_implement_yolo", "Yolo"),
         Binding("4", "copy_submit", "Submit"),
     ]
+
+    def get_system_commands(self, screen: Screen) -> Iterator[Any]:
+        """Override to hide default system commands (Keys, Quit, Screenshot, Theme)."""
+        # Return empty iterator - we only want our custom commands in this modal
+        return
+        yield  # Make this a generator that yields nothing
 
     DEFAULT_CSS = """
     PlanDetailScreen {
@@ -369,6 +381,7 @@ class PlanDetailScreen(ModalScreen):
         row: PlanRowData,
         clipboard: "Clipboard | None" = None,
         browser: "BrowserLauncher | None" = None,
+        executor: CommandExecutor | None = None,
     ) -> None:
         """Initialize with plan row data.
 
@@ -376,11 +389,13 @@ class PlanDetailScreen(ModalScreen):
             row: PlanRowData containing all plan information
             clipboard: Optional clipboard interface for copy operations
             browser: Optional browser launcher interface for opening URLs
+            executor: Optional command executor for palette commands
         """
         super().__init__()
         self._row = row
         self._clipboard = clipboard
         self._browser = browser
+        self._executor = executor
 
     def _get_pr_state_badge(self) -> tuple[str, str]:
         """Get PR state display text and CSS class."""
@@ -483,6 +498,82 @@ class PlanDetailScreen(ModalScreen):
         """Copy submit command to clipboard."""
         cmd = f"erk submit {self._row.issue_number}"
         self._copy_and_notify(cmd)
+
+    def execute_command(self, command_id: str) -> None:
+        """Execute a command from the palette.
+
+        Args:
+            command_id: The ID of the command to execute
+        """
+        if self._executor is None:
+            return
+
+        row = self._row
+        executor = self._executor
+
+        if command_id == "open_browser":
+            url = row.pr_url or row.issue_url
+            if url:
+                executor.open_url(url)
+                executor.notify(f"Opened {url}")
+
+        elif command_id == "open_issue":
+            if row.issue_url:
+                executor.open_url(row.issue_url)
+                executor.notify(f"Opened issue #{row.issue_number}")
+
+        elif command_id == "open_pr":
+            if row.pr_url:
+                executor.open_url(row.pr_url)
+                executor.notify(f"Opened PR #{row.pr_number}")
+
+        elif command_id == "open_run":
+            if row.run_url:
+                executor.open_url(row.run_url)
+                executor.notify(f"Opened run {row.run_id_display}")
+
+        elif command_id == "copy_checkout":
+            cmd = f"erk co {row.worktree_name}"
+            executor.copy_to_clipboard(cmd)
+            executor.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_pr_checkout":
+            cmd = f"erk pr co {row.pr_number}"
+            executor.copy_to_clipboard(cmd)
+            executor.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_implement":
+            cmd = f"erk implement {row.issue_number}"
+            executor.copy_to_clipboard(cmd)
+            executor.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_implement_dangerous":
+            cmd = f"erk implement {row.issue_number} --dangerous"
+            executor.copy_to_clipboard(cmd)
+            executor.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_implement_yolo":
+            cmd = f"erk implement {row.issue_number} --yolo"
+            executor.copy_to_clipboard(cmd)
+            executor.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_submit":
+            cmd = f"erk submit {row.issue_number}"
+            executor.copy_to_clipboard(cmd)
+            executor.notify(f"Copied: {cmd}")
+
+        elif command_id == "close_plan":
+            if row.issue_url:
+                closed_prs = executor.close_plan(row.issue_number, row.issue_url)
+                if closed_prs:
+                    pr_list = ", ".join(f"#{pr}" for pr in closed_prs)
+                    executor.notify(f"Closed plan #{row.issue_number} and PRs: {pr_list}")
+                else:
+                    executor.notify(f"Closed plan #{row.issue_number}")
+                executor.refresh_data()
+                # Close modal after closing plan (only when running in app context)
+                if self.is_attached:
+                    self.dismiss()
 
     def compose(self) -> ComposeResult:
         """Create detail dialog content as an Action Hub."""
@@ -597,7 +688,7 @@ class PlanDetailScreen(ModalScreen):
                         else:
                             yield Label(log_text, classes="log-entry", markup=False)
 
-            yield Label("Close", id="detail-footer")
+            yield Label("Ctrl+P: commands  Esc: close", id="detail-footer")
 
 
 class ErkDashApp(App):
@@ -618,7 +709,8 @@ class ErkDashApp(App):
         Binding("enter", "open_row", "Open"),
         Binding("o", "open_row", "Open", show=False),
         Binding("p", "open_pr", "Open PR"),
-        Binding("c", "close_plan", "Close"),
+        # NOTE: 'c' binding removed - close_plan now accessible via command palette
+        # in the plan detail modal (Space → Ctrl+P → "Close Plan")
         Binding("i", "show_implement", "Implement"),
         Binding("space", "show_detail", "Detail"),
         Binding("slash", "start_filter", "Filter", key_display="/"),
@@ -771,9 +863,22 @@ class ErkDashApp(App):
         row = self._get_selected_row()
         if row is None:
             return
+
+        # Create executor with injected dependencies
+        executor = RealCommandExecutor(
+            browser_launch=self._provider.browser.launch,
+            clipboard_copy=self._provider.clipboard.copy,
+            close_plan_fn=self._provider.close_plan,
+            notify_fn=self.notify,
+            refresh_fn=self.action_refresh,
+        )
+
         self.push_screen(
             PlanDetailScreen(
-                row, clipboard=self._provider.clipboard, browser=self._provider.browser
+                row,
+                clipboard=self._provider.clipboard,
+                browser=self._provider.browser,
+                executor=executor,
             )
         )
 
