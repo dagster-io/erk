@@ -44,7 +44,9 @@ from erk.core.repo_discovery import RepoContext
     help="Create extraction plan from session logs before landing (default: enabled)",
 )
 @click.pass_obj
-def pr_land(ctx: ErkContext, pr_reference: str | None, script: bool, up: bool, extract: bool) -> None:
+def pr_land(
+    ctx: ErkContext, pr_reference: str | None, script: bool, up: bool, extract: bool
+) -> None:
     """Merge PR, switch to trunk (or upstack with --up), and delete branch/worktree.
 
     Usage:

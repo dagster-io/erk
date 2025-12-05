@@ -1227,6 +1227,8 @@ def test_pr_land_preserves_worktree_when_extraction_fails(mock_which: MagicMock)
         # Verify PR was merged but worktree was NOT deleted
         assert 123 in github_ops.merged_prs
         assert "feature-1" not in git_ops.deleted_branches  # Worktree preserved!
+
+
 # Tests for landing by PR number (new functionality)
 # =============================================================================
 
