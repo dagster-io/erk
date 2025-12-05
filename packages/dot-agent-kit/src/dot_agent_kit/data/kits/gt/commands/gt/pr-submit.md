@@ -129,6 +129,13 @@ Display:
 - Graphite URL: `{graphite_url}`
 - Success message
 
+Then suggest:
+
+```
+Create insight extraction plan to improve docs/agent (optional):
+    /erk:create-extraction-plan
+```
+
 ## Error Handling
 
 ### Preflight Errors - CRITICAL

@@ -76,7 +76,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
         trunk_branches={repo_root: "master"},
     )
     fake_github = FakeGitHub()
-    
+
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
         root=repo_root,
@@ -797,7 +797,7 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
         trunk_branches={repo_root: "master"},
     )
     fake_github = FakeGitHub()
-    
+
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
         root=repo_root,
@@ -870,7 +870,7 @@ def test_submit_multiple_issues_atomic_validation_failure(tmp_path: Path) -> Non
         trunk_branches={repo_root: "master"},
     )
     fake_github = FakeGitHub()
-    
+
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
         root=repo_root,
@@ -936,7 +936,7 @@ def test_submit_single_issue_still_works(tmp_path: Path) -> None:
         trunk_branches={repo_root: "master"},
     )
     fake_github = FakeGitHub()
-    
+
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
         root=repo_root,
@@ -1006,7 +1006,7 @@ def test_submit_updates_dispatch_info_in_issue(tmp_path: Path) -> None:
         trunk_branches={repo_root: "master"},
     )
     fake_github = FakeGitHub()
-    
+
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
         root=repo_root,
@@ -1081,7 +1081,7 @@ def test_submit_warns_when_node_id_not_available(tmp_path: Path) -> None:
             return None
 
     fake_github = FakeGitHubNoNodeId()
-    
+
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
         root=repo_root,
@@ -1150,7 +1150,7 @@ def test_submit_with_custom_base_branch(tmp_path: Path) -> None:
         remote_branches={repo_root: ["origin/feature/parent-branch"]},
     )
     fake_github = FakeGitHub()
-    
+
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
     repo = RepoContext(
         root=repo_root,

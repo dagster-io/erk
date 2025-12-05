@@ -108,10 +108,7 @@ def test_create_from_issue_with_valid_issue() -> None:
             }
         )
 
-        
-        test_ctx = env.build_context(
-            git=git_ops, issues=fake_issues
-        )
+        test_ctx = env.build_context(git=git_ops, issues=fake_issues)
 
         # Act: Run create --from-issue 123
         result = runner.invoke(
@@ -240,9 +237,7 @@ def test_create_from_issue_url_parsing() -> None:
             }
         )
 
-        test_ctx = env.build_context(
-            git=git_ops, issues=fake_issues
-        )
+        test_ctx = env.build_context(git=git_ops, issues=fake_issues)
 
         # Act: Run with full GitHub URL
         result = runner.invoke(
@@ -294,10 +289,7 @@ def test_create_from_issue_name_derivation() -> None:
             }
         )
 
-        
-        test_ctx = env.build_context(
-            git=git_ops, issues=fake_issues
-        )
+        test_ctx = env.build_context(git=git_ops, issues=fake_issues)
 
         # Act
         result = runner.invoke(
@@ -385,9 +377,7 @@ def test_create_from_issue_readonly_operation() -> None:
             }
         )
 
-        test_ctx = env.build_context(
-            git=git_ops, issues=fake_issues
-        )
+        test_ctx = env.build_context(git=git_ops, issues=fake_issues)
 
         # Act
         result = runner.invoke(
@@ -448,7 +438,6 @@ def test_create_from_issue_tracks_branch_with_graphite() -> None:
             }
         )
 
-        
         # Create FakeGraphite to track calls
         from erk_shared.integrations.graphite.fake import FakeGraphite
 
@@ -532,7 +521,6 @@ def test_create_from_issue_no_graphite_tracking_when_disabled() -> None:
             }
         )
 
-        
         # Create FakeGraphite to track calls
         from erk_shared.integrations.graphite.fake import FakeGraphite
 

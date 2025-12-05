@@ -702,6 +702,9 @@ def create_wt(
         ctx.git.create_branch(repo.root, branch_name, trunk_branch)
         user_output(f"Created branch: {branch_name}")
 
+        # Track the linked branch for worktree creation
+        linked_branch_name = branch_name
+
         # Use the branch name for the worktree name
         name = sanitize_worktree_name(branch_name)
 

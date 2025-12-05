@@ -1020,9 +1020,7 @@ def test_interactive_mode_calls_executor() -> None:
         )
         store = FakePlanStore(plans={"42": plan_issue})
         executor = FakeClaudeExecutor(claude_available=True)
-        ctx = build_workspace_test_context(
-            env, git=git, plan_store=store, claude_executor=executor
-        )
+        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
 
         # Interactive mode is the default (no --no-interactive flag)
         result = runner.invoke(implement, ["#42"], obj=ctx)
