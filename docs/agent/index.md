@@ -6,6 +6,7 @@
 - **[cli/](cli/)** — command-organization, list-formatting, output-styling, script-mode, template-variables
 - **[commands/](commands/)** — behavioral-triggers, optimization-patterns
 - **[erk/](erk/)** — branch-cleanup, graphite-branch-setup
+- **[github/](github/)** — issue-limits
 - **[hooks/](hooks/)** — erk, hooks
 - **[kits/](kits/)** — cli-commands, code-architecture, dependency-injection, push-down-pattern, registry-discovery
 - **[planning/](planning/)** — agent-delegation, enrichment, lifecycle, plan-schema, scratch-storage, workflow
