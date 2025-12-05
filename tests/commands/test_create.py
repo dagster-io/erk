@@ -9,7 +9,6 @@ from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
 
 from erk.cli.cli import cli
-from tests.fakes.issue_link_branches import FakeIssueLinkBranches
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
 
@@ -109,11 +108,7 @@ def test_create_from_issue_with_valid_issue() -> None:
             }
         )
 
-        fake_issue_dev = FakeIssueLinkBranches()
-
-        test_ctx = env.build_context(
-            git=git_ops, issues=fake_issues, issue_link_branches=fake_issue_dev
-        )
+        test_ctx = env.build_context(git=git_ops, issues=fake_issues)
 
         # Act: Run create --from-issue 123
         result = runner.invoke(
@@ -242,12 +237,7 @@ def test_create_from_issue_url_parsing() -> None:
             }
         )
 
-        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
-        fake_issue_dev = FakeIssueLinkBranches()
-
-        test_ctx = env.build_context(
-            git=git_ops, issues=fake_issues, issue_link_branches=fake_issue_dev
-        )
+        test_ctx = env.build_context(git=git_ops, issues=fake_issues)
 
         # Act: Run with full GitHub URL
         result = runner.invoke(
@@ -299,11 +289,7 @@ def test_create_from_issue_name_derivation() -> None:
             }
         )
 
-        fake_issue_dev = FakeIssueLinkBranches()
-
-        test_ctx = env.build_context(
-            git=git_ops, issues=fake_issues, issue_link_branches=fake_issue_dev
-        )
+        test_ctx = env.build_context(git=git_ops, issues=fake_issues)
 
         # Act
         result = runner.invoke(
@@ -391,12 +377,7 @@ def test_create_from_issue_readonly_operation() -> None:
             }
         )
 
-        # FakeIssueLinkBranches creates branches named "{issue_number}-issue-branch"
-        fake_issue_dev = FakeIssueLinkBranches()
-
-        test_ctx = env.build_context(
-            git=git_ops, issues=fake_issues, issue_link_branches=fake_issue_dev
-        )
+        test_ctx = env.build_context(git=git_ops, issues=fake_issues)
 
         # Act
         result = runner.invoke(
@@ -457,8 +438,6 @@ def test_create_from_issue_tracks_branch_with_graphite() -> None:
             }
         )
 
-        fake_issue_dev = FakeIssueLinkBranches()
-
         # Create FakeGraphite to track calls
         from erk_shared.integrations.graphite.fake import FakeGraphite
 
@@ -468,7 +447,6 @@ def test_create_from_issue_tracks_branch_with_graphite() -> None:
         test_ctx = env.build_context(
             git=git_ops,
             issues=fake_issues,
-            issue_link_branches=fake_issue_dev,
             graphite=fake_graphite,
             use_graphite=True,
         )
@@ -543,8 +521,6 @@ def test_create_from_issue_no_graphite_tracking_when_disabled() -> None:
             }
         )
 
-        fake_issue_dev = FakeIssueLinkBranches()
-
         # Create FakeGraphite to track calls
         from erk_shared.integrations.graphite.fake import FakeGraphite
 
@@ -554,7 +530,6 @@ def test_create_from_issue_no_graphite_tracking_when_disabled() -> None:
         test_ctx = env.build_context(
             git=git_ops,
             issues=fake_issues,
-            issue_link_branches=fake_issue_dev,
             graphite=fake_graphite,
             use_graphite=False,  # Explicitly disabled
         )

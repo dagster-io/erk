@@ -697,9 +697,14 @@ Replaced custom `derive_branch_name_with_date()` with GitHub's native `gh issue 
 - `packages/dot-agent-kit/.../get_pr_metadata.py`
 - `src/erk/cli/constants.py` - `USE_GITHUB_NATIVE_BRANCH_LINKING` flag
 
-### New Abstractions Added
+### New Abstractions Added (Subsequently Removed)
 
-- `IssueDevelopment` ABC in `erk_shared/github/issue_link_branches.py`
-- Real/Fake/DryRun implementations following existing patterns
-- Kit CLI commands: `get-linked-branch`, `get-pr-for-branch`
-- Documentation: `docs/agent/github-branch-linking.md`
+> **Note**: The `gh issue develop` integration was subsequently removed in December 2025 (#2233).
+> The GitHub CLI's native branch linking only provided a cosmetic UI feature (Development indicator),
+> while issue closing actually works via commit message keywords ("Closes #N"). Branches are now
+> created directly via git, eliminating the `gh` CLI dependency for branch operations.
+
+- ~~`IssueDevelopment` ABC in `erk_shared/github/issue_link_branches.py`~~ (removed)
+- ~~Real/Fake/DryRun implementations following existing patterns~~ (removed)
+- ~~Kit CLI commands: `get-linked-branch`, `get-pr-for-branch`~~ (removed)
+- ~~Documentation: `docs/agent/github-branch-linking.md`~~ (removed)

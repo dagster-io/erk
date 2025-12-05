@@ -10,9 +10,6 @@ from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.real import RealGit
 from erk_shared.github.abc import GitHub
 from erk_shared.github.dry_run import DryRunGitHub
-from erk_shared.github.issue_link_branches import IssueLinkBranches
-from erk_shared.github.issue_link_branches_dry_run import DryRunIssueLinkBranches
-from erk_shared.github.issue_link_branches_real import RealIssueLinkBranches
 from erk_shared.github.issues import DryRunGitHubIssues, GitHubIssues, RealGitHubIssues
 from erk_shared.github.real import RealGitHub
 from erk_shared.integrations.graphite.abc import Graphite
@@ -61,7 +58,6 @@ class ErkContext:
     git: Git
     github: GitHub
     issues: GitHubIssues
-    issue_link_branches: IssueLinkBranches
     plan_store: PlanStore
     graphite: Graphite
     shell: Shell
@@ -140,7 +136,6 @@ class ErkContext:
         from erk_shared.plan_store.fake import FakePlanStore
         from tests.fakes.claude_executor import FakeClaudeExecutor
         from tests.fakes.completion import FakeCompletion
-        from tests.fakes.issue_link_branches import FakeIssueLinkBranches
         from tests.fakes.script_writer import FakeScriptWriter
         from tests.fakes.shell import FakeShell
         from tests.fakes.user_feedback import FakeUserFeedback
@@ -150,12 +145,10 @@ class ErkContext:
 
         fake_github = FakeGitHub()
         fake_issues = FakeGitHubIssues()
-        fake_issue_link_branches = FakeIssueLinkBranches()
         return ErkContext(
             git=git,
             github=fake_github,
             issues=fake_issues,
-            issue_link_branches=fake_issue_link_branches,
             plan_store=FakePlanStore(),
             graphite=FakeGraphite(),
             shell=FakeShell(),
@@ -180,7 +173,6 @@ class ErkContext:
         git: Git | None = None,
         github: GitHub | None = None,
         issues: GitHubIssues | None = None,
-        issue_link_branches: IssueLinkBranches | None = None,
         plan_store: PlanStore | None = None,
         graphite: Graphite | None = None,
         shell: Shell | None = None,
@@ -257,7 +249,6 @@ class ErkContext:
         from erk_shared.plan_store.fake import FakePlanStore
         from tests.fakes.claude_executor import FakeClaudeExecutor
         from tests.fakes.completion import FakeCompletion
-        from tests.fakes.issue_link_branches import FakeIssueLinkBranches
         from tests.fakes.script_writer import FakeScriptWriter
         from tests.fakes.shell import FakeShell
         from tests.fakes.user_feedback import FakeUserFeedback
@@ -274,9 +265,6 @@ class ErkContext:
 
         if issues is None:
             issues = FakeGitHubIssues()
-
-        if issue_link_branches is None:
-            issue_link_branches = FakeIssueLinkBranches()
 
         if plan_store is None:
             plan_store = FakePlanStore()
@@ -332,13 +320,11 @@ class ErkContext:
             graphite = DryRunGraphite(graphite)
             github = DryRunGitHub(github)
             issues = DryRunGitHubIssues(issues)
-            issue_link_branches = DryRunIssueLinkBranches(issue_link_branches)
 
         return ErkContext(
             git=git,
             github=github,
             issues=issues,
-            issue_link_branches=issue_link_branches,
             plan_store=plan_store,
             graphite=graphite,
             shell=shell,
@@ -476,7 +462,6 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
     graphite: Graphite = RealGraphite()
     github: GitHub = RealGitHub(time)
     issues: GitHubIssues = RealGitHubIssues()
-    issue_link_branches: IssueLinkBranches = RealIssueLinkBranches()
     plan_store: PlanStore = GitHubPlanStore(issues)
     plan_list_service: PlanListService = PlanListService(github, issues)
 
@@ -510,14 +495,12 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
         graphite = DryRunGraphite(graphite)
         github = DryRunGitHub(github)
         issues = DryRunGitHubIssues(issues)
-        issue_link_branches = DryRunIssueLinkBranches(issue_link_branches)
 
     # 10. Create context with all values
     return ErkContext(
         git=git,
         github=github,
         issues=issues,
-        issue_link_branches=issue_link_branches,
         plan_store=plan_store,
         graphite=graphite,
         shell=RealShell(),

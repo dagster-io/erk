@@ -107,36 +107,6 @@ def _build_pr_url(issue_url: str, pr_number: int) -> str:
     return f"https://github.com/pull/{pr_number}"
 
 
-def _ensure_unique_branch_name(
-    ctx: ErkContext,
-    repo_root: Path,
-    base_name: str,
-) -> str:
-    """Ensure branch name is unique by adding numeric suffix if needed.
-
-    If the base_name already exists on the remote, appends -1, -2, etc.
-    until a unique name is found. This prevents `gh issue develop` from
-    failing when a branch with the same name already exists.
-
-    Args:
-        ctx: ErkContext with git operations
-        repo_root: Repository root path
-        base_name: Initial branch name to check
-
-    Returns:
-        Unique branch name (original if available, or with -1, -2, etc. suffix)
-    """
-    if not ctx.git.branch_exists_on_remote(repo_root, "origin", base_name):
-        return base_name
-
-    for i in range(1, 100):
-        candidate = f"{base_name}-{i}"
-        if not ctx.git.branch_exists_on_remote(repo_root, "origin", candidate):
-            return candidate
-
-    raise RuntimeError(f"Could not find unique branch name after 100 attempts: {base_name}")
-
-
 def _close_orphaned_draft_prs(
     ctx: ErkContext,
     repo_root: Path,
@@ -213,40 +183,9 @@ def _validate_issue_for_submit(
     logger.debug("base_branch_name=%s", base_branch_name)
     timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
     logger.debug("timestamp_suffix=%s", timestamp_suffix)
-    desired_branch_name = base_branch_name + timestamp_suffix
-    logger.debug("desired_branch_name (before unique check)=%s", desired_branch_name)
-
-    # Ensure unique name to prevent gh issue develop failure
-    desired_branch_name = _ensure_unique_branch_name(ctx, repo.root, desired_branch_name)
-    logger.debug("desired_branch_name (after unique check)=%s", desired_branch_name)
-
-    # Use GitHub's native branch linking via `gh issue develop`
-    logger.debug(
-        "Calling create_development_branch: repo_root=%s, issue_number=%d, "
-        "branch_name=%s, base_branch=%s",
-        repo.root,
-        issue_number,
-        desired_branch_name,
-        base_branch,
-    )
-    dev_branch = ctx.issue_link_branches.create_development_branch(
-        repo.root,
-        issue_number,
-        branch_name=desired_branch_name,
-        base_branch=base_branch,
-    )
-    logger.debug(
-        "create_development_branch returned: branch_name=%s, already_existed=%s",
-        dev_branch.branch_name,
-        dev_branch.already_existed,
-    )
-
-    branch_name = dev_branch.branch_name
-
-    if dev_branch.already_existed:
-        user_output(f"Using existing linked branch: {click.style(branch_name, fg='cyan')}")
-    else:
-        user_output(f"Created linked branch: {click.style(branch_name, fg='cyan')}")
+    branch_name = base_branch_name + timestamp_suffix
+    logger.debug("branch_name=%s", branch_name)
+    user_output(f"Computed branch: {click.style(branch_name, fg='cyan')}")
 
     # Check if branch already exists on remote and has a PR
     branch_exists = ctx.git.branch_exists_on_remote(repo.root, "origin", branch_name)
@@ -375,6 +314,7 @@ def _submit_single_issue(
 
         # Create and checkout new branch from base
         ctx.git.create_branch(repo.root, branch_name, f"origin/{base_branch}")
+        user_output(f"Created branch: {click.style(branch_name, fg='cyan')}")
         ctx.git.checkout_branch(repo.root, branch_name)
 
         # Get plan content and create .worker-impl/ folder

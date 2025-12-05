@@ -19,6 +19,7 @@ from erk_shared.impl_folder import (
     read_issue_reference,
     read_last_dispatched_run_id,
     read_plan_author,
+    resolve_issue_number,
     save_issue_reference,
     update_progress,
     update_progress_frontmatter,
@@ -1025,3 +1026,48 @@ worktree_name: test-worktree
     run_id = read_last_dispatched_run_id(impl_dir)
 
     assert run_id is None
+
+
+# ============================================================================
+# Issue Number Resolution Tests
+# ============================================================================
+
+
+def test_resolve_issue_number_from_impl_folder(tmp_path: Path) -> None:
+    """Test issue resolution prefers .impl/issue.json."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    save_issue_reference(impl_dir, 123, "https://github.com/owner/repo/issues/123")
+
+    # Should use .impl/issue.json even if branch has issue number
+    assert resolve_issue_number(impl_dir, "456-feature-branch") == 123
+
+
+def test_resolve_issue_number_from_branch_name(tmp_path: Path) -> None:
+    """Test fallback to branch name when no .impl/issue.json."""
+    impl_dir = tmp_path / ".impl"  # doesn't exist
+
+    assert resolve_issue_number(impl_dir, "789-feature-12-01-1234") == 789
+    assert resolve_issue_number(impl_dir, "feature-branch") is None
+    assert resolve_issue_number(impl_dir, None) is None
+
+
+def test_resolve_issue_number_no_sources(tmp_path: Path) -> None:
+    """Test returns None when no sources available."""
+    impl_dir = tmp_path / ".impl"  # doesn't exist
+
+    # No impl_dir, no branch name
+    assert resolve_issue_number(impl_dir, None) is None
+
+    # impl_dir exists but no issue.json, no branch name
+    impl_dir.mkdir()
+    assert resolve_issue_number(impl_dir, None) is None
+
+
+def test_resolve_issue_number_branch_without_number(tmp_path: Path) -> None:
+    """Test returns None when branch name doesn't have issue number."""
+    impl_dir = tmp_path / ".impl"  # doesn't exist
+
+    assert resolve_issue_number(impl_dir, "master") is None
+    assert resolve_issue_number(impl_dir, "main") is None
+    assert resolve_issue_number(impl_dir, "feature-branch") is None

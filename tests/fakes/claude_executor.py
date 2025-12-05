@@ -7,7 +7,7 @@ requiring the actual Claude CLI or using subprocess mocks.
 from collections.abc import Iterator
 from pathlib import Path
 
-from erk.core.claude_executor import ClaudeExecutor, CommandResult, StreamEvent
+from erk.core.claude_executor import ClaudeExecutor, CommandResult, PromptResult, StreamEvent
 
 
 class FakeClaudeExecutor(ClaudeExecutor):
@@ -58,6 +58,8 @@ class FakeClaudeExecutor(ClaudeExecutor):
         simulated_no_output: bool = False,
         simulated_zero_turns: bool = False,
         simulated_process_error: str | None = None,
+        simulated_prompt_output: str | None = None,
+        simulated_prompt_error: str | None = None,
     ) -> None:
         """Initialize fake with predetermined behavior.
 
@@ -73,6 +75,10 @@ class FakeClaudeExecutor(ClaudeExecutor):
             simulated_zero_turns: Whether to simulate Claude completing with num_turns=0
                 (hook blocking scenario)
             simulated_process_error: Error message to simulate process startup failure
+            simulated_prompt_output: Output to return from execute_prompt() on success.
+                If None, defaults to "Test Title\n\nTest body"
+            simulated_prompt_error: Error message to return from execute_prompt() on failure.
+                If set, execute_prompt() will return a failure result.
         """
         self._claude_available = claude_available
         self._command_should_fail = command_should_fail
@@ -84,8 +90,11 @@ class FakeClaudeExecutor(ClaudeExecutor):
         self._simulated_no_output = simulated_no_output
         self._simulated_zero_turns = simulated_zero_turns
         self._simulated_process_error = simulated_process_error
+        self._simulated_prompt_output = simulated_prompt_output
+        self._simulated_prompt_error = simulated_prompt_error
         self._executed_commands: list[tuple[str, Path, bool, bool]] = []
         self._interactive_calls: list[tuple[Path, bool]] = []
+        self._prompt_calls: list[str] = []
 
     def is_claude_available(self) -> bool:
         """Return the availability configured at construction time."""
@@ -244,3 +253,55 @@ class FakeClaudeExecutor(ClaudeExecutor):
         This property is for test assertions only.
         """
         return self._interactive_calls.copy()
+
+    def execute_prompt(
+        self,
+        prompt: str,
+        *,
+        model: str = "haiku",
+        tools: list[str] | None = None,
+        cwd: Path | None = None,
+    ) -> PromptResult:
+        """Track prompt execution and return simulated result.
+
+        This method records the prompt for test assertions.
+        It does not execute any actual subprocess operations.
+
+        Args:
+            prompt: The prompt text to send
+            model: Model to use (ignored in fake)
+            tools: Optional list of allowed tools (ignored in fake)
+            cwd: Optional working directory (ignored in fake)
+
+        Returns:
+            PromptResult with simulated output or error
+        """
+        self._prompt_calls.append(prompt)
+
+        if self._simulated_prompt_error is not None:
+            return PromptResult(
+                success=False,
+                output="",
+                error=self._simulated_prompt_error,
+            )
+
+        # Default output if none specified
+        output = self._simulated_prompt_output
+        if output is None:
+            output = "Test Title\n\nTest body"
+
+        return PromptResult(
+            success=True,
+            output=output,
+            error=None,
+        )
+
+    @property
+    def prompt_calls(self) -> list[str]:
+        """Get the list of execute_prompt() calls that were made.
+
+        Returns list of prompt strings.
+
+        This property is for test assertions only.
+        """
+        return self._prompt_calls.copy()

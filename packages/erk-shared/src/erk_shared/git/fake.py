@@ -170,6 +170,7 @@ class FakeGit(Git):
         self._staged_files: list[str] = []
         self._commits: list[tuple[Path, str, list[str]]] = []
         self._pushed_branches: list[tuple[str, str, bool]] = []
+        self._created_branches: list[tuple[Path, str, str]] = []  # (cwd, branch_name, start_point)
 
     def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
         """List all worktrees in the repository.
@@ -378,9 +379,11 @@ class FakeGit(Git):
         self._detached_checkouts.append((cwd, ref))
 
     def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None:
-        """Create a new branch without checking it out (no-op for fake)."""
-        # Fake doesn't need to track created branches unless tests verify it
-        pass
+        """Create a new branch without checking it out.
+
+        Tracks the branch creation for test assertions via created_branches property.
+        """
+        self._created_branches.append((cwd, branch_name, start_point))
 
     def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
         """Delete a local branch (mutates internal state for test assertions).
@@ -487,6 +490,15 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return self._deleted_branches.copy()
+
+    @property
+    def created_branches(self) -> list[tuple[Path, str, str]]:
+        """Get list of branches created during test.
+
+        Returns list of (cwd, branch_name, start_point) tuples.
+        This property is for test assertions only.
+        """
+        return self._created_branches.copy()
 
     @property
     def added_worktrees(self) -> list[tuple[Path, str | None]]:

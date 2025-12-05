@@ -235,10 +235,11 @@ class GitHub(ABC):
         location: GitHubRepoLocation,
         issue_numbers: list[int],
     ) -> dict[int, list[PullRequestInfo]]:
-        """Get PRs linked to issues via GitHub's native branch linking.
+        """Get PRs linked to issues via GitHub's development references.
 
-        Queries GitHub for PRs associated with branches created via
-        `gh issue develop`. Returns a mapping of issue numbers to PRs.
+        Queries GitHub for PRs that reference issues in their description
+        or via GitHub's "Closes #N" linking. Returns a mapping of issue
+        numbers to PRs.
 
         Args:
             location: GitHub repository location (local path + owner/repo identity)

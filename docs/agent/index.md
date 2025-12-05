@@ -9,7 +9,7 @@
 - **[hooks/](hooks/)** — erk, hooks
 - **[kits/](kits/)** — cli-commands, code-architecture, dependency-injection, push-down-pattern, registry-discovery
 - **[planning/](planning/)** — agent-delegation, enrichment, lifecycle, plan-schema, scratch-storage, workflow
-- **[reference/](reference/)** — claude-cli-stream-json, github-branch-linking
+- **[reference/](reference/)** — claude-cli-stream-json
 - **[sessions/](sessions/)** — context-analysis, layout, parallel-session-awareness, tools
 - **[testing/](testing/)** — import-conflict-resolution, kit-cli-testing, rebase-conflicts, session-log-fixtures, testing
 - **[tui/](tui/)** — command-palette, textual-quirks
