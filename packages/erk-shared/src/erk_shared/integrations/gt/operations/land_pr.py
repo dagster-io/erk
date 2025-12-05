@@ -138,38 +138,19 @@ def execute_land_pr(
 
     yield ProgressEvent(f"PR #{pr_number} merged successfully", style="success")
 
-    # Step 7: Navigate to child if exactly one exists
-    child_branch = None
-    if len(children) == 1:
-        # Use git checkout to switch to the child branch
-        yield ProgressEvent(f"Navigating to child branch: {children[0]}...")
-        try:
-            ops.git.checkout_branch(cwd, children[0])
-            child_branch = children[0]
-            yield ProgressEvent(f"Switched to {child_branch}", style="success")
-        except Exception:
-            yield ProgressEvent(f"Failed to switch to {children[0]}", style="warning")
-
-    # Build success message with navigation info
+    # Build success message with child info (navigation handled by CLI layer)
     if len(children) == 0:
         message = f"Successfully merged PR #{pr_number} for branch {branch_name}"
     elif len(children) == 1:
-        if child_branch:
-            message = (
-                f"Successfully merged PR #{pr_number} for branch {branch_name}\n"
-                f"Navigated to child branch: {child_branch}"
-            )
-        else:
-            message = (
-                f"Successfully merged PR #{pr_number} for branch {branch_name}\n"
-                f"Failed to navigate to child: {children[0]}"
-            )
+        message = (
+            f"Successfully merged PR #{pr_number} for branch {branch_name}\n"
+            f"Child branch: {children[0]}"
+        )
     else:
         children_list = ", ".join(children)
         message = (
             f"Successfully merged PR #{pr_number} for branch {branch_name}\n"
-            f"Multiple children detected: {children_list}\n"
-            f"Run 'gt up' to navigate to a child branch"
+            f"Multiple children: {children_list}"
         )
 
     yield CompletionEvent(
