@@ -69,8 +69,6 @@ def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
     - Claude CLI installed (for extraction plan; warns if missing)
     """
     # Validate prerequisites
-    if extract:
-        Ensure.claude_installed()
     Ensure.gh_authenticated(ctx)
     ensure_graphite_enabled(ctx)
     check_clean_working_tree(ctx)
