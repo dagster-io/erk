@@ -1116,7 +1116,7 @@ def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
 **Example test:**
 
 ```python
-from tests.fakes.gitops import FakeGitOps
+from erk_shared.git.fake import FakeGit
 from erk.core.context import ErkContext
 
 def test_list_worktrees():
