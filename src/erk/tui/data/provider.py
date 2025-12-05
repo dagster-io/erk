@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from datetime import datetime
+from pathlib import Path
 
 from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.github.issues import IssueInfo
@@ -34,6 +35,16 @@ class PlanDataProvider(ABC):
 
     Defines the interface for fetching plan data for TUI display.
     """
+
+    @property
+    @abstractmethod
+    def repo_root(self) -> Path:
+        """Get the repository root path.
+
+        Returns:
+            Path to the repository root directory
+        """
+        ...
 
     @property
     @abstractmethod
@@ -106,6 +117,11 @@ class RealPlanDataProvider(PlanDataProvider):
         self._location = location
         self._clipboard = clipboard
         self._browser = browser
+
+    @property
+    def repo_root(self) -> Path:
+        """Get the repository root path."""
+        return self._location.root
 
     @property
     def clipboard(self) -> Clipboard:

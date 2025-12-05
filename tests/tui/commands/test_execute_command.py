@@ -182,6 +182,59 @@ class TestExecuteCommandClosePlan:
         assert executor.refresh_count == 0
 
 
+class TestExecuteCommandSubmitToQueue:
+    """Tests for submit_to_queue command.
+
+    Note: submit_to_queue now uses streaming output via subprocess when repo_root
+    is provided. These tests verify the guard conditions but actual streaming
+    behavior is tested via integration tests.
+    """
+
+    def test_submit_to_queue_does_nothing_without_repo_root(self) -> None:
+        """submit_to_queue does nothing if repo_root is not provided."""
+        row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
+        executor = FakeCommandExecutor()
+        # repo_root not provided - streaming command should not execute
+        screen = PlanDetailScreen(row, executor=executor)
+        screen.execute_command("submit_to_queue")
+        # No executor methods should be called (streaming is independent)
+        assert executor.refresh_count == 0
+
+    def test_submit_to_queue_does_nothing_without_issue_url(self) -> None:
+        """submit_to_queue does nothing if no issue URL."""
+        row = PlanRowData(
+            issue_number=123,
+            issue_url=None,  # Explicitly None
+            title="Test",
+            pr_number=None,
+            pr_url=None,
+            pr_display="-",
+            checks_display="-",
+            worktree_name="",
+            exists_locally=False,
+            local_impl_display="-",
+            remote_impl_display="-",
+            run_id_display="-",
+            run_state_display="-",
+            run_url=None,
+            full_title="Test",
+            pr_title=None,
+            pr_state=None,
+            worktree_branch=None,
+            last_local_impl_at=None,
+            last_remote_impl_at=None,
+            run_id=None,
+            run_status=None,
+            run_conclusion=None,
+            log_entries=(),
+        )
+        executor = FakeCommandExecutor()
+        screen = PlanDetailScreen(row, executor=executor)
+        screen.execute_command("submit_to_queue")
+        assert executor.refresh_count == 0
+
+
+
 class TestExecuteCommandNoExecutor:
     """Tests for behavior when no executor is provided."""
 

@@ -1,5 +1,7 @@
 """Fake plan data provider for testing TUI components."""
 
+from pathlib import Path
+
 from erk_shared.integrations.browser.abc import BrowserLauncher
 from erk_shared.integrations.browser.fake import FakeBrowserLauncher
 from erk_shared.integrations.clipboard.abc import Clipboard
@@ -20,6 +22,7 @@ class FakePlanDataProvider(PlanDataProvider):
         plans: list[PlanRowData] | None = None,
         clipboard: Clipboard | None = None,
         browser: BrowserLauncher | None = None,
+        repo_root: Path | None = None,
     ) -> None:
         """Initialize with optional canned plan data.
 
@@ -27,11 +30,18 @@ class FakePlanDataProvider(PlanDataProvider):
             plans: List of PlanRowData to return, or None for empty list
             clipboard: Clipboard interface, defaults to FakeClipboard()
             browser: BrowserLauncher interface, defaults to FakeBrowserLauncher()
+            repo_root: Repository root path, defaults to Path("/fake/repo")
         """
         self._plans = plans or []
         self._fetch_count = 0
         self._clipboard = clipboard if clipboard is not None else FakeClipboard()
         self._browser = browser if browser is not None else FakeBrowserLauncher()
+        self._repo_root = repo_root if repo_root is not None else Path("/fake/repo")
+
+    @property
+    def repo_root(self) -> Path:
+        """Get the repository root path."""
+        return self._repo_root
 
     @property
     def clipboard(self) -> Clipboard:
