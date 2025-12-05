@@ -17,6 +17,7 @@ class FakeCommandExecutor(CommandExecutor):
         self._notifications: list[str] = []
         self._refresh_count: int = 0
         self._close_plan_return: list[int] = []
+        self._submitted_to_queue: list[tuple[int, str]] = []
 
     @property
     def opened_urls(self) -> list[str]:
@@ -42,6 +43,11 @@ class FakeCommandExecutor(CommandExecutor):
     def refresh_count(self) -> int:
         """Number of times refresh was triggered."""
         return self._refresh_count
+
+    @property
+    def submitted_to_queue(self) -> list[tuple[int, str]]:
+        """Plans that were submitted to queue (issue_number, issue_url)."""
+        return list(self._submitted_to_queue)
 
     def set_close_plan_return(self, pr_numbers: list[int]) -> None:
         """Configure what close_plan should return.
@@ -71,3 +77,7 @@ class FakeCommandExecutor(CommandExecutor):
     def refresh_data(self) -> None:
         """Track refresh."""
         self._refresh_count += 1
+
+    def submit_to_queue(self, issue_number: int, issue_url: str) -> None:
+        """Track queue submission."""
+        self._submitted_to_queue.append((issue_number, issue_url))

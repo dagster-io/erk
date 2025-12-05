@@ -568,6 +568,16 @@ class PlanDetailScreen(ModalScreen):
                 if self.is_attached:
                     self.dismiss()
 
+        elif command_id == "submit_to_queue":
+            if row.issue_url:
+                executor.notify(f"Submitting plan #{row.issue_number} to queue...")
+                executor.submit_to_queue(row.issue_number, row.issue_url)
+                executor.notify(f"Submitted plan #{row.issue_number} to queue")
+                executor.refresh_data()
+                # Close modal after submission (only when running in app context)
+                if self.is_attached:
+                    self.dismiss()
+
     def compose(self) -> ComposeResult:
         """Create detail dialog content as an Action Hub."""
         with Vertical(id="detail-dialog"):
@@ -873,6 +883,7 @@ class ErkDashApp(App):
             close_plan_fn=self._provider.close_plan,
             notify_fn=self.notify,
             refresh_fn=self.action_refresh,
+            submit_to_queue_fn=self._provider.submit_to_queue,
         )
 
         self.push_screen(
