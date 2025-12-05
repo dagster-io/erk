@@ -9,7 +9,7 @@ When adding new test directories under `tests/`, always ensure:
 1. The parent directory has `__init__.py` (e.g., `tests/unit/__init__.py`)
 2. The new directory itself has `__init__.py` (e.g., `tests/unit/fakes/__init__.py`)
 
-This ensures `from tests.fakes.git import FakeGit` works correctly from any test file.
+This ensures `from erk_shared.git.fake import FakeGit` works correctly from any test file.
 
 ## Purpose
 

@@ -49,7 +49,7 @@ tests/
 ### FakeGit
 
 ```python
-from tests.fakes.gitops import FakeGit
+from erk_shared.git.fake import FakeGit
 
 git = FakeGit(
     worktrees: dict[Path, list[WorktreeInfo]] = {},

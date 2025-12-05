@@ -49,7 +49,7 @@ uv run pytest tests/core/operations/
 
 **Every new subdirectory under `tests/` must include `__init__.py`** to ensure Python recognizes it as a regular package (not a namespace package).
 
-Without `__init__.py`, pytest's import system breaks because Python 3.3+ treats directories without `__init__.py` as namespace packages, which disrupts absolute imports like `from tests.fakes.git import FakeGit`.
+Without `__init__.py`, pytest's import system breaks because Python 3.3+ treats directories without `__init__.py` as namespace packages, which disrupts absolute imports like `from erk_shared.git.fake import FakeGit`.
 
 **When adding a new test directory:**
 

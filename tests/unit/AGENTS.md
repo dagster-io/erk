@@ -10,7 +10,7 @@ Tests in this layer verify that fakes are correct and reliable test doubles. If 
 
 **Important:** The `tests/unit/` directory itself must have `__init__.py` to ensure Python recognizes it as a regular package, not a namespace package.
 
-Without `__init__.py`, Python 3.3+ treats this as a namespace package, which breaks absolute imports like `from tests.fakes.git import FakeGit`.
+Without `__init__.py`, Python 3.3+ treats this as a namespace package, which breaks absolute imports like `from erk_shared.git.fake import FakeGit`.
 
 ## Subdirectories
 
