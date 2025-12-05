@@ -167,6 +167,10 @@ class RealShell(Shell):
         Spawns Claude in non-interactive mode with permission bypass to
         automatically create an extraction plan. Returns the issue URL
         if present in the JSON output.
+
+        Note: Claude CLI with --print mode may output conversation/thinking text
+        before the final JSON. We search from the end of stdout to find the JSON
+        line containing issue_url.
         """
         cmd = [
             "claude",
@@ -185,12 +189,39 @@ class RealShell(Shell):
         )
 
         # Parse JSON output to extract issue_url
-        # Return None if parsing fails or issue_url not present
+        # Claude may output non-JSON text before the JSON result,
+        # so we search from the end of stdout to find the JSON line
+        return _extract_issue_url_from_output(result.stdout)
+
+
+def _extract_issue_url_from_output(output: str) -> str | None:
+    """Extract issue_url from Claude CLI output that may contain mixed content.
+
+    Claude CLI with --print mode can output conversation/thinking text before
+    the final JSON. This function searches from the end of the output to find
+    a JSON object containing issue_url.
+
+    Args:
+        output: The stdout from Claude CLI (may contain non-JSON text)
+
+    Returns:
+        The issue_url string if found, None otherwise.
+    """
+    if not output:
+        return None
+
+    # Search from the end of output to find JSON with issue_url
+    for line in reversed(output.strip().split("\n")):
+        line = line.strip()
+        if not line:
+            continue
         try:
-            data = json.loads(result.stdout)
-            issue_url = data.get("issue_url")
-            if isinstance(issue_url, str):
-                return issue_url
-            return None
+            data = json.loads(line)
+            if isinstance(data, dict):
+                issue_url = data.get("issue_url")
+                if isinstance(issue_url, str):
+                    return issue_url
         except json.JSONDecodeError:
-            return None
+            continue
+
+    return None
