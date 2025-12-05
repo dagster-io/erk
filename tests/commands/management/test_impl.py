@@ -416,20 +416,15 @@ def test_hidden_shell_cmd_checkout_passthrough_on_help() -> None:
     assert result.output.strip() == "__ERK_PASSTHROUGH__"
 
 
-def test_hidden_shell_cmd_forwards_error_without_passthrough(tmp_path: Path) -> None:
-    """Shell integration command forwards errors without passthrough.
+def test_hidden_shell_cmd_checkout_error_no_passthrough(tmp_path: Path) -> None:
+    """Shell integration command does NOT passthrough on errors.
 
-    When a shell-integrated command fails, we must NOT passthrough. Passthrough
-    would re-run the command WITHOUT --script, which for commands like 'pr land'
-    shows a misleading "requires shell integration" error instead of the actual
-    failure reason.
+    When a shell-integrated command fails, we don't passthrough because that would
+    run the command again WITHOUT --script, showing misleading errors instead of
+    the actual failure reason.
 
-    The correct behavior is to forward the error to the user and exit with
-    non-zero status, without outputting __ERK_PASSTHROUGH__.
-
-    See test_process_command_result_forwards_error_on_failure_without_script
-    in tests/unit/shell_integration/test_handler_commands.py for the unit test
-    of the underlying behavior.
+    Note: The 'create' top-level alias was removed. Now testing the 'checkout'
+    command error behavior instead, which is still active in shell integration.
     """
     # Set up isolated environment without erk config
     # This ensures create_context() won't find a real repo
@@ -443,7 +438,8 @@ def test_hidden_shell_cmd_forwards_error_without_passthrough(tmp_path: Path) -> 
         # Try to checkout without any setup - should error
         result = runner.invoke(hidden_shell_cmd, ["checkout", "test-branch"])
 
-        # Should exit with error but NOT passthrough
-        # (passthrough would cause shell wrapper to re-run without --script)
+        # Should fail with non-zero exit code but NOT passthrough
+        # Passthrough would run command again without --script, showing wrong error
         assert result.exit_code != 0
+        # No passthrough marker - error is handled directly by shell integration
         assert "__ERK_PASSTHROUGH__" not in result.output
