@@ -27,6 +27,13 @@ def get_all_commands() -> list[CommandDefinition]:
             shortcut=None,
             is_available=lambda _: True,
         ),
+        CommandDefinition(
+            id="submit_to_queue",
+            name="Action: Submit to Queue",
+            description="Submit plan for remote AI implementation",
+            shortcut="s",
+            is_available=lambda ctx: ctx.row.issue_url is not None,
+        ),
         # === OPENS ===
         CommandDefinition(
             id="open_browser",

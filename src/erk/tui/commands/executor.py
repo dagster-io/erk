@@ -54,3 +54,13 @@ class CommandExecutor(ABC):
     def refresh_data(self) -> None:
         """Trigger data refresh."""
         ...
+
+    @abstractmethod
+    def submit_to_queue(self, issue_number: int, issue_url: str) -> None:
+        """Submit plan to queue for remote AI implementation.
+
+        Args:
+            issue_number: The issue number to submit
+            issue_url: The issue URL for repository context
+        """
+        ...
