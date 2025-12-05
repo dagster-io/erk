@@ -13,10 +13,11 @@ parent (trunk), and pulls the latest changes.
 import subprocess
 
 import click
-from erk_shared.integrations.gt.cli import render_events
+from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
 from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
 from erk_shared.output.output import machine_output, user_output
+from rich.console import Console
 
 from erk.cli.activation import render_activation_script
 from erk.cli.commands.navigation_helpers import (
@@ -101,7 +102,19 @@ def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
         raise SystemExit(1)
 
     # Step 1: Execute land-pr (merges the PR)
-    result = render_events(execute_land_pr(ctx, ctx.cwd))
+    # Use Rich Console with force_terminal=True to ensure spinner works through
+    # shell integration's command substitution (which doesn't detect a TTY)
+    console = Console(stderr=True, force_terminal=True)
+    with console.status("Landing PR...", spinner="dots") as status:
+        for event in execute_land_pr(ctx, ctx.cwd):
+            match event:
+                case ProgressEvent(message=msg):
+                    status.update(f"  {msg}")
+                case CompletionEvent(result=completion_result):
+                    result = completion_result
+                    break
+        else:
+            raise RuntimeError("Operation ended without completion")
 
     if isinstance(result, LandPrError):
         user_output(click.style("Error: ", fg="red") + result.message)

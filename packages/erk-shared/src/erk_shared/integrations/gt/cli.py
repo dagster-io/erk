@@ -3,6 +3,7 @@
 Provides event rendering helpers for consuming operation generators.
 """
 
+import sys
 from collections.abc import Generator
 from typing import TypeVar
 
@@ -39,6 +40,7 @@ def render_events[T](
         match event:
             case ProgressEvent(message=msg, style=style):
                 click.echo(click.style(f"  {msg}", **STYLE_MAP[style]), err=True)
+                sys.stderr.flush()  # Force immediate output through shell buffering
             case CompletionEvent(result=result):
                 return result
     raise RuntimeError("Operation ended without completion")
