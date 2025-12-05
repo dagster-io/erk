@@ -83,6 +83,18 @@ class FakePlanDataProvider(PlanDataProvider):
         self._plans = [p for p in self._plans if p.issue_number != issue_number]
         return []
 
+    def submit_to_queue(self, issue_number: int, issue_url: str) -> None:
+        """Fake submit to queue implementation.
+
+        Tracks the submission without actually submitting.
+
+        Args:
+            issue_number: The issue number to submit
+            issue_url: The issue URL (unused in fake)
+        """
+        # Just track the call - actual submit is complex and not needed for UI tests
+        pass
+
 
 def make_plan_row(
     issue_number: int,

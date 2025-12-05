@@ -182,6 +182,54 @@ class TestExecuteCommandClosePlan:
         assert executor.refresh_count == 0
 
 
+class TestExecuteCommandSubmitToQueue:
+    """Tests for submit_to_queue command."""
+
+    def test_submit_to_queue_submits_and_refreshes(self) -> None:
+        """submit_to_queue submits the plan and triggers refresh."""
+        row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
+        executor = FakeCommandExecutor()
+        screen = PlanDetailScreen(row, executor=executor)
+        screen.execute_command("submit_to_queue")
+        assert executor.submitted_to_queue == [(123, "https://github.com/test/repo/issues/123")]
+        assert executor.refresh_count == 1
+        assert "Submitted plan #123 to queue" in executor.notifications
+
+    def test_submit_to_queue_does_nothing_without_issue_url(self) -> None:
+        """submit_to_queue does nothing if no issue URL."""
+        row = PlanRowData(
+            issue_number=123,
+            issue_url=None,  # Explicitly None
+            title="Test",
+            pr_number=None,
+            pr_url=None,
+            pr_display="-",
+            checks_display="-",
+            worktree_name="",
+            exists_locally=False,
+            local_impl_display="-",
+            remote_impl_display="-",
+            run_id_display="-",
+            run_state_display="-",
+            run_url=None,
+            full_title="Test",
+            pr_title=None,
+            pr_state=None,
+            worktree_branch=None,
+            last_local_impl_at=None,
+            last_remote_impl_at=None,
+            run_id=None,
+            run_status=None,
+            run_conclusion=None,
+            log_entries=(),
+        )
+        executor = FakeCommandExecutor()
+        screen = PlanDetailScreen(row, executor=executor)
+        screen.execute_command("submit_to_queue")
+        assert executor.submitted_to_queue == []
+        assert executor.refresh_count == 0
+
+
 class TestExecuteCommandNoExecutor:
     """Tests for behavior when no executor is provided."""
 
@@ -193,3 +241,4 @@ class TestExecuteCommandNoExecutor:
         screen.execute_command("open_browser")
         screen.execute_command("copy_implement")
         screen.execute_command("close_plan")
+        screen.execute_command("submit_to_queue")

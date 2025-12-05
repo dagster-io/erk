@@ -19,6 +19,7 @@ class RealCommandExecutor(CommandExecutor):
         close_plan_fn: Callable[[int, str], list[int]],
         notify_fn: Callable[[str], None],
         refresh_fn: Callable[[], None],
+        submit_to_queue_fn: Callable[[int, str], None],
     ) -> None:
         """Initialize with dependency functions.
 
@@ -28,12 +29,14 @@ class RealCommandExecutor(CommandExecutor):
             close_plan_fn: Function to close plan and linked PRs
             notify_fn: Function to show notification
             refresh_fn: Function to trigger data refresh
+            submit_to_queue_fn: Function to submit plan to implementation queue
         """
         self._browser_launch = browser_launch
         self._clipboard_copy = clipboard_copy
         self._close_plan_fn = close_plan_fn
         self._notify_fn = notify_fn
         self._refresh_fn = refresh_fn
+        self._submit_to_queue_fn = submit_to_queue_fn
 
     def open_url(self, url: str) -> None:
         """Open URL in browser."""
@@ -54,3 +57,7 @@ class RealCommandExecutor(CommandExecutor):
     def refresh_data(self) -> None:
         """Trigger data refresh."""
         self._refresh_fn()
+
+    def submit_to_queue(self, issue_number: int, issue_url: str) -> None:
+        """Submit plan to implementation queue."""
+        self._submit_to_queue_fn(issue_number, issue_url)
