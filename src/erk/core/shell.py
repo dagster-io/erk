@@ -185,12 +185,15 @@ class RealShell(Shell):
         )
 
         # Parse JSON output to extract issue_url
-        # Return None if parsing fails or issue_url not present
-        try:
-            data = json.loads(result.stdout)
-            issue_url = data.get("issue_url")
-            if isinstance(issue_url, str):
-                return issue_url
-            return None
-        except json.JSONDecodeError:
-            return None
+        # Claude CLI with --print mode outputs conversation text before final JSON
+        # Search through lines from end to find valid JSON with issue_url
+        for line in reversed(result.stdout.strip().split("\n")):
+            try:
+                data = json.loads(line)
+                if isinstance(data, dict):
+                    issue_url = data.get("issue_url")
+                    if isinstance(issue_url, str):
+                        return issue_url
+            except json.JSONDecodeError:
+                continue
+        return None
