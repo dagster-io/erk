@@ -121,7 +121,22 @@ dot-agent run gt pr-submit finalize \
     --diff-file "{diff_file}" 2>&1
 ```
 
-### Step 4: Report Results
+### Step 4: Validate PR Rules
+
+Run the PR check command to validate the PR was created correctly:
+
+```bash
+erk pr check
+```
+
+This validates:
+
+- Issue closing reference (Closes #N) is present when `.impl/issue.json` exists
+- PR body contains the standard checkout footer
+
+If any checks fail, display the output and warn the user, but continue to Step 5.
+
+### Step 5: Report Results
 
 Display:
 

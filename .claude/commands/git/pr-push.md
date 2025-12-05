@@ -142,7 +142,22 @@ fi
 gh pr create --title "$pr_title" --body "$pr_body"
 ```
 
-### Step 8: Report Results
+### Step 8: Validate PR Rules
+
+Run the PR check command to validate the PR was created correctly:
+
+```bash
+erk pr check
+```
+
+This validates:
+
+- Issue closing reference (Closes #N) is present when `.impl/issue.json` exists
+- PR body contains the standard checkout footer
+
+If any checks fail, display the output and warn the user, but continue to Step 9.
+
+### Step 9: Report Results
 
 Display a clear summary:
 

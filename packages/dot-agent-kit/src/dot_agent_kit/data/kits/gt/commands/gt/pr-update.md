@@ -40,7 +40,11 @@ Streamlined workflow to update an existing PR with fail-fast execution and natur
 
 ## Implementation
 
-When this command is invoked, delegate to the gt-update-pr-submitter agent:
+When this command is invoked:
+
+### Step 1: Execute Update Workflow
+
+Delegate to the gt-update-pr-submitter agent:
 
 ```
 Task(
@@ -51,3 +55,18 @@ Task(
 ```
 
 The agent executes a single atomic command and reports results.
+
+### Step 2: Validate PR Rules
+
+If Step 1 succeeded, run the PR check command to validate the PR:
+
+```bash
+erk pr check
+```
+
+This validates:
+
+- Issue closing reference (Closes #N) is present when `.impl/issue.json` exists
+- PR body contains the standard checkout footer
+
+If any checks fail, display the output and warn the user.

@@ -112,7 +112,7 @@ Pay special attention to:
 - "DO NOT" items in Known Pitfalls - these prevent specific bugs
 - Rejected approaches in Complex Reasoning - these explain what doesn't work
 
-### Step 2.5: Load Related Documentation
+### Step 3: Load Related Documentation
 
 If the plan contains a "Related Documentation" section:
 
@@ -134,12 +134,12 @@ Example section to look for:
 - [Kit CLI Testing](docs/agent/testing/kit-cli-testing.md)
 ```
 
-### Step 2.6: Check for GitHub Issue Reference
+### Step 4: Check for GitHub Issue Reference
 
 Progress tracking via GitHub comments is available if `.impl/issue.json` exists.
 The kit CLI commands handle all logic automatically - no manual setup required.
 
-### Step 3: Create TodoWrite Entries
+### Step 5: Create TodoWrite Entries
 
 Create todo list entries for each major phase in the plan to track progress.
 
@@ -164,7 +164,7 @@ Example:
 ]
 ```
 
-### Step 3.5: Post Start Comment to GitHub Issue
+### Step 6: Post Start Comment to GitHub Issue
 
 Post a single comprehensive start comment with implementation context:
 
@@ -180,7 +180,7 @@ This posts a comment containing:
 
 If issue tracking is not enabled (no valid issue.json), this will output an info message and exit gracefully.
 
-### Step 3.6: Update Local Implementation Timestamp
+### Step 7: Update Local Implementation Timestamp
 
 Update the GitHub issue's plan-header metadata with the local implementation start time:
 
@@ -195,7 +195,7 @@ This updates:
 
 If issue tracking is not enabled, this will exit gracefully.
 
-### Step 4: Execute Each Phase Sequentially
+### Step 8: Execute Each Phase Sequentially
 
 **🔴 MANDATORY: Tests Required With All Changes**
 
@@ -264,7 +264,7 @@ When updating progress:
 - Use the `mark-step` kit CLI command to update progress
 - The command automatically updates YAML frontmatter and regenerates checkboxes
 
-### Step 5: Follow Erk Coding Standards
+### Step 9: Follow Erk Coding Standards
 
 Project coding standards (if defined) OVERRIDE any conflicting guidance in the plan.
 
@@ -287,7 +287,7 @@ Testing standards (load `fake-driven-testing` skill for complete guidance):
 - Integration layer changes: Update ABC → Real → Fake → DryRun (all four)
 - No speculative tests: Only test code that is actively being implemented
 
-### Step 6: Report Progress
+### Step 10: Report Progress
 
 After completing each major phase, provide an update:
 
@@ -307,7 +307,7 @@ Next: [What's coming next]
 
 **🔴 IMPORTANT**: If you cannot list tests in your progress report, the phase is NOT complete. Go back and add tests before marking complete.
 
-### Step 7: Final Verification
+### Step 11: Final Verification
 
 After all phases are complete:
 
@@ -316,7 +316,7 @@ After all phases are complete:
 3. Note any deviations from the plan (with justification)
 4. Provide summary of changes
 
-### Step 8: Final Verification
+### Step 12: Run Project CI
 
 After completing all implementation steps:
 
@@ -337,7 +337,7 @@ After completing all implementation steps:
 
 4. **Address any failures** by returning to relevant implementation steps
 
-### Step 8.5: Mark Implementation Ended
+### Step 13: Mark Implementation Ended
 
 After completing all implementation work (but before CI/PR steps), mark the implementation as ended:
 
@@ -352,7 +352,7 @@ This updates:
 
 This step should be run after all code changes are complete but before any optional CI or PR submission steps.
 
-### Step 9: Run CI and Fix Issues Iteratively
+### Step 14: Run CI and Fix Issues Iteratively
 
 Run iterative CI to validate all changes before completion.
 
@@ -386,7 +386,7 @@ If in .impl/ folder:
 2. DO NOT auto-commit
 3. Leave changes for user review
 
-### Step 10: Create/Update PR (if .worker-impl/ present)
+### Step 15: Create/Update PR (if .worker-impl/ present)
 
 **Only if .worker-impl/ was present:**
 
@@ -396,7 +396,22 @@ Use gh CLI to create or update PR:
 gh pr create --fill --label "ai-generated" || gh pr edit --add-label "ai-generated"
 ```
 
-### Step 11: Output Format
+### Step 16: Validate PR Rules
+
+After creating/updating the PR, run the PR check command to validate:
+
+```bash
+erk pr check
+```
+
+This validates:
+
+- Issue closing reference (Closes #N) is present when `.impl/issue.json` exists
+- PR body contains the standard checkout footer
+
+If any checks fail, display the output and warn the user.
+
+### Step 17: Output Format
 
 Structure your output clearly:
 
