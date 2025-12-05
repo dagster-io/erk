@@ -183,17 +183,22 @@ class TestExecuteCommandClosePlan:
 
 
 class TestExecuteCommandSubmitToQueue:
-    """Tests for submit_to_queue command."""
+    """Tests for submit_to_queue command.
 
-    def test_submit_to_queue_submits_and_refreshes(self) -> None:
-        """submit_to_queue submits the plan and triggers refresh."""
+    Note: submit_to_queue now uses streaming output via subprocess when repo_root
+    is provided. These tests verify the guard conditions but actual streaming
+    behavior is tested via integration tests.
+    """
+
+    def test_submit_to_queue_does_nothing_without_repo_root(self) -> None:
+        """submit_to_queue does nothing if repo_root is not provided."""
         row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
         executor = FakeCommandExecutor()
+        # repo_root not provided - streaming command should not execute
         screen = PlanDetailScreen(row, executor=executor)
         screen.execute_command("submit_to_queue")
-        assert executor.submitted_to_queue == [(123, "https://github.com/test/repo/issues/123")]
-        assert executor.refresh_count == 1
-        assert "Submitted plan #123 to queue" in executor.notifications
+        # No executor methods should be called (streaming is independent)
+        assert executor.refresh_count == 0
 
     def test_submit_to_queue_does_nothing_without_issue_url(self) -> None:
         """submit_to_queue does nothing if no issue URL."""
@@ -226,8 +231,8 @@ class TestExecuteCommandSubmitToQueue:
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row, executor=executor)
         screen.execute_command("submit_to_queue")
-        assert executor.submitted_to_queue == []
         assert executor.refresh_count == 0
+
 
 
 class TestExecuteCommandNoExecutor:
