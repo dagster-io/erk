@@ -25,6 +25,54 @@ def test_pr_land_compound_command_registered() -> None:
     assert "pr land" in SHELL_INTEGRATION_COMMANDS
 
 
+def test_pr_group_not_registered() -> None:
+    """Verify 'pr' group is NOT registered for shell integration.
+
+    Regression test for issue #2227: `erk pr submit` silently exiting.
+
+    The bug: When "pr" (the group) was registered, ANY pr subcommand that
+    didn't have its own entry (like "pr submit") would:
+    1. Shell wrapper intercepts → calls 'erk __shell pr submit'
+    2. Handler matches "pr" (the group), not "pr submit"
+    3. _invoke_hidden_command adds --script to args
+    4. Invokes pr_group with args ["submit", "--script"]
+    5. Click routes to pr_submit but --script isn't a valid option
+    6. Click fails with "No such option: --script" (swallowed)
+    7. Result: silent exit with code 1
+
+    The fix: Remove "pr" from SHELL_INTEGRATION_COMMANDS.
+    Only register specific pr subcommands that support --script (pr land, pr checkout).
+    Unregistered pr subcommands (pr submit, pr sync, etc.) now passthrough correctly.
+    """
+    assert "pr" not in SHELL_INTEGRATION_COMMANDS, (
+        "The 'pr' group should NOT be registered. "
+        "Only specific pr subcommands with --script support should be registered."
+    )
+
+
+def test_pr_subcommands_without_script_support_passthrough() -> None:
+    """Verify pr subcommands without --script support are passed through.
+
+    Commands like 'pr submit', 'pr sync', etc. don't support --script and
+    should NOT be in SHELL_INTEGRATION_COMMANDS. When invoked via shell wrapper,
+    they should passthrough to run normally without shell integration.
+    """
+    # These pr subcommands don't support --script flag
+    subcommands_without_script = ["pr submit", "pr sync", "pr auto-restack"]
+
+    for cmd in subcommands_without_script:
+        assert cmd not in SHELL_INTEGRATION_COMMANDS, (
+            f"'{cmd}' should NOT be registered - it doesn't support --script"
+        )
+
+    # Verify passthrough behavior: when unrecognized, handler returns passthrough=True
+    result = handle_shell_request(("pr", "submit"))
+    assert result.passthrough is True, "pr submit should passthrough"
+
+    result = handle_shell_request(("pr", "sync"))
+    assert result.passthrough is True, "pr sync should passthrough"
+
+
 def test_compound_commands_have_all_expected_entries() -> None:
     """Verify all expected compound commands are registered.
 
@@ -36,6 +84,8 @@ def test_compound_commands_have_all_expected_entries() -> None:
         "wt goto",
         "stack consolidate",
         "pr land",
+        "pr checkout",
+        "pr co",  # alias for pr checkout
     ]
 
     for cmd in expected_compound_commands:
@@ -50,7 +100,6 @@ def test_top_level_commands_registered() -> None:
         "up",
         "down",
         "implement",
-        "pr",  # group
     ]
 
     for cmd in expected_top_level:

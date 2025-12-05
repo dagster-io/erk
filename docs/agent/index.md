@@ -12,7 +12,7 @@
 - **[reference/](reference/)** — claude-cli-stream-json, github-branch-linking
 - **[sessions/](sessions/)** — context-analysis, layout, parallel-session-awareness, tools
 - **[testing/](testing/)** — import-conflict-resolution, kit-cli-testing, rebase-conflicts, session-log-fixtures, testing
-- **[tui/](tui/)** — textual-quirks
+- **[tui/](tui/)** — command-palette, textual-quirks
 
 ## Uncategorized
 
