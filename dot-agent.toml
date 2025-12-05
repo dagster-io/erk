@@ -41,12 +41,29 @@ timeout = 30
 [kits.dignified-python]
 kit_id = "dignified-python"
 source_type = "bundled"
-version = "0.2.0"
+version = "0.3.0"
 artifacts = [
     ".claude/skills/dignified-python-310/SKILL.md",
     ".claude/skills/dignified-python-311/SKILL.md",
     ".claude/skills/dignified-python-312/SKILL.md",
     ".claude/skills/dignified-python-313/SKILL.md",
+    ".claude/docs/dignified-python/dignified-python-core.md",
+    ".claude/docs/dignified-python/type-annotations-common.md",
+    ".claude/docs/dignified-python/cli-patterns.md",
+    ".claude/docs/dignified-python/subprocess.md",
+    ".claude/docs/dignified-python/version-specific/310/type-annotations.md",
+    ".claude/docs/dignified-python/version-specific/310/checklist.md",
+    ".claude/docs/dignified-python/version-specific/310/pattern-table.md",
+    ".claude/docs/dignified-python/version-specific/311/type-annotations.md",
+    ".claude/docs/dignified-python/version-specific/311/checklist.md",
+    ".claude/docs/dignified-python/version-specific/311/pattern-table.md",
+    ".claude/docs/dignified-python/version-specific/312/type-annotations.md",
+    ".claude/docs/dignified-python/version-specific/312/checklist.md",
+    ".claude/docs/dignified-python/version-specific/312/pattern-table.md",
+    ".claude/docs/dignified-python/version-specific/313/type-annotations.md",
+    ".claude/docs/dignified-python/version-specific/313/type-annotations-delta.md",
+    ".claude/docs/dignified-python/version-specific/313/checklist.md",
+    ".claude/docs/dignified-python/version-specific/313/pattern-table.md",
 ]
 
 [[kits.dignified-python.hooks]]
@@ -120,6 +137,7 @@ artifacts = [
     ".claude/commands/gt/pr-submit.md",
     ".claude/commands/gt/pr-update.md",
     ".claude/commands/gt/squash-to-pr-commit.md",
+    ".claude/docs/shared/diff-analysis-guide.md",
     ".claude/skills/gt-graphite/SKILL.md",
     ".claude/skills/gt-graphite/references/gt-reference.md",
 ]

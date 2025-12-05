@@ -6,6 +6,7 @@
 
 - agent: agents/gt/commit-message-generator.md, agents/gt/gt-update-pr-submitter.md
 - command: commands/gt/prepare-local.md, commands/gt/pr-prep.md, commands/gt/pr-submit.md, commands/gt/pr-update.md, commands/gt/squash-to-pr-commit.md
+- doc: docs/shared/diff-analysis-guide.md
 - skill: skills/gt-graphite/SKILL.md, skills/gt-graphite/references/gt-reference.md
 
 **Usage**:

@@ -1,4 +1,4 @@
-.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test fast-ci all-ci check md-check kit-md-check docs-validate clean publish fix reinstall-erk-tools
+.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test fast-ci all-ci check md-check kit-md-check kit-check docs-validate clean publish fix reinstall-erk-tools
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -83,6 +83,11 @@ md-check:
 kit-md-check:
 	cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run dot-agent md check --check-links
 
+# Kit reference check: Validate that @ references in kit artifacts point to
+# files declared in kit.yaml (prevents missing doc references in skills)
+kit-check:
+	uv run dot-agent kit check --all-bundled
+
 docs-validate:
 	uv run dot-agent docs validate
 
@@ -99,6 +104,7 @@ fast-ci:
 	echo "\n--- Markdown Check ---" && uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl" || exit_code=1; \
 	echo "\n--- Kit Markdown Check ---" && (cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run dot-agent md check --check-links) || exit_code=1; \
 	cd $(CURDIR); \
+	echo "\n--- Kit Reference Check ---" && uv run dot-agent kit check --all-bundled || exit_code=1; \
 	echo "\n--- Docs Validate ---" && uv run dot-agent docs validate || exit_code=1; \
 	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
@@ -118,6 +124,7 @@ all-ci:
 	echo "\n--- Markdown Check ---" && uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl" || exit_code=1; \
 	echo "\n--- Kit Markdown Check ---" && (cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run dot-agent md check --check-links) || exit_code=1; \
 	cd $(CURDIR); \
+	echo "\n--- Kit Reference Check ---" && uv run dot-agent kit check --all-bundled || exit_code=1; \
 	echo "\n--- Docs Validate ---" && uv run dot-agent docs validate || exit_code=1; \
 	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
