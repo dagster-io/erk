@@ -10,8 +10,6 @@ It merges the current PR, deletes the current worktree/branch, navigates to the
 parent (trunk), and pulls the latest changes.
 """
 
-import subprocess
-
 import click
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
@@ -27,6 +25,7 @@ from erk.cli.commands.navigation_helpers import (
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
+from erk.cli.output import stream_extraction_plan
 from erk.core.context import ErkContext
 
 
@@ -121,19 +120,20 @@ def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
     # If extraction fails, preserve the worktree so user can retry manually.
     extraction_success = True  # Default: proceed with deletion
     if extract:
-        try:
-            issue_url = ctx.shell.run_claude_extraction_plan(ctx.cwd)
+        result = stream_extraction_plan(ctx.claude_executor, ctx.cwd)
+        if result.success:
             msg = click.style("✓", fg="green") + " Created documentation extraction plan"
-            if issue_url:
-                msg += f"\n  {issue_url}"
+            if result.issue_url:
+                msg += f"\n  {result.issue_url}"
             user_output(msg)
-        except subprocess.CalledProcessError as e:
+        else:
             extraction_success = False
             user_output(
                 click.style("⚠", fg="yellow")
                 + " Extraction plan failed - preserving worktree for manual retry"
             )
-            user_output(f"  Error: {e}")
+            if result.error_message:
+                user_output(f"  Error: {result.error_message}")
             user_output("  Run manually: claude /erk:create-extraction-plan")
 
     # Step 2: Navigate to destination (trunk or upstack)

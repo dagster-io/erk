@@ -1,7 +1,6 @@
 """Tests for erk pr land command."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 from erk_shared.git.fake import FakeGit
@@ -12,7 +11,7 @@ from erk_shared.integrations.graphite.types import BranchMetadata
 
 from erk.cli.commands.pr import pr_group
 from erk.core.repo_discovery import RepoContext
-from tests.fakes.shell import FakeShell
+from tests.fakes.claude_executor import FakeClaudeExecutor
 from tests.test_utils.cli_helpers import assert_cli_error
 from tests.test_utils.env_helpers import erk_inmem_env
 
@@ -1001,8 +1000,7 @@ def test_pr_land_with_up_flag_creates_worktree_if_needed() -> None:
         assert str(feature_2_path) in script_content
 
 
-@patch("shutil.which", return_value="/usr/local/bin/claude")
-def test_pr_land_creates_extraction_plan_by_default(mock_which: MagicMock) -> None:
+def test_pr_land_creates_extraction_plan_by_default() -> None:
     """Test pr land creates extraction plan by default after merging PR."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -1043,7 +1041,8 @@ def test_pr_land_creates_extraction_plan_by_default(mock_which: MagicMock) -> No
             merge_should_succeed=True,
         )
 
-        shell_ops = FakeShell()
+        # FakeClaudeExecutor simulates successful extraction
+        claude_executor = FakeClaudeExecutor(claude_available=True)
 
         repo = RepoContext(
             root=env.cwd,
@@ -1056,7 +1055,7 @@ def test_pr_land_creates_extraction_plan_by_default(mock_which: MagicMock) -> No
             git=git_ops,
             graphite=graphite_ops,
             github=github_ops,
-            shell=shell_ops,
+            claude_executor=claude_executor,
             repo=repo,
             use_graphite=True,
         )
@@ -1065,9 +1064,12 @@ def test_pr_land_creates_extraction_plan_by_default(mock_which: MagicMock) -> No
 
         assert result.exit_code == 0
 
-        # Verify extraction plan was created (runs from cwd, not worktree path)
-        assert len(shell_ops.extraction_calls) == 1
-        assert shell_ops.extraction_calls[0] == env.cwd
+        # Verify extraction plan was executed via ClaudeExecutor
+        assert len(claude_executor.executed_commands) == 1
+        command, worktree_path, dangerous, verbose = claude_executor.executed_commands[0]
+        assert command == "/erk:create-extraction-plan"
+        assert worktree_path == env.cwd
+        assert dangerous is True  # Non-interactive mode
 
         # Verify success message shown
         assert "Created documentation extraction plan" in result.output
@@ -1118,7 +1120,8 @@ def test_pr_land_skips_extraction_plan_with_no_extract_flag() -> None:
             merge_should_succeed=True,
         )
 
-        shell_ops = FakeShell()
+        # FakeClaudeExecutor - should NOT be called with --no-extract
+        claude_executor = FakeClaudeExecutor(claude_available=True)
 
         repo = RepoContext(
             root=env.cwd,
@@ -1131,7 +1134,7 @@ def test_pr_land_skips_extraction_plan_with_no_extract_flag() -> None:
             git=git_ops,
             graphite=graphite_ops,
             github=github_ops,
-            shell=shell_ops,
+            claude_executor=claude_executor,
             repo=repo,
             use_graphite=True,
         )
@@ -1143,14 +1146,13 @@ def test_pr_land_skips_extraction_plan_with_no_extract_flag() -> None:
         assert result.exit_code == 0
 
         # Verify extraction plan was NOT called
-        assert len(shell_ops.extraction_calls) == 0
+        assert len(claude_executor.executed_commands) == 0
 
         # Verify no extraction messages in output
         assert "extraction plan" not in result.output.lower()
 
 
-@patch("shutil.which", return_value="/usr/local/bin/claude")
-def test_pr_land_preserves_worktree_when_extraction_fails(mock_which: MagicMock) -> None:
+def test_pr_land_preserves_worktree_when_extraction_fails() -> None:
     """Test pr land preserves worktree when extraction plan fails for manual retry."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -1191,8 +1193,11 @@ def test_pr_land_preserves_worktree_when_extraction_fails(mock_which: MagicMock)
             merge_should_succeed=True,
         )
 
-        # Simulate extraction failure (subprocess.CalledProcessError)
-        shell_ops = FakeShell(claude_extraction_raises=True)
+        # Simulate extraction failure via FakeClaudeExecutor
+        claude_executor = FakeClaudeExecutor(
+            claude_available=True,
+            command_should_fail=True,
+        )
 
         repo = RepoContext(
             root=env.cwd,
@@ -1205,7 +1210,7 @@ def test_pr_land_preserves_worktree_when_extraction_fails(mock_which: MagicMock)
             git=git_ops,
             graphite=graphite_ops,
             github=github_ops,
-            shell=shell_ops,
+            claude_executor=claude_executor,
             repo=repo,
             use_graphite=True,
         )
@@ -1216,7 +1221,7 @@ def test_pr_land_preserves_worktree_when_extraction_fails(mock_which: MagicMock)
         assert result.exit_code == 0
 
         # Verify extraction was attempted
-        assert len(shell_ops.extraction_calls) == 1
+        assert len(claude_executor.executed_commands) == 1
 
         # Verify warning messages shown
         assert "Extraction plan failed" in result.output

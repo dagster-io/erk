@@ -102,27 +102,6 @@ class Shell(ABC):
         """
         ...
 
-    @abstractmethod
-    def run_claude_extraction_plan(self, cwd: Path) -> str | None:
-        """Run Claude CLI to create an extraction plan from session logs.
-
-        This spawns Claude in non-interactive mode to analyze session logs
-        and create a documentation extraction plan before landing a PR.
-
-        Caller should use Ensure.claude_installed() before calling this method.
-
-        Args:
-            cwd: Directory to run Claude in (typically the worktree being landed)
-
-        Returns:
-            The GitHub issue URL if extraction succeeded and returned JSON with issue_url,
-            None if JSON parsing fails or issue_url not present.
-
-        Raises:
-            subprocess.CalledProcessError: If Claude CLI execution fails.
-        """
-        ...
-
 
 class RealShell(Shell):
     """Production implementation using system environment and PATH."""
