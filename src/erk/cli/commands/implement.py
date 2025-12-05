@@ -475,6 +475,159 @@ def _prepare_plan_source_from_file(ctx: ErkContext, plan_file: Path) -> PlanSour
     )
 
 
+def _show_conflict_error(
+    ctx: ErkContext,
+    *,
+    branch: str,
+    wt_path: Path,
+    wt_exists: bool,
+    branch_exists: bool,
+    worktree_name_provided: bool,
+) -> None:
+    """Show error message when branch or worktree already exists.
+
+    Args:
+        ctx: Erk context
+        branch: Branch name that conflicts
+        wt_path: Worktree path that conflicts
+        wt_exists: Whether worktree directory exists
+        branch_exists: Whether branch exists
+        worktree_name_provided: Whether user explicitly provided --worktree-name
+
+    Raises:
+        SystemExit: Always exits with code 1
+    """
+    # Build error message based on what exists
+    if wt_exists and branch_exists:
+        conflict_msg = f"Branch '{branch}' and worktree '{wt_path.name}' already exist."
+    elif branch_exists:
+        conflict_msg = f"Branch '{branch}' already exists."
+    else:
+        conflict_msg = f"Worktree '{wt_path.name}' already exists."
+
+    # Suggest using --force or --worktree-name
+    if worktree_name_provided:
+        suggestion = "Use -f to delete the existing resources, or choose a different name."
+    else:
+        suggestion = (
+            "Use -f to delete the existing resources, "
+            "or --worktree-name to choose a different name."
+        )
+
+    ctx.feedback.error(f"Error: {conflict_msg}\n{suggestion}")
+    raise SystemExit(1)
+
+
+def _handle_force_delete(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    wt_path: Path,
+    branch: str,
+    wt_exists: bool,
+    branch_exists: bool,
+    delete_existing_wt: bool,
+    delete_existing_br: bool,
+    dry_run: bool,
+) -> None:
+    """Handle --force flag by prompting for confirmation and deleting existing resources.
+
+    Args:
+        ctx: Erk context
+        repo_root: Repository root path
+        wt_path: Path to existing worktree
+        branch: Branch name
+        wt_exists: Whether worktree directory exists
+        branch_exists: Whether branch exists
+        delete_existing_wt: Whether to delete worktree if it exists
+        delete_existing_br: Whether to delete branch if it exists
+        dry_run: Whether in dry-run mode
+
+    Raises:
+        SystemExit: If user declines confirmation
+    """
+    # Build list of what will be deleted
+    deletions: list[str] = []
+    if wt_exists and delete_existing_wt:
+        deletions.append(f"worktree: {click.style(str(wt_path), fg='cyan')}")
+    if branch_exists and delete_existing_br:
+        deletions.append(f"branch: {click.style(branch, fg='yellow')}")
+
+    if not deletions:
+        return
+
+    # Display what will be deleted
+    user_output(click.style("⚠️  The following will be deleted:", fg="yellow", bold=True))
+    for item in deletions:
+        user_output(f"  • {item}")
+
+    # Prompt for confirmation
+    if not dry_run:
+        prompt_text = click.style("Proceed with deletion?", fg="yellow", bold=True)
+        if not click.confirm(f"\n{prompt_text}", default=False, err=True):
+            user_output(click.style("⭕ Aborted.", fg="red", bold=True))
+            raise SystemExit(1)
+
+    # Perform deletions
+    if wt_exists and delete_existing_wt:
+        if dry_run:
+            user_output(f"[DRY RUN] Would delete worktree: {wt_path}")
+        else:
+            ctx.feedback.info(f"Deleting existing worktree: {wt_path.name}...")
+            _delete_worktree_for_force(ctx, repo_root, wt_path)
+            ctx.feedback.success(f"✓ Deleted worktree: {wt_path.name}")
+
+    if branch_exists and delete_existing_br:
+        if dry_run:
+            user_output(f"[DRY RUN] Would delete branch: {branch}")
+        else:
+            ctx.feedback.info(f"Deleting existing branch: {branch}...")
+            _delete_branch_for_force(ctx, repo_root, branch)
+            ctx.feedback.success(f"✓ Deleted branch: {branch}")
+
+
+def _delete_worktree_for_force(ctx: ErkContext, repo_root: Path, wt_path: Path) -> None:
+    """Delete a worktree directory for --force flag.
+
+    This reuses patterns from wt/delete_cmd.py for worktree cleanup.
+    """
+    import shutil
+
+    # Try git worktree remove first
+    try:
+        ctx.git.remove_worktree(repo_root, wt_path, force=True)
+    except Exception:
+        # Git removal failed - manual cleanup will handle it
+        pass
+
+    # Manually delete directory if still exists
+    if ctx.git.path_exists(wt_path):
+        try:
+            shutil.rmtree(wt_path)
+        except OSError:
+            # Path doesn't exist on real filesystem (sentinel path)
+            pass
+
+    # Prune worktree metadata
+    try:
+        ctx.git.prune_worktrees(repo_root)
+    except Exception:
+        pass
+
+
+def _delete_branch_for_force(ctx: ErkContext, repo_root: Path, branch: str) -> None:
+    """Delete a branch for --force flag.
+
+    Uses force delete (-D) since we've already confirmed with user.
+    """
+    use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
+
+    if use_graphite:
+        ctx.git.delete_branch_with_graphite(repo_root, branch, force=True)
+    else:
+        ctx.git.delete_branch(repo_root, branch, force=True)
+
+
 def _create_worktree_with_plan_content(
     ctx: ErkContext,
     *,
@@ -486,6 +639,8 @@ def _create_worktree_with_plan_content(
     no_interactive: bool,
     linked_branch_name: str | None = None,
     base_branch: str,
+    delete_existing_wt: bool = False,
+    delete_existing_br: bool = False,
 ) -> Path | None:
     """Create worktree with plan content.
 
@@ -500,6 +655,8 @@ def _create_worktree_with_plan_content(
         linked_branch_name: Optional branch name from gh issue develop
                            (when provided, use this branch instead of creating new)
         base_branch: Base branch to use as ref for worktree creation
+        delete_existing_wt: Whether to delete existing worktree with confirmation
+        delete_existing_br: Whether to delete existing branch with confirmation
 
     Returns:
         Path to created worktree, or None if dry-run mode
@@ -537,24 +694,36 @@ def _create_worktree_with_plan_content(
     use_existing_branch = linked_branch_name is not None
 
     if not use_existing_branch:
-        # Validate branch doesn't exist (before dry-run output)
+        # Check for existing worktree and branch
         local_branches = ctx.git.list_local_branches(repo_root)
-        if branch in local_branches:
-            # Different error messages based on whether name was explicitly provided
-            if worktree_name:
-                # User explicitly provided this name - tell them to choose different one
-                ctx.feedback.error(
-                    f"Error: Branch '{branch}' already exists.\n"
-                    + "Please choose a different name with --worktree-name."
+        branch_exists = branch in local_branches
+        wt_exists = ctx.git.path_exists(wt_path)
+
+        # Handle conflicts with --force flag
+        if branch_exists or wt_exists:
+            if delete_existing_wt or delete_existing_br:
+                # Prompt for confirmation and delete what exists
+                _handle_force_delete(
+                    ctx,
+                    repo_root=repo_root,
+                    wt_path=wt_path,
+                    branch=branch,
+                    wt_exists=wt_exists,
+                    branch_exists=branch_exists,
+                    delete_existing_wt=delete_existing_wt,
+                    delete_existing_br=delete_existing_br,
+                    dry_run=dry_run,
                 )
             else:
-                # Auto-generated name conflicted - suggest using explicit name
-                ctx.feedback.error(
-                    f"Error: Branch '{branch}' already exists.\n"
-                    + "Cannot create worktree with existing branch name.\n"
-                    + "Use --worktree-name to specify a different name."
+                # No --force flag - show error with suggestion
+                _show_conflict_error(
+                    ctx,
+                    branch=branch,
+                    wt_path=wt_path,
+                    wt_exists=wt_exists,
+                    branch_exists=branch_exists,
+                    worktree_name_provided=worktree_name is not None,
                 )
-            raise SystemExit(1)
 
     # Handle dry-run mode
     if dry_run:
@@ -779,6 +948,8 @@ def _implement_from_file(
     script: bool,
     no_interactive: bool,
     verbose: bool,
+    delete_existing_wt: bool,
+    delete_existing_br: bool,
     executor: ClaudeExecutor,
 ) -> None:
     """Implement feature from plan file.
@@ -793,6 +964,8 @@ def _implement_from_file(
         script: Whether to output activation script
         no_interactive: Whether to execute non-interactively
         verbose: Whether to show raw output or filtered output
+        delete_existing_wt: Whether to delete existing worktree with confirmation
+        delete_existing_br: Whether to delete existing branch with confirmation
         executor: Claude CLI executor for command execution
     """
     # Discover repo context
@@ -814,6 +987,8 @@ def _implement_from_file(
         dangerous=dangerous,
         no_interactive=no_interactive,
         base_branch=base_branch,
+        delete_existing_wt=delete_existing_wt,
+        delete_existing_br=delete_existing_br,
     )
 
     # Early return for dry-run mode
@@ -897,6 +1072,13 @@ def _implement_from_file(
     default=False,
     help="Show full Claude Code output (default: filtered)",
 )
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    default=False,
+    help="Delete existing branch/worktree with same name after confirmation.",
+)
 @click.pass_obj
 def implement(
     ctx: ErkContext,
@@ -909,6 +1091,7 @@ def implement(
     script: bool,
     yolo: bool,
     verbose: bool,
+    force: bool,
 ) -> None:
     """Create worktree from GitHub issue or plan file and execute implementation.
 
@@ -964,6 +1147,11 @@ def implement(
     # Validate flag combinations
     _validate_flags(submit, no_interactive, script)
 
+    # Expand --force into explicit delete flags (set at entry point for clarity)
+    # These control whether to delete existing worktree/branch with same name
+    delete_existing_wt = force
+    delete_existing_br = force
+
     # Detect target type
     target_info = _detect_target_type(target)
 
@@ -1006,5 +1194,7 @@ def implement(
             script=script,
             no_interactive=no_interactive,
             verbose=verbose,
+            delete_existing_wt=delete_existing_wt,
+            delete_existing_br=delete_existing_br,
             executor=ctx.claude_executor,
         )

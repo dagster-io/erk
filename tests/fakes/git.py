@@ -134,6 +134,7 @@ class FakeGit(Git):
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
+        self._deleted_branches_with_graphite: list[str] = []
         self._added_worktrees: list[tuple[Path, str | None]] = []
         self._removed_worktrees: list[Path] = []
         self._checked_out_branches: list[tuple[Path, str]] = []
@@ -317,12 +318,11 @@ class FakeGit(Git):
         pass
 
     def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
-        """Delete a local branch (no-op for fake)."""
-        # Fake doesn't need to track deleted branches unless using delete_branch_with_graphite
-        pass
+        """Delete a local branch (tracks mutation)."""
+        self._deleted_branches.append(branch_name)
 
     def delete_branch_with_graphite(self, repo_root: Path, branch: str, *, force: bool) -> None:
-        """Track which branches were deleted (mutates internal state).
+        """Track which branches were deleted via Graphite (mutates internal state).
 
         Raises configured exception if branch is in delete_branch_raises mapping.
         """
@@ -331,6 +331,7 @@ class FakeGit(Git):
             raise self._delete_branch_raises[branch]
 
         self._deleted_branches.append(branch)
+        self._deleted_branches_with_graphite.append(branch)
 
     def prune_worktrees(self, repo_root: Path) -> None:
         """Prune stale worktree metadata (no-op for in-memory fake)."""
@@ -402,6 +403,14 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return self._deleted_branches.copy()
+
+    @property
+    def deleted_branches_with_graphite(self) -> list[str]:
+        """Get the list of branches deleted via Graphite.
+
+        This property is for test assertions only.
+        """
+        return self._deleted_branches_with_graphite.copy()
 
     @property
     def added_worktrees(self) -> list[tuple[Path, str | None]]:

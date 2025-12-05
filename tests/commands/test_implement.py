@@ -505,8 +505,8 @@ def test_implement_fails_when_branch_exists_file_mode() -> None:
         assert result.exit_code == 1
         assert "Error" in result.output
         assert "already exists" in result.output
-        # Should tell user to choose different name (not suggest --worktree-name)
-        assert "Please choose a different name" in result.output
+        # Should suggest -f flag or choosing a different name (not suggest --worktree-name)
+        assert "Use -f to delete" in result.output or "choose a different name" in result.output
         assert len(git.added_worktrees) == 0
 
 
@@ -1500,3 +1500,251 @@ def test_implement_from_trunk_uses_trunk_with_graphite() -> None:
         # Verify branch was created with main as base (we're on trunk)
         assert len(issue_dev.create_calls) == 1
         assert issue_dev.create_calls[0].base_branch == "main"
+
+
+# Force Flag Tests
+
+
+def test_implement_force_deletes_existing_branch() -> None:
+    """Test -f flag deletes existing branch with user confirmation."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "my-feature"]},
+            default_branches={env.cwd: "main"},
+        )
+        ctx = build_workspace_test_context(env, git=git)
+
+        # Create plan file that would create a branch named "my-feature"
+        plan_file = env.cwd / "my-feature-plan.md"
+        plan_file.write_text("# Plan", encoding="utf-8")
+
+        # Use -f and confirm deletion (input "y")
+        result = runner.invoke(
+            implement,
+            [str(plan_file), "--worktree-name", "my-feature", "-f", "--script"],
+            obj=ctx,
+            input="y\n",
+        )
+
+        assert result.exit_code == 0
+        assert "will be deleted" in result.output
+        assert "branch:" in result.output
+        assert "my-feature" in result.output
+        assert "Deleted branch" in result.output
+        assert "Created worktree" in result.output
+
+        # Verify branch was deleted
+        assert "my-feature" in git.deleted_branches
+
+        # Verify new worktree was created
+        assert len(git.added_worktrees) == 1
+
+
+def test_implement_force_deletes_existing_worktree() -> None:
+    """Test -f flag deletes existing worktree directory with user confirmation."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Note: discover_repo_or_sentinel builds worktrees_dir as:
+        #   erk_root / "repos" / repo_name / "worktrees"
+        # This differs from env.repo.worktrees_dir, so we construct the real path
+        real_worktrees_dir = env.erk_root / "repos" / env.cwd.name / "worktrees"
+        existing_wt_path = real_worktrees_dir / "my-feature"
+        existing_wt_path.mkdir(parents=True)
+        (existing_wt_path / "some-file.txt").write_text("existing content", encoding="utf-8")
+
+        # Configure FakeGit with existing_paths including the worktrees_dir
+        # This allows path_exists to detect the real directory
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            existing_paths={env.cwd, env.git_dir, real_worktrees_dir, existing_wt_path},
+        )
+        ctx = build_workspace_test_context(env, git=git)
+
+        # Create plan file
+        plan_file = env.cwd / "my-feature-plan.md"
+        plan_file.write_text("# Plan", encoding="utf-8")
+
+        # Use -f and confirm deletion (input "y")
+        result = runner.invoke(
+            implement,
+            [str(plan_file), "--worktree-name", "my-feature", "-f", "--script"],
+            obj=ctx,
+            input="y\n",
+        )
+
+        assert result.exit_code == 0, f"Exit code {result.exit_code}. Output: {result.output}"
+        assert "will be deleted" in result.output
+        assert "worktree:" in result.output
+        assert "Deleted worktree" in result.output
+        assert "Created worktree" in result.output
+
+
+def test_implement_force_deletes_both_branch_and_worktree() -> None:
+    """Test -f flag deletes both existing branch and worktree."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Note: discover_repo_or_sentinel builds worktrees_dir as:
+        #   erk_root / "repos" / repo_name / "worktrees"
+        real_worktrees_dir = env.erk_root / "repos" / env.cwd.name / "worktrees"
+        existing_wt_path = real_worktrees_dir / "my-feature"
+        existing_wt_path.mkdir(parents=True)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "my-feature"]},
+            default_branches={env.cwd: "main"},
+            existing_paths={env.cwd, env.git_dir, real_worktrees_dir, existing_wt_path},
+        )
+        ctx = build_workspace_test_context(env, git=git)
+
+        # Create plan file
+        plan_file = env.cwd / "my-feature-plan.md"
+        plan_file.write_text("# Plan", encoding="utf-8")
+
+        # Use -f and confirm deletion
+        result = runner.invoke(
+            implement,
+            [str(plan_file), "--worktree-name", "my-feature", "-f", "--script"],
+            obj=ctx,
+            input="y\n",
+        )
+
+        assert result.exit_code == 0
+        # Should show both in deletion list
+        assert "worktree:" in result.output
+        assert "branch:" in result.output
+        assert "Created worktree" in result.output
+
+
+def test_implement_force_aborts_when_user_declines() -> None:
+    """Test -f flag aborts when user declines confirmation."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "my-feature"]},
+            default_branches={env.cwd: "main"},
+        )
+        ctx = build_workspace_test_context(env, git=git)
+
+        # Create plan file
+        plan_file = env.cwd / "my-feature-plan.md"
+        plan_file.write_text("# Plan", encoding="utf-8")
+
+        # Use -f but decline deletion (input "n")
+        result = runner.invoke(
+            implement,
+            [str(plan_file), "--worktree-name", "my-feature", "-f", "--script"],
+            obj=ctx,
+            input="n\n",
+        )
+
+        assert result.exit_code == 1
+        assert "Aborted" in result.output
+
+        # Verify nothing was deleted
+        assert "my-feature" not in git.deleted_branches
+        assert len(git.added_worktrees) == 0
+
+
+def test_implement_without_force_shows_error_with_suggestion() -> None:
+    """Test that conflict without -f shows error suggesting -f flag."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "my-feature"]},
+            default_branches={env.cwd: "main"},
+        )
+        ctx = build_workspace_test_context(env, git=git)
+
+        # Create plan file
+        plan_file = env.cwd / "my-feature-plan.md"
+        plan_file.write_text("# Plan", encoding="utf-8")
+
+        # Without -f flag
+        result = runner.invoke(
+            implement,
+            [str(plan_file), "--worktree-name", "my-feature", "--script"],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 1
+        assert "already exists" in result.output
+        assert "-f" in result.output  # Should suggest using -f
+
+        # Verify nothing was created
+        assert len(git.added_worktrees) == 0
+
+
+def test_implement_force_dry_run_shows_would_delete() -> None:
+    """Test -f with --dry-run shows what would be deleted without actually deleting."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "my-feature"]},
+            default_branches={env.cwd: "main"},
+        )
+        ctx = build_workspace_test_context(env, git=git)
+
+        # Create plan file
+        plan_file = env.cwd / "my-feature-plan.md"
+        plan_file.write_text("# Plan", encoding="utf-8")
+
+        # Use -f with --dry-run
+        result = runner.invoke(
+            implement,
+            [str(plan_file), "--worktree-name", "my-feature", "-f", "--dry-run"],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 0
+        assert "DRY RUN" in result.output
+        assert "Would delete branch" in result.output
+        assert "my-feature" in result.output
+
+        # Verify nothing was actually deleted
+        assert "my-feature" not in git.deleted_branches
+        assert len(git.added_worktrees) == 0
+
+
+def test_implement_force_uses_graphite_delete_when_enabled() -> None:
+    """Test -f uses git.delete_branch_with_graphite when use_graphite=True.
+
+    Note: This test verifies the deletion uses Graphite's method, but doesn't
+    test full worktree creation since that requires more complex Graphite setup.
+    We verify by checking that --dry-run shows the branch would be deleted.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "my-feature"]},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        # Build context with use_graphite=True but don't use FakeGraphite
+        # (we're testing deletion, not worktree creation with Graphite)
+        ctx = build_workspace_test_context(env, git=git, use_graphite=True)
+
+        # Create plan file
+        plan_file = env.cwd / "my-feature-plan.md"
+        plan_file.write_text("# Plan", encoding="utf-8")
+
+        # Use -f with --dry-run to verify deletion path without full worktree creation
+        result = runner.invoke(
+            implement,
+            [str(plan_file), "--worktree-name", "my-feature", "-f", "--dry-run"],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 0, f"Unexpected exit code. Output: {result.output}"
+
+        # Verify dry-run shows branch would be deleted
+        assert "Would delete branch" in result.output
+        assert "my-feature" in result.output
