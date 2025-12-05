@@ -115,7 +115,30 @@ closing_text=$(dot-agent run erk get-closing-text 2>/dev/null || echo "")
 
 This reads `.impl/issue.json` and returns `Closes #N` if an issue reference exists.
 
-### Step 7: Create GitHub PR
+### Step 6.5: Check for Existing PR
+
+Before creating a new PR, check if one already exists for the current branch:
+
+```bash
+existing_pr=$(gh pr list --head "$(git branch --show-current)" --state open --json number,url,isDraft --jq '.[0]')
+```
+
+**Decision logic:**
+
+- If `existing_pr` is empty or null: No existing PR, proceed to Step 7
+- If `existing_pr` has data: PR exists, skip Step 7 and go directly to Step 8
+
+If an existing PR was found, extract its details for reporting:
+
+```bash
+pr_url=$(echo "$existing_pr" | jq -r '.url')
+pr_number=$(echo "$existing_pr" | jq -r '.number')
+is_draft=$(echo "$existing_pr" | jq -r '.isDraft')
+```
+
+### Step 7: Create GitHub PR (if no existing PR)
+
+**Skip this step if an existing PR was found in Step 6.5.** The push in Step 5 already updated the existing PR with new commits.
 
 Extract PR title (first line) and body (remaining lines) from commit message, then create PR with closing text appended:
 
@@ -144,7 +167,9 @@ gh pr create --title "$pr_title" --body "$pr_body"
 
 ### Step 8: Report Results
 
-Display a clear summary:
+Display a clear summary based on whether a PR was created or found:
+
+**If a NEW PR was created (Step 7 was executed):**
 
 ```
 ## Branch Submission Complete
@@ -162,7 +187,32 @@ Display a clear summary:
 [PR URL from gh pr create output]
 ```
 
-**Conditional line:** The "Linked to issue" line should only appear if `closing_text` was non-empty (i.e., an issue reference existed in `.impl/issue.json`).
+**If an EXISTING PR was found (Step 7 was skipped):**
+
+```
+## Branch Submission Complete
+
+### What Was Done
+
+✓ Staged all uncommitted changes
+✓ Created commit with AI-generated message
+✓ Pushed branch to origin with upstream tracking
+✓ Found existing PR #N for this branch (skipped PR creation)
+✓ Linked to issue #M (will auto-close on merge)  [only if closing_text was present]
+
+### Note
+
+[If is_draft is true]: This is a draft PR. When ready for review, run: `gh pr ready`
+
+### View PR
+
+[PR URL extracted from existing_pr]
+```
+
+**Conditional lines:**
+
+- The "Linked to issue" line should only appear if `closing_text` was non-empty
+- The "Note" section with draft guidance should only appear if `is_draft` is true
 
 **CRITICAL**: The PR URL MUST be the absolute last line of your output. Do not add any text after it.
 
@@ -199,14 +249,4 @@ Option 2: Force push (⚠️ overwrites remote)
     git push -f origin [branch]
 ```
 
-**PR already exists:**
-
-```
-❌ PR already exists for this branch
-
-To update the existing PR:
-    gh pr edit [pr-number] --title "..." --body "..."
-
-Or view it:
-    gh pr view
-```
+Note: The "PR already exists" case is now handled automatically in Step 6.5. If a PR exists for the current branch, the command will skip PR creation and report the existing PR URL instead.
