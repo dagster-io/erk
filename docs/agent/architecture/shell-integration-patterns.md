@@ -11,6 +11,85 @@ read_when:
 
 This document covers implementation patterns for shell integration commands, complementing the [fundamental constraint](shell-integration-constraint.md) documentation.
 
+## Handler Execution Model
+
+The shell integration handler in `handler.py` can execute commands in two ways:
+
+### CliRunner (In-Process)
+
+- **Pros**: Fast, shares context with tests, no subprocess overhead
+- **Cons**: Buffers ALL output (stdout AND stderr) until command completes
+- **Use when**: Testing, or when real-time output isn't needed
+
+### Subprocess (Out-of-Process)
+
+- **Pros**: Allows real-time stderr streaming to terminal
+- **Cons**: Spawns new process, can't share test context
+- **Use when**: User-facing commands need live feedback
+
+### Why Subprocess for Shell Integration
+
+The handler uses subprocess because shell-integrated commands (like `pr land`) output progress messages that users need to see in real-time:
+
+```python
+# subprocess.run with stderr=None lets stderr stream live
+result = subprocess.run(
+    cmd,
+    stdout=subprocess.PIPE,  # Capture for script path
+    stderr=None,              # Pass through to terminal
+    text=True,
+    check=False,
+)
+```
+
+With CliRunner, messages like "Getting current branch...", "Deleting worktree..." would all appear at once after the command completes, making it seem frozen.
+
+## Command Routing with Subprocess
+
+When the handler uses subprocess, commands must be invoked by their actual CLI paths, not legacy aliases.
+
+### The Problem
+
+Legacy aliases like `create`, `goto`, `consolidate` are registered in `SHELL_INTEGRATION_COMMANDS` for backward compatibility, but they don't exist as top-level CLI commands. The actual commands are:
+
+| Legacy Alias  | Actual CLI Path     |
+| ------------- | ------------------- |
+| `create`      | `wt create`         |
+| `goto`        | `wt goto`           |
+| `consolidate` | `stack consolidate` |
+
+### Solution: Map Aliases to CLI Paths
+
+Use a dict that maps handler command names to CLI command parts:
+
+```python
+SHELL_INTEGRATION_COMMANDS: Final[dict[str, list[str]]] = {
+    # Top-level commands (key matches CLI path)
+    "checkout": ["checkout"],
+    "up": ["up"],
+
+    # Legacy aliases (map to actual CLI paths)
+    "create": ["wt", "create"],
+    "goto": ["wt", "goto"],
+    "consolidate": ["stack", "consolidate"],
+
+    # Compound commands
+    "wt create": ["wt", "create"],
+    "pr land": ["pr", "land"],
+}
+```
+
+Then build the subprocess command from the mapped path:
+
+```python
+cli_cmd_parts = SHELL_INTEGRATION_COMMANDS.get(command_name)
+cmd = ["erk", *cli_cmd_parts, *args, "--script"]
+```
+
+### Why This Matters
+
+With the old CliRunner approach, the handler directly invoked Command objects from the dict, bypassing CLI routing. With subprocess, we go through the actual CLI, so we need proper command paths.
+
 ## Script-First Output Pattern
 
 Commands that perform destructive operations (worktree deletion, branch deletion) MUST output their activation script **before** those operations.
