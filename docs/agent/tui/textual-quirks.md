@@ -125,6 +125,35 @@ async def _load_data(self) -> None:
     self._update_table(rows)
 ```
 
+## Generator Quirks
+
+### Empty Generator Pattern for Override Methods
+
+**Problem**: Some Textual methods like `get_system_commands` return generators. When overriding to return nothing, you need proper generator syntax.
+
+**Wrong approaches:**
+
+```python
+# WRONG - returns None, not a generator
+def get_system_commands(self, screen: Screen) -> Iterator[Any]:
+    return
+
+# WRONG - list is not a generator
+def get_system_commands(self, screen: Screen) -> Iterator[Any]:
+    return []
+```
+
+**Solution**: Use `return; yield` idiom to create an empty generator:
+
+```python
+# CORRECT - empty generator
+def get_system_commands(self, screen: Screen) -> Iterator[Any]:
+    return
+    yield  # Makes this a generator function
+```
+
+The `yield` statement (even unreachable) tells Python this is a generator function, so `return` returns an empty generator rather than `None`.
+
 ## Testing Quirks
 
 ### pytest-asyncio Required

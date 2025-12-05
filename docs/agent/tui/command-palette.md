@@ -171,6 +171,42 @@ class DashboardScreen(Screen):
         pass
 ```
 
+## Hiding System Commands from Specific Screens
+
+Textual includes default system commands (Keys, Quit, Screenshot, Theme) that appear in every command palette. To hide these from specific screens while keeping them available elsewhere, override `get_system_commands`:
+
+```python
+from collections.abc import Iterator
+from typing import Any
+from textual.screen import ModalScreen, Screen
+
+class MyModalScreen(ModalScreen):
+    """Modal that hides system commands, showing only custom commands."""
+
+    # Register only our custom provider
+    COMMANDS = {MyCustomProvider}
+
+    def get_system_commands(self, screen: Screen) -> Iterator[Any]:
+        """Override to hide default system commands (Keys, Quit, Screenshot, Theme).
+
+        This makes the command palette show only our custom commands.
+        """
+        # Empty generator pattern - return immediately, yield makes it a generator
+        return
+        yield  # Required to make this a generator function
+
+    # ... rest of screen implementation
+```
+
+**Why this pattern:**
+
+- `get_system_commands` normally yields system command tuples
+- Returning an empty generator hides all system commands
+- The `return; yield` idiom creates an empty generator with correct typing
+- Screen-level override only affects that screen; app-level commands remain available elsewhere
+
+**Type annotation note:** Use `Iterator[Any]` as the return type. The actual `SystemCommands` type alias may not be directly importable in all Textual versions.
+
 ## Provider Context Properties
 
 Providers have access to runtime context via these properties:
