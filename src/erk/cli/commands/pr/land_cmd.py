@@ -114,16 +114,19 @@ def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
 
     # Step 1.5: Create extraction plan from session logs (optional)
     # This captures learnings from the work session for documentation improvements.
-    # Extraction plan creation is non-blocking - warnings are shown but landing continues.
+    # Use ctx.cwd (current working directory) to access session logs in the worktree.
+    # If extraction fails, preserve the worktree so user can retry manually.
+    extraction_success = True  # Default: proceed with deletion
     if extract:
-        extraction_success = ctx.shell.run_claude_extraction_plan(current_worktree_path)
+        extraction_success = ctx.shell.run_claude_extraction_plan(ctx.cwd)
         if extraction_success:
             user_output(click.style("✓", fg="green") + " Created documentation extraction plan")
         else:
             user_output(
                 click.style("⚠", fg="yellow")
-                + " Skipped extraction plan (Claude CLI not available or failed)"
+                + " Extraction plan failed - preserving worktree for manual retry"
             )
+            user_output("  Run manually: claude /erk:create-extraction-plan")
 
     # Step 2: Navigate to destination (trunk or upstack)
     worktrees = ctx.git.list_worktrees(repo.root)
@@ -166,8 +169,14 @@ def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
     )
     machine_output(str(activation_result.path), nl=False)
 
-    # Step 4: Delete current branch and worktree
-    delete_branch_and_worktree(ctx, repo.root, current_branch, current_worktree_path)
+    # Step 4: Delete current branch and worktree (skip if extraction failed)
+    if extraction_success:
+        delete_branch_and_worktree(ctx, repo.root, current_branch, current_worktree_path)
+    else:
+        user_output(
+            click.style("⚠", fg="yellow") + f" Worktree preserved at: {current_worktree_path}"
+        )
+        user_output("  Delete manually after extraction: erk wt rm")
 
     # Step 5: Pull latest changes on destination branch
     # If this fails, the script is already output - shell can still navigate

@@ -1063,12 +1063,16 @@ def test_pr_land_creates_extraction_plan_by_default() -> None:
 
         assert result.exit_code == 0
 
-        # Verify extraction plan was created
+        # Verify extraction plan was created (runs from cwd, not worktree path)
         assert len(shell_ops.extraction_calls) == 1
-        assert shell_ops.extraction_calls[0] == repo_dir / "worktrees" / "feature-1"
+        assert shell_ops.extraction_calls[0] == env.cwd
 
         # Verify success message shown
         assert "Created documentation extraction plan" in result.output
+
+        # Verify PR was merged and worktree was deleted (extraction succeeded)
+        assert 123 in github_ops.merged_prs
+        assert "feature-1" in git_ops.deleted_branches
 
 
 def test_pr_land_skips_extraction_plan_with_no_extract_flag() -> None:
@@ -1143,8 +1147,8 @@ def test_pr_land_skips_extraction_plan_with_no_extract_flag() -> None:
         assert "extraction plan" not in result.output.lower()
 
 
-def test_pr_land_warns_when_extraction_fails() -> None:
-    """Test pr land shows warning when extraction plan fails but continues landing."""
+def test_pr_land_preserves_worktree_when_extraction_fails() -> None:
+    """Test pr land preserves worktree when extraction plan fails for manual retry."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -1211,10 +1215,12 @@ def test_pr_land_warns_when_extraction_fails() -> None:
         # Verify extraction was attempted
         assert len(shell_ops.extraction_calls) == 1
 
-        # Verify warning message shown
-        assert "Skipped extraction plan" in result.output
-        assert "Claude CLI not available or failed" in result.output
+        # Verify warning messages shown
+        assert "Extraction plan failed" in result.output
+        assert "preserving worktree" in result.output
+        assert "Run manually" in result.output
+        assert "Worktree preserved at" in result.output
 
-        # Verify PR was still merged and worktree deleted
+        # Verify PR was merged but worktree was NOT deleted
         assert 123 in github_ops.merged_prs
-        assert "feature-1" in git_ops.deleted_branches
+        assert "feature-1" not in git_ops.deleted_branches  # Worktree preserved!
