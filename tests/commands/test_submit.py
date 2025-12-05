@@ -1513,3 +1513,140 @@ def test_submit_warns_when_node_id_not_available(tmp_path: Path) -> None:
     assert "Could not fetch workflow run node_id" in result.output
     # Workflow should still be triggered successfully
     assert "1 issue(s) submitted successfully!" in result.output
+
+
+def test_submit_with_custom_base_branch(tmp_path: Path) -> None:
+    """Test submit creates PR with custom base branch when --base is specified."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    # Create issue with erk-plan label, OPEN state
+    now = datetime.now(UTC)
+    issue = IssueInfo(
+        number=123,
+        title="Implement feature X",
+        body=_make_plan_body(),
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    # Create plan for the issue
+    plan = Plan(
+        plan_identifier="123",
+        title="Implement feature X",
+        body=_make_plan_body(),
+        state=PlanState.OPEN,
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+        # Custom feature branch exists on remote
+        remote_branches={repo_root: ["origin/feature/parent-branch"]},
+    )
+    fake_github = FakeGitHub()
+    fake_issue_dev = FakeIssueLinkBranches()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        issue_link_branches=fake_issue_dev,
+        plan_store=fake_plan_store,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123", "--base", "feature/parent-branch"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    assert "issue(s) submitted successfully!" in result.output
+
+    # Verify PR was created with custom base branch
+    assert len(fake_github.created_prs) == 1
+    branch_name, title, body, base, draft = fake_github.created_prs[0]
+    assert base == "feature/parent-branch"  # NOT "master"
+
+    # Verify development branch was created from custom base
+    assert len(fake_issue_dev.created_branches) == 1
+    issue_num, branch = fake_issue_dev.created_branches[0]
+    assert issue_num == 123
+    # Verify the development branch was created with the custom base
+    # (FakeIssueLinkBranches records all calls in create_calls)
+    assert len(fake_issue_dev.create_calls) == 1
+    call = fake_issue_dev.create_calls[0]
+    assert call.base_branch == "feature/parent-branch"
+
+
+def test_submit_with_invalid_base_branch(tmp_path: Path) -> None:
+    """Test submit fails early when --base branch doesn't exist on remote (LBYL)."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    # Create issue (we won't get to validation because base branch check fails first)
+    now = datetime.now(UTC)
+    issue = IssueInfo(
+        number=123,
+        title="Implement feature X",
+        body=_make_plan_body(),
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+        # "nonexistent-branch" does NOT exist on remote
+        remote_branches={repo_root: []},
+    )
+    fake_github = FakeGitHub()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123", "--base", "nonexistent-branch"], obj=ctx)
+
+    # Should fail early with error (LBYL)
+    assert result.exit_code == 1
+    assert "Error: Base branch 'nonexistent-branch' does not exist on remote" in result.output
+
+    # Verify workflow was NOT triggered (failure happened before workflow dispatch)
+    assert len(fake_github.triggered_workflows) == 0
