@@ -1,13 +1,43 @@
 """Submit current branch as a pull request.
 
-Delegates to the /gt:pr-submit slash command via Claude CLI.
+Orchestrates the PR submission workflow using Python:
+1. Preflight: Auth checks, squash, submit branch, get diff
+2. Generate: AI-generated commit message via Claude CLI
+3. Finalize: Update PR metadata with generated message
 """
 
+import os
+import uuid
 from pathlib import Path
 
 import click
+from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.integrations.gt.operations.finalize import execute_finalize
+from erk_shared.integrations.gt.operations.preflight import execute_preflight
+from erk_shared.integrations.gt.types import (
+    FinalizeResult,
+    PostAnalysisError,
+    PreAnalysisError,
+    PreflightResult,
+)
 
+from erk.core.commit_message_generator import (
+    CommitMessageGenerator,
+    CommitMessageRequest,
+)
 from erk.core.context import ErkContext
+
+
+def _render_progress(event: ProgressEvent) -> None:
+    """Render a progress event to the CLI."""
+    style_map = {
+        "info": {"dim": True},
+        "success": {"fg": "green"},
+        "warning": {"fg": "yellow"},
+        "error": {"fg": "red"},
+    }
+    style = style_map.get(event.style, {})
+    click.echo(click.style(f"   {event.message}", **style))
 
 
 @click.command("submit")
@@ -25,76 +55,139 @@ def pr_submit(ctx: ErkContext, debug: bool) -> None:
       # Submit PR
       erk pr submit
     """
-    executor = ctx.claude_executor
-
-    # Verify Claude is available
-    if not executor.is_claude_available():
+    # Verify Claude is available (needed for commit message generation)
+    if not ctx.claude_executor.is_claude_available():
         raise click.ClickException(
             "Claude CLI not found\n\nInstall from: https://claude.com/download"
         )
 
-    click.echo(click.style("🚀 Submitting PR via Claude...", bold=True))
-    click.echo(click.style("   (Claude may take a moment to start)", dim=True))
+    click.echo(click.style("🚀 Submitting PR...", bold=True))
     click.echo("")
 
-    worktree_path = Path.cwd()
+    cwd = Path.cwd()
+    session_id = os.environ.get("SESSION_ID", str(uuid.uuid4()))
 
-    # Track results from streaming events
-    pr_url: str | None = None
-    error_message: str | None = None
-    success = True
-    last_spinner: str | None = None
+    # Phase 1: Preflight (auth, squash, submit, get diff)
+    click.echo(click.style("Phase 1: Preflight checks", bold=True))
+    preflight_result = _run_preflight(ctx, cwd, session_id, debug)
 
-    # Stream events and print content directly
-    for event in executor.execute_command_streaming(
-        command="/gt:pr-submit",
-        worktree_path=worktree_path,
-        dangerous=False,
+    if isinstance(preflight_result, PreAnalysisError):
+        raise click.ClickException(preflight_result.message)
+    if isinstance(preflight_result, PostAnalysisError):
+        raise click.ClickException(preflight_result.message)
+
+    click.echo(click.style(f"   PR #{preflight_result.pr_number} created", fg="green"))
+    click.echo("")
+
+    # Phase 2: Generate commit message
+    click.echo(click.style("Phase 2: Generating PR description", bold=True))
+    msg_gen = CommitMessageGenerator(ctx.claude_executor)
+    msg_result = msg_gen.generate(
+        CommitMessageRequest(
+            diff_file=Path(preflight_result.diff_file),
+            repo_root=Path(preflight_result.repo_root),
+            current_branch=preflight_result.current_branch,
+            parent_branch=preflight_result.parent_branch,
+        )
+    )
+
+    if not msg_result.success:
+        raise click.ClickException(f"Failed to generate message: {msg_result.error_message}")
+
+    click.echo(click.style("   PR description generated", fg="green"))
+    click.echo("")
+
+    # Phase 3: Finalize (update PR metadata)
+    click.echo(click.style("Phase 3: Updating PR metadata", bold=True))
+    finalize_result = _run_finalize(
+        ctx,
+        cwd,
+        pr_number=preflight_result.pr_number,
+        title=msg_result.title or "Update",
+        body=msg_result.body or "",
+        diff_file=preflight_result.diff_file,
         debug=debug,
+    )
+
+    if isinstance(finalize_result, PostAnalysisError):
+        raise click.ClickException(finalize_result.message)
+
+    click.echo(click.style("   PR metadata updated", fg="green"))
+    click.echo("")
+
+    # Success output with clickable URL
+    styled_url = click.style(finalize_result.pr_url, fg="cyan", underline=True)
+    clickable_url = f"\033]8;;{finalize_result.pr_url}\033\\{styled_url}\033]8;;\033\\"
+    click.echo(f"✅ {clickable_url}")
+
+    # Show Graphite URL if available
+    if finalize_result.graphite_url:
+        styled_graphite = click.style(finalize_result.graphite_url, fg="cyan", underline=True)
+        clickable_graphite = (
+            f"\033]8;;{finalize_result.graphite_url}\033\\{styled_graphite}\033]8;;\033\\"
+        )
+        click.echo(f"📊 {clickable_graphite}")
+
+
+def _run_preflight(
+    ctx: ErkContext,
+    cwd: Path,
+    session_id: str,
+    debug: bool,
+) -> PreflightResult | PreAnalysisError | PostAnalysisError:
+    """Run preflight phase and return result."""
+    result: PreflightResult | PreAnalysisError | PostAnalysisError | None = None
+
+    for event in execute_preflight(ctx, cwd, session_id):
+        if isinstance(event, ProgressEvent):
+            if debug:
+                _render_progress(event)
+        elif isinstance(event, CompletionEvent):
+            result = event.result
+
+    if result is None:
+        return PostAnalysisError(
+            success=False,
+            error_type="submit_failed",
+            message="Preflight did not complete",
+            details={},
+        )
+
+    return result
+
+
+def _run_finalize(
+    ctx: ErkContext,
+    cwd: Path,
+    pr_number: int,
+    title: str,
+    body: str,
+    diff_file: str,
+    debug: bool,
+) -> FinalizeResult | PostAnalysisError:
+    """Run finalize phase and return result."""
+    result: FinalizeResult | PostAnalysisError | None = None
+
+    for event in execute_finalize(
+        ctx,
+        cwd,
+        pr_number=pr_number,
+        pr_title=title,
+        pr_body=body,
+        diff_file=diff_file,
     ):
-        if event.event_type == "text":
-            # Print text content directly (Claude's formatted output)
-            click.echo(event.content)
-        elif event.event_type == "tool":
-            # Tool summaries with icon
-            click.echo(click.style(f"   ⚙️  {event.content}", fg="cyan", dim=True))
-        elif event.event_type == "spinner_update":
-            # Deduplicate spinner updates
-            if event.content != last_spinner:
-                click.echo(click.style(f"   ⏳ {event.content}", dim=True))
-                last_spinner = event.content
-        elif event.event_type == "pr_url":
-            pr_url = event.content
-        elif event.event_type == "error":
-            click.echo(click.style(f"   ❌ {event.content}", fg="red"))
-            error_message = event.content
-            success = False
-        elif event.event_type == "no_output":
-            click.echo(click.style(f"   ⚠️  {event.content}", fg="yellow"))
-            error_message = event.content
-            success = False
-        elif event.event_type == "no_turns":
-            click.echo(click.style(f"   ⚠️  {event.content}", fg="yellow"))
-            click.echo(
-                click.style(
-                    "   💡 Run 'claude /gt:pr-submit' directly to see hook errors",
-                    fg="yellow",
-                    dim=True,
-                )
-            )
-            error_message = event.content
-            success = False
-        elif event.event_type == "process_error":
-            click.echo(click.style(f"   ❌ {event.content}", fg="red"))
-            error_message = event.content
-            success = False
+        if isinstance(event, ProgressEvent):
+            if debug:
+                _render_progress(event)
+        elif isinstance(event, CompletionEvent):
+            result = event.result
 
-    # Final PR link with clickable URL
-    if pr_url:
-        styled_url = click.style(pr_url, fg="cyan", underline=True)
-        clickable_url = f"\033]8;;{pr_url}\033\\{styled_url}\033]8;;\033\\"
-        click.echo(f"\n✅ {clickable_url}\n")
+    if result is None:
+        return PostAnalysisError(
+            success=False,
+            error_type="submit_failed",
+            message="Finalize did not complete",
+            details={},
+        )
 
-    if not success:
-        error_msg = error_message or "PR submission failed"
-        raise click.ClickException(error_msg)
+    return result

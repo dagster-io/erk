@@ -47,6 +47,21 @@ class StreamEvent:
 
 
 @dataclass
+class PromptResult:
+    """Result of executing a single prompt.
+
+    Attributes:
+        success: Whether the prompt completed successfully
+        output: The output text from Claude
+        error: Error message if command failed, None otherwise
+    """
+
+    success: bool
+    output: str
+    error: str | None
+
+
+@dataclass
 class CommandResult:
     """Result of executing a Claude CLI command.
 
@@ -274,6 +289,41 @@ class ClaudeExecutor(ABC):
             ... )
             >>> if exit_code == 0:
             ...     print("Extraction plan created successfully")
+        """
+        ...
+
+    @abstractmethod
+    def execute_prompt(
+        self,
+        prompt: str,
+        *,
+        model: str = "haiku",
+        tools: list[str] | None = None,
+        cwd: Path | None = None,
+    ) -> PromptResult:
+        """Execute a single prompt and return the result.
+
+        This is a simpler interface for single-shot prompts that don't need
+        streaming. The prompt is sent to Claude CLI with --print flag and
+        the result is returned synchronously.
+
+        Args:
+            prompt: The prompt text to send to Claude
+            model: Model to use (default "haiku" for speed/cost)
+            tools: Optional list of allowed tools (e.g., ["Read", "Bash"])
+            cwd: Optional working directory for the command
+
+        Returns:
+            PromptResult with success status and output text
+
+        Example:
+            >>> executor = RealClaudeExecutor()
+            >>> result = executor.execute_prompt(
+            ...     "Generate a commit message for this diff",
+            ...     model="haiku",
+            ... )
+            >>> if result.success:
+            ...     print(result.output)
         """
         ...
 
@@ -716,3 +766,50 @@ class RealClaudeExecutor(ClaudeExecutor):
             # Fallback if /dev/tty not available (e.g., in CI without TTY)
             result = subprocess.run(cmd_args, cwd=worktree_path, check=False)
             return result.returncode
+
+    def execute_prompt(
+        self,
+        prompt: str,
+        *,
+        model: str = "haiku",
+        tools: list[str] | None = None,
+        cwd: Path | None = None,
+    ) -> PromptResult:
+        """Execute a single prompt and return the result.
+
+        Implementation details:
+        - Uses subprocess.run with --print and --output-format text
+        - Returns PromptResult with success status and output
+        """
+        cmd = [
+            "claude",
+            "--print",
+            "--output-format",
+            "text",
+            "--model",
+            model,
+        ]
+        if tools is not None:
+            cmd.extend(["--allowedTools", ",".join(tools)])
+        cmd.append(prompt)
+
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            cwd=cwd,
+            check=False,
+        )
+
+        if result.returncode != 0:
+            return PromptResult(
+                success=False,
+                output="",
+                error=result.stderr.strip() if result.stderr else f"Exit code {result.returncode}",
+            )
+
+        return PromptResult(
+            success=True,
+            output=result.stdout.strip(),
+            error=None,
+        )
