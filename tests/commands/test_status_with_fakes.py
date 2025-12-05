@@ -21,6 +21,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 
 from erk.cli.commands.status import status_cmd
@@ -78,6 +79,10 @@ def test_status_cmd_in_subdirectory_of_worktree(tmp_path: Path) -> None:
     subdir = worktree_path / "src" / "nested"
     subdir.mkdir(parents=True)
 
+    git_branches = FakeGitBranches(
+        current_branches={worktree_path: "feature", subdir: "feature"},
+    )
+
     git_ops = FakeGit(
         worktrees={
             repo_root: [
@@ -85,11 +90,11 @@ def test_status_cmd_in_subdirectory_of_worktree(tmp_path: Path) -> None:
                 WorktreeInfo(path=worktree_path, branch="feature"),
             ]
         },
-        current_branches={worktree_path: "feature", subdir: "feature"},
         git_common_dirs={worktree_path: git_dir, subdir: git_dir},
         file_statuses={worktree_path: ([], [], []), subdir: ([], [], [])},
         ahead_behind={(worktree_path, "feature"): (0, 0), (subdir, "feature"): (0, 0)},
         recent_commits={worktree_path: [], subdir: []},
+        git_branches=git_branches,
     )
     global_config = GlobalConfig.test(
         tmp_path / "erks",

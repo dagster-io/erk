@@ -14,6 +14,7 @@ from pathlib import Path
 
 import click
 from erk_shared.git.abc import Git
+from erk_shared.git.branches.abc import GitBranches
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues
 
@@ -103,6 +104,35 @@ def require_git(ctx: click.Context) -> Git:
         raise SystemExit(1)
 
     return ctx.obj.git
+
+
+def require_git_branches(ctx: click.Context) -> GitBranches:
+    """Get GitBranches from context, exiting with error if not initialized.
+
+    Uses LBYL pattern to check context before accessing.
+
+    Args:
+        ctx: Click context (must have DotAgentContext in ctx.obj)
+
+    Returns:
+        GitBranches instance from context
+
+    Raises:
+        SystemExit: If context not initialized (exits with code 1)
+
+    Example:
+        >>> @click.command()
+        >>> @click.pass_context
+        >>> def my_command(ctx: click.Context) -> None:
+        ...     git_branches = require_git_branches(ctx)
+        ...     cwd = require_cwd(ctx)
+        ...     branch = git_branches.get_current_branch(cwd)
+    """
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+
+    return ctx.obj.git_branches
 
 
 def require_github(ctx: click.Context) -> GitHub:

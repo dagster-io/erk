@@ -37,9 +37,9 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import click
-from erk_shared.git.abc import Git
+from erk_shared.git.branches.abc import GitBranches
 
-from dot_agent_kit.context_helpers import require_git
+from dot_agent_kit.context_helpers import require_git_branches
 from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.find_project_dir import (
     ProjectError,
     find_project_info,
@@ -89,18 +89,18 @@ class ListSessionsError:
     help: str
 
 
-def get_branch_context(git: Git, cwd: Path) -> BranchContext:
+def get_branch_context(git_branches: GitBranches, cwd: Path) -> BranchContext:
     """Get git branch context for determining session selection behavior.
 
     Args:
-        git: Git interface for branch operations
+        git_branches: GitBranches interface for branch operations
         cwd: Current working directory
 
     Returns:
         BranchContext with current branch, trunk branch, and trunk status
     """
-    current_branch = git.get_current_branch(cwd) or ""
-    trunk_branch = git.detect_trunk_branch(cwd)
+    current_branch = git_branches.get_current_branch(cwd) or ""
+    trunk_branch = git_branches.detect_trunk_branch(cwd)
 
     return BranchContext(
         current_branch=current_branch,
@@ -318,7 +318,7 @@ def list_sessions(ctx: click.Context, limit: int, min_size: int) -> None:
     Discovers sessions in the project directory, extracts metadata
     (timestamps, summaries), and provides branch context.
     """
-    git = require_git(ctx)
+    git_branches = require_git_branches(ctx)
     cwd = Path(os.getcwd())
 
     # Find project directory
@@ -336,7 +336,7 @@ def list_sessions(ctx: click.Context, limit: int, min_size: int) -> None:
     project_dir = Path(project_result.project_dir)
 
     # Get branch context
-    branch_context = get_branch_context(git, cwd)
+    branch_context = get_branch_context(git_branches, cwd)
 
     # Get current session ID from environment
     current_session_id = get_current_session_id()

@@ -13,6 +13,7 @@ from pathlib import Path
 
 import click
 from erk_shared.git.abc import Git
+from erk_shared.git.branches.abc import GitBranches
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues, RealGitHubIssues
 
@@ -27,7 +28,8 @@ class DotAgentContext:
 
     Attributes:
         github_issues: GitHub Issues integration for querying/commenting
-        git: Git operations integration for branch/commit queries
+        git: Git operations integration for commit/repo queries
+        git_branches: Git branch operations integration for branch queries
         github: GitHub integration for PR operations
         debug: Debug flag for error handling (full stack traces)
         repo_root: Repository root directory (detected at CLI entry)
@@ -36,6 +38,7 @@ class DotAgentContext:
 
     github_issues: GitHubIssues
     git: Git
+    git_branches: GitBranches
     github: GitHub
     debug: bool
     repo_root: Path
@@ -45,6 +48,7 @@ class DotAgentContext:
     def for_test(
         github_issues: GitHubIssues | None = None,
         git: Git | None = None,
+        git_branches: GitBranches | None = None,
         github: GitHub | None = None,
         debug: bool = False,
         repo_root: Path | None = None,
@@ -58,6 +62,7 @@ class DotAgentContext:
         Args:
             github_issues: Optional GitHubIssues implementation. If None, creates FakeGitHubIssues.
             git: Optional Git implementation. If None, creates FakeGit.
+            git_branches: Optional GitBranches implementation. If None, creates FakeGitBranches.
             github: Optional GitHub implementation. If None, creates FakeGitHub.
             debug: Whether to enable debug mode (default False).
             repo_root: Repository root path (defaults to Path("/fake/repo"))
@@ -69,12 +74,15 @@ class DotAgentContext:
         Example:
             >>> from erk_shared.github.issues import FakeGitHubIssues
             >>> from erk_shared.git.fake import FakeGit
+            >>> from erk_shared.git.branches.fake import FakeGitBranches
             >>> github = FakeGitHubIssues()
             >>> git_ops = FakeGit()
+            >>> git_branches_ops = FakeGitBranches()
             >>> ctx = DotAgentContext.for_test(
-            ...     github_issues=github, git=git_ops, debug=True
+            ...     github_issues=github, git=git_ops, git_branches=git_branches_ops, debug=True
             ... )
         """
+        from erk_shared.git.branches.fake import FakeGitBranches
         from erk_shared.git.fake import FakeGit
         from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
@@ -83,7 +91,10 @@ class DotAgentContext:
         resolved_github_issues: GitHubIssues = (
             github_issues if github_issues is not None else FakeGitHubIssues()
         )
-        resolved_git: Git = git if git is not None else FakeGit()
+        resolved_git_branches: GitBranches = (
+            git_branches if git_branches is not None else FakeGitBranches()
+        )
+        resolved_git: Git = git if git is not None else FakeGit(git_branches=resolved_git_branches)
         resolved_github: GitHub = github if github is not None else FakeGitHub()
         resolved_repo_root: Path = repo_root if repo_root is not None else Path("/fake/repo")
         resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
@@ -91,6 +102,7 @@ class DotAgentContext:
         return DotAgentContext(
             github_issues=resolved_github_issues,
             git=resolved_git,
+            git_branches=resolved_git_branches,
             github=resolved_github,
             debug=debug,
             repo_root=resolved_repo_root,
@@ -117,6 +129,7 @@ def create_context(*, debug: bool) -> DotAgentContext:
         >>> ctx = create_context(debug=False)
         >>> issue_number = ctx.github_issues.create_issue(ctx.repo_root, title, body, labels)
     """
+    from erk_shared.git.branches.real import RealGitBranches
     from erk_shared.git.real import RealGit
     from erk_shared.github.real import RealGitHub
     from erk_shared.integrations.time.real import RealTime
@@ -139,6 +152,7 @@ def create_context(*, debug: bool) -> DotAgentContext:
     return DotAgentContext(
         github_issues=RealGitHubIssues(),
         git=RealGit(),
+        git_branches=RealGitBranches(),
         github=RealGitHub(time=RealTime()),
         debug=debug,
         repo_root=repo_root,

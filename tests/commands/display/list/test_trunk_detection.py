@@ -12,6 +12,7 @@ This file trusts that unit layer and only tests CLI integration.
 import pytest
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
@@ -29,6 +30,10 @@ def test_list_with_trunk_branch(trunk_branch: str) -> None:
         # Construct sentinel path without filesystem operations
         feature_dir = env.erk_root / "repos" / env.cwd.name / "worktrees" / "feature"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: trunk_branch, feature_dir: "feature"}
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -37,7 +42,7 @@ def test_list_with_trunk_branch(trunk_branch: str) -> None:
                 ],
             },
             git_common_dirs={env.cwd: env.git_dir, feature_dir: env.git_dir},
-            current_branches={env.cwd: trunk_branch, feature_dir: "feature"},
+            git_branches=git_branches,
         )
 
         # Configure FakeGraphite with branch metadata instead of writing cache file

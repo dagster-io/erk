@@ -1,6 +1,7 @@
 """Tests for erk doctor command."""
 
 from click.testing import CliRunner
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 
 from erk.cli.commands.doctor import doctor_cmd
@@ -12,10 +13,13 @@ def test_doctor_runs_checks() -> None:
     """Test that doctor command runs and displays check results."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         ctx = build_workspace_test_context(env, git=git)
@@ -38,10 +42,13 @@ def test_doctor_shows_cli_availability() -> None:
     """Test that doctor shows CLI tool availability."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         ctx = build_workspace_test_context(env, git=git)
@@ -62,10 +69,13 @@ def test_doctor_shows_repository_status() -> None:
     """Test that doctor shows repository setup status."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         ctx = build_workspace_test_context(env, git=git)
@@ -81,10 +91,13 @@ def test_doctor_shows_summary() -> None:
     """Test that doctor shows a summary at the end."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         ctx = build_workspace_test_context(env, git=git)

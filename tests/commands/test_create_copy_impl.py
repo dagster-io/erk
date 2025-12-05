@@ -2,6 +2,7 @@
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 
 from erk.cli.cli import cli
@@ -23,15 +24,18 @@ def test_create_copy_plan_success() -> None:
         (plan_dir / "progress.md").write_text(progress_content, encoding="utf-8")
 
         # Setup: Configure git state
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "main"},
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git)
@@ -76,15 +80,18 @@ def test_create_copy_plan_missing_plan_error() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Setup: No .impl directory exists
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "main"},
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git)
@@ -117,15 +124,19 @@ def test_create_copy_plan_mutual_exclusion_with_plan() -> None:
         plan_file = env.cwd / "my-plan.md"
         plan_file.write_text("# External plan", encoding="utf-8")
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "main"},
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git)
@@ -172,15 +183,19 @@ total_steps: 6
 """
         (plan_dir / "progress.md").write_text(original_progress, encoding="utf-8")
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "main"},
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git)
@@ -225,15 +240,19 @@ custom_field: some_value
 """
         (plan_dir / "progress.md").write_text(original_progress, encoding="utf-8")
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "main"},
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git)

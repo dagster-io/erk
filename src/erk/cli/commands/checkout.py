@@ -50,7 +50,7 @@ def try_switch_root_worktree(ctx: ErkContext, repo: RepoContext, branch: str) ->
         return None
 
     # Switch root to trunk branch
-    ctx.git.checkout_branch(root_worktree.path, branch)
+    ctx.git_branches.checkout_branch(root_worktree.path, branch)
 
     return root_worktree.path
 
@@ -152,7 +152,7 @@ def _perform_checkout(
     # If we need to checkout, do it before generating the activation script
     if need_checkout:
         # Checkout the branch in the target worktree
-        ctx.git.checkout_branch(target_path, branch)
+        ctx.git_branches.checkout_branch(target_path, branch)
 
     # Ensure branch is tracked with Graphite (idempotent)
     _ensure_graphite_tracking(ctx, repo_root, target_path, branch, script)

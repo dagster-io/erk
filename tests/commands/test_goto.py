@@ -4,6 +4,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 
 from erk.cli.cli import cli
@@ -17,6 +18,10 @@ def test_goto_named_worktree() -> None:
         # Set up worktrees: root on main, feature-work on feature-1
         worktree_path = env.repo.worktrees_dir / "feature-work"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main", worktree_path: "feature-1"}
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -24,9 +29,9 @@ def test_goto_named_worktree() -> None:
                     WorktreeInfo(path=worktree_path, branch="feature-1", is_root=False),
                 ]
             },
-            current_branches={env.cwd: "main", worktree_path: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)
@@ -58,6 +63,10 @@ def test_goto_root() -> None:
         # Set up worktrees: root on main, feature-work on feature-1
         worktree_path = env.repo.worktrees_dir / "feature-work"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main", worktree_path: "feature-1"}
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -65,9 +74,9 @@ def test_goto_root() -> None:
                     WorktreeInfo(path=worktree_path, branch="feature-1", is_root=False),
                 ]
             },
-            current_branches={env.cwd: "main", worktree_path: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)
@@ -97,15 +106,18 @@ def test_goto_nonexistent_worktree() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         # Set up worktrees: only root exists
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
                 ]
             },
-            current_branches={env.cwd: "main"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)
@@ -135,6 +147,10 @@ def test_goto_shows_branch_info() -> None:
         # Set up worktrees: root on main, feature-work on feature-1
         worktree_path = env.repo.worktrees_dir / "feature-work"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main", worktree_path: "feature-1"}
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -142,9 +158,9 @@ def test_goto_shows_branch_info() -> None:
                     WorktreeInfo(path=worktree_path, branch="feature-1", is_root=False),
                 ]
             },
-            current_branches={env.cwd: "main", worktree_path: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)
@@ -173,6 +189,10 @@ def test_goto_script_mode() -> None:
         # Set up worktrees
         worktree_path = env.repo.worktrees_dir / "my-feature"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main", worktree_path: "my-feature"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -180,9 +200,9 @@ def test_goto_script_mode() -> None:
                     WorktreeInfo(path=worktree_path, branch="my-feature", is_root=False),
                 ]
             },
-            current_branches={env.cwd: "main", worktree_path: "my-feature"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)
@@ -214,15 +234,18 @@ def test_goto_branch_name_hint() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         # Set up worktrees: only root exists
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
                 ]
             },
-            current_branches={env.cwd: "main"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)

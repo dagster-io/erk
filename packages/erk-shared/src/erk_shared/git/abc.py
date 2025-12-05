@@ -67,84 +67,6 @@ class Git(ABC):
         ...
 
     @abstractmethod
-    def get_current_branch(self, cwd: Path) -> str | None:
-        """Get the currently checked-out branch."""
-        ...
-
-    @abstractmethod
-    def detect_trunk_branch(self, repo_root: Path) -> str:
-        """Auto-detect the trunk branch name.
-
-        Checks git's remote HEAD reference, then falls back to checking for
-        existence of 'main' then 'master'. Returns 'main' as final fallback
-        if neither branch exists.
-
-        Args:
-            repo_root: Path to the repository root
-
-        Returns:
-            Trunk branch name (e.g., 'main', 'master')
-        """
-        ...
-
-    @abstractmethod
-    def validate_trunk_branch(self, repo_root: Path, name: str) -> str:
-        """Validate that a configured trunk branch exists.
-
-        Args:
-            repo_root: Path to the repository root
-            name: Trunk branch name to validate
-
-        Returns:
-            The validated trunk branch name
-
-        Raises:
-            RuntimeError: If the specified branch doesn't exist
-        """
-        ...
-
-    @abstractmethod
-    def list_local_branches(self, repo_root: Path) -> list[str]:
-        """List all local branch names in the repository.
-
-        Args:
-            repo_root: Path to the repository root
-
-        Returns:
-            List of local branch names
-        """
-        ...
-
-    @abstractmethod
-    def list_remote_branches(self, repo_root: Path) -> list[str]:
-        """List all remote branch names in the repository.
-
-        Returns branch names in format 'origin/branch-name', 'upstream/feature', etc.
-        Only includes refs from configured remotes, not local branches.
-
-        Args:
-            repo_root: Path to the repository root
-
-        Returns:
-            List of remote branch names with remote prefix (e.g., 'origin/main')
-        """
-        ...
-
-    @abstractmethod
-    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -> None:
-        """Create a local tracking branch from a remote branch.
-
-        Args:
-            repo_root: Path to the repository root
-            branch: Name for the local branch (e.g., 'feature-remote')
-            remote_ref: Remote reference to track (e.g., 'origin/feature-remote')
-
-        Raises:
-            subprocess.CalledProcessError: If git command fails
-        """
-        ...
-
-    @abstractmethod
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory."""
         ...
@@ -216,43 +138,6 @@ class Git(ABC):
             path: Path to the worktree to remove
             force: True to force removal even if worktree has uncommitted changes
         """
-        ...
-
-    @abstractmethod
-    def checkout_branch(self, cwd: Path, branch: str) -> None:
-        """Checkout a branch in the given directory."""
-        ...
-
-    @abstractmethod
-    def checkout_detached(self, cwd: Path, ref: str) -> None:
-        """Checkout a detached HEAD at the given ref (commit SHA, branch, etc)."""
-        ...
-
-    @abstractmethod
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None:
-        """Create a new branch without checking it out.
-
-        Args:
-            cwd: Working directory to run command in
-            branch_name: Name of the branch to create
-            start_point: Commit/branch to base the new branch on
-        """
-        ...
-
-    @abstractmethod
-    def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
-        """Delete a local branch.
-
-        Args:
-            cwd: Working directory to run command in
-            branch_name: Name of the branch to delete
-            force: Use -D (force delete) instead of -d
-        """
-        ...
-
-    @abstractmethod
-    def delete_branch_with_graphite(self, repo_root: Path, branch: str, *, force: bool) -> None:
-        """Delete a branch using Graphite's gt delete command."""
         ...
 
     @abstractmethod
@@ -334,19 +219,6 @@ class Git(ABC):
 
         Returns:
             Path to worktree if branch is checked out, None otherwise
-        """
-        ...
-
-    @abstractmethod
-    def get_branch_head(self, repo_root: Path, branch: str) -> str | None:
-        """Get the commit SHA at the head of a branch.
-
-        Args:
-            repo_root: Path to the git repository root
-            branch: Branch name to query
-
-        Returns:
-            Commit SHA as a string, or None if branch doesn't exist.
         """
         ...
 

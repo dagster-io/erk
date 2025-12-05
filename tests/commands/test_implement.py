@@ -4,12 +4,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.git.branches.fake import FakeGitBranches
+from erk_shared.git.fake import FakeGit
 from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 
 from erk.cli.commands.implement import _detect_target_type, implement
 from tests.fakes.claude_executor import FakeClaudeExecutor
-from tests.fakes.git import FakeGit
 from tests.fakes.issue_link_branches import FakeIssueLinkBranches
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -102,10 +103,13 @@ def test_implement_from_plain_issue_number() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"123": plan_issue})
         issue_dev = FakeIssueLinkBranches()
@@ -140,10 +144,13 @@ def test_implement_from_issue_number() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         issue_dev = FakeIssueLinkBranches()
@@ -176,10 +183,13 @@ def test_implement_from_issue_url() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"123": plan_issue})
         # Branch name is computed as sanitize_worktree_name(f"{issue_number}-{title}")
@@ -208,10 +218,13 @@ def test_implement_from_issue_with_custom_name() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         # Branch name is computed as sanitize_worktree_name(f"{issue_number}-{title}")
@@ -248,10 +261,13 @@ def test_implement_from_issue_fails_without_erk_plan_label() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -268,10 +284,13 @@ def test_implement_from_issue_fails_when_not_found() -> None:
     """Test that command fails when issue doesn't exist."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -289,10 +308,13 @@ def test_implement_from_issue_dry_run() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -313,10 +335,13 @@ def test_implement_from_plan_file() -> None:
     """Test implementing from plan file."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git)
 
@@ -348,10 +373,13 @@ def test_implement_from_plan_file_with_custom_name() -> None:
     """Test implementing from plan file with custom worktree name."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git)
 
@@ -374,10 +402,13 @@ def test_implement_from_plan_file_strips_plan_suffix() -> None:
     """Test that '-plan' suffix is stripped from plan filenames."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git)
 
@@ -400,10 +431,13 @@ def test_implement_from_plan_file_fails_when_not_found() -> None:
     """Test that command fails when plan file doesn't exist."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git)
 
@@ -419,10 +453,13 @@ def test_implement_from_plan_file_dry_run() -> None:
     """Test dry-run mode for plan file implementation."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git)
 
@@ -455,10 +492,13 @@ def test_implement_issue_mode_uses_linked_branch_not_worktree_name() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "existing-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "existing-branch"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         issue_dev = FakeIssueLinkBranches()
@@ -487,10 +527,13 @@ def test_implement_fails_when_branch_exists_file_mode() -> None:
     """Test that file mode fails when branch already exists with explicit name."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "existing-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "existing-branch"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git)
 
@@ -519,10 +562,13 @@ def test_implement_with_submit_flag_from_issue() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -542,10 +588,13 @@ def test_implement_with_submit_flag_from_file() -> None:
     """Test implementing from file with --submit flag and --script generates script."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git)
 
@@ -572,10 +621,13 @@ def test_implement_without_submit_uses_default_command() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -596,10 +648,13 @@ def test_implement_submit_in_script_mode() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -631,10 +686,13 @@ def test_implement_submit_with_dry_run() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -672,10 +730,13 @@ def test_implement_uses_git_when_graphite_disabled() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         # Build context with use_graphite=False (default)
@@ -696,10 +757,13 @@ def test_implement_plan_file_uses_git_when_graphite_disabled() -> None:
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         # Build context with use_graphite=False (default)
         ctx = build_workspace_test_context(env, git=git, use_graphite=False)
@@ -735,11 +799,14 @@ def test_implement_from_issue_tracks_branch_with_graphite() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"500": plan_issue})
         issue_dev = FakeIssueLinkBranches()
@@ -799,10 +866,13 @@ def test_implement_with_dangerous_flag_in_script_mode() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -834,10 +904,13 @@ def test_implement_without_dangerous_flag_in_script_mode() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -866,10 +939,13 @@ def test_implement_with_dangerous_and_submit_flags() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -907,10 +983,13 @@ def test_implement_with_dangerous_flag_in_dry_run() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -938,10 +1017,13 @@ def test_implement_with_dangerous_and_submit_in_dry_run() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -966,10 +1048,13 @@ def test_implement_plan_file_with_dangerous_flag() -> None:
     """Test that --dangerous flag works with plan file mode."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git)
 
@@ -1003,10 +1088,13 @@ def test_implement_with_dangerous_shows_in_manual_instructions() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -1034,10 +1122,13 @@ def test_interactive_mode_calls_executor() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         executor = FakeClaudeExecutor(claude_available=True)
@@ -1068,10 +1159,13 @@ def test_interactive_mode_with_dangerous_flag() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         executor = FakeClaudeExecutor(claude_available=True)
@@ -1091,10 +1185,13 @@ def test_interactive_mode_from_plan_file() -> None:
     """Verify interactive mode works with plan file."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         executor = FakeClaudeExecutor(claude_available=True)
         ctx = build_workspace_test_context(env, git=git, claude_executor=executor)
@@ -1124,10 +1221,13 @@ def test_interactive_mode_fails_when_claude_not_available() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         executor = FakeClaudeExecutor(claude_available=False)
@@ -1146,10 +1246,13 @@ def test_submit_without_non_interactive_errors() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -1166,10 +1269,13 @@ def test_script_and_non_interactive_errors() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -1186,10 +1292,13 @@ def test_non_interactive_executes_single_command() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         executor = FakeClaudeExecutor(claude_available=True)
@@ -1213,10 +1322,13 @@ def test_non_interactive_with_submit_runs_all_commands() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         executor = FakeClaudeExecutor(claude_available=True)
@@ -1244,10 +1356,13 @@ def test_script_with_submit_includes_all_commands() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -1267,10 +1382,13 @@ def test_dry_run_shows_execution_mode() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -1294,10 +1412,13 @@ def test_dry_run_shows_command_sequence() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -1331,10 +1452,13 @@ def test_yolo_flag_sets_all_flags() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         executor = FakeClaudeExecutor(claude_available=True)
@@ -1362,10 +1486,13 @@ def test_yolo_flag_in_dry_run() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -1394,10 +1521,13 @@ def test_yolo_flag_conflicts_with_script() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
@@ -1418,11 +1548,14 @@ def test_implement_from_worktree_stacks_on_current_branch_with_graphite() -> Non
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-branch"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
-            default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},  # On feature branch
+            default_branches={env.cwd: "main"},  # On feature branch,
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"123": plan_issue})
         issue_dev = FakeIssueLinkBranches()
@@ -1448,11 +1581,14 @@ def test_implement_from_worktree_uses_trunk_without_graphite() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-branch"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
-            default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},  # On feature branch
+            default_branches={env.cwd: "main"},  # On feature branch,
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"123": plan_issue})
         issue_dev = FakeIssueLinkBranches()
@@ -1478,11 +1614,14 @@ def test_implement_from_trunk_uses_trunk_with_graphite() -> None:
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
-            default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "main"},  # On trunk branch
+            default_branches={env.cwd: "main"},  # On trunk branch,
+            git_branches=git_branches,
         )
         store = FakePlanStore(plans={"123": plan_issue})
         issue_dev = FakeIssueLinkBranches()

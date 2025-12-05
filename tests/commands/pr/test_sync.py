@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRCheckoutInfo, PRInfo
@@ -40,11 +41,14 @@ def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
         graphite = FakeGraphite(branches={})
 
         # Set current branch via FakeGit - add a commit so amend has something to modify
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-branch"},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-branch"},
             existing_paths={env.cwd, env.repo.worktrees_dir},
-            commits_ahead={(env.cwd, "main"): 2},  # Multiple commits to squash
+            commits_ahead={(env.cwd, "main"): 2},  # Multiple commits to squash,
+            git_branches=git_branches,
         )
         # Simulate an existing commit that will be amended
         git._commits.append((env.cwd, "Original message", []))
@@ -114,9 +118,13 @@ def test_pr_sync_succeeds_silently_when_already_tracked(tmp_path: Path) -> None:
             }
         )
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-branch"},
+        )
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-branch"},
+            git_branches=git_branches,
         )
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
@@ -141,9 +149,12 @@ def test_pr_sync_fails_when_not_on_branch(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # Detached HEAD (no current branch)
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: None},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: None},
+            git_branches=git_branches,
         )
 
         ctx = build_workspace_test_context(env, git=git)
@@ -165,9 +176,13 @@ def test_pr_sync_fails_when_no_pr_exists(tmp_path: Path) -> None:
             pr_statuses={"no-pr-branch": PRInfo(state="NONE", pr_number=None, title=None)}
         )
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "no-pr-branch"},
+        )
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "no-pr-branch"},
+            git_branches=git_branches,
         )
 
         ctx = build_workspace_test_context(env, git=git, github=github)
@@ -188,9 +203,13 @@ def test_pr_sync_fails_when_pr_is_closed(tmp_path: Path) -> None:
         pr_info = PRInfo(state="CLOSED", pr_number=456, title="Closed PR")
         github = FakeGitHub(pr_statuses={"closed-branch": pr_info})
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "closed-branch"},
+        )
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "closed-branch"},
+            git_branches=git_branches,
         )
 
         ctx = build_workspace_test_context(env, git=git, github=github)
@@ -211,9 +230,13 @@ def test_pr_sync_fails_when_pr_is_merged(tmp_path: Path) -> None:
         pr_info = PRInfo(state="MERGED", pr_number=789, title="Merged PR")
         github = FakeGitHub(pr_statuses={"merged-branch": pr_info})
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "merged-branch"},
+        )
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "merged-branch"},
+            git_branches=git_branches,
         )
 
         ctx = build_workspace_test_context(env, git=git, github=github)
@@ -246,9 +269,13 @@ def test_pr_sync_fails_when_cross_repo_fork(tmp_path: Path) -> None:
             pr_checkout_infos={999: pr_checkout_info},
         )
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "fork-branch"},
+        )
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "fork-branch"},
+            git_branches=git_branches,
         )
 
         ctx = build_workspace_test_context(env, git=git, github=github)
@@ -284,10 +311,13 @@ def test_pr_sync_handles_squash_single_commit(tmp_path: Path) -> None:
         graphite = FakeGraphite(branches={})
 
         # Single commit ahead - execute_squash will skip squashing
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "single-commit-branch"},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "single-commit-branch"},
-            commits_ahead={(env.cwd, "main"): 1},  # Single commit
+            commits_ahead={(env.cwd, "main"): 1},  # Single commit,
+            git_branches=git_branches,
         )
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
@@ -329,10 +359,14 @@ def test_pr_sync_handles_submit_failure_gracefully(tmp_path: Path) -> None:
             submit_stack_raises=RuntimeError("network error"),
         )
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-branch"},
+        )
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-branch"},
-            commits_ahead={(env.cwd, "main"): 2},  # Commits to squash
+            commits_ahead={(env.cwd, "main"): 2},  # Commits to squash,
+            git_branches=git_branches,
         )
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
@@ -375,10 +409,14 @@ def test_pr_sync_squash_raises_unexpected_error(tmp_path: Path) -> None:
             squash_branch_raises=error,
         )
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-branch"},
+        )
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-branch"},
-            commits_ahead={(env.cwd, "main"): 2},  # Multiple commits to trigger squash
+            commits_ahead={(env.cwd, "main"): 2},  # Multiple commits to trigger squash,
+            git_branches=git_branches,
         )
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
@@ -413,10 +451,13 @@ def test_pr_sync_uses_correct_base_branch(tmp_path: Path) -> None:
         graphite = FakeGraphite(branches={})
 
         # Note: commits_ahead uses the trunk branch detected by git, not PR base
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "hotfix-branch"},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "hotfix-branch"},
-            commits_ahead={(env.cwd, "main"): 2},  # Commits ahead of detected trunk
+            commits_ahead={(env.cwd, "main"): 2},  # Commits ahead of detected trunk,
+            git_branches=git_branches,
         )
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
@@ -455,10 +496,14 @@ def test_pr_sync_updates_commit_with_title_only(tmp_path: Path) -> None:
 
         graphite = FakeGraphite(branches={})
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "title-only-branch"},
+        )
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "title-only-branch"},
-            commits_ahead={(env.cwd, "main"): 2},  # Commits to squash
+            commits_ahead={(env.cwd, "main"): 2},  # Commits to squash,
+            git_branches=git_branches,
         )
         git._commits.append((env.cwd, "Original message", []))
 
@@ -497,10 +542,14 @@ def test_pr_sync_skips_commit_update_when_no_title(tmp_path: Path) -> None:
 
         graphite = FakeGraphite(branches={})
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "no-title-branch"},
+        )
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "no-title-branch"},
-            commits_ahead={(env.cwd, "main"): 2},  # Commits to squash
+            commits_ahead={(env.cwd, "main"): 2},  # Commits to squash,
+            git_branches=git_branches,
         )
         git._commits.append((env.cwd, "Original message", []))
 

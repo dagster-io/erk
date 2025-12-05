@@ -1,6 +1,7 @@
 """Tests for erk pr auto-restack command."""
 
 from click.testing import CliRunner
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 
 from erk.cli.commands.pr import pr_group
@@ -13,11 +14,15 @@ def test_pr_auto_restack_success() -> None:
     """Test successful auto-restack."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-branch"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+        )
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
+            git_branches=git_branches,
         )
 
         claude_executor = FakeClaudeExecutor(claude_available=True)
@@ -40,10 +45,13 @@ def test_pr_auto_restack_fails_when_claude_not_available() -> None:
     """Test that command fails when Claude CLI is not available."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         claude_executor = FakeClaudeExecutor(claude_available=False)
@@ -64,11 +72,15 @@ def test_pr_auto_restack_fails_on_command_error() -> None:
     """Test that command fails when slash command execution fails."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-branch"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+        )
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
+            git_branches=git_branches,
         )
 
         claude_executor = FakeClaudeExecutor(
@@ -89,11 +101,15 @@ def test_pr_auto_restack_aborts_on_semantic_conflict() -> None:
     """Test that command aborts when Claude prompts for user input (semantic conflict)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-branch"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+        )
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
+            git_branches=git_branches,
         )
 
         # Simulate Claude using AskUserQuestion tool (semantic conflict)

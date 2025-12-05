@@ -38,30 +38,6 @@ class PrintingGit(PrintingBase, Git):
         """List all worktrees (read-only, no printing)."""
         return self._wrapped.list_worktrees(repo_root)
 
-    def get_current_branch(self, cwd: Path) -> str | None:
-        """Get current branch (read-only, no printing)."""
-        return self._wrapped.get_current_branch(cwd)
-
-    def detect_trunk_branch(self, repo_root: Path) -> str:
-        """Auto-detect trunk branch (read-only, no printing)."""
-        return self._wrapped.detect_trunk_branch(repo_root)
-
-    def validate_trunk_branch(self, repo_root: Path, name: str) -> str:
-        """Validate trunk branch exists (read-only, no printing)."""
-        return self._wrapped.validate_trunk_branch(repo_root, name)
-
-    def list_local_branches(self, repo_root: Path) -> list[str]:
-        """List local branches (read-only, no printing)."""
-        return self._wrapped.list_local_branches(repo_root)
-
-    def list_remote_branches(self, repo_root: Path) -> list[str]:
-        """List remote branches (read-only, no printing)."""
-        return self._wrapped.list_remote_branches(repo_root)
-
-    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -> None:
-        """Create tracking branch (read-only, no printing)."""
-        return self._wrapped.create_tracking_branch(repo_root, branch, remote_ref)
-
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get git common directory (read-only, no printing)."""
         return self._wrapped.get_git_common_dir(cwd)
@@ -96,26 +72,6 @@ class PrintingGit(PrintingBase, Git):
 
     # Operations that need printing
 
-    def checkout_branch(self, cwd: Path, branch: str) -> None:
-        """Checkout branch with printed output."""
-        self._emit(self._format_command(f"git checkout {branch}"))
-        self._wrapped.checkout_branch(cwd, branch)
-
-    def checkout_detached(self, cwd: Path, ref: str) -> None:
-        """Checkout detached HEAD (delegates without printing for now)."""
-        # No printing for detached HEAD in land-stack
-        self._wrapped.checkout_detached(cwd, ref)
-
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None:
-        """Create branch (delegates without printing for now)."""
-        # Not used in land-stack
-        self._wrapped.create_branch(cwd, branch_name, start_point)
-
-    def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
-        """Delete branch (delegates without printing for now)."""
-        # Not used in land-stack
-        self._wrapped.delete_branch(cwd, branch_name, force=force)
-
     def add_worktree(
         self,
         repo_root: Path,
@@ -140,11 +96,6 @@ class PrintingGit(PrintingBase, Git):
         """Remove worktree (delegates without printing for now)."""
         # Not used in land-stack
         self._wrapped.remove_worktree(repo_root, path, force=force)
-
-    def delete_branch_with_graphite(self, repo_root: Path, branch: str, *, force: bool) -> None:
-        """Delete branch with graphite (delegates without printing for now)."""
-        # Not used in land-stack
-        self._wrapped.delete_branch_with_graphite(repo_root, branch, force=force)
 
     def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
         """Fetch branch with printed output."""
@@ -182,10 +133,6 @@ class PrintingGit(PrintingBase, Git):
     def find_worktree_for_branch(self, repo_root: Path, branch: str) -> Path | None:
         """Find worktree for branch (read-only, no printing)."""
         return self._wrapped.find_worktree_for_branch(repo_root, branch)
-
-    def get_branch_head(self, repo_root: Path, branch: str) -> str | None:
-        """Get branch head (read-only, no printing)."""
-        return self._wrapped.get_branch_head(repo_root, branch)
 
     def get_commit_message(self, repo_root: Path, commit_sha: str) -> str | None:
         """Get commit message (read-only, no printing)."""
@@ -259,3 +206,7 @@ class PrintingGit(PrintingBase, Git):
     def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
         """Check merge conflicts (read-only, no printing)."""
         return self._wrapped.check_merge_conflicts(cwd, base_branch, head_branch)
+
+    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
+        """Get remote URL (read-only, no printing)."""
+        return self._wrapped.get_remote_url(repo_root, remote)

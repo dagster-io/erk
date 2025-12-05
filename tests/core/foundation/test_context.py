@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.integrations.graphite.fake import FakeGraphite
@@ -20,9 +21,7 @@ def test_context_initialization_and_attributes() -> None:
     github_ops = FakeGitHub()
     graphite_ops = FakeGraphite()
     shell_ops = FakeShell()
-    global_config = GlobalConfig.test(
-        Path("/tmp"), use_graphite=False, shell_setup_complete=False
-    )
+    global_config = GlobalConfig.test(Path("/tmp"), use_graphite=False, shell_setup_complete=False)
 
     ctx = ErkContext.for_test(
         git=git_ops,
@@ -44,9 +43,7 @@ def test_context_initialization_and_attributes() -> None:
 
 def test_context_is_frozen() -> None:
     """ErkContext is a frozen dataclass."""
-    global_config = GlobalConfig.test(
-        Path("/tmp"), use_graphite=False, shell_setup_complete=False
-    )
+    global_config = GlobalConfig.test(Path("/tmp"), use_graphite=False, shell_setup_complete=False)
     ctx = ErkContext.for_test(
         git=FakeGit(),
         global_config=global_config,
@@ -63,13 +60,14 @@ def test_context_is_frozen() -> None:
 
 def test_minimal_factory_creates_context_with_git_ops() -> None:
     """ErkContext.minimal() creates context with only git_ops configured."""
-    git_ops = FakeGit(
+    git_branches = FakeGitBranches(
         current_branches={Path("/repo"): "main"},
-        default_branches={Path("/repo"): "main"},
+        trunk_branches={Path("/repo"): "main"},
     )
+    git_ops = FakeGit()
     cwd = sentinel_path()
 
-    ctx = ErkContext.minimal(git_ops, cwd)
+    ctx = ErkContext.minimal(git_ops, cwd, git_branches=git_branches)
 
     assert ctx.git is git_ops
     assert ctx.cwd == cwd
@@ -116,15 +114,17 @@ def test_for_test_factory_creates_context_with_defaults() -> None:
 
 def test_for_test_factory_accepts_custom_ops() -> None:
     """ErkContext.for_test() uses provided ops instead of defaults."""
-    git_ops = FakeGit(
+    git_branches = FakeGitBranches(
         current_branches={Path("/repo"): "main"},
-        default_branches={Path("/repo"): "main"},
+        trunk_branches={Path("/repo"): "main"},
     )
+    git_ops = FakeGit()
     github_ops = FakeGitHub()
     cwd = Path("/custom/cwd")
 
     ctx = ErkContext.for_test(
         git=git_ops,
+        git_branches=git_branches,
         github=github_ops,
         cwd=cwd,
     )
@@ -135,10 +135,12 @@ def test_for_test_factory_accepts_custom_ops() -> None:
 
 
 def test_for_test_factory_accepts_trunk_branch() -> None:
-    """ErkContext.for_test() computes trunk_branch from git_ops."""
-    git_ops = FakeGit(trunk_branches={Path("/repo"): "develop"})
+    """ErkContext.for_test() computes trunk_branch from git_branches."""
+    git_branches = FakeGitBranches(trunk_branches={Path("/repo"): "develop"})
+    git_ops = FakeGit()
     ctx = ErkContext.for_test(
         git=git_ops,
+        git_branches=git_branches,
         repo=RepoContext(
             root=Path("/repo"),
             repo_name="repo",

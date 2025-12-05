@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
@@ -27,9 +28,13 @@ def setup_stack_collector(
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    git_ops = FakeGit(
+    git_branches = FakeGitBranches(
         current_branches={worktree_path: branch},
+    )
+
+    git_ops = FakeGit(
         **(git_kwargs or {}),
+        git_branches=git_branches,
     )
     graphite_ops = FakeGraphite(**(graphite_kwargs or {}))
     global_config = GlobalConfig.test(

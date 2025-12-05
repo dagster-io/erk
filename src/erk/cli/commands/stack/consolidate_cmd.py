@@ -160,7 +160,7 @@ def consolidate_stack(
 
     # Get current worktree and branch
     current_worktree = ctx.cwd
-    current_branch = ctx.git.get_current_branch(current_worktree)
+    current_branch = ctx.git_branches.get_current_branch(current_worktree)
 
     if current_branch is None:
         user_output("Error: Current worktree is in detached HEAD state")
@@ -261,10 +261,10 @@ def consolidate_stack(
 
             # Create temporary branch on current commit (doesn't checkout)
             # Git operations use check=True, so failures raise CalledProcessError
-            ctx.git.create_branch(current_worktree, temp_branch_name, current_branch)
+            ctx.git_branches.create_branch(current_worktree, temp_branch_name, current_branch)
 
             # Checkout temporary branch in source worktree to free up the original branch
-            ctx.git.checkout_branch(current_worktree, temp_branch_name)
+            ctx.git_branches.checkout_branch(current_worktree, temp_branch_name)
 
             # Track temporary branch with Graphite
             ctx.graphite.track_branch(current_worktree, temp_branch_name, current_branch)
@@ -389,7 +389,7 @@ def consolidate_stack(
         # Delete temporary branch after source worktree is removed
         # (can't delete while it's checked out in the source worktree)
         if temp_branch_name is not None:
-            ctx.git.delete_branch(repo.root, temp_branch_name, force=True)
+            ctx.git_branches.delete_branch(repo.root, temp_branch_name, force=True)
 
     # Display grouped removal progress
     user_output()

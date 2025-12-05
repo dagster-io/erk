@@ -4,6 +4,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.naming import WORKTREE_DATE_SUFFIX_FORMAT
 
@@ -30,15 +31,18 @@ def test_create_with_plan_file() -> None:
         plan_file.write_text(plan_content, encoding="utf-8")
 
         # Configure FakeGit with root worktree only
+        git_branches = FakeGitBranches(
+            current_branches={env.root_worktree: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.root_worktree: [
                     WorktreeInfo(path=env.root_worktree, branch="main", is_root=True),
                 ]
             },
-            current_branches={env.root_worktree: "main"},
             git_common_dirs={env.root_worktree: env.git_dir},
             default_branches={env.root_worktree: "main"},
+            git_branches=git_branches,
         )
 
         # Create test context using env.build_context() helper
@@ -82,15 +86,18 @@ def test_create_with_plan_name_sanitization() -> None:
         plan_file.write_text("# Cool Plan\n", encoding="utf-8")
 
         # Configure FakeGit with root worktree only
+        git_branches = FakeGitBranches(
+            current_branches={env.root_worktree: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.root_worktree: [
                     WorktreeInfo(path=env.root_worktree, branch="main", is_root=True),
                 ]
             },
-            current_branches={env.root_worktree: "main"},
             git_common_dirs={env.root_worktree: env.git_dir},
             default_branches={env.root_worktree: "main"},
+            git_branches=git_branches,
         )
 
         # Create test context using env.build_context() helper
@@ -125,15 +132,18 @@ def test_create_with_both_name_and_plan_fails() -> None:
         plan_file.write_text("# Plan\n", encoding="utf-8")
 
         # Configure FakeGit with root worktree only
+        git_branches = FakeGitBranches(
+            current_branches={env.root_worktree: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.root_worktree: [
                     WorktreeInfo(path=env.root_worktree, branch="main", is_root=True),
                 ]
             },
-            current_branches={env.root_worktree: "main"},
             git_common_dirs={env.root_worktree: env.git_dir},
             default_branches={env.root_worktree: "main"},
+            git_branches=git_branches,
         )
 
         # Create global config with erk_root
@@ -166,15 +176,18 @@ def test_create_rejects_reserved_name_root() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Configure FakeGit with root worktree only
+        git_branches = FakeGitBranches(
+            current_branches={env.root_worktree: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.root_worktree: [
                     WorktreeInfo(path=env.root_worktree, branch="main", is_root=True),
                 ]
             },
-            current_branches={env.root_worktree: "main"},
             git_common_dirs={env.root_worktree: env.git_dir},
             default_branches={env.root_worktree: "main"},
+            git_branches=git_branches,
         )
 
         # Create global config with erk_root
@@ -211,15 +224,18 @@ def test_create_rejects_reserved_name_root_case_insensitive() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Configure FakeGit with root worktree only
+        git_branches = FakeGitBranches(
+            current_branches={env.root_worktree: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.root_worktree: [
                     WorktreeInfo(path=env.root_worktree, branch="main", is_root=True),
                 ]
             },
-            current_branches={env.root_worktree: "main"},
             git_common_dirs={env.root_worktree: env.git_dir},
             default_branches={env.root_worktree: "main"},
+            git_branches=git_branches,
         )
 
         # Create global config with erk_root
@@ -255,16 +271,19 @@ def test_create_rejects_main_as_worktree_name() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Configure FakeGit with root worktree only
+        git_branches = FakeGitBranches(
+            current_branches={env.root_worktree: "main"},
+            trunk_branches={env.root_worktree: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.root_worktree: [
                     WorktreeInfo(path=env.root_worktree, branch="main", is_root=True),
                 ]
             },
-            current_branches={env.root_worktree: "main"},
             git_common_dirs={env.root_worktree: env.git_dir},
             default_branches={env.root_worktree: "main"},
-            trunk_branches={env.root_worktree: "main"},
+            git_branches=git_branches,
         )
 
         # Create global config with erk_root
@@ -301,16 +320,19 @@ def test_create_rejects_master_as_worktree_name() -> None:
     with erk_isolated_fs_env(runner) as env:
         # Configure FakeGit with root worktree only
         # Set trunk_branches to "master" so it gets rejected
+        git_branches = FakeGitBranches(
+            current_branches={env.root_worktree: "master"},
+            trunk_branches={env.root_worktree: "master"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.root_worktree: [
                     WorktreeInfo(path=env.root_worktree, branch="master", is_root=True),
                 ]
             },
-            current_branches={env.root_worktree: "master"},
             git_common_dirs={env.root_worktree: env.git_dir},
             default_branches={env.root_worktree: "master"},
-            trunk_branches={env.root_worktree: "master"},
+            git_branches=git_branches,
         )
 
         # Create global config with erk_root
@@ -360,15 +382,18 @@ def test_create_with_script_flag() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Configure FakeGit with root worktree only
+        git_branches = FakeGitBranches(
+            current_branches={env.root_worktree: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.root_worktree: [
                     WorktreeInfo(path=env.root_worktree, branch="main", is_root=True),
                 ]
             },
-            current_branches={env.root_worktree: "main"},
             git_common_dirs={env.root_worktree: env.git_dir},
             default_branches={env.root_worktree: "main"},
+            git_branches=git_branches,
         )
 
         # Create test context using env.build_context() helper

@@ -7,6 +7,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import WorkflowRun
@@ -21,10 +22,13 @@ def test_logs_explicit_run_id(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
     github_ops = FakeGitHub(run_logs={"12345": "Step 1: Setup\nStep 2: Tests\n"})
     ctx = create_test_context(git=git_ops, github=github_ops, cwd=repo_root)
@@ -46,10 +50,13 @@ def test_logs_auto_detect(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "feature-x"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="feature-x")]},
-        current_branches={repo_root: "feature-x"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
     workflow_runs = [
         WorkflowRun(
@@ -89,10 +96,13 @@ def test_logs_run_not_found(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
     github_ops = FakeGitHub(run_logs={})  # No logs configured
     ctx = create_test_context(git=git_ops, github=github_ops, cwd=repo_root)
@@ -114,10 +124,13 @@ def test_logs_no_runs_for_branch(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "feature-y"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="feature-y")]},
-        current_branches={repo_root: "feature-y"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
     workflow_runs = [
         WorkflowRun(

@@ -32,6 +32,7 @@ from pathlib import Path
 from typing import Any
 
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PullRequestInfo
@@ -386,10 +387,14 @@ class WorktreeScenario:
         Returns:
             Self with ctx attribute populated
         """
+        git_branches = FakeGitBranches(
+            current_branches=self._current_branches,
+            worktrees=self._worktrees,
+        )
         self.git = FakeGit(
             worktrees=self._worktrees,
             git_common_dirs=self._git_common_dirs,
-            current_branches=self._current_branches,
+            git_branches=git_branches,
         )
 
         self.github = FakeGitHub(prs=self._prs)

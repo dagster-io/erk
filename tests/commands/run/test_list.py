@@ -17,6 +17,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.fake import FakeGitHubIssues
@@ -33,10 +34,13 @@ def test_list_runs_empty_state(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
     github_ops = FakeGitHub(workflow_runs=[])  # Empty runs
     ctx = create_test_context(git=git_ops, github=github_ops, cwd=repo_root)
@@ -57,10 +61,13 @@ def test_list_runs_single_success_run_with_issue_linkage(tmp_path: Path) -> None
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
 
     now = datetime.now(UTC)
@@ -117,10 +124,13 @@ def test_list_runs_multiple_runs_different_statuses(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
 
     now = datetime.now(UTC)
@@ -219,10 +229,13 @@ def test_list_runs_run_without_issue_linkage(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
 
     workflow_runs = [
@@ -261,10 +274,13 @@ def test_list_runs_default_filters_out_runs_without_plans(tmp_path: Path) -> Non
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
 
     now = datetime.now(UTC)
@@ -328,10 +344,13 @@ def test_list_runs_with_show_legacy_flag_shows_all_runs(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
 
     now = datetime.now(UTC)
@@ -396,10 +415,13 @@ def test_list_runs_with_pr_linkage(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
 
     now = datetime.now(UTC)
@@ -468,10 +490,13 @@ def test_list_runs_handles_queued_status(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
 
     now = datetime.now(UTC)
@@ -521,10 +546,13 @@ def test_list_runs_handles_cancelled_status(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
 
     now = datetime.now(UTC)
@@ -574,10 +602,13 @@ def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
 
     now = datetime.now(UTC)
@@ -636,10 +667,13 @@ def test_list_runs_filters_missing_issue_data(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
 
     now = datetime.now(UTC)
@@ -729,10 +763,13 @@ def test_list_runs_displays_submission_time(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
 
     # Create a specific timestamp
@@ -788,10 +825,13 @@ def test_list_runs_handles_missing_timestamp(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     (repo_root / ".git").mkdir()
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
+        git_branches=git_branches,
     )
 
     now = datetime.now(UTC)

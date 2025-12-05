@@ -79,7 +79,7 @@ def delete_branch_and_worktree(
     user_output(f"✓ Removed worktree: {click.style(str(worktree_path), fg='green')}")
 
     # Delete the branch using Git abstraction
-    ctx.git.delete_branch_with_graphite(repo_root, branch, force=True)
+    ctx.git_branches.delete_branch_with_graphite(repo_root, branch, force=True)
     user_output(f"✓ Deleted branch: {click.style(branch, fg='yellow')}")
 
     # Prune worktree metadata
@@ -242,7 +242,7 @@ def resolve_down_navigation(
     parent_branch = ctx.graphite.get_parent_branch(ctx.git, repo.root, current_branch)
     if parent_branch is None:
         # Check if we're already on trunk
-        detected_trunk = ctx.git.detect_trunk_branch(repo.root)
+        detected_trunk = ctx.git_branches.detect_trunk_branch(repo.root)
         if current_branch == detected_trunk:
             user_output(f"Already at the bottom of the stack (on trunk branch '{detected_trunk}')")
             raise SystemExit(1)
@@ -251,7 +251,7 @@ def resolve_down_navigation(
             raise SystemExit(1)
 
     # Check if parent is the trunk - if so, switch to root
-    detected_trunk = ctx.git.detect_trunk_branch(repo.root)
+    detected_trunk = ctx.git_branches.detect_trunk_branch(repo.root)
     if parent_branch == detected_trunk:
         # Check if trunk is checked out in root (repo.root path)
         trunk_wt_path = ctx.git.find_worktree_for_branch(repo.root, detected_trunk)

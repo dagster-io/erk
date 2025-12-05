@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PullRequestInfo
@@ -21,13 +22,17 @@ def test_pr_land_success_navigates_to_trunk() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite(
@@ -76,7 +81,7 @@ def test_pr_land_success_navigates_to_trunk() -> None:
         assert feature_1_path in git_ops.removed_worktrees
 
         # Verify branch was deleted
-        assert "feature-1" in git_ops.deleted_branches
+        assert "feature-1" in git_branches.deleted_branches
 
         # Verify pull was called
         assert len(git_ops.pulled_branches) >= 1
@@ -98,13 +103,16 @@ def test_pr_land_error_from_execute_land_pr() -> None:
         repo_dir = env.setup_repo_structure()
 
         # feature-1 has parent develop (not trunk), which should cause error
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         # Configure feature-1 to have parent "develop" (not trunk "main")
@@ -135,17 +143,20 @@ def test_pr_land_error_from_execute_land_pr() -> None:
 
         # Verify no cleanup happened
         assert len(git_ops.removed_worktrees) == 0
-        assert len(git_ops.deleted_branches) == 0
+        assert len(git_branches.deleted_branches) == 0
 
 
 def test_pr_land_requires_graphite() -> None:
     """Test pr land requires Graphite to be enabled."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main"),
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Graphite is NOT enabled
@@ -164,13 +175,17 @@ def test_pr_land_requires_clean_working_tree() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             # HAS uncommitted changes
             file_statuses={env.cwd: ([], ["modified.py"], [])},
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite(
@@ -206,11 +221,14 @@ def test_pr_land_detached_head() -> None:
 
         # Detached HEAD: root worktree has branch=None
         worktrees = {env.cwd: [WorktreeInfo(path=env.cwd, branch=None, is_root=True)]}
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: None},
+        )
         git_ops = FakeGit(
             worktrees=worktrees,
-            current_branches={env.cwd: None},
             git_common_dirs={env.cwd: env.git_dir},
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops, use_graphite=True)
@@ -227,13 +245,16 @@ def test_pr_land_with_trunk_in_worktree() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Trunk has a dedicated worktree (not in root)
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["main", "feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite(
@@ -279,7 +300,7 @@ def test_pr_land_with_trunk_in_worktree() -> None:
 
         # Verify cleanup happened
         assert len(git_ops.removed_worktrees) == 1
-        assert "feature-1" in git_ops.deleted_branches
+        assert "feature-1" in git_branches.deleted_branches
 
 
 def test_pr_land_no_script_flag_fails_fast() -> None:
@@ -294,13 +315,17 @@ def test_pr_land_no_script_flag_fails_fast() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite(
@@ -350,7 +375,7 @@ def test_pr_land_no_script_flag_fails_fast() -> None:
         # CRITICAL: No destructive operations should have happened
         assert len(github_ops.merged_prs) == 0, "PR should NOT be merged without shell integration"
         assert len(git_ops.removed_worktrees) == 0, "Worktree should NOT be deleted"
-        assert len(git_ops.deleted_branches) == 0, "Branch should NOT be deleted"
+        assert len(git_branches.deleted_branches) == 0, "Branch should NOT be deleted"
 
 
 def test_pr_land_error_no_pr_found() -> None:
@@ -359,13 +384,17 @@ def test_pr_land_error_no_pr_found() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite(
@@ -400,13 +429,17 @@ def test_pr_land_error_pr_not_open() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite(
@@ -460,13 +493,17 @@ def test_pr_land_does_not_call_safe_chdir() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite(
@@ -523,13 +560,16 @@ def test_pr_land_with_up_flag_navigates_to_child() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Create a stack: main -> feature-1 -> feature-2
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite(
@@ -581,7 +621,7 @@ def test_pr_land_with_up_flag_navigates_to_child() -> None:
         # Verify cleanup happened
         feature_1_path = repo_dir / "worktrees" / "feature-1"
         assert feature_1_path in git_ops.removed_worktrees
-        assert "feature-1" in git_ops.deleted_branches
+        assert "feature-1" in git_branches.deleted_branches
 
         # Verify pull was called on feature-2
         assert len(git_ops.pulled_branches) >= 1
@@ -601,13 +641,17 @@ def test_pr_land_with_up_flag_no_children_fails() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         # feature-1 has NO children
@@ -657,7 +701,7 @@ def test_pr_land_with_up_flag_no_children_fails() -> None:
 
         # Verify cleanup did NOT happen since we failed during navigation
         assert len(git_ops.removed_worktrees) == 0
-        assert len(git_ops.deleted_branches) == 0
+        assert len(git_branches.deleted_branches) == 0
 
 
 def test_pr_land_with_up_flag_multiple_children_fails() -> None:
@@ -667,15 +711,18 @@ def test_pr_land_with_up_flag_multiple_children_fails() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Create a branch with two children
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
         git_ops = FakeGit(
             worktrees=env.build_worktrees(
                 "main", ["feature-1", "feature-2a", "feature-2b"], repo_dir=repo_dir
             ),
-            current_branches={env.cwd: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         # feature-1 has TWO children
@@ -729,7 +776,7 @@ def test_pr_land_with_up_flag_multiple_children_fails() -> None:
 
         # Verify cleanup did NOT happen since we failed during navigation
         assert len(git_ops.removed_worktrees) == 0
-        assert len(git_ops.deleted_branches) == 0
+        assert len(git_branches.deleted_branches) == 0
 
 
 def test_pr_land_outputs_script_before_deletion() -> None:
@@ -751,13 +798,17 @@ def test_pr_land_outputs_script_before_deletion() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite(
@@ -839,9 +890,11 @@ def test_pr_land_outputs_script_even_when_pull_fails() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Configure git to fail on pull
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.cwd},
@@ -849,6 +902,7 @@ def test_pr_land_outputs_script_even_when_pull_fails() -> None:
             pull_branch_raises=subprocess.CalledProcessError(
                 1, "git pull", stderr="fatal: Could not fast-forward"
             ),
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite(
@@ -930,14 +984,17 @@ def test_pr_land_with_up_flag_creates_worktree_if_needed() -> None:
 
         # feature-2 has an existing worktree so the command can navigate to it
         # This tests the main --up navigation flow
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+            local_branches={env.cwd: ["main", "feature-1", "feature-2"]},
+        )
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
-            local_branches={env.cwd: ["main", "feature-1", "feature-2"]},
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite(
@@ -989,7 +1046,7 @@ def test_pr_land_with_up_flag_creates_worktree_if_needed() -> None:
         # Verify feature-1 was cleaned up
         feature_1_path = repo_dir / "worktrees" / "feature-1"
         assert feature_1_path in git_ops.removed_worktrees
-        assert "feature-1" in git_ops.deleted_branches
+        assert "feature-1" in git_branches.deleted_branches
 
         # Verify activation script was generated for feature-2
         script_path = Path(result.stdout.strip())

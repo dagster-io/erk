@@ -4,6 +4,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRCheckoutInfo
@@ -26,12 +27,15 @@ def test_pr_checkout_same_repo_branch_exists_on_remote() -> None:
             state="OPEN",
         )
         github = FakeGitHub(pr_checkout_infos={123: pr_info})
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main"]},
-            remote_branches={env.cwd: ["origin/main", "origin/feature-branch"]},
             existing_paths={env.cwd, env.repo.worktrees_dir},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
@@ -59,12 +63,15 @@ def test_pr_checkout_same_repo_branch_already_local() -> None:
             state="OPEN",
         )
         github = FakeGitHub(pr_checkout_infos={456: pr_info})
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "existing-branch"]},
+            remote_branches={env.cwd: ["origin/main", "origin/existing-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main", "existing-branch"]},
-            remote_branches={env.cwd: ["origin/main", "origin/existing-branch"]},
             existing_paths={env.cwd, env.repo.worktrees_dir},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
@@ -90,12 +97,15 @@ def test_pr_checkout_cross_repository_fork() -> None:
             state="OPEN",
         )
         github = FakeGitHub(pr_checkout_infos={789: pr_info})
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+            remote_branches={env.cwd: ["origin/main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main"]},
-            remote_branches={env.cwd: ["origin/main"]},
             existing_paths={env.cwd, env.repo.worktrees_dir},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
@@ -124,6 +134,9 @@ def test_pr_checkout_already_checked_out() -> None:
         github = FakeGitHub(pr_checkout_infos={111: pr_info})
         existing_wt_path = env.repo.worktrees_dir / "existing-wt-branch"
         existing_wt_path.mkdir(parents=True, exist_ok=True)
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "existing-wt-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -133,8 +146,8 @@ def test_pr_checkout_already_checked_out() -> None:
                     WorktreeInfo(path=existing_wt_path, branch="existing-wt-branch"),
                 ]
             },
-            local_branches={env.cwd: ["main", "existing-wt-branch"]},
             existing_paths={env.cwd, env.repo.worktrees_dir, existing_wt_path},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
@@ -176,11 +189,14 @@ def test_pr_checkout_warns_on_closed_pr() -> None:
             state="CLOSED",
         )
         github = FakeGitHub(pr_checkout_infos={222: pr_info})
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "closed-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main", "closed-branch"]},
             existing_paths={env.cwd, env.repo.worktrees_dir},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
@@ -202,11 +218,14 @@ def test_pr_checkout_warns_on_merged_pr() -> None:
             state="MERGED",
         )
         github = FakeGitHub(pr_checkout_infos={333: pr_info})
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "merged-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main", "merged-branch"]},
             existing_paths={env.cwd, env.repo.worktrees_dir},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
@@ -228,11 +247,14 @@ def test_pr_checkout_with_github_url() -> None:
             state="OPEN",
         )
         github = FakeGitHub(pr_checkout_infos={444: pr_info})
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "url-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main", "url-branch"]},
             existing_paths={env.cwd, env.repo.worktrees_dir},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
@@ -275,11 +297,14 @@ def test_pr_checkout_script_mode_outputs_script_path() -> None:
             state="OPEN",
         )
         github = FakeGitHub(pr_checkout_infos={555: pr_info})
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "script-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main", "script-branch"]},
             existing_paths={env.cwd, env.repo.worktrees_dir},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
@@ -309,11 +334,14 @@ def test_pr_checkout_non_script_mode_shows_manual_instructions() -> None:
             state="OPEN",
         )
         github = FakeGitHub(pr_checkout_infos={666: pr_info})
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "manual-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main", "manual-branch"]},
             existing_paths={env.cwd, env.repo.worktrees_dir},
+            git_branches=git_branches,
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 

@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import click
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 
 from erk.cli.commands.completions import complete_branch_names, complete_plan_files
@@ -21,10 +22,14 @@ def test_complete_branch_names_local_branches(tmp_path: Path) -> None:
     erk_root = tmp_path / "erks"
     erk_root.mkdir()
 
-    git = FakeGit(
+    git_branches = FakeGitBranches(
         local_branches={repo_root: ["main", "feature-a", "feature-b"]},
         remote_branches={repo_root: []},
+    )
+
+    git = FakeGit(
         git_common_dirs={repo_root: git_dir},
+        git_branches=git_branches,
     )
 
     global_config = GlobalConfig.test(
@@ -59,10 +64,14 @@ def test_complete_branch_names_remote_branches_strip_prefix(tmp_path: Path) -> N
     erk_root = tmp_path / "erks"
     erk_root.mkdir()
 
-    git = FakeGit(
+    git_branches = FakeGitBranches(
         local_branches={repo_root: ["main"]},
         remote_branches={repo_root: ["origin/feature-c", "upstream/feature-d"]},
+    )
+
+    git = FakeGit(
         git_common_dirs={repo_root: git_dir},
+        git_branches=git_branches,
     )
 
     global_config = GlobalConfig.test(
@@ -97,10 +106,14 @@ def test_complete_branch_names_deduplication(tmp_path: Path) -> None:
     erk_root = tmp_path / "erks"
     erk_root.mkdir()
 
-    git = FakeGit(
+    git_branches = FakeGitBranches(
         local_branches={repo_root: ["main", "feature-a"]},
         remote_branches={repo_root: ["origin/main", "origin/feature-a", "origin/feature-b"]},
+    )
+
+    git = FakeGit(
         git_common_dirs={repo_root: git_dir},
+        git_branches=git_branches,
     )
 
     global_config = GlobalConfig.test(
@@ -136,10 +149,14 @@ def test_complete_branch_names_filters_by_prefix(tmp_path: Path) -> None:
     erk_root = tmp_path / "erks"
     erk_root.mkdir()
 
-    git = FakeGit(
+    git_branches = FakeGitBranches(
         local_branches={repo_root: ["main", "feature-a", "feature-b", "bugfix-1"]},
         remote_branches={repo_root: []},
+    )
+
+    git = FakeGit(
         git_common_dirs={repo_root: git_dir},
+        git_branches=git_branches,
     )
 
     global_config = GlobalConfig.test(
@@ -213,10 +230,14 @@ def test_complete_plan_files_finds_markdown_files(tmp_path: Path) -> None:
     (repo_root / "bugfix-plan.md").touch()
     (repo_root / "readme.md").touch()
 
-    git = FakeGit(
+    git_branches = FakeGitBranches(
         local_branches={repo_root: ["main"]},
         remote_branches={repo_root: []},
+    )
+
+    git = FakeGit(
         git_common_dirs={repo_root: git_dir},
+        git_branches=git_branches,
     )
 
     global_config = GlobalConfig.test(
@@ -255,10 +276,14 @@ def test_complete_plan_files_no_markdown_files(tmp_path: Path) -> None:
     (repo_root / "readme.txt").touch()
     (repo_root / "notes.pdf").touch()
 
-    git = FakeGit(
+    git_branches = FakeGitBranches(
         local_branches={repo_root: ["main"]},
         remote_branches={repo_root: []},
+    )
+
+    git = FakeGit(
         git_common_dirs={repo_root: git_dir},
+        git_branches=git_branches,
     )
 
     global_config = GlobalConfig.test(
@@ -298,10 +323,14 @@ def test_complete_plan_files_filters_by_prefix(tmp_path: Path) -> None:
     (repo_root / "fix-plan.md").touch()
     (repo_root / "readme.md").touch()
 
-    git = FakeGit(
+    git_branches = FakeGitBranches(
         local_branches={repo_root: ["main"]},
         remote_branches={repo_root: []},
+    )
+
+    git = FakeGit(
         git_common_dirs={repo_root: git_dir},
+        git_branches=git_branches,
     )
 
     global_config = GlobalConfig.test(
@@ -375,10 +404,14 @@ def test_complete_plan_files_returns_sorted_results(tmp_path: Path) -> None:
     (repo_root / "a-plan.md").touch()
     (repo_root / "m-plan.md").touch()
 
-    git = FakeGit(
+    git_branches = FakeGitBranches(
         local_branches={repo_root: ["main"]},
         remote_branches={repo_root: []},
+    )
+
+    git = FakeGit(
         git_common_dirs={repo_root: git_dir},
+        git_branches=git_branches,
     )
 
     global_config = GlobalConfig.test(

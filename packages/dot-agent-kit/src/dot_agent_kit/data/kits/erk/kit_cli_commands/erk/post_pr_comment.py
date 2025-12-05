@@ -34,7 +34,7 @@ from erk_shared.github.metadata import (
 from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 
 from dot_agent_kit.context_helpers import (
-    require_git,
+    require_git_branches,
     require_github_issues,
     require_repo_root,
 )
@@ -105,7 +105,7 @@ def post_pr_comment(ctx: click.Context, pr_url: str, pr_number: int) -> None:
 
     # Get dependencies from context
     repo_root = require_repo_root(ctx)
-    git = require_git(ctx)
+    git_branches = require_git_branches(ctx)
 
     # Read issue reference
     impl_dir = Path.cwd() / ".impl"
@@ -129,8 +129,8 @@ def post_pr_comment(ctx: click.Context, pr_url: str, pr_number: int) -> None:
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(0)
 
-    # Get branch name using Git abstraction
-    branch_name = git.get_current_branch(Path.cwd())
+    # Get branch name using GitBranches abstraction
+    branch_name = git_branches.get_current_branch(Path.cwd())
     if branch_name is None:
         result = PrCommentError(
             success=False,

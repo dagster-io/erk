@@ -207,9 +207,9 @@ def _delete_branch_at_error_boundary(
 
     try:
         if branch_is_tracked:
-            ctx.git.delete_branch_with_graphite(repo_root, branch, force=force)
+            ctx.git_branches.delete_branch_with_graphite(repo_root, branch, force=force)
         else:
-            ctx.git.delete_branch(repo_root, branch, force=force)
+            ctx.git_branches.delete_branch(repo_root, branch, force=force)
         if not dry_run:
             branch_text = click.style(branch, fg="green")
             user_output(f"✅ Deleted branch: {branch_text}")

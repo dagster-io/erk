@@ -102,7 +102,7 @@ def _get_impl_issue(
     # Fallback to git config (no URL available from git config)
     # If branch not provided, fetch it (for backwards compatibility)
     if branch is None:
-        branch = ctx.git.get_current_branch(worktree_path)
+        branch = ctx.git_branches.get_current_branch(worktree_path)
     if branch is not None:
         issue_num = ctx.git.get_branch_issue(worktree_path, branch)
         if issue_num is not None:
@@ -222,7 +222,7 @@ def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool = False) -> None:
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
 
     # Get trunk branch once if showing last commit
-    trunk = ctx.git.detect_trunk_branch(repo.root) if show_last_commit else ""
+    trunk = ctx.git_branches.detect_trunk_branch(repo.root) if show_last_commit else ""
 
     # Create Rich table
     table = Table(show_header=True, header_style="bold", box=None)

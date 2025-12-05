@@ -4,6 +4,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
@@ -26,6 +27,10 @@ def test_checkout_to_branch_in_single_worktree() -> None:
         feature_wt = work_dir / "feature-wt"
         other_wt = work_dir / "other-wt"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "other-feature"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -34,9 +39,9 @@ def test_checkout_to_branch_in_single_worktree() -> None:
                     WorktreeInfo(path=feature_wt, branch="feature-2"),
                 ]
             },
-            current_branches={env.cwd: "other-feature"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Create RepoContext to avoid filesystem checks in discover_repo_context
@@ -74,6 +79,12 @@ def test_checkout_to_branch_not_found() -> None:
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+            # nonexistent-branch is NOT in this list
+            local_branches={env.cwd: ["main", "feature-1"]},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -81,10 +92,8 @@ def test_checkout_to_branch_not_found() -> None:
                     WorktreeInfo(path=work_dir / "feature-1-wt", branch="feature-1"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
-            # nonexistent-branch is NOT in this list
-            local_branches={env.cwd: ["main", "feature-1"]},
+            git_branches=git_branches,
         )
 
         # Create RepoContext to avoid filesystem checks
@@ -114,16 +123,19 @@ def test_checkout_creates_worktree_for_unchecked_branch() -> None:
         work_dir = env.erk_root / env.cwd.name
 
         # Branch 'existing-branch' exists in git but is not checked out
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "existing-branch"]},  # exists in git
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "existing-branch"]},  # exists in git
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Create RepoContext to avoid filesystem checks
@@ -179,6 +191,11 @@ def test_checkout_to_branch_in_stack_but_not_checked_out() -> None:
 
         # feature-1 is checked out, but feature-base is not
         # (even though it exists in git)
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+            # feature-base exists but not checked out
+            local_branches={env.cwd: ["main", "feature-1", "feature-base"]},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -186,10 +203,9 @@ def test_checkout_to_branch_in_stack_but_not_checked_out() -> None:
                     WorktreeInfo(path=wt1, branch="feature-1"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-1", "feature-base"]},  # feature-base exists
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Create RepoContext to avoid filesystem checks
@@ -226,6 +242,10 @@ def test_checkout_works_without_graphite() -> None:
         work_dir = env.erk_root / env.cwd.name
         feature_wt = work_dir / "feature-1-wt"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -233,8 +253,8 @@ def test_checkout_works_without_graphite() -> None:
                     WorktreeInfo(path=feature_wt, branch="feature-1"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Create RepoContext to avoid filesystem checks
@@ -271,6 +291,10 @@ def test_checkout_already_on_target_branch() -> None:
         work_dir = env.erk_root / env.cwd.name
         feature_wt = work_dir / "feature-1-wt"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -278,9 +302,9 @@ def test_checkout_already_on_target_branch() -> None:
                     WorktreeInfo(path=feature_wt, branch="feature-1"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Create RepoContext to avoid filesystem checks
@@ -330,6 +354,10 @@ def test_checkout_succeeds_when_branch_exactly_checked_out() -> None:
         feature_wt = work_dir / "feature-wt"
         other_wt = work_dir / "other-wt"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "other-feature"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -337,8 +365,8 @@ def test_checkout_succeeds_when_branch_exactly_checked_out() -> None:
                     WorktreeInfo(path=feature_wt, branch="feature-2"),  # feature-2 is checked out
                 ]
             },
-            current_branches={env.cwd: "other-feature"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Create RepoContext to avoid filesystem checks
@@ -379,6 +407,9 @@ def test_checkout_with_multiple_worktrees_same_branch() -> None:
 
         # Edge case: same branch checked out in multiple worktrees
         # (shouldn't happen in real git, but test our handling)
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -386,8 +417,8 @@ def test_checkout_with_multiple_worktrees_same_branch() -> None:
                     WorktreeInfo(path=wt2, branch="feature-2"),  # Same branch
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Create RepoContext to avoid filesystem checks
@@ -417,17 +448,20 @@ def test_checkout_creates_worktree_for_remote_only_branch() -> None:
         work_dir = env.erk_root / env.cwd.name
 
         # Branch exists on origin but not locally
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-remote"]},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},  # feature-remote NOT here
-            remote_branches={env.cwd: ["origin/main", "origin/feature-remote"]},  # But here
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Create RepoContext to avoid filesystem checks
@@ -478,17 +512,20 @@ def test_checkout_fails_when_branch_not_on_origin() -> None:
         work_dir = env.erk_root / env.cwd.name
 
         # Branch doesn't exist locally or remotely
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+            remote_branches={env.cwd: ["origin/main"]},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            current_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
-            remote_branches={env.cwd: ["origin/main"]},  # nonexistent-branch NOT here
+            git_common_dirs={env.cwd: env.git_dir},  # nonexistent-branch NOT here
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Create RepoContext to avoid filesystem checks
@@ -528,6 +565,10 @@ def test_checkout_message_when_switching_worktrees() -> None:
         # Set up two worktrees: root on main, secondary on feature-branch
         feature_wt = work_dir / "feature-wt"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -536,9 +577,9 @@ def test_checkout_message_when_switching_worktrees() -> None:
                     WorktreeInfo(path=feature_wt, branch="feature-branch"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Create RepoContext to avoid filesystem checks
@@ -596,18 +637,21 @@ def test_checkout_trunk_with_dirty_root_errors() -> None:
 
         # Setup: root worktree is on a feature branch, not trunk
         # This way when user tries to checkout trunk, it won't already be checked out
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+            local_branches={env.cwd: ["main", "feature-1"]},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="feature-1"),
                 ]
             },
-            current_branches={env.cwd: "feature-1"},
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-1"]},
             default_branches={env.cwd: "main"},
             # Simulate dirty root - uncommitted changes present
             file_statuses={env.cwd: ([], ["modified_file.txt"], [])},
+            git_branches=git_branches,
         )
 
         repo = RepoContext(
@@ -643,6 +687,10 @@ def test_checkout_tracks_untracked_branch_with_graphite() -> None:
         work_dir = env.erk_root / env.cwd.name
         feature_wt = work_dir / "feature-untracked-wt"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -650,9 +698,9 @@ def test_checkout_tracks_untracked_branch_with_graphite() -> None:
                     WorktreeInfo(path=feature_wt, branch="feature-untracked"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Graphite has no branches tracked (empty dict)
@@ -701,6 +749,10 @@ def test_checkout_skips_tracking_when_user_declines() -> None:
         work_dir = env.erk_root / env.cwd.name
         feature_wt = work_dir / "feature-untracked-wt"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -708,9 +760,9 @@ def test_checkout_skips_tracking_when_user_declines() -> None:
                     WorktreeInfo(path=feature_wt, branch="feature-untracked"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Graphite has no branches tracked (empty dict)
@@ -755,6 +807,10 @@ def test_checkout_skips_tracking_in_script_mode() -> None:
         work_dir = env.erk_root / env.cwd.name
         feature_wt = work_dir / "feature-untracked-wt"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -762,9 +818,9 @@ def test_checkout_skips_tracking_in_script_mode() -> None:
                     WorktreeInfo(path=feature_wt, branch="feature-untracked"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Graphite has no branches tracked (empty dict)
@@ -805,6 +861,10 @@ def test_checkout_does_not_track_already_tracked_branch() -> None:
         work_dir = env.erk_root / env.cwd.name
         feature_wt = work_dir / "feature-tracked-wt"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -812,9 +872,9 @@ def test_checkout_does_not_track_already_tracked_branch() -> None:
                     WorktreeInfo(path=feature_wt, branch="feature-tracked"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Graphite already has the branch tracked
@@ -866,6 +926,9 @@ def test_checkout_does_not_track_trunk_branch() -> None:
         feature_wt = work_dir / "feature-wt"
 
         # Setup: We're on feature branch, checking out main
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -873,9 +936,9 @@ def test_checkout_does_not_track_trunk_branch() -> None:
                     WorktreeInfo(path=feature_wt, branch="feature-1"),
                 ]
             },
-            current_branches={env.cwd: "feature-1"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Graphite has no branches tracked (empty dict)

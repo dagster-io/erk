@@ -5,6 +5,7 @@ This file tests the delete command which removes a worktree workspace.
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
@@ -74,9 +75,11 @@ def test_delete_dry_run_with_branch() -> None:
         wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-branch"
 
         # Build fake git ops with worktree info
+        git_branches = FakeGitBranches()
         fake_git_ops = FakeGit(
             worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature")]},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
         git_ops = DryRunGit(fake_git_ops)
 
@@ -99,7 +102,7 @@ def test_delete_dry_run_with_branch() -> None:
         result = runner.invoke(cli, ["wt", "delete", "test-branch", "-f", "-b"], obj=test_ctx)
 
         assert_cli_success(result, "[DRY RUN]", "Would run: gt delete")
-        assert len(fake_git_ops.deleted_branches) == 0  # No actual deletion
+        assert len(git_branches.deleted_branches) == 0  # No actual deletion
         # Directory should still exist (check via git_ops state)
         assert test_ctx.git.path_exists(wt)
 
@@ -152,6 +155,9 @@ def test_delete_changes_directory_when_in_target_worktree() -> None:
         wt_path = env.erk_root / "repos" / repo_name / "worktrees" / "feature"
 
         # Set up worktree paths
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main", wt_path: "feature"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -160,7 +166,7 @@ def test_delete_changes_directory_when_in_target_worktree() -> None:
                 ]
             },
             git_common_dirs={env.cwd: env.git_dir, wt_path: env.git_dir},
-            current_branches={env.cwd: "main", wt_path: "feature"},
+            git_branches=git_branches,
         )
 
         # Build context with cwd set to the worktree being deleted
@@ -181,9 +187,11 @@ def test_delete_with_branch_without_graphite() -> None:
         wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-branch"
 
         # Build fake git ops with worktree info
+        git_branches = FakeGitBranches()
         fake_git_ops = FakeGit(
             worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature")]},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Build context with use_graphite=False (default)
@@ -204,7 +212,7 @@ def test_delete_with_branch_without_graphite() -> None:
 
         # Assert: Command should succeed and use git branch -d
         assert_cli_success(result)
-        assert "feature" in fake_git_ops.deleted_branches
+        assert "feature" in git_branches.deleted_branches
 
 
 def test_delete_with_branch_with_graphite() -> None:
@@ -215,9 +223,11 @@ def test_delete_with_branch_with_graphite() -> None:
         wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-branch"
 
         # Build fake git ops with worktree info
+        git_branches = FakeGitBranches()
         fake_git_ops = FakeGit(
             worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature")]},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Build graphite ops with branch metadata
@@ -244,7 +254,7 @@ def test_delete_with_branch_with_graphite() -> None:
 
         # Assert: Command should succeed and branch should be deleted
         assert_cli_success(result)
-        assert "feature" in fake_git_ops.deleted_branches
+        assert "feature" in git_branches.deleted_branches
 
 
 def test_delete_with_branch_graphite_enabled_but_untracked() -> None:
@@ -255,9 +265,11 @@ def test_delete_with_branch_graphite_enabled_but_untracked() -> None:
         wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-branch"
 
         # Build fake git ops with worktree info
+        git_branches = FakeGitBranches()
         fake_git_ops = FakeGit(
             worktrees={env.cwd: [WorktreeInfo(path=wt, branch="untracked-feature")]},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Build graphite ops WITHOUT the branch being tracked
@@ -284,6 +296,6 @@ def test_delete_with_branch_graphite_enabled_but_untracked() -> None:
 
         # Assert: Command should succeed and use git branch -D (not gt delete)
         assert_cli_success(result)
-        assert "untracked-feature" in fake_git_ops.deleted_branches
+        assert "untracked-feature" in git_branches.deleted_branches
         # The branch should be deleted via git, not graphite
         # Since FakeGit.delete_branch is used, the branch appears in deleted_branches

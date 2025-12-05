@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from erk_shared.git.abc import WorktreeInfo, find_worktree_for_branch
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.integrations.graphite.real import RealGraphite
@@ -39,10 +40,14 @@ def test_find_worktrees_containing_branch_no_match(tmp_path: Path) -> None:
         WorktreeInfo(path=wt1_path, branch="feature-1"),
     ]
 
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
+
     git_ops = FakeGit(
         worktrees={repo_root: worktrees},
-        current_branches={repo_root: "main"},
         git_common_dirs={repo_root: git_dir},
+        git_branches=git_branches,
     )
 
     graphite_ops = RealGraphite()

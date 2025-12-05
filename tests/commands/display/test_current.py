@@ -8,6 +8,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 
 from erk.cli.cli import cli
@@ -25,6 +26,12 @@ def test_current_returns_worktree_name() -> None:
         feature_x_path = work_dir / "feature-x"
 
         # Configure FakeGit with worktrees - feature-x is current
+        git_branches = FakeGitBranches(
+            current_branches={
+                env.cwd: "main",
+                feature_x_path: "feature-x",
+            }
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -32,15 +39,12 @@ def test_current_returns_worktree_name() -> None:
                     WorktreeInfo(path=feature_x_path, branch="feature-x", is_root=False),
                 ]
             },
-            current_branches={
-                env.cwd: "main",
-                feature_x_path: "feature-x",
-            },
             git_common_dirs={
                 env.cwd: env.git_dir,
                 feature_x_path: env.git_dir,
             },
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Use env.build_context() helper to eliminate boilerplate
@@ -58,15 +62,18 @@ def test_current_returns_root_in_root_repository() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         # Configure FakeGit with just root worktree
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Use env.build_context() helper to eliminate boilerplate
@@ -87,15 +94,18 @@ def test_current_exits_with_error_when_not_in_worktree() -> None:
         outside_dir = env.cwd.parent / "outside"
 
         # Configure FakeGit with worktrees, but we'll run from outside
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Use env.build_context() helper to eliminate boilerplate
@@ -118,6 +128,12 @@ def test_current_works_from_subdirectory() -> None:
         subdir = feature_y_path / "src" / "nested"
 
         # Configure FakeGit with worktrees
+        git_branches = FakeGitBranches(
+            current_branches={
+                env.cwd: "main",
+                feature_y_path: "feature-y",
+            }
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -125,16 +141,13 @@ def test_current_works_from_subdirectory() -> None:
                     WorktreeInfo(path=feature_y_path, branch="feature-y", is_root=False),
                 ]
             },
-            current_branches={
-                env.cwd: "main",
-                feature_y_path: "feature-y",
-            },
             git_common_dirs={
                 env.cwd: env.git_dir,
                 feature_y_path: env.git_dir,
                 subdir: env.git_dir,  # Subdirectory also maps to same git dir
             },
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Use env.build_context() helper to eliminate boilerplate
@@ -157,9 +170,7 @@ def test_current_handles_missing_git_gracefully(tmp_path: Path) -> None:
     git_ops = FakeGit(git_common_dirs={})
 
     # Create global config
-    global_config = GlobalConfig.test(
-        erk_root, use_graphite=False, shell_setup_complete=False
-    )
+    global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
     global_config_ops = FakeConfigStore(config=global_config)
 
     ctx = ErkContext.for_test(
@@ -191,6 +202,9 @@ def test_current_handles_nested_worktrees(tmp_path: Path) -> None:
     target_dir.mkdir()
 
     # Set up nested worktrees: root contains parent, parent contains nested
+    git_branches = FakeGitBranches(
+        trunk_branches={repo_root: "main"},
+    )
     git_ops = FakeGit(
         worktrees={
             repo_root: [
@@ -203,13 +217,11 @@ def test_current_handles_nested_worktrees(tmp_path: Path) -> None:
             target_dir: repo_root / ".git",
         },
         existing_paths={repo_root, parent_wt, nested_wt, target_dir, repo_root / ".git"},
-        trunk_branches={repo_root: "main"},
+        git_branches=git_branches,
     )
 
     # Create global config
-    global_config = GlobalConfig.test(
-        erk_root, use_graphite=False, shell_setup_complete=False
-    )
+    global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
     global_config_ops = FakeConfigStore(config=global_config)
 
     ctx = ErkContext.for_test(

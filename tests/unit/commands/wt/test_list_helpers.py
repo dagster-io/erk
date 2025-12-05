@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from erk_shared.git.abc import BranchSyncInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.types import PullRequestInfo
 
@@ -112,9 +113,12 @@ def test_get_impl_issue_from_impl_folder(tmp_path: Path) -> None:
 def test_get_impl_issue_from_git_config() -> None:
     """Test getting impl issue from git config fallback (no URL available)."""
     worktree_path = Path("/repo/worktree")
-    git = FakeGit(
+    git_branches = FakeGitBranches(
         current_branches={worktree_path: "feature"},
+    )
+    git = FakeGit(
         branch_issues={"feature": 123},
+        git_branches=git_branches,
     )
     ctx = create_test_context(git=git)
 
@@ -127,9 +131,12 @@ def test_get_impl_issue_from_git_config() -> None:
 def test_get_impl_issue_none_when_not_found() -> None:
     """Test getting impl issue returns (None, None) when no issue found."""
     worktree_path = Path("/repo/worktree")
-    git = FakeGit(
+    git_branches = FakeGitBranches(
         current_branches={worktree_path: "feature"},
-        # No branch_issues configured
+    )
+    git = FakeGit(
+        # No branch_issues configured,
+        git_branches=git_branches,
     )
     ctx = create_test_context(git=git)
 

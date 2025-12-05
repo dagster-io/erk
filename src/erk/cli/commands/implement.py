@@ -47,13 +47,13 @@ def _determine_base_branch(ctx: ErkContext, repo_root: Path) -> str:
     Returns:
         Base branch name to use as ref for worktree creation
     """
-    trunk_branch = ctx.git.detect_trunk_branch(repo_root)
+    trunk_branch = ctx.git_branches.detect_trunk_branch(repo_root)
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
 
     if not use_graphite:
         return trunk_branch
 
-    current_branch = ctx.git.get_current_branch(ctx.cwd)
+    current_branch = ctx.git_branches.get_current_branch(ctx.cwd)
     if current_branch and current_branch != trunk_branch:
         return current_branch
 
@@ -538,7 +538,7 @@ def _create_worktree_with_plan_content(
 
     if not use_existing_branch:
         # Validate branch doesn't exist (before dry-run output)
-        local_branches = ctx.git.list_local_branches(repo_root)
+        local_branches = ctx.git_branches.list_local_branches(repo_root)
         if branch in local_branches:
             # Different error messages based on whether name was explicitly provided
             if worktree_name:

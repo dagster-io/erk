@@ -7,6 +7,7 @@ branches from the current Graphite stack.
 import pytest
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.integrations.graphite.fake import FakeGraphite
@@ -27,10 +28,14 @@ def test_consolidate_no_other_worktrees() -> None:
         # Current worktree only (on feature-2)
         worktrees = {env.cwd: [WorktreeInfo(path=env.cwd, branch="feature-2")]}
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-2"},
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -54,10 +59,14 @@ def test_consolidate_no_other_worktrees_with_script_flag() -> None:
         # Current worktree only (on feature-2)
         worktrees = {env.cwd: [WorktreeInfo(path=env.cwd, branch="feature-2")]}
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-2"},
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -92,10 +101,14 @@ def test_consolidate_removes_other_stack_worktrees() -> None:
             ]
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-2"},
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -130,10 +143,14 @@ def test_consolidate_preserves_current_worktree() -> None:
             ]
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-1"},
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -171,11 +188,15 @@ def test_consolidate_aborts_on_uncommitted_changes() -> None:
             wt1_path: ([], [], ["uncommitted.txt"]),  # Untracked file
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-1"},
             file_statuses=file_statuses,
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -207,10 +228,14 @@ def test_consolidate_dry_run_shows_preview() -> None:
             ]
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-1"},
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -243,10 +268,14 @@ def test_consolidate_confirmation_prompt() -> None:
             ]
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-1"},
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -272,10 +301,13 @@ def test_consolidate_detached_head_error() -> None:
         worktrees = {env.cwd: [WorktreeInfo(path=env.cwd, branch=None)]}
 
         # Create context with no current branch
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: None},
+        )
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: None},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(
@@ -303,10 +335,14 @@ def test_consolidate_not_tracked_by_graphite() -> None:
         # Current branch is "feature-1" but not in Graphite
         worktrees = {env.cwd: [WorktreeInfo(path=env.cwd, branch="feature-1")]}
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-1"},
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -341,10 +377,14 @@ def test_consolidate_skips_non_stack_worktrees() -> None:
             ]
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "stack-a"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "stack-a"},
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -389,11 +429,15 @@ def test_consolidate_with_uncommitted_changes_in_non_stack_worktree() -> None:
             wt3_path: ([], [], ["uncommitted.txt"]),  # Untracked file in non-stack worktree
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-2"},
             file_statuses=file_statuses,
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -445,10 +489,13 @@ def test_consolidate_preserves_root_worktree_even_when_in_stack() -> None:
         }
 
         # Create custom context with wt2_path as cwd
+        git_branches = FakeGitBranches(
+            current_branches={wt2_path: "feature-2"},
+        )
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={wt2_path: main_worktree / ".git"},
-            current_branches={wt2_path: "feature-2"},
+            git_branches=git_branches,
         )
         # Override git_common_dirs to include all worktrees
         git_ops._git_common_dirs[main_worktree] = main_worktree / ".git"
@@ -504,10 +551,14 @@ def test_consolidate_partial_stack() -> None:
             ]
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={wt3_path: "feat-3"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={wt3_path: env.git_dir},
-            current_branches={wt3_path: "feat-3"},
+            git_branches=git_branches,
         )
         # Override git_common_dirs
         git_ops._git_common_dirs[wt1_path] = env.git_dir
@@ -544,10 +595,14 @@ def test_consolidate_branch_not_in_stack() -> None:
         # Current worktree on feat-2
         worktrees = {env.cwd: [WorktreeInfo(path=env.cwd, branch="feat-2")]}
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feat-2"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feat-2"},
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -591,10 +646,14 @@ def test_consolidate_preserves_upstack_branches() -> None:
             ]
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={wt4_path: "feat-4"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={wt4_path: env.git_dir},
-            current_branches={wt4_path: "feat-4"},
+            git_branches=git_branches,
         )
         # Override git_common_dirs
         git_ops._git_common_dirs[wt1_path] = env.git_dir
@@ -642,10 +701,14 @@ def test_consolidate_shows_output_with_script_flag() -> None:
             ]
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-1"},
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -681,10 +744,14 @@ def test_consolidate_shows_output_without_script_flag() -> None:
             ]
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-1"},
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -723,10 +790,14 @@ def test_consolidate_script_mode_shows_preview_output() -> None:
             ]
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-1"},
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -768,10 +839,14 @@ def test_consolidate_outputs_to_stderr() -> None:
             ]
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-1"},
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -842,11 +917,15 @@ def test_consolidate_allows_uncommitted_changes_in_protected_worktrees() -> None
             # wt4_path is current (can have changes)
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={wt4_path: "feat-4"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={wt4_path: env.git_dir},
-            current_branches={wt4_path: "feat-4"},
             file_statuses=file_statuses,
+            git_branches=git_branches,
         )
 
         # Override git_common_dirs for all worktrees
@@ -900,10 +979,14 @@ def test_consolidate_with_name_tracks_temp_branch_with_graphite() -> None:
         # Current worktree on feature-2
         worktrees = {env.cwd: [WorktreeInfo(path=env.cwd, branch="feature-2")]}
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-2"},
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -950,10 +1033,14 @@ def test_consolidate_with_name_changes_directory_before_removal() -> None:
         # Current worktree on feature-2
         worktrees = {env.cwd: [WorktreeInfo(path=env.cwd, branch="feature-2")]}
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-2"},
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -1003,10 +1090,14 @@ def test_consolidate_with_name_changes_directory_in_non_script_mode() -> None:
         # Current worktree on feature-2
         worktrees = {env.cwd: [WorktreeInfo(path=env.cwd, branch="feature-2")]}
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
+
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-2"},
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,
@@ -1072,15 +1163,18 @@ def test_consolidate_with_name_outputs_script_even_when_branch_delete_fails(
 
         # Configure git to fail when deleting the temp branch
         temp_branch_name = f"temp-consolidate-{mock_timestamp}"
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
         git_ops = FakeGit(
             worktrees=worktrees,
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-2"},
             delete_branch_raises={
                 temp_branch_name: subprocess.CalledProcessError(
                     1, f"git branch -D {temp_branch_name}", stderr="fatal: Cannot delete branch"
                 )
             },
+            git_branches=git_branches,
         )
         test_ctx = build_workspace_test_context(
             env,

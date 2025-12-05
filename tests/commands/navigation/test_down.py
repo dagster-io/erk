@@ -4,6 +4,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
@@ -20,11 +21,16 @@ def test_down_with_existing_worktree() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
+
         git_ops = FakeGit(
+            # Simulate being in feature-2 worktree
             worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-2"},  # Simulate being in feature-2 worktree
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up stack: main -> feature-1 -> feature-2
@@ -67,11 +73,15 @@ def test_down_to_trunk_root() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Main is checked out in root, feature-1 has its own worktree
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
         git_ops = FakeGit(
+            # Simulate being in feature-1 worktree
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},  # Simulate being in feature-1 worktree
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up stack: main -> feature-1
@@ -110,11 +120,14 @@ def test_down_at_trunk() -> None:
     """Test down command when already at trunk."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main"),
-            current_branches={env.cwd: "main"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up stack: main (only trunk)
@@ -138,13 +151,15 @@ def test_down_parent_has_no_worktree() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Only feature-2 has a worktree, feature-1 does not (will be auto-created)
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+            local_branches={env.cwd: ["main", "feature-1", "feature-2"]},
+        )
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-2"},  # Simulate being in feature-2 worktree
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
-            # feature-1 exists locally
-            local_branches={env.cwd: ["main", "feature-1", "feature-2"]},
+            git_branches=git_branches,
         )
 
         # Set up stack: main -> feature-1 -> feature-2
@@ -184,10 +199,13 @@ def test_down_graphite_not_enabled() -> None:
     """Test down command requires Graphite to be enabled."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main"),
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Graphite is NOT enabled
@@ -208,10 +226,13 @@ def test_down_detached_head() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         # Current branch is None (detached HEAD)
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: None},
+        )
         git_ops = FakeGit(
             worktrees=env.build_worktrees(None),
-            current_branches={env.cwd: None},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops, use_graphite=True)
@@ -227,11 +248,16 @@ def test_down_script_flag() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
+
         git_ops = FakeGit(
+            # Simulate being in feature-2 worktree
             worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-2"},  # Simulate being in feature-2 worktree
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up stack: main -> feature-1 -> feature-2
@@ -282,6 +308,9 @@ def test_down_with_mismatched_worktree_name() -> None:
         # Worktree directories use different naming than branch names
         # Branch: feature/auth -> Worktree: auth-work
         # Branch: feature/auth-tests -> Worktree: auth-tests-work
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature/auth-tests"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -293,12 +322,10 @@ def test_down_with_mismatched_worktree_name() -> None:
                         is_root=False,
                     ),
                 ]
-            },
-            current_branches={
-                env.cwd: "feature/auth-tests"
             },  # Simulate being in feature/auth-tests worktree
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up stack: main -> feature/auth -> feature/auth-tests
@@ -353,13 +380,17 @@ def test_down_delete_current_success() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Set up worktrees: main, feature-1, feature-2
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
         git_ops = FakeGit(
+            # Currently on feature-2
             worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-2"},  # Currently on feature-2
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             # No uncommitted changes
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         # Set up stack: main -> feature-1 -> feature-2
@@ -422,7 +453,7 @@ def test_down_delete_current_success() -> None:
         assert feature_2_path in git_ops.removed_worktrees, "feature-2 worktree should be removed"
 
         # Assert: feature-2 branch was deleted
-        assert "feature-2" in git_ops.deleted_branches
+        assert "feature-2" in git_branches.deleted_branches
 
 
 def test_down_delete_current_uncommitted_changes() -> None:
@@ -431,13 +462,17 @@ def test_down_delete_current_uncommitted_changes() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
+
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-2"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             # HAS uncommitted changes
             file_statuses={env.cwd: ([], ["modified.py"], [])},
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite(
@@ -472,7 +507,7 @@ def test_down_delete_current_uncommitted_changes() -> None:
 
         # Assert: No worktrees or branches were deleted
         assert len(git_ops.removed_worktrees) == 0
-        assert len(git_ops.deleted_branches) == 0
+        assert len(git_branches.deleted_branches) == 0
 
 
 def test_down_delete_current_pr_open() -> None:
@@ -481,12 +516,16 @@ def test_down_delete_current_pr_open() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
+
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-2"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite(
@@ -544,7 +583,7 @@ def test_down_delete_current_pr_open() -> None:
 
         # Assert: No worktrees or branches were deleted
         assert len(git_ops.removed_worktrees) == 0
-        assert len(git_ops.deleted_branches) == 0
+        assert len(git_branches.deleted_branches) == 0
 
 
 def test_down_delete_current_pr_closed() -> None:
@@ -553,12 +592,16 @@ def test_down_delete_current_pr_closed() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
+
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-2"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite(
@@ -620,7 +663,7 @@ def test_down_delete_current_pr_closed() -> None:
         assert feature_2_path in git_ops.removed_worktrees, "feature-2 worktree should be removed"
 
         # Assert: feature-2 branch was deleted
-        assert "feature-2" in git_ops.deleted_branches
+        assert "feature-2" in git_branches.deleted_branches
 
 
 def test_down_delete_current_no_pr() -> None:
@@ -629,12 +672,16 @@ def test_down_delete_current_no_pr() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
+
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-2"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite(
@@ -676,8 +723,8 @@ def test_down_delete_current_no_pr() -> None:
 
         # Assert: Branch and worktree were deleted
         assert len(git_ops.removed_worktrees) == 1
-        assert len(git_ops.deleted_branches) == 1
-        assert "feature-2" in git_ops.deleted_branches
+        assert len(git_branches.deleted_branches) == 1
+        assert "feature-2" in git_branches.deleted_branches
 
 
 def test_down_delete_current_trunk_in_root() -> None:
@@ -687,12 +734,15 @@ def test_down_delete_current_trunk_in_root() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Main is checked out in root, feature-1 has its own worktree
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             file_statuses={env.cwd: ([], [], [])},
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite(
@@ -751,4 +801,4 @@ def test_down_delete_current_trunk_in_root() -> None:
         assert feature_1_path in git_ops.removed_worktrees, "feature-1 worktree should be removed"
 
         # Assert: feature-1 branch was deleted
-        assert "feature-1" in git_ops.deleted_branches
+        assert "feature-1" in git_branches.deleted_branches

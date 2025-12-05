@@ -1,6 +1,7 @@
 """Tests for erk pr submit command."""
 
 from click.testing import CliRunner
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 
 from erk.cli.commands.pr import pr_group
@@ -13,11 +14,14 @@ def test_pr_submit_success() -> None:
     """Test successful PR submission."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-branch"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
+            git_branches=git_branches,
         )
 
         claude_executor = FakeClaudeExecutor(
@@ -45,11 +49,14 @@ def test_pr_submit_success_without_pr_url() -> None:
     """Test successful PR submission without PR URL in result."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-branch"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
+            git_branches=git_branches,
         )
 
         # Success without PR URL (edge case)
@@ -72,10 +79,13 @@ def test_pr_submit_fails_when_claude_not_available() -> None:
     """Test that command fails when Claude CLI is not available."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         claude_executor = FakeClaudeExecutor(claude_available=False)
@@ -96,11 +106,14 @@ def test_pr_submit_fails_on_command_error() -> None:
     """Test that command fails when slash command execution fails."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-branch"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
+            git_branches=git_branches,
         )
 
         claude_executor = FakeClaudeExecutor(
@@ -121,11 +134,14 @@ def test_pr_submit_shows_error_on_no_output() -> None:
     """Test that command fails when Claude produces no output."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-branch"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
+            git_branches=git_branches,
         )
 
         claude_executor = FakeClaudeExecutor(
@@ -145,11 +161,14 @@ def test_pr_submit_shows_error_on_process_error() -> None:
     """Test that command fails when Claude fails to start."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-branch"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
+            git_branches=git_branches,
         )
 
         claude_executor = FakeClaudeExecutor(
@@ -169,11 +188,14 @@ def test_pr_submit_shows_error_on_zero_turns() -> None:
     """Test that command fails when Claude completes with zero turns (hook blocking)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-branch"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+        )
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
+            git_branches=git_branches,
         )
 
         claude_executor = FakeClaudeExecutor(

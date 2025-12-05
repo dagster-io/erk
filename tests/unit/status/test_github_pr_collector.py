@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PullRequestInfo
@@ -56,9 +57,12 @@ def setup_collector(
     repo_root.mkdir()
 
     git_ops_kwargs = git_kwargs or {}
-    git_ops = FakeGit(
+    git_branches = FakeGitBranches(
         current_branches={worktree_path: branch},
+    )
+    git_ops = FakeGit(
         **git_ops_kwargs,
+        git_branches=git_branches,
     )
 
     # PRs now come from Graphite, not GitHub

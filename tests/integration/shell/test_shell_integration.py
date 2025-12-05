@@ -491,6 +491,7 @@ def test_shell_integration_create_from_current_branch_returns_script_path() -> N
     See: https://github.com/anthropics/erk/issues/XXX
     """
     from erk_shared.git.abc import WorktreeInfo
+    from erk_shared.git.branches.fake import FakeGitBranches
     from erk_shared.git.fake import FakeGit
 
     from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -498,15 +499,18 @@ def test_shell_integration_create_from_current_branch_returns_script_path() -> N
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state: in root worktree on feature branch
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "my-feature"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
                 ]
             },
-            current_branches={env.cwd: "my-feature"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)

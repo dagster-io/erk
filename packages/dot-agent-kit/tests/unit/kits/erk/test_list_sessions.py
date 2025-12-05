@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from click.testing import CliRunner
-from erk_shared.git.fake import FakeGit
+from erk_shared.git.branches.fake import FakeGitBranches
 
 from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.list_sessions import (
@@ -367,12 +367,12 @@ def test_list_sessions_nonexistent_directory(tmp_path: Path) -> None:
 
 def test_get_branch_context_on_feature_branch(tmp_path: Path) -> None:
     """Test branch context detection on feature branch."""
-    git = FakeGit(
+    git_branches = FakeGitBranches(
         current_branches={tmp_path: "feature-xyz"},
         trunk_branches={tmp_path: "main"},
     )
 
-    context = get_branch_context(git, tmp_path)
+    context = get_branch_context(git_branches, tmp_path)
     assert context.current_branch == "feature-xyz"
     assert context.trunk_branch == "main"
     assert context.is_on_trunk is False
@@ -380,12 +380,12 @@ def test_get_branch_context_on_feature_branch(tmp_path: Path) -> None:
 
 def test_get_branch_context_on_main_branch(tmp_path: Path) -> None:
     """Test branch context detection on main branch."""
-    git = FakeGit(
+    git_branches = FakeGitBranches(
         current_branches={tmp_path: "main"},
         trunk_branches={tmp_path: "main"},
     )
 
-    context = get_branch_context(git, tmp_path)
+    context = get_branch_context(git_branches, tmp_path)
     assert context.current_branch == "main"
     assert context.trunk_branch == "main"
     assert context.is_on_trunk is True
@@ -393,12 +393,12 @@ def test_get_branch_context_on_main_branch(tmp_path: Path) -> None:
 
 def test_get_branch_context_detects_master_trunk(tmp_path: Path) -> None:
     """Test that master is detected as trunk when it exists."""
-    git = FakeGit(
+    git_branches = FakeGitBranches(
         current_branches={tmp_path: "master"},
         trunk_branches={tmp_path: "master"},
     )
 
-    context = get_branch_context(git, tmp_path)
+    context = get_branch_context(git_branches, tmp_path)
     assert context.current_branch == "master"
     assert context.trunk_branch == "master"
     assert context.is_on_trunk is True
@@ -406,24 +406,24 @@ def test_get_branch_context_detects_master_trunk(tmp_path: Path) -> None:
 
 def test_get_branch_context_no_git_repo(tmp_path: Path) -> None:
     """Test branch context when no branch is available (defaults to empty)."""
-    # FakeGit with no current_branches configured returns None for get_current_branch
-    git = FakeGit()
+    # FakeGitBranches with no current_branches configured returns None for get_current_branch
+    git_branches = FakeGitBranches()
 
-    context = get_branch_context(git, tmp_path)
+    context = get_branch_context(git_branches, tmp_path)
     assert context.current_branch == ""
-    assert context.trunk_branch == "main"  # FakeGit defaults to "main"
+    assert context.trunk_branch == "main"  # FakeGitBranches defaults to "main"
     assert context.is_on_trunk is False
 
 
 def test_get_branch_context_empty_repo(tmp_path: Path) -> None:
     """Test branch context when current branch is None (empty/new repo)."""
     # Simulates git repo with no commits (no current branch yet)
-    git = FakeGit(
+    git_branches = FakeGitBranches(
         current_branches={tmp_path: None},
         trunk_branches={tmp_path: "main"},
     )
 
-    context = get_branch_context(git, tmp_path)
+    context = get_branch_context(git_branches, tmp_path)
     # When current_branch is None, we get empty string (per or "" fallback)
     assert context.current_branch == ""
     assert context.trunk_branch == "main"
@@ -461,12 +461,12 @@ def test_cli_success(tmp_path: Path, monkeypatch) -> None:
 
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
-    # Create context with FakeGit configured for test_cwd
-    git = FakeGit(
+    # Create context with FakeGitBranchesBranches configured for test_cwd
+    git_branches = FakeGitBranches(
         current_branches={test_cwd: "feature-branch"},
         trunk_branches={test_cwd: "main"},
     )
-    context = DotAgentContext.for_test(git=git, cwd=test_cwd)
+    context = DotAgentContext.for_test(git_branches=git_branches, cwd=test_cwd)
 
     runner = CliRunner()
     original_cwd = os.getcwd()
@@ -493,12 +493,12 @@ def test_cli_project_not_found(tmp_path: Path, monkeypatch) -> None:
 
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
-    # Create context with FakeGit
-    git = FakeGit(
+    # Create context with FakeGitBranchesBranches
+    git_branches = FakeGitBranches(
         current_branches={test_dir: "main"},
         trunk_branches={test_dir: "main"},
     )
-    context = DotAgentContext.for_test(git=git, cwd=test_dir)
+    context = DotAgentContext.for_test(git_branches=git_branches, cwd=test_dir)
 
     runner = CliRunner()
     original_cwd = os.getcwd()
@@ -537,12 +537,12 @@ def test_cli_output_structure(tmp_path: Path, monkeypatch) -> None:
 
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
-    # Create context with FakeGit
-    git = FakeGit(
+    # Create context with FakeGitBranches
+    git_branches = FakeGitBranches(
         current_branches={test_cwd: "feature-branch"},
         trunk_branches={test_cwd: "main"},
     )
-    context = DotAgentContext.for_test(git=git, cwd=test_cwd)
+    context = DotAgentContext.for_test(git_branches=git_branches, cwd=test_cwd)
 
     runner = CliRunner()
     original_cwd = os.getcwd()
@@ -605,12 +605,12 @@ def test_cli_limit_option(tmp_path: Path, monkeypatch) -> None:
 
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
-    # Create context with FakeGit
-    git = FakeGit(
+    # Create context with FakeGitBranches
+    git_branches = FakeGitBranches(
         current_branches={test_cwd: "feature-branch"},
         trunk_branches={test_cwd: "main"},
     )
-    context = DotAgentContext.for_test(git=git, cwd=test_cwd)
+    context = DotAgentContext.for_test(git_branches=git_branches, cwd=test_cwd)
 
     runner = CliRunner()
     original_cwd = os.getcwd()
@@ -652,12 +652,12 @@ def test_cli_marks_current_session(tmp_path: Path, monkeypatch) -> None:
 
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
-    # Create context with FakeGit
-    git = FakeGit(
+    # Create context with FakeGitBranches
+    git_branches = FakeGitBranches(
         current_branches={test_cwd: "feature-branch"},
         trunk_branches={test_cwd: "main"},
     )
-    context = DotAgentContext.for_test(git=git, cwd=test_cwd)
+    context = DotAgentContext.for_test(git_branches=git_branches, cwd=test_cwd)
 
     runner = CliRunner(env={"SESSION_CONTEXT": "session_id=current-session"})
     original_cwd = os.getcwd()
@@ -755,11 +755,11 @@ def test_cli_min_size_option(tmp_path: Path, monkeypatch) -> None:
 
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
-    git = FakeGit(
+    git_branches = FakeGitBranches(
         current_branches={test_cwd: "feature"},
         trunk_branches={test_cwd: "main"},
     )
-    context = DotAgentContext.for_test(git=git, cwd=test_cwd)
+    context = DotAgentContext.for_test(git_branches=git_branches, cwd=test_cwd)
 
     runner = CliRunner()
     original_cwd = os.getcwd()

@@ -181,7 +181,7 @@ def split_cmd(
 
     # 2. Gather repository context
     current_worktree = ctx.cwd
-    current_branch = ctx.git.get_current_branch(current_worktree)
+    current_branch = ctx.git_branches.get_current_branch(current_worktree)
     repo = discover_repo_context(ctx, current_worktree)
     trunk_branch = ctx.trunk_branch
     validate_trunk_branch(trunk_branch)

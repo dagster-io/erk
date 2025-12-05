@@ -41,7 +41,7 @@ class GitStatusCollector(StatusCollector):
         Returns:
             GitStatus with repository information or None if collection fails
         """
-        branch = ctx.git.get_current_branch(worktree_path)
+        branch = ctx.git_branches.get_current_branch(worktree_path)
         if branch is None:
             return None
 

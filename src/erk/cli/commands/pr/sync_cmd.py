@@ -91,7 +91,7 @@ def pr_sync(ctx: ErkContext) -> None:
 
     # Check we're on a branch (not detached HEAD)
     current_branch = Ensure.not_none(
-        ctx.git.get_current_branch(ctx.cwd),
+        ctx.git_branches.get_current_branch(ctx.cwd),
         "Not on a branch - checkout a branch before syncing",
     )
 

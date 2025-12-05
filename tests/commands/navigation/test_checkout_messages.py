@@ -6,6 +6,7 @@ generation business logic.
 """
 
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
@@ -46,15 +47,19 @@ def test_message_case_1_already_on_target_branch_in_current_worktree() -> None:
         work_dir = env.erk_root / env.cwd.name
         feature_wt = work_dir / "feature-1"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=feature_wt, branch="feature-1"),
                 ]
             },
-            current_branches={env.cwd: "feature-1"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Build context with cwd=feature_wt (already in target location)
@@ -96,6 +101,10 @@ def test_message_case_2_switched_to_existing_worktree_standard_naming() -> None:
         # Standard naming: worktree name matches branch name
         feature_wt = work_dir / "feature-1"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -103,9 +112,9 @@ def test_message_case_2_switched_to_existing_worktree_standard_naming() -> None:
                     WorktreeInfo(path=feature_wt, branch="feature-1"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Build context with cwd=env.cwd (root worktree, different from target)
@@ -148,6 +157,10 @@ def test_message_case_2_switched_to_existing_worktree_nonstandard_naming() -> No
         # Non-standard naming: worktree name differs from branch name
         feature_wt = work_dir / "custom-worktree-name"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -155,9 +168,9 @@ def test_message_case_2_switched_to_existing_worktree_nonstandard_naming() -> No
                     WorktreeInfo(path=feature_wt, branch="feature-1"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Build context with cwd=env.cwd (root worktree, different from target)
@@ -198,6 +211,10 @@ def test_message_case_3_switched_and_checked_out_branch() -> None:
         work_dir = env.erk_root / env.cwd.name
         feature_wt = work_dir / "feature-wt"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -206,9 +223,9 @@ def test_message_case_3_switched_and_checked_out_branch() -> None:
                     WorktreeInfo(path=feature_wt, branch="other-branch"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Build context with cwd=env.cwd (root worktree)
@@ -252,6 +269,10 @@ def test_message_case_4_switched_to_newly_created_worktree() -> None:
         work_dir = env.erk_root / env.cwd.name
         new_wt = work_dir / "new-feature"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -259,9 +280,9 @@ def test_message_case_4_switched_to_newly_created_worktree() -> None:
                     WorktreeInfo(path=new_wt, branch="new-feature"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Build context with cwd=env.cwd (root worktree)
@@ -300,6 +321,10 @@ def test_message_colorization_applied() -> None:
         work_dir = env.erk_root / env.cwd.name
         feature_wt = work_dir / "feature-1"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -307,9 +332,9 @@ def test_message_colorization_applied() -> None:
                     WorktreeInfo(path=feature_wt, branch="feature-1"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops, cwd=env.cwd)
@@ -350,15 +375,19 @@ def test_message_non_script_mode_case_1() -> None:
         work_dir = env.erk_root / env.cwd.name
         feature_wt = work_dir / "feature-1"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=feature_wt, branch="feature-1"),
                 ]
             },
-            current_branches={env.cwd: "feature-1"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Pre-track branch to avoid confirmation prompt in non-script mode
@@ -406,6 +435,10 @@ def test_message_non_script_mode_case_4() -> None:
         work_dir = env.erk_root / env.cwd.name
         new_wt = work_dir / "new-feature"
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -413,9 +446,9 @@ def test_message_non_script_mode_case_4() -> None:
                     WorktreeInfo(path=new_wt, branch="new-feature"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         # Pre-track branch to avoid confirmation prompt in non-script mode

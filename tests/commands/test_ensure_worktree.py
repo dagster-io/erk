@@ -43,6 +43,7 @@ the code under test performs actual filesystem I/O that cannot be faked.
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
@@ -58,6 +59,10 @@ def test_ensure_worktree_returns_existing_worktree() -> None:
         repo_dir = env.erk_root / "repos" / env.cwd.name
         feature_path = repo_dir / "feature-1"
 
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "feature-1"]},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -65,8 +70,8 @@ def test_ensure_worktree_returns_existing_worktree() -> None:
                     WorktreeInfo(path=feature_path, branch="feature-1"),
                 ]
             },
-            local_branches={env.cwd: ["main", "feature-1"]},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         repo = RepoContext(
@@ -95,14 +100,17 @@ def test_ensure_worktree_creates_worktree_for_local_branch() -> None:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
         # feature-2 exists locally but is not checked out
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "feature-2"]},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            local_branches={env.cwd: ["main", "feature-2"]},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         repo = RepoContext(
@@ -132,15 +140,18 @@ def test_ensure_worktree_creates_tracking_branch_from_remote() -> None:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
         # feature-3 exists on remote but not locally
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-3"]},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            local_branches={env.cwd: ["main"]},  # feature-3 NOT in local
-            remote_branches={env.cwd: ["origin/main", "origin/feature-3"]},  # BUT on remote
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         repo = RepoContext(
@@ -177,15 +188,18 @@ def test_ensure_worktree_fails_for_nonexistent_branch() -> None:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
         # nonexistent-branch doesn't exist locally or remotely
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+            remote_branches={env.cwd: ["origin/main"]},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            local_branches={env.cwd: ["main"]},
-            remote_branches={env.cwd: ["origin/main"]},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         repo = RepoContext(
@@ -217,16 +231,19 @@ def test_ensure_worktree_handles_tracking_branch_failure() -> None:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
         # Configure git_ops to fail on create_tracking_branch
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-4"]},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            local_branches={env.cwd: ["main"]},
-            remote_branches={env.cwd: ["origin/main", "origin/feature-4"]},
             git_common_dirs={env.cwd: env.git_dir},
             tracking_branch_failures={"feature-4": "fatal: refusing to create branch"},
+            git_branches=git_branches,
         )
 
         repo = RepoContext(
@@ -255,14 +272,18 @@ def test_ensure_worktree_creates_env_file_from_config() -> None:
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "feature-5"]},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            local_branches={env.cwd: ["main", "feature-5"]},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Create config with env template
@@ -307,14 +328,18 @@ def test_ensure_worktree_skips_env_when_no_template() -> None:
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "feature-6"]},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            local_branches={env.cwd: ["main", "feature-6"]},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Create config WITHOUT env template
@@ -356,14 +381,18 @@ def test_ensure_worktree_runs_post_create_commands() -> None:
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "feature-7"]},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            local_branches={env.cwd: ["main", "feature-7"]},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Create config with post-create commands
@@ -399,14 +428,18 @@ def test_ensure_worktree_works_without_local_config() -> None:
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "feature-8"]},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            local_branches={env.cwd: ["main", "feature-8"]},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         repo = RepoContext(
@@ -442,6 +475,10 @@ def test_ensure_worktree_generates_unique_name_on_collision() -> None:
         existing_path = repo_dir / "feature-name"
         existing_path.mkdir(parents=True)
 
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "feature-name", "other-branch"]},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -449,9 +486,9 @@ def test_ensure_worktree_generates_unique_name_on_collision() -> None:
                     WorktreeInfo(path=existing_path, branch="other-branch"),
                 ]
             },
-            local_branches={env.cwd: ["main", "feature-name", "other-branch"]},
             git_common_dirs={env.cwd: env.git_dir},
             existing_paths={env.cwd, existing_path},
+            git_branches=git_branches,
         )
 
         repo = RepoContext(
@@ -481,6 +518,10 @@ def test_ensure_worktree_returns_was_created_flag() -> None:
         repo_dir = env.erk_root / "repos" / env.cwd.name
         feature_path = repo_dir / "existing-feature"
 
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "existing-feature", "new-feature"]},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -488,8 +529,8 @@ def test_ensure_worktree_returns_was_created_flag() -> None:
                     WorktreeInfo(path=feature_path, branch="existing-feature"),
                 ]
             },
-            local_branches={env.cwd: ["main", "existing-feature", "new-feature"]},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         repo = RepoContext(
@@ -517,6 +558,10 @@ def test_ensure_worktree_detached_head_error_message() -> None:
         repo_dir = env.erk_root / "repos" / env.cwd.name
         detached_path = repo_dir / "feature-branch"
 
+        git_branches = FakeGitBranches(
+            local_branches={env.cwd: ["main", "feature-branch"]},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -524,9 +569,9 @@ def test_ensure_worktree_detached_head_error_message() -> None:
                     WorktreeInfo(path=detached_path, branch=None),  # Detached HEAD
                 ]
             },
-            local_branches={env.cwd: ["main", "feature-branch"]},
             git_common_dirs={env.cwd: env.git_dir},
             existing_paths={env.cwd, detached_path},
+            git_branches=git_branches,
         )
 
         repo = RepoContext(

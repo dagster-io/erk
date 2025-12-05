@@ -5,6 +5,7 @@ from datetime import datetime
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.naming import WORKTREE_DATE_SUFFIX_FORMAT
@@ -230,10 +231,14 @@ def test_create_detects_default_branch() -> None:
         config_toml = repo_dir / "config.toml"
         config_toml.write_text("", encoding="utf-8")
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature"},
+        )
+
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature"},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)
@@ -260,18 +265,22 @@ def test_create_from_current_branch_in_worktree() -> None:
         config_toml = repo_dir / "config.toml"
         config_toml.write_text("", encoding="utf-8")
 
+        git_branches = FakeGitBranches(
+            current_branches={current_worktree: "feature"},
+        )
+
         git_ops = FakeGit(
             worktrees={
                 repo_root: [
                     WorktreeInfo(path=current_worktree, branch="feature"),
                 ]
             },
-            current_branches={current_worktree: "feature"},
             default_branches={repo_root: "main"},
             git_common_dirs={
                 current_worktree: git_dir,
                 repo_root: git_dir,
             },
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops, cwd=current_worktree)
@@ -403,10 +412,14 @@ def test_create_uses_graphite_when_enabled() -> None:
             post_create_shell=None,
         )
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         graphite_ops = FakeGraphite()
 
@@ -444,11 +457,15 @@ def test_create_blocks_when_staged_changes_present_with_graphite_enabled() -> No
             post_create_shell=None,
         )
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "main"},
             staged_repos={env.cwd},
+            git_branches=git_branches,
         )
 
         repo = RepoContext(
@@ -585,10 +602,14 @@ def test_create_from_current_branch() -> None:
         config_toml = repo_dir / "config.toml"
         config_toml.write_text("", encoding="utf-8")
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-branch"},
+        )
+
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)
@@ -646,10 +667,14 @@ def test_create_from_current_branch_on_main_fails() -> None:
         config_toml = repo_dir / "config.toml"
         config_toml.write_text("", encoding="utf-8")
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(git=git_ops)
 
@@ -675,16 +700,20 @@ def test_create_detects_branch_already_checked_out() -> None:
         existing_wt_path = repo_dir / "worktrees" / "existing-feature"
         existing_wt_path.mkdir(parents=True)
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
+
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "main"},
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                     WorktreeInfo(path=existing_wt_path, branch="feature-branch"),
                 ],
             },
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(git=git_ops)
 
@@ -706,11 +735,15 @@ def test_create_from_current_branch_on_master_fails() -> None:
         config_toml = repo_dir / "config.toml"
         config_toml.write_text("", encoding="utf-8")
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "master"},
+            trunk_branches={env.cwd: "master"},
+        )
+
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "master"},
-            current_branches={env.cwd: "master"},
-            trunk_branches={env.cwd: "master"},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)
@@ -823,6 +856,13 @@ def test_from_current_branch_with_main_in_use_prefers_graphite_parent() -> None:
             "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={
+                repo_root: "main",
+                current_worktree: "feature-2",
+            },
+        )
+
         git_ops = FakeGit(
             worktrees={
                 repo_root: [
@@ -830,15 +870,12 @@ def test_from_current_branch_with_main_in_use_prefers_graphite_parent() -> None:
                     WorktreeInfo(path=current_worktree, branch="feature-2"),
                 ]
             },
-            current_branches={
-                repo_root: "main",
-                current_worktree: "feature-2",
-            },
             default_branches={repo_root: "main"},
             git_common_dirs={
                 current_worktree: git_dir,
                 repo_root: git_dir,
             },
+            git_branches=git_branches,
         )
         graphite_ops = FakeGraphite(branches=branch_metadata)
 
@@ -901,6 +938,14 @@ def test_from_current_branch_with_parent_in_use_falls_back_to_detached_head() ->
             "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={
+                repo_root: "main",
+                current_worktree: "feature-2",
+                other_worktree: "feature-1",
+            },
+        )
+
         git_ops = FakeGit(
             worktrees={
                 repo_root: [
@@ -909,17 +954,13 @@ def test_from_current_branch_with_parent_in_use_falls_back_to_detached_head() ->
                     WorktreeInfo(path=other_worktree, branch="feature-1"),
                 ]
             },
-            current_branches={
-                repo_root: "main",
-                current_worktree: "feature-2",
-                other_worktree: "feature-1",
-            },
             default_branches={repo_root: "main"},
             git_common_dirs={
                 current_worktree: git_dir,
                 repo_root: git_dir,
                 other_worktree: git_dir,
             },
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops, cwd=current_worktree)
@@ -963,6 +1004,13 @@ def test_from_current_branch_without_graphite_falls_back_to_main() -> None:
             "main": BranchMetadata.trunk("main", commit_sha="abc123"),
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={
+                repo_root: "other-branch",
+                current_worktree: "standalone-feature",
+            },
+        )
+
         git_ops = FakeGit(
             worktrees={
                 repo_root: [
@@ -970,15 +1018,12 @@ def test_from_current_branch_without_graphite_falls_back_to_main() -> None:
                     WorktreeInfo(path=current_worktree, branch="standalone-feature"),
                 ]
             },
-            current_branches={
-                repo_root: "other-branch",
-                current_worktree: "standalone-feature",
-            },
             default_branches={repo_root: "main"},
             git_common_dirs={
                 current_worktree: git_dir,
                 repo_root: git_dir,
             },
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops, cwd=current_worktree)
@@ -1019,6 +1064,13 @@ def test_from_current_branch_no_graphite_main_in_use_uses_detached_head() -> Non
             "main": BranchMetadata.trunk("main", commit_sha="abc123"),
         }
 
+        git_branches = FakeGitBranches(
+            current_branches={
+                repo_root: "main",
+                current_worktree: "standalone-feature",
+            },
+        )
+
         git_ops = FakeGit(
             worktrees={
                 repo_root: [
@@ -1026,15 +1078,12 @@ def test_from_current_branch_no_graphite_main_in_use_uses_detached_head() -> Non
                     WorktreeInfo(path=current_worktree, branch="standalone-feature"),
                 ]
             },
-            current_branches={
-                repo_root: "main",
-                current_worktree: "standalone-feature",
-            },
             default_branches={repo_root: "main"},
             git_common_dirs={
                 current_worktree: git_dir,
                 repo_root: git_dir,
             },
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops, cwd=current_worktree)
@@ -1092,10 +1141,14 @@ def test_create_existing_worktree_with_json() -> None:
         # Create existing worktree
         existing_wt = repo_dir / "worktrees" / "existing-feature"
 
+        git_branches = FakeGitBranches(
+            current_branches={existing_wt: "existing-branch"},
+        )
+
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            current_branches={existing_wt: "existing-branch"},
+            git_branches=git_branches,
         )
 
         # Tell context that existing_wt exists
@@ -1531,10 +1584,14 @@ def test_create_fails_when_branch_exists_on_remote() -> None:
         config_toml = repo_dir / "config.toml"
         config_toml.write_text("", encoding="utf-8")
 
+        git_branches = FakeGitBranches(
+            remote_branches={env.cwd: ["origin/main", "origin/existing-feature"]},
+        )
+
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            remote_branches={env.cwd: ["origin/main", "origin/existing-feature"]},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)
@@ -1555,10 +1612,14 @@ def test_create_succeeds_when_branch_not_on_remote() -> None:
         config_toml = repo_dir / "config.toml"
         config_toml.write_text("", encoding="utf-8")
 
+        git_branches = FakeGitBranches(
+            remote_branches={env.cwd: ["origin/main"]},
+        )
+
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            remote_branches={env.cwd: ["origin/main"]},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)
@@ -1578,10 +1639,14 @@ def test_create_with_skip_remote_check_flag() -> None:
         config_toml = repo_dir / "config.toml"
         config_toml.write_text("", encoding="utf-8")
 
+        git_branches = FakeGitBranches(
+            remote_branches={env.cwd: ["origin/main", "origin/existing-feature"]},
+        )
+
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            remote_branches={env.cwd: ["origin/main", "origin/existing-feature"]},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)

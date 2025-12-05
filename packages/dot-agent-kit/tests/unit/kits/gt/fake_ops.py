@@ -15,7 +15,8 @@ Design:
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from erk_shared.git.abc import Git
+from erk_shared.git.abc import Git, WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.abc import GitHub
 from erk_shared.github.fake import FakeGitHub
@@ -73,6 +74,7 @@ class FakeGtKitOps:
         self._git_merge_conflicts: dict[tuple[str, str], bool] = {}
         self._git_add_all_raises: Exception | None = None
         self._git_remote_urls: dict[tuple[Path, str], str] = {}
+        self._worktrees: dict[Path, list[WorktreeInfo]] | None = None
         self._git_instance: FakeGit | None = None
         self._repo_root: str = "/fake/repo/root"
 
@@ -140,9 +142,14 @@ class FakeGtKitOps:
                 if (cwd, trunk) not in diff_to_branch:
                     diff_to_branch[(cwd, trunk)] = default_diff
 
-        return FakeGit(
+        # Build FakeGitBranches from accumulated branch state
+        fake_git_branches = FakeGitBranches(
             current_branches=current_branches_expanded,
             trunk_branches=trunk_branches_expanded,
+            worktrees=self._worktrees,
+        )
+
+        return FakeGit(
             repository_roots=repository_roots_expanded,
             file_statuses=file_statuses_expanded,
             commits_ahead=commits_ahead_expanded,
@@ -150,6 +157,7 @@ class FakeGtKitOps:
             merge_conflicts=self._git_merge_conflicts,
             add_all_raises=self._git_add_all_raises,
             remote_urls=self._git_remote_urls,
+            git_branches=fake_git_branches,
         )
 
     @property

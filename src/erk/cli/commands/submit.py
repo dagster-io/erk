@@ -199,7 +199,7 @@ def _validate_issue_for_submit(
         raise SystemExit(1)
 
     # Derive branch name
-    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
+    trunk_branch = ctx.git_branches.detect_trunk_branch(repo.root)
     logger.debug("trunk_branch=%s", trunk_branch)
 
     # Compute branch name: truncate to 31 chars, then append timestamp suffix
@@ -243,7 +243,7 @@ def _validate_issue_for_submit(
         user_output(f"Created linked branch: {click.style(branch_name, fg='cyan')}")
 
     # Check if branch already exists on remote and has a PR
-    branch_exists = ctx.git.branch_exists_on_remote(repo.root, "origin", branch_name)
+    branch_exists = ctx.git_branches.branch_exists_on_remote(repo.root, "origin", branch_name)
     logger.debug("branch_exists_on_remote(%s)=%s", branch_name, branch_exists)
 
     pr_number: int | None = None
@@ -280,7 +280,7 @@ def _submit_single_issue(
     branch_name = validated.branch_name
     branch_exists = validated.branch_exists
     pr_number = validated.pr_number
-    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
+    trunk_branch = ctx.git_branches.detect_trunk_branch(repo.root)
 
     if branch_exists:
         if pr_number is not None:
@@ -296,11 +296,13 @@ def _submit_single_issue(
             ctx.git.fetch_branch(repo.root, "origin", branch_name)
 
             # Only create tracking branch if it doesn't exist locally (LBYL)
-            local_branches = ctx.git.list_local_branches(repo.root)
+            local_branches = ctx.git_branches.list_local_branches(repo.root)
             if branch_name not in local_branches:
-                ctx.git.create_tracking_branch(repo.root, branch_name, f"origin/{branch_name}")
+                ctx.git_branches.create_tracking_branch(
+                    repo.root, branch_name, f"origin/{branch_name}"
+                )
 
-            ctx.git.checkout_branch(repo.root, branch_name)
+            ctx.git_branches.checkout_branch(repo.root, branch_name)
 
             # Create empty commit as placeholder for PR creation
             ctx.git.commit(
@@ -349,8 +351,8 @@ def _submit_single_issue(
                 )
 
             # Restore local state
-            ctx.git.checkout_branch(repo.root, original_branch)
-            ctx.git.delete_branch(repo.root, branch_name, force=True)
+            ctx.git_branches.checkout_branch(repo.root, original_branch)
+            ctx.git_branches.delete_branch(repo.root, branch_name, force=True)
             user_output(click.style("✓", fg="green") + " Local branch cleaned up")
     else:
         # Create branch and initial commit
@@ -360,8 +362,8 @@ def _submit_single_issue(
         ctx.git.fetch_branch(repo.root, "origin", trunk_branch)
 
         # Create and checkout new branch from trunk
-        ctx.git.create_branch(repo.root, branch_name, f"origin/{trunk_branch}")
-        ctx.git.checkout_branch(repo.root, branch_name)
+        ctx.git_branches.create_branch(repo.root, branch_name, f"origin/{trunk_branch}")
+        ctx.git_branches.checkout_branch(repo.root, branch_name)
 
         # Get plan content and create .worker-impl/ folder
         user_output("Fetching plan content...")
@@ -422,8 +424,8 @@ def _submit_single_issue(
 
         # Restore local state
         user_output("Restoring local state...")
-        ctx.git.checkout_branch(repo.root, original_branch)
-        ctx.git.delete_branch(repo.root, branch_name, force=True)
+        ctx.git_branches.checkout_branch(repo.root, original_branch)
+        ctx.git_branches.delete_branch(repo.root, branch_name, force=True)
         user_output(click.style("✓", fg="green") + " Local branch cleaned up")
 
     # Gather submission metadata
@@ -560,7 +562,7 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...]) -> None:
         repo = discover_repo_context(ctx, ctx.cwd)
 
     # Save current state
-    original_branch = ctx.git.get_current_branch(repo.root)
+    original_branch = ctx.git_branches.get_current_branch(repo.root)
     if original_branch is None:
         user_output(
             click.style("Error: ", fg="red")

@@ -7,6 +7,7 @@ It displays: emoji + #number (no title, no plan summary).
 import pytest
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.types import PullRequestInfo
 from erk_shared.integrations.graphite.fake import FakeGraphite
@@ -48,6 +49,10 @@ def test_list_pr_visibility(show_pr_info: bool, expected_visible: bool) -> None:
         repo_dir = env.erk_root / repo_name
         feature_worktree = repo_dir / branch_name
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main", feature_worktree: branch_name}
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -56,7 +61,7 @@ def test_list_pr_visibility(show_pr_info: bool, expected_visible: bool) -> None:
                 ]
             },
             git_common_dirs={env.cwd: env.git_dir, feature_worktree: env.git_dir},
-            current_branches={env.cwd: "main", feature_worktree: branch_name},
+            git_branches=git_branches,
         )
 
         # PR data comes from Graphite cache
@@ -108,6 +113,10 @@ def test_list_pr_emoji_mapping(
         repo_dir = env.erk_root / repo_name
         feature_worktree = repo_dir / branch_name
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main", feature_worktree: branch_name}
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -116,7 +125,7 @@ def test_list_pr_emoji_mapping(
                 ]
             },
             git_common_dirs={env.cwd: env.git_dir, feature_worktree: env.git_dir},
-            current_branches={env.cwd: "main", feature_worktree: branch_name},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(
@@ -161,6 +170,10 @@ def test_list_pr_with_merge_conflicts() -> None:
         repo_dir = env.erk_root / repo_name
         feature_worktree = repo_dir / branch_name
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main", feature_worktree: branch_name}
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -169,7 +182,7 @@ def test_list_pr_with_merge_conflicts() -> None:
                 ]
             },
             git_common_dirs={env.cwd: env.git_dir, feature_worktree: env.git_dir},
-            current_branches={env.cwd: "main", feature_worktree: branch_name},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(
@@ -201,6 +214,10 @@ def test_list_graceful_degradation_no_graphite_cache() -> None:
         repo_dir = env.erk_root / repo_name
         feature_worktree = repo_dir / branch_name
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main", feature_worktree: branch_name}
+        )
+
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -209,7 +226,7 @@ def test_list_graceful_degradation_no_graphite_cache() -> None:
                 ]
             },
             git_common_dirs={env.cwd: env.git_dir, feature_worktree: env.git_dir},
-            current_branches={env.cwd: "main", feature_worktree: branch_name},
+            git_branches=git_branches,
         )
 
         # Empty Graphite - simulates no cache

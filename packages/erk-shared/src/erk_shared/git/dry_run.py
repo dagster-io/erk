@@ -43,53 +43,9 @@ class DryRunGit(Git):
         """List all worktrees (read-only, delegates to wrapped)."""
         return self._wrapped.list_worktrees(repo_root)
 
-    def get_current_branch(self, cwd: Path) -> str | None:
-        """Get current branch (read-only, delegates to wrapped)."""
-        return self._wrapped.get_current_branch(cwd)
-
-    def detect_trunk_branch(self, repo_root: Path) -> str:
-        """Auto-detect trunk branch (read-only, delegates to wrapped)."""
-        return self._wrapped.detect_trunk_branch(repo_root)
-
-    def validate_trunk_branch(self, repo_root: Path, name: str) -> str:
-        """Validate trunk branch exists (read-only, delegates to wrapped)."""
-        return self._wrapped.validate_trunk_branch(repo_root, name)
-
-    def list_local_branches(self, repo_root: Path) -> list[str]:
-        """List local branches (read-only, delegates to wrapped)."""
-        return self._wrapped.list_local_branches(repo_root)
-
-    def list_remote_branches(self, repo_root: Path) -> list[str]:
-        """List remote branches (read-only, delegates to wrapped)."""
-        return self._wrapped.list_remote_branches(repo_root)
-
-    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -> None:
-        """No-op for creating tracking branch in dry-run mode."""
-        # Do nothing - prevents actual tracking branch creation
-        pass
-
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get git common directory (read-only, delegates to wrapped)."""
         return self._wrapped.get_git_common_dir(cwd)
-
-    def checkout_branch(self, cwd: Path, branch: str) -> None:
-        """No-op for checkout in dry-run mode."""
-        # Do nothing - prevents actual checkout execution
-        pass
-
-    def checkout_detached(self, cwd: Path, ref: str) -> None:
-        """No-op for detached checkout in dry-run mode."""
-        # Do nothing - prevents actual detached HEAD checkout execution
-        pass
-
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None:
-        """Print dry-run message instead of creating branch."""
-        user_output(f"[DRY RUN] Would run: git branch {branch_name} {start_point}")
-
-    def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
-        """Print dry-run message instead of deleting branch."""
-        flag = "-D" if force else "-d"
-        user_output(f"[DRY RUN] Would run: git branch {flag} {branch_name}")
 
     # Destructive operations: print dry-run message instead of executing
 
@@ -133,11 +89,6 @@ class DryRunGit(Git):
         force_flag = "--force " if force else ""
         user_output(f"[DRY RUN] Would run: git worktree remove {force_flag}{path}")
 
-    def delete_branch_with_graphite(self, repo_root: Path, branch: str, *, force: bool) -> None:
-        """Print dry-run message instead of deleting branch."""
-        force_flag = "-f " if force else ""
-        user_output(f"[DRY RUN] Would run: gt delete {force_flag}{branch}")
-
     def prune_worktrees(self, repo_root: Path) -> None:
         """Print dry-run message instead of pruning worktrees."""
         user_output("[DRY RUN] Would run: git worktree prune")
@@ -164,10 +115,6 @@ class DryRunGit(Git):
     def find_worktree_for_branch(self, repo_root: Path, branch: str) -> Path | None:
         """Find worktree path for branch (read-only, delegates to wrapped)."""
         return self._wrapped.find_worktree_for_branch(repo_root, branch)
-
-    def get_branch_head(self, repo_root: Path, branch: str) -> str | None:
-        """Get branch head commit SHA (read-only, delegates to wrapped)."""
-        return self._wrapped.get_branch_head(repo_root, branch)
 
     def get_commit_message(self, repo_root: Path, commit_sha: str) -> str | None:
         """Get commit message (read-only, delegates to wrapped)."""

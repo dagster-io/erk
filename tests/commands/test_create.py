@@ -5,6 +5,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
 
@@ -27,15 +28,18 @@ def test_create_from_current_branch_outputs_script_path_to_stdout() -> None:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
         # Set up git state: in root worktree on feature branch
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "my-feature"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            current_branches={env.cwd: "my-feature"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)
@@ -80,15 +84,18 @@ def test_create_from_issue_with_valid_issue() -> None:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
         # Set up git state
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up GitHub state with issue
@@ -164,15 +171,18 @@ def test_create_from_issue_missing_label() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up GitHub state with issue without erk-plan label
@@ -213,15 +223,18 @@ def test_create_from_issue_url_parsing() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up GitHub state with issue
@@ -270,15 +283,18 @@ def test_create_from_issue_name_derivation() -> None:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
         # Set up git state
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up GitHub state with issue with special characters in title
@@ -328,15 +344,18 @@ def test_create_from_issue_not_found() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up GitHub state with no issues
@@ -362,15 +381,18 @@ def test_create_from_issue_readonly_operation() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up GitHub state with issue
@@ -428,15 +450,18 @@ def test_create_from_issue_tracks_branch_with_graphite() -> None:
         repo_dir = env.erk_root / "repos" / env.cwd.name
 
         # Set up git state
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up GitHub state with issue
@@ -514,15 +539,18 @@ def test_create_from_issue_no_graphite_tracking_when_disabled() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            current_branches={env.cwd: "main"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up GitHub state with issue
@@ -588,16 +616,19 @@ def test_create_with_from_branch_trunk_errors() -> None:
     with erk_inmem_env(runner) as env:
         # Setup: root worktree on a feature branch (NOT trunk)
         # This way we can test creating a worktree for trunk without "already checked out" error
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+            local_branches={env.cwd: ["main", "feature-1"]},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="feature-1"),
                 ]
             },
-            current_branches={env.cwd: "feature-1"},
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-1"]},
             default_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)
@@ -628,15 +659,18 @@ def test_create_from_current_branch_shows_shell_integration_instructions() -> No
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         # Set up git state: in root worktree on feature branch
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "my-feature"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            current_branches={env.cwd: "my-feature"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)
@@ -666,15 +700,18 @@ def test_create_from_current_branch_with_stay_flag() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         # Set up git state: in root worktree on feature branch
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "my-feature"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
                 ]
             },
-            current_branches={env.cwd: "my-feature"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(git=git_ops)

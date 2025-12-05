@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
-from erk_shared.git.fake import FakeGit
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.impl_folder import save_issue_reference
@@ -83,21 +83,23 @@ def test_post_pr_comment_success(tmp_path: Path) -> None:
     """Test successful PR comment posting."""
     # Arrange - pre-populate fake with issue
     fake_gh = FakeGitHubIssues(issues={456: make_issue_info(456)})
-    fake_git = FakeGit(current_branches={Path.cwd(): "feature/test-branch"})
+    fake_git_branches = FakeGitBranches(current_branches={Path.cwd(): "feature/test-branch"})
     runner = CliRunner()
 
     # Act
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
         # Update fake_git to use the isolated filesystem cwd
-        fake_git = FakeGit(current_branches={cwd: "feature/test-branch"})
+        fake_git_branches = FakeGitBranches(current_branches={cwd: "feature/test-branch"})
         # Create .impl folder in isolated filesystem
         create_issue_json(cwd / ".impl", issue_number=456)
 
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=DotAgentContext.for_test(
+                github_issues=fake_gh, git_branches=fake_git_branches, repo_root=tmp_path
+            ),
         )
 
     # Assert
@@ -119,7 +121,7 @@ def test_post_pr_comment_success(tmp_path: Path) -> None:
 def test_post_pr_comment_no_issue_reference(tmp_path: Path) -> None:
     """Test error when no .impl/issue.json exists."""
     fake_gh = FakeGitHubIssues()
-    fake_git = FakeGit()
+    fake_git_branches = FakeGitBranches()
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -128,7 +130,9 @@ def test_post_pr_comment_no_issue_reference(tmp_path: Path) -> None:
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=DotAgentContext.for_test(
+                github_issues=fake_gh, git_branches=fake_git_branches, repo_root=tmp_path
+            ),
         )
 
     assert result.exit_code == 0  # Always exits 0 for || true pattern
@@ -141,7 +145,7 @@ def test_post_pr_comment_no_issue_reference(tmp_path: Path) -> None:
 def test_post_pr_comment_invalid_issue_json(tmp_path: Path) -> None:
     """Test error when .impl/issue.json contains invalid JSON."""
     fake_gh = FakeGitHubIssues()
-    fake_git = FakeGit()
+    fake_git_branches = FakeGitBranches()
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -153,7 +157,9 @@ def test_post_pr_comment_invalid_issue_json(tmp_path: Path) -> None:
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=DotAgentContext.for_test(
+                github_issues=fake_gh, git_branches=fake_git_branches, repo_root=tmp_path
+            ),
         )
 
     assert result.exit_code == 0
@@ -169,14 +175,16 @@ def test_post_pr_comment_branch_detection_failed(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
-        # FakeGit with no current_branches configured returns None
-        fake_git = FakeGit(current_branches={})
+        # FakeGitBranches with no current_branches configured returns None
+        fake_git_branches = FakeGitBranches(current_branches={})
         create_issue_json(cwd / ".impl", issue_number=456)
 
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=DotAgentContext.for_test(
+                github_issues=fake_gh, git_branches=fake_git_branches, repo_root=tmp_path
+            ),
         )
 
     assert result.exit_code == 0
@@ -197,13 +205,15 @@ def test_post_pr_comment_github_api_failure(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
-        fake_git = FakeGit(current_branches={cwd: "feature/test-branch"})
+        fake_git_branches = FakeGitBranches(current_branches={cwd: "feature/test-branch"})
         create_issue_json(cwd / ".impl", issue_number=456)
 
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=DotAgentContext.for_test(
+                github_issues=fake_gh, git_branches=fake_git_branches, repo_root=tmp_path
+            ),
         )
 
     assert result.exit_code == 0
@@ -225,13 +235,15 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
-        fake_git = FakeGit(current_branches={cwd: "feature/test-branch"})
+        fake_git_branches = FakeGitBranches(current_branches={cwd: "feature/test-branch"})
         create_issue_json(cwd / ".impl", issue_number=789)
 
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/456", "--pr-number", "456"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=DotAgentContext.for_test(
+                github_issues=fake_gh, git_branches=fake_git_branches, repo_root=tmp_path
+            ),
         )
 
     assert result.exit_code == 0
@@ -256,7 +268,7 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
 def test_json_output_structure_error(tmp_path: Path) -> None:
     """Test JSON output structure on error."""
     fake_gh = FakeGitHubIssues()
-    fake_git = FakeGit()
+    fake_git_branches = FakeGitBranches()
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -265,7 +277,9 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=DotAgentContext.for_test(
+                github_issues=fake_gh, git_branches=fake_git_branches, repo_root=tmp_path
+            ),
         )
 
     assert result.exit_code == 0
@@ -297,7 +311,7 @@ def test_comment_contains_pr_metadata(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
-        fake_git = FakeGit(current_branches={cwd: "feature/awesome-feature"})
+        fake_git_branches = FakeGitBranches(current_branches={cwd: "feature/awesome-feature"})
         create_issue_json(cwd / ".impl", issue_number=100)
 
         result = runner.invoke(
@@ -308,7 +322,9 @@ def test_comment_contains_pr_metadata(tmp_path: Path) -> None:
                 "--pr-number",
                 "999",
             ],
-            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=DotAgentContext.for_test(
+                github_issues=fake_gh, git_branches=fake_git_branches, repo_root=tmp_path
+            ),
         )
 
     assert result.exit_code == 0

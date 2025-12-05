@@ -6,6 +6,7 @@ branch in a Graphite stack.
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.graphite.fake import FakeGraphite
 
@@ -26,10 +27,13 @@ def test_split_full_stack() -> None:
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
 
         # Configure git ops with worktrees
-        git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
@@ -53,10 +57,13 @@ def test_split_excludes_trunk() -> None:
         current_branch = "feat-1"
 
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
-        git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 
@@ -77,10 +84,13 @@ def test_split_excludes_current_branch() -> None:
         current_branch = "feat-1"
 
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
-        git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 
@@ -106,10 +116,13 @@ def test_split_preserves_existing_worktrees() -> None:
         ]
 
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
-        git_ops = FakeGit(
-            worktrees={env.cwd: existing_worktrees},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: existing_worktrees},
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 
@@ -133,10 +146,13 @@ def test_split_with_up_flag() -> None:
         current_branch = "feat-2"
 
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
-        git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 
@@ -157,10 +173,13 @@ def test_split_with_down_flag() -> None:
         current_branch = "feat-2"
 
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
-        git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 
@@ -181,10 +200,13 @@ def test_split_up_and_down_conflict() -> None:
         current_branch = "feat-1"
 
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
-        git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 
@@ -202,10 +224,13 @@ def test_split_with_force_flag() -> None:
         current_branch = "main"
 
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
-        git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 
@@ -224,10 +249,13 @@ def test_split_with_dry_run() -> None:
         current_branch = "main"
 
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
-        git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 
@@ -252,10 +280,13 @@ def test_split_detached_head_state() -> None:
 
         # For detached HEAD, use "main" as key for graphite stacks
         graphite_ops = FakeGraphite(stacks={"main": stack_branches})
-        git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 
@@ -274,9 +305,12 @@ def test_split_untracked_branch() -> None:
     with erk_inmem_env(runner) as env:
         # Empty graphite_ops - no tracked branches
         graphite_ops = FakeGraphite(stacks={})
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "untracked"},
+        )
         git_ops = FakeGit(
             worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch="untracked")]},
-            current_branches={env.cwd: "untracked"},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(
@@ -297,9 +331,12 @@ def test_split_no_graphite_init() -> None:
     with erk_inmem_env(runner) as env:
         # Graphite returns None for uninitialized repo
         graphite_ops = FakeGraphite(stacks=None)  # Returns None for all branches
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch="main")]},
-            current_branches={env.cwd: "main"},
+            git_branches=git_branches,
         )
 
         test_ctx = env.build_context(
@@ -323,11 +360,14 @@ def test_split_uncommitted_changes() -> None:
         current_branch = "main"
 
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
-        git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
-            file_statuses={env.cwd: ([], ["modified_file.py"], [])},  # has_uncommitted=True
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+            file_statuses={env.cwd: ([], ["modified_file.py"], [])},  # has_uncommitted=True,
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 
@@ -346,11 +386,14 @@ def test_split_uncommitted_changes_with_force() -> None:
         current_branch = "main"
 
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
-        git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
-            file_statuses={env.cwd: ([], ["modified_file.py"], [])},  # has_uncommitted=True
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+            file_statuses={env.cwd: ([], ["modified_file.py"], [])},  # has_uncommitted=True,
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 
@@ -373,10 +416,13 @@ def test_split_all_branches_have_worktrees() -> None:
         ]
 
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
-        git_ops = FakeGit(
-            worktrees={env.cwd: existing_worktrees},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: existing_worktrees},
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 
@@ -403,10 +449,13 @@ def test_split_output_formatting() -> None:
         ]
 
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
-        git_ops = FakeGit(
-            worktrees={env.cwd: existing_worktrees},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: existing_worktrees},
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 
@@ -428,10 +477,13 @@ def test_split_dry_run_output() -> None:
         current_branch = "main"
 
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
-        git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 
@@ -453,10 +505,13 @@ def test_split_success_messages() -> None:
         current_branch = "main"
 
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
-        git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 
@@ -476,10 +531,13 @@ def test_split_with_master_as_trunk() -> None:
         current_branch = "feat-1"
 
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: current_branch},
+            trunk_branches={env.cwd: "master"},
+        )
         git_ops = FakeGit(
             worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
-            current_branches={env.cwd: current_branch},
-            trunk_branches={env.cwd: "master"},  # trunk_branch="master"
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 
@@ -500,10 +558,13 @@ def test_split_empty_stack() -> None:
         current_branch = "main"
 
         graphite_ops = FakeGraphite(stacks={current_branch: stack_branches})
-        git_ops = FakeGit(
-            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+        git_branches = FakeGitBranches(
             current_branches={env.cwd: current_branch},
             trunk_branches={env.cwd: "main"},
+        )
+        git_ops = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},
+            git_branches=git_branches,
         )
         test_ctx = env.build_context(use_graphite=True, git=git_ops, graphite=graphite_ops)
 

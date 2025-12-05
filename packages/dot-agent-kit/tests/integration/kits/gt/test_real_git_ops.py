@@ -15,6 +15,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from erk_shared.git.branches.real import RealGitBranches
 from erk_shared.git.real import RealGit
 
 
@@ -53,8 +54,8 @@ class TestRealGitOperations:
             )
 
             # Test from repo directory
-            git = RealGit()
-            branch_name = git.get_current_branch(repo_path)
+            git_branches = RealGitBranches()
+            branch_name = git_branches.get_current_branch(repo_path)
 
             assert branch_name is not None
             assert isinstance(branch_name, str)

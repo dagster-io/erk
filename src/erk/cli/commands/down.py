@@ -50,7 +50,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool) -> None:
 
     # Get current branch
     current_branch = Ensure.not_none(
-        ctx.git.get_current_branch(ctx.cwd), "Not currently on a branch (detached HEAD)"
+        ctx.git_branches.get_current_branch(ctx.cwd), "Not currently on a branch (detached HEAD)"
     )
 
     # Store current worktree path for deletion (before navigation)

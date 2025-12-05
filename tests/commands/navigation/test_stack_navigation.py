@@ -4,6 +4,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
@@ -19,15 +20,19 @@ def test_up_with_existing_worktree() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={
+                env.cwd: "feature-1",
+            }
+        )
+
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={
-                env.cwd: "feature-1",  # Simulate being in feature-1 worktree
-            },
             default_branches={env.cwd: "main"},
             git_common_dirs={
                 env.cwd: env.git_dir,
             },
+            git_branches=git_branches,
         )
 
         # Set up stack: main -> feature-1 -> feature-2
@@ -72,10 +77,15 @@ def test_up_at_top_of_stack() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
+
         git_ops = FakeGit(
+            # Simulate being in feature-2 worktree
             worktrees=env.build_worktrees("main", ["feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-2"},  # Simulate being in feature-2 worktree
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up stack: main -> feature-1 -> feature-2 (at top)
@@ -104,12 +114,16 @@ def test_up_child_has_no_worktree() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Only feature-1 has a worktree, feature-2 does not (will be auto-created)
-        git_ops = FakeGit(
-            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},  # Simulate being in feature-1 worktree
-            git_common_dirs={env.cwd: env.git_dir},
-            # feature-2 exists locally
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+            # feature-2 exists locally but not checked out
             local_branches={env.cwd: ["main", "feature-1", "feature-2"]},
+        )
+        git_ops = FakeGit(
+            # Simulate being in feature-1 worktree
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up stack: main -> feature-1 -> feature-2
@@ -151,11 +165,16 @@ def test_down_with_existing_worktree() -> None:
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+        )
+
         git_ops = FakeGit(
+            # Simulate being in feature-2 worktree
             worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-2"},  # Simulate being in feature-2 worktree
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up stack: main -> feature-1 -> feature-2
@@ -198,11 +217,15 @@ def test_down_to_trunk_root() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Main is checked out in root, feature-1 has its own worktree
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-1"},
+        )
         git_ops = FakeGit(
+            # Simulate being in feature-1 worktree
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},  # Simulate being in feature-1 worktree
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up stack: main -> feature-1
@@ -241,11 +264,14 @@ def test_down_at_trunk() -> None:
     """Test 'erk down' navigation when already at trunk."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main"),
-            current_branches={env.cwd: "main"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up stack: main (only trunk)
@@ -271,13 +297,17 @@ def test_down_parent_has_no_worktree() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Only feature-2 has a worktree, feature-1 does not (will be auto-created)
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature-2"},
+            # feature-1 exists locally but not checked out
+            local_branches={env.cwd: ["main", "feature-1", "feature-2"]},
+        )
         git_ops = FakeGit(
+            # Simulate being in feature-2 worktree
             worktrees=env.build_worktrees("main", ["feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-2"},  # Simulate being in feature-2 worktree
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
-            # feature-1 exists locally
-            local_branches={env.cwd: ["main", "feature-1", "feature-2"]},
+            git_branches=git_branches,
         )
 
         # Set up stack: main -> feature-1 -> feature-2
@@ -317,10 +347,13 @@ def test_up_down_graphite_not_enabled() -> None:
     """Test 'erk up' and 'erk down' require Graphite to be enabled."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "main"},
+        )
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main"),
-            current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Graphite is NOT enabled
@@ -347,10 +380,13 @@ def test_up_detached_head() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         # Current branch is None (detached HEAD)
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: None},
+        )
         git_ops = FakeGit(
             worktrees=env.build_worktrees(None),
-            current_branches={env.cwd: None},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         graphite_ops = FakeGraphite()
@@ -378,6 +414,9 @@ def test_up_with_mismatched_worktree_name() -> None:
         # Worktree directories use different naming than branch names
         # Branch: feature/db -> Worktree: db-refactor
         # Branch: feature/db-tests -> Worktree: db-tests-implementation
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature/db"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -389,10 +428,10 @@ def test_up_with_mismatched_worktree_name() -> None:
                         is_root=False,
                     ),
                 ]
-            },
-            current_branches={env.cwd: "feature/db"},  # Simulate being in feature/db worktree
+            },  # Simulate being in feature/db worktree
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up stack: main -> feature/db -> feature/db-tests
@@ -451,6 +490,10 @@ def test_down_with_mismatched_worktree_name() -> None:
         # Worktree directories use different naming than branch names
         # Branch: feature/api -> Worktree: api-work
         # Branch: feature/api-v2 -> Worktree: api-v2-work
+        # Simulate being in feature/api-v2 worktree
+        git_branches = FakeGitBranches(
+            current_branches={env.cwd: "feature/api-v2"},
+        )
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -461,10 +504,9 @@ def test_down_with_mismatched_worktree_name() -> None:
                     ),
                 ]
             },
-            # Simulate being in feature/api-v2 worktree
-            current_branches={env.cwd: "feature/api-v2"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
+            git_branches=git_branches,
         )
 
         # Set up stack: main -> feature/api -> feature/api-v2

@@ -85,6 +85,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.abc import Git, WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import GitHubRepoId
@@ -359,10 +360,14 @@ class ErkIsolatedFsEnv:
             if not branches[branch_name].is_trunk:
                 stacks[branch_name] = self._build_stack_path(branches, branch_name)
 
+        git_branches = FakeGitBranches(
+            current_branches=current_branches_map,
+            worktrees={self.root_worktree: worktrees_list},
+        )
         git = FakeGit(
             worktrees={self.root_worktree: worktrees_list},
-            current_branches=current_branches_map,
             git_common_dirs=git_common_dirs_map,
+            git_branches=git_branches,
         )
 
         graphite = FakeGraphite(
@@ -416,10 +421,13 @@ class ErkIsolatedFsEnv:
                 ctx = env.build_context()
 
                 # Before (5 lines):
+                git_branches = FakeGitBranches(
+                    current_branches={env.cwd: "feature-1"},
+                )
                 git_ops = FakeGit(
                     git_common_dirs={env.cwd: env.git_dir},
                     default_branches={env.cwd: "main"},
-                    current_branches={env.cwd: "feature-1"},
+                    git_branches=git_branches,
                 )
                 ctx = ErkContext.for_test(..., git=git_ops, ...)
 
@@ -440,10 +448,14 @@ class ErkIsolatedFsEnv:
 
         # Smart FakeGit configuration
         if git is None:
+            git_branches = FakeGitBranches(
+                current_branches={self.cwd: current_branch} if current_branch else {},
+                trunk_branches={self.cwd: trunk_branch},
+            )
             git = FakeGit(
                 git_common_dirs={self.cwd: self.git_dir},
                 default_branches={self.cwd: trunk_branch},
-                current_branches={self.cwd: current_branch} if current_branch else {},
+                git_branches=git_branches,
                 existing_paths={
                     self.cwd,
                     self.git_dir,
@@ -833,10 +845,13 @@ class ErkInMemEnv:
                 ctx = env.build_context()
 
                 # Before (5 lines):
+                git_branches = FakeGitBranches(
+                    current_branches={env.cwd: "feature-1"},
+                )
                 git_ops = FakeGit(
                     git_common_dirs={env.cwd: env.git_dir},
                     default_branches={env.cwd: "main"},
-                    current_branches={env.cwd: "feature-1"},
+                    git_branches=git_branches,
                 )
                 ctx = ErkContext.for_test(..., git=git_ops, ...)
 
@@ -871,10 +886,14 @@ class ErkInMemEnv:
             }
             all_existing = core_paths | (existing_paths or set())
 
+            git_branches = FakeGitBranches(
+                current_branches={self.cwd: current_branch} if current_branch else {},
+                trunk_branches={self.cwd: trunk_branch},
+            )
             git = FakeGit(
                 git_common_dirs={self.cwd: self.git_dir},
                 default_branches={self.cwd: trunk_branch},
-                current_branches={self.cwd: current_branch} if current_branch else {},
+                git_branches=git_branches,
                 existing_paths=all_existing,
                 file_contents=file_contents or {},
                 remote_urls={(self.cwd, "origin"): "https://github.com/owner/repo.git"},
@@ -1042,10 +1061,14 @@ class ErkInMemEnv:
         # Collect all worktree paths as existing
         existing_paths = {wt.path for wt in worktrees_list} | {self.cwd, self.git_dir}
 
+        git_branches = FakeGitBranches(
+            current_branches=current_branches_map,
+            worktrees={self.root_worktree: worktrees_list},
+        )
         git = FakeGit(
             worktrees={self.root_worktree: worktrees_list},
-            current_branches=current_branches_map,
             git_common_dirs=git_common_dirs_map,
+            git_branches=git_branches,
             existing_paths=existing_paths,
         )
 

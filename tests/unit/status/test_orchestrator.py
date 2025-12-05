@@ -24,6 +24,7 @@ import time
 from pathlib import Path
 
 from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.parallel.real import RealParallelTaskRunner
 
@@ -51,11 +52,15 @@ def test_orchestrator_collects_all_data(tmp_path: Path) -> None:
     (impl_folder / "plan.md").write_text("# Test Plan", encoding="utf-8")
     (impl_folder / "progress.md").write_text("# Progress\n\n- [ ] Step 1", encoding="utf-8")
 
-    git_ops = FakeGit(
+    git_branches = FakeGitBranches(
         current_branches={worktree_path: "test-branch"},
+    )
+
+    git_ops = FakeGit(
         file_statuses={worktree_path: ([], [], [])},
         ahead_behind={(worktree_path, "test-branch"): (0, 0)},
         recent_commits={worktree_path: []},
+        git_branches=git_branches,
     )
 
     ctx = create_test_context(git=git_ops)
@@ -320,11 +325,15 @@ def test_orchestrator_parallel_execution(tmp_path: Path) -> None:
     (impl_folder / "plan.md").write_text("# Plan", encoding="utf-8")
     (impl_folder / "progress.md").write_text("# Progress\n\n- [ ] Step 1", encoding="utf-8")
 
-    git_ops = FakeGit(
+    git_branches = FakeGitBranches(
         current_branches={worktree_path: "branch"},
+    )
+
+    git_ops = FakeGit(
         file_statuses={worktree_path: ([], [], [])},
         ahead_behind={(worktree_path, "branch"): (0, 0)},
         recent_commits={worktree_path: []},
+        git_branches=git_branches,
     )
 
     ctx = create_test_context(git=git_ops)
@@ -375,6 +384,10 @@ def test_orchestrator_related_worktrees(tmp_path: Path) -> None:
     current = tmp_path / "current"
     current.mkdir()
 
+    git_branches = FakeGitBranches(
+        current_branches={current: "current-branch"},
+    )
+
     git_ops = FakeGit(
         worktrees={
             repo_root: [
@@ -384,7 +397,7 @@ def test_orchestrator_related_worktrees(tmp_path: Path) -> None:
                 WorktreeInfo(path=current, branch="current-branch"),
             ]
         },
-        current_branches={current: "current-branch"},
+        git_branches=git_branches,
     )
 
     ctx = create_test_context(git=git_ops)
@@ -412,9 +425,13 @@ def test_orchestrator_worktree_info_root(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
+
     git_ops = FakeGit(
         worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
-        current_branches={repo_root: "main"},
+        git_branches=git_branches,
     )
 
     ctx = create_test_context(git=git_ops)
@@ -437,6 +454,10 @@ def test_orchestrator_worktree_info_not_root(tmp_path: Path) -> None:
     worktree = tmp_path / "feature"
     worktree.mkdir()
 
+    git_branches = FakeGitBranches(
+        current_branches={worktree: "feature"},
+    )
+
     git_ops = FakeGit(
         worktrees={
             repo_root: [
@@ -444,7 +465,7 @@ def test_orchestrator_worktree_info_not_root(tmp_path: Path) -> None:
                 WorktreeInfo(path=worktree, branch="feature"),
             ]
         },
-        current_branches={worktree: "feature"},
+        git_branches=git_branches,
     )
 
     ctx = create_test_context(git=git_ops)
@@ -466,6 +487,10 @@ def test_orchestrator_handles_nonexistent_paths(tmp_path: Path) -> None:
     repo_root.mkdir()
     nonexistent = tmp_path / "nonexistent"  # Don't create this
 
+    git_branches = FakeGitBranches(
+        current_branches={repo_root: "main"},
+    )
+
     git_ops = FakeGit(
         worktrees={
             repo_root: [
@@ -473,7 +498,7 @@ def test_orchestrator_handles_nonexistent_paths(tmp_path: Path) -> None:
                 WorktreeInfo(path=nonexistent, branch="ghost"),  # Non-existent
             ]
         },
-        current_branches={repo_root: "main"},
+        git_branches=git_branches,
     )
 
     ctx = create_test_context(git=git_ops)

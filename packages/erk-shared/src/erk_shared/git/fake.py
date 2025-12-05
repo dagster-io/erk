@@ -4,10 +4,10 @@ FakeGit is an in-memory implementation that accepts pre-configured state
 in its constructor. Construct instances directly with keyword arguments.
 """
 
-import subprocess
 from pathlib import Path
 
 from erk_shared.git.abc import BranchSyncInfo, Git, WorktreeInfo
+from erk_shared.git.branches.abc import GitBranches
 
 
 class FakeGit(Git):
@@ -16,7 +16,7 @@ class FakeGit(Git):
     State Management:
     -----------------
     This fake maintains mutable state to simulate git's stateful behavior.
-    Operations like add_worktree, checkout_branch modify internal state.
+    Operations like add_worktree, remove_worktree modify internal state.
     State changes are visible to subsequent method calls within the same test.
 
     When to Use Mutation:
@@ -34,17 +34,14 @@ class FakeGit(Git):
     Mutation Tracking:
     -----------------
     This fake tracks mutations for test assertions via read-only properties:
-    - deleted_branches: Branches deleted via delete_branch() or delete_branch_with_graphite()
     - added_worktrees: Worktrees added via add_worktree()
     - removed_worktrees: Worktrees removed via remove_worktree()
-    - checked_out_branches: Branches checked out via checkout_branch()
 
     Examples:
     ---------
         # Initial state via constructor
         git_ops = FakeGit(
             worktrees={repo: [WorktreeInfo(path=wt1, branch="main")]},
-            current_branches={wt1: "main"},
             git_common_dirs={repo: repo / ".git"},
         )
 
@@ -54,23 +51,14 @@ class FakeGit(Git):
         # Verify mutation
         assert len(git_ops.list_worktrees(repo)) == 2
         assert (wt2, "feature") in git_ops.added_worktrees
-
-        # Verify sequence of operations
-        git_ops.checkout_branch(repo, "feature")
-        git_ops.delete_branch_with_graphite(repo, "old-feature", force=True)
-        assert (repo, "feature") in git_ops.checked_out_branches
-        assert "old-feature" in git_ops.deleted_branches
     """
 
     def __init__(
         self,
         *,
         worktrees: dict[Path, list[WorktreeInfo]] | None = None,
-        current_branches: dict[Path, str | None] | None = None,
         default_branches: dict[Path, str] | None = None,
-        trunk_branches: dict[Path, str] | None = None,
         git_common_dirs: dict[Path, Path] | None = None,
-        branch_heads: dict[str, str] | None = None,
         commit_messages: dict[str, str] | None = None,
         staged_repos: set[Path] | None = None,
         file_statuses: dict[Path, tuple[list[str], list[str], list[str]]] | None = None,
@@ -79,10 +67,7 @@ class FakeGit(Git):
         recent_commits: dict[Path, list[dict[str, str]]] | None = None,
         existing_paths: set[Path] | None = None,
         file_contents: dict[Path, str] | None = None,
-        delete_branch_raises: dict[str, Exception] | None = None,
-        local_branches: dict[Path, list[str]] | None = None,
         remote_branches: dict[Path, list[str]] | None = None,
-        tracking_branch_failures: dict[str, str] | None = None,
         dirty_worktrees: set[Path] | None = None,
         branch_issues: dict[str, int] | None = None,
         branch_last_commit_times: dict[str, str] | None = None,
@@ -93,16 +78,14 @@ class FakeGit(Git):
         remote_urls: dict[tuple[Path, str], str] | None = None,
         add_all_raises: Exception | None = None,
         pull_branch_raises: Exception | None = None,
+        git_branches: GitBranches | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
         Args:
             worktrees: Mapping of repo_root -> list of worktrees
-            current_branches: Mapping of cwd -> current branch
             default_branches: Mapping of repo_root -> default branch
-            trunk_branches: Mapping of repo_root -> trunk branch name
             git_common_dirs: Mapping of cwd -> git common directory
-            branch_heads: Mapping of branch name -> commit SHA
             commit_messages: Mapping of commit SHA -> commit message
             staged_repos: Set of repo roots that should report staged changes
             file_statuses: Mapping of cwd -> (staged, modified, untracked) files
@@ -111,12 +94,8 @@ class FakeGit(Git):
             recent_commits: Mapping of cwd -> list of commit info dicts
             existing_paths: Set of paths that should be treated as existing (for pure mode)
             file_contents: Mapping of path -> file content (for commands that read files)
-            delete_branch_raises: Mapping of branch name -> exception to raise on delete
-            local_branches: Mapping of repo_root -> list of local branch names
             remote_branches: Mapping of repo_root -> list of remote branch names
                 (with prefix like 'origin/branch-name')
-            tracking_branch_failures: Mapping of branch name -> error message to raise
-                when create_tracking_branch is called for that branch
             dirty_worktrees: Set of worktree paths that have uncommitted/staged/untracked changes
             branch_issues: Mapping of branch name -> GitHub issue number
             branch_last_commit_times: Mapping of branch name -> ISO 8601 timestamp for last commit
@@ -127,13 +106,11 @@ class FakeGit(Git):
             remote_urls: Mapping of (repo_root, remote_name) -> remote URL
             add_all_raises: Exception to raise when add_all() is called
             pull_branch_raises: Exception to raise when pull_branch() is called
+            git_branches: GitBranches instance for branch operations (optional, for delegation)
         """
         self._worktrees = worktrees or {}
-        self._current_branches = current_branches or {}
         self._default_branches = default_branches or {}
-        self._trunk_branches = trunk_branches or {}
         self._git_common_dirs = git_common_dirs or {}
-        self._branch_heads = branch_heads or {}
         self._commit_messages = commit_messages or {}
         self._repos_with_staged_changes: set[Path] = staged_repos or set()
         self._file_statuses = file_statuses or {}
@@ -142,10 +119,7 @@ class FakeGit(Git):
         self._recent_commits = recent_commits or {}
         self._existing_paths = existing_paths or set()
         self._file_contents = file_contents or {}
-        self._delete_branch_raises = delete_branch_raises or {}
-        self._local_branches = local_branches or {}
         self._remote_branches = remote_branches or {}
-        self._tracking_branch_failures = tracking_branch_failures or {}
         self._dirty_worktrees = dirty_worktrees or set()
         self._branch_issues = branch_issues or {}
         self._branch_last_commit_times = branch_last_commit_times or {}
@@ -156,17 +130,14 @@ class FakeGit(Git):
         self._remote_urls = remote_urls or {}
         self._add_all_raises = add_all_raises
         self._pull_branch_raises = pull_branch_raises
+        self._git_branches = git_branches
 
         # Mutation tracking
-        self._deleted_branches: list[str] = []
         self._added_worktrees: list[tuple[Path, str | None]] = []
         self._removed_worktrees: list[Path] = []
-        self._checked_out_branches: list[tuple[Path, str]] = []
-        self._detached_checkouts: list[tuple[Path, str]] = []
         self._fetched_branches: list[tuple[str, str]] = []
         self._pulled_branches: list[tuple[str, str, bool]] = []
         self._chdir_history: list[Path] = []
-        self._created_tracking_branches: list[tuple[str, str]] = []
         self._staged_files: list[str] = []
         self._commits: list[tuple[Path, str, list[str]]] = []
         self._pushed_branches: list[tuple[str, str, bool]] = []
@@ -193,59 +164,6 @@ class FakeGit(Git):
                     return worktree_list
 
         return []
-
-    def get_current_branch(self, cwd: Path) -> str | None:
-        """Get the currently checked-out branch."""
-        return self._current_branches.get(cwd)
-
-    def detect_trunk_branch(self, repo_root: Path) -> str:
-        """Auto-detect the trunk branch name."""
-        if repo_root in self._trunk_branches:
-            return self._trunk_branches[repo_root]
-        # Default to "main" if not configured
-        return "main"
-
-    def validate_trunk_branch(self, repo_root: Path, name: str) -> str:
-        """Validate that a configured trunk branch exists."""
-        # Check trunk_branches first
-        if repo_root in self._trunk_branches and self._trunk_branches[repo_root] == name:
-            return name
-        # Check local_branches as well
-        if repo_root in self._local_branches and name in self._local_branches[repo_root]:
-            return name
-        error_msg = (
-            f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
-            f"Update your configuration in pyproject.toml or create the branch."
-        )
-        raise RuntimeError(error_msg)
-
-    def list_local_branches(self, repo_root: Path) -> list[str]:
-        """List all local branch names in the repository."""
-        return self._local_branches.get(repo_root, [])
-
-    def list_remote_branches(self, repo_root: Path) -> list[str]:
-        """List all remote branch names in the repository (fake implementation)."""
-        return self._remote_branches.get(repo_root, [])
-
-    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -> None:
-        """Create a local tracking branch from a remote branch (fake implementation)."""
-        import subprocess
-
-        # Check if this branch should fail
-        if branch in self._tracking_branch_failures:
-            error_msg = self._tracking_branch_failures[branch]
-            raise subprocess.CalledProcessError(
-                returncode=1, cmd=["git", "branch", "--track", branch, remote_ref], stderr=error_msg
-            )
-
-        # Track this mutation
-        self._created_tracking_branches.append((branch, remote_ref))
-
-        # In the fake, we simulate branch creation by adding to local branches
-        if repo_root not in self._local_branches:
-            self._local_branches[repo_root] = []
-        if branch not in self._local_branches[repo_root]:
-            self._local_branches[repo_root].append(branch)
 
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory.
@@ -337,84 +255,6 @@ class FakeGit(Git):
         # Remove from existing_paths so path_exists() returns False after deletion
         self._existing_paths.discard(path)
 
-    def checkout_branch(self, cwd: Path, branch: str) -> None:
-        """Checkout a branch (mutates internal state).
-
-        Validates that the branch is not already checked out in another worktree,
-        matching Git's behavior.
-        """
-        # Check if branch is already checked out in a different worktree
-        for _repo_root, worktrees in self._worktrees.items():
-            for wt in worktrees:
-                if wt.branch == branch and wt.path.resolve() != cwd.resolve():
-                    msg = f"fatal: '{branch}' is already checked out at '{wt.path}'"
-                    raise RuntimeError(msg)
-
-        self._current_branches[cwd] = branch
-        # Update worktree branch in the worktrees list
-        for repo_root, worktrees in self._worktrees.items():
-            for i, wt in enumerate(worktrees):
-                if wt.path.resolve() == cwd.resolve():
-                    self._worktrees[repo_root][i] = WorktreeInfo(
-                        path=wt.path, branch=branch, is_root=wt.is_root
-                    )
-                    break
-        # Track the checkout
-        self._checked_out_branches.append((cwd, branch))
-
-    def checkout_detached(self, cwd: Path, ref: str) -> None:
-        """Checkout a detached HEAD (mutates internal state)."""
-        # Detached HEAD means no branch is checked out (branch=None)
-        self._current_branches[cwd] = None
-        # Update worktree to show detached HEAD state
-        for repo_root, worktrees in self._worktrees.items():
-            for i, wt in enumerate(worktrees):
-                if wt.path.resolve() == cwd.resolve():
-                    self._worktrees[repo_root][i] = WorktreeInfo(
-                        path=wt.path, branch=None, is_root=wt.is_root
-                    )
-                    break
-        # Track the detached checkout
-        self._detached_checkouts.append((cwd, ref))
-
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None:
-        """Create a new branch without checking it out (no-op for fake)."""
-        # Fake doesn't need to track created branches unless tests verify it
-        pass
-
-    def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
-        """Delete a local branch (mutates internal state for test assertions).
-
-        If delete_branch_raises contains a CalledProcessError, it is wrapped in
-        RuntimeError to match run_subprocess_with_context behavior.
-        """
-        # Check if we should raise an exception for this branch
-        if branch_name in self._delete_branch_raises:
-            exc = self._delete_branch_raises[branch_name]
-            # Wrap CalledProcessError in RuntimeError to match run_subprocess_with_context
-            if isinstance(exc, subprocess.CalledProcessError):
-                raise RuntimeError(f"Failed to delete branch {branch_name}") from exc
-            raise exc
-
-        self._deleted_branches.append(branch_name)
-
-    def delete_branch_with_graphite(self, repo_root: Path, branch: str, *, force: bool) -> None:
-        """Track which branches were deleted (mutates internal state).
-
-        Raises configured exception if branch is in delete_branch_raises mapping.
-        If delete_branch_raises contains a CalledProcessError, it is wrapped in
-        RuntimeError to match run_subprocess_with_context behavior.
-        """
-        # Check if we should raise an exception for this branch
-        if branch in self._delete_branch_raises:
-            exc = self._delete_branch_raises[branch]
-            # Wrap CalledProcessError in RuntimeError to match run_subprocess_with_context
-            if isinstance(exc, subprocess.CalledProcessError):
-                raise RuntimeError(f"Failed to delete branch {branch}") from exc
-            raise exc
-
-        self._deleted_branches.append(branch)
-
     def prune_worktrees(self, repo_root: Path) -> None:
         """Prune stale worktree metadata (no-op for in-memory fake)."""
         pass
@@ -434,10 +274,6 @@ class FakeGit(Git):
             if wt.branch == branch:
                 return wt.path
         return None
-
-    def get_branch_head(self, repo_root: Path, branch: str) -> str | None:
-        """Get the commit SHA at the head of a branch."""
-        return self._branch_heads.get(branch)
 
     def get_commit_message(self, repo_root: Path, commit_sha: str) -> str | None:
         """Get the commit message for a given commit SHA."""
@@ -481,14 +317,6 @@ class FakeGit(Git):
         return remote_ref in remote_branches
 
     @property
-    def deleted_branches(self) -> list[str]:
-        """Get the list of branches that have been deleted.
-
-        This property is for test assertions only.
-        """
-        return self._deleted_branches.copy()
-
-    @property
     def added_worktrees(self) -> list[tuple[Path, str | None]]:
         """Get list of worktrees added during test.
 
@@ -504,24 +332,6 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return self._removed_worktrees.copy()
-
-    @property
-    def checked_out_branches(self) -> list[tuple[Path, str]]:
-        """Get list of branches checked out during test.
-
-        Returns list of (cwd, branch) tuples.
-        This property is for test assertions only.
-        """
-        return self._checked_out_branches.copy()
-
-    @property
-    def detached_checkouts(self) -> list[tuple[Path, str]]:
-        """Get list of detached HEAD checkouts during test.
-
-        Returns list of (cwd, ref) tuples.
-        This property is for test assertions only.
-        """
-        return self._detached_checkouts.copy()
 
     @property
     def fetched_branches(self) -> list[tuple[str, str]]:
@@ -549,15 +359,6 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return self._chdir_history.copy()
-
-    @property
-    def created_tracking_branches(self) -> list[tuple[str, str]]:
-        """Get list of tracking branches created during test.
-
-        Returns list of (branch, remote_ref) tuples.
-        This property is for test assertions only.
-        """
-        return self._created_tracking_branches.copy()
 
     def _is_parent(self, parent: Path, child: Path) -> bool:
         """Check if parent is an ancestor of child."""
@@ -682,17 +483,11 @@ class FakeGit(Git):
     def fetch_pr_ref(self, repo_root: Path, remote: str, pr_number: int, local_branch: str) -> None:
         """Record PR ref fetch in fake storage (mutates internal state).
 
-        Simulates fetching a PR ref by creating a local branch. In real git,
-        this would fetch refs/pull/<number>/head and create the branch.
+        Simulates fetching a PR ref. In real git, this would fetch
+        refs/pull/<number>/head and create the branch.
         """
         # Track the fetch for test assertions
         self._fetched_branches.append((remote, f"pull/{pr_number}/head"))
-
-        # In the fake, we simulate branch creation by adding to local branches
-        if repo_root not in self._local_branches:
-            self._local_branches[repo_root] = []
-        if local_branch not in self._local_branches[repo_root]:
-            self._local_branches[repo_root].append(local_branch)
 
     def stage_files(self, cwd: Path, paths: list[str]) -> None:
         """Record staged files for commit."""
@@ -824,3 +619,29 @@ class FakeGit(Git):
         if url is None:
             raise ValueError(f"Remote '{remote}' not found in repository")
         return url
+
+    # Branch operation delegation methods
+    # These delegate to self._git_branches if available, for backward compatibility
+    # during the migration to separate GitBranches integration
+
+    def get_current_branch(self, cwd: Path) -> str | None:
+        """Get the currently checked-out branch.
+
+        Delegates to GitBranches if available.
+        """
+        if self._git_branches is None:
+            raise AttributeError(
+                "get_current_branch requires git_branches parameter to be provided to FakeGit"
+            )
+        return self._git_branches.get_current_branch(cwd)
+
+    def detect_trunk_branch(self, repo_root: Path) -> str:
+        """Auto-detect the trunk branch name.
+
+        Delegates to GitBranches if available.
+        """
+        if self._git_branches is None:
+            raise AttributeError(
+                "detect_trunk_branch requires git_branches parameter to be provided to FakeGit"
+            )
+        return self._git_branches.detect_trunk_branch(repo_root)

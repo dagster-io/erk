@@ -64,7 +64,7 @@ def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
 
     # Get current branch and worktree path before landing
     current_branch = Ensure.not_none(
-        ctx.git.get_current_branch(ctx.cwd), "Not currently on a branch (detached HEAD)"
+        ctx.git_branches.get_current_branch(ctx.cwd), "Not currently on a branch (detached HEAD)"
     )
 
     current_worktree_path = Ensure.not_none(
@@ -112,7 +112,7 @@ def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
         dest_description = f"upstack branch '{dest_branch}'"
     else:
         # Navigate down to trunk (current behavior)
-        dest_branch = ctx.git.detect_trunk_branch(repo.root)
+        dest_branch = ctx.git_branches.detect_trunk_branch(repo.root)
         trunk_wt_path = ctx.git.find_worktree_for_branch(repo.root, dest_branch)
 
         if trunk_wt_path is not None and trunk_wt_path == repo.root:

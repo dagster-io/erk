@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+from erk_shared.git.branches.fake import FakeGitBranches
 from erk_shared.git.fake import FakeGit
 
 from erk.cli.commands.navigation_helpers import ensure_graphite_enabled
@@ -23,10 +24,14 @@ class TestEnsureGraphiteEnabled:
         erk_root = tmp_path / "erks"
         erk_root.mkdir()
 
-        git = FakeGit(
+        git_branches = FakeGitBranches(
             local_branches={repo_root: ["main"]},
             remote_branches={repo_root: []},
+        )
+
+        git = FakeGit(
             git_common_dirs={repo_root: git_dir},
+            git_branches=git_branches,
         )
 
         global_config = GlobalConfig.test(
@@ -51,10 +56,14 @@ class TestEnsureGraphiteEnabled:
         erk_root = tmp_path / "erks"
         erk_root.mkdir()
 
-        git = FakeGit(
+        git_branches = FakeGitBranches(
             local_branches={repo_root: ["main"]},
             remote_branches={repo_root: []},
+        )
+
+        git = FakeGit(
             git_common_dirs={repo_root: git_dir},
+            git_branches=git_branches,
         )
 
         global_config = GlobalConfig.test(
@@ -80,10 +89,14 @@ class TestEnsureGraphiteEnabled:
         git_dir = repo_root / ".git"
         git_dir.mkdir()
 
-        git = FakeGit(
+        git_branches = FakeGitBranches(
             local_branches={repo_root: ["main"]},
             remote_branches={repo_root: []},
+        )
+
+        git = FakeGit(
             git_common_dirs={repo_root: git_dir},
+            git_branches=git_branches,
         )
 
         ctx = ErkContext.for_test(
@@ -110,10 +123,14 @@ class TestEnsureGraphiteEnabled:
         erk_root = tmp_path / "erks"
         erk_root.mkdir()
 
-        git = FakeGit(
+        git_branches = FakeGitBranches(
             local_branches={repo_root: ["main"]},
             remote_branches={repo_root: []},
+        )
+
+        git = FakeGit(
             git_common_dirs={repo_root: git_dir},
+            git_branches=git_branches,
         )
 
         global_config = GlobalConfig.test(
