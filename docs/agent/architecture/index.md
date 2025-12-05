@@ -11,4 +11,5 @@
 - **[shell-integration-patterns.md](shell-integration-patterns.md)** — implementing commands with shell integration, fixing shell integration handler issues, understanding script-first output ordering, debugging partial success in destructive commands
 - **[subprocess-wrappers.md](subprocess-wrappers.md)** — using subprocess wrappers, executing shell commands, understanding subprocess patterns
 - **[symlink-validation-pattern.md](symlink-validation-pattern.md)** — validating @ references in markdown files, validating import paths in configuration, any path validation where source files may be symlinks
+- **[workflow-integration.md](workflow-integration.md)** — adding validation steps to PR workflows, integrating new checks into PR submission, updating PR workflow commands
 - **[worktree-metadata.md](worktree-metadata.md)** — storing per-worktree data, working with worktrees.toml, associating metadata with worktrees

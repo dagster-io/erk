@@ -2,9 +2,9 @@
 
 ## Categories
 
-- **[architecture/](architecture/)** — at-reference-resolution, commandresult-extension-pattern, erk-architecture, github-parsing, pathlib-symlinks, protocol-vs-abc, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
-- **[cli/](cli/)** — command-organization, list-formatting, output-styling, script-mode, template-variables
-- **[commands/](commands/)** — behavioral-triggers, optimization-patterns
+- **[architecture/](architecture/)** — at-reference-resolution, commandresult-extension-pattern, erk-architecture, github-parsing, pathlib-symlinks, protocol-vs-abc, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, workflow-integration, worktree-metadata
+- **[cli/](cli/)** — command-organization, list-formatting, output-styling, pr-commands, script-mode, template-variables
+- **[commands/](commands/)** — behavioral-triggers, optimization-patterns, slash-command-conventions
 - **[erk/](erk/)** — branch-cleanup, graphite-branch-setup
 - **[hooks/](hooks/)** — erk, hooks
 - **[kits/](kits/)** — cli-commands, code-architecture, dependency-injection, push-down-pattern, registry-discovery
