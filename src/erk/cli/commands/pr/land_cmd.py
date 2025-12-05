@@ -10,6 +10,8 @@ It merges the current PR, deletes the current worktree/branch, navigates to the
 parent (trunk), and pulls the latest changes.
 """
 
+import subprocess
+
 import click
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
@@ -67,6 +69,8 @@ def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
     - Claude CLI installed (for extraction plan; warns if missing)
     """
     # Validate prerequisites
+    if extract:
+        Ensure.claude_installed()
     Ensure.gh_authenticated(ctx)
     ensure_graphite_enabled(ctx)
     check_clean_working_tree(ctx)
@@ -118,14 +122,16 @@ def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
     # If extraction fails, preserve the worktree so user can retry manually.
     extraction_success = True  # Default: proceed with deletion
     if extract:
-        extraction_success = ctx.shell.run_claude_extraction_plan(ctx.cwd)
-        if extraction_success:
+        try:
+            ctx.shell.run_claude_extraction_plan(ctx.cwd)
             user_output(click.style("✓", fg="green") + " Created documentation extraction plan")
-        else:
+        except subprocess.CalledProcessError as e:
+            extraction_success = False
             user_output(
                 click.style("⚠", fg="yellow")
                 + " Extraction plan failed - preserving worktree for manual retry"
             )
+            user_output(f"  Error: {e}")
             user_output("  Run manually: claude /erk:create-extraction-plan")
 
     # Step 2: Navigate to destination (trunk or upstack)

@@ -1,6 +1,7 @@
 """Tests for erk pr land command."""
 
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 from erk_shared.git.fake import FakeGit
@@ -1000,7 +1001,8 @@ def test_pr_land_with_up_flag_creates_worktree_if_needed() -> None:
         assert str(feature_2_path) in script_content
 
 
-def test_pr_land_creates_extraction_plan_by_default() -> None:
+@patch("shutil.which", return_value="/usr/local/bin/claude")
+def test_pr_land_creates_extraction_plan_by_default(mock_which: MagicMock) -> None:
     """Test pr land creates extraction plan by default after merging PR."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -1041,7 +1043,7 @@ def test_pr_land_creates_extraction_plan_by_default() -> None:
             merge_should_succeed=True,
         )
 
-        shell_ops = FakeShell(claude_extraction_succeeds=True)
+        shell_ops = FakeShell()
 
         repo = RepoContext(
             root=env.cwd,
@@ -1116,7 +1118,7 @@ def test_pr_land_skips_extraction_plan_with_no_extract_flag() -> None:
             merge_should_succeed=True,
         )
 
-        shell_ops = FakeShell(claude_extraction_succeeds=True)
+        shell_ops = FakeShell()
 
         repo = RepoContext(
             root=env.cwd,
@@ -1147,7 +1149,8 @@ def test_pr_land_skips_extraction_plan_with_no_extract_flag() -> None:
         assert "extraction plan" not in result.output.lower()
 
 
-def test_pr_land_preserves_worktree_when_extraction_fails() -> None:
+@patch("shutil.which", return_value="/usr/local/bin/claude")
+def test_pr_land_preserves_worktree_when_extraction_fails(mock_which: MagicMock) -> None:
     """Test pr land preserves worktree when extraction plan fails for manual retry."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -1188,8 +1191,8 @@ def test_pr_land_preserves_worktree_when_extraction_fails() -> None:
             merge_should_succeed=True,
         )
 
-        # Simulate Claude CLI not available or extraction failure
-        shell_ops = FakeShell(claude_extraction_succeeds=False)
+        # Simulate extraction failure (subprocess.CalledProcessError)
+        shell_ops = FakeShell(claude_extraction_raises=True)
 
         repo = RepoContext(
             root=env.cwd,

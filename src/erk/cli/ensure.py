@@ -361,6 +361,30 @@ class Ensure:
             raise SystemExit(1)
 
     @staticmethod
+    def claude_installed() -> None:
+        """Ensure Claude CLI is installed and available on PATH.
+
+        Uses shutil.which to check for claude availability, which is the LBYL
+        approach to validating external tool availability before use.
+
+        Raises:
+            SystemExit: If claude CLI is not found on PATH
+
+        Example:
+            >>> Ensure.claude_installed()
+            >>> # Now safe to call claude commands
+            >>> ctx.shell.run_claude_extraction_plan(cwd)
+        """
+        if shutil.which("claude") is None:
+            user_output(
+                click.style("Error: ", fg="red")
+                + "Claude CLI is not installed\n\n"
+                + "Install it from: https://claude.ai/download\n"
+                + "Or skip extraction with: erk pr land --no-extract"
+            )
+            raise SystemExit(1)
+
+    @staticmethod
     def gt_authenticated(ctx: "ErkContext") -> None:
         """Ensure Graphite CLI (gt) is authenticated.
 
