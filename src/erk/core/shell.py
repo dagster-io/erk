@@ -100,6 +100,26 @@ class Shell(ABC):
         """
         ...
 
+    @abstractmethod
+    def run_claude_extraction_plan(self, cwd: Path) -> bool:
+        """Run Claude CLI to create an extraction plan from session logs.
+
+        This spawns Claude in non-interactive mode to analyze session logs
+        and create a documentation extraction plan before landing a PR.
+
+        Args:
+            cwd: Directory to run Claude in (typically the worktree being landed)
+
+        Returns:
+            True if extraction plan was created successfully, False otherwise.
+            Returns False if Claude CLI is not installed or if the command fails.
+
+        Note:
+            This method should NOT raise exceptions on failure - extraction plan
+            creation is a nice-to-have feature that should not block PR landing.
+        """
+        ...
+
 
 class RealShell(Shell):
     """Production implementation using system environment and PATH."""
@@ -137,3 +157,36 @@ class RealShell(Shell):
             cwd=repo_root,
             capture_output=not verbose,
         )
+
+    def run_claude_extraction_plan(self, cwd: Path) -> bool:
+        """Run Claude CLI to create an extraction plan from session logs.
+
+        Spawns Claude in non-interactive mode with permission bypass to
+        automatically create an extraction plan.
+        """
+        import subprocess
+
+        # Check if Claude CLI is installed
+        claude_path = self.get_installed_tool_path("claude")
+        if claude_path is None:
+            return False
+
+        cmd = [
+            "claude",
+            "--print",
+            "--permission-mode",
+            "bypassPermissions",
+            "/erk:create-extraction-plan",
+        ]
+
+        try:
+            subprocess.run(
+                cmd,
+                cwd=cwd,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            return True
+        except subprocess.CalledProcessError:
+            return False

@@ -31,19 +31,29 @@ from erk.core.context import ErkContext
 @click.command("land")
 @click.option("--script", is_flag=True, help="Print only the activation script")
 @click.option("--up", is_flag=True, help="Navigate up to child branch instead of trunk")
+@click.option(
+    "--extract/--no-extract",
+    default=True,
+    help="Create extraction plan from session logs before landing (default: enabled)",
+)
 @click.pass_obj
-def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
+def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
     """Merge PR, switch to trunk (or upstack with --up), and delete branch/worktree.
 
     Merges the current PR (must be one level from trunk), deletes the current
     branch and worktree, then navigates to the destination and pulls changes.
 
+    By default, creates a documentation extraction plan from session logs before
+    landing. This captures learnings from the work session for future improvements.
+    Use --no-extract to skip extraction plan creation.
+
     By default, navigates to trunk. With --up, navigates to child branch instead,
     enabling landing an entire stack one PR at a time.
 
     With shell integration (recommended):
-      erk pr land        # Navigate to trunk
-      erk pr land --up   # Navigate to child branch
+      erk pr land               # Navigate to trunk, create extraction plan
+      erk pr land --up          # Navigate to child, create extraction plan
+      erk pr land --no-extract  # Skip extraction plan creation
 
     Without shell integration:
       source <(erk pr land --script)
@@ -54,6 +64,7 @@ def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
     - Current branch must be one level from trunk
     - PR must be open and ready to merge
     - Working tree must be clean (no uncommitted changes)
+    - Claude CLI installed (for extraction plan; warns if missing)
     """
     # Validate prerequisites
     Ensure.gh_authenticated(ctx)
@@ -100,6 +111,19 @@ def pr_land(ctx: ErkContext, script: bool, up: bool) -> None:
         click.style("✓", fg="green")
         + f" Merged PR #{success_result.pr_number} [{success_result.branch_name}]"
     )
+
+    # Step 1.5: Create extraction plan from session logs (optional)
+    # This captures learnings from the work session for documentation improvements.
+    # Extraction plan creation is non-blocking - warnings are shown but landing continues.
+    if extract:
+        extraction_success = ctx.shell.run_claude_extraction_plan(current_worktree_path)
+        if extraction_success:
+            user_output(click.style("✓", fg="green") + " Created documentation extraction plan")
+        else:
+            user_output(
+                click.style("⚠", fg="yellow")
+                + " Skipped extraction plan (Claude CLI not available or failed)"
+            )
 
     # Step 2: Navigate to destination (trunk or upstack)
     worktrees = ctx.git.list_worktrees(repo.root)
