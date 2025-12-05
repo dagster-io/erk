@@ -2,10 +2,15 @@
 
 This module provides commit message generation for PR submissions,
 using Claude CLI to analyze diffs and generate descriptive messages.
+
+The commit message prompt is loaded from the shared prompt file at:
+packages/erk-shared/src/erk_shared/integrations/gt/commit_message_prompt.txt
 """
 
 from dataclasses import dataclass
 from pathlib import Path
+
+from erk_shared.integrations.gt.prompts import COMMIT_MESSAGE_SYSTEM_PROMPT
 
 from erk.core.claude_executor import ClaudeExecutor
 
@@ -42,38 +47,6 @@ class CommitMessageResult:
     title: str | None
     body: str | None
     error_message: str | None
-
-
-# System prompt for commit message generation
-COMMIT_MESSAGE_PROMPT = """You are a commit message generator. \
-Analyze the provided git diff and return ONLY a commit message.
-
-## Output Format
-
-[Clear one-line PR title describing the change]
-
-[2-3 sentence summary explaining what changed and why]
-
-## Files Changed
-
-### Added (N files)
-- `path/to/file.py` - Purpose
-
-### Modified (N files)
-- `path/to/file.py` - What changed
-
-## Key Changes
-
-- [3-5 component-level changes]
-
-## Rules
-
-- Output ONLY the commit message (no preamble, no explanation)
-- NO Claude attribution or footer
-- Use relative paths from repository root
-- Be concise (15-30 lines total)
-- First line = PR title, rest = PR body
-"""
 
 
 class CommitMessageGenerator:
@@ -163,7 +136,7 @@ class CommitMessageGenerator:
         parent_branch: str,
     ) -> str:
         """Build the full prompt with diff and context."""
-        return f"""{COMMIT_MESSAGE_PROMPT}
+        return f"""{COMMIT_MESSAGE_SYSTEM_PROMPT}
 
 ## Context
 
