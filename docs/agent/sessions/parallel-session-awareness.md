@@ -4,6 +4,9 @@ read_when:
   - "working with session-specific data"
   - "implementing session-scoped features"
   - "accessing plans, scratch files, or session metadata"
+tripwires:
+  - action: "working with session-specific data"
+    warning: 'Multiple sessions can run in parallel. NEVER use "most recent by mtime" for session data lookup - always scope by session ID.'
 ---
 
 # Parallel Session Awareness

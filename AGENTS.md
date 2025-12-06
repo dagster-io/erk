@@ -17,9 +17,7 @@
 
 **CRITICAL: NEVER commit directly to `master`. Always create a feature branch first.**
 
-**CRITICAL: Before writing to `/tmp/`** → Read [scratch-storage.md](docs/agent/planning/scratch-storage.md) first. AI workflow files (diffs, PR bodies, plans) belong in `.erk/scratch/<session-id>/`, NOT `/tmp/`.
-
-**CRITICAL: When working with session-specific data** → Read [parallel-session-awareness.md](docs/agent/sessions/parallel-session-awareness.md) first. Multiple sessions can run in parallel. NEVER use "most recent by mtime" for session data lookup - always scope by session ID.
+@docs/agent/tripwires.md
 
 **Load these skills FIRST:**
 

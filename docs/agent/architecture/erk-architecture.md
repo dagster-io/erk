@@ -4,6 +4,13 @@ read_when:
   - "understanding erk architecture"
   - "implementing dry-run patterns"
   - "regenerating context after os.chdir"
+tripwires:
+  - action: "passing dry_run boolean flags through function parameters"
+    warning: "Use dependency injection with DryRunGit/DryRunGitHub wrappers instead of boolean flags."
+  - action: "calling os.chdir() in erk code"
+    warning: "After os.chdir(), regenerate context using regenerate_context(ctx, repo_root=repo.root). Stale ctx.cwd causes FileNotFoundError."
+  - action: "importing time module or calling time.sleep()"
+    warning: "Use context.time.sleep() for testability. Direct time.sleep() makes tests slow."
 ---
 
 # Erk Architecture Patterns

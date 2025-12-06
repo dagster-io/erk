@@ -1,8 +1,4 @@
-# TUI Development
+# Tui Documentation
 
-Documentation for building terminal user interfaces with Textual.
-
-| Document                                 | Read when...                                                 |
-| ---------------------------------------- | ------------------------------------------------------------ |
-| [command-palette.md](command-palette.md) | Implementing command palette, Provider classes, fuzzy search |
-| [textual-quirks.md](textual-quirks.md)   | Working with Textual TUI, avoiding common API pitfalls       |
+- **[command-palette.md](command-palette.md)** — implementing command palette in Textual TUI, creating searchable command menus, adding keyboard-accessible command discovery, working with Textual Provider classes
+- **[textual-quirks.md](textual-quirks.md)** — working with Textual TUI framework, debugging DataTable, App, or CSS issues in Textual, writing tests for Textual applications

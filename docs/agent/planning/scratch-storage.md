@@ -4,6 +4,11 @@ read_when:
   - "writing temp files for AI workflows"
   - "passing files between processes"
   - "understanding scratch directory location"
+tripwires:
+  - action: "writing to /tmp/"
+    warning: "AI workflow files belong in .erk/scratch/<session-id>/, NOT /tmp/."
+  - action: "creating temp files for AI workflows"
+    warning: "Use worktree-scoped scratch storage for session-specific data."
 ---
 
 # Scratch Storage

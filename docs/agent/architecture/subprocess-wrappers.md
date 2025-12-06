@@ -4,6 +4,9 @@ read_when:
   - "using subprocess wrappers"
   - "executing shell commands"
   - "understanding subprocess patterns"
+tripwires:
+  - action: "using bare subprocess.run with check=True"
+    warning: "Use wrapper functions: run_subprocess_with_context() (integration) or run_with_error_reporting() (CLI)."
 ---
 
 # Subprocess Execution Wrappers
