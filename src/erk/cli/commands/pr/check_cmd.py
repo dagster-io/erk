@@ -7,6 +7,7 @@ import click
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.output.output import user_output
 
+from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 
 
@@ -20,23 +21,19 @@ def pr_check(ctx: ErkContext) -> None:
     2. Has the standard checkout command footer
     """
     # Get current branch
-    branch = ctx.git.get_current_branch(ctx.cwd)
-    if branch is None:
-        user_output(click.style("Error: ", fg="red") + "Not on a branch (detached HEAD)")
-        raise SystemExit(1)
+    branch = Ensure.not_none(
+        ctx.git.get_current_branch(ctx.cwd),
+        "Not on a branch (detached HEAD)",
+    )
 
     # Get repo root for GitHub operations
     repo_root = ctx.git.get_repository_root(ctx.cwd)
 
     # Get PR info for branch
-    pr_info = ctx.github.get_pr_info_for_branch(repo_root, branch)
-    if pr_info is None:
-        user_output(
-            click.style("Error: ", fg="red") + f"No pull request found for branch '{branch}'"
-        )
-        raise SystemExit(1)
-
-    pr_number, pr_url = pr_info
+    pr_number, pr_url = Ensure.not_none(
+        ctx.github.get_pr_info_for_branch(repo_root, branch),
+        f"No pull request found for branch '{branch}'",
+    )
 
     user_output(f"Checking PR #{pr_number} for branch {branch}...")
     user_output("")
