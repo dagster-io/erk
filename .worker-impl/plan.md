@@ -1,4 +1,5 @@
 <!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
 <!-- erk:metadata-block:plan-header -->
 <details>
 <summary><code>plan-header</code></summary>
@@ -8,9 +9,9 @@
 schema_version: '2'
 created_at: '2025-12-06T17:43:58.214716+00:00'
 created_by: schrockn
-last_dispatched_run_id: null
-last_dispatched_node_id: null
-last_dispatched_at: null
+last_dispatched_run_id: '19992150237'
+last_dispatched_node_id: WFR_kwLOPxC3hc8AAAAEp6AA3Q
+last_dispatched_at: '2025-12-06T17:53:17.898015+00:00'
 last_local_impl_at: null
 last_local_impl_event: null
 last_local_impl_session: null
