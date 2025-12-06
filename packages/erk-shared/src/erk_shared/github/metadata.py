@@ -1985,6 +1985,120 @@ def render_session_content_block(
 <!-- /erk:metadata-block:session-content -->"""
 
 
+def extract_session_content_from_block(block_body: str) -> str | None:
+    """Extract session XML content from a session-content metadata block body.
+
+    Parses the <details> structure to find the XML code fence content.
+
+    Args:
+        block_body: Raw body content from a session-content metadata block
+
+    Returns:
+        The session XML content, or None if not found
+    """
+    # The session-content block has format:
+    # <details>
+    # <summary><strong>Session Data...</strong></summary>
+    #
+    # [Optional: **Extraction Hints:**...]
+    #
+    # ```xml
+    # <session content here>
+    # ```
+    #
+    # </details>
+
+    # Extract content from the xml code fence
+    pattern = r"```xml\s*(.*?)\s*```"
+    match = re.search(pattern, block_body, re.DOTALL)
+
+    if match is None:
+        return None
+
+    return match.group(1).strip()
+
+
+def extract_session_content_from_comments(
+    comments: list[str],
+) -> tuple[str | None, list[str]]:
+    """Extract session XML content from GitHub issue comments.
+
+    Parses all comments looking for session-content metadata blocks,
+    handles chunked content by combining in order, and returns the
+    combined session XML.
+
+    Args:
+        comments: List of comment body strings
+
+    Returns:
+        Tuple of (combined_session_xml, list_of_session_ids)
+        Returns (None, []) if no session content found
+    """
+    # Collect all session-content blocks with their chunk info
+    chunks: list[tuple[int | None, int | None, str]] = []
+
+    for body in comments:
+        if not body:
+            continue
+
+        # Extract raw metadata blocks
+        raw_blocks = extract_raw_metadata_blocks(body)
+
+        for raw_block in raw_blocks:
+            if raw_block.key != "session-content":
+                continue
+
+            # Extract the session XML from this block
+            session_xml = extract_session_content_from_block(raw_block.body)
+            if session_xml is None:
+                continue
+
+            # Try to determine chunk number from the summary
+            # Format: <summary><strong>Session Data (1/3): label</strong></summary>
+            chunk_pattern = r"Session Data\s*\((\d+)/(\d+)\)"
+            chunk_match = re.search(chunk_pattern, raw_block.body)
+
+            if chunk_match:
+                chunk_num = int(chunk_match.group(1))
+                total_chunks = int(chunk_match.group(2))
+                chunks.append((chunk_num, total_chunks, session_xml))
+            else:
+                # Non-chunked content
+                chunks.append((None, None, session_xml))
+
+    if not chunks:
+        return (None, [])
+
+    # Sort chunks by chunk number (None values first for non-chunked)
+    def sort_key(
+        item: tuple[int | None, int | None, str],
+    ) -> tuple[int, int]:
+        chunk_num, total, _ = item
+        if chunk_num is None:
+            return (0, 0)
+        return (1, chunk_num)
+
+    chunks.sort(key=sort_key)
+
+    # Combine all session XML content
+    combined_xml = "\n".join(xml for _, _, xml in chunks)
+
+    # Extract session IDs from the XML content
+    # Session IDs appear in the session header like: session_id="abc123"
+    session_id_pattern = r'session_id="([^"]+)"'
+    session_ids = re.findall(session_id_pattern, combined_xml)
+
+    # Remove duplicates while preserving order
+    seen: set[str] = set()
+    unique_session_ids: list[str] = []
+    for sid in session_ids:
+        if sid not in seen:
+            seen.add(sid)
+            unique_session_ids.append(sid)
+
+    return (combined_xml, unique_session_ids)
+
+
 def render_session_content_blocks(
     content: str,
     *,

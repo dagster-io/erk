@@ -1,0 +1,295 @@
+# REQUIRED REPOSITORY SETTING:
+# Settings > Actions > General > Workflow permissions
+# ✓ Enable "Allow GitHub Actions to create and approve pull requests"
+#
+# Without this setting, PR creation will fail with:
+# "GitHub Actions is not permitted to create or approve pull requests"
+
+name: Process Raw Extraction Issues
+run-name: "Extract Docs: #${{ github.event.issue.number }}"
+
+on:
+  issues:
+    types: [opened, labeled]
+
+concurrency:
+  group: process-extraction-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  process-extraction:
+    # Only run for issues with erk-extraction label
+    if: contains(github.event.issue.labels.*.name, 'erk-extraction')
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      # =================================================================
+      # PHASE 1: CHECKOUT AND SETUP
+      # =================================================================
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          fetch-depth: 0
+
+      - name: Setup all tools
+        run: |
+          # Install uv
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.cargo/env
+
+          # Install Claude Code
+          curl -fsSL https://claude.ai/install.sh | bash
+
+          # Install Prettier via npm
+          npm install -g prettier
+
+          cd $GITHUB_WORKSPACE
+
+          # Install workspace packages in dependency order
+          uv tool install --from ./packages/dot-agent-kit --with ./packages/erk-shared dot-agent-kit
+          uv tool install --from . --with ./packages/erk-shared --with ./packages/dot-agent-kit erk
+
+          # Install erk kit for Claude Code
+          dot-agent kit install erk
+
+      - name: Configure git
+        run: |
+          git config user.name "erk-bot"
+          git config user.email "erk-bot@users.noreply.github.com"
+
+      - name: Detect trunk branch
+        id: trunk
+        run: |
+          if git ls-remote --heads origin main | grep -q main; then
+            echo "trunk_branch=main" >> $GITHUB_OUTPUT
+          elif git ls-remote --heads origin master | grep -q master; then
+            echo "trunk_branch=master" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Could not detect trunk branch (main or master)"
+            exit 1
+          fi
+
+      # =================================================================
+      # PHASE 2: EXTRACT SESSION DATA
+      # =================================================================
+      - name: Post extraction started comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          source $HOME/.cargo/env
+          dot-agent run erk post-extraction-comment \
+            --issue-number "$ISSUE_NUMBER" \
+            --status started \
+            --workflow-run-url "$WORKFLOW_RUN_URL"
+
+      - name: Extract session data from issue
+        id: extract
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          source $HOME/.cargo/env
+          result=$(dot-agent run erk extract-session-from-issue "$ISSUE_NUMBER" 2>&1) || {
+            echo "extraction_success=false" >> $GITHUB_OUTPUT
+            echo "extraction_error=$result" >> $GITHUB_OUTPUT
+            exit 0
+          }
+
+          success=$(echo "$result" | jq -r '.success')
+          if [ "$success" != "true" ]; then
+            error=$(echo "$result" | jq -r '.error // "Unknown error"')
+            echo "extraction_success=false" >> $GITHUB_OUTPUT
+            echo "extraction_error=$error" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "extraction_success=true" >> $GITHUB_OUTPUT
+          echo "session_file=$(echo "$result" | jq -r '.session_file')" >> $GITHUB_OUTPUT
+          echo "session_ids=$(echo "$result" | jq -r '.session_ids | join(",")')" >> $GITHUB_OUTPUT
+
+      - name: Post extraction failed comment
+        if: steps.extract.outputs.extraction_success != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EXTRACTION_ERROR: ${{ steps.extract.outputs.extraction_error }}
+        run: |
+          source $HOME/.cargo/env
+          dot-agent run erk post-extraction-comment \
+            --issue-number "$ISSUE_NUMBER" \
+            --status failed \
+            --workflow-run-url "$WORKFLOW_RUN_URL" \
+            --error-message "$EXTRACTION_ERROR"
+          dot-agent run erk add-issue-label --issue-number "$ISSUE_NUMBER" --label "extraction-failed"
+          exit 1
+
+      # =================================================================
+      # PHASE 3: CREATE BRANCH
+      # =================================================================
+      - name: Create extraction branch
+        id: branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          TRUNK_BRANCH: ${{ steps.trunk.outputs.trunk_branch }}
+        run: |
+          source $HOME/.cargo/env
+          result=$(dot-agent run erk create-extraction-branch \
+            --issue-number "$ISSUE_NUMBER" \
+            --trunk-branch "$TRUNK_BRANCH")
+          echo "branch_name=$(echo "$result" | jq -r '.branch_name')" >> $GITHUB_OUTPUT
+
+      # =================================================================
+      # PHASE 4: ANALYSIS PHASE
+      # =================================================================
+      - name: Run extraction plan analysis
+        id: analyze
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          SESSION_FILE: ${{ steps.extract.outputs.session_file }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set +e
+          cat > /tmp/extraction_prompt.md <<EOF
+          Analyze the session data in file: $SESSION_FILE
+
+          This session was extracted from GitHub issue #$ISSUE_NUMBER.
+          Read the session XML and identify documentation improvements using the extraction framework.
+
+          Create an extraction plan issue with your findings. Focus on:
+          - Category A: Learning gaps (docs that would have made the session faster)
+          - Category B: Teaching gaps (docs for what was built)
+
+          Use /erk:create-extraction-plan to create the plan issue.
+          EOF
+
+          claude --print \
+            --model claude-sonnet-4-5-20250929 \
+            --output-format stream-json \
+            --dangerously-skip-permissions \
+            --verbose \
+            "$(cat /tmp/extraction_prompt.md)"
+
+          if [ $? -eq 0 ]; then
+            echo "analysis_success=true" >> $GITHUB_OUTPUT
+          else
+            echo "analysis_success=false" >> $GITHUB_OUTPUT
+          fi
+          exit 0
+
+      # =================================================================
+      # PHASE 5: IMPLEMENTATION PHASE
+      # =================================================================
+      - name: Check for plan and implement
+        id: implement
+        if: steps.analyze.outputs.analysis_success == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          if [ ! -f ".impl/plan.md" ]; then
+            echo "implementation_success=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          claude --print \
+            --model claude-sonnet-4-5-20250929 \
+            --output-format stream-json \
+            --dangerously-skip-permissions \
+            --verbose \
+            "/erk:plan-implement"
+
+          if [ $? -eq 0 ]; then
+            echo "implementation_success=true" >> $GITHUB_OUTPUT
+          else
+            echo "implementation_success=false" >> $GITHUB_OUTPUT
+          fi
+          exit 0
+
+      # =================================================================
+      # PHASE 6: SUBMISSION PHASE
+      # =================================================================
+      - name: Create PR with documentation changes
+        id: submit
+        if: steps.implement.outputs.implementation_success == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          BRANCH_NAME: ${{ steps.branch.outputs.branch_name }}
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+
+          claude --print \
+            --model claude-sonnet-4-5-20250929 \
+            --output-format stream-json \
+            --dangerously-skip-permissions \
+            --verbose \
+            "/git:pr-push Documentation extraction from issue #$ISSUE_NUMBER"
+
+          PR_URL=$(gh pr view "$BRANCH_NAME" --json url -q '.url' 2>/dev/null || echo "")
+          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+
+      - name: Mark PR ready for review
+        if: steps.submit.outputs.has_changes == 'true' && steps.submit.outputs.pr_url != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH_NAME: ${{ steps.branch.outputs.branch_name }}
+        run: |
+          gh pr ready "$BRANCH_NAME" 2>/dev/null || true
+
+      - name: Post completion comment
+        if: steps.submit.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          PR_URL: ${{ steps.submit.outputs.pr_url }}
+        run: |
+          source $HOME/.cargo/env
+          dot-agent run erk post-extraction-comment \
+            --issue-number "$ISSUE_NUMBER" \
+            --status complete \
+            --pr-url "$PR_URL"
+          dot-agent run erk add-issue-label --issue-number "$ISSUE_NUMBER" --label "docs-extracted"
+
+      - name: Post no-changes comment
+        if: steps.submit.outputs.has_changes == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          source $HOME/.cargo/env
+          dot-agent run erk post-extraction-comment \
+            --issue-number "$ISSUE_NUMBER" \
+            --status no-changes
+
+      # =================================================================
+      # PHASE 7: ERROR HANDLING
+      # =================================================================
+      - name: Post failure comment
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          source $HOME/.cargo/env
+          dot-agent run erk post-extraction-comment \
+            --issue-number "$ISSUE_NUMBER" \
+            --status failed \
+            --workflow-run-url "$WORKFLOW_RUN_URL"
+          dot-agent run erk add-issue-label --issue-number "$ISSUE_NUMBER" --label "extraction-failed"
