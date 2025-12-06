@@ -47,6 +47,7 @@ Analyze the diff following these principles:
 
 ## Rules
 
+- **IMPORTANT**: Output the commit message directly. Do NOT wrap your response in code fences or markdown blocks.
 - Output ONLY the commit message (no preamble, no explanation, no commentary)
 - NO Claude attribution or footer (NEVER add "Generated with Claude Code" or similar)
 - NO metadata headers (NEVER add `**Author:**`, `**Plan:**`, `Closes #N`, or similar)

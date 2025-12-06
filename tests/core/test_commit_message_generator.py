@@ -222,3 +222,66 @@ def test_generate_uses_custom_model(tmp_path: Path) -> None:
 
     # Should still work - model is passed to executor but FakeClaudeExecutor ignores it
     assert result.success is True
+
+
+def test_generate_strips_code_fence_wrapper(tmp_path: Path) -> None:
+    """Test that code fences wrapping the output are stripped."""
+    diff_file = tmp_path / "test.diff"
+    diff_file.write_text("diff content", encoding="utf-8")
+
+    # Simulate Claude wrapping output in code fences
+    executor = FakeClaudeExecutor(
+        claude_available=True,
+        simulated_prompt_output=(
+            "```\n"
+            "Fix PR title parsing when Claude wraps output in code fences\n\n"
+            "This fixes an issue where the parser would incorrectly use the code fence\n"
+            "as the PR title when Claude wraps its response in markdown code blocks.\n"
+            "```"
+        ),
+    )
+    generator = CommitMessageGenerator(executor)
+    request = CommitMessageRequest(
+        diff_file=diff_file,
+        repo_root=tmp_path,
+        current_branch="fix-fence",
+        parent_branch="main",
+    )
+
+    result, _ = _consume_generator(generator, request)
+
+    assert result.success is True
+    assert result.title == "Fix PR title parsing when Claude wraps output in code fences"
+    assert result.body is not None
+    # Verify backticks are stripped (the content can mention "code fence" as words)
+    assert "```" not in result.title
+
+
+def test_generate_strips_code_fence_with_language_tag(tmp_path: Path) -> None:
+    """Test that code fences with language tags (```markdown) are stripped."""
+    diff_file = tmp_path / "test.diff"
+    diff_file.write_text("diff content", encoding="utf-8")
+
+    # Simulate Claude wrapping output in code fences with language specifier
+    executor = FakeClaudeExecutor(
+        claude_available=True,
+        simulated_prompt_output=(
+            "```markdown\nAdd new feature\n\n## Summary\n\nThis adds a new feature.\n```"
+        ),
+    )
+    generator = CommitMessageGenerator(executor)
+    request = CommitMessageRequest(
+        diff_file=diff_file,
+        repo_root=tmp_path,
+        current_branch="feature",
+        parent_branch="main",
+    )
+
+    result, _ = _consume_generator(generator, request)
+
+    assert result.success is True
+    assert result.title == "Add new feature"
+    assert result.body is not None
+    assert "## Summary" in result.body
+    assert "```" not in result.title
+    assert "```" not in result.body

@@ -178,6 +178,7 @@ Generate a commit message for this diff:"""
         """Parse Claude output into title and body.
 
         The first non-empty line is the title, the rest is the body.
+        Handles case where output is wrapped in markdown code fences.
 
         Args:
             output: Raw output from Claude
@@ -186,6 +187,14 @@ Generate a commit message for this diff:"""
             Tuple of (title, body)
         """
         lines = output.strip().split("\n")
+
+        # Strip leading code fence if present (handles ```markdown, ```text, ```, etc.)
+        if lines and lines[0].strip().startswith("```"):
+            lines = lines[1:]
+
+        # Strip trailing code fence if present
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
 
         # Find first non-empty line as title
         title = ""
