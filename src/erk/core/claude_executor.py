@@ -646,6 +646,18 @@ class RealClaudeExecutor(ClaudeExecutor):
             cmd_args.append("--dangerously-skip-permissions")
         cmd_args.append("/erk:plan-implement")
 
+        # Redirect stdin/stdout/stderr to /dev/tty before exec.
+        # This ensures Claude gets terminal access even when running
+        # as subprocess with captured stdout (e.g., shell integration).
+        try:
+            tty_fd = os.open("/dev/tty", os.O_RDWR)
+            os.dup2(tty_fd, 0)  # stdin
+            os.dup2(tty_fd, 1)  # stdout
+            os.dup2(tty_fd, 2)  # stderr
+            os.close(tty_fd)
+        except OSError:
+            pass  # Fallback to inherited descriptors if /dev/tty unavailable
+
         # Replace current process with Claude
         os.execvp("claude", cmd_args)
         # Never returns - process is replaced
