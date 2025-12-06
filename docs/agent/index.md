@@ -4,14 +4,15 @@
 
 - **[architecture/](architecture/)** — at-reference-resolution, commandresult-extension-pattern, erk-architecture, github-parsing, pathlib-symlinks, protocol-vs-abc, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
 - **[cli/](cli/)** — command-organization, list-formatting, output-styling, script-mode, template-variables
-- **[commands/](commands/)** — behavioral-triggers, optimization-patterns
+- **[commands/](commands/)** — behavioral-triggers, optimization-patterns, raw-extraction-plan
 - **[erk/](erk/)** — branch-cleanup, graphite-branch-setup
+- **[github/](github/)** — issue-limits, markdown-escaping
 - **[hooks/](hooks/)** — erk, hooks
 - **[kits/](kits/)** — cli-commands, code-architecture, dependency-injection, push-down-pattern, registry-discovery
 - **[planning/](planning/)** — agent-delegation, enrichment, lifecycle, plan-schema, scratch-storage, workflow
 - **[reference/](reference/)** — claude-cli-stream-json
-- **[sessions/](sessions/)** — context-analysis, layout, parallel-session-awareness, tools
-- **[testing/](testing/)** — import-conflict-resolution, kit-cli-testing, rebase-conflicts, session-log-fixtures, testing
+- **[sessions/](sessions/)** — auto-selection, context-analysis, layout, parallel-session-awareness, subagent-mining, tools
+- **[testing/](testing/)** — fake-constructor-extension, import-conflict-resolution, kit-cli-testing, rebase-conflicts, session-log-fixtures, testing
 - **[tui/](tui/)** — command-palette, textual-quirks
 
 ## Uncategorized
