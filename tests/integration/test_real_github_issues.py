@@ -283,29 +283,30 @@ def test_add_comment_command_failure(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_list_issues_all(monkeypatch: MonkeyPatch) -> None:
-    """Test list_issues without filters."""
+    """Test list_issues without filters (uses REST API)."""
+    # REST API returns different field names than GraphQL
     issues_data = [
         {
             "number": 1,
             "title": "Issue 1",
             "body": "Body 1",
-            "state": "OPEN",
-            "url": "http://url/1",
+            "state": "open",  # REST: lowercase
+            "html_url": "http://url/1",  # REST: html_url
             "labels": [],
             "assignees": [],
-            "createdAt": "2024-01-01T00:00:00Z",
-            "updatedAt": "2024-01-01T00:00:00Z",
+            "created_at": "2024-01-01T00:00:00Z",  # REST: snake_case
+            "updated_at": "2024-01-01T00:00:00Z",
         },
         {
             "number": 2,
             "title": "Issue 2",
             "body": "Body 2",
-            "state": "CLOSED",
-            "url": "http://url/2",
+            "state": "closed",  # REST: lowercase
+            "html_url": "http://url/2",
             "labels": [],
             "assignees": [],
-            "createdAt": "2024-01-02T00:00:00Z",
-            "updatedAt": "2024-01-02T00:00:00Z",
+            "created_at": "2024-01-02T00:00:00Z",
+            "updated_at": "2024-01-02T00:00:00Z",
         },
     ]
 
@@ -325,11 +326,11 @@ def test_list_issues_all(monkeypatch: MonkeyPatch) -> None:
         assert result[0].number == 1
         assert result[0].title == "Issue 1"
         assert result[1].number == 2
-        assert result[1].state == "CLOSED"
+        assert result[1].state == "CLOSED"  # Implementation uppercases
 
 
 def test_list_issues_with_state_filter(monkeypatch: MonkeyPatch) -> None:
-    """Test list_issues with state filter."""
+    """Test list_issues with state filter (uses REST API query params)."""
     created_commands = []
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -346,12 +347,15 @@ def test_list_issues_with_state_filter(monkeypatch: MonkeyPatch) -> None:
         issues.list_issues(Path("/repo"), state="open")
 
         cmd = created_commands[0]
-        assert "--state" in cmd
-        assert "open" in cmd
+        # REST API: state is a query parameter in the endpoint URL
+        assert "gh" in cmd
+        assert "api" in cmd
+        endpoint = [arg for arg in cmd if "repos/" in arg][0]
+        assert "state=open" in endpoint
 
 
 def test_list_issues_with_labels_filter(monkeypatch: MonkeyPatch) -> None:
-    """Test list_issues with labels filter."""
+    """Test list_issues with labels filter (uses REST API query params)."""
     created_commands = []
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -368,13 +372,15 @@ def test_list_issues_with_labels_filter(monkeypatch: MonkeyPatch) -> None:
         issues.list_issues(Path("/repo"), labels=["plan", "erk"])
 
         cmd = created_commands[0]
-        assert cmd.count("--label") == 2
-        assert "plan" in cmd
-        assert "erk" in cmd
+        # REST API: labels is comma-separated in the query parameter
+        assert "gh" in cmd
+        assert "api" in cmd
+        endpoint = [arg for arg in cmd if "repos/" in arg][0]
+        assert "labels=plan,erk" in endpoint
 
 
 def test_list_issues_with_both_filters(monkeypatch: MonkeyPatch) -> None:
-    """Test list_issues with both labels and state filters."""
+    """Test list_issues with both labels and state filters (uses REST API)."""
     created_commands = []
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -391,14 +397,16 @@ def test_list_issues_with_both_filters(monkeypatch: MonkeyPatch) -> None:
         issues.list_issues(Path("/repo"), labels=["bug"], state="closed")
 
         cmd = created_commands[0]
-        assert "--label" in cmd
-        assert "bug" in cmd
-        assert "--state" in cmd
-        assert "closed" in cmd
+        # REST API: both are query parameters in the endpoint URL
+        assert "gh" in cmd
+        assert "api" in cmd
+        endpoint = [arg for arg in cmd if "repos/" in arg][0]
+        assert "labels=bug" in endpoint
+        assert "state=closed" in endpoint
 
 
-def test_list_issues_json_fields(monkeypatch: MonkeyPatch) -> None:
-    """Test list_issues requests all required JSON fields."""
+def test_list_issues_uses_rest_api(monkeypatch: MonkeyPatch) -> None:
+    """Test list_issues uses gh api with REST endpoint and jq filter."""
     created_commands = []
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -415,14 +423,17 @@ def test_list_issues_json_fields(monkeypatch: MonkeyPatch) -> None:
         issues.list_issues(Path("/repo"))
 
         cmd = created_commands[0]
-        assert "--json" in cmd
-        json_fields_idx = cmd.index("--json") + 1
-        json_fields = cmd[json_fields_idx]
-        assert "number" in json_fields
-        assert "title" in json_fields
-        assert "body" in json_fields
-        assert "state" in json_fields
-        assert "url" in json_fields
+        # Uses gh api (REST) instead of gh issue list (GraphQL)
+        assert cmd[0] == "gh"
+        assert cmd[1] == "api"
+        # Has endpoint with repos/{owner}/{repo}/issues
+        endpoint = [arg for arg in cmd if "repos/" in arg][0]
+        assert "issues" in endpoint
+        # Uses --jq to filter out PRs
+        assert "--jq" in cmd
+        jq_idx = cmd.index("--jq") + 1
+        jq_expr = cmd[jq_idx]
+        assert "pull_request" in jq_expr  # Filters out PRs
 
 
 def test_list_issues_command_failure(monkeypatch: MonkeyPatch) -> None:
@@ -457,18 +468,19 @@ def test_list_issues_empty_response(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_list_issues_parses_all_fields(monkeypatch: MonkeyPatch) -> None:
-    """Test list_issues correctly parses all IssueInfo fields."""
+    """Test list_issues correctly parses all IssueInfo fields (REST format)."""
+    # REST API returns different field names than GraphQL
     issues_data = [
         {
             "number": 123,
             "title": "Complex Issue Title with Special Chars: / & <>",
             "body": "Multi-line\nbody\nwith\nlinebreaks",
-            "state": "OPEN",
-            "url": "https://github.com/owner/repo/issues/123",
+            "state": "open",  # REST: lowercase
+            "html_url": "https://github.com/owner/repo/issues/123",  # REST: html_url
             "labels": [{"name": "bug"}, {"name": "documentation"}],
             "assignees": [{"login": "alice"}],
-            "createdAt": "2024-01-15T10:30:00Z",
-            "updatedAt": "2024-01-20T16:45:00Z",
+            "created_at": "2024-01-15T10:30:00Z",  # REST: snake_case
+            "updated_at": "2024-01-20T16:45:00Z",
         }
     ]
 
@@ -489,12 +501,12 @@ def test_list_issues_parses_all_fields(monkeypatch: MonkeyPatch) -> None:
         assert issue.number == 123
         assert issue.title == "Complex Issue Title with Special Chars: / & <>"
         assert issue.body == "Multi-line\nbody\nwith\nlinebreaks"
-        assert issue.state == "OPEN"
+        assert issue.state == "OPEN"  # Implementation uppercases
         assert issue.url == "https://github.com/owner/repo/issues/123"
 
 
 def test_list_issues_with_limit(monkeypatch: MonkeyPatch) -> None:
-    """Test list_issues respects limit parameter."""
+    """Test list_issues respects limit parameter (uses per_page in REST API)."""
     created_commands = []
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -511,8 +523,11 @@ def test_list_issues_with_limit(monkeypatch: MonkeyPatch) -> None:
         issues.list_issues(Path("/repo"), limit=10)
 
         cmd = created_commands[0]
-        assert "--limit" in cmd
-        assert "10" in cmd
+        # REST API: limit is per_page query parameter
+        assert "gh" in cmd
+        assert "api" in cmd
+        endpoint = [arg for arg in cmd if "repos/" in arg][0]
+        assert "per_page=10" in endpoint
 
 
 def test_get_current_username_success(monkeypatch: MonkeyPatch) -> None:
