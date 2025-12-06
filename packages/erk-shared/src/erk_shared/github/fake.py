@@ -12,6 +12,7 @@ from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
     PRCheckoutInfo,
+    PRDetails,
     PRInfo,
     PRMergeability,
     PRState,
@@ -35,6 +36,7 @@ class FakeGitHub(GitHub):
         pr_statuses: dict[str, tuple[str | None, int | None, str | None]] | None = None,
         pr_bases: dict[int, str] | None = None,
         pr_mergeability: dict[int, PRMergeability | None] | None = None,
+        pr_details: dict[int, PRDetails] | None = None,
         workflow_runs: list[WorkflowRun] | None = None,
         workflow_runs_by_node_id: dict[str, WorkflowRun] | None = None,
         run_logs: dict[str, str] | None = None,
@@ -59,6 +61,7 @@ class FakeGitHub(GitHub):
                         Mapping of branch name -> (state, pr_number, title)
             pr_bases: Mapping of pr_number -> base_branch
             pr_mergeability: Mapping of pr_number -> PRMergeability (None for API errors)
+            pr_details: Mapping of pr_number -> PRDetails for get_pr()
             workflow_runs: List of WorkflowRun objects to return from list_workflow_runs
             workflow_runs_by_node_id: Mapping of GraphQL node_id -> WorkflowRun for
                                      get_workflow_runs_by_node_ids()
@@ -105,6 +108,7 @@ class FakeGitHub(GitHub):
 
         self._pr_bases = pr_bases or {}
         self._pr_mergeability = pr_mergeability or {}
+        self._pr_details = pr_details or {}
         self._workflow_runs = workflow_runs or []
         self._workflow_runs_by_node_id = workflow_runs_by_node_id or {}
         self._run_logs = run_logs or {}
@@ -580,6 +584,14 @@ class FakeGitHub(GitHub):
         if pr is None:
             return None
         return (pr.number, pr.url)
+
+    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails:
+        """Get comprehensive PR details from pre-configured state.
+
+        Raises:
+            KeyError: If pr_number not found in pr_details mapping
+        """
+        return self._pr_details[pr_number]
 
     def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
         """Get PR number and state for a specific branch from configured state.

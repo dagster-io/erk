@@ -5,7 +5,7 @@ from pathlib import Path
 from click.testing import CliRunner
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PRCheckoutInfo, PRInfo
+from erk_shared.github.types import PRDetails, PRInfo
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 
@@ -22,18 +22,24 @@ def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
 
         # Setup PR info with title and body
         pr_info = PRInfo(state="OPEN", pr_number=123, title="Feature PR")
-        pr_checkout_info = PRCheckoutInfo(
+        pr_details = PRDetails(
             number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Add awesome feature",
+            body="This PR adds an awesome feature.",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
             head_ref_name="feature-branch",
             is_cross_repository=False,
-            state="OPEN",
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
         )
         github = FakeGitHub(
             pr_statuses={"feature-branch": pr_info},
-            pr_checkout_infos={123: pr_checkout_info},
-            pr_bases={123: "main"},
-            pr_titles={123: "Add awesome feature"},
-            pr_bodies_by_number={123: "This PR adds an awesome feature."},
+            pr_details={123: pr_details},
         )
 
         # Branch NOT tracked yet (empty branches dict)
@@ -92,15 +98,24 @@ def test_pr_sync_succeeds_silently_when_already_tracked(tmp_path: Path) -> None:
 
         # Setup PR info
         pr_info = PRInfo(state="OPEN", pr_number=123, title="Feature PR")
-        pr_checkout_info = PRCheckoutInfo(
+        pr_details = PRDetails(
             number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
             head_ref_name="feature-branch",
             is_cross_repository=False,
-            state="OPEN",
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
         )
         github = FakeGitHub(
             pr_statuses={"feature-branch": pr_info},
-            pr_checkout_infos={123: pr_checkout_info},
+            pr_details={123: pr_details},
         )
 
         # Branch ALREADY tracked (has parent)
@@ -236,16 +251,25 @@ def test_pr_sync_fails_when_cross_repo_fork(tmp_path: Path) -> None:
         pr_info = PRInfo(state="OPEN", pr_number=999, title="Fork PR")
 
         # But it's a cross-repository fork
-        pr_checkout_info = PRCheckoutInfo(
+        pr_details = PRDetails(
             number=999,
+            url="https://github.com/owner/repo/pull/999",
+            title="Fork PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
             head_ref_name="fork-branch",
             is_cross_repository=True,  # This is the key check
-            state="OPEN",
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
         )
 
         github = FakeGitHub(
             pr_statuses={"fork-branch": pr_info},
-            pr_checkout_infos={999: pr_checkout_info},
+            pr_details={999: pr_details},
         )
 
         git = FakeGit(
@@ -270,16 +294,24 @@ def test_pr_sync_handles_squash_single_commit(tmp_path: Path) -> None:
 
         # Setup PR
         pr_info = PRInfo(state="OPEN", pr_number=111, title="Single Commit")
-        pr_checkout_info = PRCheckoutInfo(
+        pr_details = PRDetails(
             number=111,
+            url="https://github.com/owner/repo/pull/111",
+            title="Single Commit",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
             head_ref_name="single-commit-branch",
             is_cross_repository=False,
-            state="OPEN",
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
         )
         github = FakeGitHub(
             pr_statuses={"single-commit-branch": pr_info},
-            pr_checkout_infos={111: pr_checkout_info},
-            pr_bases={111: "main"},
+            pr_details={111: pr_details},
         )
 
         # No squash_branch_raises needed - execute_squash checks commit count first
@@ -313,16 +345,24 @@ def test_pr_sync_handles_submit_failure_gracefully(tmp_path: Path) -> None:
 
         # Setup PR
         pr_info = PRInfo(state="OPEN", pr_number=222, title="Feature")
-        pr_checkout_info = PRCheckoutInfo(
+        pr_details = PRDetails(
             number=222,
+            url="https://github.com/owner/repo/pull/222",
+            title="Feature",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
             head_ref_name="feature-branch",
             is_cross_repository=False,
-            state="OPEN",
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
         )
         github = FakeGitHub(
             pr_statuses={"feature-branch": pr_info},
-            pr_checkout_infos={222: pr_checkout_info},
-            pr_bases={222: "main"},
+            pr_details={222: pr_details},
         )
 
         # Submit raises error
@@ -354,16 +394,24 @@ def test_pr_sync_squash_raises_unexpected_error(tmp_path: Path) -> None:
 
         # Setup PR
         pr_info = PRInfo(state="OPEN", pr_number=333, title="Feature")
-        pr_checkout_info = PRCheckoutInfo(
+        pr_details = PRDetails(
             number=333,
+            url="https://github.com/owner/repo/pull/333",
+            title="Feature",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
             head_ref_name="feature-branch",
             is_cross_repository=False,
-            state="OPEN",
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
         )
         github = FakeGitHub(
             pr_statuses={"feature-branch": pr_info},
-            pr_checkout_infos={333: pr_checkout_info},
-            pr_bases={333: "main"},
+            pr_details={333: pr_details},
         )
 
         # Squash raises unexpected error via CalledProcessError (what execute_squash catches)
@@ -400,16 +448,24 @@ def test_pr_sync_uses_correct_base_branch(tmp_path: Path) -> None:
 
         # PR targets "release/v1.0" not "main"
         pr_info = PRInfo(state="OPEN", pr_number=444, title="Hotfix")
-        pr_checkout_info = PRCheckoutInfo(
+        pr_details = PRDetails(
             number=444,
+            url="https://github.com/owner/repo/pull/444",
+            title="Hotfix",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="release/v1.0",  # Non-standard base
             head_ref_name="hotfix-branch",
             is_cross_repository=False,
-            state="OPEN",
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
         )
         github = FakeGitHub(
             pr_statuses={"hotfix-branch": pr_info},
-            pr_checkout_infos={444: pr_checkout_info},
-            pr_bases={444: "release/v1.0"},  # Non-standard base
+            pr_details={444: pr_details},
         )
 
         graphite = FakeGraphite(branches={})
@@ -439,20 +495,26 @@ def test_pr_sync_updates_commit_with_title_only(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        # Setup PR with title but NO body
+        # Setup PR with title but NO body (empty string)
         pr_info = PRInfo(state="OPEN", pr_number=555, title="Title Only PR")
-        pr_checkout_info = PRCheckoutInfo(
+        pr_details = PRDetails(
             number=555,
+            url="https://github.com/owner/repo/pull/555",
+            title="Just a title",
+            body="",  # No body
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
             head_ref_name="title-only-branch",
             is_cross_repository=False,
-            state="OPEN",
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
         )
         github = FakeGitHub(
             pr_statuses={"title-only-branch": pr_info},
-            pr_checkout_infos={555: pr_checkout_info},
-            pr_bases={555: "main"},
-            pr_titles={555: "Just a title"},
-            # No pr_bodies_by_number - body is None
+            pr_details={555: pr_details},
         )
 
         graphite = FakeGraphite(branches={})
@@ -482,19 +544,26 @@ def test_pr_sync_skips_commit_update_when_no_title(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        # Setup PR with NO title
+        # Setup PR with empty title
         pr_info = PRInfo(state="OPEN", pr_number=666, title=None)
-        pr_checkout_info = PRCheckoutInfo(
+        pr_details = PRDetails(
             number=666,
+            url="https://github.com/owner/repo/pull/666",
+            title="",  # Empty title
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
             head_ref_name="no-title-branch",
             is_cross_repository=False,
-            state="OPEN",
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
         )
         github = FakeGitHub(
             pr_statuses={"no-title-branch": pr_info},
-            pr_checkout_infos={666: pr_checkout_info},
-            pr_bases={666: "main"},
-            # No pr_titles - title is None
+            pr_details={666: pr_details},
         )
 
         graphite = FakeGraphite(branches={})

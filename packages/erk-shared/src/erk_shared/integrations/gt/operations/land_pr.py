@@ -114,13 +114,13 @@ def execute_land_pr(
 
     # Step 6: Get PR title and body for merge commit message
     yield ProgressEvent("Getting PR metadata...")
-    pr_title = ops.github.get_pr_title(repo_root, pr_number)
-    pr_body = ops.github.get_pr_body(repo_root, pr_number)
+    pr = ops.github.get_pr(repo_root, pr_number)
 
     # Merge with squash using title and body
     yield ProgressEvent(f"Merging PR #{pr_number}...")
-    subject = f"{pr_title} (#{pr_number})" if pr_title else None
-    if not ops.github.merge_pr(repo_root, pr_number, subject=subject, body=pr_body):
+    subject = f"{pr.title} (#{pr_number})" if pr.title else None
+    body = pr.body or None
+    if not ops.github.merge_pr(repo_root, pr_number, subject=subject, body=body):
         yield CompletionEvent(
             LandPrError(
                 success=False,

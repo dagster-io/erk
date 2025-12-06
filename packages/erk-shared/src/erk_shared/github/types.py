@@ -9,6 +9,42 @@ PRState = Literal["OPEN", "MERGED", "CLOSED", "NONE"]
 
 
 @dataclass(frozen=True)
+class PRDetails:
+    """Comprehensive PR information from a single GitHub API call.
+
+    This dataclass contains all commonly-needed PR fields, allowing call sites
+    to fetch everything they need in one API call instead of multiple separate
+    calls for title, body, base branch, etc.
+    """
+
+    # Identity
+    number: int
+    url: str
+
+    # Content
+    title: str
+    body: str
+
+    # State
+    state: str  # "OPEN", "MERGED", "CLOSED"
+    is_draft: bool
+
+    # Structure
+    base_ref_name: str
+    head_ref_name: str
+    is_cross_repository: bool
+
+    # Mergeability
+    mergeable: str  # "MERGEABLE", "CONFLICTING", "UNKNOWN"
+    merge_state_status: str  # "CLEAN", "BLOCKED", "UNSTABLE", "DIRTY"
+
+    # Metadata
+    owner: str
+    repo: str
+    labels: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class GitHubRepoId:
     """GitHub repository identity (owner and repo name)."""
 

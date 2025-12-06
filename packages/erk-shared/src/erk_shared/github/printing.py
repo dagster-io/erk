@@ -8,6 +8,7 @@ from erk_shared.github.abc import GitHub
 from erk_shared.github.types import (
     GitHubRepoLocation,
     PRCheckoutInfo,
+    PRDetails,
     PRInfo,
     PRMergeability,
     PullRequestInfo,
@@ -192,6 +193,10 @@ class PrintingGitHub(PrintingBase, GitHub):
     def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
         """Get PR info for branch (read-only, no printing)."""
         return self._wrapped.get_pr_info_for_branch(repo_root, branch)
+
+    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails:
+        """Get comprehensive PR details (read-only, no printing)."""
+        return self._wrapped.get_pr(repo_root, pr_number)
 
     def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
         """Get PR state for branch (read-only, no printing)."""

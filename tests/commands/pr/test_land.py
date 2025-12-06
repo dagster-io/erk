@@ -19,7 +19,7 @@ from click.testing import CliRunner
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.types import PullRequestInfo
+from erk_shared.github.types import PRDetails, PullRequestInfo
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 from erk_shared.integrations.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
@@ -69,8 +69,23 @@ def test_pr_land_success_runs_extraction_and_deletes_worktree() -> None:
                     has_conflicts=None,
                 ),
             },
-            pr_titles={123: "Feature 1"},
-            pr_bodies_by_number={123: "PR body"},
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
             merge_should_succeed=True,
         )
 
@@ -150,8 +165,23 @@ def test_pr_land_extraction_failure_continues() -> None:
                     has_conflicts=None,
                 ),
             },
-            pr_titles={123: "Feature 1"},
-            pr_bodies_by_number={123: "PR body"},
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
             merge_should_succeed=True,
         )
 
@@ -352,8 +382,23 @@ def test_pr_land_no_script_flag_fails_fast() -> None:
                     has_conflicts=None,
                 ),
             },
-            pr_titles={123: "Feature 1"},
-            pr_bodies_by_number={123: "PR body"},
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
             merge_should_succeed=True,
         )
 
@@ -516,8 +561,23 @@ def test_pr_land_does_not_call_safe_chdir() -> None:
                     has_conflicts=None,
                 ),
             },
-            pr_titles={123: "Feature 1"},
-            pr_bodies_by_number={123: "PR body"},
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
             merge_should_succeed=True,
         )
 
@@ -582,8 +642,23 @@ def test_pr_land_with_skip_insights_deletes_worktree_and_branch() -> None:
                     has_conflicts=None,
                 ),
             },
-            pr_titles={123: "Feature 1"},
-            pr_bodies_by_number={123: "PR body"},
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
             merge_should_succeed=True,
         )
 
@@ -679,8 +754,23 @@ def test_pr_land_extraction_origin_skips_marker_and_deletes_worktree() -> None:
                     has_conflicts=None,
                 ),
             },
-            pr_titles={123: "Feature 1"},
-            pr_bodies_by_number={123: "PR body"},
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
             merge_should_succeed=True,
         )
         # PR has erk-skip-extraction label
@@ -825,8 +915,23 @@ def test_pr_land_with_up_navigates_to_child_branch() -> None:
                     has_conflicts=None,
                 ),
             },
-            pr_titles={123: "Feature 1"},
-            pr_bodies_by_number={123: "PR body"},
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
             merge_should_succeed=True,
         )
 
@@ -903,8 +1008,23 @@ def test_pr_land_with_up_no_children_fails_before_merge() -> None:
                     has_conflicts=None,
                 ),
             },
-            pr_titles={123: "Feature 1"},
-            pr_bodies_by_number={123: "PR body"},
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
             merge_should_succeed=True,
         )
 
@@ -989,8 +1109,23 @@ def test_pr_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
                     has_conflicts=None,
                 ),
             },
-            pr_titles={123: "Feature 1"},
-            pr_bodies_by_number={123: "PR body"},
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
             merge_should_succeed=True,
         )
 
@@ -1097,8 +1232,23 @@ def test_pr_land_with_up_multiple_children_fails_before_merge() -> None:
                     has_conflicts=None,
                 ),
             },
-            pr_titles={123: "Feature 1"},
-            pr_bodies_by_number={123: "PR body"},
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
             merge_should_succeed=True,
         )
 
