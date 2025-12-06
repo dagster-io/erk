@@ -9,7 +9,7 @@ def _load_prompt(filename: str) -> str:
     return prompt_path.read_text()
 
 
-COMMIT_MESSAGE_SYSTEM_PROMPT = _load_prompt("commit_message_prompt.txt")
+COMMIT_MESSAGE_SYSTEM_PROMPT = _load_prompt("commit_message_prompt.md")
 
 MAX_DIFF_CHARS = 1_000_000  # ~300K tokens - supports very large PRs
 
