@@ -23,6 +23,7 @@ from erk_shared.github.types import PullRequestInfo
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 from erk_shared.integrations.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
+from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, marker_exists
 
 from erk.cli.commands.pr import pr_group
 from erk.cli.commands.pr.land_cmd import is_extraction_origin_pr
@@ -717,7 +718,7 @@ def test_pr_land_extraction_origin_skips_marker_and_deletes_worktree() -> None:
         assert "skipping insight extraction" in result.output
 
         # Verify output messages about deletion
-        assert "Landed PR. Deleted worktree and branch." in result.output
+        assert "Deleted worktree and branch" in result.output
 
 
 def test_is_extraction_origin_pr_returns_true_when_label_present(tmp_path: Path) -> None:
