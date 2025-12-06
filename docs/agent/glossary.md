@@ -187,6 +187,43 @@ type erk
 
 **For comprehensive gt documentation**: See [tools/gt.md](tools/gt.md)
 
+### Git Common Dir vs Repo Root
+
+**Problem:** When running from a git worktree, `repo_root` (or `git rev-parse --show-toplevel`) returns the worktree directory path, NOT the main repository where `.git/` lives.
+
+**Solution:** Use `git rev-parse --git-common-dir` to find the actual git directory:
+
+```bash
+# Returns path to .git directory (shared across all worktrees)
+git rev-parse --git-common-dir
+```
+
+**Key distinction:**
+
+- `--show-toplevel`: Returns worktree root (the directory you're in)
+- `--git-common-dir`: Returns the shared .git directory location
+
+**When this matters:**
+
+- Running git commands AFTER deleting a worktree (cwd no longer exists)
+- Operations that need the main repository, not the worktree
+- Subprocess execution where cwd must exist
+
+**Example bug:**
+
+```python
+# BUG: If repo_root is the worktree being deleted, this fails
+git.remove_worktree(repo_root, worktree_path, force=True)
+git.prune_worktrees(repo_root)  # FAILS - repo_root no longer exists!
+
+# FIX: Resolve main git dir BEFORE deletion
+main_git_dir = find_main_git_dir(repo_root)  # Uses --git-common-dir
+git.remove_worktree(repo_root, worktree_path, force=True)
+git.prune_worktrees(main_git_dir)  # WORKS - main repo still exists
+```
+
+**Related:** Links to the `_find_main_git_dir()` helper being added in issue #2345
+
 ### Trunk Branch
 
 The default branch of the repository (typically `main` or `master`).
