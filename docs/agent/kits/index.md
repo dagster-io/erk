@@ -1,3 +1,6 @@
+<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
+<!-- Edit source frontmatter, then run 'dot-agent docs sync' to regenerate. -->
+
 # Kits Documentation
 
 - **[cli-command-development.md](cli-command-development.md)** — adding new kit CLI commands, creating kit commands from scratch, understanding kit command file structure

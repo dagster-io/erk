@@ -4,6 +4,9 @@ read_when:
   - "checking tripwire rules"
 ---
 
+<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
+<!-- Edit source frontmatter, then run 'dot-agent docs sync' to regenerate. -->
+
 # Tripwires
 
 Action-triggered rules that fire when you're about to perform specific actions.
@@ -15,6 +18,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 **CRITICAL: Before importing time module or calling time.sleep()** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. Use context.time.sleep() for testability. Direct time.sleep() makes tests slow.
 
 **CRITICAL: Before implementing CLI flags that affect post-mutation behavior** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. Validate flag preconditions BEFORE any mutations. Example: `--up` in `erk pr land` checks for child branches before merging PR. This prevents partial state (PR merged, worktree deleted, but no valid navigation target).
+
+**CRITICAL: Before editing docs/agent/index.md or docs/agent/tripwires.md directly** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. These are generated files. Edit the source frontmatter instead, then run 'dot-agent docs sync'.
 
 **CRITICAL: Before importing from erk package in dot-agent-kit** → Read [erk_shared Package](architecture/erk-shared-package.md) first. dot-agent-kit cannot import from erk. Use erk_shared for shared code.
 

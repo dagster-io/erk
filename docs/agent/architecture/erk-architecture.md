@@ -13,6 +13,8 @@ tripwires:
     warning: "Use context.time.sleep() for testability. Direct time.sleep() makes tests slow."
   - action: "implementing CLI flags that affect post-mutation behavior"
     warning: "Validate flag preconditions BEFORE any mutations. Example: `--up` in `erk pr land` checks for child branches before merging PR. This prevents partial state (PR merged, worktree deleted, but no valid navigation target)."
+  - action: "editing docs/agent/index.md or docs/agent/tripwires.md directly"
+    warning: "These are generated files. Edit the source frontmatter instead, then run 'dot-agent docs sync'."
 ---
 
 # Erk Architecture Patterns

@@ -207,8 +207,40 @@ This validates:
 - Required fields present
 - Markdown formatting (prettier)
 
+## ⚠️ Generated Files - Do Not Edit Directly
+
+The following files are **auto-generated** from frontmatter metadata:
+
+| File                             | Source                     |
+| -------------------------------- | -------------------------- |
+| `docs/agent/index.md`            | Frontmatter from all docs  |
+| `docs/agent/<category>/index.md` | Frontmatter from category  |
+| `docs/agent/tripwires.md`        | `tripwires:` field in docs |
+
+**Never edit these files directly.** Changes will be overwritten.
+
+### Workflow for Changes
+
+1. **Edit the source frontmatter** in the relevant documentation file(s)
+2. **Run sync**: `dot-agent docs sync`
+3. **Verify changes** in the generated files
+4. **Commit both** the source and generated files
+
+### Adding a New Tripwire
+
+To add a tripwire rule:
+
+1. Add to the `tripwires:` field in the relevant doc's frontmatter:
+   ```yaml
+   tripwires:
+     - action: "doing something dangerous"
+       warning: "Do this instead."
+   ```
+2. Run `dot-agent docs sync` to regenerate `tripwires.md`
+
 ## Quick Reference
 
 - Full navigation: [docs/agent/guide.md](docs/agent/guide.md)
 - Category index: [docs/agent/index.md](docs/agent/index.md)
+- Regenerate indexes: `dot-agent docs sync`
 - Run validation: `make fast-ci`
