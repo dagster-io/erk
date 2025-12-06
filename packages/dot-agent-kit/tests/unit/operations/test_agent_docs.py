@@ -4,6 +4,7 @@ from pathlib import Path
 
 from dot_agent_kit.models.agent_doc import AgentDocFrontmatter, Tripwire
 from dot_agent_kit.operations.agent_docs import (
+    GENERATED_FILE_BANNER,
     CollectedTripwire,
     collect_tripwires,
     collect_valid_docs,
@@ -398,6 +399,7 @@ class TestGenerateRootIndex:
     def test_generate_empty_index(self) -> None:
         """Generate index when no docs."""
         content = generate_root_index([], [])
+        assert content.startswith(GENERATED_FILE_BANNER.rstrip())
         assert "# Agent Documentation" in content
         assert "*No documentation files found.*" in content
 
@@ -409,6 +411,7 @@ class TestGenerateRootIndex:
             DocInfo("glossary.md", AgentDocFrontmatter("Glossary", ["understanding terms"])),
         ]
         content = generate_root_index(docs, [])
+        assert content.startswith(GENERATED_FILE_BANNER.rstrip())
         assert "## Uncategorized" in content
         # Bullet list format: - **[link](link)** — description
         assert "- **[glossary.md](glossary.md)** — understanding terms" in content
@@ -426,6 +429,7 @@ class TestGenerateRootIndex:
             ),
         ]
         content = generate_root_index([], categories)
+        assert content.startswith(GENERATED_FILE_BANNER.rstrip())
         assert "## Categories" in content
         # Bullet list format: - **[link](link)** — doc names
         assert "- **[planning/](planning/)** — lifecycle" in content
@@ -453,6 +457,7 @@ class TestGenerateCategoryIndex:
             ],
         )
         content = generate_category_index(category)
+        assert content.startswith(GENERATED_FILE_BANNER.rstrip())
         assert "# Planning Documentation" in content
         # Bullet list format: - **[link](link)** — description
         assert "- **[lifecycle.md](lifecycle.md)** — creating plans" in content
@@ -469,6 +474,7 @@ class TestGenerateCategoryIndex:
             [DocInfo("cli-patterns/a.md", AgentDocFrontmatter("A", ["x"]))],
         )
         content = generate_category_index(category)
+        assert content.startswith(GENERATED_FILE_BANNER.rstrip())
         assert "# Cli Patterns Documentation" in content
         # Bullet list format
         assert "- **[a.md](a.md)** — x" in content
@@ -496,10 +502,11 @@ class TestSyncAgentDocs:
         assert len(result.created) == 1
         assert "index.md" in result.created[0]
 
-        # Verify file was created with bullet list format
+        # Verify file was created with banner and bullet list format
         index_path = agent_docs / "index.md"
         assert index_path.exists()
         content = index_path.read_text(encoding="utf-8")
+        assert content.startswith(GENERATED_FILE_BANNER.rstrip())
         assert "- **[glossary.md](glossary.md)** — terms" in content
         # No table syntax
         assert "|" not in content
@@ -772,12 +779,14 @@ class TestGenerateTripwiresDoc:
     def test_generate_empty_tripwires(self) -> None:
         """Generate content when no tripwires."""
         content = generate_tripwires_doc([])
-        assert "# Tripwires" in content
-        assert "*No tripwires defined.*" in content
-        # Should have frontmatter
-        assert "---" in content
+        # Should start with frontmatter (banner comes after)
+        assert content.startswith("---")
         assert "title: Generated Tripwires" in content
         assert "read_when:" in content
+        # Banner should be after frontmatter
+        assert GENERATED_FILE_BANNER.rstrip() in content
+        assert "# Tripwires" in content
+        assert "*No tripwires defined.*" in content
 
     def test_generate_tripwires_doc(self) -> None:
         """Generate content with tripwires."""
@@ -797,10 +806,12 @@ class TestGenerateTripwiresDoc:
         ]
         content = generate_tripwires_doc(tripwires)
 
-        # Should have frontmatter
-        assert "---" in content
+        # Should start with frontmatter (banner comes after)
+        assert content.startswith("---")
         assert "title: Generated Tripwires" in content
         assert "read_when:" in content
+        # Banner should be after frontmatter
+        assert GENERATED_FILE_BANNER.rstrip() in content
         # Should have tripwires content
         assert "# Tripwires" in content
         assert "**CRITICAL: Before writing to /tmp/**" in content

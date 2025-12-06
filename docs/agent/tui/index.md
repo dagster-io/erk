@@ -1,3 +1,6 @@
+<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
+<!-- Edit source frontmatter, then run 'dot-agent docs sync' to regenerate. -->
+
 # Tui Documentation
 
 - **[command-palette.md](command-palette.md)** — implementing command palette in Textual TUI, creating searchable command menus, adding keyboard-accessible command discovery, working with Textual Provider classes

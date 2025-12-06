@@ -1,3 +1,6 @@
+<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
+<!-- Edit source frontmatter, then run 'dot-agent docs sync' to regenerate. -->
+
 # Architecture Documentation
 
 - **[at-reference-resolution.md](at-reference-resolution.md)** — Modifying @ reference validation, Debugging broken @ references in symlinked files, Understanding why validation passes but Claude Code fails
@@ -9,6 +12,7 @@
 - **[erk-shared-package.md](erk-shared-package.md)** — sharing code between erk and dot-agent-kit, deciding where to put new utilities, moving code between packages
 - **[event-progress-pattern.md](event-progress-pattern.md)** — implementing operations that need progress reporting, separating business logic from UI output, building testable CLI operations, using ProgressEvent or CompletionEvent
 - **[extraction-origin-tracking.md](extraction-origin-tracking.md)** — understanding how extraction PRs are identified, modifying erk pr land behavior, working with erk-skip-extraction label
+- **[generated-files.md](generated-files.md)** — understanding how agent docs sync works, debugging generated file issues, adding new generated file types
 - **[github-parsing.md](github-parsing.md)** — parsing GitHub URLs, extracting PR or issue numbers from URLs, understanding github parsing layers
 - **[markers.md](markers.md)** — creating worktree state tracking, adding friction before destructive operations, implementing pending extraction workflow
 - **[pathlib-symlinks.md](pathlib-symlinks.md)** — Writing file validation code, Debugging unexpected path resolution behavior, Working with symlinked configuration files

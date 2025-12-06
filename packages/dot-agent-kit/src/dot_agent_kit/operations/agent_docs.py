@@ -20,6 +20,12 @@ from dot_agent_kit.models.agent_doc import (
 AGENT_DOCS_DIR = "docs/agent"
 FRONTMATTER_PATTERN = re.compile(r"^---\s*\n(.*?)\n---", re.DOTALL)
 
+# Banner for auto-generated files
+GENERATED_FILE_BANNER = """<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
+<!-- Edit source frontmatter, then run 'dot-agent docs sync' to regenerate. -->
+
+"""
+
 
 def parse_frontmatter(content: str) -> tuple[dict[str, object] | None, str | None]:
     """Parse YAML frontmatter from markdown content.
@@ -341,12 +347,15 @@ def generate_tripwires_doc(tripwires: list[CollectedTripwire]) -> str:
     Returns:
         Generated markdown content for the tripwires reference document.
     """
+    # Note: Banner goes AFTER frontmatter so YAML parsing works correctly
     lines = [
         "---",
         "title: Generated Tripwires",
         "read_when:",
         '  - "checking tripwire rules"',
         "---",
+        "",
+        GENERATED_FILE_BANNER.rstrip(),
         "",
         "# Tripwires",
         "",
@@ -435,7 +444,7 @@ def generate_root_index(
     Returns:
         Generated markdown content.
     """
-    lines = ["# Agent Documentation", ""]
+    lines = [GENERATED_FILE_BANNER.rstrip(), "", "# Agent Documentation", ""]
 
     if categories:
         lines.append("## Categories")
@@ -475,7 +484,7 @@ def generate_category_index(category: CategoryInfo) -> str:
     # Title case the category name
     title = category.name.replace("-", " ").replace("_", " ").title()
 
-    lines = [f"# {title} Documentation", ""]
+    lines = [GENERATED_FILE_BANNER.rstrip(), "", f"# {title} Documentation", ""]
 
     for doc in category.docs:
         # Use just the filename for relative links within category

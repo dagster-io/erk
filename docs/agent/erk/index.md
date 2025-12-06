@@ -1,3 +1,6 @@
+<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
+<!-- Edit source frontmatter, then run 'dot-agent docs sync' to regenerate. -->
+
 # Erk Documentation
 
 - **[auto-restack.md](auto-restack.md)** — using erk pr auto-restack, dealing with rebase conflicts in Graphite stacks, automating conflict resolution, understanding when to use auto-restack vs manual gt restack

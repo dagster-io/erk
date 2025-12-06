@@ -1,3 +1,6 @@
+<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
+<!-- Edit source frontmatter, then run 'dot-agent docs sync' to regenerate. -->
+
 # Hooks Documentation
 
 - **[erk.md](erk.md)** — working with erk-specific hooks, understanding context-aware reminders, modifying project hooks

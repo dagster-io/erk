@@ -1,8 +1,11 @@
+<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
+<!-- Edit source frontmatter, then run 'dot-agent docs sync' to regenerate. -->
+
 # Agent Documentation
 
 ## Categories
 
-- **[architecture/](architecture/)** — at-reference-resolution, claude-cli-integration, claude-cli-progress, command-boundaries, commandresult-extension-pattern, erk-architecture, erk-shared-package, event-progress-pattern, extraction-origin-tracking, github-parsing, markers, pathlib-symlinks, protocol-vs-abc, restack-operations, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
+- **[architecture/](architecture/)** — at-reference-resolution, claude-cli-integration, claude-cli-progress, command-boundaries, commandresult-extension-pattern, erk-architecture, erk-shared-package, event-progress-pattern, extraction-origin-tracking, generated-files, github-parsing, markers, pathlib-symlinks, protocol-vs-abc, restack-operations, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
 - **[cli/](cli/)** — command-organization, list-formatting, output-styling, script-mode, shell-aliases, template-variables
 - **[commands/](commands/)** — optimization-patterns, tripwires
 - **[erk/](erk/)** — auto-restack, branch-cleanup, graphite-branch-setup, pr-sync-workflow

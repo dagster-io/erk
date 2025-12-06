@@ -1,3 +1,6 @@
+<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
+<!-- Edit source frontmatter, then run 'dot-agent docs sync' to regenerate. -->
+
 # Sessions Documentation
 
 - **[context-analysis.md](context-analysis.md)** — analyzing context consumption, debugging context window blowout, understanding why session ran out of context
