@@ -210,7 +210,9 @@ def pr_land(ctx: ErkContext, script: bool, skip_insights: bool, up_flag: bool) -
         target_path = ctx.git.find_worktree_for_branch(main_repo_root, target_child_branch)
         if target_path is None:
             # Auto-create worktree for child
-            target_path, _ = ensure_worktree_for_branch(ctx, post_deletion_repo, target_child_branch)
+            target_path, _ = ensure_worktree_for_branch(
+                ctx, post_deletion_repo, target_child_branch
+            )
         activate_worktree(ctx, post_deletion_repo, target_path, script, command_name="pr-land")
         # activate_worktree raises SystemExit(0)
     else:
