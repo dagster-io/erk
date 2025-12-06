@@ -209,7 +209,7 @@ def test_create_ensures_label_exists(tmp_path) -> None:
         assert len(issues.created_labels) == 1
         label, description, color = issues.created_labels[0]
         assert label == "erk-plan"
-        assert "Implementation plan tracked by erk" in description
+        assert description == "Implementation plan for manual execution"
         assert color == "0E8A16"
 
 

@@ -22,15 +22,10 @@ Exit Codes:
 """
 
 import json
-from datetime import UTC, datetime
 from pathlib import Path
 
 import click
-from erk_shared.github.metadata import (
-    format_plan_content_comment,
-    format_plan_header_body,
-)
-from erk_shared.plan_utils import extract_title_from_plan
+from erk_shared.github.plan_issues import create_plan_issue
 
 from dot_agent_kit.context_helpers import require_github_issues, require_repo_root
 from dot_agent_kit.data.kits.erk.session_plan_extractor import get_latest_plan
@@ -85,93 +80,53 @@ def plan_save_to_issue(
             click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
         raise SystemExit(1)
 
-    # Step 2: Extract title
-    title = extract_title_from_plan(plan)
-
-    # Step 3: Get GitHub username
-    username = github.get_current_username()
-    if username is None:
-        error_msg = "Could not get GitHub username (gh CLI not authenticated?)"
-        if output_format == "display":
-            click.echo(f"Error: {error_msg}", err=True)
-        else:
-            click.echo(json.dumps({"success": False, "error": error_msg}))
-        raise SystemExit(1)
-
-    # Step 4: Prepare metadata (no worktree_name until worktree is created)
-    created_at = datetime.now(UTC).isoformat()
-    formatted_body = format_plan_header_body(
-        created_at=created_at,
-        created_by=username,
+    # Use consolidated create_plan_issue for the entire workflow
+    result = create_plan_issue(
+        github_issues=github,
+        repo_root=repo_root,
+        plan_content=plan,
     )
 
-    # Step 5: Ensure erk-plan label exists
-    try:
-        github.ensure_label_exists(
-            repo_root=repo_root,
-            label="erk-plan",
-            description="Implementation plan for manual execution",
-            color="0E8A16",
-        )
-    except RuntimeError as e:
-        error_msg = f"Failed to ensure label exists: {e}"
-        if output_format == "display":
-            click.echo(f"Error: {error_msg}", err=True)
-        else:
-            click.echo(json.dumps({"success": False, "error": error_msg}))
-        raise SystemExit(1) from e
-
-    # Step 6: Create issue (with [erk-plan] suffix for visibility)
-    issue_title = f"{title} [erk-plan]"
-    try:
-        result = github.create_issue(repo_root, issue_title, formatted_body, labels=["erk-plan"])
-    except RuntimeError as e:
-        error_msg = f"Failed to create GitHub issue: {e}"
-        if output_format == "display":
-            click.echo(f"Error: {error_msg}", err=True)
-        else:
-            click.echo(json.dumps({"success": False, "error": error_msg}))
-        raise SystemExit(1) from e
-
-    # Step 7: Add plan as first comment
-    plan_comment = format_plan_content_comment(plan.strip())
-    try:
-        github.add_comment(repo_root, result.number, plan_comment)
-    except RuntimeError as e:
-        # Issue created but comment failed - partial success
-        error_msg = f"Issue #{result.number} created but failed to add plan comment: {e}"
-        if output_format == "display":
-            click.echo(f"Warning: {error_msg}", err=True)
-            click.echo(f"Please manually add plan content to: {result.url}", err=True)
-        else:
-            click.echo(
-                json.dumps(
-                    {
-                        "success": False,
-                        "error": error_msg,
-                        "issue_number": result.number,
-                        "issue_url": result.url,
-                    }
+    if not result.success:
+        if result.issue_number is not None:
+            # Partial success - issue created but comment failed
+            if output_format == "display":
+                click.echo(f"Warning: {result.error}", err=True)
+                click.echo(f"Please manually add plan content to: {result.issue_url}", err=True)
+            else:
+                click.echo(
+                    json.dumps(
+                        {
+                            "success": False,
+                            "error": result.error,
+                            "issue_number": result.issue_number,
+                            "issue_url": result.issue_url,
+                        }
+                    )
                 )
-            )
-        raise SystemExit(1) from e
+        else:
+            if output_format == "display":
+                click.echo(f"Error: {result.error}", err=True)
+            else:
+                click.echo(json.dumps({"success": False, "error": result.error}))
+        raise SystemExit(1)
 
-    # Step 8: Output success
+    # Output success
     # Detect enrichment status for informational output
     is_enriched = "## Enrichment Details" in plan
 
     if output_format == "display":
-        click.echo(f"Plan saved to GitHub issue #{result.number}")
-        click.echo(f"URL: {result.url}")
+        click.echo(f"Plan saved to GitHub issue #{result.issue_number}")
+        click.echo(f"URL: {result.issue_url}")
         click.echo(f"Enrichment: {'Yes' if is_enriched else 'No'}")
     else:
         click.echo(
             json.dumps(
                 {
                     "success": True,
-                    "issue_number": result.number,
-                    "issue_url": result.url,
-                    "title": title,
+                    "issue_number": result.issue_number,
+                    "issue_url": result.issue_url,
+                    "title": result.title,
                     "enriched": is_enriched,
                 }
             )

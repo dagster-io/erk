@@ -26,15 +26,10 @@ Output:
 """
 
 import json
-from datetime import UTC, datetime
 from pathlib import Path
 
 import click
-from erk_shared.github.metadata import (
-    format_plan_content_comment,
-    format_plan_header_body,
-)
-from erk_shared.plan_utils import extract_title_from_plan
+from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, delete_marker
 from erk_shared.scratch.scratch import write_scratch_file
 
@@ -191,76 +186,32 @@ def create_extraction_plan(
         )
         raise SystemExit(1)
 
-    # Get GitHub username
-    username = github.get_current_username()
-    if username is None:
-        click.echo(
-            json.dumps(
-                {
-                    "success": False,
-                    "error": "Could not get GitHub username (gh CLI not authenticated?)",
-                }
-            )
-        )
-        raise SystemExit(1)
-
-    # Extract title from plan
-    title = extract_title_from_plan(content)
-
-    # Prepare metadata with extraction plan fields
-    created_at = datetime.now(UTC).isoformat()
-    formatted_body = format_plan_header_body(
-        created_at=created_at,
-        created_by=username,
+    # Use consolidated create_plan_issue for the entire workflow
+    result = create_plan_issue(
+        github_issues=github,
+        repo_root=repo_root,
+        plan_content=content,
         plan_type="extraction",
-        source_plan_issues=source_issues if source_issues else [],
+        source_plan_issues=source_issues if source_issues else None,
         extraction_session_ids=session_ids,
     )
 
-    # Ensure labels exist
-    labels = ["erk-plan", "erk-extraction"]
-    try:
-        github.ensure_label_exists(
-            repo_root=repo_root,
-            label="erk-plan",
-            description="Implementation plan for manual execution",
-            color="0E8A16",
-        )
-        github.ensure_label_exists(
-            repo_root=repo_root,
-            label="erk-extraction",
-            description="Documentation extraction plan",
-            color="D93F0B",
-        )
-    except RuntimeError as e:
-        click.echo(json.dumps({"success": False, "error": f"Failed to ensure labels exist: {e}"}))
-        raise SystemExit(1) from e
-
-    # Create issue with [erk-extraction] suffix for visibility
-    issue_title = f"{title} [erk-extraction]"
-    try:
-        result = github.create_issue(repo_root, issue_title, formatted_body, labels=labels)
-    except RuntimeError as e:
-        click.echo(json.dumps({"success": False, "error": f"Failed to create GitHub issue: {e}"}))
-        raise SystemExit(1) from e
-
-    # Add plan as first comment
-    plan_comment = format_plan_content_comment(content)
-    try:
-        github.add_comment(repo_root, result.number, plan_comment)
-    except RuntimeError as e:
-        # Issue created but comment failed - partial success
-        click.echo(
-            json.dumps(
-                {
-                    "success": False,
-                    "error": f"Issue #{result.number} created but failed to add plan comment: {e}",
-                    "issue_number": result.number,
-                    "issue_url": result.url,
-                }
+    if not result.success:
+        if result.issue_number is not None:
+            # Partial success - issue created but comment failed
+            click.echo(
+                json.dumps(
+                    {
+                        "success": False,
+                        "error": result.error,
+                        "issue_number": result.issue_number,
+                        "issue_url": result.issue_url,
+                    }
+                )
             )
-        )
-        raise SystemExit(1) from e
+        else:
+            click.echo(json.dumps({"success": False, "error": result.error}))
+        raise SystemExit(1)
 
     # Delete pending extraction marker since extraction is complete
     delete_marker(cwd, PENDING_EXTRACTION_MARKER)
@@ -268,9 +219,9 @@ def create_extraction_plan(
     # Output success
     output: dict[str, object] = {
         "success": True,
-        "issue_number": result.number,
-        "issue_url": result.url,
-        "title": title,
+        "issue_number": result.issue_number,
+        "issue_url": result.issue_url,
+        "title": result.title,
         "plan_type": "extraction",
         "source_plan_issues": source_issues,
         "extraction_session_ids": session_ids,

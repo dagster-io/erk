@@ -12,7 +12,6 @@ Stage 2 is controlled by USE_LLM_DISTILLATION constant.
 
 import uuid
 import warnings
-from datetime import UTC, datetime
 from pathlib import Path
 
 from erk_shared.extraction.llm_distillation import distill_with_haiku
@@ -27,12 +26,8 @@ from erk_shared.extraction.session_selection import auto_select_sessions
 from erk_shared.extraction.types import RawExtractionResult
 from erk_shared.git.abc import Git
 from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.metadata import (
-    format_plan_content_comment,
-    format_plan_header_body,
-    render_session_content_blocks,
-)
-from erk_shared.plan_utils import extract_title_from_plan
+from erk_shared.github.metadata import render_session_content_blocks
+from erk_shared.github.plan_issues import create_plan_issue
 
 # Enable/disable Stage 2 Haiku distillation
 # When True: Stage 1 mechanical reduction + Stage 2 Haiku distillation
@@ -273,97 +268,52 @@ def create_raw_extraction_plan(
         extraction_hints=extraction_hints,
     )
 
-    # Get GitHub username
-    username = github_issues.get_current_username()
-    if username is None:
-        return RawExtractionResult(
-            success=False,
-            issue_url=None,
-            issue_number=None,
-            chunks=0,
-            sessions_processed=[s for s, _ in session_xmls],
-            error="Could not get GitHub username (gh CLI not authenticated?)",
-        )
-
-    # Prepare issue body with metadata
-    created_at = datetime.now(UTC).isoformat()
     session_ids = [s for s, _ in session_xmls]
 
-    # Get raw extraction body (plan content) and extract title from it
+    # Get raw extraction body (plan content)
     raw_body = get_raw_extraction_body(session_label)
-    extracted_title = extract_title_from_plan(raw_body)
-    issue_title = f"{extracted_title} [erk-extraction]"
 
-    # Issue body contains ONLY metadata (Schema v2)
-    issue_body = format_plan_header_body(
-        created_at=created_at,
-        created_by=username,
+    # Use consolidated create_plan_issue for core workflow
+    plan_result = create_plan_issue(
+        github_issues=github_issues,
+        repo_root=repo_root,
+        plan_content=raw_body,
         plan_type="extraction",
-        source_plan_issues=[],  # No source issues for raw extraction
         extraction_session_ids=session_ids,
     )
 
-    # Ensure labels exist
-    labels = ["erk-plan", "erk-extraction"]
-    try:
-        github_issues.ensure_label_exists(
-            repo_root=repo_root,
-            label="erk-plan",
-            description="Implementation plan for manual execution",
-            color="0E8A16",
-        )
-        github_issues.ensure_label_exists(
-            repo_root=repo_root,
-            label="erk-extraction",
-            description="Documentation extraction plan",
-            color="D93F0B",
-        )
-    except RuntimeError as e:
+    if not plan_result.success:
         return RawExtractionResult(
             success=False,
-            issue_url=None,
+            issue_url=plan_result.issue_url,
+            issue_number=plan_result.issue_number,
+            chunks=0,
+            sessions_processed=session_ids,
+            error=plan_result.error,
+        )
+
+    # At this point, plan_result.success is True so issue_number is guaranteed to be set
+    issue_number = plan_result.issue_number
+    if issue_number is None:
+        # Defensive check - should never happen when success=True
+        return RawExtractionResult(
+            success=False,
+            issue_url=plan_result.issue_url,
             issue_number=None,
             chunks=0,
             sessions_processed=session_ids,
-            error=f"Failed to ensure labels exist: {e}",
+            error="Internal error: issue_number is None after successful creation",
         )
 
-    # Create issue with metadata-only body
-    try:
-        result = github_issues.create_issue(repo_root, issue_title, issue_body, labels=labels)
-    except RuntimeError as e:
-        return RawExtractionResult(
-            success=False,
-            issue_url=None,
-            issue_number=None,
-            chunks=0,
-            sessions_processed=session_ids,
-            error=f"Failed to create GitHub issue: {e}",
-        )
-
-    # First comment: plan content wrapped in plan-body block
-    plan_comment = format_plan_content_comment(raw_body)
-    try:
-        github_issues.add_comment(repo_root, result.number, plan_comment)
-    except RuntimeError as e:
-        return RawExtractionResult(
-            success=False,
-            issue_url=result.url,
-            issue_number=result.number,
-            chunks=0,
-            sessions_processed=session_ids,
-            error=f"Issue created but failed to add plan content: {e}",
-        )
-
-    # Subsequent comments: session XML chunks
+    # Add session XML chunks as additional comments (raw extraction specific)
     try:
         for block in content_blocks:
-            github_issues.add_comment(repo_root, result.number, block)
+            github_issues.add_comment(repo_root, issue_number, block)
     except RuntimeError as e:
         return RawExtractionResult(
             success=False,
-            issue_url=result.url,
-            issue_number=result.number,
+            issue_url=plan_result.issue_url,
+            issue_number=issue_number,
             chunks=0,
             sessions_processed=session_ids,
             error=f"Issue created but failed to add session content: {e}",
@@ -371,8 +321,8 @@ def create_raw_extraction_plan(
 
     return RawExtractionResult(
         success=True,
-        issue_url=result.url,
-        issue_number=result.number,
+        issue_url=plan_result.issue_url,
+        issue_number=issue_number,
         chunks=len(content_blocks),
         sessions_processed=session_ids,
         error=None,
