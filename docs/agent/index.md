@@ -8,9 +8,9 @@
 - **[erk/](erk/)** — branch-cleanup, graphite-branch-setup, pr-sync-workflow
 - **[hooks/](hooks/)** — erk, hooks
 - **[kits/](kits/)** — cli-command-development, cli-commands, code-architecture, dependency-injection, push-down-pattern, registry-discovery
-- **[planning/](planning/)** — agent-delegation, enrichment, lifecycle, plan-schema, scratch-storage, workflow
-- **[reference/](reference/)** — claude-cli-stream-json
-- **[sessions/](sessions/)** — context-analysis, layout, parallel-session-awareness, tools
+- **[planning/](planning/)** — agent-delegation, enrichment, lifecycle, plan-schema, raw-extraction-workflow, scratch-storage, workflow
+- **[reference/](reference/)** — claude-cli-stream-json, claude-code-github-actions
+- **[sessions/](sessions/)** — context-analysis, layout, parallel-session-awareness, session-content-blocks, tools
 - **[testing/](testing/)** — import-conflict-resolution, kit-cli-testing, rebase-conflicts, session-log-fixtures, testing
 - **[tui/](tui/)** — command-palette, textual-quirks
 
