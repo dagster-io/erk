@@ -6,7 +6,7 @@ manually deleting.
 
 Workflow:
     1. erk pr land         # Merges PR, creates marker, stays in worktree
-    2. /erk:create-raw-extraction-plan  # Extracts insights, deletes marker
+    2. claude /erk:create-raw-extraction-plan  # Extracts insights, deletes marker
     3. erk down --delete-current        # Manual cleanup when ready
 """
 
@@ -44,7 +44,7 @@ def pr_land(ctx: ErkContext, script: bool) -> None:
       source <(erk pr land --script)
 
     After landing:
-      /erk:create-raw-extraction-plan   # Extract insights (deletes marker)
+      claude /erk:create-raw-extraction-plan   # Extract insights (deletes marker)
       erk down --delete-current         # Manual cleanup
 
     Requires:
@@ -103,9 +103,10 @@ def pr_land(ctx: ErkContext, script: bool) -> None:
     user_output(click.style("✓", fg="green") + " Created pending extraction marker")
 
     # Step 3: Output activation script (stays in current worktree)
+    extraction_cmd = "claude /erk:create-raw-extraction-plan"
     script_content = render_activation_script(
         worktree_path=current_worktree_path,
-        final_message='echo "Landed PR. Run /erk:create-raw-extraction-plan to extract insights."',
+        final_message=f'echo "Landed PR. Run {extraction_cmd} to extract insights."',
         comment="erk pr land activate-script",
     )
     activation_result = ctx.script_writer.write_activation_script(
@@ -118,7 +119,7 @@ def pr_land(ctx: ErkContext, script: bool) -> None:
     # Step 4: Output next steps
     user_output("")
     user_output(click.style("Next steps:", fg="cyan"))
-    user_output("  1. Run /erk:create-raw-extraction-plan to extract insights")
+    user_output("  1. Run: claude /erk:create-raw-extraction-plan")
     user_output("  2. Run: erk down --delete-current")
     user_output("")
 

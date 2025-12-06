@@ -103,7 +103,7 @@ def test_pr_land_success_creates_marker_and_stays_in_worktree() -> None:
 
         # Verify next steps shown
         assert "Next steps:" in result.output
-        assert "/erk:create-raw-extraction-plan" in result.output
+        assert "claude /erk:create-raw-extraction-plan" in result.output
 
 
 def test_pr_land_error_from_execute_land_pr() -> None:
