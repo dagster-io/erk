@@ -1,12 +1,15 @@
-"""Tests for navigation helper completion functions."""
+"""Tests for navigation helper functions."""
 
+import os
 from pathlib import Path
 from unittest.mock import Mock
 
 import click
+from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 
 from erk.cli.commands.completions import complete_branch_names, complete_plan_files
+from erk.cli.commands.navigation_helpers import delete_branch_and_worktree
 from erk.core.config_store import GlobalConfig
 from erk.core.context import ErkContext
 
@@ -401,3 +404,152 @@ def test_complete_plan_files_returns_sorted_results(tmp_path: Path) -> None:
 
     # Assert
     assert result == ["a-plan.md", "m-plan.md", "z-plan.md"]
+
+
+def test_delete_branch_and_worktree_escapes_cwd_when_inside(tmp_path: Path) -> None:
+    """Test that delete_branch_and_worktree changes CWD before deletion when inside worktree."""
+    # Arrange
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    git_dir = repo_root / ".git"
+    git_dir.mkdir()
+    erk_root = tmp_path / "erks"
+    erk_root.mkdir()
+    worktree_path = tmp_path / "worktrees" / "feature"
+    worktree_path.mkdir(parents=True)
+
+    git = FakeGit(
+        local_branches={repo_root: ["main", "feature"]},
+        remote_branches={repo_root: []},
+        git_common_dirs={repo_root: git_dir},
+        worktrees={repo_root: [WorktreeInfo(path=worktree_path, branch="feature")]},
+    )
+
+    global_config = GlobalConfig.test(
+        erk_root,
+        use_graphite=False,
+        shell_setup_complete=False,
+        show_pr_info=False,
+    )
+
+    ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+
+    # Change to the worktree directory (simulating being inside it)
+    original_cwd = Path.cwd()
+    os.chdir(worktree_path)
+
+    try:
+        # Act
+        delete_branch_and_worktree(ctx, repo_root, "feature", worktree_path)
+
+        # Assert: CWD should have changed to repo_root
+        assert Path.cwd() == repo_root
+
+        # Assert: Worktree removal was called
+        assert worktree_path in git.removed_worktrees
+
+        # Assert: Branch was deleted
+        assert "feature" in git.deleted_branches
+    finally:
+        # Restore original CWD for test cleanup
+        os.chdir(original_cwd)
+
+
+def test_delete_branch_and_worktree_no_escape_when_outside(tmp_path: Path) -> None:
+    """Test that delete_branch_and_worktree does not change CWD when outside worktree."""
+    # Arrange
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    git_dir = repo_root / ".git"
+    git_dir.mkdir()
+    erk_root = tmp_path / "erks"
+    erk_root.mkdir()
+    worktree_path = tmp_path / "worktrees" / "feature"
+    worktree_path.mkdir(parents=True)
+
+    git = FakeGit(
+        local_branches={repo_root: ["main", "feature"]},
+        remote_branches={repo_root: []},
+        git_common_dirs={repo_root: git_dir},
+        worktrees={repo_root: [WorktreeInfo(path=worktree_path, branch="feature")]},
+    )
+
+    global_config = GlobalConfig.test(
+        erk_root,
+        use_graphite=False,
+        shell_setup_complete=False,
+        show_pr_info=False,
+    )
+
+    ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+
+    # Stay at repo_root (not inside worktree)
+    original_cwd = Path.cwd()
+    os.chdir(repo_root)
+
+    try:
+        # Act
+        delete_branch_and_worktree(ctx, repo_root, "feature", worktree_path)
+
+        # Assert: CWD should still be repo_root (unchanged)
+        assert Path.cwd() == repo_root
+
+        # Assert: Worktree removal was called
+        assert worktree_path in git.removed_worktrees
+
+        # Assert: Branch was deleted
+        assert "feature" in git.deleted_branches
+    finally:
+        # Restore original CWD for test cleanup
+        os.chdir(original_cwd)
+
+
+def test_delete_branch_and_worktree_escapes_from_subdirectory(tmp_path: Path) -> None:
+    """Test that delete_branch_and_worktree changes CWD when inside a subdirectory of worktree."""
+    # Arrange
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    git_dir = repo_root / ".git"
+    git_dir.mkdir()
+    erk_root = tmp_path / "erks"
+    erk_root.mkdir()
+    worktree_path = tmp_path / "worktrees" / "feature"
+    worktree_path.mkdir(parents=True)
+    subdir = worktree_path / "src" / "deep"
+    subdir.mkdir(parents=True)
+
+    git = FakeGit(
+        local_branches={repo_root: ["main", "feature"]},
+        remote_branches={repo_root: []},
+        git_common_dirs={repo_root: git_dir},
+        worktrees={repo_root: [WorktreeInfo(path=worktree_path, branch="feature")]},
+    )
+
+    global_config = GlobalConfig.test(
+        erk_root,
+        use_graphite=False,
+        shell_setup_complete=False,
+        show_pr_info=False,
+    )
+
+    ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+
+    # Change to a subdirectory inside the worktree
+    original_cwd = Path.cwd()
+    os.chdir(subdir)
+
+    try:
+        # Act
+        delete_branch_and_worktree(ctx, repo_root, "feature", worktree_path)
+
+        # Assert: CWD should have changed to repo_root
+        assert Path.cwd() == repo_root
+
+        # Assert: Worktree removal was called
+        assert worktree_path in git.removed_worktrees
+
+        # Assert: Branch was deleted
+        assert "feature" in git.deleted_branches
+    finally:
+        # Restore original CWD for test cleanup
+        os.chdir(original_cwd)

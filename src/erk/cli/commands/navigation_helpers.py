@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import click
@@ -106,6 +107,10 @@ def delete_branch_and_worktree(
     Uses two-step deletion: git worktree remove, then branch delete.
     Note: remove_worktree already calls prune internally, so no additional prune needed.
     """
+    # Escape the worktree if we're inside it (prevents FileNotFoundError after removal)
+    cwd = Path.cwd()
+    if cwd == worktree_path or worktree_path in cwd.parents:
+        os.chdir(repo_root)
 
     # Remove the worktree (already calls prune internally)
     ctx.git.remove_worktree(repo_root, worktree_path, force=True)
