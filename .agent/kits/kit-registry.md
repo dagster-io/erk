@@ -13,7 +13,7 @@
 
 <!-- ENTRY_END -->
 
-<!-- ENTRY_START kit_id="dignified-python" version="0.2.0" source="bundled" -->
+<!-- ENTRY_START kit_id="dignified-python" version="0.3.0" source="bundled" -->
 
 @.agent/kits/dignified-python/registry-entry.md
 

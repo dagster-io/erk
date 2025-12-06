@@ -2,7 +2,7 @@
 
 import click
 
-from dot_agent_kit.commands.kit import install, registry, search, show, sync
+from dot_agent_kit.commands.kit import check, install, registry, search, show, sync
 from dot_agent_kit.commands.kit.list import list_installed_kits, ls
 from dot_agent_kit.commands.kit.remove import remove, rm
 
@@ -23,6 +23,7 @@ def kit_group() -> None:
 
 
 # Register all kit commands
+kit_group.add_command(check.check)
 kit_group.add_command(install.install)
 kit_group.add_command(list_installed_kits)
 kit_group.add_command(ls)

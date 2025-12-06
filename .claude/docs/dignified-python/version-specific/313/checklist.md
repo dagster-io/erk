@@ -1,2 +1,1 @@
-- **Never** use `from __future__ import annotations` (unnecessary in Python 3.13)
-- **Always** use modern type syntax: `list[str]`, `str | None`
+../../../../../packages/dot-agent-kit/src/dot_agent_kit/data/kits/dignified-python/docs/dignified-python/version-specific/313/checklist.md
