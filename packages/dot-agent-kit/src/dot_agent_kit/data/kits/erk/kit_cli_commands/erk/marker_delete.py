@@ -12,8 +12,7 @@ import json
 from pathlib import Path
 
 import click
-
-from erk.core.markers import delete_marker, marker_exists
+from erk_shared.scratch.markers import delete_marker, marker_exists
 
 
 @click.command(name="marker-delete")
