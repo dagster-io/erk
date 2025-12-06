@@ -13,18 +13,29 @@ Erk provides a worktree-local scratch directory for inter-process file passing d
 ## Location
 
 ```
-{repo_root}/.erk/scratch/<session-id>/
+{repo_root}/.erk/scratch/sessions/<session-id>/
 ```
 
-Each Claude session gets its own subdirectory, making debugging and auditing easier.
+Each Claude session gets its own subdirectory under `sessions/`, making debugging and auditing easier.
+
+### Directory Structure
+
+```
+.erk/scratch/
+  ├── sessions/<session-id>/     # Session-scoped files (isolated per Claude session)
+  │   ├── pr-diff-abc123.diff
+  │   ├── haiku-input-xyz.xml
+  │   └── ...
+  └── <worktree-scoped files>    # Top-level for worktree-scoped scratch files
+```
 
 ## When to Use Scratch vs /tmp
 
-| Storage                      | Use For                               | Examples                             |
-| ---------------------------- | ------------------------------------- | ------------------------------------ |
-| `.erk/scratch/<session-id>/` | AI workflow intermediate files        | PR diffs, PR bodies, commit messages |
-| `/tmp/erk-*`                 | Shell scripts sourced by parent shell | Shell integration, recovery scripts  |
-| `/tmp/erk-debug.log`         | Global diagnostics                    | Debug logging                        |
+| Storage                               | Use For                               | Examples                             |
+| ------------------------------------- | ------------------------------------- | ------------------------------------ |
+| `.erk/scratch/sessions/<session-id>/` | AI workflow intermediate files        | PR diffs, PR bodies, commit messages |
+| `/tmp/erk-*`                          | Shell scripts sourced by parent shell | Shell integration, recovery scripts  |
+| `/tmp/erk-debug.log`                  | Global diagnostics                    | Debug logging                        |
 
 **Key distinction**: Scratch is scoped to worktree + session. /tmp is for files that must work from any directory.
 
@@ -69,6 +80,6 @@ pr_body = scratch_dir / "pr-body.txt"
 # WRONG: AI workflow files in global /tmp
 Path("/tmp/pr-body-1927.txt")
 
-# RIGHT: AI workflow files in worktree scratch
+# RIGHT: AI workflow files in worktree scratch (sessions/<session-id>/)
 scratch_dir / "pr-body.txt"
 ```

@@ -10,6 +10,7 @@ Two-stage preprocessing architecture:
 Stage 2 is controlled by USE_LLM_DISTILLATION constant.
 """
 
+import uuid
 import warnings
 from datetime import UTC, datetime
 from pathlib import Path
@@ -78,6 +79,10 @@ def create_raw_extraction_plan(
     # Get current session ID if not provided
     if current_session_id is None:
         current_session_id = get_current_session_id()
+
+    # Generate fallback session ID if still None (e.g., running outside Claude session)
+    if current_session_id is None:
+        current_session_id = f"extraction-{uuid.uuid4().hex[:8]}"
 
     # Find project directory
     project_dir = find_project_dir(cwd)

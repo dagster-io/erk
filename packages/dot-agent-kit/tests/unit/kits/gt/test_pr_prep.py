@@ -202,7 +202,7 @@ class TestPrepExecution:
         # Verify the diff file was created in scratch directory
         diff_path = Path(result.diff_file)
         assert diff_path.exists()
-        assert diff_path.parent == tmp_path / ".erk" / "scratch" / "test-session"
+        assert diff_path.parent == tmp_path / ".erk" / "scratch" / "sessions" / "test-session"
         assert diff_path.name.startswith("pr-prep-diff-")
         assert diff_path.name.endswith(".diff")
         # Verify diff content was written
