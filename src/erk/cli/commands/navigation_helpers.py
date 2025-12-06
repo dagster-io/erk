@@ -108,8 +108,11 @@ def delete_branch_and_worktree(
     Note: remove_worktree already calls prune internally, so no additional prune needed.
     """
     # Escape the worktree if we're inside it (prevents FileNotFoundError after removal)
-    cwd = Path.cwd()
-    if cwd == worktree_path or worktree_path in cwd.parents:
+    # Both paths must be resolved for reliable comparison - Path.cwd() returns resolved path
+    # but worktree_path may not be resolved, causing equality check to fail for same directory
+    cwd = Path.cwd().resolve()
+    resolved_worktree = worktree_path.resolve()
+    if cwd == resolved_worktree or resolved_worktree in cwd.parents:
         os.chdir(repo_root)
 
     # Remove the worktree (already calls prune internally)
