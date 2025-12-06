@@ -61,7 +61,7 @@ class FakeGitHub(GitHub):
                         Mapping of branch name -> (state, pr_number, title)
             pr_bases: Mapping of pr_number -> base_branch
             pr_mergeability: Mapping of pr_number -> PRMergeability (None for API errors)
-            pr_details: Mapping of pr_number -> PRDetails for get_pr()
+            pr_details: Mapping of pr_number -> PRDetails for get_pr() and get_pr_for_branch()
             workflow_runs: List of WorkflowRun objects to return from list_workflow_runs
             workflow_runs_by_node_id: Mapping of GraphQL node_id -> WorkflowRun for
                                      get_workflow_runs_by_node_ids()
@@ -124,6 +124,7 @@ class FakeGitHub(GitHub):
         self._pr_diffs = pr_diffs or {}
         self._merge_should_succeed = merge_should_succeed
         self._pr_update_should_succeed = pr_update_should_succeed
+        self._pr_details = pr_details or {}
         self._updated_pr_bases: list[tuple[int, str]] = []
         self._updated_pr_bodies: list[tuple[int, str]] = []
         self._updated_pr_titles: list[tuple[int, str]] = []
@@ -592,6 +593,17 @@ class FakeGitHub(GitHub):
             KeyError: If pr_number not found in pr_details mapping
         """
         return self._pr_details[pr_number]
+
+    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | None:
+        """Get comprehensive PR details for a branch from pre-configured state.
+
+        Returns:
+            PRDetails if a PR exists for the branch, None otherwise
+        """
+        pr = self._prs.get(branch)
+        if pr is None:
+            return None
+        return self._pr_details.get(pr.number)
 
     def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
         """Get PR number and state for a specific branch from configured state.

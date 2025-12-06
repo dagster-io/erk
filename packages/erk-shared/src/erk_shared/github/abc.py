@@ -421,6 +421,19 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
+    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | None:
+        """Get comprehensive PR details for a branch.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Branch name to look up
+
+        Returns:
+            PRDetails if a PR exists for the branch, None otherwise
+        """
+        ...
+
+    @abstractmethod
     def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
         """Get PR number and state for a specific branch.
 
