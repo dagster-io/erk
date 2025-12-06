@@ -50,21 +50,27 @@ Get session ID from SESSION_CONTEXT reminder and branch name from discovery outp
 
 **Session Content Formatting:**
 
-Use the `render_session_content_blocks` function from `erk_shared.github.metadata` to format the session XML:
+Write the preprocessed session XML to a scratch file, then use the `render-session-content` CLI command:
 
-```python
-from erk_shared.github.metadata import render_session_content_blocks
+```bash
+# Write preprocessed session XML to scratch directory
+# Agent writes output to .erk/scratch/<session-id>/session-content.xml
 
-# Get branch name for labeling (e.g., "fix-auth-bug")
-session_label = branch_context.get("branch_name")
+# Render session content blocks
+dot-agent run erk render-session-content \
+    --session-file=.erk/scratch/<session-id>/session-content.xml \
+    --session-label="<branch-name>" \
+    --extraction-hints="Session data for future documentation extraction"
+```
 
-# Render session content as metadata blocks with XML code fences
-# Automatically handles chunking if content exceeds GitHub limits
-comment_bodies = render_session_content_blocks(
-    session_xml_content,
-    session_label=session_label,
-    extraction_hints=["Session data for future documentation extraction"],
-)
+Parse the JSON output to get the `blocks` array:
+
+```json
+{
+  "success": true,
+  "blocks": ["<rendered-block-1>", "<rendered-block-2>"],
+  "chunk_count": 2
+}
 ```
 
 This produces properly formatted metadata blocks:
@@ -73,6 +79,8 @@ This produces properly formatted metadata blocks:
 - Collapsible `<details>` sections
 - Numbered chunks if content exceeds 64K limit (e.g., "Session Data (1/3)")
 - Session label in summary (branch name)
+
+**Note:** Using scratch directory (`.erk/scratch/<session-id>/`) instead of `/tmp/` follows the project's AI workflow file conventions per `docs/agent/planning/scratch-storage.md`.
 
 **Create the issue:**
 
