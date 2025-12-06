@@ -21,13 +21,11 @@ from erk.core.repo_discovery import ensure_erk_metadata_dir
     help="Plan file to read",
 )
 @click.option("--title", "-t", type=str, help="Issue title (default: extract from H1)")
-@click.option("--label", "-l", multiple=True, help="Additional labels")
 @click.pass_obj
 def create_plan(
     ctx: ErkContext,
     file: Path | None,
     title: str | None,
-    label: tuple[str, ...],
 ) -> None:
     """Create a plan issue from markdown content.
 
@@ -39,7 +37,6 @@ def create_plan(
         erk create --file plan.md
         cat plan.md | erk create
         erk create --file plan.md --title "Custom Title"
-        erk create --file plan.md --label bug --label urgent
     """
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
@@ -70,16 +67,13 @@ def create_plan(
     # Validate content is not empty
     Ensure.not_empty(content.strip(), "Plan content is empty. Provide a non-empty plan.")
 
-    # Convert extra labels tuple to list
-    extra_labels = list(label) if label else None
-
     # Use consolidated create_plan_issue for the entire workflow
     result = create_plan_issue(
         github_issues=ctx.issues,
         repo_root=repo_root,
         plan_content=content,
         title=title,
-        extra_labels=extra_labels,
+        plan_type="standard",
     )
 
     if not result.success:

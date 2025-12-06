@@ -116,33 +116,6 @@ def test_create_with_explicit_title(tmp_path) -> None:
         assert title == "Custom Title [erk-plan]"
 
 
-def test_create_with_additional_labels(tmp_path) -> None:
-    """Test adding multiple custom labels."""
-    # Arrange
-    plan_file = tmp_path / "plan.md"
-    plan_content = "# Bug Fix\n\nFix critical bug"
-    plan_file.write_text(plan_content, encoding="utf-8")
-
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues()
-        ctx = build_workspace_test_context(env, issues=issues)
-
-        # Act
-        result = runner.invoke(
-            cli,
-            ["plan", "create", "--file", str(plan_file), "--label", "bug", "--label", "urgent"],
-            obj=ctx,
-        )
-
-        # Assert
-        assert result.exit_code == 0
-        title, body, labels = issues.created_issues[0]
-        assert "erk-plan" in labels
-        assert "bug" in labels
-        assert "urgent" in labels
-
-
 def test_create_fails_with_no_input() -> None:
     """Test error when no input provided (empty stdin)."""
     # Arrange
