@@ -37,13 +37,92 @@ from erk_shared.github.metadata import (
 # When False: Stage 1 only (deterministic, no LLM cost)
 USE_LLM_DISTILLATION = False
 
-# Default issue body content for raw extraction plans
-RAW_EXTRACTION_BODY = """# Raw Session Context
+# Template for raw extraction plan body (branch_name will be interpolated)
+RAW_EXTRACTION_BODY_TEMPLATE = """# Extraction Plan: {branch_name}
 
-This issue contains raw preprocessed session data from the landed PR.
+## Objective
 
-See comments below for session XML content.
+Analyze session context to identify documentation gaps and create documentation improvements.
+
+## Source
+
+- **Branch:** {branch_name}
+- **Session IDs:** See plan-header metadata
+- **Session Data:** See comments below
+
+## Implementation Steps
+
+### Step 1: Read Session Data
+
+Read and parse the session XML from the issue comments below. The XML contains:
+- `<session>` blocks: Individual conversation sessions
+- `<user>` and `<assistant>` elements: Conversation turns
+- `<tool_use>` and `<tool_result>`: Tool invocations and results
+
+### Step 2: Verify Existing Documentation
+
+Before analyzing gaps, scan the project:
+- `docs/agent/` - Existing agent docs
+- `.claude/skills/` - Existing skills
+- `docs/agent/glossary.md` - Terms and definitions
+
+### Step 3: Identify Category A - Learning Gaps
+
+Documentation that would have made the session MORE EFFICIENT. Signals:
+- Repeated explanations of the same concept
+- Trial-and-error before finding the right approach
+- Extensive codebase exploration for core patterns
+- User redirecting the agent's approach
+- WebSearch/WebFetch for locally-documentable info
+
+### Step 4: Identify Category B - Teaching Gaps
+
+Documentation needed for what was BUILT. Signals:
+- New CLI commands (need glossary + routing entries)
+- New constants/labels (need glossary entries)
+- New patterns established (need agent doc)
+- New configuration options
+- New ABC/interfaces
+
+### Step 5: Categorize Each Finding
+
+For each finding, determine:
+- **Type:** Agent Doc (`docs/agent/`) or Skill (`.claude/skills/`)
+- **Action:** New doc | Update existing | Merge into
+- **Priority:** High (significant friction) | Medium | Low
+
+### Step 6: Generate Documentation
+
+For each suggestion:
+1. Create the documentation file with draft content
+2. Add routing entry to AGENTS.md if applicable
+3. Update glossary.md for new terms/commands
+
+### Step 7: Verify Changes
+
+Run `make fast-ci` to validate all changes pass CI.
+
+---
+
+## Output Format
+
+For each documentation item created, report:
+- File path created/updated
+- Type (Agent Doc, Skill, Glossary, Routing)
+- Brief description of what was documented
 """
+
+
+def get_raw_extraction_body(branch_name: str) -> str:
+    """Get the raw extraction plan body with branch name interpolated.
+
+    Args:
+        branch_name: The branch name to include in the plan.
+
+    Returns:
+        The formatted extraction plan body.
+    """
+    return RAW_EXTRACTION_BODY_TEMPLATE.format(branch_name=branch_name)
 
 
 def create_raw_extraction_plan(
@@ -216,8 +295,9 @@ def create_raw_extraction_plan(
         extraction_session_ids=session_ids,
     )
 
-    # Append the raw extraction body
-    issue_body = f"{formatted_body}\n\n{RAW_EXTRACTION_BODY}"
+    # Append the raw extraction body with branch name
+    raw_body = get_raw_extraction_body(session_label)
+    issue_body = f"{formatted_body}\n\n{raw_body}"
 
     # Ensure labels exist
     labels = ["erk-plan", "erk-extraction"]
