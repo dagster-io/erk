@@ -21,29 +21,102 @@ PROCESS_TIMEOUT_SECONDS = 600  # 10 minutes
 STDERR_JOIN_TIMEOUT = 5.0  # 5 seconds (increased from 1.0)
 
 
-@dataclass
-class StreamEvent:
-    """Event emitted during streaming execution.
+# =============================================================================
+# Typed Claude CLI Events
+# =============================================================================
 
-    Attributes:
-        event_type: Type of event:
-            - "text": Text content from Claude
-            - "tool": Tool usage summary
-            - "spinner_update": Status update for spinner display
-            - "pr_url": Pull request URL
-            - "pr_number": Pull request number
-            - "pr_title": Pull request title
-            - "issue_number": GitHub issue number
-            - "error": Error with non-zero exit code
-            - "no_output": Claude CLI produced no output (diagnostic info)
-            - "no_turns": Claude completed with num_turns=0 (likely hook blocking)
-            - "process_error": Failed to start or timeout (Popen failure, timeout)
-        content: The content of the event (text message, tool summary, spinner text,
-            PR URL, PR number, PR title, issue number, or error/diagnostic details)
-    """
 
-    event_type: str
+@dataclass(frozen=True)
+class TextEvent:
+    """Text content from Claude."""
+
     content: str
+
+
+@dataclass(frozen=True)
+class ToolEvent:
+    """Tool usage summary."""
+
+    summary: str
+
+
+@dataclass(frozen=True)
+class SpinnerUpdateEvent:
+    """Status update for spinner display."""
+
+    status: str
+
+
+@dataclass(frozen=True)
+class PrUrlEvent:
+    """Pull request URL."""
+
+    url: str
+
+
+@dataclass(frozen=True)
+class PrNumberEvent:
+    """Pull request number."""
+
+    number: int
+
+
+@dataclass(frozen=True)
+class PrTitleEvent:
+    """Pull request title."""
+
+    title: str
+
+
+@dataclass(frozen=True)
+class IssueNumberEvent:
+    """GitHub issue number."""
+
+    number: int
+
+
+@dataclass(frozen=True)
+class ErrorEvent:
+    """Error with non-zero exit code."""
+
+    message: str
+
+
+@dataclass(frozen=True)
+class NoOutputEvent:
+    """Claude CLI produced no output."""
+
+    diagnostic: str
+
+
+@dataclass(frozen=True)
+class NoTurnsEvent:
+    """Claude completed with num_turns=0 (hook blocking)."""
+
+    diagnostic: str
+
+
+@dataclass(frozen=True)
+class ProcessErrorEvent:
+    """Failed to start or timeout."""
+
+    message: str
+
+
+# Union type for all Claude events
+ClaudeEvent = (
+    TextEvent
+    | ToolEvent
+    | SpinnerUpdateEvent
+    | PrUrlEvent
+    | PrNumberEvent
+    | PrTitleEvent
+    | IssueNumberEvent
+    | ErrorEvent
+    | NoOutputEvent
+    | NoTurnsEvent
+    | ProcessErrorEvent
+)
 
 
 @dataclass
@@ -115,8 +188,8 @@ class ClaudeExecutor(ABC):
         dangerous: bool,
         verbose: bool = False,
         debug: bool = False,
-    ) -> Iterator[StreamEvent]:
-        """Execute Claude CLI command and yield StreamEvents in real-time.
+    ) -> Iterator[ClaudeEvent]:
+        """Execute Claude CLI command and yield typed events in real-time.
 
         Args:
             command: The slash command to execute (e.g., "/erk:plan-implement")
@@ -126,7 +199,7 @@ class ClaudeExecutor(ABC):
             debug: Whether to emit debug output for stream parsing
 
         Yields:
-            StreamEvent objects as they occur during execution
+            ClaudeEvent objects as they occur during execution
 
         Example:
             >>> executor = RealClaudeExecutor()
@@ -135,8 +208,9 @@ class ClaudeExecutor(ABC):
             ...     Path("/repos/my-project"),
             ...     dangerous=False
             ... ):
-            ...     if event.event_type == "tool":
-            ...         print(f"Tool: {event.content}")
+            ...     match event:
+            ...         case ToolEvent(summary=s):
+            ...             print(f"Tool: {s}")
         """
         ...
 
@@ -182,34 +256,33 @@ class ClaudeExecutor(ABC):
         success = True
 
         for event in self.execute_command_streaming(command, worktree_path, dangerous, verbose):
-            if event.event_type == "text":
-                filtered_messages.append(event.content)
-            elif event.event_type == "tool":
-                filtered_messages.append(event.content)
-            elif event.event_type == "pr_url":
-                pr_url = event.content
-            elif event.event_type == "pr_number":
-                # Convert string back to int - safe because we control the source
-                if event.content.isdigit():
-                    pr_number = int(event.content)
-            elif event.event_type == "pr_title":
-                pr_title = event.content
-            elif event.event_type == "issue_number":
-                # Convert string back to int - safe because we control the source
-                if event.content.isdigit():
-                    issue_number = int(event.content)
-            elif event.event_type == "error":
-                error_message = event.content
-                success = False
-            elif event.event_type == "no_output":
-                error_message = event.content
-                success = False
-            elif event.event_type == "no_turns":
-                error_message = event.content
-                success = False
-            elif event.event_type == "process_error":
-                error_message = event.content
-                success = False
+            match event:
+                case TextEvent(content=text):
+                    filtered_messages.append(text)
+                case ToolEvent(summary=summary):
+                    filtered_messages.append(summary)
+                case PrUrlEvent(url=url):
+                    pr_url = url
+                case PrNumberEvent(number=num):
+                    pr_number = num
+                case PrTitleEvent(title=title):
+                    pr_title = title
+                case IssueNumberEvent(number=num):
+                    issue_number = num
+                case ErrorEvent(message=msg):
+                    error_message = msg
+                    success = False
+                case NoOutputEvent(diagnostic=diag):
+                    error_message = diag
+                    success = False
+                case NoTurnsEvent(diagnostic=diag):
+                    error_message = diag
+                    success = False
+                case ProcessErrorEvent(message=msg):
+                    error_message = msg
+                    success = False
+                case SpinnerUpdateEvent():
+                    pass  # Spinner updates not captured in CommandResult
 
         duration = time.time() - start_time
         return CommandResult(
@@ -342,8 +415,8 @@ class RealClaudeExecutor(ClaudeExecutor):
         dangerous: bool,
         verbose: bool = False,
         debug: bool = False,
-    ) -> Iterator[StreamEvent]:
-        """Execute Claude CLI command and yield StreamEvents in real-time.
+    ) -> Iterator[ClaudeEvent]:
+        """Execute Claude CLI command and yield typed events in real-time.
 
         Implementation details:
         - Uses subprocess.Popen() for streaming stdout line-by-line
@@ -372,7 +445,7 @@ class RealClaudeExecutor(ClaudeExecutor):
 
             if result.returncode != 0:
                 error_msg = f"Claude command {command} failed with exit code {result.returncode}"
-                yield StreamEvent("error", error_msg)
+                yield ErrorEvent(message=error_msg)
             return
 
         # Filtered mode - streaming with real-time parsing
@@ -392,9 +465,8 @@ class RealClaudeExecutor(ClaudeExecutor):
                 bufsize=1,  # Line buffered
             )
         except OSError as e:
-            yield StreamEvent(
-                "process_error",
-                f"Failed to start Claude CLI: {e}\nCommand: {' '.join(cmd_args)}",
+            yield ProcessErrorEvent(
+                message=f"Failed to start Claude CLI: {e}\nCommand: {' '.join(cmd_args)}"
             )
             return
 
@@ -446,50 +518,54 @@ class RealClaudeExecutor(ClaudeExecutor):
                 # Yield text content and extract metadata from it
                 text_content = parsed.get("text_content")
                 if text_content is not None and isinstance(text_content, str):
-                    yield StreamEvent("text", text_content)
+                    yield TextEvent(content=text_content)
 
                     # Also try to extract PR metadata from text (simpler than nested JSON)
                     from erk.core.output_filter import extract_pr_metadata_from_text
 
                     text_metadata = extract_pr_metadata_from_text(text_content)
-                    if text_metadata.get("pr_url"):
-                        yield StreamEvent("pr_url", str(text_metadata["pr_url"]))
-                    if text_metadata.get("pr_number"):
-                        yield StreamEvent("pr_number", str(text_metadata["pr_number"]))
-                    if text_metadata.get("pr_title"):
-                        yield StreamEvent("pr_title", str(text_metadata["pr_title"]))
-                    if text_metadata.get("issue_number"):
-                        yield StreamEvent("issue_number", str(text_metadata["issue_number"]))
+                    text_pr_url = text_metadata.get("pr_url")
+                    if text_pr_url is not None:
+                        yield PrUrlEvent(url=str(text_pr_url))
+                    text_pr_number = text_metadata.get("pr_number")
+                    if text_pr_number is not None:
+                        yield PrNumberEvent(number=int(text_pr_number))
+                    text_pr_title = text_metadata.get("pr_title")
+                    if text_pr_title is not None:
+                        yield PrTitleEvent(title=str(text_pr_title))
+                    text_issue_number = text_metadata.get("issue_number")
+                    if text_issue_number is not None:
+                        yield IssueNumberEvent(number=int(text_issue_number))
 
                 # Yield tool summaries
                 tool_summary = parsed.get("tool_summary")
                 if tool_summary is not None and isinstance(tool_summary, str):
-                    yield StreamEvent("tool", tool_summary)
+                    yield ToolEvent(summary=tool_summary)
 
                 # Yield spinner updates
                 spinner_text = parsed.get("spinner_update")
                 if spinner_text is not None and isinstance(spinner_text, str):
-                    yield StreamEvent("spinner_update", spinner_text)
+                    yield SpinnerUpdateEvent(status=spinner_text)
 
                 # Yield PR URL
                 pr_url_value = parsed.get("pr_url")
                 if pr_url_value is not None:
-                    yield StreamEvent("pr_url", str(pr_url_value))
+                    yield PrUrlEvent(url=str(pr_url_value))
 
                 # Yield PR number
                 pr_number_value = parsed.get("pr_number")
                 if pr_number_value is not None:
-                    yield StreamEvent("pr_number", str(pr_number_value))
+                    yield PrNumberEvent(number=int(pr_number_value))
 
                 # Yield PR title
                 pr_title_value = parsed.get("pr_title")
                 if pr_title_value is not None:
-                    yield StreamEvent("pr_title", str(pr_title_value))
+                    yield PrTitleEvent(title=str(pr_title_value))
 
                 # Yield issue number
                 issue_number_value = parsed.get("issue_number")
                 if issue_number_value is not None:
-                    yield StreamEvent("issue_number", str(issue_number_value))
+                    yield IssueNumberEvent(number=int(issue_number_value))
 
                 # Detect zero-turn completions (hook blocking)
                 num_turns = parsed.get("num_turns")
@@ -498,7 +574,7 @@ class RealClaudeExecutor(ClaudeExecutor):
                     diag += "\n  This usually means a hook blocked the command"
                     diag += "\n  Run 'claude' directly to see hook error messages"
                     diag += f"\n  Working directory: {worktree_path}"
-                    yield StreamEvent("no_turns", diag)
+                    yield NoTurnsEvent(diagnostic=diag)
 
         if debug:
             print(
@@ -513,9 +589,9 @@ class RealClaudeExecutor(ClaudeExecutor):
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait()
-            yield StreamEvent(
-                "process_error",
-                f"Claude command {command} timed out after {PROCESS_TIMEOUT_SECONDS // 60} minutes",
+            timeout_minutes = PROCESS_TIMEOUT_SECONDS // 60
+            yield ProcessErrorEvent(
+                message=f"Claude command {command} timed out after {timeout_minutes} minutes"
             )
             return
 
@@ -529,10 +605,10 @@ class RealClaudeExecutor(ClaudeExecutor):
             diag += f"\n  Working directory: {worktree_path}"
             if stderr_output:
                 diag += "\n  Stderr:\n" + "".join(stderr_output)
-            yield StreamEvent("no_output", diag)
+            yield NoOutputEvent(diagnostic=diag)
 
             if returncode != 0:
-                yield StreamEvent("error", f"Exit code {returncode}")
+                yield ErrorEvent(message=f"Exit code {returncode}")
             return
 
         # Enhanced error messages for non-zero exit codes
@@ -542,7 +618,7 @@ class RealClaudeExecutor(ClaudeExecutor):
             error_msg += f"\n  Lines processed: {line_count}"
             if stderr_output:
                 error_msg += "\n  Stderr:\n" + "".join(stderr_output).strip()
-            yield StreamEvent("error", error_msg)
+            yield ErrorEvent(message=error_msg)
 
         # Debug summary
         if debug:

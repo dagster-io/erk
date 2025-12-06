@@ -7,7 +7,23 @@ requiring the actual Claude CLI or using subprocess mocks.
 from collections.abc import Iterator
 from pathlib import Path
 
-from erk.core.claude_executor import ClaudeExecutor, CommandResult, PromptResult, StreamEvent
+from erk.core.claude_executor import (
+    ClaudeEvent,
+    ClaudeExecutor,
+    CommandResult,
+    ErrorEvent,
+    IssueNumberEvent,
+    NoOutputEvent,
+    NoTurnsEvent,
+    PrNumberEvent,
+    ProcessErrorEvent,
+    PromptResult,
+    PrTitleEvent,
+    PrUrlEvent,
+    SpinnerUpdateEvent,
+    TextEvent,
+    ToolEvent,
+)
 
 
 class FakeClaudeExecutor(ClaudeExecutor):
@@ -111,8 +127,8 @@ class FakeClaudeExecutor(ClaudeExecutor):
         dangerous: bool,
         verbose: bool = False,
         debug: bool = False,
-    ) -> Iterator[StreamEvent]:
-        """Track command execution and yield simulated streaming events.
+    ) -> Iterator[ClaudeEvent]:
+        """Track command execution and yield simulated typed events.
 
         This method records the call parameters for test assertions.
         It does not execute any actual subprocess operations.
@@ -125,7 +141,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
             debug: Whether to emit debug output for stream parsing
 
         Yields:
-            StreamEvent objects simulating command execution
+            ClaudeEvent objects simulating command execution
 
         Raises:
             RuntimeError: If command_should_fail was set to True
@@ -134,14 +150,13 @@ class FakeClaudeExecutor(ClaudeExecutor):
 
         # Process error takes precedence (simulates Popen failure)
         if self._simulated_process_error is not None:
-            yield StreamEvent("process_error", self._simulated_process_error)
+            yield ProcessErrorEvent(message=self._simulated_process_error)
             return
 
         # No output simulation (simulates Claude CLI producing no output)
         if self._simulated_no_output:
-            yield StreamEvent(
-                "no_output",
-                f"Claude command {command} completed but produced no output",
+            yield NoOutputEvent(
+                diagnostic=f"Claude command {command} completed but produced no output"
             )
             return
 
@@ -151,32 +166,32 @@ class FakeClaudeExecutor(ClaudeExecutor):
             diag += "\n  This usually means a hook blocked the command"
             diag += "\n  Run 'claude' directly to see hook error messages"
             diag += f"\n  Working directory: {worktree_path}"
-            yield StreamEvent("no_turns", diag)
+            yield NoTurnsEvent(diagnostic=diag)
             return
 
         if self._command_should_fail:
-            yield StreamEvent("error", f"Claude command {command} failed (simulated failure)")
+            yield ErrorEvent(message=f"Claude command {command} failed (simulated failure)")
             return
 
         # Simulate some basic streaming events
-        yield StreamEvent("text", "Starting execution...")
-        yield StreamEvent("spinner_update", f"Running {command}...")
+        yield TextEvent(content="Starting execution...")
+        yield SpinnerUpdateEvent(status=f"Running {command}...")
 
         # Yield any configured tool events
         for tool_event in self._simulated_tool_events:
-            yield StreamEvent("tool", tool_event)
+            yield ToolEvent(summary=tool_event)
 
-        yield StreamEvent("text", "Execution complete")
+        yield TextEvent(content="Execution complete")
 
         # Yield PR metadata if configured
         if self._simulated_pr_url is not None:
-            yield StreamEvent("pr_url", self._simulated_pr_url)
+            yield PrUrlEvent(url=self._simulated_pr_url)
         if self._simulated_pr_number is not None:
-            yield StreamEvent("pr_number", str(self._simulated_pr_number))
+            yield PrNumberEvent(number=self._simulated_pr_number)
         if self._simulated_pr_title is not None:
-            yield StreamEvent("pr_title", self._simulated_pr_title)
+            yield PrTitleEvent(title=self._simulated_pr_title)
         if self._simulated_issue_number is not None:
-            yield StreamEvent("issue_number", str(self._simulated_issue_number))
+            yield IssueNumberEvent(number=self._simulated_issue_number)
 
     def execute_command(
         self, command: str, worktree_path: Path, dangerous: bool, verbose: bool = False

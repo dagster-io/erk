@@ -2,7 +2,7 @@
 
 ## Categories
 
-- **[architecture/](architecture/)** — at-reference-resolution, claude-cli-integration, command-boundaries, commandresult-extension-pattern, erk-architecture, github-parsing, pathlib-symlinks, protocol-vs-abc, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
+- **[architecture/](architecture/)** — at-reference-resolution, claude-cli-integration, claude-cli-progress, command-boundaries, commandresult-extension-pattern, erk-architecture, github-parsing, pathlib-symlinks, protocol-vs-abc, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
 - **[cli/](cli/)** — command-organization, list-formatting, output-styling, script-mode, template-variables
 - **[commands/](commands/)** — behavioral-triggers, optimization-patterns
 - **[erk/](erk/)** — branch-cleanup, graphite-branch-setup
