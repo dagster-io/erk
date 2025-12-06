@@ -34,7 +34,7 @@ def check_pending_extraction_marker(worktree_path: Path, force: bool) -> None:
 
     This provides friction before worktree deletion to ensure insights are
     extracted from the session logs. The marker is created by `erk pr land`
-    and deleted by `/erk:create-raw-extraction-plan`.
+    and deleted by `claude /erk:create-raw-extraction-plan`.
 
     Args:
         worktree_path: Path to the worktree being deleted
@@ -54,8 +54,8 @@ def check_pending_extraction_marker(worktree_path: Path, force: bool) -> None:
 
     user_output(
         click.style("Error: ", fg="red") + "Worktree has pending extraction.\n"
-        "Run /erk:create-raw-extraction-plan to extract insights first,\n"
-        "or use --force to skip extraction."
+        "Run: claude /erk:create-raw-extraction-plan\n"
+        "Or use --force to skip extraction."
     )
     raise SystemExit(1)
 

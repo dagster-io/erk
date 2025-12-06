@@ -307,7 +307,7 @@ def test_delete_blocks_when_pending_extraction_marker_exists() -> None:
             result,
             1,
             "Worktree has pending extraction",
-            "/erk:create-raw-extraction-plan",
+            "claude /erk:create-raw-extraction-plan",
         )
 
         # Verify worktree was NOT deleted
