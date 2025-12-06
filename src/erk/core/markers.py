@@ -23,7 +23,7 @@ PENDING_EXTRACTION_MARKER = "pending-extraction"
 
 
 def get_marker_path(worktree_path: Path, marker_name: str) -> Path:
-    """Get path to a marker file in worktree's .erk/ directory.
+    """Get path to a marker file in worktree's .erk/scratch/__erk_markers/ directory.
 
     Args:
         worktree_path: Path to the worktree directory
@@ -32,7 +32,7 @@ def get_marker_path(worktree_path: Path, marker_name: str) -> Path:
     Returns:
         Path to the marker file (may not exist)
     """
-    return worktree_path / ".erk" / marker_name
+    return worktree_path / ".erk" / "scratch" / "__erk_markers" / marker_name
 
 
 def create_marker(worktree_path: Path, marker_name: str) -> None:

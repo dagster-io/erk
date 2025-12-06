@@ -12,17 +12,17 @@ from erk.core.markers import (
 
 
 def test_get_marker_path_returns_correct_path(tmp_path: Path) -> None:
-    """Test that get_marker_path returns path in .erk directory."""
+    """Test that get_marker_path returns path in .erk/scratch/__erk_markers/ directory."""
     result = get_marker_path(tmp_path, "test-marker")
 
-    assert result == tmp_path / ".erk" / "test-marker"
+    assert result == tmp_path / ".erk" / "scratch" / "__erk_markers" / "test-marker"
 
 
 def test_create_marker_creates_file_and_parent_directory(tmp_path: Path) -> None:
-    """Test that create_marker creates the marker file and .erk directory."""
+    """Test that create_marker creates the marker file and parent directories."""
     create_marker(tmp_path, PENDING_EXTRACTION_MARKER)
 
-    marker_path = tmp_path / ".erk" / PENDING_EXTRACTION_MARKER
+    marker_path = tmp_path / ".erk" / "scratch" / "__erk_markers" / PENDING_EXTRACTION_MARKER
     assert marker_path.exists()
     assert marker_path.is_file()
 
@@ -34,7 +34,7 @@ def test_create_marker_works_when_erk_directory_exists(tmp_path: Path) -> None:
 
     create_marker(tmp_path, PENDING_EXTRACTION_MARKER)
 
-    marker_path = erk_dir / PENDING_EXTRACTION_MARKER
+    marker_path = erk_dir / "scratch" / "__erk_markers" / PENDING_EXTRACTION_MARKER
     assert marker_path.exists()
 
 
