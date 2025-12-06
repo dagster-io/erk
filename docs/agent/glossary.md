@@ -101,6 +101,21 @@ The absolute path to a specific erk directory.
 
 **Code**: `worktree_path_for(repo.erks_dir, "my-feature")`
 
+### Branch Naming Convention
+
+Erk branches follow the pattern `{issue_number}-{slug}-{timestamp}`:
+
+- `{issue_number}` - GitHub issue number (extracted by `extract_leading_issue_number()`)
+- `{slug}` - Kebab-case description of the work
+- `{timestamp}` - Creation timestamp in `MM-DD-HHMM` format
+
+**Examples**:
+
+- `2382-convert-erk-create-raw-ext-12-05-2359`
+- `123-fix-auth-bug-01-15-1430`
+
+**Automatic extraction**: `get_branch_issue()` uses this pattern to determine which GitHub issue a branch relates to, without requiring git config setup.
+
 ### Project
 
 A subdirectory within a git repository that has its own erk configuration context.
