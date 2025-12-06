@@ -152,8 +152,9 @@ def pr_sync(ctx: ErkContext) -> None:
     user_output(click.style("✓", fg="green") + " Restack complete")
 
     # Step 8: Submit to link with Graphite
+    # Force push is required because squashing rewrites history, causing divergence from remote
     user_output("Submitting to link with Graphite...")
-    ctx.graphite.submit_stack(repo.root, quiet=True)
+    ctx.graphite.submit_stack(repo.root, quiet=True, force=True)
     user_output(click.style("✓", fg="green") + f" PR #{pr_number} synchronized with Graphite")
 
     user_output(f"\nBranch '{current_branch}' is now tracked by Graphite.")

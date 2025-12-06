@@ -77,9 +77,11 @@ def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
         assert len(graphite.restack_calls) == 1
         assert graphite.restack_calls[0] == (env.cwd, True, True)
 
-        # Verify submit was called
+        # Verify submit was called with force=True (needed after squashing)
         assert len(graphite.submit_stack_calls) == 1
-        assert graphite.submit_stack_calls[0][0] == env.cwd
+        repo_root, publish, restack, quiet, force = graphite.submit_stack_calls[0]
+        assert repo_root == env.cwd
+        assert force is True  # Required because squashing rewrites history
 
 
 def test_pr_sync_succeeds_silently_when_already_tracked(tmp_path: Path) -> None:
