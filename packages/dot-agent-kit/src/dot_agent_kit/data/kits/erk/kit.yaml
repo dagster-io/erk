@@ -114,6 +114,9 @@ kit_cli_commands:
   - name: exit-plan-mode-hook
     path: kit_cli_commands/erk/exit_plan_mode_hook.py
     description: Save plan to GitHub when ExitPlanMode is called
+  - name: touch-scratch-marker
+    path: kit_cli_commands/erk/touch_scratch_marker.py
+    description: Create scratch directory and optional marker file for session
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit

@@ -142,8 +142,10 @@ def test_plan_exists_no_marker_blocks(tmp_path: Path) -> None:
     assert "(default)" in result.output
     assert "Does NOT proceed to implementation" in result.output
     assert "Implement now" in result.output
-    # Skip marker path should be documented (for "Implement now" flow)
-    assert f".erk/scratch/{session_id}/skip-plan-save" in result.output
+    # Skip marker should be created via kit command (for "Implement now" flow)
+    assert "touch-scratch-marker" in result.output
+    assert f"--session-id {session_id}" in result.output
+    assert "--marker skip-plan-save" in result.output
     # Saved marker is NOT documented - /erk:save-plan handles it internally
     assert "Do NOT call ExitPlanMode" in result.output
 
