@@ -89,3 +89,7 @@ class DryRunGraphite(Graphite):
     ) -> None:
         """No-op for gt submit in dry-run mode."""
         pass
+
+    def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
+        """No-op for gt continue in dry-run mode."""
+        pass

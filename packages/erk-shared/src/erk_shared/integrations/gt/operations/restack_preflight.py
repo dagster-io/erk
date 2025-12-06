@@ -1,0 +1,91 @@
+"""Restack preflight operation - squash commits and attempt restack.
+
+Squashes all commits on the current branch, then attempts gt restack --no-interactive.
+Detects conflicts and reports them for manual resolution.
+"""
+
+import subprocess
+from collections.abc import Generator
+from pathlib import Path
+
+from erk_shared.integrations.gt.abc import GtKit
+from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.integrations.gt.operations.squash import execute_squash
+from erk_shared.integrations.gt.types import (
+    RestackPreflightError,
+    RestackPreflightSuccess,
+    SquashError,
+)
+
+
+def execute_restack_preflight(
+    ops: GtKit,
+    cwd: Path,
+) -> Generator[ProgressEvent | CompletionEvent[RestackPreflightSuccess | RestackPreflightError]]:
+    """Execute restack preflight: squash + restack attempt + detect conflicts.
+
+    Args:
+        ops: GtKit for dependency injection.
+        cwd: Working directory (repository path).
+
+    Yields:
+        ProgressEvent for status updates
+        CompletionEvent with RestackPreflightSuccess or RestackPreflightError.
+    """
+    # Get repository root
+    repo_root = ops.git.get_repository_root(cwd)
+    branch_name = ops.git.get_current_branch(cwd) or "unknown"
+
+    # Step 1: Squash commits (reuse existing squash operation)
+    yield ProgressEvent("Squashing commits...")
+    for event in execute_squash(ops, cwd):
+        if isinstance(event, CompletionEvent):
+            result = event.result
+            if isinstance(result, SquashError):
+                yield CompletionEvent(
+                    RestackPreflightError(
+                        success=False,
+                        error_type="squash_failed"
+                        if result.error == "squash_failed"
+                        else "squash_conflict"
+                        if result.error == "squash_conflict"
+                        else "no_commits",
+                        message=result.message,
+                        details={"squash_error": result.error},
+                    )
+                )
+                return
+        else:
+            yield event
+
+    # Step 2: Attempt gt restack --no-interactive
+    yield ProgressEvent("Running gt restack...")
+    try:
+        ops.graphite.restack(repo_root, no_interactive=True, quiet=True)
+    except (subprocess.CalledProcessError, RuntimeError):
+        pass  # Expected if conflicts
+
+    # Step 3: Check for conflicts
+    if ops.git.is_rebase_in_progress(cwd):
+        conflicts = ops.git.get_conflicted_files(cwd)
+        yield ProgressEvent(f"Found {len(conflicts)} conflict(s)", style="warning")
+        yield CompletionEvent(
+            RestackPreflightSuccess(
+                success=True,
+                has_conflicts=True,
+                conflicts=conflicts,
+                branch_name=branch_name,
+                message=f"{len(conflicts)} conflict(s) detected",
+            )
+        )
+    else:
+        yield ProgressEvent("Restack completed successfully", style="success")
+        yield CompletionEvent(
+            RestackPreflightSuccess(
+                success=True,
+                has_conflicts=False,
+                conflicts=[],
+                branch_name=branch_name,
+                message="Restack completed successfully",
+            )
+        )

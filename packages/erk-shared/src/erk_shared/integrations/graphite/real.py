@@ -374,3 +374,21 @@ class RealGraphite(Graphite):
             raise RuntimeError(
                 f"gt submit failed (exit code {e.returncode}): {e.stderr or ''}"
             ) from e
+
+    def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
+        """Run gt continue to continue an in-progress restack."""
+        cmd = ["gt", "continue"]
+
+        result = run_subprocess_with_context(
+            cmd,
+            operation_context="continue restack with Graphite (gt continue)",
+            cwd=repo_root,
+            stdout=DEVNULL if quiet else subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        if not quiet and result.stderr:
+            user_output(result.stderr, nl=False)
+
+        # Invalidate branches cache - gt continue modifies Graphite metadata
+        self._branches_cache = None

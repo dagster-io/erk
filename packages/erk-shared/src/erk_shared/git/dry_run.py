@@ -263,3 +263,16 @@ class DryRunGit(Git):
     def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
         """Get remote URL (read-only, delegates to wrapped)."""
         return self._wrapped.get_remote_url(repo_root, remote)
+
+    def get_conflicted_files(self, cwd: Path) -> list[str]:
+        """Get conflicted files (read-only, delegates to wrapped)."""
+        return self._wrapped.get_conflicted_files(cwd)
+
+    def is_rebase_in_progress(self, cwd: Path) -> bool:
+        """Check if rebase in progress (read-only, delegates to wrapped)."""
+        return self._wrapped.is_rebase_in_progress(cwd)
+
+    def rebase_continue(self, cwd: Path) -> None:
+        """No-op for continuing rebase in dry-run mode."""
+        # Do nothing - prevents actual rebase continue
+        pass

@@ -595,3 +595,43 @@ class Git(ABC):
             ValueError: If remote doesn't exist or has no URL
         """
         ...
+
+    @abstractmethod
+    def get_conflicted_files(self, cwd: Path) -> list[str]:
+        """Get list of files with merge conflicts from git status --porcelain.
+
+        Returns file paths with conflict status codes (UU, AA, DD, AU, UA, DU, UD).
+
+        Args:
+            cwd: Working directory
+
+        Returns:
+            List of file paths with conflicts
+        """
+        ...
+
+    @abstractmethod
+    def is_rebase_in_progress(self, cwd: Path) -> bool:
+        """Check if rebase in progress (.git/rebase-merge or .git/rebase-apply).
+
+        Handles worktrees by checking git common dir.
+
+        Args:
+            cwd: Working directory
+
+        Returns:
+            True if a rebase is in progress
+        """
+        ...
+
+    @abstractmethod
+    def rebase_continue(self, cwd: Path) -> None:
+        """Continue an in-progress rebase (git rebase --continue).
+
+        Args:
+            cwd: Working directory
+
+        Raises:
+            subprocess.CalledProcessError: If continue fails (e.g., unresolved conflicts)
+        """
+        ...

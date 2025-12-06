@@ -93,6 +93,9 @@ class FakeGit(Git):
         add_all_raises: Exception | None = None,
         pull_branch_raises: Exception | None = None,
         branch_issues: dict[str, int] | None = None,
+        conflicted_files: list[str] | None = None,
+        rebase_in_progress: bool = False,
+        rebase_continue_raises: Exception | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -127,6 +130,9 @@ class FakeGit(Git):
             add_all_raises: Exception to raise when add_all() is called
             pull_branch_raises: Exception to raise when pull_branch() is called
             branch_issues: Mapping of branch name -> issue number for get_branch_issue()
+            conflicted_files: List of file paths with merge conflicts
+            rebase_in_progress: Whether a rebase is currently in progress
+            rebase_continue_raises: Exception to raise when rebase_continue() is called
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -156,6 +162,9 @@ class FakeGit(Git):
         self._add_all_raises = add_all_raises
         self._pull_branch_raises = pull_branch_raises
         self._branch_issues = branch_issues or {}
+        self._conflicted_files = conflicted_files or []
+        self._rebase_in_progress = rebase_in_progress
+        self._rebase_continue_raises = rebase_continue_raises
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -171,6 +180,7 @@ class FakeGit(Git):
         self._commits: list[tuple[Path, str, list[str]]] = []
         self._pushed_branches: list[tuple[str, str, bool]] = []
         self._created_branches: list[tuple[Path, str, str]] = []  # (cwd, branch_name, start_point)
+        self._rebase_continue_calls: list[Path] = []
 
     def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
         """List all worktrees in the repository.
@@ -844,3 +854,22 @@ class FakeGit(Git):
         if url is None:
             raise ValueError(f"Remote '{remote}' not found in repository")
         return url
+
+    def get_conflicted_files(self, cwd: Path) -> list[str]:
+        """Get list of files with merge conflicts."""
+        return list(self._conflicted_files)
+
+    def is_rebase_in_progress(self, cwd: Path) -> bool:
+        """Check if a rebase is in progress."""
+        return self._rebase_in_progress
+
+    def rebase_continue(self, cwd: Path) -> None:
+        """Continue an in-progress rebase."""
+        if self._rebase_continue_raises is not None:
+            raise self._rebase_continue_raises
+        self._rebase_continue_calls.append(cwd)
+
+    @property
+    def rebase_continue_calls(self) -> list[Path]:
+        """Get list of rebase_continue calls for test assertions."""
+        return list(self._rebase_continue_calls)

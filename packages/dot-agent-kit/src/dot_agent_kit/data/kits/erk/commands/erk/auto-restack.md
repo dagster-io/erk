@@ -10,85 +10,64 @@ This command runs `gt restack` and automatically handles any merge conflicts tha
 
 ## What This Command Does
 
-1. **Squashes commits** - Consolidates all commits into one before restacking
-2. **Runs `gt restack`** - Starts the restack operation
-3. **Checks for conflicts** - Monitors `git status` for conflicted files
-4. **Resolves conflicts intelligently** - Distinguishes between:
-   - **Semantic conflicts**: Alerts user for manual decision
-   - **Mechanical conflicts**: Auto-resolves when safe
-5. **Continues restacking** - Stages files and runs `gt continue`
-6. **Loops until complete** - Repeats until no more conflicts
-7. **Verifies success** - Confirms clean git status
+1. **Preflight** - Squashes commits and attempts restack, detecting conflicts
+2. **Conflict loop** - For each set of conflicts:
+   - Resolves conflicts (semantic vs mechanical)
+   - Stages resolved files and continues
+3. **Finalize** - Verifies clean completion
 
 ## Implementation
 
-### Step 0: Squash Commits First
-
-Before restacking, squash all commits into one to simplify conflict resolution:
+### Step 1: Run Preflight
 
 ```bash
-dot-agent run gt idempotent-squash --format json
+dot-agent run gt restack-preflight
 ```
 
 Parse the JSON result:
 
-- If `success: true` with `action: "squashed"` or `action: "already_single_commit"`: Continue to Step 1
-- If `success: false` with `error: "squash_conflict"`: Report the squash conflict and stop
-- If `success: false` with `error: "no_commits"`: Report no commits ahead of trunk and stop
-- If `success: false` with other error: Report the error and stop
+- If `success: true` and `has_conflicts: false`: Restack completed, skip to Step 3
+- If `success: true` and `has_conflicts: true`: Conflicts detected, continue to Step 2 with `conflicts` list
+- If `success: false`: Report error and stop (includes `error_type`: "squash_conflict", "squash_failed", "no_commits", etc.)
 
-This ensures only a single commit needs to be rebased, minimizing potential conflicts.
+### Step 2: Resolve Conflicts Loop
 
-### Step 1: Start the Restack
+While there are conflicts:
 
-```bash
-gt restack --no-interactive
-```
+#### 2a: Resolve Each Conflict
 
-If the command succeeds without conflicts, skip to Step 5.
-
-### Step 2: Check for Conflicts
-
-Run `git status` to identify the state:
-
-- If no conflicts (clean or rebase complete): Go to Step 5
-- If conflicts exist: Continue to Step 3
-
-### Step 3: Resolve Conflicts
-
-For each conflicted file identified by `git status`:
+For each file in the `conflicts` list:
 
 <!-- prettier-ignore -->
 @../../docs/erk/includes/conflict-resolution.md
 
-### Step 4: Continue the Restack
+#### 2b: Continue Restack
 
-After resolving all conflicts:
+After resolving all current conflicts:
 
 1. If project memory includes a precommit check, run it and ensure no failures
-2. Stage the resolved files:
+2. Continue the restack (stages files and runs gt continue):
 
 ```bash
-git add <resolved-files>
+dot-agent run gt restack-continue <resolved-files...>
 ```
 
-3. Continue the restack:
+Parse the JSON result:
+
+- If `restack_complete: true`: Done with conflicts, go to Step 3
+- If `has_conflicts: true`: More conflicts found, loop back to 2a with new `conflicts` list
+- If `success: false`: Report error and stop
+
+### Step 3: Verify Completion
 
 ```bash
-gt continue
+dot-agent run gt restack-finalize
 ```
 
-4. **Loop back to Step 2** - Check if more conflicts arise
+Parse the JSON result:
 
-### Step 5: Verify Completion
-
-Check `git status` to confirm:
-
-- No ongoing rebase
-- Clean working directory
-- Successful restack completion
-
-Display success message with summary of what was resolved.
+- If `success: true`: Display success message
+- If `success: false`: Report the issue (rebase still in progress, dirty working tree)
 
 **IMPORTANT: Do not suggest specific next actions** (like "push" or "submit PR"). The user knows what they were doing before the restack was needed. Just confirm the branch is ready.
 
@@ -99,16 +78,15 @@ Display success message with summary of what was resolved.
 If pre-commit hooks fail after conflict resolution:
 
 1. Fix the issues raised by the hooks
-2. Re-stage the files
-3. Continue with `gt continue`
+2. Run `restack-continue` again with the fixed files
 
 ### Unresolvable Conflicts
 
-If a conflict cannot be safely auto-resolved (semantic conflict), the command will pause and ask for user input before proceeding.
+If a conflict cannot be safely auto-resolved (semantic conflict), ask for user input before proceeding.
 
 ### Restack Already in Progress
 
-If a restack is already in progress when the command starts, it will detect this from `git status` and continue from the conflict resolution phase.
+If a restack is already in progress when the command starts, the preflight will detect this and report conflicts immediately.
 
 ## Example Output
 
@@ -120,8 +98,7 @@ If a restack is already in progress when the command starts, it will detect this
    - src/config.py (mechanical - auto-resolving)
 
 ✅ Resolved 2 mechanical conflicts
-📦 Staged resolved files
-▶️  Continuing restack...
+📦 Staging resolved files and continuing...
 
 ⚡ Conflict detected in 1 file:
    - src/api.py (semantic - requires decision)
@@ -138,8 +115,7 @@ If a restack is already in progress when the command starts, it will detect this
 [User chooses option 1]
 
 ✅ Resolved conflict with user's choice
-📦 Staged resolved files
-▶️  Continuing restack...
+📦 Staging resolved files and continuing...
 
 ✅ Restack complete! Your branch is ready.
 ```
