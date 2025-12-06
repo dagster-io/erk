@@ -50,18 +50,18 @@ class RealGitHubIssues(GitHubIssues):
         )
 
     def get_issue(self, repo_root: Path, number: int) -> IssueInfo:
-        """Fetch issue data using gh CLI.
+        """Fetch issue data using gh CLI REST API.
+
+        Uses REST API instead of GraphQL to avoid hitting GraphQL rate limits.
+        The {owner}/{repo} placeholders are auto-substituted by gh CLI.
 
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
         """
         cmd = [
             "gh",
-            "issue",
-            "view",
-            str(number),
-            "--json",
-            "number,title,body,state,url,labels,assignees,createdAt,updatedAt",
+            "api",
+            f"repos/{{owner}}/{{repo}}/issues/{number}",
         ]
         stdout = execute_gh_command(cmd, repo_root)
         data = json.loads(stdout)
@@ -69,13 +69,13 @@ class RealGitHubIssues(GitHubIssues):
         return IssueInfo(
             number=data["number"],
             title=data["title"],
-            body=data["body"],
-            state=data["state"],
-            url=data["url"],
+            body=data["body"] or "",  # REST can return null
+            state=data["state"].upper(),  # Convert "open" -> "OPEN"
+            url=data["html_url"],  # Different field name in REST API
             labels=[label["name"] for label in data.get("labels", [])],
             assignees=[assignee["login"] for assignee in data.get("assignees", [])],
-            created_at=datetime.fromisoformat(data["createdAt"].replace("Z", "+00:00")),
-            updated_at=datetime.fromisoformat(data["updatedAt"].replace("Z", "+00:00")),
+            created_at=datetime.fromisoformat(data["created_at"].replace("Z", "+00:00")),
+            updated_at=datetime.fromisoformat(data["updated_at"].replace("Z", "+00:00")),
         )
 
     def add_comment(self, repo_root: Path, number: int, body: str) -> None:
