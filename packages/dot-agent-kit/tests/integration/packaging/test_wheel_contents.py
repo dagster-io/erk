@@ -106,7 +106,6 @@ def test_wheel_contains_skill_markdown(
     ("kit_name", "command_script"),
     [
         ("gt", "submit_branch.py"),
-        ("gt", "pr_update.py"),
     ],
 )
 def test_wheel_contains_kit_cli_commands(

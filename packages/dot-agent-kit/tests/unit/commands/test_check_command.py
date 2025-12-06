@@ -885,11 +885,7 @@ def test_check_command_perfect_sync_no_missing_no_obsolete(tmp_path: Path) -> No
                     version="0.1.0",
                     source_type="bundled",
                     artifacts=[
-                        ".claude/agents/gt/gt-update-pr-submitter.md",
-                        ".claude/commands/gt/prepare-local.md",
-                        ".claude/commands/gt/pr-prep.md",
                         ".claude/commands/gt/pr-submit.md",
-                        ".claude/commands/gt/pr-update.md",
                         ".claude/commands/gt/squash-to-pr-commit.md",
                         ".claude/skills/gt-graphite/SKILL.md",
                         ".claude/skills/gt-graphite/references/gt-reference.md",
@@ -906,11 +902,7 @@ def test_check_command_perfect_sync_no_missing_no_obsolete(tmp_path: Path) -> No
         bundled_path = bundled_source._get_bundled_kit_path("gt")
         if bundled_path is not None:
             for artifact_rel in [
-                "agents/gt/gt-update-pr-submitter.md",
-                "commands/gt/prepare-local.md",
-                "commands/gt/pr-prep.md",
                 "commands/gt/pr-submit.md",
-                "commands/gt/pr-update.md",
                 "commands/gt/squash-to-pr-commit.md",
                 "skills/gt-graphite/SKILL.md",
                 "skills/gt-graphite/references/gt-reference.md",
