@@ -355,11 +355,11 @@ class TestFilterMode:
 
 
 class TestOpenRow:
-    """Tests for Enter/o key open behavior (PR-first, then issue)."""
+    """Tests for 'o' key open behavior (PR-first, then issue)."""
 
     @pytest.mark.asyncio
-    async def test_enter_opens_pr_when_available(self) -> None:
-        """Enter opens PR URL when PR is available."""
+    async def test_o_opens_pr_when_available(self) -> None:
+        """'o' key opens PR URL when PR is available."""
         provider = FakePlanDataProvider(
             [
                 make_plan_row(
@@ -378,9 +378,9 @@ class TestOpenRow:
             await pilot.pause()
             await pilot.pause()
 
-            # Press Enter - should open PR (we can't actually open URL in test,
+            # Press 'o' - should open PR (we can't actually open URL in test,
             # but we can check the status bar message)
-            await pilot.press("enter")
+            await pilot.press("o")
             await pilot.pause()
 
             status_bar = app.query_one(StatusBar)
@@ -388,8 +388,8 @@ class TestOpenRow:
             assert status_bar._message == "Opened PR #456"
 
     @pytest.mark.asyncio
-    async def test_enter_opens_issue_when_no_pr(self) -> None:
-        """Enter opens issue URL when no PR is available."""
+    async def test_o_opens_issue_when_no_pr(self) -> None:
+        """'o' key opens issue URL when no PR is available."""
         provider = FakePlanDataProvider(
             [
                 make_plan_row(
@@ -406,7 +406,7 @@ class TestOpenRow:
             await pilot.pause()
             await pilot.pause()
 
-            await pilot.press("enter")
+            await pilot.press("o")
             await pilot.pause()
 
             status_bar = app.query_one(StatusBar)
@@ -728,3 +728,88 @@ class TestPlanDetailScreenCopyActions:
             await pilot.pause()
 
             assert clipboard.last_copied == "erk pr co 456"
+
+
+class TestCommandPaletteFromMain:
+    """Tests for command palette from main list view.
+
+    Ctrl+P opens the command palette directly from main list (no detail modal).
+    The palette shows plan-specific commands for the selected row.
+    """
+
+    @pytest.mark.asyncio
+    async def test_execute_palette_command_copy_implement(self) -> None:
+        """Execute palette command copies implement command."""
+        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            [make_plan_row(123, "Test Plan")],
+            clipboard=clipboard,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Execute command directly (simulates palette selection)
+            app.execute_palette_command("copy_implement")
+
+            assert clipboard.last_copied == "erk implement 123"
+
+    @pytest.mark.asyncio
+    async def test_execute_palette_command_open_pr(self) -> None:
+        """Execute palette command opens PR in browser."""
+        provider = FakePlanDataProvider(
+            [make_plan_row(123, "Test Plan", pr_number=456, pr_url="https://github.com/test/pr/456")]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Execute open_pr command
+            app.execute_palette_command("open_pr")
+
+            assert provider.browser.last_launched == "https://github.com/test/pr/456"
+
+    @pytest.mark.asyncio
+    async def test_execute_palette_command_with_no_selection(self) -> None:
+        """Execute palette command with no selection does nothing."""
+        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider([], clipboard=clipboard)
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Execute command with no rows selected
+            app.execute_palette_command("copy_implement")
+
+            # Nothing should be copied
+            assert clipboard.last_copied is None
+
+    @pytest.mark.asyncio
+    async def test_space_opens_detail_screen(self) -> None:
+        """Space opens detail screen without palette."""
+        provider = FakePlanDataProvider([make_plan_row(123, "Test Plan")])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Press space (regular detail view)
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            detail_screen = app.screen_stack[-1]
+            assert isinstance(detail_screen, PlanDetailScreen)
+            # The flag should NOT be set (space = just detail, no palette)
+            assert detail_screen._auto_open_palette is False

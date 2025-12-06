@@ -18,7 +18,7 @@ from textual.screen import ModalScreen, Screen
 from textual.widgets import Header, Input, Label, Static
 
 from erk.tui.commands.executor import CommandExecutor
-from erk.tui.commands.provider import PlanCommandProvider
+from erk.tui.commands.provider import MainListCommandProvider, PlanCommandProvider
 from erk.tui.commands.real_executor import RealCommandExecutor
 from erk.tui.data.provider import PlanDataProvider
 from erk.tui.data.types import PlanFilters, PlanRowData
@@ -176,6 +176,7 @@ class HelpScreen(ModalScreen):
             with Vertical(classes="help-section"):
                 yield Label("Actions", classes="help-section-title")
                 yield Label("Enter   View plan details", classes="help-binding")
+                yield Label("Ctrl+P  Commands (opens detail modal)", classes="help-binding")
                 yield Label("o       Open PR (or issue if no PR)", classes="help-binding")
                 yield Label("p       Open PR in browser", classes="help-binding")
                 yield Label("i       Show implement command", classes="help-binding")
@@ -378,6 +379,7 @@ class PlanDetailScreen(ModalScreen):
         browser: "BrowserLauncher | None" = None,
         executor: CommandExecutor | None = None,
         repo_root: Path | None = None,
+        auto_open_palette: bool = False,
     ) -> None:
         """Initialize with plan row data.
 
@@ -387,6 +389,7 @@ class PlanDetailScreen(ModalScreen):
             browser: Optional browser launcher interface for opening URLs
             executor: Optional command executor for palette commands
             repo_root: Path to repository root for running commands
+            auto_open_palette: If True, open command palette on mount
         """
         super().__init__()
         self._row = row
@@ -396,6 +399,14 @@ class PlanDetailScreen(ModalScreen):
         self._repo_root = repo_root
         self._output_panel: CommandOutputPanel | None = None
         self._command_running = False
+        self._auto_open_palette = auto_open_palette
+
+    def on_mount(self) -> None:
+        """Handle mount event - optionally open command palette."""
+        if self._auto_open_palette:
+            # Use call_after_refresh to ensure screen is fully active
+            # before opening command palette
+            self.call_after_refresh(self.app.action_command_palette)
 
     def _get_pr_state_badge(self) -> tuple[str, str]:
         """Get PR state display text and CSS class."""
@@ -788,6 +799,7 @@ class ErkDashApp(App):
     """
 
     CSS_PATH = Path(__file__).parent / "styles" / "dash.tcss"
+    COMMANDS = {MainListCommandProvider}
 
     BINDINGS = [
         Binding("q", "exit_app", "Quit"),
@@ -797,21 +809,27 @@ class ErkDashApp(App):
         Binding("j", "cursor_down", "Down", show=False),
         Binding("k", "cursor_up", "Up", show=False),
         Binding("enter", "show_detail", "Detail"),
+        Binding("space", "show_detail", "Detail", show=False),
         Binding("o", "open_row", "Open", show=False),
         Binding("p", "open_pr", "Open PR"),
         # NOTE: 'c' binding removed - close_plan now accessible via command palette
         # in the plan detail modal (Enter → Ctrl+P → "Close Plan")
         Binding("i", "show_implement", "Implement"),
         Binding("slash", "start_filter", "Filter", key_display="/"),
+        Binding("ctrl+p", "command_palette", "Commands"),
     ]
 
     def get_system_commands(self, screen: Screen) -> Iterator[SystemCommand]:
-        """Return system commands, hiding them on modal screens.
+        """Return system commands, hiding them when plan commands are available.
 
         Hides Keys, Quit, Screenshot, Theme from command palette when on
-        PlanDetailScreen modal so only plan-specific commands appear.
+        PlanDetailScreen or when main list has a selected row, so only
+        plan-specific commands appear.
         """
         if isinstance(screen, PlanDetailScreen):
+            return iter(())
+        # Hide system commands on main list when a row is selected
+        if self._get_selected_row() is not None:
             return iter(())
         yield from super().get_system_commands(screen)
 
@@ -1141,6 +1159,105 @@ class ErkDashApp(App):
         if self._table is None:
             return None
         return self._table.get_selected_row_data()
+
+    def execute_palette_command(self, command_id: str) -> None:
+        """Execute a command from the palette on the selected row.
+
+        Args:
+            command_id: The ID of the command to execute
+        """
+        row = self._get_selected_row()
+        if row is None:
+            return
+
+        if command_id == "open_browser":
+            url = row.pr_url or row.issue_url
+            if url:
+                self._provider.browser.launch(url)
+                self.notify(f"Opened {url}")
+
+        elif command_id == "open_issue":
+            if row.issue_url:
+                self._provider.browser.launch(row.issue_url)
+                self.notify(f"Opened issue #{row.issue_number}")
+
+        elif command_id == "open_pr":
+            if row.pr_url:
+                self._provider.browser.launch(row.pr_url)
+                self.notify(f"Opened PR #{row.pr_number}")
+
+        elif command_id == "open_run":
+            if row.run_url:
+                self._provider.browser.launch(row.run_url)
+                self.notify(f"Opened run {row.run_id_display}")
+
+        elif command_id == "copy_checkout":
+            cmd = f"erk co {row.worktree_name}"
+            self._provider.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_pr_checkout":
+            cmd = f"erk pr co {row.pr_number}"
+            self._provider.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_implement":
+            cmd = f"erk implement {row.issue_number}"
+            self._provider.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_implement_dangerous":
+            cmd = f"erk implement {row.issue_number} --dangerous"
+            self._provider.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_implement_yolo":
+            cmd = f"erk implement {row.issue_number} --yolo"
+            self._provider.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_submit":
+            cmd = f"erk submit {row.issue_number}"
+            self._provider.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
+        elif command_id == "close_plan":
+            if row.issue_url:
+                closed_prs = self._provider.close_plan(row.issue_number, row.issue_url)
+                if closed_prs:
+                    pr_list = ", ".join(f"#{pr}" for pr in closed_prs)
+                    self.notify(f"Closed plan #{row.issue_number} and PRs: {pr_list}")
+                else:
+                    self.notify(f"Closed plan #{row.issue_number}")
+                self.action_refresh()
+
+        elif command_id == "submit_to_queue":
+            if row.issue_url:
+                # Open detail modal to show streaming output
+                executor = RealCommandExecutor(
+                    browser_launch=self._provider.browser.launch,
+                    clipboard_copy=self._provider.clipboard.copy,
+                    close_plan_fn=self._provider.close_plan,
+                    notify_fn=self.notify,
+                    refresh_fn=self.action_refresh,
+                    submit_to_queue_fn=self._provider.submit_to_queue,
+                )
+                detail_screen = PlanDetailScreen(
+                    row,
+                    clipboard=self._provider.clipboard,
+                    browser=self._provider.browser,
+                    executor=executor,
+                    repo_root=self._provider.repo_root,
+                )
+                self.push_screen(detail_screen)
+                # Trigger the streaming command after screen is mounted
+                detail_screen.call_after_refresh(
+                    lambda: detail_screen.run_streaming_command(
+                        ["erk", "submit", str(row.issue_number)],
+                        cwd=self._provider.repo_root,
+                        title=f"Submitting Plan #{row.issue_number}",
+                    )
+                )
 
     @on(PlanDataTable.RowSelected)
     def on_row_selected(self, event: PlanDataTable.RowSelected) -> None:
