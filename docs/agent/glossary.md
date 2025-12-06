@@ -565,6 +565,24 @@ Test that uses fake implementations and isolated filesystem.
 
 ---
 
+## Kit Concepts
+
+### Kit CLI Command
+
+A Python Click command registered in a kit's `kit.yaml` and invoked via `dot-agent run <kit-name> <command>`.
+
+**Location**: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/<kit-name>/kit_cli_commands/<kit-name>/`
+
+**Example**:
+
+```bash
+dot-agent run erk check-impl --dry-run
+```
+
+**See also**: [Kit CLI Command Development](kits/cli-command-development.md)
+
+---
+
 ## Kit Maintenance
 
 ### Kit Consolidation
