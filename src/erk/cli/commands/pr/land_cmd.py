@@ -4,10 +4,13 @@ This command merges the PR, creates a "pending extraction" marker, and outputs
 an activation script. The user stays in the worktree to extract insights before
 manually deleting.
 
-Workflow:
+Workflow (default):
     1. erk pr land         # Merges PR, creates marker, stays in worktree
     2. claude /erk:create-raw-extraction-plan  # Extracts insights, deletes marker
     3. erk down --delete-current        # Manual cleanup when ready
+
+Workflow (--skip-insights):
+    1. erk pr land --skip-insights  # Merges PR, deletes worktree, goes to trunk
 """
 
 import click
@@ -18,7 +21,9 @@ from erk_shared.output.output import machine_output, user_output
 
 from erk.cli.activation import render_activation_script
 from erk.cli.commands.navigation_helpers import (
+    activate_root_repo,
     check_clean_working_tree,
+    delete_branch_and_worktree,
     ensure_graphite_enabled,
 )
 from erk.cli.core import discover_repo_context
@@ -29,8 +34,13 @@ from erk.core.markers import PENDING_EXTRACTION_MARKER, create_marker
 
 @click.command("land")
 @click.option("--script", is_flag=True, help="Print only the activation script")
+@click.option(
+    "--skip-insights",
+    is_flag=True,
+    help="Skip extraction marker; delete worktree and go to trunk",
+)
 @click.pass_obj
-def pr_land(ctx: ErkContext, script: bool) -> None:
+def pr_land(ctx: ErkContext, script: bool, skip_insights: bool) -> None:
     """Merge PR and create pending extraction marker.
 
     Merges the current PR (must be one level from trunk) and creates a
@@ -46,6 +56,10 @@ def pr_land(ctx: ErkContext, script: bool) -> None:
     After landing:
       claude /erk:create-raw-extraction-plan   # Extract insights (deletes marker)
       erk down --delete-current         # Manual cleanup
+
+    With --skip-insights:
+      Skips the extraction marker and automatically deletes the worktree
+      and branch, navigating to trunk. Use when no session insights are needed.
 
     Requires:
     - Graphite enabled: 'erk config set use_graphite true'
@@ -96,6 +110,19 @@ def pr_land(ctx: ErkContext, script: bool) -> None:
         click.style("✓", fg="green")
         + f" Merged PR #{success_result.pr_number} [{success_result.branch_name}]"
     )
+
+    if skip_insights:
+        # Skip marker creation, delete worktree and branch, go to trunk
+        delete_branch_and_worktree(ctx, repo, current_branch, current_worktree_path)
+
+        user_output("")
+        user_output(click.style("✓", fg="green") + " Landed PR. Deleted worktree and branch.")
+
+        # Output activation script pointing to trunk/root repo
+        activate_root_repo(ctx, repo, script, command_name="pr-land")
+        # activate_root_repo raises SystemExit(0)
+
+    # Default behavior: create pending extraction marker and stay in worktree
 
     # Step 2: Create pending extraction marker
     # This signals that extraction should happen before worktree deletion
