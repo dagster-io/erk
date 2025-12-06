@@ -98,22 +98,6 @@ class TestCreatePlanIssueSuccess:
         title, _, _ = fake_gh.created_issues[0]
         assert title == "My Plan [custom-suffix]"
 
-    def test_adds_extra_labels(self, tmp_path: Path) -> None:
-        """Add extra labels beyond erk-plan."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# My Plan\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            extra_labels=["bug", "priority-high"],
-        )
-
-        assert result.success is True
-        _, _, labels = fake_gh.created_issues[0]
-        assert labels == ["erk-plan", "bug", "priority-high"]
-
     def test_includes_source_plan_issues(self, tmp_path: Path) -> None:
         """Include source_plan_issues in metadata."""
         fake_gh = FakeGitHubIssues(username="testuser")
@@ -341,24 +325,6 @@ class TestCreatePlanIssueLabelManagement:
         # Label should not have been re-created
         assert len(fake_gh.created_labels) == 0
 
-    def test_deduplicates_extra_labels(self, tmp_path: Path) -> None:
-        """Don't duplicate labels if extra_labels includes erk-plan."""
-        fake_gh = FakeGitHubIssues(username="testuser")
-        plan_content = "# My Plan\n\nContent..."
-
-        result = create_plan_issue(
-            github_issues=fake_gh,
-            repo_root=tmp_path,
-            plan_content=plan_content,
-            extra_labels=["erk-plan", "bug"],  # erk-plan would be duplicate
-        )
-
-        assert result.success is True
-        _, _, labels = fake_gh.created_issues[0]
-        # Should not have duplicate erk-plan
-        assert labels.count("erk-plan") == 1
-        assert "bug" in labels
-
 
 class TestCreatePlanIssueResultDataclass:
     """Test CreatePlanIssueResult dataclass."""
@@ -391,3 +357,58 @@ class TestCreatePlanIssueResultDataclass:
         assert result.issue_url == "https://github.com/test/repo/issues/42"
         assert result.title == "My Title"
         assert result.error == "Something went wrong"
+
+
+class TestPlanType:
+    """Test PlanType Literal type."""
+
+    def test_plan_type_accepts_standard(self, tmp_path: Path) -> None:
+        """Verify plan_type accepts 'standard' literal."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = "# My Plan\n\nContent..."
+
+        result = create_plan_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+            plan_type="standard",
+        )
+
+        assert result.success is True
+        _, _, labels = fake_gh.created_issues[0]
+        assert labels == ["erk-plan"]
+
+    def test_plan_type_accepts_extraction(self, tmp_path: Path) -> None:
+        """Verify plan_type accepts 'extraction' literal."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = "# Extraction Plan\n\nContent..."
+
+        result = create_plan_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+            plan_type="extraction",
+        )
+
+        assert result.success is True
+        _, _, labels = fake_gh.created_issues[0]
+        assert "erk-plan" in labels
+        assert "erk-extraction" in labels
+
+    def test_plan_type_defaults_to_standard(self, tmp_path: Path) -> None:
+        """Verify plan_type defaults to 'standard' when not specified."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = "# My Plan\n\nContent..."
+
+        result = create_plan_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+        )
+
+        assert result.success is True
+        _, _, labels = fake_gh.created_issues[0]
+        assert labels == ["erk-plan"]
+        # Verify default title suffix is [erk-plan] not [erk-extraction]
+        title, _, _ = fake_gh.created_issues[0]
+        assert title.endswith("[erk-plan]")
