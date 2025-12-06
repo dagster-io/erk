@@ -23,6 +23,20 @@ When switching between GraphQL (`gh issue view --json`) and REST (`gh api`), fie
 | Updated timestamp | `updatedAt`           | `updated_at`          |
 | Body              | Always string         | Can be `null`         |
 
+## PR-Specific Field Mapping
+
+| Field       | GraphQL                               | REST               | Notes                                                |
+| ----------- | ------------------------------------- | ------------------ | ---------------------------------------------------- |
+| Base branch | `baseRefName`                         | `base.ref`         | Nested object                                        |
+| Head branch | `headRefName`                         | `head.ref`         | Nested object                                        |
+| Cross-repo  | `isCrossRepository`                   | Computed           | Compare `head.repo.full_name != base.repo.full_name` |
+| State       | `"OPEN"/"CLOSED"/"MERGED"`            | `state` + `merged` | REST: lowercase + separate bool                      |
+| Mergeable   | `"MERGEABLE"/"CONFLICTING"/"UNKNOWN"` | `true/false/null`  | Requires mapping                                     |
+| Merge state | `mergeStateStatus`                    | `mergeable_state`  | REST: lowercase                                      |
+| Title       | `title`                               | `title`            | Same                                                 |
+| Body        | `body`                                | `body`             | Both can be null                                     |
+| Labels      | `labels[].name`                       | `labels[].name`    | Same structure                                       |
+
 ## Normalization Pattern
 
 When parsing REST responses, normalize to match GraphQL conventions:
@@ -50,4 +64,39 @@ Both APIs return ISO 8601 timestamps with "Z" suffix:
 ```python
 # "2024-01-15T10:30:00Z" -> datetime with UTC timezone
 datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+```
+
+## PR State Normalization
+
+REST returns lowercase state with separate `merged` boolean. Normalize to GraphQL format:
+
+```python
+# Compute state: REST has "open"/"closed", check merged bool for MERGED
+if data.get("merged"):
+    state = "MERGED"
+else:
+    state = data["state"].upper()  # "open" -> "OPEN", "closed" -> "CLOSED"
+```
+
+## PR Mergeability Normalization
+
+REST returns `true/false/null` for mergeable. Normalize to GraphQL enums:
+
+```python
+# REST --jq returns multiline: mergeable value, then state
+lines = result.stdout.strip().split("\n")
+mergeable_raw = lines[0] if len(lines) > 0 else "null"
+merge_state = lines[1] if len(lines) > 1 else "unknown"
+
+# Map to GraphQL enum format
+mergeable = {"true": "MERGEABLE", "false": "CONFLICTING"}.get(mergeable_raw, "UNKNOWN")
+merge_state_status = merge_state.upper() if merge_state != "null" else "UNKNOWN"
+```
+
+## Cross-Repository Detection
+
+GraphQL provides `isCrossRepository` directly. REST requires computation:
+
+```python
+is_cross_repository = data["head"]["repo"]["full_name"] != data["base"]["repo"]["full_name"]
 ```
