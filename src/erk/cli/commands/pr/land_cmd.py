@@ -15,6 +15,7 @@ Note on extraction plans:
     from an extraction-originated PR would lead to another extraction plan.
 """
 
+from dataclasses import replace
 from pathlib import Path
 
 import click
@@ -229,15 +230,22 @@ def pr_land(ctx: ErkContext, script: bool, skip_insights: bool, up_flag: bool) -
     delete_branch_and_worktree(ctx, repo, current_branch, current_worktree_path)
     user_output(click.style("✓", fg="green") + " Deleted worktree and branch")
 
+    # Create post-deletion repo context with root pointing to main_repo_root
+    # (repo.root pointed to the now-deleted worktree)
+    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+    post_deletion_repo = replace(repo, root=main_repo_root)
+
     # Navigate to child branch (--up) or root
     if target_child_branch is not None:
-        target_path = ctx.git.find_worktree_for_branch(repo.root, target_child_branch)
+        target_path = ctx.git.find_worktree_for_branch(main_repo_root, target_child_branch)
         if target_path is None:
             # Auto-create worktree for child
-            target_path, _ = ensure_worktree_for_branch(ctx, repo, target_child_branch)
-        activate_worktree(ctx, repo, target_path, script, command_name="pr-land")
+            target_path, _ = ensure_worktree_for_branch(
+                ctx, post_deletion_repo, target_child_branch
+            )
+        activate_worktree(ctx, post_deletion_repo, target_path, script, command_name="pr-land")
         # activate_worktree raises SystemExit(0)
     else:
         # Output activation script pointing to trunk/root repo
-        activate_root_repo(ctx, repo, script, command_name="pr-land")
+        activate_root_repo(ctx, post_deletion_repo, script, command_name="pr-land")
         # activate_root_repo raises SystemExit(0)
