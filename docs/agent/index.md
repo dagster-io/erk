@@ -9,6 +9,7 @@
 - **[cli/](cli/)** — command-organization, list-formatting, output-styling, script-mode, shell-aliases, template-variables
 - **[commands/](commands/)** — optimization-patterns, tripwires
 - **[erk/](erk/)** — auto-restack, branch-cleanup, graphite-branch-setup, pr-sync-workflow
+- **[github/](github/)** — api-field-mapping, gh-cli-patterns, rate-limits
 - **[hooks/](hooks/)** — erk, hooks
 - **[kits/](kits/)** — cli-command-development, cli-commands, code-architecture, dependency-injection, push-down-pattern, registry-discovery
 - **[planning/](planning/)** — agent-delegation, enrichment, lifecycle, plan-schema, scratch-storage, workflow
