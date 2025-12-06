@@ -804,6 +804,76 @@ A marker state indicating a merged PR is queued for insight extraction. When `er
 
 ---
 
+## GitHub Plan Functions
+
+### create_plan_issue()
+
+The canonical function for creating plan issues. Located at `erk_shared/github/plan_issues.py`.
+
+**Always use this function** instead of manually implementing the 6-step workflow:
+
+1. Get GitHub username
+2. Extract title from plan H1
+3. Ensure labels exist
+4. Create issue with metadata-only body
+5. Add first comment with plan content
+6. Handle partial failures
+
+**Signature**:
+
+```python
+def create_plan_issue(
+    github_issues: GitHubIssues,
+    repo_root: Path,
+    plan_content: str,
+    *,
+    title: str | None = None,
+    plan_type: str | None = None,  # "extraction" or None
+    extra_labels: list[str] | None = None,
+    title_suffix: str | None = None,
+    source_plan_issues: list[int] | None = None,
+    extraction_session_ids: list[str] | None = None,
+) -> CreatePlanIssueResult
+```
+
+**Returns**: `CreatePlanIssueResult` with `success`, `issue_number`, `issue_url`, `title`, `error`
+
+**Callers**:
+
+- `erk plan create` CLI command
+- `dot-agent run erk plan-save-to-issue`
+- `dot-agent run erk create-extraction-plan`
+- `dot-agent run erk create-issue-from-session`
+- `create_raw_extraction_plan()` in erk-shared
+
+### Plan Issue Schema
+
+The format for erk plan issues on GitHub. Separates metadata from plan content for faster querying.
+
+**Structure**:
+
+- **Issue body**: Metadata-only (`plan-header` block with YAML)
+- **First comment**: Plan content wrapped in `plan-body` block
+
+**Key functions**:
+
+- `format_plan_header_body()` - Creates metadata-only issue body
+- `format_plan_content_comment()` - Wraps plan in collapsible block
+- `create_plan_issue()` - Complete workflow (preferred)
+
+**Metadata fields** (in plan-header):
+
+- `created_at`: ISO 8601 timestamp
+- `created_by`: GitHub username
+- `worktree_name`: Set when worktree is created
+- `plan_type`: "standard" or "extraction"
+- `source_plan_issues`: For extraction plans
+- `extraction_session_ids`: For extraction plans
+
+**Why this structure**: Issue bodies are returned in list queries, so keeping them small improves `erk dash` performance. Plan content in comments is loaded on-demand.
+
+---
+
 ## Abbreviations
 
 - **ABC**: Abstract Base Class (Python's `abc` module)

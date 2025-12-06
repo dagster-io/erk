@@ -18,3 +18,5 @@
 - **[subprocess-wrappers.md](subprocess-wrappers.md)** — using subprocess wrappers, executing shell commands, understanding subprocess patterns
 - **[symlink-validation-pattern.md](symlink-validation-pattern.md)** — Validating @ references in markdown files, Validating import paths in configuration, Any path validation where source files may be symlinks
 - **[worktree-metadata.md](worktree-metadata.md)** — storing per-worktree data, working with worktrees.toml, associating metadata with worktrees
+- **[result-pattern.md](result-pattern.md)** — designing functions that can partially succeed, structured error returns, result dataclasses
+- **[consolidation-refactoring.md](consolidation-refactoring.md)** — identifying duplicated patterns, extracting shared code, consolidation workflows
