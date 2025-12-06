@@ -128,9 +128,7 @@ def test_add_label_github_api_failure(tmp_path: Path) -> None:
     """Test error when GitHub API fails."""
 
     class FailingFakeGitHubIssues(FakeGitHubIssues):
-        def ensure_label_on_issue(
-            self, repo_root: Path, number: int, label: str
-        ) -> None:
+        def ensure_label_on_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
             raise RuntimeError("GitHub API rate limit exceeded")
 
     fake_gh = FailingFakeGitHubIssues(
@@ -161,9 +159,7 @@ def test_add_label_network_error(tmp_path: Path) -> None:
     """Test error when network fails."""
 
     class NetworkFailingGitHubIssues(FakeGitHubIssues):
-        def ensure_label_on_issue(
-            self, repo_root: Path, number: int, label: str
-        ) -> None:
+        def ensure_label_on_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
             raise RuntimeError("Network connection timed out")
 
     fake_gh = NetworkFailingGitHubIssues(
@@ -237,9 +233,7 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
     """Test JSON output structure on error."""
 
     class FailingFakeGitHubIssues(FakeGitHubIssues):
-        def ensure_label_on_issue(
-            self, repo_root: Path, number: int, label: str
-        ) -> None:
+        def ensure_label_on_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
             raise RuntimeError("Some error")
 
     fake_gh = FailingFakeGitHubIssues(

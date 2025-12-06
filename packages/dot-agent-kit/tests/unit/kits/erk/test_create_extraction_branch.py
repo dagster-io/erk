@@ -16,7 +16,6 @@ from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_extraction_branch i
     create_extraction_branch,
 )
 
-
 # ============================================================================
 # Success Cases (Layer 4: Business Logic over Fakes)
 # ============================================================================
@@ -120,7 +119,7 @@ def test_create_extraction_branch_checkout_fails(tmp_path: Path) -> None:
     """Test error when checkout of trunk branch fails."""
 
     class FailingCheckoutGit(FakeGit):
-        def checkout_branch(self, cwd: Path, branch_name: str) -> None:
+        def checkout_branch(self, cwd: Path, branch: str) -> None:
             raise RuntimeError("Failed to checkout branch")
 
     runner = CliRunner()
@@ -151,9 +150,7 @@ def test_create_extraction_branch_pull_fails(tmp_path: Path) -> None:
     """Test error when pull of trunk branch fails."""
 
     class FailingPullGit(FakeGit):
-        def pull_branch(
-            self, repo_root: Path, remote: str, branch: str, *, ff_only: bool
-        ) -> None:
+        def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -> None:
             raise RuntimeError("Network error: could not fetch")
 
     runner = CliRunner()
