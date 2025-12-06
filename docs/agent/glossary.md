@@ -744,6 +744,66 @@ Test that uses fake implementations and isolated filesystem.
 
 ---
 
+## Plan & Extraction Concepts
+
+### Extraction Plan
+
+A special type of implementation plan created by `/erk:create-extraction-plan`. Extraction plans capture documentation improvements and learnings discovered during implementation sessions.
+
+**Characteristics**:
+
+- Created from session analysis to capture valuable insights
+- Contains documentation items rather than code changes
+- Marked with `plan_type: extraction` in the plan-header metadata
+- PRs from extraction plans receive the `erk-skip-extraction` label
+
+**Purpose**: Prevent valuable learnings from being lost after implementation sessions by systematically documenting patterns, decisions, and discoveries.
+
+**Related**: [erk-skip-extraction](#erk-skip-extraction), [Plan Lifecycle](planning/lifecycle.md)
+
+### erk-skip-extraction
+
+A GitHub label added to PRs that originate from extraction plans. When `erk pr land` detects this label, it automatically skips creating the pending-extraction marker and deletes the worktree immediately.
+
+**Purpose**: Prevents infinite extraction loops where extracting insights from an extraction-originated PR would lead to another extraction plan.
+
+**Applied by**:
+
+- `erk submit` when the source issue has `plan_type: extraction`
+- `gt finalize` when the `.impl/plan.md` has `plan_type: extraction`
+
+**Checked by**:
+
+- `erk pr land` - Skips insight extraction if label present
+
+**Design Decision**: Labels are used instead of PR body markers because:
+
+1. **Visibility** - Labels are visible in GitHub UI, making extraction PRs easy to identify
+2. **Simplicity** - Label checks are simpler than parsing PR body content
+3. **Separation** - PR body remains focused on the actual PR description
+4. **Flexibility** - Labels can be manually added/removed for edge cases
+
+**Related**: [Extraction Plan](#extraction-plan), [pending-extraction](#pending-extraction), [Extraction Origin Tracking](architecture/extraction-origin-tracking.md)
+
+### pending-extraction
+
+A marker state indicating a merged PR is queued for insight extraction. When `erk pr land` completes successfully (and the PR is not from an extraction plan), it leaves the worktree in a "pending extraction" state for later session analysis.
+
+**Purpose**: Queue merged PRs for documentation extraction to capture learnings.
+
+**Lifecycle**:
+
+1. PR merges via `erk pr land`
+2. If not extraction-originated → worktree marked as pending-extraction
+3. User runs extraction workflow later to capture insights
+4. Worktree deleted after extraction complete
+
+**Skip condition**: PRs with `erk-skip-extraction` label bypass this marking.
+
+**Related**: [erk-skip-extraction](#erk-skip-extraction), [Extraction Plan](#extraction-plan)
+
+---
+
 ## Abbreviations
 
 - **ABC**: Abstract Base Class (Python's `abc` module)
