@@ -661,7 +661,8 @@ class RealClaudeExecutor(ClaudeExecutor):
         Implementation details:
         - Verifies Claude CLI is available
         - Uses subprocess.run() so control returns after Claude exits
-        - No output capture - user sees and interacts with Claude directly
+        - Opens /dev/tty directly to bypass shell integration stdout capture
+        - This prevents Claude's output from being mixed with machine output
         """
         # Verify Claude is available
         if not self.is_claude_available():
@@ -673,6 +674,22 @@ class RealClaudeExecutor(ClaudeExecutor):
             cmd_args.append("--dangerously-skip-permissions")
         cmd_args.append(command)
 
-        # Run Claude interactively (no output capture)
-        result = subprocess.run(cmd_args, cwd=worktree_path, check=False)
-        return result.returncode
+        # Open TTY directly to bypass any shell capture
+        # Shell integration captures stdout to extract activation script path.
+        # By using /dev/tty, Claude's output goes directly to terminal, not captured stdout.
+        try:
+            tty_fd = os.open("/dev/tty", os.O_RDWR)
+            result = subprocess.run(
+                cmd_args,
+                cwd=worktree_path,
+                check=False,
+                stdin=tty_fd,
+                stdout=tty_fd,
+                stderr=tty_fd,
+            )
+            os.close(tty_fd)
+            return result.returncode
+        except OSError:
+            # Fallback if /dev/tty not available (e.g., in CI without TTY)
+            result = subprocess.run(cmd_args, cwd=worktree_path, check=False)
+            return result.returncode

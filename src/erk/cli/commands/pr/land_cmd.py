@@ -177,7 +177,9 @@ def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
 
     # Step 4: Delete current branch and worktree (skip if extraction failed)
     if extraction_success:
-        delete_branch_and_worktree(ctx, repo.root, current_branch, current_worktree_path)
+        # main_repo_root is always set by RepoContext.__post_init__, but pyright doesn't know
+        main_repo = repo.main_repo_root if repo.main_repo_root else repo.root
+        delete_branch_and_worktree(ctx, main_repo, current_branch, current_worktree_path)
     else:
         user_output(
             click.style("⚠", fg="yellow") + f" Worktree preserved at: {current_worktree_path}"
