@@ -123,6 +123,18 @@ kit_cli_commands:
   - name: marker-exists
     path: kit_cli_commands/erk/marker_exists.py
     description: Check if a marker exists in the current worktree
+  - name: add-issue-label
+    path: kit_cli_commands/erk/add_issue_label.py
+    description: Add a label to a GitHub issue
+  - name: create-extraction-branch
+    path: kit_cli_commands/erk/create_extraction_branch.py
+    description: Create branch for extraction workflow
+  - name: extract-session-from-issue
+    path: kit_cli_commands/erk/extract_session_from_issue.py
+    description: Extract session data from GitHub issue comments
+  - name: post-extraction-comment
+    path: kit_cli_commands/erk/post_extraction_comment.py
+    description: Post extraction workflow status comments to GitHub issues
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit
