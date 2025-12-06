@@ -234,7 +234,6 @@ class TestExecuteCommandSubmitToQueue:
         assert executor.refresh_count == 0
 
 
-
 class TestExecuteCommandNoExecutor:
     """Tests for behavior when no executor is provided."""
 
