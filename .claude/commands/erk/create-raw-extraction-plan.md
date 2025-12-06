@@ -114,7 +114,7 @@ gh issue comment <issue-number> --body "<comment-body>"
 After successfully creating the extraction issue, delete the pending extraction marker:
 
 ```bash
-rm -f .erk/scratch/__erk_markers/pending-extraction
+dot-agent run erk marker-delete pending-extraction
 ```
 
 This allows the user to delete the worktree without needing `--force`.

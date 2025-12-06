@@ -117,6 +117,12 @@ kit_cli_commands:
   - name: render-session-content
     path: kit_cli_commands/erk/render_session_content.py
     description: Render session XML as GitHub comment blocks with automatic chunking
+  - name: marker-delete
+    path: kit_cli_commands/erk/marker_delete.py
+    description: Delete a marker from the current worktree
+  - name: marker-exists
+    path: kit_cli_commands/erk/marker_exists.py
+    description: Check if a marker exists in the current worktree
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit
