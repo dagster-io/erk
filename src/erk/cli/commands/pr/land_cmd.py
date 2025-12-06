@@ -4,9 +4,9 @@ This command merges the PR, creates a "pending extraction" marker, and outputs
 an activation script. The user stays in the worktree to extract insights before
 manually deleting.
 
-Workflow (default):
-    1. erk pr land         # Merges PR, creates marker, stays in worktree
-    2. claude /erk:create-raw-extraction-plan  # Extracts insights, deletes marker
+Workflow:
+    1. erk pr land              # Merges PR, creates marker, stays in worktree
+    2. erk plan extraction raw  # Extracts insights, deletes marker
     3. erk down --delete-current        # Manual cleanup when ready
 
 Workflow (--skip-insights):
@@ -54,7 +54,7 @@ def pr_land(ctx: ErkContext, script: bool, skip_insights: bool) -> None:
       source <(erk pr land --script)
 
     After landing:
-      claude /erk:create-raw-extraction-plan   # Extract insights (deletes marker)
+      erk plan extraction raw           # Extract insights (deletes marker)
       erk down --delete-current         # Manual cleanup
 
     With --skip-insights:
@@ -130,7 +130,7 @@ def pr_land(ctx: ErkContext, script: bool, skip_insights: bool) -> None:
     user_output(click.style("✓", fg="green") + " Created pending extraction marker")
 
     # Step 3: Output activation script (stays in current worktree)
-    extraction_cmd = "claude /erk:create-raw-extraction-plan"
+    extraction_cmd = "erk plan extraction raw"
     script_content = render_activation_script(
         worktree_path=current_worktree_path,
         final_message=f'echo "Landed PR. Run {extraction_cmd} to extract insights."',
@@ -146,7 +146,7 @@ def pr_land(ctx: ErkContext, script: bool, skip_insights: bool) -> None:
     # Step 4: Output next steps
     user_output("")
     user_output(click.style("Next steps:", fg="cyan"))
-    user_output("  1. Run: claude /erk:create-raw-extraction-plan")
+    user_output("  1. Run: erk plan extraction raw")
     user_output("  2. Run: erk down --delete-current")
     user_output("")
 
