@@ -132,6 +132,9 @@ kit_cli_commands:
   - name: extract-session-from-issue
     path: kit_cli_commands/erk/extract_session_from_issue.py
     description: Extract session data from GitHub issue comments
+  - name: mark-impl-ended
+    path: kit_cli_commands/erk/mark_impl_ended.py
+    description: Update implementation ended event in GitHub issue and local state file
   - name: post-extraction-comment
     path: kit_cli_commands/erk/post_extraction_comment.py
     description: Post extraction workflow status comments to GitHub issues
