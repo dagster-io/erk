@@ -1,13 +1,11 @@
 """Command to create a plan issue from markdown content."""
 
 import sys
-from datetime import UTC, datetime
 from pathlib import Path
 
 import click
-from erk_shared.github.metadata import format_plan_content_comment, format_plan_header_body
+from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.output.output import user_output
-from erk_shared.plan_utils import extract_title_from_plan
 
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -72,76 +70,37 @@ def create_plan(
     # Validate content is not empty
     Ensure.not_empty(content.strip(), "Plan content is empty. Provide a non-empty plan.")
 
-    # Extract or use provided title
-    if title is None:
-        title = extract_title_from_plan(content)
+    # Convert extra labels tuple to list
+    extra_labels = list(label) if label else None
 
-    # Validate title is not empty
-    Ensure.not_empty(
-        title.strip(), "Could not extract title from plan. Use --title to specify one."
+    # Use consolidated create_plan_issue for the entire workflow
+    result = create_plan_issue(
+        github_issues=ctx.issues,
+        repo_root=repo_root,
+        plan_content=content,
+        title=title,
+        extra_labels=extra_labels,
     )
 
-    # Ensure erk-plan label exists
-    try:
-        ctx.issues.ensure_label_exists(
-            repo_root,
-            label="erk-plan",
-            description="Implementation plan tracked by erk",
-            color="0E8A16",  # Green
-        )
-    except RuntimeError as e:
-        user_output(click.style("Error: ", fg="red") + f"Failed to ensure label exists: {e}")
-        raise SystemExit(1) from e
-
-    # Build labels list: erk-plan + additional labels
-    labels = ["erk-plan"] + list(label)
-
-    # Create timestamp
-    timestamp = datetime.now(UTC).isoformat()
-
-    # Get creator from GitHub authentication
-    creator = ctx.issues.get_current_username()
-    if not creator:
-        creator = "unknown"
-
-    # Format issue body (Schema V2: metadata only, worktree_name set later)
-    issue_body = format_plan_header_body(
-        created_at=timestamp,
-        created_by=creator,
-    )
-
-    # Create the issue (add [erk-plan] suffix for visibility)
-    issue_title = f"{title} [erk-plan]"
-    try:
-        result = ctx.issues.create_issue(
-            repo_root=repo_root,
-            title=issue_title,
-            body=issue_body,
-            labels=labels,
-        )
-    except RuntimeError as e:
-        user_output(click.style("Error: ", fg="red") + f"Failed to create issue: {e}")
-        raise SystemExit(1) from e
-
-    # Add plan content as first comment (Schema V2 format)
-    try:
-        comment_body = format_plan_content_comment(content)
-        ctx.issues.add_comment(repo_root, result.number, comment_body)
-    except RuntimeError as e:
-        user_output(
-            click.style("Warning: ", fg="yellow")
-            + f"Issue created but failed to add plan comment: {e}"
-        )
-        user_output(f"Issue #{result.number} created but incomplete.")
-        user_output(f"URL: {result.url}")
-        raise SystemExit(1) from e
+    if not result.success:
+        if result.issue_number is not None:
+            # Partial success - issue created but comment failed
+            user_output(
+                click.style("Warning: ", fg="yellow")
+                + f"Issue created but failed to add plan comment: {result.error}"
+            )
+            user_output(f"Issue #{result.issue_number} created but incomplete.")
+            user_output(f"URL: {result.issue_url}")
+        else:
+            user_output(click.style("Error: ", fg="red") + str(result.error))
+        raise SystemExit(1)
 
     # Display success message with next steps
-    user_output(f"Created plan #{result.number}")
+    user_output(f"Created plan #{result.issue_number}")
     user_output("")
-    user_output(f"Issue: {result.url}")
+    user_output(f"Issue: {result.issue_url}")
     user_output("")
     user_output("Next steps:")
-    user_output(f"  View:       erk get {result.number}")
-    user_output(f"  Implement:  erk implement {result.number}")
-    user_output(f"  Submit:     erk submit {result.number}")
+    user_output(f"  View:       erk get {result.issue_number}")
+    user_output(f"  Implement:  erk implement {result.issue_number}")
+    user_output(f"  Submit:     erk submit {result.issue_number}")
