@@ -5,6 +5,7 @@ invoke it in unit tests.
 """
 
 import subprocess
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -13,6 +14,10 @@ from erk_shared.extraction.llm_distillation import (
     distill_with_haiku,
 )
 
+# Test constants
+TEST_SESSION_ID = "test-session-id"
+TEST_REPO_ROOT = Path("/tmp/test-repo")
+
 
 class TestDistillationPrompt:
     """Tests for the distillation prompt template."""
@@ -20,7 +25,7 @@ class TestDistillationPrompt:
     def test_prompt_includes_instructions(self) -> None:
         """Prompt contains key instructions for Haiku."""
         assert "preprocessing" in DISTILLATION_PROMPT
-        assert "documentation extraction" in DISTILLATION_PROMPT
+        assert "doc extraction" in DISTILLATION_PROMPT
         assert "conservative" in DISTILLATION_PROMPT.lower()
 
     def test_prompt_includes_preservation_rules(self) -> None:
@@ -43,9 +48,20 @@ class TestDistillWithHaiku:
         mock_result = MagicMock()
         mock_result.stdout = "Distilled content"
         mock_result.returncode = 0
+        mock_scratch_path = Path("/tmp/scratch/haiku-input-abc12345.xml")
 
-        with patch("subprocess.run", return_value=mock_result) as mock_run:
-            distill_with_haiku("<session>test</session>")
+        with (
+            patch("subprocess.run", return_value=mock_result) as mock_run,
+            patch(
+                "erk_shared.extraction.llm_distillation.write_scratch_file",
+                return_value=mock_scratch_path,
+            ),
+        ):
+            distill_with_haiku(
+                "<session>test</session>",
+                session_id=TEST_SESSION_ID,
+                repo_root=TEST_REPO_ROOT,
+            )
 
             # Verify subprocess call
             mock_run.assert_called_once()
@@ -63,22 +79,45 @@ class TestDistillWithHaiku:
         mock_result = MagicMock()
         mock_result.stdout = "  Distilled output  \n"
         mock_result.returncode = 0
+        mock_scratch_path = Path("/tmp/scratch/haiku-input-abc12345.xml")
 
-        with patch("subprocess.run", return_value=mock_result):
-            result = distill_with_haiku("<session>test</session>")
+        with (
+            patch("subprocess.run", return_value=mock_result),
+            patch(
+                "erk_shared.extraction.llm_distillation.write_scratch_file",
+                return_value=mock_scratch_path,
+            ),
+        ):
+            result = distill_with_haiku(
+                "<session>test</session>",
+                session_id=TEST_SESSION_ID,
+                repo_root=TEST_REPO_ROOT,
+            )
 
             assert result == "Distilled output"
 
     def test_raises_runtime_error_on_failure(self) -> None:
         """Raises RuntimeError when subprocess fails."""
-        with patch(
-            "subprocess.run",
-            side_effect=subprocess.CalledProcessError(
-                returncode=1, cmd=["claude"], stderr="Auth failed"
+        mock_scratch_path = Path("/tmp/scratch/haiku-input-abc12345.xml")
+
+        with (
+            patch(
+                "subprocess.run",
+                side_effect=subprocess.CalledProcessError(
+                    returncode=1, cmd=["claude"], stderr="Auth failed"
+                ),
+            ),
+            patch(
+                "erk_shared.extraction.llm_distillation.write_scratch_file",
+                return_value=mock_scratch_path,
             ),
         ):
             with pytest.raises(RuntimeError) as exc_info:
-                distill_with_haiku("<session>test</session>")
+                distill_with_haiku(
+                    "<session>test</session>",
+                    session_id=TEST_SESSION_ID,
+                    repo_root=TEST_REPO_ROOT,
+                )
 
             assert "distillation failed" in str(exc_info.value).lower()
 
@@ -87,11 +126,22 @@ class TestDistillWithHaiku:
         mock_result = MagicMock()
         mock_result.stdout = "Distilled"
         mock_result.returncode = 0
+        mock_scratch_path = Path("/tmp/scratch/haiku-input-abc12345.xml")
 
         test_content = "<session>Test content here</session>"
 
-        with patch("subprocess.run", return_value=mock_result) as mock_run:
-            distill_with_haiku(test_content)
+        with (
+            patch("subprocess.run", return_value=mock_result) as mock_run,
+            patch(
+                "erk_shared.extraction.llm_distillation.write_scratch_file",
+                return_value=mock_scratch_path,
+            ),
+        ):
+            distill_with_haiku(
+                test_content,
+                session_id=TEST_SESSION_ID,
+                repo_root=TEST_REPO_ROOT,
+            )
 
             call_args = mock_run.call_args
             cmd = call_args[0][0]
@@ -103,3 +153,33 @@ class TestDistillWithHaiku:
             # Prompt should contain both template and content
             assert "preprocessing" in full_prompt
             assert test_content in full_prompt
+
+    def test_writes_to_scratch_storage(self) -> None:
+        """Content is written to scratch storage for auditing."""
+        mock_result = MagicMock()
+        mock_result.stdout = "Distilled"
+        mock_result.returncode = 0
+        mock_scratch_path = Path("/tmp/scratch/haiku-input-abc12345.xml")
+
+        test_content = "<session>Test content</session>"
+
+        with (
+            patch("subprocess.run", return_value=mock_result),
+            patch(
+                "erk_shared.extraction.llm_distillation.write_scratch_file",
+                return_value=mock_scratch_path,
+            ) as mock_write,
+        ):
+            distill_with_haiku(
+                test_content,
+                session_id=TEST_SESSION_ID,
+                repo_root=TEST_REPO_ROOT,
+            )
+
+            mock_write.assert_called_once_with(
+                test_content,
+                session_id=TEST_SESSION_ID,
+                suffix=".xml",
+                prefix="haiku-input-",
+                repo_root=TEST_REPO_ROOT,
+            )

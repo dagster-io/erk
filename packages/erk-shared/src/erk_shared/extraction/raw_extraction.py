@@ -10,6 +10,7 @@ Two-stage preprocessing architecture:
 Stage 2 is controlled by USE_LLM_DISTILLATION constant.
 """
 
+import warnings
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -163,11 +164,19 @@ def create_raw_extraction_plan(
     # Stage 2: Haiku distillation (if enabled)
     if USE_LLM_DISTILLATION:
         try:
-            combined_xml = distill_with_haiku(combined_xml)
-        except RuntimeError:
+            combined_xml = distill_with_haiku(
+                combined_xml,
+                session_id=current_session_id,
+                repo_root=repo_root,
+            )
+        except RuntimeError as e:
             # Distillation failed - fall back to Stage 1 output
+            warnings.warn(
+                f"Haiku distillation failed, using Stage 1 output: {e}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
             # Continue with mechanically reduced content
-            pass
 
     # Render session content blocks (handles chunking)
     session_label = branch_context.current_branch or "session"

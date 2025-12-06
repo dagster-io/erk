@@ -11,6 +11,7 @@ to Haiku in Stage 2.
 
 import json
 import re
+from dataclasses import dataclass, field
 from pathlib import Path
 
 
@@ -78,6 +79,81 @@ def deduplicate_assistant_messages(entries: list[dict]) -> list[dict]:
     return deduplicated
 
 
+@dataclass
+class SessionXmlWriter:
+    """Streaming XML writer that outputs elements as they're added."""
+
+    _lines: list[str] = field(default_factory=lambda: ["<session>"])
+
+    def _escape(self, text: str) -> str:
+        """Escape XML special characters."""
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    def meta(self, **attrs: str) -> None:
+        """Write a meta element."""
+        attr_str = " ".join(f'{k}="{self._escape(v)}"' for k, v in attrs.items())
+        self._lines.append(f"  <meta {attr_str} />")
+
+    def user(self, content: str) -> None:
+        """Write a user element."""
+        self._lines.append(f"  <user>{self._escape(content)}</user>")
+
+    def assistant(self, text: str) -> None:
+        """Write an assistant text element."""
+        self._lines.append(f"  <assistant>{self._escape(text)}</assistant>")
+
+    def tool_use(self, name: str, tool_id: str, params: dict[str, str]) -> None:
+        """Write a tool_use element with params."""
+        self._lines.append(
+            f'  <tool_use name="{self._escape(name)}" id="{self._escape(tool_id)}">'
+        )
+        for key, value in params.items():
+            self._lines.append(
+                f'    <param name="{self._escape(key)}">{self._escape(value)}</param>'
+            )
+        self._lines.append("  </tool_use>")
+
+    def tool_result(self, tool_id: str, content: str) -> None:
+        """Write a tool_result element."""
+        self._lines.append(f'  <tool_result tool="{self._escape(tool_id)}">')
+        self._lines.append(self._escape(content))
+        self._lines.append("  </tool_result>")
+
+    def finish(self) -> str:
+        """Close session and return complete XML."""
+        self._lines.append("</session>")
+        return "\n".join(self._lines)
+
+
+def _extract_user_content(message: dict) -> str:
+    """Extract text content from user message."""
+    content = message.get("content", "")
+    if isinstance(content, list):
+        text_parts = []
+        for block in content:
+            if isinstance(block, dict) and block.get("type") == "text":
+                text_parts.append(block.get("text", ""))
+            elif isinstance(block, str):
+                text_parts.append(block)
+        return "\n".join(text_parts)
+    return str(content)
+
+
+def _extract_tool_result_content(message: dict) -> str:
+    """Extract text content from tool result message."""
+    content_blocks = message.get("content", [])
+    result_parts = []
+    for block in content_blocks:
+        if isinstance(block, dict):
+            if block.get("type") == "text":
+                result_parts.append(block.get("text", ""))
+            elif "text" in block:
+                result_parts.append(block["text"])
+        elif isinstance(block, str):
+            result_parts.append(block)
+    return "\n".join(result_parts)
+
+
 def generate_compressed_xml(entries: list[dict], source_label: str | None = None) -> str:
     """Generate coarse-grained XML from mechanically reduced entries.
 
@@ -91,89 +167,47 @@ def generate_compressed_xml(entries: list[dict], source_label: str | None = None
     Returns:
         XML string representation of the session
     """
-    xml_lines = ["<session>"]
+    writer = SessionXmlWriter()
 
-    # Add source label if provided (for agent logs)
+    # Write metadata
     if source_label:
-        xml_lines.append(f'  <meta source="{escape_xml(source_label)}" />')
+        writer.meta(source=source_label)
 
-    # Extract session metadata once (from first entry with gitBranch)
     for entry in entries:
-        # Check in the original entry structure (before filtering)
         if "gitBranch" in entry:
-            branch = entry["gitBranch"]
-            xml_lines.append(f'  <meta branch="{escape_xml(branch)}" />')
+            writer.meta(branch=entry["gitBranch"])
             break
 
+    # Stream entries
     for entry in entries:
         entry_type = entry["type"]
         message = entry.get("message", {})
 
         if entry_type == "user":
-            # Extract user content
-            content = message.get("content", "")
-            if isinstance(content, list):
-                # Handle list of content blocks
-                text_parts = []
-                for block in content:
-                    if isinstance(block, dict) and block.get("type") == "text":
-                        text_parts.append(block.get("text", ""))
-                    elif isinstance(block, str):
-                        text_parts.append(block)
-                content = "\n".join(text_parts)
-            # Apply whitespace compaction
-            content = compact_whitespace(str(content))
-            xml_lines.append(f"  <user>{escape_xml(content)}</user>")
+            content = _extract_user_content(message)
+            writer.user(compact_whitespace(content))
 
         elif entry_type == "assistant":
-            # Extract text and tool uses
-            content_blocks = message.get("content", [])
-            for content in content_blocks:
-                if content.get("type") == "text":
-                    text = content.get("text", "")
-                    if text.strip():  # Only include non-empty text
-                        # Apply whitespace compaction
-                        text = compact_whitespace(text)
-                        xml_lines.append(f"  <assistant>{escape_xml(text)}</assistant>")
-                elif content.get("type") == "tool_use":
-                    tool_name = content.get("name", "")
-                    tool_id = content.get("id", "")
-                    escaped_name = escape_xml(tool_name)
-                    escaped_id = escape_xml(tool_id)
-                    xml_lines.append(f'  <tool_use name="{escaped_name}" id="{escaped_id}">')
-                    input_params = content.get("input", {})
-                    for key, value in input_params.items():
-                        escaped_key = escape_xml(key)
-                        escaped_value = escape_xml(str(value))
-                        xml_lines.append(f'    <param name="{escaped_key}">{escaped_value}</param>')
-                    xml_lines.append("  </tool_use>")
+            for block in message.get("content", []):
+                if block.get("type") == "text":
+                    text = block.get("text", "")
+                    if text.strip():
+                        writer.assistant(compact_whitespace(text))
+                elif block.get("type") == "tool_use":
+                    writer.tool_use(
+                        name=block.get("name", ""),
+                        tool_id=block.get("id", ""),
+                        params={k: str(v) for k, v in block.get("input", {}).items()},
+                    )
 
         elif entry_type == "tool_result":
-            # Handle tool results - no pruning in Stage 1 (Haiku handles that)
-            content_blocks = message.get("content", [])
-            tool_use_id = message.get("tool_use_id", "")
+            content = _extract_tool_result_content(message)
+            writer.tool_result(
+                tool_id=message.get("tool_use_id", ""),
+                content=compact_whitespace(content),
+            )
 
-            # Extract result content
-            result_parts = []
-            for block in content_blocks:
-                if isinstance(block, dict):
-                    if block.get("type") == "text":
-                        result_parts.append(block.get("text", ""))
-                    elif "text" in block:
-                        result_parts.append(block["text"])
-                elif isinstance(block, str):
-                    result_parts.append(block)
-
-            result_text = "\n".join(result_parts)
-            # Apply whitespace compaction
-            result_text = compact_whitespace(result_text)
-
-            xml_lines.append(f'  <tool_result tool="{escape_xml(tool_use_id)}">')
-            xml_lines.append(escape_xml(result_text))
-            xml_lines.append("  </tool_result>")
-
-    xml_lines.append("</session>")
-    return "\n".join(xml_lines)
+    return writer.finish()
 
 
 def reduce_session_mechanically(entries: list[dict]) -> list[dict]:

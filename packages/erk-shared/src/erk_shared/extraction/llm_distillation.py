@@ -14,8 +14,9 @@ Uses Claude Code subprocess for authentication, avoiding direct API dependencies
 """
 
 import subprocess
-import tempfile
 from pathlib import Path
+
+from erk_shared.scratch.scratch import write_scratch_file
 
 # Prompt template for Haiku distillation
 DISTILLATION_PROMPT = """You are preprocessing a Claude Code session log for doc extraction.
@@ -44,7 +45,12 @@ Session:
 """
 
 
-def distill_with_haiku(reduced_content: str) -> str:
+def distill_with_haiku(
+    reduced_content: str,
+    *,
+    session_id: str,
+    repo_root: Path | None = None,
+) -> str:
     """Stage 2: Semantic distillation via Haiku.
 
     Invokes Claude Code subprocess to piggyback on its auth.
@@ -52,6 +58,8 @@ def distill_with_haiku(reduced_content: str) -> str:
 
     Args:
         reduced_content: XML content from Stage 1 mechanical reduction
+        session_id: Claude session ID for scratch file isolation.
+        repo_root: Repo root path. If None, auto-detects via git.
 
     Returns:
         Distilled content with noise removed and duplicates collapsed
@@ -59,15 +67,14 @@ def distill_with_haiku(reduced_content: str) -> str:
     Raises:
         RuntimeError: If Claude Code subprocess fails
     """
-    # Write reduced content to temp file
-    with tempfile.NamedTemporaryFile(
-        mode="w",
+    # Write reduced content to scratch for debugging/auditing
+    scratch_path = write_scratch_file(
+        reduced_content,
+        session_id=session_id,
         suffix=".xml",
-        delete=False,
-        encoding="utf-8",
-    ) as tmp_file:
-        tmp_file.write(reduced_content)
-        tmp_path = Path(tmp_file.name)
+        prefix="haiku-input-",
+        repo_root=repo_root,
+    )
 
     try:
         # Build the full prompt
@@ -94,6 +101,6 @@ def distill_with_haiku(reduced_content: str) -> str:
         raise RuntimeError(f"Claude Code distillation failed: {e.stderr}") from e
 
     finally:
-        # Clean up temp file
-        if tmp_path.exists():
-            tmp_path.unlink()
+        # Clean up scratch file
+        if scratch_path.exists():
+            scratch_path.unlink()
