@@ -35,9 +35,10 @@ from erk_shared.github.metadata import (
     format_plan_header_body,
 )
 from erk_shared.plan_utils import extract_title_from_plan
+from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, delete_marker
 from erk_shared.scratch.scratch import write_scratch_file
 
-from dot_agent_kit.context_helpers import require_github_issues, require_repo_root
+from dot_agent_kit.context_helpers import require_cwd, require_github_issues, require_repo_root
 
 
 @click.command(name="create-extraction-plan")
@@ -90,9 +91,10 @@ def create_extraction_plan(
     When using --plan-content, the content is automatically written to
     .erk/scratch/<session-id>/extraction-plan.md
     """
-    # Get GitHub Issues from context
+    # Get required context
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
+    cwd = require_cwd(ctx)
 
     # Validate options: must provide either --plan-content or --plan-file
     if plan_content is None and plan_file is None:
@@ -259,6 +261,9 @@ def create_extraction_plan(
             )
         )
         raise SystemExit(1) from e
+
+    # Delete pending extraction marker since extraction is complete
+    delete_marker(cwd, PENDING_EXTRACTION_MARKER)
 
     # Output success
     output: dict[str, object] = {

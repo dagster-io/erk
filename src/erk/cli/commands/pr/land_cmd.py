@@ -1,25 +1,23 @@
-"""Land current PR and create pending extraction marker.
+"""Land current PR, run extraction, and delete worktree.
 
-This command merges the PR, creates a "pending extraction" marker, and outputs
-an activation script. The user stays in the worktree to extract insights before
-manually deleting.
+This command merges the PR, automatically runs extraction, and deletes the worktree.
+It combines what was previously three separate commands into one seamless flow.
 
 Workflow:
-    1. erk pr land              # Merges PR, creates marker, stays in worktree
-    2. erk plan extraction raw  # Extracts insights, deletes marker
-    3. erk down --delete-current        # Manual cleanup when ready
+    1. erk pr land  # Merges PR, extracts insights, prints URL, deletes worktree
 
 Workflow (--skip-insights):
     1. erk pr land --skip-insights  # Merges PR, deletes worktree, goes to trunk
 """
 
 import click
+from erk_shared.extraction.raw_extraction import create_raw_extraction_plan
+from erk_shared.extraction.session_discovery import get_current_session_id
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
 from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
-from erk_shared.output.output import machine_output, user_output
+from erk_shared.output.output import user_output
 
-from erk.cli.activation import render_activation_script
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     check_clean_working_tree,
@@ -29,7 +27,6 @@ from erk.cli.commands.navigation_helpers import (
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
-from erk.core.markers import PENDING_EXTRACTION_MARKER, create_marker
 
 
 @click.command("land")
@@ -37,15 +34,15 @@ from erk.core.markers import PENDING_EXTRACTION_MARKER, create_marker
 @click.option(
     "--skip-insights",
     is_flag=True,
-    help="Skip extraction marker; delete worktree and go to trunk",
+    help="Skip extraction; delete worktree and go to trunk",
 )
 @click.pass_obj
 def pr_land(ctx: ErkContext, script: bool, skip_insights: bool) -> None:
-    """Merge PR and create pending extraction marker.
+    """Merge PR, run extraction, and delete worktree.
 
-    Merges the current PR (must be one level from trunk) and creates a
-    ".erk/pending-extraction" marker in the worktree. The user stays in the
-    worktree to run extraction before manual cleanup.
+    Merges the current PR (must be one level from trunk), automatically runs
+    extraction to capture session insights, then deletes the worktree and
+    navigates to trunk.
 
     With shell integration (recommended):
       erk pr land
@@ -53,13 +50,9 @@ def pr_land(ctx: ErkContext, script: bool, skip_insights: bool) -> None:
     Without shell integration:
       source <(erk pr land --script)
 
-    After landing:
-      erk plan extraction raw           # Extract insights (deletes marker)
-      erk down --delete-current         # Manual cleanup
-
     With --skip-insights:
-      Skips the extraction marker and automatically deletes the worktree
-      and branch, navigating to trunk. Use when no session insights are needed.
+      Skips extraction and just deletes the worktree.
+      Use when no session insights are needed.
 
     Requires:
     - Graphite enabled: 'erk config set use_graphite true'
@@ -111,43 +104,36 @@ def pr_land(ctx: ErkContext, script: bool, skip_insights: bool) -> None:
         + f" Merged PR #{success_result.pr_number} [{success_result.branch_name}]"
     )
 
-    if skip_insights:
-        # Skip marker creation, delete worktree and branch, go to trunk
-        delete_branch_and_worktree(ctx, repo, current_branch, current_worktree_path)
+    # Step 2: Run extraction (unless --skip-insights)
+    extraction_issue_url: str | None = None
+    if not skip_insights:
+        # Get current session ID from environment
+        current_session_id = get_current_session_id()
 
-        user_output("")
-        user_output(click.style("✓", fg="green") + " Landed PR. Deleted worktree and branch.")
+        # Run extraction
+        extraction_result = create_raw_extraction_plan(
+            github_issues=ctx.issues,
+            git=ctx.git,
+            repo_root=repo.root,
+            cwd=ctx.cwd,
+            current_session_id=current_session_id,
+        )
 
-        # Output activation script pointing to trunk/root repo
-        activate_root_repo(ctx, repo, script, command_name="pr-land")
-        # activate_root_repo raises SystemExit(0)
+        if extraction_result.success:
+            extraction_issue_url = extraction_result.issue_url
+            user_output(
+                click.style("✓", fg="green") + f" Extracted insights: {extraction_issue_url}"
+            )
+        else:
+            # Extraction failed - warn but continue (PR was already merged)
+            user_output(
+                click.style("⚠", fg="yellow") + f" Extraction failed: {extraction_result.error}"
+            )
 
-    # Default behavior: create pending extraction marker and stay in worktree
+    # Step 3: Delete worktree and branch, navigate to trunk
+    delete_branch_and_worktree(ctx, repo, current_branch, current_worktree_path)
+    user_output(click.style("✓", fg="green") + " Deleted worktree and branch")
 
-    # Step 2: Create pending extraction marker
-    # This signals that extraction should happen before worktree deletion
-    create_marker(current_worktree_path, PENDING_EXTRACTION_MARKER)
-    user_output(click.style("✓", fg="green") + " Created pending extraction marker")
-
-    # Step 3: Output activation script (stays in current worktree)
-    extraction_cmd = "erk plan extraction raw"
-    script_content = render_activation_script(
-        worktree_path=current_worktree_path,
-        final_message=f'echo "Landed PR. Run {extraction_cmd} to extract insights."',
-        comment="erk pr land activate-script",
-    )
-    activation_result = ctx.script_writer.write_activation_script(
-        script_content,
-        command_name="pr-land",
-        comment="stay in worktree after landing",
-    )
-    machine_output(str(activation_result.path), nl=False)
-
-    # Step 4: Output next steps
-    user_output("")
-    user_output(click.style("Next steps:", fg="cyan"))
-    user_output("  1. Run: erk plan extraction raw")
-    user_output("  2. Run: erk down --delete-current")
-    user_output("")
-
-    raise SystemExit(0)
+    # Output activation script pointing to trunk/root repo
+    activate_root_repo(ctx, repo, script, command_name="pr-land")
+    # activate_root_repo raises SystemExit(0)

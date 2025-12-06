@@ -5,6 +5,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, create_marker, marker_exists
 
 from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_extraction_plan import (
@@ -279,3 +280,31 @@ def test_create_extraction_plan_issue_format(tmp_path: Path) -> None:
     # Verify labels
     assert "erk-plan" in labels
     assert "erk-extraction" in labels
+
+
+def test_create_extraction_plan_deletes_pending_extraction_marker(tmp_path: Path) -> None:
+    """Test that pending extraction marker is deleted on success."""
+    fake_gh = FakeGitHubIssues()
+    runner = CliRunner()
+
+    # Create the pending extraction marker before running command
+    create_marker(tmp_path, PENDING_EXTRACTION_MARKER)
+    assert marker_exists(tmp_path, PENDING_EXTRACTION_MARKER)
+
+    result = runner.invoke(
+        create_extraction_plan,
+        [
+            "--plan-content",
+            "# Extraction Plan\n\n## Items\n\n- Item 1",
+            "--session-id",
+            "test-session-123",
+            "--extraction-session-ids",
+            "test-session-123",
+        ],
+        obj=DotAgentContext.for_test(github_issues=fake_gh, repo_root=tmp_path, cwd=tmp_path),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+
+    # Verify marker was deleted
+    assert not marker_exists(tmp_path, PENDING_EXTRACTION_MARKER)

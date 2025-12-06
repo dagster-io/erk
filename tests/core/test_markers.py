@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk.core.markers import (
+from erk_shared.scratch.markers import (
     PENDING_EXTRACTION_MARKER,
     create_marker,
     delete_marker,

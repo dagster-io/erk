@@ -2,29 +2,30 @@
 
 The pr land command now:
 1. Merges the PR
-2. Creates a pending extraction marker
-3. Stays in the worktree (no navigation or deletion)
-4. Outputs activation script pointing to current worktree
+2. Automatically runs extraction (unless --skip-insights)
+3. Prints extraction issue URL (if successful)
+4. Deletes worktree and navigates to trunk
 """
 
+from dataclasses import replace
 from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.types import PullRequestInfo
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 
 from erk.cli.commands.pr import pr_group
-from erk.core.markers import PENDING_EXTRACTION_MARKER, marker_exists
 from erk.core.repo_discovery import RepoContext
 from tests.test_utils.cli_helpers import assert_cli_error
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
-def test_pr_land_success_creates_marker_and_stays_in_worktree() -> None:
-    """Test pr land merges PR, creates marker, stays in worktree."""
+def test_pr_land_success_runs_extraction_and_deletes_worktree() -> None:
+    """Test pr land merges PR, runs extraction, deletes worktree."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -65,6 +66,9 @@ def test_pr_land_success_creates_marker_and_stays_in_worktree() -> None:
             merge_should_succeed=True,
         )
 
+        # FakeGitHubIssues for extraction
+        issues_ops = FakeGitHubIssues(username="testuser")
+
         repo = RepoContext(
             root=env.cwd,
             repo_name=env.cwd.name,
@@ -75,6 +79,8 @@ def test_pr_land_success_creates_marker_and_stays_in_worktree() -> None:
         test_ctx = env.build_context(
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
+        # Manually set issues since build_context doesn't have issues param
+        test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
@@ -83,27 +89,93 @@ def test_pr_land_success_creates_marker_and_stays_in_worktree() -> None:
         # Verify PR was merged
         assert 123 in github_ops.merged_prs
 
-        # Verify pending extraction marker was created
-        assert marker_exists(feature_1_path, PENDING_EXTRACTION_MARKER)
+        # Verify worktree WAS removed (new behavior)
+        assert feature_1_path in git_ops.removed_worktrees
 
-        # Verify worktree was NOT removed (user stays in worktree)
-        assert feature_1_path not in git_ops.removed_worktrees
+        # Verify branch WAS deleted (new behavior)
+        assert "feature-1" in git_ops.deleted_branches
 
-        # Verify branch was NOT deleted
-        assert "feature-1" not in git_ops.deleted_branches
-
-        # Verify no pull was called (user stays in current worktree)
-        assert len(git_ops.pulled_branches) == 0
-
-        # Verify activation script points to current worktree
+        # Verify activation script points to root repo (trunk)
         script_path = Path(result.stdout.strip())
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
-        assert str(feature_1_path) in script_content
+        assert str(repo.root) in script_content
 
-        # Verify next steps shown
-        assert "Next steps:" in result.output
-        assert "erk plan extraction raw" in result.output
+        # Verify "Deleted worktree" message
+        assert "Deleted worktree and branch" in result.output
+
+
+def test_pr_land_extraction_failure_continues() -> None:
+    """Test pr land continues with worktree deletion even if extraction fails."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_titles={123: "Feature 1"},
+            pr_bodies_by_number={123: "PR body"},
+            merge_should_succeed=True,
+        )
+
+        # FakeGitHubIssues with no username = not authenticated = extraction fails
+        issues_ops = FakeGitHubIssues(username=None)
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+        test_ctx = replace(test_ctx, issues=issues_ops)
+
+        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+
+        # Should succeed overall despite extraction failure
+        assert result.exit_code == 0
+
+        # Verify PR was merged
+        assert 123 in github_ops.merged_prs
+
+        # Verify extraction failure warning shown
+        assert "Extraction failed" in result.output
+
+        # Verify worktree still deleted despite extraction failure
+        assert feature_1_path in git_ops.removed_worktrees
+        assert "feature-1" in git_ops.deleted_branches
 
 
 def test_pr_land_error_from_execute_land_pr() -> None:
@@ -147,10 +219,6 @@ def test_pr_land_error_from_execute_land_pr() -> None:
         result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "Branch must be exactly one level up from main")
-
-        # Verify no marker was created
-        feature_1_path = repo_dir / "worktrees" / "feature-1"
-        assert not marker_exists(feature_1_path, PENDING_EXTRACTION_MARKER)
 
 
 def test_pr_land_requires_graphite() -> None:
@@ -445,6 +513,8 @@ def test_pr_land_does_not_call_safe_chdir() -> None:
             merge_should_succeed=True,
         )
 
+        issues_ops = FakeGitHubIssues(username="testuser")
+
         repo = RepoContext(
             root=env.cwd,
             repo_name=env.cwd.name,
@@ -455,6 +525,7 @@ def test_pr_land_does_not_call_safe_chdir() -> None:
         test_ctx = env.build_context(
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
+        test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
@@ -508,6 +579,9 @@ def test_pr_land_with_skip_insights_deletes_worktree_and_branch() -> None:
             merge_should_succeed=True,
         )
 
+        # Note: No issues setup needed since --skip-insights skips extraction
+        issues_ops = FakeGitHubIssues(username="testuser")
+
         repo = RepoContext(
             root=env.cwd,
             repo_name=env.cwd.name,
@@ -518,6 +592,7 @@ def test_pr_land_with_skip_insights_deletes_worktree_and_branch() -> None:
         test_ctx = env.build_context(
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
+        test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(
             pr_group, ["land", "--script", "--skip-insights"], obj=test_ctx, catch_exceptions=False
@@ -528,8 +603,8 @@ def test_pr_land_with_skip_insights_deletes_worktree_and_branch() -> None:
         # Verify PR was merged
         assert 123 in github_ops.merged_prs
 
-        # Verify NO pending extraction marker was created
-        assert not marker_exists(feature_1_path, PENDING_EXTRACTION_MARKER)
+        # Verify NO extraction was attempted (no issues created)
+        assert len(issues_ops.created_issues) == 0
 
         # Verify worktree was removed
         assert feature_1_path in git_ops.removed_worktrees
@@ -538,7 +613,7 @@ def test_pr_land_with_skip_insights_deletes_worktree_and_branch() -> None:
         assert "feature-1" in git_ops.deleted_branches
 
         # Verify output messages
-        assert "Landed PR. Deleted worktree and branch." in result.output
+        assert "Deleted worktree and branch" in result.output
 
         # Verify activation script points to root repo (not worktree)
         script_path = Path(result.stdout.strip())
@@ -546,5 +621,6 @@ def test_pr_land_with_skip_insights_deletes_worktree_and_branch() -> None:
         assert script_content is not None
         assert str(repo.root) in script_content
 
-        # Verify "Next steps" is NOT shown (that's for the default flow)
-        assert "Next steps:" not in result.output
+        # Verify extraction-related output NOT shown
+        assert "Extracted insights" not in result.output
+        assert "Extraction failed" not in result.output
