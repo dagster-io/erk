@@ -34,7 +34,7 @@ from erk_shared.github.metadata import (
 # Enable/disable Stage 2 Haiku distillation
 # When True: Stage 1 mechanical reduction + Stage 2 Haiku distillation
 # When False: Stage 1 only (deterministic, no LLM cost)
-USE_LLM_DISTILLATION = True
+USE_LLM_DISTILLATION = False
 
 # Default issue body content for raw extraction plans
 RAW_EXTRACTION_BODY = """# Raw Session Context
