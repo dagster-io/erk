@@ -922,6 +922,40 @@ A marker state indicating a merged PR is queued for insight extraction. When `er
 
 **Related**: [erk-skip-extraction](#erk-skip-extraction), [Extraction Plan](#extraction-plan)
 
+### session_context module
+
+**Location:** `erk_shared/extraction/session_context.py`
+
+The session context module provides a reusable helper for collecting and preprocessing Claude Code session data for embedding in GitHub issues. It encapsulates the full pipeline:
+
+1. Get current session ID (from env or provided)
+2. Find project directory
+3. Get branch context
+4. Discover available sessions
+5. Auto-select based on branch context
+6. Preprocess sessions to XML
+7. Combine multiple sessions with headers
+
+**Key exports:**
+
+- `SessionContextResult` - Dataclass with `combined_xml`, `session_ids`, `branch_context`
+- `collect_session_context()` - Main orchestrator function
+
+**Usage:**
+
+```python
+from erk_shared.extraction.session_context import collect_session_context
+
+result = collect_session_context(git=git, cwd=cwd, min_size=1024)
+if result is not None:
+    # Use result.combined_xml, result.session_ids, result.branch_context
+```
+
+**Used by:**
+
+- `plan-save-to-issue` - Embeds planning session context in plan issues
+- `raw_extraction.py` - Creates extraction plans with session data
+
 ---
 
 ## Abbreviations
