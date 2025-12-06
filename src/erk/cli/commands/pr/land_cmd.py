@@ -113,28 +113,7 @@ def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
         + f" Merged PR #{success_result.pr_number} [{success_result.branch_name}]"
     )
 
-    # Step 1.5: Create extraction plan from session logs (optional)
-    # This captures learnings from the work session for documentation improvements.
-    # Use ctx.cwd (current working directory) to access session logs in the worktree.
-    # If extraction fails, preserve the worktree so user can retry manually.
-    # Launch Claude interactively so the user can participate in the extraction workflow.
-    extraction_success = True  # Default: proceed with deletion
-    if extract:
-        exit_code = ctx.claude_executor.execute_interactive_command(
-            "/erk:create-extraction-plan",
-            ctx.cwd,
-        )
-        extraction_success = exit_code == 0
-        if extraction_success:
-            user_output(click.style("✓", fg="green") + " Created documentation extraction plan")
-        else:
-            user_output(
-                click.style("⚠", fg="yellow")
-                + " Extraction plan failed - preserving worktree for manual retry"
-            )
-            user_output("  Run manually: claude /erk:create-extraction-plan")
-
-    # Step 2: Navigate to destination (trunk or upstack)
+    # Step 2: Navigate to destination (trunk or upstack) - compute early for messaging
     worktrees = ctx.git.list_worktrees(repo.root)
 
     if up:
@@ -175,18 +154,32 @@ def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
     )
     machine_output(str(activation_result.path), nl=False)
 
-    # Step 4: Delete current branch and worktree (skip if extraction failed)
-    if extraction_success:
-        # main_repo_root is always set by RepoContext.__post_init__, but pyright doesn't know
-        main_repo = repo.main_repo_root if repo.main_repo_root else repo.root
-        delete_branch_and_worktree(ctx, main_repo, current_branch, current_worktree_path)
-    else:
-        user_output(
-            click.style("⚠", fg="yellow") + f" Worktree preserved at: {current_worktree_path}"
-        )
-        user_output("  Delete manually after extraction: erk wt rm")
+    # Step 4: Handle extraction plan creation
+    # If extract=True, launch Claude interactively with process takeover.
+    # This avoids the hanging subprocess issue by using os.execvp() instead of subprocess.run().
+    # The user must run cleanup manually after extraction completes.
+    if extract:
+        user_output("")
+        user_output(click.style("Launching extraction plan.", fg="cyan") + " When complete, run:")
+        user_output("  erk down --delete-current && git pull")
+        user_output("")
 
-    # Step 5: Pull latest changes on destination branch
+        # This call takes over the process and never returns in production.
+        # In tests (FakeClaudeExecutor), it returns normally, so we need the return
+        # statement to prevent continuing to the deletion code.
+        ctx.claude_executor.execute_interactive(
+            ctx.cwd,
+            dangerous=False,
+            command="/erk:create-extraction-plan",
+        )
+        # Never reached in production - process is replaced by Claude CLI.
+        # In tests, the fake returns, so we return here to match production behavior.
+        return
+
+    # Step 5 (no-extract path): Delete current branch and worktree
+    delete_branch_and_worktree(ctx, repo.root, current_branch, current_worktree_path)
+
+    # Step 6 (no-extract path): Pull latest changes on destination branch
     # If this fails, the script is already output - shell can still navigate
     ctx.git.pull_branch(dest_path, "origin", dest_branch, ff_only=True)
     user_output(click.style("✓", fg="green") + " Pulled latest changes")

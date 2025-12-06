@@ -68,7 +68,10 @@ def test_pr_land_success_navigates_to_trunk() -> None:
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+        # Use --no-extract to test the cleanup path (extraction takes over process)
+        result = runner.invoke(
+            pr_group, ["land", "--no-extract", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
 
@@ -274,7 +277,10 @@ def test_pr_land_with_trunk_in_worktree() -> None:
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+        # Use --no-extract to test the cleanup path (extraction takes over process)
+        result = runner.invoke(
+            pr_group, ["land", "--no-extract", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
 
@@ -573,8 +579,12 @@ def test_pr_land_with_up_flag_navigates_to_child() -> None:
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
 
+        # Use --no-extract to test the cleanup path (extraction takes over process)
         result = runner.invoke(
-            pr_group, ["land", "--up", "--script"], obj=test_ctx, catch_exceptions=False
+            pr_group,
+            ["land", "--up", "--no-extract", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
@@ -798,7 +808,10 @@ def test_pr_land_outputs_script_before_deletion() -> None:
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+        # Use --no-extract to test the cleanup path (extraction takes over process)
+        result = runner.invoke(
+            pr_group, ["land", "--no-extract", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
 
@@ -890,7 +903,8 @@ def test_pr_land_outputs_script_even_when_pull_fails() -> None:
         )
 
         # Command should fail because pull fails
-        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx)
+        # Use --no-extract to test the cleanup path (extraction takes over process)
+        result = runner.invoke(pr_group, ["land", "--no-extract", "--script"], obj=test_ctx)
 
         # Command should have raised an exception due to pull failure
         assert result.exit_code != 0
@@ -981,8 +995,12 @@ def test_pr_land_with_up_flag_creates_worktree_if_needed() -> None:
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
 
+        # Use --no-extract to test the cleanup path (extraction takes over process)
         result = runner.invoke(
-            pr_group, ["land", "--up", "--script"], obj=test_ctx, catch_exceptions=False
+            pr_group,
+            ["land", "--up", "--no-extract", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
@@ -1000,8 +1018,8 @@ def test_pr_land_with_up_flag_creates_worktree_if_needed() -> None:
         assert str(feature_2_path) in script_content
 
 
-def test_pr_land_creates_extraction_plan_by_default() -> None:
-    """Test pr land creates extraction plan by default after merging PR."""
+def test_pr_land_launches_extraction_plan_by_default() -> None:
+    """Test pr land launches extraction plan via execute_interactive (process takeover)."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -1041,7 +1059,7 @@ def test_pr_land_creates_extraction_plan_by_default() -> None:
             merge_should_succeed=True,
         )
 
-        # FakeClaudeExecutor simulates successful extraction
+        # FakeClaudeExecutor simulates extraction (returns without taking over process in tests)
         claude_executor = FakeClaudeExecutor(claude_available=True)
 
         repo = RepoContext(
@@ -1064,19 +1082,24 @@ def test_pr_land_creates_extraction_plan_by_default() -> None:
 
         assert result.exit_code == 0
 
-        # Verify extraction plan was executed via ClaudeExecutor.execute_interactive_command
-        assert len(claude_executor.interactive_command_calls) == 1
-        command, worktree_path, dangerous = claude_executor.interactive_command_calls[0]
+        # Verify extraction plan was launched via execute_interactive (process takeover)
+        assert len(claude_executor.interactive_calls) == 1
+        worktree_path, dangerous, command = claude_executor.interactive_calls[0]
         assert command == "/erk:create-extraction-plan"
         assert worktree_path == env.cwd
-        assert dangerous is False  # Interactive mode respects permission prompts
+        assert dangerous is False
 
-        # Verify success message shown
-        assert "Created documentation extraction plan" in result.output
+        # Verify cleanup instructions shown (user must run cleanup after extraction)
+        assert "Launching extraction plan" in result.output
+        assert "erk down --delete-current && git pull" in result.output
 
-        # Verify PR was merged and worktree was deleted (extraction succeeded)
+        # Verify PR was merged
         assert 123 in github_ops.merged_prs
-        assert "feature-1" in git_ops.deleted_branches
+
+        # Verify worktree was NOT deleted (user must do cleanup after extraction)
+        # In production, execute_interactive() takes over and never returns.
+        # The fake returns to allow test assertions, but the code path doesn't continue.
+        assert "feature-1" not in git_ops.deleted_branches
 
 
 def test_pr_land_skips_extraction_plan_with_no_extract_flag() -> None:
@@ -1150,85 +1173,3 @@ def test_pr_land_skips_extraction_plan_with_no_extract_flag() -> None:
 
         # Verify no extraction messages in output
         assert "extraction plan" not in result.output.lower()
-
-
-def test_pr_land_preserves_worktree_when_extraction_fails() -> None:
-    """Test pr land preserves worktree when extraction plan fails for manual retry."""
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        repo_dir = env.setup_repo_structure()
-
-        git_ops = FakeGit(
-            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
-            default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
-            file_statuses={env.cwd: ([], [], [])},
-        )
-
-        graphite_ops = FakeGraphite(
-            branches={
-                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
-                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
-            }
-        )
-
-        github_ops = FakeGitHub(
-            prs={
-                "feature-1": PullRequestInfo(
-                    number=123,
-                    state="OPEN",
-                    url="https://github.com/owner/repo/pull/123",
-                    is_draft=False,
-                    title="Feature 1",
-                    checks_passing=None,
-                    owner="owner",
-                    repo="repo",
-                    has_conflicts=None,
-                ),
-            },
-            pr_titles={123: "Feature 1"},
-            pr_bodies_by_number={123: "PR body"},
-            merge_should_succeed=True,
-        )
-
-        # Simulate extraction failure via FakeClaudeExecutor (non-zero exit code)
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
-            interactive_command_exit_code=1,  # Simulate failure
-        )
-
-        repo = RepoContext(
-            root=env.cwd,
-            repo_name=env.cwd.name,
-            repo_dir=repo_dir,
-            worktrees_dir=repo_dir / "worktrees",
-        )
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            graphite=graphite_ops,
-            github=github_ops,
-            claude_executor=claude_executor,
-            repo=repo,
-            use_graphite=True,
-        )
-
-        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
-
-        # Command should still succeed
-        assert result.exit_code == 0
-
-        # Verify extraction was attempted via execute_interactive_command
-        assert len(claude_executor.interactive_command_calls) == 1
-
-        # Verify warning messages shown
-        assert "Extraction plan failed" in result.output
-        assert "preserving worktree" in result.output
-        assert "Run manually" in result.output
-        assert "Worktree preserved at" in result.output
-
-        # Verify PR was merged but worktree was NOT deleted
-        assert 123 in github_ops.merged_prs
-        assert "feature-1" not in git_ops.deleted_branches  # Worktree preserved!

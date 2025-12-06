@@ -209,12 +209,18 @@ class ClaudeExecutor(ABC):
         )
 
     @abstractmethod
-    def execute_interactive(self, worktree_path: Path, dangerous: bool) -> None:
+    def execute_interactive(
+        self,
+        worktree_path: Path,
+        dangerous: bool,
+        command: str = "/erk:plan-implement",
+    ) -> None:
         """Execute Claude CLI in interactive mode by replacing current process.
 
         Args:
             worktree_path: Path to worktree directory to run in
             dangerous: Whether to skip permission prompts
+            command: The slash command to execute (default: /erk:plan-implement)
 
         Raises:
             RuntimeError: If Claude CLI is not available
@@ -621,13 +627,18 @@ class RealClaudeExecutor(ClaudeExecutor):
 
         return result
 
-    def execute_interactive(self, worktree_path: Path, dangerous: bool) -> None:
+    def execute_interactive(
+        self,
+        worktree_path: Path,
+        dangerous: bool,
+        command: str = "/erk:plan-implement",
+    ) -> None:
         """Execute Claude CLI in interactive mode by replacing current process.
 
         Implementation details:
         - Verifies Claude CLI is available
         - Changes to worktree directory
-        - Builds command arguments with /erk:plan-implement
+        - Builds command arguments with the specified command
         - Replaces current process using os.execvp
 
         Note:
@@ -644,7 +655,7 @@ class RealClaudeExecutor(ClaudeExecutor):
         cmd_args = ["claude", "--permission-mode", "acceptEdits"]
         if dangerous:
             cmd_args.append("--dangerously-skip-permissions")
-        cmd_args.append("/erk:plan-implement")
+        cmd_args.append(command)
 
         # Replace current process with Claude
         os.execvp("claude", cmd_args)
