@@ -134,13 +134,10 @@ class RealGitHub(GitHub):
         try:
             cmd = [
                 "gh",
-                "pr",
-                "view",
-                str(pr_number),
-                "--json",
-                "baseRefName",
+                "api",
+                f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
                 "--jq",
-                ".baseRefName",
+                ".base.ref",
             ]
             stdout = execute_gh_command(cmd, repo_root)
             return stdout.strip()
@@ -198,14 +195,28 @@ class RealGitHub(GitHub):
         """
         try:
             result = run_subprocess_with_context(
-                ["gh", "pr", "view", str(pr_number), "--json", "mergeable,mergeStateStatus"],
+                [
+                    "gh",
+                    "api",
+                    f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+                    "--jq",
+                    ".mergeable,.mergeable_state",
+                ],
                 operation_context=f"check PR mergeability for PR #{pr_number}",
                 cwd=repo_root,
             )
-            data = json.loads(result.stdout)
+            # REST returns: true/false/null for mergeable, lowercase for state
+            lines = result.stdout.strip().split("\n")
+            mergeable_raw = lines[0] if len(lines) > 0 else "null"
+            merge_state = lines[1] if len(lines) > 1 else "unknown"
+
+            # Map REST values to GraphQL enum format
+            mergeable = {"true": "MERGEABLE", "false": "CONFLICTING"}.get(mergeable_raw, "UNKNOWN")
+            merge_state_status = merge_state.upper() if merge_state != "null" else "UNKNOWN"
+
             return PRMergeability(
-                mergeable=data["mergeable"],
-                merge_state_status=data["mergeStateStatus"],
+                mergeable=mergeable,
+                merge_state_status=merge_state_status,
             )
         except (
             RuntimeError,
@@ -971,26 +982,38 @@ query {{
         """Get PR details needed for checkout via gh CLI."""
         cmd = [
             "gh",
-            "pr",
-            "view",
-            str(pr_number),
-            "--json",
-            "number,headRefName,isCrossRepository,state",
+            "api",
+            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
         ]
         data = self._execute_gh_json_command(cmd, repo_root)
         if data is None:
             return None
 
         # LBYL: Validate required keys before accessing
-        required_keys = ("number", "headRefName", "isCrossRepository", "state")
-        if not all(key in data for key in required_keys):
+        # REST API uses different field names than GraphQL
+        if "number" not in data or "head" not in data or "base" not in data:
             return None
+        if "ref" not in data["head"] or "repo" not in data["head"]:
+            return None
+        if "repo" not in data["base"]:
+            return None
+
+        # Compute isCrossRepository from comparing repos
+        head_repo = data["head"]["repo"]
+        base_repo = data["base"]["repo"]
+        is_cross_repository = head_repo["full_name"] != base_repo["full_name"]
+
+        # Compute state: REST has "open"/"closed", check merged bool for MERGED
+        if data.get("merged"):
+            state = "MERGED"
+        else:
+            state = data["state"].upper()  # "open" -> "OPEN", "closed" -> "CLOSED"
 
         return PRCheckoutInfo(
             number=data["number"],
-            head_ref_name=data["headRefName"],
-            is_cross_repository=data["isCrossRepository"],
-            state=data["state"],
+            head_ref_name=data["head"]["ref"],
+            is_cross_repository=is_cross_repository,
+            state=state,
         )
 
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
@@ -1496,12 +1519,9 @@ query {{
         """
         cmd = [
             "gh",
-            "pr",
-            "view",
-            str(pr_number),
-            "--json",
-            "title",
-            "-q",
+            "api",
+            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+            "--jq",
             ".title",
         ]
         stdout = execute_gh_command(cmd, repo_root)
@@ -1519,12 +1539,9 @@ query {{
         """
         cmd = [
             "gh",
-            "pr",
-            "view",
-            str(pr_number),
-            "--json",
-            "body",
-            "-q",
+            "api",
+            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+            "--jq",
             ".body",
         ]
         stdout = execute_gh_command(cmd, repo_root)
@@ -1633,12 +1650,9 @@ query {{
         """
         cmd = [
             "gh",
-            "pr",
-            "view",
-            str(pr_number),
-            "--json",
-            "labels",
-            "-q",
+            "api",
+            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+            "--jq",
             ".labels[].name",
         ]
         stdout = execute_gh_command(cmd, repo_root)

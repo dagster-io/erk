@@ -309,19 +309,25 @@ def test_get_pr_mergeability_mergeable() -> None:
     repo_root = Path("/repo")
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # Verify command structure
-        assert cmd == ["gh", "pr", "view", "123", "--json", "mergeable,mergeStateStatus"]
+        # Verify command structure - REST API format
+        assert cmd == [
+            "gh",
+            "api",
+            "repos/{owner}/{repo}/pulls/123",
+            "--jq",
+            ".mergeable,.mergeable_state",
+        ]
         assert kwargs["cwd"] == repo_root
         assert kwargs["capture_output"] is True
         assert kwargs["text"] is True
         assert kwargs["encoding"] == "utf-8"
         assert kwargs["check"] is True
 
-        # Return mock response
+        # Return mock response - REST API returns multiline: true/false/null + lowercase state
         result = subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout=json.dumps({"mergeable": "MERGEABLE", "mergeStateStatus": "CLEAN"}),
+            stdout="true\nclean",
             stderr="",
         )
         return result
@@ -347,10 +353,11 @@ def test_get_pr_mergeability_conflicting() -> None:
     repo_root = Path("/repo")
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        # REST API returns false for conflicting, lowercase state
         result = subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout=json.dumps({"mergeable": "CONFLICTING", "mergeStateStatus": "DIRTY"}),
+            stdout="false\ndirty",
             stderr="",
         )
         return result
@@ -374,10 +381,11 @@ def test_get_pr_mergeability_unknown() -> None:
     repo_root = Path("/repo")
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        # REST API returns null for unknown mergeability
         result = subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout=json.dumps({"mergeable": "UNKNOWN", "mergeStateStatus": "UNKNOWN"}),
+            stdout="null\nunknown",
             stderr="",
         )
         return result
@@ -417,14 +425,13 @@ def test_get_pr_mergeability_command_failure() -> None:
         subprocess.run = original_run
 
 
-def test_get_pr_mergeability_json_decode_error() -> None:
-    """Test that get_pr_mergeability returns None on malformed JSON."""
+def test_get_pr_mergeability_single_line_output() -> None:
+    """Test that get_pr_mergeability handles malformed single-line output gracefully."""
     repo_root = Path("/repo")
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        result = subprocess.CompletedProcess(
-            args=cmd, returncode=0, stdout="not valid json", stderr=""
-        )
+        # Only one line of output (missing mergeable_state)
+        result = subprocess.CompletedProcess(args=cmd, returncode=0, stdout="true", stderr="")
         return result
 
     original_run = subprocess.run
@@ -434,20 +441,21 @@ def test_get_pr_mergeability_json_decode_error() -> None:
         ops = RealGitHub(FakeTime())
         result = ops.get_pr_mergeability(repo_root, 123)
 
-        assert result is None
+        # Should still return a result with default for missing state
+        assert result is not None
+        assert result.mergeable == "MERGEABLE"
+        assert result.merge_state_status == "UNKNOWN"
     finally:
         subprocess.run = original_run
 
 
-def test_get_pr_mergeability_missing_key() -> None:
-    """Test that get_pr_mergeability returns None when JSON is missing required keys."""
+def test_get_pr_mergeability_empty_output() -> None:
+    """Test that get_pr_mergeability handles empty output gracefully."""
     repo_root = Path("/repo")
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # Missing mergeStateStatus key
-        result = subprocess.CompletedProcess(
-            args=cmd, returncode=0, stdout=json.dumps({"mergeable": "MERGEABLE"}), stderr=""
-        )
+        # Empty output
+        result = subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
         return result
 
     original_run = subprocess.run
@@ -457,7 +465,10 @@ def test_get_pr_mergeability_missing_key() -> None:
         ops = RealGitHub(FakeTime())
         result = ops.get_pr_mergeability(repo_root, 123)
 
-        assert result is None
+        # Should return UNKNOWN values for empty output
+        assert result is not None
+        assert result.mergeable == "UNKNOWN"
+        assert result.merge_state_status == "UNKNOWN"
     finally:
         subprocess.run = original_run
 
