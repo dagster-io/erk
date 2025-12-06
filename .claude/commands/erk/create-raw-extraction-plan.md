@@ -101,7 +101,17 @@ Post each as a separate comment to the created issue:
 gh issue comment <issue-number> --body "<comment-body>"
 ```
 
-### Step 5: Output Result
+### Step 5: Delete Pending Extraction Marker
+
+After successfully creating the extraction issue, delete the pending extraction marker:
+
+```bash
+rm -f .erk/pending-extraction
+```
+
+This allows the user to delete the worktree without needing `--force`.
+
+### Step 6: Output Result
 
 Output JSON to stdout for the caller to parse:
 
@@ -114,3 +124,5 @@ If no sessions were found or preprocessing failed, output:
 ```json
 { "issue_url": null, "error": "<error-message>" }
 ```
+
+**Note:** The pending extraction marker is NOT deleted if extraction fails. This ensures the user is reminded to extract insights before cleanup.

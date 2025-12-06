@@ -9,6 +9,7 @@ from erk.cli.activation import render_activation_script
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+from erk.core.markers import PENDING_EXTRACTION_MARKER, marker_exists
 from erk.core.repo_discovery import RepoContext
 
 
@@ -25,6 +26,37 @@ def ensure_graphite_enabled(ctx: ErkContext) -> None:
         ctx.global_config is not None and ctx.global_config.use_graphite,
         "This command requires Graphite to be enabled. Run 'erk config set use_graphite true'",
     )
+
+
+def check_pending_extraction_marker(worktree_path: Path, force: bool) -> None:
+    """Check for pending extraction marker and block deletion if present.
+
+    This provides friction before worktree deletion to ensure insights are
+    extracted from the session logs. The marker is created by `erk pr land`
+    and deleted by `/erk:create-raw-extraction-plan`.
+
+    Args:
+        worktree_path: Path to the worktree being deleted
+        force: If True, warn but don't block deletion
+
+    Raises:
+        SystemExit: If marker exists and force is False
+    """
+    if not marker_exists(worktree_path, PENDING_EXTRACTION_MARKER):
+        return
+
+    if force:
+        user_output(
+            click.style("Warning: ", fg="yellow") + "Skipping pending extraction (--force used).\n"
+        )
+        return
+
+    user_output(
+        click.style("Error: ", fg="red") + "Worktree has pending extraction.\n"
+        "Run /erk:create-raw-extraction-plan to extract insights first,\n"
+        "or use --force to skip extraction."
+    )
+    raise SystemExit(1)
 
 
 def check_clean_working_tree(ctx: ErkContext) -> None:

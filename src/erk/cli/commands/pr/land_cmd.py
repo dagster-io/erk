@@ -1,13 +1,13 @@
-"""Land current PR and navigate to parent branch.
+"""Land current PR and create pending extraction marker.
 
-This command replicates the shell function:
+This command merges the PR, creates a "pending extraction" marker, and outputs
+an activation script. The user stays in the worktree to extract insights before
+manually deleting.
 
-    land() {
-        dot-agent kit-command gt land-pr && erk down --delete-current && git pull
-    }
-
-It merges the current PR, deletes the current worktree/branch, navigates to the
-parent (trunk), and pulls the latest changes.
+Workflow:
+    1. erk pr land         # Merges PR, creates marker, stays in worktree
+    2. /erk:create-raw-extraction-plan  # Extracts insights, deletes marker
+    3. erk down --delete-current        # Manual cleanup when ready
 """
 
 import click
@@ -19,52 +19,39 @@ from erk_shared.output.output import machine_output, user_output
 from erk.cli.activation import render_activation_script
 from erk.cli.commands.navigation_helpers import (
     check_clean_working_tree,
-    delete_branch_and_worktree,
     ensure_graphite_enabled,
-    resolve_up_navigation,
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+from erk.core.markers import PENDING_EXTRACTION_MARKER, create_marker
 
 
 @click.command("land")
 @click.option("--script", is_flag=True, help="Print only the activation script")
-@click.option("--up", is_flag=True, help="Navigate up to child branch instead of trunk")
-@click.option(
-    "--extract/--no-extract",
-    default=True,
-    help="Create extraction plan from session logs before landing (default: enabled)",
-)
 @click.pass_obj
-def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
-    """Merge PR, switch to trunk (or upstack with --up), and delete branch/worktree.
+def pr_land(ctx: ErkContext, script: bool) -> None:
+    """Merge PR and create pending extraction marker.
 
-    Merges the current PR (must be one level from trunk), deletes the current
-    branch and worktree, then navigates to the destination and pulls changes.
-
-    By default, creates a documentation extraction plan from session logs before
-    landing. This captures learnings from the work session for future improvements.
-    Use --no-extract to skip extraction plan creation.
-
-    By default, navigates to trunk. With --up, navigates to child branch instead,
-    enabling landing an entire stack one PR at a time.
+    Merges the current PR (must be one level from trunk) and creates a
+    ".erk/pending-extraction" marker in the worktree. The user stays in the
+    worktree to run extraction before manual cleanup.
 
     With shell integration (recommended):
-      erk pr land               # Navigate to trunk, create extraction plan
-      erk pr land --up          # Navigate to child, create extraction plan
-      erk pr land --no-extract  # Skip extraction plan creation
+      erk pr land
 
     Without shell integration:
       source <(erk pr land --script)
-      source <(erk pr land --up --script)
+
+    After landing:
+      /erk:create-raw-extraction-plan   # Extract insights (deletes marker)
+      erk down --delete-current         # Manual cleanup
 
     Requires:
     - Graphite enabled: 'erk config set use_graphite true'
     - Current branch must be one level from trunk
     - PR must be open and ready to merge
     - Working tree must be clean (no uncommitted changes)
-    - Claude CLI installed (for extraction plan; warns if missing)
     """
     # Validate prerequisites
     Ensure.gh_authenticated(ctx)
@@ -83,14 +70,11 @@ def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
         f"Cannot find worktree for current branch '{current_branch}'.",
     )
 
-    # Validate shell integration for worktree deletion
-    # This check happens BEFORE any destructive operations (PR merge, worktree deletion)
-    # A subprocess cannot change its parent shell's working directory, so without
-    # shell integration, the shell will be stranded in the deleted worktree directory.
+    # Validate shell integration for activation script output
     if not script:
         user_output(
             click.style("Error: ", fg="red")
-            + "This command deletes the current worktree and requires shell integration.\n\n"
+            + "This command requires shell integration for activation.\n\n"
             + "Options:\n"
             + "  1. Use shell integration: erk pr land\n"
             + "     (Requires 'erk init --shell' setup)\n\n"
@@ -113,75 +97,29 @@ def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
         + f" Merged PR #{success_result.pr_number} [{success_result.branch_name}]"
     )
 
-    # Step 2: Navigate to destination (trunk or upstack) - compute early for messaging
-    worktrees = ctx.git.list_worktrees(repo.root)
+    # Step 2: Create pending extraction marker
+    # This signals that extraction should happen before worktree deletion
+    create_marker(current_worktree_path, PENDING_EXTRACTION_MARKER)
+    user_output(click.style("✓", fg="green") + " Created pending extraction marker")
 
-    if up:
-        # Navigate up to child branch
-        dest_branch, _was_created = resolve_up_navigation(ctx, repo, current_branch, worktrees)
-        target_wt_path = ctx.git.find_worktree_for_branch(repo.root, dest_branch)
-        dest_path = Ensure.not_none(target_wt_path, f"Worktree not found for '{dest_branch}'")
-        dest_description = f"upstack branch '{dest_branch}'"
-    else:
-        # Navigate down to trunk (current behavior)
-        dest_branch = ctx.git.detect_trunk_branch(repo.root)
-        trunk_wt_path = ctx.git.find_worktree_for_branch(repo.root, dest_branch)
-
-        if trunk_wt_path is not None and trunk_wt_path == repo.root:
-            dest_path = repo.root
-        elif trunk_wt_path is not None:
-            dest_path = trunk_wt_path
-        else:
-            dest_path = repo.root
-        dest_description = "trunk"
-
-    # NOTE: We intentionally do NOT call safe_chdir() here.
-    # A subprocess cannot change the parent shell's cwd.
-    # The shell integration (activation script) handles the cd.
-
-    # Step 3: Output activation script BEFORE destructive operations
-    # This ensures the shell can navigate even if later steps fail.
-    # The handler will use this script instead of passthrough when available.
+    # Step 3: Output activation script (stays in current worktree)
     script_content = render_activation_script(
-        worktree_path=dest_path,
-        final_message=f'echo "Landed PR and switched to {dest_description}: $(pwd)"',
+        worktree_path=current_worktree_path,
+        final_message='echo "Landed PR. Run /erk:create-raw-extraction-plan to extract insights."',
         comment="erk pr land activate-script",
     )
     activation_result = ctx.script_writer.write_activation_script(
         script_content,
         command_name="pr-land",
-        comment=f"activate {dest_description} after landing",
+        comment="stay in worktree after landing",
     )
     machine_output(str(activation_result.path), nl=False)
 
-    # Step 4: Handle extraction plan creation
-    # If extract=True, launch Claude interactively with process takeover.
-    # This avoids the hanging subprocess issue by using os.execvp() instead of subprocess.run().
-    # The user must run cleanup manually after extraction completes.
-    if extract:
-        user_output("")
-        user_output(click.style("Launching extraction plan.", fg="cyan") + " When complete, run:")
-        user_output("  erk down --delete-current && git pull")
-        user_output("")
-
-        # This call takes over the process and never returns in production.
-        # In tests (FakeClaudeExecutor), it returns normally, so we need the return
-        # statement to prevent continuing to the deletion code.
-        ctx.claude_executor.execute_interactive(
-            ctx.cwd,
-            dangerous=False,
-            command="/erk:create-extraction-plan",
-        )
-        # Never reached in production - process is replaced by Claude CLI.
-        # In tests, the fake returns, so we return here to match production behavior.
-        return
-
-    # Step 5 (no-extract path): Delete current branch and worktree
-    delete_branch_and_worktree(ctx, repo.root, current_branch, current_worktree_path)
-
-    # Step 6 (no-extract path): Pull latest changes on destination branch
-    # If this fails, the script is already output - shell can still navigate
-    ctx.git.pull_branch(dest_path, "origin", dest_branch, ff_only=True)
-    user_output(click.style("✓", fg="green") + " Pulled latest changes")
+    # Step 4: Output next steps
+    user_output("")
+    user_output(click.style("Next steps:", fg="cyan"))
+    user_output("  1. Run /erk:create-raw-extraction-plan to extract insights")
+    user_output("  2. Run: erk down --delete-current")
+    user_output("")
 
     raise SystemExit(0)
