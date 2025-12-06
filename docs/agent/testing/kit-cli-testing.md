@@ -154,7 +154,60 @@ def test_command_with_filesystem(tmp_path: Path) -> None:
     assert (tmp_path / "output.txt").exists()
 ```
 
-### Pattern 4: Testing Error Handling
+### Pattern 4: Isolated Filesystem with CliRunner
+
+When commands read from the current working directory (e.g., `Path.cwd()`), use CliRunner's `isolated_filesystem` context manager to create a clean, temporary working directory:
+
+```python
+def test_command_with_cwd_dependency(tmp_path: Path) -> None:
+    """Test command that reads from current working directory."""
+    fake_git = FakeGit()
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+        # Create test fixtures in isolated directory
+        (cwd / ".erk" / "scratch").mkdir(parents=True)
+        (cwd / ".impl").mkdir()
+        (cwd / ".impl" / "issue.json").write_text('{"number": 123}')
+
+        result = runner.invoke(
+            my_command,
+            ["--arg", "value"],
+            obj=DotAgentContext.for_test(
+                git=fake_git,
+                repo_root=cwd,
+                cwd=cwd,
+            ),
+        )
+
+    assert result.exit_code == 0
+```
+
+**When to use this pattern:**
+
+- Command uses `Path.cwd()` to find files
+- Command creates files relative to current directory
+- Command relies on `.impl/`, `.erk/`, or similar directory structures
+- You need to test filesystem interactions in isolation
+
+**Key points:**
+
+1. Pass `temp_dir=tmp_path` to use pytest's managed temp directory (cleaned up automatically)
+2. Get the actual cwd with `Path.cwd()` inside the context manager
+3. Pass the cwd to `DotAgentContext.for_test()` for both `repo_root` and `cwd`
+4. All file operations happen in the isolated directory
+5. Directory is cleaned up after the context manager exits
+
+**Comparison with Pattern 3:**
+
+| Pattern 3 (Custom Paths)           | Pattern 4 (Isolated Filesystem) |
+| ---------------------------------- | ------------------------------- |
+| Creates files in tmp_path          | Changes cwd to tmp_path         |
+| Command receives paths via context | Command uses `Path.cwd()`       |
+| Paths must be passed explicitly    | Works with implicit cwd usage   |
+
+### Pattern 5: Testing Error Handling
 
 When testing error paths:
 
@@ -177,7 +230,7 @@ def test_command_handles_missing_issue() -> None:
     assert "Issue #999 not found" in result.output
 ```
 
-### Pattern 5: Multiple Dependencies
+### Pattern 6: Multiple Dependencies
 
 When command uses multiple dependencies:
 
@@ -417,3 +470,4 @@ def test_command(tmp_path: Path) -> None:
 - [fake-driven-testing skill](.claude/docs/fake-driven-testing/) - Complete 5-layer testing strategy
 - [Kit CLI Dependency Injection](../kits/dependency-injection.md) - How dependencies are injected in commands
 - [Testing Guide](testing.md) - General testing patterns
+- [Click CliRunner Documentation](https://click.palletsprojects.com/en/stable/testing/) - Official Click testing utilities including `isolated_filesystem()`
