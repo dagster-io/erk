@@ -199,6 +199,10 @@ class TestCreateRawExtractionPlan:
 
         assert result.success is True
         title, _, _ = github_issues.created_issues[0]
+        # Title now uses extract_title_from_plan() which extracts from the plan H1
+        # "Extraction Plan: feature-awesome" becomes the title
+        assert "[erk-extraction]" in title
+        # The plan title includes the branch name
         assert "feature-awesome" in title
 
     def test_ensures_labels_exist(self, tmp_path: Path) -> None:
@@ -236,8 +240,10 @@ class TestCreateRawExtractionPlan:
         assert "erk-plan" in label_names
         assert "erk-extraction" in label_names
 
-    def test_issue_body_contains_implementation_plan(self, tmp_path: Path) -> None:
-        """Issue body contains actionable implementation steps."""
+    def test_issue_body_contains_metadata_only_and_plan_in_first_comment(
+        self, tmp_path: Path
+    ) -> None:
+        """Issue body contains only metadata, plan is in first comment (Schema v2)."""
         git = FakeGit(
             current_branches={tmp_path: "feature-docs"},
             default_branches={tmp_path: "main"},
@@ -269,8 +275,17 @@ class TestCreateRawExtractionPlan:
         assert result.success is True
         _, body, _ = github_issues.created_issues[0]
 
-        # Verify implementation plan is present
-        assert "## Implementation Steps" in body
-        assert "Category A" in body
-        assert "Category B" in body
-        assert "feature-docs" in body  # Branch name interpolated
+        # Issue body should contain ONLY metadata (Schema v2)
+        assert "plan-header" in body
+        assert "schema_version" in body
+        # Plan content should NOT be in the issue body
+        assert "## Implementation Steps" not in body
+
+        # Verify plan content is in the first comment (plan-body block)
+        assert len(github_issues.added_comments) >= 2  # Plan comment + session content
+        first_comment = github_issues.added_comments[0][1]  # (issue_number, comment_body)
+        assert "plan-body" in first_comment
+        assert "## Implementation Steps" in first_comment
+        assert "Category A" in first_comment
+        assert "Category B" in first_comment
+        assert "feature-docs" in first_comment  # Branch name interpolated

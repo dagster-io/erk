@@ -33,6 +33,7 @@ from erk.cli.commands.navigation_helpers import (
     delete_branch_and_worktree,
     ensure_graphite_enabled,
 )
+from erk.cli.commands.plan.check_cmd import validate_plan_format
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -184,12 +185,41 @@ def pr_land(ctx: ErkContext, script: bool, skip_insights: bool, up_flag: bool) -
             current_session_id=current_session_id,
         )
 
-        if extraction_result.success:
+        if extraction_result.success and extraction_result.issue_number is not None:
             extraction_issue_url = extraction_result.issue_url
-            user_output(
-                click.style("✓", fg="green") + f" Extracted insights: {extraction_issue_url}"
-            )
-        else:
+            issue_number = extraction_result.issue_number
+
+            # Validate plan format - halt on failure
+            try:
+                validation_result = validate_plan_format(ctx.issues, repo.root, issue_number)
+            except RuntimeError as e:
+                user_output(
+                    click.style("Error: ", fg="red")
+                    + f"Extraction plan #{issue_number} validation failed.\n"
+                    + "The PR was merged but the worktree was NOT deleted.\n"
+                    + f"Validation error: {e}\n"
+                    + f"Please investigate: {extraction_issue_url}\n"
+                    + f"Run: erk plan check {issue_number}"
+                )
+                raise SystemExit(1) from e
+
+            if validation_result.passed:
+                user_output(
+                    click.style("✓", fg="green") + f" Extracted insights: {extraction_issue_url}"
+                )
+            else:
+                # Validation failed - halt before worktree deletion
+                failed_checks = [desc for passed, desc in validation_result.checks if not passed]
+                user_output(
+                    click.style("Error: ", fg="red")
+                    + f"Extraction plan #{issue_number} failed validation.\n"
+                    + "The PR was merged but the worktree was NOT deleted.\n"
+                    + f"Failed checks: {', '.join(failed_checks)}\n"
+                    + f"Please investigate: {extraction_issue_url}\n"
+                    + f"Run: erk plan check {issue_number}"
+                )
+                raise SystemExit(1)
+        elif not extraction_result.success:
             # Extraction failed - warn but continue (PR was already merged)
             user_output(
                 click.style("⚠", fg="yellow") + f" Extraction failed: {extraction_result.error}"
