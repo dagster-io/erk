@@ -5,8 +5,8 @@
 # Without this setting, PR creation will fail with:
 # "GitHub Actions is not permitted to create or approve pull requests"
 
-name: Process Raw Extraction Issues
-run-name: "Extract Docs: #${{ github.event.issue.number }}"
+name: Implement Extraction Plan
+run-name: "Implement Extraction: #${{ github.event.issue.number }}"
 
 on:
   issues:
@@ -17,9 +17,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  process-extraction:
-    # Only run for issues with erk-extraction label
-    if: contains(github.event.issue.labels.*.name, 'erk-extraction')
+  implement-extraction:
+    # Only run for extraction plan issues (have both erk-plan and erk-extraction labels)
+    if: |
+      contains(github.event.issue.labels.*.name, 'erk-extraction') &&
+      contains(github.event.issue.labels.*.name, 'erk-plan')
     runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
@@ -74,64 +76,7 @@ jobs:
           fi
 
       # =================================================================
-      # PHASE 2: EXTRACT SESSION DATA
-      # =================================================================
-      - name: Post extraction started comment
-        env:
-          GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          source $HOME/.cargo/env
-          dot-agent run erk post-extraction-comment \
-            --issue-number "$ISSUE_NUMBER" \
-            --status started \
-            --workflow-run-url "$WORKFLOW_RUN_URL"
-
-      - name: Extract session data from issue
-        id: extract
-        env:
-          GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-        run: |
-          source $HOME/.cargo/env
-          result=$(dot-agent run erk extract-session-from-issue "$ISSUE_NUMBER" 2>&1) || {
-            echo "extraction_success=false" >> $GITHUB_OUTPUT
-            echo "extraction_error=$result" >> $GITHUB_OUTPUT
-            exit 0
-          }
-
-          success=$(echo "$result" | jq -r '.success')
-          if [ "$success" != "true" ]; then
-            error=$(echo "$result" | jq -r '.error // "Unknown error"')
-            echo "extraction_success=false" >> $GITHUB_OUTPUT
-            echo "extraction_error=$error" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          echo "extraction_success=true" >> $GITHUB_OUTPUT
-          echo "session_file=$(echo "$result" | jq -r '.session_file')" >> $GITHUB_OUTPUT
-          echo "session_ids=$(echo "$result" | jq -r '.session_ids | join(",")')" >> $GITHUB_OUTPUT
-
-      - name: Post extraction failed comment
-        if: steps.extract.outputs.extraction_success != 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          EXTRACTION_ERROR: ${{ steps.extract.outputs.extraction_error }}
-        run: |
-          source $HOME/.cargo/env
-          dot-agent run erk post-extraction-comment \
-            --issue-number "$ISSUE_NUMBER" \
-            --status failed \
-            --workflow-run-url "$WORKFLOW_RUN_URL" \
-            --error-message "$EXTRACTION_ERROR"
-          dot-agent run erk add-issue-label --issue-number "$ISSUE_NUMBER" --label "extraction-failed"
-          exit 1
-
-      # =================================================================
-      # PHASE 3: CREATE BRANCH
+      # PHASE 2: CREATE BRANCH AND SETUP
       # =================================================================
       - name: Create extraction branch
         id: branch
@@ -146,61 +91,28 @@ jobs:
             --trunk-branch "$TRUNK_BRANCH")
           echo "branch_name=$(echo "$result" | jq -r '.branch_name')" >> $GITHUB_OUTPUT
 
-      # =================================================================
-      # PHASE 4: ANALYSIS PHASE
-      # =================================================================
-      - name: Run extraction plan analysis
-        id: analyze
+      - name: Create worker-impl from issue
+        id: worker_impl
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
-          SESSION_FILE: ${{ steps.extract.outputs.session_file }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
-          set +e
-          cat > /tmp/extraction_prompt.md <<EOF
-          Analyze the session data in file: $SESSION_FILE
-
-          This session was extracted from GitHub issue #$ISSUE_NUMBER.
-          Read the session XML and identify documentation improvements using the extraction framework.
-
-          Create an extraction plan issue with your findings. Focus on:
-          - Category A: Learning gaps (docs that would have made the session faster)
-          - Category B: Teaching gaps (docs for what was built)
-
-          Use /erk:create-extraction-plan to create the plan issue.
-          EOF
-
-          claude --print \
-            --model claude-sonnet-4-5-20250929 \
-            --output-format stream-json \
-            --dangerously-skip-permissions \
-            --verbose \
-            "$(cat /tmp/extraction_prompt.md)"
-
-          if [ $? -eq 0 ]; then
-            echo "analysis_success=true" >> $GITHUB_OUTPUT
-          else
-            echo "analysis_success=false" >> $GITHUB_OUTPUT
-          fi
-          exit 0
+          source $HOME/.cargo/env
+          result=$(dot-agent run erk create-worker-impl-from-issue "$ISSUE_NUMBER")
+          success=$(echo "$result" | jq -r '.success')
+          echo "worker_impl_success=$success" >> $GITHUB_OUTPUT
 
       # =================================================================
-      # PHASE 5: IMPLEMENTATION PHASE
+      # PHASE 3: IMPLEMENTATION
       # =================================================================
-      - name: Check for plan and implement
+      - name: Implement extraction plan
         id: implement
-        if: steps.analyze.outputs.analysis_success == 'true'
+        if: steps.worker_impl.outputs.worker_impl_success == 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set +e
-          if [ ! -f ".impl/plan.md" ]; then
-            echo "implementation_success=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
           claude --print \
             --model claude-sonnet-4-5-20250929 \
             --output-format stream-json \
@@ -216,7 +128,7 @@ jobs:
           exit 0
 
       # =================================================================
-      # PHASE 6: SUBMISSION PHASE
+      # PHASE 4: SUBMISSION
       # =================================================================
       - name: Create PR with documentation changes
         id: submit
@@ -278,7 +190,7 @@ jobs:
             --status no-changes
 
       # =================================================================
-      # PHASE 7: ERROR HANDLING
+      # PHASE 5: ERROR HANDLING
       # =================================================================
       - name: Post failure comment
         if: failure()
