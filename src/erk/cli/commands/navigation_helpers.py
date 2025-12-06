@@ -71,19 +71,17 @@ def delete_branch_and_worktree(
 ) -> None:
     """Delete the specified branch and its worktree.
 
-    Uses two-step deletion: git worktree remove, then manual cleanup.
+    Uses two-step deletion: git worktree remove, then branch delete.
+    Note: remove_worktree already calls prune internally, so no additional prune needed.
     """
 
-    # Remove the worktree
+    # Remove the worktree (already calls prune internally)
     ctx.git.remove_worktree(repo_root, worktree_path, force=True)
     user_output(f"✓ Removed worktree: {click.style(str(worktree_path), fg='green')}")
 
     # Delete the branch using Git abstraction
     ctx.git.delete_branch_with_graphite(repo_root, branch, force=True)
     user_output(f"✓ Deleted branch: {click.style(branch, fg='yellow')}")
-
-    # Prune worktree metadata
-    ctx.git.prune_worktrees(repo_root)
 
 
 def activate_root_repo(ctx: ErkContext, repo: RepoContext, script: bool, command_name: str) -> None:

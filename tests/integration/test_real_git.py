@@ -444,3 +444,110 @@ def test_checkout_branch_in_worktree(
     # Verify branch is checked out
     branch = git_ops.get_current_branch(wt)
     assert branch == "feature-2"
+
+
+def test_remove_worktree_called_from_worktree_path(
+    tmp_path: Path,
+) -> None:
+    """Test that remove_worktree works when repo_root IS the worktree being deleted.
+
+    This is a regression test for issue #2345:
+    When remove_worktree is called with repo_root pointing to the worktree path itself,
+    the prune step would fail because the cwd no longer exists after git worktree remove.
+
+    The fix is to resolve the main git directory BEFORE deleting the worktree,
+    and use that path for the prune command.
+    """
+    from erk_shared.git.real import RealGit
+
+    from tests.integration.conftest import init_git_repo
+
+    # Setup: Create main repo and a worktree
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    wt = tmp_path / "wt"
+
+    init_git_repo(repo, "main")
+
+    # Create a worktree
+    subprocess.run(
+        ["git", "worktree", "add", "-b", "feature-1", str(wt)],
+        cwd=repo,
+        check=True,
+    )
+
+    # Verify worktree exists
+    assert wt.exists()
+
+    git_ops = RealGit()
+
+    # Act: Remove worktree using the WORKTREE PATH as repo_root
+    # This simulates the case where we're inside the worktree and calling remove
+    # The key is that after git worktree remove runs, the wt path no longer exists
+    # so git worktree prune would fail if it tried to use wt as cwd
+    git_ops.remove_worktree(wt, wt, force=True)
+
+    # Assert: Worktree was removed successfully
+    # This would have raised RuntimeError("Command not found...") before the fix
+    assert not wt.exists()
+
+    # Verify git still tracks the main repo correctly
+    worktrees = git_ops.list_worktrees(repo)
+    assert len(worktrees) == 1
+    assert worktrees[0].path == repo
+    assert worktrees[0].branch == "main"
+
+
+def test_find_main_git_dir_from_worktree(
+    tmp_path: Path,
+) -> None:
+    """Test _find_main_git_dir correctly resolves main repo from a worktree."""
+    from erk_shared.git.real import RealGit
+
+    from tests.integration.conftest import init_git_repo
+
+    # Setup: Create main repo and a worktree
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    wt = tmp_path / "wt"
+
+    init_git_repo(repo, "main")
+
+    # Create a worktree
+    subprocess.run(
+        ["git", "worktree", "add", "-b", "feature", str(wt)],
+        cwd=repo,
+        check=True,
+    )
+
+    git_ops = RealGit()
+
+    # Act: Find main git dir from both locations
+    main_from_repo = git_ops._find_main_git_dir(repo)
+    main_from_wt = git_ops._find_main_git_dir(wt)
+
+    # Assert: Both should resolve to the main repo root
+    assert main_from_repo == repo
+    assert main_from_wt == repo
+
+
+def test_find_main_git_dir_from_main_repo(
+    tmp_path: Path,
+) -> None:
+    """Test _find_main_git_dir returns repo_root when called on main repo."""
+    from erk_shared.git.real import RealGit
+
+    from tests.integration.conftest import init_git_repo
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    git_ops = RealGit()
+
+    # Act
+    main_dir = git_ops._find_main_git_dir(repo)
+
+    # Assert
+    assert main_dir == repo
