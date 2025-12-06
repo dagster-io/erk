@@ -202,6 +202,28 @@ Documentation needed for what was BUILT this session:
 - Only one person would ever need this information
 - The "pattern" was actually a bug or mistake, not a convention
 
+## Before Dismissing as "Edge Case"
+
+Before concluding something is too niche to document, validate:
+
+1. **Is this pattern used in multiple commands/workflows?**
+   - Example: "worktree deletion" appears in `pr land`, `wt rm`, `stack` commands
+   - If yes → NOT an edge case, it's a core pattern
+
+2. **Is this infrastructure used across the codebase?**
+   - Example: SentinelPath is used in every test file
+   - Test infrastructure docs help every test-writing session
+
+3. **Did exploration take significant time (30+ minutes)?**
+   - If yes → others will likely hit the same friction
+   - Time spent is a signal of documentation value
+
+4. **Would this help a new contributor?**
+   - Even "internal" patterns matter for onboarding
+
+**Test infrastructure documentation is EQUALLY valuable as feature documentation.**
+Dismissing something as "internal" or "test-related" is not a valid reason to skip it.
+
 ## Guidelines
 
 - **Be specific**: Tie each suggestion to actual patterns observed in the session
