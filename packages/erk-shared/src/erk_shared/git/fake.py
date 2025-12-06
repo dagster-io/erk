@@ -84,7 +84,6 @@ class FakeGit(Git):
         remote_branches: dict[Path, list[str]] | None = None,
         tracking_branch_failures: dict[str, str] | None = None,
         dirty_worktrees: set[Path] | None = None,
-        branch_issues: dict[str, int] | None = None,
         branch_last_commit_times: dict[str, str] | None = None,
         repository_roots: dict[Path, Path] | None = None,
         diff_to_branch: dict[tuple[Path, str], str] | None = None,
@@ -93,6 +92,7 @@ class FakeGit(Git):
         remote_urls: dict[tuple[Path, str], str] | None = None,
         add_all_raises: Exception | None = None,
         pull_branch_raises: Exception | None = None,
+        branch_issues: dict[str, int] | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -118,7 +118,6 @@ class FakeGit(Git):
             tracking_branch_failures: Mapping of branch name -> error message to raise
                 when create_tracking_branch is called for that branch
             dirty_worktrees: Set of worktree paths that have uncommitted/staged/untracked changes
-            branch_issues: Mapping of branch name -> GitHub issue number
             branch_last_commit_times: Mapping of branch name -> ISO 8601 timestamp for last commit
             repository_roots: Mapping of cwd -> repository root path
             diff_to_branch: Mapping of (cwd, branch) -> diff output
@@ -127,6 +126,7 @@ class FakeGit(Git):
             remote_urls: Mapping of (repo_root, remote_name) -> remote URL
             add_all_raises: Exception to raise when add_all() is called
             pull_branch_raises: Exception to raise when pull_branch() is called
+            branch_issues: Mapping of branch name -> issue number for get_branch_issue()
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -147,7 +147,6 @@ class FakeGit(Git):
         self._remote_branches = remote_branches or {}
         self._tracking_branch_failures = tracking_branch_failures or {}
         self._dirty_worktrees = dirty_worktrees or set()
-        self._branch_issues = branch_issues or {}
         self._branch_last_commit_times = branch_last_commit_times or {}
         self._repository_roots = repository_roots or {}
         self._diff_to_branch = diff_to_branch or {}
@@ -156,6 +155,7 @@ class FakeGit(Git):
         self._remote_urls = remote_urls or {}
         self._add_all_raises = add_all_raises
         self._pull_branch_raises = pull_branch_raises
+        self._branch_issues = branch_issues or {}
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -683,13 +683,21 @@ class FakeGit(Git):
             raise FileNotFoundError(f"No content for {path}")
         return self._file_contents[path]
 
-    def set_branch_issue(self, repo_root: Path, branch: str, issue_number: int) -> None:
-        """Record branch-issue association in fake storage."""
-        self._branch_issues[branch] = issue_number
-
     def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
-        """Get branch-issue association from fake storage."""
-        return self._branch_issues.get(branch)
+        """Extract GitHub issue number from branch name.
+
+        Branch names follow the pattern: {issue_number}-{slug}-{timestamp}
+
+        Uses configured branch_issues mapping if available, otherwise extracts
+        from branch name.
+        """
+        # Check configured mapping first (allows tests to override)
+        if branch in self._branch_issues:
+            return self._branch_issues[branch]
+
+        from erk_shared.naming import extract_leading_issue_number
+
+        return extract_leading_issue_number(branch)
 
     def fetch_pr_ref(self, repo_root: Path, remote: str, pr_number: int, local_branch: str) -> None:
         """Record PR ref fetch in fake storage (mutates internal state).

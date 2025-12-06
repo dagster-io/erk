@@ -104,9 +104,7 @@ class SessionXmlWriter:
 
     def tool_use(self, name: str, tool_id: str, params: dict[str, str]) -> None:
         """Write a tool_use element with params."""
-        self._lines.append(
-            f'  <tool_use name="{self._escape(name)}" id="{self._escape(tool_id)}">'
-        )
+        self._lines.append(f'  <tool_use name="{self._escape(name)}" id="{self._escape(tool_id)}">')
         for key, value in params.items():
             self._lines.append(
                 f'    <param name="{self._escape(key)}">{self._escape(value)}</param>'

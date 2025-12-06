@@ -489,79 +489,38 @@ def test_fake_git_is_worktree_clean_with_nonexistent_path() -> None:
 
 
 # ============================================================================
-# Branch-Issue Association Tests
+# Branch-Issue Extraction Tests
 # ============================================================================
 
 
-def test_fake_git_set_branch_issue() -> None:
-    """Test set_branch_issue stores issue number for branch."""
+def test_fake_git_get_branch_issue_extracts_from_branch_name() -> None:
+    """Test get_branch_issue extracts issue number from branch name prefix."""
     git_ops = FakeGit()
 
-    git_ops.set_branch_issue(Path("/repo"), "feature-branch", 42)
+    # Branch names with issue number prefix
+    assert (
+        git_ops.get_branch_issue(Path("/repo"), "2382-convert-erk-create-raw-ext-12-05-2359")
+        == 2382
+    )
+    assert git_ops.get_branch_issue(Path("/repo"), "42-fix-bug") == 42
+    assert git_ops.get_branch_issue(Path("/repo"), "123-feature-name") == 123
 
-    # Verify stored in fake
-    result = git_ops.get_branch_issue(Path("/repo"), "feature-branch")
-    assert result == 42
 
-
-def test_fake_git_get_branch_issue_not_set() -> None:
-    """Test get_branch_issue returns None when not set."""
+def test_fake_git_get_branch_issue_returns_none_for_no_prefix() -> None:
+    """Test get_branch_issue returns None when branch has no issue number prefix."""
     git_ops = FakeGit()
 
-    result = git_ops.get_branch_issue(Path("/repo"), "feature-branch")
+    # Branch names without issue number prefix
+    assert git_ops.get_branch_issue(Path("/repo"), "feature-branch") is None
+    assert git_ops.get_branch_issue(Path("/repo"), "master") is None
+    assert git_ops.get_branch_issue(Path("/repo"), "main") is None
+    assert git_ops.get_branch_issue(Path("/repo"), "develop") is None
 
-    assert result is None
 
-
-def test_fake_git_set_branch_issue_multiple_branches() -> None:
-    """Test setting issue numbers for multiple branches."""
+def test_fake_git_get_branch_issue_requires_hyphen_after_number() -> None:
+    """Test get_branch_issue requires hyphen after issue number."""
     git_ops = FakeGit()
 
-    git_ops.set_branch_issue(Path("/repo"), "branch-1", 10)
-    git_ops.set_branch_issue(Path("/repo"), "branch-2", 20)
-    git_ops.set_branch_issue(Path("/repo"), "branch-3", 30)
-
-    assert git_ops.get_branch_issue(Path("/repo"), "branch-1") == 10
-    assert git_ops.get_branch_issue(Path("/repo"), "branch-2") == 20
-    assert git_ops.get_branch_issue(Path("/repo"), "branch-3") == 30
-
-
-def test_fake_git_set_branch_issue_overwrites() -> None:
-    """Test set_branch_issue overwrites existing association."""
-    git_ops = FakeGit()
-
-    git_ops.set_branch_issue(Path("/repo"), "feature", 10)
-    git_ops.set_branch_issue(Path("/repo"), "feature", 20)
-
-    # Should return latest value
-    result = git_ops.get_branch_issue(Path("/repo"), "feature")
-    assert result == 20
-
-
-def test_fake_git_branch_issue_pre_configured() -> None:
-    """Test FakeGit can be initialized with branch-issue associations."""
-    branch_issues = {
-        "feature-1": 42,
-        "feature-2": 99,
-    }
-    git_ops = FakeGit(branch_issues=branch_issues)
-
-    assert git_ops.get_branch_issue(Path("/repo"), "feature-1") == 42
-    assert git_ops.get_branch_issue(Path("/repo"), "feature-2") == 99
-    assert git_ops.get_branch_issue(Path("/repo"), "other-branch") is None
-
-
-def test_fake_git_branch_issue_mixed_pre_configured_and_set() -> None:
-    """Test mixing pre-configured and dynamically set branch-issue associations."""
-    branch_issues = {"existing-branch": 100}
-    git_ops = FakeGit(branch_issues=branch_issues)
-
-    # Pre-configured should work
-    assert git_ops.get_branch_issue(Path("/repo"), "existing-branch") == 100
-
-    # Set new association
-    git_ops.set_branch_issue(Path("/repo"), "new-branch", 200)
-
-    # Both should be accessible
-    assert git_ops.get_branch_issue(Path("/repo"), "existing-branch") == 100
-    assert git_ops.get_branch_issue(Path("/repo"), "new-branch") == 200
+    # Numbers without trailing hyphen are not issue numbers
+    assert git_ops.get_branch_issue(Path("/repo"), "123") is None
+    assert git_ops.get_branch_issue(Path("/repo"), "v2.0.0") is None

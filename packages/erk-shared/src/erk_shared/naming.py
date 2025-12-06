@@ -359,6 +359,34 @@ def extract_trailing_number(name: str) -> tuple[str, int | None]:
     return (name, None)
 
 
+def extract_leading_issue_number(branch_name: str) -> int | None:
+    """Extract leading issue number from a branch name.
+
+    Branch names follow the pattern: {issue_number}-{slug}-{timestamp}
+    Examples: "2382-convert-erk-create-raw-ext-12-05-2359"
+
+    Args:
+        branch_name: Branch name to parse
+
+    Returns:
+        Issue number if branch starts with digits followed by hyphen, else None
+
+    Examples:
+        >>> extract_leading_issue_number("2382-convert-erk-create-raw-ext-12-05-2359")
+        2382
+        >>> extract_leading_issue_number("42-fix-bug")
+        42
+        >>> extract_leading_issue_number("feature-branch")
+        None
+        >>> extract_leading_issue_number("master")
+        None
+    """
+    match = re.match(r"^(\d+)-", branch_name)
+    if match:
+        return int(match.group(1))
+    return None
+
+
 def ensure_unique_worktree_name_with_date(base_name: str, worktrees_dir: Path, git_ops) -> str:
     """Ensure unique worktree name with datetime suffix and smart versioning.
 
