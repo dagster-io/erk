@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
+from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
 from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
@@ -157,6 +158,35 @@ class TestLandPrExecution:
         assert result.error_type == "parent_not_trunk"
         assert "must be exactly one level up from master" in result.message
         assert result.details["parent_branch"] == "main"
+
+    def test_land_pr_does_not_auto_navigate_to_child(self, tmp_path: Path) -> None:
+        """Test that landing does not auto-navigate to child branch.
+
+        Navigation to child branches should be handled by the CLI layer,
+        not the core execute_land_pr operation.
+        """
+        # Setup: feature branch on main with open PR and one child
+        ops = (
+            FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
+            .with_branch("feature-branch", parent="main")
+            .with_pr(123, state="OPEN")
+            .with_children(["child-branch"])
+        )
+
+        result = render_events(execute_land_pr(ops, tmp_path))
+
+        # Verify success
+        assert isinstance(result, LandPrSuccess)
+        assert result.success is True
+
+        # Verify message mentions child but no navigation occurred
+        assert "Child branch: child-branch" in result.message
+
+        # Verify checkout_branch was NOT called (no auto-navigation)
+        git = ops.git
+        assert isinstance(git, FakeGit)
+        assert git.checked_out_branches == []
 
 
 class TestLandPrCLI:
