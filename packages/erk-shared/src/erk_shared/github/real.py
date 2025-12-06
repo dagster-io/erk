@@ -13,6 +13,7 @@ Error Handling Philosophy:
 import json
 import secrets
 import string
+import subprocess
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,7 @@ from erk_shared.github.parsing import (
     execute_gh_command,
     parse_aggregated_check_counts,
     parse_gh_auth_status_output,
+    parse_git_remote_url,
     parse_github_pr_status,
 )
 from erk_shared.github.types import (
@@ -1398,31 +1400,41 @@ query {{
         return (issues, pr_linkages)
 
     def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR number and URL for a specific branch using gh CLI.
+        """Get PR number and URL for a specific branch using REST API.
+
+        Uses REST API instead of GraphQL to reduce pressure on GraphQL rate limits.
 
         Returns:
             Tuple of (pr_number, pr_url) or None if no PR exists for this branch.
 
         Raises:
             RuntimeError: If gh command fails (auth issues, network errors, etc.)
+            subprocess.CalledProcessError: If git remote command fails.
         """
+        # Get owner/repo from local git remote (no API call)
+        result = subprocess.run(
+            ["git", "remote", "get-url", "origin"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        owner, repo_name = parse_git_remote_url(result.stdout.strip())
+
+        # REST API with server-side head filter (query params in URL for GET request)
+        head_param = f"{owner}:{branch}"
         cmd = [
             "gh",
-            "pr",
-            "list",
-            "--head",
-            branch,
-            "--json",
-            "number,url",
-            "--limit",
-            "1",
+            "api",
+            f"repos/{owner}/{repo_name}/pulls?head={head_param}&state=open&per_page=1",
+            "--jq",
+            ".[0] // empty | [.number, .html_url] | @tsv",
         ]
         stdout = execute_gh_command(cmd, repo_root)
-        data = json.loads(stdout)
-        if not data:
+        if not stdout.strip():
             return None
-        pr = data[0]
-        return (pr["number"], pr["url"])
+        parts = stdout.strip().split("\t")
+        return (int(parts[0]), parts[1])
 
     def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
         """Get PR number and state for a specific branch using gh CLI.
