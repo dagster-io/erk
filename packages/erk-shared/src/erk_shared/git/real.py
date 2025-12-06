@@ -278,6 +278,10 @@ class RealGit(Git):
 
     def remove_worktree(self, repo_root: Path, path: Path, *, force: bool) -> None:
         """Remove a worktree."""
+        # Find the main git directory BEFORE deleting the worktree
+        # This handles the case where repo_root IS the worktree being deleted
+        main_git_dir = self._find_main_git_dir(repo_root)
+
         cmd = ["git", "worktree", "remove"]
         if force:
             cmd.append("--force")
@@ -290,11 +294,35 @@ class RealGit(Git):
 
         # Clean up git worktree metadata to prevent permission issues during test cleanup
         # This prunes stale administrative files left behind after worktree removal
+        # Use main_git_dir for prune - repo_root may have been deleted
         run_subprocess_with_context(
             ["git", "worktree", "prune"],
             operation_context="prune worktree metadata",
+            cwd=main_git_dir,
+        )
+
+    def _find_main_git_dir(self, repo_root: Path) -> Path:
+        """Find the main repository root (where .git directory lives).
+
+        For worktrees, this resolves the actual git directory location.
+        For main repos, returns repo_root unchanged.
+        """
+        result = run_subprocess_with_context(
+            ["git", "rev-parse", "--git-common-dir"],
+            operation_context="find main git directory",
             cwd=repo_root,
         )
+        git_common_dir = Path(result.stdout.strip())
+
+        # Handle relative paths - git may return relative path
+        if not git_common_dir.is_absolute():
+            git_common_dir = (repo_root / git_common_dir).resolve()
+
+        # --git-common-dir returns the .git directory, we want its parent
+        if git_common_dir.name == ".git":
+            return git_common_dir.parent
+        # For bare repos or unusual setups, just return parent
+        return git_common_dir.parent
 
     def checkout_branch(self, cwd: Path, branch: str) -> None:
         """Checkout a branch in the given directory."""
