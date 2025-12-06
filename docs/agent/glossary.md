@@ -373,6 +373,101 @@ class ErkContext:
 
 ---
 
+## Event Types
+
+### ProgressEvent
+
+A frozen dataclass for emitting progress notifications during long-running operations.
+
+**Location**: `packages/erk-shared/src/erk_shared/integrations/gt/events.py`
+
+**Purpose**: Decouple progress reporting from rendering. Operations yield events; CLI layer renders them.
+
+**Fields**:
+
+- `message: str` - Human-readable progress message
+- `style: Literal["info", "success", "warning", "error"]` - Visual style hint (default: "info")
+
+**Example**:
+
+```python
+yield ProgressEvent("Analyzing changes with Claude...")
+yield ProgressEvent("Complete", style="success")
+```
+
+**Related**: [Claude CLI Progress Feedback Pattern](architecture/claude-cli-progress.md)
+
+### CompletionEvent
+
+A generic frozen dataclass wrapping the final result of a generator-based operation.
+
+**Location**: `packages/erk-shared/src/erk_shared/integrations/gt/events.py`
+
+**Purpose**: Signal operation completion and provide the result to the consumer.
+
+**Type Parameter**: `CompletionEvent[T]` where `T` is the result type.
+
+**Example**:
+
+```python
+yield CompletionEvent(MyResult(success=True, data=data))
+```
+
+**Related**: [Claude CLI Progress Feedback Pattern](architecture/claude-cli-progress.md)
+
+### ClaudeEvent
+
+A union type of frozen dataclasses representing events from Claude CLI streaming execution.
+
+**Location**: `src/erk/core/claude_executor.py`
+
+**Purpose**: Typed events enabling pattern matching for Claude CLI output processing.
+
+**Event Types**:
+
+| Event                | Field(s)          | Description                                       |
+| -------------------- | ----------------- | ------------------------------------------------- |
+| `TextEvent`          | `content: str`    | Text content from Claude                          |
+| `ToolEvent`          | `summary: str`    | Tool usage summary                                |
+| `SpinnerUpdateEvent` | `status: str`     | Status update for spinner display                 |
+| `PrUrlEvent`         | `url: str`        | Pull request URL                                  |
+| `PrNumberEvent`      | `number: int`     | Pull request number (proper int)                  |
+| `PrTitleEvent`       | `title: str`      | Pull request title                                |
+| `IssueNumberEvent`   | `number: int`     | GitHub issue number (proper int)                  |
+| `ErrorEvent`         | `message: str`    | Error with non-zero exit code                     |
+| `NoOutputEvent`      | `diagnostic: str` | Claude CLI produced no output                     |
+| `NoTurnsEvent`       | `diagnostic: str` | Claude completed with num_turns=0 (hook blocking) |
+| `ProcessErrorEvent`  | `message: str`    | Failed to start or timeout                        |
+
+**Union Type**:
+
+```python
+ClaudeEvent = (
+    TextEvent | ToolEvent | SpinnerUpdateEvent |
+    PrUrlEvent | PrNumberEvent | PrTitleEvent | IssueNumberEvent |
+    ErrorEvent | NoOutputEvent | NoTurnsEvent | ProcessErrorEvent
+)
+```
+
+**Example (consuming)**:
+
+```python
+for event in executor.execute_command_streaming(...):
+    match event:
+        case TextEvent(content=text):
+            print(text)
+        case ToolEvent(summary=summary):
+            print(f"  > {summary}")
+        case PrNumberEvent(number=num):
+            pr_number = num  # Already int, no conversion needed
+        case ErrorEvent(message=msg):
+            handle_error(msg)
+```
+
+**Related**: [Claude CLI Integration](architecture/claude-cli-integration.md)
+
+---
+
 ## Integration Layer Terms
 
 ### Integration Class

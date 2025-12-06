@@ -7,6 +7,15 @@ from pathlib import Path
 
 import click
 
+from erk.core.claude_executor import (
+    ErrorEvent,
+    NoOutputEvent,
+    NoTurnsEvent,
+    ProcessErrorEvent,
+    SpinnerUpdateEvent,
+    TextEvent,
+    ToolEvent,
+)
 from erk.core.context import ErkContext
 
 
@@ -54,21 +63,36 @@ def pr_prepare_local(ctx: ErkContext) -> None:
         worktree_path=worktree_path,
         dangerous=False,
     ):
-        if event.event_type == "text":
-            # Print text content directly (Claude's formatted output)
-            click.echo(event.content)
-        elif event.event_type == "tool":
-            # Tool summaries with icon
-            click.echo(click.style(f"   ⚙️  {event.content}", fg="cyan", dim=True))
-        elif event.event_type == "spinner_update":
-            # Deduplicate spinner updates
-            if event.content != last_spinner:
-                click.echo(click.style(f"   ⏳ {event.content}", dim=True))
-                last_spinner = event.content
-        elif event.event_type == "error":
-            click.echo(click.style(f"   ❌ {event.content}", fg="red"))
-            error_message = event.content
-            success = False
+        match event:
+            case TextEvent(content=content):
+                # Print text content directly (Claude's formatted output)
+                click.echo(content)
+            case ToolEvent(summary=summary):
+                # Tool summaries with icon
+                click.echo(click.style(f"   ⚙️  {summary}", fg="cyan", dim=True))
+            case SpinnerUpdateEvent(status=status):
+                # Deduplicate spinner updates
+                if status != last_spinner:
+                    click.echo(click.style(f"   ⏳ {status}", dim=True))
+                    last_spinner = status
+            case ErrorEvent(message=msg):
+                click.echo(click.style(f"   ❌ {msg}", fg="red"))
+                error_message = msg
+                success = False
+            case NoOutputEvent(diagnostic=diag):
+                click.echo(click.style(f"   ⚠️  {diag}", fg="yellow"))
+                error_message = diag
+                success = False
+            case NoTurnsEvent(diagnostic=diag):
+                click.echo(click.style(f"   ⚠️  {diag}", fg="yellow"))
+                error_message = diag
+                success = False
+            case ProcessErrorEvent(message=msg):
+                click.echo(click.style(f"   ❌ {msg}", fg="red"))
+                error_message = msg
+                success = False
+            case _:
+                pass  # PR metadata events not relevant for prepare-local
 
     if not success:
         error_msg = error_message or "Branch preparation failed"

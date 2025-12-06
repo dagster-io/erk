@@ -14,7 +14,21 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
-from erk.core.claude_executor import ClaudeExecutor, CommandResult
+from erk.core.claude_executor import (
+    ClaudeExecutor,
+    CommandResult,
+    ErrorEvent,
+    IssueNumberEvent,
+    NoOutputEvent,
+    NoTurnsEvent,
+    PrNumberEvent,
+    ProcessErrorEvent,
+    PrTitleEvent,
+    PrUrlEvent,
+    SpinnerUpdateEvent,
+    TextEvent,
+    ToolEvent,
+)
 
 
 def format_implement_summary(results: list[CommandResult], total_duration: float) -> Panel:
@@ -164,47 +178,46 @@ def stream_command_with_feedback(
     for event in event_stream:
         event_count += 1
         if debug:
-            content_preview = event.content[:80] if len(event.content) > 80 else event.content
             console.print(
-                f"[DEBUG] Event #{event_count}: type={event.event_type!r}, "
-                f"content={content_preview!r}",
+                f"[DEBUG] Event #{event_count}: {type(event).__name__}",
                 style="yellow",
             )
-        if event.event_type == "text":
-            console.print(event.content)
-            filtered_messages.append(event.content)
-        elif event.event_type == "tool":
-            console.print(f"  > {event.content}", style="dim")
-            filtered_messages.append(event.content)
-        elif event.event_type == "spinner_update":
-            # Deduplicate spinner updates - only print when status changes
-            if event.content != last_spinner_update:
-                console.print(f"  ... {event.content}", style="dim")
-                last_spinner_update = event.content
-        elif event.event_type == "pr_url":
-            pr_url = event.content
-        elif event.event_type == "pr_number":
-            # Convert string back to int - safe because we control the source
-            if event.content.isdigit():
-                pr_number = int(event.content)
-        elif event.event_type == "pr_title":
-            pr_title = event.content
-        elif event.event_type == "issue_number":
-            # Convert string back to int - safe because we control the source
-            if event.content.isdigit():
-                issue_number = int(event.content)
-        elif event.event_type == "error":
-            console.print(f"  ! {event.content}", style="red")
-            error_message = event.content
-            success = False
-        elif event.event_type == "no_output":
-            console.print(f"  ⚠️ {event.content}", style="yellow")
-            error_message = event.content
-            success = False
-        elif event.event_type == "process_error":
-            console.print(f"  ❌ {event.content}", style="red")
-            error_message = event.content
-            success = False
+        match event:
+            case TextEvent(content=content):
+                console.print(content)
+                filtered_messages.append(content)
+            case ToolEvent(summary=summary):
+                console.print(f"  > {summary}", style="dim")
+                filtered_messages.append(summary)
+            case SpinnerUpdateEvent(status=status):
+                # Deduplicate spinner updates - only print when status changes
+                if status != last_spinner_update:
+                    console.print(f"  ... {status}", style="dim")
+                    last_spinner_update = status
+            case PrUrlEvent(url=url):
+                pr_url = url
+            case PrNumberEvent(number=num):
+                pr_number = num  # Already int, no conversion needed
+            case PrTitleEvent(title=title):
+                pr_title = title
+            case IssueNumberEvent(number=num):
+                issue_number = num  # Already int, no conversion needed
+            case ErrorEvent(message=msg):
+                console.print(f"  ! {msg}", style="red")
+                error_message = msg
+                success = False
+            case NoOutputEvent(diagnostic=diag):
+                console.print(f"  ⚠️ {diag}", style="yellow")
+                error_message = diag
+                success = False
+            case NoTurnsEvent(diagnostic=diag):
+                console.print(f"  ⚠️ {diag}", style="yellow")
+                error_message = diag
+                success = False
+            case ProcessErrorEvent(message=msg):
+                console.print(f"  ❌ {msg}", style="red")
+                error_message = msg
+                success = False
 
     if debug:
         console.print(f"[DEBUG] Event stream complete. Total events: {event_count}", style="yellow")
@@ -274,47 +287,54 @@ def stream_auto_restack(
         worktree_path=worktree_path,
         dangerous=True,  # Restack modifies git state
     ):
-        if event.event_type == "text":
-            click.echo(event.content)
-        elif event.event_type == "tool":
-            # Check for user input prompts (semantic conflict requiring decision)
-            if "AskUserQuestion" in event.content:
-                click.echo("")
-                click.echo(
-                    click.style(
-                        "⚠️  Semantic conflict detected - requires interactive resolution",
-                        fg="yellow",
-                        bold=True,
+        match event:
+            case TextEvent(content=content):
+                click.echo(content)
+            case ToolEvent(summary=summary):
+                # Check for user input prompts (semantic conflict requiring decision)
+                if "AskUserQuestion" in summary:
+                    click.echo("")
+                    click.echo(
+                        click.style(
+                            "⚠️  Semantic conflict detected - requires interactive resolution",
+                            fg="yellow",
+                            bold=True,
+                        )
                     )
-                )
-                click.echo("")
-                click.echo("Claude needs your input to resolve this conflict.")
-                click.echo("Please run the restack manually in an interactive environment:")
-                click.echo("")
-                click.echo(click.style("    claude /erk:auto-restack", fg="cyan"))
-                click.echo("")
-                return AutoRestackResult(
-                    success=False,
-                    requires_interactive=True,
-                )
-            # Tool summaries with icon
-            click.echo(click.style(f"   ⚙️  {event.content}", fg="cyan", dim=True))
-        elif event.event_type == "spinner_update":
-            if event.content != last_spinner:
-                click.echo(click.style(f"   ⏳ {event.content}", dim=True))
-                last_spinner = event.content
-        elif event.event_type == "error":
-            click.echo(click.style(f"   ❌ {event.content}", fg="red"))
-            error_message = event.content
-            success = False
-        elif event.event_type == "no_output":
-            click.echo(click.style(f"   ⚠️  {event.content}", fg="yellow"))
-            error_message = event.content
-            success = False
-        elif event.event_type == "process_error":
-            click.echo(click.style(f"   ❌ {event.content}", fg="red"))
-            error_message = event.content
-            success = False
+                    click.echo("")
+                    click.echo("Claude needs your input to resolve this conflict.")
+                    click.echo("Please run the restack manually in an interactive environment:")
+                    click.echo("")
+                    click.echo(click.style("    claude /erk:auto-restack", fg="cyan"))
+                    click.echo("")
+                    return AutoRestackResult(
+                        success=False,
+                        requires_interactive=True,
+                    )
+                # Tool summaries with icon
+                click.echo(click.style(f"   ⚙️  {summary}", fg="cyan", dim=True))
+            case SpinnerUpdateEvent(status=status):
+                if status != last_spinner:
+                    click.echo(click.style(f"   ⏳ {status}", dim=True))
+                    last_spinner = status
+            case ErrorEvent(message=msg):
+                click.echo(click.style(f"   ❌ {msg}", fg="red"))
+                error_message = msg
+                success = False
+            case NoOutputEvent(diagnostic=diag):
+                click.echo(click.style(f"   ⚠️  {diag}", fg="yellow"))
+                error_message = diag
+                success = False
+            case NoTurnsEvent(diagnostic=diag):
+                click.echo(click.style(f"   ⚠️  {diag}", fg="yellow"))
+                error_message = diag
+                success = False
+            case ProcessErrorEvent(message=msg):
+                click.echo(click.style(f"   ❌ {msg}", fg="red"))
+                error_message = msg
+                success = False
+            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | IssueNumberEvent():
+                pass  # PR metadata not relevant for auto-restack
 
     # Calculate duration and print end marker
     duration = time.time() - start_time
