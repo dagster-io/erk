@@ -9,6 +9,7 @@ import click
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata import (
     create_submission_queued_block,
+    find_metadata_block,
     render_erk_issue_event,
     update_plan_header_dispatch,
 )
@@ -17,6 +18,7 @@ from erk_shared.github.parsing import (
     construct_workflow_run_url,
     extract_owner_repo_from_github_url,
 )
+from erk_shared.integrations.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 from erk_shared.naming import (
     format_branch_timestamp_suffix,
     sanitize_worktree_name,
@@ -37,6 +39,25 @@ from erk.core.repo_discovery import RepoContext
 logger = logging.getLogger(__name__)
 
 
+def is_issue_extraction_plan(issue_body: str) -> bool:
+    """Check if an issue is an extraction plan by examining its plan-header metadata.
+
+    Args:
+        issue_body: The full issue body text
+
+    Returns:
+        True if the issue has plan_type: "extraction" in its plan-header block,
+        False otherwise (including if no plan-header block exists)
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+
+    if block is None:
+        return False
+
+    plan_type = block.data.get("plan_type")
+    return plan_type == "extraction"
+
+
 @dataclass
 class ValidatedIssue:
     """Issue that passed all validation checks."""
@@ -46,6 +67,7 @@ class ValidatedIssue:
     branch_name: str
     branch_exists: bool
     pr_number: int | None
+    is_extraction_origin: bool
 
 
 @dataclass
@@ -197,12 +219,16 @@ def _validate_issue_for_submit(
         if pr_status.pr_number is not None:
             pr_number = pr_status.pr_number
 
+    # Check if this issue is an extraction plan
+    is_extraction_origin = is_issue_extraction_plan(issue.body)
+
     return ValidatedIssue(
         number=issue_number,
         issue=issue,
         branch_name=branch_name,
         branch_exists=branch_exists,
         pr_number=pr_number,
+        is_extraction_origin=is_extraction_origin,
     )
 
 
@@ -284,13 +310,14 @@ def _submit_single_issue(
             # Update PR body with checkout command footer
             footer_body = (
                 f"{pr_body}\n\n"
-                f"---\n\n"
-                f"To checkout this PR locally:\n\n"
-                f"```\n"
-                f"erk pr checkout {pr_number}\n"
-                f"```"
+                "---\n\n"
+                f"To checkout this PR locally:\n\n```\nerk pr checkout {pr_number}\n```"
             )
             ctx.github.update_pr_body(repo.root, pr_number, footer_body)
+
+            # Add extraction skip label if this is an extraction plan
+            if validated.is_extraction_origin:
+                ctx.github.add_label_to_pr(repo.root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
 
             # Close any orphaned draft PRs
             closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)
@@ -357,13 +384,14 @@ def _submit_single_issue(
         # Update PR body with checkout command footer
         footer_body = (
             f"{pr_body}\n\n"
-            f"---\n\n"
-            f"To checkout this PR locally:\n\n"
-            f"```\n"
-            f"erk pr checkout {pr_number}\n"
-            f"```"
+            "---\n\n"
+            f"To checkout this PR locally:\n\n```\nerk pr checkout {pr_number}\n```"
         )
         ctx.github.update_pr_body(repo.root, pr_number, footer_body)
+
+        # Add extraction skip label if this is an extraction plan
+        if validated.is_extraction_origin:
+            ctx.github.add_label_to_pr(repo.root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
 
         # Close any orphaned draft PRs for this issue
         closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)

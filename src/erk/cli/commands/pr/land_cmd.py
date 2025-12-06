@@ -8,12 +8,20 @@ Workflow:
 
 Workflow (--skip-insights):
     1. erk pr land --skip-insights  # Merges PR, deletes worktree, goes to trunk
+
+Note on extraction plans:
+    PRs that originate from extraction plans (plan_type: "extraction") automatically
+    skip insight extraction. This prevents infinite loops where extracting insights
+    from an extraction-originated PR would lead to another extraction plan.
 """
+
+from pathlib import Path
 
 import click
 from erk_shared.extraction.raw_extraction import create_raw_extraction_plan
 from erk_shared.extraction.session_discovery import get_current_session_id
 from erk_shared.integrations.gt.cli import render_events
+from erk_shared.integrations.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
 from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
 from erk_shared.output.output import user_output
@@ -27,6 +35,22 @@ from erk.cli.commands.navigation_helpers import (
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+
+
+def is_extraction_origin_pr(ctx: ErkContext, repo_root: Path, pr_number: int) -> bool:
+    """Check if a PR originated from an extraction plan.
+
+    Checks if the PR has the erk-skip-extraction label.
+
+    Args:
+        ctx: ErkContext with GitHub operations
+        repo_root: Repository root directory
+        pr_number: PR number to check
+
+    Returns:
+        True if the PR has the erk-skip-extraction label, False otherwise
+    """
+    return ctx.github.has_pr_label(repo_root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
 
 
 @click.command("land")
@@ -104,9 +128,19 @@ def pr_land(ctx: ErkContext, script: bool, skip_insights: bool) -> None:
         + f" Merged PR #{success_result.pr_number} [{success_result.branch_name}]"
     )
 
-    # Step 2: Run extraction (unless --skip-insights)
+    # Check if this PR originated from an extraction plan
+    # If so, automatically skip insights to prevent infinite extraction loops
+    is_extraction_origin = is_extraction_origin_pr(ctx, repo.root, success_result.pr_number)
+
+    if is_extraction_origin:
+        user_output(
+            click.style("ℹ", fg="cyan")
+            + " PR originated from extraction plan - skipping insight extraction"
+        )
+
+    # Step 2: Run extraction (unless --skip-insights or extraction origin)
     extraction_issue_url: str | None = None
-    if not skip_insights:
+    if not skip_insights and not is_extraction_origin:
         # Get current session ID from environment
         current_session_id = get_current_session_id()
 

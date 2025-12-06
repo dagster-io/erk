@@ -8,6 +8,7 @@ This phase handles:
 from collections.abc import Generator
 from pathlib import Path
 
+from erk_shared.github.metadata import find_metadata_block
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.types import GitHubRepoId
 from erk_shared.impl_folder import has_issue_reference, read_issue_reference
@@ -15,8 +16,42 @@ from erk_shared.integrations.gt.abc import GtKit
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.integrations.gt.types import FinalizeResult, PostAnalysisError
 
+# Label added to PRs that originate from extraction plans.
+# Checked by land_cmd.py to skip creating pending-extraction marker.
+ERK_SKIP_EXTRACTION_LABEL = "erk-skip-extraction"
 
-def build_pr_metadata_section(pr_number: int, issue_number: int | None = None) -> str:
+
+def is_extraction_plan(impl_dir: Path) -> bool:
+    """Check if the plan in the impl folder is an extraction plan.
+
+    Reads plan.md and checks the plan-header metadata block for plan_type: "extraction".
+
+    Args:
+        impl_dir: Path to .impl/ directory
+
+    Returns:
+        True if plan_type is "extraction", False otherwise (including if plan.md
+        doesn't exist or metadata block is missing)
+    """
+    plan_file = impl_dir / "plan.md"
+
+    if not plan_file.exists():
+        return False
+
+    plan_content = plan_file.read_text(encoding="utf-8")
+    block = find_metadata_block(plan_content, "plan-header")
+
+    if block is None:
+        return False
+
+    plan_type = block.data.get("plan_type")
+    return plan_type == "extraction"
+
+
+def build_pr_metadata_section(
+    pr_number: int,
+    issue_number: int | None = None,
+) -> str:
     """Build metadata footer section for PR body.
 
     This section is appended AFTER the PR body content, not before.
@@ -25,6 +60,9 @@ def build_pr_metadata_section(pr_number: int, issue_number: int | None = None) -
 
     Note: Issue closing is handled via commit message keywords ("Closes #N")
     added by the gt finalize process.
+
+    Note: Extraction origin is now tracked via the erk-skip-extraction label
+    rather than a marker in the PR body.
 
     Args:
         pr_number: PR number
@@ -101,8 +139,14 @@ def execute_finalize(
         if issue_ref is not None:
             issue_number = issue_ref.issue_number
 
+    # Check if this is an extraction plan
+    is_extraction_origin = is_extraction_plan(impl_dir)
+
     # Build metadata section and combine with AI body
-    metadata_section = build_pr_metadata_section(pr_number=pr_number, issue_number=issue_number)
+    metadata_section = build_pr_metadata_section(
+        pr_number=pr_number,
+        issue_number=issue_number,
+    )
     # pr_body is guaranteed non-None here (either passed in or read from file, validated above)
     assert pr_body is not None
 
@@ -115,6 +159,12 @@ def execute_finalize(
     yield ProgressEvent("Updating PR metadata... (gh pr edit)")
     ops.github.update_pr_title_and_body(repo_root, pr_number, pr_title, final_body)
     yield ProgressEvent("PR metadata updated", style="success")
+
+    # Add extraction skip label if this is an extraction plan
+    if is_extraction_origin:
+        yield ProgressEvent("Adding erk-skip-extraction label...")
+        ops.github.add_label_to_pr(repo_root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
+        yield ProgressEvent("Label added", style="success")
 
     # Amend local commit with PR title and body (without metadata footer)
     yield ProgressEvent("Updating local commit message...")

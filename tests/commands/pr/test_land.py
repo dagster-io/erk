@@ -5,6 +5,11 @@ The pr land command now:
 2. Automatically runs extraction (unless --skip-insights)
 3. Prints extraction issue URL (if successful)
 4. Deletes worktree and navigates to trunk
+
+Note on extraction plans:
+PRs that originate from extraction plans (plan_type: "extraction") automatically
+skip insight extraction. This prevents infinite loops where extracting insights
+from an extraction-originated PR would lead to another extraction plan.
 """
 
 from dataclasses import replace
@@ -17,8 +22,10 @@ from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.types import PullRequestInfo
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
+from erk_shared.integrations.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 
 from erk.cli.commands.pr import pr_group
+from erk.cli.commands.pr.land_cmd import is_extraction_origin_pr
 from erk.core.repo_discovery import RepoContext
 from tests.test_utils.cli_helpers import assert_cli_error
 from tests.test_utils.env_helpers import erk_inmem_env
@@ -624,3 +631,152 @@ def test_pr_land_with_skip_insights_deletes_worktree_and_branch() -> None:
         # Verify extraction-related output NOT shown
         assert "Extracted insights" not in result.output
         assert "Extraction failed" not in result.output
+
+
+def test_pr_land_extraction_origin_skips_marker_and_deletes_worktree() -> None:
+    """Test pr land auto-skips insights for PRs with erk-skip-extraction label.
+
+    When a PR has the erk-skip-extraction label, erk pr land should:
+    1. NOT create the pending-extraction marker
+    2. Delete the worktree and branch (like --skip-insights)
+    3. Navigate to trunk
+
+    This prevents infinite extraction loops from extraction-originated PRs.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_titles={123: "Feature 1"},
+            pr_bodies_by_number={123: "PR body"},
+            merge_should_succeed=True,
+        )
+        # PR has erk-skip-extraction label
+        github_ops.set_pr_labels(123, {ERK_SKIP_EXTRACTION_LABEL})
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+
+        assert result.exit_code == 0
+
+        # Verify PR was merged
+        assert 123 in github_ops.merged_prs
+
+        # Verify NO pending extraction marker was created
+        assert not marker_exists(feature_1_path, PENDING_EXTRACTION_MARKER)
+
+        # Verify worktree was removed
+        assert feature_1_path in git_ops.removed_worktrees
+
+        # Verify branch was deleted
+        assert "feature-1" in git_ops.deleted_branches
+
+        # Verify user was informed about skipping extraction
+        assert "extraction plan" in result.output
+        assert "skipping insight extraction" in result.output
+
+        # Verify output messages about deletion
+        assert "Landed PR. Deleted worktree and branch." in result.output
+
+
+def test_is_extraction_origin_pr_returns_true_when_label_present(tmp_path: Path) -> None:
+    """Test is_extraction_origin_pr returns True when PR has erk-skip-extraction label."""
+    from erk.core.context import ErkContext
+
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    github_ops = FakeGitHub()
+    # PR has erk-skip-extraction label
+    github_ops.set_pr_labels(456, {ERK_SKIP_EXTRACTION_LABEL})
+
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        github=github_ops,
+    )
+
+    result = is_extraction_origin_pr(ctx, repo_root, 456)
+
+    assert result is True
+
+
+def test_is_extraction_origin_pr_returns_false_when_label_absent(tmp_path: Path) -> None:
+    """Test is_extraction_origin_pr returns False when PR has no erk-skip-extraction label."""
+    from erk.core.context import ErkContext
+
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    github_ops = FakeGitHub()
+    # PR has other labels, but not erk-skip-extraction
+    github_ops.set_pr_labels(456, {"bug", "enhancement"})
+
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        github=github_ops,
+    )
+
+    result = is_extraction_origin_pr(ctx, repo_root, 456)
+
+    assert result is False
+
+
+def test_is_extraction_origin_pr_returns_false_when_no_labels(tmp_path: Path) -> None:
+    """Test is_extraction_origin_pr returns False when PR has no labels."""
+    from erk.core.context import ErkContext
+
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    # No labels configured for this PR
+    github_ops = FakeGitHub()
+
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        github=github_ops,
+    )
+
+    result = is_extraction_origin_pr(ctx, repo_root, 456)
+
+    assert result is False

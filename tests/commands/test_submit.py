@@ -9,6 +9,7 @@ from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
 from erk_shared.github.issues.types import PRReference
 from erk_shared.github.metadata import MetadataBlock, render_metadata_block
+from erk_shared.integrations.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -16,6 +17,7 @@ from erk.cli.commands.submit import (
     ERK_PLAN_LABEL,
     _close_orphaned_draft_prs,
     _strip_plan_markers,
+    is_issue_extraction_plan,
     submit_cmd,
 )
 from erk.core.context import ErkContext
@@ -34,6 +36,24 @@ def _make_plan_body(content: str = "Implementation details...") -> str:
     }
     header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
     return f"{header_block}\n\n# Plan\n\n{content}"
+
+
+def _make_extraction_plan_body(content: str = "Documentation extraction...") -> str:
+    """Create a valid extraction plan issue body with plan-header metadata block.
+
+    The plan-header block with plan_type: "extraction" is used to identify PRs
+    that originate from extraction plans.
+    """
+    plan_header_data = {
+        "schema_version": "2",
+        "created_at": "2024-01-01T00:00:00Z",
+        "created_by": "test-user",
+        "plan_type": "extraction",
+        "source_plan_issues": [100],
+        "extraction_session_ids": ["session-abc"],
+    }
+    header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
+    return f"{header_block}\n\n# Extraction Plan\n\n{content}"
 
 
 def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
@@ -1237,3 +1257,169 @@ def test_submit_with_invalid_base_branch(tmp_path: Path) -> None:
 
     # Verify workflow was NOT triggered (failure happened before workflow dispatch)
     assert len(fake_github.triggered_workflows) == 0
+
+
+def test_is_issue_extraction_plan_returns_true_for_extraction_plan() -> None:
+    """Test is_issue_extraction_plan returns True when plan_type is 'extraction'."""
+    body = _make_extraction_plan_body()
+    result = is_issue_extraction_plan(body)
+    assert result is True
+
+
+def test_is_issue_extraction_plan_returns_false_for_standard_plan() -> None:
+    """Test is_issue_extraction_plan returns False when plan_type is not 'extraction'."""
+    body = _make_plan_body()
+    result = is_issue_extraction_plan(body)
+    assert result is False
+
+
+def test_is_issue_extraction_plan_returns_false_for_no_metadata() -> None:
+    """Test is_issue_extraction_plan returns False when there's no plan-header block."""
+    body = "# Just a plain issue\n\nNo metadata here."
+    result = is_issue_extraction_plan(body)
+    assert result is False
+
+
+def test_submit_extraction_plan_adds_skip_extraction_label(tmp_path: Path) -> None:
+    """Test submit adds erk-skip-extraction label to PR for extraction plans."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+    # Issue with extraction plan_type in metadata
+    extraction_body = _make_extraction_plan_body()
+    issue = IssueInfo(
+        number=123,
+        title="Extract documentation from session X",
+        body=extraction_body,
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    plan = Plan(
+        plan_identifier="123",
+        title="Extract documentation from session X",
+        body=extraction_body,
+        state=PlanState.OPEN,
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+    )
+    fake_github = FakeGitHub()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        plan_store=fake_plan_store,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+
+    # Verify erk-skip-extraction label was added to PR
+    assert len(fake_github.added_labels) == 1
+    pr_number, label = fake_github.added_labels[0]
+    assert pr_number == 999  # FakeGitHub returns 999 for created PRs
+    assert label == ERK_SKIP_EXTRACTION_LABEL
+
+    # Verify PR body was updated (checkout command, no extraction marker)
+    assert len(fake_github.updated_pr_bodies) == 1
+    _, updated_body = fake_github.updated_pr_bodies[0]
+    assert "erk pr checkout" in updated_body
+
+
+def test_submit_standard_plan_does_not_add_skip_extraction_label(tmp_path: Path) -> None:
+    """Test submit does NOT add erk-skip-extraction label for standard plans."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+    # Standard plan (not extraction)
+    standard_body = _make_plan_body()
+    issue = IssueInfo(
+        number=456,
+        title="Implement feature Y",
+        body=standard_body,
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/456",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    plan = Plan(
+        plan_identifier="456",
+        title="Implement feature Y",
+        body=standard_body,
+        state=PlanState.OPEN,
+        url="https://github.com/test-owner/test-repo/issues/456",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={456: issue})
+    fake_plan_store = FakePlanStore(plans={"456": plan})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+    )
+    fake_github = FakeGitHub()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        plan_store=fake_plan_store,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["456"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+
+    # Verify NO label was added (standard plan, not extraction)
+    assert len(fake_github.added_labels) == 0
+
+    # Verify PR body was updated (checkout command only)
+    assert len(fake_github.updated_pr_bodies) == 1
+    _, updated_body = fake_github.updated_pr_bodies[0]
+    assert "erk pr checkout" in updated_body

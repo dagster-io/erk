@@ -531,3 +531,31 @@ class GitHub(ABC):
             RuntimeError: If gh command fails
         """
         ...
+
+    @abstractmethod
+    def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
+        """Add a label to a pull request.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to add label to
+            label: Label name to add
+
+        Raises:
+            RuntimeError: If gh command fails
+        """
+        ...
+
+    @abstractmethod
+    def has_pr_label(self, repo_root: Path, pr_number: int, label: str) -> bool:
+        """Check if a PR has a specific label.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to check
+            label: Label name to check for
+
+        Returns:
+            True if the PR has the label, False otherwise
+        """
+        ...

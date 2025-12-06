@@ -131,6 +131,8 @@ class FakeGitHub(GitHub):
         self._poll_attempts: list[tuple[str, str, int, int]] = []
         self._check_auth_status_calls: list[None] = []
         self._created_prs: list[tuple[str, str, str, str | None, bool]] = []
+        self._pr_labels: dict[int, set[str]] = {}
+        self._added_labels: list[tuple[int, str]] = []
 
     @property
     def merged_prs(self) -> list[int]:
@@ -683,3 +685,28 @@ class FakeGitHub(GitHub):
     def get_repo_info(self, repo_root: Path) -> RepoInfo:
         """Get repository owner and name (returns test defaults)."""
         return RepoInfo(owner="test-owner", name="test-repo")
+
+    def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
+        """Record label addition in mutation tracking list and update internal state."""
+        self._added_labels.append((pr_number, label))
+        if pr_number not in self._pr_labels:
+            self._pr_labels[pr_number] = set()
+        self._pr_labels[pr_number].add(label)
+
+    def has_pr_label(self, repo_root: Path, pr_number: int, label: str) -> bool:
+        """Check if a PR has a specific label from configured state."""
+        if pr_number not in self._pr_labels:
+            return False
+        return label in self._pr_labels[pr_number]
+
+    @property
+    def added_labels(self) -> list[tuple[int, str]]:
+        """Read-only access to tracked label additions for test assertions.
+
+        Returns list of (pr_number, label) tuples.
+        """
+        return self._added_labels
+
+    def set_pr_labels(self, pr_number: int, labels: set[str]) -> None:
+        """Set labels for a PR (for test setup)."""
+        self._pr_labels[pr_number] = labels

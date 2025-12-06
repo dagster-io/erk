@@ -1615,3 +1615,32 @@ query {{
         owner = data["owner"]["login"]
         name = data["name"]
         return RepoInfo(owner=owner, name=name)
+
+    def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
+        """Add a label to a pull request using gh CLI.
+
+        Raises:
+            RuntimeError: If gh command fails (auth issues, network errors, etc.)
+        """
+        cmd = ["gh", "pr", "edit", str(pr_number), "--add-label", label]
+        execute_gh_command(cmd, repo_root)
+
+    def has_pr_label(self, repo_root: Path, pr_number: int, label: str) -> bool:
+        """Check if a PR has a specific label using gh CLI.
+
+        Returns:
+            True if the PR has the label, False otherwise.
+        """
+        cmd = [
+            "gh",
+            "pr",
+            "view",
+            str(pr_number),
+            "--json",
+            "labels",
+            "-q",
+            ".labels[].name",
+        ]
+        stdout = execute_gh_command(cmd, repo_root)
+        labels = stdout.strip().split("\n") if stdout.strip() else []
+        return label in labels
