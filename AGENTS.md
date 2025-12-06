@@ -76,7 +76,7 @@ This ensures implementing agents have access to documentation you discovered dur
 
 **Category quick reference:**
 
-- **[Architecture](docs/agent/architecture/)** — dry-run patterns, Protocol vs ABC, subprocess wrappers, GitHub URL parsing, shell integration patterns
+- **[Architecture](docs/agent/architecture/)** — dry-run patterns, Protocol vs ABC, subprocess wrappers, GitHub URL parsing, shell integration patterns, Claude CLI integration, agent vs CLI command boundaries
 - **[CLI Development](docs/agent/cli/)** — command organization, output styling, script mode
 - **[Planning](docs/agent/planning/)** — plan lifecycle, .impl/ folders, agent delegation, scratch storage
 - **[Testing](docs/agent/testing/)** — erk fakes, rebase conflicts, import conflict resolution
