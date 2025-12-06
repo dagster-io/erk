@@ -504,6 +504,73 @@ def test_delete_branch_and_worktree_no_escape_when_outside(tmp_path: Path) -> No
         os.chdir(original_cwd)
 
 
+def test_delete_branch_and_worktree_escapes_via_symlink(tmp_path: Path) -> None:
+    """Test that delete_branch_and_worktree escapes CWD when worktree_path is accessed via symlink.
+
+    This tests the fix for the bug where Path.cwd() returns a resolved path,
+    but worktree_path might be a symlink. Without resolving both paths,
+    the equality check fails even when they refer to the same directory.
+    """
+    # Arrange
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    git_dir = repo_root / ".git"
+    git_dir.mkdir()
+    erk_root = tmp_path / "erks"
+    erk_root.mkdir()
+
+    # Create the actual worktree directory
+    worktrees_dir = tmp_path / "worktrees"
+    worktrees_dir.mkdir()
+    actual_worktree_path = worktrees_dir / "feature"
+    actual_worktree_path.mkdir()
+
+    # Create a symlink to the worktrees directory (common in some setups)
+    symlink_worktrees = tmp_path / "wt-link"
+    symlink_worktrees.symlink_to(worktrees_dir)
+    symlinked_worktree_path = symlink_worktrees / "feature"
+
+    git = FakeGit(
+        local_branches={repo_root: ["main", "feature"]},
+        remote_branches={repo_root: []},
+        git_common_dirs={repo_root: git_dir},
+        worktrees={repo_root: [WorktreeInfo(path=actual_worktree_path, branch="feature")]},
+    )
+
+    global_config = GlobalConfig.test(
+        erk_root,
+        use_graphite=False,
+        shell_setup_complete=False,
+        show_pr_info=False,
+    )
+
+    ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+
+    # Change to the ACTUAL worktree directory (resolved path)
+    original_cwd = Path.cwd()
+    os.chdir(actual_worktree_path)
+
+    try:
+        # Act: Pass the SYMLINKED path (unresolved) - this is the bug scenario
+        # Before fix: symlinked_worktree_path != Path.cwd() because one is resolved
+        # After fix: both are resolved, so they're equal
+        delete_branch_and_worktree(ctx, repo_root, "feature", symlinked_worktree_path)
+
+        # Assert: CWD should have changed to repo_root (escaped the worktree)
+        # Before fix: this would FAIL because the paths didn't compare equal,
+        # so os.chdir(repo_root) was never called
+        assert Path.cwd() == repo_root
+
+        # Assert: Worktree removal was called (with the symlinked path we passed)
+        assert symlinked_worktree_path in git.removed_worktrees
+
+        # Assert: Branch was deleted
+        assert "feature" in git.deleted_branches
+    finally:
+        # Restore original CWD for test cleanup
+        os.chdir(original_cwd)
+
+
 def test_delete_branch_and_worktree_escapes_from_subdirectory(tmp_path: Path) -> None:
     """Test that delete_branch_and_worktree changes CWD when inside a subdirectory of worktree."""
     # Arrange
