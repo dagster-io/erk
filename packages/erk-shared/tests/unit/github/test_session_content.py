@@ -4,6 +4,8 @@ from erk_shared.github.metadata import (
     CHUNK_SAFETY_BUFFER,
     GITHUB_COMMENT_SIZE_LIMIT,
     chunk_session_content,
+    extract_session_content_from_block,
+    extract_session_content_from_comments,
     render_session_content_block,
     render_session_content_blocks,
 )
@@ -237,3 +239,195 @@ def test_render_session_content_blocks_content_preserved() -> None:
     all_blocks = "\n".join(blocks)
     for line in lines:
         assert line in all_blocks
+
+
+# =============================================================================
+# Tests for extract_session_content_from_block
+# =============================================================================
+
+
+def test_extract_session_content_from_block_basic() -> None:
+    """Extracts XML content from a session-content block body."""
+    block_body = """<details>
+<summary><strong>Session Data</strong></summary>
+
+```xml
+<session session_id="abc123">
+<message>Hello world</message>
+</session>
+```
+
+</details>"""
+
+    result = extract_session_content_from_block(block_body)
+
+    assert result is not None
+    assert '<session session_id="abc123">' in result
+    assert "<message>Hello world</message>" in result
+
+
+def test_extract_session_content_from_block_with_hints() -> None:
+    """Extraction works when hints section is present."""
+    block_body = """<details>
+<summary><strong>Session Data</strong></summary>
+
+**Extraction Hints:**
+- Error handling patterns
+- Test setup
+
+```xml
+<session>content here</session>
+```
+
+</details>"""
+
+    result = extract_session_content_from_block(block_body)
+
+    assert result is not None
+    assert "<session>content here</session>" in result
+
+
+def test_extract_session_content_from_block_no_xml_fence_returns_none() -> None:
+    """Returns None when no xml code fence is found."""
+    block_body = """<details>
+<summary><strong>Session Data</strong></summary>
+
+No code fence here
+
+</details>"""
+
+    result = extract_session_content_from_block(block_body)
+
+    assert result is None
+
+
+def test_extract_session_content_from_block_empty_xml_returns_empty() -> None:
+    """Empty XML content returns empty string."""
+    block_body = """<details>
+<summary><strong>Session Data</strong></summary>
+
+```xml
+```
+
+</details>"""
+
+    result = extract_session_content_from_block(block_body)
+
+    assert result == ""
+
+
+# =============================================================================
+# Tests for extract_session_content_from_comments
+# =============================================================================
+
+
+def test_extract_session_content_from_comments_single_comment() -> None:
+    """Extracts session content from a single comment."""
+    comments = [
+        render_session_content_block(
+            '<session session_id="test123"><message>Hello</message></session>',
+            session_label="test-branch",
+        )
+    ]
+
+    content, session_ids = extract_session_content_from_comments(comments)
+
+    assert content is not None
+    assert '<session session_id="test123">' in content
+    assert "test123" in session_ids
+
+
+def test_extract_session_content_from_comments_multiple_chunks() -> None:
+    """Combines chunked content in correct order."""
+    # Create chunked content
+    chunk1 = render_session_content_block(
+        '<session session_id="abc">chunk1</session>',
+        chunk_number=1,
+        total_chunks=2,
+    )
+    chunk2 = render_session_content_block(
+        '<session session_id="def">chunk2</session>',
+        chunk_number=2,
+        total_chunks=2,
+    )
+
+    # Comments might be in any order
+    comments = [chunk2, chunk1]
+
+    content, session_ids = extract_session_content_from_comments(comments)
+
+    assert content is not None
+    # Should be combined in order (chunk1 then chunk2)
+    assert content.index("chunk1") < content.index("chunk2")
+    assert "abc" in session_ids
+    assert "def" in session_ids
+
+
+def test_extract_session_content_from_comments_no_session_content() -> None:
+    """Returns None when no session content blocks found."""
+    comments = [
+        "Regular comment without session content",
+        "Another comment",
+    ]
+
+    content, session_ids = extract_session_content_from_comments(comments)
+
+    assert content is None
+    assert session_ids == []
+
+
+def test_extract_session_content_from_comments_empty_list() -> None:
+    """Returns None for empty comment list."""
+    content, session_ids = extract_session_content_from_comments([])
+
+    assert content is None
+    assert session_ids == []
+
+
+def test_extract_session_content_from_comments_mixed_content() -> None:
+    """Extracts session content from comments mixed with regular content."""
+    session_block = render_session_content_block(
+        '<session session_id="xyz789"><data>Important stuff</data></session>'
+    )
+    comments = [
+        "Just a regular comment",
+        session_block,
+        "Another regular comment",
+    ]
+
+    content, session_ids = extract_session_content_from_comments(comments)
+
+    assert content is not None
+    assert "Important stuff" in content
+    assert "xyz789" in session_ids
+
+
+def test_extract_session_content_from_comments_deduplicates_session_ids() -> None:
+    """Session IDs are deduplicated while preserving order."""
+    # Two blocks with the same session ID
+    block1 = render_session_content_block('<session session_id="same123">part1</session>')
+    block2 = render_session_content_block('<session session_id="same123">part2</session>')
+    comments = [block1, block2]
+
+    content, session_ids = extract_session_content_from_comments(comments)
+
+    assert content is not None
+    assert session_ids == ["same123"]  # Only one occurrence
+
+
+def test_extract_session_content_roundtrip() -> None:
+    """Content survives render -> extract roundtrip."""
+    original_content = '<session session_id="roundtrip"><message>Test data</message></session>'
+
+    # Render the content
+    rendered_blocks = render_session_content_blocks(
+        original_content,
+        session_label="test",
+    )
+
+    # Extract it back
+    content, session_ids = extract_session_content_from_comments(rendered_blocks)
+
+    assert content is not None
+    assert original_content == content
+    assert "roundtrip" in session_ids
