@@ -3,7 +3,7 @@
 Render Session Content CLI Command
 
 Wraps render_session_content_blocks to provide deterministic CLI access.
-Used by /erk:create-raw-extraction-plan to avoid ad-hoc Python scripts.
+Used by erk plan extraction raw to avoid ad-hoc Python scripts.
 """
 
 import json

@@ -107,7 +107,7 @@ class FakeShell(Shell):
         if self._claude_extraction_raises:
             raise subprocess.CalledProcessError(
                 returncode=1,
-                cmd=["claude", "/erk:create-raw-extraction-plan"],
+                cmd=["erk", "plan", "extraction", "raw"],
                 stderr="Simulated extraction failure",
             )
         return self._extraction_plan_url
