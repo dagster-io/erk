@@ -2,16 +2,16 @@
 
 ## Categories
 
-- **[architecture/](architecture/)** — at-reference-resolution, commandresult-extension-pattern, erk-architecture, github-parsing, pathlib-symlinks, protocol-vs-abc, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
+- **[architecture/](architecture/)** — at-reference-resolution, commandresult-extension-pattern, erk-architecture, github-parsing, marker-pattern, pathlib-symlinks, protocol-vs-abc, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
 - **[cli/](cli/)** — command-organization, list-formatting, output-styling, script-mode, template-variables
 - **[commands/](commands/)** — behavioral-triggers, optimization-patterns
-- **[erk/](erk/)** — branch-cleanup, graphite-branch-setup
+- **[erk/](erk/)** — branch-cleanup, graphite-branch-setup, pending-extraction-workflow
 - **[hooks/](hooks/)** — erk, hooks
 - **[kits/](kits/)** — cli-commands, code-architecture, dependency-injection, push-down-pattern, registry-discovery
 - **[planning/](planning/)** — agent-delegation, enrichment, lifecycle, plan-schema, scratch-storage, workflow
 - **[reference/](reference/)** — claude-cli-stream-json
 - **[sessions/](sessions/)** — context-analysis, layout, parallel-session-awareness, tools
-- **[testing/](testing/)** — import-conflict-resolution, kit-cli-testing, rebase-conflicts, session-log-fixtures, testing
+- **[testing/](testing/)** — import-conflict-resolution, kit-cli-testing, rebase-conflicts, sentinel-path, session-log-fixtures, testing
 - **[tui/](tui/)** — command-palette, textual-quirks
 
 ## Uncategorized

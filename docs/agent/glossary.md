@@ -565,6 +565,30 @@ Test that uses fake implementations and isolated filesystem.
 
 ---
 
+## Markers
+
+### pending-extraction marker
+
+An empty file at `.erk/pending-extraction` in a worktree that signals the worktree has a landed PR but insights haven't been extracted yet.
+
+**Lifecycle**:
+
+- Created by `erk pr land`
+- Deleted by `/erk:create-raw-extraction-plan`
+
+**Behavior**:
+
+- Blocks `erk wt delete`, `erk down --delete-current`, and `erk up --delete-current`
+- Bypass with `--force` flag
+
+**Purpose**: Provides friction before worktree cleanup to ensure valuable session discoveries (architectural insights, API quirks, failed approaches) are captured.
+
+**Implementation**: `src/erk/core/markers.py`
+
+**Related**: [Pending Extraction Workflow](erk/pending-extraction-workflow.md)
+
+---
+
 ## Kit Maintenance
 
 ### Kit Consolidation
