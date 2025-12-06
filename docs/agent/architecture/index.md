@@ -1,6 +1,8 @@
 # Architecture Documentation
 
 - **[at-reference-resolution.md](at-reference-resolution.md)** — Modifying @ reference validation, Debugging broken @ references in symlinked files, Understanding why validation passes but Claude Code fails
+- **[erk-shared-package.md](erk-shared-package.md)** — Sharing code between erk and dot-agent-kit, Deciding where to put new utilities, Moving code between packages
+- **[markers.md](markers.md)** — Creating worktree state tracking, Adding friction before destructive operations, Implementing pending extraction workflow
 - **[claude-cli-integration.md](claude-cli-integration.md)** — Invoking Claude from Python, Spawning Claude CLI from Python code, Understanding non-interactive vs interactive modes
 - **[claude-cli-progress.md](claude-cli-progress.md)** — adding progress output to Claude operations, wrapping Claude CLI with user feedback, using ProgressEvent or CompletionEvent, converting blocking operations to streaming progress
 - **[command-boundaries.md](command-boundaries.md)** — Choosing between agent vs CLI command, Deciding when to use .claude/commands/ vs src/erk/cli/, Understanding when AI capabilities are needed
