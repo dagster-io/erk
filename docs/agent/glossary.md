@@ -202,6 +202,20 @@ type erk
 
 **For comprehensive gt documentation**: See [tools/gt.md](tools/gt.md)
 
+### Force-Push After Squash
+
+When squashing commits on a branch that already has a PR:
+
+1. **Why it's needed**: Squashing rewrites git history, causing the local branch to diverge from remote
+2. **Why it's safe**: The PR already exists on remote - you're updating it, not creating it
+3. **Pattern**: After `gt squash`, use `gt submit` with `--force` (or equivalent)
+
+This pattern applies to:
+
+- `erk pr sync` (automatically uses force after squash)
+- Manual squash + submit workflows
+- Any workflow that rewrites history on an existing PR branch
+
 ### Trunk Branch
 
 The default branch of the repository (typically `main` or `master`).
