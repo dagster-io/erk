@@ -1,17 +1,17 @@
-"""Tests for session preprocessing module."""
+"""Tests for session preprocessing module - Stage 1 deterministic reduction."""
 
 import json
 from pathlib import Path
 
 from erk_shared.extraction.session_preprocessing import (
+    compact_whitespace,
+    deduplicate_assistant_messages,
     escape_xml,
     generate_compressed_xml,
-    is_empty_session,
-    is_warmup_session,
     preprocess_session,
     process_log_file,
-    prune_tool_result_content,
-    truncate_parameter_value,
+    reduce_session_mechanically,
+    remove_empty_text_blocks,
 )
 
 
@@ -35,114 +35,143 @@ class TestEscapeXml:
         assert escape_xml("a & b < c > d") == "a &amp; b &lt; c &gt; d"
 
 
-class TestIsEmptySession:
-    """Tests for is_empty_session function."""
+class TestCompactWhitespace:
+    """Tests for compact_whitespace function."""
 
-    def test_fewer_than_3_entries_is_empty(self) -> None:
-        """Sessions with fewer than 3 entries are considered empty."""
-        entries = [{"type": "user"}, {"type": "assistant"}]
-        assert is_empty_session(entries) is True
+    def test_leaves_single_newlines_alone(self) -> None:
+        """Single newlines are preserved."""
+        assert compact_whitespace("a\nb") == "a\nb"
 
-    def test_no_user_message_is_empty(self) -> None:
-        """Sessions without user messages are considered empty."""
-        entries = [
-            {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hello"}]}},
-            {"type": "assistant", "message": {"content": [{"type": "text", "text": "World"}]}},
-            {"type": "tool_result", "message": {}},
+    def test_leaves_double_newlines_alone(self) -> None:
+        """Double newlines are preserved."""
+        assert compact_whitespace("a\n\nb") == "a\n\nb"
+
+    def test_compacts_triple_newlines(self) -> None:
+        """Triple newlines are compacted to double."""
+        assert compact_whitespace("a\n\n\nb") == "a\n\nb"
+
+    def test_compacts_many_newlines(self) -> None:
+        """Many newlines are compacted to double."""
+        assert compact_whitespace("a\n\n\n\n\nb") == "a\n\nb"
+
+
+class TestRemoveEmptyTextBlocks:
+    """Tests for remove_empty_text_blocks function."""
+
+    def test_removes_empty_text_blocks(self) -> None:
+        """Empty text blocks are removed."""
+        blocks = [
+            {"type": "text", "text": ""},
+            {"type": "text", "text": "content"},
         ]
-        assert is_empty_session(entries) is True
+        result = remove_empty_text_blocks(blocks)
+        assert len(result) == 1
+        assert result[0]["text"] == "content"
 
-    def test_no_assistant_response_is_empty(self) -> None:
-        """Sessions without assistant responses are considered empty."""
+    def test_removes_whitespace_only_blocks(self) -> None:
+        """Whitespace-only text blocks are removed."""
+        blocks = [
+            {"type": "text", "text": "   "},
+            {"type": "text", "text": "\n\t"},
+            {"type": "text", "text": "content"},
+        ]
+        result = remove_empty_text_blocks(blocks)
+        assert len(result) == 1
+        assert result[0]["text"] == "content"
+
+    def test_preserves_non_text_blocks(self) -> None:
+        """Non-text blocks are preserved regardless of content."""
+        blocks = [
+            {"type": "tool_use", "name": "Read"},
+            {"type": "text", "text": ""},
+        ]
+        result = remove_empty_text_blocks(blocks)
+        assert len(result) == 1
+        assert result[0]["type"] == "tool_use"
+
+
+class TestDeduplicateAssistantMessages:
+    """Tests for deduplicate_assistant_messages function."""
+
+    def test_removes_duplicate_text_when_tool_use_present(self) -> None:
+        """Duplicate assistant text is removed when tool_use follows."""
+        entries = [
+            {
+                "type": "assistant",
+                "message": {"content": [{"type": "text", "text": "Let me help"}]},
+            },
+            {
+                "type": "assistant",
+                "message": {
+                    "content": [
+                        {"type": "text", "text": "Let me help"},
+                        {"type": "tool_use", "name": "Read"},
+                    ]
+                },
+            },
+        ]
+        result = deduplicate_assistant_messages(entries)
+        # Second entry should only have tool_use
+        assert len(result[1]["message"]["content"]) == 1
+        assert result[1]["message"]["content"][0]["type"] == "tool_use"
+
+
+class TestReduceSessionMechanically:
+    """Tests for reduce_session_mechanically function - Stage 1 core logic."""
+
+    def test_drops_file_history_snapshot(self) -> None:
+        """file-history-snapshot entries are dropped entirely."""
         entries = [
             {"type": "user", "message": {"content": "Hello"}},
-            {"type": "user", "message": {"content": "World"}},
-            {"type": "tool_result", "message": {}},
+            {"type": "file-history-snapshot", "message": {}},
+            {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi"}]}},
         ]
-        assert is_empty_session(entries) is True
+        result = reduce_session_mechanically(entries)
+        assert len(result) == 2
+        assert all(e["type"] != "file-history-snapshot" for e in result)
 
-    def test_meaningful_session_is_not_empty(self) -> None:
-        """Sessions with user message and assistant response are not empty."""
+    def test_strips_usage_metadata(self) -> None:
+        """usage metadata is stripped from assistant messages."""
         entries = [
-            {"type": "user", "message": {"content": "Hello"}},
-            {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi there!"}]}},
-            {"type": "user", "message": {"content": "Thanks"}},
+            {
+                "type": "assistant",
+                "message": {
+                    "content": [{"type": "text", "text": "Hi"}],
+                    "usage": {"input_tokens": 100, "output_tokens": 50},
+                },
+            },
         ]
-        assert is_empty_session(entries) is False
+        result = reduce_session_mechanically(entries)
+        assert "usage" not in result[0]["message"]
 
-
-class TestIsWarmupSession:
-    """Tests for is_warmup_session function."""
-
-    def test_empty_entries_not_warmup(self) -> None:
-        """Empty entry list is not a warmup."""
-        assert is_warmup_session([]) is False
-
-    def test_warmup_keyword_detected(self) -> None:
-        """Sessions with 'warmup' in first user message are warmups."""
+    def test_removes_empty_text_blocks(self) -> None:
+        """Empty text blocks are removed from content."""
         entries = [
-            {"type": "user", "message": {"content": "warmup: review the codebase"}},
-            {"type": "assistant", "message": {"content": [{"type": "text", "text": "Ready"}]}},
+            {
+                "type": "assistant",
+                "message": {
+                    "content": [
+                        {"type": "text", "text": ""},
+                        {"type": "text", "text": "content"},
+                    ]
+                },
+            },
         ]
-        assert is_warmup_session(entries) is True
+        result = reduce_session_mechanically(entries)
+        assert len(result[0]["message"]["content"]) == 1
+        assert result[0]["message"]["content"][0]["text"] == "content"
 
-    def test_normal_session_not_warmup(self) -> None:
-        """Normal sessions without 'warmup' are not warmups."""
+    def test_preserves_git_branch(self) -> None:
+        """gitBranch is preserved for metadata extraction."""
         entries = [
-            {"type": "user", "message": {"content": "Fix the bug in auth module"}},
-            {"type": "assistant", "message": {"content": [{"type": "text", "text": "Sure"}]}},
+            {
+                "type": "user",
+                "message": {"content": "Hello"},
+                "gitBranch": "feature/test",
+            },
         ]
-        assert is_warmup_session(entries) is False
-
-
-class TestTruncateParameterValue:
-    """Tests for truncate_parameter_value function."""
-
-    def test_short_value_unchanged(self) -> None:
-        """Values under max_length are unchanged."""
-        result = truncate_parameter_value("short value", max_length=200)
-        assert result == "short value"
-
-    def test_long_path_truncated_with_ellipsis(self) -> None:
-        """Long file paths are truncated preserving start and end."""
-        long_path = "/Users/foo/code/project/src/very/deep/nested/module/file.py"
-        result = truncate_parameter_value(long_path, max_length=40)
-        assert "/.../" in result
-        assert result.startswith("/Users")
-        assert result.endswith("file.py")
-
-    def test_long_text_truncated_with_marker(self) -> None:
-        """Long text is truncated with character count marker."""
-        long_text = "a" * 300
-        result = truncate_parameter_value(long_text, max_length=200)
-        assert "truncated" in result
-        assert len(result) < len(long_text)
-
-
-class TestPruneToolResultContent:
-    """Tests for prune_tool_result_content function."""
-
-    def test_short_content_unchanged(self) -> None:
-        """Content under 30 lines is unchanged."""
-        content = "\n".join(f"line {i}" for i in range(20))
-        result = prune_tool_result_content(content)
-        assert result == content
-
-    def test_long_content_pruned(self) -> None:
-        """Content over 30 lines is pruned."""
-        lines = [f"line {i}" for i in range(50)]
-        content = "\n".join(lines)
-        result = prune_tool_result_content(content)
-        assert "omitted" in result
-        assert len(result.split("\n")) < 50
-
-    def test_preserves_error_lines(self) -> None:
-        """Error lines after line 30 are preserved."""
-        lines = [f"line {i}" for i in range(50)]
-        lines[40] = "ERROR: something failed"
-        content = "\n".join(lines)
-        result = prune_tool_result_content(content)
-        assert "ERROR: something failed" in result
+        result = reduce_session_mechanically(entries)
+        assert result[0]["gitBranch"] == "feature/test"
 
 
 class TestGenerateCompressedXml:
@@ -200,6 +229,15 @@ class TestGenerateCompressedXml:
         entries = [{"type": "user", "message": {"content": "Hello"}}]
         result = generate_compressed_xml(entries, source_label="agent-abc")
         assert '<meta source="agent-abc" />' in result
+
+    def test_compacts_whitespace_in_content(self) -> None:
+        """Multiple newlines in content are compacted."""
+        entries = [
+            {"type": "user", "message": {"content": "Hello\n\n\n\nWorld"}},
+        ]
+        result = generate_compressed_xml(entries)
+        assert "Hello\n\nWorld" in result
+        assert "Hello\n\n\n\nWorld" not in result
 
 
 class TestProcessLogFile:
@@ -269,18 +307,20 @@ class TestPreprocessSession:
         assert "<user>Hello</user>" in result
         assert "<assistant>Hi there!</assistant>" in result
 
-    def test_returns_empty_for_empty_session(self, tmp_path: Path) -> None:
-        """Empty sessions return empty string."""
+    def test_always_returns_xml_no_empty_check(self, tmp_path: Path) -> None:
+        """Stage 1 always returns XML - semantic emptiness check delegated to Haiku."""
         log_file = tmp_path / "session.jsonl"
         entries = [{"type": "user", "message": {"content": ""}}]
         log_file.write_text("\n".join(json.dumps(e) for e in entries), encoding="utf-8")
 
         result = preprocess_session(log_file)
 
-        assert result == ""
+        # Stage 1 returns XML structure even for minimal sessions
+        # Haiku (Stage 2) decides if content is meaningful
+        assert "<session>" in result
 
-    def test_returns_empty_for_warmup_session(self, tmp_path: Path) -> None:
-        """Warmup sessions return empty string."""
+    def test_no_warmup_filtering(self, tmp_path: Path) -> None:
+        """Stage 1 does not filter warmup sessions - delegated to Haiku."""
         log_file = tmp_path / "session.jsonl"
         entries = [
             {"type": "user", "message": {"content": "warmup: get ready"}},
@@ -291,4 +331,6 @@ class TestPreprocessSession:
 
         result = preprocess_session(log_file)
 
-        assert result == ""
+        # Stage 1 includes warmup content - Haiku decides if it's noise
+        assert "warmup" in result
+        assert "<session>" in result

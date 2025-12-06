@@ -2,11 +2,18 @@
 
 This module provides the main orchestrator for creating raw extraction plans
 from Claude Code session logs.
+
+Two-stage preprocessing architecture:
+1. Stage 1: Deterministic mechanical reduction (session_preprocessing)
+2. Stage 2: Haiku distillation (llm_distillation) - semantic judgment calls
+
+Stage 2 is controlled by USE_LLM_DISTILLATION constant.
 """
 
 from datetime import UTC, datetime
 from pathlib import Path
 
+from erk_shared.extraction.llm_distillation import distill_with_haiku
 from erk_shared.extraction.session_discovery import (
     discover_sessions,
     find_project_dir,
@@ -22,6 +29,11 @@ from erk_shared.github.metadata import (
     format_plan_header_body,
     render_session_content_blocks,
 )
+
+# Enable/disable Stage 2 Haiku distillation
+# When True: Stage 1 mechanical reduction + Stage 2 Haiku distillation
+# When False: Stage 1 only (deterministic, no LLM cost)
+USE_LLM_DISTILLATION = True
 
 # Default issue body content for raw extraction plans
 RAW_EXTRACTION_BODY = """# Raw Session Context
@@ -117,14 +129,13 @@ def create_raw_extraction_plan(
             error="No sessions selected for extraction",
         )
 
-    # Preprocess sessions and combine XML
+    # Stage 1: Preprocess sessions (deterministic mechanical reduction)
     session_xmls: list[tuple[str, str]] = []  # (session_id, xml)
     for session in selected_sessions:
         xml_content = preprocess_session(
             session_path=session.path,
             session_id=session.session_id,
             include_agents=True,
-            enable_filtering=True,
         )
         if xml_content:  # Skip empty sessions
             session_xmls.append((session.session_id, xml_content))
@@ -148,6 +159,15 @@ def create_raw_extraction_plan(
         for session_id, xml in session_xmls:
             xml_parts.append(f"<!-- Session: {session_id} -->\n{xml}")
         combined_xml = "\n\n".join(xml_parts)
+
+    # Stage 2: Haiku distillation (if enabled)
+    if USE_LLM_DISTILLATION:
+        try:
+            combined_xml = distill_with_haiku(combined_xml)
+        except RuntimeError:
+            # Distillation failed - fall back to Stage 1 output
+            # Continue with mechanically reduced content
+            pass
 
     # Render session content blocks (handles chunking)
     session_label = branch_context.current_branch or "session"

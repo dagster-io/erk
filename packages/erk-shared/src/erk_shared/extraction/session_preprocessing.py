@@ -1,11 +1,16 @@
 """Session preprocessing for extraction workflow.
 
-This module provides functions to preprocess Claude Code session logs,
-converting JSONL format to compressed XML suitable for extraction.
+Two-stage preprocessing architecture:
+1. Stage 1: Deterministic mechanical reduction (this module) - fast, local, predictable
+2. Stage 2: Haiku distillation (llm_distillation module) - semantic judgment calls
+
+This module provides Stage 1: simple, deterministic operations that are always correct.
+All semantic judgment calls (noise detection, deduplication, truncation) are delegated
+to Haiku in Stage 2.
 """
 
-import hashlib
 import json
+import re
 from pathlib import Path
 
 
@@ -14,330 +19,36 @@ def escape_xml(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def is_empty_session(entries: list[dict]) -> bool:
-    """Check if session contains only metadata with no meaningful content.
-
-    Empty sessions are characterized by:
-    - Fewer than 3 entries (too small to be meaningful)
-    - Only metadata/system entries without substantive interaction
+def compact_whitespace(text: str) -> str:
+    """Compact multiple consecutive newlines to a single newline.
 
     Args:
-        entries: List of session entries to check
+        text: Text to compact
 
     Returns:
-        True if session is empty/meaningless, False otherwise
+        Text with multiple newlines collapsed to single newlines
     """
-    if len(entries) < 3:
-        return True
-
-    # Check if there's any meaningful content
-    has_user_message = False
-    has_assistant_response = False
-
-    for entry in entries:
-        entry_type = entry.get("type")
-        if entry_type == "user":
-            content = entry.get("message", {}).get("content", "")
-            if isinstance(content, list):
-                text_parts = []
-                for block in content:
-                    if isinstance(block, dict) and block.get("type") == "text":
-                        text_parts.append(block.get("text", ""))
-                content = " ".join(text_parts)
-            if content and len(str(content).strip()) > 0:
-                has_user_message = True
-
-        elif entry_type == "assistant":
-            content_blocks = entry.get("message", {}).get("content", [])
-            for block in content_blocks:
-                if block.get("type") == "text" and block.get("text", "").strip():
-                    has_assistant_response = True
-                    break
-
-    # Session is empty if it lacks meaningful interaction
-    return not (has_user_message and has_assistant_response)
+    return re.sub(r"\n{3,}", "\n\n", text)
 
 
-def is_warmup_session(entries: list[dict]) -> bool:
-    """Check if session is a warmup containing only boilerplate acknowledgment.
-
-    Warmup sessions contain predictable patterns like:
-    - "I've reviewed"
-    - "I'm ready"
-    - "loaded the instructions"
+def remove_empty_text_blocks(content_blocks: list[dict]) -> list[dict]:
+    """Remove text blocks that are empty or contain only whitespace.
 
     Args:
-        entries: List of session entries to check
+        content_blocks: List of content blocks from a message
 
     Returns:
-        True if session is a warmup, False otherwise
+        Filtered list without empty text blocks
     """
-    if not entries:
-        return False
-
-    # Look for warmup keyword in first user message
-    for entry in entries:
-        if entry.get("type") == "user":
-            content = entry.get("message", {}).get("content", "")
-            if isinstance(content, list):
-                text_parts = []
-                for block in content:
-                    if isinstance(block, dict) and block.get("type") == "text":
-                        text_parts.append(block.get("text", ""))
-                content = " ".join(text_parts)
-
-            content_lower = str(content).lower()
-            if "warmup" in content_lower:
-                return True
-            break
-
-    return False
-
-
-def deduplicate_documentation_blocks(entries: list[dict]) -> list[dict]:
-    """Replace duplicate command documentation blocks with marker text.
-
-    Command documentation can appear verbatim multiple times, consuming
-    significant tokens. This function detects duplicate blocks by content hash
-    and replaces them with a reference marker.
-
-    Args:
-        entries: List of session entries
-
-    Returns:
-        Modified entries with duplicate documentation replaced by markers
-    """
-    seen_docs: dict[str, int] = {}  # hash -> first occurrence count
-    occurrence_counter: dict[str, int] = {}  # hash -> current occurrence
-    deduplicated = []
-
-    for entry in entries:
-        if entry.get("type") == "user":
-            content = entry.get("message", {}).get("content", "")
-            if isinstance(content, list):
-                text_parts = []
-                for block in content:
-                    if isinstance(block, dict) and block.get("type") == "text":
-                        text_parts.append(block.get("text", ""))
-                content = " ".join(text_parts)
-
-            content_str = str(content)
-
-            # Detect command documentation by markers
-            is_doc = any(
-                marker in content_str
-                for marker in [
-                    "/erk:plan-save-issue",
-                    "/erk:plan-implement",
-                    "/gt:submit-branch",
-                    "/gt:pr-update",
-                    "command-message>",
-                    "command-name>",
-                ]
-            )
-
-            if is_doc and len(content_str) > 500:
-                # Hash the content
-                content_hash = hashlib.sha256(content_str.encode()).hexdigest()[:16]
-
-                if content_hash not in seen_docs:
-                    # First occurrence - keep it
-                    seen_docs[content_hash] = 1
-                    occurrence_counter[content_hash] = 1
-                    deduplicated.append(entry)
-                else:
-                    # Duplicate - replace with marker
-                    occurrence_counter[content_hash] += 1
-                    occurrence_num = occurrence_counter[content_hash]
-
-                    # Create marker entry
-                    marker_entry = entry.copy()
-                    marker_content = (
-                        f"[Duplicate command documentation block omitted - "
-                        f"hash {content_hash}, occurrence #{occurrence_num}]"
-                    )
-
-                    # Preserve structure
-                    if isinstance(entry.get("message", {}).get("content"), list):
-                        marker_entry["message"] = {
-                            "content": [{"type": "text", "text": marker_content}]
-                        }
-                    else:
-                        marker_entry["message"] = {"content": marker_content}
-
-                    deduplicated.append(marker_entry)
-            else:
-                deduplicated.append(entry)
-        else:
-            deduplicated.append(entry)
-
-    return deduplicated
-
-
-def truncate_parameter_value(value: str, max_length: int = 200) -> str:
-    """Truncate long parameter values while preserving identifiability.
-
-    Special handling for file paths to preserve structure.
-
-    Args:
-        value: Parameter value to truncate
-        max_length: Maximum length (default 200)
-
-    Returns:
-        Truncated value with context markers
-    """
-    if len(value) <= max_length:
-        return value
-
-    # Detect file paths - check for path separators and no spaces
-    has_slash = "/" in value
-    has_no_spaces_early = " " not in value[: min(100, len(value))]
-
-    if has_slash and has_no_spaces_early:
-        # Likely a file path - preserve start and end structure
-        parts = value.split("/")
-        if len(parts) > 3:
-            # Build path keeping first 2 parts and last 2 parts
-            first_parts = "/".join(parts[:2])
-            last_parts = "/".join(parts[-2:])
-            return f"{first_parts}/.../{last_parts}"
-
-    # General text - keep beginning and end with marker
-    keep_chars = (max_length - 20) // 2
-    truncated_count = len(value) - max_length
-    return f"{value[:keep_chars]}...[truncated {truncated_count} chars]...{value[-keep_chars:]}"
-
-
-def truncate_tool_parameters(entries: list[dict]) -> list[dict]:
-    """Truncate verbose tool parameters to reduce token usage.
-
-    Tool parameters can be extremely long (20+ lines), especially prompts.
-    This function truncates them while preserving identifiability.
-
-    Args:
-        entries: List of session entries
-
-    Returns:
-        Modified entries with truncated parameters
-    """
-    truncated = []
-
-    for entry in entries:
-        if entry.get("type") == "assistant":
-            message = entry.get("message", {})
-            content_blocks = message.get("content", [])
-
-            modified_blocks = []
-            for block in content_blocks:
-                if block.get("type") == "tool_use":
-                    # Truncate input parameters
-                    input_params = block.get("input", {})
-                    truncated_params = {}
-                    for key, value in input_params.items():
-                        value_str = str(value)
-                        if len(value_str) > 200:
-                            truncated_params[key] = truncate_parameter_value(value_str)
-                        else:
-                            truncated_params[key] = value
-
-                    # Create modified block
-                    modified_block = block.copy()
-                    modified_block["input"] = truncated_params
-                    modified_blocks.append(modified_block)
-                else:
-                    modified_blocks.append(block)
-
-            # Update entry
-            modified_entry = entry.copy()
-            modified_entry["message"] = message.copy()
-            modified_entry["message"]["content"] = modified_blocks
-            truncated.append(modified_entry)
-        else:
-            truncated.append(entry)
-
-    return truncated
-
-
-def prune_tool_result_content(result_text: str) -> str:
-    """Prune verbose tool results to first 30 lines, preserving errors.
-
-    Tool results can be extremely long. This function keeps the first 30 lines
-    (which usually contain the most relevant context) and preserves any lines
-    containing error keywords.
-
-    Args:
-        result_text: Tool result text to prune
-
-    Returns:
-        Pruned result text with error preservation
-    """
-    lines = result_text.split("\n")
-
-    if len(lines) <= 30:
-        return result_text
-
-    # Keep first 30 lines
-    kept_lines = lines[:30]
-
-    # Scan remaining lines for errors
-    error_keywords = ["error", "exception", "failed", "failure", "fatal", "warning"]
-    error_lines = []
-
-    for line in lines[30:]:
-        line_lower = line.lower()
-        if any(keyword in line_lower for keyword in error_keywords):
-            error_lines.append(line)
-
-    # Combine
-    if error_lines:
-        result_lines = kept_lines + [f"\n... [{len(lines) - 30} lines omitted] ...\n"] + error_lines
-    else:
-        result_lines = kept_lines + [f"\n... [{len(lines) - 30} lines omitted] ..."]
-
-    return "\n".join(result_lines)
-
-
-def is_log_discovery_operation(entry: dict) -> bool:
-    """Check if entry is a log discovery bash command (pwd, ls, etc.).
-
-    These are implementation mechanics that don't provide semantic value
-    for plan enhancement.
-
-    Args:
-        entry: Session entry to check
-
-    Returns:
-        True if entry is a log discovery operation, False otherwise
-    """
-    if entry.get("type") != "assistant":
-        return False
-
-    content_blocks = entry.get("message", {}).get("content", [])
-
+    result = []
     for block in content_blocks:
-        if block.get("type") == "tool_use":
-            tool_name = block.get("name", "")
-            if tool_name != "Bash":
-                continue
-
-            # Check command parameter
-            input_params = block.get("input", {})
-            command = input_params.get("command", "")
-
-            # Log discovery patterns
-            log_discovery_patterns = [
-                "pwd",
-                "ls ~/.claude/projects/",
-                "ls ~/.claude",
-                "find ~/.claude",
-                "echo $SESSION_ID",
-            ]
-
-            for pattern in log_discovery_patterns:
-                if pattern in command:
-                    return True
-
-    return False
+        if isinstance(block, dict) and block.get("type") == "text":
+            text = block.get("text", "")
+            if text.strip():
+                result.append(block)
+        else:
+            result.append(block)
+    return result
 
 
 def deduplicate_assistant_messages(entries: list[dict]) -> list[dict]:
@@ -367,15 +78,15 @@ def deduplicate_assistant_messages(entries: list[dict]) -> list[dict]:
     return deduplicated
 
 
-def generate_compressed_xml(
-    entries: list[dict], source_label: str | None = None, enable_pruning: bool = True
-) -> str:
-    """Generate coarse-grained XML from filtered entries.
+def generate_compressed_xml(entries: list[dict], source_label: str | None = None) -> str:
+    """Generate coarse-grained XML from mechanically reduced entries.
+
+    This is Stage 1 output - deterministic structure conversion.
+    No semantic judgment is applied here.
 
     Args:
         entries: List of session entries to convert to XML
         source_label: Optional label for agent logs
-        enable_pruning: Whether to prune tool results (default: True)
 
     Returns:
         XML string representation of the session
@@ -410,6 +121,8 @@ def generate_compressed_xml(
                     elif isinstance(block, str):
                         text_parts.append(block)
                 content = "\n".join(text_parts)
+            # Apply whitespace compaction
+            content = compact_whitespace(str(content))
             xml_lines.append(f"  <user>{escape_xml(content)}</user>")
 
         elif entry_type == "assistant":
@@ -419,6 +132,8 @@ def generate_compressed_xml(
                 if content.get("type") == "text":
                     text = content.get("text", "")
                     if text.strip():  # Only include non-empty text
+                        # Apply whitespace compaction
+                        text = compact_whitespace(text)
                         xml_lines.append(f"  <assistant>{escape_xml(text)}</assistant>")
                 elif content.get("type") == "tool_use":
                     tool_name = content.get("name", "")
@@ -434,7 +149,7 @@ def generate_compressed_xml(
                     xml_lines.append("  </tool_use>")
 
         elif entry_type == "tool_result":
-            # Handle tool results - apply pruning if enabled
+            # Handle tool results - no pruning in Stage 1 (Haiku handles that)
             content_blocks = message.get("content", [])
             tool_use_id = message.get("tool_use_id", "")
 
@@ -450,10 +165,8 @@ def generate_compressed_xml(
                     result_parts.append(block)
 
             result_text = "\n".join(result_parts)
-
-            # Apply pruning if enabled
-            if enable_pruning:
-                result_text = prune_tool_result_content(result_text)
+            # Apply whitespace compaction
+            result_text = compact_whitespace(result_text)
 
             xml_lines.append(f'  <tool_result tool="{escape_xml(tool_use_id)}">')
             xml_lines.append(escape_xml(result_text))
@@ -463,22 +176,70 @@ def generate_compressed_xml(
     return "\n".join(xml_lines)
 
 
+def reduce_session_mechanically(entries: list[dict]) -> list[dict]:
+    """Stage 1: Deterministic token reduction.
+
+    Simple, predictable operations that are always correct:
+    - Drop file-history-snapshot entries
+    - Strip usage metadata
+    - Remove empty text blocks
+    - Drop sessionId field
+    - Compact whitespace (handled in XML generation)
+
+    Args:
+        entries: Raw session entries from JSONL
+
+    Returns:
+        Mechanically reduced entries
+    """
+    reduced = []
+
+    for entry in entries:
+        # Drop file-history-snapshot entries entirely
+        if entry.get("type") == "file-history-snapshot":
+            continue
+
+        # Build reduced entry with minimal fields
+        reduced_entry = {
+            "type": entry["type"],
+            "message": entry.get("message", {}).copy(),
+        }
+
+        # Preserve gitBranch for metadata (will be extracted in XML generation)
+        if "gitBranch" in entry:
+            reduced_entry["gitBranch"] = entry["gitBranch"]
+
+        # Drop usage metadata from assistant messages
+        if "usage" in reduced_entry["message"]:
+            del reduced_entry["message"]["usage"]
+
+        # Remove empty text blocks from content
+        message_content = reduced_entry["message"].get("content", [])
+        if isinstance(message_content, list):
+            reduced_entry["message"]["content"] = remove_empty_text_blocks(message_content)
+
+        reduced.append(reduced_entry)
+
+    return reduced
+
+
 def process_log_file(
     log_path: Path,
     session_id: str | None = None,
-    enable_filtering: bool = True,
 ) -> tuple[list[dict], int, int]:
-    """Process a single JSONL log file and return filtered entries.
+    """Process a single JSONL log file and return mechanically reduced entries.
+
+    This is Stage 1 processing: deterministic mechanical reduction only.
+    No semantic judgment calls (those are delegated to Haiku in Stage 2).
 
     Args:
         log_path: Path to the JSONL log file
         session_id: Optional session ID to filter entries by
-        enable_filtering: Whether to apply optimization filters (default: True)
 
     Returns:
-        Tuple of (filtered entries, total entries count, skipped entries count)
+        Tuple of (reduced entries, total entries count, skipped entries count)
     """
-    entries = []
+    raw_entries = []
     total_entries = 0
     skipped_entries = 0
 
@@ -497,102 +258,60 @@ def process_log_file(
                 skipped_entries += 1
                 continue
 
-        # Filter out noise entries
-        if entry.get("type") == "file-history-snapshot":
-            continue
+        raw_entries.append(entry)
 
-        # Filter log discovery operations if filtering enabled
-        if enable_filtering and is_log_discovery_operation(entry):
-            continue
+    # Apply Stage 1 mechanical reduction
+    reduced_entries = reduce_session_mechanically(raw_entries)
 
-        # Keep minimal fields but preserve gitBranch for metadata extraction
-        filtered = {
-            "type": entry["type"],
-            "message": entry.get("message", {}),
-        }
-
-        # Preserve gitBranch for metadata (will be extracted in XML generation)
-        if "gitBranch" in entry:
-            filtered["gitBranch"] = entry["gitBranch"]
-
-        # Drop usage metadata from assistant messages
-        if "usage" in filtered["message"]:
-            del filtered["message"]["usage"]
-
-        entries.append(filtered)
-
-    return entries, total_entries, skipped_entries
+    return reduced_entries, total_entries, skipped_entries
 
 
 def preprocess_session(
     session_path: Path,
     session_id: str | None = None,
     include_agents: bool = True,
-    enable_filtering: bool = True,
 ) -> str:
-    """Preprocess a session log file to compressed XML format.
+    """Stage 1: Preprocess a session log file to compressed XML format.
 
-    This is the main entry point for session preprocessing.
+    This performs deterministic mechanical reduction only:
+    - Drops file-history-snapshot entries
+    - Strips usage metadata
+    - Removes empty text blocks
+    - Compacts whitespace
+    - Deduplicates repeated assistant text
+
+    All semantic judgment calls (noise detection, deduplication, truncation)
+    are delegated to Stage 2 Haiku distillation.
 
     Args:
         session_path: Path to the session JSONL file
         session_id: Optional session ID to filter entries by
         include_agents: Whether to include agent logs
-        enable_filtering: Whether to apply all filtering optimizations
 
     Returns:
-        Compressed XML string, or empty string if session is empty/warmup
+        Compressed XML string (mechanically reduced, not semantically filtered)
     """
-    # Process main session log
-    entries, _, _ = process_log_file(
-        session_path, session_id=session_id, enable_filtering=enable_filtering
-    )
+    # Process main session log (Stage 1 reduction)
+    entries, _, _ = process_log_file(session_path, session_id=session_id)
 
-    # Apply filtering operations if enabled
-    if enable_filtering:
-        # Check for empty/warmup sessions
-        if is_empty_session(entries):
-            return ""
-
-        if is_warmup_session(entries):
-            return ""
-
-        # Apply documentation deduplication
-        entries = deduplicate_documentation_blocks(entries)
-
-        # Apply parameter truncation
-        entries = truncate_tool_parameters(entries)
-
-    # Apply standard deduplication (always enabled)
+    # Apply standard deduplication (deterministic - always enabled)
     entries = deduplicate_assistant_messages(entries)
 
     # Generate main session XML
-    xml_sections = [generate_compressed_xml(entries, enable_pruning=enable_filtering)]
+    xml_sections = [generate_compressed_xml(entries)]
 
     # Discover and process agent logs if requested
     if include_agents:
         agent_logs = _discover_agent_logs(session_path)
         for agent_log in agent_logs:
-            agent_entries, _, _ = process_log_file(
-                agent_log, session_id=session_id, enable_filtering=enable_filtering
-            )
+            agent_entries, _, _ = process_log_file(agent_log, session_id=session_id)
 
-            # Apply filtering for agent logs
-            if enable_filtering:
-                if is_empty_session(agent_entries):
-                    continue
-                if is_warmup_session(agent_entries):
-                    continue
-                agent_entries = deduplicate_documentation_blocks(agent_entries)
-                agent_entries = truncate_tool_parameters(agent_entries)
-
+            # Apply standard deduplication
             agent_entries = deduplicate_assistant_messages(agent_entries)
 
             # Generate XML with source label
             source_label = f"agent-{agent_log.stem.replace('agent-', '')}"
-            agent_xml = generate_compressed_xml(
-                agent_entries, source_label=source_label, enable_pruning=enable_filtering
-            )
+            agent_xml = generate_compressed_xml(agent_entries, source_label=source_label)
             xml_sections.append(agent_xml)
 
     # Combine all XML sections
