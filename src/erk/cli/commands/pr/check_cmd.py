@@ -46,7 +46,7 @@ def pr_check(ctx: ErkContext) -> None:
 
     # Fetch PR details
     pr = ctx.github.get_pr(repo_root, pr_number)
-    pr_body = pr.body if pr else ""
+    pr_body = pr.body
 
     # Check 1: Issue closing reference (if .impl/issue.json exists)
     impl_dir = Path(ctx.cwd) / ".impl"

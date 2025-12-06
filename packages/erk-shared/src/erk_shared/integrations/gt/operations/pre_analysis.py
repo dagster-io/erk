@@ -144,8 +144,8 @@ def execute_pre_analysis(
         pr_number, pr_url = pr_status_info
         # PR exists - check mergeability
         pr = ops.github.get_pr(repo_root, pr_number)
-        mergeable = pr.mergeable if pr else "UNKNOWN"
-        merge_state = pr.merge_state_status if pr else "UNKNOWN"
+        mergeable = pr.mergeable
+        merge_state = pr.merge_state_status
 
         if mergeable == "CONFLICTING":
             has_conflicts = True

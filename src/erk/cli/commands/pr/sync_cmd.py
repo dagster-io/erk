@@ -43,12 +43,10 @@ def _squash_commits(ctx: ErkContext, repo_root: Path) -> None:
 def _update_commit_message_from_pr(ctx: ErkContext, repo_root: Path, pr_number: int) -> None:
     """Update the commit message with PR title and body from GitHub."""
     pr = ctx.github.get_pr(repo_root, pr_number)
-    pr_title = pr.title if pr else None
-    pr_body = pr.body if pr else None
-    if pr_title:
-        commit_message = pr_title
-        if pr_body:
-            commit_message = f"{pr_title}\n\n{pr_body}"
+    if pr.title:
+        commit_message = pr.title
+        if pr.body:
+            commit_message = f"{pr.title}\n\n{pr.body}"
         user_output("Updating commit message from PR...")
         ctx.git.amend_commit(repo_root, commit_message)
         user_output(click.style("✓", fg="green") + " Commit message updated")
@@ -114,10 +112,7 @@ def pr_sync(ctx: ErkContext) -> None:
     )
 
     # Check if PR is from a fork (cross-repo) and get base branch
-    pr = Ensure.not_none(
-        ctx.github.get_pr(repo.root, pr_number),
-        f"Could not fetch PR #{pr_number} details",
-    )
+    pr = ctx.github.get_pr(repo.root, pr_number)
     Ensure.invariant(
         not pr.is_cross_repository,
         "Cannot sync fork PRs - Graphite cannot track branches from forks",

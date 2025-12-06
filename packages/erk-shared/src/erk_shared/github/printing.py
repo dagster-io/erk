@@ -194,7 +194,7 @@ class PrintingGitHub(PrintingBase, GitHub):
         """Get PR info for branch (read-only, no printing)."""
         return self._wrapped.get_pr_info_for_branch(repo_root, branch)
 
-    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | None:
+    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails:
         """Get comprehensive PR details (read-only, no printing)."""
         return self._wrapped.get_pr(repo_root, pr_number)
 

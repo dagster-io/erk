@@ -743,7 +743,6 @@ def test_fake_github_get_pr_returns_configured_details() -> None:
 
     result = ops.get_pr(sentinel_path(), 123)
 
-    assert result is not None
     assert result.number == 123
     assert result.title == "Add feature"
     assert result.body == "This PR adds a feature"
@@ -756,22 +755,24 @@ def test_fake_github_get_pr_returns_configured_details() -> None:
     assert result.labels == ("enhancement", "reviewed")
 
 
-def test_fake_github_get_pr_returns_none_for_missing_pr() -> None:
-    """Test get_pr returns None when PR number not found."""
+def test_fake_github_get_pr_raises_key_error_for_missing_pr() -> None:
+    """Test get_pr raises KeyError when PR number not found."""
+    import pytest
+
     ops = FakeGitHub()
 
-    result = ops.get_pr(sentinel_path(), 999)
+    with pytest.raises(KeyError):
+        ops.get_pr(sentinel_path(), 999)
 
-    assert result is None
 
+def test_fake_github_get_pr_raises_key_error_with_empty_dict() -> None:
+    """Test get_pr raises KeyError with explicitly empty pr_details dict."""
+    import pytest
 
-def test_fake_github_get_pr_empty_dict() -> None:
-    """Test get_pr returns None with explicitly empty pr_details dict."""
     ops = FakeGitHub(pr_details={})
 
-    result = ops.get_pr(sentinel_path(), 123)
-
-    assert result is None
+    with pytest.raises(KeyError):
+        ops.get_pr(sentinel_path(), 123)
 
 
 def test_fake_github_get_pr_multiple_prs() -> None:
@@ -812,11 +813,9 @@ def test_fake_github_get_pr_multiple_prs() -> None:
     result1 = ops.get_pr(sentinel_path(), 100)
     result2 = ops.get_pr(sentinel_path(), 200)
 
-    assert result1 is not None
     assert result1.title == "First PR"
     assert result1.state == "MERGED"
 
-    assert result2 is not None
     assert result2.title == "Second PR"
     assert result2.is_draft is True
     assert result2.is_cross_repository is True

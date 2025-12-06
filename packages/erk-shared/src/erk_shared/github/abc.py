@@ -401,7 +401,7 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
-    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | None:
+    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails:
         """Get comprehensive PR details in a single API call.
 
         This is the preferred method for fetching PR information. It returns
@@ -413,7 +413,10 @@ class GitHub(ABC):
             pr_number: PR number to query
 
         Returns:
-            PRDetails with all PR fields, or None if PR not found
+            PRDetails with all PR fields
+
+        Raises:
+            RuntimeError: If PR not found or API call fails
         """
         ...
 

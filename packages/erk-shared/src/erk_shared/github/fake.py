@@ -585,12 +585,13 @@ class FakeGitHub(GitHub):
             return None
         return (pr.number, pr.url)
 
-    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | None:
+    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails:
         """Get comprehensive PR details from pre-configured state.
 
-        Returns None if pr_number not found in pr_details mapping.
+        Raises:
+            KeyError: If pr_number not found in pr_details mapping
         """
-        return self._pr_details.get(pr_number)
+        return self._pr_details[pr_number]
 
     def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
         """Get PR number and state for a specific branch from configured state.
