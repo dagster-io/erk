@@ -4,6 +4,8 @@ read_when:
   - "understanding plan issue structure"
   - "debugging plan validation errors"
   - "working with plan-header or plan-body blocks"
+  - "creating extraction plans with session content"
+  - "embedding session XML in GitHub issues"
 ---
 
 # Plan Schema Reference
@@ -12,14 +14,15 @@ Complete reference for the erk plan issue structure.
 
 ## Overview
 
-Plan issues use a two-part structure:
+Plan issues use a multi-part structure:
 
-| Location      | Block Key     | Purpose                                  |
-| ------------- | ------------- | ---------------------------------------- |
-| Issue body    | `plan-header` | Compact metadata for fast querying       |
-| First comment | `plan-body`   | Full plan content in collapsible details |
+| Location            | Block Key         | Purpose                                     |
+| ------------------- | ----------------- | ------------------------------------------- |
+| Issue body          | `plan-header`     | Compact metadata for fast querying          |
+| First comment       | `plan-body`       | Full plan content in collapsible details    |
+| Additional comments | `session-content` | Session XML for extraction plans (optional) |
 
-This separation optimizes GitHub API performance - metadata can be queried without fetching comments.
+The plan-header/plan-body separation optimizes GitHub API performance - metadata can be queried without fetching comments. Session-content blocks are used only in extraction plans to provide session context for pattern extraction.
 
 ## Issue Body: plan-header Block
 
@@ -85,6 +88,58 @@ The first comment contains the full plan content in a collapsible block. The str
 - A `<details>` element with `<summary><strong>📋 Implementation Plan</strong></summary>`
 - The full plan markdown content
 - Closing marker: `<!-- /erk:metadata-block:plan-body -->`
+
+## Additional Comments: session-content Blocks
+
+Extraction plans may include one or more `session-content` metadata blocks containing preprocessed session XML. These blocks enable agents to analyze session context when implementing extraction plans.
+
+### Structure
+
+Each session-content block uses:
+
+- Opening marker: `<!-- erk:metadata-block:session-content -->`
+- A `<details>` element with summary showing chunk number and optional label
+- Optional extraction hints section
+- XML content wrapped in fenced code block (see [github-xml-rendering.md](../architecture/github-xml-rendering.md))
+- Closing marker: `<!-- /erk:metadata-block:session-content -->`
+
+### Example
+
+````markdown
+<!-- erk:metadata-block:session-content -->
+<details>
+<summary><strong>Session Data (1/3): fix-auth-bug</strong></summary>
+
+**Extraction Hints:**
+
+- Error handling patterns with subprocess
+- Test fixture setup for CLI commands
+
+```xml
+<session>
+  <user>Can you fix the authentication bug?</user>
+  <assistant>Let me investigate the auth flow...</assistant>
+  <tool_result name="Read">
+    <file_path>src/auth.py</file_path>
+    ...
+  </tool_result>
+</session>
+```
+
+</details>
+<!-- /erk:metadata-block:session-content -->
+````
+
+### Key Features
+
+- **Chunking**: Large sessions can be split across multiple numbered blocks (e.g., "1/3", "2/3", "3/3")
+- **Optional labels**: Session labels help identify the context (e.g., "fix-auth-bug")
+- **Extraction hints**: Bulleted list highlighting key patterns or insights to extract
+- **XML code fences**: Required to prevent GitHub from interpreting XML tags as HTML (see [XML rendering docs](../architecture/github-xml-rendering.md))
+
+### When to Use
+
+Session-content blocks are used in extraction plans (plans created by `/erk:create-extraction-plan` or `/erk:create-raw-extraction-plan`) to provide session context that implementing agents should analyze and extract patterns from.
 
 ## HTML Comment Markers
 
