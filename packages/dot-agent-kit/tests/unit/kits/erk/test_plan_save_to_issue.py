@@ -1,9 +1,13 @@
 """Unit tests for plan-save-to-issue command."""
 
 import json
+from pathlib import Path
 from unittest.mock import patch
 
 from click.testing import CliRunner
+from erk_shared.extraction.session_context import SessionContextResult
+from erk_shared.extraction.types import BranchContext
+from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues import FakeGitHubIssues
 
 from dot_agent_kit.context import DotAgentContext
@@ -160,3 +164,165 @@ def test_plan_save_to_issue_label_created() -> None:
     assert label == "erk-plan"
     assert description == "Implementation plan for manual execution"
     assert color == "0E8A16"
+
+
+def test_plan_save_to_issue_session_context_captured(tmp_path: Path) -> None:
+    """Test that session context is captured and posted as comments."""
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit()
+    runner = CliRunner()
+
+    plan = "# Feature Plan\n\n- Step 1"
+
+    # Create a mock SessionContextResult
+    branch_context = BranchContext(
+        current_branch="feature-branch",
+        trunk_branch="main",
+        is_on_trunk=False,
+    )
+    session_result = SessionContextResult(
+        combined_xml="<session><user>Hello</user></session>",
+        session_ids=["test-session-id"],
+        branch_context=branch_context,
+    )
+
+    with (
+        patch(
+            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
+            return_value=plan,
+        ),
+        patch(
+            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
+            return_value=session_result,
+        ),
+    ):
+        result = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "json"],
+            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git),
+        )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["session_context_chunks"] >= 1
+    assert output["session_ids"] == ["test-session-id"]
+
+    # Verify: plan comment + at least one session context comment
+    assert len(fake_gh.added_comments) >= 2
+    # First comment is the plan
+    _issue_num1, plan_comment = fake_gh.added_comments[0]
+    assert "Step 1" in plan_comment
+
+    # Second comment is session context
+    _issue_num2, session_comment = fake_gh.added_comments[1]
+    assert "session-content" in session_comment
+
+
+def test_plan_save_to_issue_session_context_skipped_when_none() -> None:
+    """Test session context is skipped when collect_session_context returns None."""
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit()
+    runner = CliRunner()
+
+    plan = "# Feature Plan\n\n- Step 1"
+
+    with (
+        patch(
+            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
+            return_value=plan,
+        ),
+        patch(
+            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
+            return_value=None,  # No session context available
+        ),
+    ):
+        result = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "json"],
+            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git),
+        )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["session_context_chunks"] == 0
+    assert output["session_ids"] == []
+
+    # Only plan comment, no session context
+    assert len(fake_gh.added_comments) == 1
+
+
+def test_plan_save_to_issue_json_output_includes_session_metadata() -> None:
+    """Test JSON output includes session_context_chunks and session_ids fields."""
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit()
+    runner = CliRunner()
+
+    plan = "# Feature\n\n- Step 1"
+
+    # Test with no session context - fields should still be present
+    with (
+        patch(
+            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
+            return_value=plan,
+        ),
+        patch(
+            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
+            return_value=None,
+        ),
+    ):
+        result = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "json"],
+            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git),
+        )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+
+    # Verify both fields are always present
+    assert "session_context_chunks" in output
+    assert "session_ids" in output
+    assert isinstance(output["session_context_chunks"], int)
+    assert isinstance(output["session_ids"], list)
+
+
+def test_plan_save_to_issue_display_format_shows_session_context() -> None:
+    """Test display format shows session context chunk count when present."""
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit()
+    runner = CliRunner()
+
+    plan = "# Feature Plan\n\n- Step 1"
+
+    branch_context = BranchContext(
+        current_branch="feature-branch",
+        trunk_branch="main",
+        is_on_trunk=False,
+    )
+    session_result = SessionContextResult(
+        combined_xml="<session><user>Hello</user></session>",
+        session_ids=["test-session-id"],
+        branch_context=branch_context,
+    )
+
+    with (
+        patch(
+            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
+            return_value=plan,
+        ),
+        patch(
+            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
+            return_value=session_result,
+        ),
+    ):
+        result = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "display"],
+            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git),
+        )
+
+    assert result.exit_code == 0
+    assert "Session context:" in result.output
+    assert "chunks" in result.output
