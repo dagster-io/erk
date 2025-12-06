@@ -33,7 +33,7 @@ tripwires:
 ---
 ```
 
-When `dot-agent docs sync` runs, it collects all tripwires and generates `docs/agent/generated/tripwires.md`, which is included via `@` reference in AGENTS.md.
+When `dot-agent docs sync` runs, it collects all tripwires and generates `docs/agent/generated/tripwires.md`, which is included via `@` reference in AGENTS.md. See [AGENT-DOC-STANDARD.md](../../AGENT-DOC-STANDARD.md) for the complete frontmatter specification.
 
 ### Generated Output
 

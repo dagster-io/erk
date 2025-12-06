@@ -630,6 +630,73 @@ erk delete my-feature --dry-run
 
 ---
 
+## Documentation System
+
+### Front Matter
+
+YAML metadata block at the beginning of agent documentation files.
+
+**Required fields**:
+
+- `title`: Human-readable document title
+- `read_when`: List of conditions when agents should read this doc
+
+**Optional fields**:
+
+- `tripwires`: List of action-triggered warnings
+
+**Example**:
+
+```yaml
+---
+title: Scratch Storage
+read_when:
+  - "writing temp files for AI workflows"
+tripwires:
+  - action: "writing to /tmp/"
+    warning: "Use .erk/scratch/<session-id>/ instead."
+---
+```
+
+### read_when
+
+A front matter field listing conditions that trigger documentation routing.
+
+**Purpose**: Powers the agent documentation index. When an agent's task matches a `read_when` condition, the index routes them to the relevant doc.
+
+**Distinction from tripwires**:
+
+- `read_when` = Agent actively searches for guidance (pull model)
+- `tripwires` = Agent is about to perform action (push model)
+
+**Example**:
+
+```yaml
+read_when:
+  - "creating a plan"
+  - "closing a plan"
+```
+
+### Tripwire
+
+An action-triggered rule that routes agents to documentation when specific behavior patterns are detected.
+
+**Format**: Defined in doc frontmatter with `action` (pattern to detect) and `warning` (guidance message).
+
+**Purpose**: Catches agents _before_ they make mistakes, complementing the `read_when` index which requires agents to actively seek guidance.
+
+**Example**:
+
+```yaml
+tripwires:
+  - action: "writing to /tmp/"
+    warning: "AI workflow files belong in .erk/scratch/<session-id>/, NOT /tmp/."
+```
+
+**See also**: [Tripwires System](commands/tripwires.md)
+
+---
+
 ## Testing Terms
 
 ### Isolated Filesystem
