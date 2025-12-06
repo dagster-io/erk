@@ -24,7 +24,6 @@ from erk_shared.github.parsing import (
     execute_gh_command,
     parse_aggregated_check_counts,
     parse_gh_auth_status_output,
-    parse_github_pr_list,
     parse_github_pr_status,
 )
 from erk_shared.github.types import (
@@ -59,37 +58,6 @@ class RealGitHub(GitHub):
             time: Time abstraction for sleep operations
         """
         self._time = time
-
-    def get_prs_for_repo(
-        self, repo_root: Path, *, include_checks: bool
-    ) -> dict[str, PullRequestInfo]:
-        """Get PR information for all branches in the repository.
-
-        Note: Uses try/except as an acceptable error boundary for handling gh CLI
-        availability and authentication. We cannot reliably check gh installation
-        and authentication status a priori without duplicating gh's logic.
-        """
-        try:
-            # Build JSON fields list - conditionally include statusCheckRollup for performance
-            json_fields = "number,headRefName,url,state,isDraft,title"
-            if include_checks:
-                json_fields += ",statusCheckRollup"
-
-            cmd = [
-                "gh",
-                "pr",
-                "list",
-                "--state",
-                "all",
-                "--json",
-                json_fields,
-            ]
-            stdout = execute_gh_command(cmd, repo_root)
-            return parse_github_pr_list(stdout, include_checks)
-
-        except (RuntimeError, FileNotFoundError, json.JSONDecodeError):
-            # gh not installed, not authenticated, or JSON parsing failed
-            return {}
 
     def get_pr_status(self, repo_root: Path, branch: str, *, debug: bool) -> PRInfo:
         """Get PR status for a specific branch.

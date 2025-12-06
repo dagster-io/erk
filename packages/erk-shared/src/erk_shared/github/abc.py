@@ -22,23 +22,6 @@ class GitHub(ABC):
     """
 
     @abstractmethod
-    def get_prs_for_repo(
-        self, repo_root: Path, *, include_checks: bool
-    ) -> dict[str, PullRequestInfo]:
-        """Get PR information for all branches in the repository.
-
-        Args:
-            repo_root: Repository root directory
-            include_checks: If True, fetch CI check status (slower). If False, skip check status
-
-        Returns:
-            Mapping of branch name -> PullRequestInfo
-            - checks_passing is None when include_checks=False
-            Empty dict if gh CLI is not available or not authenticated
-        """
-        ...
-
-    @abstractmethod
     def get_pr_status(self, repo_root: Path, branch: str, *, debug: bool) -> PRInfo:
         """Get PR status for a specific branch.
 

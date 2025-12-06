@@ -33,12 +33,6 @@ class DryRunGitHub(GitHub):
         """
         self._wrapped = wrapped
 
-    def get_prs_for_repo(
-        self, repo_root: Path, *, include_checks: bool
-    ) -> dict[str, PullRequestInfo]:
-        """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_prs_for_repo(repo_root, include_checks=include_checks)
-
     def get_pr_status(self, repo_root: Path, branch: str, *, debug: bool) -> PRInfo:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_pr_status(repo_root, branch, debug=debug)

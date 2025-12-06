@@ -36,12 +36,6 @@ class PrintingGitHub(PrintingBase, GitHub):
 
     # Read-only operations: delegate without printing
 
-    def get_prs_for_repo(
-        self, repo_root: Path, *, include_checks: bool
-    ) -> dict[str, PullRequestInfo]:
-        """Get PRs (read-only, no printing)."""
-        return self._wrapped.get_prs_for_repo(repo_root, include_checks=include_checks)
-
     def get_pr_status(self, repo_root: Path, branch: str, *, debug: bool) -> PRInfo:
         """Get PR status (read-only, no printing)."""
         return self._wrapped.get_pr_status(repo_root, branch, debug=debug)

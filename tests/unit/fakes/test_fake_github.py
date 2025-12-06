@@ -23,73 +23,6 @@ from tests.test_utils.paths import sentinel_path
 TEST_LOCATION = GitHubRepoLocation(root=sentinel_path(), repo_id=GitHubRepoId("owner", "repo"))
 
 
-def test_fake_github_ops_initialization() -> None:
-    """Test that FakeGitHub initializes with empty state."""
-    ops = FakeGitHub()
-
-    result = ops.get_prs_for_repo(sentinel_path(), include_checks=False)
-    assert result == {}
-
-
-def test_fake_github_ops_get_prs_for_repo() -> None:
-    """Test that get_prs_for_repo returns pre-configured PRs."""
-    prs = {
-        "feature-1": PullRequestInfo(
-            number=123,
-            state="OPEN",
-            url="https://github.com/repo/pull/123",
-            is_draft=False,
-            title=None,
-            checks_passing=True,
-            owner="testowner",
-            repo="testrepo",
-        ),
-        "feature-2": PullRequestInfo(
-            number=456,
-            state="MERGED",
-            url="https://github.com/repo/pull/456",
-            is_draft=False,
-            title=None,
-            checks_passing=None,
-            owner="testowner",
-            repo="testrepo",
-        ),
-    }
-    ops = FakeGitHub(prs=prs)
-
-    result = ops.get_prs_for_repo(sentinel_path(), include_checks=False)
-
-    assert len(result) == 2
-    assert result["feature-1"].number == 123
-    assert result["feature-1"].state == "OPEN"
-    assert result["feature-2"].number == 456
-    assert result["feature-2"].state == "MERGED"
-
-
-def test_fake_github_ops_get_prs_for_repo_with_checks() -> None:
-    """Test that include_checks parameter is accepted (but ignored)."""
-    prs = {
-        "feature": PullRequestInfo(
-            number=123,
-            state="OPEN",
-            url="https://github.com/repo/pull/123",
-            is_draft=False,
-            title="https://github.com/repo/pull/123",
-            checks_passing=True,
-            owner="testowner",
-            repo="testrepo",
-        ),
-    }
-    ops = FakeGitHub(prs=prs)
-
-    # Both calls should return same data regardless of include_checks
-    result_without = ops.get_prs_for_repo(sentinel_path(), include_checks=False)
-    result_with = ops.get_prs_for_repo(sentinel_path(), include_checks=True)
-
-    assert result_without == result_with
-    assert len(result_without) == 1
-
-
 def test_fake_github_ops_get_pr_status_existing_branch() -> None:
     """Test get_pr_status returns configured PR info for existing branch."""
     prs = {
@@ -184,9 +117,6 @@ def test_fake_github_ops_pull_request_info_fields() -> None:
 def test_fake_github_ops_empty_prs_dict() -> None:
     """Test behavior with explicitly empty prs dict."""
     ops = FakeGitHub(prs={})
-
-    result = ops.get_prs_for_repo(sentinel_path(), include_checks=False)
-    assert result == {}
 
     pr_status = ops.get_pr_status(sentinel_path(), "any-branch", debug=False)
     assert pr_status == PRInfo("NONE", None, None)
@@ -345,9 +275,6 @@ def test_fake_github_ops_full_workflow() -> None:
     ops = FakeGitHub(prs=prs, pr_bases=pr_bases)
 
     # Query operations
-    all_prs = ops.get_prs_for_repo(sentinel_path(), include_checks=False)
-    assert len(all_prs) == 2
-
     pr_status = ops.get_pr_status(sentinel_path(), "feature-1", debug=False)
     assert pr_status.pr_number == 123
 

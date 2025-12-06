@@ -125,7 +125,6 @@ class FakeGitHub(GitHub):
         self._updated_pr_titles: list[tuple[int, str]] = []
         self._merged_prs: list[int] = []
         self._closed_prs: list[int] = []
-        self._get_prs_for_repo_calls: list[tuple[Path, bool]] = []
         self._get_pr_status_calls: list[tuple[Path, str]] = []
         self._triggered_workflows: list[tuple[str, dict[str, str]]] = []
         self._poll_attempts: list[tuple[str, str, int, int]] = []
@@ -145,31 +144,12 @@ class FakeGitHub(GitHub):
         return self._closed_prs
 
     @property
-    def get_prs_for_repo_calls(self) -> list[tuple[Path, bool]]:
-        """Read-only access to tracked get_prs_for_repo() calls for test assertions.
-
-        Returns list of (repo_root, include_checks) tuples.
-        """
-        return self._get_prs_for_repo_calls
-
-    @property
     def get_pr_status_calls(self) -> list[tuple[Path, str]]:
         """Read-only access to tracked get_pr_status() calls for test assertions.
 
         Returns list of (repo_root, branch) tuples.
         """
         return self._get_pr_status_calls
-
-    def get_prs_for_repo(
-        self, repo_root: Path, *, include_checks: bool
-    ) -> dict[str, PullRequestInfo]:
-        """Get PR information for all branches (returns pre-configured data).
-
-        The include_checks parameter is accepted but ignored - fake returns the
-        same pre-configured data regardless of this parameter.
-        """
-        self._get_prs_for_repo_calls.append((repo_root, include_checks))
-        return self._prs
 
     def get_pr_status(self, repo_root: Path, branch: str, *, debug: bool) -> PRInfo:
         """Get PR status from configured PRs.
