@@ -235,3 +235,42 @@ class TestCreateRawExtractionPlan:
         label_names = {label[0] for label in github_issues.created_labels}
         assert "erk-plan" in label_names
         assert "erk-extraction" in label_names
+
+    def test_issue_body_contains_implementation_plan(self, tmp_path: Path) -> None:
+        """Issue body contains actionable implementation steps."""
+        git = FakeGit(
+            current_branches={tmp_path: "feature-docs"},
+            default_branches={tmp_path: "main"},
+        )
+        github_issues = FakeGitHubIssues(username="testuser")
+
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        session_content = [
+            {"type": "user", "message": {"content": "Hello"}},
+            {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi!"}]}},
+            {"type": "user", "message": {"content": "Thanks"}},
+        ]
+        (project_dir / "abc123.jsonl").write_text(
+            "\n".join(json.dumps(e) for e in session_content), encoding="utf-8"
+        )
+
+        patch_target = "erk_shared.extraction.raw_extraction.find_project_dir"
+        with patch(patch_target, return_value=project_dir):
+            result = create_raw_extraction_plan(
+                github_issues=github_issues,
+                git=git,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+                current_session_id="abc123",
+                min_size=0,  # Don't filter by size
+            )
+
+        assert result.success is True
+        _, body, _ = github_issues.created_issues[0]
+
+        # Verify implementation plan is present
+        assert "## Implementation Steps" in body
+        assert "Category A" in body
+        assert "Category B" in body
+        assert "feature-docs" in body  # Branch name interpolated
