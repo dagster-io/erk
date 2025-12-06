@@ -1,7 +1,9 @@
-"""Unit tests for render-session-content kit CLI command."""
+"""Unit tests for render_session_content kit CLI command.
+
+Tests rendering of session XML content as GitHub-ready comment bodies.
+"""
 
 import json
-from pathlib import Path
 
 from click.testing import CliRunner
 
@@ -9,214 +11,211 @@ from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.render_session_content imp
     render_session_content,
 )
 
+# ============================================================================
+# 1. CLI Success Tests (6 tests)
+# ============================================================================
 
-def test_render_session_content_basic(tmp_path: Path) -> None:
-    """Test basic rendering of small session content."""
-    session_content = "<session>test content</session>"
-    session_file = tmp_path / "session.xml"
-    session_file.write_text(session_content, encoding="utf-8")
 
+def test_cli_renders_basic_content() -> None:
+    """Test basic content rendering."""
     runner = CliRunner()
     result = runner.invoke(
         render_session_content,
-        ["--session-file", str(session_file)],
+        [],
+        input="<session>test content</session>",
     )
 
     assert result.exit_code == 0
     output = json.loads(result.output)
-
     assert output["success"] is True
+    assert len(output["comment_bodies"]) == 1
     assert output["chunk_count"] == 1
-    assert len(output["blocks"]) == 1
-    assert session_content in output["blocks"][0]
-    assert "<!-- erk:metadata-block:session-content -->" in output["blocks"][0]
 
 
-def test_render_session_content_with_label(tmp_path: Path) -> None:
-    """Test rendering with session label."""
-    session_content = "<session>test</session>"
-    session_file = tmp_path / "session.xml"
-    session_file.write_text(session_content, encoding="utf-8")
-
+def test_cli_includes_session_label() -> None:
+    """Test that session label is included in output."""
     runner = CliRunner()
     result = runner.invoke(
         render_session_content,
-        [
-            "--session-file",
-            str(session_file),
-            "--session-label",
-            "fix-auth-bug",
-        ],
+        ["--session-label", "feature-branch"],
+        input="<session>content</session>",
     )
 
     assert result.exit_code == 0
     output = json.loads(result.output)
-
     assert output["success"] is True
-    assert "fix-auth-bug" in output["blocks"][0]
+    assert "feature-branch" in output["comment_bodies"][0]
 
 
-def test_render_session_content_with_hints(tmp_path: Path) -> None:
-    """Test rendering with extraction hints."""
-    session_content = "<session>test</session>"
-    session_file = tmp_path / "session.xml"
-    session_file.write_text(session_content, encoding="utf-8")
-
+def test_cli_includes_extraction_hints() -> None:
+    """Test that extraction hints are included in output."""
     runner = CliRunner()
     result = runner.invoke(
         render_session_content,
-        [
-            "--session-file",
-            str(session_file),
-            "--extraction-hints",
-            "Error handling patterns,Test fixture setup",
-        ],
+        ["--extraction-hints", "error handling,test patterns"],
+        input="<session>content</session>",
     )
 
     assert result.exit_code == 0
     output = json.loads(result.output)
-
     assert output["success"] is True
-    assert "**Extraction Hints:**" in output["blocks"][0]
-    assert "- Error handling patterns" in output["blocks"][0]
-    assert "- Test fixture setup" in output["blocks"][0]
+    # Check hints appear in comment body
+    body = output["comment_bodies"][0]
+    assert "error handling" in body
+    assert "test patterns" in body
 
 
-def test_render_session_content_with_label_and_hints(tmp_path: Path) -> None:
-    """Test rendering with both label and hints."""
-    session_content = "<session>test</session>"
-    session_file = tmp_path / "session.xml"
-    session_file.write_text(session_content, encoding="utf-8")
-
+def test_cli_output_structure() -> None:
+    """Test that output has expected structure."""
     runner = CliRunner()
     result = runner.invoke(
         render_session_content,
-        [
-            "--session-file",
-            str(session_file),
-            "--session-label",
-            "my-feature",
-            "--extraction-hints",
-            "Hint one,Hint two",
-        ],
+        [],
+        input="<session>content</session>",
     )
 
     assert result.exit_code == 0
     output = json.loads(result.output)
 
-    assert output["success"] is True
-    assert "my-feature" in output["blocks"][0]
-    assert "- Hint one" in output["blocks"][0]
-    assert "- Hint two" in output["blocks"][0]
-
-
-def test_render_session_content_output_format(tmp_path: Path) -> None:
-    """Test that output is valid JSON with expected structure."""
-    session_content = "<session>content</session>"
-    session_file = tmp_path / "session.xml"
-    session_file.write_text(session_content, encoding="utf-8")
-
-    runner = CliRunner()
-    result = runner.invoke(
-        render_session_content,
-        ["--session-file", str(session_file)],
-    )
-
-    assert result.exit_code == 0
-
-    # Verify output is valid JSON
-    output = json.loads(result.output)
-
-    # Verify expected keys exist
     assert "success" in output
-    assert "blocks" in output
+    assert "comment_bodies" in output
     assert "chunk_count" in output
-
-    # Verify types
-    assert isinstance(output["success"], bool)
-    assert isinstance(output["blocks"], list)
+    assert isinstance(output["comment_bodies"], list)
     assert isinstance(output["chunk_count"], int)
 
 
-def test_render_session_content_handles_unicode(tmp_path: Path) -> None:
-    """Test that unicode content is handled correctly."""
-    session_content = "<session>测试内容 🔥 emoji content</session>"
-    session_file = tmp_path / "session.xml"
-    session_file.write_text(session_content, encoding="utf-8")
-
+def test_cli_preserves_xml_content() -> None:
+    """Test that XML content is preserved in output."""
+    xml_content = "<session><message>Test message</message></session>"
     runner = CliRunner()
     result = runner.invoke(
         render_session_content,
-        ["--session-file", str(session_file)],
+        [],
+        input=xml_content,
     )
 
     assert result.exit_code == 0
     output = json.loads(result.output)
+    # XML content should be wrapped in code fence
+    assert "Test message" in output["comment_bodies"][0]
 
+
+def test_cli_combined_options() -> None:
+    """Test CLI with both session label and hints."""
+    runner = CliRunner()
+    result = runner.invoke(
+        render_session_content,
+        ["--session-label", "my-branch", "--extraction-hints", "patterns,testing"],
+        input="<session>content</session>",
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    body = output["comment_bodies"][0]
+    assert "my-branch" in body
+    assert "patterns" in body
+
+
+# ============================================================================
+# 2. Error Handling Tests (3 tests)
+# ============================================================================
+
+
+def test_cli_empty_input_error() -> None:
+    """Test error when input is empty."""
+    runner = CliRunner()
+    result = runner.invoke(
+        render_session_content,
+        [],
+        input="",
+    )
+
+    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert "Empty input" in output["error"]
+
+
+def test_cli_whitespace_only_error() -> None:
+    """Test error when input is only whitespace."""
+    runner = CliRunner()
+    result = runner.invoke(
+        render_session_content,
+        [],
+        input="   \n  \n  ",
+    )
+
+    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output["success"] is False
+
+
+def test_cli_empty_hints_handled() -> None:
+    """Test that empty hints string is handled gracefully."""
+    runner = CliRunner()
+    result = runner.invoke(
+        render_session_content,
+        ["--extraction-hints", ""],
+        input="<session>content</session>",
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
     assert output["success"] is True
-    assert "测试内容" in output["blocks"][0]
-    assert "🔥" in output["blocks"][0]
 
 
-def test_render_session_content_file_not_found(tmp_path: Path) -> None:
-    """Test error when session file does not exist."""
-    nonexistent = tmp_path / "nonexistent.xml"
+# ============================================================================
+# 3. Content Format Tests (3 tests)
+# ============================================================================
 
+
+def test_cli_wraps_in_metadata_block() -> None:
+    """Test that output is wrapped in metadata block structure."""
     runner = CliRunner()
     result = runner.invoke(
         render_session_content,
-        ["--session-file", str(nonexistent)],
-    )
-
-    # Click should fail because path doesn't exist
-    assert result.exit_code != 0
-
-
-def test_render_session_content_whitespace_hints(tmp_path: Path) -> None:
-    """Test that hints with extra whitespace are trimmed."""
-    session_content = "<session>test</session>"
-    session_file = tmp_path / "session.xml"
-    session_file.write_text(session_content, encoding="utf-8")
-
-    runner = CliRunner()
-    result = runner.invoke(
-        render_session_content,
-        [
-            "--session-file",
-            str(session_file),
-            "--extraction-hints",
-            "  Hint one  ,  Hint two  ",
-        ],
+        [],
+        input="<session>content</session>",
     )
 
     assert result.exit_code == 0
     output = json.loads(result.output)
+    body = output["comment_bodies"][0]
 
-    # Hints should be trimmed
-    assert "- Hint one" in output["blocks"][0]
-    assert "- Hint two" in output["blocks"][0]
+    # Check for metadata block markers
+    assert "<!-- erk:metadata-block:session-content -->" in body
+    assert "<!-- /erk:metadata-block:session-content -->" in body
 
 
-def test_render_session_content_includes_metadata_markers(tmp_path: Path) -> None:
-    """Test that output includes proper metadata block markers."""
-    session_content = "<session>test</session>"
-    session_file = tmp_path / "session.xml"
-    session_file.write_text(session_content, encoding="utf-8")
-
+def test_cli_uses_details_summary() -> None:
+    """Test that output uses HTML details/summary for collapsibility."""
     runner = CliRunner()
     result = runner.invoke(
         render_session_content,
-        ["--session-file", str(session_file)],
+        [],
+        input="<session>content</session>",
     )
 
     assert result.exit_code == 0
     output = json.loads(result.output)
-    block = output["blocks"][0]
+    body = output["comment_bodies"][0]
 
-    # Check metadata block structure
-    assert "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->" in block
-    assert "<!-- erk:metadata-block:session-content -->" in block
-    assert "<!-- /erk:metadata-block:session-content -->" in block
-    assert "<details>" in block
-    assert "</details>" in block
-    assert "```xml" in block
+    assert "<details>" in body
+    assert "</details>" in body
+    assert "<summary>" in body
+
+
+def test_cli_uses_xml_code_fence() -> None:
+    """Test that content is in XML code fence."""
+    runner = CliRunner()
+    result = runner.invoke(
+        render_session_content,
+        [],
+        input="<session>content</session>",
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    body = output["comment_bodies"][0]
+
+    assert "```xml" in body

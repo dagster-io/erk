@@ -1,13 +1,31 @@
 #!/usr/bin/env python3
-"""
-Render Session Content CLI Command
+"""Wrap render_session_content_blocks() as CLI.
 
-Wraps render_session_content_blocks to provide deterministic CLI access.
-Used by erk plan extraction raw to avoid ad-hoc Python scripts.
+This command takes session XML content from stdin and renders it as
+GitHub-ready comment bodies with proper chunking for large sessions.
+
+Usage:
+    cat session.xml | dot-agent run erk render-session-content
+    cat session.xml | dot-agent run erk render-session-content --session-label "feature-branch"
+
+Output:
+    JSON object with success status, rendered comment bodies, and chunk count
+
+Exit Codes:
+    0: Success
+    1: Error (no input)
+
+Examples:
+    $ cat session.xml | dot-agent run erk render-session-content --session-label "fix-auth"
+    {
+      "success": true,
+      "comment_bodies": ["<rendered-block-1>", "<rendered-block-2>"],
+      "chunk_count": 2
+    }
 """
 
 import json
-from pathlib import Path
+import sys
 
 import click
 from erk_shared.github.metadata import render_session_content_blocks
@@ -15,58 +33,66 @@ from erk_shared.github.metadata import render_session_content_blocks
 
 @click.command(name="render-session-content")
 @click.option(
-    "--session-file",
-    type=click.Path(exists=True, path_type=Path),
-    required=True,
-    help="Path to the session XML file",
-)
-@click.option(
     "--session-label",
-    type=str,
     default=None,
-    help="Label for the session (e.g., branch name)",
+    type=str,
+    help="Optional label for the session (e.g., branch name)",
 )
 @click.option(
     "--extraction-hints",
-    type=str,
     default=None,
-    help="Comma-separated extraction hints",
+    type=str,
+    help="Optional comma-separated hints for extraction (e.g., 'error handling,test patterns')",
 )
-def render_session_content(
-    session_file: Path,
-    session_label: str | None,
-    extraction_hints: str | None,
-) -> None:
-    """Render session XML as GitHub comment blocks.
+def render_session_content(session_label: str | None, extraction_hints: str | None) -> None:
+    """Render session content as GitHub-ready comment bodies.
 
-    Reads session XML content and formats it as collapsible metadata blocks
-    suitable for posting as GitHub issue comments. Automatically handles
-    chunking if content exceeds GitHub's comment size limit.
-
-    Output is JSON with success status, blocks array, and chunk count.
+    Reads session XML content from stdin (from preprocess-session --stdout)
+    and renders it with proper chunking for large sessions.
     """
-    content = session_file.read_text(encoding="utf-8")
+    # Read from stdin
+    if sys.stdin.isatty():
+        click.echo(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": "No input provided",
+                    "help": "Pipe session XML content from preprocess-session --stdout",
+                }
+            )
+        )
+        raise SystemExit(1)
 
-    hints: list[str] | None = None
-    if extraction_hints:
-        hints = [h.strip() for h in extraction_hints.split(",")]
+    content = sys.stdin.read()
 
-    blocks = render_session_content_blocks(
+    if not content.strip():
+        click.echo(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": "Empty input",
+                    "help": "Input must contain session XML content",
+                }
+            )
+        )
+        raise SystemExit(1)
+
+    # Parse extraction hints if provided
+    hints_list: list[str] | None = None
+    if extraction_hints is not None:
+        hints_list = [h.strip() for h in extraction_hints.split(",") if h.strip()]
+
+    # Render the content blocks
+    comment_bodies = render_session_content_blocks(
         content,
         session_label=session_label,
-        extraction_hints=hints,
+        extraction_hints=hints_list,
     )
 
-    click.echo(
-        json.dumps(
-            {
-                "success": True,
-                "blocks": blocks,
-                "chunk_count": len(blocks),
-            }
-        )
-    )
+    result = {
+        "success": True,
+        "comment_bodies": comment_bodies,
+        "chunk_count": len(comment_bodies),
+    }
 
-
-if __name__ == "__main__":
-    render_session_content()
+    click.echo(json.dumps(result, indent=2))

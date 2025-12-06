@@ -114,9 +114,18 @@ kit_cli_commands:
   - name: exit-plan-mode-hook
     path: kit_cli_commands/erk/exit_plan_mode_hook.py
     description: Save plan to GitHub when ExitPlanMode is called
+  - name: parse-session-context
+    path: kit_cli_commands/erk/parse_session_context.py
+    description: Extract session IDs from free-form text
+  - name: select-sessions
+    path: kit_cli_commands/erk/select_sessions.py
+    description: Auto-select sessions based on branch context from list-sessions output
   - name: render-session-content
     path: kit_cli_commands/erk/render_session_content.py
-    description: Render session XML as GitHub comment blocks with automatic chunking
+    description: Render session XML content as GitHub-ready comment bodies with chunking
+  - name: post-issue-comments
+    path: kit_cli_commands/erk/post_issue_comments.py
+    description: Post multiple comments to a GitHub issue
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit
