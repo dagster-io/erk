@@ -6,7 +6,7 @@ from pathlib import Path
 from click.testing import CliRunner
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PullRequestInfo
+from erk_shared.github.types import PRDetails, PullRequestInfo
 
 from erk.cli.commands.pr import pr_group
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -48,6 +48,21 @@ To checkout this PR in a fresh worktree and environment locally, run:
 erk pr checkout 123
 ```
 """
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Add feature",
+            body=pr_body,
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature-branch",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
         github = FakeGitHub(
             prs={
                 "feature-branch": PullRequestInfo(
@@ -62,7 +77,7 @@ erk pr checkout 123
                     has_conflicts=None,
                 )
             },
-            pr_bodies_by_number={123: pr_body},
+            pr_details={123: pr_details},
         )
 
         git = FakeGit(
@@ -114,6 +129,21 @@ To checkout this PR in a fresh worktree and environment locally, run:
 erk pr checkout 123
 ```
 """
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Add feature",
+            body=pr_body,
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature-branch",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
         github = FakeGitHub(
             prs={
                 "feature-branch": PullRequestInfo(
@@ -128,7 +158,7 @@ erk pr checkout 123
                     has_conflicts=None,
                 )
             },
-            pr_bodies_by_number={123: pr_body},
+            pr_details={123: pr_details},
         )
 
         git = FakeGit(
@@ -158,6 +188,21 @@ def test_pr_check_fails_when_missing_footer(tmp_path: Path) -> None:
         pr_body = """## Summary
 This PR adds a feature.
 """
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Add feature",
+            body=pr_body,
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature-branch",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
         github = FakeGitHub(
             prs={
                 "feature-branch": PullRequestInfo(
@@ -172,7 +217,7 @@ This PR adds a feature.
                     has_conflicts=None,
                 )
             },
-            pr_bodies_by_number={123: pr_body},
+            pr_details={123: pr_details},
         )
 
         git = FakeGit(
@@ -207,6 +252,21 @@ To checkout this PR in a fresh worktree and environment locally, run:
 erk pr checkout 123
 ```
 """
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Add feature",
+            body=pr_body,
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature-branch",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
         github = FakeGitHub(
             prs={
                 "feature-branch": PullRequestInfo(
@@ -221,7 +281,7 @@ erk pr checkout 123
                     has_conflicts=None,
                 )
             },
-            pr_bodies_by_number={123: pr_body},
+            pr_details={123: pr_details},
         )
 
         git = FakeGit(
@@ -288,7 +348,22 @@ def test_pr_check_handles_empty_pr_body(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        # PR with no body configured (returns None -> empty string)
+        # PR with empty body
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Add feature",
+            body="",  # Empty body
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature-branch",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
         github = FakeGitHub(
             prs={
                 "feature-branch": PullRequestInfo(
@@ -303,7 +378,7 @@ def test_pr_check_handles_empty_pr_body(tmp_path: Path) -> None:
                     has_conflicts=None,
                 )
             },
-            # No pr_bodies_by_number - get_pr_body returns None
+            pr_details={123: pr_details},
         )
 
         git = FakeGit(
@@ -350,6 +425,21 @@ closes #456
 erk pr checkout 123
 ```
 """
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Add feature",
+            body=pr_body,
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature-branch",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
         github = FakeGitHub(
             prs={
                 "feature-branch": PullRequestInfo(
@@ -364,7 +454,7 @@ erk pr checkout 123
                     has_conflicts=None,
                 )
             },
-            pr_bodies_by_number={123: pr_body},
+            pr_details={123: pr_details},
         )
 
         git = FakeGit(
@@ -405,6 +495,21 @@ def test_pr_check_reports_multiple_failures(tmp_path: Path) -> None:
         # PR missing BOTH closing reference AND footer
         pr_body = "Just a summary."
 
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Add feature",
+            body=pr_body,
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature-branch",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
         github = FakeGitHub(
             prs={
                 "feature-branch": PullRequestInfo(
@@ -419,7 +524,7 @@ def test_pr_check_reports_multiple_failures(tmp_path: Path) -> None:
                     has_conflicts=None,
                 )
             },
-            pr_bodies_by_number={123: pr_body},
+            pr_details={123: pr_details},
         )
 
         git = FakeGit(

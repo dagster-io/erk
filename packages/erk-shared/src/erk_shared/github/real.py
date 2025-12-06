@@ -32,6 +32,7 @@ from erk_shared.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
     PRCheckoutInfo,
+    PRDetails,
     PRInfo,
     PRMergeability,
     PullRequestInfo,
@@ -1423,6 +1424,77 @@ query {{
             return None
         pr = data[0]
         return (pr["number"], pr["url"])
+
+    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | None:
+        """Get comprehensive PR details via GitHub REST API.
+
+        Uses gh api to call GET /repos/{owner}/{repo}/pulls/{pr_number}
+        which returns all PR fields in a single request.
+
+        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+        availability and authentication. We cannot reliably check gh installation
+        and authentication status a priori without duplicating gh's logic.
+        """
+        try:
+            repo_info = self.get_repo_info(repo_root)
+            endpoint = f"/repos/{repo_info.owner}/{repo_info.name}/pulls/{pr_number}"
+
+            cmd = ["gh", "api", endpoint]
+            stdout = execute_gh_command(cmd, repo_root)
+            data = json.loads(stdout)
+
+            # LBYL: Validate required keys exist before accessing
+            required_keys = ("number", "html_url", "state", "base", "head")
+            if not all(key in data for key in required_keys):
+                return None
+
+            # Derive state (REST API uses "open"/"closed" + merged boolean)
+            if data.get("merged"):
+                state = "MERGED"
+            elif data["state"] == "closed":
+                state = "CLOSED"
+            else:
+                state = "OPEN"
+
+            # Map mergeable (true/false/null) to MERGEABLE/CONFLICTING/UNKNOWN
+            mergeable_raw = data.get("mergeable")
+            if mergeable_raw is True:
+                mergeable = "MERGEABLE"
+            elif mergeable_raw is False:
+                mergeable = "CONFLICTING"
+            else:
+                mergeable = "UNKNOWN"
+
+            # Map mergeable_state to upper case
+            merge_state_status = (data.get("mergeable_state") or "UNKNOWN").upper()
+
+            # Extract labels
+            labels = tuple(lbl.get("name", "") for lbl in data.get("labels", []))
+
+            # Check if head repo exists (can be None for deleted forks)
+            head_repo = data["head"].get("repo")
+            is_cross_repository = head_repo["fork"] if head_repo else False
+
+            return PRDetails(
+                number=data["number"],
+                url=data["html_url"],
+                title=data.get("title") or "",
+                body=data.get("body") or "",
+                state=state,
+                is_draft=data.get("draft", False),
+                base_ref_name=data["base"]["ref"],
+                head_ref_name=data["head"]["ref"],
+                is_cross_repository=is_cross_repository,
+                mergeable=mergeable,
+                merge_state_status=merge_state_status,
+                owner=repo_info.owner,
+                repo=repo_info.name,
+                labels=labels,
+            )
+
+        except (RuntimeError, json.JSONDecodeError, KeyError, FileNotFoundError):
+            # gh not installed, not authenticated, or command failed
+            return None
 
     def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
         """Get PR number and state for a specific branch using gh CLI.

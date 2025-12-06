@@ -13,6 +13,7 @@ from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
+    PRDetails,
     PRInfo,
     PullRequestInfo,
     WorkflowRun,
@@ -718,3 +719,105 @@ def test_fake_github_get_issues_with_pr_linkages_no_linkages_for_filtered_issues
     # Only issue 1 matches, so no PR linkages should be returned
     assert len(issues) == 1
     assert 2 not in pr_linkages
+
+
+def test_fake_github_get_pr_returns_configured_details() -> None:
+    """Test get_pr returns pre-configured PRDetails."""
+    pr_details = PRDetails(
+        number=123,
+        url="https://github.com/owner/repo/pull/123",
+        title="Add feature",
+        body="This PR adds a feature",
+        state="OPEN",
+        is_draft=False,
+        base_ref_name="main",
+        head_ref_name="feature-branch",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="owner",
+        repo="repo",
+        labels=("enhancement", "reviewed"),
+    )
+    ops = FakeGitHub(pr_details={123: pr_details})
+
+    result = ops.get_pr(sentinel_path(), 123)
+
+    assert result is not None
+    assert result.number == 123
+    assert result.title == "Add feature"
+    assert result.body == "This PR adds a feature"
+    assert result.state == "OPEN"
+    assert result.base_ref_name == "main"
+    assert result.head_ref_name == "feature-branch"
+    assert result.is_cross_repository is False
+    assert result.mergeable == "MERGEABLE"
+    assert result.merge_state_status == "CLEAN"
+    assert result.labels == ("enhancement", "reviewed")
+
+
+def test_fake_github_get_pr_returns_none_for_missing_pr() -> None:
+    """Test get_pr returns None when PR number not found."""
+    ops = FakeGitHub()
+
+    result = ops.get_pr(sentinel_path(), 999)
+
+    assert result is None
+
+
+def test_fake_github_get_pr_empty_dict() -> None:
+    """Test get_pr returns None with explicitly empty pr_details dict."""
+    ops = FakeGitHub(pr_details={})
+
+    result = ops.get_pr(sentinel_path(), 123)
+
+    assert result is None
+
+
+def test_fake_github_get_pr_multiple_prs() -> None:
+    """Test get_pr returns correct PR when multiple are configured."""
+    pr1 = PRDetails(
+        number=100,
+        url="https://github.com/owner/repo/pull/100",
+        title="First PR",
+        body="First body",
+        state="MERGED",
+        is_draft=False,
+        base_ref_name="main",
+        head_ref_name="feat-1",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="owner",
+        repo="repo",
+    )
+    pr2 = PRDetails(
+        number=200,
+        url="https://github.com/owner/repo/pull/200",
+        title="Second PR",
+        body="Second body",
+        state="OPEN",
+        is_draft=True,
+        base_ref_name="develop",
+        head_ref_name="feat-2",
+        is_cross_repository=True,
+        mergeable="CONFLICTING",
+        merge_state_status="DIRTY",
+        owner="owner",
+        repo="repo",
+        labels=("wip",),
+    )
+    ops = FakeGitHub(pr_details={100: pr1, 200: pr2})
+
+    result1 = ops.get_pr(sentinel_path(), 100)
+    result2 = ops.get_pr(sentinel_path(), 200)
+
+    assert result1 is not None
+    assert result1.title == "First PR"
+    assert result1.state == "MERGED"
+
+    assert result2 is not None
+    assert result2.title == "Second PR"
+    assert result2.is_draft is True
+    assert result2.is_cross_repository is True
+    assert result2.mergeable == "CONFLICTING"

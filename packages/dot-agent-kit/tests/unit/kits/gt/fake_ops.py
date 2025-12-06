@@ -193,7 +193,7 @@ class FakeGtKitOps:
 
     def _build_fake_github(self) -> FakeGitHub:
         """Build FakeGitHub from accumulated builder state."""
-        from erk_shared.github.types import PullRequestInfo
+        from erk_shared.github.types import PRDetails, PullRequestInfo
 
         # Build prs dict from pr_numbers, pr_urls, pr_states
         prs: dict[str, PullRequestInfo] = {}
@@ -225,12 +225,52 @@ class FakeGtKitOps:
                 mergeable=mergeable, merge_state_status=merge_state
             )
 
+        # Build pr_details from accumulated state for get_pr()
+        pr_details: dict[int, PRDetails] = {}
+        for branch, pr_number in self._github_builder_state.pr_numbers.items():
+            pr_url = self._github_builder_state.pr_urls.get(
+                branch, f"https://github.com/repo/pull/{pr_number}"
+            )
+            pr_state = self._github_builder_state.pr_states.get(branch, "OPEN")
+            pr_title = self._github_builder_state.pr_titles.get(pr_number, "")
+            pr_body = self._github_builder_state.pr_bodies.get(pr_number, "")
+
+            # Get mergeability info or use defaults
+            if pr_number in self._github_builder_state.pr_mergeability:
+                mergeable, merge_state = self._github_builder_state.pr_mergeability[pr_number]
+            else:
+                mergeable, merge_state = "MERGEABLE", "CLEAN"
+
+            # Get parent branch from graphite tracking if available
+            base_ref = "master"  # Default base branch
+            if isinstance(self._main_graphite, FakeGraphite):
+                branch_info = self._main_graphite._branches.get(branch)
+                if branch_info and branch_info.parent:
+                    base_ref = branch_info.parent
+
+            pr_details[pr_number] = PRDetails(
+                number=pr_number,
+                url=pr_url,
+                title=pr_title or "",
+                body=pr_body,
+                state=pr_state,
+                is_draft=False,
+                base_ref_name=base_ref,
+                head_ref_name=branch,
+                is_cross_repository=False,
+                mergeable=mergeable,
+                merge_state_status=merge_state,
+                owner="test-owner",
+                repo="test-repo",
+            )
+
         return FakeGitHub(
             prs=prs,
             pr_titles=self._github_builder_state.pr_titles,
             pr_bodies_by_number=self._github_builder_state.pr_bodies,
             pr_diffs=self._github_builder_state.pr_diffs,
             pr_mergeability=pr_mergeability,
+            pr_details=pr_details,
             merge_should_succeed=self._github_builder_state.merge_should_succeed,
             pr_update_should_succeed=self._github_builder_state.pr_update_should_succeed,
             authenticated=self._github_builder_state.authenticated,

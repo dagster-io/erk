@@ -7,6 +7,7 @@ from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
     PRCheckoutInfo,
+    PRDetails,
     PRInfo,
     PRMergeability,
     PullRequestInfo,
@@ -396,6 +397,23 @@ class GitHub(ABC):
 
         Returns:
             Tuple of (pr_number, pr_url) or None if no PR exists for this branch
+        """
+        ...
+
+    @abstractmethod
+    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | None:
+        """Get comprehensive PR details in a single API call.
+
+        This is the preferred method for fetching PR information. It returns
+        all commonly-needed fields in one API call, avoiding multiple separate
+        calls for title, body, base branch, etc.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to query
+
+        Returns:
+            PRDetails with all PR fields, or None if PR not found
         """
         ...
 

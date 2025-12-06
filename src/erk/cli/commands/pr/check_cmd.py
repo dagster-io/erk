@@ -44,10 +44,9 @@ def pr_check(ctx: ErkContext) -> None:
     # Track validation results
     checks: list[tuple[bool, str]] = []
 
-    # Fetch PR body
-    pr_body = ctx.github.get_pr_body(repo_root, pr_number)
-    if pr_body is None:
-        pr_body = ""
+    # Fetch PR details
+    pr = ctx.github.get_pr(repo_root, pr_number)
+    pr_body = pr.body if pr else ""
 
     # Check 1: Issue closing reference (if .impl/issue.json exists)
     impl_dir = Path(ctx.cwd) / ".impl"

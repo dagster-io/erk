@@ -42,8 +42,9 @@ def _squash_commits(ctx: ErkContext, repo_root: Path) -> None:
 
 def _update_commit_message_from_pr(ctx: ErkContext, repo_root: Path, pr_number: int) -> None:
     """Update the commit message with PR title and body from GitHub."""
-    pr_title = ctx.github.get_pr_title(repo_root, pr_number)
-    pr_body = ctx.github.get_pr_body(repo_root, pr_number)
+    pr = ctx.github.get_pr(repo_root, pr_number)
+    pr_title = pr.title if pr else None
+    pr_body = pr.body if pr else None
     if pr_title:
         commit_message = pr_title
         if pr_body:
@@ -112,13 +113,13 @@ def pr_sync(ctx: ErkContext) -> None:
         f"Could not determine PR number for branch '{current_branch}'",
     )
 
-    # Check if PR is from a fork (cross-repo)
-    pr_checkout_info = Ensure.not_none(
-        ctx.github.get_pr_checkout_info(repo.root, pr_number),
+    # Check if PR is from a fork (cross-repo) and get base branch
+    pr = Ensure.not_none(
+        ctx.github.get_pr(repo.root, pr_number),
         f"Could not fetch PR #{pr_number} details",
     )
     Ensure.invariant(
-        not pr_checkout_info.is_cross_repository,
+        not pr.is_cross_repository,
         "Cannot sync fork PRs - Graphite cannot track branches from forks",
     )
 
@@ -132,7 +133,7 @@ def pr_sync(ctx: ErkContext) -> None:
         return
 
     # Step 4: Get PR base branch from GitHub
-    base_branch = ctx.github.get_pr_base_branch(repo.root, pr_number)
+    base_branch = pr.base_ref_name
     user_output(f"Base branch: {base_branch}")
 
     # Step 5: Track with Graphite
