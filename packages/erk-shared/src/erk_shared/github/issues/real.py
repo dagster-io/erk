@@ -103,29 +103,32 @@ class RealGitHubIssues(GitHubIssues):
         state: str | None = None,
         limit: int | None = None,
     ) -> list[IssueInfo]:
-        """Query issues using gh CLI.
+        """Query issues using gh REST API.
 
+        Uses REST API instead of GraphQL to consume REST rate limit pool.
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated).
         """
-        cmd = [
-            "gh",
-            "issue",
-            "list",
-            "--json",
-            "number,title,body,state,url,labels,assignees,createdAt,updatedAt",
-        ]
+        # Build REST endpoint with query params
+        endpoint = "repos/{owner}/{repo}/issues"
+        params: list[str] = []
 
         if labels:
-            for label in labels:
-                cmd.extend(["--label", label])
+            # REST API accepts comma-separated labels
+            params.append(f"labels={','.join(labels)}")
 
         if state:
-            cmd.extend(["--state", state])
+            # REST API: "open", "closed", or "all" (default is "open")
+            params.append(f"state={state}")
 
         if limit is not None:
-            cmd.extend(["--limit", str(limit)])
+            params.append(f"per_page={limit}")
 
+        if params:
+            endpoint = f"{endpoint}?{'&'.join(params)}"
+
+        # Use --jq to filter out PRs (REST /issues returns both issues and PRs)
+        cmd = ["gh", "api", endpoint, "--jq", "[.[] | select(.pull_request == null)]"]
         stdout = execute_gh_command(cmd, repo_root)
         data = json.loads(stdout)
 
@@ -133,13 +136,13 @@ class RealGitHubIssues(GitHubIssues):
             IssueInfo(
                 number=issue["number"],
                 title=issue["title"],
-                body=issue["body"],
-                state=issue["state"],
-                url=issue["url"],
+                body=issue["body"] or "",  # REST can return null
+                state=issue["state"].upper(),  # "open" -> "OPEN"
+                url=issue["html_url"],  # Different field name in REST
                 labels=[label["name"] for label in issue.get("labels", [])],
                 assignees=[assignee["login"] for assignee in issue.get("assignees", [])],
-                created_at=datetime.fromisoformat(issue["createdAt"].replace("Z", "+00:00")),
-                updated_at=datetime.fromisoformat(issue["updatedAt"].replace("Z", "+00:00")),
+                created_at=datetime.fromisoformat(issue["created_at"].replace("Z", "+00:00")),
+                updated_at=datetime.fromisoformat(issue["updated_at"].replace("Z", "+00:00")),
             )
             for issue in data
         ]
