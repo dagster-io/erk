@@ -114,6 +114,9 @@ kit_cli_commands:
   - name: exit-plan-mode-hook
     path: kit_cli_commands/erk/exit_plan_mode_hook.py
     description: Save plan to GitHub when ExitPlanMode is called
+  - name: render-session-content
+    path: kit_cli_commands/erk/render_session_content.py
+    description: Render session XML as GitHub comment blocks with automatic chunking
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit
