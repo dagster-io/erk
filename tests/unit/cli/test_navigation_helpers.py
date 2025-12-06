@@ -5,14 +5,16 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import click
+import pytest
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 
 from erk.cli.commands.completions import complete_branch_names, complete_plan_files
-from erk.cli.commands.navigation_helpers import delete_branch_and_worktree
+from erk.cli.commands.navigation_helpers import activate_root_repo, delete_branch_and_worktree
 from erk.core.config_store import GlobalConfig
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
+from tests.fakes.script_writer import FakeScriptWriter
 
 
 def make_test_repo_context(
@@ -716,3 +718,82 @@ def test_delete_branch_and_worktree_escapes_from_subdirectory(tmp_path: Path) ->
     finally:
         # Restore original CWD for test cleanup
         os.chdir(original_cwd)
+
+
+def test_activate_root_repo_uses_main_repo_root_not_worktree_path(tmp_path: Path) -> None:
+    """Regression test: activate_root_repo uses main_repo_root, not repo.root.
+
+    Bug: When repo.root (= worktree path) was used for the activation script,
+    `erk pr land` would delete the worktree, then the activation script would
+    try to `cd` to the deleted worktree directory, causing "no such file or
+    directory" error.
+
+    Fix: The function now uses repo.main_repo_root to ensure the activation
+    script references a directory that still exists after worktree deletion.
+
+    This test verifies the activation script contains main_repo_root (not repo.root)
+    when running from inside a worktree where repo.root != main_repo_root.
+    """
+    # Arrange
+    main_repo = tmp_path / "main-repo"
+    main_repo.mkdir()
+    git_dir = main_repo / ".git"
+    git_dir.mkdir()
+    erk_root = tmp_path / "erks"
+    erk_root.mkdir()
+    worktree_path = tmp_path / "worktrees" / "feature"
+    worktree_path.mkdir(parents=True)
+
+    git = FakeGit(
+        local_branches={main_repo: ["main", "feature"]},
+        remote_branches={main_repo: []},
+        git_common_dirs={main_repo: git_dir},
+    )
+
+    global_config = GlobalConfig.test(
+        erk_root,
+        use_graphite=False,
+        shell_setup_complete=True,  # Enable script mode
+        show_pr_info=False,
+    )
+
+    script_writer = FakeScriptWriter()
+
+    ctx = ErkContext.for_test(
+        git=git,
+        cwd=worktree_path,
+        global_config=global_config,
+        script_writer=script_writer,
+    )
+
+    # Simulate running from worktree: repo.root == worktree_path
+    # but main_repo_root points to the actual main repository
+    repo = make_test_repo_context(
+        worktree_path,  # When in worktree, repo.root == worktree path
+        main_repo_root=main_repo,  # But main_repo_root is the actual repo
+        erk_root=erk_root,
+    )
+
+    # Act: Call activate_root_repo with script=True
+    # It should raise SystemExit(0) on success
+    with pytest.raises(SystemExit) as exc_info:
+        activate_root_repo(ctx, repo, script=True, command_name="test")
+
+    # Assert: Function exited successfully
+    assert exc_info.value.code == 0
+
+    # Assert: Script was written
+    assert script_writer.last_script is not None
+
+    # Assert: Script contains main_repo_root path, NOT worktree_path
+    # This is the key assertion - the bug was using worktree_path here
+    script_content = script_writer.last_script.content
+    assert str(main_repo) in script_content, (
+        f"Expected main_repo_root ({main_repo}) in script, "
+        f"but got script that uses worktree path ({worktree_path})"
+    )
+    # Verify the cd command uses main_repo, not worktree_path
+    # shlex.quote() may or may not add quotes depending on path characters
+    assert f"cd {main_repo}" in script_content or f"cd '{main_repo}'" in script_content, (
+        f"Expected 'cd' to main_repo_root ({main_repo}), but script content was:\n{script_content}"
+    )

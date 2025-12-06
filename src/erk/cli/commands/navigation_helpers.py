@@ -148,7 +148,10 @@ def activate_root_repo(ctx: ErkContext, repo: RepoContext, script: bool, command
     Raises:
         SystemExit: Always (successful exit after activation)
     """
-    root_path = repo.root
+    # Use main_repo_root (not repo.root) to ensure we reference a directory that
+    # still exists after worktree removal. repo.root equals the worktree path when
+    # running from inside a worktree.
+    root_path = repo.main_repo_root if repo.main_repo_root else repo.root
     if script:
         script_content = render_activation_script(
             worktree_path=root_path,
