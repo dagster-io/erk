@@ -34,7 +34,10 @@ from erk.cli.commands.navigation_helpers import (
     delete_branch_and_worktree,
     ensure_graphite_enabled,
 )
-from erk.cli.commands.plan.check_cmd import validate_plan_format
+from erk.cli.commands.plan.check_cmd import (
+    PlanValidationError,
+    validate_plan_format,
+)
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -191,18 +194,18 @@ def pr_land(ctx: ErkContext, script: bool, skip_insights: bool, up_flag: bool) -
             issue_number = extraction_result.issue_number
 
             # Validate plan format - halt on failure
-            try:
-                validation_result = validate_plan_format(ctx.issues, repo.root, issue_number)
-            except RuntimeError as e:
+            validation_result = validate_plan_format(ctx.issues, repo.root, issue_number)
+
+            if isinstance(validation_result, PlanValidationError):
                 user_output(
                     click.style("Error: ", fg="red")
                     + f"Extraction plan #{issue_number} validation failed.\n"
                     + "The PR was merged but the worktree was NOT deleted.\n"
-                    + f"Validation error: {e}\n"
+                    + f"Validation error: {validation_result.error}\n"
                     + f"Please investigate: {extraction_issue_url}\n"
                     + f"Run: erk plan check {issue_number}"
                 )
-                raise SystemExit(1) from e
+                raise SystemExit(1)
 
             if validation_result.passed:
                 user_output(

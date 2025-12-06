@@ -295,8 +295,8 @@ def test_check_invalid_identifier_fails() -> None:
 
 
 def test_validate_plan_format_passes_valid_plan(tmp_path: Path) -> None:
-    """Test validate_plan_format returns passed=True for valid plan."""
-    from erk.cli.commands.plan.check_cmd import validate_plan_format
+    """Returns PlanValidationSuccess with passed=True for valid plan."""
+    from erk.cli.commands.plan.check_cmd import PlanValidationSuccess, validate_plan_format
 
     # Valid plan-header metadata
     plan_header_data = {
@@ -334,6 +334,7 @@ def test_validate_plan_format_passes_valid_plan(tmp_path: Path) -> None:
 
     result = validate_plan_format(issues, tmp_path, 42)
 
+    assert isinstance(result, PlanValidationSuccess)
     assert result.passed is True
     assert result.failed_count == 0
     assert len(result.checks) == 4
@@ -342,8 +343,8 @@ def test_validate_plan_format_passes_valid_plan(tmp_path: Path) -> None:
 
 
 def test_validate_plan_format_fails_missing_plan_header(tmp_path: Path) -> None:
-    """Test validate_plan_format returns passed=False when plan-header missing."""
-    from erk.cli.commands.plan.check_cmd import validate_plan_format
+    """Returns PlanValidationSuccess with passed=False when plan-header missing."""
+    from erk.cli.commands.plan.check_cmd import PlanValidationSuccess, validate_plan_format
 
     issue = IssueInfo(
         number=42,
@@ -364,6 +365,7 @@ def test_validate_plan_format_fails_missing_plan_header(tmp_path: Path) -> None:
 
     result = validate_plan_format(issues, tmp_path, 42)
 
+    assert isinstance(result, PlanValidationSuccess)
     assert result.passed is False
     assert result.failed_count >= 1
     # Check first failure is plan-header
@@ -372,8 +374,8 @@ def test_validate_plan_format_fails_missing_plan_header(tmp_path: Path) -> None:
 
 
 def test_validate_plan_format_fails_missing_first_comment(tmp_path: Path) -> None:
-    """Test validate_plan_format returns passed=False when no comments exist."""
-    from erk.cli.commands.plan.check_cmd import validate_plan_format
+    """Returns PlanValidationSuccess with passed=False when no comments exist."""
+    from erk.cli.commands.plan.check_cmd import PlanValidationSuccess, validate_plan_format
 
     plan_header_data = {
         "schema_version": "2",
@@ -402,6 +404,7 @@ def test_validate_plan_format_fails_missing_first_comment(tmp_path: Path) -> Non
 
     result = validate_plan_format(issues, tmp_path, 42)
 
+    assert isinstance(result, PlanValidationSuccess)
     assert result.passed is False
     assert result.failed_count >= 1
     failed_checks = [desc for passed, desc in result.checks if not passed]
@@ -409,8 +412,8 @@ def test_validate_plan_format_fails_missing_first_comment(tmp_path: Path) -> Non
 
 
 def test_validate_plan_format_fails_missing_plan_body(tmp_path: Path) -> None:
-    """Test validate_plan_format returns passed=False when plan-body missing."""
-    from erk.cli.commands.plan.check_cmd import validate_plan_format
+    """Returns PlanValidationSuccess with passed=False when plan-body missing."""
+    from erk.cli.commands.plan.check_cmd import PlanValidationSuccess, validate_plan_format
 
     plan_header_data = {
         "schema_version": "2",
@@ -439,7 +442,21 @@ def test_validate_plan_format_fails_missing_plan_body(tmp_path: Path) -> None:
 
     result = validate_plan_format(issues, tmp_path, 42)
 
+    assert isinstance(result, PlanValidationSuccess)
     assert result.passed is False
     assert result.failed_count >= 1
     failed_checks = [desc for passed, desc in result.checks if not passed]
     assert "plan-body content extractable" in failed_checks
+
+
+def test_validate_plan_format_returns_error_on_github_failure(tmp_path: Path) -> None:
+    """Returns PlanValidationError when GitHub API fails."""
+    from erk.cli.commands.plan.check_cmd import PlanValidationError, validate_plan_format
+
+    # FakeGitHubIssues with no issues configured will raise on get_issue
+    issues = FakeGitHubIssues(issues={}, comments={})
+
+    result = validate_plan_format(issues, tmp_path, 999)
+
+    assert isinstance(result, PlanValidationError)
+    assert "999" in result.error or "not found" in result.error.lower()

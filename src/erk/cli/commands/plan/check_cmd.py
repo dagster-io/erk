@@ -19,8 +19,8 @@ from erk.core.repo_discovery import ensure_erk_metadata_dir
 
 
 @dataclass(frozen=True)
-class PlanValidationResult:
-    """Result of plan format validation.
+class PlanValidationSuccess:
+    """Validation completed (may have passed or failed checks).
 
     Attributes:
         passed: True if all validation checks passed
@@ -31,6 +31,16 @@ class PlanValidationResult:
     passed: bool
     checks: list[tuple[bool, str]]
     failed_count: int
+
+
+@dataclass(frozen=True)
+class PlanValidationError:
+    """Could not complete validation (API error, network issue, etc.)."""
+
+    error: str
+
+
+PlanValidationResult = PlanValidationSuccess | PlanValidationError
 
 
 def validate_plan_format(
@@ -45,7 +55,8 @@ def validate_plan_format(
     - First comment has plan-body metadata block with extractable content
 
     This function is designed to be called programmatically (e.g., from land_cmd).
-    It does not produce output or raise SystemExit.
+    It does not produce output or raise SystemExit. It never raises exceptions -
+    API failures are returned as PlanValidationError.
 
     Args:
         github_issues: GitHub issues interface
@@ -53,16 +64,18 @@ def validate_plan_format(
         issue_number: GitHub issue number to validate
 
     Returns:
-        PlanValidationResult with validation outcome
-
-    Raises:
-        RuntimeError: If unable to fetch issue or comments from GitHub
+        PlanValidationSuccess if validation completed (may have passed or failed checks)
+        PlanValidationError if unable to complete validation (API error, etc.)
     """
     # Track validation results
     checks: list[tuple[bool, str]] = []
 
     # Fetch issue from GitHub
-    issue = github_issues.get_issue(repo_root, issue_number)
+    try:
+        issue = github_issues.get_issue(repo_root, issue_number)
+    except RuntimeError as e:
+        return PlanValidationError(error=str(e))
+
     issue_body = issue.body if issue.body else ""
 
     # Check 1: plan-header metadata block exists
@@ -83,7 +96,10 @@ def validate_plan_format(
             checks.append((False, f"plan-header validation failed: {error_msg}"))
 
     # Check 3: First comment exists
-    comments = github_issues.get_issue_comments(repo_root, issue_number)
+    try:
+        comments = github_issues.get_issue_comments(repo_root, issue_number)
+    except RuntimeError as e:
+        return PlanValidationError(error=str(e))
 
     if not comments:
         checks.append((False, "First comment exists"))
@@ -101,7 +117,7 @@ def validate_plan_format(
     # Determine overall result
     failed_count = sum(1 for passed, _ in checks if not passed)
 
-    return PlanValidationResult(
+    return PlanValidationSuccess(
         passed=failed_count == 0,
         checks=checks,
         failed_count=failed_count,
@@ -132,12 +148,13 @@ def check_plan(ctx: ErkContext, identifier: str) -> None:
     user_output("")
 
     # Run validation
-    try:
-        result = validate_plan_format(ctx.issues, repo_root, issue_number)
-    except RuntimeError as e:
-        user_output(click.style("Error: ", fg="red") + f"Failed to validate plan: {e}")
-        raise SystemExit(1) from e
+    result = validate_plan_format(ctx.issues, repo_root, issue_number)
 
+    if isinstance(result, PlanValidationError):
+        user_output(click.style("Error: ", fg="red") + f"Failed to validate plan: {result.error}")
+        raise SystemExit(1)
+
+    # result is now PlanValidationSuccess
     # Output results
     for passed, description in result.checks:
         status = click.style("[PASS]", fg="green") if passed else click.style("[FAIL]", fg="red")
