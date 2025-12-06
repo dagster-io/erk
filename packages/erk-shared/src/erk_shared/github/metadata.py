@@ -1827,3 +1827,218 @@ def extract_plan_header_remote_impl_at(issue_body: str) -> str | None:
         return None
 
     return block.data.get("last_remote_impl_at")
+
+
+# =============================================================================
+# Session Content Metadata Blocks
+# =============================================================================
+# These support storing session content in GitHub issue comments, with:
+# - Chunking for large sessions (GitHub comment size limit is 65536 bytes)
+# - Numbered chunks for navigation
+# - Extraction hints about potential documentation patterns
+# - Metadata-derived naming (branch name, first message)
+
+GITHUB_COMMENT_SIZE_LIMIT = 65536
+CHUNK_SAFETY_BUFFER = 1000
+
+
+def chunk_session_content(
+    content: str,
+    max_chunk_size: int = GITHUB_COMMENT_SIZE_LIMIT - CHUNK_SAFETY_BUFFER,
+) -> list[str]:
+    """Split content into chunks that fit within GitHub comment limits.
+
+    Uses line-aware splitting to avoid breaking content mid-line.
+    Each chunk will be at most max_chunk_size bytes.
+
+    Args:
+        content: The full session content to chunk
+        max_chunk_size: Maximum size per chunk in bytes (default: 64536)
+
+    Returns:
+        List of content chunks, each fitting within the size limit
+    """
+    if len(content.encode("utf-8")) <= max_chunk_size:
+        return [content]
+
+    chunks: list[str] = []
+    lines = content.split("\n")
+    current_chunk_lines: list[str] = []
+    current_chunk_size = 0
+
+    for line in lines:
+        line_with_newline = line + "\n"
+        line_size = len(line_with_newline.encode("utf-8"))
+
+        # If a single line exceeds the limit, we need to split it
+        if line_size > max_chunk_size:
+            # Flush current chunk first
+            if current_chunk_lines:
+                chunks.append("\n".join(current_chunk_lines))
+                current_chunk_lines = []
+                current_chunk_size = 0
+
+            # Split the long line by bytes
+            encoded = line.encode("utf-8")
+            start = 0
+            while start < len(encoded):
+                end = min(start + max_chunk_size - 1, len(encoded))  # Leave room for newline
+                # Ensure we don't split in the middle of a UTF-8 character
+                while end > start and end < len(encoded) and (encoded[end] & 0xC0) == 0x80:
+                    end -= 1
+                chunk_bytes = encoded[start:end]
+                chunks.append(chunk_bytes.decode("utf-8", errors="replace"))
+                start = end
+            continue
+
+        # Check if adding this line would exceed the limit
+        if current_chunk_size + line_size > max_chunk_size:
+            # Flush current chunk
+            if current_chunk_lines:
+                chunks.append("\n".join(current_chunk_lines))
+            current_chunk_lines = [line]
+            current_chunk_size = line_size
+        else:
+            current_chunk_lines.append(line)
+            current_chunk_size += line_size
+
+    # Don't forget the last chunk
+    if current_chunk_lines:
+        chunks.append("\n".join(current_chunk_lines))
+
+    return chunks
+
+
+def render_session_content_block(
+    content: str,
+    *,
+    chunk_number: int | None = None,
+    total_chunks: int | None = None,
+    session_label: str | None = None,
+    extraction_hints: list[str] | None = None,
+) -> str:
+    """Render session content in a code fence within metadata block structure.
+
+    Creates a collapsible metadata block containing session XML wrapped in
+    a code fence for proper display on GitHub.
+
+    Args:
+        content: The session XML content to wrap
+        chunk_number: Current chunk number (1-indexed), if chunked
+        total_chunks: Total number of chunks, if chunked
+        session_label: Label for the session (e.g., branch name, "fix-auth-bug")
+        extraction_hints: List of hints about potential extractions
+
+    Returns:
+        Rendered metadata block markdown string
+
+    Example output:
+        <!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+        <!-- erk:metadata-block:session-content -->
+        <details>
+        <summary><strong>Session Data (1/3): fix-auth-bug</strong></summary>
+
+        **Extraction Hints:**
+        - Error handling patterns
+        - Test fixture setup
+
+        ```xml
+        <session>
+        ...
+        </session>
+        ```
+
+        </details>
+        <!-- /erk:metadata-block:session-content -->
+    """
+    # Build the summary line
+    summary_parts = ["Session Data"]
+
+    # Add chunk indicator if provided
+    if chunk_number is not None and total_chunks is not None:
+        summary_parts.append(f" ({chunk_number}/{total_chunks})")
+
+    # Add session label if provided
+    if session_label:
+        summary_parts.append(f": {session_label}")
+
+    summary_text = "".join(summary_parts)
+
+    # Build extraction hints section if provided
+    hints_section = ""
+    if extraction_hints:
+        hints_lines = ["**Extraction Hints:**"]
+        for hint in extraction_hints:
+            hints_lines.append(f"- {hint}")
+        hints_section = "\n".join(hints_lines) + "\n\n"
+
+    return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:session-content -->
+<details>
+<summary><strong>{summary_text}</strong></summary>
+
+{hints_section}```xml
+{content}
+```
+
+</details>
+<!-- /erk:metadata-block:session-content -->"""
+
+
+def render_session_content_blocks(
+    content: str,
+    *,
+    session_label: str | None = None,
+    extraction_hints: list[str] | None = None,
+    max_chunk_size: int = GITHUB_COMMENT_SIZE_LIMIT - CHUNK_SAFETY_BUFFER,
+) -> list[str]:
+    """Render session content as one or more metadata blocks.
+
+    Automatically chunks content if it exceeds the maximum chunk size,
+    adding chunk numbers to each block for navigation.
+
+    Args:
+        content: The full session XML content
+        session_label: Label for the session (e.g., branch name)
+        extraction_hints: List of hints about potential extractions
+            (only included in first chunk)
+        max_chunk_size: Maximum size per chunk in bytes
+
+    Returns:
+        List of rendered metadata block strings, one per chunk
+    """
+    # Calculate overhead for the block wrapper (without hints, conservative estimate)
+    # The wrapper includes HTML comments, details tags, code fence, etc.
+    wrapper_overhead = 300  # Conservative estimate
+
+    # Hints overhead is only in first chunk
+    hints_overhead = 0
+    if extraction_hints:
+        hints_overhead = sum(len(f"- {hint}\n".encode()) for hint in extraction_hints)
+        hints_overhead += len(b"**Extraction Hints:**\n\n")
+
+    # Adjust chunk size for wrapper overhead
+    content_max_size = max_chunk_size - wrapper_overhead
+
+    chunks = chunk_session_content(content, content_max_size)
+    total_chunks = len(chunks)
+
+    blocks: list[str] = []
+    for i, chunk_content in enumerate(chunks, start=1):
+        # Only include hints in the first chunk
+        chunk_hints = extraction_hints if i == 1 else None
+
+        # Only include chunk numbers if there are multiple chunks
+        chunk_num = i if total_chunks > 1 else None
+        total = total_chunks if total_chunks > 1 else None
+
+        block = render_session_content_block(
+            chunk_content,
+            chunk_number=chunk_num,
+            total_chunks=total,
+            session_label=session_label,
+            extraction_hints=chunk_hints,
+        )
+        blocks.append(block)
+
+    return blocks
