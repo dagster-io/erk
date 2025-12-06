@@ -40,3 +40,5 @@ jobs:
         run: make md-check
       - name: Validate agent documentation frontmatter
         run: make docs-validate
+      - name: Check generated docs are in sync
+        run: make docs-sync-check

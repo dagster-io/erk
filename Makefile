@@ -1,4 +1,4 @@
-.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test fast-ci all-ci check md-check kit-md-check docs-validate clean publish fix reinstall-erk-tools
+.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test fast-ci all-ci check md-check kit-md-check docs-validate docs-sync-check clean publish fix reinstall-erk-tools
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -86,6 +86,9 @@ kit-md-check:
 docs-validate:
 	uv run dot-agent docs validate
 
+docs-sync-check:
+	uv run dot-agent docs sync --check
+
 # Removed: land-branch command has been deprecated
 # Removed: sync-dignified-python-universal (obsolete - shared content now referenced directly)
 
@@ -100,6 +103,7 @@ fast-ci:
 	echo "\n--- Kit Markdown Check ---" && (cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run dot-agent md check --check-links) || exit_code=1; \
 	cd $(CURDIR); \
 	echo "\n--- Docs Validate ---" && uv run dot-agent docs validate || exit_code=1; \
+	echo "\n--- Docs Sync Check ---" && uv run dot-agent docs sync --check || exit_code=1; \
 	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
@@ -119,6 +123,7 @@ all-ci:
 	echo "\n--- Kit Markdown Check ---" && (cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run dot-agent md check --check-links) || exit_code=1; \
 	cd $(CURDIR); \
 	echo "\n--- Docs Validate ---" && uv run dot-agent docs validate || exit_code=1; \
+	echo "\n--- Docs Sync Check ---" && uv run dot-agent docs sync --check || exit_code=1; \
 	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
 	echo "\n--- Integration Tests (erk) ---" && uv run pytest tests/integration/ -n auto || exit_code=1; \

@@ -864,3 +864,99 @@ class TestAgentDocFrontmatterWithTripwires:
             tripwires=[Tripwire(action="a", warning="w")],
         )
         assert frontmatter.is_valid() is True
+
+
+class TestSyncAgentDocsCheckMode:
+    """Tests for sync_agent_docs with check mode behavior."""
+
+    def test_sync_check_passes_when_in_sync(self, tmp_path: Path) -> None:
+        """Check mode returns no changes when files are in sync."""
+        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs.mkdir(parents=True)
+        _create_valid_doc(agent_docs / "glossary.md", "Glossary", ["terms"])
+
+        # First sync creates files
+        sync_agent_docs(tmp_path)
+
+        # Second sync (simulating --check) should find no changes
+        result = sync_agent_docs(tmp_path, dry_run=True)
+        assert len(result.created) == 0
+        assert len(result.updated) == 0
+        assert len(result.unchanged) == 1
+
+    def test_sync_check_detects_out_of_sync_index(self, tmp_path: Path) -> None:
+        """Check mode detects when index.md needs updating."""
+        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs.mkdir(parents=True)
+        _create_valid_doc(agent_docs / "glossary.md", "Glossary", ["terms"])
+
+        # First sync creates files
+        sync_agent_docs(tmp_path)
+
+        # Manually modify index.md (simulating direct edit)
+        index_path = agent_docs / "index.md"
+        index_path.write_text("# Manually edited content", encoding="utf-8")
+
+        # Check mode should detect the change
+        result = sync_agent_docs(tmp_path, dry_run=True)
+        assert len(result.updated) == 1
+        assert "index.md" in result.updated[0]
+
+    def test_sync_check_detects_out_of_sync_tripwires(self, tmp_path: Path) -> None:
+        """Check mode detects when tripwires.md needs updating."""
+        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs.mkdir(parents=True)
+        _create_doc_with_tripwires(
+            agent_docs / "storage.md",
+            "Storage",
+            ["storage patterns"],
+            [{"action": "writing to /tmp/", "warning": "Use scratch instead."}],
+        )
+
+        # First sync creates files
+        sync_agent_docs(tmp_path)
+
+        # Manually modify tripwires.md (simulating direct edit)
+        tripwires_path = agent_docs / "tripwires.md"
+        original = tripwires_path.read_text(encoding="utf-8")
+        tripwires_path.write_text(
+            original + "\n**CRITICAL: Manually added tripwire**\n",
+            encoding="utf-8",
+        )
+
+        # Check mode should detect the change
+        result = sync_agent_docs(tmp_path, dry_run=True)
+        assert len(result.updated) >= 1
+        assert any("tripwires.md" in path for path in result.updated)
+
+    def test_sync_check_detects_missing_tripwire_in_generated_file(
+        self, tmp_path: Path
+    ) -> None:
+        """Check mode detects when tripwires.md is missing a tripwire from frontmatter."""
+        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs.mkdir(parents=True)
+        _create_doc_with_tripwires(
+            agent_docs / "storage.md",
+            "Storage",
+            ["storage patterns"],
+            [{"action": "writing to /tmp/", "warning": "Use scratch instead."}],
+        )
+
+        # First sync creates files
+        sync_agent_docs(tmp_path)
+
+        # Add a new tripwire to frontmatter (simulating frontmatter change)
+        _create_doc_with_tripwires(
+            agent_docs / "storage.md",
+            "Storage",
+            ["storage patterns"],
+            [
+                {"action": "writing to /tmp/", "warning": "Use scratch instead."},
+                {"action": "new action", "warning": "New warning."},
+            ],
+        )
+
+        # Check mode should detect the change
+        result = sync_agent_docs(tmp_path, dry_run=True)
+        assert len(result.updated) >= 1
+        assert any("tripwires.md" in path for path in result.updated)

@@ -11,6 +11,8 @@ tripwires:
     warning: "After os.chdir(), regenerate context using regenerate_context(ctx, repo_root=repo.root). Stale ctx.cwd causes FileNotFoundError."
   - action: "importing time module or calling time.sleep()"
     warning: "Use context.time.sleep() for testability. Direct time.sleep() makes tests slow."
+  - action: "implementing CLI flags that affect post-mutation behavior"
+    warning: "Validate flag preconditions BEFORE any mutations. Example: `--up` in `erk pr land` checks for child branches before merging PR. This prevents partial state (PR merged, worktree deleted, but no valid navigation target)."
 ---
 
 # Erk Architecture Patterns

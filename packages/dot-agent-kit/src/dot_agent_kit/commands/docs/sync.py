@@ -18,7 +18,12 @@ from dot_agent_kit.operations.agent_docs import sync_agent_docs
     is_flag=True,
     help="Show what would be done without writing files.",
 )
-def sync_command(*, dry_run: bool) -> None:
+@click.option(
+    "--check",
+    is_flag=True,
+    help="Check if files are in sync without writing. Exit 1 if changes needed.",
+)
+def sync_command(*, dry_run: bool, check: bool) -> None:
     """Regenerate index files from frontmatter.
 
     Generates index.md files for:
@@ -28,9 +33,12 @@ def sync_command(*, dry_run: bool) -> None:
     Index files are auto-generated and should not be manually edited.
 
     Exit codes:
-    - 0: Sync completed successfully
-    - 1: Error during sync
+    - 0: Sync completed successfully (or --check passes)
+    - 1: Error during sync (or --check finds files out of sync)
     """
+    # --check implies dry-run behavior
+    if check:
+        dry_run = True
     # Find repository root
     result = subprocess.run(
         ["git", "rev-parse", "--show-toplevel"],
@@ -96,7 +104,14 @@ def sync_command(*, dry_run: bool) -> None:
     if total_changes == 0 and sync_result.skipped_invalid == 0:
         user_output(click.style("✓ All files are up to date", fg="green"))
     elif total_changes > 0:
-        if dry_run:
+        if check:
+            user_output(
+                click.style(f"✗ Files out of sync: {total_changes} change(s) needed", fg="red", bold=True)
+            )
+            user_output()
+            user_output("Run 'dot-agent docs sync' to regenerate files from frontmatter.")
+            raise SystemExit(1)
+        elif dry_run:
             user_output(click.style(f"Would make {total_changes} change(s)", fg="cyan", bold=True))
         else:
             user_output(click.style(f"✓ Sync complete: {total_changes} change(s)", fg="green"))
