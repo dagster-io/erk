@@ -235,3 +235,48 @@ class TestCreateRawExtractionPlan:
         label_names = {label[0] for label in github_issues.created_labels}
         assert "erk-plan" in label_names
         assert "erk-extraction" in label_names
+
+    def test_issue_body_includes_dynamic_values(self, tmp_path: Path) -> None:
+        """Issue body includes branch name, session IDs, and comment count."""
+        git = FakeGit(
+            current_branches={tmp_path: "feature-dynamic"},
+            default_branches={tmp_path: "main"},
+        )
+        github_issues = FakeGitHubIssues(username="testuser")
+
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        session_content = [
+            {"type": "user", "message": {"content": "Hello"}},
+            {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi!"}]}},
+            {"type": "user", "message": {"content": "Thanks"}},
+        ]
+        (project_dir / "session123.jsonl").write_text(
+            "\n".join(json.dumps(e) for e in session_content), encoding="utf-8"
+        )
+
+        patch_target = "erk_shared.extraction.raw_extraction.find_project_dir"
+        with patch(patch_target, return_value=project_dir):
+            result = create_raw_extraction_plan(
+                github_issues=github_issues,
+                git=git,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+                current_session_id="session123",
+                min_size=0,
+            )
+
+        assert result.success is True
+        _, body, _ = github_issues.created_issues[0]
+
+        # Verify comprehensive template content is present
+        assert "# Raw Session: feature-dynamic" in body
+        assert "**Branch:** feature-dynamic" in body
+        assert "**Session IDs:** session123" in body
+        assert "**Session Data Comments:**" in body
+        assert "## How to Process This Issue" in body
+        assert "/erk:create-extraction-plan" in body
+        assert "Category A (Learning Gaps)" in body
+        assert "Category B (Teaching Gaps)" in body
+        assert "## Session Data Format" in body
+        assert "`<message>` blocks" in body
