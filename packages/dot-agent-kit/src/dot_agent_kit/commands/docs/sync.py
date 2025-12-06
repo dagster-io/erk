@@ -105,9 +105,8 @@ def sync_command(*, dry_run: bool, check: bool) -> None:
         user_output(click.style("✓ All files are up to date", fg="green"))
     elif total_changes > 0:
         if check:
-            user_output(
-                click.style(f"✗ Files out of sync: {total_changes} change(s) needed", fg="red", bold=True)
-            )
+            msg = f"✗ Files out of sync: {total_changes} change(s) needed"
+            user_output(click.style(msg, fg="red", bold=True))
             user_output()
             user_output("Run 'dot-agent docs sync' to regenerate files from frontmatter.")
             raise SystemExit(1)

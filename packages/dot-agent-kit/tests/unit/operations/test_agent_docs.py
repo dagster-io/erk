@@ -929,9 +929,7 @@ class TestSyncAgentDocsCheckMode:
         assert len(result.updated) >= 1
         assert any("tripwires.md" in path for path in result.updated)
 
-    def test_sync_check_detects_missing_tripwire_in_generated_file(
-        self, tmp_path: Path
-    ) -> None:
+    def test_sync_check_detects_missing_tripwire_in_generated_file(self, tmp_path: Path) -> None:
         """Check mode detects when tripwires.md is missing a tripwire from frontmatter."""
         agent_docs = tmp_path / "docs" / "agent"
         agent_docs.mkdir(parents=True)
