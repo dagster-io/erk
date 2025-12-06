@@ -453,31 +453,18 @@ class Git(ABC):
         ...
 
     @abstractmethod
-    def set_branch_issue(self, repo_root: Path, branch: str, issue_number: int) -> None:
-        """Associate a GitHub issue number with a branch via git config.
-
-        Stores the issue number in git config at branch.<branch>.issue.
-        This association persists even if worktree is removed and recreated.
-
-        Args:
-            repo_root: Path to the git repository root
-            branch: Branch name to associate with issue
-            issue_number: GitHub issue number
-        """
-        ...
-
-    @abstractmethod
     def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
-        """Get GitHub issue number associated with a branch from git config.
+        """Extract GitHub issue number from branch name.
 
-        Reads the issue number from git config at branch.<branch>.issue.
+        Branch names follow the pattern: {issue_number}-{slug}-{timestamp}
+        Examples: "2382-convert-erk-create-raw-ext-12-05-2359"
 
         Args:
-            repo_root: Path to the git repository root
-            branch: Branch name to lookup
+            repo_root: Path to the git repository root (unused, kept for interface compat)
+            branch: Branch name to parse
 
         Returns:
-            Issue number if set, None otherwise
+            Issue number if branch starts with digits followed by hyphen, None otherwise
         """
         ...
 

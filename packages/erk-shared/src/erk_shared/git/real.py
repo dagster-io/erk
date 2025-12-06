@@ -609,39 +609,14 @@ class RealGit(Git):
         )
         return bool(result.stdout.strip())
 
-    def set_branch_issue(self, repo_root: Path, branch: str, issue_number: int) -> None:
-        """Associate a GitHub issue number with a branch via git config."""
-        run_subprocess_with_context(
-            ["git", "config", f"branch.{branch}.issue", str(issue_number)],
-            operation_context=f"set issue #{issue_number} for branch '{branch}'",
-            cwd=repo_root,
-        )
-
     def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
-        """Get GitHub issue number associated with a branch from git config.
+        """Extract GitHub issue number from branch name.
 
-        Note: Uses subprocess exception handling as an acceptable error boundary.
-        We cannot check if the config key exists beforehandwithout duplicating
-        git's logic.
+        Branch names follow the pattern: {issue_number}-{slug}-{timestamp}
         """
-        result = subprocess.run(
-            ["git", "config", f"branch.{branch}.issue"],
-            cwd=repo_root,
-            capture_output=True,
-            text=True,
-            check=False,  # LBYL: check return code after
-        )
+        from erk_shared.naming import extract_leading_issue_number
 
-        # Check if config key exists
-        if result.returncode != 0:
-            return None
-
-        # Parse issue number from output
-        try:
-            return int(result.stdout.strip())
-        except ValueError:
-            # Config value exists but is not a valid integer
-            return None
+        return extract_leading_issue_number(branch)
 
     def fetch_pr_ref(self, repo_root: Path, remote: str, pr_number: int, local_branch: str) -> None:
         """Fetch a PR ref into a local branch.
