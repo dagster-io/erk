@@ -23,7 +23,6 @@ kit_cli_commands:
     description: Update PR by staging changes, committing, restacking, and submitting
 artifacts:
   agent:
-    - agents/gt/commit-message-generator.md
     - agents/gt/gt-update-pr-submitter.md
   command:
     - commands/gt/prepare-local.md
