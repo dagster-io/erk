@@ -79,7 +79,13 @@ class DryRunGraphite(Graphite):
         pass
 
     def submit_stack(
-        self, repo_root: Path, *, publish: bool = False, restack: bool = False, quiet: bool = False
+        self,
+        repo_root: Path,
+        *,
+        publish: bool = False,
+        restack: bool = False,
+        quiet: bool = False,
+        force: bool = False,
     ) -> None:
         """No-op for gt submit in dry-run mode."""
         pass
