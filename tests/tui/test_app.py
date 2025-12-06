@@ -728,3 +728,87 @@ class TestPlanDetailScreenCopyActions:
             await pilot.pause()
 
             assert clipboard.last_copied == "erk pr co 456"
+
+
+class TestCommandPaletteFromMain:
+    """Tests for Ctrl+P command palette shortcut from main list view."""
+
+    @pytest.mark.asyncio
+    async def test_ctrl_p_opens_detail_with_palette(self) -> None:
+        """Ctrl+P from main view opens detail modal."""
+        provider = FakePlanDataProvider([make_plan_row(123, "Test Plan", pr_number=456)])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Press Ctrl+P to open detail with command palette
+            await pilot.press("ctrl+p")
+            await pilot.pause()
+            await pilot.pause()
+
+            # Detail screen should be in the screen stack
+            assert len(app.screen_stack) > 1
+            assert isinstance(app.screen_stack[-1], PlanDetailScreen)
+
+    @pytest.mark.asyncio
+    async def test_ctrl_p_sets_auto_open_palette_flag(self) -> None:
+        """Ctrl+P opens detail screen with auto_open_palette=True."""
+        provider = FakePlanDataProvider([make_plan_row(123, "Test Plan")])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Press Ctrl+P
+            await pilot.press("ctrl+p")
+            await pilot.pause()
+            await pilot.pause()
+
+            detail_screen = app.screen_stack[-1]
+            assert isinstance(detail_screen, PlanDetailScreen)
+            # The flag should be set for palette auto-open
+            assert detail_screen._auto_open_palette is True
+
+    @pytest.mark.asyncio
+    async def test_space_does_not_set_auto_open_palette(self) -> None:
+        """Space opens detail screen without auto_open_palette."""
+        provider = FakePlanDataProvider([make_plan_row(123, "Test Plan")])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Press space (regular detail view)
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            detail_screen = app.screen_stack[-1]
+            assert isinstance(detail_screen, PlanDetailScreen)
+            # The flag should NOT be set
+            assert detail_screen._auto_open_palette is False
+
+    @pytest.mark.asyncio
+    async def test_ctrl_p_with_no_rows_does_nothing(self) -> None:
+        """Ctrl+P with empty table does not open modal."""
+        provider = FakePlanDataProvider([])  # No plans
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Press Ctrl+P with no rows
+            await pilot.press("ctrl+p")
+            await pilot.pause()
+
+            # Should remain on main screen (no modal opened)
+            assert len(app.screen_stack) == 1

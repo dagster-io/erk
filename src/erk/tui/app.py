@@ -176,6 +176,7 @@ class HelpScreen(ModalScreen):
             with Vertical(classes="help-section"):
                 yield Label("Actions", classes="help-section-title")
                 yield Label("Enter   View plan details", classes="help-binding")
+                yield Label("Ctrl+P  Commands (opens detail modal)", classes="help-binding")
                 yield Label("o       Open PR (or issue if no PR)", classes="help-binding")
                 yield Label("p       Open PR in browser", classes="help-binding")
                 yield Label("i       Show implement command", classes="help-binding")
@@ -378,6 +379,7 @@ class PlanDetailScreen(ModalScreen):
         browser: "BrowserLauncher | None" = None,
         executor: CommandExecutor | None = None,
         repo_root: Path | None = None,
+        auto_open_palette: bool = False,
     ) -> None:
         """Initialize with plan row data.
 
@@ -387,6 +389,7 @@ class PlanDetailScreen(ModalScreen):
             browser: Optional browser launcher interface for opening URLs
             executor: Optional command executor for palette commands
             repo_root: Path to repository root for running commands
+            auto_open_palette: If True, open command palette on mount
         """
         super().__init__()
         self._row = row
@@ -396,6 +399,12 @@ class PlanDetailScreen(ModalScreen):
         self._repo_root = repo_root
         self._output_panel: CommandOutputPanel | None = None
         self._command_running = False
+        self._auto_open_palette = auto_open_palette
+
+    def on_mount(self) -> None:
+        """Handle mount event - optionally open command palette."""
+        if self._auto_open_palette:
+            self.set_timer(0.01, self.app.action_command_palette)
 
     def _get_pr_state_badge(self) -> tuple[str, str]:
         """Get PR state display text and CSS class."""
@@ -804,6 +813,7 @@ class ErkDashApp(App):
         # in the plan detail modal (Enter → Ctrl+P → "Close Plan")
         Binding("i", "show_implement", "Implement"),
         Binding("slash", "start_filter", "Filter", key_display="/"),
+        Binding("ctrl+p", "show_commands", "Commands"),
     ]
 
     def get_system_commands(self, screen: Screen) -> Iterator[SystemCommand]:
@@ -980,6 +990,33 @@ class ErkDashApp(App):
                 browser=self._provider.browser,
                 executor=executor,
                 repo_root=self._provider.repo_root,
+            )
+        )
+
+    def action_show_commands(self) -> None:
+        """Show command palette for selected plan via detail modal."""
+        row = self._get_selected_row()
+        if row is None:
+            return
+
+        # Create executor with injected dependencies
+        executor = RealCommandExecutor(
+            browser_launch=self._provider.browser.launch,
+            clipboard_copy=self._provider.clipboard.copy,
+            close_plan_fn=self._provider.close_plan,
+            notify_fn=self.notify,
+            refresh_fn=self.action_refresh,
+            submit_to_queue_fn=self._provider.submit_to_queue,
+        )
+
+        self.push_screen(
+            PlanDetailScreen(
+                row,
+                clipboard=self._provider.clipboard,
+                browser=self._provider.browser,
+                executor=executor,
+                repo_root=self._provider.repo_root,
+                auto_open_palette=True,
             )
         )
 
