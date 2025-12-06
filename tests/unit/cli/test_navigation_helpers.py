@@ -12,6 +12,31 @@ from erk.cli.commands.completions import complete_branch_names, complete_plan_fi
 from erk.cli.commands.navigation_helpers import delete_branch_and_worktree
 from erk.core.config_store import GlobalConfig
 from erk.core.context import ErkContext
+from erk.core.repo_discovery import RepoContext
+
+
+def make_test_repo_context(
+    repo_root: Path,
+    *,
+    main_repo_root: Path | None = None,
+    erk_root: Path | None = None,
+) -> RepoContext:
+    """Create a RepoContext for testing with sensible defaults.
+
+    Args:
+        repo_root: The repository root path (also used as main_repo_root if not specified)
+        main_repo_root: The main repo root (defaults to repo_root)
+        erk_root: The erk root directory (defaults to repo_root.parent / "erks")
+    """
+    main_repo = main_repo_root if main_repo_root is not None else repo_root
+    erk = erk_root if erk_root is not None else repo_root.parent / "erks"
+    return RepoContext(
+        root=repo_root,
+        main_repo_root=main_repo,
+        repo_name="test-repo",
+        repo_dir=erk / "repos" / "test-repo",
+        worktrees_dir=erk / "repos" / "test-repo" / "worktrees",
+    )
 
 
 def test_complete_branch_names_local_branches(tmp_path: Path) -> None:
@@ -433,6 +458,7 @@ def test_delete_branch_and_worktree_escapes_cwd_when_inside(tmp_path: Path) -> N
     )
 
     ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+    repo = make_test_repo_context(repo_root, erk_root=erk_root)
 
     # Change to the worktree directory (simulating being inside it)
     original_cwd = Path.cwd()
@@ -440,9 +466,9 @@ def test_delete_branch_and_worktree_escapes_cwd_when_inside(tmp_path: Path) -> N
 
     try:
         # Act
-        delete_branch_and_worktree(ctx, repo_root, "feature", worktree_path)
+        delete_branch_and_worktree(ctx, repo, "feature", worktree_path)
 
-        # Assert: CWD should have changed to repo_root
+        # Assert: CWD should have changed to repo_root (main_repo_root)
         assert Path.cwd() == repo_root
 
         # Assert: Worktree removal was called
@@ -482,6 +508,7 @@ def test_delete_branch_and_worktree_no_escape_when_outside(tmp_path: Path) -> No
     )
 
     ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+    repo = make_test_repo_context(repo_root, erk_root=erk_root)
 
     # Stay at repo_root (not inside worktree)
     original_cwd = Path.cwd()
@@ -489,7 +516,7 @@ def test_delete_branch_and_worktree_no_escape_when_outside(tmp_path: Path) -> No
 
     try:
         # Act
-        delete_branch_and_worktree(ctx, repo_root, "feature", worktree_path)
+        delete_branch_and_worktree(ctx, repo, "feature", worktree_path)
 
         # Assert: CWD should still be repo_root (unchanged)
         assert Path.cwd() == repo_root
@@ -545,6 +572,7 @@ def test_delete_branch_and_worktree_escapes_via_symlink(tmp_path: Path) -> None:
     )
 
     ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+    repo = make_test_repo_context(repo_root, erk_root=erk_root)
 
     # Change to the ACTUAL worktree directory (resolved path)
     original_cwd = Path.cwd()
@@ -554,7 +582,7 @@ def test_delete_branch_and_worktree_escapes_via_symlink(tmp_path: Path) -> None:
         # Act: Pass the SYMLINKED path (unresolved) - this is the bug scenario
         # Before fix: symlinked_worktree_path != Path.cwd() because one is resolved
         # After fix: both are resolved, so they're equal
-        delete_branch_and_worktree(ctx, repo_root, "feature", symlinked_worktree_path)
+        delete_branch_and_worktree(ctx, repo, "feature", symlinked_worktree_path)
 
         # Assert: CWD should have changed to repo_root (escaped the worktree)
         # Before fix: this would FAIL because the paths didn't compare equal,
@@ -566,6 +594,73 @@ def test_delete_branch_and_worktree_escapes_via_symlink(tmp_path: Path) -> None:
 
         # Assert: Branch was deleted
         assert "feature" in git.deleted_branches
+    finally:
+        # Restore original CWD for test cleanup
+        os.chdir(original_cwd)
+
+
+def test_delete_branch_and_worktree_uses_main_repo_root(tmp_path: Path) -> None:
+    """Regression test: function uses main_repo_root for safe directory escape.
+
+    Bug: When repo.root (= worktree path) was used for directory escape, the function
+    would delete the worktree, then fail when gt delete tried to run with
+    cwd pointing to the deleted directory.
+
+    Fix: The function now uses repo.main_repo_root (passed via RepoContext) to ensure
+    gt delete runs from a directory that still exists after worktree removal.
+
+    This test verifies the function escapes to main_repo_root (not repo.root) when
+    running from inside a worktree.
+    """
+    # Arrange
+    main_repo = tmp_path / "main-repo"
+    main_repo.mkdir()
+    git_dir = main_repo / ".git"
+    git_dir.mkdir()
+    erk_root = tmp_path / "erks"
+    erk_root.mkdir()
+    worktree_path = tmp_path / "worktrees" / "feature"
+    worktree_path.mkdir(parents=True)
+
+    git = FakeGit(
+        local_branches={main_repo: ["main", "feature"]},
+        remote_branches={main_repo: []},
+        git_common_dirs={main_repo: git_dir},
+        worktrees={main_repo: [WorktreeInfo(path=worktree_path, branch="feature")]},
+    )
+
+    global_config = GlobalConfig.test(
+        erk_root,
+        use_graphite=False,
+        shell_setup_complete=False,
+        show_pr_info=False,
+    )
+
+    ctx = ErkContext.for_test(git=git, cwd=main_repo, global_config=global_config)
+
+    # Simulate running from worktree: repo.root == worktree_path, but main_repo_root is different
+    repo = make_test_repo_context(
+        worktree_path,  # When in worktree, repo.root == worktree path
+        main_repo_root=main_repo,  # But main_repo_root is the actual repo
+        erk_root=erk_root,
+    )
+
+    # Change to the worktree directory (simulating being inside it)
+    original_cwd = Path.cwd()
+    os.chdir(worktree_path)
+
+    try:
+        # Act: Function should use main_repo_root for escape, not repo.root
+        delete_branch_and_worktree(ctx, repo, "feature", worktree_path)
+
+        # Assert: CWD should have changed to main_repo (not worktree_path)
+        # Before fix: would escape to repo.root which == worktree_path (deleted!)
+        # After fix: escapes to main_repo_root which still exists
+        assert Path.cwd() == main_repo
+
+        # Assert: Operations completed successfully
+        assert "feature" in git.deleted_branches
+        assert worktree_path in git.removed_worktrees
     finally:
         # Restore original CWD for test cleanup
         os.chdir(original_cwd)
@@ -600,6 +695,7 @@ def test_delete_branch_and_worktree_escapes_from_subdirectory(tmp_path: Path) ->
     )
 
     ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+    repo = make_test_repo_context(repo_root, erk_root=erk_root)
 
     # Change to a subdirectory inside the worktree
     original_cwd = Path.cwd()
@@ -607,7 +703,7 @@ def test_delete_branch_and_worktree_escapes_from_subdirectory(tmp_path: Path) ->
 
     try:
         # Act
-        delete_branch_and_worktree(ctx, repo_root, "feature", worktree_path)
+        delete_branch_and_worktree(ctx, repo, "feature", worktree_path)
 
         # Assert: CWD should have changed to repo_root
         assert Path.cwd() == repo_root

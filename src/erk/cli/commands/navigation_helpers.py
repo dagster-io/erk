@@ -100,27 +100,39 @@ def verify_pr_closed_or_merged(ctx: ErkContext, repo_root: Path, branch: str) ->
 
 
 def delete_branch_and_worktree(
-    ctx: ErkContext, repo_root: Path, branch: str, worktree_path: Path
+    ctx: ErkContext, repo: RepoContext, branch: str, worktree_path: Path
 ) -> None:
     """Delete the specified branch and its worktree.
 
     Uses two-step deletion: git worktree remove, then branch delete.
     Note: remove_worktree already calls prune internally, so no additional prune needed.
+
+    Args:
+        ctx: Erk context
+        repo: Repository context (uses main_repo_root for safe directory operations)
+        branch: Branch name to delete
+        worktree_path: Path to the worktree to remove
     """
+    # Use main_repo_root (not repo.root) to ensure we escape to a directory that
+    # still exists after worktree removal. repo.root equals the worktree path when
+    # running from inside a worktree.
+    # main_repo_root is always set by RepoContext.__post_init__, but pyright doesn't know
+    main_repo = repo.main_repo_root if repo.main_repo_root else repo.root
+
     # Escape the worktree if we're inside it (prevents FileNotFoundError after removal)
     # Both paths must be resolved for reliable comparison - Path.cwd() returns resolved path
     # but worktree_path may not be resolved, causing equality check to fail for same directory
     cwd = Path.cwd().resolve()
     resolved_worktree = worktree_path.resolve()
     if cwd == resolved_worktree or resolved_worktree in cwd.parents:
-        os.chdir(repo_root)
+        os.chdir(main_repo)
 
     # Remove the worktree (already calls prune internally)
-    ctx.git.remove_worktree(repo_root, worktree_path, force=True)
+    ctx.git.remove_worktree(main_repo, worktree_path, force=True)
     user_output(f"✓ Removed worktree: {click.style(str(worktree_path), fg='green')}")
 
     # Delete the branch using Git abstraction
-    ctx.git.delete_branch_with_graphite(repo_root, branch, force=True)
+    ctx.git.delete_branch_with_graphite(main_repo, branch, force=True)
     user_output(f"✓ Deleted branch: {click.style(branch, fg='yellow')}")
 
 

@@ -112,7 +112,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                 user_output(f"Went to root repo: {root_path}")
 
             # Perform cleanup (no context regeneration needed - we haven't changed dirs)
-            delete_branch_and_worktree(ctx, repo.root, current_branch, current_worktree_path)
+            delete_branch_and_worktree(ctx, repo, current_branch, current_worktree_path)
 
             # Exit after cleanup
             raise SystemExit(0)
@@ -146,7 +146,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
             user_output("\nOr use: source <(erk down --script)")
 
         # Perform cleanup (no context regeneration needed - we haven't actually changed directories)
-        delete_branch_and_worktree(ctx, repo.root, current_branch, current_worktree_path)
+        delete_branch_and_worktree(ctx, repo, current_branch, current_worktree_path)
 
         # Exit after cleanup
         raise SystemExit(0)

@@ -131,7 +131,7 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
             user_output("\nOr use: source <(erk up --script)")
 
         # Perform cleanup: delete branch and worktree
-        delete_branch_and_worktree(ctx, repo.root, current_branch, current_worktree_path)
+        delete_branch_and_worktree(ctx, repo, current_branch, current_worktree_path)
 
         # Exit after cleanup
         raise SystemExit(0)
