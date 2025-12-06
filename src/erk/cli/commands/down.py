@@ -5,6 +5,7 @@ from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
     check_clean_working_tree,
+    check_pending_extraction_marker,
     delete_branch_and_worktree,
     ensure_graphite_enabled,
     render_activation_script,
@@ -25,8 +26,14 @@ from erk.core.context import ErkContext
     is_flag=True,
     help="Delete current branch and worktree after navigating down",
 )
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Force deletion even if pending extraction marker exists",
+)
 @click.pass_obj
-def down_cmd(ctx: ErkContext, script: bool, delete_current: bool) -> None:
+def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> None:
     """Move to parent branch in Graphite stack.
 
     With shell integration (recommended):
@@ -63,9 +70,11 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool) -> None:
         )
 
     # Safety checks before navigation (if --delete-current flag is set)
-    if delete_current:
+    if delete_current and current_worktree_path is not None:
         check_clean_working_tree(ctx)
         verify_pr_closed_or_merged(ctx, repo.root, current_branch)
+        # Check for pending extraction marker
+        check_pending_extraction_marker(current_worktree_path, force)
 
     # Get all worktrees for checking if target has a worktree
     worktrees = ctx.git.list_worktrees(repo.root)

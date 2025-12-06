@@ -5,6 +5,7 @@ from erk.cli.activation import render_activation_script
 from erk.cli.commands.navigation_helpers import (
     activate_worktree,
     check_clean_working_tree,
+    check_pending_extraction_marker,
     delete_branch_and_worktree,
     ensure_graphite_enabled,
     resolve_up_navigation,
@@ -24,8 +25,14 @@ from erk.core.context import ErkContext
     is_flag=True,
     help="Delete current branch and worktree after navigating up",
 )
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Force deletion even if pending extraction marker exists",
+)
 @click.pass_obj
-def up_cmd(ctx: ErkContext, script: bool, delete_current: bool) -> None:
+def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> None:
     """Move to child branch in Graphite stack.
 
     With shell integration (recommended):
@@ -82,6 +89,9 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool) -> None:
 
         # Validate PR is closed or merged on GitHub
         verify_pr_closed_or_merged(ctx, repo.root, current_branch)
+
+        # Check for pending extraction marker
+        check_pending_extraction_marker(current_worktree_path, force)
 
     # Resolve navigation to get target branch (may auto-create worktree)
     target_name, was_created = resolve_up_navigation(ctx, repo, current_branch, worktrees)

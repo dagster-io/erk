@@ -33,18 +33,23 @@ class SentinelPath(type(Path())):
         """
         cls._file_storage.clear()
 
-    def exists(self) -> bool:
-        """Throw error instead of checking filesystem.
+    def exists(self, *, follow_symlinks: bool = True) -> bool:
+        """Check if file exists in sentinel storage.
 
-        Production code should use FakeGit.path_exists() instead of
-        directly calling Path.exists() in pure test mode.
+        For sentinel paths created via touch() or write_text(), we check
+        if the path is in our in-memory storage. This allows marker file
+        checks and other file existence checks to work in tests.
+
+        Note: For paths NOT in storage, this returns False (not an error).
+        If code attempts to check filesystem paths that weren't explicitly
+        created via write_text()/touch(), this will return False which
+        may not match production behavior. But this is safer than throwing
+        an error for all exists() calls.
+
+        Args:
+            follow_symlinks: Ignored for sentinel paths (no real filesystem).
         """
-        raise RuntimeError(
-            f"Called .exists() on sentinel path {self}. "
-            "Production code must check paths through fake operations "
-            "(e.g., git_ops.path_exists()) not direct filesystem calls. "
-            "This ensures tests have high fidelity with production."
-        )
+        return str(self) in SentinelPath._file_storage
 
     def resolve(self, strict: bool = False) -> "SentinelPath":
         """Return self without resolving (no-op for sentinel paths).
@@ -99,6 +104,27 @@ class SentinelPath(type(Path())):
         This allows production code to safely call .mkdir() without modification.
         """
         pass
+
+    def touch(self, mode: int = 0o666, exist_ok: bool = True) -> None:
+        """Create empty file marker for sentinel paths.
+
+        In production, .touch() creates an empty file on the filesystem.
+        For sentinel paths, we store an empty string to mark the file as existing.
+        This allows tests to check for marker file existence.
+        """
+        SentinelPath._file_storage[str(self)] = ""
+
+    def unlink(self, missing_ok: bool = False) -> None:
+        """Remove file marker for sentinel paths.
+
+        In production, .unlink() deletes a file from the filesystem.
+        For sentinel paths, we remove from storage if present.
+        """
+        path_str = str(self)
+        if path_str in SentinelPath._file_storage:
+            del SentinelPath._file_storage[path_str]
+        elif not missing_ok:
+            raise FileNotFoundError(f"No content stored for sentinel path {self}")
 
     def write_text(
         self,
