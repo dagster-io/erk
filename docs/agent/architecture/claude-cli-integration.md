@@ -37,7 +37,6 @@ result = subprocess.run(
         "claude",
         "--print",
         "--verbose",
-        "--permission-mode", "bypassPermissions",
         "--output-format", "stream-json",
         "/erk:my-command",
     ],
@@ -53,7 +52,6 @@ Key flags:
 
 - `--print`: Non-interactive, runs command and exits
 - `--verbose`: Required for stream-json with --print
-- `--permission-mode bypassPermissions`: Skip permission prompts
 - `--output-format stream-json`: JSONL output for parsing
 
 ## Interactive Mode
