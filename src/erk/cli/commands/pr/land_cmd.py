@@ -28,10 +28,12 @@ from erk_shared.output.output import user_output
 
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
+    activate_worktree,
     check_clean_working_tree,
     delete_branch_and_worktree,
     ensure_graphite_enabled,
 )
+from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
@@ -60,8 +62,14 @@ def is_extraction_origin_pr(ctx: ErkContext, repo_root: Path, pr_number: int) ->
     is_flag=True,
     help="Skip extraction; delete worktree and go to trunk",
 )
+@click.option(
+    "--up",
+    "up_flag",
+    is_flag=True,
+    help="Navigate to child branch instead of trunk after landing",
+)
 @click.pass_obj
-def pr_land(ctx: ErkContext, script: bool, skip_insights: bool) -> None:
+def pr_land(ctx: ErkContext, script: bool, skip_insights: bool, up_flag: bool) -> None:
     """Merge PR, run extraction, and delete worktree.
 
     Merges the current PR (must be one level from trunk), automatically runs
@@ -112,6 +120,29 @@ def pr_land(ctx: ErkContext, script: bool, skip_insights: bool) -> None:
             + "  2. Use --script flag: source <(erk pr land --script)\n"
         )
         raise SystemExit(1)
+
+    # Validate --up preconditions BEFORE any mutations (fail-fast)
+    target_child_branch: str | None = None
+    if up_flag:
+        children = ctx.graphite.get_child_branches(ctx.git, repo.root, current_branch)
+        if len(children) == 0:
+            user_output(
+                click.style("Error: ", fg="red")
+                + f"Cannot use --up: branch '{current_branch}' has no children.\n"
+                "Use 'erk pr land' without --up to return to trunk."
+            )
+            raise SystemExit(1)
+        elif len(children) > 1:
+            children_list = ", ".join(f"'{c}'" for c in children)
+            user_output(
+                click.style("Error: ", fg="red")
+                + f"Cannot use --up: branch '{current_branch}' has multiple children: "
+                f"{children_list}.\n"
+                "Use 'erk pr land' without --up, then 'erk co <branch>' to choose."
+            )
+            raise SystemExit(1)
+        else:
+            target_child_branch = children[0]
 
     # Step 1: Execute land-pr (merges the PR)
     # render_events() uses click.echo() + sys.stderr.flush() for immediate unbuffered output
@@ -164,10 +195,19 @@ def pr_land(ctx: ErkContext, script: bool, skip_insights: bool) -> None:
                 click.style("⚠", fg="yellow") + f" Extraction failed: {extraction_result.error}"
             )
 
-    # Step 3: Delete worktree and branch, navigate to trunk
+    # Step 3: Delete worktree and branch
     delete_branch_and_worktree(ctx, repo, current_branch, current_worktree_path)
     user_output(click.style("✓", fg="green") + " Deleted worktree and branch")
 
-    # Output activation script pointing to trunk/root repo
-    activate_root_repo(ctx, repo, script, command_name="pr-land")
-    # activate_root_repo raises SystemExit(0)
+    # Navigate to child branch (--up) or root
+    if target_child_branch is not None:
+        target_path = ctx.git.find_worktree_for_branch(repo.root, target_child_branch)
+        if target_path is None:
+            # Auto-create worktree for child
+            target_path, _ = ensure_worktree_for_branch(ctx, repo, target_child_branch)
+        activate_worktree(ctx, repo, target_path, script, command_name="pr-land")
+        # activate_worktree raises SystemExit(0)
+    else:
+        # Output activation script pointing to trunk/root repo
+        activate_root_repo(ctx, repo, script, command_name="pr-land")
+        # activate_root_repo raises SystemExit(0)

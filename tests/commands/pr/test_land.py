@@ -781,3 +781,232 @@ def test_is_extraction_origin_pr_returns_false_when_no_labels(tmp_path: Path) ->
     result = is_extraction_origin_pr(ctx, repo_root, 456)
 
     assert result is False
+
+
+def test_pr_land_with_up_navigates_to_child_branch() -> None:
+    """Test --up navigates to child branch after landing."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+        feature_2_path = repo_dir / "worktrees" / "feature-2"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        # feature-1 is parent of feature-2 (feature-1 has one child)
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_titles={123: "Feature 1"},
+            pr_bodies_by_number={123: "PR body"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+        test_ctx = replace(test_ctx, issues=issues_ops)
+
+        result = runner.invoke(
+            pr_group, ["land", "--script", "--up"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+
+        # Verify PR was merged
+        assert 123 in github_ops.merged_prs
+
+        # Verify worktree of feature-1 was removed
+        assert feature_1_path in git_ops.removed_worktrees
+
+        # Verify branch feature-1 was deleted
+        assert "feature-1" in git_ops.deleted_branches
+
+        # Verify activation script points to feature-2 worktree (the child)
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert str(feature_2_path) in script_content
+
+
+def test_pr_land_with_up_no_children_fails_before_merge() -> None:
+    """Test --up fails BEFORE merge when no children exist."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        # feature-1 has NO children
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_titles={123: "Feature 1"},
+            pr_bodies_by_number={123: "PR body"},
+            merge_should_succeed=True,
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(
+            pr_group, ["land", "--script", "--up"], obj=test_ctx, catch_exceptions=False
+        )
+
+        # Should fail with exit code 1
+        assert result.exit_code == 1
+
+        # Should show error about no children
+        assert "Cannot use --up" in result.output
+        assert "has no children" in result.output
+        assert "Use 'erk pr land' without --up" in result.output
+
+        # CRITICAL: PR should NOT have been merged (fail-fast)
+        assert len(github_ops.merged_prs) == 0
+
+
+def test_pr_land_with_up_multiple_children_fails_before_merge() -> None:
+    """Test --up fails BEFORE merge when multiple children exist."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees(
+                "main", ["feature-1", "feature-2a", "feature-2b"], repo_dir=repo_dir
+            ),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        # feature-1 has MULTIPLE children
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2a", "feature-2b"], commit_sha="def456"
+                ),
+                "feature-2a": BranchMetadata.branch("feature-2a", "feature-1", commit_sha="ghi789"),
+                "feature-2b": BranchMetadata.branch("feature-2b", "feature-1", commit_sha="jkl012"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_titles={123: "Feature 1"},
+            pr_bodies_by_number={123: "PR body"},
+            merge_should_succeed=True,
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(
+            pr_group, ["land", "--script", "--up"], obj=test_ctx, catch_exceptions=False
+        )
+
+        # Should fail with exit code 1
+        assert result.exit_code == 1
+
+        # Should show error about multiple children
+        assert "Cannot use --up" in result.output
+        assert "has multiple children" in result.output
+        assert "'feature-2a'" in result.output
+        assert "'feature-2b'" in result.output
+        assert "erk co <branch>" in result.output
+
+        # CRITICAL: PR should NOT have been merged (fail-fast)
+        assert len(github_ops.merged_prs) == 0
