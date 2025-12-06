@@ -235,6 +235,42 @@ class ClaudeExecutor(ABC):
         """
         ...
 
+    @abstractmethod
+    def execute_interactive_command(
+        self,
+        command: str,
+        worktree_path: Path,
+        dangerous: bool = False,
+    ) -> int:
+        """Execute Claude CLI interactively with a command, returning exit code.
+
+        Unlike execute_interactive(), this method runs Claude in a subprocess
+        and returns control to the caller after completion. The user can
+        interact with Claude during execution.
+
+        Args:
+            command: The slash command to execute (e.g., "/erk:create-extraction-plan")
+            worktree_path: Path to worktree directory to run in
+            dangerous: Whether to skip permission prompts
+
+        Returns:
+            Exit code from the Claude CLI process (0 = success)
+
+        Raises:
+            RuntimeError: If Claude CLI is not available
+
+        Example:
+            >>> executor = RealClaudeExecutor()
+            >>> exit_code = executor.execute_interactive_command(
+            ...     "/erk:create-extraction-plan",
+            ...     Path("/repos/my-project"),
+            ...     dangerous=True,
+            ... )
+            >>> if exit_code == 0:
+            ...     print("Extraction plan created successfully")
+        """
+        ...
+
 
 class RealClaudeExecutor(ClaudeExecutor):
     """Production implementation using subprocess and Claude CLI."""
@@ -613,3 +649,30 @@ class RealClaudeExecutor(ClaudeExecutor):
         # Replace current process with Claude
         os.execvp("claude", cmd_args)
         # Never returns - process is replaced
+
+    def execute_interactive_command(
+        self,
+        command: str,
+        worktree_path: Path,
+        dangerous: bool = False,
+    ) -> int:
+        """Execute Claude CLI interactively with a command, returning exit code.
+
+        Implementation details:
+        - Verifies Claude CLI is available
+        - Uses subprocess.run() so control returns after Claude exits
+        - No output capture - user sees and interacts with Claude directly
+        """
+        # Verify Claude is available
+        if not self.is_claude_available():
+            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+
+        # Build command arguments
+        cmd_args = ["claude", "--permission-mode", "acceptEdits"]
+        if dangerous:
+            cmd_args.append("--dangerously-skip-permissions")
+        cmd_args.append(command)
+
+        # Run Claude interactively (no output capture)
+        result = subprocess.run(cmd_args, cwd=worktree_path, check=False)
+        return result.returncode

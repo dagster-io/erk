@@ -25,7 +25,6 @@ from erk.cli.commands.navigation_helpers import (
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
-from erk.cli.output import stream_extraction_plan
 from erk.core.context import ErkContext
 
 
@@ -118,22 +117,21 @@ def pr_land(ctx: ErkContext, script: bool, up: bool, extract: bool) -> None:
     # This captures learnings from the work session for documentation improvements.
     # Use ctx.cwd (current working directory) to access session logs in the worktree.
     # If extraction fails, preserve the worktree so user can retry manually.
+    # Launch Claude interactively so the user can participate in the extraction workflow.
     extraction_success = True  # Default: proceed with deletion
     if extract:
-        result = stream_extraction_plan(ctx.claude_executor, ctx.cwd)
-        if result.success:
-            msg = click.style("✓", fg="green") + " Created documentation extraction plan"
-            if result.issue_url:
-                msg += f"\n  {result.issue_url}"
-            user_output(msg)
+        exit_code = ctx.claude_executor.execute_interactive_command(
+            "/erk:create-extraction-plan",
+            ctx.cwd,
+        )
+        extraction_success = exit_code == 0
+        if extraction_success:
+            user_output(click.style("✓", fg="green") + " Created documentation extraction plan")
         else:
-            extraction_success = False
             user_output(
                 click.style("⚠", fg="yellow")
                 + " Extraction plan failed - preserving worktree for manual retry"
             )
-            if result.error_message:
-                user_output(f"  Error: {result.error_message}")
             user_output("  Run manually: claude /erk:create-extraction-plan")
 
     # Step 2: Navigate to destination (trunk or upstack)

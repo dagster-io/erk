@@ -50,6 +50,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         *,
         claude_available: bool = True,
         command_should_fail: bool = False,
+        interactive_command_exit_code: int = 0,
         simulated_pr_url: str | None = None,
         simulated_pr_number: int | None = None,
         simulated_pr_title: str | None = None,
@@ -64,6 +65,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         Args:
             claude_available: Whether Claude CLI should appear available
             command_should_fail: Whether execute_command should raise RuntimeError
+            interactive_command_exit_code: Exit code to return from execute_interactive_command
             simulated_pr_url: PR URL to return in CommandResult (simulates successful PR creation)
             simulated_pr_number: PR number to return (simulates PR metadata)
             simulated_pr_title: PR title to return (simulates PR metadata)
@@ -76,6 +78,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         """
         self._claude_available = claude_available
         self._command_should_fail = command_should_fail
+        self._interactive_command_exit_code = interactive_command_exit_code
         self._simulated_pr_url = simulated_pr_url
         self._simulated_pr_number = simulated_pr_number
         self._simulated_pr_title = simulated_pr_title
@@ -86,6 +89,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         self._simulated_process_error = simulated_process_error
         self._executed_commands: list[tuple[str, Path, bool, bool]] = []
         self._interactive_calls: list[tuple[Path, bool]] = []
+        self._interactive_command_calls: list[tuple[str, Path, bool]] = []
 
     def is_claude_available(self) -> bool:
         """Return the availability configured at construction time."""
@@ -225,6 +229,29 @@ class FakeClaudeExecutor(ClaudeExecutor):
 
         self._interactive_calls.append((worktree_path, dangerous))
 
+    def execute_interactive_command(
+        self,
+        command: str,
+        worktree_path: Path,
+        dangerous: bool = False,
+    ) -> int:
+        """Track interactive command execution and return configured exit code.
+
+        This method records the call parameters for test assertions.
+        Unlike RealClaudeExecutor, this does not run an actual subprocess.
+
+        Returns:
+            The exit code configured via interactive_command_exit_code parameter
+
+        Raises:
+            RuntimeError: If Claude CLI is not available
+        """
+        if not self._claude_available:
+            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+
+        self._interactive_command_calls.append((command, worktree_path, dangerous))
+        return self._interactive_command_exit_code
+
     @property
     def executed_commands(self) -> list[tuple[str, Path, bool, bool]]:
         """Get the list of execute_command() calls that were made.
@@ -244,3 +271,13 @@ class FakeClaudeExecutor(ClaudeExecutor):
         This property is for test assertions only.
         """
         return self._interactive_calls.copy()
+
+    @property
+    def interactive_command_calls(self) -> list[tuple[str, Path, bool]]:
+        """Get the list of execute_interactive_command() calls that were made.
+
+        Returns list of (command, worktree_path, dangerous) tuples.
+
+        This property is for test assertions only.
+        """
+        return self._interactive_command_calls.copy()

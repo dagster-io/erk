@@ -231,101 +231,12 @@ def stream_command_with_feedback(
 
 
 @dataclass
-class ExtractionPlanResult:
-    """Result from extraction plan streaming execution."""
-
-    success: bool
-    issue_url: str | None = None
-    error_message: str | None = None
-
-
-@dataclass
 class AutoRestackResult:
     """Result from auto-restack streaming execution."""
 
     success: bool
     error_message: str | None = None
     requires_interactive: bool = False
-
-
-def stream_extraction_plan(
-    executor: ClaudeExecutor,
-    worktree_path: Path,
-) -> ExtractionPlanResult:
-    """Stream extraction plan command via Claude executor with live feedback.
-
-    Handles the /erk:create-extraction-plan command execution with:
-    - Live output streaming to stderr (preserves stdout for script paths)
-    - Deduped spinner updates
-    - Issue URL extraction from JSON output
-
-    Args:
-        executor: Claude CLI executor
-        worktree_path: Path to run the extraction in
-
-    Returns:
-        ExtractionPlanResult with success status and issue URL
-    """
-    import json
-
-    error_message: str | None = None
-    issue_url: str | None = None
-    success = True
-    last_spinner: str | None = None
-    collected_text: list[str] = []
-
-    # Output to stderr to preserve stdout for script paths in --script mode
-    click.echo(click.style("--- /erk:create-extraction-plan ---", bold=True), err=True)
-
-    for event in executor.execute_command_streaming(
-        command="/erk:create-extraction-plan",
-        worktree_path=worktree_path,
-        dangerous=True,  # Non-interactive mode with bypassed permissions
-    ):
-        if event.event_type == "text":
-            click.echo(event.content, err=True)
-            collected_text.append(event.content)
-        elif event.event_type == "tool":
-            # Tool summaries with icon
-            click.echo(click.style(f"   ⚙️  {event.content}", fg="cyan", dim=True), err=True)
-        elif event.event_type == "spinner_update":
-            if event.content != last_spinner:
-                click.echo(click.style(f"   ⏳ {event.content}", dim=True), err=True)
-                last_spinner = event.content
-        elif event.event_type == "error":
-            click.echo(click.style(f"   ❌ {event.content}", fg="red"), err=True)
-            error_message = event.content
-            success = False
-        elif event.event_type == "no_output":
-            click.echo(click.style(f"   ⚠️  {event.content}", fg="yellow"), err=True)
-            error_message = event.content
-            success = False
-        elif event.event_type == "process_error":
-            click.echo(click.style(f"   ❌ {event.content}", fg="red"), err=True)
-            error_message = event.content
-            success = False
-
-    click.echo(click.style("--- Done ---", bold=True), err=True)
-
-    # Try to extract issue_url from collected text
-    # The extraction plan command outputs JSON with issue_url
-    for text in collected_text:
-        # JSON parsing requires exception handling (third-party API compatibility)
-        try:
-            data = json.loads(text.strip())
-            if isinstance(data, dict):
-                url = data.get("issue_url")
-                if isinstance(url, str):
-                    issue_url = url
-                    break
-        except json.JSONDecodeError:
-            continue
-
-    return ExtractionPlanResult(
-        success=success,
-        issue_url=issue_url,
-        error_message=error_message,
-    )
 
 
 def stream_auto_restack(

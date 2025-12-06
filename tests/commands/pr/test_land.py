@@ -1064,12 +1064,12 @@ def test_pr_land_creates_extraction_plan_by_default() -> None:
 
         assert result.exit_code == 0
 
-        # Verify extraction plan was executed via ClaudeExecutor
-        assert len(claude_executor.executed_commands) == 1
-        command, worktree_path, dangerous, verbose = claude_executor.executed_commands[0]
+        # Verify extraction plan was executed via ClaudeExecutor.execute_interactive_command
+        assert len(claude_executor.interactive_command_calls) == 1
+        command, worktree_path, dangerous = claude_executor.interactive_command_calls[0]
         assert command == "/erk:create-extraction-plan"
         assert worktree_path == env.cwd
-        assert dangerous is True  # Non-interactive mode
+        assert dangerous is False  # Interactive mode respects permission prompts
 
         # Verify success message shown
         assert "Created documentation extraction plan" in result.output
@@ -1146,7 +1146,7 @@ def test_pr_land_skips_extraction_plan_with_no_extract_flag() -> None:
         assert result.exit_code == 0
 
         # Verify extraction plan was NOT called
-        assert len(claude_executor.executed_commands) == 0
+        assert len(claude_executor.interactive_command_calls) == 0
 
         # Verify no extraction messages in output
         assert "extraction plan" not in result.output.lower()
@@ -1193,10 +1193,10 @@ def test_pr_land_preserves_worktree_when_extraction_fails() -> None:
             merge_should_succeed=True,
         )
 
-        # Simulate extraction failure via FakeClaudeExecutor
+        # Simulate extraction failure via FakeClaudeExecutor (non-zero exit code)
         claude_executor = FakeClaudeExecutor(
             claude_available=True,
-            command_should_fail=True,
+            interactive_command_exit_code=1,  # Simulate failure
         )
 
         repo = RepoContext(
@@ -1220,8 +1220,8 @@ def test_pr_land_preserves_worktree_when_extraction_fails() -> None:
         # Command should still succeed
         assert result.exit_code == 0
 
-        # Verify extraction was attempted
-        assert len(claude_executor.executed_commands) == 1
+        # Verify extraction was attempted via execute_interactive_command
+        assert len(claude_executor.interactive_command_calls) == 1
 
         # Verify warning messages shown
         assert "Extraction plan failed" in result.output
