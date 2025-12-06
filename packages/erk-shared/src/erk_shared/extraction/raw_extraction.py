@@ -28,9 +28,11 @@ from erk_shared.extraction.types import RawExtractionResult
 from erk_shared.git.abc import Git
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.metadata import (
+    format_plan_content_comment,
     format_plan_header_body,
     render_session_content_blocks,
 )
+from erk_shared.plan_utils import extract_title_from_plan
 
 # Enable/disable Stage 2 Haiku distillation
 # When True: Stage 1 mechanical reduction + Stage 2 Haiku distillation
@@ -287,17 +289,19 @@ def create_raw_extraction_plan(
     created_at = datetime.now(UTC).isoformat()
     session_ids = [s for s, _ in session_xmls]
 
-    formatted_body = format_plan_header_body(
+    # Get raw extraction body (plan content) and extract title from it
+    raw_body = get_raw_extraction_body(session_label)
+    extracted_title = extract_title_from_plan(raw_body)
+    issue_title = f"{extracted_title} [erk-extraction]"
+
+    # Issue body contains ONLY metadata (Schema v2)
+    issue_body = format_plan_header_body(
         created_at=created_at,
         created_by=username,
         plan_type="extraction",
         source_plan_issues=[],  # No source issues for raw extraction
         extraction_session_ids=session_ids,
     )
-
-    # Append the raw extraction body with branch name
-    raw_body = get_raw_extraction_body(session_label)
-    issue_body = f"{formatted_body}\n\n{raw_body}"
 
     # Ensure labels exist
     labels = ["erk-plan", "erk-extraction"]
@@ -324,10 +328,9 @@ def create_raw_extraction_plan(
             error=f"Failed to ensure labels exist: {e}",
         )
 
-    # Create issue
-    title = f"Raw Session Context: {session_label} [erk-extraction]"
+    # Create issue with metadata-only body
     try:
-        result = github_issues.create_issue(repo_root, title, issue_body, labels=labels)
+        result = github_issues.create_issue(repo_root, issue_title, issue_body, labels=labels)
     except RuntimeError as e:
         return RawExtractionResult(
             success=False,
@@ -338,7 +341,21 @@ def create_raw_extraction_plan(
             error=f"Failed to create GitHub issue: {e}",
         )
 
-    # Post session content as comments (may be chunked)
+    # First comment: plan content wrapped in plan-body block
+    plan_comment = format_plan_content_comment(raw_body)
+    try:
+        github_issues.add_comment(repo_root, result.number, plan_comment)
+    except RuntimeError as e:
+        return RawExtractionResult(
+            success=False,
+            issue_url=result.url,
+            issue_number=result.number,
+            chunks=0,
+            sessions_processed=session_ids,
+            error=f"Issue created but failed to add plan content: {e}",
+        )
+
+    # Subsequent comments: session XML chunks
     try:
         for block in content_blocks:
             github_issues.add_comment(repo_root, result.number, block)

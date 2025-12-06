@@ -1,6 +1,7 @@
 """Tests for plan check command."""
 
 from datetime import UTC, datetime
+from pathlib import Path
 
 from click.testing import CliRunner
 from erk_shared.github.issues.fake import FakeGitHubIssues
@@ -286,3 +287,159 @@ def test_check_invalid_identifier_fails() -> None:
         assert result.exit_code == 1
         assert "Error:" in result.output
         assert "Invalid issue number or URL" in result.output
+
+
+# =============================================================================
+# Tests for validate_plan_format function (programmatic validation)
+# =============================================================================
+
+
+def test_validate_plan_format_passes_valid_plan(tmp_path: Path) -> None:
+    """Test validate_plan_format returns passed=True for valid plan."""
+    from erk.cli.commands.plan.check_cmd import validate_plan_format
+
+    # Valid plan-header metadata
+    plan_header_data = {
+        "schema_version": "2",
+        "created_at": "2024-01-01T00:00:00Z",
+        "created_by": "alice",
+        "worktree_name": "test-feature",
+    }
+    plan_header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
+
+    # Valid plan-body in first comment
+    plan_content = """# Plan: Test Feature
+
+## Steps
+1. Step one
+2. Step two"""
+    plan_body_block = render_metadata_block(MetadataBlock("plan-body", {"content": plan_content}))
+
+    issue = IssueInfo(
+        number=42,
+        title="Test Feature",
+        body=plan_header_block,
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+    )
+
+    issues = FakeGitHubIssues(
+        issues={42: issue},
+        comments={42: [plan_body_block]},
+    )
+
+    result = validate_plan_format(issues, tmp_path, 42)
+
+    assert result.passed is True
+    assert result.failed_count == 0
+    assert len(result.checks) == 4
+    # All checks should pass
+    assert all(passed for passed, _ in result.checks)
+
+
+def test_validate_plan_format_fails_missing_plan_header(tmp_path: Path) -> None:
+    """Test validate_plan_format returns passed=False when plan-header missing."""
+    from erk.cli.commands.plan.check_cmd import validate_plan_format
+
+    issue = IssueInfo(
+        number=42,
+        title="Test Feature",
+        body="No metadata block here",
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+    )
+
+    issues = FakeGitHubIssues(
+        issues={42: issue},
+        comments={42: []},
+    )
+
+    result = validate_plan_format(issues, tmp_path, 42)
+
+    assert result.passed is False
+    assert result.failed_count >= 1
+    # Check first failure is plan-header
+    failed_checks = [desc for passed, desc in result.checks if not passed]
+    assert "plan-header metadata block present" in failed_checks
+
+
+def test_validate_plan_format_fails_missing_first_comment(tmp_path: Path) -> None:
+    """Test validate_plan_format returns passed=False when no comments exist."""
+    from erk.cli.commands.plan.check_cmd import validate_plan_format
+
+    plan_header_data = {
+        "schema_version": "2",
+        "created_at": "2024-01-01T00:00:00Z",
+        "created_by": "alice",
+        "worktree_name": "test-feature",
+    }
+    plan_header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
+
+    issue = IssueInfo(
+        number=42,
+        title="Test Feature",
+        body=plan_header_block,
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+    )
+
+    issues = FakeGitHubIssues(
+        issues={42: issue},
+        comments={42: []},  # No comments
+    )
+
+    result = validate_plan_format(issues, tmp_path, 42)
+
+    assert result.passed is False
+    assert result.failed_count >= 1
+    failed_checks = [desc for passed, desc in result.checks if not passed]
+    assert "First comment exists" in failed_checks
+
+
+def test_validate_plan_format_fails_missing_plan_body(tmp_path: Path) -> None:
+    """Test validate_plan_format returns passed=False when plan-body missing."""
+    from erk.cli.commands.plan.check_cmd import validate_plan_format
+
+    plan_header_data = {
+        "schema_version": "2",
+        "created_at": "2024-01-01T00:00:00Z",
+        "created_by": "alice",
+        "worktree_name": "test-feature",
+    }
+    plan_header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
+
+    issue = IssueInfo(
+        number=42,
+        title="Test Feature",
+        body=plan_header_block,
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+    )
+
+    issues = FakeGitHubIssues(
+        issues={42: issue},
+        comments={42: ["Just a regular comment"]},  # No plan-body block
+    )
+
+    result = validate_plan_format(issues, tmp_path, 42)
+
+    assert result.passed is False
+    assert result.failed_count >= 1
+    failed_checks = [desc for passed, desc in result.checks if not passed]
+    assert "plan-body content extractable" in failed_checks
