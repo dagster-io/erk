@@ -25,9 +25,11 @@ import json
 from pathlib import Path
 
 import click
+from erk_shared.extraction.session_context import collect_session_context
+from erk_shared.github.metadata import render_session_content_blocks
 from erk_shared.github.plan_issues import create_plan_issue
 
-from dot_agent_kit.context_helpers import require_github_issues, require_repo_root
+from dot_agent_kit.context_helpers import require_git, require_github_issues, require_repo_root
 from dot_agent_kit.data.kits.erk.session_plan_extractor import get_latest_plan
 
 
@@ -111,7 +113,34 @@ def plan_save_to_issue(
                 click.echo(json.dumps({"success": False, "error": result.error}))
         raise SystemExit(1)
 
-    # Output success
+    # Step 8: Capture and embed session context (non-blocking)
+    session_context_chunks = 0
+    session_ids: list[str] = []
+
+    git = require_git(ctx)
+    session_result = collect_session_context(git=git, cwd=cwd, min_size=1024, limit=20)
+
+    if session_result is not None and result.issue_number is not None:
+        # Render and post as comments
+        session_label = session_result.branch_context.current_branch or "planning-session"
+        content_blocks = render_session_content_blocks(
+            content=session_result.combined_xml,
+            session_label=session_label,
+            extraction_hints=["Planning session context for downstream analysis"],
+        )
+
+        # Post each block as a comment (failures are non-blocking)
+        for block in content_blocks:
+            try:
+                github.add_comment(repo_root, result.issue_number, block)
+                session_context_chunks += 1
+            except RuntimeError:
+                # Session context is supplementary - don't fail the command
+                pass
+
+        session_ids = session_result.session_ids
+
+    # Step 9: Output success
     # Detect enrichment status for informational output
     is_enriched = "## Enrichment Details" in plan
 
@@ -119,6 +148,8 @@ def plan_save_to_issue(
         click.echo(f"Plan saved to GitHub issue #{result.issue_number}")
         click.echo(f"URL: {result.issue_url}")
         click.echo(f"Enrichment: {'Yes' if is_enriched else 'No'}")
+        if session_context_chunks > 0:
+            click.echo(f"Session context: {session_context_chunks} chunks")
     else:
         click.echo(
             json.dumps(
@@ -128,6 +159,8 @@ def plan_save_to_issue(
                     "issue_url": result.issue_url,
                     "title": result.title,
                     "enriched": is_enriched,
+                    "session_context_chunks": session_context_chunks,
+                    "session_ids": session_ids,
                 }
             )
         )

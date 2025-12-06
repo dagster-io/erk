@@ -15,14 +15,8 @@ import warnings
 from pathlib import Path
 
 from erk_shared.extraction.llm_distillation import distill_with_haiku
-from erk_shared.extraction.session_discovery import (
-    discover_sessions,
-    find_project_dir,
-    get_branch_context,
-    get_current_session_id,
-)
-from erk_shared.extraction.session_preprocessing import preprocess_session
-from erk_shared.extraction.session_selection import auto_select_sessions
+from erk_shared.extraction.session_context import collect_session_context
+from erk_shared.extraction.session_discovery import get_current_session_id
 from erk_shared.extraction.types import RawExtractionResult
 from erk_shared.git.abc import Git
 from erk_shared.github.issues.abc import GitHubIssues
@@ -133,13 +127,12 @@ def create_raw_extraction_plan(
     """Create an extraction plan with raw session context.
 
     This is the main orchestrator function that:
-    1. Discovers sessions via discover_sessions()
-    2. Auto-selects via auto_select_sessions()
-    3. Preprocesses via preprocess_session()
-    4. Renders via render_session_content_blocks()
-    5. Creates GitHub issue
-    6. Posts chunked comments
-    7. Returns result
+    1. Collects session context via collect_session_context()
+    2. Optionally applies Haiku distillation
+    3. Renders via render_session_content_blocks()
+    4. Creates GitHub issue
+    5. Posts chunked comments
+    6. Returns result
 
     Args:
         github_issues: GitHub issues interface for creating issues and comments
@@ -160,87 +153,28 @@ def create_raw_extraction_plan(
     if current_session_id is None:
         current_session_id = f"extraction-{uuid.uuid4().hex[:8]}"
 
-    # Find project directory
-    project_dir = find_project_dir(cwd)
-    if project_dir is None:
-        return RawExtractionResult(
-            success=False,
-            issue_url=None,
-            issue_number=None,
-            chunks=0,
-            sessions_processed=[],
-            error="Could not find Claude Code project directory",
-        )
-
-    # Get branch context
-    branch_context = get_branch_context(git, cwd)
-
-    # Discover sessions
-    sessions = discover_sessions(
-        project_dir=project_dir,
+    # Collect session context using shared helper
+    session_result = collect_session_context(
+        git=git,
+        cwd=cwd,
         current_session_id=current_session_id,
         min_size=min_size,
-        limit=20,  # Get more to have options for selection
+        limit=20,
     )
 
-    if not sessions:
+    if session_result is None:
         return RawExtractionResult(
             success=False,
             issue_url=None,
             issue_number=None,
             chunks=0,
             sessions_processed=[],
-            error="No sessions found in project directory",
+            error="No sessions found or all sessions were empty after preprocessing",
         )
 
-    # Auto-select sessions
-    selected_sessions = auto_select_sessions(
-        sessions=sessions,
-        branch_context=branch_context,
-        current_session_id=current_session_id,
-        min_substantial_size=min_size,
-    )
-
-    if not selected_sessions:
-        return RawExtractionResult(
-            success=False,
-            issue_url=None,
-            issue_number=None,
-            chunks=0,
-            sessions_processed=[],
-            error="No sessions selected for extraction",
-        )
-
-    # Stage 1: Preprocess sessions (deterministic mechanical reduction)
-    session_xmls: list[tuple[str, str]] = []  # (session_id, xml)
-    for session in selected_sessions:
-        xml_content = preprocess_session(
-            session_path=session.path,
-            session_id=session.session_id,
-            include_agents=True,
-        )
-        if xml_content:  # Skip empty sessions
-            session_xmls.append((session.session_id, xml_content))
-
-    if not session_xmls:
-        return RawExtractionResult(
-            success=False,
-            issue_url=None,
-            issue_number=None,
-            chunks=0,
-            sessions_processed=[],
-            error="All selected sessions were empty after preprocessing",
-        )
-
-    # Combine session XMLs
-    if len(session_xmls) == 1:
-        combined_xml = session_xmls[0][1]
-    else:
-        # Multiple sessions - concatenate with headers
-        xml_parts = []
-        for session_id, xml in session_xmls:
-            xml_parts.append(f"<!-- Session: {session_id} -->\n{xml}")
-        combined_xml = "\n\n".join(xml_parts)
+    combined_xml = session_result.combined_xml
+    session_ids = session_result.session_ids
+    branch_context = session_result.branch_context
 
     # Stage 2: Haiku distillation (if enabled)
     if USE_LLM_DISTILLATION:
@@ -267,8 +201,6 @@ def create_raw_extraction_plan(
         session_label=session_label,
         extraction_hints=extraction_hints,
     )
-
-    session_ids = [s for s, _ in session_xmls]
 
     # Get raw extraction body (plan content)
     raw_body = get_raw_extraction_body(session_label)
