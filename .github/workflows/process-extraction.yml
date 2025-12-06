@@ -73,10 +73,21 @@ jobs:
             exit 1
           fi
 
+      - name: Detect issue type
+        id: detect
+        run: |
+          HAS_ERK_PLAN="${{ contains(github.event.issue.labels.*.name, 'erk-plan') }}"
+          if [ "$HAS_ERK_PLAN" = "true" ]; then
+            echo "issue_type=extraction_plan" >> $GITHUB_OUTPUT
+          else
+            echo "issue_type=raw_session" >> $GITHUB_OUTPUT
+          fi
+
       # =================================================================
-      # PHASE 2: EXTRACT SESSION DATA
+      # PHASE 2: EXTRACT SESSION DATA (RAW SESSION PATH)
       # =================================================================
       - name: Post extraction started comment
+        if: steps.detect.outputs.issue_type == 'raw_session'
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
@@ -90,6 +101,7 @@ jobs:
 
       - name: Extract session data from issue
         id: extract
+        if: steps.detect.outputs.issue_type == 'raw_session'
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
@@ -114,7 +126,7 @@ jobs:
           echo "session_ids=$(echo "$result" | jq -r '.session_ids | join(",")')" >> $GITHUB_OUTPUT
 
       - name: Post extraction failed comment
-        if: steps.extract.outputs.extraction_success != 'true'
+        if: steps.detect.outputs.issue_type == 'raw_session' && steps.extract.outputs.extraction_success != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
@@ -131,10 +143,11 @@ jobs:
           exit 1
 
       # =================================================================
-      # PHASE 3: CREATE BRANCH
+      # PHASE 3: CREATE BRANCH (RAW SESSION PATH)
       # =================================================================
       - name: Create extraction branch
         id: branch
+        if: steps.detect.outputs.issue_type == 'raw_session'
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
@@ -147,10 +160,11 @@ jobs:
           echo "branch_name=$(echo "$result" | jq -r '.branch_name')" >> $GITHUB_OUTPUT
 
       # =================================================================
-      # PHASE 4: ANALYSIS PHASE
+      # PHASE 4: ANALYSIS PHASE (RAW SESSION PATH)
       # =================================================================
       - name: Run extraction plan analysis
         id: analyze
+        if: steps.detect.outputs.issue_type == 'raw_session'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
@@ -186,11 +200,11 @@ jobs:
           exit 0
 
       # =================================================================
-      # PHASE 5: IMPLEMENTATION PHASE
+      # PHASE 5: IMPLEMENTATION PHASE (RAW SESSION PATH)
       # =================================================================
       - name: Check for plan and implement
         id: implement
-        if: steps.analyze.outputs.analysis_success == 'true'
+        if: steps.detect.outputs.issue_type == 'raw_session' && steps.analyze.outputs.analysis_success == 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
@@ -216,16 +230,69 @@ jobs:
           exit 0
 
       # =================================================================
+      # EXTRACTION PLAN PATH (for issues with erk-plan + erk-extraction)
+      # =================================================================
+      - name: Create branch for extraction plan
+        id: branch_plan
+        if: steps.detect.outputs.issue_type == 'extraction_plan'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          TRUNK_BRANCH: ${{ steps.trunk.outputs.trunk_branch }}
+        run: |
+          source $HOME/.cargo/env
+          result=$(dot-agent run erk create-extraction-branch \
+            --issue-number "$ISSUE_NUMBER" \
+            --trunk-branch "$TRUNK_BRANCH")
+          echo "branch_name=$(echo "$result" | jq -r '.branch_name')" >> $GITHUB_OUTPUT
+
+      - name: Create worker-impl from issue
+        id: worker_impl
+        if: steps.detect.outputs.issue_type == 'extraction_plan'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          source $HOME/.cargo/env
+          result=$(dot-agent run erk create-worker-impl-from-issue "$ISSUE_NUMBER")
+          success=$(echo "$result" | jq -r '.success')
+          echo "worker_impl_success=$success" >> $GITHUB_OUTPUT
+
+      - name: Implement extraction plan
+        id: implement_plan
+        if: steps.detect.outputs.issue_type == 'extraction_plan' && steps.worker_impl.outputs.worker_impl_success == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          claude --print \
+            --model claude-sonnet-4-5-20250929 \
+            --output-format stream-json \
+            --dangerously-skip-permissions \
+            --verbose \
+            "/erk:plan-implement"
+
+          if [ $? -eq 0 ]; then
+            echo "implementation_success=true" >> $GITHUB_OUTPUT
+          else
+            echo "implementation_success=false" >> $GITHUB_OUTPUT
+          fi
+          exit 0
+
+      # =================================================================
       # PHASE 6: SUBMISSION PHASE
       # =================================================================
       - name: Create PR with documentation changes
         id: submit
-        if: steps.implement.outputs.implementation_success == 'true'
+        if: |
+          (steps.detect.outputs.issue_type == 'raw_session' && steps.implement.outputs.implementation_success == 'true') ||
+          (steps.detect.outputs.issue_type == 'extraction_plan' && steps.implement_plan.outputs.implementation_success == 'true')
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
-          BRANCH_NAME: ${{ steps.branch.outputs.branch_name }}
+          BRANCH_NAME: ${{ steps.detect.outputs.issue_type == 'raw_session' && steps.branch.outputs.branch_name || steps.branch_plan.outputs.branch_name }}
         run: |
           if [ -z "$(git status --porcelain)" ]; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
@@ -248,7 +315,7 @@ jobs:
         if: steps.submit.outputs.has_changes == 'true' && steps.submit.outputs.pr_url != ''
         env:
           GH_TOKEN: ${{ github.token }}
-          BRANCH_NAME: ${{ steps.branch.outputs.branch_name }}
+          BRANCH_NAME: ${{ steps.detect.outputs.issue_type == 'raw_session' && steps.branch.outputs.branch_name || steps.branch_plan.outputs.branch_name }}
         run: |
           gh pr ready "$BRANCH_NAME" 2>/dev/null || true
 
