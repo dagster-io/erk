@@ -177,8 +177,14 @@ def pr_land(ctx: ErkContext, script: bool, skip_insights: bool, up_flag: bool) -
     # Step 2: Run extraction (unless --skip-insights or extraction origin)
     extraction_issue_url: str | None = None
     if not skip_insights and not is_extraction_origin:
-        # Get current session ID from environment
+        # Get current session ID from environment (needed for both status line and extraction)
         current_session_id = get_current_session_id()
+
+        # Show status line before extraction
+        user_output(
+            f"  Running: create_raw_extraction_plan("
+            f"repo_root={repo.root}, session_id={current_session_id})"
+        )
 
         # Run extraction
         extraction_result = create_raw_extraction_plan(
