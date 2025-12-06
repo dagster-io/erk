@@ -396,6 +396,8 @@ Use gh CLI to create or update PR:
 gh pr create --fill --label "ai-generated" || gh pr edit --add-label "ai-generated"
 ```
 
+**Note:** This creates a minimal PR using `--fill`. The human operator will later use `/gt:pr-submit` to add proper metadata (Closes #N reference, checkout footer) before merging.
+
 ### Step 16: Validate PR Rules
 
 After creating/updating the PR, run the PR check command to validate:
