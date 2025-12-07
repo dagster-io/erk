@@ -3,6 +3,7 @@
 
 # Testing Documentation
 
+- **[cascading-import-cleanup.md](cascading-import-cleanup.md)** — removing modules from codebase, import errors after module deletion, cleaning up removed functionality
 - **[import-conflict-resolution.md](import-conflict-resolution.md)** — resolving merge conflicts during rebase, fixing import conflicts after consolidation, rebasing after shared module changes
 - **[kit-cli-testing.md](kit-cli-testing.md)** — writing tests for kit CLI commands, using DotAgentContext.for_test(), testing Click commands with context
 - **[rebase-conflicts.md](rebase-conflicts.md)** — fixing merge conflicts in erk tests, ErkContext API changes during rebase, env_helpers conflicts

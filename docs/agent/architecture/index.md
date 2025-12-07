@@ -7,6 +7,7 @@
 - **[claude-cli-integration.md](claude-cli-integration.md)** — Invoking Claude from Python, Spawning Claude CLI from Python code, Understanding non-interactive vs interactive modes
 - **[claude-cli-progress.md](claude-cli-progress.md)** — adding progress output to Claude operations, wrapping Claude CLI with user feedback, using ProgressEvent or CompletionEvent, converting blocking operations to streaming progress
 - **[command-boundaries.md](command-boundaries.md)** — Choosing between agent vs CLI command, Deciding when to use .claude/commands/ vs src/erk/cli/, Understanding when AI capabilities are needed
+- **[command-execution.md](command-execution.md)** — executing commands in TUI, choosing between sync and streaming execution, implementing command runners
 - **[commandresult-extension-pattern.md](commandresult-extension-pattern.md)** — adding new field to CommandResult, extending CommandResult dataclass, adding metadata extraction, implementing new CommandResult field
 - **[erk-architecture.md](erk-architecture.md)** — understanding erk architecture, implementing dry-run patterns, regenerating context after os.chdir
 - **[erk-shared-package.md](erk-shared-package.md)** — sharing code between erk and dot-agent-kit, deciding where to put new utilities, moving code between packages
@@ -15,6 +16,7 @@
 - **[generated-files.md](generated-files.md)** — understanding how agent docs sync works, debugging generated file issues, adding new generated file types
 - **[github-interface-patterns.md](github-interface-patterns.md)** — calling GitHub API from erk, working with gh api command, fetching PR or issue data efficiently, understanding PRDetails type
 - **[github-parsing.md](github-parsing.md)** — parsing GitHub URLs, extracting PR or issue numbers from URLs, understanding github parsing layers
+- **[llm-output-parsing.md](llm-output-parsing.md)** — integrating Claude API responses, parsing structured LLM output, handling markdown-wrapped responses
 - **[markers.md](markers.md)** — creating worktree state tracking, adding friction before destructive operations, implementing pending extraction workflow
 - **[pathlib-symlinks.md](pathlib-symlinks.md)** — Writing file validation code, Debugging unexpected path resolution behavior, Working with symlinked configuration files
 - **[protocol-vs-abc.md](protocol-vs-abc.md)** — choosing between Protocol and ABC for interface design, designing interfaces with structural vs nominal typing, working with frozen dataclasses and Protocol @property patterns

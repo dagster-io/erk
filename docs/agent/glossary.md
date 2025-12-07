@@ -888,6 +888,42 @@ When merging multiple kits into a unified kit:
 
 ---
 
+## Streaming & Execution Terms
+
+### Bypass PR Commands (Historical)
+
+A set of now-removed commands (`pr-prep`, `pr-update`, `prepare-local`) that allowed preparing PR branches locally without GitHub CLI. Removed in favor of the streamlined `gt` workflow.
+
+### Kit Artifact
+
+A file (command, tool, etc.) bundled within a kit. Must be declared in the kit manifest to pass synchronization validation.
+
+**Validation**: Kit sync tests verify every manifest entry has a corresponding file and vice versa.
+
+**Related**: [Kit Artifact Synchronization](kits/artifact-synchronization.md)
+
+### Streaming Subprocess
+
+An execution pattern where subprocess output is streamed to the UI in real-time via background threads and cross-thread callbacks.
+
+**Key components**:
+
+- Background thread reads subprocess stdout
+- `app.call_from_thread()` safely updates UI from background thread
+- Event queue buffers parsed output
+
+**Related**: [TUI Streaming Output Patterns](tui/streaming-output.md)
+
+### Capability Marker
+
+A parameter (like `repo_root`) whose presence/absence determines which execution path or feature set is available. Used to gracefully degrade functionality.
+
+**Example**: `PlanDetailScreen` uses `repo_root` to decide whether streaming execution is available or commands are disabled.
+
+**Related**: [Command Execution Strategies](tui/command-execution.md)
+
+---
+
 ## Related Documentation
 
 - [AGENTS.md](../../AGENTS.md) - Coding standards
