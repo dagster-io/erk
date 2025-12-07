@@ -40,7 +40,7 @@ Discover Claude Code sessions for the current worktree (kit CLI command).
 
 ```bash
 # List sessions for current worktree
-dot-agent run erk list-sessions --format json
+dot-agent run erk list-sessions [--limit N] [--min-size BYTES]
 ```
 
 **Output format:**
@@ -56,13 +56,23 @@ dot-agent run erk list-sessions --format json
   "sessions": [
     {
       "session_id": "abc123-def456",
-      "timestamp": "2024-01-15T10:30:00Z",
-      "path": "/Users/foo/.claude/projects/-Users-foo-code-myapp/abc123-def456.jsonl"
+      "mtime_display": "2h ago",
+      "size_bytes": 125000,
+      "summary": "125KB"
     }
   ],
-  "project_dir": "/Users/foo/.claude/projects/-Users-foo-code-myapp"
+  "project_dir": "/Users/foo/.claude/projects/-Users-foo-code-myapp",
+  "filtered_count": 3
 }
 ```
+
+**Fields:**
+
+- `branch_context`: Current branch info and trunk detection
+- `current_session_id`: ID from SESSION_CONTEXT environment variable
+- `sessions`: List with `session_id`, `mtime_display`, `size_bytes`, `summary`
+- `project_dir`: Path to session log files
+- `filtered_count`: Number of tiny sessions filtered out (below `--min-size`)
 
 **Branch context detection:**
 
@@ -76,6 +86,26 @@ The `branch_context` field provides information about whether the current branch
 - Finding sessions for extraction plans (`/erk:create-extraction-plan`)
 - Session discovery workflows (`/erk:sessions-list`)
 - Branch-aware command behavior
+
+### dot-agent run erk preprocess-session
+
+Converts raw JSONL session logs to readable XML format for analysis.
+
+```bash
+dot-agent run erk preprocess-session <session-file.jsonl> --stdout
+```
+
+**Useful for:**
+
+- Extracting tool usage patterns
+- Analyzing conversation flow
+- Mining subagent outputs for documentation extraction
+
+**Example:**
+
+```bash
+dot-agent run erk preprocess-session ~/.claude/projects/.../abc123.jsonl --stdout | head -500
+```
 
 ## Finding Session Logs
 

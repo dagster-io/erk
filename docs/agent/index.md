@@ -10,10 +10,10 @@
 - **[commands/](commands/)** — optimization-patterns, tripwires
 - **[erk/](erk/)** — auto-restack, branch-cleanup, graphite-branch-setup, pr-sync-workflow
 - **[hooks/](hooks/)** — erk, hooks
-- **[kits/](kits/)** — artifact-synchronization, cli-command-development, cli-commands, code-architecture, dependency-injection, push-down-pattern, registry-discovery
+- **[kits/](kits/)** — artifact-synchronization, cli-command-development, cli-commands, code-architecture, dependency-injection, artifact-management, kit-check, push-down-pattern, registry-discovery
 - **[planning/](planning/)** — agent-delegation, enrichment, lifecycle, plan-schema, scratch-storage, workflow
 - **[reference/](reference/)** — claude-cli-stream-json
-- **[sessions/](sessions/)** — context-analysis, layout, parallel-session-awareness, tools
+- **[sessions/](sessions/)** — context-analysis, context-optimization, layout, parallel-session-awareness, tools
 - **[testing/](testing/)** — cascading-import-cleanup, import-conflict-resolution, integration-test-speed, kit-cli-testing, rebase-conflicts, session-log-fixtures, testing
 - **[textual/](textual/)** — background-workers, quirks, testing, widget-development
 - **[tui/](tui/)** — command-execution, command-palette, streaming-output, textual-async

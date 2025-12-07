@@ -31,6 +31,10 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before writing `__all__` to a Python file** → Read [Code Conventions](conventions.md) first. Re-export modules are forbidden. Import directly from where code is defined.
 
+**CRITICAL: Before creating symlinks in bundled kit source directories** → Read [Kit Artifact and Symlink Management](kits/dev/artifact-management.md) first. Bundled kits should contain real files, NOT symlinks. The installation process creates symlinks FROM .claude/ TO kit sources.
+
+**CRITICAL: Before running `kit sync` after adding artifacts to kit.yaml** → Read [Kit Artifact and Symlink Management](kits/dev/artifact-management.md) first. Must use `--force` flag if version wasn't bumped.
+
 **CRITICAL: Before writing to /tmp/** → Read [Scratch Storage](planning/scratch-storage.md) first. AI workflow files belong in .erk/scratch/<session-id>/, NOT /tmp/.
 
 **CRITICAL: Before creating temp files for AI workflows** → Read [Scratch Storage](planning/scratch-storage.md) first. Use worktree-scoped scratch storage for session-specific data.
