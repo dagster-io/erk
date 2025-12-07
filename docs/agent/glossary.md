@@ -208,6 +208,7 @@ project = Ensure.in_project_context(ctx)
 impl_dir = repo_root / project.path_from_repo / ".impl"
 ```
 
+
 ---
 
 ## Shell Concepts
