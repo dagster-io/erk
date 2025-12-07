@@ -1,0 +1,5 @@
+{
+  "number": 1346,
+  "url": "https://github.com/dagster-io/erk/issues/1346",
+  "title": "Fix: Allow --delete-current for closed PRs"
+}
