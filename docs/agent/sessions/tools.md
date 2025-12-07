@@ -40,8 +40,13 @@ Discover Claude Code sessions for the current worktree (kit CLI command).
 
 ```bash
 # List sessions for current worktree
-dot-agent run erk list-sessions --format json
+dot-agent run erk list-sessions [--limit N] [--min-size BYTES]
 ```
+
+**Parameters:**
+
+- `--limit N`: Maximum number of sessions to return (default: 10)
+- `--min-size BYTES`: Filter out sessions smaller than this size
 
 **Output format:**
 
@@ -56,11 +61,14 @@ dot-agent run erk list-sessions --format json
   "sessions": [
     {
       "session_id": "abc123-def456",
-      "timestamp": "2024-01-15T10:30:00Z",
+      "mtime_display": "2024-01-15 10:30:00",
+      "size_bytes": 1234567,
+      "summary": "Brief session description",
       "path": "/Users/foo/.claude/projects/-Users-foo-code-myapp/abc123-def456.jsonl"
     }
   ],
-  "project_dir": "/Users/foo/.claude/projects/-Users-foo-code-myapp"
+  "project_dir": "/Users/foo/.claude/projects/-Users-foo-code-myapp",
+  "filtered_count": 5
 }
 ```
 
@@ -76,6 +84,42 @@ The `branch_context` field provides information about whether the current branch
 - Finding sessions for extraction plans (`/erk:create-extraction-plan`)
 - Session discovery workflows (`/erk:sessions-list`)
 - Branch-aware command behavior
+
+**Example:**
+
+```bash
+# List only large sessions (>1KB)
+dot-agent run erk list-sessions --min-size 1024
+```
+
+### dot-agent run erk preprocess-session
+
+Convert raw JSONL session logs to readable XML format for analysis.
+
+```bash
+dot-agent run erk preprocess-session <session-file.jsonl> --stdout
+```
+
+**Purpose:**
+
+- Extract tool usage patterns
+- Analyze conversation flow
+- Mine subagent outputs
+- Debug session behavior
+
+**Example:**
+
+```bash
+# Preview first 500 lines of preprocessed session
+dot-agent run erk preprocess-session ~/.claude/projects/.../abc123.jsonl --stdout | head -500
+```
+
+**Use cases:**
+
+- Identifying duplicate file reads
+- Analyzing context consumption patterns
+- Extracting tool call sequences
+- Creating session summaries for documentation
 
 ## Finding Session Logs
 
