@@ -288,6 +288,39 @@ def test_plan_save_to_issue_json_output_includes_session_metadata() -> None:
     assert isinstance(output["session_ids"], list)
 
 
+def test_plan_save_to_issue_passes_session_id_to_collect_session_context() -> None:
+    """Test that --session-id argument is forwarded to collect_session_context."""
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit()
+    runner = CliRunner()
+
+    plan = "# Feature Plan\n\n- Step 1"
+    test_session_id = "test-session-12345"
+
+    with (
+        patch(
+            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
+            return_value=plan,
+        ),
+        patch(
+            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
+            return_value=None,
+        ) as mock_collect,
+    ):
+        result = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "json", "--session-id", test_session_id],
+            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git),
+        )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+
+    # Verify collect_session_context was called with the session_id
+    mock_collect.assert_called_once()
+    call_kwargs = mock_collect.call_args.kwargs
+    assert call_kwargs.get("current_session_id") == test_session_id
+
+
 def test_plan_save_to_issue_display_format_shows_session_context() -> None:
     """Test display format shows session context chunk count when present."""
     fake_gh = FakeGitHubIssues()

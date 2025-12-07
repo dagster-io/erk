@@ -118,7 +118,9 @@ def plan_save_to_issue(
     session_ids: list[str] = []
 
     git = require_git(ctx)
-    session_result = collect_session_context(git=git, cwd=cwd, min_size=1024, limit=20)
+    session_result = collect_session_context(
+        git=git, cwd=cwd, current_session_id=session_id, min_size=1024, limit=20
+    )
 
     if session_result is not None and result.issue_number is not None:
         # Render and post as comments
