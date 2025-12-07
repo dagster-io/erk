@@ -56,6 +56,44 @@ The main git repository directory containing `.git/` directory.
 
 **Note**: In a worktree, `git rev-parse --git-common-dir` points back to the repo root's `.git` directory.
 
+### Path Hierarchy in CLI Commands
+
+When writing CLI commands, use the appropriate path level based on what you're looking up:
+
+**1. `ctx.cwd` - User's Current Directory**
+
+- **What**: Where the user ran the command
+- **Use for**: Rarely correct for lookups
+- **Example**: User runs `erk status` from `/tmp` - `ctx.cwd` would be `/tmp`
+- **Pitfall**: Don't use for `.impl/` or `.erk/` lookups
+
+**2. `repo_root` / `repo.root` - Git Worktree Root**
+
+- **What**: The git working tree root (where `.git` directory lives)
+- **Use for**: `.erk/` folder lookups, git operations, repo-level metadata
+- **Example**: `repo_root / ".erk" / "scratch"`
+- **Common in**: Most erk commands dealing with worktrees
+
+**3. `ctx.project.path_from_repo` - Project Directory (Monorepo)**
+
+- **What**: Relative path from repo root to project directory
+- **Use for**: `.impl/` folder lookups, project-specific operations
+- **Example**:
+  ```python
+  if ctx.project is not None:
+      source_dir = repo_root / ctx.project.path_from_repo
+  else:
+      source_dir = repo_root
+  impl_dir = source_dir / ".impl"
+  ```
+- **Common in**: `src/erk/cli/wt/create_cmd.py`, `src/erk/cli/pr/check_cmd.py`
+
+**Decision Tree**:
+
+- Looking for `.erk/` files? → Use `repo_root`
+- Looking for `.impl/` files? → Use project-aware resolution (pattern above)
+- Need user's working directory? → Use `ctx.cwd` (rare)
+
 ### Erks Dir
 
 The directory containing all erks for a specific repository.
