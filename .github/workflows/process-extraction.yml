@@ -176,7 +176,6 @@ jobs:
             --issue-number "$ISSUE_NUMBER" \
             --status complete \
             --pr-url "$PR_URL"
-          dot-agent run erk add-issue-label --issue-number "$ISSUE_NUMBER" --label "docs-extracted"
 
       - name: Post no-changes comment
         if: steps.submit.outputs.has_changes == 'false'
@@ -204,4 +203,3 @@ jobs:
             --issue-number "$ISSUE_NUMBER" \
             --status failed \
             --workflow-run-url "$WORKFLOW_RUN_URL"
-          dot-agent run erk add-issue-label --issue-number "$ISSUE_NUMBER" --label "extraction-failed"
