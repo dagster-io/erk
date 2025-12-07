@@ -35,5 +35,5 @@ Display the command output to the user. The `erk submit` command handles all val
 
 ## Error Cases
 
-- **No issue found in conversation**: Report "No GitHub issue found in conversation. Run /erk:craft-plan first to create an issue."
+- **No issue found in conversation**: Report "No GitHub issue found in conversation. Run /erk:save-plan first to create an issue."
 - **erk submit fails**: Display the error output from the command (erk submit validates the issue)

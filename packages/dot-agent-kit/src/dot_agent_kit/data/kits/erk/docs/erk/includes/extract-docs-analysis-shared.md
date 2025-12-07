@@ -180,7 +180,7 @@ Documentation needed for what was BUILT this session:
 
 **Next steps:**
 
-- For Category A: Run `/erk:craft-plan` to create exploration docs
+- For Category A: Enter Plan Mode to create exploration docs, then `/erk:save-plan`
 - For Category B: Apply updates directly (usually quick glossary/routing updates)
 ````
 
