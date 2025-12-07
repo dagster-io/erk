@@ -4,6 +4,9 @@ read_when:
   - "using .impl/ folders"
   - "understanding plan file structure"
   - "implementing plans"
+tripwires:
+  - action: "looking up .impl/ directory"
+    warning: "Read planning/workflow.md for correct path resolution. Use project-aware pattern: ctx.project.path_from_repo if available, else repo_root."
 ---
 
 # Planning Workflow
@@ -25,6 +28,35 @@ Erk uses `.impl/` folders to track implementation progress for plans executed lo
 - Contains `plan.md`, `progress.md`, and optional `issue.json`
 - Lives in worktree directory during implementation
 - Never committed to repository
+
+**Location**:
+
+The `.impl/` folder location depends on repository structure:
+
+- **In monorepos with project context**: Located at `{repo_root}/{project_path}/.impl/`
+  - When a project is detected (`.erk/project.toml` exists), `.impl/` is placed at the project directory level
+  - Use `ctx.project.path_from_repo` to determine the project directory
+- **In single-project repos**: Located at `{repo_root}/.impl/`
+  - When no project context exists, fallback to repo root
+
+This pattern ensures `.impl/` lives at the appropriate source root - the project directory in monorepos, or the repo root in single-project repos.
+
+**Project-Aware Path Resolution Pattern**:
+
+```python
+# Canonical pattern for finding .impl/ directory
+if ctx.project is not None:
+    source_dir = repo_root / ctx.project.path_from_repo
+else:
+    # Single-project repo fallback
+    source_dir = repo_root
+impl_dir = source_dir / ".impl"
+```
+
+This pattern is used consistently in:
+
+- `src/erk/cli/wt/create_cmd.py` - Creating worktrees with plans
+- `src/erk/cli/pr/check_cmd.py` - Validating PR requirements
 
 **Structure**:
 
