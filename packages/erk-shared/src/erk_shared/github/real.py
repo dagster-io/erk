@@ -19,6 +19,10 @@ from typing import Any
 
 from erk_shared.debug import debug_log
 from erk_shared.github.abc import GitHub
+from erk_shared.github.graphql_queries import (
+    GET_PR_REVIEW_THREADS_QUERY,
+    RESOLVE_REVIEW_THREAD_MUTATION,
+)
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.parsing import (
     execute_gh_command,
@@ -32,6 +36,8 @@ from erk_shared.github.types import (
     GitHubRepoLocation,
     PRDetails,
     PRNotFound,
+    PRReviewComment,
+    PRReviewThread,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
@@ -1551,3 +1557,133 @@ query {{
         stdout = execute_gh_command(cmd, repo_root)
         labels = stdout.strip().split("\n") if stdout.strip() else []
         return label in labels
+
+    def get_pr_review_threads(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        *,
+        include_resolved: bool = False,
+    ) -> list[PRReviewThread]:
+        """Get review threads for a pull request via GraphQL.
+
+        Uses the reviewThreads connection which provides resolution status
+        that the REST API doesn't expose.
+        """
+        repo_info = self.get_repo_info(repo_root)
+
+        # Pass variables individually: -f for strings, -F for typed values (int)
+        cmd = [
+            "gh",
+            "api",
+            "graphql",
+            "-f",
+            f"query={GET_PR_REVIEW_THREADS_QUERY}",
+            "-f",
+            f"owner={repo_info.owner}",
+            "-f",
+            f"repo={repo_info.name}",
+            "-F",
+            f"number={pr_number}",
+        ]
+        stdout = execute_gh_command(cmd, repo_root)
+        response = json.loads(stdout)
+
+        return self._parse_review_threads_response(response, include_resolved)
+
+    def _parse_review_threads_response(
+        self, response: dict[str, Any], include_resolved: bool
+    ) -> list[PRReviewThread]:
+        """Parse GraphQL response into PRReviewThread objects.
+
+        Args:
+            response: GraphQL response data
+            include_resolved: Whether to include resolved threads
+
+        Returns:
+            List of PRReviewThread sorted by (path, line)
+        """
+        threads: list[PRReviewThread] = []
+
+        pr_data = response.get("data", {}).get("repository", {}).get("pullRequest")
+        if pr_data is None:
+            return threads
+
+        thread_nodes = pr_data.get("reviewThreads", {}).get("nodes", [])
+
+        for node in thread_nodes:
+            if node is None:
+                continue
+
+            is_resolved = node.get("isResolved", False)
+            if is_resolved and not include_resolved:
+                continue
+
+            # Parse comments
+            comments: list[PRReviewComment] = []
+            comment_nodes = node.get("comments", {}).get("nodes", [])
+            for comment_node in comment_nodes:
+                if comment_node is None:
+                    continue
+
+                author = comment_node.get("author")
+                author_login = author.get("login") if author else "unknown"
+
+                comment = PRReviewComment(
+                    id=comment_node.get("databaseId", 0),
+                    body=comment_node.get("body", ""),
+                    author=author_login,
+                    path=comment_node.get("path", ""),
+                    line=comment_node.get("line"),
+                    created_at=comment_node.get("createdAt", ""),
+                )
+                comments.append(comment)
+
+            thread = PRReviewThread(
+                id=node.get("id", ""),
+                path=node.get("path", ""),
+                line=node.get("line"),
+                is_resolved=is_resolved,
+                is_outdated=node.get("isOutdated", False),
+                comments=tuple(comments),
+            )
+            threads.append(thread)
+
+        # Sort by path, then by line (None sorts first)
+        threads.sort(key=lambda t: (t.path, t.line or 0))
+        return threads
+
+    def resolve_review_thread(
+        self,
+        repo_root: Path,
+        thread_id: str,
+    ) -> bool:
+        """Resolve a PR review thread via GraphQL mutation.
+
+        Args:
+            repo_root: Repository root (for gh CLI context)
+            thread_id: GraphQL node ID of the thread
+
+        Returns:
+            True if resolved successfully
+        """
+        # Pass variables individually with -f for strings
+        cmd = [
+            "gh",
+            "api",
+            "graphql",
+            "-f",
+            f"query={RESOLVE_REVIEW_THREAD_MUTATION}",
+            "-f",
+            f"threadId={thread_id}",
+        ]
+
+        stdout = execute_gh_command(cmd, repo_root)
+        response = json.loads(stdout)
+
+        # Check if the thread was resolved
+        thread_data = response.get("data", {}).get("resolveReviewThread", {}).get("thread")
+        if thread_data is None:
+            return False
+
+        return thread_data.get("isResolved", False)

@@ -756,6 +756,37 @@ activation_script = render_activation_script(
 
 **Exception:** If a variable is used multiple times or if inline computation hurts readability, a local variable is appropriate.
 
+### Don't Destructure Objects Into Single-Use Locals
+
+**Prefer direct attribute access over intermediate variables.** When you have an object, access its attributes at the point of use rather than extracting them into local variables that are only used once.
+
+```python
+# ❌ WRONG: Unnecessary field extraction
+result = fetch_user(user_id)
+name = result.name      # only used once below
+email = result.email    # only used once below
+role = result.role      # only used once below
+
+send_notification(name, email, role)
+
+# ✅ CORRECT: Access fields directly
+user = fetch_user(user_id)
+send_notification(user.name, user.email, user.role)
+```
+
+**Why this matters:**
+
+- Reduces cognitive load - no need to track extra variable names
+- Makes data flow clearer - you can see where values come from
+- Avoids stale variable bugs when object is mutated
+- The object name (`user`) provides context; `name` alone is ambiguous
+
+**Exception:** Extract to a local when:
+
+- The value is used multiple times
+- The expression is complex and a name improves readability
+- You need to modify the value before use
+
 ---
 
 ### Indentation Depth Limit
@@ -858,8 +889,9 @@ Benefits:
 - [ ] Is this variable used more than once?
 - [ ] Is this variable used close to where it's declared?
 - [ ] Would inlining the computation hurt readability?
+- [ ] Am I extracting object fields into locals that are only used once?
 
-**Default: Inline single-use computations at the call site**
+**Default: Inline single-use computations at the call site; access object attributes directly**
 
 ### Before adding a default parameter value:
 

@@ -8,6 +8,7 @@ from erk_shared.github.types import (
     GitHubRepoLocation,
     PRDetails,
     PRNotFound,
+    PRReviewThread,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
@@ -499,5 +500,45 @@ class GitHub(ABC):
 
         Returns:
             True if the PR has the label, False otherwise
+        """
+        ...
+
+    @abstractmethod
+    def get_pr_review_threads(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        *,
+        include_resolved: bool = False,
+    ) -> list[PRReviewThread]:
+        """Get review threads for a pull request.
+
+        Uses GraphQL API (reviewThreads connection) since REST API
+        doesn't expose resolution status.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to query
+            include_resolved: If True, include resolved threads (default: False)
+
+        Returns:
+            List of PRReviewThread sorted by (path, line)
+        """
+        ...
+
+    @abstractmethod
+    def resolve_review_thread(
+        self,
+        repo_root: Path,
+        thread_id: str,
+    ) -> bool:
+        """Resolve a PR review thread.
+
+        Args:
+            repo_root: Repository root (for owner/repo context)
+            thread_id: GraphQL node ID of the thread
+
+        Returns:
+            True if resolved successfully
         """
         ...

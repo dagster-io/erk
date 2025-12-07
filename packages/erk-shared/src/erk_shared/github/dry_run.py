@@ -8,6 +8,7 @@ from erk_shared.github.types import (
     GitHubRepoLocation,
     PRDetails,
     PRNotFound,
+    PRReviewThread,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
@@ -209,3 +210,26 @@ class DryRunGitHub(GitHub):
     def has_pr_label(self, repo_root: Path, pr_number: int, label: str) -> bool:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.has_pr_label(repo_root, pr_number, label)
+
+    def get_pr_review_threads(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        *,
+        include_resolved: bool = False,
+    ) -> list[PRReviewThread]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_pr_review_threads(
+            repo_root, pr_number, include_resolved=include_resolved
+        )
+
+    def resolve_review_thread(
+        self,
+        repo_root: Path,
+        thread_id: str,
+    ) -> bool:
+        """No-op for resolving review thread in dry-run mode.
+
+        Returns True to indicate success without actually resolving.
+        """
+        return True

@@ -47,13 +47,25 @@ def load_python_module(module_path: Path):
     Returns:
         Loaded module object
     """
-    spec = importlib.util.spec_from_file_location("temp_module", module_path)
+    import sys
+
+    # Generate unique module name to avoid conflicts
+    module_name = f"_temp_module_{module_path.stem}"
+
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
     if spec is None or spec.loader is None:
         return None
 
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    # Register module in sys.modules BEFORE exec_module to support
+    # dataclasses with `from __future__ import annotations`
+    sys.modules[module_name] = module
+    try:
+        spec.loader.exec_module(module)
+        return module
+    finally:
+        # Clean up to avoid polluting sys.modules
+        sys.modules.pop(module_name, None)
 
 
 def extract_click_command_name(module) -> str | None:

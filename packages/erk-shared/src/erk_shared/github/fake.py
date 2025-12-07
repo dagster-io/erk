@@ -12,6 +12,7 @@ from erk_shared.github.types import (
     GitHubRepoLocation,
     PRDetails,
     PRNotFound,
+    PRReviewThread,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
@@ -45,6 +46,7 @@ class FakeGitHub(GitHub):
         pr_diffs: dict[int, str] | None = None,
         merge_should_succeed: bool = True,
         pr_update_should_succeed: bool = True,
+        pr_review_threads: dict[int, list[PRReviewThread]] | None = None,
     ) -> None:
         """Create FakeGitHub with pre-configured state.
 
@@ -67,6 +69,7 @@ class FakeGitHub(GitHub):
             pr_diffs: Mapping of pr_number -> diff content
             merge_should_succeed: Whether merge_pr() should succeed (default True)
             pr_update_should_succeed: Whether PR updates should succeed (default True)
+            pr_review_threads: Mapping of pr_number -> list[PRReviewThread]
         """
         self._prs = prs or {}
         self._pr_bases = pr_bases or {}
@@ -96,6 +99,8 @@ class FakeGitHub(GitHub):
         self._created_prs: list[tuple[str, str, str, str | None, bool]] = []
         self._pr_labels: dict[int, set[str]] = {}
         self._added_labels: list[tuple[int, str]] = []
+        self._pr_review_threads = pr_review_threads or {}
+        self._resolved_thread_ids: set[str] = set()
 
     @property
     def merged_prs(self) -> list[int]:
@@ -609,3 +614,56 @@ class FakeGitHub(GitHub):
     def set_pr_labels(self, pr_number: int, labels: set[str]) -> None:
         """Set labels for a PR (for test setup)."""
         self._pr_labels[pr_number] = labels
+
+    def get_pr_review_threads(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        *,
+        include_resolved: bool = False,
+    ) -> list[PRReviewThread]:
+        """Get review threads for a PR from pre-configured data.
+
+        Applies any resolutions that happened during the test, then filters
+        and sorts the results.
+        """
+        threads = self._pr_review_threads.get(pr_number, [])
+
+        # Apply any resolutions that happened during test
+        result_threads: list[PRReviewThread] = []
+        for t in threads:
+            is_resolved = t.is_resolved or t.id in self._resolved_thread_ids
+            if is_resolved and not include_resolved:
+                continue
+            # Create new thread with updated resolution status
+            result_threads.append(
+                PRReviewThread(
+                    id=t.id,
+                    path=t.path,
+                    line=t.line,
+                    is_resolved=is_resolved,
+                    is_outdated=t.is_outdated,
+                    comments=t.comments,
+                )
+            )
+
+        # Sort by path, then by line
+        result_threads.sort(key=lambda t: (t.path, t.line or 0))
+        return result_threads
+
+    def resolve_review_thread(
+        self,
+        repo_root: Path,
+        thread_id: str,
+    ) -> bool:
+        """Record thread resolution in mutation tracking set.
+
+        Always returns True to simulate successful resolution.
+        """
+        self._resolved_thread_ids.add(thread_id)
+        return True
+
+    @property
+    def resolved_thread_ids(self) -> set[str]:
+        """Read-only access to tracked thread resolutions for test assertions."""
+        return self._resolved_thread_ids

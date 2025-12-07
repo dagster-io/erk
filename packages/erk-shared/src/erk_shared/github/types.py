@@ -9,6 +9,39 @@ PRState = Literal["OPEN", "MERGED", "CLOSED"]
 
 
 @dataclass(frozen=True)
+class PRReviewComment:
+    """A single comment within a PR review thread."""
+
+    id: int
+    body: str
+    author: str
+    path: str
+    line: int | None
+    created_at: str  # ISO format string
+
+
+@dataclass(frozen=True)
+class PRReviewThread:
+    """A review thread on a PR.
+
+    Attributes:
+        id: GraphQL node ID (needed for resolution mutation)
+        path: File path the thread is on
+        line: Line number in the file (None for file-level comments)
+        is_resolved: Whether the thread has been resolved
+        is_outdated: Whether the thread is outdated (code changed)
+        comments: Tuple of comments in this thread
+    """
+
+    id: str  # GraphQL node ID (needed for resolution mutation)
+    path: str
+    line: int | None
+    is_resolved: bool
+    is_outdated: bool
+    comments: tuple[PRReviewComment, ...]
+
+
+@dataclass(frozen=True)
 class PRNotFound:
     """Result when a PR lookup finds no matching PR.
 

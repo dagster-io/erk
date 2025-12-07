@@ -107,5 +107,6 @@ This pattern:
 
 ## Related Topics
 
+- [GitHub GraphQL API Patterns](github-graphql.md) - GraphQL queries and mutations
 - [GitHub URL Parsing Architecture](github-parsing.md) - Parsing URLs and identifiers
 - [Subprocess Wrappers](subprocess-wrappers.md) - Running `gh` commands safely

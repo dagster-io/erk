@@ -78,6 +78,7 @@ artifacts = [
     ".claude/commands/erk/auto-restack.md",
     ".claude/commands/erk/create-extraction-plan.md",
     ".claude/commands/erk/save-plan.md",
+    ".claude/commands/erk/pr-address.md",
     ".claude/agents/erk/issue-wt-creator.md",
     ".claude/agents/erk/plan-extractor.md",
     ".claude/docs/erk/EXAMPLES.md",

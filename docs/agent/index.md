@@ -5,7 +5,7 @@
 
 ## Categories
 
-- **[architecture/](architecture/)** — at-reference-resolution, claude-cli-integration, claude-cli-progress, cli-binary-ops-pattern, command-boundaries, commandresult-extension-pattern, erk-architecture, erk-shared-package, event-progress-pattern, extraction-origin-tracking, generated-files, github-interface-patterns, github-parsing, markers, not-found-sentinel, pathlib-symlinks, protocol-vs-abc, restack-operations, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
+- **[architecture/](architecture/)** — at-reference-resolution, claude-cli-integration, claude-cli-progress, cli-binary-ops-pattern, command-boundaries, commandresult-extension-pattern, erk-architecture, erk-shared-package, event-progress-pattern, extraction-origin-tracking, generated-files, github-graphql, github-interface-patterns, github-parsing, markers, not-found-sentinel, pathlib-symlinks, protocol-vs-abc, restack-operations, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
 - **[cli/](cli/)** — command-organization, list-formatting, output-styling, script-mode, shell-aliases, template-variables
 - **[commands/](commands/)** — optimization-patterns, tripwires
 - **[erk/](erk/)** — auto-restack, branch-cleanup, graphite-branch-setup, pr-sync-workflow

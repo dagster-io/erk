@@ -10,6 +10,7 @@ artifacts:
     - commands/erk/auto-restack.md
     - commands/erk/create-extraction-plan.md
     - commands/erk/save-plan.md
+    - commands/erk/pr-address.md
   agent:
     - agents/erk/issue-wt-creator.md
     - agents/erk/plan-extractor.md
@@ -142,6 +143,12 @@ kit_cli_commands:
   - name: impl-signal
     path: kit_cli_commands/erk/impl_signal.py
     description: Signal implementation events (started/ended) to GitHub
+  - name: get-pr-review-comments
+    path: kit_cli_commands/erk/get_pr_review_comments.py
+    description: Fetch PR review comments for agent context injection
+  - name: resolve-review-thread
+    path: kit_cli_commands/erk/resolve_review_thread.py
+    description: Resolve a PR review thread via GraphQL mutation
   - name: tripwires-reminder-hook
     path: kit_cli_commands/erk/tripwires_reminder_hook.py
     description: Remind to check tripwires before common dangerous operations

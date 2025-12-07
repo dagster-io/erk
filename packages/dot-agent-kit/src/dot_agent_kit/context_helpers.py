@@ -190,3 +190,32 @@ def require_session_store(ctx: click.Context) -> ClaudeCodeSessionStore:
         raise SystemExit(1)
 
     return ctx.obj.session_store
+
+
+def get_current_branch(ctx: click.Context) -> str | None:
+    """Get current git branch from context.
+
+    Convenience method that combines require_cwd and require_git to get
+    the current branch name. Returns None if branch cannot be determined.
+
+    Args:
+        ctx: Click context (must have DotAgentContext in ctx.obj)
+
+    Returns:
+        Current branch name as string, or None if not determinable
+
+    Raises:
+        SystemExit: If context not initialized (exits with code 1)
+
+    Example:
+        >>> @click.command()
+        >>> @click.pass_context
+        >>> def my_command(ctx: click.Context) -> None:
+        ...     branch = get_current_branch(ctx)
+        ...     if branch is None:
+        ...         # handle error
+        ...     pr = github.get_pr_for_branch(repo_root, branch)
+    """
+    cwd = require_cwd(ctx)
+    git = require_git(ctx)
+    return git.get_current_branch(cwd)
