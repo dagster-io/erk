@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import click
 from erk_shared.output.output import machine_output, user_output
 
@@ -15,6 +17,28 @@ from erk.cli.commands.navigation_helpers import (
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+
+
+def _check_no_active_claude_session(ctx: ErkContext, wt_path: Path) -> None:
+    """Check that no active Claude Code session is using the worktree.
+
+    This is a safety check to prevent deleting a worktree that has an active
+    Claude Code session running in it.
+
+    Args:
+        ctx: Erk context with claude_session_detector
+        wt_path: Path to the worktree to check
+
+    Raises:
+        SystemExit: If an active Claude session is detected
+    """
+    if ctx.claude_session_detector.has_active_session(wt_path):
+        user_output(
+            click.style("Error: ", fg="red", bold=True)
+            + f"Cannot delete worktree: active Claude Code session detected in {wt_path}"
+        )
+        user_output("\nPlease exit the Claude session before deleting this worktree.")
+        raise SystemExit(1)
 
 
 @click.command("down")
@@ -75,6 +99,8 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
         verify_pr_closed_or_merged(ctx, repo.root, current_branch)
         # Check for pending extraction marker
         check_pending_extraction_marker(current_worktree_path, force)
+        # Check for active Claude session
+        _check_no_active_claude_session(ctx, current_worktree_path)
 
     # Get all worktrees for checking if target has a worktree
     worktrees = ctx.git.list_worktrees(repo.root)

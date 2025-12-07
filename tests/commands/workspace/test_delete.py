@@ -8,6 +8,7 @@ from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
+from erk_shared.integrations.claude.fake import FakeClaudeSessionDetector
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, create_marker
@@ -333,3 +334,50 @@ def test_delete_force_bypasses_pending_extraction_marker() -> None:
 
         # Verify worktree was deleted
         assert not test_ctx.git.path_exists(wt)
+
+
+def test_delete_blocked_by_active_claude_session() -> None:
+    """Test that delete is blocked when worktree has an active Claude session."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_name = env.cwd.name
+        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-session"
+
+        # Configure fake to report an active session at this path
+        claude_detector = FakeClaudeSessionDetector(active_sessions={wt})
+
+        test_ctx = build_workspace_test_context(
+            env, existing_paths={wt}, claude_session_detector=claude_detector
+        )
+        result = runner.invoke(cli, ["wt", "delete", "test-session", "-f"], obj=test_ctx)
+
+        # Should fail with error about active Claude session
+        assert_cli_error(
+            result,
+            1,
+            "active Claude Code session detected",
+            "Please exit the Claude session",
+        )
+        # Worktree should still exist (deletion was blocked)
+        assert test_ctx.git.path_exists(wt)
+
+
+def test_delete_succeeds_when_no_active_claude_session() -> None:
+    """Test that delete proceeds when no Claude session is active."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_name = env.cwd.name
+        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-clean"
+
+        # Configure fake with no active sessions (default)
+        claude_detector = FakeClaudeSessionDetector()
+
+        test_ctx = build_workspace_test_context(
+            env, existing_paths={wt}, claude_session_detector=claude_detector
+        )
+        result = runner.invoke(cli, ["wt", "delete", "test-clean", "-f"], obj=test_ctx)
+
+        # Should succeed
+        assert_cli_success(result)
+        # Check that session detection was called
+        assert wt in claude_detector.check_calls
