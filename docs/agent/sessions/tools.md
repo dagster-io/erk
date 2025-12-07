@@ -87,6 +87,26 @@ The `branch_context` field provides information about whether the current branch
 - Session discovery workflows (`/erk:sessions-list`)
 - Branch-aware command behavior
 
+### /erk:analyze-context (Slash Command)
+
+Analyzes context window usage across all sessions in the current worktree.
+
+```bash
+/erk:analyze-context
+```
+
+**Output:**
+
+- Summary metrics (sessions analyzed, peak context, cache hit rate)
+- Token breakdown by category (file reads, assistant output, tool results, etc.)
+- Duplicate file reads across sessions with wasted token estimates
+
+**Use cases:**
+
+- Understanding why sessions ran out of context
+- Identifying optimization opportunities
+- Finding duplicate file reads that waste tokens
+
 ### dot-agent run erk preprocess-session
 
 Converts raw JSONL session logs to readable XML format for analysis.
@@ -281,3 +301,4 @@ Key points:
 
 - [layout.md](layout.md) - Complete format specification
 - [context-analysis.md](context-analysis.md) - Analyzing context consumption
+- [context-optimization.md](context-optimization.md) - Patterns for reducing context waste

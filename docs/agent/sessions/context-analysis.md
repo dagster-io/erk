@@ -74,6 +74,20 @@ cat "$SESSION_LOG" | jq -s '
 
 For detailed breakdown by tool type, look at the preceding assistant message's `tool_use` entries.
 
+## Quick Analysis: /erk:analyze-context
+
+The easiest way to analyze context consumption is the slash command:
+
+```bash
+/erk:analyze-context
+```
+
+This analyzes all sessions in the current worktree and outputs:
+
+- **Summary metrics**: Sessions analyzed, peak context window, cache hit rate
+- **Token breakdown by category**: File reads, assistant responses, tool results, skill expansions, etc.
+- **Duplicate file reads**: Files read multiple times across sessions with wasted token estimates
+
 ## Analysis Workflow
 
 ### 1. Locate Session Log
@@ -181,3 +195,4 @@ Read those 3 files
 - [layout.md](layout.md) - Session log format reference
 - [Command Optimization](../commands/optimization-patterns.md) - The `@` reference pattern
 - [tools.md](tools.md) - CLI tools for session inspection
+- [Context Optimization](context-optimization.md) - Patterns for reducing context waste
