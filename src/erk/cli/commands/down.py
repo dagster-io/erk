@@ -15,6 +15,7 @@ from erk.cli.commands.navigation_helpers import (
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+from erk.core.worktree_utils import compute_relative_path_in_worktree
 
 
 @click.command("down")
@@ -79,6 +80,9 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
     # Get all worktrees for checking if target has a worktree
     worktrees = ctx.git.list_worktrees(repo.root)
 
+    # Compute relative path to preserve directory position
+    relative_path = compute_relative_path_in_worktree(worktrees, ctx.cwd)
+
     # Resolve navigation to get target branch or 'root' (may auto-create worktree)
     target_name, was_created = resolve_down_navigation(
         ctx, repo, current_branch, worktrees, trunk_branch
@@ -99,6 +103,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
             if script:
                 script_content = render_activation_script(
                     worktree_path=root_path,
+                    target_subpath=relative_path,
                     final_message='echo "Went to root repo: $(pwd)"',
                     comment="work activate-script (root repo)",
                 )
@@ -118,7 +123,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
             raise SystemExit(0)
         else:
             # No cleanup needed, use standard activation
-            activate_root_repo(ctx, repo, script, "down")
+            activate_root_repo(ctx, repo, script, "down", relative_path)
 
     # Resolve target branch to actual worktree path
     target_wt_path = Ensure.not_none(
@@ -131,7 +136,10 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
         Ensure.path_exists(ctx, target_wt_path, f"Worktree not found: {target_wt_path}")
 
         if script:
-            activation_script = render_activation_script(worktree_path=target_wt_path)
+            activation_script = render_activation_script(
+                worktree_path=target_wt_path,
+                target_subpath=relative_path,
+            )
             result = ctx.script_writer.write_activation_script(
                 activation_script,
                 command_name="down",
@@ -152,4 +160,4 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
         raise SystemExit(0)
     else:
         # No cleanup needed, use standard activation
-        activate_worktree(ctx, repo, target_wt_path, script, "down")
+        activate_worktree(ctx, repo, target_wt_path, script, "down", relative_path)

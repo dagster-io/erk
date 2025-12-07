@@ -137,7 +137,13 @@ def delete_branch_and_worktree(
     user_output(f"✓ Deleted branch: {click.style(branch, fg='yellow')}")
 
 
-def activate_root_repo(ctx: ErkContext, repo: RepoContext, script: bool, command_name: str) -> None:
+def activate_root_repo(
+    ctx: ErkContext,
+    repo: RepoContext,
+    script: bool,
+    command_name: str,
+    relative_path: Path | None = None,
+) -> None:
     """Activate the root repository and exit.
 
     Args:
@@ -145,6 +151,7 @@ def activate_root_repo(ctx: ErkContext, repo: RepoContext, script: bool, command
         repo: Repository context
         script: Whether to output script path or user message
         command_name: Name of the command (for script generation)
+        relative_path: Optional relative path to preserve from current worktree
 
     Raises:
         SystemExit: Always (successful exit after activation)
@@ -156,6 +163,7 @@ def activate_root_repo(ctx: ErkContext, repo: RepoContext, script: bool, command
     if script:
         script_content = render_activation_script(
             worktree_path=root_path,
+            target_subpath=relative_path,
             final_message='echo "Went to root repo: $(pwd)"',
             comment="work activate-script (root repo)",
         )
@@ -181,6 +189,7 @@ def activate_worktree(
     target_path: Path,
     script: bool,
     command_name: str,
+    relative_path: Path | None = None,
 ) -> None:
     """Activate a worktree and exit.
 
@@ -190,6 +199,7 @@ def activate_worktree(
         target_path: Path to the target worktree directory
         script: Whether to output script path or user message
         command_name: Name of the command (for script generation and debug logging)
+        relative_path: Optional relative path to preserve from current worktree
 
     Raises:
         SystemExit: If worktree not found, or after successful activation
@@ -201,7 +211,10 @@ def activate_worktree(
     worktree_name = wt_path.name
 
     if script:
-        activation_script = render_activation_script(worktree_path=wt_path)
+        activation_script = render_activation_script(
+            worktree_path=wt_path,
+            target_subpath=relative_path,
+        )
         result = ctx.script_writer.write_activation_script(
             activation_script,
             command_name=command_name,

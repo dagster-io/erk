@@ -14,6 +14,7 @@ from erk.cli.commands.navigation_helpers import (
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+from erk.core.worktree_utils import compute_relative_path_in_worktree
 
 
 @click.command("up")
@@ -59,6 +60,9 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
 
     # Get all worktrees for checking if target has a worktree
     worktrees = ctx.git.list_worktrees(repo.root)
+
+    # Compute relative path to preserve directory position
+    relative_path = compute_relative_path_in_worktree(worktrees, ctx.cwd)
 
     # Get child branches for ambiguity checks
     children = ctx.graphite.get_child_branches(ctx.git, repo.root, current_branch)
@@ -115,7 +119,10 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
 
         if script:
             # Generate activation script for shell integration
-            activation_script = render_activation_script(worktree_path=target_wt_path)
+            activation_script = render_activation_script(
+                worktree_path=target_wt_path,
+                target_subpath=relative_path,
+            )
             result = ctx.script_writer.write_activation_script(
                 activation_script,
                 command_name="up",
@@ -137,4 +144,4 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
         raise SystemExit(0)
     else:
         # No cleanup needed, use standard activation
-        activate_worktree(ctx, repo, target_wt_path, script, "up")
+        activate_worktree(ctx, repo, target_wt_path, script, "up", relative_path)
