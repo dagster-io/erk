@@ -1149,9 +1149,12 @@ class PlanHeaderSchema(MetadataBlockSchema):
         last_local_impl_session: Claude Code session ID from environment (nullable)
         last_local_impl_user: User who ran the implementation (nullable)
         last_remote_impl_at: Updated by GitHub Actions, tracks last remote run (nullable)
-        plan_type: Type discriminator - "standard" (default) or "extraction"
+        plan_type: Type discriminator - "standard", "extraction", or "objective"
         source_plan_issues: For extraction plans, list of issue numbers analyzed
         extraction_session_ids: For extraction plans, list of session IDs analyzed
+        source_objective: For objective plans, the objective name that generated this plan
+        objective_type: For objective plans, "completable" or "perpetual"
+        turn_context: For objective plans, context about the turn that generated this plan
     """
 
     def validate(self, data: dict[str, Any]) -> None:
@@ -1174,6 +1177,10 @@ class PlanHeaderSchema(MetadataBlockSchema):
             "plan_type",
             "source_plan_issues",
             "extraction_session_ids",
+            # Objective plan fields
+            "source_objective",
+            "objective_type",
+            "turn_context",
         }
 
         # Check required fields exist
@@ -1250,7 +1257,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
                     raise ValueError("last_local_impl_user must be a string or null")
 
         # Validate plan_type field
-        valid_plan_types = {"standard", "extraction"}
+        valid_plan_types = {"standard", "extraction", "objective"}
         if "plan_type" in data and data["plan_type"] is not None:
             if not isinstance(data["plan_type"], str):
                 raise ValueError("plan_type must be a string or null")
@@ -1289,6 +1296,44 @@ class PlanHeaderSchema(MetadataBlockSchema):
                     "extraction_session_ids is required when plan_type is 'extraction'"
                 )
 
+        # Validate objective mixin fields
+        if "source_objective" in data and data["source_objective"] is not None:
+            if not isinstance(data["source_objective"], str):
+                raise ValueError("source_objective must be a string or null")
+            if len(data["source_objective"]) == 0:
+                raise ValueError("source_objective must not be empty when provided")
+
+        valid_objective_types = {"completable", "perpetual"}
+        if "objective_type" in data and data["objective_type"] is not None:
+            if not isinstance(data["objective_type"], str):
+                raise ValueError("objective_type must be a string or null")
+            if data["objective_type"] not in valid_objective_types:
+                raise ValueError(
+                    f"Invalid objective_type '{data['objective_type']}'. "
+                    f"Must be one of: {', '.join(sorted(valid_objective_types))}"
+                )
+
+        if "turn_context" in data and data["turn_context"] is not None:
+            if not isinstance(data["turn_context"], dict):
+                raise ValueError("turn_context must be a dict or null")
+            # Validate turn_context structure
+            allowed_turn_context_keys = {
+                "gap_size",
+                "files_evaluated",
+                "evaluation_timestamp",
+            }
+            for key in data["turn_context"].keys():
+                if key not in allowed_turn_context_keys:
+                    raise ValueError(
+                        f"Unknown turn_context field: '{key}'. "
+                        f"Allowed: {', '.join(sorted(allowed_turn_context_keys))}"
+                    )
+
+        # Validate objective mixin: when plan_type is "objective", source_objective is required
+        if plan_type == "objective":
+            if "source_objective" not in data or data.get("source_objective") is None:
+                raise ValueError("source_objective is required when plan_type is 'objective'")
+
         # Check for unexpected fields
         known_fields = required_fields | optional_fields
         unknown_fields = set(data.keys()) - known_fields
@@ -1315,6 +1360,10 @@ def create_plan_header_block(
     plan_type: str | None = None,
     source_plan_issues: list[int] | None = None,
     extraction_session_ids: list[str] | None = None,
+    # Objective plan fields
+    source_objective: str | None = None,
+    objective_type: str | None = None,
+    turn_context: dict[str, str | int] | None = None,
 ) -> MetadataBlock:
     """Create a plan-header metadata block with validation.
 
@@ -1330,9 +1379,12 @@ def create_plan_header_block(
         last_local_impl_session: Optional Claude Code session ID
         last_local_impl_user: Optional user who ran implementation
         last_remote_impl_at: Optional remote implementation timestamp (set by GitHub Actions)
-        plan_type: Optional type discriminator ("standard" or "extraction")
+        plan_type: Optional type discriminator ("standard", "extraction", or "objective")
         source_plan_issues: For extraction plans, list of issue numbers analyzed
         extraction_session_ids: For extraction plans, list of session IDs analyzed
+        source_objective: For objective plans, the objective name that generated this plan
+        objective_type: For objective plans, "completable" or "perpetual"
+        turn_context: For objective plans, context about the turn (gap_size, files_evaluated, etc.)
 
     Returns:
         MetadataBlock with plan-header schema
@@ -1365,6 +1417,14 @@ def create_plan_header_block(
     if extraction_session_ids is not None:
         data["extraction_session_ids"] = extraction_session_ids
 
+    # Include objective mixin fields if provided
+    if source_objective is not None:
+        data["source_objective"] = source_objective
+    if objective_type is not None:
+        data["objective_type"] = objective_type
+    if turn_context is not None:
+        data["turn_context"] = turn_context
+
     return create_metadata_block(
         key=schema.get_key(),
         data=data,
@@ -1388,6 +1448,10 @@ def format_plan_header_body(
     plan_type: str | None = None,
     source_plan_issues: list[int] | None = None,
     extraction_session_ids: list[str] | None = None,
+    # Objective plan fields
+    source_objective: str | None = None,
+    objective_type: str | None = None,
+    turn_context: dict[str, str | int] | None = None,
 ) -> str:
     """Format issue body with only metadata (schema version 2).
 
@@ -1406,9 +1470,12 @@ def format_plan_header_body(
         last_local_impl_session: Optional Claude Code session ID
         last_local_impl_user: Optional user who ran implementation
         last_remote_impl_at: Optional remote implementation timestamp
-        plan_type: Optional type discriminator ("standard" or "extraction")
+        plan_type: Optional type discriminator ("standard", "extraction", or "objective")
         source_plan_issues: For extraction plans, list of issue numbers analyzed
         extraction_session_ids: For extraction plans, list of session IDs analyzed
+        source_objective: For objective plans, the objective name that generated this plan
+        objective_type: For objective plans, "completable" or "perpetual"
+        turn_context: For objective plans, context about the turn (gap_size, files_evaluated, etc.)
 
     Returns:
         Issue body string with metadata block only
@@ -1428,6 +1495,9 @@ def format_plan_header_body(
         plan_type=plan_type,
         source_plan_issues=source_plan_issues,
         extraction_session_ids=extraction_session_ids,
+        source_objective=source_objective,
+        objective_type=objective_type,
+        turn_context=turn_context,
     )
 
     return render_metadata_block(block)

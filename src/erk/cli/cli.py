@@ -11,6 +11,7 @@ from erk.cli.commands.doctor import doctor_cmd
 from erk.cli.commands.down import down_cmd
 from erk.cli.commands.implement import implement
 from erk.cli.commands.init import init_cmd
+from erk.cli.commands.objective import objective_group
 from erk.cli.commands.plan import plan_group
 from erk.cli.commands.plan.list_cmd import dash
 from erk.cli.commands.planner import planner_group
@@ -54,6 +55,7 @@ cli.add_command(down_cmd)
 cli.add_command(implement)
 cli.add_command(init_cmd)
 cli.add_command(dash)
+cli.add_command(objective_group)
 cli.add_command(plan_group)
 cli.add_command(planner_group)
 cli.add_command(pr_group)
