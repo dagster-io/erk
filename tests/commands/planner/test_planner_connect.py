@@ -176,11 +176,10 @@ def test_connect_default_opens_vscode() -> None:
     assert "Run in VS Code terminal:" in result.output
     assert "git pull && uv sync && source .venv/bin/activate" in result.output
     assert "--allow-dangerously-skip-permissions" in result.output
-    assert '"/erk:craft-plan"' in result.output
 
 
 def test_connect_with_ssh_flag_uses_ssh() -> None:
-    """Test that connect --ssh runs claude with /erk:craft-plan via SSH in a bash login shell."""
+    """Test that connect --ssh runs claude via SSH in a bash login shell."""
     planner = _make_planner(name="my-planner", gh_name="my-gh-codespace")
     registry = FakePlannerRegistry(planners=[planner], default_planner="my-planner")
     ctx = ErkContext.for_test(planner_registry=registry)
@@ -202,13 +201,13 @@ def test_connect_with_ssh_flag_uses_ssh() -> None:
     assert "my-gh-codespace" in args_list
     # SSH concatenates command args with spaces without preserving grouping.
     # The entire remote command must be a single argument after -t to work correctly.
-    # Format: bash -l -c '<setup_commands> && claude "/erk:craft-plan"'
+    # Format: bash -l -c '<setup_commands> && claude'
     assert "--" in args_list
     dash_dash_idx = args_list.index("--")
     remaining_args = args_list[dash_dash_idx + 1 :]
     # The remote command is now a single combined string
     expected_remote_cmd = (
         "bash -l -c 'git pull && uv sync && source .venv/bin/activate "
-        '&& claude --allow-dangerously-skip-permissions --verbose "/erk:craft-plan"\''
+        "&& claude --allow-dangerously-skip-permissions --verbose'"
     )
     assert remaining_args == ["-t", expected_remote_cmd]

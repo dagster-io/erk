@@ -886,7 +886,6 @@ def test_check_command_perfect_sync_no_missing_no_obsolete(tmp_path: Path) -> No
                     source_type="bundled",
                     artifacts=[
                         ".claude/commands/gt/pr-submit.md",
-                        ".claude/commands/gt/squash-to-pr-commit.md",
                         ".claude/skills/gt-graphite/SKILL.md",
                         ".claude/skills/gt-graphite/references/gt-reference.md",
                     ],
@@ -903,7 +902,6 @@ def test_check_command_perfect_sync_no_missing_no_obsolete(tmp_path: Path) -> No
         if bundled_path is not None:
             for artifact_rel in [
                 "commands/gt/pr-submit.md",
-                "commands/gt/squash-to-pr-commit.md",
                 "skills/gt-graphite/SKILL.md",
                 "skills/gt-graphite/references/gt-reference.md",
             ]:

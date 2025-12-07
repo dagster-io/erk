@@ -34,21 +34,6 @@ erk find-project-dir /path/to/project
 }
 ```
 
-### erk debug-agent
-
-Inspect agent subprocess logs.
-
-```bash
-# List agent logs for current session
-erk debug-agent
-
-# Inspect specific agent by ID
-erk debug-agent 17cfd3f4
-
-# Show agent log content
-erk debug-agent 17cfd3f4 --show-log
-```
-
 ### dot-agent run erk list-sessions
 
 Discover Claude Code sessions for the current worktree (kit CLI command).
@@ -223,19 +208,15 @@ See [context-analysis.md](context-analysis.md) for optimization strategies.
 
 ### Agent Subprocess Failed
 
-1. Find agent logs:
+1. Find agent logs for session:
 
    ```bash
-   erk debug-agent
+   SESSION_ID="abc123-def456"
+   PROJECT_DIR=$(erk find-project-dir | jq -r '.project_dir')
+   ls -lt "$PROJECT_DIR"/agent-*.jsonl | head -5
    ```
 
-2. Inspect specific agent:
-
-   ```bash
-   erk debug-agent <agent-id> --show-log
-   ```
-
-3. Check for errors in log:
+2. Check for errors in log:
    ```bash
    cat agent-<id>.jsonl | jq 'select(.message.is_error == true)'
    ```

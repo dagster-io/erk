@@ -54,7 +54,7 @@ def connect_planner(ctx: ErkContext, name: str | None, ssh: bool) -> None:
         # Replace current process with ssh session
         # -t: Force pseudo-terminal allocation (required for interactive TUI like claude)
         # bash -l -c: Use login shell to ensure PATH is set up (claude installs to ~/.claude/local/)
-        # Pass /erk:craft-plan as initial prompt to launch the planning workflow immediately
+        # Launch Claude in interactive mode for planning workflows
         #
         # IMPORTANT: The entire remote command (bash -l -c '...') must be a single argument.
         # SSH concatenates command arguments with spaces without preserving grouping.
@@ -64,7 +64,7 @@ def connect_planner(ctx: ErkContext, name: str | None, ssh: bool) -> None:
         #   bash -l -c "git pull && uv sync && ..."
         # This causes `bash -l -c git` to run `git` with no subcommand (exits with help).
         setup_commands = "git pull && uv sync && source .venv/bin/activate"
-        claude_command = 'claude --allow-dangerously-skip-permissions --verbose "/erk:craft-plan"'
+        claude_command = "claude --allow-dangerously-skip-permissions --verbose"
         remote_command = f"bash -l -c '{setup_commands} && {claude_command}'"
 
         os.execvp(
@@ -87,7 +87,7 @@ def connect_planner(ctx: ErkContext, name: str | None, ssh: bool) -> None:
         click.echo("Run in VS Code terminal:", err=True)
         click.echo("  git pull && uv sync && source .venv/bin/activate", err=True)
         click.echo(
-            '  claude --allow-dangerously-skip-permissions --verbose "/erk:craft-plan"',
+            "  claude --allow-dangerously-skip-permissions --verbose",
             err=True,
         )
 

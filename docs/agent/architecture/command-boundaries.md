@@ -30,7 +30,7 @@ The operation requires:
 Examples:
 
 - `/erk:create-extraction-plan` - Analyzes sessions for documentation gaps
-- `/erk:craft-plan` - Creates implementation plans from requirements
+- `/erk:plan-implement` - Executes implementation plans from `.impl/` folder
 
 ## Use CLI Commands When
 

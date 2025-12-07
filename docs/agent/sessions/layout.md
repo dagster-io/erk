@@ -135,8 +135,6 @@ def discover_agent_logs(project_dir: Path) -> list[Path]:
     return sorted(project_dir.glob("agent-*.jsonl"))
 ```
 
-**Implementation:** See `discover_agent_logs()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/debug_agent.py:92`
-
 ## JSONL Format Specification
 
 ### Entry Structure
@@ -307,8 +305,6 @@ def get_session_id_from_env() -> str | None:
 
     return None
 ```
-
-**Implementation:** See `get_session_id_from_env()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/debug_agent.py:20-39`
 
 ### Agent ID Format
 
@@ -535,8 +531,6 @@ def find_project_dir_for_session(session_id: str) -> Path | None:
 
     return None
 ```
-
-**Implementation:** See `find_project_dir_for_session()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/debug_agent.py:42-80`
 
 ### cwd_hint Optimization Pattern
 
@@ -804,19 +798,17 @@ except json.JSONDecodeError:
 | Module                        | Path                                                                           | Purpose                                   |
 | ----------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------- |
 | `find_project_dir.py`         | `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/` | Project directory discovery and encoding  |
-| `debug_agent.py`              | `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/` | Agent log parsing and inspection          |
 | `preprocess_session.py`       | `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/` | Session log preprocessing and compression |
 | `session_plan_extractor.py`   | `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/`                      | Extract plans from session logs           |
 | `session_id_injector_hook.py` | `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/` | Inject session ID into context            |
 
 ### Test Files
 
-| Test File                                    | Coverage                               |
-| -------------------------------------------- | -------------------------------------- |
-| `test_find_project_dir.py`                   | Path encoding, project discovery       |
-| `test_debug_agent.py`                        | Agent log parsing, session correlation |
-| `test_preprocess_session.py`                 | Session filtering, compression         |
-| `test_session_plan_extractor_integration.py` | Plan extraction across sessions        |
+| Test File                                    | Coverage                         |
+| -------------------------------------------- | -------------------------------- |
+| `test_find_project_dir.py`                   | Path encoding, project discovery |
+| `test_preprocess_session.py`                 | Session filtering, compression   |
+| `test_session_plan_extractor_integration.py` | Plan extraction across sessions  |
 
 ## Common Operations
 

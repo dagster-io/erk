@@ -282,22 +282,23 @@ Worries, uncertainties, or potential issues identified.
 
 ## Using Plan Enrichment
 
-Plan enrichment is now integrated into the `/erk:craft-plan` workflow. When creating a plan:
+Plan enrichment is integrated into the Plan Mode workflow. When creating a plan:
 
-1. Use `/erk:craft-plan` to start the planning process
-2. The command will guide you through plan creation with interactive enrichment
-3. Answer clarifying questions to add context
-4. The enriched plan is saved directly to a GitHub issue
+1. Enter Plan Mode for your task (Claude will do this automatically for complex tasks)
+2. Answer clarifying questions during planning to add context
+3. Exit Plan Mode when the plan is complete
+4. Run `/erk:save-plan` to save the enriched plan to a GitHub issue
 5. Implement: `erk implement <issue-number>`
 
 **Workflow:**
 
 ```bash
 # Create and save enriched plan
-1. Run: /erk:craft-plan
-2. Follow the interactive prompts
-3. Answer clarifying questions
-4. Implement: erk implement <issue-number>
+1. Enter Plan Mode (automatic for complex tasks)
+2. Answer clarifying questions during planning
+3. Exit Plan Mode
+4. Run: /erk:save-plan
+5. Implement: erk implement <issue-number>
 ```
 
 ## Examples
@@ -313,7 +314,7 @@ Plan enrichment is now integrated into the `/erk:craft-plan` workflow. When crea
 - No discoveries made
 - Obvious implementation
 
-**Approach:** Skip enrichment during `/erk:craft-plan` by answering minimally
+**Approach:** Skip enrichment during Plan Mode by answering minimally
 
 ### Example 2: Complex Plan (Enrichment Required)
 
@@ -334,7 +335,7 @@ Plan enrichment is now integrated into the `/erk:craft-plan` workflow. When crea
 - **Complex Reasoning**: Rejected synchronous confirmation
 - **Known Pitfalls**: Zero-amount events, storage anti-patterns
 
-**Approach:** Use `/erk:craft-plan` and thoroughly answer clarifying questions
+**Approach:** Use Plan Mode and thoroughly answer clarifying questions, then `/erk:save-plan`
 
 **Value:** Implementing agent knows WHY async is required, what NOT to do, and edge cases to handle.
 
@@ -438,7 +439,7 @@ Plans describe WHAT to do, not HOW to code it.
 
 - After enrichment, review the Context & Understanding sections
 - Manually add missing discoveries using GitHub issue editing
-- Re-run `/erk:craft-plan` with explicit guidance about what to add
+- Re-enter Plan Mode with explicit guidance about what to add, then `/erk:save-plan`
 
 ---
 
