@@ -336,6 +336,96 @@ from .config import load_config
 
 ---
 
+## Import-Time Side Effects
+
+### Core Rule
+
+**Avoid computation and side effects at import time. Defer to function calls.**
+
+Module-level code runs when the module is imported. Side effects at import time cause:
+
+1. **Slower startup** - Every import triggers computation
+2. **Test brittleness** - Hard to mock/control behavior
+3. **Circular import issues** - Dependencies evaluated too early
+4. **Unpredictable order** - Import order affects behavior
+
+### Common Anti-Patterns
+
+```python
+# ❌ WRONG: Path computed at import time
+SESSION_ID_FILE = Path(".erk/scratch/current-session-id")
+
+def get_session_id() -> str | None:
+    if SESSION_ID_FILE.exists():
+        return SESSION_ID_FILE.read_text(encoding="utf-8")
+    return None
+
+# ❌ WRONG: Config loaded at import time
+CONFIG = load_config()  # I/O at import!
+
+# ❌ WRONG: Connection established at import time
+DB_CLIENT = DatabaseClient(os.environ["DB_URL"])  # Side effect at import!
+```
+
+### Correct Patterns
+
+**Use `@cache` for deferred computation:**
+
+```python
+from functools import cache
+
+# ✅ CORRECT: Defer computation until first call
+@cache
+def _session_id_file_path() -> Path:
+    """Return path to session ID file (cached after first call)."""
+    return Path(".erk/scratch/current-session-id")
+
+def get_session_id() -> str | None:
+    session_file = _session_id_file_path()
+    if session_file.exists():
+        return session_file.read_text(encoding="utf-8")
+    return None
+```
+
+**Use functions for resources:**
+
+```python
+# ✅ CORRECT: Defer resource creation to function call
+@cache
+def get_config() -> Config:
+    """Load config on first call, cache result."""
+    return load_config()
+
+@cache
+def get_db_client() -> DatabaseClient:
+    """Create database client on first call."""
+    return DatabaseClient(os.environ["DB_URL"])
+```
+
+### When Module-Level Constants ARE Acceptable
+
+Simple, static values that don't involve computation or I/O:
+
+```python
+# ✅ ACCEPTABLE: Static constants
+DEFAULT_TIMEOUT = 30
+MAX_RETRIES = 3
+SUPPORTED_FORMATS = frozenset({"json", "yaml", "toml"})
+```
+
+### Decision Checklist
+
+Before writing module-level code:
+
+- [ ] Does this involve any computation (even `Path()` construction)?
+- [ ] Does this involve I/O (file, network, environment)?
+- [ ] Could this fail or raise exceptions?
+- [ ] Would tests need to mock this value?
+
+If any answer is "yes", wrap in a `@cache`-decorated function instead.
+
+---
+
 ## Dependency Injection
 
 ### Core Rule

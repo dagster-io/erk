@@ -22,6 +22,7 @@ Exit Codes:
 """
 
 import json
+from functools import cache
 from pathlib import Path
 
 import click
@@ -32,13 +33,18 @@ from erk_shared.github.plan_issues import create_plan_issue
 from dot_agent_kit.context_helpers import require_git, require_github_issues, require_repo_root
 from dot_agent_kit.data.kits.erk.session_plan_extractor import get_latest_plan
 
-SESSION_ID_FILE = Path(".erk/scratch/current-session-id")
+
+@cache
+def _session_id_file_path() -> Path:
+    """Return path to the session ID file (cached to avoid import-time computation)."""
+    return Path(".erk/scratch/current-session-id")
 
 
 def _get_session_id_from_file() -> str | None:
     """Read session ID from worktree-scoped file if it exists."""
-    if SESSION_ID_FILE.exists():
-        return SESSION_ID_FILE.read_text(encoding="utf-8").strip()
+    session_file = _session_id_file_path()
+    if session_file.exists():
+        return session_file.read_text(encoding="utf-8").strip()
     return None
 
 

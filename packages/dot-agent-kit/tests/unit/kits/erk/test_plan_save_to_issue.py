@@ -92,9 +92,15 @@ def test_plan_save_to_issue_format() -> None:
 
     plan = "# Test Plan\n\n- Step 1"
 
-    with patch(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-        return_value=plan,
+    with (
+        patch(
+            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
+            return_value=plan,
+        ),
+        patch(
+            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
+            return_value=None,
+        ),
     ):
         result = runner.invoke(
             plan_save_to_issue,
@@ -369,8 +375,8 @@ def test_get_session_id_from_file_returns_content(tmp_path: Path) -> None:
     session_file.write_text("test-session-id-12345", encoding="utf-8")
 
     with patch(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.SESSION_ID_FILE",
-        session_file,
+        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._session_id_file_path",
+        return_value=session_file,
     ):
         result = _get_session_id_from_file()
         assert result == "test-session-id-12345"
@@ -383,8 +389,8 @@ def test_get_session_id_from_file_strips_whitespace(tmp_path: Path) -> None:
     session_file.write_text("  test-session-id-12345  \n", encoding="utf-8")
 
     with patch(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.SESSION_ID_FILE",
-        session_file,
+        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._session_id_file_path",
+        return_value=session_file,
     ):
         result = _get_session_id_from_file()
         assert result == "test-session-id-12345"
@@ -395,8 +401,8 @@ def test_get_session_id_from_file_returns_none_when_missing(tmp_path: Path) -> N
     nonexistent_file = tmp_path / ".erk" / "scratch" / "current-session-id"
 
     with patch(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.SESSION_ID_FILE",
-        nonexistent_file,
+        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._session_id_file_path",
+        return_value=nonexistent_file,
     ):
         result = _get_session_id_from_file()
         assert result is None
@@ -419,8 +425,8 @@ def test_plan_save_to_issue_reads_session_id_from_file(tmp_path: Path) -> None:
     with (
         runner.isolated_filesystem(temp_dir=tmp_path),
         patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.SESSION_ID_FILE",
-            session_file,
+            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._session_id_file_path",
+            return_value=session_file,
         ),
         patch(
             "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
@@ -466,8 +472,8 @@ def test_plan_save_to_issue_flag_overrides_file(tmp_path: Path) -> None:
     with (
         runner.isolated_filesystem(temp_dir=tmp_path),
         patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.SESSION_ID_FILE",
-            session_file,
+            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._session_id_file_path",
+            return_value=session_file,
         ),
         patch(
             "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
