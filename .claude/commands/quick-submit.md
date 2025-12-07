@@ -14,10 +14,10 @@ Quickly commit all changes with a generic "update" message and submit to Graphit
 
 ## Implementation
 
-Run the following commands in sequence:
+Run the kit CLI command:
 
 ```bash
-git add -A && (git diff --cached --quiet || git commit -m update); gt submit
+dot-agent run gt quick-submit
 ```
 
 ## Notes
