@@ -2,14 +2,15 @@
 
 The pr land command now:
 1. Merges the PR
-2. Automatically runs extraction (unless --skip-insights)
-3. Prints extraction issue URL (if successful)
+2. Optionally runs extraction (only with --insights flag)
+3. Prints extraction issue URL (if --insights and successful)
 4. Deletes worktree and navigates to trunk
 
 Note on extraction plans:
 PRs that originate from extraction plans (plan_type: "extraction") automatically
-skip insight extraction. This prevents infinite loops where extracting insights
-from an extraction-originated PR would lead to another extraction plan.
+skip insight extraction even with --insights. This prevents infinite loops where
+extracting insights from an extraction-originated PR would lead to another
+extraction plan.
 """
 
 from dataclasses import replace
@@ -32,8 +33,8 @@ from tests.test_utils.cli_helpers import assert_cli_error
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
-def test_pr_land_success_runs_extraction_and_deletes_worktree() -> None:
-    """Test pr land merges PR, runs extraction, deletes worktree."""
+def test_pr_land_default_skips_extraction_and_deletes_worktree() -> None:
+    """Test pr land (default --no-insights) merges PR, skips extraction, deletes worktree."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -89,7 +90,7 @@ def test_pr_land_success_runs_extraction_and_deletes_worktree() -> None:
             merge_should_succeed=True,
         )
 
-        # FakeGitHubIssues for extraction
+        # Note: No issues setup needed since default skips extraction
         issues_ops = FakeGitHubIssues(username="testuser")
 
         repo = RepoContext(
@@ -102,7 +103,6 @@ def test_pr_land_success_runs_extraction_and_deletes_worktree() -> None:
         test_ctx = env.build_context(
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
-        # Manually set issues since build_context doesn't have issues param
         test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
@@ -112,10 +112,13 @@ def test_pr_land_success_runs_extraction_and_deletes_worktree() -> None:
         # Verify PR was merged
         assert 123 in github_ops.merged_prs
 
-        # Verify worktree WAS removed (new behavior)
+        # Verify NO extraction was attempted (no issues created)
+        assert len(issues_ops.created_issues) == 0
+
+        # Verify worktree was removed
         assert feature_1_path in git_ops.removed_worktrees
 
-        # Verify branch WAS deleted (new behavior)
+        # Verify branch was deleted
         assert "feature-1" in git_ops.deleted_branches
 
         # Verify activation script points to root repo (trunk)
@@ -127,9 +130,13 @@ def test_pr_land_success_runs_extraction_and_deletes_worktree() -> None:
         # Verify "Deleted worktree" message
         assert "Deleted worktree and branch" in result.output
 
+        # Verify extraction-related output NOT shown
+        assert "Extracted insights" not in result.output
+        assert "Extraction failed" not in result.output
 
-def test_pr_land_extraction_failure_continues() -> None:
-    """Test pr land continues with worktree deletion even if extraction fails."""
+
+def test_pr_land_with_insights_extraction_failure_continues() -> None:
+    """Test pr land --insights continues with worktree deletion even if extraction fails."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -200,7 +207,9 @@ def test_pr_land_extraction_failure_continues() -> None:
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
-        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            pr_group, ["land", "--script", "--insights"], obj=test_ctx, catch_exceptions=False
+        )
 
         # Should succeed overall despite extraction failure
         assert result.exit_code == 0
@@ -605,8 +614,8 @@ def test_pr_land_does_not_call_safe_chdir() -> None:
         )
 
 
-def test_pr_land_with_skip_insights_deletes_worktree_and_branch() -> None:
-    """Test pr land --skip-insights merges PR, deletes worktree/branch, goes to trunk."""
+def test_pr_land_with_insights_runs_extraction() -> None:
+    """Test pr land --insights merges PR, runs extraction, deletes worktree."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -662,7 +671,7 @@ def test_pr_land_with_skip_insights_deletes_worktree_and_branch() -> None:
             merge_should_succeed=True,
         )
 
-        # Note: No issues setup needed since --skip-insights skips extraction
+        # FakeGitHubIssues for extraction
         issues_ops = FakeGitHubIssues(username="testuser")
 
         repo = RepoContext(
@@ -678,16 +687,13 @@ def test_pr_land_with_skip_insights_deletes_worktree_and_branch() -> None:
         test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(
-            pr_group, ["land", "--script", "--skip-insights"], obj=test_ctx, catch_exceptions=False
+            pr_group, ["land", "--script", "--insights"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
 
         # Verify PR was merged
         assert 123 in github_ops.merged_prs
-
-        # Verify NO extraction was attempted (no issues created)
-        assert len(issues_ops.created_issues) == 0
 
         # Verify worktree was removed
         assert feature_1_path in git_ops.removed_worktrees
@@ -698,23 +704,19 @@ def test_pr_land_with_skip_insights_deletes_worktree_and_branch() -> None:
         # Verify output messages
         assert "Deleted worktree and branch" in result.output
 
-        # Verify activation script points to root repo (not worktree)
+        # Verify activation script points to root repo (trunk)
         script_path = Path(result.stdout.strip())
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
         assert str(repo.root) in script_content
 
-        # Verify extraction-related output NOT shown
-        assert "Extracted insights" not in result.output
-        assert "Extraction failed" not in result.output
 
+def test_pr_land_extraction_origin_skips_extraction_even_with_insights_flag() -> None:
+    """Test pr land --insights auto-skips extraction for PRs with erk-skip-extraction label.
 
-def test_pr_land_extraction_origin_skips_marker_and_deletes_worktree() -> None:
-    """Test pr land auto-skips insights for PRs with erk-skip-extraction label.
-
-    When a PR has the erk-skip-extraction label, erk pr land should:
-    1. NOT create the pending-extraction marker
-    2. Delete the worktree and branch (like --skip-insights)
+    When a PR has the erk-skip-extraction label, erk pr land --insights should:
+    1. NOT run extraction (even though --insights is specified)
+    2. Delete the worktree and branch
     3. Navigate to trunk
 
     This prevents infinite extraction loops from extraction-originated PRs.
@@ -787,7 +789,10 @@ def test_pr_land_extraction_origin_skips_marker_and_deletes_worktree() -> None:
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+        # Use --insights flag explicitly, but extraction should still be skipped
+        result = runner.invoke(
+            pr_group, ["land", "--script", "--insights"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
 

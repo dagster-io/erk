@@ -3,11 +3,11 @@
 This command merges the PR, automatically runs extraction, and deletes the worktree.
 It combines what was previously three separate commands into one seamless flow.
 
-Workflow:
-    1. erk pr land  # Merges PR, extracts insights, prints URL, deletes worktree
+Workflow (default, --no-insights):
+    1. erk pr land  # Merges PR, deletes worktree, goes to trunk
 
-Workflow (--skip-insights):
-    1. erk pr land --skip-insights  # Merges PR, deletes worktree, goes to trunk
+Workflow (--insights):
+    1. erk pr land --insights  # Merges PR, extracts insights, prints URL, deletes worktree
 
 Note on extraction plans:
     PRs that originate from extraction plans (plan_type: "extraction") automatically
@@ -63,9 +63,9 @@ def is_extraction_origin_pr(ctx: ErkContext, repo_root: Path, pr_number: int) ->
 @click.command("land")
 @click.option("--script", is_flag=True, help="Print only the activation script")
 @click.option(
-    "--skip-insights",
-    is_flag=True,
-    help="Skip extraction; delete worktree and go to trunk",
+    "--insights/--no-insights",
+    default=False,
+    help="Run extraction to capture session insights (default: --no-insights)",
 )
 @click.option(
     "--up",
@@ -74,7 +74,7 @@ def is_extraction_origin_pr(ctx: ErkContext, repo_root: Path, pr_number: int) ->
     help="Navigate to child branch instead of trunk after landing",
 )
 @click.pass_obj
-def pr_land(ctx: ErkContext, script: bool, skip_insights: bool, up_flag: bool) -> None:
+def pr_land(ctx: ErkContext, script: bool, insights: bool, up_flag: bool) -> None:
     """Merge PR, run extraction, and delete worktree.
 
     Merges the current PR (must be one level from trunk), automatically runs
@@ -87,9 +87,9 @@ def pr_land(ctx: ErkContext, script: bool, skip_insights: bool, up_flag: bool) -
     Without shell integration:
       source <(erk pr land --script)
 
-    With --skip-insights:
-      Skips extraction and just deletes the worktree.
-      Use when no session insights are needed.
+    With --insights:
+      Runs extraction to capture session insights before deleting worktree.
+      Use when you want to preserve learnings from the session.
 
     Requires:
     - Graphite enabled: 'erk config set use_graphite true'
@@ -174,9 +174,9 @@ def pr_land(ctx: ErkContext, script: bool, skip_insights: bool, up_flag: bool) -
             + " PR originated from extraction plan - skipping insight extraction"
         )
 
-    # Step 2: Run extraction (unless --skip-insights or extraction origin)
+    # Step 2: Run extraction (only if --insights and not extraction origin)
     extraction_issue_url: str | None = None
-    if not skip_insights and not is_extraction_origin:
+    if insights and not is_extraction_origin:
         # Get current session ID from environment (needed for both status line and extraction)
         current_session_id = get_current_session_id()
 
