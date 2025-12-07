@@ -66,9 +66,6 @@ kit_cli_commands:
   - name: check-impl
     path: kit_cli_commands/erk/check_impl.py
     description: Check .impl/ folder structure and validate prerequisites
-  - name: agent-debug
-    path: kit_cli_commands/erk/agent_debug.py
-    description: Inspect failed agent runs from the current session
   - name: validate-plan-content
     path: kit_cli_commands/erk/validate_plan_content.py
     description: Validate plan content structure and quality from stdin

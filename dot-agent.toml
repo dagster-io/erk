@@ -114,7 +114,6 @@ source_type = "bundled"
 version = "0.1.0"
 artifacts = [
     ".claude/commands/gt/pr-submit.md",
-    ".claude/commands/gt/squash-to-pr-commit.md",
     ".claude/skills/gt-graphite/SKILL.md",
     ".claude/skills/gt-graphite/references/gt-reference.md",
 ]
