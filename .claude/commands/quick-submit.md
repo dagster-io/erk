@@ -17,7 +17,7 @@ Quickly commit all changes with a generic "update" message and submit to Graphit
 Run the following commands in sequence:
 
 ```bash
-git add -A && git commit -a -m update && gt submit
+git add -A && (git diff --cached --quiet || git commit -m update); gt submit
 ```
 
 ## Notes
