@@ -1,11 +1,13 @@
 """Pre-analysis phase for submit-branch workflow.
 
 This phase handles:
-1. Check for and commit any uncommitted changes
-2. Get current branch and parent branch
-3. Count commits in branch (compared to parent)
-4. Run gt squash to consolidate commits (only if 2+ commits)
-5. Return branch info for AI analysis
+0. Check authentication (Graphite and GitHub) and commit uncommitted changes
+1. Get current branch
+2. Get parent branch
+3. Check if parent branch has a merged PR
+4. Check for merge conflicts (informational)
+5. Count commits in branch (compared to parent)
+6. Run gt squash to consolidate commits (only if 2+ commits)
 """
 
 import subprocess
@@ -133,7 +135,7 @@ def execute_pre_analysis(
         )
         return
 
-    # Step 2.5: Check if parent branch has a merged PR (would cause gt submit to fail)
+    # Step 3: Check if parent branch has a merged PR (would cause gt submit to fail)
     trunk_branch = ops.git.detect_trunk_branch(repo_root)
     if parent_branch != trunk_branch:
         yield ProgressEvent(f"Checking if parent branch '{parent_branch}' is merged...")
@@ -157,7 +159,7 @@ def execute_pre_analysis(
             return
         yield ProgressEvent("Parent branch not merged", style="success")
 
-    # Step 2.6: Check for merge conflicts (informational only, does not block)
+    # Step 4: Check for merge conflicts (informational only, does not block)
     # First try GitHub API if PR exists (most accurate), then fallback to local git merge-tree
     pr_details = ops.github.get_pr_for_branch(repo_root, branch_name)
 
@@ -204,7 +206,7 @@ def execute_pre_analysis(
                 style="warning",
             )
 
-    # Step 3: Count commits in branch
+    # Step 5: Count commits in branch
     yield ProgressEvent(f"Counting commits ahead of {parent_branch}...")
     commit_count = ops.git.count_commits_ahead(cwd, parent_branch)
 
@@ -219,7 +221,7 @@ def execute_pre_analysis(
         )
         return
 
-    # Step 4: Run gt squash only if 2+ commits
+    # Step 6: Run gt squash only if 2+ commits
     squashed = False
     if commit_count >= 2:
         yield ProgressEvent(f"Squashing {commit_count} commits... (gt squash --no-edit)")
