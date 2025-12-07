@@ -210,6 +210,38 @@ def test_command_with_multiple_dependencies() -> None:
     assert len(fake_gh.created_prs) == 1
 ```
 
+### Pattern 6: Commands with Current Working Directory Dependencies
+
+When testing kit CLI commands that depend on current working directory (e.g., reading files from `.impl/` folder):
+
+```python
+def test_command_with_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test command that depends on current working directory."""
+    # Arrange: Setup test files in tmp_path
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    (impl_dir / "plan.md").write_text("# Test Plan")
+    (impl_dir / "progress.md").write_text("## Progress")
+
+    # Change to the test directory BEFORE invoking command
+    monkeypatch.chdir(tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(my_command, ["--json"])
+
+    # Assert
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["success"] is True
+```
+
+**Key points:**
+
+- Use `monkeypatch.chdir()` to change cwd for the test
+- Setup files BEFORE changing directory
+- Use `tmp_path` fixture for all file operations
+- This pattern works with `CliRunner` - no need for `DotAgentContext.for_test()` if command only needs filesystem access
+
 ## Real-World Examples
 
 ### Example 1: Testing plan-save-to-issue
@@ -341,10 +373,11 @@ def test_command_with_monkeypatch(monkeypatch: pytest.MonkeyPatch) -> None:
 
 When writing tests for kit CLI commands:
 
-- [ ] Use `DotAgentContext.for_test()` to create test context
+- [ ] Use `DotAgentContext.for_test()` to create test context (if command uses dependency injection)
 - [ ] Pass context via `obj=` parameter to `runner.invoke()`
 - [ ] Create separate fakes when you need to inspect state
 - [ ] Use `tmp_path` for filesystem interactions (never hardcode paths)
+- [ ] Use `monkeypatch.chdir()` if command depends on current working directory
 - [ ] Test both success and error paths
 - [ ] Validate exit codes and output formats
 - [ ] Ensure tests complete instantly (no subprocess calls)

@@ -774,3 +774,114 @@ Write plan to temp file and call CLI:
 dot-agent run erk plan-save-to-issue --plan-file="/tmp/plan-session-abc123.md"
 \`\`\`
 ```
+
+## Graceful Degradation for Bash `|| true` Pattern
+
+Commands used with `|| true` in bash (e.g., `dot-agent run erk impl-signal started 2>/dev/null || true`) must always exit with code 0, even on errors. This allows optional operations to fail without blocking the main workflow.
+
+### The Pattern
+
+```python
+def _output_error(error_type: str, message: str) -> None:
+    """Output error as JSON and exit gracefully."""
+    result = {"success": False, "error_type": error_type, "message": message}
+    click.echo(json.dumps(result))
+    raise SystemExit(0)  # Exit 0 for graceful degradation
+```
+
+### Why This Matters
+
+**Bash behavior:**
+
+```bash
+# Command exits 1 - bash continues due to || true
+dot-agent run erk optional-command || true
+
+# Next command runs regardless of optional-command's exit code
+git commit -m "Continue workflow"
+```
+
+**Without graceful degradation:**
+
+```python
+# ❌ WRONG: Exit 1 makes || true necessary
+if not optional_feature_available:
+    click.echo(json.dumps({"success": False, "error": "Feature unavailable"}))
+    raise SystemExit(1)  # Bash sees failure, continues anyway
+```
+
+**With graceful degradation:**
+
+```python
+# ✅ CORRECT: Exit 0 signals "handled failure"
+if not optional_feature_available:
+    result = {
+        "success": False,
+        "error_type": "feature_unavailable",
+        "message": "Optional feature not available",
+    }
+    click.echo(json.dumps(result))
+    raise SystemExit(0)  # Bash knows we handled it
+```
+
+### Implementation Steps
+
+1. **Output JSON with `success: false` and error details**
+2. **Always `raise SystemExit(0)` - never exit 1**
+3. **Check lightweight prerequisites (file existence) BEFORE context-dependent operations**
+4. **This allows bash scripts to continue even when optional operations fail**
+
+### When to Use
+
+Use this pattern for:
+
+- Commands called in slash command workflows with `|| true`
+- Optional operations that shouldn't block the main workflow
+- GitHub tracking commands where tracking is optional
+- Any command where failure is acceptable and expected
+
+### Real-World Example
+
+```python
+@click.command(name="impl-signal")
+@click.argument("event", type=click.Choice(["started", "ended"]))
+def impl_signal(event: str) -> None:
+    """Signal implementation event (optional operation)."""
+    # Check lightweight prerequisite first
+    impl_dir = Path.cwd() / ".impl"
+    if not impl_dir.exists():
+        _output_error("no_impl_dir", "No .impl/ directory found")
+        return  # Exit 0 via _output_error
+
+    # Check for issue tracking
+    issue_json = impl_dir / "issue.json"
+    if not issue_json.exists():
+        _output_error("no_tracking", "Issue tracking not enabled")
+        return  # Exit 0 via _output_error
+
+    # Perform the operation
+    try:
+        update_issue_with_event(issue_json, event)
+        click.echo(json.dumps({"success": True, "event": event}))
+    except Exception as e:
+        _output_error("update_failed", str(e))
+        return  # Exit 0 via _output_error
+```
+
+### Used in Slash Commands
+
+```bash
+# Optional GitHub tracking - workflow continues if it fails
+dot-agent run erk impl-signal started 2>/dev/null || true
+
+# Main workflow continues
+git commit -m "Implement feature"
+git push
+```
+
+### Benefits
+
+1. **Clear error reporting** - JSON output shows what went wrong
+2. **Non-blocking failures** - Workflow continues when optional features unavailable
+3. **Consistent interface** - Always returns JSON, always exits 0
+4. **Debuggable** - Error type and message preserved in output
