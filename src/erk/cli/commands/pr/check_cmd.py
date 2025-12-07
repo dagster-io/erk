@@ -1,13 +1,13 @@
 """Command to validate PR rules for the current branch."""
 
 import re
-from pathlib import Path
 
 import click
 from erk_shared.github.types import PRNotFound
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.output.output import user_output
 
+from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 
 
@@ -48,7 +48,10 @@ def pr_check(ctx: ErkContext) -> None:
     pr_body = pr.body
 
     # Check 1: Issue closing reference (if .impl/issue.json exists)
-    impl_dir = Path(ctx.cwd) / ".impl"
+    # Require project context - .impl always lives at project directory
+    project = Ensure.in_project_context(ctx)
+    project_dir = repo_root / project.path_from_repo
+    impl_dir = project_dir / ".impl"
     issue_ref = read_issue_reference(impl_dir)
 
     if issue_ref is not None:

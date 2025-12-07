@@ -4,6 +4,9 @@ read_when:
   - "using .impl/ folders"
   - "understanding plan file structure"
   - "implementing plans"
+tripwires:
+  - action: "looking up .impl/ directory in CLI code"
+    warning: "Use project-aware path resolution. .impl/ lives at project directory, not repo root. Use Ensure.in_project_context() to get project."
 ---
 
 # Planning Workflow
@@ -23,8 +26,32 @@ Erk uses `.impl/` folders to track implementation progress for plans executed lo
 - NOT tracked in git (in `.gitignore`)
 - Created by planning commands
 - Contains `plan.md`, `progress.md`, and optional `issue.json`
-- Lives in worktree directory during implementation
 - Never committed to repository
+
+### Location
+
+The `.impl/` folder lives at the **project directory level**, not at the worktree root:
+
+**In monorepos (with project context)**:
+
+```
+{repo_root}/{project_path}/.impl/
+```
+
+**In single-project repos**: Project context is still required. Initialize with `erk project init`.
+
+**Path Resolution Pattern**:
+
+```python
+# In CLI commands, use Ensure.in_project_context() to require project context
+project = Ensure.in_project_context(ctx)
+impl_dir = repo_root / project.path_from_repo / ".impl"
+```
+
+**Reference implementations**:
+
+- `src/erk/cli/commands/pr/check_cmd.py` - Uses this pattern for issue reference validation
+- `src/erk/cli/commands/wt/create_cmd.py` - Uses this pattern for `--copy-plan` feature
 
 **Structure**:
 
