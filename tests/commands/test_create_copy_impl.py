@@ -1,10 +1,13 @@
 """Tests for erk create --copy-plan flag."""
 
+from pathlib import Path
+
 from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 
 from erk.cli.cli import cli
+from erk.core.project_discovery import ProjectContext
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
@@ -34,7 +37,14 @@ def test_create_copy_plan_success() -> None:
             },
         )
 
-        test_ctx = env.build_context(git=git)
+        # Create project context - .impl lives at project directory
+        project = ProjectContext(
+            root=env.cwd,
+            name="test-project",
+            path_from_repo=Path("."),
+        )
+
+        test_ctx = env.build_context(git=git, project=project)
 
         # Act: Create worktree with --copy-plan
         result = runner.invoke(
@@ -87,7 +97,14 @@ def test_create_copy_plan_missing_plan_error() -> None:
             },
         )
 
-        test_ctx = env.build_context(git=git)
+        # Create project context - .impl lives at project directory
+        project = ProjectContext(
+            root=env.cwd,
+            name="test-project",
+            path_from_repo=Path("."),
+        )
+
+        test_ctx = env.build_context(git=git, project=project)
 
         # Act: Try to create worktree with --copy-plan
         result = runner.invoke(
@@ -128,7 +145,14 @@ def test_create_copy_plan_mutual_exclusion_with_plan() -> None:
             },
         )
 
-        test_ctx = env.build_context(git=git)
+        # Create project context - .impl lives at project directory
+        project = ProjectContext(
+            root=env.cwd,
+            name="test-project",
+            path_from_repo=Path("."),
+        )
+
+        test_ctx = env.build_context(git=git, project=project)
 
         # Act: Try to use both --copy-plan and --from-plan
         result = runner.invoke(
@@ -183,7 +207,14 @@ total_steps: 6
             },
         )
 
-        test_ctx = env.build_context(git=git)
+        # Create project context - .impl lives at project directory
+        project = ProjectContext(
+            root=env.cwd,
+            name="test-project",
+            path_from_repo=Path("."),
+        )
+
+        test_ctx = env.build_context(git=git, project=project)
 
         # Act: Create worktree with --copy-plan
         result = runner.invoke(
@@ -236,7 +267,14 @@ custom_field: some_value
             },
         )
 
-        test_ctx = env.build_context(git=git)
+        # Create project context - .impl lives at project directory
+        project = ProjectContext(
+            root=env.cwd,
+            name="test-project",
+            path_from_repo=Path("."),
+        )
+
+        test_ctx = env.build_context(git=git, project=project)
 
         # Act: Create worktree with --copy-plan
         result = runner.invoke(

@@ -163,6 +163,53 @@ class ProjectContext:
 
 ---
 
+## Path Hierarchy in CLI Commands
+
+When writing CLI commands, use the correct path level for file lookups:
+
+| Path                         | What it represents             | When to use                                            |
+| ---------------------------- | ------------------------------ | ------------------------------------------------------ |
+| `ctx.cwd`                    | Where the user ran the command | **Rarely correct** - only for user-relative operations |
+| `repo.root` / `repo_root`    | Git worktree root              | `.erk/` lookups, git operations                        |
+| `ctx.project.path_from_repo` | Project directory in monorepo  | `.impl/` lookups, project-specific files               |
+
+### Common Pattern: Requiring Project Context
+
+For operations that need `.impl/` (which lives at project directory level), use `Ensure.in_project_context()`:
+
+```python
+from erk.cli.ensure import Ensure
+
+# Validate project context and get ProjectContext with narrowed type
+project = Ensure.in_project_context(ctx)
+
+# Now safely access project fields
+impl_dir = repo_root / project.path_from_repo / ".impl"
+```
+
+This pattern:
+
+- Provides clear error message if not in project context
+- Returns `ProjectContext` (not `None`) for type safety
+- Directs users to run from project directory or use `erk project init`
+
+### Common Mistake
+
+**❌ Wrong**: Using `ctx.cwd` for `.impl/` lookup
+
+```python
+impl_dir = ctx.cwd / ".impl"  # Wrong - user may run from any subdirectory
+```
+
+**✅ Correct**: Using project-aware resolution
+
+```python
+project = Ensure.in_project_context(ctx)
+impl_dir = repo_root / project.path_from_repo / ".impl"
+```
+
+---
+
 ## Shell Concepts
 
 ### Shell Integration

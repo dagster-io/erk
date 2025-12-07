@@ -272,26 +272,21 @@ def check_dot_agent_health() -> CheckResult:
 
 def check_repository(ctx: ErkContext) -> CheckResult:
     """Check repository setup."""
-    cwd = ctx.cwd
-
-    # Check if we're in a git repo
-    try:
-        git_dir = ctx.git.get_git_common_dir(cwd)
-        if git_dir is None:
-            return CheckResult(
-                name="repository",
-                passed=False,
-                message="Not in a git repository",
-            )
-    except Exception:
+    # First check if we're in a git repo using git_common_dir
+    # (get_repository_root raises on non-git dirs, but git_common_dir returns None)
+    git_dir = ctx.git.get_git_common_dir(ctx.cwd)
+    if git_dir is None:
         return CheckResult(
             name="repository",
             passed=False,
             message="Not in a git repository",
         )
 
-    # Check for .erk directory
-    erk_dir = cwd / ".erk"
+    # Now safe to get repo root
+    repo_root = ctx.git.get_repository_root(ctx.cwd)
+
+    # Check for .erk directory at repo root
+    erk_dir = repo_root / ".erk"
     if not erk_dir.exists():
         return CheckResult(
             name="repository",
@@ -307,9 +302,13 @@ def check_repository(ctx: ErkContext) -> CheckResult:
     )
 
 
-def check_claude_settings(cwd: Path) -> CheckResult:
-    """Check Claude settings for misconfigurations."""
-    settings_path = cwd / ".claude" / "settings.json"
+def check_claude_settings(repo_root: Path) -> CheckResult:
+    """Check Claude settings for misconfigurations.
+
+    Args:
+        repo_root: Path to the repository root (where .claude/ should be located)
+    """
+    settings_path = repo_root / ".claude" / "settings.json"
 
     if not settings_path.exists():
         return CheckResult(
@@ -413,11 +412,14 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
     if shutil.which("dot-agent") is not None:
         results.append(check_dot_agent_health())
 
-    results.extend(
-        [
-            check_repository(ctx),
-            check_claude_settings(ctx.cwd),
-        ]
-    )
+    # Add repository check
+    results.append(check_repository(ctx))
+
+    # Check Claude settings if we're in a repo
+    # (get_git_common_dir returns None if not in a repo)
+    git_dir = ctx.git.get_git_common_dir(ctx.cwd)
+    if git_dir is not None:
+        repo_root = ctx.git.get_repository_root(ctx.cwd)
+        results.append(check_claude_settings(repo_root))
 
     return results

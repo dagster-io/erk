@@ -573,15 +573,8 @@ def create_wt(
         "file OR --from-issue <number> to use a GitHub issue.",
     )
 
-    # Validate .impl directory exists if --copy-plan is used
-    if copy_plan:
-        impl_source_check = ctx.cwd / ".impl"
-        Ensure.path_is_dir(
-            ctx,
-            impl_source_check,
-            f"No .impl directory found in current worktree ({ctx.cwd}). "
-            "Use 'erk create --from-plan <file>' to create a worktree with a plan from a file.",
-        )
+    # Note: --copy-plan validation is deferred until after repo discovery
+    # to ensure we check for .impl at the worktree root, not ctx.cwd
 
     # Initialize variables used in conditional blocks (for type checking)
     issue_number_parsed: int | None = None
@@ -654,6 +647,19 @@ def create_wt(
     # Discover repo context (needed for all paths)
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
+
+    # Validate .impl directory exists if --copy-plan is used (now that we have repo.root)
+    # Require project context - .impl always lives at project directory
+    if copy_plan:
+        project = Ensure.in_project_context(ctx)
+        source_dir = repo.root / project.path_from_repo
+        impl_source_check = source_dir / ".impl"
+        Ensure.path_is_dir(
+            ctx,
+            impl_source_check,
+            f"No .impl directory found at {source_dir}. "
+            "Use 'erk create --from-plan <file>' to create a worktree with a plan from a file.",
+        )
 
     # Track linked branch name for issue-based worktrees
     linked_branch_name: str | None = None
@@ -930,7 +936,11 @@ def create_wt(
     if copy_plan:
         import shutil
 
-        impl_source = ctx.cwd / ".impl"
+        # Use same source_dir logic as validation above
+        # project context was already validated above
+        assert ctx.project is not None  # validated earlier with Ensure.in_project_context
+        source_dir = repo.root / ctx.project.path_from_repo
+        impl_source = source_dir / ".impl"
         impl_dest = wt_path / ".impl"
 
         # Copy entire directory
@@ -943,7 +953,7 @@ def create_wt(
             user_output(
                 "  "
                 + click.style("✓", fg="green")
-                + f" Copied .impl from {click.style(str(ctx.cwd), fg='yellow')}"
+                + f" Copied .impl from {click.style(str(source_dir), fg='yellow')}"
             )
 
     # Post-create commands (suppress output if JSON mode)
