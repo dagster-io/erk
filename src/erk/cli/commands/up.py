@@ -144,4 +144,4 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
         raise SystemExit(0)
     else:
         # No cleanup needed, use standard activation
-        activate_worktree(ctx, repo, target_wt_path, script, "up", relative_path)
+        activate_worktree(ctx, repo, target_wt_path, script, "up")

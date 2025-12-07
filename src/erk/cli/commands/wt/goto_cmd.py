@@ -1,7 +1,5 @@
 """Goto command - navigate directly to a worktree by name."""
 
-from pathlib import Path
-
 import click
 from erk_shared.output.output import user_output
 
@@ -11,7 +9,6 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.worktree_metadata import get_worktree_project
-from erk.core.worktree_utils import compute_relative_path_in_worktree
 
 
 @click.command("goto")
@@ -45,16 +42,13 @@ def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
 
     repo = discover_repo_context(ctx, ctx.cwd)
 
-    # Get all worktrees for relative path computation
-    worktrees = ctx.git.list_worktrees(repo.root)
-
-    # Compute relative path to preserve directory position
-    relative_path = compute_relative_path_in_worktree(worktrees, ctx.cwd)
-
     # Special case: "root" navigates to root repository
     if worktree_name == "root":
-        activate_root_repo(ctx, repo, script, "goto", relative_path)
-        return  # _activate_root_repo raises SystemExit, but explicit return for clarity
+        activate_root_repo(ctx, repo, script, "goto")
+        return  # activate_root_repo raises SystemExit, but explicit return for clarity
+
+    # Get all worktrees for error messages and lookup
+    worktrees = ctx.git.list_worktrees(repo.root)
 
     # Validate worktree exists
     worktree_path = repo.worktrees_dir / worktree_name
@@ -97,17 +91,14 @@ def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
     # Look up project path for this worktree
     project_path = get_worktree_project(repo.repo_dir, worktree_name, ctx.git)
 
-    # Determine target path and whether to use relative path preservation
+    # Determine target path and whether to preserve relative path
     # Project path takes precedence over relative path preservation
-    effective_relative_path: Path | None = None
     if project_path is not None:
-        # Navigate to project subdirectory within the worktree
         target_path = worktree_path / project_path
-        # Don't preserve relative path when project path is set
+        preserve_relative = False  # Project path overrides relative path preservation
     else:
-        # Navigate to worktree root, but preserve relative path if available
         target_path = worktree_path
-        effective_relative_path = relative_path
+        preserve_relative = True  # Preserve user's relative directory position
 
     # Show worktree and branch info (only in non-script mode)
     if not script:
@@ -120,5 +111,7 @@ def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
         else:
             user_output(f"Went to worktree {styled_wt} [{styled_branch}]")
 
-    # Activate the worktree (at project path if applicable, with relative path preservation)
-    activate_worktree(ctx, repo, target_path, script, "goto", effective_relative_path)
+    # Activate the worktree (at project path if applicable)
+    activate_worktree(
+        ctx, repo, target_path, script, "goto", preserve_relative_path=preserve_relative
+    )
