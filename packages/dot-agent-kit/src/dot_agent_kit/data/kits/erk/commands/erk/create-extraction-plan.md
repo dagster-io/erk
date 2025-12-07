@@ -257,7 +257,7 @@ When presenting analysis, clearly label which source revealed each insight:
 
 **If analyzing current conversation (no session IDs in context):**
 
-Ask for confirmation before proceeding:
+Present findings neutrally and let the user decide value:
 
 > "Based on this session, I identified these potential documentation gaps:
 >
@@ -266,6 +266,8 @@ Ask for confirmation before proceeding:
 > 3. ...
 >
 > Which of these would be valuable for future sessions? I'll generate detailed suggestions and draft content for the ones you select."
+
+**IMPORTANT: Do NOT editorialize about whether gaps are "worth" documenting, "minor", "not broadly applicable", etc. Present findings neutrally and let the user decide. Your job is to surface potential gaps, not gatekeep what's valuable.**
 
 Wait for user response before generating full output.
 

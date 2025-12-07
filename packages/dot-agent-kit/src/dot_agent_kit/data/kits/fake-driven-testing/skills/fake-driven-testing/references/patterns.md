@@ -204,6 +204,33 @@ def test_cli_command() -> None:
     assert "Hi, Bob!" in result.output
 ```
 
+### Separating stdout and stderr (Click 8.2+)
+
+Click 8.2+ automatically separates stdout and stderr. Use `result.stdout` and `result.stderr` for independent access:
+
+```python
+@click.command()
+def mixed_output() -> None:
+    """Command that writes to both stdout and stderr."""
+    click.echo("Normal output")           # Goes to stdout
+    click.echo("Error message", err=True) # Goes to stderr
+
+def test_separate_stdout_stderr() -> None:
+    """Test stdout and stderr are captured separately."""
+    runner = CliRunner()
+    result = runner.invoke(mixed_output)
+
+    # result.output contains combined stdout+stderr (for backwards compat)
+    # result.stdout contains only stdout
+    # result.stderr contains only stderr
+    assert "Normal output" in result.stdout
+    assert "Error message" in result.stderr
+    assert "Normal output" not in result.stderr
+    assert "Error message" not in result.stdout
+```
+
+**IMPORTANT**: Do NOT use `CliRunner(mix_stderr=False)` - this parameter was removed in Click 8.2. Stdout/stderr separation is now automatic.
+
 ### With Context Object
 
 ```python

@@ -385,9 +385,9 @@ def test_stdout_outputs_xml_to_stdout(tmp_path: Path) -> None:
         )
 
     assert result.exit_code == 0, result.output
-    # stdout contains the XML (check result.output which is the combined output)
-    assert "<session session_id=" in result.output
-    assert "stdout123" in result.output
+    # stdout contains the XML (Click 8.2+ separates stdout/stderr automatically)
+    assert "<session session_id=" in result.stdout
+    assert "stdout123" in result.stdout
 
 
 def test_stdout_outputs_metadata_to_stderr(tmp_path: Path) -> None:
@@ -414,12 +414,12 @@ def test_stdout_outputs_metadata_to_stderr(tmp_path: Path) -> None:
         )
 
     assert result.exit_code == 0
-    # result.output contains combined stdout+stderr, verify JSON metadata is present
-    # The output should have XML first, then JSON metadata on stderr
-    assert "stderr456" in result.output
-    # Verify the JSON metadata structure is in the output
-    assert '"success": true' in result.output
-    assert '"issue_number": 1100' in result.output
+    # Click 8.2+ separates stdout/stderr - verify metadata JSON is in stderr
+    stderr_output = json.loads(result.stderr)
+    assert stderr_output["success"] is True
+    assert stderr_output["issue_number"] == 1100
+    assert "stderr456" in stderr_output["session_ids"]
+    assert stderr_output["chunk_count"] >= 1
 
 
 def test_stdout_does_not_write_file(tmp_path: Path) -> None:
