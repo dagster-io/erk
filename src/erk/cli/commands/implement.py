@@ -781,10 +781,13 @@ def _create_worktree_with_plan_content(
     run_post_worktree_setup(ctx, config, wt_path, repo_root, name)
 
     # Create .impl/ folder with plan content
+    # Use overwrite=True since new worktrees created from branches with existing
+    # .impl/ folders inherit that folder, and we want to replace it with the new plan
     ctx.feedback.info("Creating .impl/ folder with plan...")
     create_impl_folder(
         worktree_path=wt_path,
         plan_content=plan_source.plan_content,
+        overwrite=True,
     )
     ctx.feedback.success("✓ Created .impl/ folder")
 

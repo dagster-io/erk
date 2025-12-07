@@ -11,6 +11,7 @@ These utilities are used by both erk (for local operations) and dot-agent-kit
 
 import json
 import re
+import shutil
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -25,23 +26,28 @@ from erk_shared.github.metadata import (
 )
 
 
-def create_impl_folder(worktree_path: Path, plan_content: str) -> Path:
+def create_impl_folder(worktree_path: Path, plan_content: str, *, overwrite: bool = False) -> Path:
     """Create .impl/ folder with plan.md and progress.md files.
 
     Args:
         worktree_path: Path to the worktree directory
         plan_content: Content for plan.md file
+        overwrite: If True, remove existing .impl/ folder before creating new one.
+                   Default is False for backward compatibility.
 
     Returns:
         Path to the created .impl/ directory
 
     Raises:
-        FileExistsError: If .impl/ directory already exists
+        FileExistsError: If .impl/ directory already exists and overwrite is False
     """
     impl_folder = worktree_path / ".impl"
 
     if impl_folder.exists():
-        raise FileExistsError(f"Implementation folder already exists at {impl_folder}")
+        if overwrite:
+            shutil.rmtree(impl_folder)
+        else:
+            raise FileExistsError(f"Implementation folder already exists at {impl_folder}")
 
     # Create .impl/ directory
     impl_folder.mkdir(parents=True, exist_ok=False)

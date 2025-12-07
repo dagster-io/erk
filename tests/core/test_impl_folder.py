@@ -71,6 +71,46 @@ def test_create_impl_folder_already_exists(tmp_path: Path) -> None:
         create_impl_folder(tmp_path, plan_content)
 
 
+def test_create_impl_folder_overwrite_replaces_existing(tmp_path: Path) -> None:
+    """Test that overwrite=True removes existing .impl/ folder before creating new one.
+
+    This is the fix for GitHub issue #2595 where creating a worktree from a branch
+    with an existing .impl/ folder would fail because the folder was inherited.
+    """
+    old_plan = "# Old Plan\n\n1. Old step one\n2. Old step two"
+    new_plan = "# New Plan\n\n1. New step one\n2. New step two\n3. New step three"
+
+    # Create first .impl/ folder
+    impl_folder = create_impl_folder(tmp_path, old_plan)
+    old_plan_file = impl_folder / "plan.md"
+    old_progress_file = impl_folder / "progress.md"
+
+    # Verify old content
+    assert old_plan_file.read_text(encoding="utf-8") == old_plan
+    old_progress_content = old_progress_file.read_text(encoding="utf-8")
+    assert "1. Old step one" in old_progress_content
+    assert "total_steps: 2" in old_progress_content
+
+    # Create again with overwrite=True - should succeed and replace content
+    new_impl_folder = create_impl_folder(tmp_path, new_plan, overwrite=True)
+
+    # Verify new content replaced old
+    assert new_impl_folder == impl_folder  # Same path
+    new_plan_file = new_impl_folder / "plan.md"
+    new_progress_file = new_impl_folder / "progress.md"
+
+    assert new_plan_file.read_text(encoding="utf-8") == new_plan
+    new_progress_content = new_progress_file.read_text(encoding="utf-8")
+    assert "1. New step one" in new_progress_content
+    assert "2. New step two" in new_progress_content
+    assert "3. New step three" in new_progress_content
+    assert "total_steps: 3" in new_progress_content
+
+    # Verify old content is gone
+    assert "Old" not in new_plan_file.read_text(encoding="utf-8")
+    assert "Old" not in new_progress_content
+
+
 def test_create_impl_folder_with_nested_steps(tmp_path: Path) -> None:
     """Test creating plan folder with nested step numbering."""
     plan_content = """# Complex Plan
