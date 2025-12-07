@@ -4,6 +4,9 @@ read_when:
   - "writing kit CLI commands"
   - "testing kit CLI commands"
   - "using DotAgentContext"
+tripwires:
+  - action: "using Path.cwd() in kit CLI commands"
+    warning: "Use require_cwd(ctx) instead. Path.cwd() bypasses dependency injection and makes tests require monkeypatching."
 ---
 
 # Kit CLI Dependency Injection Patterns
@@ -100,9 +103,10 @@ def mark_impl_started(ctx: click.Context) -> None:
     """Update implementation started event in GitHub issue."""
     # Get dependencies
     repo_root = require_repo_root(ctx)
+    cwd = require_cwd(ctx)
 
     # Read issue reference from .impl/issue.json
-    impl_dir = Path.cwd() / ".impl"
+    impl_dir = cwd / ".impl"
     issue_ref = read_issue_reference(impl_dir)
 
     if issue_ref is None:
@@ -318,6 +322,38 @@ def my_command(ctx: click.Context) -> None:
     # Operations that need worktree path (e.g., git operations)
     branch = git.get_current_branch(cwd)
 ```
+
+### Why `require_cwd(ctx)` Instead of `Path.cwd()`
+
+**NEVER use `Path.cwd()` in kit CLI commands.** Always use `require_cwd(ctx)`.
+
+| Approach           | Testability | Why                                                          |
+| ------------------ | ----------- | ------------------------------------------------------------ |
+| `require_cwd(ctx)` | ✅ Easy     | Inject any path via `DotAgentContext.for_test(cwd=tmp_path)` |
+| `Path.cwd()`       | ❌ Hard     | Requires `monkeypatch` or `os.chdir()` in tests              |
+
+**Anti-pattern:**
+
+```python
+@click.command()
+@click.pass_context
+def my_command(ctx: click.Context) -> None:
+    impl_dir = Path.cwd() / ".impl"  # ❌ WRONG: bypasses DI
+    # ...
+```
+
+**Correct pattern:**
+
+```python
+@click.command()
+@click.pass_context
+def my_command(ctx: click.Context) -> None:
+    cwd = require_cwd(ctx)
+    impl_dir = cwd / ".impl"  # ✅ CORRECT: uses injected path
+    # ...
+```
+
+The production context captures `Path.cwd()` once at CLI entry point and stores it in `DotAgentContext.cwd`. Commands access it via `require_cwd(ctx)`, enabling tests to inject arbitrary paths without filesystem manipulation.
 
 ## See Also
 

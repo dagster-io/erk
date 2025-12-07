@@ -30,7 +30,6 @@ import json
 import os
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
-from pathlib import Path
 
 import click
 from erk_shared.env import in_github_actions
@@ -41,6 +40,7 @@ from erk_shared.github.metadata import (
 from erk_shared.impl_folder import read_issue_reference, write_local_run_state
 
 from dot_agent_kit.context_helpers import (
+    require_cwd,
     require_github_issues,
     require_repo_root,
 )
@@ -81,9 +81,10 @@ def mark_impl_ended(ctx: click.Context) -> None:
     """
     # Get dependencies from context
     repo_root = require_repo_root(ctx)
+    cwd = require_cwd(ctx)
 
     # Read issue reference from .impl/issue.json
-    impl_dir = Path.cwd() / ".impl"
+    impl_dir = cwd / ".impl"
     issue_ref = read_issue_reference(impl_dir)
     if issue_ref is None:
         result = MarkImplError(

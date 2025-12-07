@@ -412,6 +412,71 @@ def test_command(tmp_path: Path) -> None:
     )
 ```
 
+## Testing Commands That Use Current Working Directory
+
+Some kit CLI commands use `Path.cwd()` internally rather than receiving the path via `DotAgentContext`. For these commands, use `monkeypatch.chdir()` to change the working directory before invoking the command.
+
+### Pattern: Using monkeypatch.chdir()
+
+```python
+def test_command_with_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test command that reads from current working directory."""
+    # Arrange: Setup test files in tmp_path
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    (impl_dir / "plan.md").write_text("# Test Plan\n\nContent here.")
+
+    # Change to the test directory BEFORE invoking command
+    monkeypatch.chdir(tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(my_command, ["--json"])
+
+    # Assert
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["success"] is True
+```
+
+### Key Points
+
+1. **Setup files BEFORE changing directory** - Create the test file structure in `tmp_path` first
+2. **Use `monkeypatch.chdir()`** - This changes cwd for the duration of the test and auto-reverts
+3. **Use `tmp_path` fixture** - Never hardcode paths like `/tmp/test` or `/fake/path`
+4. **Order matters** - `monkeypatch.chdir()` must happen before `runner.invoke()`
+
+### When to Use monkeypatch.chdir() vs DotAgentContext
+
+| Scenario                                | Use                                      |
+| --------------------------------------- | ---------------------------------------- |
+| Command uses `ctx.obj.cwd` from context | `DotAgentContext.for_test(cwd=tmp_path)` |
+| Command uses `Path.cwd()` directly      | `monkeypatch.chdir(tmp_path)`            |
+| Command does both                       | Both approaches together                 |
+
+### Example: Testing impl-init Command
+
+```python
+def test_impl_init_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test impl-init with valid .impl folder."""
+    # Arrange: Create .impl folder with plan
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    (impl_dir / "plan.md").write_text("# Implementation Plan\n\n## Phase 1\n...")
+
+    # Change to test directory
+    monkeypatch.chdir(tmp_path)
+
+    # Act
+    runner = CliRunner()
+    result = runner.invoke(impl_init, ["--json"])
+
+    # Assert
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["valid"] is True
+    assert "phases" in data
+```
+
 ## See Also
 
 - [fake-driven-testing skill](.claude/docs/fake-driven-testing/) - Complete 5-layer testing strategy
