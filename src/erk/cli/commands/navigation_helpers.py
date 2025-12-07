@@ -143,7 +143,6 @@ def activate_root_repo(
     repo: RepoContext,
     script: bool,
     command_name: str,
-    preserve_relative_path: bool = True,
 ) -> None:
     """Activate the root repository and exit.
 
@@ -152,8 +151,6 @@ def activate_root_repo(
         repo: Repository context
         script: Whether to output script path or user message
         command_name: Name of the command (for script generation)
-        preserve_relative_path: If True (default), compute and preserve the user's
-            relative directory position from the current worktree
 
     Raises:
         SystemExit: Always (successful exit after activation)
@@ -163,11 +160,9 @@ def activate_root_repo(
     # running from inside a worktree.
     root_path = repo.main_repo_root if repo.main_repo_root else repo.root
 
-    # Auto-compute relative path if requested
-    relative_path: Path | None = None
-    if preserve_relative_path:
-        worktrees = ctx.git.list_worktrees(repo.root)
-        relative_path = compute_relative_path_in_worktree(worktrees, ctx.cwd)
+    # Compute relative path to preserve user's position within worktree
+    worktrees = ctx.git.list_worktrees(repo.root)
+    relative_path = compute_relative_path_in_worktree(worktrees, ctx.cwd)
 
     if script:
         script_content = render_activation_script(
