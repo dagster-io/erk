@@ -98,6 +98,7 @@ dot-agent run erk impl-signal ended 2>/dev/null || true
 2. Otherwise: warn "No .erk/post-implement.md found. Run CI manually."
 
 After CI passes:
+
 - `.worker-impl/`: delete folder, commit cleanup, push
 - `.impl/`: leave for user review (no auto-commit)
 
