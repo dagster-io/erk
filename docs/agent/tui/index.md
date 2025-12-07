@@ -1,15 +1,9 @@
-# TUI Development
+<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
+<!-- Edit source frontmatter, then run 'dot-agent docs sync' to regenerate. -->
 
-Documentation for building terminal user interfaces with Textual.
+# Tui Documentation
 
-## Erk-Specific TUI
-
-| Document                                 | Read when...                                                 |
-| ---------------------------------------- | ------------------------------------------------------------ |
-| [command-palette.md](command-palette.md) | Implementing command palette, Provider classes, fuzzy search |
-
-## Textual Framework Patterns
-
-For generic Textual patterns (quirks, testing, widget development, workers), see:
-
-→ **[../textual/](../textual/)** - Framework-level documentation
+- **[command-execution.md](command-execution.md)** — executing commands in TUI, choosing between sync and streaming execution, implementing command runners
+- **[command-palette.md](command-palette.md)** — implementing command palette in Textual TUI, creating searchable command menus, adding keyboard-accessible command discovery, working with Textual Provider classes
+- **[streaming-output.md](streaming-output.md)** — displaying streaming command output in TUI, executing long-running commands with progress, cross-thread UI updates in Textual
+- **[textual-async.md](textual-async.md)** — overriding Screen actions, working with async/await in Textual, testing async TUI code
