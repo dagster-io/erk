@@ -1,0 +1,2 @@
+- **Never** use `from __future__ import annotations` (unnecessary in Python 3.13)
+- **Always** use modern type syntax: `list[str]`, `str | None`

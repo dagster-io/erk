@@ -47,6 +47,16 @@ artifacts = [
     ".claude/skills/dignified-python-311/SKILL.md",
     ".claude/skills/dignified-python-312/SKILL.md",
     ".claude/skills/dignified-python-313/SKILL.md",
+    ".claude/docs/dignified-python/dignified-python-core.md",
+    ".claude/docs/dignified-python/type-annotations-common.md",
+    ".claude/docs/dignified-python/version-specific/310/type-annotations.md",
+    ".claude/docs/dignified-python/version-specific/310/checklist.md",
+    ".claude/docs/dignified-python/version-specific/311/type-annotations.md",
+    ".claude/docs/dignified-python/version-specific/311/checklist.md",
+    ".claude/docs/dignified-python/version-specific/312/type-annotations.md",
+    ".claude/docs/dignified-python/version-specific/312/checklist.md",
+    ".claude/docs/dignified-python/version-specific/313/type-annotations-delta.md",
+    ".claude/docs/dignified-python/version-specific/313/checklist.md",
 ]
 
 [[kits.dignified-python.hooks]]
