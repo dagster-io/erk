@@ -421,6 +421,43 @@ pr = github.get_pr(owner, repo, pr_number)
 
 **Related**: [GitHub Interface Patterns](architecture/github-interface-patterns.md)
 
+### PRNotFound
+
+A sentinel class returned when a PR lookup fails to find a PR.
+
+**Location**: `packages/erk-shared/src/erk_shared/github/types.py`
+
+**Purpose**: Provides LBYL-style error handling for PR lookups. Instead of returning `None` (which loses context) or raising an exception (which violates LBYL), methods return this sentinel that can preserve lookup context.
+
+**Fields**:
+
+| Field       | Type          | Description                    |
+| ----------- | ------------- | ------------------------------ |
+| `branch`    | `str \| None` | Branch name that was looked up |
+| `pr_number` | `int \| None` | PR number that was looked up   |
+
+**Usage Pattern**:
+
+```python
+from erk_shared.github.types import PRNotFound
+
+pr = github.get_pr_for_branch(repo_root, branch)
+if isinstance(pr, PRNotFound):
+    # No PR exists for this branch
+    click.echo(f"No PR found for branch: {pr.branch}")
+else:
+    # pr is PRDetails
+    click.echo(f"Found PR #{pr.number}")
+```
+
+**Why Sentinel, Not None?**:
+
+1. **Type safety**: `PRDetails | PRNotFound` is explicit about possible returns
+2. **Context preservation**: Can inspect which branch/PR was looked up
+3. **LBYL compliance**: Explicit isinstance check, not try/except
+
+**Related**: [PRNotFound Sentinel Pattern](architecture/prnotfound-sentinel.md)
+
 ---
 
 ## Event Types

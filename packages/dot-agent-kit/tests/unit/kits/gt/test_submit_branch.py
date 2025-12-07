@@ -1,4 +1,21 @@
-"""Tests for submit_branch kit CLI command using fake ops."""
+"""Tests for submit_branch kit CLI command using fake ops.
+
+Testing Generator-Based Operations
+----------------------------------
+Operations in erk_shared.integrations.gt.operations yield ProgressEvent and
+CompletionEvent objects. To test them:
+
+1. Use render_events() to consume the generator and get the final result:
+
+    result = render_events(execute_pre_analysis(ops, tmp_path))
+    assert isinstance(result, PreAnalysisResult)
+
+2. render_events() handles all the iteration and returns the CompletionEvent's
+   result, which is what you typically want to assert on.
+
+3. ProgressEvents are for UI feedback - render_events() prints them but they
+   don't affect the returned result.
+"""
 
 import json
 from pathlib import Path
