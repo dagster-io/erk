@@ -20,6 +20,7 @@ from pathlib import Path
 
 import click
 from erk_shared.extraction.raw_extraction import create_raw_extraction_plan
+from erk_shared.extraction.real_session_environment import RealSessionEnvironment
 from erk_shared.extraction.session_discovery import get_current_session_id
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
@@ -178,7 +179,8 @@ def pr_land(ctx: ErkContext, script: bool, insights: bool, up_flag: bool) -> Non
     extraction_issue_url: str | None = None
     if insights and not is_extraction_origin:
         # Get current session ID from environment (needed for both status line and extraction)
-        current_session_id = get_current_session_id()
+        env = RealSessionEnvironment()
+        current_session_id = get_current_session_id(env)
 
         # Show status line before extraction
         user_output(

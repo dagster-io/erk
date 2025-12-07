@@ -15,8 +15,10 @@ import warnings
 from pathlib import Path
 
 from erk_shared.extraction.llm_distillation import distill_with_haiku
+from erk_shared.extraction.real_session_environment import RealSessionEnvironment
 from erk_shared.extraction.session_context import collect_session_context
 from erk_shared.extraction.session_discovery import get_current_session_id
+from erk_shared.extraction.session_environment import SessionEnvironment
 from erk_shared.extraction.types import RawExtractionResult
 from erk_shared.git.abc import Git
 from erk_shared.github.issues.abc import GitHubIssues
@@ -123,6 +125,7 @@ def create_raw_extraction_plan(
     cwd: Path,
     current_session_id: str | None = None,
     min_size: int = 1024,
+    env: SessionEnvironment | None = None,
 ) -> RawExtractionResult:
     """Create an extraction plan with raw session context.
 
@@ -141,13 +144,18 @@ def create_raw_extraction_plan(
         cwd: Current working directory (for project directory lookup)
         current_session_id: Current session ID (None to auto-detect from env)
         min_size: Minimum session size in bytes for selection
+        env: Session environment (None to use RealSessionEnvironment)
 
     Returns:
         RawExtractionResult with success status and created issue info
     """
+    # Create environment for session operations if not provided
+    if env is None:
+        env = RealSessionEnvironment()
+
     # Get current session ID if not provided
     if current_session_id is None:
-        current_session_id = get_current_session_id()
+        current_session_id = get_current_session_id(env)
 
     # Generate fallback session ID if still None (e.g., running outside Claude session)
     if current_session_id is None:
@@ -157,6 +165,7 @@ def create_raw_extraction_plan(
     session_result = collect_session_context(
         git=git,
         cwd=cwd,
+        env=env,
         current_session_id=current_session_id,
         min_size=min_size,
         limit=20,

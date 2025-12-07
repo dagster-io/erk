@@ -14,6 +14,7 @@ from erk_shared.extraction.session_discovery import (
     get_branch_context,
     get_current_session_id,
 )
+from erk_shared.extraction.session_environment import SessionEnvironment
 from erk_shared.extraction.session_preprocessing import preprocess_session
 from erk_shared.extraction.session_selection import auto_select_sessions
 from erk_shared.extraction.types import BranchContext
@@ -38,6 +39,7 @@ class SessionContextResult:
 def collect_session_context(
     git: Git,
     cwd: Path,
+    env: SessionEnvironment,
     current_session_id: str | None = None,
     min_size: int = 1024,
     limit: int = 20,
@@ -56,6 +58,7 @@ def collect_session_context(
     Args:
         git: Git interface for branch operations
         cwd: Current working directory (for project directory lookup)
+        env: Session environment for filesystem and env var operations
         current_session_id: Current session ID (None to auto-detect from env)
         min_size: Minimum session size in bytes for selection
         limit: Maximum number of sessions to discover
@@ -70,23 +73,24 @@ def collect_session_context(
     """
     # Get current session ID if not provided
     if current_session_id is None:
-        current_session_id = get_current_session_id()
+        current_session_id = get_current_session_id(env)
 
     if current_session_id is None:
         return None
 
     # Find project directory
-    project_dir = find_project_dir(cwd)
+    project_dir = find_project_dir(cwd, env)
     if project_dir is None:
         return None
 
-    # Get branch context
+    # Get branch context (uses Git, not SessionEnvironment)
     branch_context = get_branch_context(git, cwd)
 
     # Discover sessions
     sessions = discover_sessions(
         project_dir=project_dir,
         current_session_id=current_session_id,
+        env=env,
         min_size=min_size,
         limit=limit,
     )
@@ -110,6 +114,7 @@ def collect_session_context(
     for session in selected_sessions:
         xml_content = preprocess_session(
             session_path=session.path,
+            env=env,
             session_id=session.session_id,
             include_agents=True,
         )
