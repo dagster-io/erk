@@ -22,6 +22,7 @@ Exit Codes:
 """
 
 import json
+from functools import cache
 from pathlib import Path
 
 import click
@@ -31,6 +32,27 @@ from erk_shared.github.plan_issues import create_plan_issue
 
 from dot_agent_kit.context_helpers import require_git, require_github_issues, require_repo_root
 from dot_agent_kit.data.kits.erk.session_plan_extractor import get_latest_plan
+
+
+@cache
+def _session_id_file_path() -> Path:
+    """Return path to the session ID file (cached to avoid import-time computation)."""
+    return Path(".erk/scratch/current-session-id")
+
+
+def _get_session_id_from_file() -> str | None:
+    """Read session ID from worktree-scoped file if it exists."""
+    session_file = _session_id_file_path()
+    if session_file.exists():
+        return session_file.read_text(encoding="utf-8").strip()
+    return None
+
+
+def _create_plan_saved_marker(session_id: str) -> None:
+    """Create marker file to signal plan was saved to GitHub."""
+    marker_dir = Path(".erk/scratch") / session_id
+    marker_dir.mkdir(parents=True, exist_ok=True)
+    (marker_dir / "plan-saved-to-github").touch()
 
 
 @click.command(name="plan-save-to-issue")
@@ -65,11 +87,14 @@ def plan_save_to_issue(
     repo_root = require_repo_root(ctx)
     cwd = Path.cwd()
 
+    # Resolve session ID: --session-id flag > file > None
+    effective_session_id = session_id or _get_session_id_from_file()
+
     # Step 1: Extract plan (priority: plan_file > session_id > most recent)
     if plan_file:
         plan = plan_file.read_text(encoding="utf-8")
     else:
-        plan = get_latest_plan(str(cwd), session_id=session_id)
+        plan = get_latest_plan(str(cwd), session_id=effective_session_id)
 
     if not plan:
         if output_format == "display":
@@ -119,7 +144,7 @@ def plan_save_to_issue(
 
     git = require_git(ctx)
     session_result = collect_session_context(
-        git=git, cwd=cwd, current_session_id=session_id, min_size=1024, limit=20
+        git=git, cwd=cwd, current_session_id=effective_session_id, min_size=1024, limit=20
     )
 
     if session_result is not None and result.issue_number is not None:
@@ -142,7 +167,11 @@ def plan_save_to_issue(
 
         session_ids = session_result.session_ids
 
-    # Step 9: Output success
+    # Step 9: Create marker file to signal plan was saved
+    if effective_session_id:
+        _create_plan_saved_marker(effective_session_id)
+
+    # Step 10: Output success
     # Detect enrichment status for informational output
     is_enriched = "## Enrichment Details" in plan
 
