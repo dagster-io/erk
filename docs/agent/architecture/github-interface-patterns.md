@@ -5,6 +5,8 @@ read_when:
   - "working with gh api command"
   - "fetching PR or issue data efficiently"
   - "understanding PRDetails type"
+  - "using GraphQL API for GitHub data"
+  - "fetching review thread resolution status"
 ---
 
 # GitHub Interface Patterns
@@ -105,8 +107,160 @@ This pattern:
 - Simplifies call site code (no need to make additional fetches)
 - Makes the data contract explicit via the type definition
 
+## GraphQL API via `gh api graphql`
+
+Some GitHub data is only available via GraphQL. Use GraphQL when:
+
+- **Data not exposed in REST API**: Review thread resolution status, certain connection fields
+- **Batch queries**: Fetching multiple objects by node ID efficiently
+- **Mutations**: Resolving review threads, updating draft state
+
+### Query Syntax with Variables
+
+Prefer using `-f variables='{...}'` for parameterized queries instead of string interpolation. This avoids escaping issues and injection risks.
+
+```bash
+gh api graphql -f query='
+query($owner: String!, $repo: String!, $number: Int!) {
+  repository(owner: $owner, name: $repo) {
+    pullRequest(number: $number) {
+      reviewThreads(first: 100) {
+        nodes {
+          id
+          isResolved
+          path
+          line
+        }
+      }
+    }
+  }
+}' -f variables='{"owner":"cli","repo":"cli","number":123}'
+```
+
+### Query Pattern: Review Threads
+
+Review thread resolution status is only available via GraphQL. The REST API does not expose `isResolved`.
+
+```python
+query = """query($owner: String!, $repo: String!, $number: Int!) {
+  repository(owner: $owner, name: $repo) {
+    pullRequest(number: $number) {
+      reviewThreads(first: 100) {
+        nodes {
+          id
+          isResolved
+          isOutdated
+          path
+          line
+          comments(first: 20) {
+            nodes {
+              databaseId
+              body
+              author { login }
+              path
+              line: originalLine
+              createdAt
+            }
+          }
+        }
+      }
+    }
+  }
+}"""
+
+variables = json.dumps({
+    "owner": repo_info.owner,
+    "repo": repo_info.name,
+    "number": pr_number
+})
+
+cmd = [
+    "gh", "api", "graphql",
+    "-f", f"query={query}",
+    "-f", f"variables={variables}",
+]
+stdout = execute_gh_command(cmd, repo_root)
+```
+
+### Mutation Pattern: Resolve Review Thread
+
+Mutations use the same `gh api graphql` command with a mutation query:
+
+```python
+mutation = """mutation($threadId: ID!) {
+  resolveReviewThread(input: {threadId: $threadId}) {
+    thread {
+      id
+      isResolved
+    }
+  }
+}"""
+
+variables = json.dumps({"threadId": thread_id})
+
+cmd = [
+    "gh", "api", "graphql",
+    "-f", f"query={mutation}",
+    "-f", f"variables={variables}",
+]
+stdout = execute_gh_command(cmd, repo_root)
+response = json.loads(stdout)
+```
+
+### Batch Queries with Node IDs
+
+GraphQL's `nodes(ids: [...])` interface fetches multiple objects efficiently:
+
+```python
+def _build_workflow_runs_nodes_query(node_ids: list[str]) -> str:
+    node_ids_json = json.dumps(node_ids)
+
+    query = f"""query {{
+  nodes(ids: {node_ids_json}) {{
+    ... on WorkflowRun {{
+      id
+      databaseId
+      checkSuite {{
+        status
+        conclusion
+      }}
+    }}
+  }}
+}}"""
+    return query
+```
+
+### When to Use GraphQL vs REST
+
+| Use Case                         | API to Use | Reason                                 |
+| -------------------------------- | ---------- | -------------------------------------- |
+| Get PR details                   | REST       | `gh api /repos/{owner}/{repo}/pulls/N` |
+| Get review thread resolution     | GraphQL    | `isResolved` not in REST               |
+| Resolve review thread            | GraphQL    | `resolveReviewThread` mutation         |
+| Batch fetch by node ID           | GraphQL    | `nodes(ids: [...])` efficient batching |
+| Get PR by branch                 | REST       | `?head=owner:branch&state=all`         |
+| Get workflow run status          | REST       | Simple, well-documented                |
+| Complex timeline/connection data | GraphQL    | Better for nested connections          |
+
+### Error Handling
+
+GraphQL errors are returned in the response body, not via HTTP status:
+
+```python
+response = json.loads(stdout)
+
+# Check for GraphQL errors
+if "errors" in response:
+    errors = response["errors"]
+    # Handle errors...
+
+# Access data
+data = response.get("data", {})
+```
+
 ## Related Topics
 
 - [GitHub GraphQL API Patterns](github-graphql.md) - GraphQL queries and mutations
 - [GitHub URL Parsing Architecture](github-parsing.md) - Parsing URLs and identifiers
 - [Subprocess Wrappers](subprocess-wrappers.md) - Running `gh` commands safely
+- [GitHub ABC Extension Guide](github-abc-extension.md) - Adding new GitHub methods
