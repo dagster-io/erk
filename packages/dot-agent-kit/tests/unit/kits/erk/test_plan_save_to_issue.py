@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 from click.testing import CliRunner
 from erk_shared.extraction.session_context import SessionContextResult
 from erk_shared.extraction.types import BranchContext
@@ -17,22 +18,37 @@ from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue import 
 )
 
 
-def test_plan_save_to_issue_success() -> None:
+@pytest.fixture
+def plans_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Create a plans directory and monkeypatch get_plans_dir to use it.
+
+    This fixture replaces the @patch decorator for get_latest_plan by allowing
+    tests to create real plan files. The get_plans_dir() function is monkeypatched
+    to return a temp directory, and tests write real .md files there.
+    """
+    plans = tmp_path / ".claude" / "plans"
+    plans.mkdir(parents=True)
+    monkeypatch.setattr(
+        "dot_agent_kit.data.kits.erk.session_plan_extractor.get_plans_dir",
+        lambda: plans,
+    )
+    return plans
+
+
+def test_plan_save_to_issue_success(plans_dir: Path) -> None:
     """Test successful plan extraction and issue creation."""
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
-    plan = "# My Feature\n\n- Step 1\n- Step 2"
+    # Create real plan file instead of mocking get_latest_plan
+    plan_content = "# My Feature\n\n- Step 1\n- Step 2"
+    (plans_dir / "test-plan.md").write_text(plan_content, encoding="utf-8")
 
-    with patch(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-        return_value=plan,
-    ):
-        result = runner.invoke(
-            plan_save_to_issue,
-            ["--format", "json"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh),
-        )
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json"],
+        obj=DotAgentContext.for_test(github_issues=fake_gh),
+    )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
@@ -42,42 +58,37 @@ def test_plan_save_to_issue_success() -> None:
     assert output["enriched"] is False
 
 
-def test_plan_save_to_issue_enriched_plan() -> None:
+def test_plan_save_to_issue_enriched_plan(plans_dir: Path) -> None:
     """Test detection of enriched plan."""
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
-    plan = "# My Feature\n\n## Enrichment Details\n\nContext here"
+    # Create plan file with enrichment section
+    plan_content = "# My Feature\n\n## Enrichment Details\n\nContext here"
+    (plans_dir / "enriched-plan.md").write_text(plan_content, encoding="utf-8")
 
-    with patch(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-        return_value=plan,
-    ):
-        result = runner.invoke(
-            plan_save_to_issue,
-            ["--format", "json"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh),
-        )
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json"],
+        obj=DotAgentContext.for_test(github_issues=fake_gh),
+    )
 
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["enriched"] is True
 
 
-def test_plan_save_to_issue_no_plan() -> None:
+def test_plan_save_to_issue_no_plan(plans_dir: Path) -> None:
     """Test error when no plan found."""
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
-    with patch(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-        return_value=None,
-    ):
-        result = runner.invoke(
-            plan_save_to_issue,
-            ["--format", "json"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh),
-        )
+    # plans_dir exists but is empty - no plan files
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json"],
+        obj=DotAgentContext.for_test(github_issues=fake_gh),
+    )
 
     assert result.exit_code == 1
     output = json.loads(result.output)
@@ -85,28 +96,20 @@ def test_plan_save_to_issue_no_plan() -> None:
     assert "No plan found" in output["error"]
 
 
-def test_plan_save_to_issue_format() -> None:
+def test_plan_save_to_issue_format(plans_dir: Path) -> None:
     """Verify plan format (metadata in body, plan in comment)."""
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
-    plan = "# Test Plan\n\n- Step 1"
+    # Create plan file
+    plan_content = "# Test Plan\n\n- Step 1"
+    (plans_dir / "format-test.md").write_text(plan_content, encoding="utf-8")
 
-    with (
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-            return_value=plan,
-        ),
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
-            return_value=None,
-        ),
-    ):
-        result = runner.invoke(
-            plan_save_to_issue,
-            [],
-            obj=DotAgentContext.for_test(github_issues=fake_gh),
-        )
+    result = runner.invoke(
+        plan_save_to_issue,
+        [],
+        obj=DotAgentContext.for_test(github_issues=fake_gh),
+    )
 
     assert result.exit_code == 0
 
@@ -123,22 +126,20 @@ def test_plan_save_to_issue_format() -> None:
     assert "Step 1" in comment
 
 
-def test_plan_save_to_issue_display_format() -> None:
+def test_plan_save_to_issue_display_format(plans_dir: Path) -> None:
     """Test display output format."""
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
-    plan = "# Test Feature\n\n- Implementation step"
+    # Create plan file
+    plan_content = "# Test Feature\n\n- Implementation step"
+    (plans_dir / "display-test.md").write_text(plan_content, encoding="utf-8")
 
-    with patch(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-        return_value=plan,
-    ):
-        result = runner.invoke(
-            plan_save_to_issue,
-            ["--format", "display"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh),
-        )
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "display"],
+        obj=DotAgentContext.for_test(github_issues=fake_gh),
+    )
 
     assert result.exit_code == 0
     assert "Plan saved to GitHub issue #1" in result.output
@@ -146,22 +147,20 @@ def test_plan_save_to_issue_display_format() -> None:
     assert "Enrichment: No" in result.output
 
 
-def test_plan_save_to_issue_label_created() -> None:
+def test_plan_save_to_issue_label_created(plans_dir: Path) -> None:
     """Test that erk-plan label is created."""
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
-    plan = "# Feature\n\nSteps here"
+    # Create plan file
+    plan_content = "# Feature\n\nSteps here"
+    (plans_dir / "label-test.md").write_text(plan_content, encoding="utf-8")
 
-    with patch(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-        return_value=plan,
-    ):
-        result = runner.invoke(
-            plan_save_to_issue,
-            [],
-            obj=DotAgentContext.for_test(github_issues=fake_gh),
-        )
+    result = runner.invoke(
+        plan_save_to_issue,
+        [],
+        obj=DotAgentContext.for_test(github_issues=fake_gh),
+    )
 
     assert result.exit_code == 0
 
@@ -173,15 +172,17 @@ def test_plan_save_to_issue_label_created() -> None:
     assert color == "0E8A16"
 
 
-def test_plan_save_to_issue_session_context_captured(tmp_path: Path) -> None:
+def test_plan_save_to_issue_session_context_captured(plans_dir: Path) -> None:
     """Test that session context is captured and posted as comments."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
     runner = CliRunner()
 
-    plan = "# Feature Plan\n\n- Step 1"
+    # Create plan file
+    plan_content = "# Feature Plan\n\n- Step 1"
+    (plans_dir / "session-context-test.md").write_text(plan_content, encoding="utf-8")
 
-    # Create a mock SessionContextResult
+    # Create a mock SessionContextResult (kept mocked per plan - complex dependency tree)
     branch_context = BranchContext(
         current_branch="feature-branch",
         trunk_branch="main",
@@ -193,15 +194,9 @@ def test_plan_save_to_issue_session_context_captured(tmp_path: Path) -> None:
         branch_context=branch_context,
     )
 
-    with (
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-            return_value=plan,
-        ),
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
-            return_value=session_result,
-        ),
+    with patch(
+        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
+        return_value=session_result,
     ):
         result = runner.invoke(
             plan_save_to_issue,
@@ -226,23 +221,19 @@ def test_plan_save_to_issue_session_context_captured(tmp_path: Path) -> None:
     assert "session-content" in session_comment
 
 
-def test_plan_save_to_issue_session_context_skipped_when_none() -> None:
+def test_plan_save_to_issue_session_context_skipped_when_none(plans_dir: Path) -> None:
     """Test session context is skipped when collect_session_context returns None."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
     runner = CliRunner()
 
-    plan = "# Feature Plan\n\n- Step 1"
+    # Create plan file
+    plan_content = "# Feature Plan\n\n- Step 1"
+    (plans_dir / "no-session-test.md").write_text(plan_content, encoding="utf-8")
 
-    with (
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-            return_value=plan,
-        ),
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
-            return_value=None,  # No session context available
-        ),
+    with patch(
+        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
+        return_value=None,  # No session context available
     ):
         result = runner.invoke(
             plan_save_to_issue,
@@ -260,24 +251,20 @@ def test_plan_save_to_issue_session_context_skipped_when_none() -> None:
     assert len(fake_gh.added_comments) == 1
 
 
-def test_plan_save_to_issue_json_output_includes_session_metadata() -> None:
+def test_plan_save_to_issue_json_output_includes_session_metadata(plans_dir: Path) -> None:
     """Test JSON output includes session_context_chunks and session_ids fields."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
     runner = CliRunner()
 
-    plan = "# Feature\n\n- Step 1"
+    # Create plan file
+    plan_content = "# Feature\n\n- Step 1"
+    (plans_dir / "metadata-test.md").write_text(plan_content, encoding="utf-8")
 
     # Test with no session context - fields should still be present
-    with (
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-            return_value=plan,
-        ),
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
-            return_value=None,
-        ),
+    with patch(
+        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
+        return_value=None,
     ):
         result = runner.invoke(
             plan_save_to_issue,
@@ -295,25 +282,25 @@ def test_plan_save_to_issue_json_output_includes_session_metadata() -> None:
     assert isinstance(output["session_ids"], list)
 
 
-def test_plan_save_to_issue_passes_session_id_to_collect_session_context() -> None:
+def test_plan_save_to_issue_passes_session_id_to_collect_session_context(
+    plans_dir: Path,
+) -> None:
     """Test that --session-id argument is forwarded to collect_session_context."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
     runner = CliRunner()
 
-    plan = "# Feature Plan\n\n- Step 1"
+    # Create plan file
+    plan_content = "# Feature Plan\n\n- Step 1"
+    (plans_dir / "session-id-test.md").write_text(plan_content, encoding="utf-8")
+
     test_session_id = "test-session-12345"
 
-    with (
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-            return_value=plan,
-        ),
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
-            return_value=None,
-        ) as mock_collect,
-    ):
+    # Keep mock for collect_session_context - testing argument forwarding
+    with patch(
+        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
+        return_value=None,
+    ) as mock_collect:
         result = runner.invoke(
             plan_save_to_issue,
             ["--format", "json", "--session-id", test_session_id],
@@ -328,13 +315,15 @@ def test_plan_save_to_issue_passes_session_id_to_collect_session_context() -> No
     assert call_kwargs.get("current_session_id") == test_session_id
 
 
-def test_plan_save_to_issue_display_format_shows_session_context() -> None:
+def test_plan_save_to_issue_display_format_shows_session_context(plans_dir: Path) -> None:
     """Test display format shows session context chunk count when present."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
     runner = CliRunner()
 
-    plan = "# Feature Plan\n\n- Step 1"
+    # Create plan file
+    plan_content = "# Feature Plan\n\n- Step 1"
+    (plans_dir / "display-session-test.md").write_text(plan_content, encoding="utf-8")
 
     branch_context = BranchContext(
         current_branch="feature-branch",
@@ -347,15 +336,10 @@ def test_plan_save_to_issue_display_format_shows_session_context() -> None:
         branch_context=branch_context,
     )
 
-    with (
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-            return_value=plan,
-        ),
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
-            return_value=session_result,
-        ),
+    # Keep mock for collect_session_context - complex dependency tree
+    with patch(
+        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.collect_session_context",
+        return_value=session_result,
     ):
         result = runner.invoke(
             plan_save_to_issue,
