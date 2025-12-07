@@ -18,6 +18,7 @@ Flow:
 from pathlib import Path
 
 import click
+from erk_shared.github.types import PRNotFound
 from erk_shared.integrations.gt.events import CompletionEvent
 from erk_shared.integrations.gt.operations import execute_squash
 from erk_shared.integrations.gt.types import SquashError
@@ -43,6 +44,9 @@ def _squash_commits(ctx: ErkContext, repo_root: Path) -> None:
 def _update_commit_message_from_pr(ctx: ErkContext, repo_root: Path, pr_number: int) -> None:
     """Update the commit message with PR title and body from GitHub."""
     pr = ctx.github.get_pr(repo_root, pr_number)
+    if isinstance(pr, PRNotFound):
+        # PR was verified to exist earlier, so this shouldn't happen
+        return
     if pr.title:
         commit_message = pr.title
         if pr.body:
@@ -97,11 +101,11 @@ def pr_sync(ctx: ErkContext) -> None:
     # Step 2: Check if PR exists and get status
     pr = ctx.github.get_pr_for_branch(repo.root, current_branch)
     Ensure.invariant(
-        pr is not None,
+        not isinstance(pr, PRNotFound),
         f"No pull request found for branch '{current_branch}'",
     )
     # Type narrowing after invariant check
-    assert pr is not None
+    assert not isinstance(pr, PRNotFound)
     Ensure.invariant(
         pr.state == "OPEN",
         f"Cannot sync {pr.state} PR - only OPEN PRs can be synchronized",

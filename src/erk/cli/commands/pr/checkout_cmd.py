@@ -4,6 +4,7 @@ This command fetches PR code and creates a worktree for local review/testing.
 """
 
 import click
+from erk_shared.github.types import PRNotFound
 from erk_shared.output.output import user_output
 
 from erk.cli.activation import render_activation_script
@@ -51,14 +52,13 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
 
     # Get PR details from GitHub
     ctx.feedback.info(f"Fetching PR #{pr_number}...")
-    try:
-        pr = ctx.github.get_pr(repo.root, pr_number)
-    except (RuntimeError, KeyError):
+    pr = ctx.github.get_pr(repo.root, pr_number)
+    if isinstance(pr, PRNotFound):
         ctx.feedback.error(
             f"Could not find PR #{pr_number}\n\n"
             "Check the PR number and ensure you're authenticated with gh CLI."
         )
-        raise SystemExit(1) from None
+        raise SystemExit(1)
 
     # Warn for closed/merged PRs
     if pr.state != "OPEN":

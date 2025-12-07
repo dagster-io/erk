@@ -10,7 +10,7 @@ from pathlib import Path
 
 from erk_shared.github.metadata import find_metadata_block
 from erk_shared.github.parsing import parse_git_remote_url
-from erk_shared.github.types import GitHubRepoId
+from erk_shared.github.types import GitHubRepoId, PRNotFound
 from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 from erk_shared.integrations.gt.abc import GtKit
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
@@ -186,8 +186,8 @@ def execute_finalize(
 
     # Get PR info for result
     branch_name = ops.git.get_current_branch(cwd) or "unknown"
-    pr_details = ops.github.get_pr_for_branch(repo_root, branch_name)
-    pr_url = pr_details.url if pr_details is not None else ""
+    pr_result = ops.github.get_pr_for_branch(repo_root, branch_name)
+    pr_url = pr_result.url if not isinstance(pr_result, PRNotFound) else ""
 
     # Get Graphite URL by parsing repo identity from git remote URL (no API call)
     remote_url = ops.git.get_remote_url(repo_root, "origin")

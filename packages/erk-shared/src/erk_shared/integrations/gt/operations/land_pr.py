@@ -9,6 +9,7 @@ This script safely lands a single PR from a Graphite stack by:
 from collections.abc import Generator
 from pathlib import Path
 
+from erk_shared.github.types import PRNotFound
 from erk_shared.integrations.gt.abc import GtKit
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
@@ -75,7 +76,7 @@ def execute_land_pr(
     # Step 4: Check PR exists and is open
     yield ProgressEvent("Checking PR status...")
     pr_details = ops.github.get_pr_for_branch(repo_root, branch_name)
-    if pr_details is None:
+    if isinstance(pr_details, PRNotFound):
         yield CompletionEvent(
             LandPrError(
                 success=False,

@@ -7,6 +7,7 @@ from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
     PRDetails,
+    PRNotFound,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
@@ -342,7 +343,7 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
-    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails:
+    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | PRNotFound:
         """Get comprehensive PR details in a single API call.
 
         This is the preferred method for fetching PR information. It returns
@@ -354,15 +355,12 @@ class GitHub(ABC):
             pr_number: PR number to query
 
         Returns:
-            PRDetails with all PR fields
-
-        Raises:
-            RuntimeError: If PR not found or API call fails
+            PRDetails with all PR fields, or PRNotFound if PR doesn't exist
         """
         ...
 
     @abstractmethod
-    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | None:
+    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | PRNotFound:
         """Get comprehensive PR details for a branch.
 
         Args:
@@ -370,7 +368,7 @@ class GitHub(ABC):
             branch: Branch name to look up
 
         Returns:
-            PRDetails if a PR exists for the branch, None otherwise
+            PRDetails if a PR exists for the branch, PRNotFound otherwise
         """
         ...
 

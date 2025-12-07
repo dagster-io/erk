@@ -11,6 +11,7 @@ from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
     PRDetails,
+    PRNotFound,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
@@ -486,24 +487,29 @@ class FakeGitHub(GitHub):
 
         return (filtered_issues, pr_linkages)
 
-    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails:
+    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | PRNotFound:
         """Get comprehensive PR details from pre-configured state.
 
-        Raises:
-            KeyError: If pr_number not found in pr_details mapping
+        Returns:
+            PRDetails if pr_number exists, PRNotFound otherwise
         """
+        if pr_number not in self._pr_details:
+            return PRNotFound(pr_number=pr_number)
         return self._pr_details[pr_number]
 
-    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | None:
+    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | PRNotFound:
         """Get comprehensive PR details for a branch from pre-configured state.
 
         Returns:
-            PRDetails if a PR exists for the branch, None otherwise
+            PRDetails if a PR exists for the branch, PRNotFound otherwise
         """
         pr = self._prs.get(branch)
         if pr is None:
-            return None
-        return self._pr_details.get(pr.number)
+            return PRNotFound(branch=branch)
+        pr_details = self._pr_details.get(pr.number)
+        if pr_details is None:
+            return PRNotFound(branch=branch)
+        return pr_details
 
     def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
         """Get PR title by number from configured state.

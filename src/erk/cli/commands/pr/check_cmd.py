@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 
 import click
+from erk_shared.github.types import PRNotFound
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.output.output import user_output
 
@@ -30,7 +31,7 @@ def pr_check(ctx: ErkContext) -> None:
 
     # Get PR for branch
     pr = ctx.github.get_pr_for_branch(repo_root, branch)
-    if pr is None:
+    if isinstance(pr, PRNotFound):
         user_output(
             click.style("Error: ", fg="red") + f"No pull request found for branch '{branch}'"
         )

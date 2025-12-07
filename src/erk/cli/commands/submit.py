@@ -18,6 +18,7 @@ from erk_shared.github.parsing import (
     construct_workflow_run_url,
     extract_owner_repo_from_github_url,
 )
+from erk_shared.github.types import PRNotFound
 from erk_shared.integrations.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 from erk_shared.naming import (
     format_branch_timestamp_suffix,
@@ -216,7 +217,7 @@ def _validate_issue_for_submit(
     pr_number: int | None = None
     if branch_exists:
         pr_details = ctx.github.get_pr_for_branch(repo.root, branch_name)
-        if pr_details is not None:
+        if not isinstance(pr_details, PRNotFound):
             pr_number = pr_details.number
 
     # Check if this issue is an extraction plan

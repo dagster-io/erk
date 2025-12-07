@@ -31,6 +31,7 @@ from erk_shared.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
     PRDetails,
+    PRNotFound,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
@@ -1288,32 +1289,36 @@ query {{
 
         return (issues, pr_linkages)
 
-    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails:
+    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | PRNotFound:
         """Get comprehensive PR details via GitHub REST API.
 
         Uses gh api to call GET /repos/{owner}/{repo}/pulls/{pr_number}
         which returns all PR fields in a single request.
 
-        Raises:
-            RuntimeError: If API call fails or response is malformed
+        Returns:
+            PRDetails with all PR fields, or PRNotFound if PR doesn't exist
         """
         repo_info = self.get_repo_info(repo_root)
         endpoint = f"/repos/{repo_info.owner}/{repo_info.name}/pulls/{pr_number}"
 
         cmd = ["gh", "api", endpoint]
-        stdout = execute_gh_command(cmd, repo_root)
-        data = json.loads(stdout)
+        try:
+            stdout = execute_gh_command(cmd, repo_root)
+        except RuntimeError:
+            # API call failed - PR not found or other error
+            return PRNotFound(pr_number=pr_number)
 
+        data = json.loads(stdout)
         return self._parse_pr_details_from_rest_api(data, repo_info)
 
-    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | None:
+    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | PRNotFound:
         """Get comprehensive PR details for a branch via GitHub REST API.
 
         Uses gh api to call GET /repos/{owner}/{repo}/pulls?head={owner}:{branch}&state=all
         which returns PRs for the branch in a single request.
 
         Returns:
-            PRDetails if a PR exists for the branch, None otherwise
+            PRDetails if a PR exists for the branch, PRNotFound otherwise
         """
         repo_info = self.get_repo_info(repo_root)
         endpoint = (
@@ -1326,7 +1331,7 @@ query {{
         data = json.loads(stdout)
 
         if not data:
-            return None
+            return PRNotFound(branch=branch)
 
         pr = data[0]
         return self._parse_pr_details_from_rest_api(pr, repo_info)

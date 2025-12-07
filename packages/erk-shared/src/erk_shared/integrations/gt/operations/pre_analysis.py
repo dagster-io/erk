@@ -12,6 +12,7 @@ import subprocess
 from collections.abc import Generator
 from pathlib import Path
 
+from erk_shared.github.types import PRNotFound
 from erk_shared.integrations.gt.abc import GtKit
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.integrations.gt.types import PreAnalysisError, PreAnalysisResult
@@ -140,7 +141,7 @@ def execute_pre_analysis(
     has_conflicts = False
     conflict_details: dict[str, str] | None = None
 
-    if pr_details is not None:
+    if not isinstance(pr_details, PRNotFound):
         pr_number = pr_details.number
         # PR exists - check mergeability (use same PRDetails object)
         mergeable = pr_details.mergeable

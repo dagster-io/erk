@@ -9,6 +9,7 @@ from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
     PRDetails,
+    PRNotFound,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
@@ -176,11 +177,11 @@ class PrintingGitHub(PrintingBase, GitHub):
         """Get workflow run node ID (read-only, no printing)."""
         return self._wrapped.get_workflow_run_node_id(repo_root, run_id)
 
-    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails:
+    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | PRNotFound:
         """Get comprehensive PR details (read-only, no printing)."""
         return self._wrapped.get_pr(repo_root, pr_number)
 
-    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | None:
+    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | PRNotFound:
         """Get comprehensive PR details for a branch (read-only, no printing)."""
         return self._wrapped.get_pr_for_branch(repo_root, branch)
 

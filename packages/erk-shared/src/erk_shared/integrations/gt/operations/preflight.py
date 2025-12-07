@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 from erk_shared.github.parsing import parse_git_remote_url
-from erk_shared.github.types import GitHubRepoId
+from erk_shared.github.types import GitHubRepoId, PRNotFound
 from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 from erk_shared.integrations.gt.abc import GtKit
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
@@ -294,8 +294,9 @@ def _execute_submit_only(
     for attempt in range(max_retries):
         if attempt > 0:
             yield ProgressEvent(f"Attempt {attempt + 1}/{max_retries}...")
-        pr_details = ops.github.get_pr_for_branch(repo_root, branch_name)
-        if pr_details is not None:
+        pr_result = ops.github.get_pr_for_branch(repo_root, branch_name)
+        if not isinstance(pr_result, PRNotFound):
+            pr_details = pr_result
             yield ProgressEvent(f"PR info retrieved (PR #{pr_details.number})", style="success")
             break
         if attempt < max_retries - 1:

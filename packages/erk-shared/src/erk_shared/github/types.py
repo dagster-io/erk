@@ -9,6 +9,17 @@ PRState = Literal["OPEN", "MERGED", "CLOSED"]
 
 
 @dataclass(frozen=True)
+class PRNotFound:
+    """Result when a PR lookup finds no matching PR.
+
+    Used as part of union return types for LBYL-style error handling.
+    """
+
+    pr_number: int | None = None  # Set when looking up by number
+    branch: str | None = None  # Set when looking up by branch
+
+
+@dataclass(frozen=True)
 class PRDetails:
     """Comprehensive PR information from a single GitHub API call.
 

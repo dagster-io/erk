@@ -7,13 +7,13 @@ providing reliable test doubles for CLI tests.
 from datetime import UTC, datetime
 from pathlib import Path
 
-import pytest
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
     PRDetails,
+    PRNotFound,
     PullRequestInfo,
     WorkflowRun,
 )
@@ -668,20 +668,25 @@ def test_fake_github_get_pr_returns_configured_details() -> None:
     assert result.labels == ("enhancement", "reviewed")
 
 
-def test_fake_github_get_pr_raises_key_error_for_missing_pr() -> None:
-    """Test get_pr raises KeyError when PR number not found."""
+def test_fake_github_get_pr_returns_pr_not_found_for_missing_pr() -> None:
+    """Test get_pr returns PRNotFound when PR number not found."""
     ops = FakeGitHub()
 
-    with pytest.raises(KeyError):
-        ops.get_pr(sentinel_path(), 999)
+    result = ops.get_pr(sentinel_path(), 999)
+
+    assert isinstance(result, PRNotFound)
+    assert result.pr_number == 999
+    assert result.branch is None
 
 
-def test_fake_github_get_pr_raises_key_error_with_empty_dict() -> None:
-    """Test get_pr raises KeyError with explicitly empty pr_details dict."""
+def test_fake_github_get_pr_returns_pr_not_found_with_empty_dict() -> None:
+    """Test get_pr returns PRNotFound with explicitly empty pr_details dict."""
     ops = FakeGitHub(pr_details={})
 
-    with pytest.raises(KeyError):
-        ops.get_pr(sentinel_path(), 123)
+    result = ops.get_pr(sentinel_path(), 123)
+
+    assert isinstance(result, PRNotFound)
+    assert result.pr_number == 123
 
 
 def test_fake_github_get_pr_multiple_prs() -> None:
@@ -777,17 +782,19 @@ def test_fake_github_get_pr_for_branch_returns_details() -> None:
     assert result.labels == ("enhancement",)
 
 
-def test_fake_github_get_pr_for_branch_returns_none_for_missing_branch() -> None:
-    """Test get_pr_for_branch returns None when branch has no PR."""
+def test_fake_github_get_pr_for_branch_returns_pr_not_found_for_missing_branch() -> None:
+    """Test get_pr_for_branch returns PRNotFound when branch has no PR."""
     ops = FakeGitHub()
 
     result = ops.get_pr_for_branch(sentinel_path(), "nonexistent-branch")
 
-    assert result is None
+    assert isinstance(result, PRNotFound)
+    assert result.branch == "nonexistent-branch"
+    assert result.pr_number is None
 
 
-def test_fake_github_get_pr_for_branch_returns_none_when_pr_exists_but_no_details() -> None:
-    """Test get_pr_for_branch returns None when PR exists but details not configured."""
+def test_fake_github_get_pr_for_branch_returns_pr_not_found_when_pr_exists_but_no_details() -> None:
+    """Test get_pr_for_branch returns PRNotFound when PR exists but details not configured."""
     pr_info = PullRequestInfo(
         number=456,
         state="OPEN",
@@ -803,4 +810,5 @@ def test_fake_github_get_pr_for_branch_returns_none_when_pr_exists_but_no_detail
 
     result = ops.get_pr_for_branch(sentinel_path(), "some-branch")
 
-    assert result is None
+    assert isinstance(result, PRNotFound)
+    assert result.branch == "some-branch"

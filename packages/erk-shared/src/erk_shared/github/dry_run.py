@@ -7,6 +7,7 @@ from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
     PRDetails,
+    PRNotFound,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
@@ -163,11 +164,11 @@ class DryRunGitHub(GitHub):
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_issues_with_pr_linkages(location, labels, state=state, limit=limit)
 
-    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails:
+    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | PRNotFound:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_pr(repo_root, pr_number)
 
-    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | None:
+    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | PRNotFound:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_pr_for_branch(repo_root, branch)
 
