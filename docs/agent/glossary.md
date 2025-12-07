@@ -385,6 +385,42 @@ class ErkContext:
 
 **File**: `src/erk/core/context.py`
 
+### PRDetails
+
+A frozen dataclass containing comprehensive PR information from a single GitHub API call.
+
+**Location**: `packages/erk-shared/src/erk_shared/github/types.py`
+
+**Purpose**: Implements the "Fetch Once, Use Everywhere" pattern - fetch all commonly-needed PR fields in one API call to reduce rate limit consumption.
+
+**Fields**:
+
+| Category     | Fields                                                                  |
+| ------------ | ----------------------------------------------------------------------- |
+| Identity     | `number`, `url`                                                         |
+| Content      | `title`, `body`                                                         |
+| State        | `state` ("OPEN"/"MERGED"/"CLOSED"), `is_draft`                          |
+| Structure    | `base_ref_name`, `head_ref_name`, `is_cross_repository`                 |
+| Mergeability | `mergeable` ("MERGEABLE"/"CONFLICTING"/"UNKNOWN"), `merge_state_status` |
+| Metadata     | `owner`, `repo`, `labels`                                               |
+
+**Design Pattern**:
+
+When multiple call sites need different PR fields, create a comprehensive type that fetches everything once:
+
+```python
+# Instead of multiple narrow fetches:
+title = github.get_pr_title(pr_number)
+state = github.get_pr_state(pr_number)
+base = github.get_pr_base(pr_number)
+
+# Use one comprehensive fetch:
+pr = github.get_pr(owner, repo, pr_number)
+# pr.title, pr.state, pr.base_ref_name all available
+```
+
+**Related**: [GitHub Interface Patterns](architecture/github-interface-patterns.md)
+
 ---
 
 ## Event Types
