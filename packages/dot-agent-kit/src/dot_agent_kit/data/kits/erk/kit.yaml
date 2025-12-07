@@ -136,6 +136,12 @@ kit_cli_commands:
   - name: post-extraction-comment
     path: kit_cli_commands/erk/post_extraction_comment.py
     description: Post extraction workflow status comments to GitHub issues
+  - name: impl-init
+    path: kit_cli_commands/erk/impl_init.py
+    description: Initialize implementation by validating .impl/ folder and extracting phases
+  - name: impl-signal
+    path: kit_cli_commands/erk/impl_signal.py
+    description: Signal implementation events (started/ended) to GitHub
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit
