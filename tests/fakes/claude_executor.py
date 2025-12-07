@@ -112,7 +112,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         self._simulated_prompt_output = simulated_prompt_output
         self._simulated_prompt_error = simulated_prompt_error
         self._executed_commands: list[tuple[str, Path, bool, bool]] = []
-        self._interactive_calls: list[tuple[Path, bool, str]] = []
+        self._interactive_calls: list[tuple[Path, bool, str, Path | None]] = []
         self._interactive_command_calls: list[tuple[str, Path, bool]] = []
         self._prompt_calls: list[str] = []
 
@@ -242,7 +242,8 @@ class FakeClaudeExecutor(ClaudeExecutor):
         self,
         worktree_path: Path,
         dangerous: bool,
-        command: str = "/erk:plan-implement",
+        command: str,
+        target_subpath: Path | None,
     ) -> None:
         """Track interactive execution without replacing process.
 
@@ -256,7 +257,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         if not self._claude_available:
             raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
 
-        self._interactive_calls.append((worktree_path, dangerous, command))
+        self._interactive_calls.append((worktree_path, dangerous, command, target_subpath))
 
     def execute_interactive_command(
         self,
@@ -292,10 +293,10 @@ class FakeClaudeExecutor(ClaudeExecutor):
         return self._executed_commands.copy()
 
     @property
-    def interactive_calls(self) -> list[tuple[Path, bool, str]]:
+    def interactive_calls(self) -> list[tuple[Path, bool, str, Path | None]]:
         """Get the list of execute_interactive() calls that were made.
 
-        Returns list of (worktree_path, dangerous, command) tuples.
+        Returns list of (worktree_path, dangerous, command, target_subpath) tuples.
 
         This property is for test assertions only.
         """

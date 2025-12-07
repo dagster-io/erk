@@ -301,7 +301,8 @@ class ClaudeExecutor(ABC):
         self,
         worktree_path: Path,
         dangerous: bool,
-        command: str = "/erk:plan-implement",
+        command: str,
+        target_subpath: Path | None,
     ) -> None:
         """Execute Claude CLI in interactive mode by replacing current process.
 
@@ -309,6 +310,10 @@ class ClaudeExecutor(ABC):
             worktree_path: Path to worktree directory to run in
             dangerous: Whether to skip permission prompts
             command: The slash command to execute (default: /erk:plan-implement)
+            target_subpath: Optional subdirectory within worktree to start in.
+                If provided and exists, Claude will start in that subdirectory
+                instead of the worktree root. This preserves the user's relative
+                directory position when switching worktrees.
 
         Raises:
             RuntimeError: If Claude CLI is not available
@@ -757,13 +762,14 @@ class RealClaudeExecutor(ClaudeExecutor):
         self,
         worktree_path: Path,
         dangerous: bool,
-        command: str = "/erk:plan-implement",
+        command: str,
+        target_subpath: Path | None,
     ) -> None:
         """Execute Claude CLI in interactive mode by replacing current process.
 
         Implementation details:
         - Verifies Claude CLI is available
-        - Changes to worktree directory
+        - Changes to worktree directory (optionally to subpath if it exists)
         - Builds command arguments with the specified command
         - Replaces current process using os.execvp
 
@@ -774,8 +780,15 @@ class RealClaudeExecutor(ClaudeExecutor):
         if not self.is_claude_available():
             raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
 
-        # Change to worktree directory
-        os.chdir(worktree_path)
+        # Change to worktree directory (optionally to subpath if it exists)
+        if target_subpath is not None:
+            target_dir = worktree_path / target_subpath
+            if target_dir.is_dir():
+                os.chdir(target_dir)
+            else:
+                os.chdir(worktree_path)
+        else:
+            os.chdir(worktree_path)
 
         # Build command arguments
         cmd_args = ["claude", "--permission-mode", "acceptEdits"]

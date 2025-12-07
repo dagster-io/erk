@@ -33,6 +33,7 @@ from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk.core.worktree_utils import compute_relative_path_in_worktree
 
 
 def _determine_base_branch(ctx: ErkContext, repo_root: Path) -> str:
@@ -139,11 +140,17 @@ def _build_claude_args(slash_command: str, dangerous: bool) -> list[str]:
 
 
 def _execute_interactive_mode(
-    worktree_path: Path, dangerous: bool, executor: ClaudeExecutor
+    ctx: ErkContext,
+    repo_root: Path,
+    worktree_path: Path,
+    dangerous: bool,
+    executor: ClaudeExecutor,
 ) -> None:
     """Execute implementation in interactive mode using executor.
 
     Args:
+        ctx: Erk context for accessing git and current working directory
+        repo_root: Path to repository root for listing worktrees
         worktree_path: Path to worktree directory
         dangerous: Whether to skip permission prompts
         executor: Claude CLI executor for process replacement
@@ -154,12 +161,14 @@ def _execute_interactive_mode(
     Note:
         This function never returns in production - the process is replaced by Claude
     """
-    # Show message before handing off to executor
     click.echo("Entering interactive implementation mode...", err=True)
-
-    # Delegate to executor (never returns in production)
     try:
-        executor.execute_interactive(worktree_path, dangerous)
+        executor.execute_interactive(
+            worktree_path,
+            dangerous,
+            "/erk:plan-implement",
+            compute_relative_path_in_worktree(ctx.git.list_worktrees(repo_root), ctx.cwd),
+        )
     except RuntimeError as e:
         raise click.ClickException(str(e)) from e
 
@@ -935,7 +944,7 @@ def _implement_from_issue(
         _execute_non_interactive_mode(wt_path, commands, dangerous, verbose, executor)
     else:
         # Interactive mode - hand off to Claude (never returns)
-        _execute_interactive_mode(wt_path, dangerous, executor)
+        _execute_interactive_mode(ctx, repo.root, wt_path, dangerous, executor)
 
 
 def _implement_from_file(
@@ -1019,7 +1028,7 @@ def _implement_from_file(
         _execute_non_interactive_mode(wt_path, commands, dangerous, verbose, executor)
     else:
         # Interactive mode - hand off to Claude (never returns)
-        _execute_interactive_mode(wt_path, dangerous, executor)
+        _execute_interactive_mode(ctx, repo.root, wt_path, dangerous, executor)
 
 
 @click.command("implement")
