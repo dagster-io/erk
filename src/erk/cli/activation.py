@@ -11,13 +11,14 @@ from pathlib import Path
 def render_activation_script(
     *,
     worktree_path: Path,
+    target_subpath: Path | None = None,
     final_message: str = 'echo "Activated worktree: $(pwd)"',
     comment: str = "work activate-script",
 ) -> str:
     """Return shell code that activates a worktree's venv and .env.
 
     The script:
-      - cds into the worktree
+      - cds into the worktree (optionally to a subpath within it)
       - creates .venv with `uv sync` if not present
       - sources `.venv/bin/activate` if present
       - exports variables from `.env` if present
@@ -25,6 +26,9 @@ def render_activation_script(
 
     Args:
         worktree_path: Path to the worktree directory
+        target_subpath: Optional relative path within the worktree to cd to.
+            If the subpath doesn't exist, a warning is shown and the script
+            falls back to the worktree root.
         final_message: Shell command for final echo message (default shows activation)
         comment: Comment line for script identification (default: "work activate-script")
 
@@ -34,6 +38,7 @@ def render_activation_script(
     Example:
         >>> script = render_activation_script(
         ...     worktree_path=Path("/path/to/worktree"),
+        ...     target_subpath=Path("src/lib"),
         ...     final_message='echo "Ready: $(pwd)"'
         ... )
     """
@@ -41,8 +46,22 @@ def render_activation_script(
     venv_dir = shlex.quote(str(worktree_path / ".venv"))
     venv_activate = shlex.quote(str(worktree_path / ".venv" / "bin" / "activate"))
 
+    # Generate the cd command with optional subpath handling
+    if target_subpath is not None:
+        subpath_quoted = shlex.quote(str(target_subpath))
+        # Check if subpath exists in target worktree, fall back to root with warning
+        cd_command = f"""cd {wt}
+# Try to preserve relative directory position
+if [ -d {subpath_quoted} ]; then
+  cd {subpath_quoted}
+else
+  echo "Warning: '{target_subpath}' doesn't exist in target, using worktree root" >&2
+fi"""
+    else:
+        cd_command = f"cd {wt}"
+
     return f"""# {comment}
-cd {wt}
+{cd_command}
 # Unset VIRTUAL_ENV to avoid conflicts with previous activations
 unset VIRTUAL_ENV
 # Create venv if it doesn't exist

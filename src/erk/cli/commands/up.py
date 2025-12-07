@@ -14,6 +14,7 @@ from erk.cli.commands.navigation_helpers import (
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+from erk.core.worktree_utils import compute_relative_path_in_worktree
 
 
 @click.command("up")
@@ -115,7 +116,10 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
 
         if script:
             # Generate activation script for shell integration
-            activation_script = render_activation_script(worktree_path=target_wt_path)
+            activation_script = render_activation_script(
+                worktree_path=target_wt_path,
+                target_subpath=compute_relative_path_in_worktree(worktrees, ctx.cwd),
+            )
             result = ctx.script_writer.write_activation_script(
                 activation_script,
                 command_name="up",

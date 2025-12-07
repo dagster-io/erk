@@ -544,6 +544,60 @@ from myapp.core.feature import my_function  # ruff will flag as F401
 
 The `as X` syntax is the PEP 484 standard for indicating intentional re-exports. It tells both linters and readers that this import is meant to be consumed from this module.
 
+### Default Parameter Values Are Dangerous
+
+**Avoid default parameter values unless absolutely necessary.** They are a significant source of bugs.
+
+**Why defaults are dangerous:**
+
+1. **Silent incorrect behavior** - Callers forget to pass a parameter and get unexpected results
+2. **Hidden coupling** - The default encodes an assumption that may not hold for all callers
+3. **Audit difficulty** - Hard to verify all call sites are using the right value
+4. **Refactoring hazard** - Adding a new parameter with a default doesn't trigger errors at existing call sites
+
+```python
+# ❌ DANGEROUS: Default that might be wrong for some callers
+def process_file(path: Path, encoding: str = "utf-8") -> str:
+    return path.read_text(encoding=encoding)
+
+# Caller forgets encoding, silently gets wrong behavior for legacy file
+content = process_file(legacy_latin1_file)  # Bug: should be encoding="latin-1"
+
+# ✅ SAFER: Require explicit choice
+def process_file(path: Path, encoding: str) -> str:
+    return path.read_text(encoding=encoding)
+
+# Caller must think about encoding
+content = process_file(legacy_latin1_file, encoding="latin-1")
+```
+
+**When you discover a default is never overridden, eliminate it:**
+
+```python
+# If every call site uses the default...
+activate_worktree(ctx, repo, path, script, "up", preserve_relative_path=True)  # Always True
+activate_worktree(ctx, repo, path, script, "down", preserve_relative_path=True)  # Always True
+
+# ✅ CORRECT: Remove the parameter entirely
+def activate_worktree(ctx, repo, path, script, command_name) -> None:
+    # Always preserve relative path - it's just the behavior
+    ...
+```
+
+**Acceptable uses of defaults:**
+
+1. **Truly optional behavior** - Where the default is correct for 95%+ of callers
+2. **Backwards compatibility** - When adding a parameter to existing API (temporary)
+3. **Test conveniences** - Defaults that simplify test setup
+
+**When reviewing code with defaults, ask:**
+
+- Do all call sites actually want this default?
+- Would a caller forgetting this parameter cause a bug?
+- Is there a safer design that makes the choice explicit?
+
+---
+
 ### Speculative Tests
 
 ```python
@@ -560,6 +614,59 @@ def test_feature_being_built_now():
 ---
 
 ## Code Organization
+
+### Declare Variables Close to Use
+
+**Variables should be declared as close as possible to where they are used.** Avoid early declarations that pollute scope and obscure data flow.
+
+```python
+# ❌ WRONG: Variable declared far from use
+def process_data(ctx, items):
+    # Declared here...
+    result_path = compute_result_path(ctx)
+
+    # 20+ lines of other logic...
+    validate_items(items)
+    transformed = transform_items(items)
+    check_permissions(ctx)
+
+    # ...used here, far below
+    save_to_path(transformed, result_path)
+
+# ✅ CORRECT: Inline at use site
+def process_data(ctx, items):
+    validate_items(items)
+    transformed = transform_items(items)
+    check_permissions(ctx)
+
+    # Computed right where it's needed
+    save_to_path(transformed, compute_result_path(ctx))
+```
+
+**When passing to functions, prefer inline computation:**
+
+```python
+# ❌ WRONG: Unnecessary intermediate variable
+worktrees = ctx.git.list_worktrees(repo.root)
+relative_path = compute_relative_path(worktrees, ctx.cwd)  # Only used once below
+
+activation_script = render_activation_script(
+    worktree_path=target_path,
+    target_subpath=relative_path,
+)
+
+# ✅ CORRECT: Inline the computation
+worktrees = ctx.git.list_worktrees(repo.root)
+
+activation_script = render_activation_script(
+    worktree_path=target_path,
+    target_subpath=compute_relative_path(worktrees, ctx.cwd),
+)
+```
+
+**Exception:** If a variable is used multiple times or if inline computation hurts readability, a local variable is appropriate.
+
+---
 
 ### Indentation Depth Limit
 
@@ -655,3 +762,20 @@ Benefits:
 - [ ] Have I avoided `__all__` exports?
 
 **Default: Import from canonical location, never re-export**
+
+### Before declaring a local variable:
+
+- [ ] Is this variable used more than once?
+- [ ] Is this variable used close to where it's declared?
+- [ ] Would inlining the computation hurt readability?
+
+**Default: Inline single-use computations at the call site**
+
+### Before adding a default parameter value:
+
+- [ ] Do 95%+ of callers actually want this default?
+- [ ] Would forgetting to pass this parameter cause a subtle bug?
+- [ ] Is there a safer design that makes the choice explicit?
+- [ ] If the default is never overridden anywhere, should this parameter exist at all?
+
+**Default: Require explicit values; eliminate unused defaults**

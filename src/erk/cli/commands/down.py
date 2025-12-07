@@ -15,6 +15,7 @@ from erk.cli.commands.navigation_helpers import (
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+from erk.core.worktree_utils import compute_relative_path_in_worktree
 
 
 @click.command("down")
@@ -99,6 +100,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
             if script:
                 script_content = render_activation_script(
                     worktree_path=root_path,
+                    target_subpath=compute_relative_path_in_worktree(worktrees, ctx.cwd),
                     final_message='echo "Went to root repo: $(pwd)"',
                     comment="work activate-script (root repo)",
                 )
@@ -131,7 +133,10 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
         Ensure.path_exists(ctx, target_wt_path, f"Worktree not found: {target_wt_path}")
 
         if script:
-            activation_script = render_activation_script(worktree_path=target_wt_path)
+            activation_script = render_activation_script(
+                worktree_path=target_wt_path,
+                target_subpath=compute_relative_path_in_worktree(worktrees, ctx.cwd),
+            )
             result = ctx.script_writer.write_activation_script(
                 activation_script,
                 command_name="down",
