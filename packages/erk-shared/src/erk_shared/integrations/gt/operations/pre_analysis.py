@@ -133,7 +133,31 @@ def execute_pre_analysis(
         )
         return
 
-    # Step 2.5: Check for merge conflicts (informational only, does not block)
+    # Step 2.5: Check if parent branch has a merged PR (would cause gt submit to fail)
+    trunk_branch = ops.git.detect_trunk_branch(repo_root)
+    if parent_branch != trunk_branch:
+        yield ProgressEvent(f"Checking if parent branch '{parent_branch}' is merged...")
+        parent_pr = ops.github.get_pr_for_branch(repo_root, parent_branch)
+        if parent_pr is not None and parent_pr.state == "MERGED":
+            yield CompletionEvent(
+                PreAnalysisError(
+                    success=False,
+                    error_type="parent_merged",
+                    message=(
+                        f"Parent branch '{parent_branch}' has been merged. "
+                        "Run 'gt sync' to update your stack."
+                    ),
+                    details={
+                        "parent_branch": parent_branch,
+                        "pr_number": str(parent_pr.number),
+                        "fix": "Run 'gt sync' to reparent this branch to trunk",
+                    },
+                )
+            )
+            return
+        yield ProgressEvent("Parent branch not merged", style="success")
+
+    # Step 2.6: Check for merge conflicts (informational only, does not block)
     # First try GitHub API if PR exists (most accurate), then fallback to local git merge-tree
     pr_details = ops.github.get_pr_for_branch(repo_root, branch_name)
 

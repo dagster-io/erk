@@ -133,6 +133,7 @@ PreAnalysisErrorType = Literal[
     "no_commits",
     "squash_failed",
     "squash_conflict",
+    "parent_merged",
 ]
 
 PostAnalysisErrorType = Literal[
