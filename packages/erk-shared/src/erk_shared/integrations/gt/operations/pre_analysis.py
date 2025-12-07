@@ -140,7 +140,7 @@ def execute_pre_analysis(
     if parent_branch != trunk_branch:
         yield ProgressEvent(f"Checking if parent branch '{parent_branch}' is merged...")
         parent_pr = ops.github.get_pr_for_branch(repo_root, parent_branch)
-        if parent_pr is not None and parent_pr.state == "MERGED":
+        if not isinstance(parent_pr, PRNotFound) and parent_pr.state == "MERGED":
             yield CompletionEvent(
                 PreAnalysisError(
                     success=False,
