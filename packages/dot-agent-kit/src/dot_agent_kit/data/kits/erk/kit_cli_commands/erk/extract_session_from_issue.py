@@ -2,16 +2,18 @@
 
 Usage:
     dot-agent run erk extract-session-from-issue <issue-number> [--output <path>]
+    dot-agent run erk extract-session-from-issue <issue-number> --stdout
 
 This command:
 1. Fetches all comments from the specified GitHub issue
 2. Parses session-content metadata blocks from the comments
 3. Handles chunked content by combining in order
-4. Writes the combined XML to the output path
+4. Writes the combined XML to the output path (or stdout with --stdout)
 5. Returns metadata about the extracted session
 
 Output:
-    JSON with success status, session_file path, session_ids, and chunk_count
+    Default: JSON with success status, session_file path, session_ids, and chunk_count
+    With --stdout: Session XML to stdout, metadata JSON to stderr
 """
 
 import json
@@ -38,12 +40,20 @@ from dot_agent_kit.context_helpers import require_github_issues, require_repo_ro
     default=None,
     help="Session ID for scratch directory (used if --output not provided)",
 )
+@click.option(
+    "--stdout",
+    "use_stdout",
+    is_flag=True,
+    default=False,
+    help="Output session XML to stdout instead of writing to a file",
+)
 @click.pass_context
 def extract_session_from_issue(
     ctx: click.Context,
     issue_number: int,
     output: Path | None,
     session_id: str | None,
+    use_stdout: bool,
 ) -> None:
     """Extract session XML from GitHub issue comments.
 
@@ -74,6 +84,22 @@ def extract_session_from_issue(
             )
         )
         raise SystemExit(1)
+
+    # Handle --stdout: output XML to stdout, metadata to stderr
+    if use_stdout:
+        click.echo(session_xml)
+        click.echo(
+            json.dumps(
+                {
+                    "success": True,
+                    "issue_number": issue_number,
+                    "session_ids": session_ids,
+                    "chunk_count": len(session_ids) if session_ids else 1,
+                }
+            ),
+            err=True,
+        )
+        return
 
     # Determine output path
     if output is not None:

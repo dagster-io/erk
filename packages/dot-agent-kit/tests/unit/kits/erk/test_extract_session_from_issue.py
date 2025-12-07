@@ -354,3 +354,101 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
     assert isinstance(output["success"], bool)
     assert isinstance(output["error"], str)
     assert output["success"] is False
+
+
+# ============================================================================
+# --stdout Flag Tests
+# ============================================================================
+
+
+def test_stdout_outputs_xml_to_stdout(tmp_path: Path) -> None:
+    """Test --stdout outputs session XML to stdout."""
+    session_xml = '<session session_id="stdout123"><message>Hello world</message></session>'
+    session_block = render_session_content_block(session_xml, session_label="test-session")
+
+    fake_gh = FakeGitHubIssues(
+        issues={1000: make_issue_info(1000)},
+        comments={1000: [session_block]},
+    )
+    fake_git = FakeGit()
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+
+        result = runner.invoke(
+            extract_session_from_issue,
+            ["1000", "--stdout"],
+            obj=DotAgentContext.for_test(
+                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
+            ),
+        )
+
+    assert result.exit_code == 0, result.output
+    # stdout contains the XML (check result.output which is the combined output)
+    assert "<session session_id=" in result.output
+    assert "stdout123" in result.output
+
+
+def test_stdout_outputs_metadata_to_stderr(tmp_path: Path) -> None:
+    """Test --stdout outputs metadata JSON to stderr."""
+    session_xml = '<session session_id="stderr456"><data>Test</data></session>'
+    session_block = render_session_content_block(session_xml)
+
+    fake_gh = FakeGitHubIssues(
+        issues={1100: make_issue_info(1100)},
+        comments={1100: [session_block]},
+    )
+    fake_git = FakeGit()
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+
+        result = runner.invoke(
+            extract_session_from_issue,
+            ["1100", "--stdout"],
+            obj=DotAgentContext.for_test(
+                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
+            ),
+        )
+
+    assert result.exit_code == 0
+    # result.output contains combined stdout+stderr, verify JSON metadata is present
+    # The output should have XML first, then JSON metadata on stderr
+    assert "stderr456" in result.output
+    # Verify the JSON metadata structure is in the output
+    assert '"success": true' in result.output
+    assert '"issue_number": 1100' in result.output
+
+
+def test_stdout_does_not_write_file(tmp_path: Path) -> None:
+    """Test --stdout doesn't create any files."""
+    session_xml = '<session session_id="nofile789"><data>Test</data></session>'
+    session_block = render_session_content_block(session_xml)
+
+    fake_gh = FakeGitHubIssues(
+        issues={1200: make_issue_info(1200)},
+        comments={1200: [session_block]},
+    )
+    fake_git = FakeGit()
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+        scratch_dir = cwd / ".erk" / "scratch"
+        scratch_dir.mkdir(parents=True)
+
+        result = runner.invoke(
+            extract_session_from_issue,
+            ["1200", "--stdout"],
+            obj=DotAgentContext.for_test(
+                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
+            ),
+        )
+
+        # Verify no XML files were created in scratch directory
+        xml_files = list(scratch_dir.rglob("*.xml"))
+        assert xml_files == []
+
+    assert result.exit_code == 0

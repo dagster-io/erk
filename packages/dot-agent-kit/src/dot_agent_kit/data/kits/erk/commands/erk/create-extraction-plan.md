@@ -146,7 +146,28 @@ Match session IDs against filenames (full or partial prefix match), then preproc
 dot-agent run erk preprocess-session <project-dir>/<session-id>.jsonl --stdout
 ```
 
-### Step 2: Verify Existing Documentation
+### Step 2: Check for Associated Plan Issue Session Content
+
+If on a feature branch (not trunk), check if this branch has an associated plan issue:
+
+```bash
+# Check if .impl/issue.json exists
+cat .impl/issue.json 2>/dev/null
+```
+
+**If issue.json exists AND has valid `issue_number`:**
+
+1. Extract the `issue_number` from the JSON response
+2. Attempt to extract session content from the plan issue:
+   ```bash
+   dot-agent run erk extract-session-from-issue <issue_number> --stdout
+   ```
+3. If session XML is returned (not an error), store it as "plan issue session content"
+4. Note the session IDs from the stderr JSON output
+
+**If issue.json doesn't exist OR extraction fails:** Continue with session log analysis only (this is normal for branches not created via `erk implement`).
+
+### Step 3: Verify Existing Documentation
 
 Before analyzing gaps, scan the project for existing documentation:
 
@@ -163,7 +184,7 @@ ls -la *.md README* CONTRIBUTING* 2>/dev/null
 
 Create a mental inventory of what's already documented. For each potential suggestion later, verify it doesn't substantially overlap with existing docs.
 
-### Step 3: Mine Full Session Context
+### Step 4: Mine Full Session Context
 
 **CRITICAL**: Session analysis must examine the FULL conversation, not just recent messages.
 
@@ -207,11 +228,32 @@ This indicates:
 - The fake-driven-testing skill connection was discovered
 - This is Category A (learning) if not documented, or confirms existing docs if it is
 
-### Steps 4-7: Analyze Session
+### Steps 5-8: Analyze Session
 
 @../../docs/erk/includes/extract-docs-analysis-shared.md
 
-### Step 8: Confirm with User
+### Step 9: Combine Session Sources
+
+When both **plan issue session content** (from Step 2) AND **session logs** (from Step 1) are available, analyze them together:
+
+**Plan Issue Session Content** (from Step 2):
+
+- Contains the PLANNING session - research, exploration, design decisions
+- Look for: external docs consulted, codebase patterns discovered, trade-offs considered
+- Particularly valuable for **Category A (Learning Gaps)** - what would have made planning faster
+
+**Session Logs** (from Step 1):
+
+- Contains the IMPLEMENTATION session(s) - actual work done
+- Look for: features built, patterns implemented, problems solved
+- Particularly valuable for **Category B (Teaching Gaps)** - documentation for what was built
+
+When presenting analysis, clearly label which source revealed each insight:
+
+- "[Plan session]" for insights from the plan issue
+- "[Impl session]" for insights from session logs
+
+### Step 10: Confirm with User
 
 **If analyzing current conversation (no session IDs in context):**
 
@@ -231,7 +273,7 @@ Wait for user response before generating full output.
 
 Skip confirmation and output all suggestions immediately since the user explicitly chose to analyze specific session(s).
 
-### Step 9: Format Plan Content
+### Step 11: Format Plan Content
 
 Format the selected suggestions as an implementation plan with this structure:
 
@@ -244,7 +286,7 @@ Format the selected suggestions as an implementation plan with this structure:
   - Priority (based on effort and impact)
   - Content (the actual draft content)
 
-### Step 10: Create Extraction Plan Issue
+### Step 12: Create Extraction Plan Issue
 
 **CRITICAL: Use this exact CLI command. Do NOT use `gh issue create` directly.**
 
@@ -265,7 +307,7 @@ This command automatically:
 
 **Note:** The current session ID (from `SESSION_CONTEXT` reminder) is used as `--session-id` for scratch storage. The `--extraction-session-ids` should list all session IDs that were analyzed (may differ from current session).
 
-### Step 11: Verify and Output
+### Step 13: Verify and Output
 
 Run verification to ensure the issue was created with proper Schema v2 compliance:
 
