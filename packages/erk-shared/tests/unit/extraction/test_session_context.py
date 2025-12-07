@@ -2,7 +2,11 @@
 
 from pathlib import Path
 
-from erk_shared.extraction.fake_session_store import FakeProject, FakeSessionData, FakeSessionStore
+from erk_shared.extraction.claude_code_session_store import (
+    FakeClaudeCodeSessionStore,
+    FakeProject,
+    FakeSessionData,
+)
 from erk_shared.extraction.session_context import (
     SessionContextResult,
     collect_session_context,
@@ -22,7 +26,7 @@ def test_collect_session_context_success(tmp_path: Path) -> None:
         '{"type": "user", "message": {"content": "Hello"}}\n'
         '{"type": "assistant", "message": {"content": [{"type": "text", "text": "World"}]}}\n'
     )
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         current_session_id="test-session-id",
         projects={
             tmp_path: FakeProject(
@@ -53,7 +57,7 @@ def test_collect_session_context_success(tmp_path: Path) -> None:
 def test_collect_session_context_no_session_id() -> None:
     """Test returns None when no session ID available."""
     fake_git = FakeGit()
-    fake_store = FakeSessionStore(current_session_id=None)
+    fake_store = FakeClaudeCodeSessionStore(current_session_id=None)
 
     result = collect_session_context(
         git=fake_git,
@@ -68,7 +72,7 @@ def test_collect_session_context_no_project(tmp_path: Path) -> None:
     """Test returns None when no project exists for cwd."""
     fake_git = FakeGit()
     # Session store has no projects
-    fake_store = FakeSessionStore(current_session_id="test-session-id")
+    fake_store = FakeClaudeCodeSessionStore(current_session_id="test-session-id")
 
     result = collect_session_context(
         git=fake_git,
@@ -83,7 +87,7 @@ def test_collect_session_context_no_sessions(tmp_path: Path) -> None:
     """Test returns None when no sessions discovered."""
     fake_git = FakeGit()
     # Project exists but has no sessions
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         current_session_id="test-session-id",
         projects={tmp_path: FakeProject(sessions={})},
     )
@@ -101,7 +105,7 @@ def test_collect_session_context_empty_after_preprocessing(tmp_path: Path) -> No
     """Test returns None when all sessions are empty after preprocessing."""
     fake_git = FakeGit()
     # Empty session content will result in None after preprocessing
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         current_session_id="empty-session",
         projects={
             tmp_path: FakeProject(
@@ -136,7 +140,7 @@ def test_collect_session_context_multiple_sessions(tmp_path: Path) -> None:
     session1_content = '{"type": "user", "message": {"content": "First"}}\n'
     session2_content = '{"type": "user", "message": {"content": "Second"}}\n'
 
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         current_session_id="session-2",
         projects={
             tmp_path: FakeProject(
@@ -179,7 +183,7 @@ def test_collect_session_context_uses_provided_session_id(tmp_path: Path) -> Non
     )
 
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         current_session_id="auto-detected-session",  # Different from provided
         projects={
             tmp_path: FakeProject(
@@ -223,7 +227,7 @@ def test_collect_session_context_with_agent_logs(tmp_path: Path) -> None:
     main_content = '{"type": "user", "message": {"content": "Main session"}}\n'
     agent_content = '{"type": "user", "message": {"content": "Agent task"}}\n'
 
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         current_session_id="test-session",
         projects={
             tmp_path: FakeProject(

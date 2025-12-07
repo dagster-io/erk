@@ -3,7 +3,11 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from erk_shared.extraction.session_store import ClaudeCodeSessionStore, Session, SessionContent
+from erk_shared.extraction.claude_code_session_store.abc import (
+    ClaudeCodeSessionStore,
+    Session,
+    SessionContent,
+)
 
 
 @dataclass
@@ -23,7 +27,7 @@ class FakeProject:
     sessions: dict[str, FakeSessionData] = field(default_factory=dict)
 
 
-class FakeSessionStore(ClaudeCodeSessionStore):
+class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
     """In-memory fake for testing.
 
     Enables fast, deterministic testing without filesystem I/O.

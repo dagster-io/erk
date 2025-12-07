@@ -37,7 +37,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import click
-from erk_shared.extraction.session_store import ClaudeCodeSessionStore, Session
+from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore, Session
 from erk_shared.git.abc import Git
 
 from dot_agent_kit.context_helpers import require_cwd, require_git, require_session_store

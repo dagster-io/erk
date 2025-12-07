@@ -3,10 +3,14 @@
 import os
 from pathlib import Path
 
-from erk_shared.extraction.session_store import ClaudeCodeSessionStore, Session, SessionContent
+from erk_shared.extraction.claude_code_session_store.abc import (
+    ClaudeCodeSessionStore,
+    Session,
+    SessionContent,
+)
 
 
-class RealSessionStore(ClaudeCodeSessionStore):
+class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
     """Production implementation using local filesystem.
 
     Reads sessions from ~/.claude/projects/ directory structure.

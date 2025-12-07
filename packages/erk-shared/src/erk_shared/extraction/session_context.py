@@ -8,10 +8,10 @@ plan-save-to-issue and raw extraction workflows.
 from dataclasses import dataclass
 from pathlib import Path
 
+from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
 from erk_shared.extraction.session_discovery import get_branch_context
 from erk_shared.extraction.session_preprocessing import preprocess_session_content
 from erk_shared.extraction.session_selection import auto_select_sessions
-from erk_shared.extraction.session_store import ClaudeCodeSessionStore
 from erk_shared.extraction.types import BranchContext
 from erk_shared.git.abc import Git
 

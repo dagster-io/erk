@@ -5,7 +5,7 @@ from pathlib import Path
 
 import click
 import tomlkit
-from erk_shared.extraction.session_store import ClaudeCodeSessionStore
+from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
 from erk_shared.git.abc import Git
 from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.real import RealGit
@@ -131,7 +131,7 @@ class ErkContext:
             For more complex test setup with custom configs or multiple integration classes,
             use ErkContext.for_test() instead.
         """
-        from erk_shared.extraction.fake_session_store import FakeSessionStore
+        from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
         from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
         from erk_shared.integrations.graphite.fake import FakeGraphite
@@ -163,7 +163,7 @@ class ErkContext:
             feedback=FakeUserFeedback(),
             plan_list_service=PlanListService(fake_github, fake_issues),
             planner_registry=FakePlannerRegistry(),
-            session_store=FakeSessionStore(),
+            session_store=FakeClaudeCodeSessionStore(),
             cwd=cwd,
             global_config=None,
             local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
@@ -246,7 +246,7 @@ class ErkContext:
             For simple cases that only need git, use ErkContext.minimal()
             which is more concise.
         """
-        from erk_shared.extraction.fake_session_store import FakeSessionStore
+        from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
         from erk_shared.git.fake import FakeGit
         from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
@@ -303,7 +303,7 @@ class ErkContext:
             planner_registry = FakePlannerRegistry()
 
         if session_store is None:
-            session_store = FakeSessionStore()
+            session_store = FakeClaudeCodeSessionStore()
 
         if global_config is None:
             global_config = GlobalConfig(
@@ -507,9 +507,9 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
         issues = DryRunGitHubIssues(issues)
 
     # 10. Create session store
-    from erk_shared.extraction.real_session_store import RealSessionStore
+    from erk_shared.extraction.claude_code_session_store import RealClaudeCodeSessionStore
 
-    session_store: ClaudeCodeSessionStore = RealSessionStore()
+    session_store: ClaudeCodeSessionStore = RealClaudeCodeSessionStore()
 
     # 11. Create context with all values
     return ErkContext(

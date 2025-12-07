@@ -14,9 +14,9 @@ import uuid
 import warnings
 from pathlib import Path
 
+from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
 from erk_shared.extraction.llm_distillation import distill_with_haiku
 from erk_shared.extraction.session_context import collect_session_context
-from erk_shared.extraction.session_store import ClaudeCodeSessionStore
 from erk_shared.extraction.types import RawExtractionResult
 from erk_shared.git.abc import Git
 from erk_shared.github.issues.abc import GitHubIssues

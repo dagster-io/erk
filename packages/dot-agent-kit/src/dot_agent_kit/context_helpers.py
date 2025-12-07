@@ -13,7 +13,7 @@ This eliminates code duplication across kit CLI commands.
 from pathlib import Path
 
 import click
-from erk_shared.extraction.session_store import ClaudeCodeSessionStore
+from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues

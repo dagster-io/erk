@@ -1,7 +1,7 @@
 """Unit tests for list_sessions kit CLI command.
 
 Tests session discovery, relative time formatting, branch context detection,
-and summary extraction using FakeSessionStore.
+and summary extraction using FakeClaudeCodeSessionStore.
 """
 
 import json
@@ -11,7 +11,11 @@ from pathlib import Path
 from unittest.mock import patch
 
 from click.testing import CliRunner
-from erk_shared.extraction.fake_session_store import FakeProject, FakeSessionData, FakeSessionStore
+from erk_shared.extraction.claude_code_session_store import (
+    FakeClaudeCodeSessionStore,
+    FakeProject,
+    FakeSessionData,
+)
 from erk_shared.git.fake import FakeGit
 
 from dot_agent_kit.context import DotAgentContext
@@ -218,13 +222,13 @@ def test_extract_summary_content_with_newlines() -> None:
 
 
 # ============================================================================
-# 4. Session Discovery Tests (7 tests) - Using FakeSessionStore
+# 4. Session Discovery Tests (7 tests) - Using FakeClaudeCodeSessionStore
 # ============================================================================
 
 
 def test_list_sessions_finds_all_sessions(tmp_path: Path) -> None:
     """Test that all sessions are discovered from store."""
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -255,7 +259,7 @@ def test_list_sessions_finds_all_sessions(tmp_path: Path) -> None:
 
 def test_list_sessions_sorted_by_mtime(tmp_path: Path) -> None:
     """Test that sessions are sorted by mtime (newest first)."""
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -283,7 +287,7 @@ def test_list_sessions_sorted_by_mtime(tmp_path: Path) -> None:
 
 def test_list_sessions_respects_limit(tmp_path: Path) -> None:
     """Test that limit parameter is respected."""
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -305,7 +309,7 @@ def test_list_sessions_respects_limit(tmp_path: Path) -> None:
 
 def test_list_sessions_marks_current(tmp_path: Path) -> None:
     """Test that current session is marked correctly."""
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         current_session_id="current123",
         projects={
             tmp_path: FakeProject(
@@ -339,7 +343,7 @@ def test_list_sessions_marks_current(tmp_path: Path) -> None:
 
 def test_list_sessions_empty_project(tmp_path: Path) -> None:
     """Test handling of project with no sessions."""
-    fake_store = FakeSessionStore(projects={tmp_path: FakeProject(sessions={})})
+    fake_store = FakeClaudeCodeSessionStore(projects={tmp_path: FakeProject(sessions={})})
 
     sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
     assert sessions == []
@@ -348,7 +352,7 @@ def test_list_sessions_empty_project(tmp_path: Path) -> None:
 
 def test_list_sessions_nonexistent_project(tmp_path: Path) -> None:
     """Test handling of nonexistent project."""
-    fake_store = FakeSessionStore()  # No projects
+    fake_store = FakeClaudeCodeSessionStore()  # No projects
 
     sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
     assert sessions == []
@@ -357,7 +361,7 @@ def test_list_sessions_nonexistent_project(tmp_path: Path) -> None:
 
 def test_list_sessions_extracts_summaries(tmp_path: Path) -> None:
     """Test that summaries are extracted from session content."""
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -447,7 +451,7 @@ def test_get_branch_context_empty_repo(tmp_path: Path) -> None:
 
 
 # ============================================================================
-# 6. CLI Command Tests (5 tests) - Using FakeSessionStore
+# 6. CLI Command Tests (5 tests) - Using FakeClaudeCodeSessionStore
 # ============================================================================
 
 
@@ -457,7 +461,7 @@ def test_cli_success(tmp_path: Path) -> None:
         current_branches={tmp_path: "feature-branch"},
         trunk_branches={tmp_path: "main"},
     )
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -489,7 +493,7 @@ def test_cli_project_not_found(tmp_path: Path) -> None:
         trunk_branches={tmp_path: "main"},
     )
     # Empty session store - no projects
-    fake_store = FakeSessionStore()
+    fake_store = FakeClaudeCodeSessionStore()
     context = DotAgentContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
@@ -507,7 +511,7 @@ def test_cli_output_structure(tmp_path: Path) -> None:
         current_branches={tmp_path: "feature-branch"},
         trunk_branches={tmp_path: "main"},
     )
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -558,7 +562,7 @@ def test_cli_limit_option(tmp_path: Path) -> None:
         current_branches={tmp_path: "feature-branch"},
         trunk_branches={tmp_path: "main"},
     )
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -588,7 +592,7 @@ def test_cli_marks_current_session(tmp_path: Path) -> None:
         current_branches={tmp_path: "feature-branch"},
         trunk_branches={tmp_path: "main"},
     )
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         current_session_id="current-session",
         projects={
             tmp_path: FakeProject(
@@ -629,7 +633,7 @@ def test_cli_marks_current_session(tmp_path: Path) -> None:
 
 def test_list_sessions_min_size_filters_tiny_sessions(tmp_path: Path) -> None:
     """Test that --min-size filters out tiny sessions."""
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -659,7 +663,7 @@ def test_list_sessions_min_size_filters_tiny_sessions(tmp_path: Path) -> None:
 
 def test_list_sessions_min_size_zero_no_filtering(tmp_path: Path) -> None:
     """Test that min_size=0 (default) does not filter."""
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -688,7 +692,7 @@ def test_list_sessions_min_size_zero_no_filtering(tmp_path: Path) -> None:
 
 def test_list_sessions_all_filtered(tmp_path: Path) -> None:
     """Test when all sessions are filtered by size."""
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -721,7 +725,7 @@ def test_cli_min_size_option(tmp_path: Path) -> None:
         current_branches={tmp_path: "feature"},
         trunk_branches={tmp_path: "main"},
     )
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         projects={
             tmp_path: FakeProject(
                 sessions={

@@ -1,51 +1,52 @@
-"""Unit tests for SessionStore implementations."""
+"""Unit tests for ClaudeCodeSessionStore implementations."""
 
 from pathlib import Path
 
-from erk_shared.extraction.fake_session_store import (
+from erk_shared.extraction.claude_code_session_store import (
+    FakeClaudeCodeSessionStore,
     FakeProject,
     FakeSessionData,
-    FakeSessionStore,
+    Session,
+    SessionContent,
 )
-from erk_shared.extraction.session_store import Session, SessionContent
 
 
-class TestFakeSessionStore:
-    """Tests for FakeSessionStore - Layer 1: Fake Infrastructure Tests."""
+class TestFakeClaudeCodeSessionStore:
+    """Tests for FakeClaudeCodeSessionStore - Layer 1: Fake Infrastructure Tests."""
 
     def test_get_current_session_id_returns_configured_value(self) -> None:
         """Test that get_current_session_id returns the configured value."""
-        store = FakeSessionStore(current_session_id="abc-123")
+        store = FakeClaudeCodeSessionStore(current_session_id="abc-123")
         assert store.get_current_session_id() == "abc-123"
 
     def test_get_current_session_id_returns_none_when_not_configured(self) -> None:
         """Test that get_current_session_id returns None by default."""
-        store = FakeSessionStore()
+        store = FakeClaudeCodeSessionStore()
         assert store.get_current_session_id() is None
 
     def test_has_project_returns_true_for_existing_project(self) -> None:
         """Test has_project returns True for configured project."""
         project_path = Path("/my/project")
-        store = FakeSessionStore(
+        store = FakeClaudeCodeSessionStore(
             projects={project_path: FakeProject()},
         )
         assert store.has_project(project_path) is True
 
     def test_has_project_returns_false_for_missing_project(self) -> None:
         """Test has_project returns False for unconfigured project."""
-        store = FakeSessionStore()
+        store = FakeClaudeCodeSessionStore()
         assert store.has_project(Path("/nonexistent")) is False
 
     def test_find_sessions_returns_empty_for_missing_project(self) -> None:
         """Test find_sessions returns empty list for unconfigured project."""
-        store = FakeSessionStore()
+        store = FakeClaudeCodeSessionStore()
         sessions = store.find_sessions(Path("/nonexistent"))
         assert sessions == []
 
     def test_find_sessions_returns_sessions_sorted_by_modified_at(self) -> None:
         """Test sessions are sorted newest first."""
         project_path = Path("/my/project")
-        store = FakeSessionStore(
+        store = FakeClaudeCodeSessionStore(
             current_session_id="session-2",
             projects={
                 project_path: FakeProject(
@@ -76,7 +77,7 @@ class TestFakeSessionStore:
     def test_find_sessions_filters_by_min_size(self) -> None:
         """Test min_size filter excludes small sessions."""
         project_path = Path("/my/project")
-        store = FakeSessionStore(
+        store = FakeClaudeCodeSessionStore(
             projects={
                 project_path: FakeProject(
                     sessions={
@@ -103,7 +104,7 @@ class TestFakeSessionStore:
     def test_find_sessions_respects_limit(self) -> None:
         """Test limit parameter caps number of sessions returned."""
         project_path = Path("/my/project")
-        store = FakeSessionStore(
+        store = FakeClaudeCodeSessionStore(
             projects={
                 project_path: FakeProject(
                     sessions={
@@ -129,7 +130,7 @@ class TestFakeSessionStore:
     def test_find_sessions_marks_current_session(self) -> None:
         """Test is_current is set correctly based on current_session_id."""
         project_path = Path("/my/project")
-        store = FakeSessionStore(
+        store = FakeClaudeCodeSessionStore(
             current_session_id="current-one",
             projects={
                 project_path: FakeProject(
@@ -157,14 +158,14 @@ class TestFakeSessionStore:
 
     def test_read_session_returns_none_for_missing_project(self) -> None:
         """Test read_session returns None for unconfigured project."""
-        store = FakeSessionStore()
+        store = FakeClaudeCodeSessionStore()
         result = store.read_session(Path("/nonexistent"), "any-id")
         assert result is None
 
     def test_read_session_returns_none_for_missing_session(self) -> None:
         """Test read_session returns None for unconfigured session."""
         project_path = Path("/my/project")
-        store = FakeSessionStore(
+        store = FakeClaudeCodeSessionStore(
             projects={project_path: FakeProject()},
         )
         result = store.read_session(project_path, "nonexistent-id")
@@ -174,7 +175,7 @@ class TestFakeSessionStore:
         """Test read_session returns main content."""
         project_path = Path("/my/project")
         main_content = '{"type": "user", "message": "Hello"}\n'
-        store = FakeSessionStore(
+        store = FakeClaudeCodeSessionStore(
             projects={
                 project_path: FakeProject(
                     sessions={
@@ -200,7 +201,7 @@ class TestFakeSessionStore:
         project_path = Path("/my/project")
         main_content = '{"type": "user", "message": "Hello"}\n'
         agent_content = '{"type": "agent", "message": "Working"}\n'
-        store = FakeSessionStore(
+        store = FakeClaudeCodeSessionStore(
             projects={
                 project_path: FakeProject(
                     sessions={
@@ -224,7 +225,7 @@ class TestFakeSessionStore:
     def test_read_session_excludes_agent_logs_when_disabled(self) -> None:
         """Test read_session excludes agent logs when include_agents=False."""
         project_path = Path("/my/project")
-        store = FakeSessionStore(
+        store = FakeClaudeCodeSessionStore(
             projects={
                 project_path: FakeProject(
                     sessions={
@@ -247,7 +248,7 @@ class TestFakeSessionStore:
     def test_read_session_sorts_agent_logs_by_id(self) -> None:
         """Test agent logs are returned in sorted order."""
         project_path = Path("/my/project")
-        store = FakeSessionStore(
+        store = FakeClaudeCodeSessionStore(
             projects={
                 project_path: FakeProject(
                     sessions={

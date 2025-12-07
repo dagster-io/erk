@@ -6,7 +6,11 @@ from unittest.mock import patch
 
 import pytest
 from click.testing import CliRunner
-from erk_shared.extraction.fake_session_store import FakeProject, FakeSessionData, FakeSessionStore
+from erk_shared.extraction.claude_code_session_store import (
+    FakeClaudeCodeSessionStore,
+    FakeProject,
+    FakeSessionData,
+)
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues import FakeGitHubIssues
 
@@ -179,12 +183,12 @@ def test_plan_save_to_issue_session_context_captured(plans_dir: Path, tmp_path: 
         trunk_branches={tmp_path: "main"},
     )
 
-    # Create session data in FakeSessionStore
+    # Create session data in FakeClaudeCodeSessionStore
     session_content = (
         '{"type": "user", "message": {"content": "Hello"}}\n'
         '{"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi!"}]}}\n'
     )
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         current_session_id="test-session-id",
         projects={
             tmp_path: FakeProject(
@@ -238,7 +242,7 @@ def test_plan_save_to_issue_session_context_skipped_when_none(plans_dir: Path) -
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
     # Empty session store - no projects
-    fake_store = FakeSessionStore(current_session_id=None)
+    fake_store = FakeClaudeCodeSessionStore(current_session_id=None)
 
     runner = CliRunner()
 
@@ -270,7 +274,7 @@ def test_plan_save_to_issue_json_output_includes_session_metadata(plans_dir: Pat
     """Test JSON output includes session_context_chunks and session_ids fields."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    fake_store = FakeSessionStore(current_session_id=None)
+    fake_store = FakeClaudeCodeSessionStore(current_session_id=None)
 
     runner = CliRunner()
 
@@ -312,7 +316,7 @@ def test_plan_save_to_issue_passes_session_id_to_session_store(
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
 
     # Session store with the specific session ID
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         current_session_id=test_session_id,
         projects={
             tmp_path: FakeProject(
@@ -362,7 +366,7 @@ def test_plan_save_to_issue_display_format_shows_session_context(
     )
 
     session_content = '{"type": "user", "message": {"content": "Hello"}}\n'
-    fake_store = FakeSessionStore(
+    fake_store = FakeClaudeCodeSessionStore(
         current_session_id="test-session-id",
         projects={
             tmp_path: FakeProject(
@@ -443,7 +447,7 @@ def test_plan_save_to_issue_reads_session_id_from_file(tmp_path: Path) -> None:
     """Test plan_save_to_issue reads session ID from file when not provided via flag."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    fake_store = FakeSessionStore()
+    fake_store = FakeClaudeCodeSessionStore()
     runner = CliRunner()
 
     plan = "# Feature Plan\n\n- Step 1"
@@ -488,7 +492,7 @@ def test_plan_save_to_issue_flag_overrides_file(tmp_path: Path) -> None:
     """Test --session-id flag takes priority over file-based session ID."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    fake_store = FakeSessionStore()
+    fake_store = FakeClaudeCodeSessionStore()
     runner = CliRunner()
 
     plan = "# Feature Plan\n\n- Step 1"
@@ -534,7 +538,7 @@ def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
     """Test plan_save_to_issue creates marker file on success."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    fake_store = FakeSessionStore()
+    fake_store = FakeClaudeCodeSessionStore()
     runner = CliRunner()
 
     plan = "# Feature Plan\n\n- Step 1"
@@ -566,7 +570,7 @@ def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None
     """Test marker file is not created when no session ID is available."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    fake_store = FakeSessionStore()
+    fake_store = FakeClaudeCodeSessionStore()
     runner = CliRunner()
 
     plan = "# Feature Plan\n\n- Step 1"

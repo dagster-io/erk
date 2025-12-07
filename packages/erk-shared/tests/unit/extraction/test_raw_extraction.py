@@ -3,7 +3,11 @@
 import json
 from pathlib import Path
 
-from erk_shared.extraction.fake_session_store import FakeProject, FakeSessionData, FakeSessionStore
+from erk_shared.extraction.claude_code_session_store import (
+    FakeClaudeCodeSessionStore,
+    FakeProject,
+    FakeSessionData,
+)
 from erk_shared.extraction.raw_extraction import create_raw_extraction_plan
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues.fake import FakeGitHubIssues
@@ -20,7 +24,7 @@ class TestCreateRawExtractionPlan:
         )
         github_issues = FakeGitHubIssues()
         # Session store with no projects
-        session_store = FakeSessionStore(current_session_id="abc123")
+        session_store = FakeClaudeCodeSessionStore(current_session_id="abc123")
 
         result = create_raw_extraction_plan(
             github_issues=github_issues,
@@ -42,7 +46,7 @@ class TestCreateRawExtractionPlan:
         )
         github_issues = FakeGitHubIssues()
         # Project exists but has no sessions
-        session_store = FakeSessionStore(
+        session_store = FakeClaudeCodeSessionStore(
             current_session_id="abc123",
             projects={tmp_path: FakeProject(sessions={})},
         )
@@ -68,7 +72,7 @@ class TestCreateRawExtractionPlan:
         github_issues = FakeGitHubIssues()
 
         # Session exists but won't be selected (different session ID, on trunk)
-        session_store = FakeSessionStore(
+        session_store = FakeClaudeCodeSessionStore(
             current_session_id="abc123",  # Current session ID
             projects={
                 tmp_path: FakeProject(
@@ -109,7 +113,7 @@ class TestCreateRawExtractionPlan:
             {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi!"}]}},
             {"type": "user", "message": {"content": "Thanks"}},
         ]
-        session_store = FakeSessionStore(
+        session_store = FakeClaudeCodeSessionStore(
             current_session_id="abc123",
             projects={
                 tmp_path: FakeProject(
@@ -150,7 +154,7 @@ class TestCreateRawExtractionPlan:
             {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi there!"}]}},
             {"type": "user", "message": {"content": "Thank you"}},
         ]
-        session_store = FakeSessionStore(
+        session_store = FakeClaudeCodeSessionStore(
             current_session_id="abc123",
             projects={
                 tmp_path: FakeProject(
@@ -205,7 +209,7 @@ class TestCreateRawExtractionPlan:
             {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi!"}]}},
             {"type": "user", "message": {"content": "Thanks"}},
         ]
-        session_store = FakeSessionStore(
+        session_store = FakeClaudeCodeSessionStore(
             current_session_id="abc123",
             projects={
                 tmp_path: FakeProject(
@@ -251,7 +255,7 @@ class TestCreateRawExtractionPlan:
             {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi!"}]}},
             {"type": "user", "message": {"content": "Thanks"}},
         ]
-        session_store = FakeSessionStore(
+        session_store = FakeClaudeCodeSessionStore(
             current_session_id="abc123",
             projects={
                 tmp_path: FakeProject(
@@ -296,7 +300,7 @@ class TestCreateRawExtractionPlan:
             {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi!"}]}},
             {"type": "user", "message": {"content": "Thanks"}},
         ]
-        session_store = FakeSessionStore(
+        session_store = FakeClaudeCodeSessionStore(
             current_session_id="abc123",
             projects={
                 tmp_path: FakeProject(

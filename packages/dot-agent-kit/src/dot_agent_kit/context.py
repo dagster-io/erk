@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import click
-from erk_shared.extraction.session_store import ClaudeCodeSessionStore
+from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues, RealGitHubIssues
@@ -63,7 +63,7 @@ class DotAgentContext:
             github_issues: Optional GitHubIssues implementation. If None, creates FakeGitHubIssues.
             git: Optional Git implementation. If None, creates FakeGit.
             github: Optional GitHub implementation. If None, creates FakeGitHub.
-            session_store: Optional SessionStore implementation. If None, creates FakeSessionStore.
+            session_store: Optional SessionStore. If None, creates FakeClaudeCodeSessionStore.
             debug: Whether to enable debug mode (default False).
             repo_root: Repository root path (defaults to Path("/fake/repo"))
             cwd: Current working directory (defaults to Path("/fake/worktree"))
@@ -80,7 +80,7 @@ class DotAgentContext:
             ...     github_issues=github, git=git_ops, debug=True
             ... )
         """
-        from erk_shared.extraction.fake_session_store import FakeSessionStore
+        from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
         from erk_shared.git.fake import FakeGit
         from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
@@ -92,7 +92,7 @@ class DotAgentContext:
         resolved_git: Git = git if git is not None else FakeGit()
         resolved_github: GitHub = github if github is not None else FakeGitHub()
         resolved_session_store: ClaudeCodeSessionStore = (
-            session_store if session_store is not None else FakeSessionStore()
+            session_store if session_store is not None else FakeClaudeCodeSessionStore()
         )
         resolved_repo_root: Path = repo_root if repo_root is not None else Path("/fake/repo")
         resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
@@ -127,7 +127,7 @@ def create_context(*, debug: bool) -> DotAgentContext:
         >>> ctx = create_context(debug=False)
         >>> issue_number = ctx.github_issues.create_issue(ctx.repo_root, title, body, labels)
     """
-    from erk_shared.extraction.real_session_store import RealSessionStore
+    from erk_shared.extraction.claude_code_session_store import RealClaudeCodeSessionStore
     from erk_shared.git.real import RealGit
     from erk_shared.github.real import RealGitHub
     from erk_shared.integrations.time.real import RealTime
@@ -151,7 +151,7 @@ def create_context(*, debug: bool) -> DotAgentContext:
         github_issues=RealGitHubIssues(),
         git=RealGit(),
         github=RealGitHub(time=RealTime()),
-        session_store=RealSessionStore(),
+        session_store=RealClaudeCodeSessionStore(),
         debug=debug,
         repo_root=repo_root,
         cwd=cwd,
