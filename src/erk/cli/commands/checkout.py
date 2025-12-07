@@ -14,6 +14,7 @@ from erk.cli.core import discover_repo_context
 from erk.cli.graphite import find_worktrees_containing_branch
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+from erk.core.worktree_utils import compute_relative_path_in_worktree
 
 
 def try_switch_root_worktree(ctx: ErkContext, repo: RepoContext, branch: str) -> Path | None:
@@ -126,11 +127,13 @@ def _format_worktree_info(wt: WorktreeInfo, repo_root: Path) -> str:
 
 def _perform_checkout(
     ctx: ErkContext,
+    *,
     repo_root: Path,
     target_worktree: WorktreeInfo,
     branch: str,
     script: bool,
     is_newly_created: bool = False,
+    worktrees: list[WorktreeInfo] | None = None,
 ) -> None:
     """Perform the actual checkout and switch to a worktree.
 
@@ -141,10 +144,14 @@ def _perform_checkout(
         branch: Target branch name
         script: Whether to output only the activation script
         is_newly_created: Whether the worktree was just created (default False)
+        worktrees: Optional list of worktrees (for relative path computation)
     """
     target_path = target_worktree.path
     current_branch_in_worktree = target_worktree.branch
     current_cwd = ctx.cwd
+
+    # Compute relative path to preserve directory position
+    relative_path = compute_relative_path_in_worktree(worktrees, ctx.cwd) if worktrees else None
 
     # Check if branch is already checked out in the worktree
     need_checkout = current_branch_in_worktree != branch
@@ -202,7 +209,9 @@ def _perform_checkout(
             )
 
         script_content = render_activation_script(
-            worktree_path=target_path, final_message=switch_message
+            worktree_path=target_path,
+            target_subpath=relative_path,
+            final_message=switch_message,
         )
 
         result = ctx.script_writer.write_activation_script(
@@ -304,7 +313,15 @@ def checkout_cmd(ctx: ErkContext, branch: str, script: bool) -> None:
     if len(matching_worktrees) == 1:
         # Exactly one worktree contains this branch
         target_worktree = matching_worktrees[0]
-        _perform_checkout(ctx, repo.root, target_worktree, branch, script, is_newly_created)
+        _perform_checkout(
+            ctx,
+            repo_root=repo.root,
+            target_worktree=target_worktree,
+            branch=branch,
+            script=script,
+            is_newly_created=is_newly_created,
+            worktrees=worktrees,
+        )
 
     else:
         # Multiple worktrees contain this branch
@@ -314,7 +331,15 @@ def checkout_cmd(ctx: ErkContext, branch: str, script: bool) -> None:
         if len(directly_checked_out) == 1:
             # Exactly one worktree has the branch directly checked out - jump to it
             target_worktree = directly_checked_out[0]
-            _perform_checkout(ctx, repo.root, target_worktree, branch, script, is_newly_created)
+            _perform_checkout(
+                ctx,
+                repo_root=repo.root,
+                target_worktree=target_worktree,
+                branch=branch,
+                script=script,
+                is_newly_created=is_newly_created,
+                worktrees=worktrees,
+            )
         else:
             # Zero or multiple worktrees have it directly checked out
             # Show error message listing all options

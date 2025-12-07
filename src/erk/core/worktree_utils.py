@@ -40,6 +40,50 @@ class MoveOperation:
     target_branch: str | None
 
 
+def compute_relative_path_in_worktree(
+    worktrees: list[WorktreeInfo],
+    current_dir: Path,
+) -> Path | None:
+    """Compute relative path from current worktree root to current_dir.
+
+    Used to preserve the user's relative position when switching worktrees.
+    For example, if the user is at /repo/worktrees/feat/src/lib, switching
+    to another worktree should land them at <target>/src/lib if it exists.
+
+    Args:
+        worktrees: List of WorktreeInfo objects to search
+        current_dir: Current directory path (will be resolved internally)
+
+    Returns:
+        Relative path from worktree root to current_dir, or None if:
+        - current_dir is at the worktree root (relative path would be '.')
+        - current_dir is not within any known worktree
+
+    Examples:
+        >>> worktrees = [WorktreeInfo(Path("/repo/wt/feat"), "feat", False)]
+        >>> compute_relative_path_in_worktree(worktrees, Path("/repo/wt/feat/src/lib"))
+        Path("src/lib")
+        >>> compute_relative_path_in_worktree(worktrees, Path("/repo/wt/feat"))
+        None  # At worktree root
+    """
+    worktree_root = find_worktree_containing_path(worktrees, current_dir)
+    if worktree_root is None:
+        return None
+
+    # Resolve both paths for reliable comparison
+    resolved_current = current_dir.resolve()
+    resolved_root = worktree_root.resolve()
+
+    # If at worktree root, return None (no relative subpath)
+    if resolved_current == resolved_root:
+        return None
+
+    # Compute relative path
+    relative = resolved_current.relative_to(resolved_root)
+
+    return relative
+
+
 def find_worktree_containing_path(worktrees: list[WorktreeInfo], target_path: Path) -> Path | None:
     """Find which worktree contains the given path.
 

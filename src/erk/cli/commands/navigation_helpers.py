@@ -13,6 +13,7 @@ from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
+from erk.core.worktree_utils import compute_relative_path_in_worktree
 
 
 def ensure_graphite_enabled(ctx: ErkContext) -> None:
@@ -137,7 +138,12 @@ def delete_branch_and_worktree(
     user_output(f"✓ Deleted branch: {click.style(branch, fg='yellow')}")
 
 
-def activate_root_repo(ctx: ErkContext, repo: RepoContext, script: bool, command_name: str) -> None:
+def activate_root_repo(
+    ctx: ErkContext,
+    repo: RepoContext,
+    script: bool,
+    command_name: str,
+) -> None:
     """Activate the root repository and exit.
 
     Args:
@@ -153,9 +159,15 @@ def activate_root_repo(ctx: ErkContext, repo: RepoContext, script: bool, command
     # still exists after worktree removal. repo.root equals the worktree path when
     # running from inside a worktree.
     root_path = repo.main_repo_root if repo.main_repo_root else repo.root
+
+    # Compute relative path to preserve user's position within worktree
+    worktrees = ctx.git.list_worktrees(repo.root)
+    relative_path = compute_relative_path_in_worktree(worktrees, ctx.cwd)
+
     if script:
         script_content = render_activation_script(
             worktree_path=root_path,
+            target_subpath=relative_path,
             final_message='echo "Went to root repo: $(pwd)"',
             comment="work activate-script (root repo)",
         )
@@ -181,6 +193,7 @@ def activate_worktree(
     target_path: Path,
     script: bool,
     command_name: str,
+    preserve_relative_path: bool = True,
 ) -> None:
     """Activate a worktree and exit.
 
@@ -190,6 +203,8 @@ def activate_worktree(
         target_path: Path to the target worktree directory
         script: Whether to output script path or user message
         command_name: Name of the command (for script generation and debug logging)
+        preserve_relative_path: If True (default), compute and preserve the user's
+            relative directory position from the current worktree
 
     Raises:
         SystemExit: If worktree not found, or after successful activation
@@ -200,8 +215,17 @@ def activate_worktree(
 
     worktree_name = wt_path.name
 
+    # Auto-compute relative path if requested
+    relative_path: Path | None = None
+    if preserve_relative_path:
+        worktrees = ctx.git.list_worktrees(repo.root)
+        relative_path = compute_relative_path_in_worktree(worktrees, ctx.cwd)
+
     if script:
-        activation_script = render_activation_script(worktree_path=wt_path)
+        activation_script = render_activation_script(
+            worktree_path=wt_path,
+            target_subpath=relative_path,
+        )
         result = ctx.script_writer.write_activation_script(
             activation_script,
             command_name=command_name,
