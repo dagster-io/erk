@@ -101,6 +101,39 @@ The absolute path to a specific erk directory.
 
 **Code**: `worktree_path_for(repo.erks_dir, "my-feature")`
 
+### compute_relative_path_in_worktree()
+
+Pure utility function to compute relative path from worktree root to current directory. Located in `src/erk/core/worktree_utils.py`.
+
+**Signature**:
+
+```python
+def compute_relative_path_in_worktree(
+    worktrees: list[WorktreeInfo],
+    current_dir: Path,
+) -> Path | None
+```
+
+**Returns**:
+
+- `Path` - Relative path from worktree root (e.g., `Path("src/lib")`)
+- `None` - If at worktree root or not in any worktree
+
+**Use Case**: Preserving user's directory position when switching between worktrees.
+
+**Example**:
+
+```python
+worktrees = ctx.git.list_worktrees(repo.root)
+relative = compute_relative_path_in_worktree(worktrees, ctx.cwd)
+# If user is at /repo/wt/feat/src/lib → returns Path("src/lib")
+# If user is at /repo/wt/feat → returns None
+```
+
+**Related**: [Auto-Compute Pattern](architecture/auto-compute-pattern.md), [render_activation_script()](#render_activation_script)
+
+---
+
 ### Branch Naming Convention
 
 Erk branches follow the pattern `{issue_number}-{slug}-{timestamp}`:
@@ -211,6 +244,40 @@ impl_dir = repo_root / project.path_from_repo / ".impl"
 ---
 
 ## Shell Concepts
+
+### render_activation_script()
+
+Shell script generator for worktree activation. Located in `src/erk/cli/activation.py`.
+
+**Parameters**:
+
+- `worktree_path`: Target worktree directory
+- `target_subpath`: Optional relative path to cd into after worktree root (with fallback)
+- `final_message`: Shell command for completion message
+- `comment`: Script identification comment
+
+**Subpath Behavior**:
+
+When `target_subpath` is provided, the generated script:
+
+1. `cd` to worktree root first
+2. Check if subpath exists: `if [ -d <subpath> ]`
+3. If exists: `cd <subpath>`
+4. If not: Print warning to stderr, stay at worktree root
+
+**Example Usage**:
+
+```python
+script = render_activation_script(
+    worktree_path=Path("/repo/worktrees/feat"),
+    target_subpath=Path("src/lib"),  # Preserves user's relative position
+    final_message='echo "Activated"',
+)
+```
+
+**Related**: [Auto-Compute Pattern](architecture/auto-compute-pattern.md), [compute_relative_path_in_worktree()](#compute_relative_path_in_worktree)
+
+---
 
 ### Shell Integration
 
