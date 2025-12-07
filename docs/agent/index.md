@@ -5,7 +5,7 @@
 
 ## Categories
 
-- **[architecture/](architecture/)** — at-reference-resolution, claude-cli-integration, claude-cli-progress, command-boundaries, commandresult-extension-pattern, erk-architecture, erk-shared-package, event-progress-pattern, extraction-origin-tracking, generated-files, github-interface-patterns, github-parsing, markers, not-found-sentinel, pathlib-symlinks, protocol-vs-abc, restack-operations, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
+- **[architecture/](architecture/)** — at-reference-resolution, claude-cli-integration, claude-cli-progress, cli-binary-ops-pattern, command-boundaries, commandresult-extension-pattern, erk-architecture, erk-shared-package, event-progress-pattern, extraction-origin-tracking, generated-files, github-interface-patterns, github-parsing, markers, not-found-sentinel, pathlib-symlinks, protocol-vs-abc, restack-operations, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
 - **[cli/](cli/)** — command-organization, list-formatting, output-styling, script-mode, shell-aliases, template-variables
 - **[commands/](commands/)** — optimization-patterns, tripwires
 - **[erk/](erk/)** — auto-restack, branch-cleanup, graphite-branch-setup, pr-sync-workflow
@@ -14,7 +14,7 @@
 - **[planning/](planning/)** — agent-delegation, enrichment, lifecycle, plan-schema, scratch-storage, workflow
 - **[reference/](reference/)** — claude-cli-stream-json
 - **[sessions/](sessions/)** — context-analysis, layout, parallel-session-awareness, tools
-- **[testing/](testing/)** — cascading-import-cleanup, import-conflict-resolution, kit-cli-testing, rebase-conflicts, session-log-fixtures, testing
+- **[testing/](testing/)** — cascading-import-cleanup, import-conflict-resolution, integration-test-speed, kit-cli-testing, rebase-conflicts, session-log-fixtures, testing
 - **[tui/](tui/)** — command-execution, command-palette, streaming-output, textual-async, textual-quirks
 
 ## Uncategorized
