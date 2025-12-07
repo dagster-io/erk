@@ -456,7 +456,7 @@ else:
 2. **Context preservation**: Can inspect which branch/PR was looked up
 3. **LBYL compliance**: Explicit isinstance check, not try/except
 
-**Related**: [PRNotFound Sentinel Pattern](architecture/prnotfound-sentinel.md)
+**Related**: [Not-Found Sentinel Pattern](architecture/not-found-sentinel.md)
 
 ---
 
