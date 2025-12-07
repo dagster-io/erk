@@ -50,6 +50,12 @@ def session_id_injector_hook() -> None:
 
     # Output session ID if available
     if session_id:
+        # Write to file for CLI tools to read (worktree-scoped persistence)
+        session_file = Path(".erk/scratch/current-session-id")
+        session_file.parent.mkdir(parents=True, exist_ok=True)
+        session_file.write_text(session_id, encoding="utf-8")
+
+        # Still output reminder for LLM context
         click.echo("<reminder>")
         click.echo(f"SESSION_CONTEXT: session_id={session_id}")
         click.echo("</reminder>")
