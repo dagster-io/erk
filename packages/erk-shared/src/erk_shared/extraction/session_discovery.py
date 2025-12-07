@@ -4,22 +4,25 @@ This module provides functions to discover Claude Code sessions
 in a project directory.
 """
 
-import os
 from pathlib import Path
 
+from erk_shared.extraction.session_environment import SessionEnvironment
 from erk_shared.extraction.types import BranchContext, SessionInfo
 from erk_shared.git.abc import Git
 
 
-def get_current_session_id() -> str | None:
+def get_current_session_id(env: SessionEnvironment) -> str | None:
     """Extract current session ID from SESSION_CONTEXT environment variable.
 
     The SESSION_CONTEXT env var contains: session_id=<uuid>
 
+    Args:
+        env: Session environment for accessing env vars
+
     Returns:
         Session ID string or None if not found
     """
-    ctx = os.environ.get("SESSION_CONTEXT", "")
+    ctx = env.get_session_context_env() or ""
     if "session_id=" in ctx:
         return ctx.split("session_id=")[1].strip()
     return None
@@ -48,6 +51,7 @@ def get_branch_context(git: Git, cwd: Path) -> BranchContext:
 def discover_sessions(
     project_dir: Path,
     current_session_id: str | None,
+    env: SessionEnvironment,
     min_size: int = 0,
     limit: int = 10,
 ) -> list[SessionInfo]:
@@ -56,6 +60,7 @@ def discover_sessions(
     Args:
         project_dir: Path to Claude Code project directory
         current_session_id: Current session ID (for marking)
+        env: Session environment for filesystem operations
         min_size: Minimum session size in bytes (filters out tiny sessions)
         limit: Maximum number of sessions to return
 
@@ -64,22 +69,20 @@ def discover_sessions(
     """
     sessions: list[SessionInfo] = []
 
-    if not project_dir.exists():
+    if not env.path_exists(project_dir):
         return sessions
 
     # Collect session files (exclude agent logs)
     session_files: list[tuple[Path, float, int]] = []
-    for log_file in project_dir.iterdir():
-        if not log_file.is_file():
+    for log_file in env.list_directory(project_dir):
+        if not env.is_file(log_file):
             continue
         if log_file.suffix != ".jsonl":
             continue
         if log_file.name.startswith("agent-"):
             continue
 
-        stat = log_file.stat()
-        mtime = stat.st_mtime
-        size = stat.st_size
+        mtime, size = env.get_file_stat(log_file)
 
         # Filter by minimum size
         if min_size > 0 and size < min_size:
@@ -131,24 +134,25 @@ def encode_path_to_project_folder(path: Path) -> str:
     return str(path).replace("/", "-").replace(".", "-")
 
 
-def find_project_dir(cwd: Path) -> Path | None:
+def find_project_dir(cwd: Path, env: SessionEnvironment) -> Path | None:
     """Find Claude Code project directory for a filesystem path.
 
     Args:
         cwd: Current working directory
+        env: Session environment for filesystem operations
 
     Returns:
         Path to project directory if found, None otherwise
     """
-    projects_dir = Path.home() / ".claude" / "projects"
-    if not projects_dir.exists():
+    projects_dir = env.get_home_dir() / ".claude" / "projects"
+    if not env.path_exists(projects_dir):
         return None
 
     # Encode path and find project directory
     encoded_path = encode_path_to_project_folder(cwd)
     project_dir = projects_dir / encoded_path
 
-    if not project_dir.exists():
+    if not env.path_exists(project_dir):
         return None
 
     return project_dir

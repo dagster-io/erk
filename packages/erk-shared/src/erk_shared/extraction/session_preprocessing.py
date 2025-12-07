@@ -14,6 +14,8 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from erk_shared.extraction.session_environment import SessionEnvironment
+
 
 def escape_xml(text: str) -> str:
     """Minimal XML escaping for special characters."""
@@ -255,17 +257,17 @@ def reduce_session_mechanically(entries: list[dict]) -> list[dict]:
     return reduced
 
 
-def process_log_file(
-    log_path: Path,
+def process_log_file_content(
+    content: str,
     session_id: str | None = None,
 ) -> tuple[list[dict], int, int]:
-    """Process a single JSONL log file and return mechanically reduced entries.
+    """Process JSONL log content and return mechanically reduced entries.
 
     This is Stage 1 processing: deterministic mechanical reduction only.
     No semantic judgment calls (those are delegated to Haiku in Stage 2).
 
     Args:
-        log_path: Path to the JSONL log file
+        content: JSONL content string
         session_id: Optional session ID to filter entries by
 
     Returns:
@@ -275,7 +277,7 @@ def process_log_file(
     total_entries = 0
     skipped_entries = 0
 
-    for line in log_path.read_text(encoding="utf-8").splitlines():
+    for line in content.splitlines():
         if not line.strip():
             continue
 
@@ -300,6 +302,7 @@ def process_log_file(
 
 def preprocess_session(
     session_path: Path,
+    env: SessionEnvironment,
     session_id: str | None = None,
     include_agents: bool = True,
 ) -> str:
@@ -317,6 +320,7 @@ def preprocess_session(
 
     Args:
         session_path: Path to the session JSONL file
+        env: Session environment for filesystem operations
         session_id: Optional session ID to filter entries by
         include_agents: Whether to include agent logs
 
@@ -324,7 +328,8 @@ def preprocess_session(
         Compressed XML string (mechanically reduced, not semantically filtered)
     """
     # Process main session log (Stage 1 reduction)
-    entries, _, _ = process_log_file(session_path, session_id=session_id)
+    content = env.read_file(session_path)
+    entries, _, _ = process_log_file_content(content, session_id=session_id)
 
     # Apply standard deduplication (deterministic - always enabled)
     entries = deduplicate_assistant_messages(entries)
@@ -334,9 +339,10 @@ def preprocess_session(
 
     # Discover and process agent logs if requested
     if include_agents:
-        agent_logs = _discover_agent_logs(session_path)
+        agent_logs = _discover_agent_logs(session_path, env)
         for agent_log in agent_logs:
-            agent_entries, _, _ = process_log_file(agent_log, session_id=session_id)
+            agent_content = env.read_file(agent_log)
+            agent_entries, _, _ = process_log_file_content(agent_content, session_id=session_id)
 
             # Apply standard deduplication
             agent_entries = deduplicate_assistant_messages(agent_entries)
@@ -350,8 +356,15 @@ def preprocess_session(
     return "\n\n".join(xml_sections)
 
 
-def _discover_agent_logs(session_log_path: Path) -> list[Path]:
-    """Discover agent logs in the same directory as the session log."""
+def _discover_agent_logs(session_log_path: Path, env: SessionEnvironment) -> list[Path]:
+    """Discover agent logs in the same directory as the session log.
+
+    Args:
+        session_log_path: Path to the main session log
+        env: Session environment for filesystem operations
+
+    Returns:
+        Sorted list of agent log paths
+    """
     log_dir = session_log_path.parent
-    agent_logs = sorted(log_dir.glob("agent-*.jsonl"))
-    return agent_logs
+    return env.glob_directory(log_dir, "agent-*.jsonl")

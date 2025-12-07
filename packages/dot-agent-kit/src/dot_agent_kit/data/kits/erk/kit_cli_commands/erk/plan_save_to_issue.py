@@ -26,6 +26,7 @@ from functools import cache
 from pathlib import Path
 
 import click
+from erk_shared.extraction.real_session_environment import RealSessionEnvironment
 from erk_shared.extraction.session_context import collect_session_context
 from erk_shared.github.metadata import render_session_content_blocks
 from erk_shared.github.plan_issues import create_plan_issue
@@ -143,8 +144,9 @@ def plan_save_to_issue(
     session_ids: list[str] = []
 
     git = require_git(ctx)
+    env = RealSessionEnvironment()
     session_result = collect_session_context(
-        git=git, cwd=cwd, current_session_id=effective_session_id, min_size=1024, limit=20
+        git=git, cwd=cwd, env=env, current_session_id=effective_session_id, min_size=1024, limit=20
     )
 
     if session_result is not None and result.issue_number is not None:

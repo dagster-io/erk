@@ -2,9 +2,10 @@
 
 import json
 from pathlib import Path
-from unittest.mock import patch
 
+from erk_shared.extraction.fake_session_environment import FakeSessionEnvironment, FileEntry
 from erk_shared.extraction.raw_extraction import create_raw_extraction_plan
+from erk_shared.extraction.session_discovery import encode_path_to_project_folder
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues.fake import FakeGitHubIssues
 
@@ -20,18 +21,23 @@ class TestCreateRawExtractionPlan:
         )
         github_issues = FakeGitHubIssues()
 
-        # Mock find_project_dir to return None
-        with patch("erk_shared.extraction.raw_extraction.find_project_dir", return_value=None):
-            result = create_raw_extraction_plan(
-                github_issues=github_issues,
-                git=git,
-                repo_root=tmp_path,
-                cwd=tmp_path,
-                current_session_id="abc123",
-            )
+        # Empty environment - no project dir
+        env = FakeSessionEnvironment(
+            session_context="session_id=abc123",
+            home_dir=Path("/fake/home"),
+        )
+
+        result = create_raw_extraction_plan(
+            github_issues=github_issues,
+            git=git,
+            repo_root=tmp_path,
+            cwd=tmp_path,
+            current_session_id="abc123",
+            env=env,
+        )
 
         assert result.success is False
-        assert "Could not find Claude Code project directory" in str(result.error)
+        assert "No sessions found" in str(result.error)
 
     def test_returns_error_when_no_sessions_found(self, tmp_path: Path) -> None:
         """Returns error when no sessions exist."""
@@ -42,18 +48,24 @@ class TestCreateRawExtractionPlan:
         github_issues = FakeGitHubIssues()
 
         # Create empty project directory
-        project_dir = tmp_path / "project"
-        project_dir.mkdir()
+        home = Path("/fake/home")
+        encoded = encode_path_to_project_folder(tmp_path)
+        project_dir = home / ".claude" / "projects" / encoded
 
-        patch_target = "erk_shared.extraction.raw_extraction.find_project_dir"
-        with patch(patch_target, return_value=project_dir):
-            result = create_raw_extraction_plan(
-                github_issues=github_issues,
-                git=git,
-                repo_root=tmp_path,
-                cwd=tmp_path,
-                current_session_id="abc123",
-            )
+        env = FakeSessionEnvironment(
+            session_context="session_id=abc123",
+            home_dir=home,
+            directories={project_dir},  # Empty project dir
+        )
+
+        result = create_raw_extraction_plan(
+            github_issues=github_issues,
+            git=git,
+            repo_root=tmp_path,
+            cwd=tmp_path,
+            current_session_id="abc123",
+            env=env,
+        )
 
         assert result.success is False
         assert "No sessions found" in str(result.error)
@@ -67,23 +79,31 @@ class TestCreateRawExtractionPlan:
         github_issues = FakeGitHubIssues()
 
         # Create project directory with session that won't be selected
-        project_dir = tmp_path / "project"
-        project_dir.mkdir()
-        (project_dir / "other.jsonl").write_text("{}", encoding="utf-8")
+        home = Path("/fake/home")
+        encoded = encode_path_to_project_folder(tmp_path)
+        project_dir = home / ".claude" / "projects" / encoded
+        session_path = project_dir / "other.jsonl"
 
-        patch_target = "erk_shared.extraction.raw_extraction.find_project_dir"
-        with patch(patch_target, return_value=project_dir):
-            result = create_raw_extraction_plan(
-                github_issues=github_issues,
-                git=git,
-                repo_root=tmp_path,
-                cwd=tmp_path,
-                current_session_id="abc123",  # Not "other"
-                min_size=0,  # Don't filter by size
-            )
+        env = FakeSessionEnvironment(
+            session_context="session_id=abc123",  # Not "other"
+            home_dir=home,
+            files={
+                session_path: FileEntry(content="{}", mtime=1000.0),
+            },
+        )
+
+        result = create_raw_extraction_plan(
+            github_issues=github_issues,
+            git=git,
+            repo_root=tmp_path,
+            cwd=tmp_path,
+            current_session_id="abc123",
+            min_size=0,
+            env=env,
+        )
 
         assert result.success is False
-        assert "No sessions selected" in str(result.error)
+        assert "No sessions" in str(result.error)
 
     def test_returns_error_when_username_not_authenticated(self, tmp_path: Path) -> None:
         """Returns error when GitHub username not available."""
@@ -94,27 +114,37 @@ class TestCreateRawExtractionPlan:
         github_issues = FakeGitHubIssues(username=None)  # Not authenticated
 
         # Create project directory with session
-        project_dir = tmp_path / "project"
-        project_dir.mkdir()
+        home = Path("/fake/home")
+        encoded = encode_path_to_project_folder(tmp_path)
+        project_dir = home / ".claude" / "projects" / encoded
+        session_path = project_dir / "abc123.jsonl"
+
         session_content = [
             {"type": "user", "message": {"content": "Hello"}},
             {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi!"}]}},
             {"type": "user", "message": {"content": "Thanks"}},
         ]
-        (project_dir / "abc123.jsonl").write_text(
-            "\n".join(json.dumps(e) for e in session_content), encoding="utf-8"
+
+        env = FakeSessionEnvironment(
+            session_context="session_id=abc123",
+            home_dir=home,
+            files={
+                session_path: FileEntry(
+                    content="\n".join(json.dumps(e) for e in session_content),
+                    mtime=1000.0,
+                ),
+            },
         )
 
-        patch_target = "erk_shared.extraction.raw_extraction.find_project_dir"
-        with patch(patch_target, return_value=project_dir):
-            result = create_raw_extraction_plan(
-                github_issues=github_issues,
-                git=git,
-                repo_root=tmp_path,
-                cwd=tmp_path,
-                current_session_id="abc123",
-                min_size=0,  # Don't filter by size
-            )
+        result = create_raw_extraction_plan(
+            github_issues=github_issues,
+            git=git,
+            repo_root=tmp_path,
+            cwd=tmp_path,
+            current_session_id="abc123",
+            min_size=0,
+            env=env,
+        )
 
         assert result.success is False
         assert "Could not get GitHub username" in str(result.error)
@@ -128,27 +158,37 @@ class TestCreateRawExtractionPlan:
         github_issues = FakeGitHubIssues(username="testuser")
 
         # Create project directory with meaningful session
-        project_dir = tmp_path / "project"
-        project_dir.mkdir()
+        home = Path("/fake/home")
+        encoded = encode_path_to_project_folder(tmp_path)
+        project_dir = home / ".claude" / "projects" / encoded
+        session_path = project_dir / "abc123.jsonl"
+
         session_content = [
             {"type": "user", "message": {"content": "Hello world"}},
             {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi there!"}]}},
             {"type": "user", "message": {"content": "Thank you"}},
         ]
-        (project_dir / "abc123.jsonl").write_text(
-            "\n".join(json.dumps(e) for e in session_content), encoding="utf-8"
+
+        env = FakeSessionEnvironment(
+            session_context="session_id=abc123",
+            home_dir=home,
+            files={
+                session_path: FileEntry(
+                    content="\n".join(json.dumps(e) for e in session_content),
+                    mtime=1000.0,
+                ),
+            },
         )
 
-        patch_target = "erk_shared.extraction.raw_extraction.find_project_dir"
-        with patch(patch_target, return_value=project_dir):
-            result = create_raw_extraction_plan(
-                github_issues=github_issues,
-                git=git,
-                repo_root=tmp_path,
-                cwd=tmp_path,
-                current_session_id="abc123",
-                min_size=0,  # Don't filter by size
-            )
+        result = create_raw_extraction_plan(
+            github_issues=github_issues,
+            git=git,
+            repo_root=tmp_path,
+            cwd=tmp_path,
+            current_session_id="abc123",
+            min_size=0,
+            env=env,
+        )
 
         assert result.success is True
         assert result.issue_url is not None
@@ -175,34 +215,41 @@ class TestCreateRawExtractionPlan:
         )
         github_issues = FakeGitHubIssues(username="testuser")
 
-        project_dir = tmp_path / "project"
-        project_dir.mkdir()
+        home = Path("/fake/home")
+        encoded = encode_path_to_project_folder(tmp_path)
+        project_dir = home / ".claude" / "projects" / encoded
+        session_path = project_dir / "abc123.jsonl"
+
         session_content = [
             {"type": "user", "message": {"content": "Hello"}},
             {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi!"}]}},
             {"type": "user", "message": {"content": "Thanks"}},
         ]
-        (project_dir / "abc123.jsonl").write_text(
-            "\n".join(json.dumps(e) for e in session_content), encoding="utf-8"
+
+        env = FakeSessionEnvironment(
+            session_context="session_id=abc123",
+            home_dir=home,
+            files={
+                session_path: FileEntry(
+                    content="\n".join(json.dumps(e) for e in session_content),
+                    mtime=1000.0,
+                ),
+            },
         )
 
-        patch_target = "erk_shared.extraction.raw_extraction.find_project_dir"
-        with patch(patch_target, return_value=project_dir):
-            result = create_raw_extraction_plan(
-                github_issues=github_issues,
-                git=git,
-                repo_root=tmp_path,
-                cwd=tmp_path,
-                current_session_id="abc123",
-                min_size=0,  # Don't filter by size
-            )
+        result = create_raw_extraction_plan(
+            github_issues=github_issues,
+            git=git,
+            repo_root=tmp_path,
+            cwd=tmp_path,
+            current_session_id="abc123",
+            min_size=0,
+            env=env,
+        )
 
         assert result.success is True
         title, _, _ = github_issues.created_issues[0]
-        # Title now uses extract_title_from_plan() which extracts from the plan H1
-        # "Extraction Plan: feature-awesome" becomes the title
         assert "[erk-extraction]" in title
-        # The plan title includes the branch name
         assert "feature-awesome" in title
 
     def test_ensures_labels_exist(self, tmp_path: Path) -> None:
@@ -213,27 +260,37 @@ class TestCreateRawExtractionPlan:
         )
         github_issues = FakeGitHubIssues(username="testuser")
 
-        project_dir = tmp_path / "project"
-        project_dir.mkdir()
+        home = Path("/fake/home")
+        encoded = encode_path_to_project_folder(tmp_path)
+        project_dir = home / ".claude" / "projects" / encoded
+        session_path = project_dir / "abc123.jsonl"
+
         session_content = [
             {"type": "user", "message": {"content": "Hello"}},
             {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi!"}]}},
             {"type": "user", "message": {"content": "Thanks"}},
         ]
-        (project_dir / "abc123.jsonl").write_text(
-            "\n".join(json.dumps(e) for e in session_content), encoding="utf-8"
+
+        env = FakeSessionEnvironment(
+            session_context="session_id=abc123",
+            home_dir=home,
+            files={
+                session_path: FileEntry(
+                    content="\n".join(json.dumps(e) for e in session_content),
+                    mtime=1000.0,
+                ),
+            },
         )
 
-        patch_target = "erk_shared.extraction.raw_extraction.find_project_dir"
-        with patch(patch_target, return_value=project_dir):
-            result = create_raw_extraction_plan(
-                github_issues=github_issues,
-                git=git,
-                repo_root=tmp_path,
-                cwd=tmp_path,
-                current_session_id="abc123",
-                min_size=0,  # Don't filter by size
-            )
+        result = create_raw_extraction_plan(
+            github_issues=github_issues,
+            git=git,
+            repo_root=tmp_path,
+            cwd=tmp_path,
+            current_session_id="abc123",
+            min_size=0,
+            env=env,
+        )
 
         assert result.success is True
         label_names = {label[0] for label in github_issues.created_labels}
@@ -250,27 +307,37 @@ class TestCreateRawExtractionPlan:
         )
         github_issues = FakeGitHubIssues(username="testuser")
 
-        project_dir = tmp_path / "project"
-        project_dir.mkdir()
+        home = Path("/fake/home")
+        encoded = encode_path_to_project_folder(tmp_path)
+        project_dir = home / ".claude" / "projects" / encoded
+        session_path = project_dir / "abc123.jsonl"
+
         session_content = [
             {"type": "user", "message": {"content": "Hello"}},
             {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi!"}]}},
             {"type": "user", "message": {"content": "Thanks"}},
         ]
-        (project_dir / "abc123.jsonl").write_text(
-            "\n".join(json.dumps(e) for e in session_content), encoding="utf-8"
+
+        env = FakeSessionEnvironment(
+            session_context="session_id=abc123",
+            home_dir=home,
+            files={
+                session_path: FileEntry(
+                    content="\n".join(json.dumps(e) for e in session_content),
+                    mtime=1000.0,
+                ),
+            },
         )
 
-        patch_target = "erk_shared.extraction.raw_extraction.find_project_dir"
-        with patch(patch_target, return_value=project_dir):
-            result = create_raw_extraction_plan(
-                github_issues=github_issues,
-                git=git,
-                repo_root=tmp_path,
-                cwd=tmp_path,
-                current_session_id="abc123",
-                min_size=0,  # Don't filter by size
-            )
+        result = create_raw_extraction_plan(
+            github_issues=github_issues,
+            git=git,
+            repo_root=tmp_path,
+            cwd=tmp_path,
+            current_session_id="abc123",
+            min_size=0,
+            env=env,
+        )
 
         assert result.success is True
         _, body, _ = github_issues.created_issues[0]
