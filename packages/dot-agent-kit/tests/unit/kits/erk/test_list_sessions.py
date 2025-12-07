@@ -1,7 +1,7 @@
 """Unit tests for list_sessions kit CLI command.
 
 Tests session discovery, relative time formatting, branch context detection,
-and summary extraction.
+and summary extraction using FakeSessionStore.
 """
 
 import json
@@ -11,11 +11,12 @@ from pathlib import Path
 from unittest.mock import patch
 
 from click.testing import CliRunner
+from erk_shared.extraction.fake_session_store import FakeProject, FakeSessionData, FakeSessionStore
 from erk_shared.git.fake import FakeGit
 
 from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.list_sessions import (
-    _list_sessions_for_project,
+    _list_sessions_from_store,
     extract_summary,
     format_display_time,
     format_relative_time,
@@ -23,6 +24,12 @@ from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.list_sessions import (
     get_current_session_id,
     list_sessions,
 )
+
+
+def _user_msg(text: str) -> str:
+    """Create JSON content for a user message."""
+    return json.dumps({"type": "user", "message": {"content": text}})
+
 
 # ============================================================================
 # 1. Relative Time Formatting Tests (7 tests)
@@ -145,154 +152,129 @@ def test_get_current_session_id_invalid_format() -> None:
 # ============================================================================
 
 
-def test_extract_summary_string_content(tmp_path: Path) -> None:
+def test_extract_summary_string_content() -> None:
     """Test extraction from user message with string content."""
-    log_file = tmp_path / "session.jsonl"
-    entry = {
-        "type": "user",
-        "message": {"content": "how many session ids does this correspond to?"},
-    }
-    log_file.write_text(json.dumps(entry), encoding="utf-8")
-
-    result = extract_summary(log_file)
+    content = json.dumps(
+        {"type": "user", "message": {"content": "how many session ids does this correspond to?"}}
+    )
+    result = extract_summary(content)
     assert result == "how many session ids does this correspond to?"
 
 
-def test_extract_summary_structured_content(tmp_path: Path) -> None:
+def test_extract_summary_structured_content() -> None:
     """Test extraction from user message with structured content."""
-    log_file = tmp_path / "session.jsonl"
-    entry = {
-        "type": "user",
-        "message": {"content": [{"type": "text", "text": "Please help with this task"}]},
-    }
-    log_file.write_text(json.dumps(entry), encoding="utf-8")
-
-    result = extract_summary(log_file)
-    assert result == "Please help with this task"
+    msg = {"type": "user", "message": {"content": [{"type": "text", "text": "Please help"}]}}
+    content = json.dumps(msg)
+    result = extract_summary(content)
+    assert result == "Please help"
 
 
-def test_extract_summary_truncates_long_text(tmp_path: Path) -> None:
+def test_extract_summary_truncates_long_text() -> None:
     """Test that long summaries are truncated with ellipsis."""
-    log_file = tmp_path / "session.jsonl"
     long_text = "x" * 100
-    entry = {"type": "user", "message": {"content": long_text}}
-    log_file.write_text(json.dumps(entry), encoding="utf-8")
-
-    result = extract_summary(log_file, max_length=60)
+    content = json.dumps({"type": "user", "message": {"content": long_text}})
+    result = extract_summary(content, max_length=60)
     assert len(result) == 60
     assert result.endswith("...")
 
 
-def test_extract_summary_skips_assistant_messages(tmp_path: Path) -> None:
+def test_extract_summary_skips_assistant_messages() -> None:
     """Test that assistant messages are skipped to find first user message."""
-    log_file = tmp_path / "session.jsonl"
-    entries = [
-        {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hello there"}]}},
-        {"type": "user", "message": {"content": "My actual question"}},
-    ]
-    log_file.write_text("\n".join(json.dumps(e) for e in entries), encoding="utf-8")
-
-    result = extract_summary(log_file)
+    asst_msg = {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hello"}]}}
+    user_msg = {"type": "user", "message": {"content": "My actual question"}}
+    lines = [json.dumps(asst_msg), json.dumps(user_msg)]
+    content = "\n".join(lines)
+    result = extract_summary(content)
     assert result == "My actual question"
 
 
-def test_extract_summary_empty_file(tmp_path: Path) -> None:
-    """Test handling of empty log file."""
-    log_file = tmp_path / "session.jsonl"
-    log_file.write_text("", encoding="utf-8")
-
-    result = extract_summary(log_file)
+def test_extract_summary_empty_content() -> None:
+    """Test handling of empty content."""
+    result = extract_summary("")
     assert result == ""
 
 
-def test_extract_summary_no_user_messages(tmp_path: Path) -> None:
-    """Test handling of file with no user messages."""
-    log_file = tmp_path / "session.jsonl"
-    entry = {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi"}]}}
-    log_file.write_text(json.dumps(entry), encoding="utf-8")
-
-    result = extract_summary(log_file)
+def test_extract_summary_no_user_messages() -> None:
+    """Test handling of content with no user messages."""
+    msg = {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi"}]}}
+    content = json.dumps(msg)
+    result = extract_summary(content)
     assert result == ""
 
 
-def test_extract_summary_handles_malformed_json(tmp_path: Path) -> None:
-    """Test handling of malformed JSON in log file."""
-    log_file = tmp_path / "session.jsonl"
-    log_file.write_text(
-        "{invalid json}\n" + json.dumps({"type": "user", "message": {"content": "Valid"}}),
-        encoding="utf-8",
-    )
-
-    result = extract_summary(log_file)
+def test_extract_summary_handles_malformed_json() -> None:
+    """Test handling of malformed JSON in content."""
+    content = "{invalid json}\n" + json.dumps({"type": "user", "message": {"content": "Valid"}})
+    result = extract_summary(content)
     # Should find the valid entry after skipping malformed
     assert result == "Valid"
 
 
-def test_extract_summary_nonexistent_file(tmp_path: Path) -> None:
-    """Test handling of nonexistent file."""
-    log_file = tmp_path / "nonexistent.jsonl"
-
-    result = extract_summary(log_file)
-    assert result == ""
+def test_extract_summary_content_with_newlines() -> None:
+    """Test handling of multi-line content."""
+    content = json.dumps({"type": "user", "message": {"content": "Line one"}})
+    result = extract_summary(content)
+    assert result == "Line one"
 
 
 # ============================================================================
-# 4. Session Discovery Tests (7 tests)
+# 4. Session Discovery Tests (7 tests) - Using FakeSessionStore
 # ============================================================================
 
 
 def test_list_sessions_finds_all_sessions(tmp_path: Path) -> None:
-    """Test that all session files are discovered."""
-    project_dir = tmp_path / "project"
-    project_dir.mkdir()
+    """Test that all sessions are discovered from store."""
+    fake_store = FakeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "abc123": FakeSessionData(
+                        content=_user_msg("Session abc123"),
+                        size_bytes=100,
+                        modified_at=1000.0,
+                    ),
+                    "def456": FakeSessionData(
+                        content=_user_msg("Session def456"),
+                        size_bytes=100,
+                        modified_at=2000.0,
+                    ),
+                    "ghi789": FakeSessionData(
+                        content=_user_msg("Session ghi789"),
+                        size_bytes=100,
+                        modified_at=3000.0,
+                    ),
+                }
+            )
+        }
+    )
 
-    # Create session files
-    for name in ["abc123.jsonl", "def456.jsonl", "ghi789.jsonl"]:
-        (project_dir / name).write_text(
-            json.dumps({"type": "user", "message": {"content": f"Session {name}"}}),
-            encoding="utf-8",
-        )
-
-    sessions, filtered_count = _list_sessions_for_project(project_dir, None, limit=10)
+    sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
     assert len(sessions) == 3
-    assert filtered_count == 0
-
-
-def test_list_sessions_excludes_agent_logs(tmp_path: Path) -> None:
-    """Test that agent-* files are excluded."""
-    project_dir = tmp_path / "project"
-    project_dir.mkdir()
-
-    # Create session and agent files
-    (project_dir / "main123.jsonl").write_text(
-        json.dumps({"type": "user", "message": {"content": "Main session"}}),
-        encoding="utf-8",
-    )
-    (project_dir / "agent-abc.jsonl").write_text(
-        json.dumps({"type": "user", "message": {"content": "Agent log"}}),
-        encoding="utf-8",
-    )
-
-    sessions, filtered_count = _list_sessions_for_project(project_dir, None, limit=10)
-    assert len(sessions) == 1
-    assert sessions[0].session_id == "main123"
     assert filtered_count == 0
 
 
 def test_list_sessions_sorted_by_mtime(tmp_path: Path) -> None:
     """Test that sessions are sorted by mtime (newest first)."""
-    project_dir = tmp_path / "project"
-    project_dir.mkdir()
+    fake_store = FakeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "old": FakeSessionData(
+                        content=json.dumps({"type": "user", "message": {"content": "Old"}}),
+                        size_bytes=100,
+                        modified_at=1000.0,
+                    ),
+                    "new": FakeSessionData(
+                        content=json.dumps({"type": "user", "message": {"content": "New"}}),
+                        size_bytes=100,
+                        modified_at=2000.0,
+                    ),
+                }
+            )
+        }
+    )
 
-    # Create files with different mtimes
-    old = project_dir / "old.jsonl"
-    old.write_text(json.dumps({"type": "user", "message": {"content": "Old"}}), encoding="utf-8")
-    time.sleep(0.02)
-
-    new = project_dir / "new.jsonl"
-    new.write_text(json.dumps({"type": "user", "message": {"content": "New"}}), encoding="utf-8")
-
-    sessions, filtered_count = _list_sessions_for_project(project_dir, None, limit=10)
+    sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
     assert len(sessions) == 2
     assert sessions[0].session_id == "new"  # Newest first
     assert sessions[1].session_id == "old"
@@ -301,37 +283,51 @@ def test_list_sessions_sorted_by_mtime(tmp_path: Path) -> None:
 
 def test_list_sessions_respects_limit(tmp_path: Path) -> None:
     """Test that limit parameter is respected."""
-    project_dir = tmp_path / "project"
-    project_dir.mkdir()
+    fake_store = FakeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    f"session{i:02d}": FakeSessionData(
+                        content=_user_msg(f"Session {i}"),
+                        size_bytes=100,
+                        modified_at=float(i),
+                    )
+                    for i in range(20)
+                }
+            )
+        }
+    )
 
-    # Create many session files
-    for i in range(20):
-        (project_dir / f"session{i:02d}.jsonl").write_text(
-            json.dumps({"type": "user", "message": {"content": f"Session {i}"}}),
-            encoding="utf-8",
-        )
-        time.sleep(0.001)  # Ensure different mtimes
-
-    sessions, filtered_count = _list_sessions_for_project(project_dir, None, limit=5)
+    sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=5)
     assert len(sessions) == 5
     assert filtered_count == 0
 
 
 def test_list_sessions_marks_current(tmp_path: Path) -> None:
     """Test that current session is marked correctly."""
-    project_dir = tmp_path / "project"
-    project_dir.mkdir()
-
-    (project_dir / "current123.jsonl").write_text(
-        json.dumps({"type": "user", "message": {"content": "Current"}}),
-        encoding="utf-8",
+    fake_store = FakeSessionStore(
+        current_session_id="current123",
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "current123": FakeSessionData(
+                        content=_user_msg("Current"),
+                        size_bytes=100,
+                        modified_at=2000.0,
+                    ),
+                    "other456": FakeSessionData(
+                        content=_user_msg("Other"),
+                        size_bytes=100,
+                        modified_at=1000.0,
+                    ),
+                }
+            )
+        },
     )
-    (project_dir / "other456.jsonl").write_text(
-        json.dumps({"type": "user", "message": {"content": "Other"}}),
-        encoding="utf-8",
-    )
 
-    sessions, filtered_count = _list_sessions_for_project(project_dir, "current123", limit=10)
+    sessions, filtered_count = _list_sessions_from_store(
+        fake_store, tmp_path, "current123", limit=10
+    )
 
     current = next(s for s in sessions if s.session_id == "current123")
     other = next(s for s in sessions if s.session_id == "other456")
@@ -341,23 +337,43 @@ def test_list_sessions_marks_current(tmp_path: Path) -> None:
     assert filtered_count == 0
 
 
-def test_list_sessions_empty_directory(tmp_path: Path) -> None:
-    """Test handling of empty directory."""
-    project_dir = tmp_path / "project"
-    project_dir.mkdir()
+def test_list_sessions_empty_project(tmp_path: Path) -> None:
+    """Test handling of project with no sessions."""
+    fake_store = FakeSessionStore(projects={tmp_path: FakeProject(sessions={})})
 
-    sessions, filtered_count = _list_sessions_for_project(project_dir, None, limit=10)
+    sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
     assert sessions == []
     assert filtered_count == 0
 
 
-def test_list_sessions_nonexistent_directory(tmp_path: Path) -> None:
-    """Test handling of nonexistent directory."""
-    project_dir = tmp_path / "nonexistent"
+def test_list_sessions_nonexistent_project(tmp_path: Path) -> None:
+    """Test handling of nonexistent project."""
+    fake_store = FakeSessionStore()  # No projects
 
-    sessions, filtered_count = _list_sessions_for_project(project_dir, None, limit=10)
+    sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
     assert sessions == []
     assert filtered_count == 0
+
+
+def test_list_sessions_extracts_summaries(tmp_path: Path) -> None:
+    """Test that summaries are extracted from session content."""
+    fake_store = FakeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "session1": FakeSessionData(
+                        content=json.dumps({"type": "user", "message": {"content": "Hello world"}}),
+                        size_bytes=100,
+                        modified_at=1000.0,
+                    )
+                }
+            )
+        }
+    )
+
+    sessions, _ = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
+    assert len(sessions) == 1
+    assert sessions[0].summary == "Hello world"
 
 
 # ============================================================================
@@ -431,250 +447,179 @@ def test_get_branch_context_empty_repo(tmp_path: Path) -> None:
 
 
 # ============================================================================
-# 6. CLI Command Tests (5 tests)
+# 6. CLI Command Tests (5 tests) - Using FakeSessionStore
 # ============================================================================
 
 
-def test_cli_success(tmp_path: Path, monkeypatch) -> None:
+def test_cli_success(tmp_path: Path) -> None:
     """Test CLI command with successful session listing."""
-    # Setup project directory structure
-    projects_dir = tmp_path / ".claude" / "projects"
-    projects_dir.mkdir(parents=True)
-
-    # Create test cwd and project dir
-    test_cwd = tmp_path / "test"
-    test_cwd.mkdir()
-
-    from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.find_project_dir import (
-        encode_path_to_project_folder,
-    )
-
-    encoded_name = encode_path_to_project_folder(test_cwd)
-    project_dir = projects_dir / encoded_name
-    project_dir.mkdir()
-
-    # Create session file
-    (project_dir / "abc123.jsonl").write_text(
-        json.dumps({"type": "user", "message": {"content": "Test session"}}),
-        encoding="utf-8",
-    )
-
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
-
-    # Create context with FakeGit configured for test_cwd
     git = FakeGit(
-        current_branches={test_cwd: "feature-branch"},
-        trunk_branches={test_cwd: "main"},
+        current_branches={tmp_path: "feature-branch"},
+        trunk_branches={tmp_path: "main"},
     )
-    context = DotAgentContext.for_test(git=git, cwd=test_cwd)
+    fake_store = FakeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "abc123": FakeSessionData(
+                        content=_user_msg("Test session"),
+                        size_bytes=100,
+                        modified_at=1234567890.0,
+                    )
+                }
+            )
+        }
+    )
+    context = DotAgentContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
-    original_cwd = os.getcwd()
-    try:
-        os.chdir(test_cwd)
-        result = runner.invoke(list_sessions, [], obj=context)
+    result = runner.invoke(list_sessions, [], obj=context)
 
-        assert result.exit_code == 0
-        output = json.loads(result.output)
-        assert output["success"] is True
-        assert len(output["sessions"]) == 1
-        assert output["sessions"][0]["session_id"] == "abc123"
-    finally:
-        os.chdir(original_cwd)
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert len(output["sessions"]) == 1
+    assert output["sessions"][0]["session_id"] == "abc123"
 
 
-def test_cli_project_not_found(tmp_path: Path, monkeypatch) -> None:
+def test_cli_project_not_found(tmp_path: Path) -> None:
     """Test CLI command error when project not found."""
-    projects_dir = tmp_path / ".claude" / "projects"
-    projects_dir.mkdir(parents=True)
-
-    test_dir = tmp_path / "test"
-    test_dir.mkdir()
-
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
-
-    # Create context with FakeGit
     git = FakeGit(
-        current_branches={test_dir: "main"},
-        trunk_branches={test_dir: "main"},
+        current_branches={tmp_path: "main"},
+        trunk_branches={tmp_path: "main"},
     )
-    context = DotAgentContext.for_test(git=git, cwd=test_dir)
+    # Empty session store - no projects
+    fake_store = FakeSessionStore()
+    context = DotAgentContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
-    original_cwd = os.getcwd()
-    try:
-        os.chdir(test_dir)
-        result = runner.invoke(list_sessions, [], obj=context)
+    result = runner.invoke(list_sessions, [], obj=context)
 
-        assert result.exit_code == 1
-        output = json.loads(result.output)
-        assert output["success"] is False
-        assert "error" in output
-    finally:
-        os.chdir(original_cwd)
+    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert "error" in output
 
 
-def test_cli_output_structure(tmp_path: Path, monkeypatch) -> None:
+def test_cli_output_structure(tmp_path: Path) -> None:
     """Test that CLI output has expected structure."""
-    projects_dir = tmp_path / ".claude" / "projects"
-    projects_dir.mkdir(parents=True)
-
-    test_cwd = tmp_path / "test"
-    test_cwd.mkdir()
-
-    from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.find_project_dir import (
-        encode_path_to_project_folder,
-    )
-
-    encoded_name = encode_path_to_project_folder(test_cwd)
-    project_dir = projects_dir / encoded_name
-    project_dir.mkdir()
-
-    (project_dir / "session.jsonl").write_text(
-        json.dumps({"type": "user", "message": {"content": "Test"}}),
-        encoding="utf-8",
-    )
-
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
-
-    # Create context with FakeGit
     git = FakeGit(
-        current_branches={test_cwd: "feature-branch"},
-        trunk_branches={test_cwd: "main"},
+        current_branches={tmp_path: "feature-branch"},
+        trunk_branches={tmp_path: "main"},
     )
-    context = DotAgentContext.for_test(git=git, cwd=test_cwd)
+    fake_store = FakeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "session": FakeSessionData(
+                        content=json.dumps({"type": "user", "message": {"content": "Test"}}),
+                        size_bytes=100,
+                        modified_at=1234567890.0,
+                    )
+                }
+            )
+        }
+    )
+    context = DotAgentContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
-    original_cwd = os.getcwd()
-    try:
-        os.chdir(test_cwd)
-        result = runner.invoke(list_sessions, [], obj=context)
+    result = runner.invoke(list_sessions, [], obj=context)
 
-        assert result.exit_code == 0
-        output = json.loads(result.output)
+    assert result.exit_code == 0
+    output = json.loads(result.output)
 
-        # Verify expected keys
-        assert "success" in output
-        assert "branch_context" in output
-        assert "current_session_id" in output
-        assert "sessions" in output
-        assert "project_dir" in output
+    # Verify expected keys
+    assert "success" in output
+    assert "branch_context" in output
+    assert "current_session_id" in output
+    assert "sessions" in output
+    assert "project_dir" in output
 
-        # Verify branch_context structure
-        assert "current_branch" in output["branch_context"]
-        assert "trunk_branch" in output["branch_context"]
-        assert "is_on_trunk" in output["branch_context"]
+    # Verify branch_context structure
+    assert "current_branch" in output["branch_context"]
+    assert "trunk_branch" in output["branch_context"]
+    assert "is_on_trunk" in output["branch_context"]
 
-        # Verify session structure
-        if output["sessions"]:
-            session = output["sessions"][0]
-            assert "session_id" in session
-            assert "mtime_display" in session
-            assert "mtime_relative" in session
-            assert "mtime_unix" in session
-            assert "size_bytes" in session
-            assert "summary" in session
-            assert "is_current" in session
-    finally:
-        os.chdir(original_cwd)
+    # Verify session structure
+    if output["sessions"]:
+        session = output["sessions"][0]
+        assert "session_id" in session
+        assert "mtime_display" in session
+        assert "mtime_relative" in session
+        assert "mtime_unix" in session
+        assert "size_bytes" in session
+        assert "summary" in session
+        assert "is_current" in session
 
 
-def test_cli_limit_option(tmp_path: Path, monkeypatch) -> None:
+def test_cli_limit_option(tmp_path: Path) -> None:
     """Test CLI --limit option."""
-    projects_dir = tmp_path / ".claude" / "projects"
-    projects_dir.mkdir(parents=True)
-
-    test_cwd = tmp_path / "test"
-    test_cwd.mkdir()
-
-    from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.find_project_dir import (
-        encode_path_to_project_folder,
-    )
-
-    encoded_name = encode_path_to_project_folder(test_cwd)
-    project_dir = projects_dir / encoded_name
-    project_dir.mkdir()
-
-    # Create many sessions
-    for i in range(10):
-        (project_dir / f"session{i:02d}.jsonl").write_text(
-            json.dumps({"type": "user", "message": {"content": f"Session {i}"}}),
-            encoding="utf-8",
-        )
-        time.sleep(0.001)
-
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
-
-    # Create context with FakeGit
     git = FakeGit(
-        current_branches={test_cwd: "feature-branch"},
-        trunk_branches={test_cwd: "main"},
+        current_branches={tmp_path: "feature-branch"},
+        trunk_branches={tmp_path: "main"},
     )
-    context = DotAgentContext.for_test(git=git, cwd=test_cwd)
+    fake_store = FakeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    f"session{i:02d}": FakeSessionData(
+                        content=_user_msg(f"Session {i}"),
+                        size_bytes=100,
+                        modified_at=float(i),
+                    )
+                    for i in range(10)
+                }
+            )
+        }
+    )
+    context = DotAgentContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
-    original_cwd = os.getcwd()
-    try:
-        os.chdir(test_cwd)
-        result = runner.invoke(list_sessions, ["--limit", "3"], obj=context)
+    result = runner.invoke(list_sessions, ["--limit", "3"], obj=context)
 
-        assert result.exit_code == 0
-        output = json.loads(result.output)
-        assert len(output["sessions"]) == 3
-    finally:
-        os.chdir(original_cwd)
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert len(output["sessions"]) == 3
 
 
-def test_cli_marks_current_session(tmp_path: Path, monkeypatch) -> None:
+def test_cli_marks_current_session(tmp_path: Path) -> None:
     """Test that CLI marks current session from SESSION_CONTEXT env."""
-    projects_dir = tmp_path / ".claude" / "projects"
-    projects_dir.mkdir(parents=True)
-
-    test_cwd = tmp_path / "test"
-    test_cwd.mkdir()
-
-    from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.find_project_dir import (
-        encode_path_to_project_folder,
-    )
-
-    encoded_name = encode_path_to_project_folder(test_cwd)
-    project_dir = projects_dir / encoded_name
-    project_dir.mkdir()
-
-    (project_dir / "current-session.jsonl").write_text(
-        json.dumps({"type": "user", "message": {"content": "Current"}}),
-        encoding="utf-8",
-    )
-    (project_dir / "other-session.jsonl").write_text(
-        json.dumps({"type": "user", "message": {"content": "Other"}}),
-        encoding="utf-8",
-    )
-
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
-
-    # Create context with FakeGit
     git = FakeGit(
-        current_branches={test_cwd: "feature-branch"},
-        trunk_branches={test_cwd: "main"},
+        current_branches={tmp_path: "feature-branch"},
+        trunk_branches={tmp_path: "main"},
     )
-    context = DotAgentContext.for_test(git=git, cwd=test_cwd)
+    fake_store = FakeSessionStore(
+        current_session_id="current-session",
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "current-session": FakeSessionData(
+                        content=json.dumps({"type": "user", "message": {"content": "Current"}}),
+                        size_bytes=100,
+                        modified_at=2000.0,
+                    ),
+                    "other-session": FakeSessionData(
+                        content=json.dumps({"type": "user", "message": {"content": "Other"}}),
+                        size_bytes=100,
+                        modified_at=1000.0,
+                    ),
+                }
+            )
+        },
+    )
+    context = DotAgentContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
 
     runner = CliRunner(env={"SESSION_CONTEXT": "session_id=current-session"})
-    original_cwd = os.getcwd()
-    try:
-        os.chdir(test_cwd)
-        result = runner.invoke(list_sessions, [], obj=context)
+    result = runner.invoke(list_sessions, [], obj=context)
 
-        assert result.exit_code == 0
-        output = json.loads(result.output)
+    assert result.exit_code == 0
+    output = json.loads(result.output)
 
-        current = next(s for s in output["sessions"] if s["session_id"] == "current-session")
-        other = next(s for s in output["sessions"] if s["session_id"] == "other-session")
+    current = next(s for s in output["sessions"] if s["session_id"] == "current-session")
+    other = next(s for s in output["sessions"] if s["session_id"] == "other-session")
 
-        assert current["is_current"] is True
-        assert other["is_current"] is False
-    finally:
-        os.chdir(original_cwd)
+    assert current["is_current"] is True
+    assert other["is_current"] is False
 
 
 # ============================================================================
@@ -684,17 +629,28 @@ def test_cli_marks_current_session(tmp_path: Path, monkeypatch) -> None:
 
 def test_list_sessions_min_size_filters_tiny_sessions(tmp_path: Path) -> None:
     """Test that --min-size filters out tiny sessions."""
-    project_dir = tmp_path / "project"
-    project_dir.mkdir()
+    fake_store = FakeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "tiny": FakeSessionData(
+                        content="x",
+                        size_bytes=10,
+                        modified_at=1000.0,
+                    ),
+                    "large": FakeSessionData(
+                        content=json.dumps({"type": "user", "message": {"content": "x" * 2000}}),
+                        size_bytes=2000,
+                        modified_at=2000.0,
+                    ),
+                }
+            )
+        }
+    )
 
-    # Create a tiny session (< 100 bytes)
-    (project_dir / "tiny.jsonl").write_text("x", encoding="utf-8")
-
-    # Create a larger session (> 1KB)
-    large_content = json.dumps({"type": "user", "message": {"content": "x" * 2000}})
-    (project_dir / "large.jsonl").write_text(large_content, encoding="utf-8")
-
-    sessions, filtered_count = _list_sessions_for_project(project_dir, None, limit=10, min_size=100)
+    sessions, filtered_count = _list_sessions_from_store(
+        fake_store, tmp_path, None, limit=10, min_size=100
+    )
 
     assert len(sessions) == 1
     assert sessions[0].session_id == "large"
@@ -703,13 +659,28 @@ def test_list_sessions_min_size_filters_tiny_sessions(tmp_path: Path) -> None:
 
 def test_list_sessions_min_size_zero_no_filtering(tmp_path: Path) -> None:
     """Test that min_size=0 (default) does not filter."""
-    project_dir = tmp_path / "project"
-    project_dir.mkdir()
+    fake_store = FakeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "tiny": FakeSessionData(
+                        content="x",
+                        size_bytes=1,
+                        modified_at=1000.0,
+                    ),
+                    "large": FakeSessionData(
+                        content="x" * 1000,
+                        size_bytes=1000,
+                        modified_at=2000.0,
+                    ),
+                }
+            )
+        }
+    )
 
-    (project_dir / "tiny.jsonl").write_text("x", encoding="utf-8")
-    (project_dir / "large.jsonl").write_text("x" * 1000, encoding="utf-8")
-
-    sessions, filtered_count = _list_sessions_for_project(project_dir, None, limit=10, min_size=0)
+    sessions, filtered_count = _list_sessions_from_store(
+        fake_store, tmp_path, None, limit=10, min_size=0
+    )
 
     assert len(sessions) == 2
     assert filtered_count == 0
@@ -717,59 +688,63 @@ def test_list_sessions_min_size_zero_no_filtering(tmp_path: Path) -> None:
 
 def test_list_sessions_all_filtered(tmp_path: Path) -> None:
     """Test when all sessions are filtered by size."""
-    project_dir = tmp_path / "project"
-    project_dir.mkdir()
+    fake_store = FakeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "tiny1": FakeSessionData(
+                        content="x",
+                        size_bytes=1,
+                        modified_at=1000.0,
+                    ),
+                    "tiny2": FakeSessionData(
+                        content="xx",
+                        size_bytes=2,
+                        modified_at=2000.0,
+                    ),
+                }
+            )
+        }
+    )
 
-    (project_dir / "tiny1.jsonl").write_text("x", encoding="utf-8")
-    (project_dir / "tiny2.jsonl").write_text("xx", encoding="utf-8")
-
-    sessions, filtered_count = _list_sessions_for_project(
-        project_dir, None, limit=10, min_size=1000
+    sessions, filtered_count = _list_sessions_from_store(
+        fake_store, tmp_path, None, limit=10, min_size=1000
     )
 
     assert len(sessions) == 0
     assert filtered_count == 2
 
 
-def test_cli_min_size_option(tmp_path: Path, monkeypatch) -> None:
+def test_cli_min_size_option(tmp_path: Path) -> None:
     """Test CLI --min-size option."""
-    # Setup project directory structure
-    projects_dir = tmp_path / ".claude" / "projects"
-    projects_dir.mkdir(parents=True)
-
-    test_cwd = tmp_path / "test"
-    test_cwd.mkdir()
-
-    from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.find_project_dir import (
-        encode_path_to_project_folder,
-    )
-
-    encoded_name = encode_path_to_project_folder(test_cwd)
-    project_dir = projects_dir / encoded_name
-    project_dir.mkdir()
-
-    # Create tiny and large sessions
-    (project_dir / "tiny.jsonl").write_text("x", encoding="utf-8")
-    large_content = json.dumps({"type": "user", "message": {"content": "x" * 2000}})
-    (project_dir / "large.jsonl").write_text(large_content, encoding="utf-8")
-
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
-
     git = FakeGit(
-        current_branches={test_cwd: "feature"},
-        trunk_branches={test_cwd: "main"},
+        current_branches={tmp_path: "feature"},
+        trunk_branches={tmp_path: "main"},
     )
-    context = DotAgentContext.for_test(git=git, cwd=test_cwd)
+    fake_store = FakeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "tiny": FakeSessionData(
+                        content="x",
+                        size_bytes=10,
+                        modified_at=1000.0,
+                    ),
+                    "large": FakeSessionData(
+                        content=json.dumps({"type": "user", "message": {"content": "x" * 2000}}),
+                        size_bytes=2000,
+                        modified_at=2000.0,
+                    ),
+                }
+            )
+        }
+    )
+    context = DotAgentContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
-    original_cwd = os.getcwd()
-    try:
-        os.chdir(test_cwd)
-        result = runner.invoke(list_sessions, ["--min-size", "100"], obj=context)
+    result = runner.invoke(list_sessions, ["--min-size", "100"], obj=context)
 
-        assert result.exit_code == 0
-        output = json.loads(result.output)
-        assert len(output["sessions"]) == 1
-        assert output["filtered_count"] == 1
-    finally:
-        os.chdir(original_cwd)
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert len(output["sessions"]) == 1
+    assert output["filtered_count"] == 1

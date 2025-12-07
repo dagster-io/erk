@@ -5,7 +5,6 @@ from dataclasses import asdict
 
 import click
 from erk_shared.extraction.raw_extraction import create_raw_extraction_plan
-from erk_shared.extraction.session_discovery import get_current_session_id
 from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, delete_marker
 
 from erk.cli.core import discover_repo_context
@@ -36,13 +35,14 @@ def create_raw(ctx: ErkContext, min_size: int) -> None:
     repo = discover_repo_context(ctx, ctx.cwd)
     repo_root = repo.root
 
-    # Get current session ID from environment
-    current_session_id = get_current_session_id()
+    # Get current session ID from session store
+    current_session_id = ctx.session_store.get_current_session_id()
 
     # Call the orchestrator
     result = create_raw_extraction_plan(
         github_issues=ctx.issues,
         git=ctx.git,
+        session_store=ctx.session_store,
         repo_root=repo_root,
         cwd=ctx.cwd,
         current_session_id=current_session_id,

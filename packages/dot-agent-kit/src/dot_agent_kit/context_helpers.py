@@ -13,6 +13,7 @@ This eliminates code duplication across kit CLI commands.
 from pathlib import Path
 
 import click
+from erk_shared.extraction.session_store import ClaudeCodeSessionStore
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues
@@ -161,3 +162,31 @@ def require_cwd(ctx: click.Context) -> Path:
         raise SystemExit(1)
 
     return ctx.obj.cwd
+
+
+def require_session_store(ctx: click.Context) -> ClaudeCodeSessionStore:
+    """Get SessionStore from context, exiting with error if not initialized.
+
+    Uses LBYL pattern to check context before accessing.
+
+    Args:
+        ctx: Click context (must have DotAgentContext in ctx.obj)
+
+    Returns:
+        SessionStore instance from context
+
+    Raises:
+        SystemExit: If context not initialized (exits with code 1)
+
+    Example:
+        >>> @click.command()
+        >>> @click.pass_context
+        >>> def my_command(ctx: click.Context) -> None:
+        ...     store = require_session_store(ctx)
+        ...     sessions = store.find_sessions(cwd)
+    """
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+
+    return ctx.obj.session_store

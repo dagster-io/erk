@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import click
+from erk_shared.extraction.session_store import ClaudeCodeSessionStore
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues, RealGitHubIssues
@@ -29,6 +30,7 @@ class DotAgentContext:
         github_issues: GitHub Issues integration for querying/commenting
         git: Git operations integration for branch/commit queries
         github: GitHub integration for PR operations
+        session_store: Session storage for Claude Code sessions
         debug: Debug flag for error handling (full stack traces)
         repo_root: Repository root directory (detected at CLI entry)
         cwd: Current working directory (worktree path)
@@ -37,6 +39,7 @@ class DotAgentContext:
     github_issues: GitHubIssues
     git: Git
     github: GitHub
+    session_store: ClaudeCodeSessionStore
     debug: bool
     repo_root: Path
     cwd: Path
@@ -46,6 +49,7 @@ class DotAgentContext:
         github_issues: GitHubIssues | None = None,
         git: Git | None = None,
         github: GitHub | None = None,
+        session_store: ClaudeCodeSessionStore | None = None,
         debug: bool = False,
         repo_root: Path | None = None,
         cwd: Path | None = None,
@@ -59,6 +63,7 @@ class DotAgentContext:
             github_issues: Optional GitHubIssues implementation. If None, creates FakeGitHubIssues.
             git: Optional Git implementation. If None, creates FakeGit.
             github: Optional GitHub implementation. If None, creates FakeGitHub.
+            session_store: Optional SessionStore implementation. If None, creates FakeSessionStore.
             debug: Whether to enable debug mode (default False).
             repo_root: Repository root path (defaults to Path("/fake/repo"))
             cwd: Current working directory (defaults to Path("/fake/worktree"))
@@ -75,6 +80,7 @@ class DotAgentContext:
             ...     github_issues=github, git=git_ops, debug=True
             ... )
         """
+        from erk_shared.extraction.fake_session_store import FakeSessionStore
         from erk_shared.git.fake import FakeGit
         from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
@@ -85,6 +91,9 @@ class DotAgentContext:
         )
         resolved_git: Git = git if git is not None else FakeGit()
         resolved_github: GitHub = github if github is not None else FakeGitHub()
+        resolved_session_store: ClaudeCodeSessionStore = (
+            session_store if session_store is not None else FakeSessionStore()
+        )
         resolved_repo_root: Path = repo_root if repo_root is not None else Path("/fake/repo")
         resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
 
@@ -92,6 +101,7 @@ class DotAgentContext:
             github_issues=resolved_github_issues,
             git=resolved_git,
             github=resolved_github,
+            session_store=resolved_session_store,
             debug=debug,
             repo_root=resolved_repo_root,
             cwd=resolved_cwd,
@@ -117,6 +127,7 @@ def create_context(*, debug: bool) -> DotAgentContext:
         >>> ctx = create_context(debug=False)
         >>> issue_number = ctx.github_issues.create_issue(ctx.repo_root, title, body, labels)
     """
+    from erk_shared.extraction.real_session_store import RealSessionStore
     from erk_shared.git.real import RealGit
     from erk_shared.github.real import RealGitHub
     from erk_shared.integrations.time.real import RealTime
@@ -140,6 +151,7 @@ def create_context(*, debug: bool) -> DotAgentContext:
         github_issues=RealGitHubIssues(),
         git=RealGit(),
         github=RealGitHub(time=RealTime()),
+        session_store=RealSessionStore(),
         debug=debug,
         repo_root=repo_root,
         cwd=cwd,

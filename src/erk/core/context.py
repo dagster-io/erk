@@ -5,6 +5,7 @@ from pathlib import Path
 
 import click
 import tomlkit
+from erk_shared.extraction.session_store import ClaudeCodeSessionStore
 from erk_shared.git.abc import Git
 from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.real import RealGit
@@ -69,6 +70,7 @@ class ErkContext:
     feedback: UserFeedback
     plan_list_service: PlanListService
     planner_registry: PlannerRegistry
+    session_store: ClaudeCodeSessionStore
     cwd: Path  # Current working directory at CLI invocation
     global_config: GlobalConfig | None
     local_config: LoadedConfig
@@ -129,6 +131,7 @@ class ErkContext:
             For more complex test setup with custom configs or multiple integration classes,
             use ErkContext.for_test() instead.
         """
+        from erk_shared.extraction.fake_session_store import FakeSessionStore
         from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
         from erk_shared.integrations.graphite.fake import FakeGraphite
@@ -160,6 +163,7 @@ class ErkContext:
             feedback=FakeUserFeedback(),
             plan_list_service=PlanListService(fake_github, fake_issues),
             planner_registry=FakePlannerRegistry(),
+            session_store=FakeSessionStore(),
             cwd=cwd,
             global_config=None,
             local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
@@ -184,6 +188,7 @@ class ErkContext:
         feedback: UserFeedback | None = None,
         plan_list_service: PlanListService | None = None,
         planner_registry: PlannerRegistry | None = None,
+        session_store: ClaudeCodeSessionStore | None = None,
         cwd: Path | None = None,
         global_config: GlobalConfig | None = None,
         local_config: LoadedConfig | None = None,
@@ -241,6 +246,7 @@ class ErkContext:
             For simple cases that only need git, use ErkContext.minimal()
             which is more concise.
         """
+        from erk_shared.extraction.fake_session_store import FakeSessionStore
         from erk_shared.git.fake import FakeGit
         from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
@@ -296,6 +302,9 @@ class ErkContext:
         if planner_registry is None:
             planner_registry = FakePlannerRegistry()
 
+        if session_store is None:
+            session_store = FakeSessionStore()
+
         if global_config is None:
             global_config = GlobalConfig(
                 erk_root=Path("/test/erks"),
@@ -336,6 +345,7 @@ class ErkContext:
             feedback=feedback,
             plan_list_service=plan_list_service,
             planner_registry=planner_registry,
+            session_store=session_store,
             cwd=cwd or sentinel_path(),
             global_config=global_config,
             local_config=local_config,
@@ -496,7 +506,12 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
         github = DryRunGitHub(github)
         issues = DryRunGitHubIssues(issues)
 
-    # 10. Create context with all values
+    # 10. Create session store
+    from erk_shared.extraction.real_session_store import RealSessionStore
+
+    session_store: ClaudeCodeSessionStore = RealSessionStore()
+
+    # 11. Create context with all values
     return ErkContext(
         git=git,
         github=github,
@@ -512,6 +527,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
         feedback=feedback,
         plan_list_service=plan_list_service,
         planner_registry=RealPlannerRegistry(),
+        session_store=session_store,
         cwd=cwd,
         global_config=global_config,
         local_config=local_config,

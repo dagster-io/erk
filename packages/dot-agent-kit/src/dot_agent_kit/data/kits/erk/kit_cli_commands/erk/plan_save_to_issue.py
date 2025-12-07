@@ -30,7 +30,13 @@ from erk_shared.extraction.session_context import collect_session_context
 from erk_shared.github.metadata import render_session_content_blocks
 from erk_shared.github.plan_issues import create_plan_issue
 
-from dot_agent_kit.context_helpers import require_git, require_github_issues, require_repo_root
+from dot_agent_kit.context_helpers import (
+    require_cwd,
+    require_git,
+    require_github_issues,
+    require_repo_root,
+    require_session_store,
+)
 from dot_agent_kit.data.kits.erk.session_plan_extractor import get_latest_plan
 
 
@@ -85,7 +91,7 @@ def plan_save_to_issue(
     # Get GitHub Issues from context
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
-    cwd = Path.cwd()
+    cwd = require_cwd(ctx)
 
     # Resolve session ID: --session-id flag > file > None
     effective_session_id = session_id or _get_session_id_from_file()
@@ -143,8 +149,14 @@ def plan_save_to_issue(
     session_ids: list[str] = []
 
     git = require_git(ctx)
+    session_store = require_session_store(ctx)
     session_result = collect_session_context(
-        git=git, cwd=cwd, current_session_id=effective_session_id, min_size=1024, limit=20
+        git=git,
+        cwd=cwd,
+        session_store=session_store,
+        current_session_id=effective_session_id,
+        min_size=1024,
+        limit=20,
     )
 
     if session_result is not None and result.issue_number is not None:

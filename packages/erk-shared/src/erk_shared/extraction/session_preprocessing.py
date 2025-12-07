@@ -255,17 +255,17 @@ def reduce_session_mechanically(entries: list[dict]) -> list[dict]:
     return reduced
 
 
-def process_log_file(
-    log_path: Path,
+def process_log_content(
+    content: str,
     session_id: str | None = None,
 ) -> tuple[list[dict], int, int]:
-    """Process a single JSONL log file and return mechanically reduced entries.
+    """Process JSONL content string and return mechanically reduced entries.
 
     This is Stage 1 processing: deterministic mechanical reduction only.
     No semantic judgment calls (those are delegated to Haiku in Stage 2).
 
     Args:
-        log_path: Path to the JSONL log file
+        content: Raw JSONL content string
         session_id: Optional session ID to filter entries by
 
     Returns:
@@ -275,7 +275,7 @@ def process_log_file(
     total_entries = 0
     skipped_entries = 0
 
-    for line in log_path.read_text(encoding="utf-8").splitlines():
+    for line in content.splitlines():
         if not line.strip():
             continue
 
@@ -296,6 +296,76 @@ def process_log_file(
     reduced_entries = reduce_session_mechanically(raw_entries)
 
     return reduced_entries, total_entries, skipped_entries
+
+
+def process_log_file(
+    log_path: Path,
+    session_id: str | None = None,
+) -> tuple[list[dict], int, int]:
+    """Process a single JSONL log file and return mechanically reduced entries.
+
+    This is Stage 1 processing: deterministic mechanical reduction only.
+    No semantic judgment calls (those are delegated to Haiku in Stage 2).
+
+    Args:
+        log_path: Path to the JSONL log file
+        session_id: Optional session ID to filter entries by
+
+    Returns:
+        Tuple of (reduced entries, total entries count, skipped entries count)
+    """
+    content = log_path.read_text(encoding="utf-8")
+    return process_log_content(content, session_id)
+
+
+def preprocess_session_content(
+    main_content: str,
+    agent_logs: list[tuple[str, str]],
+    session_id: str | None = None,
+) -> str:
+    """Stage 1: Preprocess session content to compressed XML format.
+
+    This is the content-based version of preprocess_session, working with
+    raw strings instead of file paths. Used by SessionStore-based workflows.
+
+    This performs deterministic mechanical reduction only:
+    - Drops file-history-snapshot entries
+    - Strips usage metadata
+    - Removes empty text blocks
+    - Compacts whitespace
+    - Deduplicates repeated assistant text
+
+    Args:
+        main_content: Raw JSONL content string for main session
+        agent_logs: List of (agent_id, raw JSONL content) tuples
+        session_id: Optional session ID to filter entries by
+
+    Returns:
+        Compressed XML string (mechanically reduced, not semantically filtered)
+    """
+    # Process main session content
+    entries, _, _ = process_log_content(main_content, session_id=session_id)
+
+    # Apply standard deduplication (deterministic - always enabled)
+    entries = deduplicate_assistant_messages(entries)
+
+    # Generate main session XML
+    xml_sections = [generate_compressed_xml(entries)]
+
+    # Process agent logs
+    for agent_id, agent_content in agent_logs:
+        agent_entries, _, _ = process_log_content(agent_content, session_id=session_id)
+
+        # Apply standard deduplication
+        agent_entries = deduplicate_assistant_messages(agent_entries)
+
+        # Generate XML with source label
+        source_label = f"agent-{agent_id}"
+        agent_xml = generate_compressed_xml(agent_entries, source_label=source_label)
+        xml_sections.append(agent_xml)
+
+    # Combine all XML sections
+    return "\n\n".join(xml_sections)
 
 
 def preprocess_session(
