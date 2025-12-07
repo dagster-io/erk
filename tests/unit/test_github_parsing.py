@@ -5,10 +5,7 @@ from erk_shared.github.parsing import (
     parse_aggregated_check_counts,
     parse_gh_auth_status_output,
     parse_git_remote_url,
-    parse_github_pr_status,
 )
-
-from tests.conftest import load_fixture
 
 # Tests for parse_git_remote_url
 
@@ -149,25 +146,6 @@ def test_parse_aggregated_check_counts_missing_count_field():
     ]
     result = parse_aggregated_check_counts(check_run_counts, [], 2)
     assert result == (2, 2)
-
-
-def test_parse_github_pr_status_single():
-    """Test parsing single PR status."""
-    json_data = load_fixture("github/pr_status_single.json")
-    state, number, title = parse_github_pr_status(json_data)
-
-    assert state == "OPEN"
-    assert number == 456
-    assert title == "Add new feature for improved performance"
-
-
-def test_parse_github_pr_status_no_pr():
-    """Test parsing status when no PR exists."""
-    state, number, title = parse_github_pr_status("[]")
-
-    assert state == "NONE"
-    assert number is None
-    assert title is None
 
 
 # Tests for parse_gh_auth_status_output

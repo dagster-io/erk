@@ -95,24 +95,21 @@ def pr_sync(ctx: ErkContext) -> None:
     )
 
     # Step 2: Check if PR exists and get status
-    pr_info = ctx.github.get_pr_status(repo.root, current_branch, debug=False)
+    pr = ctx.github.get_pr_for_branch(repo.root, current_branch)
     Ensure.invariant(
-        pr_info.state != "NONE",
+        pr is not None,
         f"No pull request found for branch '{current_branch}'",
     )
+    # Type narrowing after invariant check
+    assert pr is not None
     Ensure.invariant(
-        pr_info.state == "OPEN",
-        f"Cannot sync {pr_info.state} PR - only OPEN PRs can be synchronized",
+        pr.state == "OPEN",
+        f"Cannot sync {pr.state} PR - only OPEN PRs can be synchronized",
     )
 
-    # Get PR number for further checks
-    pr_number = Ensure.not_none(
-        pr_info.pr_number,
-        f"Could not determine PR number for branch '{current_branch}'",
-    )
+    pr_number = pr.number
 
-    # Check if PR is from a fork (cross-repo) and get base branch
-    pr = ctx.github.get_pr(repo.root, pr_number)
+    # Check if PR is from a fork (cross-repo)
     Ensure.invariant(
         not pr.is_cross_repository,
         "Cannot sync fork PRs - Graphite cannot track branches from forks",
@@ -127,7 +124,7 @@ def pr_sync(ctx: ErkContext) -> None:
         )
         return
 
-    # Step 4: Get PR base branch from GitHub
+    # Step 4: Get PR base branch from GitHub (use same PRDetails object)
     base_branch = pr.base_ref_name
     user_output(f"Base branch: {base_branch}")
 

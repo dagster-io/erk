@@ -6,11 +6,50 @@ from click.testing import CliRunner
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PRCheckoutInfo
+from erk_shared.github.types import PRDetails, PullRequestInfo
 
 from erk.cli.commands.pr import pr_group
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
+
+
+def _make_pr_details(
+    number: int,
+    head_ref_name: str,
+    is_cross_repository: bool,
+    state: str,
+    base_ref_name: str = "main",
+) -> PRDetails:
+    """Create a PRDetails for testing."""
+    return PRDetails(
+        number=number,
+        url=f"https://github.com/owner/repo/pull/{number}",
+        title=f"PR #{number}",
+        body="",
+        state=state,
+        is_draft=False,
+        base_ref_name=base_ref_name,
+        head_ref_name=head_ref_name,
+        is_cross_repository=is_cross_repository,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="owner",
+        repo="repo",
+    )
+
+
+def _make_pr_info(number: int, state: str = "OPEN") -> PullRequestInfo:
+    """Create a PullRequestInfo for testing."""
+    return PullRequestInfo(
+        number=number,
+        state=state,
+        url=f"https://github.com/owner/repo/pull/{number}",
+        is_draft=False,
+        title=f"PR #{number}",
+        checks_passing=True,
+        owner="owner",
+        repo="repo",
+    )
 
 
 def test_pr_checkout_same_repo_branch_exists_on_remote() -> None:
@@ -19,13 +58,13 @@ def test_pr_checkout_same_repo_branch_exists_on_remote() -> None:
     with erk_isolated_fs_env(runner) as env:
         # Setup repo structure for worktrees_dir
         env.setup_repo_structure()
-        pr_info = PRCheckoutInfo(
+        pr_details = _make_pr_details(
             number=123,
             head_ref_name="feature-branch",
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_checkout_infos={123: pr_info})
+        github = FakeGitHub(pr_details={123: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -52,13 +91,13 @@ def test_pr_checkout_same_repo_branch_already_local() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
-        pr_info = PRCheckoutInfo(
+        pr_details = _make_pr_details(
             number=456,
             head_ref_name="existing-branch",
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_checkout_infos={456: pr_info})
+        github = FakeGitHub(pr_details={456: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -83,13 +122,13 @@ def test_pr_checkout_cross_repository_fork() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
-        pr_info = PRCheckoutInfo(
+        pr_details = _make_pr_details(
             number=789,
             head_ref_name="contributor-branch",
             is_cross_repository=True,
             state="OPEN",
         )
-        github = FakeGitHub(pr_checkout_infos={789: pr_info})
+        github = FakeGitHub(pr_details={789: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -115,13 +154,13 @@ def test_pr_checkout_already_checked_out() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
-        pr_info = PRCheckoutInfo(
+        pr_details = _make_pr_details(
             number=111,
             head_ref_name="existing-wt-branch",
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_checkout_infos={111: pr_info})
+        github = FakeGitHub(pr_details={111: pr_details})
         existing_wt_path = env.repo.worktrees_dir / "existing-wt-branch"
         existing_wt_path.mkdir(parents=True, exist_ok=True)
         git = FakeGit(
@@ -151,7 +190,7 @@ def test_pr_checkout_pr_not_found() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
-        github = FakeGitHub(pr_checkout_infos={})  # Empty - PR 999 not found
+        github = FakeGitHub(pr_details={})  # Empty - PR 999 not found
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -169,13 +208,13 @@ def test_pr_checkout_warns_on_closed_pr() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
-        pr_info = PRCheckoutInfo(
+        pr_details = _make_pr_details(
             number=222,
             head_ref_name="closed-branch",
             is_cross_repository=False,
             state="CLOSED",
         )
-        github = FakeGitHub(pr_checkout_infos={222: pr_info})
+        github = FakeGitHub(pr_details={222: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -195,13 +234,13 @@ def test_pr_checkout_warns_on_merged_pr() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
-        pr_info = PRCheckoutInfo(
+        pr_details = _make_pr_details(
             number=333,
             head_ref_name="merged-branch",
             is_cross_repository=False,
             state="MERGED",
         )
-        github = FakeGitHub(pr_checkout_infos={333: pr_info})
+        github = FakeGitHub(pr_details={333: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -221,13 +260,13 @@ def test_pr_checkout_with_github_url() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
-        pr_info = PRCheckoutInfo(
+        pr_details = _make_pr_details(
             number=444,
             head_ref_name="url-branch",
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_checkout_infos={444: pr_info})
+        github = FakeGitHub(pr_details={444: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -268,13 +307,13 @@ def test_pr_checkout_script_mode_outputs_script_path() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
-        pr_info = PRCheckoutInfo(
+        pr_details = _make_pr_details(
             number=555,
             head_ref_name="script-branch",
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_checkout_infos={555: pr_info})
+        github = FakeGitHub(pr_details={555: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -302,13 +341,13 @@ def test_pr_checkout_non_script_mode_shows_manual_instructions() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
-        pr_info = PRCheckoutInfo(
+        pr_details = _make_pr_details(
             number=666,
             head_ref_name="manual-branch",
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_checkout_infos={666: pr_info})
+        github = FakeGitHub(pr_details={666: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},

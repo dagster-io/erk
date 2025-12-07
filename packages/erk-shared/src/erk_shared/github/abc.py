@@ -6,10 +6,7 @@ from pathlib import Path
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
-    PRCheckoutInfo,
     PRDetails,
-    PRInfo,
-    PRMergeability,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
@@ -21,23 +18,6 @@ class GitHub(ABC):
 
     All implementations (real and fake) must implement this interface.
     """
-
-    @abstractmethod
-    def get_pr_status(self, repo_root: Path, branch: str, *, debug: bool) -> PRInfo:
-        """Get PR status for a specific branch.
-
-        Args:
-            repo_root: Repository root directory
-            branch: Branch name to check
-            debug: If True, print debug information
-
-        Returns:
-            PRInfo with state, pr_number, and title
-            - state: "OPEN", "MERGED", "CLOSED", or "NONE" if no PR exists
-            - pr_number: PR number or None if no PR exists
-            - title: PR title or None if no PR exists
-        """
-        ...
 
     @abstractmethod
     def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str:
@@ -71,14 +51,6 @@ class GitHub(ABC):
             repo_root: Repository root directory
             pr_number: PR number to update
             body: New PR body (markdown)
-        """
-        ...
-
-    @abstractmethod
-    def get_pr_mergeability(self, repo_root: Path, pr_number: int) -> PRMergeability | None:
-        """Get PR mergeability status from GitHub.
-
-        Returns None if PR not found or API error.
         """
         ...
 
@@ -282,24 +254,6 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
-    def get_pr_checkout_info(self, repo_root: Path, pr_number: int) -> PRCheckoutInfo:
-        """Get PR details needed for checkout.
-
-        Fetches the minimal information required to checkout a PR into a worktree:
-        - head_ref_name: The branch name in the source repository
-        - is_cross_repository: Whether this PR is from a fork
-        - state: The PR state (OPEN, CLOSED, MERGED)
-
-        Args:
-            repo_root: Repository root directory
-            pr_number: PR number to query
-
-        Returns:
-            PRCheckoutInfo with checkout details
-        """
-        ...
-
-    @abstractmethod
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Check GitHub CLI authentication status.
 
@@ -388,19 +342,6 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
-    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR number and URL for a specific branch.
-
-        Args:
-            repo_root: Repository root directory
-            branch: Branch name to check
-
-        Returns:
-            Tuple of (pr_number, pr_url) or None if no PR exists for this branch
-        """
-        ...
-
-    @abstractmethod
     def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails:
         """Get comprehensive PR details in a single API call.
 
@@ -430,20 +371,6 @@ class GitHub(ABC):
 
         Returns:
             PRDetails if a PR exists for the branch, None otherwise
-        """
-        ...
-
-    @abstractmethod
-    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR number and state for a specific branch.
-
-        Args:
-            repo_root: Repository root directory
-            branch: Branch name to check
-
-        Returns:
-            Tuple of (pr_number, state) where state is "OPEN", "MERGED", or "CLOSED"
-            None if no PR exists for this branch
         """
         ...
 

@@ -74,8 +74,8 @@ def execute_land_pr(
 
     # Step 4: Check PR exists and is open
     yield ProgressEvent("Checking PR status...")
-    pr_state_info = ops.github.get_pr_state_for_branch(repo_root, branch_name)
-    if pr_state_info is None:
+    pr_details = ops.github.get_pr_for_branch(repo_root, branch_name)
+    if pr_details is None:
         yield CompletionEvent(
             LandPrError(
                 success=False,
@@ -89,7 +89,8 @@ def execute_land_pr(
         )
         return
 
-    pr_number, pr_state = pr_state_info
+    pr_number = pr_details.number
+    pr_state = pr_details.state
     if pr_state != "OPEN":
         yield CompletionEvent(
             LandPrError(
@@ -112,14 +113,13 @@ def execute_land_pr(
     yield ProgressEvent("Getting child branches...")
     children = ops.graphite.get_child_branches(ops.git, repo_root, branch_name)
 
-    # Step 6: Get PR title and body for merge commit message
+    # Step 6: Get PR title and body for merge commit message (use same PRDetails object)
     yield ProgressEvent("Getting PR metadata...")
-    pr = ops.github.get_pr(repo_root, pr_number)
 
     # Merge with squash using title and body
     yield ProgressEvent(f"Merging PR #{pr_number}...")
-    subject = f"{pr.title} (#{pr_number})" if pr.title else None
-    body = pr.body or None
+    subject = f"{pr_details.title} (#{pr_number})" if pr_details.title else None
+    body = pr_details.body or None
     if not ops.github.merge_pr(repo_root, pr_number, subject=subject, body=body):
         yield CompletionEvent(
             LandPrError(

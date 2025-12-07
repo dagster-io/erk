@@ -19,7 +19,7 @@ from erk_shared.git.abc import Git
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.abc import GitHub
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PRMergeability
+from erk_shared.github.types import PRDetails, PullRequestInfo
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
@@ -193,8 +193,6 @@ class FakeGtKitOps:
 
     def _build_fake_github(self) -> FakeGitHub:
         """Build FakeGitHub from accumulated builder state."""
-        from erk_shared.github.types import PRDetails, PullRequestInfo
-
         # Build prs dict from pr_numbers, pr_urls, pr_states
         prs: dict[str, PullRequestInfo] = {}
         for branch, pr_number in self._github_builder_state.pr_numbers.items():
@@ -215,17 +213,7 @@ class FakeGtKitOps:
                 has_conflicts=None,
             )
 
-        # Build pr_mergeability dict with PRMergeability objects
-        pr_mergeability: dict[int, PRMergeability | None] = {}
-        for pr_number, (
-            mergeable,
-            merge_state,
-        ) in self._github_builder_state.pr_mergeability.items():
-            pr_mergeability[pr_number] = PRMergeability(
-                mergeable=mergeable, merge_state_status=merge_state
-            )
-
-        # Build pr_details from accumulated state for get_pr()
+        # Build pr_details from accumulated state for get_pr() and get_pr_for_branch()
         pr_details: dict[int, PRDetails] = {}
         for branch, pr_number in self._github_builder_state.pr_numbers.items():
             pr_url = self._github_builder_state.pr_urls.get(
@@ -269,7 +257,6 @@ class FakeGtKitOps:
             pr_titles=self._github_builder_state.pr_titles,
             pr_bodies_by_number=self._github_builder_state.pr_bodies,
             pr_diffs=self._github_builder_state.pr_diffs,
-            pr_mergeability=pr_mergeability,
             pr_details=pr_details,
             merge_should_succeed=self._github_builder_state.merge_should_succeed,
             pr_update_should_succeed=self._github_builder_state.pr_update_should_succeed,

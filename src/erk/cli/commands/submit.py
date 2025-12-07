@@ -215,9 +215,9 @@ def _validate_issue_for_submit(
 
     pr_number: int | None = None
     if branch_exists:
-        pr_status = ctx.github.get_pr_status(repo.root, branch_name, debug=False)
-        if pr_status.pr_number is not None:
-            pr_number = pr_status.pr_number
+        pr_details = ctx.github.get_pr_for_branch(repo.root, branch_name)
+        if pr_details is not None:
+            pr_number = pr_details.number
 
     # Check if this issue is an extraction plan
     is_extraction_origin = is_issue_extraction_plan(issue.body)

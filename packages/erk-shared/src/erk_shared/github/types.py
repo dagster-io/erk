@@ -3,9 +3,9 @@
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Literal, NamedTuple
+from typing import Literal
 
-PRState = Literal["OPEN", "MERGED", "CLOSED", "NONE"]
+PRState = Literal["OPEN", "MERGED", "CLOSED"]
 
 
 @dataclass(frozen=True)
@@ -75,14 +75,6 @@ WorkflowRunStatus = Literal["completed", "in_progress", "queued", "unknown"]
 WorkflowRunConclusion = Literal["success", "failure", "cancelled", "skipped"]
 
 
-class PRInfo(NamedTuple):
-    """PR status information from GitHub API."""
-
-    state: PRState
-    pr_number: int | None
-    title: str | None
-
-
 @dataclass(frozen=True)
 class PullRequestInfo:
     """Information about a GitHub pull request."""
@@ -98,14 +90,6 @@ class PullRequestInfo:
     # True if CONFLICTING, False if MERGEABLE, None if UNKNOWN or not fetched
     has_conflicts: bool | None = None
     checks_counts: tuple[int, int] | None = None  # (passing, total) or None if no checks
-
-
-@dataclass(frozen=True)
-class PRMergeability:
-    """GitHub PR mergeability status."""
-
-    mergeable: str  # "MERGEABLE", "CONFLICTING", "UNKNOWN"
-    merge_state_status: str  # "CLEAN", "BLOCKED", "UNSTABLE", "DIRTY", etc.
 
 
 class _NotAvailable:
@@ -261,19 +245,3 @@ class WorkflowRun:
             f"WorkflowRun(run_id={self._run_id!r}, status={self._status!r}, "
             f"conclusion={self._conclusion!r}, head_sha={self._head_sha!r})"
         )
-
-
-@dataclass(frozen=True)
-class PRCheckoutInfo:
-    """Information needed to checkout a PR into a worktree.
-
-    This dataclass contains the minimal information required to:
-    1. Determine the local branch name to use
-    2. Decide whether to fetch from GitHub's special PR ref
-    3. Warn users about closed/merged PRs
-    """
-
-    number: int
-    head_ref_name: str  # Branch name in source repo
-    is_cross_repository: bool  # True if from a fork
-    state: str  # OPEN, CLOSED, MERGED

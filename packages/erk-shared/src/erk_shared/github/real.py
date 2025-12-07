@@ -24,17 +24,13 @@ from erk_shared.github.parsing import (
     execute_gh_command,
     parse_aggregated_check_counts,
     parse_gh_auth_status_output,
-    parse_github_pr_status,
 )
 from erk_shared.github.types import (
     BRANCH_NOT_AVAILABLE,
     DISPLAY_TITLE_NOT_AVAILABLE,
     GitHubRepoId,
     GitHubRepoLocation,
-    PRCheckoutInfo,
     PRDetails,
-    PRInfo,
-    PRMergeability,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
@@ -59,39 +55,6 @@ class RealGitHub(GitHub):
             time: Time abstraction for sleep operations
         """
         self._time = time
-
-    def get_pr_status(self, repo_root: Path, branch: str, *, debug: bool) -> PRInfo:
-        """Get PR status for a specific branch.
-
-        Note: Uses try/except as an acceptable error boundary for handling gh CLI
-        availability and authentication. We cannot reliably check gh installation
-        and authentication status a priori without duplicating gh's logic.
-        """
-        try:
-            # Query gh for PR info for this specific branch
-            cmd = [
-                "gh",
-                "pr",
-                "list",
-                "--head",
-                branch,
-                "--state",
-                "all",
-                "--json",
-                "number,state,title",
-                "--limit",
-                "1",
-            ]
-
-            if debug:
-                user_output(f"$ {' '.join(cmd)}")
-
-            stdout = execute_gh_command(cmd, repo_root)
-            return parse_github_pr_status(stdout)
-
-        except (RuntimeError, FileNotFoundError, json.JSONDecodeError):
-            # gh not installed, not authenticated, or JSON parsing failed
-            return PRInfo("NONE", None, None)
 
     def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
         """Get current base branch of a PR from GitHub.
@@ -157,32 +120,6 @@ class RealGitHub(GitHub):
             # Graceful degradation - operation skipped
             # Caller is responsible for precondition validation
             pass
-
-    def get_pr_mergeability(self, repo_root: Path, pr_number: int) -> PRMergeability | None:
-        """Get PR mergeability status from GitHub via gh CLI.
-
-        Note: Uses try/except as an acceptable error boundary for handling gh CLI
-        availability and authentication. We cannot reliably check gh installation
-        and authentication status a priori without duplicating gh's logic.
-        """
-        try:
-            result = run_subprocess_with_context(
-                ["gh", "pr", "view", str(pr_number), "--json", "mergeable,mergeStateStatus"],
-                operation_context=f"check PR mergeability for PR #{pr_number}",
-                cwd=repo_root,
-            )
-            data = json.loads(result.stdout)
-            return PRMergeability(
-                mergeable=data["mergeable"],
-                merge_state_status=data["mergeStateStatus"],
-            )
-        except (
-            RuntimeError,
-            json.JSONDecodeError,
-            KeyError,
-            FileNotFoundError,
-        ):
-            return None
 
     def _execute_batch_pr_query(self, query: str, repo_root: Path) -> dict[str, Any]:
         """Execute batched GraphQL query via gh CLI.
@@ -915,53 +852,6 @@ query {{
         # Timeout reached without finding matching run
         return None
 
-    def _execute_gh_json_command(self, cmd: list[str], repo_root: Path) -> dict[str, Any] | None:
-        """Execute gh CLI command and parse JSON response.
-
-        Encapsulates the third-party error boundary for gh CLI operations.
-        We cannot reliably check gh installation and authentication status
-        a priori without duplicating gh's logic.
-
-        Args:
-            cmd: gh CLI command as list of arguments
-            repo_root: Repository root directory
-
-        Returns:
-            Parsed JSON data as dict, or None if command failed
-        """
-        try:
-            stdout = execute_gh_command(cmd, repo_root)
-            return json.loads(stdout)
-        except (RuntimeError, FileNotFoundError, json.JSONDecodeError):
-            # gh not installed, not authenticated, command failed, or JSON parsing failed
-            return None
-
-    def get_pr_checkout_info(self, repo_root: Path, pr_number: int) -> PRCheckoutInfo | None:
-        """Get PR details needed for checkout via gh CLI."""
-        cmd = [
-            "gh",
-            "pr",
-            "view",
-            str(pr_number),
-            "--json",
-            "number,headRefName,isCrossRepository,state",
-        ]
-        data = self._execute_gh_json_command(cmd, repo_root)
-        if data is None:
-            return None
-
-        # LBYL: Validate required keys before accessing
-        required_keys = ("number", "headRefName", "isCrossRepository", "state")
-        if not all(key in data for key in required_keys):
-            return None
-
-        return PRCheckoutInfo(
-            number=data["number"],
-            head_ref_name=data["headRefName"],
-            is_cross_repository=data["isCrossRepository"],
-            state=data["state"],
-        )
-
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Check GitHub CLI authentication status.
 
@@ -1398,33 +1288,6 @@ query {{
 
         return (issues, pr_linkages)
 
-    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR number and URL for a specific branch using gh CLI.
-
-        Returns:
-            Tuple of (pr_number, pr_url) or None if no PR exists for this branch.
-
-        Raises:
-            RuntimeError: If gh command fails (auth issues, network errors, etc.)
-        """
-        cmd = [
-            "gh",
-            "pr",
-            "list",
-            "--head",
-            branch,
-            "--json",
-            "number,url",
-            "--limit",
-            "1",
-        ]
-        stdout = execute_gh_command(cmd, repo_root)
-        data = json.loads(stdout)
-        if not data:
-            return None
-        pr = data[0]
-        return (pr["number"], pr["url"])
-
     def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails:
         """Get comprehensive PR details via GitHub REST API.
 
@@ -1523,35 +1386,6 @@ query {{
             repo=repo_info.name,
             labels=labels,
         )
-
-    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR number and state for a specific branch using gh CLI.
-
-        Returns:
-            Tuple of (pr_number, state) or None if no PR exists for this branch.
-
-        Raises:
-            RuntimeError: If gh command fails (auth issues, network errors, etc.)
-        """
-        cmd = [
-            "gh",
-            "pr",
-            "list",
-            "--head",
-            branch,
-            "--state",
-            "all",
-            "--json",
-            "number,state",
-            "--limit",
-            "1",
-        ]
-        stdout = execute_gh_command(cmd, repo_root)
-        data = json.loads(stdout)
-        if not data:
-            return None
-        pr = data[0]
-        return (pr["number"], pr["state"])
 
     def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
         """Get PR title by number using gh CLI.

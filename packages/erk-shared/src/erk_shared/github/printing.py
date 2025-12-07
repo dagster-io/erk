@@ -8,10 +8,7 @@ from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
-    PRCheckoutInfo,
     PRDetails,
-    PRInfo,
-    PRMergeability,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
@@ -38,17 +35,9 @@ class PrintingGitHub(PrintingBase, GitHub):
 
     # Read-only operations: delegate without printing
 
-    def get_pr_status(self, repo_root: Path, branch: str, *, debug: bool) -> PRInfo:
-        """Get PR status (read-only, no printing)."""
-        return self._wrapped.get_pr_status(repo_root, branch, debug=debug)
-
     def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str:
         """Get PR base branch (read-only, no printing)."""
         return self._wrapped.get_pr_base_branch(repo_root, pr_number)
-
-    def get_pr_mergeability(self, repo_root: Path, pr_number: int) -> PRMergeability | None:
-        """Get PR mergeability (read-only, no printing)."""
-        return self._wrapped.get_pr_mergeability(repo_root, pr_number)
 
     def list_workflow_runs(
         self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
@@ -171,10 +160,6 @@ class PrintingGitHub(PrintingBase, GitHub):
             repo_root, workflow, branch_name, timeout, poll_interval
         )
 
-    def get_pr_checkout_info(self, repo_root: Path, pr_number: int) -> PRCheckoutInfo:
-        """Get PR checkout info (read-only, no printing)."""
-        return self._wrapped.get_pr_checkout_info(repo_root, pr_number)
-
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Check auth status (read-only, no printing)."""
         return self._wrapped.check_auth_status()
@@ -191,17 +176,13 @@ class PrintingGitHub(PrintingBase, GitHub):
         """Get workflow run node ID (read-only, no printing)."""
         return self._wrapped.get_workflow_run_node_id(repo_root, run_id)
 
-    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR info for branch (read-only, no printing)."""
-        return self._wrapped.get_pr_info_for_branch(repo_root, branch)
-
     def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails:
         """Get comprehensive PR details (read-only, no printing)."""
         return self._wrapped.get_pr(repo_root, pr_number)
 
-    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR state for branch (read-only, no printing)."""
-        return self._wrapped.get_pr_state_for_branch(repo_root, branch)
+    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | None:
+        """Get comprehensive PR details for a branch (read-only, no printing)."""
+        return self._wrapped.get_pr_for_branch(repo_root, branch)
 
     def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
         """Get PR title (read-only, no printing)."""
@@ -234,10 +215,6 @@ class PrintingGitHub(PrintingBase, GitHub):
     def get_repo_info(self, repo_root: Path) -> RepoInfo:
         """Get repository info (read-only, no printing)."""
         return self._wrapped.get_repo_info(repo_root)
-
-    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | None:
-        """Get comprehensive PR details for a branch (read-only, no printing)."""
-        return self._wrapped.get_pr_for_branch(repo_root, branch)
 
     def get_issues_with_pr_linkages(
         self,

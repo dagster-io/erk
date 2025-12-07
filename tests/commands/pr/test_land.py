@@ -502,6 +502,23 @@ def test_pr_land_error_pr_not_open() -> None:
                     has_conflicts=None,
                 ),
             },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="",
+                    state="MERGED",  # Not OPEN
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                ),
+            },
         )
 
         repo = RepoContext(

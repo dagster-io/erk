@@ -6,10 +6,7 @@ from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
-    PRCheckoutInfo,
     PRDetails,
-    PRInfo,
-    PRMergeability,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
@@ -34,10 +31,6 @@ class DryRunGitHub(GitHub):
         """
         self._wrapped = wrapped
 
-    def get_pr_status(self, repo_root: Path, branch: str, *, debug: bool) -> PRInfo:
-        """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_pr_status(repo_root, branch, debug=debug)
-
     def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_pr_base_branch(repo_root, pr_number)
@@ -51,10 +44,6 @@ class DryRunGitHub(GitHub):
         """No-op for updating PR body in dry-run mode."""
         # Do nothing - prevents actual PR body update
         pass
-
-    def get_pr_mergeability(self, repo_root: Path, pr_number: int) -> PRMergeability | None:
-        """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_pr_mergeability(repo_root, pr_number)
 
     def merge_pr(
         self,
@@ -148,10 +137,6 @@ class DryRunGitHub(GitHub):
             repo_root, workflow, branch_name, timeout, poll_interval
         )
 
-    def get_pr_checkout_info(self, repo_root: Path, pr_number: int) -> PRCheckoutInfo:
-        """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_pr_checkout_info(repo_root, pr_number)
-
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.check_auth_status()
@@ -178,10 +163,6 @@ class DryRunGitHub(GitHub):
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_issues_with_pr_linkages(location, labels, state=state, limit=limit)
 
-    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_pr_info_for_branch(repo_root, branch)
-
     def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_pr(repo_root, pr_number)
@@ -189,10 +170,6 @@ class DryRunGitHub(GitHub):
     def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | None:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_pr_for_branch(repo_root, branch)
-
-    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_pr_state_for_branch(repo_root, branch)
 
     def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
         """Delegate read operation to wrapped implementation."""

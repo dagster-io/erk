@@ -5,7 +5,7 @@ from pathlib import Path
 from click.testing import CliRunner
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PRDetails, PRInfo
+from erk_shared.github.types import PRDetails, PullRequestInfo
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 
@@ -14,31 +14,68 @@ from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
+def _make_pr_info(
+    number: int,
+    branch: str,
+    state: str = "OPEN",
+    title: str | None = None,
+) -> PullRequestInfo:
+    """Create a PullRequestInfo for testing."""
+    return PullRequestInfo(
+        number=number,
+        state=state,
+        url=f"https://github.com/owner/repo/pull/{number}",
+        is_draft=False,
+        title=title or f"PR #{number}",
+        checks_passing=True,
+        owner="owner",
+        repo="repo",
+    )
+
+
+def _make_pr_details(
+    number: int,
+    head_ref_name: str,
+    state: str = "OPEN",
+    base_ref_name: str = "main",
+    title: str | None = None,
+    body: str = "",
+    is_cross_repository: bool = False,
+) -> PRDetails:
+    """Create a PRDetails for testing."""
+    return PRDetails(
+        number=number,
+        url=f"https://github.com/owner/repo/pull/{number}",
+        title=f"PR #{number}" if title is None else title,
+        body=body,
+        state=state,
+        is_draft=False,
+        base_ref_name=base_ref_name,
+        head_ref_name=head_ref_name,
+        is_cross_repository=is_cross_repository,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="owner",
+        repo="repo",
+    )
+
+
 def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
     """Test successful sync flow: track → squash → update commit → restack → submit."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        # Setup PR info with title and body
-        pr_info = PRInfo(state="OPEN", pr_number=123, title="Feature PR")
-        pr_details = PRDetails(
+        # Setup PR info for branch lookup
+        pr_info = _make_pr_info(123, "feature-branch", title="Feature PR")
+        pr_details = _make_pr_details(
             number=123,
-            url="https://github.com/owner/repo/pull/123",
+            head_ref_name="feature-branch",
             title="Add awesome feature",
             body="This PR adds an awesome feature.",
-            state="OPEN",
-            is_draft=False,
-            base_ref_name="main",
-            head_ref_name="feature-branch",
-            is_cross_repository=False,
-            mergeable="MERGEABLE",
-            merge_state_status="CLEAN",
-            owner="owner",
-            repo="repo",
         )
         github = FakeGitHub(
-            pr_statuses={"feature-branch": pr_info},
+            prs={"feature-branch": pr_info},
             pr_details={123: pr_details},
         )
 
@@ -97,24 +134,14 @@ def test_pr_sync_succeeds_silently_when_already_tracked(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # Setup PR info
-        pr_info = PRInfo(state="OPEN", pr_number=123, title="Feature PR")
-        pr_details = PRDetails(
+        pr_info = _make_pr_info(123, "feature-branch", title="Feature PR")
+        pr_details = _make_pr_details(
             number=123,
-            url="https://github.com/owner/repo/pull/123",
-            title="Feature PR",
-            body="",
-            state="OPEN",
-            is_draft=False,
-            base_ref_name="main",
             head_ref_name="feature-branch",
-            is_cross_repository=False,
-            mergeable="MERGEABLE",
-            merge_state_status="CLEAN",
-            owner="owner",
-            repo="repo",
+            title="Feature PR",
         )
         github = FakeGitHub(
-            pr_statuses={"feature-branch": pr_info},
+            prs={"feature-branch": pr_info},
             pr_details={123: pr_details},
         )
 
@@ -177,10 +204,8 @@ def test_pr_sync_fails_when_no_pr_exists(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        # No PR for this branch (state = NONE)
-        github = FakeGitHub(
-            pr_statuses={"no-pr-branch": PRInfo(state="NONE", pr_number=None, title=None)}
-        )
+        # No PR for this branch (empty prs dict)
+        github = FakeGitHub(prs={}, pr_details={})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -202,8 +227,17 @@ def test_pr_sync_fails_when_pr_is_closed(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # PR is closed
-        pr_info = PRInfo(state="CLOSED", pr_number=456, title="Closed PR")
-        github = FakeGitHub(pr_statuses={"closed-branch": pr_info})
+        pr_info = _make_pr_info(456, "closed-branch", state="CLOSED", title="Closed PR")
+        pr_details = _make_pr_details(
+            number=456,
+            head_ref_name="closed-branch",
+            state="CLOSED",
+            title="Closed PR",
+        )
+        github = FakeGitHub(
+            prs={"closed-branch": pr_info},
+            pr_details={456: pr_details},
+        )
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -225,8 +259,17 @@ def test_pr_sync_fails_when_pr_is_merged(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # PR is merged
-        pr_info = PRInfo(state="MERGED", pr_number=789, title="Merged PR")
-        github = FakeGitHub(pr_statuses={"merged-branch": pr_info})
+        pr_info = _make_pr_info(789, "merged-branch", state="MERGED", title="Merged PR")
+        pr_details = _make_pr_details(
+            number=789,
+            head_ref_name="merged-branch",
+            state="MERGED",
+            title="Merged PR",
+        )
+        github = FakeGitHub(
+            prs={"merged-branch": pr_info},
+            pr_details={789: pr_details},
+        )
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -248,27 +291,18 @@ def test_pr_sync_fails_when_cross_repo_fork(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # PR exists and is open
-        pr_info = PRInfo(state="OPEN", pr_number=999, title="Fork PR")
+        pr_info = _make_pr_info(999, "fork-branch", title="Fork PR")
 
         # But it's a cross-repository fork
-        pr_details = PRDetails(
+        pr_details = _make_pr_details(
             number=999,
-            url="https://github.com/owner/repo/pull/999",
-            title="Fork PR",
-            body="",
-            state="OPEN",
-            is_draft=False,
-            base_ref_name="main",
             head_ref_name="fork-branch",
+            title="Fork PR",
             is_cross_repository=True,  # This is the key check
-            mergeable="MERGEABLE",
-            merge_state_status="CLEAN",
-            owner="owner",
-            repo="repo",
         )
 
         github = FakeGitHub(
-            pr_statuses={"fork-branch": pr_info},
+            prs={"fork-branch": pr_info},
             pr_details={999: pr_details},
         )
 
@@ -293,24 +327,14 @@ def test_pr_sync_handles_squash_single_commit(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # Setup PR
-        pr_info = PRInfo(state="OPEN", pr_number=111, title="Single Commit")
-        pr_details = PRDetails(
+        pr_info = _make_pr_info(111, "single-commit-branch", title="Single Commit")
+        pr_details = _make_pr_details(
             number=111,
-            url="https://github.com/owner/repo/pull/111",
-            title="Single Commit",
-            body="",
-            state="OPEN",
-            is_draft=False,
-            base_ref_name="main",
             head_ref_name="single-commit-branch",
-            is_cross_repository=False,
-            mergeable="MERGEABLE",
-            merge_state_status="CLEAN",
-            owner="owner",
-            repo="repo",
+            title="Single Commit",
         )
         github = FakeGitHub(
-            pr_statuses={"single-commit-branch": pr_info},
+            prs={"single-commit-branch": pr_info},
             pr_details={111: pr_details},
         )
 
@@ -344,24 +368,14 @@ def test_pr_sync_handles_submit_failure_gracefully(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # Setup PR
-        pr_info = PRInfo(state="OPEN", pr_number=222, title="Feature")
-        pr_details = PRDetails(
+        pr_info = _make_pr_info(222, "feature-branch", title="Feature")
+        pr_details = _make_pr_details(
             number=222,
-            url="https://github.com/owner/repo/pull/222",
-            title="Feature",
-            body="",
-            state="OPEN",
-            is_draft=False,
-            base_ref_name="main",
             head_ref_name="feature-branch",
-            is_cross_repository=False,
-            mergeable="MERGEABLE",
-            merge_state_status="CLEAN",
-            owner="owner",
-            repo="repo",
+            title="Feature",
         )
         github = FakeGitHub(
-            pr_statuses={"feature-branch": pr_info},
+            prs={"feature-branch": pr_info},
             pr_details={222: pr_details},
         )
 
@@ -393,24 +407,14 @@ def test_pr_sync_squash_raises_unexpected_error(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # Setup PR
-        pr_info = PRInfo(state="OPEN", pr_number=333, title="Feature")
-        pr_details = PRDetails(
+        pr_info = _make_pr_info(333, "feature-branch", title="Feature")
+        pr_details = _make_pr_details(
             number=333,
-            url="https://github.com/owner/repo/pull/333",
-            title="Feature",
-            body="",
-            state="OPEN",
-            is_draft=False,
-            base_ref_name="main",
             head_ref_name="feature-branch",
-            is_cross_repository=False,
-            mergeable="MERGEABLE",
-            merge_state_status="CLEAN",
-            owner="owner",
-            repo="repo",
+            title="Feature",
         )
         github = FakeGitHub(
-            pr_statuses={"feature-branch": pr_info},
+            prs={"feature-branch": pr_info},
             pr_details={333: pr_details},
         )
 
@@ -447,24 +451,15 @@ def test_pr_sync_uses_correct_base_branch(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # PR targets "release/v1.0" not "main"
-        pr_info = PRInfo(state="OPEN", pr_number=444, title="Hotfix")
-        pr_details = PRDetails(
+        pr_info = _make_pr_info(444, "hotfix-branch", title="Hotfix")
+        pr_details = _make_pr_details(
             number=444,
-            url="https://github.com/owner/repo/pull/444",
-            title="Hotfix",
-            body="",
-            state="OPEN",
-            is_draft=False,
-            base_ref_name="release/v1.0",  # Non-standard base
             head_ref_name="hotfix-branch",
-            is_cross_repository=False,
-            mergeable="MERGEABLE",
-            merge_state_status="CLEAN",
-            owner="owner",
-            repo="repo",
+            base_ref_name="release/v1.0",  # Non-standard base
+            title="Hotfix",
         )
         github = FakeGitHub(
-            pr_statuses={"hotfix-branch": pr_info},
+            prs={"hotfix-branch": pr_info},
             pr_details={444: pr_details},
         )
 
@@ -496,24 +491,15 @@ def test_pr_sync_updates_commit_with_title_only(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # Setup PR with title but NO body (empty string)
-        pr_info = PRInfo(state="OPEN", pr_number=555, title="Title Only PR")
-        pr_details = PRDetails(
+        pr_info = _make_pr_info(555, "title-only-branch", title="Title Only PR")
+        pr_details = _make_pr_details(
             number=555,
-            url="https://github.com/owner/repo/pull/555",
+            head_ref_name="title-only-branch",
             title="Just a title",
             body="",  # No body
-            state="OPEN",
-            is_draft=False,
-            base_ref_name="main",
-            head_ref_name="title-only-branch",
-            is_cross_repository=False,
-            mergeable="MERGEABLE",
-            merge_state_status="CLEAN",
-            owner="owner",
-            repo="repo",
         )
         github = FakeGitHub(
-            pr_statuses={"title-only-branch": pr_info},
+            prs={"title-only-branch": pr_info},
             pr_details={555: pr_details},
         )
 
@@ -545,24 +531,14 @@ def test_pr_sync_skips_commit_update_when_no_title(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # Setup PR with empty title
-        pr_info = PRInfo(state="OPEN", pr_number=666, title=None)
-        pr_details = PRDetails(
+        pr_info = _make_pr_info(666, "no-title-branch", title=None)
+        pr_details = _make_pr_details(
             number=666,
-            url="https://github.com/owner/repo/pull/666",
-            title="",  # Empty title
-            body="",
-            state="OPEN",
-            is_draft=False,
-            base_ref_name="main",
             head_ref_name="no-title-branch",
-            is_cross_repository=False,
-            mergeable="MERGEABLE",
-            merge_state_status="CLEAN",
-            owner="owner",
-            repo="repo",
+            title="",  # Empty title
         )
         github = FakeGitHub(
-            pr_statuses={"no-title-branch": pr_info},
+            prs={"no-title-branch": pr_info},
             pr_details={666: pr_details},
         )
 

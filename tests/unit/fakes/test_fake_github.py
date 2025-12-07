@@ -14,7 +14,6 @@ from erk_shared.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
     PRDetails,
-    PRInfo,
     PullRequestInfo,
     WorkflowRun,
 )
@@ -22,125 +21,6 @@ from erk_shared.github.types import (
 from tests.test_utils.paths import sentinel_path
 
 TEST_LOCATION = GitHubRepoLocation(root=sentinel_path(), repo_id=GitHubRepoId("owner", "repo"))
-
-
-def test_fake_github_ops_get_pr_status_existing_branch() -> None:
-    """Test get_pr_status returns configured PR info for existing branch."""
-    prs = {
-        "feature": PullRequestInfo(
-            number=123,
-            state="OPEN",
-            url="https://github.com/repo/pull/123",
-            is_draft=False,
-            title="https://github.com/repo/pull/123",
-            checks_passing=True,
-            owner="testowner",
-            repo="testrepo",
-        ),
-    }
-    ops = FakeGitHub(prs=prs)
-
-    result = ops.get_pr_status(sentinel_path(), "feature", debug=False)
-
-    assert result.state == "OPEN"
-    assert result.pr_number == 123
-    assert result.title == "https://github.com/repo/pull/123"  # URL used as title
-
-
-def test_fake_github_ops_get_pr_status_missing_branch() -> None:
-    """Test get_pr_status returns NONE for missing branch."""
-    ops = FakeGitHub()
-
-    result = ops.get_pr_status(sentinel_path(), "nonexistent", debug=False)
-
-    assert result.state == "NONE"
-    assert result.pr_number is None
-    assert result.title is None
-
-
-def test_fake_github_ops_legacy_pr_statuses_format() -> None:
-    """Test backward compatibility with legacy pr_statuses parameter."""
-    pr_statuses = {
-        "feature": ("OPEN", 123, "Add feature"),
-        "bugfix": ("MERGED", 456, "Fix bug"),
-    }
-    ops = FakeGitHub(pr_statuses=pr_statuses)
-
-    result_feature = ops.get_pr_status(sentinel_path(), "feature", debug=False)
-    assert result_feature.state == "OPEN"
-    assert result_feature.pr_number == 123
-    assert result_feature.title == "Add feature"
-
-    result_bugfix = ops.get_pr_status(sentinel_path(), "bugfix", debug=False)
-    assert result_bugfix.state == "MERGED"
-    assert result_bugfix.pr_number == 456
-    assert result_bugfix.title == "Fix bug"
-
-
-def test_fake_github_ops_state_conversion() -> None:
-    """Test that None state in legacy format converts to NONE."""
-    pr_statuses = {
-        "no-pr": (None, None, None),
-    }
-    ops = FakeGitHub(pr_statuses=pr_statuses)
-
-    result = ops.get_pr_status(sentinel_path(), "no-pr", debug=False)
-
-    assert result.state == "NONE"
-    assert result.pr_number is None
-    assert result.title is None
-
-
-def test_fake_github_ops_pull_request_info_fields() -> None:
-    """Test that PullRequestInfo fields map correctly to PRInfo."""
-    prs = {
-        "feature": PullRequestInfo(
-            number=789,
-            state="CLOSED",
-            url="https://github.com/repo/pull/789",
-            is_draft=False,
-            title="https://github.com/repo/pull/789",
-            checks_passing=True,
-            owner="testowner",
-            repo="testrepo",
-        ),
-    }
-    ops = FakeGitHub(prs=prs)
-
-    result = ops.get_pr_status(sentinel_path(), "feature", debug=False)
-
-    # Verify field mapping: PullRequestInfo -> PRInfo
-    assert result.state == "CLOSED"
-    assert result.pr_number == 789
-    assert result.title == "https://github.com/repo/pull/789"
-
-
-def test_fake_github_ops_empty_prs_dict() -> None:
-    """Test behavior with explicitly empty prs dict."""
-    ops = FakeGitHub(prs={})
-
-    pr_status = ops.get_pr_status(sentinel_path(), "any-branch", debug=False)
-    assert pr_status == PRInfo("NONE", None, None)
-
-
-def test_fake_github_ops_both_formats_raises() -> None:
-    """Test that specifying both prs and pr_statuses raises ValueError."""
-    prs = {
-        "feature": PullRequestInfo(
-            number=1,
-            state="OPEN",
-            url="http://url",
-            is_draft=False,
-            title=None,
-            checks_passing=True,
-            owner="testowner",
-            repo="testrepo",
-        )
-    }
-    pr_statuses = {"feature": ("OPEN", 1, "Title")}
-
-    with pytest.raises(ValueError, match="Cannot specify both prs and pr_statuses"):
-        FakeGitHub(prs=prs, pr_statuses=pr_statuses)
 
 
 def test_fake_github_ops_get_pr_base_branch_existing() -> None:
@@ -273,11 +153,44 @@ def test_fake_github_ops_full_workflow() -> None:
         123: "main",
         456: "feature-1",
     }
-    ops = FakeGitHub(prs=prs, pr_bases=pr_bases)
+    pr_details = {
+        123: PRDetails(
+            number=123,
+            url="https://github.com/repo/pull/123",
+            title="Feature 1",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature-1",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="testowner",
+            repo="testrepo",
+        ),
+        456: PRDetails(
+            number=456,
+            url="https://github.com/repo/pull/456",
+            title="Feature 2",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="feature-1",
+            head_ref_name="feature-2",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="testowner",
+            repo="testrepo",
+        ),
+    }
+    ops = FakeGitHub(prs=prs, pr_bases=pr_bases, pr_details=pr_details)
 
     # Query operations
-    pr_status = ops.get_pr_status(sentinel_path(), "feature-1", debug=False)
-    assert pr_status.pr_number == 123
+    pr = ops.get_pr_for_branch(sentinel_path(), "feature-1")
+    assert pr is not None
+    assert pr.number == 123
 
     base = ops.get_pr_base_branch(sentinel_path(), 123)
     assert base == "main"

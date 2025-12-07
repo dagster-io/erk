@@ -501,7 +501,7 @@ def test_down_delete_current_pr_open() -> None:
 
         # PR for feature-2 is OPEN (active work in progress)
         from erk_shared.github.fake import FakeGitHub
-        from erk_shared.github.types import PullRequestInfo
+        from erk_shared.github.types import PRDetails, PullRequestInfo
 
         github_ops = FakeGitHub(
             prs={
@@ -516,7 +516,24 @@ def test_down_delete_current_pr_open() -> None:
                     repo="repo",
                     has_conflicts=None,
                 ),
-            }
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 2",
+                    body="",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="feature-1",
+                    head_ref_name="feature-2",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                ),
+            },
         )
 
         repo = RepoContext(

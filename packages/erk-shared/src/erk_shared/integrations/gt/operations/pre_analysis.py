@@ -134,18 +134,17 @@ def execute_pre_analysis(
 
     # Step 2.5: Check for merge conflicts (informational only, does not block)
     # First try GitHub API if PR exists (most accurate), then fallback to local git merge-tree
-    pr_status_info = ops.github.get_pr_info_for_branch(repo_root, branch_name)
+    pr_details = ops.github.get_pr_for_branch(repo_root, branch_name)
 
     # Track conflict info (will be included in success result)
     has_conflicts = False
     conflict_details: dict[str, str] | None = None
 
-    if pr_status_info is not None:
-        pr_number, pr_url = pr_status_info
-        # PR exists - check mergeability
-        pr = ops.github.get_pr(repo_root, pr_number)
-        mergeable = pr.mergeable
-        merge_state = pr.merge_state_status
+    if pr_details is not None:
+        pr_number = pr_details.number
+        # PR exists - check mergeability (use same PRDetails object)
+        mergeable = pr_details.mergeable
+        merge_state = pr_details.merge_state_status
 
         if mergeable == "CONFLICTING":
             has_conflicts = True

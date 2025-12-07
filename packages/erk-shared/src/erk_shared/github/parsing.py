@@ -1,11 +1,10 @@
 """Parsing utilities for GitHub operations."""
 
-import json
 import re
 from pathlib import Path
 from typing import Any
 
-from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PRInfo
+from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
@@ -31,29 +30,6 @@ def execute_gh_command(cmd: list[str], cwd: Path) -> str:
         cwd=cwd,
     )
     return result.stdout
-
-
-def parse_github_pr_status(json_str: str) -> PRInfo:
-    """Parse gh pr status JSON output.
-
-    Args:
-        json_str: JSON string from gh pr list command for a specific branch
-
-    Returns:
-        PRInfo with state, pr_number, and title
-        - state: "OPEN", "MERGED", "CLOSED", or "NONE" if no PR exists
-        - pr_number: PR number or None if no PR exists
-        - title: PR title or None if no PR exists
-    """
-    prs_data = json.loads(json_str)
-
-    # If no PR exists for this branch
-    if not prs_data:
-        return PRInfo("NONE", None, None)
-
-    # Take the first (and should be only) PR
-    pr = prs_data[0]
-    return PRInfo(pr["state"], pr["number"], pr["title"])
 
 
 def _parse_github_pr_url(url: str) -> tuple[str, str] | None:

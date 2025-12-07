@@ -28,15 +28,15 @@ def pr_check(ctx: ErkContext) -> None:
     # Get repo root for GitHub operations
     repo_root = ctx.git.get_repository_root(ctx.cwd)
 
-    # Get PR info for branch
-    pr_info = ctx.github.get_pr_info_for_branch(repo_root, branch)
-    if pr_info is None:
+    # Get PR for branch
+    pr = ctx.github.get_pr_for_branch(repo_root, branch)
+    if pr is None:
         user_output(
             click.style("Error: ", fg="red") + f"No pull request found for branch '{branch}'"
         )
         raise SystemExit(1)
 
-    pr_number, pr_url = pr_info
+    pr_number = pr.number
 
     user_output(f"Checking PR #{pr_number} for branch {branch}...")
     user_output("")
@@ -44,8 +44,6 @@ def pr_check(ctx: ErkContext) -> None:
     # Track validation results
     checks: list[tuple[bool, str]] = []
 
-    # Fetch PR details
-    pr = ctx.github.get_pr(repo_root, pr_number)
     pr_body = pr.body
 
     # Check 1: Issue closing reference (if .impl/issue.json exists)

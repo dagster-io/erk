@@ -5,17 +5,12 @@ in its constructor. Construct instances directly with keyword arguments.
 """
 
 from pathlib import Path
-from typing import cast
 
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
-    PRCheckoutInfo,
     PRDetails,
-    PRInfo,
-    PRMergeability,
-    PRState,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
@@ -33,16 +28,13 @@ class FakeGitHub(GitHub):
         self,
         *,
         prs: dict[str, PullRequestInfo] | None = None,
-        pr_statuses: dict[str, tuple[str | None, int | None, str | None]] | None = None,
         pr_bases: dict[int, str] | None = None,
-        pr_mergeability: dict[int, PRMergeability | None] | None = None,
         pr_details: dict[int, PRDetails] | None = None,
         workflow_runs: list[WorkflowRun] | None = None,
         workflow_runs_by_node_id: dict[str, WorkflowRun] | None = None,
         run_logs: dict[str, str] | None = None,
         pr_issue_linkages: dict[int, list[PullRequestInfo]] | None = None,
         polled_run_id: str | None = None,
-        pr_checkout_infos: dict[int, PRCheckoutInfo] | None = None,
         authenticated: bool = True,
         auth_username: str | None = "test-user",
         auth_hostname: str | None = "github.com",
@@ -57,10 +49,7 @@ class FakeGitHub(GitHub):
 
         Args:
             prs: Mapping of branch name -> PullRequestInfo
-            pr_statuses: Legacy parameter for backward compatibility.
-                        Mapping of branch name -> (state, pr_number, title)
             pr_bases: Mapping of pr_number -> base_branch
-            pr_mergeability: Mapping of pr_number -> PRMergeability (None for API errors)
             pr_details: Mapping of pr_number -> PRDetails for get_pr() and get_pr_for_branch()
             workflow_runs: List of WorkflowRun objects to return from list_workflow_runs
             workflow_runs_by_node_id: Mapping of GraphQL node_id -> WorkflowRun for
@@ -68,7 +57,6 @@ class FakeGitHub(GitHub):
             run_logs: Mapping of run_id -> log string
             pr_issue_linkages: Mapping of issue_number -> list[PullRequestInfo]
             polled_run_id: Run ID to return from poll_for_workflow_run (None for timeout)
-            pr_checkout_infos: Mapping of pr_number -> PRCheckoutInfo
             authenticated: Whether gh CLI is authenticated (default True for test convenience)
             auth_username: Username returned by check_auth_status() (default "test-user")
             auth_hostname: Hostname returned by check_auth_status() (default "github.com")
@@ -79,42 +67,14 @@ class FakeGitHub(GitHub):
             merge_should_succeed: Whether merge_pr() should succeed (default True)
             pr_update_should_succeed: Whether PR updates should succeed (default True)
         """
-        if prs is not None and pr_statuses is not None:
-            msg = "Cannot specify both prs and pr_statuses"
-            raise ValueError(msg)
-
-        if pr_statuses is not None:
-            # Convert legacy pr_statuses format to PullRequestInfo
-            self._prs = {}
-            for branch, (state, pr_number, title) in pr_statuses.items():
-                if pr_number is not None:
-                    # Handle None state - default to "OPEN"
-                    resolved_state = state if state is not None and state != "NONE" else "OPEN"
-                    self._prs[branch] = PullRequestInfo(
-                        number=pr_number,
-                        state=resolved_state,
-                        url=f"https://github.com/owner/repo/pull/{pr_number}",
-                        is_draft=False,
-                        title=title,
-                        checks_passing=None,
-                        owner="owner",
-                        repo="repo",
-                        has_conflicts=None,
-                    )
-            self._pr_statuses = pr_statuses
-        else:
-            self._prs = prs or {}
-            self._pr_statuses = None
-
+        self._prs = prs or {}
         self._pr_bases = pr_bases or {}
-        self._pr_mergeability = pr_mergeability or {}
         self._pr_details = pr_details or {}
         self._workflow_runs = workflow_runs or []
         self._workflow_runs_by_node_id = workflow_runs_by_node_id or {}
         self._run_logs = run_logs or {}
         self._pr_issue_linkages = pr_issue_linkages or {}
         self._polled_run_id = polled_run_id
-        self._pr_checkout_infos = pr_checkout_infos or {}
         self._authenticated = authenticated
         self._auth_username = auth_username
         self._auth_hostname = auth_hostname
@@ -124,13 +84,11 @@ class FakeGitHub(GitHub):
         self._pr_diffs = pr_diffs or {}
         self._merge_should_succeed = merge_should_succeed
         self._pr_update_should_succeed = pr_update_should_succeed
-        self._pr_details = pr_details or {}
         self._updated_pr_bases: list[tuple[int, str]] = []
         self._updated_pr_bodies: list[tuple[int, str]] = []
         self._updated_pr_titles: list[tuple[int, str]] = []
         self._merged_prs: list[int] = []
         self._closed_prs: list[int] = []
-        self._get_pr_status_calls: list[tuple[Path, str]] = []
         self._triggered_workflows: list[tuple[str, dict[str, str]]] = []
         self._poll_attempts: list[tuple[str, str, int, int]] = []
         self._check_auth_status_calls: list[None] = []
@@ -148,37 +106,6 @@ class FakeGitHub(GitHub):
         """Read-only access to tracked PR closures for test assertions."""
         return self._closed_prs
 
-    @property
-    def get_pr_status_calls(self) -> list[tuple[Path, str]]:
-        """Read-only access to tracked get_pr_status() calls for test assertions.
-
-        Returns list of (repo_root, branch) tuples.
-        """
-        return self._get_pr_status_calls
-
-    def get_pr_status(self, repo_root: Path, branch: str, *, debug: bool) -> PRInfo:
-        """Get PR status from configured PRs.
-
-        Returns PRInfo("NONE", None, None) if branch not found.
-        """
-        # Support legacy pr_statuses format
-        if self._pr_statuses is not None:
-            result = self._pr_statuses.get(branch)
-            if result is None:
-                return PRInfo("NONE", None, None)
-            state, pr_number, title = result
-            # Convert None state to "NONE" for consistency
-            if state is None:
-                state = "NONE"
-            return PRInfo(cast(PRState, state), pr_number, title)
-
-        pr = self._prs.get(branch)
-        if pr is None:
-            return PRInfo("NONE", None, None)
-        # PullRequestInfo has: number, state, url, is_draft, title, checks_passing
-        # Return state, number, and title as expected by PRInfo
-        return PRInfo(cast(PRState, pr.state), pr.number, pr.title)
-
     def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
         """Get current base branch of a PR from configured state.
 
@@ -193,16 +120,6 @@ class FakeGitHub(GitHub):
     def update_pr_body(self, repo_root: Path, pr_number: int, body: str) -> None:
         """Record PR body update in mutation tracking list."""
         self._updated_pr_bodies.append((pr_number, body))
-
-    def get_pr_mergeability(self, repo_root: Path, pr_number: int) -> PRMergeability | None:
-        """Get PR mergeability status from configured state.
-
-        Returns configured mergeability or defaults to MERGEABLE if not configured.
-        """
-        if pr_number in self._pr_mergeability:
-            return self._pr_mergeability[pr_number]
-        # Default to MERGEABLE if not configured
-        return PRMergeability(mergeable="MERGEABLE", merge_state_status="CLEAN")
 
     def merge_pr(
         self,
@@ -453,13 +370,6 @@ class FakeGitHub(GitHub):
         """
         return self._poll_attempts
 
-    def get_pr_checkout_info(self, repo_root: Path, pr_number: int) -> PRCheckoutInfo | None:
-        """Get PR checkout info from pre-configured state.
-
-        Returns None if pr_number not found in pr_checkout_infos mapping.
-        """
-        return self._pr_checkout_infos.get(pr_number)
-
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Return pre-configured authentication status.
 
@@ -576,16 +486,6 @@ class FakeGitHub(GitHub):
 
         return (filtered_issues, pr_linkages)
 
-    def get_pr_info_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR number and URL for a specific branch from configured state.
-
-        Returns None if branch not found in configured PRs.
-        """
-        pr = self._prs.get(branch)
-        if pr is None:
-            return None
-        return (pr.number, pr.url)
-
     def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails:
         """Get comprehensive PR details from pre-configured state.
 
@@ -604,16 +504,6 @@ class FakeGitHub(GitHub):
         if pr is None:
             return None
         return self._pr_details.get(pr.number)
-
-    def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
-        """Get PR number and state for a specific branch from configured state.
-
-        Returns None if branch not found in configured PRs.
-        """
-        pr = self._prs.get(branch)
-        if pr is None:
-            return None
-        return (pr.number, pr.state)
 
     def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
         """Get PR title by number from configured state.
@@ -677,13 +567,12 @@ class FakeGitHub(GitHub):
     def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
         """Get PR mergeability status from configured state.
 
-        Returns configured mergeability or defaults to ("MERGEABLE", "CLEAN").
+        Returns configured values from pr_details if available,
+        otherwise defaults to ("MERGEABLE", "CLEAN").
         """
-        if pr_number in self._pr_mergeability:
-            mergeability = self._pr_mergeability[pr_number]
-            if mergeability is None:
-                return ("UNKNOWN", "UNKNOWN")
-            return (mergeability.mergeable, mergeability.merge_state_status)
+        if pr_number in self._pr_details:
+            details = self._pr_details[pr_number]
+            return (details.mergeable, details.merge_state_status)
         return ("MERGEABLE", "CLEAN")
 
     def get_repo_info(self, repo_root: Path) -> RepoInfo:

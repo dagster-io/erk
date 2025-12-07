@@ -284,25 +284,24 @@ def _execute_submit_only(
     yield ProgressEvent("Branch submitted to Graphite", style="success")
 
     # Wait for PR info
-    pr_info = None
     max_retries = 5
     retry_delays = [0.5, 1.0, 2.0, 4.0, 8.0]
     repo_root = ops.git.get_repository_root(cwd)
 
     yield ProgressEvent("Waiting for PR info from GitHub API... (gh pr view)")
 
+    pr_details = None
     for attempt in range(max_retries):
         if attempt > 0:
             yield ProgressEvent(f"Attempt {attempt + 1}/{max_retries}...")
-        pr_info = ops.github.get_pr_info_for_branch(repo_root, branch_name)
-        if pr_info is not None:
-            pr_num, _ = pr_info
-            yield ProgressEvent(f"PR info retrieved (PR #{pr_num})", style="success")
+        pr_details = ops.github.get_pr_for_branch(repo_root, branch_name)
+        if pr_details is not None:
+            yield ProgressEvent(f"PR info retrieved (PR #{pr_details.number})", style="success")
             break
         if attempt < max_retries - 1:
             time.sleep(retry_delays[attempt])
 
-    if pr_info is None:
+    if pr_details is None:
         yield CompletionEvent(
             PostAnalysisError(
                 success=False,
@@ -313,7 +312,8 @@ def _execute_submit_only(
         )
         return
 
-    pr_number, pr_url = pr_info
+    pr_number = pr_details.number
+    pr_url = pr_details.url
     # Get Graphite URL by parsing repo identity from git remote URL (no API call)
     remote_url = ops.git.get_remote_url(repo_root, "origin")
     owner, repo_name = parse_git_remote_url(remote_url)

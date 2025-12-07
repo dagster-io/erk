@@ -49,27 +49,28 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
 
     pr_number = parse_pr_reference(pr_reference)
 
-    # Get PR checkout info from GitHub
+    # Get PR details from GitHub
     ctx.feedback.info(f"Fetching PR #{pr_number}...")
-    pr_info = ctx.github.get_pr_checkout_info(repo.root, pr_number)
-    if pr_info is None:
+    try:
+        pr = ctx.github.get_pr(repo.root, pr_number)
+    except (RuntimeError, KeyError):
         ctx.feedback.error(
             f"Could not find PR #{pr_number}\n\n"
             "Check the PR number and ensure you're authenticated with gh CLI."
         )
-        raise SystemExit(1)
+        raise SystemExit(1) from None
 
     # Warn for closed/merged PRs
-    if pr_info.state != "OPEN":
-        ctx.feedback.info(f"Warning: PR #{pr_number} is {pr_info.state}")
+    if pr.state != "OPEN":
+        ctx.feedback.info(f"Warning: PR #{pr_number} is {pr.state}")
 
     # Determine branch name strategy
     # For cross-repository PRs (forks), use pr/<number> to avoid conflicts
     # For same-repository PRs, use the actual branch name
-    if pr_info.is_cross_repository:
+    if pr.is_cross_repository:
         branch_name = f"pr/{pr_number}"
     else:
-        branch_name = pr_info.head_ref_name
+        branch_name = pr.head_ref_name
 
     # Check if branch already exists in a worktree
     existing_worktree = ctx.git.find_worktree_for_branch(repo.root, branch_name)
@@ -95,7 +96,7 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
 
     # For cross-repository PRs, always fetch via refs/pull/<n>/head
     # For same-repo PRs, check if branch exists locally first
-    if pr_info.is_cross_repository:
+    if pr.is_cross_repository:
         # Fetch PR ref directly
         ctx.git.fetch_pr_ref(repo.root, "origin", pr_number, branch_name)
     else:

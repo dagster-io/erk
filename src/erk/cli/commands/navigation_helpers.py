@@ -78,9 +78,9 @@ def verify_pr_closed_or_merged(ctx: ErkContext, repo_root: Path, branch: str) ->
     Warns if no PR exists, raises SystemExit if PR is still OPEN.
     Allows deletion for both MERGED and CLOSED PRs (abandoned/rejected work).
     """
-    pr_info = ctx.github.get_pr_status(repo_root, branch, debug=False)
+    pr_details = ctx.github.get_pr_for_branch(repo_root, branch)
 
-    if pr_info.state == "NONE" or pr_info.pr_number is None:
+    if pr_details is None:
         # Warn but continue when no PR exists
         user_output(
             click.style("Warning: ", fg="yellow")
@@ -89,7 +89,7 @@ def verify_pr_closed_or_merged(ctx: ErkContext, repo_root: Path, branch: str) ->
         )
         return  # Allow deletion to proceed
 
-    if pr_info.state == "OPEN":
+    if pr_details.state == "OPEN":
         # Block deletion for open PRs (active work in progress)
         user_output(
             click.style("Error: ", fg="red")

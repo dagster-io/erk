@@ -186,8 +186,8 @@ def execute_finalize(
 
     # Get PR info for result
     branch_name = ops.git.get_current_branch(cwd) or "unknown"
-    pr_url_result = ops.github.get_pr_info_for_branch(repo_root, branch_name)
-    pr_url = pr_url_result[1] if pr_url_result else ""
+    pr_details = ops.github.get_pr_for_branch(repo_root, branch_name)
+    pr_url = pr_details.url if pr_details is not None else ""
 
     # Get Graphite URL by parsing repo identity from git remote URL (no API call)
     remote_url = ops.git.get_remote_url(repo_root, "origin")
