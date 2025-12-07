@@ -91,7 +91,7 @@ Test the workflow.
 """
 
     # Step 1: Create plan folder (simulates erk create --from-plan)
-    impl_folder = create_impl_folder(tmp_path, plan_content)
+    impl_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
 
     # Step 2: Create issue (simulates gh issue create)
     issues = FakeGitHubIssues(next_issue_number=123)

@@ -23,7 +23,7 @@ def impl_folder_with_steps(tmp_path: Path) -> Path:
 2. Second step
 3. Third step
 """
-    create_impl_folder(tmp_path, plan_content)
+    create_impl_folder(tmp_path, plan_content, overwrite=False)
     return tmp_path
 
 

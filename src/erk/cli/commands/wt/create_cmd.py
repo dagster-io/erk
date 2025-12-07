@@ -898,7 +898,8 @@ def create_wt(
         plan_content = from_plan.read_text(encoding="utf-8")
 
         # Create .impl/ folder in new worktree
-        impl_folder_destination = create_impl_folder(wt_path, plan_content)
+        # Use overwrite=False since fresh worktree should not have .impl/
+        impl_folder_destination = create_impl_folder(wt_path, plan_content, overwrite=False)
 
         # Handle --keep-plan flag
         if keep_plan:
@@ -918,7 +919,8 @@ def create_wt(
         plan_content = issue_info.body
 
         # Create .impl/ folder in new worktree
-        impl_folder_destination = create_impl_folder(wt_path, plan_content)
+        # Use overwrite=False since fresh worktree should not have .impl/
+        impl_folder_destination = create_impl_folder(wt_path, plan_content, overwrite=False)
 
         # Create .impl/issue.json metadata
         issue_json_path = wt_path / ".impl" / "issue.json"

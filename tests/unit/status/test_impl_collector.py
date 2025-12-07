@@ -31,7 +31,7 @@ def test_plan_collector_with_plan_no_issue(tmp_path: Path) -> None:
     """Test collector returns plan status without issue when no issue.json exists."""
     # Create plan folder without issue reference
     plan_content = "# Test Plan\n\n1. Step one\n2. Step two"
-    create_impl_folder(tmp_path, plan_content)
+    create_impl_folder(tmp_path, plan_content, overwrite=False)
 
     git = FakeGit()
     ctx = ErkContext.minimal(git, tmp_path)
@@ -49,7 +49,7 @@ def test_plan_collector_with_issue_reference(tmp_path: Path) -> None:
     """Test collector includes issue reference in PlanStatus."""
     # Create plan folder
     plan_content = "# Test Plan\n\n1. Step one"
-    plan_folder = create_impl_folder(tmp_path, plan_content)
+    plan_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
 
     # Save issue reference
     save_issue_reference(plan_folder, 42, "https://github.com/owner/repo/issues/42")
@@ -72,7 +72,7 @@ def test_plan_collector_issue_reference_with_progress(tmp_path: Path) -> None:
 
     # Create plan folder
     plan_content = "# Test Plan\n\n1. Step one\n2. Step two\n3. Step three"
-    plan_folder = create_impl_folder(tmp_path, plan_content)
+    plan_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
 
     # Save issue reference
     save_issue_reference(plan_folder, 123, "https://github.com/test/repo/issues/123")
@@ -118,7 +118,7 @@ def test_plan_collector_invalid_issue_reference(tmp_path: Path) -> None:
     """Test collector handles invalid issue.json gracefully."""
     # Create plan folder
     plan_content = "# Test Plan\n\n1. Step"
-    plan_folder = create_impl_folder(tmp_path, plan_content)
+    plan_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
 
     # Create invalid issue.json
     issue_file = plan_folder / "issue.json"

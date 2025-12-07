@@ -26,14 +26,14 @@ from erk_shared.github.metadata import (
 )
 
 
-def create_impl_folder(worktree_path: Path, plan_content: str, *, overwrite: bool = False) -> Path:
+def create_impl_folder(worktree_path: Path, plan_content: str, *, overwrite: bool) -> Path:
     """Create .impl/ folder with plan.md and progress.md files.
 
     Args:
         worktree_path: Path to the worktree directory
         plan_content: Content for plan.md file
         overwrite: If True, remove existing .impl/ folder before creating new one.
-                   Default is False for backward compatibility.
+                   If False, raise FileExistsError when .impl/ already exists.
 
     Returns:
         Path to the created .impl/ directory
