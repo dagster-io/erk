@@ -14,6 +14,7 @@ All callers should use create_plan_issue() instead of duplicating this logic.
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Literal
 
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.metadata import (
@@ -21,6 +22,9 @@ from erk_shared.github.metadata import (
     format_plan_header_body,
 )
 from erk_shared.plan_utils import extract_title_from_plan
+
+# Type definitions
+PlanType = Literal["standard", "extraction"]
 
 # Label configurations
 _LABEL_ERK_PLAN = "erk-plan"
@@ -58,8 +62,7 @@ def create_plan_issue(
     plan_content: str,
     *,
     title: str | None = None,
-    plan_type: str | None = None,
-    extra_labels: list[str] | None = None,
+    plan_type: PlanType = "standard",
     title_suffix: str | None = None,
     source_plan_issues: list[int] | None = None,
     extraction_session_ids: list[str] | None = None,
@@ -78,8 +81,7 @@ def create_plan_issue(
         repo_root: Repository root directory
         plan_content: The full plan markdown content
         title: Optional title (extracted from H1 if None)
-        plan_type: Optional type discriminator ("extraction" or None for standard)
-        extra_labels: Additional labels beyond erk-plan
+        plan_type: Type discriminator ("standard" or "extraction", default "standard")
         title_suffix: Suffix for issue title (default: "[erk-plan]" or "[erk-extraction]")
         source_plan_issues: For extraction plans, list of source issue numbers
         extraction_session_ids: For extraction plans, list of session IDs analyzed
@@ -110,12 +112,6 @@ def create_plan_issue(
     labels = [_LABEL_ERK_PLAN]
     if plan_type == "extraction":
         labels.append(_LABEL_ERK_EXTRACTION)
-
-    # Add any extra labels
-    if extra_labels:
-        for label in extra_labels:
-            if label not in labels:
-                labels.append(label)
 
     # Ensure labels exist
     label_errors = _ensure_labels_exist(github_issues, repo_root, labels, plan_type)
@@ -191,7 +187,7 @@ def _ensure_labels_exist(
     github_issues: GitHubIssues,
     repo_root: Path,
     labels: list[str],
-    plan_type: str | None,
+    plan_type: PlanType,
 ) -> str | None:
     """Ensure all required labels exist in the repository.
 
