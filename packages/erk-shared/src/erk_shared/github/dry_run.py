@@ -186,6 +186,10 @@ class DryRunGitHub(GitHub):
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_pr(repo_root, pr_number)
 
+    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | None:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_pr_for_branch(repo_root, branch)
+
     def get_pr_state_for_branch(self, repo_root: Path, branch: str) -> tuple[int, str] | None:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_pr_state_for_branch(repo_root, branch)

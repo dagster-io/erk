@@ -761,7 +761,11 @@ class TestCommandPaletteFromMain:
     async def test_execute_palette_command_open_pr(self) -> None:
         """Execute palette command opens PR in browser."""
         provider = FakePlanDataProvider(
-            [make_plan_row(123, "Test Plan", pr_number=456, pr_url="https://github.com/test/pr/456")]
+            [
+                make_plan_row(
+                    123, "Test Plan", pr_number=456, pr_url="https://github.com/test/pr/456"
+                )
+            ]
         )
         filters = PlanFilters.default()
         app = ErkDashApp(provider, filters, refresh_interval=0)

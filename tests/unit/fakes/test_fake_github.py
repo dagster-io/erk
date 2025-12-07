@@ -757,8 +757,6 @@ def test_fake_github_get_pr_returns_configured_details() -> None:
 
 def test_fake_github_get_pr_raises_key_error_for_missing_pr() -> None:
     """Test get_pr raises KeyError when PR number not found."""
-    import pytest
-
     ops = FakeGitHub()
 
     with pytest.raises(KeyError):
@@ -767,8 +765,6 @@ def test_fake_github_get_pr_raises_key_error_for_missing_pr() -> None:
 
 def test_fake_github_get_pr_raises_key_error_with_empty_dict() -> None:
     """Test get_pr raises KeyError with explicitly empty pr_details dict."""
-    import pytest
-
     ops = FakeGitHub(pr_details={})
 
     with pytest.raises(KeyError):
@@ -820,3 +816,78 @@ def test_fake_github_get_pr_multiple_prs() -> None:
     assert result2.is_draft is True
     assert result2.is_cross_repository is True
     assert result2.mergeable == "CONFLICTING"
+
+
+def test_fake_github_get_pr_for_branch_returns_details() -> None:
+    """Test get_pr_for_branch returns PRDetails when branch has a PR."""
+    pr_info = PullRequestInfo(
+        number=123,
+        state="OPEN",
+        url="https://github.com/owner/repo/pull/123",
+        is_draft=False,
+        title="Add feature",
+        checks_passing=True,
+        owner="owner",
+        repo="repo",
+    )
+    pr_details = PRDetails(
+        number=123,
+        url="https://github.com/owner/repo/pull/123",
+        title="Add feature",
+        body="This PR adds a feature",
+        state="OPEN",
+        is_draft=False,
+        base_ref_name="main",
+        head_ref_name="feature-branch",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="owner",
+        repo="repo",
+        labels=("enhancement",),
+    )
+    ops = FakeGitHub(
+        prs={"feature-branch": pr_info},
+        pr_details={123: pr_details},
+    )
+
+    result = ops.get_pr_for_branch(sentinel_path(), "feature-branch")
+
+    assert result is not None
+    assert result.number == 123
+    assert result.title == "Add feature"
+    assert result.body == "This PR adds a feature"
+    assert result.state == "OPEN"
+    assert result.base_ref_name == "main"
+    assert result.head_ref_name == "feature-branch"
+    assert result.mergeable == "MERGEABLE"
+    assert result.labels == ("enhancement",)
+
+
+def test_fake_github_get_pr_for_branch_returns_none_for_missing_branch() -> None:
+    """Test get_pr_for_branch returns None when branch has no PR."""
+    ops = FakeGitHub()
+
+    result = ops.get_pr_for_branch(sentinel_path(), "nonexistent-branch")
+
+    assert result is None
+
+
+def test_fake_github_get_pr_for_branch_returns_none_when_pr_exists_but_no_details() -> None:
+    """Test get_pr_for_branch returns None when PR exists but details not configured."""
+    pr_info = PullRequestInfo(
+        number=456,
+        state="OPEN",
+        url="https://github.com/owner/repo/pull/456",
+        is_draft=False,
+        title="Some PR",
+        checks_passing=True,
+        owner="owner",
+        repo="repo",
+    )
+    # prs configured but pr_details not configured for this PR number
+    ops = FakeGitHub(prs={"some-branch": pr_info})
+
+    result = ops.get_pr_for_branch(sentinel_path(), "some-branch")
+
+    assert result is None

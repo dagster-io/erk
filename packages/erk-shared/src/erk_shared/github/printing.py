@@ -5,6 +5,7 @@ from pathlib import Path
 import click
 
 from erk_shared.github.abc import GitHub
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
     PRCheckoutInfo,
@@ -233,3 +234,26 @@ class PrintingGitHub(PrintingBase, GitHub):
     def get_repo_info(self, repo_root: Path) -> RepoInfo:
         """Get repository info (read-only, no printing)."""
         return self._wrapped.get_repo_info(repo_root)
+
+    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | None:
+        """Get comprehensive PR details for a branch (read-only, no printing)."""
+        return self._wrapped.get_pr_for_branch(repo_root, branch)
+
+    def get_issues_with_pr_linkages(
+        self,
+        location: GitHubRepoLocation,
+        labels: list[str],
+        state: str | None = None,
+        limit: int | None = None,
+    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+        """Get issues with PR linkages (read-only, no printing)."""
+        return self._wrapped.get_issues_with_pr_linkages(location, labels, state=state, limit=limit)
+
+    def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
+        """Add label to PR with printed output."""
+        self._emit(self._format_command(f"gh pr edit {pr_number} --add-label {label}"))
+        self._wrapped.add_label_to_pr(repo_root, pr_number, label)
+
+    def has_pr_label(self, repo_root: Path, pr_number: int, label: str) -> bool:
+        """Check if PR has label (read-only, no printing)."""
+        return self._wrapped.has_pr_label(repo_root, pr_number, label)
