@@ -97,6 +97,7 @@ class FakeGit(Git):
         rebase_in_progress: bool = False,
         rebase_continue_raises: Exception | None = None,
         commit_messages_since: dict[tuple[Path, str], list[str]] | None = None,
+        push_to_remote_raises: Exception | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -135,6 +136,7 @@ class FakeGit(Git):
             rebase_in_progress: Whether a rebase is currently in progress
             rebase_continue_raises: Exception to raise when rebase_continue() is called
             commit_messages_since: Mapping of (cwd, base_branch) -> list of commit messages
+            push_to_remote_raises: Exception to raise when push_to_remote() is called
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -168,6 +170,7 @@ class FakeGit(Git):
         self._rebase_in_progress = rebase_in_progress
         self._rebase_continue_raises = rebase_continue_raises
         self._commit_messages_since = commit_messages_since or {}
+        self._push_to_remote_raises = push_to_remote_raises
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -750,6 +753,8 @@ class FakeGit(Git):
         self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False
     ) -> None:
         """Record push to remote."""
+        if self._push_to_remote_raises is not None:
+            raise self._push_to_remote_raises
         self._pushed_branches.append((remote, branch, set_upstream))
 
     @property

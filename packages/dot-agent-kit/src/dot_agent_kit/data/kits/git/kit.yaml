@@ -1,0 +1,11 @@
+name: git
+version: 0.1.0
+description: Git-only PR workflows without Graphite. Provides commands for pushing branches as PRs using standard git + GitHub CLI.
+license: See LICENSE.md
+kit_cli_commands:
+  - name: pr-push
+    path: kit_cli_commands/git/pr_push.py
+    description: Git-only PR push workflow (two-phase) for creating and updating PRs
+artifacts:
+  command:
+    - commands/git/pr-push.md

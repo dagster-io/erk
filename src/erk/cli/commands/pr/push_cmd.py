@@ -1,24 +1,26 @@
-"""Submit current branch as a pull request.
+"""Push current branch as a pull request (git-only, no Graphite).
 
-Orchestrates the PR submission workflow using Python:
-1. Preflight: Auth checks, squash, submit branch, get diff
+Orchestrates the git-only PR submission workflow using Python:
+1. Preflight: Auth checks, stage changes, push, create PR, get diff
 2. Generate: AI-generated commit message via Claude CLI
 3. Finalize: Update PR metadata with generated message
+
+This is the git-only alternative to `erk pr submit` which uses Graphite.
 """
 
 import uuid
 from pathlib import Path
 
 import click
-from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
-from erk_shared.integrations.gt.operations.finalize import execute_finalize
-from erk_shared.integrations.gt.operations.preflight import execute_preflight
-from erk_shared.integrations.gt.types import (
-    FinalizeResult,
-    PostAnalysisError,
-    PreAnalysisError,
-    PreflightResult,
+from erk_shared.integrations.git_pr.operations.finalize import execute_finalize
+from erk_shared.integrations.git_pr.operations.preflight import execute_preflight
+from erk_shared.integrations.git_pr.types import (
+    GitFinalizeError,
+    GitFinalizeResult,
+    GitPreflightError,
+    GitPreflightResult,
 )
+from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 
 from erk.core.commit_message_generator import (
     CommitMessageGenerator,
@@ -40,20 +42,23 @@ def _render_progress(event: ProgressEvent) -> None:
     click.echo(click.style(f"   {event.message}", **style))
 
 
-@click.command("submit")
+@click.command("push")
 @click.option("--debug", is_flag=True, help="Show diagnostic output")
 @click.pass_obj
-def pr_submit(ctx: ErkContext, debug: bool) -> None:
-    """Submit PR with AI-generated commit message.
+def pr_push(ctx: ErkContext, debug: bool) -> None:
+    """Push PR with AI-generated commit message (git-only).
 
     Analyzes your changes, generates a commit message via AI, and
-    creates a pull request using Graphite.
+    creates a pull request using standard git + GitHub CLI.
+
+    This command does NOT use Graphite. For Graphite-based submission,
+    use `erk pr submit` instead.
 
     Examples:
 
     \b
-      # Submit PR
-      erk pr submit
+      # Push PR (git-only)
+      erk pr push
     """
     # Verify Claude is available (needed for commit message generation)
     if not ctx.claude_executor.is_claude_available():
@@ -61,22 +66,21 @@ def pr_submit(ctx: ErkContext, debug: bool) -> None:
             "Claude CLI not found\n\nInstall from: https://claude.com/download"
         )
 
-    click.echo(click.style("🚀 Submitting PR...", bold=True))
+    click.echo(click.style("🚀 Pushing PR (git-only)...", bold=True))
     click.echo("")
 
     cwd = ctx.cwd
     session_id = ctx.session_store.get_current_session_id() or str(uuid.uuid4())
 
-    # Phase 1: Preflight (auth, squash, submit, get diff)
+    # Phase 1: Preflight (auth, stage, push, create PR, get diff)
     click.echo(click.style("Phase 1: Preflight checks", bold=True))
     preflight_result = _run_preflight(ctx, cwd, session_id, debug)
 
-    if isinstance(preflight_result, PreAnalysisError):
-        raise click.ClickException(preflight_result.message)
-    if isinstance(preflight_result, PostAnalysisError):
+    if isinstance(preflight_result, GitPreflightError):
         raise click.ClickException(preflight_result.message)
 
-    click.echo(click.style(f"   PR #{preflight_result.pr_number} created", fg="green"))
+    action_verb = "created" if preflight_result.pr_created else "found existing"
+    click.echo(click.style(f"   PR #{preflight_result.pr_number} {action_verb}", fg="green"))
     click.echo("")
 
     # Phase 2: Generate commit message
@@ -86,7 +90,7 @@ def pr_submit(ctx: ErkContext, debug: bool) -> None:
         msg_gen,
         diff_file=Path(preflight_result.diff_file),
         repo_root=Path(preflight_result.repo_root),
-        current_branch=preflight_result.current_branch,
+        current_branch=preflight_result.branch_name,
         parent_branch=preflight_result.parent_branch,
         commit_messages=preflight_result.commit_messages,
         debug=debug,
@@ -109,7 +113,7 @@ def pr_submit(ctx: ErkContext, debug: bool) -> None:
         debug=debug,
     )
 
-    if isinstance(finalize_result, PostAnalysisError):
+    if isinstance(finalize_result, GitFinalizeError):
         raise click.ClickException(finalize_result.message)
 
     click.echo(click.style("   PR metadata updated", fg="green"))
@@ -120,23 +124,15 @@ def pr_submit(ctx: ErkContext, debug: bool) -> None:
     clickable_url = f"\033]8;;{finalize_result.pr_url}\033\\{styled_url}\033]8;;\033\\"
     click.echo(f"✅ {clickable_url}")
 
-    # Show Graphite URL if available
-    if finalize_result.graphite_url:
-        styled_graphite = click.style(finalize_result.graphite_url, fg="cyan", underline=True)
-        clickable_graphite = (
-            f"\033]8;;{finalize_result.graphite_url}\033\\{styled_graphite}\033]8;;\033\\"
-        )
-        click.echo(f"📊 {clickable_graphite}")
-
 
 def _run_preflight(
     ctx: ErkContext,
     cwd: Path,
     session_id: str,
     debug: bool,
-) -> PreflightResult | PreAnalysisError | PostAnalysisError:
+) -> GitPreflightResult | GitPreflightError:
     """Run preflight phase and return result."""
-    result: PreflightResult | PreAnalysisError | PostAnalysisError | None = None
+    result: GitPreflightResult | GitPreflightError | None = None
 
     for event in execute_preflight(ctx, cwd, session_id):
         if isinstance(event, ProgressEvent):
@@ -146,9 +142,9 @@ def _run_preflight(
             result = event.result
 
     if result is None:
-        return PostAnalysisError(
+        return GitPreflightError(
             success=False,
-            error_type="submit_failed",
+            error_type="push_failed",
             message="Preflight did not complete",
             details={},
         )
@@ -164,9 +160,9 @@ def _run_finalize(
     body: str,
     diff_file: str,
     debug: bool,
-) -> FinalizeResult | PostAnalysisError:
+) -> GitFinalizeResult | GitFinalizeError:
     """Run finalize phase and return result."""
-    result: FinalizeResult | PostAnalysisError | None = None
+    result: GitFinalizeResult | GitFinalizeError | None = None
 
     for event in execute_finalize(
         ctx,
@@ -183,9 +179,9 @@ def _run_finalize(
             result = event.result
 
     if result is None:
-        return PostAnalysisError(
+        return GitFinalizeError(
             success=False,
-            error_type="submit_failed",
+            error_type="pr_update_failed",
             message="Finalize did not complete",
             details={},
         )
