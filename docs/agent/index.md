@@ -14,7 +14,7 @@
 - **[planning/](planning/)** — agent-delegation, enrichment, lifecycle, plan-schema, scratch-storage, workflow
 - **[reference/](reference/)** — claude-cli-stream-json
 - **[sessions/](sessions/)** — context-analysis, context-optimization, layout, parallel-session-awareness, tools
-- **[testing/](testing/)** — cascading-import-cleanup, import-conflict-resolution, integration-test-speed, kit-cli-testing, mock-elimination, rebase-conflicts, session-log-fixtures, session-store-testing, testing
+- **[testing/](testing/)** — cascading-import-cleanup, dot-agent-context-testing, import-conflict-resolution, integration-test-speed, kit-cli-testing, mock-elimination, rebase-conflicts, session-log-fixtures, session-store-testing, testing
 - **[textual/](textual/)** — background-workers, quirks, testing, widget-development
 - **[tui/](tui/)** — command-execution, command-palette, streaming-output, textual-async
 
