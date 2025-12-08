@@ -54,6 +54,16 @@ For mechanical conflicts: **Auto-resolve** by:
 - Choosing the more recent/complete version when one supersedes the other
 - Preserving the intent of both changes where possible
 
+#### Style/Readability Conflicts
+
+When both versions are functionally equivalent but differ in style:
+
+- **Variable extraction**: Prefer extracting long expressions into named variables
+- **Line length**: Prefer the version that stays within reasonable line lengths
+- **Consistency**: Match the surrounding code's style conventions
+
+These are mechanical conflicts - auto-resolve by choosing the more readable version.
+
 ### Real-World Examples
 
 #### Example 1: Tuple Type Annotation Merge (Mechanical)
