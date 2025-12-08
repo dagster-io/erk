@@ -14,11 +14,7 @@ def test_tripwires_reminder_hook_outputs_reminder() -> None:
 
     assert result.exit_code == 0
     assert "tripwires" in result.output
-    assert "os.chdir" in result.output
-    assert "/tmp/" in result.output
-    assert "dry_run" in result.output
-    assert "subprocess.run" in result.output
-    assert "docs/agent/tripwires.md" in result.output
+    assert "After you write code" in result.output
 
 
 def test_tripwires_reminder_hook_exits_successfully() -> None:

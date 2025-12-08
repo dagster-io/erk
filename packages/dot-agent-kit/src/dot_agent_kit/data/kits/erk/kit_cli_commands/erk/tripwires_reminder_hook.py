@@ -7,10 +7,7 @@ import click
 @click.command()
 def tripwires_reminder_hook() -> None:
     """Output tripwires reminder for UserPromptSubmit hook."""
-    click.echo(
-        "🚧 tripwires: Before os.chdir, /tmp/ writes, dry_run flags, "
-        "or subprocess.run → check docs/agent/tripwires.md"
-    )
+    click.echo("🚧 tripwires: After you write code, check for tripwires.")
 
 
 if __name__ == "__main__":
