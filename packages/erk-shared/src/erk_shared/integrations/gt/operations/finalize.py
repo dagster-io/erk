@@ -10,6 +10,7 @@ from pathlib import Path
 
 from erk_shared.github.metadata import find_metadata_block
 from erk_shared.github.parsing import parse_git_remote_url
+from erk_shared.github.pr_footer import build_pr_body_footer
 from erk_shared.github.types import GitHubRepoId, PRNotFound
 from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 from erk_shared.integrations.gt.abc import GtKit
@@ -46,49 +47,6 @@ def is_extraction_plan(impl_dir: Path) -> bool:
 
     plan_type = block.data.get("plan_type")
     return plan_type == "extraction"
-
-
-def build_pr_metadata_section(
-    pr_number: int,
-    issue_number: int | None = None,
-) -> str:
-    """Build metadata footer section for PR body.
-
-    This section is appended AFTER the PR body content, not before.
-    It contains essential metadata: issue closing reference (if linked to a plan)
-    and checkout command.
-
-    Note: Issue closing is handled via commit message keywords ("Closes #N")
-    added by the gt finalize process.
-
-    Note: Extraction origin is now tracked via the erk-skip-extraction label
-    rather than a marker in the PR body.
-
-    Args:
-        pr_number: PR number
-        issue_number: Optional issue number to close (from .impl/issue.json)
-
-    Returns:
-        Metadata footer section as string
-    """
-    metadata_parts: list[str] = []
-
-    # Separator at start of footer
-    metadata_parts.append("\n---\n")
-
-    # Issue closing reference (if linked to a plan)
-    if issue_number is not None:
-        metadata_parts.append(f"\nCloses #{issue_number}\n")
-
-    # Checkout command
-    metadata_parts.append(
-        f"\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n"
-        f"```\n"
-        f"erk pr checkout {pr_number}\n"
-        f"```\n"
-    )
-
-    return "\n".join(metadata_parts)
 
 
 def execute_finalize(
@@ -143,7 +101,7 @@ def execute_finalize(
     is_extraction_origin = is_extraction_plan(impl_dir)
 
     # Build metadata section and combine with AI body
-    metadata_section = build_pr_metadata_section(
+    metadata_section = build_pr_body_footer(
         pr_number=pr_number,
         issue_number=issue_number,
     )

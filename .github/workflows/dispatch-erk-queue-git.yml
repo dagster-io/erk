@@ -199,6 +199,19 @@ jobs:
           gh issue comment "$ISSUE_NUMBER" --body-file comment_body.md
           rm -f comment_body.md
 
+      - name: Add remote execution note to PR
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          source $HOME/.cargo/env
+          dot-agent run erk add-remote-execution-note \
+            --pr-number "$PR_NUMBER" \
+            --run-id "$WORKFLOW_RUN_ID" \
+            --run-url "$WORKFLOW_RUN_URL"
+
       # =================================================================
       # PHASE 4: IMPLEMENTATION
       # =================================================================

@@ -18,6 +18,7 @@ from erk_shared.github.parsing import (
     construct_workflow_run_url,
     extract_owner_repo_from_github_url,
 )
+from erk_shared.github.pr_footer import build_pr_body_footer
 from erk_shared.github.types import PRNotFound
 from erk_shared.integrations.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 from erk_shared.naming import (
@@ -309,12 +310,8 @@ def _submit_single_issue(
             user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
 
             # Update PR body with checkout command footer
-            footer_body = (
-                f"{pr_body}\n\n"
-                "---\n\n"
-                f"To checkout this PR locally:\n\n```\nerk pr checkout {pr_number}\n```"
-            )
-            ctx.github.update_pr_body(repo.root, pr_number, footer_body)
+            footer = build_pr_body_footer(pr_number=pr_number)
+            ctx.github.update_pr_body(repo.root, pr_number, pr_body + footer)
 
             # Add extraction skip label if this is an extraction plan
             if validated.is_extraction_origin:
@@ -383,12 +380,8 @@ def _submit_single_issue(
         user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
 
         # Update PR body with checkout command footer
-        footer_body = (
-            f"{pr_body}\n\n"
-            "---\n\n"
-            f"To checkout this PR locally:\n\n```\nerk pr checkout {pr_number}\n```"
-        )
-        ctx.github.update_pr_body(repo.root, pr_number, footer_body)
+        footer = build_pr_body_footer(pr_number=pr_number)
+        ctx.github.update_pr_body(repo.root, pr_number, pr_body + footer)
 
         # Add extraction skip label if this is an extraction plan
         if validated.is_extraction_origin:

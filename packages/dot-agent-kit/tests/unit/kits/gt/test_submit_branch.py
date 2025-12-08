@@ -23,11 +23,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 from click.testing import CliRunner
+from erk_shared.github.pr_footer import build_pr_body_footer
 from erk_shared.integrations.gt.cli import render_events
-from erk_shared.integrations.gt.operations.finalize import (
-    build_pr_metadata_section,
-    execute_finalize,
-)
+from erk_shared.integrations.gt.operations.finalize import execute_finalize
 from erk_shared.integrations.gt.operations.pre_analysis import execute_pre_analysis
 from erk_shared.integrations.gt.operations.preflight import execute_preflight
 from erk_shared.integrations.gt.types import (
@@ -72,20 +70,20 @@ def extract_json_from_output(output: str) -> dict:
     raise ValueError(f"No complete JSON found in output: {output}")
 
 
-class TestBuildPRMetadataSection:
-    """Tests for build_pr_metadata_section() function.
+class TestBuildPRBodyFooter:
+    """Tests for build_pr_body_footer() function.
 
     The function builds a footer section for PR bodies containing:
     - Separator (---) at start
-    - Checkout command
+    - Checkout command with && erk pr sync
     """
 
-    def test_build_metadata_footer(self) -> None:
-        """Test building metadata footer with a PR number."""
-        result = build_pr_metadata_section(456)
+    def test_build_footer_with_pr_number(self) -> None:
+        """Test building footer with a PR number."""
+        result = build_pr_body_footer(456)
 
         assert "---" in result
-        assert "erk pr checkout 456" in result
+        assert "erk pr checkout 456 && erk pr sync" in result
 
 
 class TestPreAnalysisExecution:
@@ -585,7 +583,7 @@ class TestExecuteFinalize:
         assert final_pr_body.startswith("Description")
         # Footer contains separator, issue closing reference, and checkout command
         assert "---" in final_pr_body
-        assert "erk pr checkout 123" in final_pr_body
+        assert "erk pr checkout 123 && erk pr sync" in final_pr_body
         # Closes #N is included when issue reference exists
         assert "Closes #456" in final_pr_body
 

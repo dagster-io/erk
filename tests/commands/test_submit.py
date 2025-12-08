@@ -499,11 +499,11 @@ def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
     branch_name, title, body, base, draft = fake_github.created_prs[0]
     assert title == "Implement feature X"  # NOT "Implement feature X [erk-plan]"
 
-    # Verify PR body was updated with checkout footer
+    # Verify PR body was updated with checkout footer (includes && erk pr sync)
     assert len(fake_github.updated_pr_bodies) == 1
     pr_number, updated_body = fake_github.updated_pr_bodies[0]
     assert pr_number == 999  # FakeGitHub returns 999 for created PRs
-    assert "erk pr checkout 999" in updated_body
+    assert "erk pr checkout 999 && erk pr sync" in updated_body
 
 
 def test_close_orphaned_draft_prs_closes_old_drafts(tmp_path: Path) -> None:

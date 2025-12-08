@@ -1,44 +1,13 @@
-"""Unit tests for build_pr_metadata_section and is_extraction_plan functions.
+"""Unit tests for is_extraction_plan function.
 
-Tests the PR metadata footer generation for PR bodies and extraction plan detection.
+Tests extraction plan detection for PR bodies.
+
+Note: build_pr_body_footer tests are in tests/unit/github/test_pr_footer.py
 """
 
 from pathlib import Path
 
-from erk_shared.integrations.gt.operations.finalize import (
-    build_pr_metadata_section,
-    is_extraction_plan,
-)
-
-
-def test_build_pr_metadata_section_without_issue_number() -> None:
-    """Test metadata section without issue number."""
-    result = build_pr_metadata_section(pr_number=1895)
-
-    assert "---" in result
-    assert "erk pr checkout 1895" in result
-    assert "Closes #" not in result
-
-
-def test_build_pr_metadata_section_with_issue_number() -> None:
-    """Test metadata section includes Closes #N when issue_number is provided."""
-    result = build_pr_metadata_section(pr_number=1895, issue_number=123)
-
-    assert "---" in result
-    assert "Closes #123" in result
-    assert "erk pr checkout 1895" in result
-
-
-def test_build_pr_metadata_section_issue_number_before_checkout() -> None:
-    """Test that Closes #N appears before the checkout command."""
-    result = build_pr_metadata_section(pr_number=456, issue_number=789)
-
-    closes_pos = result.find("Closes #789")
-    checkout_pos = result.find("erk pr checkout 456")
-
-    assert closes_pos != -1
-    assert checkout_pos != -1
-    assert closes_pos < checkout_pos
+from erk_shared.integrations.gt.operations.finalize import is_extraction_plan
 
 
 class TestIsExtractionPlan:

@@ -40,6 +40,7 @@ Examples:
 """
 
 import click
+from erk_shared.github.pr_footer import build_pr_body_footer
 
 
 @click.command(name="get-pr-body-footer")
@@ -58,18 +59,5 @@ def get_pr_body_footer(pr_number: int, issue_number: int | None) -> None:
         pr_number: The PR number to include in the checkout command
         issue_number: Optional issue number to close when PR is merged
     """
-    parts: list[str] = []
-    parts.append("\n---\n")
-
-    if issue_number is not None:
-        parts.append(f"\nCloses #{issue_number}\n")
-
-    parts.append(
-        f"\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n"
-        f"```\n"
-        f"erk pr checkout {pr_number} && erk pr sync\n"
-        f"```\n"
-    )
-
-    output = "\n".join(parts)
+    output = build_pr_body_footer(pr_number=pr_number, issue_number=issue_number)
     click.echo(output, nl=False)
