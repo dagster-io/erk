@@ -119,11 +119,11 @@ class GtKit(Protocol):
 Use ABC when:
 
 1. **Defining implementation contracts** - Classes must explicitly implement
-2. **Creating integration layer interfaces** - `Git`, `GitHub`, `Graphite`, etc.
+2. **Creating gateway interfaces** - `Git`, `GitHub`, `Graphite`, etc.
 3. **You want fakes to inherit** - Ensures test fakes implement full interface
 4. **You need runtime checks** - `isinstance()` checks work with ABC
 
-### Example: Integration Interface
+### Example: Gateway Interface
 
 ```python
 from abc import ABC, abstractmethod
@@ -226,7 +226,7 @@ use_it(FrozenThing(name="test"))
 
 ### Background
 
-The gt kit needed access to `git`, `gh`, and `graphite` integrations. Initially, we considered making `ErkContext` inherit from a base class, but that would require changes throughout the codebase.
+The gt kit needed access to `git`, `gh`, and `graphite` gateways. Initially, we considered making `ErkContext` inherit from a base class, but that would require changes throughout the codebase.
 
 ### First Attempt: ABC (Failed)
 
@@ -370,7 +370,7 @@ consume(p)  # Works! Read-write satisfies read-only
 
 ## Code Examples
 
-### Complete ABC Pattern (Integration Layer)
+### Complete ABC Pattern (Gateway Layer)
 
 ```python
 from abc import ABC, abstractmethod
@@ -438,7 +438,7 @@ class HasGitHub(Protocol):
 
 
 class FullContext(Protocol):
-    """Composite interface for operations needing multiple integrations."""
+    """Composite interface for operations needing multiple gateways."""
 
     @property
     def git(self) -> Git: ...

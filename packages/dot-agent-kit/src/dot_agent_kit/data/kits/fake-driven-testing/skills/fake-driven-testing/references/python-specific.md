@@ -831,4 +831,4 @@ class UserBuilder:
 - `workflows.md` - Step-by-step testing workflows
 - `patterns.md` - General testing patterns
 - `anti-patterns.md` - What to avoid in Python tests
-- `integration-architecture.md` - Integration class/gateway pattern in Python
+- `gateway-architecture.md` - Gateway pattern in Python

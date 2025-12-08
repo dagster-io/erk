@@ -619,11 +619,11 @@ for event in executor.execute_command_streaming(...):
 
 ---
 
-## Integration Layer Terms
+## Gateway Terms
 
-### Integration Class
+### Gateway
 
-An ABC (Abstract Base Class) defining integration classes for external systems.
+An ABC (Abstract Base Class) defining gateways for external systems.
 
 **Pattern**:
 
@@ -646,9 +646,11 @@ class Git(ABC):
 
 **Purpose**: Abstraction enabling testing with fakes.
 
+**Related**: [Gateway Inventory](architecture/gateway-inventory.md)
+
 ### Real Implementation
 
-Production implementation of an integration interface that executes actual commands.
+Production implementation of a gateway interface that executes actual commands.
 
 **Naming**: `Real<Interface>` (e.g., `RealGit`)
 
@@ -665,7 +667,7 @@ class RealGit(Git):
 
 ### Fake Implementation
 
-In-memory implementation of an integration interface for testing.
+In-memory implementation of a gateway interface for testing.
 
 **Naming**: `Fake<Interface>` (e.g., `FakeGit`)
 

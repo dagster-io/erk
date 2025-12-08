@@ -821,6 +821,6 @@ def test_cleanup_dry_run() -> None:
 
 - `workflows.md` - Step-by-step guides for using these patterns
 - `testing-strategy.md` - Which layer to test at
-- `integration-architecture.md` - Understanding fakes and integration layer
+- `gateway-architecture.md` - Understanding fakes and gateway layer
 - `anti-patterns.md` - What to avoid
 - `python-specific.md` - Python-specific testing patterns

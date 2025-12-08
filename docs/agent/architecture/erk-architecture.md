@@ -288,27 +288,27 @@ class MockApp:
         pass
 ```
 
-## Integration Layer Directory Structure
+## Gateway Directory Structure
 
-Erk uses a consistent directory structure for all integration layers (git, github, graphite, etc). Each integration follows the ABC/Real/Fake/DryRun pattern.
+Erk uses a consistent directory structure for all gateways (git, github, graphite, etc). Each gateway follows the ABC/Real/Fake/DryRun pattern.
 
 ### Standard Directory Layout
 
 ```
 packages/erk-shared/src/erk_shared/
-├── git/                           # Core git integration
+├── git/                           # Core git gateway
 │   ├── __init__.py                # Re-exports all implementations
 │   ├── abc.py                     # ABC interface definition
 │   ├── real.py                    # Production implementation
 │   ├── fake.py                    # In-memory test implementation
 │   ├── dry_run.py                 # No-op wrapper for dry-run mode
 │   └── printing.py                # (Optional) Wrapper that logs operations
-├── github/                        # GitHub API integration
+├── github/                        # GitHub API gateway
 │   ├── __init__.py
 │   ├── abc.py
 │   ├── real.py
 │   └── fake.py
-└── integrations/                  # Domain-specific integrations
+└── integrations/                  # Domain-specific gateways
     ├── erk_wt/                    # Erk worktree operations
     │   ├── __init__.py
     │   ├── abc.py
@@ -333,8 +333,8 @@ packages/erk-shared/src/erk_shared/
 ```python
 from abc import ABC, abstractmethod
 
-class MyIntegration(ABC):
-    """Abstract interface for MyIntegration operations."""
+class MyGateway(ABC):
+    """Abstract interface for MyGateway operations."""
 
     @abstractmethod
     def do_operation(self, arg: str) -> str:
@@ -346,9 +346,9 @@ class MyIntegration(ABC):
 
 ```python
 import subprocess
-from erk_shared.my_integration.abc import MyIntegration
+from erk_shared.my_gateway.abc import MyGateway
 
-class RealMyIntegration(MyIntegration):
+class RealMyGateway(MyGateway):
     """Production implementation using subprocess."""
 
     def do_operation(self, arg: str) -> str:
@@ -364,9 +364,9 @@ class RealMyIntegration(MyIntegration):
 **`fake.py`** - Test implementation:
 
 ```python
-from erk_shared.my_integration.abc import MyIntegration
+from erk_shared.my_gateway.abc import MyGateway
 
-class FakeMyIntegration(MyIntegration):
+class FakeMyGateway(MyGateway):
     """In-memory fake for testing."""
 
     def __init__(self) -> None:
@@ -380,12 +380,12 @@ class FakeMyIntegration(MyIntegration):
 **`dry_run.py`** - No-op wrapper (optional):
 
 ```python
-from erk_shared.my_integration.abc import MyIntegration
+from erk_shared.my_gateway.abc import MyGateway
 
-class DryRunMyIntegration(MyIntegration):
+class DryRunMyGateway(MyGateway):
     """No-op wrapper that tracks but doesn't execute operations."""
 
-    def __init__(self, delegate: MyIntegration) -> None:
+    def __init__(self, delegate: MyGateway) -> None:
         self.delegate = delegate
         self.operations: list[str] = []
 
@@ -397,45 +397,45 @@ class DryRunMyIntegration(MyIntegration):
 **`__init__.py`** - Re-export pattern:
 
 ```python
-"""MyIntegration operations."""
+"""MyGateway operations."""
 
-from erk_shared.my_integration.abc import MyIntegration
-from erk_shared.my_integration.real import RealMyIntegration
-from erk_shared.my_integration.fake import FakeMyIntegration
+from erk_shared.my_gateway.abc import MyGateway
+from erk_shared.my_gateway.real import RealMyGateway
+from erk_shared.my_gateway.fake import FakeMyGateway
 
 __all__ = [
-    "MyIntegration",      # ABC interface
-    "RealMyIntegration",  # Production implementation
-    "FakeMyIntegration",  # Test implementation
+    "MyGateway",      # ABC interface
+    "RealMyGateway",  # Production implementation
+    "FakeMyGateway",  # Test implementation
 ]
 ```
 
-### Integration Locations
+### Gateway Locations
 
-**Core integrations** (used across the codebase):
+**Core gateways** (used across the codebase):
 
 - `packages/erk-shared/src/erk_shared/git/` - Git operations
 - `packages/erk-shared/src/erk_shared/github/` - GitHub API
 - `packages/erk-shared/src/erk_shared/graphite/` - Graphite stack operations
 
-**Domain integrations** (specific domains):
+**Domain gateways** (specific domains):
 
 - `packages/erk-shared/src/erk_shared/integrations/<name>/` - Domain-specific operations
 
-### When to Create a New Integration
+### When to Create a New Gateway
 
-**Create a new integration when:**
+**Create a new gateway when:**
 
 - Wrapping external CLI tool (git, gh, gt)
 - Wrapping external API (GitHub REST API)
 - Abstracting system operations (time, filesystem)
 - Isolating subprocess calls for testing
 
-**Extend existing integration when:**
+**Extend existing gateway when:**
 
 - Adding method to existing tool (e.g., new git operation)
 - Enhancing existing functionality
-- Operation fits natural domain of existing integration
+- Operation fits natural domain of existing gateway
 
 ### Import Pattern
 
@@ -457,12 +457,12 @@ from erk_shared.git.real import RealGit  # Bypasses __init__.py
 
 ### Testing All Four Layers
 
-When adding a method to an integration ABC:
+When adding a method to a gateway ABC:
 
 1. **ABC**: Add abstract method signature
 2. **Real**: Implement with subprocess/API calls
 3. **Fake**: Implement with in-memory tracking
-4. **DryRun**: Add no-op wrapper (if integration has dry-run layer)
+4. **DryRun**: Add no-op wrapper (if gateway has dry-run layer)
 
 **Example workflow:**
 
@@ -502,9 +502,9 @@ class DryRunGit(Git):
 
 ### Migration Notes
 
-If you find code that should be an integration but isn't:
+If you find code that should be a gateway but isn't:
 
-1. **Create integration directory** with abc.py, real.py, fake.py
+1. **Create gateway directory** with abc.py, real.py, fake.py
 2. **Extract subprocess calls** into Real implementation
 3. **Write Fake implementation** for testing
 4. **Update consumers** to use injected dependency instead of direct calls

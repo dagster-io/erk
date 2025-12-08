@@ -6,27 +6,27 @@ read_when:
   - "understanding subprocess patterns"
 tripwires:
   - action: "using bare subprocess.run with check=True"
-    warning: "Use wrapper functions: run_subprocess_with_context() (integration) or run_with_error_reporting() (CLI)."
+    warning: "Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI)."
 ---
 
 # Subprocess Execution Wrappers
 
 **NEVER use bare `subprocess.run(..., check=True)`. ALWAYS use wrapper functions.**
 
-This guide explains the two-layer pattern for subprocess execution in erk: integration layer and CLI layer wrappers.
+This guide explains the two-layer pattern for subprocess execution in erk: gateway layer and CLI layer wrappers.
 
 ## Two-Layer Pattern
 
 Erk uses a two-layer design for subprocess execution to provide consistent error handling across different boundaries:
 
-- **Integration layer**: `run_subprocess_with_context()` - Raises RuntimeError for business logic
+- **Gateway layer**: `run_subprocess_with_context()` - Raises RuntimeError for business logic
 - **CLI layer**: `run_with_error_reporting()` - Prints user-friendly message and raises SystemExit
 
 ## Wrapper Functions
 
-### run_subprocess_with_context (Integration Layer)
+### run_subprocess_with_context (Gateway Layer)
 
-**When to use**: In business logic, integration classes, and core functionality that may be called from multiple contexts.
+**When to use**: In business logic, gateway classes, and core functionality that may be called from multiple contexts.
 
 **Import**: `from erk.core.subprocess import run_subprocess_with_context`
 
@@ -100,7 +100,7 @@ When code explicitly uses `check=False` and checks the return code, this is a Lo
 
 ## Summary
 
-- **Integration layer**: Use `run_subprocess_with_context()` for business logic
+- **Gateway layer**: Use `run_subprocess_with_context()` for business logic
 - **CLI layer**: Use `run_with_error_reporting()` for command handlers
 - **Keep LBYL**: Don't migrate intentional `check=False` patterns
 - **Never use bare check=True**: Always use one of the wrapper functions

@@ -512,7 +512,7 @@ def test_complete_pr_workflow(tmp_path):
 
 ## Related Documentation
 
-- `integration-architecture.md` - Understanding the integration layer being tested
+- `gateway-architecture.md` - Understanding the gateway layer being tested
 - `workflows.md` - Step-by-step guides for adding tests
 - `patterns.md` - Common testing patterns (CliRunner, builders, etc.)
 - `anti-patterns.md` - What to avoid when writing tests
