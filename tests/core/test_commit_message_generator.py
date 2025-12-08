@@ -285,3 +285,64 @@ def test_generate_strips_code_fence_with_language_tag(tmp_path: Path) -> None:
     assert "## Summary" in result.body
     assert "```" not in result.title
     assert "```" not in result.body
+
+
+def test_generate_includes_commit_messages_in_prompt(tmp_path: Path) -> None:
+    """Test that commit messages are included in the prompt when provided."""
+    diff_file = tmp_path / "test.diff"
+    diff_file.write_text("diff --git a/file.py b/file.py\n-old\n+new", encoding="utf-8")
+
+    executor = FakeClaudeExecutor(
+        claude_available=True,
+        simulated_prompt_output="Add feature based on commit context\n\nUsed commit messages.",
+    )
+    generator = CommitMessageGenerator(executor)
+    request = CommitMessageRequest(
+        diff_file=diff_file,
+        repo_root=tmp_path,
+        current_branch="feature-branch",
+        parent_branch="main",
+        commit_messages=[
+            "Initial implementation\n\nAdded basic structure.",
+            "Fix bug in parsing\n\nFixed edge case in parser.",
+        ],
+    )
+
+    result, _ = _consume_generator(generator, request)
+
+    assert result.success is True
+    # Verify commit messages were included in the prompt
+    assert len(executor.prompt_calls) == 1
+    prompt = executor.prompt_calls[0]
+    assert "Initial implementation" in prompt
+    assert "Added basic structure" in prompt
+    assert "Fix bug in parsing" in prompt
+    assert "Fixed edge case in parser" in prompt
+    assert "Developer's Commit Messages" in prompt
+
+
+def test_generate_works_without_commit_messages(tmp_path: Path) -> None:
+    """Test that generation works when commit_messages is None."""
+    diff_file = tmp_path / "test.diff"
+    diff_file.write_text("diff content", encoding="utf-8")
+
+    executor = FakeClaudeExecutor(
+        claude_available=True,
+        simulated_prompt_output="Simple title\n\nSimple body.",
+    )
+    generator = CommitMessageGenerator(executor)
+    request = CommitMessageRequest(
+        diff_file=diff_file,
+        repo_root=tmp_path,
+        current_branch="branch",
+        parent_branch="main",
+        commit_messages=None,
+    )
+
+    result, _ = _consume_generator(generator, request)
+
+    assert result.success is True
+    # Prompt should not mention Developer's Commit Messages
+    assert len(executor.prompt_calls) == 1
+    prompt = executor.prompt_calls[0]
+    assert "Developer's Commit Messages" not in prompt

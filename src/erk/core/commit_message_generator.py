@@ -26,12 +26,14 @@ class CommitMessageRequest:
         repo_root: Path to the repository root directory
         current_branch: Name of the current branch
         parent_branch: Name of the parent branch
+        commit_messages: Optional list of existing commit messages for context
     """
 
     diff_file: Path
     repo_root: Path
     current_branch: str
     parent_branch: str
+    commit_messages: list[str] | None = None
 
 
 @dataclass
@@ -119,6 +121,7 @@ class CommitMessageGenerator:
             diff_content=diff_content,
             current_branch=request.current_branch,
             parent_branch=request.parent_branch,
+            commit_messages=request.commit_messages,
         )
 
         # Execute prompt via Claude CLI
@@ -157,14 +160,31 @@ class CommitMessageGenerator:
         diff_content: str,
         current_branch: str,
         parent_branch: str,
+        commit_messages: list[str] | None = None,
     ) -> str:
         """Build the full prompt with diff and context."""
-        return f"""{COMMIT_MESSAGE_SYSTEM_PROMPT}
-
-## Context
+        context_section = f"""## Context
 
 - Current branch: {current_branch}
-- Parent branch: {parent_branch}
+- Parent branch: {parent_branch}"""
+
+        # Add commit messages section if present
+        if commit_messages:
+            messages_text = "\n\n---\n\n".join(commit_messages)
+            context_section += f"""
+
+## Developer's Commit Messages
+
+The following commit messages were written by the developer during implementation:
+
+{messages_text}
+
+Use these commit messages as additional context. They describe the developer's intent
+and may contain details not visible in the diff alone."""
+
+        return f"""{COMMIT_MESSAGE_SYSTEM_PROMPT}
+
+{context_section}
 
 ## Diff
 

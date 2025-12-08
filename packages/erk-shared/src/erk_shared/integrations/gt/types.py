@@ -163,6 +163,7 @@ class PreAnalysisResult:
     message: str
     has_conflicts: bool = False
     conflict_details: dict[str, str] | None = None
+    commit_messages: list[str] | None = None  # Full commit messages for AI context
 
 
 @dataclass
@@ -214,6 +215,7 @@ class PreflightResult:
     parent_branch: str
     issue_number: int | None
     message: str
+    commit_messages: list[str] | None = None  # Full commit messages for AI context
 
 
 @dataclass

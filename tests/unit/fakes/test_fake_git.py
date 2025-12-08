@@ -524,3 +524,45 @@ def test_fake_git_get_branch_issue_requires_hyphen_after_number() -> None:
     # Numbers without trailing hyphen are not issue numbers
     assert git_ops.get_branch_issue(Path("/repo"), "123") is None
     assert git_ops.get_branch_issue(Path("/repo"), "v2.0.0") is None
+
+
+# ============================================================================
+# Commit Messages Since Tests
+# ============================================================================
+
+
+def test_fake_git_get_commit_messages_since_returns_configured_messages() -> None:
+    """Test get_commit_messages_since returns configured commit messages."""
+    cwd = Path("/repo")
+    messages = [
+        "Initial commit\n\nThis is the body of the first commit.",
+        "Add feature\n\nImplemented new feature X.",
+        "Fix bug",
+    ]
+    git_ops = FakeGit(commit_messages_since={(cwd, "main"): messages})
+
+    result = git_ops.get_commit_messages_since(cwd, "main")
+
+    assert result == messages
+
+
+def test_fake_git_get_commit_messages_since_returns_empty_for_unknown_branch() -> None:
+    """Test get_commit_messages_since returns empty list for unknown branch."""
+    cwd = Path("/repo")
+    git_ops = FakeGit()
+
+    result = git_ops.get_commit_messages_since(cwd, "main")
+
+    assert result == []
+
+
+def test_fake_git_get_commit_messages_since_returns_empty_for_unknown_cwd() -> None:
+    """Test get_commit_messages_since returns empty list for unknown cwd."""
+    cwd = Path("/repo")
+    other_cwd = Path("/other")
+    messages = ["Some commit"]
+    git_ops = FakeGit(commit_messages_since={(cwd, "main"): messages})
+
+    result = git_ops.get_commit_messages_since(other_cwd, "main")
+
+    assert result == []

@@ -797,3 +797,17 @@ class RealGit(Git):
             text=True,
             env={**os.environ, "GIT_EDITOR": "true"},  # Auto-accept commit messages
         )
+
+    def get_commit_messages_since(self, cwd: Path, base_branch: str) -> list[str]:
+        """Get full commit messages for commits in HEAD but not in base_branch."""
+        separator = "---COMMIT_SEP---"
+        result = subprocess.run(
+            ["git", "log", "--reverse", f"--format=%B{separator}", f"{base_branch}..HEAD"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return []
+        return [msg.strip() for msg in result.stdout.split(separator) if msg.strip()]

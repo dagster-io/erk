@@ -635,3 +635,18 @@ class Git(ABC):
             subprocess.CalledProcessError: If continue fails (e.g., unresolved conflicts)
         """
         ...
+
+    @abstractmethod
+    def get_commit_messages_since(self, cwd: Path, base_branch: str) -> list[str]:
+        """Get full commit messages for commits in HEAD but not in base_branch.
+
+        Returns commits in chronological order (oldest first).
+
+        Args:
+            cwd: Working directory
+            base_branch: Branch to compare against (e.g., parent branch)
+
+        Returns:
+            List of full commit messages (subject + body) for each unique commit
+        """
+        ...

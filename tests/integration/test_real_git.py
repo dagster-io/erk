@@ -551,3 +551,83 @@ def test_find_main_git_dir_from_main_repo(
 
     # Assert
     assert main_dir == repo
+
+
+def test_get_commit_messages_since_returns_messages(tmp_path: Path) -> None:
+    """Test get_commit_messages_since returns full commit messages."""
+    from erk_shared.git.real import RealGit
+
+    from tests.integration.conftest import init_git_repo
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    # Create feature branch with multiple commits
+    subprocess.run(["git", "checkout", "-b", "feature"], cwd=repo, check=True)
+
+    # First commit
+    (repo / "file1.txt").write_text("content1\n", encoding="utf-8")
+    subprocess.run(["git", "add", "file1.txt"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "commit", "-m", "Add file1\n\nThis is the body."],
+        cwd=repo,
+        check=True,
+    )
+
+    # Second commit
+    (repo / "file2.txt").write_text("content2\n", encoding="utf-8")
+    subprocess.run(["git", "add", "file2.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "Add file2"], cwd=repo, check=True)
+
+    git_ops = RealGit()
+
+    # Act
+    messages = git_ops.get_commit_messages_since(repo, "main")
+
+    # Assert: Should have 2 messages in chronological order
+    assert len(messages) == 2
+    assert "Add file1" in messages[0]
+    assert "This is the body" in messages[0]  # Full message with body
+    assert "Add file2" in messages[1]
+
+
+def test_get_commit_messages_since_returns_empty_for_no_commits(tmp_path: Path) -> None:
+    """Test get_commit_messages_since returns empty list when no commits ahead."""
+    from erk_shared.git.real import RealGit
+
+    from tests.integration.conftest import init_git_repo
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    git_ops = RealGit()
+
+    # Act: main..main has no commits
+    messages = git_ops.get_commit_messages_since(repo, "main")
+
+    # Assert
+    assert messages == []
+
+
+def test_get_commit_messages_since_returns_empty_for_invalid_branch(tmp_path: Path) -> None:
+    """Test get_commit_messages_since returns empty list for nonexistent branch."""
+    from erk_shared.git.real import RealGit
+
+    from tests.integration.conftest import init_git_repo
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    git_ops = RealGit()
+
+    # Act: nonexistent base branch
+    messages = git_ops.get_commit_messages_since(repo, "nonexistent")
+
+    # Assert: Returns empty list (graceful degradation)
+    assert messages == []

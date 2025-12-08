@@ -433,5 +433,6 @@ def execute_preflight(
             parent_branch=parent_branch,
             issue_number=issue_number,
             message=f"Preflight complete for branch: {branch_name}\nPR #{pr_number}: {pr_url}",
+            commit_messages=pre_result.commit_messages,
         )
     )

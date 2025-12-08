@@ -253,3 +253,23 @@ class PrintingGit(PrintingBase, Git):
     def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -> bool:
         """Check merge conflicts (read-only, no printing)."""
         return self._wrapped.check_merge_conflicts(cwd, base_branch, head_branch)
+
+    def get_remote_url(self, repo_root: Path, remote: str = "origin") -> str:
+        """Get remote URL (read-only, no printing)."""
+        return self._wrapped.get_remote_url(repo_root, remote)
+
+    def get_conflicted_files(self, cwd: Path) -> list[str]:
+        """Get conflicted files (read-only, no printing)."""
+        return self._wrapped.get_conflicted_files(cwd)
+
+    def is_rebase_in_progress(self, cwd: Path) -> bool:
+        """Check if rebase in progress (read-only, no printing)."""
+        return self._wrapped.is_rebase_in_progress(cwd)
+
+    def rebase_continue(self, cwd: Path) -> None:
+        """Continue rebase (delegates without printing for now)."""
+        self._wrapped.rebase_continue(cwd)
+
+    def get_commit_messages_since(self, cwd: Path, base_branch: str) -> list[str]:
+        """Get commit messages since base branch (read-only, no printing)."""
+        return self._wrapped.get_commit_messages_since(cwd, base_branch)

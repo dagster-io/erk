@@ -276,3 +276,7 @@ class DryRunGit(Git):
         """No-op for continuing rebase in dry-run mode."""
         # Do nothing - prevents actual rebase continue
         pass
+
+    def get_commit_messages_since(self, cwd: Path, base_branch: str) -> list[str]:
+        """Get commit messages since base branch (read-only, delegates to wrapped)."""
+        return self._wrapped.get_commit_messages_since(cwd, base_branch)

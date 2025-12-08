@@ -96,6 +96,7 @@ class FakeGit(Git):
         conflicted_files: list[str] | None = None,
         rebase_in_progress: bool = False,
         rebase_continue_raises: Exception | None = None,
+        commit_messages_since: dict[tuple[Path, str], list[str]] | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -133,6 +134,7 @@ class FakeGit(Git):
             conflicted_files: List of file paths with merge conflicts
             rebase_in_progress: Whether a rebase is currently in progress
             rebase_continue_raises: Exception to raise when rebase_continue() is called
+            commit_messages_since: Mapping of (cwd, base_branch) -> list of commit messages
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -165,6 +167,7 @@ class FakeGit(Git):
         self._conflicted_files = conflicted_files or []
         self._rebase_in_progress = rebase_in_progress
         self._rebase_continue_raises = rebase_continue_raises
+        self._commit_messages_since = commit_messages_since or {}
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -873,3 +876,7 @@ class FakeGit(Git):
     def rebase_continue_calls(self) -> list[Path]:
         """Get list of rebase_continue calls for test assertions."""
         return list(self._rebase_continue_calls)
+
+    def get_commit_messages_since(self, cwd: Path, base_branch: str) -> list[str]:
+        """Get full commit messages for commits in HEAD but not in base_branch."""
+        return self._commit_messages_since.get((cwd, base_branch), [])

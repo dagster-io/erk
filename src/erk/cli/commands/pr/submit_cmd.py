@@ -89,6 +89,7 @@ def pr_submit(ctx: ErkContext, debug: bool) -> None:
         repo_root=Path(preflight_result.repo_root),
         current_branch=preflight_result.current_branch,
         parent_branch=preflight_result.parent_branch,
+        commit_messages=preflight_result.commit_messages,
         debug=debug,
     )
 
@@ -199,6 +200,7 @@ def _run_commit_message_generation(
     repo_root: Path,
     current_branch: str,
     parent_branch: str,
+    commit_messages: list[str] | None,
     debug: bool,
 ) -> CommitMessageResult:
     """Run commit message generation and return result."""
@@ -210,6 +212,7 @@ def _run_commit_message_generation(
             repo_root=repo_root,
             current_branch=current_branch,
             parent_branch=parent_branch,
+            commit_messages=commit_messages,
         )
     ):
         if isinstance(event, ProgressEvent):

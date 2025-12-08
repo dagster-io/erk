@@ -221,6 +221,9 @@ def execute_pre_analysis(
         )
         return
 
+    # Step 5b: Capture commit messages BEFORE squashing (for AI context)
+    commit_messages = ops.git.get_commit_messages_since(cwd, parent_branch)
+
     # Step 6: Run gt squash only if 2+ commits
     squashed = False
     if commit_count >= 2:
@@ -290,5 +293,6 @@ def execute_pre_analysis(
             message=message,
             has_conflicts=has_conflicts,
             conflict_details=conflict_details,
+            commit_messages=commit_messages if commit_messages else None,
         )
     )

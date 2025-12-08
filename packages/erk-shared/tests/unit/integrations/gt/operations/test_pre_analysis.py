@@ -319,3 +319,98 @@ class TestPreAnalysisDetectsMergedParent:
         assert result.success is True
         assert result.branch_name == "feature-child"
         assert result.parent_branch == "feature-parent"
+
+
+class TestPreAnalysisCapturesCommitMessages:
+    """Tests for commit message capture in pre-analysis."""
+
+    def test_captures_commit_messages_before_squash(self, tmp_path: Path) -> None:
+        """Pre-analysis should capture commit messages before squashing."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+
+        commit_messages = [
+            "First commit\n\nAdded initial feature.",
+            "Second commit\n\nFixed bug in feature.",
+        ]
+
+        fake_git = FakeGit(
+            current_branches={repo_root: "feature"},
+            trunk_branches={repo_root: "main"},
+            repository_roots={repo_root: repo_root},
+            commits_ahead={(repo_root, "main"): 2},
+            commit_messages_since={(repo_root, "main"): commit_messages},
+        )
+
+        fake_graphite = FakeGraphite(
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha="abc123",
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha="def456",
+                ),
+            },
+        )
+
+        fake_github = FakeGitHub()
+
+        ops = FakeGtKit(fake_git, fake_github, fake_graphite)
+        result = _get_completion_result(ops, repo_root)
+
+        assert isinstance(result, PreAnalysisResult)
+        assert result.success is True
+        assert result.commit_messages is not None
+        assert len(result.commit_messages) == 2
+        assert "First commit" in result.commit_messages[0]
+        assert "Second commit" in result.commit_messages[1]
+
+    def test_handles_no_commit_messages(self, tmp_path: Path) -> None:
+        """Pre-analysis should handle case where no commit messages returned."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+
+        fake_git = FakeGit(
+            current_branches={repo_root: "feature"},
+            trunk_branches={repo_root: "main"},
+            repository_roots={repo_root: repo_root},
+            commits_ahead={(repo_root, "main"): 1},
+            # No commit_messages_since configured - will return empty list
+        )
+
+        fake_graphite = FakeGraphite(
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha="abc123",
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha="def456",
+                ),
+            },
+        )
+
+        fake_github = FakeGitHub()
+
+        ops = FakeGtKit(fake_git, fake_github, fake_graphite)
+        result = _get_completion_result(ops, repo_root)
+
+        assert isinstance(result, PreAnalysisResult)
+        assert result.success is True
+        # Empty list should be converted to None
+        assert result.commit_messages is None
