@@ -159,22 +159,9 @@ assert fake_time.sleep_calls == [2.0]
 
 ### Real-World Examples
 
-**Retry with exponential backoff** (`src/erk/cli/commands/land_stack/retry.py:100`):
+**Retry with exponential backoff**: Use `context.time.sleep(delay)` in retry loops for instant test execution. See `src/erk/cli/commands/land_stack/` for production patterns.
 
-```python
-def with_retry(context: ErkContext, func, max_attempts: int = 3):
-    for attempt in range(max_attempts):
-        try:
-            return func()
-        except Exception as e:
-            if attempt < max_attempts - 1:
-                delay = base_delay * (backoff_factor ** attempt)
-                context.time.sleep(delay)  # Fast in tests!
-            else:
-                raise
-```
-
-**GitHub API stabilization** (`src/erk/cli/commands/land_stack/execution.py:210`):
+**GitHub API stabilization**:
 
 ```python
 # Wait for GitHub to recalculate merge status after base update
@@ -554,32 +541,9 @@ class BranchContext:
 
 ### Helper Function
 
-```python
-def get_branch_context(git: Git, path: Path) -> BranchContext:
-    """Determine branch context for a repository path.
+The `get_branch_context()` helper detects current branch, trunk branch (prefers 'main', falls back to 'master'), and whether current branch is trunk.
 
-    Detects:
-    - Current branch name
-    - Trunk branch name (prefers 'main', falls back to 'master')
-    - Whether current branch is trunk
-
-    Args:
-        git: Git integration for querying branch information
-        path: Path to git repository or worktree
-
-    Returns:
-        BranchContext with trunk detection information
-    """
-    current_branch = git.get_current_branch(path)
-    trunk_branch = "main" if git.branch_exists(path, "main") else "master"
-    is_on_trunk = current_branch == trunk_branch
-
-    return BranchContext(
-        is_on_trunk=is_on_trunk,
-        current_branch=current_branch,
-        trunk_branch=trunk_branch,
-    )
-```
+See `erk_shared/extraction/session_discovery.py` for the canonical implementation.
 
 ### When to Use
 
@@ -599,39 +563,12 @@ Use branch context when command behavior differs based on trunk vs feature branc
 
 ### Example Usage
 
-```python
-from erk_shared.branch_context import BranchContext, get_branch_context
+Commands typically use branch context to decide behavior:
 
-def list_relevant_items(git: Git, path: Path) -> list[str]:
-    """List items relevant to current branch context."""
-    branch_ctx = get_branch_context(git, path)
+- **On trunk**: Show all feature branches, repository-wide queries
+- **On feature branch**: Show items for current feature only, branch-relative queries
 
-    if branch_ctx.is_on_trunk:
-        # On trunk: show all feature branches
-        return git.list_branches(path, remotes=False)
-    else:
-        # On feature: show items for current feature only
-        return [branch_ctx.current_branch]
-```
-
-### Real-World Example
-
-From `list_sessions.py` (kit CLI command):
-
-```python
-# Get branch context to determine session filtering
-branch_ctx = get_branch_context(git, cwd)
-
-# Output includes branch context for downstream consumers
-output = {
-    "branch_context": {
-        "is_on_trunk": branch_ctx.is_on_trunk,
-        "current_branch": branch_ctx.current_branch,
-        "trunk_branch": branch_ctx.trunk_branch,
-    },
-    "sessions": sessions,  # Filtered based on branch context
-}
-```
+See `kit_cli_commands/erk/list_sessions.py` for a real-world usage example.
 
 ### Testing Branch Context
 

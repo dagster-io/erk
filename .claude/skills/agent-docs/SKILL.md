@@ -135,6 +135,102 @@ read_when:
 - [Other Category](../other/) - Brief relevance
 ```
 
+## Code in Documentation
+
+**Critical rule**: NEVER embed Python functions that process erk data or encode business logic.
+
+### Why This Matters
+
+Embedded Python code in documentation:
+
+- Is NOT under test - it silently goes stale
+- Causes bugs when agents copy outdated patterns
+- Encodes business assumptions (field names, conventions) that can change
+- Creates maintenance burden requiring docs-code sync
+
+PR #2681 demonstrated this: an agent copied incorrect scratch directory paths from documentation because the docs hadn't been updated when the implementation changed.
+
+### The "Simple Function" Trap
+
+Even "simple" functions are dangerous. A one-liner like:
+
+```python
+# DANGEROUS - encodes `agent-` prefix convention
+files = [f for f in dir.glob("*.jsonl") if not f.name.startswith("agent-")]
+```
+
+Embeds a naming convention that could change. When it does, the docs become a source of bugs.
+
+### What to REMOVE (Aggressive Stance)
+
+Remove ALL Python `def` functions that:
+
+- Process session logs, JSONL, or erk data
+- Encode path patterns or naming conventions
+- Filter, parse, or transform erk-specific data
+- Implement algorithms that exist (or could exist) in production
+- Show "how to" implementation patterns for erk internals
+
+**Even if the function doesn't exist in production today**, it could be added later, creating divergence.
+
+### What to KEEP (Narrow Exceptions)
+
+- **JSON/YAML format examples**: Showing data structure, not processing code
+- **External library patterns**: Click commands, pytest fixtures, Rich tables (teaching third-party APIs)
+- **Anti-pattern demonstrations**: Code explicitly marked "WRONG" or "DON'T DO THIS"
+- **Shell/bash commands**: `ls`, `jq`, `grep` for operational tasks
+- **Type definitions**: Dataclass/TypedDict showing structure (not methods)
+
+### Decision Test
+
+Before keeping a Python code block, ask:
+
+1. Does it contain a `def` statement? → Probably REMOVE
+2. Does it process erk-specific data? → REMOVE
+3. Does it encode a convention (field name, path pattern, prefix)? → REMOVE
+4. Is it teaching a third-party API (Click, pytest, Rich)? → KEEP
+5. Is it showing data FORMAT (not processing)? → KEEP
+
+### Replacement Format
+
+When removing code, replace with:
+
+1. **Prose description** of what the operation does
+2. **Source pointer** to canonical implementation
+3. **CLI command** if one exists for agents to use
+
+**Before (BAD)**:
+
+````markdown
+```python
+def find_session_logs(project_dir: Path) -> list[Path]:
+    """Find all main session logs (exclude agent logs)."""
+    return [
+        f for f in project_dir.glob("*.jsonl")
+        if f.is_file() and not f.name.startswith("agent-")
+    ]
+```
+````
+
+**After (GOOD)**:
+
+```markdown
+Main session logs are `.jsonl` files that don't start with `agent-`. Agent
+subprocess logs use the `agent-<id>.jsonl` naming convention.
+
+To list sessions for a project, use:
+dot-agent run erk list-sessions
+
+See `preprocess_session.py` for the canonical implementation.
+```
+
+### Source Pointer Rules
+
+- Point to source file path: `package/module.py`
+- NEVER include line numbers (they go stale)
+- Use backticks for file paths
+- Prefer CLI commands over source pointers when available
+
 ## Reorganizing Documentation
 
 When moving files between categories:

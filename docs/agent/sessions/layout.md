@@ -103,18 +103,7 @@ Project directories use **deterministic path encoding**:
 - Contains the main conversation thread
 - Includes user messages, assistant responses, and tool results
 
-**Discovery:**
-
-```python
-from pathlib import Path
-
-def find_session_logs(project_dir: Path) -> list[Path]:
-    """Find all main session logs (exclude agent logs)."""
-    return [
-        f for f in project_dir.glob("*.jsonl")
-        if f.is_file() and not f.name.startswith("agent-")
-    ]
-```
+**Discovery:** Main session logs are `.jsonl` files in the project directory that don't start with `agent-`. Use `dot-agent run erk list-sessions` to list sessions for the current project.
 
 ### Agent Subprocess Logs
 
@@ -127,13 +116,9 @@ def find_session_logs(project_dir: Path) -> list[Path]:
 - Contains agent-specific tool calls and results
 - Linked to parent session via `sessionId` field
 
-**Discovery:**
+**Discovery:** Agent logs match the pattern `agent-*.jsonl` in the project directory.
 
-```python
-def discover_agent_logs(project_dir: Path) -> list[Path]:
-    """Find all agent subprocess logs."""
-    return sorted(project_dir.glob("agent-*.jsonl"))
-```
+See `preprocess_session.py:discover_agent_logs()` for the canonical implementation.
 
 ## JSONL Format Specification
 
@@ -289,22 +274,9 @@ The slug field enables session-scoped plan extraction:
 SESSION_CONTEXT="session_id=abc123-def456"
 ```
 
-**Extraction Code:**
+**Extraction:** The session ID appears after `session_id=` in the environment variable value. Parse by splitting on this prefix.
 
-```python
-def get_session_id_from_env() -> str | None:
-    """Extract session ID from SESSION_CONTEXT env var."""
-    session_context = os.environ.get("SESSION_CONTEXT")
-    if not session_context:
-        return None
-
-    if "session_id=" in session_context:
-        parts = session_context.split("session_id=")
-        if len(parts) == 2:
-            return parts[1].strip()
-
-    return None
-```
+See `erk_shared/extraction/session_discovery.py:get_current_session_id()` for the canonical implementation.
 
 ### Agent ID Format
 
@@ -322,12 +294,7 @@ def get_session_id_from_env() -> str | None:
 9e8f7g6h
 ```
 
-**Extraction from Filename:**
-
-```python
-agent_id = log_path.stem.replace("agent-", "")
-# agent-17cfd3f4.jsonl → 17cfd3f4
-```
+**Extraction from Filename:** Remove the `agent-` prefix from the filename stem. Example: `agent-17cfd3f4.jsonl` → `17cfd3f4`
 
 ## Session Lifecycle and Compaction
 
@@ -376,16 +343,7 @@ After Compaction:
 
 ### Compaction Boundary Detection
 
-You can identify compaction boundaries by looking for `type: "summary"` entries:
-
-```python
-def find_compaction_boundaries(entries: list[dict]) -> list[int]:
-    """Find indices where context compaction occurred."""
-    return [
-        i for i, entry in enumerate(entries)
-        if entry.get("type") == "summary"
-    ]
-```
+Compaction boundaries are identified by `type: "summary"` entries in the JSONL log. When context is compacted, a summary entry is inserted marking the boundary between the condensed history and new conversation.
 
 ### Implications for Tooling
 
@@ -409,41 +367,9 @@ def find_compaction_boundaries(entries: list[dict]) -> list[int]:
 
 ### Example: Cross-Compaction Work
 
-```python
-import os
-from pathlib import Path
+To persist data across context compactions, use the session-scoped scratch directory at `.erk/scratch/sessions/<session-id>/`. This directory remains accessible throughout the session lifetime, even after compaction.
 
-def get_scratch_dir() -> Path | None:
-    """Get scratch directory that persists across compactions."""
-    session_id = get_current_session_id()
-    if not session_id:
-        return None
-
-    scratch_dir = repo_root / ".erk" / "scratch" / "sessions" / session_id
-    scratch_dir.mkdir(parents=True, exist_ok=True)
-    return scratch_dir
-
-
-def save_work_state(state: dict) -> None:
-    """Save state that survives context compaction."""
-    scratch = get_scratch_dir()
-    if scratch:
-        state_file = scratch / "work_state.json"
-        state_file.write_text(json.dumps(state))
-
-
-def restore_work_state() -> dict | None:
-    """Restore state after context compaction."""
-    scratch = get_scratch_dir()
-    if not scratch:
-        return None
-
-    state_file = scratch / "work_state.json"
-    if state_file.exists():
-        return json.loads(state_file.read_text())
-
-    return None
-```
+See `erk_shared/scratch/scratch.py:get_scratch_dir()` for the canonical implementation.
 
 ## Key Algorithms
 
@@ -453,30 +379,13 @@ def restore_work_state() -> dict | None:
 
 **Algorithm:**
 
-1. Encode the filesystem path using replacement rules
+1. Encode the filesystem path using replacement rules (see "Project Directory Encoding" above)
 2. Construct path: `~/.claude/projects/<encoded-path>`
 3. Check if directory exists
 
-**Code Example:**
+**CLI:** Use `dot-agent run erk find-project-dir` to find the project directory for the current working directory.
 
-```python
-from pathlib import Path
-
-def find_project_dir(working_dir: str) -> Path | None:
-    """Find Claude project directory for a filesystem path."""
-    # Encode path
-    encoded = "-" + working_dir.replace("/", "-").replace(".", "-").lstrip("-")
-
-    # Construct project directory path
-    project_dir = Path.home() / ".claude" / "projects" / encoded
-
-    if not project_dir.exists():
-        return None
-
-    return project_dir
-```
-
-**Implementation:** See `find_project_info()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/find_project_dir.py:111-174`
+**Implementation:** See `find_project_info()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/find_project_dir.py`
 
 ### Finding Project Directory for Session ID
 
@@ -485,52 +394,12 @@ def find_project_dir(working_dir: str) -> Path | None:
 **Algorithm:**
 
 1. Iterate through all project directories in `~/.claude/projects/`
-2. For each directory, scan `*.jsonl` files
+2. For each directory, scan `*.jsonl` files (excluding `agent-*` files)
 3. Read first 10 lines of each file
 4. Parse JSON and check if `sessionId` field matches
 5. Return project directory when match found
 
-**Code Example:**
-
-```python
-import json
-from pathlib import Path
-
-def find_project_dir_for_session(session_id: str) -> Path | None:
-    """Find project directory containing a specific session."""
-    projects_base = Path.home() / ".claude" / "projects"
-
-    if not projects_base.exists():
-        return None
-
-    # Iterate all project directories
-    for project_dir in projects_base.iterdir():
-        if not project_dir.is_dir():
-            continue
-
-        # Check session files
-        for session_file in project_dir.glob("*.jsonl"):
-            if session_file.name.startswith("agent-"):
-                continue
-
-            # Check first few lines for session ID
-            try:
-                with open(session_file, encoding="utf-8") as f:
-                    for i, line in enumerate(f):
-                        if i >= 10:  # Only check first 10 lines
-                            break
-
-                        try:
-                            entry = json.loads(line)
-                            if entry.get("sessionId") == session_id:
-                                return project_dir
-                        except json.JSONDecodeError:
-                            continue
-            except OSError:
-                continue
-
-    return None
-```
+**Implementation:** See `find_project_dir_for_session()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/session_plan_extractor.py`
 
 ### cwd_hint Optimization Pattern
 
@@ -538,40 +407,7 @@ def find_project_dir_for_session(session_id: str) -> Path | None:
 
 **Problem:** Finding a project directory by session ID requires scanning all project directories in `~/.claude/projects/`. With many projects (e.g., 1,476 directories), this takes 378ms-1.6s.
 
-**Solution:** Use `cwd_hint` parameter to enable O(1) lookup:
-
-```python
-def find_project_dir_for_session(
-    session_id: str,
-    cwd_hint: str | None = None
-) -> Path | None:
-    """Find project directory for session, optionally using cwd hint.
-
-    Args:
-        session_id: The session ID to search for
-        cwd_hint: Working directory path for O(1) lookup optimization
-    """
-    projects_dir = Path.home() / ".claude" / "projects"
-    if not projects_dir.exists():
-        return None
-
-    # Fast path: encode cwd_hint to compute project directory directly
-    if cwd_hint:
-        encoded = "-" + cwd_hint.replace("/", "-").replace(".", "-").lstrip("-")
-        hint_project_dir = projects_dir / encoded
-        if hint_project_dir.exists() and hint_project_dir.is_dir():
-            if _check_session_in_project(hint_project_dir, session_id):
-                return hint_project_dir
-
-    # Slow path: scan all project directories
-    for project_dir in projects_dir.iterdir():
-        if not project_dir.is_dir():
-            continue
-        if _check_session_in_project(project_dir, session_id):
-            return project_dir
-
-    return None
-```
+**Solution:** Pass a `cwd_hint` parameter to enable O(1) lookup. When provided, the function encodes the hint to compute the project directory directly, then verifies the session exists there before falling back to full scan.
 
 **Performance comparison:**
 
@@ -606,41 +442,15 @@ def find_project_dir_for_session(
 3. Sort by modification time (most recent first)
 4. Extract session ID from filename (`.stem`)
 
-**Code Example:**
+**CLI:** Use `dot-agent run erk find-project-dir` which outputs the latest session ID.
 
-```python
-from pathlib import Path
-
-def find_latest_session(project_dir: Path) -> str | None:
-    """Return most recent session ID by modification time."""
-    session_files = [
-        f for f in project_dir.glob("*.jsonl")
-        if f.is_file() and not f.name.startswith("agent-")
-    ]
-
-    if not session_files:
-        return None
-
-    latest = max(session_files, key=lambda f: f.stat().st_mtime)
-    return latest.stem
-```
-
-**Implementation:** Part of `find_project_info()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/find_project_dir.py:148-174`
+**Implementation:** Part of `find_project_info()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/find_project_dir.py`
 
 ### Correlating Agent Logs with Session
 
 **Method 1: Session ID Matching**
 
-Agent logs contain `sessionId` field linking them to the parent session:
-
-```python
-def filter_agent_entries(entries: list[dict], session_id: str) -> list[dict]:
-    """Filter agent log entries by session ID."""
-    return [
-        entry for entry in entries
-        if entry.get("sessionId") == session_id
-    ]
-```
+Agent logs contain a `sessionId` field linking them to the parent session. Filter entries by matching this field against the target session ID.
 
 **Method 2: Temporal Correlation (Plan Agents)**
 
@@ -652,40 +462,14 @@ Plan agents are matched using timestamp proximity:
 
 ### Reading Session Entries
 
-**Code Example:**
+Session logs are JSONL format (one JSON object per line). To parse:
 
-```python
-import json
-from pathlib import Path
+1. Read file line by line
+2. Strip whitespace and skip empty lines
+3. Parse each line as JSON (skip malformed lines gracefully)
+4. Optionally filter by `sessionId` field
 
-def read_session_entries(
-    session_file: Path,
-    session_id: str | None = None
-) -> list[dict]:
-    """Parse JSONL file and optionally filter by session ID."""
-    entries = []
-
-    with open(session_file, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-
-            try:
-                entry = json.loads(line)
-            except json.JSONDecodeError:
-                continue  # Skip malformed lines
-
-            # Filter by session ID if provided
-            if session_id is not None:
-                entry_session = entry.get("sessionId")
-                if entry_session is not None and entry_session != session_id:
-                    continue
-
-            entries.append(entry)
-
-    return entries
-```
+For quick inspection, use `jq` or Python's `json` module directly on the command line.
 
 ## Special Cases and Quirks
 
@@ -740,56 +524,13 @@ if entry_session is not None and entry_session != session_id:
 - **Empty:** < 3 entries OR no meaningful user/assistant interaction
 - **Warmup:** Contains "warmup" keyword in first user message
 
-**Implementation:**
-
-```python
-def is_empty_session(entries: list[dict]) -> bool:
-    """Check if session is empty (< 3 entries or no interaction)."""
-    if len(entries) < 3:
-        return True
-
-    has_user = any(e.get("type") == "user" for e in entries)
-    has_assistant = any(e.get("type") == "assistant" for e in entries)
-
-    return not (has_user and has_assistant)
-
-def is_warmup_session(entries: list[dict]) -> bool:
-    """Check if session is a warmup session."""
-    if not entries:
-        return False
-
-    first_user = next(
-        (e for e in entries if e.get("type") == "user"),
-        None
-    )
-
-    if not first_user:
-        return False
-
-    content = first_user.get("message", {}).get("content", [])
-    if not content:
-        return False
-
-    text = content[0].get("text", "").lower() if content else ""
-    return "warmup" in text
-```
-
-**Implementation:** See `preprocess_session.py` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/`
+**Implementation:** See `is_empty_session()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/preprocess_session.py`
 
 ### Malformed JSONL Entries
 
 **Issue:** Invalid JSON lines in `.jsonl` files
 
-**Handling:**
-
-```python
-try:
-    entry = json.loads(line)
-except json.JSONDecodeError:
-    continue  # Skip malformed lines
-```
-
-**Best Practice:** Always wrap JSON parsing in try-except blocks
+**Handling:** Skip malformed lines gracefully during parsing. Always wrap JSON parsing in try-except blocks to handle corrupt entries.
 
 ## Code Reference
 
@@ -849,297 +590,50 @@ These are rough estimates. Actual counts depend on:
 
 ### Get Project Directory for Current Working Directory
 
-```python
-from pathlib import Path
-
-def get_claude_project_dir(working_dir: str) -> Path:
-    """Get Claude project directory for a filesystem path."""
-    claude_base = Path.home() / ".claude" / "projects"
-    project_name = "-" + working_dir.replace("/", "-").replace(".", "-").lstrip("-")
-    return claude_base / project_name
-
-# Usage
-project_dir = get_claude_project_dir("/Users/foo/code/erk")
-# Returns: ~/.claude/projects/-Users-foo-code-erk
-```
+Use `dot-agent run erk find-project-dir` to get the project directory for the current path. The directory path is constructed by encoding the working directory path (see "Project Directory Encoding" above).
 
 ### List All Sessions for a Project
 
-```python
-def find_all_sessions(project_dir: Path) -> list[str]:
-    """Return list of session IDs (excluding agent logs)."""
-    session_files = [
-        f for f in project_dir.glob("*.jsonl")
-        if f.is_file() and not f.name.startswith("agent-")
-    ]
-    return [f.stem for f in session_files]
-```
+Session IDs are the filenames (stems) of `.jsonl` files that don't start with `agent-`.
+
+**CLI:** Use `dot-agent run erk list-sessions` to list sessions for the current project.
 
 ### Get Session ID from Environment
 
-```python
-import os
+The session ID is available in the `SESSION_CONTEXT` environment variable, formatted as `session_id=<uuid>`.
 
-def get_current_session_id() -> str | None:
-    """Get session ID from SESSION_CONTEXT environment variable."""
-    session_context = os.environ.get("SESSION_CONTEXT", "")
-
-    if "session_id=" in session_context:
-        parts = session_context.split("session_id=")
-        if len(parts) == 2:
-            return parts[1].strip()
-
-    return None
-```
+**Implementation:** See `get_current_session_id()` in `erk_shared/extraction/session_discovery.py`
 
 ### Parse Session Log
 
-```python
-import json
-from pathlib import Path
+Session logs are JSONL format. Parse line by line, skipping empty and malformed lines.
 
-def parse_session_log(session_file: Path) -> list[dict]:
-    """Parse a JSONL session log file."""
-    entries = []
+**Quick inspection with jq:**
 
-    with open(session_file, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-
-            try:
-                entry = json.loads(line)
-                entries.append(entry)
-            except json.JSONDecodeError:
-                continue  # Skip malformed lines
-
-    return entries
+```bash
+cat session.jsonl | jq -s 'length'  # Count entries
+cat session.jsonl | jq -s '.[0]'    # First entry
 ```
 
 ### Find Agent Logs for Session
 
-```python
-def find_agent_logs_for_session(
-    project_dir: Path,
-    session_id: str
-) -> list[Path]:
-    """Find all agent logs linked to a specific session."""
-    agent_logs = []
+Agent logs are linked to parent sessions via the `sessionId` field. To find agent logs for a session, glob `agent-*.jsonl` files and check the first few entries for a matching `sessionId`.
 
-    for agent_file in project_dir.glob("agent-*.jsonl"):
-        # Read first few lines to check session ID
-        try:
-            with open(agent_file, encoding="utf-8") as f:
-                for i, line in enumerate(f):
-                    if i >= 10:  # Only check first 10 lines
-                        break
-
-                    try:
-                        entry = json.loads(line)
-                        if entry.get("sessionId") == session_id:
-                            agent_logs.append(agent_file)
-                            break
-                    except json.JSONDecodeError:
-                        continue
-        except OSError:
-            continue
-
-    return agent_logs
-```
+**Implementation:** See `discover_planning_agent_logs()` in `preprocess_session.py`
 
 ### Session Summarization Patterns
 
-Techniques for creating human-readable summaries from session logs.
+Session summarization involves extracting key information from session logs:
 
-#### Extract Key Messages
+- **Extract key messages:** Filter entries by type, extract text content from `message.content`
+- **Identify compaction boundaries:** Look for `type: "summary"` entries
+- **Count entry types:** Aggregate entries by `type` field
+- **Extract user requests:** Get first line of each `type: "user"` entry's text content
 
-```python
-def extract_key_messages(
-    entries: list[dict],
-    include_tools: bool = False
-) -> list[dict]:
-    """Extract user and assistant text messages from session entries.
+These patterns are useful for session analysis and debugging. For automated analysis, use:
 
-    Args:
-        entries: Parsed JSONL entries from session log
-        include_tools: Whether to include tool use/result entries
-
-    Returns:
-        List of simplified message dicts with type and text
-    """
-    messages = []
-
-    for entry in entries:
-        entry_type = entry.get("type")
-
-        # Skip tool entries unless explicitly requested
-        if entry_type == "tool_result" and not include_tools:
-            continue
-
-        # Skip summary entries (compaction boundaries)
-        if entry_type == "summary":
-            continue
-
-        message = entry.get("message", {})
-        content = message.get("content", [])
-
-        # Extract text content
-        for item in content:
-            if item.get("type") == "text":
-                text = item.get("text", "").strip()
-                if text:
-                    messages.append({
-                        "type": entry_type,
-                        "text": text,
-                        "timestamp": message.get("timestamp")
-                    })
-
-    return messages
-```
-
-#### Identify Compaction Boundaries
-
-```python
-def split_by_compaction(entries: list[dict]) -> list[list[dict]]:
-    """Split session entries into segments separated by compaction.
-
-    Each segment represents a "generation" of the conversation
-    before context was summarized.
-
-    Returns:
-        List of entry lists, one per conversation segment
-    """
-    segments = []
-    current_segment = []
-
-    for entry in entries:
-        if entry.get("type") == "summary":
-            # Save current segment and start new one
-            if current_segment:
-                segments.append(current_segment)
-            current_segment = [entry]  # Include summary in new segment
-        else:
-            current_segment.append(entry)
-
-    # Don't forget the last segment
-    if current_segment:
-        segments.append(current_segment)
-
-    return segments
-```
-
-#### Create Session Summary
-
-```python
-def summarize_session(session_file: Path) -> dict:
-    """Create a structured summary of a session.
-
-    Returns:
-        Dict with session metadata and key events
-    """
-    entries = parse_session_log(session_file)
-
-    if not entries:
-        return {"error": "Empty session"}
-
-    # Basic metadata
-    session_id = entries[0].get("sessionId", "unknown")
-    first_timestamp = None
-    last_timestamp = None
-
-    for entry in entries:
-        ts = entry.get("message", {}).get("timestamp")
-        if ts:
-            if first_timestamp is None:
-                first_timestamp = ts
-            last_timestamp = ts
-
-    # Count entry types
-    type_counts = {}
-    for entry in entries:
-        t = entry.get("type", "unknown")
-        type_counts[t] = type_counts.get(t, 0) + 1
-
-    # Find compaction count
-    compaction_count = type_counts.get("summary", 0)
-
-    # Extract user requests (first line of each user message)
-    user_requests = []
-    for entry in entries:
-        if entry.get("type") == "user":
-            content = entry.get("message", {}).get("content", [])
-            for item in content:
-                if item.get("type") == "text":
-                    text = item.get("text", "").strip()
-                    # Take first line as summary
-                    first_line = text.split("\n")[0][:100]
-                    if first_line:
-                        user_requests.append(first_line)
-                    break
-
-    return {
-        "session_id": session_id,
-        "first_timestamp": first_timestamp,
-        "last_timestamp": last_timestamp,
-        "total_entries": len(entries),
-        "type_counts": type_counts,
-        "compaction_count": compaction_count,
-        "user_requests": user_requests[:10],  # First 10 requests
-    }
-```
-
-#### Find Session by ID and Summarize
-
-```python
-def summarize_session_by_id(session_id: str) -> dict | None:
-    """Find and summarize a session by its ID.
-
-    Searches all project directories for the session.
-    """
-    # Find project directory containing this session
-    project_dir = find_project_dir_for_session(session_id)
-    if not project_dir:
-        return None
-
-    # Find the session file
-    session_file = project_dir / f"{session_id}.jsonl"
-    if not session_file.exists():
-        # Try without extension (session ID might be filename)
-        for f in project_dir.glob("*.jsonl"):
-            if f.stem == session_id:
-                session_file = f
-                break
-        else:
-            return None
-
-    return summarize_session(session_file)
-```
-
-#### Example Output
-
-```python
-summary = summarize_session_by_id("abc123-def456")
-print(summary)
-# {
-#     "session_id": "abc123-def456",
-#     "first_timestamp": 1700000000.0,
-#     "last_timestamp": 1700003600.0,
-#     "total_entries": 245,
-#     "type_counts": {
-#         "user": 23,
-#         "assistant": 45,
-#         "tool_result": 177,
-#         "summary": 2
-#     },
-#     "compaction_count": 2,
-#     "user_requests": [
-#         "Run pytest tests",
-#         "Fix the failing test in test_auth.py",
-#         "Add type hints to the User class",
-#         ...
-#     ]
-# }
+```bash
+/erk:analyze-context
 ```
 
 ## Examples

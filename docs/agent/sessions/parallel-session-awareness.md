@@ -51,94 +51,38 @@ Always use session ID to scope data lookups for session-specific resources:
 
 ### Pattern 1: Session-Scoped Plan Lookup
 
-Plans created in Plan Mode are logged to session logs with a `slug` field:
+Plans created in Plan Mode are logged to session logs with a `slug` field. To find a plan for a specific session:
 
-```python
-import json
-from pathlib import Path
+1. Parse the session's JSONL log file
+2. Look for entries with `slug` field matching the session ID
+3. Return the slug to construct the plan path
 
-def find_plan_for_session(session_id: str, project_dir: Path) -> str | None:
-    """Find the plan slug created in a specific session."""
-    session_file = project_dir / f"{session_id}.jsonl"
+**CLI command**: Use `dot-agent run erk find-plan-slug --session-id <id>` for plan lookup.
 
-    if not session_file.exists():
-        return None
-
-    # Parse session log entries
-    with open(session_file, encoding="utf-8") as f:
-        for line in f:
-            try:
-                entry = json.loads(line)
-
-                # Look for Plan Mode entries with slug field
-                if entry.get("sessionId") == session_id:
-                    slug = entry.get("slug")
-                    if slug:
-                        return slug
-            except json.JSONDecodeError:
-                continue
-
-    return None
-
-# Usage
-slug = find_plan_for_session(current_session_id, project_dir)
-if slug:
-    plan_path = Path.home() / ".claude" / "plans" / f"{slug}.md"
-```
+**Source**: See `session_plan_extractor.py` for the canonical implementation.
 
 ### Pattern 2: Session-Scoped Scratch Files
 
-Scratch files should always be scoped to session ID:
+Scratch files should always be scoped to session ID at `.erk/scratch/sessions/<session-id>/`.
 
-```python
-import os
-from pathlib import Path
+Key implementation details:
 
-def get_scratch_dir() -> Path | None:
-    """Get scratch directory for current session."""
-    session_id = os.environ.get("SESSION_CONTEXT", "").split("session_id=")[-1].strip()
+- Get session ID from `SESSION_CONTEXT` environment variable
+- Create directory at `repo_root / ".erk" / "scratch" / "sessions" / session_id`
+- Files stored here are automatically session-scoped
 
-    if not session_id:
-        return None
-
-    scratch_dir = repo_root / ".erk" / "scratch" / "sessions" / session_id
-    scratch_dir.mkdir(parents=True, exist_ok=True)
-    return scratch_dir
-
-# Usage - files are automatically session-scoped
-scratch = get_scratch_dir()
-if scratch:
-    work_file = scratch / "my_work.json"
-    work_file.write_text(json.dumps(data))
-```
+**Source**: See `erk_shared/scratch.py` for scratch directory utilities.
 
 ### Pattern 3: Agent Log Correlation
 
 When searching agent logs, always filter by session ID:
 
-```python
-def find_agent_data_for_session(
-    project_dir: Path,
-    session_id: str,
-    agent_pattern: str = "agent-*.jsonl"
-) -> list[dict]:
-    """Find data from agent logs for a specific session."""
-    results = []
+1. Glob for `agent-*.jsonl` files in the project directory
+2. Parse each JSONL file line by line
+3. Filter entries where `sessionId` matches the target session
+4. Skip malformed JSON entries gracefully
 
-    for agent_file in project_dir.glob(agent_pattern):
-        with open(agent_file, encoding="utf-8") as f:
-            for line in f:
-                try:
-                    entry = json.loads(line)
-
-                    # Only include entries from this session
-                    if entry.get("sessionId") == session_id:
-                        results.append(entry)
-                except json.JSONDecodeError:
-                    continue
-
-    return results
-```
+Agent logs use the `agent-<id>.jsonl` naming convention. Only include entries where the `sessionId` field matches your target session.
 
 ### Pattern 4: Performance Optimization with cwd_hint
 
@@ -146,86 +90,17 @@ When searching for session data, you often need to find the project directory fi
 
 **Approach 1: Scan all projects (O(n) - slow)**
 
-Without knowing the working directory, you must scan all project directories:
-
-```python
-def find_project_dir_for_session_slow(session_id: str) -> Path | None:
-    """Find project directory by scanning all projects.
-
-    Performance: O(n) where n = number of project directories
-    Typical time: 378ms - 1.6s with 1,476 project directories
-    """
-    projects_base = Path.home() / ".claude" / "projects"
-
-    if not projects_base.exists():
-        return None
-
-    # Must check every project directory
-    for project_dir in projects_base.iterdir():
-        if not project_dir.is_dir():
-            continue
-
-        # Check if this project contains the session
-        for session_file in project_dir.glob("*.jsonl"):
-            if session_file.stem == session_id:
-                return project_dir
-
-    return None
-```
+Without knowing the working directory, you must scan all project directories under `~/.claude/projects/`. This is O(n) where n = number of project directories. Typical time: 378ms - 1.6s with 1,476 project directories.
 
 **Approach 2: Direct computation with cwd_hint (O(1) - fast)**
 
-When you know the working directory, compute the project directory name directly:
+When you know the working directory, compute the project directory name directly using Claude Code's deterministic path encoding:
 
-```python
-from pathlib import Path
+- Replace `/` with `-`
+- Replace `.` with `-`
+- Example: `/Users/foo/code/app` → `-Users-foo-code-app`
 
-def encode_path_to_project_folder(path: Path) -> str:
-    """Encode filesystem path to Claude project folder name.
-
-    Claude Code uses deterministic encoding:
-    - Replace "/" with "-"
-    - Replace "." with "-"
-
-    Examples:
-        /Users/foo/code/app → -Users-foo-code-app
-        /Users/foo/.config → -Users-foo--config (double dash for dot dirs)
-    """
-    return str(path).replace("/", "-").replace(".", "-")
-
-def find_project_dir_for_session_fast(
-    session_id: str,
-    cwd_hint: Path | None = None
-) -> Path | None:
-    """Find project directory using working directory hint.
-
-    Performance: O(1) when cwd_hint provided
-    Typical time: ~0.1ms (3,780x - 16,000x faster than scanning)
-
-    Args:
-        session_id: Session ID to find
-        cwd_hint: Optional working directory to compute project path directly
-
-    Returns:
-        Project directory path or None if not found
-    """
-    # Fast path: compute project directory directly from cwd_hint
-    if cwd_hint is not None:
-        projects_base = Path.home() / ".claude" / "projects"
-        encoded = encode_path_to_project_folder(cwd_hint)
-        project_dir = projects_base / encoded
-
-        if project_dir.exists():
-            # Verify session exists in this project
-            session_file = project_dir / f"{session_id}.jsonl"
-            if session_file.exists():
-                return project_dir
-
-        return None
-
-    # Slow path: scan all projects (fallback)
-    return find_project_dir_for_session_slow(session_id)
-```
+**Source**: See `erk_shared/extraction/session_discovery.py` for `encode_path_to_project_folder()` implementation.
 
 **When to use cwd_hint:**
 
@@ -235,46 +110,7 @@ def find_project_dir_for_session_fast(
 - ❌ **Historical analysis**: Working directory may be unknown for old sessions
 - ❌ **Cross-project searches**: Deliberately searching all projects
 
-**Example: Kit CLI command with cwd_hint**
-
-```python
-import os
-import click
-from pathlib import Path
-
-@click.command()
-@click.option(
-    "--session-id",
-    required=True,
-    help="Session ID to find plan for"
-)
-@click.option(
-    "--cwd",
-    default=os.getcwd,
-    type=click.Path(exists=True, file_okay=False, path_type=Path),
-    help="Working directory hint for O(1) lookup (default: current directory)"
-)
-def find_plan_fast(session_id: str, cwd: Path) -> None:
-    """Find plan for session using O(1) lookup."""
-    # O(1) lookup using cwd_hint
-    project_dir = find_project_dir_for_session_fast(session_id, cwd_hint=cwd)
-
-    if not project_dir:
-        click.echo(json.dumps({
-            "success": False,
-            "error": "Project directory not found"
-        }))
-        return
-
-    # Now search for plan slug in this specific project
-    slug = find_plan_slug_in_project(session_id, project_dir)
-
-    click.echo(json.dumps({
-        "success": True,
-        "slug": slug,
-        "project_dir": str(project_dir)
-    }))
-```
+**CLI command**: Use `dot-agent run erk find-project-dir --cwd <path>` for O(1) project directory lookup.
 
 **Performance comparison:**
 

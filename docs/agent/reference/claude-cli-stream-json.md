@@ -144,137 +144,34 @@ Metadata and initialization events. These are typically filtered out in producti
 
 ## Parsing in Python
 
-### Basic Text Extraction
+### Canonical Implementation
 
-```python
-import json
+For parsing stream-json output, use the production implementation:
 
-def extract_text_from_assistant(line: str) -> str | None:
-    """Extract text content from assistant message."""
-    data = json.loads(line)
+**Source**: `dot_agent_kit/data/kits/command/kit_cli_commands/command/message_parsing.py`
 
-    if data.get("type") != "assistant":
-        return None
+Functions available:
 
-    message = data.get("message", {})
-    content = message.get("content", [])
-
-    text_parts: list[str] = []
-    for item in content:
-        if isinstance(item, dict) and item.get("type") == "text":
-            text = item.get("text")
-            if text:
-                text_parts.append(text)
-
-    return "\n".join(text_parts) if text_parts else None
-```
+- `extract_text_from_assistant_message(msg)` - Extract text content from assistant message
+- `extract_tool_uses_from_assistant_message(msg)` - Extract tool use blocks as `ToolUse` dataclass
+- `extract_tool_results_from_user_message(msg)` - Extract tool results as `ToolResult` dataclass
 
 ### Session ID Extraction
 
-```python
-def extract_session_id(line: str) -> str | None:
-    """Extract session_id from stream-json line."""
-    data = json.loads(line)
-    return data.get("session_id")
-```
-
-### Tool Use Detection
+Session ID is at the **top level** of the parsed JSON:
 
 ```python
-def extract_tool_uses(line: str) -> list[dict]:
-    """Extract tool use blocks from assistant message."""
-    data = json.loads(line)
-
-    if data.get("type") != "assistant":
-        return []
-
-    message = data.get("message", {})
-    content = message.get("content", [])
-
-    tools = []
-    for item in content:
-        if isinstance(item, dict) and item.get("type") == "tool_use":
-            tools.append(item)
-
-    return tools
+data = json.loads(line)
+session_id = data.get("session_id")  # Top level, not nested in message
 ```
 
-### Tool Result Extraction
+### Key Patterns
 
-```python
-def extract_tool_result_content(tool_result: dict) -> str | None:
-    """Extract content from tool result, handling both string and list formats."""
-    content = tool_result.get("content")
-
-    # String format
-    if isinstance(content, str):
-        return content
-
-    # List format - extract text from first text item
-    if isinstance(content, list):
-        for item in content:
-            if isinstance(item, dict) and item.get("type") == "text":
-                return item.get("text")
-
-    return None
-```
-
-## Complete Streaming Parser Example
-
-```python
-import json
-import subprocess
-from pathlib import Path
-
-def stream_claude_output(command: str, cwd: Path) -> None:
-    """Execute Claude CLI and parse stream-json output."""
-    cmd_args = [
-        "claude",
-        "--output-format", "stream-json",
-        "--permission-mode", "acceptEdits",
-        command
-    ]
-
-    process = subprocess.Popen(
-        cmd_args,
-        cwd=cwd,
-        stdout=subprocess.PIPE,
-        text=True,
-        bufsize=1,  # Line buffered
-    )
-
-    session_id: str | None = None
-
-    if process.stdout:
-        for line in process.stdout:
-            if not line.strip():
-                continue
-
-            try:
-                data = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-
-            # Capture session_id (appears in every line)
-            if session_id is None:
-                session_id = data.get("session_id")
-                if session_id:
-                    print(f"Session ID: {session_id}")
-
-            # Process assistant messages
-            if data.get("type") == "assistant":
-                message = data.get("message", {})
-                content = message.get("content", [])
-
-                for item in content:
-                    if isinstance(item, dict):
-                        if item.get("type") == "text":
-                            print(f"Text: {item.get('text')}")
-                        elif item.get("type") == "tool_use":
-                            print(f"Tool: {item.get('name')}")
-
-    process.wait()
-```
+- **Parse each line as JSON**: `data = json.loads(line)`
+- **Check message type**: `data.get("type")` returns `"assistant"`, `"user"`, or `"system"`
+- **Access content array**: `data.get("message", {}).get("content", [])`
+- **Handle tool result formats**: Content can be string OR list - check with `isinstance()`
+- **Handle parse errors**: Wrap `json.loads()` in try/except for malformed lines
 
 ## Common Pitfalls
 
