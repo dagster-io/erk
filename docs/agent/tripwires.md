@@ -23,6 +23,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before editing docs/agent/index.md or docs/agent/tripwires.md directly** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. These are generated files. Edit the source frontmatter instead, then run 'dot-agent docs sync'.
 
+**CRITICAL: Before comparing worktree path to repo_root to detect root worktree** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. Use WorktreeInfo.is_root instead of path comparison. Path comparison fails when running from within a non-root worktree because ctx.cwd resolves differently.
+
 **CRITICAL: Before importing from erk package in dot-agent-kit** → Read [erk_shared Package](architecture/erk-shared-package.md) first. dot-agent-kit cannot import from erk. Use erk_shared for shared code.
 
 **CRITICAL: Before adding a new method to Git ABC** → Read [Git ABC Implementation Checklist](architecture/git-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.

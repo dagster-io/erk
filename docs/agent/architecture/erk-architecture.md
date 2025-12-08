@@ -4,6 +4,7 @@ read_when:
   - "understanding erk architecture"
   - "implementing dry-run patterns"
   - "regenerating context after os.chdir"
+  - "detecting root worktree"
 tripwires:
   - action: "passing dry_run boolean flags through function parameters"
     warning: "Use dependency injection with DryRunGit/DryRunGitHub wrappers instead of boolean flags."
@@ -15,6 +16,8 @@ tripwires:
     warning: "Validate flag preconditions BEFORE any mutations. Example: `--up` in `erk pr land` checks for child branches before merging PR. This prevents partial state (PR merged, worktree deleted, but no valid navigation target)."
   - action: "editing docs/agent/index.md or docs/agent/tripwires.md directly"
     warning: "These are generated files. Edit the source frontmatter instead, then run 'dot-agent docs sync'."
+  - action: "comparing worktree path to repo_root to detect root worktree"
+    warning: "Use WorktreeInfo.is_root instead of path comparison. Path comparison fails when running from within a non-root worktree because ctx.cwd resolves differently."
 ---
 
 # Erk Architecture Patterns
@@ -589,6 +592,73 @@ The helper implements this precedence:
 3. **Compare current branch** to detected trunk
 
 This ensures correct detection regardless of repository trunk name.
+
+## Root Worktree Detection
+
+**ALWAYS use `WorktreeInfo.is_root` instead of path comparison to identify the root worktree.**
+
+### The Problem
+
+When running from within a non-root worktree, path comparison fails because:
+
+1. `ctx.cwd` resolves to the worktree path (e.g., `/Users/me/erks/repo/feature-branch`)
+2. `repo_root` from git discovery resolves to the main repo (e.g., `/Users/me/repos/repo`)
+3. Direct path comparison always returns False, even when you're in the root worktree
+
+### Wrong Pattern
+
+```python
+# WRONG: Path comparison breaks from non-root worktrees
+def is_root_worktree(worktree_path: Path, repo_root: Path) -> bool:
+    return worktree_path.resolve() == repo_root.resolve()
+
+# WRONG: Manual computation of is_root
+is_root = worktree_path.resolve() == repo_root.resolve()
+```
+
+### Correct Pattern
+
+```python
+# CORRECT: Use WorktreeInfo.is_root from git worktree list
+worktrees = ctx.git.list_worktrees(repo_root)
+for wt in worktrees:
+    if wt.is_root:
+        # This is the root worktree
+        handle_root_worktree(wt)
+    else:
+        # This is a feature worktree
+        handle_feature_worktree(wt)
+```
+
+### How WorktreeInfo.is_root Works
+
+`WorktreeInfo.is_root` is populated by `RealGit.list_worktrees()` when parsing `git worktree list --porcelain`:
+
+- Git marks the root worktree with `branch refs/heads/<trunk>` where the `.git` directory lives
+- The first worktree entry (before any blank line separator) is always the root
+- `is_root=True` is set based on this git metadata, not path comparison
+
+### When to Use
+
+Use `wt.is_root` whenever you need to:
+
+- Filter out the root worktree from worktree lists
+- Identify which worktree is the main repository
+- Determine special handling for root vs feature worktrees
+
+### Examples in Codebase
+
+```python
+# From checkout.py - handling root worktree specially
+if wt.is_root:
+    # Root worktree navigation
+    activate_root_repo(ctx, repo, script, command_name="checkout")
+
+# From goto_cmd.py - filtering worktrees
+if not wt.is_root:
+    # Only show non-root worktrees in picker
+    worktree_options.append(wt)
+```
 
 ## Design Principles
 

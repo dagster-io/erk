@@ -57,6 +57,21 @@ The main git repository directory containing `.git/` directory.
 
 **Note**: In a worktree, `git rev-parse --git-common-dir` points back to the repo root's `.git` directory.
 
+### Root Worktree
+
+The primary git worktree where the `.git` directory lives (as opposed to linked worktrees which have `.git` files pointing elsewhere).
+
+**Terminology Note**: Use "root worktree" (not "main worktree") to avoid confusion with the "main" branch. This ensures "main" unambiguously refers to the branch name.
+
+**In Code**: `WorktreeInfo.is_root` field identifies the root worktree. Always use this instead of path comparison.
+
+**Detection**:
+
+- ✅ Correct: `if wt.is_root:`
+- ❌ Wrong: `if wt.path == repo_root:` (fails from non-root worktrees)
+
+**Related**: [Root Worktree Detection](architecture/erk-architecture.md#root-worktree-detection)
+
 ### Erks Dir
 
 The directory containing all erks for a specific repository.
