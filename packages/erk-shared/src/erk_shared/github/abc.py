@@ -462,7 +462,7 @@ class GitHub(ABC):
 
     @abstractmethod
     def get_repo_info(self, repo_root: Path) -> RepoInfo:
-        """Get repository owner and name from GitHub CLI.
+        """Get repository owner and name.
 
         Args:
             repo_root: Repository root directory
@@ -471,7 +471,8 @@ class GitHub(ABC):
             RepoInfo with owner and name
 
         Raises:
-            RuntimeError: If gh command fails
+            RuntimeError: If git command fails
+            ValueError: If remote URL is not a valid GitHub URL
         """
         ...
 
