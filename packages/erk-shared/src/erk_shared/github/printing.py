@@ -11,7 +11,6 @@ from erk_shared.github.types import (
     PRDetails,
     PRNotFound,
     PullRequestInfo,
-    RepoInfo,
     WorkflowRun,
 )
 from erk_shared.printing.base import PrintingBase
@@ -212,10 +211,6 @@ class PrintingGitHub(PrintingBase, GitHub):
     def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
         """Get PR mergeability status (read-only, no printing)."""
         return self._wrapped.get_pr_mergeability_status(repo_root, pr_number)
-
-    def get_repo_info(self, repo_root: Path) -> RepoInfo:
-        """Get repository info (read-only, no printing)."""
-        return self._wrapped.get_repo_info(repo_root)
 
     def get_issues_with_pr_linkages(
         self,

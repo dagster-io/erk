@@ -12,7 +12,9 @@ from erk_shared.git.real import RealGit
 from erk_shared.github.abc import GitHub
 from erk_shared.github.dry_run import DryRunGitHub
 from erk_shared.github.issues import DryRunGitHubIssues, GitHubIssues, RealGitHubIssues
+from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.real import RealGitHub
+from erk_shared.github.types import RepoInfo
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.dry_run import DryRunGraphite
 from erk_shared.integrations.graphite.real import RealGraphite
@@ -78,6 +80,7 @@ class ErkContext:
     local_config: LoadedConfig
     repo: RepoContext | NoRepoSentinel
     project: ProjectContext | None  # None if not in a project subdirectory
+    repo_info: RepoInfo | None  # None when not in a GitHub repo
     dry_run: bool
 
     @property
@@ -173,6 +176,7 @@ class ErkContext:
             local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
             repo=NoRepoSentinel(),
             project=None,
+            repo_info=None,
             dry_run=dry_run,
         )
 
@@ -199,6 +203,7 @@ class ErkContext:
         local_config: LoadedConfig | None = None,
         repo: RepoContext | NoRepoSentinel | None = None,
         project: ProjectContext | None = None,
+        repo_info: RepoInfo | None = None,
         dry_run: bool = False,
     ) -> "ErkContext":
         """Create test context with optional pre-configured integration classes.
@@ -361,6 +366,7 @@ class ErkContext:
             local_config=local_config,
             repo=repo,
             project=project,
+            repo_info=repo_info,
             dry_run=dry_run,
         )
 
@@ -480,10 +486,6 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
     time: Time = RealTime()
     git: Git = RealGit()
     graphite: Graphite = RealGraphite()
-    github: GitHub = RealGitHub(time)
-    issues: GitHubIssues = RealGitHubIssues()
-    plan_store: PlanStore = GitHubPlanStore(issues)
-    plan_list_service: PlanListService = PlanListService(github, issues)
 
     # 5. Discover repo (only needs cwd, erk_root, git)
     # If global_config is None, use placeholder path for repo discovery
@@ -494,6 +496,24 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
     project: ProjectContext | None = None
     if not isinstance(repo, NoRepoSentinel):
         project = discover_project(cwd, repo.root, git)
+
+    # 6b. Fetch repo_info (if in a repo with origin remote)
+    # Note: try-except is acceptable at CLI entry point boundary per LBYL conventions
+    repo_info: RepoInfo | None = None
+    if not isinstance(repo, NoRepoSentinel):
+        try:
+            remote_url = git.get_remote_url(repo.root)
+            owner, name = parse_git_remote_url(remote_url)
+            repo_info = RepoInfo(owner=owner, name=name)
+        except ValueError:
+            # No origin remote configured - repo_info stays None
+            pass
+
+    # 6c. Create GitHub-related classes (need repo_info)
+    github: GitHub = RealGitHub(time, repo_info)
+    issues: GitHubIssues = RealGitHubIssues()
+    plan_store: PlanStore = GitHubPlanStore(issues)
+    plan_list_service: PlanListService = PlanListService(github, issues)
 
     # 7. Load local config (or defaults if no repo)
     if isinstance(repo, NoRepoSentinel):
@@ -544,6 +564,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
         local_config=local_config,
         repo=repo,
         project=project,
+        repo_info=repo_info,
         dry_run=dry_run,
     )
 

@@ -10,7 +10,6 @@ from erk_shared.github.types import (
     PRNotFound,
     PRReviewThread,
     PullRequestInfo,
-    RepoInfo,
     WorkflowRun,
 )
 
@@ -198,10 +197,6 @@ class DryRunGitHub(GitHub):
     def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_pr_mergeability_status(repo_root, pr_number)
-
-    def get_repo_info(self, repo_root: Path) -> RepoInfo:
-        """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_repo_info(repo_root)
 
     def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
         """No-op for adding label to PR in dry-run mode."""

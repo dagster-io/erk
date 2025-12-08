@@ -56,13 +56,15 @@ class RealGitHub(GitHub):
     All GitHub operations execute actual gh commands via subprocess.
     """
 
-    def __init__(self, time: Time):
+    def __init__(self, time: Time, repo_info: RepoInfo | None = None):
         """Initialize RealGitHub.
 
         Args:
             time: Time abstraction for sleep operations
+            repo_info: Repository owner/name info (None if not in a GitHub repo)
         """
         self._time = time
+        self._repo_info = repo_info
 
     def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
         """Get current base branch of a PR from GitHub.
@@ -1305,8 +1307,8 @@ query {{
         Returns:
             PRDetails with all PR fields, or PRNotFound if PR doesn't exist
         """
-        repo_info = self.get_repo_info(repo_root)
-        endpoint = f"/repos/{repo_info.owner}/{repo_info.name}/pulls/{pr_number}"
+        assert self._repo_info is not None, "repo_info required for get_pr"
+        endpoint = f"/repos/{self._repo_info.owner}/{self._repo_info.name}/pulls/{pr_number}"
 
         cmd = ["gh", "api", endpoint]
         try:
@@ -1316,7 +1318,7 @@ query {{
             return PRNotFound(pr_number=pr_number)
 
         data = json.loads(stdout)
-        return self._parse_pr_details_from_rest_api(data, repo_info)
+        return self._parse_pr_details_from_rest_api(data, self._repo_info)
 
     def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | PRNotFound:
         """Get comprehensive PR details for a branch via GitHub REST API.
@@ -1327,10 +1329,10 @@ query {{
         Returns:
             PRDetails if a PR exists for the branch, PRNotFound otherwise
         """
-        repo_info = self.get_repo_info(repo_root)
+        assert self._repo_info is not None, "repo_info required for get_pr_for_branch"
         endpoint = (
-            f"/repos/{repo_info.owner}/{repo_info.name}/pulls"
-            f"?head={repo_info.owner}:{branch}&state=all"
+            f"/repos/{self._repo_info.owner}/{self._repo_info.name}/pulls"
+            f"?head={self._repo_info.owner}:{branch}&state=all"
         )
 
         cmd = ["gh", "api", endpoint]
@@ -1341,7 +1343,7 @@ query {{
             return PRNotFound(branch=branch)
 
         pr = data[0]
-        return self._parse_pr_details_from_rest_api(pr, repo_info)
+        return self._parse_pr_details_from_rest_api(pr, self._repo_info)
 
     def _parse_pr_details_from_rest_api(
         self, data: dict[str, Any], repo_info: RepoInfo
@@ -1515,24 +1517,6 @@ query {{
             return ("CONFLICTING", merge_state.upper())
         return ("UNKNOWN", "UNKNOWN")
 
-    def get_repo_info(self, repo_root: Path) -> RepoInfo:
-        """Get repository owner and name from git remote URL.
-
-        Parses the origin remote URL locally - no API call needed.
-
-        Raises:
-            RuntimeError: If git command fails
-            ValueError: If remote URL is not a valid GitHub URL
-        """
-        result = run_subprocess_with_context(
-            ["git", "remote", "get-url", "origin"],
-            operation_context="get git remote URL",
-            cwd=repo_root,
-        )
-        remote_url = result.stdout.strip()
-        owner, name = parse_git_remote_url(remote_url)
-        return RepoInfo(owner=owner, name=name)
-
     def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
         """Add a label to a pull request using gh CLI.
 
@@ -1574,7 +1558,7 @@ query {{
         Uses the reviewThreads connection which provides resolution status
         that the REST API doesn't expose.
         """
-        repo_info = self.get_repo_info(repo_root)
+        assert self._repo_info is not None, "repo_info required for get_pr_review_threads"
 
         # Pass variables individually: -f for strings, -F for typed values (int)
         cmd = [
@@ -1584,9 +1568,9 @@ query {{
             "-f",
             f"query={GET_PR_REVIEW_THREADS_QUERY}",
             "-f",
-            f"owner={repo_info.owner}",
+            f"owner={self._repo_info.owner}",
             "-f",
-            f"repo={repo_info.name}",
+            f"repo={self._repo_info.name}",
             "-F",
             f"number={pr_number}",
         ]

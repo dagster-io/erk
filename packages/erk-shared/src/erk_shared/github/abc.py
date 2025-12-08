@@ -10,7 +10,6 @@ from erk_shared.github.types import (
     PRNotFound,
     PRReviewThread,
     PullRequestInfo,
-    RepoInfo,
     WorkflowRun,
 )
 
@@ -457,22 +456,6 @@ class GitHub(ABC):
             Tuple of (mergeable, merge_state_status):
             - mergeable: "MERGEABLE", "CONFLICTING", or "UNKNOWN"
             - merge_state_status: "CLEAN", "DIRTY", "UNSTABLE", etc.
-        """
-        ...
-
-    @abstractmethod
-    def get_repo_info(self, repo_root: Path) -> RepoInfo:
-        """Get repository owner and name.
-
-        Args:
-            repo_root: Repository root directory
-
-        Returns:
-            RepoInfo with owner and name
-
-        Raises:
-            RuntimeError: If git command fails
-            ValueError: If remote URL is not a valid GitHub URL
         """
         ...
 

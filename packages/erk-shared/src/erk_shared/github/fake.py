@@ -29,6 +29,7 @@ class FakeGitHub(GitHub):
     def __init__(
         self,
         *,
+        repo_info: RepoInfo | None = None,
         prs: dict[str, PullRequestInfo] | None = None,
         pr_bases: dict[int, str] | None = None,
         pr_details: dict[int, PRDetails] | None = None,
@@ -51,6 +52,7 @@ class FakeGitHub(GitHub):
         """Create FakeGitHub with pre-configured state.
 
         Args:
+            repo_info: Repository owner/name info (defaults to test-owner/test-repo)
             prs: Mapping of branch name -> PullRequestInfo
             pr_bases: Mapping of pr_number -> base_branch
             pr_details: Mapping of pr_number -> PRDetails for get_pr() and get_pr_for_branch()
@@ -71,6 +73,8 @@ class FakeGitHub(GitHub):
             pr_update_should_succeed: Whether PR updates should succeed (default True)
             pr_review_threads: Mapping of pr_number -> list[PRReviewThread]
         """
+        # Default to test values if not provided
+        self._repo_info = repo_info or RepoInfo(owner="test-owner", name="test-repo")
         self._prs = prs or {}
         self._pr_bases = pr_bases or {}
         self._pr_details = pr_details or {}
@@ -586,10 +590,6 @@ class FakeGitHub(GitHub):
             details = self._pr_details[pr_number]
             return (details.mergeable, details.merge_state_status)
         return ("MERGEABLE", "CLEAN")
-
-    def get_repo_info(self, repo_root: Path) -> RepoInfo:
-        """Get repository owner and name (returns test defaults)."""
-        return RepoInfo(owner="test-owner", name="test-repo")
 
     def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
         """Record label addition in mutation tracking list and update internal state."""
