@@ -314,7 +314,7 @@ jobs:
           PR_NUMBER=$(gh pr view "$BRANCH_NAME" --json number -q .number)
 
           # Get standardized body footer from get-pr-body-footer
-          pr_metadata=$(dot-agent run erk get-pr-body-footer --pr-number "$PR_NUMBER" 2>/dev/null || echo "")
+          pr_metadata=$(dot-agent run erk get-pr-body-footer --pr-number "$PR_NUMBER" --issue-number "$ISSUE_NUMBER" 2>/dev/null || echo "")
 
           # Build PR body: summary + footer
           cat > pr_body.md <<BODY_EOF
