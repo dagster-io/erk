@@ -812,6 +812,8 @@ erk list --stacks
 
 **Graceful degradation**: If `gh` is not available, erk continues without PR info.
 
+**Workflow dispatch customization**: Repos can customize GitHub Actions workflow inputs via `.erk/workflows/` TOML files. See [Glossary: Workflow Config](../../docs/agent/glossary.md#workflow-config) for details.
+
 ### Shell Integration
 
 Shell integration enables directory navigation:
