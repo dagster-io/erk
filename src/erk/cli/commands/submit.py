@@ -1,6 +1,7 @@
 """Submit issue for remote AI implementation via GitHub Actions."""
 
 import logging
+import tomllib
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -58,6 +59,31 @@ def is_issue_extraction_plan(issue_body: str) -> bool:
 
     plan_type = block.data.get("plan_type")
     return plan_type == "extraction"
+
+
+def load_workflow_config(repo_root: Path, workflow_name: str) -> dict[str, str]:
+    """Load workflow config from .erk/workflows/<workflow_name>.toml.
+
+    Args:
+        repo_root: Repository root path
+        workflow_name: Workflow filename (with or without .yml/.yaml extension)
+
+    Returns:
+        Dict of string key-value pairs for workflow inputs.
+        Returns empty dict if config file doesn't exist.
+    """
+    # Strip .yml/.yaml extension if present
+    config_name = workflow_name.removesuffix(".yml").removesuffix(".yaml")
+    config_path = repo_root / ".erk" / "workflows" / f"{config_name}.toml"
+
+    if not config_path.exists():
+        return {}
+
+    with open(config_path, "rb") as f:
+        data = tomllib.load(f)
+
+    # Convert all values to strings (workflow inputs are always strings)
+    return {k: str(v) for k, v in data.items()}
 
 
 @dataclass
@@ -423,20 +449,30 @@ def _submit_single_issue(
         )
         raise SystemExit(1)
 
+    # Load workflow-specific config
+    workflow_config = load_workflow_config(repo.root, DISPATCH_WORKFLOW_NAME)
+
     # Trigger workflow via direct dispatch
     user_output("")
     user_output(f"Triggering workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
     user_output(f"  Display name: {DISPATCH_WORKFLOW_METADATA_NAME}")
+
+    # Build inputs dict, merging workflow config
+    inputs = {
+        # Required inputs (always passed)
+        "issue_number": str(issue_number),
+        "submitted_by": submitted_by,
+        "issue_title": issue.title,
+        "branch_name": branch_name,
+        "pr_number": str(pr_number),
+        # Config-based inputs (from .erk/workflows/)
+        **workflow_config,
+    }
+
     run_id = ctx.github.trigger_workflow(
         repo_root=repo.root,
         workflow=DISPATCH_WORKFLOW_NAME,
-        inputs={
-            "issue_number": str(issue_number),
-            "submitted_by": submitted_by,
-            "issue_title": issue.title,
-            "branch_name": branch_name,
-            "pr_number": str(pr_number),
-        },
+        inputs=inputs,
     )
     user_output(click.style("✓", fg="green") + " Workflow triggered.")
 
