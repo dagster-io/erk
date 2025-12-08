@@ -11,7 +11,7 @@ Flow:
 4. Track with Graphite: gt track --branch <current> --parent <base>
 5. Squash commits: gt squash --no-edit --no-interactive
 6. Update local commit message with PR title/body from GitHub
-7. Restack: gt restack --no-interactive (delegate to auto-restack on conflict)
+7. Restack: erk pr auto-restack (AI-powered conflict resolution)
 8. Submit: gt submit --no-edit --no-interactive (force-push to link with Graphite)
 """
 
@@ -25,6 +25,7 @@ from erk_shared.integrations.gt.types import SquashError
 from erk_shared.output.output import user_output
 
 from erk.cli.ensure import Ensure
+from erk.cli.output import stream_auto_restack
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 
@@ -143,10 +144,19 @@ def pr_sync(ctx: ErkContext) -> None:
     # Step 6b: Update commit message with PR title/body
     _update_commit_message_from_pr(ctx, repo.root, pr_number)
 
-    # Step 7: Restack
-    user_output("Restacking...")
-    ctx.graphite.restack(repo.root, no_interactive=True, quiet=True)
-    user_output(click.style("✓", fg="green") + " Restack complete")
+    # Step 7: Restack with auto-conflict resolution
+    executor = ctx.claude_executor
+    if not executor.is_claude_available():
+        raise click.ClickException(
+            "Claude CLI not found\n\nInstall from: https://claude.com/download"
+        )
+
+    result = stream_auto_restack(executor, repo.root)
+
+    if result.requires_interactive:
+        raise click.ClickException("Semantic conflict requires interactive resolution")
+    if not result.success:
+        raise click.ClickException(result.error_message or "Auto-restack failed")
 
     # Step 8: Submit to link with Graphite
     # Force push is required because squashing rewrites history, causing divergence from remote
