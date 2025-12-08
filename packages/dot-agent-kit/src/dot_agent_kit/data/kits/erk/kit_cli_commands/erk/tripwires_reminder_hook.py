@@ -7,7 +7,7 @@ import click
 @click.command()
 def tripwires_reminder_hook() -> None:
     """Output tripwires reminder for UserPromptSubmit hook."""
-    click.echo("🚧 Ensure docs/agent/tripwires.md is loaded follow its directives.")
+    click.echo("🚧 Ensure docs/agent/tripwires.md is loaded and follow its directives.")
 
 
 if __name__ == "__main__":
