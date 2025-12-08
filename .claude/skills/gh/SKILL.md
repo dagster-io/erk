@@ -299,6 +299,22 @@ Use GraphQL when the porcelain commands (`gh pr`, `gh issue`, etc.) cannot accom
    - `Pagination` - Cursor-based pagination
    - `Example [0-9]` - Complete working examples
 
+## Rate Limits and API Backend
+
+When users encounter rate limit issues or need to optimize API usage:
+
+1. Load `references/api-backend-audit.md` for complete command-to-API mapping
+2. Understand the difference:
+   - **REST**: 5,000 requests/hour, counted per request
+   - **GraphQL**: 5,000 points/hour, cost based on query complexity
+   - **Search**: 30 requests/minute (separate limit)
+3. Key insights:
+   - PR/Issue commands use GraphQL (query cost varies)
+   - Run/Workflow/Gist commands use REST (predictable cost)
+   - Project commands require GraphQL exclusively
+   - Search always uses REST with stricter limits
+4. Check current limits: `gh api rate_limit --jq '.resources'`
+
 ## Troubleshooting
 
 When users encounter issues:
@@ -341,5 +357,11 @@ When users ask "what can gh do?":
   - Load only when detailed schema info needed
   - Detailed field definitions for core types
   - Mutation input types and examples
+
+- `api-backend-audit.md` - REST vs GraphQL API backend audit (~850 lines)
+  - Load when understanding which API type a command uses
+  - Rate limit guidance and optimization strategies
+  - Complete mapping of all gh commands to their API backends
+  - Batch operation alternatives and caching strategies
 
 These references should be loaded as needed to ensure accurate, detailed information. Use progressive disclosure: start with the main reference, then load specialized GraphQL docs when needed.
