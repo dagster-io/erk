@@ -355,6 +355,66 @@ def my_command(ctx: click.Context) -> None:
 
 The production context captures `Path.cwd()` once at CLI entry point and stores it in `DotAgentContext.cwd`. Commands access it via `require_cwd(ctx)`, enabling tests to inject arbitrary paths without filesystem manipulation.
 
+## Scratch Storage in Kit CLI Commands
+
+Kit CLI commands cannot access `ErkContext`, so they need explicit scratch storage handling.
+
+### Correct Pattern
+
+```python
+import subprocess
+from pathlib import Path
+from erk_shared.scratch.scratch import get_scratch_dir
+
+def _get_repo_root() -> Path:
+    result = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return Path(result.stdout.strip())
+
+# Session-scoped files: .erk/scratch/sessions/<session_id>/
+scratch_dir = get_scratch_dir(session_id, repo_root=_get_repo_root())
+
+# Worktree-scoped files: .erk/scratch/
+repo_root = _get_repo_root()
+worktree_file = repo_root / ".erk" / "scratch" / "current-session-id"
+```
+
+### Common Mistakes
+
+```python
+# WRONG: Relative path writes to cwd, not repo root
+Path(".erk/scratch/current-session-id")
+
+# WRONG: Missing sessions/ segment
+repo_root / ".erk" / "scratch" / session_id
+
+# RIGHT: Session-scoped with sessions/ segment
+repo_root / ".erk" / "scratch" / "sessions" / session_id
+```
+
+### Testing with Scratch Storage
+
+When testing kit CLI commands that create scratch files, always provide a writable `repo_root`:
+
+```python
+result = runner.invoke(
+    my_command,
+    obj=DotAgentContext.for_test(
+        github_issues=fake_gh,
+        git=fake_git,
+        session_store=fake_store,
+        cwd=tmp_path,
+        repo_root=tmp_path,  # Required for scratch file creation
+    ),
+)
+```
+
+Without `repo_root=tmp_path`, the default `/fake/repo` path causes read-only filesystem errors.
+
 ## See Also
 
 - [fake-driven-testing skill](.claude/docs/fake-driven-testing/) - Layer 4 testing strategy
