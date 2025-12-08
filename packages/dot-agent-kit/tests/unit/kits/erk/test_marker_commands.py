@@ -8,7 +8,7 @@ from erk_shared.scratch.markers import create_marker, marker_exists
 
 from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.marker_delete import marker_delete
 from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.marker_exists import (
-    marker_exists_cmd,
+    marker_exists as marker_exists_cmd,
 )
 
 
