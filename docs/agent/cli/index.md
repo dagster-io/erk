@@ -3,6 +3,7 @@
 
 # Cli Documentation
 
+- **[cli-slash-command-delegation.md](cli-slash-command-delegation.md)** — creating CLI commands that delegate to slash commands, using ClaudeExecutor abstraction, testing commands with FakeClaudeExecutor
 - **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
 - **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
 - **[list-formatting.md](list-formatting.md)** — formatting list output, designing list commands, ensuring consistent list display

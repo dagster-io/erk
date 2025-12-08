@@ -75,6 +75,33 @@ The REST API returns field names that differ from GraphQL and internal conventio
 | ---------------- | --------------------- |
 | `head.repo.fork` | `is_cross_repository` |
 
+### Branch References
+
+| REST API Field | Internal Field  | Description                       |
+| -------------- | --------------- | --------------------------------- |
+| `base.ref`     | `base_ref_name` | Target branch name (e.g., "main") |
+| `head.ref`     | `head_ref_name` | Source branch name                |
+
+**Note**: REST API `base.ref` and `head.ref` contain only the branch name, not the full ref path (`refs/heads/...`).
+
+### Merge State Status
+
+| REST API `mergeable_state` | Internal Value | Description                            |
+| -------------------------- | -------------- | -------------------------------------- |
+| `"clean"`                  | `"CLEAN"`      | No blocking issues, ready to merge     |
+| `"blocked"`                | `"BLOCKED"`    | Blocked by required checks/reviews     |
+| `"unstable"`               | `"UNSTABLE"`   | Some checks failing (not required)     |
+| `"dirty"`                  | `"DIRTY"`      | Has merge conflicts                    |
+| `null` or missing          | `"UNKNOWN"`    | GitHub hasn't computed status yet      |
+
+**Normalization**: Convert REST API lowercase values to uppercase for internal use. Handle `null` or missing values as `"UNKNOWN"`.
+
+**Implementation Example** (`packages/erk-shared/src/erk_shared/github/real.py:1376-1377`):
+```python
+# Map mergeable_state to upper case
+merge_state_status = (data.get("mergeable_state") or "UNKNOWN").upper()
+```
+
 ## Implementation in erk
 
 The `RealGitHub.get_pr()` method in `packages/erk-shared/src/erk_shared/github/real.py` implements this pattern, returning a `PRDetails` dataclass with all commonly-needed fields.

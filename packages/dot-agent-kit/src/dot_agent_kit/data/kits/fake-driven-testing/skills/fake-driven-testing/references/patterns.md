@@ -817,6 +817,156 @@ def test_cleanup_dry_run() -> None:
 
 ---
 
+## Kit CLI Command Testing
+
+**Pattern**: Test kit CLI commands using CliRunner + DotAgentContext.for_test() with fake implementations.
+
+### Basic Setup
+
+```python
+from dot_agent_kit.context import DotAgentContext
+from dot_agent_kit.testing import CliRunner
+from erk_shared.git.fake import FakeGit
+from erk_shared.github.issues import FakeGitHubIssues
+
+def test_my_kit_command(tmp_path: Path) -> None:
+    # Setup fakes
+    fake_git = FakeGit(current_branches={tmp_path: "feature"})
+    fake_gh = FakeGitHubIssues()
+
+    # Inject via context
+    ctx = DotAgentContext.for_test(
+        git=fake_git,
+        github_issues=fake_gh,
+        cwd=tmp_path,
+        repo_root=tmp_path,
+    )
+
+    # Run command
+    runner = CliRunner()
+    result = runner.invoke(my_command, ["--flag", "value"], obj=ctx)
+
+    # Assert
+    assert result.exit_code == 0
+    assert "expected output" in result.output
+```
+
+### JSON Output Testing
+
+```python
+import json
+
+def test_json_output(tmp_path: Path) -> None:
+    fake_gh = FakeGitHubIssues(
+        issues={
+            1: IssueInfo(
+                number=1,
+                title="Test Issue",
+                body="Description",
+                state="open",
+                url="https://github.com/...",
+            )
+        }
+    )
+
+    ctx = DotAgentContext.for_test(
+        github_issues=fake_gh,
+        cwd=tmp_path,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(my_command, ["--format", "json"], obj=ctx)
+
+    assert result.exit_code == 0
+
+    # Parse and validate JSON
+    output = json.loads(result.output)
+    assert output["issue_number"] == 1
+    assert output["title"] == "Test Issue"
+```
+
+### FakeGitHubIssues Helper
+
+Use constructor-injected state for predictable tests:
+
+```python
+from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
+
+def test_create_and_list_issues(tmp_path: Path) -> None:
+    # Setup with initial issues
+    fake_gh = FakeGitHubIssues(
+        issues={
+            1: IssueInfo(1, "Bug", "Fix this", "open", "http://..."),
+            2: IssueInfo(2, "Feature", "Add that", "closed", "http://..."),
+        },
+        next_issue_number=3,  # Next created issue will be #3
+    )
+
+    # Create new issue
+    result = fake_gh.create_issue(tmp_path, "New", "Body", ["label"])
+    assert result.number == 3
+
+    # Verify via mutation tracking
+    assert len(fake_gh.created_issues) == 1
+    assert fake_gh.created_issues[0] == ("New", "Body", ["label"])
+
+    # List issues
+    issues = fake_gh.list_issues(tmp_path, state="open")
+    assert len(issues) == 2  # Original #1 + new #3
+```
+
+### Key Patterns
+
+**DotAgentContext.for_test()** - Inject all fake implementations:
+
+```python
+ctx = DotAgentContext.for_test(
+    github_issues=FakeGitHubIssues(...),
+    git=FakeGit(...),
+    github=FakeGitHub(...),
+    session_store=FakeClaudeCodeSessionStore(...),
+    debug=True,  # Enable debug mode for testing
+    repo_root=Path("/fake/repo"),
+    cwd=Path("/fake/worktree"),
+)
+```
+
+**CliRunner** - Invoke Click commands programmatically:
+
+```python
+runner = CliRunner()
+result = runner.invoke(command, args=["--flag"], obj=ctx)
+
+assert result.exit_code == 0
+assert "expected" in result.output
+```
+
+**Mutation Tracking** - Verify operations via fake properties:
+
+```python
+fake_gh = FakeGitHubIssues()
+
+# Perform operation
+fake_gh.create_issue(tmp_path, "Title", "Body", ["bug"])
+fake_gh.add_comment(tmp_path, 1, "Comment text")
+
+# Assert via tracking
+assert len(fake_gh.created_issues) == 1
+assert fake_gh.created_issues[0][0] == "Title"  # Title
+
+assert len(fake_gh.added_comments) == 1
+assert fake_gh.added_comments[0] == (1, "Comment text")
+```
+
+### Benefits
+
+- **Fast**: No filesystem I/O or network calls
+- **Deterministic**: Constructor-injected state
+- **Type-safe**: Real ABC implementations
+- **Maintainable**: No mock configuration
+
+---
+
 ## Related Documentation
 
 - `workflows.md` - Step-by-step guides for using these patterns

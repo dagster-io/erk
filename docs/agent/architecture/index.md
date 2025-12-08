@@ -18,6 +18,7 @@
 - **[git-abc-implementation.md](git-abc-implementation.md)** — adding or modifying methods in the Git ABC interface, implementing new Git operations
 - **[github-graphql.md](github-graphql.md)** — using gh api graphql, writing GraphQL queries for GitHub, passing variables to GraphQL queries, fetching data not available in REST API
 - **[github-interface-patterns.md](github-interface-patterns.md)** — calling GitHub API from erk, working with gh api command, fetching PR or issue data efficiently, understanding PRDetails type
+- **[github-issues-abc.md](github-issues-abc.md)** — adding or modifying methods in the GitHubIssues ABC interface, implementing new GitHub Issues operations
 - **[github-parsing.md](github-parsing.md)** — parsing GitHub URLs, extracting PR or issue numbers from URLs, understanding github parsing layers
 - **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .impl/ or .worker-impl/ folders, understanding remote implementation workflow, debugging plan visibility in PRs
 - **[issue-reference-flow.md](issue-reference-flow.md)** — issue references not appearing in PRs, debugging 'Closes #N' in PR body, working with issue.json
@@ -28,9 +29,12 @@
 - **[pre-destruction-capture.md](pre-destruction-capture.md)** — implementing operations that destroy or transform data, designing pipelines with data capture requirements, working with git squash, rebase, or other destructive operations
 - **[protocol-vs-abc.md](protocol-vs-abc.md)** — choosing between Protocol and ABC for interface design, designing interfaces with structural vs nominal typing, working with frozen dataclasses and Protocol @property patterns
 - **[restack-operations.md](restack-operations.md)** — implementing or modifying restack operations, understanding preflight/continue/finalize pattern, working with RestackPreflightSuccess/Error types, adding new three-phase operations
+- **[result-pattern.md](result-pattern.md)** — implementing operations that can fail, choosing between Result types and exceptions, understanding LBYL error handling
 - **[sentinel-path-compatibility.md](sentinel-path-compatibility.md)** — writing functions that check path existence, seeing 'Called .exists() on sentinel path' errors, making functions testable with FakeGit
 - **[shell-integration-constraint.md](shell-integration-constraint.md)** — implementing commands that delete the current worktree, debugging directory change issues after worktree operations, understanding why safe_chdir doesn't work for some commands
 - **[shell-integration-patterns.md](shell-integration-patterns.md)** — implementing commands with shell integration, fixing shell integration handler issues, understanding script-first output ordering, debugging partial success in destructive commands
+- **[submission-flows.md](submission-flows.md)** — choosing between /git:pr-push and /gt:pr-submit, understanding PR submission workflows, implementing new submission commands
 - **[subprocess-wrappers.md](subprocess-wrappers.md)** — using subprocess wrappers, executing shell commands, understanding subprocess patterns
 - **[symlink-validation-pattern.md](symlink-validation-pattern.md)** — Validating @ references in markdown files, Validating import paths in configuration, Any path validation where source files may be symlinks
+- **[two-phase-operations.md](two-phase-operations.md)** — implementing CLI operations with AI generation, adding new submit or land workflows, understanding preflight/finalize pattern
 - **[worktree-metadata.md](worktree-metadata.md)** — storing per-worktree data, working with worktrees.toml, associating metadata with worktrees, implementing subdirectory navigation, preserving relative path on worktree switch
