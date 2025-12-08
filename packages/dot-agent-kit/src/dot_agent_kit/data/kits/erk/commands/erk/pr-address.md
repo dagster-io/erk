@@ -114,10 +114,10 @@ Process all comments (both types) in the order shown in the summary table.
 
 ### Step 5: Mark Review Thread Resolved
 
-After addressing a review thread, resolve it:
+After addressing a review thread, resolve it with a resolution comment:
 
 ```bash
-dot-agent run erk resolve-review-thread --thread-id "PRRT_abc123"
+dot-agent run erk resolve-review-thread --thread-id "PRRT_abc123" --comment "Resolved via /erk:pr-address at $(date '+%Y-%m-%d %I:%M %p %Z')"
 ```
 
 Report: "Resolved review thread on src/foo.py:42"

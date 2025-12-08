@@ -106,6 +106,7 @@ class FakeGitHub(GitHub):
         self._added_labels: list[tuple[int, str]] = []
         self._pr_review_threads = pr_review_threads or {}
         self._resolved_thread_ids: set[str] = set()
+        self._thread_replies: list[tuple[str, str]] = []
 
     @property
     def merged_prs(self) -> list[int]:
@@ -673,3 +674,24 @@ class FakeGitHub(GitHub):
     def resolved_thread_ids(self) -> set[str]:
         """Read-only access to tracked thread resolutions for test assertions."""
         return self._resolved_thread_ids
+
+    def add_review_thread_reply(
+        self,
+        repo_root: Path,
+        thread_id: str,
+        body: str,
+    ) -> bool:
+        """Record thread reply in mutation tracking list.
+
+        Always returns True to simulate successful comment addition.
+        """
+        self._thread_replies.append((thread_id, body))
+        return True
+
+    @property
+    def thread_replies(self) -> list[tuple[str, str]]:
+        """Read-only access to tracked thread replies for test assertions.
+
+        Returns list of (thread_id, body) tuples.
+        """
+        return self._thread_replies

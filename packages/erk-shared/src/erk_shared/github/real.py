@@ -20,6 +20,7 @@ from typing import Any
 from erk_shared.debug import debug_log
 from erk_shared.github.abc import GitHub
 from erk_shared.github.graphql_queries import (
+    ADD_REVIEW_THREAD_REPLY_MUTATION,
     GET_PR_REVIEW_THREADS_QUERY,
     RESOLVE_REVIEW_THREAD_MUTATION,
 )
@@ -1674,3 +1675,41 @@ query {{
             return False
 
         return thread_data.get("isResolved", False)
+
+    def add_review_thread_reply(
+        self,
+        repo_root: Path,
+        thread_id: str,
+        body: str,
+    ) -> bool:
+        """Add a reply comment to a PR review thread via GraphQL mutation.
+
+        Args:
+            repo_root: Repository root (for gh CLI context)
+            thread_id: GraphQL node ID of the thread
+            body: Comment body text
+
+        Returns:
+            True if comment added successfully
+        """
+        # Pass variables individually with -f for strings
+        cmd = [
+            "gh",
+            "api",
+            "graphql",
+            "-f",
+            f"query={ADD_REVIEW_THREAD_REPLY_MUTATION}",
+            "-f",
+            f"threadId={thread_id}",
+            "-f",
+            f"body={body}",
+        ]
+
+        stdout = execute_gh_command(cmd, repo_root)
+        response = json.loads(stdout)
+
+        # Check if the comment was added
+        comment_data = (
+            response.get("data", {}).get("addPullRequestReviewThreadReply", {}).get("comment")
+        )
+        return comment_data is not None

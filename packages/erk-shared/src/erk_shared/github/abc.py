@@ -526,3 +526,22 @@ class GitHub(ABC):
             True if resolved successfully
         """
         ...
+
+    @abstractmethod
+    def add_review_thread_reply(
+        self,
+        repo_root: Path,
+        thread_id: str,
+        body: str,
+    ) -> bool:
+        """Add a reply comment to a PR review thread.
+
+        Args:
+            repo_root: Repository root (for owner/repo context)
+            thread_id: GraphQL node ID of the thread
+            body: Comment body text
+
+        Returns:
+            True if comment added successfully
+        """
+        ...

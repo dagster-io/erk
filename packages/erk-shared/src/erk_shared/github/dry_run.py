@@ -228,3 +228,15 @@ class DryRunGitHub(GitHub):
         Returns True to indicate success without actually resolving.
         """
         return True
+
+    def add_review_thread_reply(
+        self,
+        repo_root: Path,
+        thread_id: str,
+        body: str,
+    ) -> bool:
+        """No-op for adding reply to review thread in dry-run mode.
+
+        Returns True to indicate success without actually adding comment.
+        """
+        return True
