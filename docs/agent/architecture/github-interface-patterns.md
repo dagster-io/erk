@@ -136,6 +136,7 @@ gh api graphql \
 ```
 
 **Flag types:**
+
 - `-f name=value` — String variables
 - `-F name=value` — Typed variables (integers, booleans) parsed from JSON
 
