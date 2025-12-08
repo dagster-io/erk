@@ -114,48 +114,25 @@ git push -u origin "$(git branch --show-current)"
 - Sets upstream tracking (`-u` flag) so future `git pull` works
 - Creates remote branch if it doesn't exist
 
-### Step 6: Get PR Body Prefix (CI vs Manual)
+### Step 6: Get Issue Closing Text (if applicable)
 
-Before creating the PR, get the appropriate prefix for the PR body based on context:
+Before creating the PR, get the closing text if an issue reference exists:
 
 ```bash
-# Check if running in CI (GitHub Actions)
-if [ -n "$GITHUB_ACTIONS" ]; then
-    # CI mode: Get full PR body footer (author, checkout command, etc.)
-    pr_prefix=$(dot-agent run erk get-pr-body-footer 2>/dev/null || echo "")
-    is_ci="true"
-else
-    # Manual mode: Get just the closing text
-    pr_prefix=$(dot-agent run erk get-closing-text 2>/dev/null || echo "")
-    is_ci="false"
-fi
+# Get closing text if .impl/issue.json exists
+closing_text=$(dot-agent run erk get-closing-text 2>/dev/null || echo "")
 ```
 
 **What this does:**
 
-**In CI (`$GITHUB_ACTIONS` is set):**
-
-- Reads `.impl/issue.json` for plan link and closes reference
-- Reads `.impl/plan.md` for plan author
-- Builds formatted metadata section with:
-  - Plan link: `- **Plan:** [#N](url)`
-  - Plan author: `- **Plan Author:** @username`
-  - Checkout command with placeholder PR number
-  - Closes reference
-  - Horizontal rule separator
-
-**In manual workflow:**
-
-- Gets just the closing text (`Closes #N`) if issue reference exists
+- Gets the closing text (`Closes #N`) if issue reference exists in `.impl/issue.json`
 - Returns empty string if no issue reference
 
 **Error handling:**
 
-- Commands always succeed (exit code 0)
-- No output if no metadata/issue reference exists
+- Command always succeeds (exit code 0)
+- No output if no issue reference exists
 - Stderr redirected to /dev/null to suppress warnings
-
-**Rationale:** CI submissions need full metadata for traceability. Manual submissions keep the simple closing text behavior.
 
 ### Step 7: Create GitHub PR
 
@@ -171,9 +148,11 @@ pr_title=$(echo "$commit_msg" | head -n 1)
 # Extract remaining lines as body (commit body)
 commit_body=$(echo "$commit_msg" | tail -n +2 | sed '/^$/d')
 
-# Build complete PR body: prefix + commit body
-if [ -n "$pr_prefix" ]; then
-    pr_body="${pr_prefix}${commit_body}"
+# Build complete PR body: closing text + commit body
+if [ -n "$closing_text" ]; then
+    pr_body="${closing_text}
+
+${commit_body}"
 else
     pr_body="${commit_body}"
 fi
@@ -199,35 +178,44 @@ gh pr create --title "$pr_title" --body "$pr_body"
 - Extract PR number for subsequent steps
 - Store for final report
 
-### Step 8: CI-Only: Mark PR Ready and Update Metadata
+### Step 8: Update PR with Checkout Footer
 
-**This step only runs in CI (`$GITHUB_ACTIONS` is set).**
-
-After PR creation in CI, mark it as ready for review and update the PR body with the actual PR number:
+After PR creation, update the body to include the checkout command:
 
 ```bash
-if [ "$is_ci" = "true" ]; then
-    # Mark PR as ready for review (triggers CI)
-    gh pr ready 2>/dev/null || true
+# Get the PR number from the created PR
+pr_number=$(gh pr view --json number --jq '.number')
 
-    # Get PR number from the created PR
-    pr_number=$(gh pr view --json number --jq '.number')
+# Generate full footer with checkout command
+pr_footer=$(dot-agent run erk get-pr-body-footer --pr-number "$pr_number" 2>/dev/null || echo "")
 
-    # Update PR body with actual PR number (replace placeholder)
-    if [ -n "$pr_number" ] && [ -n "$pr_prefix" ]; then
-        updated_body=$(echo "$pr_body" | sed "s/__PLACEHOLDER_PR_NUMBER__/$pr_number/g")
-        gh pr edit --body "$updated_body" 2>/dev/null || true
-    fi
+# If we have a footer, update the PR body
+if [ -n "$pr_footer" ]; then
+    current_body=$(gh pr view --json body --jq '.body')
+    gh pr edit --body "${current_body}
+
+${pr_footer}"
 fi
 ```
 
-**What this does (CI only):**
+**What this does:**
 
-- **Mark PR ready:** Converts draft PR to ready for review, triggering CI workflows
-- **Update PR number:** Replaces `__PLACEHOLDER_PR_NUMBER__` with actual number in checkout command
+- Gets the PR number from the just-created PR
+- Generates the footer with checkout command (now that we have the PR number)
+- Appends the footer to the existing PR body
 - Silently continues if any step fails
 
-**Manual workflow:** This step is skipped entirely.
+**CI-only additional step:**
+
+```bash
+if [ -n "$GITHUB_ACTIONS" ]; then
+    # Mark PR as ready for review (triggers CI)
+    gh pr ready 2>/dev/null || true
+fi
+```
+
+- Converts draft PR to ready for review, triggering CI workflows
+- Only runs in GitHub Actions environment
 
 ### Step 9: Post PR Link to Issue (if applicable)
 
@@ -261,8 +249,8 @@ After submission, provide a clear summary with the PR URL.
 ✓ Created commit with AI-generated message
 ✓ Pushed branch to origin with upstream tracking
 ✓ Created GitHub PR
+✓ Added checkout command to PR body
 ✓ Marked PR ready for review (CI triggered)     [CI only]
-✓ Updated PR body with checkout command         [CI only]
 ✓ Linked to issue #<number> (will auto-close on merge)
 ✓ Posted PR link to issue #<number>
 
@@ -273,7 +261,7 @@ After submission, provide a clear summary with the PR URL.
 
 **Conditional lines:**
 
-- "Marked PR ready" and "Updated PR body" lines: Only in CI mode
+- "Marked PR ready" line: Only in CI mode
 - "Linked to issue" and "Posted PR link" lines: Only if issue reference exists in `.impl/issue.json`
 
 **Formatting requirements:**
@@ -442,12 +430,11 @@ Before completing, verify:
 - [ ] File paths are relative to repository root
 - [ ] Commit created successfully
 - [ ] Branch pushed to origin with upstream tracking
-- [ ] CI detection performed (`$GITHUB_ACTIONS` checked)
-- [ ] PR body prefix obtained (metadata in CI, closing text in manual)
+- [ ] Closing text obtained (if issue reference exists)
 - [ ] GitHub PR created successfully
 - [ ] PR URL extracted from output
+- [ ] PR body updated with checkout footer
 - [ ] CI only: PR marked ready for review
-- [ ] CI only: PR body updated with actual PR number
 - [ ] PR link posted to issue (if issue reference exists)
 - [ ] Results displayed with "What Was Done" section listing actions
 - [ ] PR URL placed at end under "View PR" section
