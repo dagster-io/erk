@@ -4,18 +4,19 @@ This module provides the auto-selection algorithm for choosing
 which sessions to include in an extraction plan.
 """
 
-from erk_shared.extraction.types import BranchContext, SessionInfo
+from erk_shared.extraction.claude_code_session_store import Session
+from erk_shared.extraction.types import BranchContext
 
 # Default threshold for considering a session "substantial"
 DEFAULT_MIN_SUBSTANTIAL_SIZE = 1024
 
 
 def auto_select_sessions(
-    sessions: list[SessionInfo],
+    sessions: list[Session],
     branch_context: BranchContext,
     current_session_id: str | None,
     min_substantial_size: int = DEFAULT_MIN_SUBSTANTIAL_SIZE,
-) -> list[SessionInfo]:
+) -> list[Session]:
     """Auto-select sessions based on branch context.
 
     Rules:

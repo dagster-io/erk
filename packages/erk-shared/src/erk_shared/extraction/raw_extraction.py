@@ -14,9 +14,9 @@ import uuid
 import warnings
 from pathlib import Path
 
+from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
 from erk_shared.extraction.llm_distillation import distill_with_haiku
 from erk_shared.extraction.session_context import collect_session_context
-from erk_shared.extraction.session_discovery import get_current_session_id
 from erk_shared.extraction.types import RawExtractionResult
 from erk_shared.git.abc import Git
 from erk_shared.github.issues.abc import GitHubIssues
@@ -119,6 +119,7 @@ def get_raw_extraction_body(branch_name: str) -> str:
 def create_raw_extraction_plan(
     github_issues: GitHubIssues,
     git: Git,
+    session_store: ClaudeCodeSessionStore,
     repo_root: Path,
     cwd: Path,
     current_session_id: str | None = None,
@@ -137,9 +138,10 @@ def create_raw_extraction_plan(
     Args:
         github_issues: GitHub issues interface for creating issues and comments
         git: Git interface for branch operations
+        session_store: SessionStore for session operations
         repo_root: Path to repository root
         cwd: Current working directory (for project directory lookup)
-        current_session_id: Current session ID (None to auto-detect from env)
+        current_session_id: Current session ID (None to auto-detect from store)
         min_size: Minimum session size in bytes for selection
 
     Returns:
@@ -147,7 +149,7 @@ def create_raw_extraction_plan(
     """
     # Get current session ID if not provided
     if current_session_id is None:
-        current_session_id = get_current_session_id()
+        current_session_id = session_store.get_current_session_id()
 
     # Generate fallback session ID if still None (e.g., running outside Claude session)
     if current_session_id is None:
@@ -157,6 +159,7 @@ def create_raw_extraction_plan(
     session_result = collect_session_context(
         git=git,
         cwd=cwd,
+        session_store=session_store,
         current_session_id=current_session_id,
         min_size=min_size,
         limit=20,

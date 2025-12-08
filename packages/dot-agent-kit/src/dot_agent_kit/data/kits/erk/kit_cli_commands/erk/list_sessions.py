@@ -26,7 +26,7 @@ Examples:
       },
       "current_session_id": "abc123-def456",
       "sessions": [...],
-      "project_dir": "/Users/foo/.claude/projects/-Users-foo-code-erk"
+      "project_dir": "claude-code-project"
     }
 """
 
@@ -37,13 +37,10 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import click
+from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore, Session
 from erk_shared.git.abc import Git
 
-from dot_agent_kit.context_helpers import require_git
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.find_project_dir import (
-    ProjectError,
-    find_project_info,
-)
+from dot_agent_kit.context_helpers import require_cwd, require_git, require_session_store
 
 
 @dataclass
@@ -173,75 +170,76 @@ def format_display_time(mtime: float) -> str:
     return dt.strftime("%b %-d, %-I:%M %p")
 
 
-def extract_summary(session_path: Path, max_length: int = 60) -> str:
-    """Extract summary from session log (first user message text).
+def extract_text_from_blocks(blocks: list[dict | str]) -> str:
+    """Extract the first text string from a list of content blocks."""
+    for block in blocks:
+        if isinstance(block, dict) and block.get("type") == "text":
+            return block.get("text", "")
+        elif isinstance(block, str):
+            return block
+    return ""
+
+
+def extract_summary(content: str, max_length: int = 60) -> str:
+    """Extract summary from session content (first user message text).
 
     Args:
-        session_path: Path to session JSONL file
+        content: Raw JSONL session content
         max_length: Maximum summary length
 
     Returns:
         First user message text, truncated to max_length
     """
-    try:
-        with session_path.open(encoding="utf-8") as f:
-            for line in f:
-                if not line.strip():
-                    continue
-                try:
-                    entry = json.loads(line)
-                    if entry.get("type") != "user":
-                        continue
+    for line in content.split("\n"):
+        if not line.strip():
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue
 
-                    message = entry.get("message", {})
-                    content = message.get("content", "")
+        if entry.get("type") != "user":
+            continue
 
-                    # Content can be string or list of content blocks
-                    if isinstance(content, str):
-                        text = content
-                    elif isinstance(content, list):
-                        # Find first text block
-                        for block in content:
-                            if isinstance(block, dict) and block.get("type") == "text":
-                                text = block.get("text", "")
-                                break
-                            elif isinstance(block, str):
-                                text = block
-                                break
-                        else:
-                            continue
-                    else:
-                        continue
+        message = entry.get("message", {})
+        content_field = message.get("content", "")
 
-                    # Clean up the text
-                    text = text.strip()
-                    if not text:
-                        continue
+        # Content can be string or list of content blocks
+        if isinstance(content_field, str):
+            text = content_field
+        elif isinstance(content_field, list):
+            # Find first text block
+            text = extract_text_from_blocks(content_field)
+            if not text:
+                continue
+        else:
+            continue
 
-                    # Truncate with ellipsis if needed
-                    if len(text) > max_length:
-                        return text[: max_length - 3] + "..."
-                    return text
+        # Clean up the text
+        text = text.strip()
+        if not text:
+            continue
 
-                except json.JSONDecodeError:
-                    continue
-
-    except OSError:
-        pass
+        # Truncate with ellipsis if needed
+        if len(text) > max_length:
+            return text[: max_length - 3] + "..."
+        return text
 
     return ""
 
 
-def _list_sessions_for_project(
-    project_dir: Path,
+def _list_sessions_from_store(
+    session_store: ClaudeCodeSessionStore,
+    cwd: Path,
     current_session_id: str | None,
     limit: int = 10,
     min_size: int = 0,
 ) -> tuple[list[SessionInfo], int]:
-    """List sessions in project directory sorted by modification time.
+    """List sessions from session store sorted by modification time.
 
     Args:
-        project_dir: Path to Claude Code project directory
+        session_store: Session store to query
+        cwd: Current working directory (project identifier)
         current_session_id: Current session ID (for marking)
         limit: Maximum number of sessions to return
         min_size: Minimum session size in bytes (filters out tiny sessions)
@@ -249,53 +247,50 @@ def _list_sessions_for_project(
     Returns:
         Tuple of (sessions list, count of sessions filtered by min_size)
     """
-    sessions: list[SessionInfo] = []
+    # Check if project exists
+    if not session_store.has_project(cwd):
+        return [], 0
 
-    if not project_dir.exists():
-        return sessions, 0
+    # Get all sessions first to count filtered
+    all_sessions = session_store.find_sessions(cwd, min_size=0, limit=1000)
 
-    # Collect session files (exclude agent logs)
-    session_files: list[tuple[Path, float]] = []
-    for log_file in project_dir.iterdir():
-        if not log_file.is_file():
-            continue
-        if log_file.suffix != ".jsonl":
-            continue
-        if log_file.name.startswith("agent-"):
-            continue
-
-        mtime = log_file.stat().st_mtime
-        session_files.append((log_file, mtime))
-
-    # Filter by minimum size
-    filtered_count = 0
+    # Filter by size
+    filtered_sessions: list[Session]
     if min_size > 0:
-        unfiltered = session_files
-        session_files = [(f, m) for f, m in unfiltered if f.stat().st_size >= min_size]
-        filtered_count = len(unfiltered) - len(session_files)
+        filtered_sessions = [s for s in all_sessions if s.size_bytes >= min_size]
+        filtered_count = len(all_sessions) - len(filtered_sessions)
+    else:
+        filtered_sessions = all_sessions
+        filtered_count = 0
 
-    # Sort by mtime descending (newest first)
-    session_files.sort(key=lambda x: x[1], reverse=True)
+    # Apply limit
+    limited_sessions = filtered_sessions[:limit]
 
-    # Take limit
-    for log_file, mtime in session_files[:limit]:
-        session_id = log_file.stem
-        size_bytes = log_file.stat().st_size
-        summary = extract_summary(log_file)
+    # Convert to SessionInfo with summaries
+    session_infos: list[SessionInfo] = []
+    for session in limited_sessions:
+        # Read session content for summary extraction
+        content = session_store.read_session(cwd, session.session_id, include_agents=False)
+        summary = ""
+        if content is not None:
+            summary = extract_summary(content.main_content)
 
-        sessions.append(
+        # Determine if this is the current session
+        is_current = session.session_id == current_session_id
+
+        session_infos.append(
             SessionInfo(
-                session_id=session_id,
-                mtime_display=format_display_time(mtime),
-                mtime_relative=format_relative_time(mtime),
-                mtime_unix=mtime,
-                size_bytes=size_bytes,
+                session_id=session.session_id,
+                mtime_display=format_display_time(session.modified_at),
+                mtime_relative=format_relative_time(session.modified_at),
+                mtime_unix=session.modified_at,
+                size_bytes=session.size_bytes,
                 summary=summary,
-                is_current=(session_id == current_session_id),
+                is_current=is_current,
             )
         )
 
-    return sessions, filtered_count
+    return session_infos, filtered_count
 
 
 @click.command(name="list-sessions")
@@ -319,21 +314,18 @@ def list_sessions(ctx: click.Context, limit: int, min_size: int) -> None:
     (timestamps, summaries), and provides branch context.
     """
     git = require_git(ctx)
-    cwd = Path(os.getcwd())
+    session_store = require_session_store(ctx)
+    cwd = require_cwd(ctx)
 
-    # Find project directory
-    project_result = find_project_info(cwd)
-
-    if isinstance(project_result, ProjectError):
+    # Check if project exists
+    if not session_store.has_project(cwd):
         error = ListSessionsError(
             success=False,
-            error=project_result.error,
-            help=project_result.help,
+            error=f"No Claude Code project found for: {cwd}",
+            help="Make sure you're in a directory with Claude Code sessions",
         )
         click.echo(json.dumps(asdict(error), indent=2))
         raise SystemExit(1)
-
-    project_dir = Path(project_result.project_dir)
 
     # Get branch context
     branch_context = get_branch_context(git, cwd)
@@ -341,9 +333,9 @@ def list_sessions(ctx: click.Context, limit: int, min_size: int) -> None:
     # Get current session ID from environment
     current_session_id = get_current_session_id()
 
-    # List sessions
-    sessions, filtered_count = _list_sessions_for_project(
-        project_dir, current_session_id, limit=limit, min_size=min_size
+    # List sessions from store
+    sessions, filtered_count = _list_sessions_from_store(
+        session_store, cwd, current_session_id, limit=limit, min_size=min_size
     )
 
     # Build result
@@ -356,7 +348,7 @@ def list_sessions(ctx: click.Context, limit: int, min_size: int) -> None:
         },
         current_session_id=current_session_id,
         sessions=[asdict(s) for s in sessions],
-        project_dir=str(project_dir),
+        project_dir="claude-code-project",  # Abstract - don't expose filesystem paths
         filtered_count=filtered_count,
     )
 

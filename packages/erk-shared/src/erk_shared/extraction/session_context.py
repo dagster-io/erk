@@ -8,13 +8,9 @@ plan-save-to-issue and raw extraction workflows.
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk_shared.extraction.session_discovery import (
-    discover_sessions,
-    find_project_dir,
-    get_branch_context,
-    get_current_session_id,
-)
-from erk_shared.extraction.session_preprocessing import preprocess_session
+from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
+from erk_shared.extraction.session_discovery import get_branch_context
+from erk_shared.extraction.session_preprocessing import preprocess_session_content
 from erk_shared.extraction.session_selection import auto_select_sessions
 from erk_shared.extraction.types import BranchContext
 from erk_shared.git.abc import Git
@@ -38,6 +34,7 @@ class SessionContextResult:
 def collect_session_context(
     git: Git,
     cwd: Path,
+    session_store: ClaudeCodeSessionStore,
     current_session_id: str | None = None,
     min_size: int = 1024,
     limit: int = 20,
@@ -46,7 +43,7 @@ def collect_session_context(
 
     This is the shared orchestrator for session context collection.
     It handles:
-    1. Finding the project directory
+    1. Checking if project exists via SessionStore
     2. Getting branch context
     3. Discovering available sessions
     4. Auto-selecting based on branch context
@@ -56,37 +53,36 @@ def collect_session_context(
     Args:
         git: Git interface for branch operations
         cwd: Current working directory (for project directory lookup)
-        current_session_id: Current session ID (None to auto-detect from env)
+        session_store: SessionStore for session operations
+        current_session_id: Current session ID (None to auto-detect from store)
         min_size: Minimum session size in bytes for selection
         limit: Maximum number of sessions to discover
 
     Returns:
         SessionContextResult with combined XML and metadata,
         or None if:
-        - No project directory found
+        - No project exists
         - No current session ID available
         - No sessions discovered
         - All sessions empty after preprocessing
     """
     # Get current session ID if not provided
     if current_session_id is None:
-        current_session_id = get_current_session_id()
+        current_session_id = session_store.get_current_session_id()
 
     if current_session_id is None:
         return None
 
-    # Find project directory
-    project_dir = find_project_dir(cwd)
-    if project_dir is None:
+    # Check if project exists
+    if not session_store.has_project(cwd):
         return None
 
     # Get branch context
     branch_context = get_branch_context(git, cwd)
 
     # Discover sessions
-    sessions = discover_sessions(
-        project_dir=project_dir,
-        current_session_id=current_session_id,
+    sessions = session_store.find_sessions(
+        cwd,
         min_size=min_size,
         limit=limit,
     )
@@ -108,10 +104,18 @@ def collect_session_context(
     # Preprocess sessions to XML
     session_xmls: list[tuple[str, str]] = []
     for session in selected_sessions:
-        xml_content = preprocess_session(
-            session_path=session.path,
-            session_id=session.session_id,
+        session_content = session_store.read_session(
+            cwd,
+            session.session_id,
             include_agents=True,
+        )
+        if session_content is None:
+            continue
+
+        xml_content = preprocess_session_content(
+            main_content=session_content.main_content,
+            agent_logs=session_content.agent_logs,
+            session_id=session.session_id,
         )
         if xml_content:  # Skip empty sessions
             session_xmls.append((session.session_id, xml_content))
