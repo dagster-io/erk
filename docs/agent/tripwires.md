@@ -25,6 +25,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before importing from erk package in dot-agent-kit** → Read [erk_shared Package](architecture/erk-shared-package.md) first. dot-agent-kit cannot import from erk. Use erk_shared for shared code.
 
+**CRITICAL: Before adding a new method to Git ABC** → Read [Git ABC Implementation Checklist](architecture/git-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
+
 **CRITICAL: Before passing variables to gh api graphql as JSON blob** → Read [GitHub GraphQL API Patterns](architecture/github-graphql.md) first. Variables must be passed individually with -f (strings) and -F (typed). The syntax `-f variables={...}` does NOT work.
 
 **CRITICAL: Before checking if get_pr_for_branch() returned a PR** → Read [Not-Found Sentinel Pattern](architecture/not-found-sentinel.md) first. Use `isinstance(pr, PRNotFound)` not `pr is not None`. PRNotFound is a sentinel object, not None.

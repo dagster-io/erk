@@ -5,7 +5,7 @@
 
 ## Categories
 
-- **[architecture/](architecture/)** — at-reference-resolution, claude-cli-integration, claude-cli-progress, claude-executor-patterns, cli-binary-ops-pattern, command-boundaries, commandresult-extension-pattern, erk-architecture, erk-shared-package, event-progress-pattern, extraction-origin-tracking, generated-files, github-graphql, github-interface-patterns, github-parsing, impl-folder-lifecycle, issue-reference-flow, markers, not-found-sentinel, pathlib-symlinks, pr-finalization-paths, protocol-vs-abc, restack-operations, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
+- **[architecture/](architecture/)** — at-reference-resolution, claude-cli-integration, claude-cli-progress, claude-executor-patterns, cli-binary-ops-pattern, command-boundaries, commandresult-extension-pattern, erk-architecture, erk-shared-package, event-progress-pattern, extraction-origin-tracking, generated-files, git-abc-implementation, github-graphql, github-interface-patterns, github-parsing, impl-folder-lifecycle, issue-reference-flow, markers, not-found-sentinel, pathlib-symlinks, pr-finalization-paths, pre-destruction-capture, protocol-vs-abc, restack-operations, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
 - **[cli/](cli/)** — command-group-structure, command-organization, list-formatting, output-styling, script-mode, shell-aliases, template-variables
 - **[commands/](commands/)** — optimization-patterns, tripwires
 - **[erk/](erk/)** — auto-restack, branch-cleanup, graphite-branch-setup, pr-sync-workflow

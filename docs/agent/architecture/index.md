@@ -15,6 +15,7 @@
 - **[event-progress-pattern.md](event-progress-pattern.md)** — implementing operations that need progress reporting, separating business logic from UI output, building testable CLI operations, using ProgressEvent or CompletionEvent
 - **[extraction-origin-tracking.md](extraction-origin-tracking.md)** — understanding how extraction PRs are identified, modifying erk pr land behavior, working with erk-skip-extraction label
 - **[generated-files.md](generated-files.md)** — understanding how agent docs sync works, debugging generated file issues, adding new generated file types
+- **[git-abc-implementation.md](git-abc-implementation.md)** — adding or modifying methods in the Git ABC interface, implementing new Git operations
 - **[github-graphql.md](github-graphql.md)** — using gh api graphql, writing GraphQL queries for GitHub, passing variables to GraphQL queries, fetching data not available in REST API
 - **[github-interface-patterns.md](github-interface-patterns.md)** — calling GitHub API from erk, working with gh api command, fetching PR or issue data efficiently, understanding PRDetails type
 - **[github-parsing.md](github-parsing.md)** — parsing GitHub URLs, extracting PR or issue numbers from URLs, understanding github parsing layers
@@ -24,6 +25,7 @@
 - **[not-found-sentinel.md](not-found-sentinel.md)** — designing return types for lookup operations, handling missing resource cases without exceptions, checking if get_pr_for_branch() returned a PR, working with GitHub PR lookup results
 - **[pathlib-symlinks.md](pathlib-symlinks.md)** — Writing file validation code, Debugging unexpected path resolution behavior, Working with symlinked configuration files
 - **[pr-finalization-paths.md](pr-finalization-paths.md)** — debugging PR body content or issue closing, understanding local vs remote PR submission, working with 'Closes #N' in PRs
+- **[pre-destruction-capture.md](pre-destruction-capture.md)** — implementing operations that destroy or transform data, designing pipelines with data capture requirements, working with git squash, rebase, or other destructive operations
 - **[protocol-vs-abc.md](protocol-vs-abc.md)** — choosing between Protocol and ABC for interface design, designing interfaces with structural vs nominal typing, working with frozen dataclasses and Protocol @property patterns
 - **[restack-operations.md](restack-operations.md)** — implementing or modifying restack operations, understanding preflight/continue/finalize pattern, working with RestackPreflightSuccess/Error types, adding new three-phase operations
 - **[sentinel-path-compatibility.md](sentinel-path-compatibility.md)** — writing functions that check path existence, seeing 'Called .exists() on sentinel path' errors, making functions testable with FakeGit
