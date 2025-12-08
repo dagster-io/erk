@@ -36,7 +36,7 @@ class PrintingGitHub(PrintingBase, GitHub):
 
     # Read-only operations: delegate without printing
 
-    def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str:
+    def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
         """Get PR base branch (read-only, no printing)."""
         return self._wrapped.get_pr_base_branch(repo_root, pr_number)
 
@@ -46,7 +46,7 @@ class PrintingGitHub(PrintingBase, GitHub):
         """List workflow runs (read-only, no printing)."""
         return self._wrapped.list_workflow_runs(repo_root, workflow, limit, user=user)
 
-    def get_workflow_run(self, repo_root: Path, run_id: str) -> WorkflowRun:
+    def get_workflow_run(self, repo_root: Path, run_id: str) -> WorkflowRun | None:
         """Get workflow run details (read-only, no printing)."""
         return self._wrapped.get_workflow_run(repo_root, run_id)
 

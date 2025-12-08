@@ -22,7 +22,7 @@ class GitHub(ABC):
     """
 
     @abstractmethod
-    def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str:
+    def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
         """Get current base branch of a PR from GitHub.
 
         Args:
@@ -30,7 +30,7 @@ class GitHub(ABC):
             pr_number: PR number to query
 
         Returns:
-            Name of the base branch
+            Name of the base branch, or None if PR not found or gh CLI unavailable
         """
         ...
 
@@ -159,7 +159,7 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
-    def get_workflow_run(self, repo_root: Path, run_id: str) -> WorkflowRun:
+    def get_workflow_run(self, repo_root: Path, run_id: str) -> WorkflowRun | None:
         """Get details for a specific workflow run by ID.
 
         Args:
@@ -167,7 +167,7 @@ class GitHub(ABC):
             run_id: GitHub Actions run ID
 
         Returns:
-            WorkflowRun with status and conclusion
+            WorkflowRun with status and conclusion, or None if not found
         """
         ...
 
