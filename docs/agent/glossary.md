@@ -507,6 +507,22 @@ else:
 
 **Related**: [Not-Found Sentinel Pattern](architecture/not-found-sentinel.md)
 
+### NonIdealState
+
+A Protocol interface for representing operation failures without throwing exceptions.
+
+**Pattern**: Functions return `T | NonIdealState` allowing callers to inspect results and decide how to handle errors.
+
+**Key types**: `BranchDetectionFailed`, `NoPRForBranch`, `PRNotFoundError`, `GitHubAPIFailed`
+
+**Usage**:
+- Kit CLI: Check with `isinstance()`, exit with `exit_with_error()`
+- Erk CLI: Use `Ensure.X()` methods for type narrowing
+
+**Files**: `erk_shared/non_ideal_state.py`, `dot_agent_kit/non_ideal_state.py`
+
+**Related**: [NonIdealState Pattern](architecture/non-ideal-state.md), [CLI Exit Patterns](architecture/cli-exit-patterns.md), [GitHubChecks Pattern](architecture/github-checks-pattern.md)
+
 ---
 
 ## Event Types
