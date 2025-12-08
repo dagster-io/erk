@@ -3,6 +3,7 @@
 
 # Kits Documentation
 
+- **[agent-to-python-refactoring.md](agent-to-python-refactoring.md)** — refactoring large agents to Python, agent has more than 300 lines, agent token usage is too high, making agents more testable, reducing mechanical operations in agents
 - **[artifact-synchronization.md](artifact-synchronization.md)** — adding commands to kits, removing kit commands, test_check_command_perfect_sync fails, kit manifest validation errors
 - **[cli-command-development.md](cli-command-development.md)** — adding new kit CLI commands, creating kit commands from scratch, understanding kit command file structure
 - **[cli-commands.md](cli-commands.md)** — creating kit CLI commands, understanding Python/LLM boundary, implementing kit command patterns
