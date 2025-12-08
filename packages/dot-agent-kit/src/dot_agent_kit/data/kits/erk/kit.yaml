@@ -152,6 +152,9 @@ kit_cli_commands:
   - name: tripwires-reminder-hook
     path: kit_cli_commands/erk/tripwires_reminder_hook.py
     description: Remind to check tripwires before common dangerous operations
+  - name: get-pr-review-comments
+    path: kit_cli_commands/erk/get_pr_review_comments.py
+    description: Fetch PR review comments for agent context injection
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit

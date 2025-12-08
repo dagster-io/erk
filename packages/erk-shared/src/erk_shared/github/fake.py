@@ -88,6 +88,7 @@ class FakeGitHub(GitHub):
         self._pr_diffs = pr_diffs or {}
         self._merge_should_succeed = merge_should_succeed
         self._pr_update_should_succeed = pr_update_should_succeed
+        self._pr_review_threads = pr_review_threads or {}
         self._updated_pr_bases: list[tuple[int, str]] = []
         self._updated_pr_bodies: list[tuple[int, str]] = []
         self._updated_pr_titles: list[tuple[int, str]] = []

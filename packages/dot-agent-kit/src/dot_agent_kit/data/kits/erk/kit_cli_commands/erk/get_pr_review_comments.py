@@ -39,6 +39,24 @@ from dot_agent_kit.context_helpers import (
 )
 
 
+class ReviewCommentDict(TypedDict):
+    """Typed dict for a single review comment in JSON output."""
+
+    author: str
+    body: str
+    created_at: str
+
+
+class ReviewThreadDict(TypedDict):
+    """Typed dict for a review thread in JSON output."""
+
+    id: str
+    path: str
+    line: int | None
+    is_outdated: bool
+    comments: list[ReviewCommentDict]
+
+
 @dataclass(frozen=True)
 class ReviewCommentSuccess:
     """Success response for PR review comments."""
@@ -57,24 +75,6 @@ class ReviewCommentError:
     success: bool
     error_type: str
     message: str
-
-
-class ReviewCommentDict(TypedDict):
-    """Typed dict for a single review comment in JSON output."""
-
-    author: str
-    body: str
-    created_at: str
-
-
-class ReviewThreadDict(TypedDict):
-    """Typed dict for a review thread in JSON output."""
-
-    id: str
-    path: str
-    line: int | None
-    is_outdated: bool
-    comments: list[ReviewCommentDict]
 
 
 def _exit_with_error(error_type: str, message: str) -> NoReturn:
@@ -108,7 +108,7 @@ def _ensure_pr_result(
 
 def _format_thread_for_json(thread: PRReviewThread) -> ReviewThreadDict:
     """Format a PRReviewThread for JSON output."""
-    comments = []
+    comments: list[ReviewCommentDict] = []
     for comment in thread.comments:
         comments.append(
             {
