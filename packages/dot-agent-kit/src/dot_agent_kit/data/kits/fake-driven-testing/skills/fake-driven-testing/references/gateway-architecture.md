@@ -1,14 +1,14 @@
-# Integration class Layer Architecture
+# Gateway Layer Architecture
 
-**Read this when**: You need to understand or modify the integration layer (the thin wrapper interfaces over external state).
+**Read this when**: You need to understand or modify the gateway layer (the thin wrapper interfaces over external state).
 
 ## Overview
 
-**Naming note**: "Integration class" is a common name for this pattern. These classes are also called **integration classes**, **gateways**, **providers**, or **ports** in other contexts. The pattern matters more than the name.
+**Naming note**: "Gateway" is a common name for this pattern. These classes are also called **adapters**, **providers**, or **ports** in other contexts. The pattern matters more than the name.
 
-## What Are Integration class Classes?
+## What Are Gateway Classes?
 
-**Adapter classes are thin wrappers around heavyweight external APIs** that:
+**Gateway classes are thin wrappers around heavyweight external APIs** that:
 
 - Touch external state (filesystem, database, APIs, message queues)
 - Could be slow (network calls, disk I/O, subprocess execution)
@@ -17,20 +17,20 @@
 
 ## The Four Implementations
 
-Every integration class interface has **four implementations**:
+Every gateway interface has **four implementations**:
 
 ### 1. Abstract Interface (ABC)
 
 Defines the contract all implementations must follow.
 
-**Example**: `DatabaseAdapter` (`src/myapp/integration classes/database.py`)
+**Example**: `DatabaseGateway` (`src/myapp/gateways/database.py`)
 
 ```python
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
-class DatabaseAdapter(ABC):
+class DatabaseGateway(ABC):
     """Thin wrapper over database operations."""
 
     @abstractmethod
@@ -59,13 +59,13 @@ class DatabaseAdapter(ABC):
 
 Calls actual external systems (database, filesystem, API).
 
-**Example**: `RealDatabaseAdapter` (`src/myapp/integration classes/database.py`)
+**Example**: `RealDatabaseGateway` (`src/myapp/gateways/database.py`)
 
 ```python
 import psycopg2
 from contextlib import contextmanager
 
-class RealDatabaseAdapter(DatabaseAdapter):
+class RealDatabaseGateway(DatabaseGateway):
     """Real database operations via psycopg2."""
 
     def __init__(self, connection_string: str) -> None:
@@ -123,13 +123,13 @@ class RealDatabaseAdapter(DatabaseAdapter):
 
 In-memory simulation for fast testing.
 
-**Example**: `FakeDatabaseAdapter` (`tests/fakes/database.py`)
+**Example**: `FakeDatabaseGateway` (`tests/fakes/database.py`)
 
 ```python
 from typing import Any
 from contextlib import contextmanager
 
-class FakeDatabaseAdapter(DatabaseAdapter):
+class FakeDatabaseGateway(DatabaseGateway):
     """In-memory database simulation for testing."""
 
     def __init__(
@@ -223,7 +223,7 @@ class FakeDatabaseAdapter(DatabaseAdapter):
 
 ```python
 # In test:
-fake_db = FakeDatabaseAdapter()
+fake_db = FakeDatabaseGateway()
 fake_db.execute("INSERT INTO users VALUES (...)")
 
 # Assert operation was called
@@ -234,23 +234,23 @@ assert "INSERT INTO users" in fake_db.executed_commands[0]
 
 Intercepts write operations, delegates reads.
 
-**Example**: `DryRunDatabaseAdapter` (`src/myapp/integration classes/database.py`)
+**Example**: `DryRunDatabaseGateway` (`src/myapp/gateways/database.py`)
 
 ```python
-class DryRunDatabaseAdapter(DatabaseAdapter):
+class DryRunDatabaseGateway(DatabaseGateway):
     """Wrapper that prints instead of executing writes."""
 
-    def __init__(self, adapter: DatabaseAdapter) -> None:
-        self._adapter = adapter  # Wrap any DatabaseAdapter implementation
+    def __init__(self, gateway: DatabaseGateway) -> None:
+        self._gateway = gateway  # Wrap any DatabaseGateway implementation
 
     def query(self, sql: str, *, timeout: float | None = None) -> list[dict[str, Any]]:
         """Delegate read operation."""
-        return self._adapter.query(sql, timeout=timeout)
+        return self._gateway.query(sql, timeout=timeout)
 
     def execute(self, sql: str) -> None:
         """Print instead of executing."""
         print(f"[DRY RUN] Would execute: {sql}")
-        # Does NOT call self._adapter.execute()
+        # Does NOT call self._gateway.execute()
 
     @contextmanager
     def transaction(self):
@@ -262,18 +262,18 @@ class DryRunDatabaseAdapter(DatabaseAdapter):
 
 **Key characteristics**:
 
-- **Wrapper pattern**: Accepts any integration class implementation
+- **Wrapper pattern**: Accepts any gateway implementation
 - **Read operations**: Delegate to wrapped implementation
 - **Write operations**: Print `[DRY RUN]` message, don't execute
 - **Testing**: Verify operations are intercepted correctly
 
-## Common Integration class Types
+## Common Gateway Types
 
-### API Client Integration class
+### API Client Gateway
 
 ```python
 class ApiClient(ABC):
-    """Integration class for external API calls."""
+    """Gateway for external API calls."""
 
     @abstractmethod
     def get(self, endpoint: str, *, params: dict | None = None) -> dict:
@@ -312,11 +312,11 @@ class FakeApiClient(ApiClient):
         return self.responses.get(endpoint, {})
 ```
 
-### File System Integration class
+### File System Gateway
 
 ```python
-class FileSystemAdapter(ABC):
-    """Integration class for file system operations."""
+class FileSystemGateway(ABC):
+    """Gateway for file system operations."""
 
     @abstractmethod
     def read_file(self, path: Path) -> str:
@@ -330,7 +330,7 @@ class FileSystemAdapter(ABC):
     def exists(self, path: Path) -> bool:
         """Check if path exists."""
 
-class RealFileSystemAdapter(FileSystemAdapter):
+class RealFileSystemGateway(FileSystemGateway):
     """Real file system operations."""
 
     def read_file(self, path: Path) -> str:
@@ -345,7 +345,7 @@ class RealFileSystemAdapter(FileSystemAdapter):
     def exists(self, path: Path) -> bool:
         return path.exists()
 
-class FakeFileSystemAdapter(FileSystemAdapter):
+class FakeFileSystemGateway(FileSystemGateway):
     """In-memory file system for testing."""
 
     def __init__(self) -> None:
@@ -364,11 +364,11 @@ class FakeFileSystemAdapter(FileSystemAdapter):
         return str(path) in self._files
 ```
 
-### Message Queue Integration class
+### Message Queue Gateway
 
 ```python
-class MessageQueueAdapter(ABC):
-    """Integration class for message queue operations."""
+class MessageQueueGateway(ABC):
+    """Gateway for message queue operations."""
 
     @abstractmethod
     def publish(self, topic: str, message: dict) -> None:
@@ -378,7 +378,7 @@ class MessageQueueAdapter(ABC):
     def subscribe(self, topic: str) -> Generator[dict, None, None]:
         """Subscribe to topic messages."""
 
-class FakeMessageQueue(MessageQueueAdapter):
+class FakeMessageQueue(MessageQueueGateway):
     """In-memory message queue for testing."""
 
     def __init__(self) -> None:
@@ -402,11 +402,11 @@ class FakeMessageQueue(MessageQueueAdapter):
         return self._published_messages.copy()
 ```
 
-## When to Add/Change Integration class Methods
+## When to Add/Change Gateway Methods
 
 ### Adding a Method
 
-**If you need to add a method to an integration class interface:**
+**If you need to add a method to a gateway interface:**
 
 1. Add `@abstractmethod` to ABC interface
 2. Implement in real class with actual I/O
@@ -425,13 +425,13 @@ class FakeMessageQueue(MessageQueueAdapter):
 
 ## Design Principles
 
-### Keep Integration classes Thin
+### Keep Gateways Thin
 
-**Integration classes should NOT contain business logic**. Push complexity to the business layer.
+**Gateways should NOT contain business logic**. Push complexity to the business layer.
 
 ```python
-# ❌ WRONG: Business logic in adapter class
-class RealDatabaseAdapter(DatabaseAdapter):
+# ❌ WRONG: Business logic in gateway class
+class RealDatabaseGateway(DatabaseGateway):
     def get_active_users_with_recent_orders(self) -> list[dict]:
         """Complex logic to find users."""
         users = self.query("SELECT * FROM users WHERE active = true")
@@ -442,8 +442,8 @@ class RealDatabaseAdapter(DatabaseAdapter):
                 result.append(user)
         return result
 
-# ✅ CORRECT: Thin integration class, logic in business layer
-class RealDatabaseAdapter(DatabaseAdapter):
+# ✅ CORRECT: Thin gateway, logic in business layer
+class RealDatabaseGateway(DatabaseGateway):
     def query(self, sql: str) -> list[dict[str, Any]]:
         """Just wrap database query."""
         conn = psycopg2.connect(self.connection_string)
@@ -454,7 +454,7 @@ class RealDatabaseAdapter(DatabaseAdapter):
 # Business logic layer:
 class UserService:
     def get_active_users_with_recent_orders(self) -> list[User]:
-        """Complex logic over thin integration class."""
+        """Complex logic over thin gateway."""
         users = self.database.query("SELECT * FROM users WHERE active = true")
         result = []
         for user in users:
@@ -464,7 +464,7 @@ class UserService:
         return result
 ```
 
-**Why**: Thin integration classes are easier to fake, easier to test, easier to understand.
+**Why**: Thin gateways are easier to fake, easier to test, easier to understand.
 
 ### Fakes Should Be In-Memory
 
@@ -472,13 +472,13 @@ class UserService:
 
 ```python
 # ❌ WRONG: Fake performs I/O
-class FakeFileSystem(FileSystemAdapter):
+class FakeFileSystem(FileSystemGateway):
     def read_file(self, path: Path) -> str:
         # Reading real files defeats the purpose of fakes!
         return path.read_text()
 
 # ✅ CORRECT: Fake uses in-memory state
-class FakeFileSystem(FileSystemAdapter):
+class FakeFileSystem(FileSystemGateway):
     def __init__(self) -> None:
         self._files: dict[str, str] = {}
 
@@ -493,7 +493,7 @@ class FakeFileSystem(FileSystemAdapter):
 
 ## Related Documentation
 
-- `testing-strategy.md` - How to test adapter classes at different layers
-- `workflows.md` - Step-by-step guide for adding integration class methods
+- `testing-strategy.md` - How to test gateway classes at different layers
+- `workflows.md` - Step-by-step guide for adding gateway methods
 - `patterns.md` - Constructor injection and mutation tracking patterns
-- `anti-patterns.md` - What to avoid in integration class design
+- `anti-patterns.md` - What to avoid in gateway design

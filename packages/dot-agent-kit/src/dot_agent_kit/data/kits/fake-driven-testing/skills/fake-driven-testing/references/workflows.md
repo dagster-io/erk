@@ -539,7 +539,7 @@ def query(self, sql: str, *, timeout: float | None = None) -> list[dict[str, Any
 
 ## Managing Dry-Run Features
 
-**Pattern**: Pass dry-run flag down to integration layer by wrapping with `DryRunAdapter`.
+**Pattern**: Pass dry-run flag down to gateway layer by wrapping with `DryRunGateway`.
 
 ### Service Level
 
@@ -556,7 +556,7 @@ class DataMigrationService:
         """Migrate data with optional dry-run."""
         database = self.database
 
-        # Wrap integration layer with dry-run wrapper
+        # Wrap gateway layer with dry-run wrapper
         if dry_run:
             database = DryRunDatabaseAdapter(database)
 
@@ -744,7 +744,7 @@ def test_complex_order_scenario() -> None:
 ## Related Documentation
 
 - `testing-strategy.md` - Which layer to test at
-- `integration-architecture.md` - Understanding the integration layer
+- `gateway-architecture.md` - Understanding the gateway layer
 - `patterns.md` - Common testing patterns (CliRunner, mutation tracking, etc.)
 - `anti-patterns.md` - What to avoid
 - `python-specific.md` - pytest fixtures and Python tools

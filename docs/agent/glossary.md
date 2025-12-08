@@ -57,6 +57,21 @@ The main git repository directory containing `.git/` directory.
 
 **Note**: In a worktree, `git rev-parse --git-common-dir` points back to the repo root's `.git` directory.
 
+### Root Worktree
+
+The primary git worktree where the `.git` directory lives (as opposed to linked worktrees which have `.git` files pointing elsewhere).
+
+**Terminology Note**: Use "root worktree" (not "main worktree") to avoid confusion with the "main" branch. This ensures "main" unambiguously refers to the branch name.
+
+**In Code**: `WorktreeInfo.is_root` field identifies the root worktree. Always use this instead of path comparison.
+
+**Detection**:
+
+- ✅ Correct: `if wt.is_root:`
+- ❌ Wrong: `if wt.path == repo_root:` (fails from non-root worktrees)
+
+**Related**: [Root Worktree Detection](architecture/erk-architecture.md#root-worktree-detection)
+
 ### Erks Dir
 
 The directory containing all erks for a specific repository.
@@ -604,11 +619,11 @@ for event in executor.execute_command_streaming(...):
 
 ---
 
-## Integration Layer Terms
+## Gateway Terms
 
-### Integration Class
+### Gateway
 
-An ABC (Abstract Base Class) defining integration classes for external systems.
+An ABC (Abstract Base Class) defining gateways for external systems.
 
 **Pattern**:
 
@@ -631,9 +646,11 @@ class Git(ABC):
 
 **Purpose**: Abstraction enabling testing with fakes.
 
+**Related**: [Gateway Inventory](architecture/gateway-inventory.md)
+
 ### Real Implementation
 
-Production implementation of an integration interface that executes actual commands.
+Production implementation of a gateway interface that executes actual commands.
 
 **Naming**: `Real<Interface>` (e.g., `RealGit`)
 
@@ -650,7 +667,7 @@ class RealGit(Git):
 
 ### Fake Implementation
 
-In-memory implementation of an integration interface for testing.
+In-memory implementation of a gateway interface for testing.
 
 **Naming**: `Fake<Interface>` (e.g., `FakeGit`)
 

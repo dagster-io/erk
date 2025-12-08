@@ -1,11 +1,11 @@
 ---
 name: fake-driven-testing
-description: This skill should be used when writing tests, fixing bugs, adding features, or modifying the integration layer. Use when you need guidance on testing architecture, working with fakes, implementing ABC integration interfaces, or understanding the defense-in-depth testing strategy. Essential for maintaining test quality and understanding where different types of tests belong.
+description: This skill should be used when writing tests, fixing bugs, adding features, or modifying the gateway layer. Use when you need guidance on testing architecture, working with fakes, implementing ABC gateway interfaces, or understanding the defense-in-depth testing strategy. Essential for maintaining test quality and understanding where different types of tests belong.
 ---
 
 # Fake-Driven Testing Architecture for Python
 
-**Use this skill when**: Writing tests, fixing bugs, adding features, or modifying integration class/gateway/integration layers in Python projects.
+**Use this skill when**: Writing tests, fixing bugs, adding features, or modifying gateway layers in Python projects.
 
 **Prerequisites**: For Python code standards, load the `dignified-python-313` skill first. This skill focuses on testing architecture, not Python syntax.
 
@@ -29,7 +29,7 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 
 **Philosophy**: Test business logic extensively over fast in-memory fakes. Use real implementations sparingly for integration validation.
 
-**Terminology note**: The "integration layer" (also called integration classes/gateways/providers) refers to thin wrappers around heavyweight external APIs (databases, filesystems, HTTP APIs, message queues, etc.). The pattern matters more than the name.
+**Terminology note**: The "gateway layer" (also called adapters/providers) refers to thin wrappers around heavyweight external APIs (databases, filesystems, HTTP APIs, message queues, etc.). The pattern matters more than the name.
 
 ## Quick Decision: What Should I Read?
 
@@ -42,8 +42,8 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 **Working with Python-specific patterns?**
 → Read `python-specific.md`
 
-**Adding/changing an integration class interface?**
-→ Read `integration-architecture.md`, then `workflows.md#adding-an-integration class-method`
+**Adding/changing a gateway interface?**
+→ Read `gateway-architecture.md`, then `workflows.md#adding-a-gateway-method`
 
 **Need to implement a specific pattern (CliRunner, builders, etc.)?**
 → Read `patterns.md`
@@ -56,23 +56,23 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 
 ## When to Read Each Reference Document
 
-### 📖 `integration-architecture.md`
+### 📖 `gateway-architecture.md`
 
 **Read when**:
 
-- Adding or changing integration class/gateway/ABC integration interfaces
+- Adding or changing gateway/ABC interfaces
 - Understanding the ABC/Real/Fake/DryRun pattern
-- Need examples of integration class implementations
-- Want to understand what integration classes are (and why they're thin)
+- Need examples of gateway implementations
+- Want to understand what gateways are (and why they're thin)
 
 **Contents**:
 
-- What are adapter classes? (naming: integration classes/gateways/integration classes/providers)
+- What are gateway classes? (naming: gateways/adapters/providers)
 - The four implementations (ABC, Real, Fake, DryRun)
 - Code examples for each
-- When to add/change integration class methods
-- Design principles (keep integration classes thin)
-- Common integration class types (Database, API, FileSystem, MessageQueue)
+- When to add/change gateway methods
+- Design principles (keep gateways thin)
+- Common gateway types (Database, API, FileSystem, MessageQueue)
 
 ### 📖 `testing-strategy.md`
 
@@ -118,7 +118,7 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 
 - Adding a new feature (step-by-step)
 - Fixing a bug (step-by-step)
-- Adding an integration class method (complete checklist)
+- Adding a gateway method (complete checklist)
 - Changing an interface (what to update)
 - Managing dry-run features
 
@@ -126,7 +126,7 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 
 - Adding a new feature (TDD workflow)
 - Fixing a bug (reproduce → fix → regression test)
-- Adding an integration class method (8-step checklist with examples)
+- Adding a gateway method (8-step checklist with examples)
 - Changing an interface (update all layers)
 - Managing dry-run features (wrapping pattern)
 - Testing with builder patterns
@@ -167,10 +167,10 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 - ❌ Hardcoded paths in tests (catastrophic)
 - ❌ Not updating all layers
 - ❌ Using subprocess in unit tests
-- ❌ Complex logic in adapter classes
+- ❌ Complex logic in gateway classes
 - ❌ Fakes with I/O operations
 - ❌ Testing implementation details
-- ❌ Incomplete test coverage for integration classes
+- ❌ Incomplete test coverage for gateways
 
 ### 📖 `quick-reference.md`
 
@@ -190,7 +190,7 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 - Common test patterns (code snippets)
 - Example tests to reference
 - Useful commands (pytest, pyright, etc.)
-- Quick checklist for adding integration class methods
+- Quick checklist for adding gateway methods
 
 ## Quick Navigation by Task
 
@@ -207,11 +207,11 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 2. **Patterns**: `patterns.md#constructor-injection-for-fakes`
 3. **Examples**: `quick-reference.md#example-tests-to-reference`
 
-### I'm adding/changing an integration class method
+### I'm adding/changing a gateway method
 
-1. **Understanding**: `integration-architecture.md`
-2. **Step-by-step**: `workflows.md#adding-an-integration class-method`
-3. **Checklist**: `quick-reference.md#quick-checklist-adding-a-new-integration class-method`
+1. **Understanding**: `gateway-architecture.md`
+2. **Step-by-step**: `workflows.md#adding-a-gateway-method`
+3. **Checklist**: `quick-reference.md#quick-checklist-adding-a-new-gateway-method`
 4. **Avoid**: `anti-patterns.md#not-updating-all-layers`
 
 ### I don't know where my test should go
@@ -291,7 +291,7 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 
 ## Key Principles
 
-1. **Thin integration layer**: Wrap external state, push complexity to business logic
+1. **Thin gateway layer**: Wrap external state, push complexity to business logic
 2. **Fast tests over fakes**: 70% of tests should use in-memory fakes
 3. **Defense in depth**: Fakes → sanity tests → pure unit → business logic → integration
 4. **Test what you're building**: No speculative tests, only active work
@@ -327,7 +327,7 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 
 **For quick tasks**: Start with `quick-reference.md`
 
-**For understanding**: Start with `testing-strategy.md` or `integration-architecture.md`
+**For understanding**: Start with `testing-strategy.md` or `gateway-architecture.md`
 
 **For step-by-step guidance**: Use `workflows.md`
 

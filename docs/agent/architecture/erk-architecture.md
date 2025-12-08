@@ -4,6 +4,7 @@ read_when:
   - "understanding erk architecture"
   - "implementing dry-run patterns"
   - "regenerating context after os.chdir"
+  - "detecting root worktree"
 tripwires:
   - action: "passing dry_run boolean flags through function parameters"
     warning: "Use dependency injection with DryRunGit/DryRunGitHub wrappers instead of boolean flags."
@@ -15,6 +16,8 @@ tripwires:
     warning: "Validate flag preconditions BEFORE any mutations. Example: `--up` in `erk pr land` checks for child branches before merging PR. This prevents partial state (PR merged, worktree deleted, but no valid navigation target)."
   - action: "editing docs/agent/index.md or docs/agent/tripwires.md directly"
     warning: "These are generated files. Edit the source frontmatter instead, then run 'dot-agent docs sync'."
+  - action: "comparing worktree path to repo_root to detect root worktree"
+    warning: "Use WorktreeInfo.is_root instead of path comparison. Path comparison fails when running from within a non-root worktree because ctx.cwd resolves differently."
 ---
 
 # Erk Architecture Patterns
@@ -285,27 +288,27 @@ class MockApp:
         pass
 ```
 
-## Integration Layer Directory Structure
+## Gateway Directory Structure
 
-Erk uses a consistent directory structure for all integration layers (git, github, graphite, etc). Each integration follows the ABC/Real/Fake/DryRun pattern.
+Erk uses a consistent directory structure for all gateways (git, github, graphite, etc). Each gateway follows the ABC/Real/Fake/DryRun pattern.
 
 ### Standard Directory Layout
 
 ```
 packages/erk-shared/src/erk_shared/
-├── git/                           # Core git integration
+├── git/                           # Core git gateway
 │   ├── __init__.py                # Re-exports all implementations
 │   ├── abc.py                     # ABC interface definition
 │   ├── real.py                    # Production implementation
 │   ├── fake.py                    # In-memory test implementation
 │   ├── dry_run.py                 # No-op wrapper for dry-run mode
 │   └── printing.py                # (Optional) Wrapper that logs operations
-├── github/                        # GitHub API integration
+├── github/                        # GitHub API gateway
 │   ├── __init__.py
 │   ├── abc.py
 │   ├── real.py
 │   └── fake.py
-└── integrations/                  # Domain-specific integrations
+└── integrations/                  # Domain-specific gateways
     ├── erk_wt/                    # Erk worktree operations
     │   ├── __init__.py
     │   ├── abc.py
@@ -330,8 +333,8 @@ packages/erk-shared/src/erk_shared/
 ```python
 from abc import ABC, abstractmethod
 
-class MyIntegration(ABC):
-    """Abstract interface for MyIntegration operations."""
+class MyGateway(ABC):
+    """Abstract interface for MyGateway operations."""
 
     @abstractmethod
     def do_operation(self, arg: str) -> str:
@@ -343,9 +346,9 @@ class MyIntegration(ABC):
 
 ```python
 import subprocess
-from erk_shared.my_integration.abc import MyIntegration
+from erk_shared.my_gateway.abc import MyGateway
 
-class RealMyIntegration(MyIntegration):
+class RealMyGateway(MyGateway):
     """Production implementation using subprocess."""
 
     def do_operation(self, arg: str) -> str:
@@ -361,9 +364,9 @@ class RealMyIntegration(MyIntegration):
 **`fake.py`** - Test implementation:
 
 ```python
-from erk_shared.my_integration.abc import MyIntegration
+from erk_shared.my_gateway.abc import MyGateway
 
-class FakeMyIntegration(MyIntegration):
+class FakeMyGateway(MyGateway):
     """In-memory fake for testing."""
 
     def __init__(self) -> None:
@@ -377,12 +380,12 @@ class FakeMyIntegration(MyIntegration):
 **`dry_run.py`** - No-op wrapper (optional):
 
 ```python
-from erk_shared.my_integration.abc import MyIntegration
+from erk_shared.my_gateway.abc import MyGateway
 
-class DryRunMyIntegration(MyIntegration):
+class DryRunMyGateway(MyGateway):
     """No-op wrapper that tracks but doesn't execute operations."""
 
-    def __init__(self, delegate: MyIntegration) -> None:
+    def __init__(self, delegate: MyGateway) -> None:
         self.delegate = delegate
         self.operations: list[str] = []
 
@@ -394,45 +397,45 @@ class DryRunMyIntegration(MyIntegration):
 **`__init__.py`** - Re-export pattern:
 
 ```python
-"""MyIntegration operations."""
+"""MyGateway operations."""
 
-from erk_shared.my_integration.abc import MyIntegration
-from erk_shared.my_integration.real import RealMyIntegration
-from erk_shared.my_integration.fake import FakeMyIntegration
+from erk_shared.my_gateway.abc import MyGateway
+from erk_shared.my_gateway.real import RealMyGateway
+from erk_shared.my_gateway.fake import FakeMyGateway
 
 __all__ = [
-    "MyIntegration",      # ABC interface
-    "RealMyIntegration",  # Production implementation
-    "FakeMyIntegration",  # Test implementation
+    "MyGateway",      # ABC interface
+    "RealMyGateway",  # Production implementation
+    "FakeMyGateway",  # Test implementation
 ]
 ```
 
-### Integration Locations
+### Gateway Locations
 
-**Core integrations** (used across the codebase):
+**Core gateways** (used across the codebase):
 
 - `packages/erk-shared/src/erk_shared/git/` - Git operations
 - `packages/erk-shared/src/erk_shared/github/` - GitHub API
 - `packages/erk-shared/src/erk_shared/graphite/` - Graphite stack operations
 
-**Domain integrations** (specific domains):
+**Domain gateways** (specific domains):
 
 - `packages/erk-shared/src/erk_shared/integrations/<name>/` - Domain-specific operations
 
-### When to Create a New Integration
+### When to Create a New Gateway
 
-**Create a new integration when:**
+**Create a new gateway when:**
 
 - Wrapping external CLI tool (git, gh, gt)
 - Wrapping external API (GitHub REST API)
 - Abstracting system operations (time, filesystem)
 - Isolating subprocess calls for testing
 
-**Extend existing integration when:**
+**Extend existing gateway when:**
 
 - Adding method to existing tool (e.g., new git operation)
 - Enhancing existing functionality
-- Operation fits natural domain of existing integration
+- Operation fits natural domain of existing gateway
 
 ### Import Pattern
 
@@ -454,12 +457,12 @@ from erk_shared.git.real import RealGit  # Bypasses __init__.py
 
 ### Testing All Four Layers
 
-When adding a method to an integration ABC:
+When adding a method to a gateway ABC:
 
 1. **ABC**: Add abstract method signature
 2. **Real**: Implement with subprocess/API calls
 3. **Fake**: Implement with in-memory tracking
-4. **DryRun**: Add no-op wrapper (if integration has dry-run layer)
+4. **DryRun**: Add no-op wrapper (if gateway has dry-run layer)
 
 **Example workflow:**
 
@@ -499,9 +502,9 @@ class DryRunGit(Git):
 
 ### Migration Notes
 
-If you find code that should be an integration but isn't:
+If you find code that should be a gateway but isn't:
 
-1. **Create integration directory** with abc.py, real.py, fake.py
+1. **Create gateway directory** with abc.py, real.py, fake.py
 2. **Extract subprocess calls** into Real implementation
 3. **Write Fake implementation** for testing
 4. **Update consumers** to use injected dependency instead of direct calls
@@ -589,6 +592,73 @@ The helper implements this precedence:
 3. **Compare current branch** to detected trunk
 
 This ensures correct detection regardless of repository trunk name.
+
+## Root Worktree Detection
+
+**ALWAYS use `WorktreeInfo.is_root` instead of path comparison to identify the root worktree.**
+
+### The Problem
+
+When running from within a non-root worktree, path comparison fails because:
+
+1. `ctx.cwd` resolves to the worktree path (e.g., `/Users/me/erks/repo/feature-branch`)
+2. `repo_root` from git discovery resolves to the main repo (e.g., `/Users/me/repos/repo`)
+3. Direct path comparison always returns False, even when you're in the root worktree
+
+### Wrong Pattern
+
+```python
+# WRONG: Path comparison breaks from non-root worktrees
+def is_root_worktree(worktree_path: Path, repo_root: Path) -> bool:
+    return worktree_path.resolve() == repo_root.resolve()
+
+# WRONG: Manual computation of is_root
+is_root = worktree_path.resolve() == repo_root.resolve()
+```
+
+### Correct Pattern
+
+```python
+# CORRECT: Use WorktreeInfo.is_root from git worktree list
+worktrees = ctx.git.list_worktrees(repo_root)
+for wt in worktrees:
+    if wt.is_root:
+        # This is the root worktree
+        handle_root_worktree(wt)
+    else:
+        # This is a feature worktree
+        handle_feature_worktree(wt)
+```
+
+### How WorktreeInfo.is_root Works
+
+`WorktreeInfo.is_root` is populated by `RealGit.list_worktrees()` when parsing `git worktree list --porcelain`:
+
+- Git marks the root worktree with `branch refs/heads/<trunk>` where the `.git` directory lives
+- The first worktree entry (before any blank line separator) is always the root
+- `is_root=True` is set based on this git metadata, not path comparison
+
+### When to Use
+
+Use `wt.is_root` whenever you need to:
+
+- Filter out the root worktree from worktree lists
+- Identify which worktree is the main repository
+- Determine special handling for root vs feature worktrees
+
+### Examples in Codebase
+
+```python
+# From checkout.py - handling root worktree specially
+if wt.is_root:
+    # Root worktree navigation
+    activate_root_repo(ctx, repo, script, command_name="checkout")
+
+# From goto_cmd.py - filtering worktrees
+if not wt.is_root:
+    # Only show non-root worktrees in picker
+    worktree_options.append(wt)
+```
 
 ## Design Principles
 

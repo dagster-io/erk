@@ -23,6 +23,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before editing docs/agent/index.md or docs/agent/tripwires.md directly** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. These are generated files. Edit the source frontmatter instead, then run 'dot-agent docs sync'.
 
+**CRITICAL: Before comparing worktree path to repo_root to detect root worktree** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. Use WorktreeInfo.is_root instead of path comparison. Path comparison fails when running from within a non-root worktree because ctx.cwd resolves differently.
+
 **CRITICAL: Before importing from erk package in dot-agent-kit** → Read [erk_shared Package](architecture/erk-shared-package.md) first. dot-agent-kit cannot import from erk. Use erk_shared for shared code.
 
 **CRITICAL: Before adding a new method to Git ABC** → Read [Git ABC Implementation Checklist](architecture/git-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
@@ -33,7 +35,7 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before creating Protocol with bare attributes for frozen dataclasses** → Read [Protocol vs ABC Interface Design Guide](architecture/protocol-vs-abc.md) first. Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors.
 
-**CRITICAL: Before using bare subprocess.run with check=True** → Read [Subprocess Wrappers](architecture/subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (integration) or run_with_error_reporting() (CLI).
+**CRITICAL: Before using bare subprocess.run with check=True** → Read [Subprocess Wrappers](architecture/subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI).
 
 **CRITICAL: Before writing `__all__` to a Python file** → Read [Code Conventions](conventions.md) first. Re-export modules are forbidden. Import directly from where code is defined.
 

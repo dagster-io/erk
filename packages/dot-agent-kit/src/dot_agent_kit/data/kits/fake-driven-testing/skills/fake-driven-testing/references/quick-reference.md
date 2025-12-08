@@ -456,4 +456,4 @@ def test_get_user(input: int, expected: str | None) -> None:
 - `workflows.md` - Step-by-step guides for common tasks
 - `patterns.md` - Common testing patterns explained
 - `anti-patterns.md` - What to avoid
-- `integration-architecture.md` - Understanding the integration layer
+- `gateway-architecture.md` - Understanding the gateway layer

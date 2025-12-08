@@ -10,10 +10,11 @@
 - **[cli-binary-ops-pattern.md](cli-binary-ops-pattern.md)** — wrapping external CLI binary, testing subprocess calls, creating fake for external tool
 - **[command-boundaries.md](command-boundaries.md)** — Choosing between agent vs CLI command, Deciding when to use .claude/commands/ vs src/erk/cli/, Understanding when AI capabilities are needed
 - **[commandresult-extension-pattern.md](commandresult-extension-pattern.md)** — adding new field to CommandResult, extending CommandResult dataclass, adding metadata extraction, implementing new CommandResult field
-- **[erk-architecture.md](erk-architecture.md)** — understanding erk architecture, implementing dry-run patterns, regenerating context after os.chdir
+- **[erk-architecture.md](erk-architecture.md)** — understanding erk architecture, implementing dry-run patterns, regenerating context after os.chdir, detecting root worktree
 - **[erk-shared-package.md](erk-shared-package.md)** — sharing code between erk and dot-agent-kit, deciding where to put new utilities, moving code between packages
 - **[event-progress-pattern.md](event-progress-pattern.md)** — implementing operations that need progress reporting, separating business logic from UI output, building testable CLI operations, using ProgressEvent or CompletionEvent
 - **[extraction-origin-tracking.md](extraction-origin-tracking.md)** — understanding how extraction PRs are identified, modifying erk pr land behavior, working with erk-skip-extraction label
+- **[gateway-inventory.md](gateway-inventory.md)** — understanding available gateways, adding a new gateway, creating test doubles for external services
 - **[generated-files.md](generated-files.md)** — understanding how agent docs sync works, debugging generated file issues, adding new generated file types
 - **[git-abc-implementation.md](git-abc-implementation.md)** — adding or modifying methods in the Git ABC interface, implementing new Git operations
 - **[github-graphql.md](github-graphql.md)** — using gh api graphql, writing GraphQL queries for GitHub, passing variables to GraphQL queries, fetching data not available in REST API

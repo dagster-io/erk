@@ -711,22 +711,22 @@ def test_file_upload():
 
 ## Summary of Anti-Patterns
 
-| Anti-Pattern                         | Why It's Wrong                    | Correct Approach                    |
-| ------------------------------------ | --------------------------------- | ----------------------------------- |
-| Testing speculative features         | Maintenance burden, no value      | Only test active work               |
-| Hardcoded paths                      | Catastrophic: pollutes filesystem | Use `tmp_path` fixture              |
-| Not updating all layers              | Type errors, broken tests         | Update ABC/Real/Fake/DryRun         |
-| subprocess in unit tests             | 100x slower, harder to debug      | Use test clients                    |
-| Complex logic in integration classes | Hard to test, hard to fake        | Keep integration classes thin       |
-| Fakes with I/O                       | Slow, defeats purpose             | In-memory only                      |
-| Testing implementation               | Breaks on refactoring             | Test behavior                       |
-| Incomplete integration class tests   | Untested code, potential bugs     | Test all implementations            |
-| Mocking third-party libs             | Fragile, coupled to internals     | Create your own integration classes |
+| Anti-Pattern                 | Why It's Wrong                    | Correct Approach            |
+| ---------------------------- | --------------------------------- | --------------------------- |
+| Testing speculative features | Maintenance burden, no value      | Only test active work       |
+| Hardcoded paths              | Catastrophic: pollutes filesystem | Use `tmp_path` fixture      |
+| Not updating all layers      | Type errors, broken tests         | Update ABC/Real/Fake/DryRun |
+| subprocess in unit tests     | 100x slower, harder to debug      | Use test clients            |
+| Complex logic in gateways    | Hard to test, hard to fake        | Keep gateways thin          |
+| Fakes with I/O               | Slow, defeats purpose             | In-memory only              |
+| Testing implementation       | Breaks on refactoring             | Test behavior               |
+| Incomplete gateway tests     | Untested code, potential bugs     | Test all implementations    |
+| Mocking third-party libs     | Fragile, coupled to internals     | Create your own gateways    |
 
 ## Related Documentation
 
 - `workflows.md` - Step-by-step guides for correct approaches
 - `patterns.md` - Common testing patterns to follow
 - `testing-strategy.md` - Which layer to test at
-- `integration-architecture.md` - Understanding the integration layer
+- `gateway-architecture.md` - Understanding the gateway layer
 - `python-specific.md` - Python testing best practices
