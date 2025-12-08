@@ -12,6 +12,7 @@ dot-agent kit install gt
 ```
 
 These kits provide:
+
 - **erk** - Plan management commands, skills, and hooks
 - **devrun** - Development tool runner (pytest, pyright, ruff, etc.)
 - **dignified-python** - Python coding standards and patterns

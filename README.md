@@ -16,17 +16,21 @@ Ensure you have these tools installed:
 - `gt` - Graphite for stacked PRs
 - `gh` - GitHub CLI
 
-### Shell Configuration
-
-Add to your shell profile (`.zshrc` or `.bashrc`):
+### Initialize Erk
 
 ```bash
-eval "$(erk completion zsh)"  # or bash
+erk init
 ```
 
-This enables:
-- Tab completion for erk commands
-- Automatic virtual environment activation when switching worktrees
+This creates your global config and prompts for shell integration setup.
+
+### Shell Integration
+
+`erk init` will display shell integration instructions to add to your `.zshrc` or `.bashrc`. Copy these instructions manually - erk doesn't modify your shell config automatically.
+
+**Why manual setup?** Shell integration is essential for the core workflow: it enables `erk checkout` to change your terminal's directory and activate the correct Python environment. Without it, these commands run in a subprocess and have no effect on your shell. We ask you to add it manually so you stay in control of your shell configuration.
+
+To view the instructions again later: `erk init --shell`
 
 ## Local Plan-Driven Workflow
 
@@ -35,6 +39,7 @@ The primary workflow: create a plan, save it, implement it, ship it. **Often com
 ### Planning Phase
 
 1. Start a Claude Code session:
+
    ```bash
    claude
    ```
@@ -46,6 +51,7 @@ The primary workflow: create a plan, save it, implement it, ship it. **Often com
 ### Implementation
 
 4. Execute the plan:
+
    ```bash
    erk implement <issue-number>
    ```
@@ -55,6 +61,7 @@ The primary workflow: create a plan, save it, implement it, ship it. **Often com
 ### PR Submission
 
 5. Submit the PR:
+
    ```bash
    erk pr submit
    ```
@@ -66,6 +73,7 @@ The primary workflow: create a plan, save it, implement it, ship it. **Often com
 6. Review PR feedback in GitHub
 
 7. Address feedback:
+
    ```
    /erk:pr-address
    ```
@@ -114,6 +122,7 @@ To fix merge conflicts during a rebase:
 Erk supports extracting reusable documentation from implementation sessions into the `docs/agent/` folder—a directory of **agent-generated, agent-consumed documentation**.
 
 This documentation:
+
 - Captures patterns discovered during implementation
 - Gets loaded by future agent sessions via AGENTS.md routing
 - Builds institutional knowledge over time
@@ -153,6 +162,7 @@ This checks out the PR into a local worktree for debugging and iteration.
 For smaller changes that don't require formal planning:
 
 1. Create a worktree:
+
    ```bash
    erk wt create <branch-name>
    ```
@@ -160,6 +170,7 @@ For smaller changes that don't require formal planning:
 2. Iterate normally in Claude Code
 
 3. Submit PR:
+
    ```bash
    erk pr submit
    ```
