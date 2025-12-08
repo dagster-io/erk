@@ -953,6 +953,45 @@ A marker state indicating a merged PR is queued for insight extraction. When `er
 - **PR**: Pull Request (GitHub)
 - **TOML**: Tom's Obvious Minimal Language (configuration file format)
 
+## Data Formats
+
+### ISO 8601
+
+Standardized format for dates and timestamps used in kit CLI commands and workflow artifacts.
+
+**Format**: `YYYY-MM-DDTHH:MM:SSZ` (UTC timezone)
+
+**Example**: `2025-01-15T14:30:00Z`
+
+**Usage in erk**:
+
+- Issue tracking metadata (`issue.json` files)
+- Objective turn timestamps
+- Session log timestamps
+- GitHub API responses
+
+**Why ISO 8601?**:
+
+- Sortable lexicographically (filenames, logs)
+- Unambiguous timezone handling (always UTC with `Z` suffix)
+- Language-agnostic parsing
+- GitHub API standard
+
+**Python example**:
+
+```python
+from datetime import datetime, timezone
+
+# Create
+timestamp = datetime.now(timezone.utc).isoformat()
+# Result: "2025-01-15T14:30:00+00:00"
+
+# Parse
+dt = datetime.fromisoformat(timestamp)
+```
+
+**Related**: Kit CLI commands use ISO 8601 for all timestamp fields in JSON output.
+
 ---
 
 ## Kit Concepts

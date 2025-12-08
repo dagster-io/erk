@@ -12,3 +12,5 @@
 - **[kit-check.md](kit-check.md)** — validating kit configuration, debugging missing artifacts, kit-check errors
 - **[push-down-pattern.md](push-down-pattern.md)** — deciding what belongs in kit CLI vs agent markdown, moving bash logic from agent prompts to Python, reducing token usage in agent prompts, designing kit CLI commands for agents
 - **[registry-discovery.md](registry-discovery.md)** — kit not showing in search, debugging kit discovery, understanding registry.yaml
+- **[testing-kit-cli-commands.md](testing-kit-cli-commands.md)** — writing tests for kit CLI commands, testing commands that output JSON, validating kit CLI command structure, using CliRunner for command testing
+- **[workflow-integration.md](workflow-integration.md)** — creating GitHub Actions workflows that call kit CLI commands, parsing JSON output in workflow steps, handling workflow errors from kit CLI commands, passing data between workflow steps
