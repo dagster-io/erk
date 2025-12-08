@@ -225,6 +225,9 @@ def execute_pre_analysis(
     commit_messages = ops.git.get_commit_messages_since(cwd, parent_branch)
 
     # Step 6: Run gt squash only if 2+ commits
+    # Note: We try squashing if git shows 2+ commits, but Graphite may have a different
+    # view of "branch commits" after a previous submit. We handle "nothing to squash"
+    # gracefully as a success case (idempotent squash).
     squashed = False
     if commit_count >= 2:
         yield ProgressEvent(f"Squashing {commit_count} commits... (gt squash --no-edit)")
@@ -232,11 +235,21 @@ def execute_pre_analysis(
             ops.graphite.squash_branch(repo_root, quiet=False)
             squashed = True
             yield ProgressEvent(f"Squashed {commit_count} commits into 1", style="success")
-        except subprocess.CalledProcessError as e:
-            # Check if failure was due to merge conflict
-            stderr = e.stderr if hasattr(e, "stderr") else ""
-            combined_output = (e.stdout if hasattr(e, "stdout") else "") + stderr
-            if "conflict" in combined_output.lower() or "merge conflict" in combined_output.lower():
+        except RuntimeError as e:
+            # run_subprocess_with_context wraps CalledProcessError in RuntimeError
+            # with the error message containing stdout/stderr
+            error_msg = str(e).lower()
+
+            # Handle "nothing to squash" gracefully - this is an idempotent success case
+            # Graphite's view of "branch commits" may differ from git's after previous submit
+            if "nothing to squash" in error_msg:
+                yield ProgressEvent(
+                    "Already a single commit in Graphite's view, no squash needed",
+                    style="success",
+                )
+                # Continue without squashing - this is a valid success path
+
+            elif "conflict" in error_msg or "merge conflict" in error_msg:
                 yield CompletionEvent(
                     PreAnalysisError(
                         success=False,
@@ -245,28 +258,27 @@ def execute_pre_analysis(
                         details={
                             "branch_name": branch_name,
                             "commit_count": str(commit_count),
-                            "stdout": e.stdout if hasattr(e, "stdout") else "",
-                            "stderr": stderr,
+                            "error": str(e),
                         },
                     )
                 )
                 return
 
-            # Generic squash failure (not conflict-related)
-            yield CompletionEvent(
-                PreAnalysisError(
-                    success=False,
-                    error_type="squash_failed",
-                    message="Failed to squash commits",
-                    details={
-                        "branch_name": branch_name,
-                        "commit_count": str(commit_count),
-                        "stdout": e.stdout if hasattr(e, "stdout") else "",
-                        "stderr": stderr,
-                    },
+            else:
+                # Generic squash failure (not conflict-related)
+                yield CompletionEvent(
+                    PreAnalysisError(
+                        success=False,
+                        error_type="squash_failed",
+                        message="Failed to squash commits",
+                        details={
+                            "branch_name": branch_name,
+                            "commit_count": str(commit_count),
+                            "error": str(e),
+                        },
+                    )
                 )
-            )
-            return
+                return
 
     # Build success message
     message_parts = [f"Pre-analysis complete for branch: {branch_name}"]

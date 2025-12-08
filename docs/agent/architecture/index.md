@@ -17,7 +17,7 @@
 - **[gateway-inventory.md](gateway-inventory.md)** — understanding available gateways, adding a new gateway, creating test doubles for external services
 - **[generated-files.md](generated-files.md)** — understanding how agent docs sync works, debugging generated file issues, adding new generated file types
 - **[git-abc-implementation.md](git-abc-implementation.md)** — adding or modifying methods in the Git ABC interface, implementing new Git operations
-- **[github-graphql.md](github-graphql.md)** — using gh api graphql, writing GraphQL queries for GitHub, passing variables to GraphQL queries, fetching data not available in REST API
+- **[github-graphql.md](github-graphql.md)** — using gh api graphql, writing GraphQL queries for GitHub, writing GraphQL mutations for GitHub, passing variables to GraphQL queries, fetching data not available in REST API, modifying GitHub data (resolving threads, adding comments)
 - **[github-interface-patterns.md](github-interface-patterns.md)** — calling GitHub API from erk, working with gh api command, fetching PR or issue data efficiently, understanding PRDetails type
 - **[github-parsing.md](github-parsing.md)** — parsing GitHub URLs, extracting PR or issue numbers from URLs, understanding github parsing layers
 - **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .impl/ or .worker-impl/ folders, understanding remote implementation workflow, debugging plan visibility in PRs
