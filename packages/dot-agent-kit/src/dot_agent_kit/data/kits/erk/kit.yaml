@@ -172,6 +172,9 @@ kit_cli_commands:
   - name: post-workflow-started-comment
     path: kit_cli_commands/erk/post_workflow_started_comment.py
     description: Post workflow started comment to GitHub issue with YAML metadata
+  - name: generate-pr-summary
+    path: kit_cli_commands/erk/generate_pr_summary.py
+    description: Generate PR summary from PR diff using Claude (no commit messages)
   - name: update-pr-summary
     path: kit_cli_commands/erk/update_pr_summary.py
     description: Update PR body with implementation summary from commit message
