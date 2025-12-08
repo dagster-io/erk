@@ -6,6 +6,7 @@ from pathlib import Path
 from dot_agent_kit.cli.output import user_output
 from dot_agent_kit.hooks.installer import install_hooks
 from dot_agent_kit.io.manifest import load_kit_manifest
+from dot_agent_kit.models.artifact import ARTIFACT_TARGET_DIRS, ArtifactType
 from dot_agent_kit.models.config import InstalledKit
 from dot_agent_kit.operations.artifact_operations import create_artifact_operations
 from dot_agent_kit.sources.exceptions import ArtifactConflictError
@@ -28,11 +29,6 @@ def install_kit(
                           If None, installs all artifacts from manifest.
     """
     manifest = load_kit_manifest(resolved.manifest_path)
-    claude_dir = project_dir / ".claude"
-
-    # Create .claude directory if needed
-    if not claude_dir.exists():
-        claude_dir.mkdir(parents=True)
 
     installed_artifacts: list[str] = []
 
@@ -45,9 +41,18 @@ def install_kit(
     )
 
     # Process each artifact type
-    for artifact_type, paths in artifacts_to_install.items():
-        # Map artifact type to .claude subdirectory
-        target_dir = claude_dir / f"{artifact_type}s"  # agents, commands, skills
+    for artifact_type_str, paths in artifacts_to_install.items():
+        # Get base directory for this artifact type (default to .claude for unknown types)
+        artifact_type: ArtifactType = artifact_type_str  # type: ignore[assignment]
+        base_dir_name = ARTIFACT_TARGET_DIRS.get(artifact_type, ".claude")
+        base_dir = project_dir / base_dir_name
+
+        # Ensure base directory exists
+        if not base_dir.exists():
+            base_dir.mkdir(parents=True)
+
+        # Map artifact type to subdirectory (e.g., agents, commands, skills, workflows)
+        target_dir = base_dir / f"{artifact_type}s"
         if not target_dir.exists():
             target_dir.mkdir(parents=True)
 
@@ -90,7 +95,7 @@ def install_kit(
             mode_indicator = operations.install_artifact(source, target)
 
             # Log installation with namespace visibility
-            relative_path = target.relative_to(claude_dir)
+            relative_path = target.relative_to(base_dir)
             user_output(f"  Installed {artifact_type}: {relative_path}{mode_indicator}")
 
             # Track installation
