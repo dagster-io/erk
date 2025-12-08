@@ -23,6 +23,7 @@ Complete guide to Claude Code hooks: general capabilities and project-specific u
 - [Exit Code Decision Patterns](#exit-code-decision-patterns)
 - [Security Considerations](#security-considerations)
 - [Best Practices](#best-practices)
+- [Hook Output Format Conventions](#hook-output-format-conventions)
 
 **Part 2: Project-Specific Supplement**
 
@@ -500,6 +501,98 @@ def run_tests() -> bool:
 
 if __name__ == "__main__":
     pre_commit_check()
+```
+
+### Hook Output Format Conventions
+
+Hook output should be minimal to reduce context consumption. Every token in hook output consumes context budget across the entire session, so verbose output compounds rapidly (6-line hook × 50 prompts = 300 lines of repeated context).
+
+#### Output Patterns
+
+**Skill Reminder Hooks**
+
+For hooks that remind the agent to load a skill:
+
+```
+📌 skill-name: If not loaded, load now. Always abide by its rules.
+```
+
+Example:
+
+```
+📌 dignified-python-312: If not loaded, load now. Always abide by its rules.
+```
+
+**Routing Reminder Hooks**
+
+For hooks that route to specialized agents/tools:
+
+```
+📋 tool-name: trigger-conditions → Action(params)
+```
+
+Example:
+
+```
+📋 devrun: IF running pytest/pyright/ruff/prettier/make/gt → use devrun agent
+   ↳ Use Task tool with subagent_type="devrun", NOT direct Bash
+   ↳ Includes uv run variants: uv run pytest, uv run pyright, etc.
+   ↳ If not running these tools: This reminder doesn't apply
+```
+
+**Context Injection Hooks**
+
+For hooks that inject context (session IDs, metadata):
+
+```
+📌 context-type: value
+```
+
+Example:
+
+```
+📌 session: abc123-def456
+```
+
+#### Context Minimization Strategies
+
+1. **One-liner format**: Convey the essential action in a single line
+2. **Use symbols**: `→` instead of "use", `📌` for pins, `📋` for routing
+3. **Omit explanations**: The agent has the skill/doc for details
+4. **No wrapper tags**: Plain text, no XML or markdown formatting
+
+#### Anti-patterns
+
+Avoid these context-consuming patterns:
+
+- Multi-line explanations (compress to one line)
+- XML wrapper tags like `<reminder>...</reminder>`
+- Redundant "WHY:" explanations that duplicate skill content
+- Bullet points with sub-items when a single line suffices
+- Verbose descriptions of what the agent should do (put that in the skill/doc)
+
+**Example transformation:**
+
+❌ Before (verbose):
+
+```
+<reminder>
+You should use the devrun agent when running pytest, pyright, ruff, prettier, make, or gt.
+
+WHY: It provides specialized parsing and is more cost efficient.
+
+Here's how:
+- Use the Task tool
+- Set subagent_type="devrun"
+- Do NOT use direct Bash commands
+</reminder>
+```
+
+✅ After (minimal):
+
+```
+📋 devrun: IF running pytest/pyright/ruff/prettier/make/gt → use devrun agent
+   ↳ Use Task tool with subagent_type="devrun", NOT direct Bash
 ```
 
 ---
