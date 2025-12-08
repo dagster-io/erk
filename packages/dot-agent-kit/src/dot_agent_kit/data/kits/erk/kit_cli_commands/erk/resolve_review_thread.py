@@ -27,10 +27,15 @@ Examples:
 
 import json
 from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 
 from dot_agent_kit.context_helpers import require_github, require_repo_root
+
+if TYPE_CHECKING:
+    from erk_shared.github.abc import GitHub
 
 
 @dataclass(frozen=True)
@@ -51,6 +56,30 @@ class ResolveThreadError:
     message: str
 
 
+def _add_comment_if_provided(
+    github: "GitHub",
+    repo_root: Path,
+    thread_id: str,
+    comment: str | None,
+) -> bool | ResolveThreadError:
+    """Add a comment to the thread if provided.
+
+    Returns:
+        True/False for comment_added status, or ResolveThreadError on failure
+    """
+    if comment is None:
+        return False
+
+    try:
+        return github.add_review_thread_reply(repo_root, thread_id, comment)
+    except RuntimeError as e:
+        return ResolveThreadError(
+            success=False,
+            error_type="comment_failed",
+            message=f"Failed to add comment: {e}",
+        )
+
+
 @click.command(name="resolve-review-thread")
 @click.option("--thread-id", required=True, help="GraphQL node ID of the thread to resolve")
 @click.option("--comment", default=None, help="Optional comment to add before resolving")
@@ -67,21 +96,12 @@ def resolve_review_thread(ctx: click.Context, thread_id: str, comment: str | Non
     repo_root = require_repo_root(ctx)
     github = require_github(ctx)
 
-    # Track whether we added a comment
-    comment_added = False
-
     # Add comment first if provided
-    if comment is not None:
-        try:
-            comment_added = github.add_review_thread_reply(repo_root, thread_id, comment)
-        except RuntimeError as e:
-            result = ResolveThreadError(
-                success=False,
-                error_type="comment_failed",
-                message=f"Failed to add comment: {e}",
-            )
-            click.echo(json.dumps(asdict(result), indent=2))
-            raise SystemExit(0) from None
+    comment_result = _add_comment_if_provided(github, repo_root, thread_id, comment)
+    if isinstance(comment_result, ResolveThreadError):
+        click.echo(json.dumps(asdict(comment_result), indent=2))
+        raise SystemExit(0)
+    comment_added = comment_result
 
     # Attempt to resolve the thread
     try:

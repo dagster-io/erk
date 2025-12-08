@@ -230,3 +230,13 @@ class PrintingGitHub(PrintingBase, GitHub):
     def has_pr_label(self, repo_root: Path, pr_number: int, label: str) -> bool:
         """Check if PR has label (read-only, no printing)."""
         return self._wrapped.has_pr_label(repo_root, pr_number, label)
+
+    def resolve_review_thread(self, repo_root: Path, thread_id: str) -> bool:
+        """Resolve a PR review thread with printed output."""
+        self._emit(self._format_command(f"gh api graphql (resolve thread {thread_id})"))
+        return self._wrapped.resolve_review_thread(repo_root, thread_id)
+
+    def add_review_thread_reply(self, repo_root: Path, thread_id: str, body: str) -> bool:
+        """Add a reply to a PR review thread with printed output."""
+        self._emit(self._format_command(f"gh api graphql (add reply to thread {thread_id})"))
+        return self._wrapped.add_review_thread_reply(repo_root, thread_id, body)
