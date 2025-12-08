@@ -1,7 +1,5 @@
 """Tests for erk objective turn command."""
 
-from pathlib import Path
-
 from click.testing import CliRunner
 from erk_shared.git.fake import FakeGit
 from erk_shared.objectives.storage import FakeObjectiveStore
@@ -140,9 +138,7 @@ def test_turn_with_dangerous_flag() -> None:
             claude_executor=claude_executor,
         )
 
-        result = runner.invoke(
-            objective_group, ["turn", "test-objective", "--dangerous"], obj=ctx
-        )
+        result = runner.invoke(objective_group, ["turn", "test-objective", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
         assert len(claude_executor.interactive_command_calls) == 1
@@ -203,9 +199,7 @@ def test_turn_fails_for_nonexistent_objective() -> None:
             claude_executor=claude_executor,
         )
 
-        result = runner.invoke(
-            objective_group, ["turn", "nonexistent-objective"], obj=ctx
-        )
+        result = runner.invoke(objective_group, ["turn", "nonexistent-objective"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Objective not found" in result.output
