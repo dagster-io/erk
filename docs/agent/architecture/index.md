@@ -8,6 +8,7 @@
 - **[claude-cli-progress.md](claude-cli-progress.md)** — adding progress output to Claude operations, wrapping Claude CLI with user feedback, using ProgressEvent or CompletionEvent, converting blocking operations to streaming progress
 - **[claude-executor-patterns.md](claude-executor-patterns.md)** — launching Claude from CLI commands, deciding which ClaudeExecutor method to use, testing code that executes Claude CLI
 - **[cli-binary-ops-pattern.md](cli-binary-ops-pattern.md)** — wrapping external CLI binary, testing subprocess calls, creating fake for external tool
+- **[cli-exit-patterns.md](cli-exit-patterns.md)** — writing kit CLI commands, handling errors in CLI commands, choosing between JSON and styled output, understanding exit code conventions
 - **[command-boundaries.md](command-boundaries.md)** — Choosing between agent vs CLI command, Deciding when to use .claude/commands/ vs src/erk/cli/, Understanding when AI capabilities are needed
 - **[commandresult-extension-pattern.md](commandresult-extension-pattern.md)** — adding new field to CommandResult, extending CommandResult dataclass, adding metadata extraction, implementing new CommandResult field
 - **[erk-architecture.md](erk-architecture.md)** — understanding erk architecture, implementing dry-run patterns, regenerating context after os.chdir, detecting root worktree
@@ -17,12 +18,15 @@
 - **[gateway-abc-implementation.md](gateway-abc-implementation.md)** — adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite), implementing new gateway operations
 - **[gateway-inventory.md](gateway-inventory.md)** — understanding available gateways, adding a new gateway, creating test doubles for external services
 - **[generated-files.md](generated-files.md)** — understanding how agent docs sync works, debugging generated file issues, adding new generated file types
+- **[git-abc-implementation.md](git-abc-implementation.md)** — adding or modifying methods in the Git ABC interface, implementing new Git operations
+- **[github-checks-pattern.md](github-checks-pattern.md)** — calling GitHub API in kit commands, handling GitHub operation failures, using NonIdealState with GitHub operations
 - **[github-graphql.md](github-graphql.md)** — using gh api graphql, writing GraphQL queries for GitHub, passing variables to GraphQL queries, fetching data not available in REST API
 - **[github-interface-patterns.md](github-interface-patterns.md)** — calling GitHub API from erk, working with gh api command, fetching PR or issue data efficiently, understanding PRDetails type
 - **[github-parsing.md](github-parsing.md)** — parsing GitHub URLs, extracting PR or issue numbers from URLs, understanding github parsing layers
 - **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .impl/ or .worker-impl/ folders, understanding remote implementation workflow, debugging plan visibility in PRs
 - **[issue-reference-flow.md](issue-reference-flow.md)** — issue references not appearing in PRs, debugging 'Closes #N' in PR body, working with issue.json
 - **[markers.md](markers.md)** — creating worktree state tracking, adding friction before destructive operations, implementing pending extraction workflow
+- **[non-ideal-state.md](non-ideal-state.md)** — handling operations that can fail gracefully, returning errors without throwing exceptions, type narrowing for error handling, working with GitHubChecks class
 - **[not-found-sentinel.md](not-found-sentinel.md)** — designing return types for lookup operations, handling missing resource cases without exceptions, checking if get_pr_for_branch() returned a PR, working with GitHub PR lookup results
 - **[pathlib-symlinks.md](pathlib-symlinks.md)** — Writing file validation code, Debugging unexpected path resolution behavior, Working with symlinked configuration files
 - **[pr-finalization-paths.md](pr-finalization-paths.md)** — debugging PR body content or issue closing, understanding local vs remote PR submission, working with 'Closes #N' in PRs

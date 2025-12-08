@@ -617,6 +617,21 @@ for event in executor.execute_command_streaming(...):
 
 **Related**: [Claude CLI Integration](architecture/claude-cli-integration.md)
 
+### NonIdealState
+
+A Protocol interface for representing operation failures without throwing exceptions.
+
+**Pattern**: Functions return `T | NonIdealState` allowing callers to inspect results and decide how to handle errors.
+
+**Key types**: `BranchDetectionFailed`, `NoPRForBranch`, `PRNotFoundError`, `GitHubAPIFailed`
+
+**Usage**:
+
+- Kit CLI: Check with `isinstance()`, exit with `exit_with_error()`
+- Erk CLI: Use `Ensure.X()` methods for type narrowing
+
+**Files**: `erk_shared/non_ideal_state.py`, `dot_agent_kit/non_ideal_state.py`
+
 ---
 
 ## Gateway Terms
