@@ -14,7 +14,6 @@ from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.add_remote_execution_note 
     add_remote_execution_note,
 )
 
-
 # ============================================================================
 # Success Cases (Layer 4: Business Logic over Fakes)
 # ============================================================================

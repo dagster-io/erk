@@ -23,9 +23,9 @@ Examples:
 """
 
 import click
+from erk_shared.github.pr_footer import build_remote_execution_note
 
 from dot_agent_kit.context_helpers import require_github, require_repo_root
-from erk_shared.github.pr_footer import build_remote_execution_note
 
 
 @click.command(name="add-remote-execution-note")
