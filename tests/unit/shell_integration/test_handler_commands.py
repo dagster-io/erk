@@ -452,3 +452,58 @@ def test_process_command_result_no_output_when_no_stderr_no_exception() -> None:
 
     assert result.passthrough is False
     assert result.exit_code == 1
+
+
+def test_yolo_flag_causes_passthrough() -> None:
+    """--yolo flag should cause passthrough to avoid conflict with --script.
+
+    Regression test for issue #2754: erk implement --yolo fails with
+    "Error: --no-interactive and --script are mutually exclusive".
+
+    The bug:
+    1. User runs `erk implement 2753 --yolo` via shell wrapper
+    2. Shell wrapper intercepts → calls 'erk __shell implement 2753 --yolo'
+    3. Handler adds --script flag to args
+    4. Command receives both --yolo (expands to --no-interactive) and --script
+    5. Click fails: "mutually exclusive"
+
+    Fix: --yolo should cause passthrough (like --help, --dry-run) so shell
+    integration doesn't add --script.
+    """
+    result = handle_shell_request(("implement", "2753", "--yolo"))
+    assert result.passthrough is True, "--yolo should cause passthrough"
+
+
+def test_no_interactive_flag_causes_passthrough() -> None:
+    """--no-interactive flag should cause passthrough to avoid conflict with --script.
+
+    --no-interactive and --script are mutually exclusive. When --no-interactive
+    is present, shell integration should passthrough to avoid adding --script.
+    """
+    result = handle_shell_request(("implement", "2753", "--no-interactive"))
+    assert result.passthrough is True, "--no-interactive should cause passthrough"
+
+
+def test_passthrough_flags_include_yolo_and_no_interactive() -> None:
+    """Verify passthrough flags include --yolo and --no-interactive.
+
+    Shell integration passthrough flags must include:
+    - -h, --help (show help)
+    - --script (already has script mode)
+    - --dry-run (show output directly)
+    - --yolo (conflicts with --script)
+    - --no-interactive (conflicts with --script)
+    """
+    # Test each flag causes passthrough when present in args
+    passthrough_test_cases = [
+        (("implement", "2753", "-h"), "-h"),
+        (("implement", "2753", "--help"), "--help"),
+        (("implement", "2753", "--script"), "--script"),
+        (("implement", "2753", "--dry-run"), "--dry-run"),
+        (("implement", "2753", "--yolo"), "--yolo"),
+        (("implement", "2753", "--no-interactive"), "--no-interactive"),
+    ]
+
+    for args, flag in passthrough_test_cases:
+        result = handle_shell_request(args)
+        assert result.passthrough is True, f"{flag} should cause passthrough"

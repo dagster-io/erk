@@ -135,9 +135,11 @@ def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellInt
     to stream directly to the terminal in real-time, while capturing stdout
     (the activation script path) for shell integration.
     """
-    # Check if help flags, --script, or --dry-run are present - these should pass through
-    # Dry-run mode should show output directly, not via shell integration
-    if "-h" in args or "--help" in args or "--script" in args or "--dry-run" in args:
+    # Check if help flags, --script, --dry-run, or non-interactive flags are present
+    # These should pass through to avoid shell integration adding --script.
+    # --yolo and --no-interactive conflict with --script (mutually exclusive).
+    passthrough_flags = {"-h", "--help", "--script", "--dry-run", "--yolo", "--no-interactive"}
+    if passthrough_flags & set(args):
         return ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
 
     cli_cmd_parts = SHELL_INTEGRATION_COMMANDS.get(command_name)
