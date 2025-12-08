@@ -35,6 +35,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before using bare subprocess.run with check=True** → Read [Subprocess Wrappers](architecture/subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (integration) or run_with_error_reporting() (CLI).
 
+**CRITICAL: Before determining if a worktree is root** → Read [WorktreeInfo Patterns and Pitfalls](architecture/worktree-info-patterns.md) first. Use `wt.is_root` field, NEVER compare paths. Path comparison fails when running from non-root worktrees.
+
 **CRITICAL: Before writing `__all__` to a Python file** → Read [Code Conventions](conventions.md) first. Re-export modules are forbidden. Import directly from where code is defined.
 
 **CRITICAL: Before using Path.cwd() in kit CLI commands** → Read [Kit CLI Dependency Injection Patterns](kits/dependency-injection.md) first. Use require_cwd(ctx) instead. Path.cwd() bypasses dependency injection and makes tests require monkeypatching.
