@@ -10,6 +10,8 @@ tripwires:
     warning: "Bundled kits should contain real files, NOT symlinks. The installation process creates symlinks FROM .claude/ TO kit sources."
   - action: "running `kit sync` after adding artifacts to kit.yaml"
     warning: "Must use `--force` flag if version wasn't bumped."
+  - action: "removing agents from kit.yaml artifacts"
+    warning: "When removing an agent from kit.yaml, also remove the corresponding symlink from .claude/agents/. The test_no_broken_symlinks_in_claude_directory integration test will fail if orphaned symlinks remain."
 ---
 
 # Kit Artifact and Symlink Management
@@ -83,6 +85,32 @@ If the docs are shared across multiple kits or shouldn't be bundled:
 
 ```bash
 dot-agent kit sync --force  # Required to pick up new artifacts
+```
+
+## Removing Agents from kit.yaml
+
+When removing an agent from kit.yaml, you must also remove the corresponding symlink from `.claude/agents/` directory:
+
+**Steps:**
+
+1. Remove the agent entry from `kit.yaml` under `artifacts: agents:`
+2. Remove the symlink from `.claude/agents/<agent-name>.md`
+3. Run `dot-agent kit sync --force` to sync changes
+4. Run integration tests to verify: `pytest tests/integration/`
+
+**Why this matters:**
+
+The integration test `test_no_broken_symlinks_in_claude_directory` will fail if orphaned symlinks remain in `.claude/`. This test ensures all symlinks in `.claude/` point to valid files.
+
+**Example:**
+
+```bash
+# After removing agent from kit.yaml:
+rm .claude/agents/git-branch-submitter.md
+
+# Verify no broken symlinks:
+find .claude -type l ! -exec test -e {} \; -print
+# (should output nothing)
 ```
 
 ## Troubleshooting

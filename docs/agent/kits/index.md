@@ -10,5 +10,6 @@
 - **[dependency-injection.md](dependency-injection.md)** — writing kit CLI commands, testing kit CLI commands, using DotAgentContext
 - **[artifact-management.md](artifact-management.md)** — adding artifacts to kits, fixing kit-check errors, troubleshooting kit sync, kit sync says up to date but artifacts missing
 - **[kit-check.md](kit-check.md)** — validating kit configuration, debugging missing artifacts, kit-check errors
+- **[kit-cli-push-down.md](kit-cli-push-down.md)** — agent markdown files exceed 200 lines, slash commands contain embedded bash scripts, need to make agent logic testable, optimizing token usage in kit commands
 - **[push-down-pattern.md](push-down-pattern.md)** — deciding what belongs in kit CLI vs agent markdown, moving bash logic from agent prompts to Python, reducing token usage in agent prompts, designing kit CLI commands for agents
 - **[registry-discovery.md](registry-discovery.md)** — kit not showing in search, debugging kit discovery, understanding registry.yaml
