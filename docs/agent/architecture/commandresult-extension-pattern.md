@@ -360,69 +360,20 @@ def test_execute_command_captures_session_id():
 
 ## Real-World Example: Adding `session_id`
 
-This pattern was used to add `session_id` support to CommandResult. Here's what was changed:
+This pattern was used to add `session_id` support to CommandResult. The changes touched these locations (see the files for current implementation):
 
-**1. CommandResult dataclass** (claude_executor.py:48):
+| Step | Location                                                        | Change                                              |
+| ---- | --------------------------------------------------------------- | --------------------------------------------------- |
+| 1    | `src/erk/core/claude_executor.py` - CommandResult               | Add `session_id: str \| None` field                 |
+| 2    | `src/erk/core/claude_executor.py` - `_parse_stream_json_line`   | Add `"session_id": None` to result dict             |
+| 3    | `src/erk/core/claude_executor.py` - `_parse_stream_json_line`   | Add extraction logic for top-level `session_id`     |
+| 4    | `src/erk/core/claude_executor.py` - `execute_command_streaming` | Yield `StreamEvent("session_id", ...)`              |
+| 5    | `src/erk/core/claude_executor.py` - `execute_command`           | Capture event into `session_id` variable            |
+| 6    | `src/erk/core/output.py` - `stream_command_with_feedback`       | Same capture logic                                  |
+| 7    | `tests/fakes/fake_claude_executor.py`                           | Add `simulated_session_id` parameter                |
+| 8    | Test files                                                      | Add parsing, fake simulation, and integration tests |
 
-```python
-session_id: str | None
-```
-
-**2. \_parse_stream_json_line result dict** (claude_executor.py:437):
-
-```python
-"session_id": None,
-```
-
-**3. Extraction logic** (claude_executor.py:498-501):
-
-```python
-# Extract session_id (appears at top level, not in message)
-session_id_value = data.get("session_id")
-if session_id_value is not None:
-    result["session_id"] = str(session_id_value)
-```
-
-**4. StreamEvent yield** (claude_executor.py:372-374):
-
-```python
-session_id_value = parsed.get("session_id")
-if session_id_value is not None:
-    yield StreamEvent("session_id", str(session_id_value))
-```
-
-**5. execute_command capture** (claude_executor.py:150, 172-173):
-
-```python
-session_id: str | None = None
-# ...
-elif event.event_type == "session_id":
-    session_id = event.content
-```
-
-**6. stream_command_with_feedback** (output.py:115, 131-132):
-
-```python
-session_id: str | None = None
-# ...
-elif event.event_type == "session_id":
-    session_id = event.content
-```
-
-**7. FakeClaudeExecutor** (fake_claude_executor.py:37, 68-69):
-
-```python
-simulated_session_id: str | None = None,
-# ...
-if self._session_id is not None:
-    yield StreamEvent("session_id", self._session_id)
-```
-
-**8. Tests** (test_claude_executor.py, test_fake_claude_executor.py):
-
-- Parsing test for `_parse_stream_json_line()`
-- Fake simulation test
-- Integration test for `execute_command()`
+See `src/erk/core/claude_executor.py` for the canonical implementation.
 
 ## Common Pitfalls
 

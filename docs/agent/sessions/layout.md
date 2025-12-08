@@ -504,18 +504,14 @@ For quick inspection, use `jq` or Python's `json` module directly on the command
 
 **Issue:** Older logs may not have `sessionId` field
 
-**Handling:**
-
-```python
-if entry_session is not None and entry_session != session_id:
-    skipped_entries += 1
-    continue
-```
+**Handling:** When filtering entries by session ID, treat entries without a `sessionId` field as belonging to any session (include them). Only skip entries that have a `sessionId` that doesn't match the target.
 
 **Implication:**
 
 - Code handles missing `sessionId` gracefully
 - Includes entries without `sessionId` when filtering
+
+See `preprocess_session.py` for the canonical implementation.
 
 ### Empty and Warmup Sessions
 
