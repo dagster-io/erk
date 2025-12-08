@@ -149,41 +149,6 @@ Or on failure:
 
 ---
 
-### render-session-content
-
-Render session XML as GitHub comment blocks with automatic chunking.
-
-```bash
-erk kit exec erk render-session-content --session-file <path> [OPTIONS]
-```
-
-**Options:**
-
-| Option               | Description                           |
-| -------------------- | ------------------------------------- |
-| `--session-file`     | Path to session XML file (required)   |
-| `--session-label`    | Label for session (e.g., branch name) |
-| `--extraction-hints` | Comma-separated extraction hints      |
-
-**Output:**
-
-```json
-{
-  "success": true,
-  "blocks": ["<details>...</details>", "..."],
-  "chunk_count": 2
-}
-```
-
-**Chunking:**
-
-- GitHub comment limit: 65,536 bytes
-- Safety buffer: 1,000 bytes
-- Line-aware splitting to avoid breaking mid-line
-- Chunk numbers added for multi-chunk content
-
----
-
 ### extract-session-from-issue
 
 Extract session XML content from GitHub issue comments.
@@ -461,9 +426,6 @@ erk kit exec erk list-sessions --limit 20
 # 2. Preprocess to XML
 erk kit exec erk preprocess-session /path/to/session.jsonl --stdout > session.xml
 
-# 3. Render as GitHub comment blocks
-erk kit exec erk render-session-content --session-file session.xml
-
-# 4. Or create issue directly
+# 3. Create issue with session context
 erk kit exec erk create-issue-from-session --session-id abc123
 ```

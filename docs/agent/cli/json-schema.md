@@ -127,30 +127,6 @@ Lists Claude Code sessions for the current project.
 }
 ```
 
-### check-marker
-
-Check if a marker file exists.
-
-**Command**: `erk kit exec erk check-marker pending-extraction`
-
-**Output**:
-
-```json
-{ "exists": true }
-```
-
-### marker-delete
-
-Delete a marker file.
-
-**Command**: `erk kit exec erk marker-delete pending-extraction`
-
-**Output**:
-
-```json
-{ "success": true, "deleted": "pending-extraction" }
-```
-
 ### mark-step
 
 Mark implementation steps as complete.
@@ -181,22 +157,6 @@ Validate implementation folder (precursor to impl-init).
   "impl_type": "impl",
   "has_issue_tracking": true,
   "issue_number": 123
-}
-```
-
-### render-session-content
-
-Render session XML for GitHub issue comments.
-
-**Command**: `erk kit exec erk render-session-content --session-file=<path> --session-label=<label>`
-
-**Output**:
-
-```json
-{
-  "success": true,
-  "blocks": ["<rendered-block-1>", "<rendered-block-2>"],
-  "chunk_count": 2
 }
 ```
 

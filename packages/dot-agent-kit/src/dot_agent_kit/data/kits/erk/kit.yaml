@@ -118,15 +118,6 @@ scripts:
   - name: exit-plan-mode-hook
     path: scripts/erk/exit_plan_mode_hook.py
     description: Save plan to GitHub when ExitPlanMode is called
-  - name: render-session-content
-    path: scripts/erk/render_session_content.py
-    description: Render session XML as GitHub comment blocks with automatic chunking
-  - name: marker-delete
-    path: scripts/erk/marker_delete.py
-    description: Delete a marker from the current worktree
-  - name: check-marker
-    path: scripts/erk/check_marker.py
-    description: Check if a marker exists in the current worktree
   - name: add-issue-label
     path: scripts/erk/add_issue_label.py
     description: Add a label to a GitHub issue

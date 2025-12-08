@@ -46,7 +46,6 @@ All commands invoked via `erk kit exec erk <command>`:
 | `preprocess-session`         | Convert JSONL to compressed XML                  |
 | `extract-latest-plan`        | Extract most recent plan from session            |
 | `create-issue-from-session`  | Create GitHub issue from session plan            |
-| `render-session-content`     | Render session XML as GitHub comment blocks      |
 | `extract-session-from-issue` | Extract session content from GitHub issue        |
 
 ### Slash Commands
