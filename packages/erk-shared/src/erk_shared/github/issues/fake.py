@@ -28,6 +28,8 @@ class FakeGitHubIssues(GitHubIssues):
         comments_with_urls: dict[int, list[IssueComment]] | None = None,
         username: str | None = "testuser",
         pr_references: dict[int, list[PRReference]] | None = None,
+        add_reaction_error: str | None = None,
+        get_comments_error: str | None = None,
     ) -> None:
         """Create FakeGitHubIssues with pre-configured state.
 
@@ -41,6 +43,10 @@ class FakeGitHubIssues(GitHubIssues):
                 not authenticated)
             pr_references: Mapping of issue number -> list of PRReference for
                 get_prs_referencing_issue()
+            add_reaction_error: If set, add_reaction_to_comment raises RuntimeError
+                with this message
+            get_comments_error: If set, get_issue_comments_with_urls raises
+                RuntimeError with this message
         """
         self._issues = issues or {}
         self._next_issue_number = next_issue_number
@@ -49,10 +55,13 @@ class FakeGitHubIssues(GitHubIssues):
         self._comments_with_urls = comments_with_urls or {}
         self._username = username
         self._pr_references = pr_references or {}
+        self._add_reaction_error = add_reaction_error
+        self._get_comments_error = get_comments_error
         self._created_issues: list[tuple[str, str, list[str]]] = []
         self._added_comments: list[tuple[int, str]] = []
         self._created_labels: list[tuple[str, str, str]] = []
         self._closed_issues: list[int] = []
+        self._added_reactions: list[tuple[int, str]] = []
 
     @property
     def created_issues(self) -> list[tuple[str, str, list[str]]]:
@@ -93,6 +102,14 @@ class FakeGitHubIssues(GitHubIssues):
         Returns set of label names.
         """
         return self._labels.copy()
+
+    @property
+    def added_reactions(self) -> list[tuple[int, str]]:
+        """Read-only access to added reactions for test assertions.
+
+        Returns list of (comment_id, reaction) tuples.
+        """
+        return self._added_reactions
 
     def create_issue(
         self, repo_root: Path, title: str, body: str, labels: list[str]
@@ -206,8 +223,14 @@ class FakeGitHubIssues(GitHubIssues):
         """Get comments with URLs for issue from fake storage.
 
         Returns:
-            List of IssueComment objects, or empty list if no comments exist
+            List of IssueComment objects (with body, url, id, author),
+            or empty list if no comments exist
+
+        Raises:
+            RuntimeError: If get_comments_error was set in constructor
         """
+        if self._get_comments_error is not None:
+            raise RuntimeError(self._get_comments_error)
         return self._comments_with_urls.get(number, [])
 
     def ensure_label_exists(
@@ -319,3 +342,20 @@ class FakeGitHubIssues(GitHubIssues):
             or empty list if no references configured for this issue.
         """
         return self._pr_references.get(issue_number, [])
+
+    def add_reaction_to_comment(
+        self,
+        repo_root: Path,
+        comment_id: int,
+        reaction: str,
+    ) -> None:
+        """Record reaction in mutation tracking.
+
+        Note: Does not validate comment_id exists. Real API is idempotent.
+
+        Raises:
+            RuntimeError: If add_reaction_error was set in constructor
+        """
+        if self._add_reaction_error is not None:
+            raise RuntimeError(self._add_reaction_error)
+        self._added_reactions.append((comment_id, reaction))

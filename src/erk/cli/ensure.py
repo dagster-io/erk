@@ -18,6 +18,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import click
+from erk_shared.github.types import PRDetails
+from erk_shared.non_ideal_state import (
+    BranchDetectionFailed,
+    GitHubAPIFailed,
+    NonIdealState,
+    NoPRForBranch,
+    PRNotFoundError,
+)
 from erk_shared.output.output import user_output
 
 if TYPE_CHECKING:
@@ -476,3 +484,102 @@ class Ensure:
                 + "This is required before submitting branches or creating PRs."
             )
             raise SystemExit(1)
+
+    @staticmethod
+    def ideal_state[T](result: T | NonIdealState) -> T:
+        """Ensure result is not a NonIdealState, otherwise exit with error.
+
+        This method provides type narrowing: it takes `T | NonIdealState` and
+        returns `T`, allowing the type checker to understand the value cannot
+        be a NonIdealState after this call.
+
+        Args:
+            result: Value that may be a NonIdealState
+
+        Returns:
+            The value unchanged if not NonIdealState (with narrowed type T)
+
+        Raises:
+            SystemExit: If result is NonIdealState (with exit code 1)
+
+        Example:
+            >>> from erk_shared.non_ideal_state import GitHubChecks
+            >>> branch = Ensure.ideal_state(GitHubChecks.branch(raw_branch))
+            >>> # branch is now guaranteed to be str, not str | BranchDetectionFailed
+        """
+        if isinstance(result, NonIdealState):
+            user_output(click.style("Error: ", fg="red") + result.message)
+            raise SystemExit(1)
+        return result
+
+    @staticmethod
+    def branch(result: str | BranchDetectionFailed) -> str:
+        """Ensure branch detection succeeded.
+
+        Args:
+            result: Branch name or BranchDetectionFailed
+
+        Returns:
+            The branch name
+
+        Raises:
+            SystemExit: If detection failed (with exit code 1)
+        """
+        if isinstance(result, BranchDetectionFailed):
+            user_output(click.style("Error: ", fg="red") + result.message)
+            raise SystemExit(1)
+        return result
+
+    @staticmethod
+    def pr(result: PRDetails | NoPRForBranch | PRNotFoundError) -> PRDetails:
+        """Ensure PR lookup succeeded.
+
+        Args:
+            result: PRDetails or a not-found error
+
+        Returns:
+            The PRDetails
+
+        Raises:
+            SystemExit: If PR not found (with exit code 1)
+        """
+        if isinstance(result, (NoPRForBranch, PRNotFoundError)):
+            user_output(click.style("Error: ", fg="red") + result.message)
+            raise SystemExit(1)
+        return result
+
+    @staticmethod
+    def comments(result: list | GitHubAPIFailed) -> list:
+        """Ensure comments fetch succeeded.
+
+        Args:
+            result: List of comments or GitHubAPIFailed
+
+        Returns:
+            The list of comments
+
+        Raises:
+            SystemExit: If API call failed (with exit code 1)
+        """
+        if isinstance(result, GitHubAPIFailed):
+            user_output(click.style("Error: ", fg="red") + result.message)
+            raise SystemExit(1)
+        return result
+
+    @staticmethod
+    def void_op(result: None | GitHubAPIFailed) -> None:
+        """Ensure void operation succeeded.
+
+        Args:
+            result: None (success) or GitHubAPIFailed
+
+        Returns:
+            None
+
+        Raises:
+            SystemExit: If API call failed (with exit code 1)
+        """
+        if isinstance(result, GitHubAPIFailed):
+            user_output(click.style("Error: ", fg="red") + result.message)
+            raise SystemExit(1)
+        return result

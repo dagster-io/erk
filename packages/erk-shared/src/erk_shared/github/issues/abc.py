@@ -233,3 +233,26 @@ class GitHubIssues(ABC):
             List of PRReference objects for PRs that reference the issue
         """
         ...
+
+    @abstractmethod
+    def add_reaction_to_comment(
+        self,
+        repo_root: Path,
+        comment_id: int,
+        reaction: str,
+    ) -> None:
+        """Add a reaction to an issue/PR comment.
+
+        Used to mark PR discussion comments as addressed (typically with +1).
+
+        Args:
+            repo_root: Repository root path
+            comment_id: Numeric comment ID (from IssueComment.id)
+            reaction: Reaction type. One of: +1, -1, laugh, confused,
+                heart, hooray, rocket, eyes
+
+        Raises:
+            RuntimeError: If gh CLI fails (not installed, not authenticated,
+                comment not found, or invalid reaction)
+        """
+        ...
