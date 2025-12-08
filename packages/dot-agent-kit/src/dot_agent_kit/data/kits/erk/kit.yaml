@@ -142,6 +142,9 @@ kit_cli_commands:
   - name: impl-signal
     path: kit_cli_commands/erk/impl_signal.py
     description: Signal implementation events (started/ended) to GitHub
+  - name: tripwires-reminder-hook
+    path: kit_cli_commands/erk/tripwires_reminder_hook.py
+    description: Remind to check tripwires before common dangerous operations
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit
@@ -154,4 +157,10 @@ hooks:
     matcher: ExitPlanMode
     invocation: dot-agent kit-command erk exit-plan-mode-hook
     description: Auto-save plan to GitHub on Plan Mode exit
+    timeout: 30
+  - id: tripwires-reminder-hook
+    lifecycle: UserPromptSubmit
+    matcher: "*"
+    invocation: dot-agent kit-command erk tripwires-reminder-hook
+    description: Reminds Claude to check tripwires before common operations
     timeout: 30
