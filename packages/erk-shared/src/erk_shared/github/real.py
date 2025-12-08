@@ -28,7 +28,6 @@ from erk_shared.github.parsing import (
     execute_gh_command,
     parse_aggregated_check_counts,
     parse_gh_auth_status_output,
-    parse_git_remote_url,
 )
 from erk_shared.github.types import (
     BRANCH_NOT_AVAILABLE,
