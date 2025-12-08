@@ -229,6 +229,7 @@ def test_plan_save_to_issue_session_context_captured(plans_dir: Path, tmp_path: 
             git=fake_git,
             session_store=fake_store,
             cwd=tmp_path,
+            repo_root=tmp_path,
         ),
     )
 
@@ -357,6 +358,7 @@ def test_plan_save_to_issue_passes_session_id_to_session_store(
             git=fake_git,
             session_store=fake_store,
             cwd=tmp_path,
+            repo_root=tmp_path,
         ),
     )
 
@@ -407,6 +409,7 @@ def test_plan_save_to_issue_display_format_shows_session_context(
             git=fake_git,
             session_store=fake_store,
             cwd=tmp_path,
+            repo_root=tmp_path,
         ),
     )
 
@@ -458,6 +461,7 @@ def test_plan_save_to_issue_uses_session_store_for_current_session_id(
             git=fake_git,
             session_store=fake_store,
             cwd=tmp_path,
+            repo_root=tmp_path,
         ),
     )
 
@@ -518,6 +522,7 @@ def test_plan_save_to_issue_flag_overrides_session_store(plans_dir: Path, tmp_pa
             git=fake_git,
             session_store=fake_store,
             cwd=tmp_path,
+            repo_root=tmp_path,
         ),
     )
 
@@ -545,14 +550,16 @@ def test_plan_save_to_issue_creates_marker_file(tmp_path: Path, plans_dir: Path)
             plan_save_to_issue,
             ["--format", "json", "--session-id", test_session_id],
             obj=DotAgentContext.for_test(
-                github_issues=fake_gh, git=fake_git, session_store=fake_store
+                github_issues=fake_gh, git=fake_git, session_store=fake_store, repo_root=Path(td)
             ),
         )
 
         assert result.exit_code == 0, f"Failed: {result.output}"
 
-        # Verify marker file was created
-        marker_file = Path(td) / ".erk" / "scratch" / test_session_id / "plan-saved-to-github"
+        # Verify marker file was created at correct path with sessions/ segment
+        marker_file = (
+            Path(td) / ".erk" / "scratch" / "sessions" / test_session_id / "plan-saved-to-github"
+        )
         assert marker_file.exists()
 
 

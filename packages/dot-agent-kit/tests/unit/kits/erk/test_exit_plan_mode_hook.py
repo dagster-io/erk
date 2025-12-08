@@ -26,9 +26,9 @@ def test_skip_marker_present_deletes_and_allows(tmp_path: Path) -> None:
     """Test when skip marker exists - should delete marker and allow exit."""
     runner = CliRunner()
 
-    # Create skip marker
+    # Create skip marker at correct path with sessions/ segment
     session_id = "session-abc123"
-    marker_dir = tmp_path / ".erk" / "scratch" / session_id
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
     marker_dir.mkdir(parents=True)
     skip_marker = marker_dir / "skip-plan-save"
     skip_marker.touch()
@@ -54,9 +54,8 @@ def test_saved_marker_present_blocks_to_prevent_plan_dialog(
     runner = CliRunner()
     session_id = "session-abc123"
 
-    # Create saved marker (indicates plan was saved to GitHub)
-    session_id = "session-abc123"
-    marker_dir = tmp_path / ".erk" / "scratch" / session_id
+    # Create saved marker at correct path with sessions/ segment
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
     marker_dir.mkdir(parents=True)
     saved_marker = marker_dir / "plan-saved-to-github"
     saved_marker.touch()
@@ -81,9 +80,9 @@ def test_skip_marker_takes_precedence_over_saved_marker(tmp_path: Path) -> None:
     """Test that skip marker is checked before saved marker."""
     runner = CliRunner()
 
-    # Create both markers
+    # Create both markers at correct path with sessions/ segment
     session_id = "session-abc123"
-    marker_dir = tmp_path / ".erk" / "scratch" / session_id
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
     marker_dir.mkdir(parents=True)
     skip_marker = marker_dir / "skip-plan-save"
     skip_marker.touch()
@@ -142,8 +141,8 @@ def test_plan_exists_no_marker_blocks(tmp_path: Path) -> None:
     assert "(default)" in result.output
     assert "Does NOT proceed to implementation" in result.output
     assert "Implement now" in result.output
-    # Skip marker path should be documented (for "Implement now" flow)
-    assert f".erk/scratch/{session_id}/skip-plan-save" in result.output
+    # Skip marker path should be documented with sessions/ segment (for "Implement now" flow)
+    assert f".erk/scratch/sessions/{session_id}/skip-plan-save" in result.output
     # Saved marker is NOT documented - /erk:save-plan handles it internally
     assert "Do NOT call ExitPlanMode" in result.output
 

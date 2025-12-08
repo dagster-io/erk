@@ -28,6 +28,7 @@ import click
 from erk_shared.extraction.session_context import collect_session_context
 from erk_shared.github.metadata import render_session_content_blocks
 from erk_shared.github.plan_issues import create_plan_issue
+from erk_shared.scratch.scratch import get_scratch_dir
 
 from dot_agent_kit.context_helpers import (
     require_cwd,
@@ -39,10 +40,14 @@ from dot_agent_kit.context_helpers import (
 from dot_agent_kit.data.kits.erk.session_plan_extractor import get_latest_plan
 
 
-def _create_plan_saved_marker(session_id: str) -> None:
-    """Create marker file to signal plan was saved to GitHub."""
-    marker_dir = Path(".erk/scratch") / session_id
-    marker_dir.mkdir(parents=True, exist_ok=True)
+def _create_plan_saved_marker(session_id: str, repo_root: Path) -> None:
+    """Create marker file to signal plan was saved to GitHub.
+
+    Args:
+        session_id: The session ID for the scratch directory.
+        repo_root: The repository root path.
+    """
+    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
     (marker_dir / "plan-saved-to-github").touch()
 
 
@@ -166,7 +171,7 @@ def plan_save_to_issue(
 
     # Step 9: Create marker file to signal plan was saved
     if effective_session_id:
-        _create_plan_saved_marker(effective_session_id)
+        _create_plan_saved_marker(effective_session_id, repo_root)
 
     # Step 10: Output success
     # Detect enrichment status for informational output

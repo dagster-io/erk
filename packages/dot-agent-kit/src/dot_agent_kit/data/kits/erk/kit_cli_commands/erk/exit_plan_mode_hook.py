@@ -53,7 +53,7 @@ def _get_session_id_from_stdin() -> str | None:
 
 
 def _get_scratch_dir(session_id: str) -> Path | None:
-    """Get scratch directory path in .erk/scratch/<session_id>/.
+    """Get scratch directory path in .erk/scratch/sessions/<session_id>/.
 
     Args:
         session_id: The session ID to build the path for
@@ -69,13 +69,13 @@ def _get_scratch_dir(session_id: str) -> Path | None:
             check=True,
         )
         repo_root = Path(result.stdout.strip())
-        return repo_root / ".erk" / "scratch" / session_id
+        return repo_root / ".erk" / "scratch" / "sessions" / session_id
     except subprocess.CalledProcessError:
         return None
 
 
 def _get_skip_marker_path(session_id: str) -> Path | None:
-    """Get skip marker path in .erk/scratch/<session_id>/.
+    """Get skip marker path in .erk/scratch/sessions/<session_id>/.
 
     Args:
         session_id: The session ID to build the path for
@@ -90,7 +90,7 @@ def _get_skip_marker_path(session_id: str) -> Path | None:
 
 
 def _get_saved_marker_path(session_id: str) -> Path | None:
-    """Get saved marker path in .erk/scratch/<session_id>/.
+    """Get saved marker path in .erk/scratch/sessions/<session_id>/.
 
     The saved marker indicates the plan was already saved to GitHub,
     so exit should proceed without triggering implementation.
@@ -170,8 +170,8 @@ def _output_blocking_message(session_id: str) -> None:
     click.echo("If user chooses 'Implement now':", err=True)
     click.echo("  1. Create skip marker:", err=True)
     click.echo(
-        f"     mkdir -p .erk/scratch/{session_id} && "
-        f"touch .erk/scratch/{session_id}/skip-plan-save",
+        f"     mkdir -p .erk/scratch/sessions/{session_id} && "
+        f"touch .erk/scratch/sessions/{session_id}/skip-plan-save",
         err=True,
     )
     click.echo("  2. Call ExitPlanMode", err=True)

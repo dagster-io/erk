@@ -7,11 +7,30 @@ This command is invoked via dot-agent run erk session-id-injector-hook.
 """
 
 import json
+import subprocess
 import sys
 import tomllib
 from pathlib import Path
 
 import click
+
+
+def _get_repo_root() -> Path:
+    """Get the repository root via git rev-parse.
+
+    Returns:
+        Path to the git repository root.
+
+    Raises:
+        subprocess.CalledProcessError: If not in a git repository.
+    """
+    result = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return Path(result.stdout.strip())
 
 
 def _is_github_planning_enabled() -> bool:
@@ -51,7 +70,9 @@ def session_id_injector_hook() -> None:
     # Output session ID if available
     if session_id:
         # Write to file for CLI tools to read (worktree-scoped persistence)
-        session_file = Path(".erk/scratch/current-session-id")
+        # Must use repo root to ensure file is at correct location
+        repo_root = _get_repo_root()
+        session_file = repo_root / ".erk" / "scratch" / "current-session-id"
         session_file.parent.mkdir(parents=True, exist_ok=True)
         session_file.write_text(session_id, encoding="utf-8")
 
