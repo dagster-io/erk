@@ -33,11 +33,8 @@ Examples:
 
 import json
 from dataclasses import asdict, dataclass
-from pathlib import Path
 
 import click
-from erk_shared.git.abc import Git
-from erk_shared.github.abc import GitHub
 from erk_shared.github.pr_footer import build_pr_body_footer
 from erk_shared.github.types import PRNotFound
 
