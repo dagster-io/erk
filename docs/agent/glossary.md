@@ -368,6 +368,20 @@ commands = [
 
 **File**: `src/erk/cli/config.py`
 
+### workflow config
+
+A TOML configuration file at `.erk/workflows/<workflow-name>.toml` that provides repo-specific parameters passed to GitHub Actions workflows at dispatch time. The filename matches the workflow file (without `.yml` extension). All values are converted to strings before being passed as workflow inputs.
+
+Example: `.erk/workflows/dispatch-erk-queue-git.toml`
+
+```toml
+kit_names = "erk,gt,devrun"
+model_name = "claude-sonnet-4-5-20250929"
+package_install_script = ""
+```
+
+See also: [queue-setup](/docs/user/queue-setup.md#workflow-configuration)
+
 ---
 
 ## Architecture Terms
