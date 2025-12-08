@@ -63,6 +63,18 @@ The REST API returns field names that differ from GraphQL and internal conventio
 
 **Note**: `mergeable` may be `null` if GitHub hasn't computed mergeability yet. Retry after a short delay if you need this value.
 
+### Merge State Status
+
+| REST API `mergeable_state` | Internal `merge_state_status` |
+| -------------------------- | ----------------------------- |
+| `"clean"`                  | `"CLEAN"`                     |
+| `"blocked"`                | `"BLOCKED"`                   |
+| `"behind"`                 | `"BEHIND"`                    |
+| `"unstable"`               | `"UNSTABLE"`                  |
+| `null`                     | `"UNKNOWN"`                   |
+
+**Logic**: GraphQL `mergeStateStatus` maps to REST `mergeable_state` with case transformation (lowercase to uppercase).
+
 ### Draft Status
 
 | REST API Field | Internal Field |
@@ -74,6 +86,15 @@ The REST API returns field names that differ from GraphQL and internal conventio
 | REST API Field   | Internal Field        |
 | ---------------- | --------------------- |
 | `head.repo.fork` | `is_cross_repository` |
+
+### Branch Reference Fields
+
+| GraphQL Field | REST API Field | Internal Field  |
+| ------------- | -------------- | --------------- |
+| `baseRefName` | `base.ref`     | `base_ref_name` |
+| `headRefName` | `head.ref`     | `head_ref_name` |
+
+**Note**: REST API nests branch names under `base` and `head` objects, while GraphQL provides flat field names. Internal fields use snake_case.
 
 ## Implementation in erk
 
@@ -104,6 +125,32 @@ This pattern:
 - Reduces API rate limit consumption
 - Simplifies call site code (no need to make additional fetches)
 - Makes the data contract explicit via the type definition
+
+## Normalization Code Examples
+
+The following examples show how REST API responses are normalized into internal types in `packages/erk-shared/src/erk_shared/github/real.py`:
+
+```python
+# PR State normalization
+if data.get("merged"):
+    state = "MERGED"
+else:
+    state = data["state"].upper()
+
+# Branch refs (nested in REST)
+base_ref_name = data["base"]["ref"]
+head_ref_name = data["head"]["ref"]
+
+# Cross-repository detection
+head_repo = data["head"].get("repo")
+is_cross_repository = head_repo["fork"] if head_repo else False
+```
+
+**Key patterns:**
+
+- Check `merged` field first to distinguish `MERGED` from `CLOSED`
+- REST API nests branch names under objects; extract with nested access
+- Handle `null` repo (deleted fork) with `.get()` and conditional check
 
 ## Related Topics
 
