@@ -39,18 +39,20 @@ Exit Codes:
 """
 
 import json
-from pathlib import Path
 
 import click
+
+from dot_agent_kit.context_helpers import require_cwd
 
 
 @click.command(name="your-command")
 @click.argument("arg_name")
 @click.option("--json", "output_json", is_flag=True, help="Output JSON")
-def your_command(arg_name: str, output_json: bool) -> None:
+@click.pass_context
+def your_command(ctx: click.Context, arg_name: str, output_json: bool) -> None:
     """Brief docstring for --help."""
-    # Use Path.cwd() for worktree-scoped operations
-    worktree_path = Path.cwd()
+    # Use require_cwd(ctx) for worktree-scoped operations (NOT Path.cwd())
+    worktree_path = require_cwd(ctx)
 
     # Implement logic...
     result = do_something(worktree_path, arg_name)
@@ -83,10 +85,11 @@ dot-agent run erk your-command arg_value --json
 
 ## Key Patterns
 
-1. **Worktree-scoped**: Use `Path.cwd()` for operations relative to current worktree
+1. **Worktree-scoped**: Use `require_cwd(ctx)` for operations relative to current worktree (NOT `Path.cwd()`)
 2. **JSON output**: Always provide `--json` flag for machine-readable output
 3. **Exit codes**: Return 0 for success, 1 for errors
 4. **Error handling**: Use `click.echo(..., err=True)` for errors, then `raise SystemExit(1)`
+5. **Context injection**: Use `@click.pass_context` and `require_*()` helpers for dependencies
 
 ## Example Commands
 

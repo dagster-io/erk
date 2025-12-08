@@ -117,25 +117,27 @@ Some GitHub data is only available via GraphQL. Use GraphQL when:
 
 ### Query Syntax with Variables
 
-Prefer using `-f variables='{...}'` for parameterized queries instead of string interpolation. This avoids escaping issues and injection risks.
+**IMPORTANT:** Variables must be passed individually using `-f` (strings) and `-F` (typed values like integers). The syntax `-f variables='{...}'` does **NOT** work with `gh api graphql`.
 
 ```bash
-gh api graphql -f query='
-query($owner: String!, $repo: String!, $number: Int!) {
-  repository(owner: $owner, name: $repo) {
-    pullRequest(number: $number) {
-      reviewThreads(first: 100) {
-        nodes {
-          id
-          isResolved
-          path
-          line
+gh api graphql \
+  -f query='query($owner: String!, $repo: String!, $number: Int!) {
+    repository(owner: $owner, name: $repo) {
+      pullRequest(number: $number) {
+        reviewThreads(first: 100) {
+          nodes { id isResolved path line }
         }
       }
     }
-  }
-}' -f variables='{"owner":"cli","repo":"cli","number":123}'
+  }' \
+  -f owner=cli \
+  -f repo=cli \
+  -F number=123
 ```
+
+**Flag types:**
+- `-f name=value` — String variables
+- `-F name=value` — Typed variables (integers, booleans) parsed from JSON
 
 ### Query Pattern: Review Threads
 
@@ -168,23 +170,20 @@ query = """query($owner: String!, $repo: String!, $number: Int!) {
   }
 }"""
 
-variables = json.dumps({
-    "owner": repo_info.owner,
-    "repo": repo_info.name,
-    "number": pr_number
-})
-
+# Pass variables individually: -f for strings, -F for typed values
 cmd = [
     "gh", "api", "graphql",
     "-f", f"query={query}",
-    "-f", f"variables={variables}",
+    "-f", f"owner={repo_info.owner}",
+    "-f", f"repo={repo_info.name}",
+    "-F", f"number={pr_number}",  # -F for integer
 ]
 stdout = execute_gh_command(cmd, repo_root)
 ```
 
 ### Mutation Pattern: Resolve Review Thread
 
-Mutations use the same `gh api graphql` command with a mutation query:
+Mutations use the same `gh api graphql` command with individual variable flags:
 
 ```python
 mutation = """mutation($threadId: ID!) {
@@ -196,12 +195,11 @@ mutation = """mutation($threadId: ID!) {
   }
 }"""
 
-variables = json.dumps({"threadId": thread_id})
-
+# Pass variables individually with -f for strings
 cmd = [
     "gh", "api", "graphql",
     "-f", f"query={mutation}",
-    "-f", f"variables={variables}",
+    "-f", f"threadId={thread_id}",
 ]
 stdout = execute_gh_command(cmd, repo_root)
 response = json.loads(stdout)

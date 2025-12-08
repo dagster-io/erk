@@ -125,16 +125,14 @@ def get_pr_review_threads(
       }
     }"""
 
-    variables = json.dumps({
-        "owner": repo_info.owner,
-        "repo": repo_info.name,
-        "number": pr_number
-    })
-
+    # IMPORTANT: Pass variables individually with -f (strings) and -F (typed)
+    # The syntax -f variables='{...}' does NOT work with gh api graphql
     cmd = [
         "gh", "api", "graphql",
         "-f", f"query={query}",
-        "-f", f"variables={variables}",
+        "-f", f"owner={repo_info.owner}",
+        "-f", f"repo={repo_info.name}",
+        "-F", f"number={pr_number}",  # -F for integer
     ]
     stdout = execute_gh_command(cmd, repo_root)
     response = json.loads(stdout)
