@@ -1118,6 +1118,48 @@ A frozen dataclass capturing the outcome of running a turn.
 
 **File**: `packages/erk-shared/src/erk_shared/objectives/types.py`
 
+### ISO 8601 Timestamp
+
+International standard for representing dates and times in a machine-readable format.
+
+**Format**: `YYYY-MM-DDTHH:MM:SS.mmmmmm` (extended format with microseconds)
+
+**Example**: `2025-12-08T14:03:42.123456`
+
+**Usage in erk**:
+
+- Session log timestamps
+- Objective turn timestamps
+- ObjectiveNotes entries
+- Branch naming convention uses abbreviated format: `MM-DD-HHMM`
+
+**Python generation**:
+
+```python
+from datetime import datetime, timezone
+
+# With timezone (preferred for logs)
+timestamp = datetime.now(timezone.utc).isoformat()
+
+# Without timezone (for local timestamps)
+timestamp = datetime.now().isoformat()
+```
+
+**Parsing**:
+
+```python
+from datetime import datetime
+
+dt = datetime.fromisoformat(timestamp)
+```
+
+**Why ISO 8601?**
+
+- Unambiguous (no MM/DD vs DD/MM confusion)
+- Sortable as strings (lexicographic order = chronological order)
+- Widely supported by APIs and databases
+- Human-readable while being machine-parseable
+
 ### Key Files
 
 | Concern | Location                                                   |
