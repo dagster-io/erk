@@ -148,19 +148,15 @@ repo-root/
 
 A frozen dataclass containing project information.
 
-**Definition**:
+**Fields**:
 
-```python
-@dataclass(frozen=True)
-class ProjectContext:
-    root: Path          # Absolute path to project directory
-    name: str           # Project name (defaults to directory name)
-    path_from_repo: Path  # Relative path from repo root
-```
+- `root: Path` - Absolute path to project directory
+- `name: str` - Project name (defaults to directory name)
+- `path_from_repo: Path` - Relative path from repo root
 
 **Creation**: `discover_project(cwd, repo_root)`
 
-**File**: `src/erk/core/project_discovery.py`
+See `src/erk/core/project_discovery.py` for the canonical definition.
 
 ---
 
@@ -380,20 +376,18 @@ commands = [
 
 A frozen dataclass containing repository information.
 
-**Definition**:
+**Key Fields**:
 
-```python
-@dataclass(frozen=True)
-class RepoContext:
-    root: Path            # Working tree root for git commands
-    main_repo_root: Path  # Main repository root (consistent across worktrees)
-    repo_name: str        # Repository name
-    erks_dir: Path        # Erks directory for this repo
-```
+- `root: Path` - Working tree root for git commands (worktree or main repo)
+- `main_repo_root: Path` - Main repository root (consistent across worktrees)
+- `repo_name: str` - Repository name
+- `repo_dir: Path` - Path to erk metadata directory (`~/.erk/repos/<repo-name>`)
+- `worktrees_dir: Path` - Path to worktrees directory (`~/.erk/repos/<repo-name>/worktrees`)
+- `github: GitHubRepoId | None` - GitHub repository identity, if available
 
-**Creation**: `discover_repo_context(ctx, Path.cwd())`
+**Creation**: `discover_repo_or_sentinel(git, Path.cwd())`
 
-**File**: `src/erk/cli/core.py`
+See `src/erk/core/repo_discovery.py` for the canonical definition.
 
 #### root vs main_repo_root
 
@@ -410,28 +404,35 @@ class RepoContext:
 
 A frozen dataclass containing all injected dependencies.
 
-**Definition**:
+**Purpose**: Dependency injection container passed to all commands. Created at CLI entry point and threaded through the application.
 
-```python
-@dataclass(frozen=True)
-class ErkContext:
-    git: Git
-    config_store: ConfigStore
-    github: GitHub
-    graphite: Graphite
-    shell: Shell
-    completion: Completion
-    script_writer: ScriptWriter
-    dry_run: bool
-```
+**Key Integration Fields**:
 
-**Purpose**: Dependency injection container passed to all commands.
+- `git: Git` - Git operations
+- `github: GitHub` - GitHub PR operations
+- `graphite: Graphite` - Graphite CLI operations
+- `shell: Shell` - Shell detection
+- `completion: Completion` - Shell completion generation
+- `script_writer: ScriptWriter` - Activation script generation
 
-**Creation**: `create_context(dry_run=False)` in `src/erk/core/context.py`
+**Configuration Fields**:
 
-**Usage**: Commands receive via `@click.pass_obj` decorator.
+- `global_config: GlobalConfig | None` - Global configuration (may be None during init)
+- `local_config: LoadedConfig | None` - Repository-specific configuration
+- `dry_run: bool` - Whether to print operations instead of executing
 
-**File**: `src/erk/core/context.py`
+**Path Fields**:
+
+- `cwd: Path` - Current working directory
+- `repo: RepoContext | NoRepoSentinel` - Repository context
+- `project: ProjectContext | None` - Project context within monorepo
+
+**Factory Methods**:
+
+- `create_context(dry_run=False)` - Production context with real implementations
+- `ErkContext.for_test(...)` - Test context with configurable fakes
+
+See `src/erk/core/context.py` for the canonical definition.
 
 ### PRDetails
 

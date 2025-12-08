@@ -196,23 +196,12 @@ def test_retry_logic():
 
 ### Interface
 
-**ABC (erk_shared/integrations/time/abc.py)**:
+The `Time` ABC defines abstract methods for time operations including `sleep()` and `now()`. Implementations:
 
-```python
-from abc import ABC, abstractmethod
+- **RealTime**: Uses actual `time.sleep()` and `datetime.now()`
+- **FakeTime**: Returns immediately, tracks calls for test assertions
 
-class Time(ABC):
-    """Abstract time operations for dependency injection."""
-
-    @abstractmethod
-    def sleep(self, seconds: float) -> None:
-        """Sleep for specified number of seconds.
-
-        Args:
-            seconds: Number of seconds to sleep
-        """
-        ...
-```
+See `erk_shared/integrations/time/abc.py` for the canonical interface definition.
 
 ### When to Use
 
@@ -524,20 +513,13 @@ Commands that need to behave differently on trunk vs feature branches use the br
 
 ### The BranchContext Pattern
 
-```python
-@dataclass(frozen=True)
-class BranchContext:
-    """Branch context information for current git repository.
+`BranchContext` is a frozen dataclass with three fields:
 
-    Attributes:
-        is_on_trunk: True if current branch is trunk (main/master)
-        current_branch: Name of the current branch
-        trunk_branch: Name of the trunk branch (main or master)
-    """
-    is_on_trunk: bool
-    current_branch: str
-    trunk_branch: str
-```
+- `current_branch`: Name of the current branch
+- `trunk_branch`: Name of the trunk branch (main or master)
+- `is_on_trunk`: True if current branch is trunk
+
+See `erk_shared/extraction/types.py` for the dataclass definition.
 
 ### Helper Function
 
