@@ -61,6 +61,40 @@ If you need to disable PR creation for workflows:
 erk admin github-pr-setting --disable
 ```
 
+## Workflow Configuration
+
+Customize workflow parameters by creating `.erk/workflows/dispatch-erk-queue-git.toml` in your repository:
+
+```toml
+# Kits to install (comma-separated)
+kit_names = "erk,gt,devrun"
+
+# Claude model to use
+model_name = "claude-sonnet-4-5-20250929"
+
+# Optional: Custom package installation script
+package_install_script = "pip install -e ."
+```
+
+These values are passed as inputs to the GitHub Actions workflow at dispatch time when running `erk submit`.
+
+### How It Works
+
+1. When you run `erk submit <issue>`, erk looks for a config file at `.erk/workflows/<workflow-name>.toml`
+2. The filename matches the workflow file (without the `.yml` extension)
+3. Config values are merged with required inputs (issue_number, branch_name, etc.)
+4. If no config file exists, the workflow uses its built-in defaults
+
+### Available Parameters
+
+| Parameter                | Description                             | Example                        |
+| ------------------------ | --------------------------------------- | ------------------------------ |
+| `kit_names`              | Comma-separated list of kits to install | `"erk,gt,devrun"`              |
+| `model_name`             | Claude model ID to use                  | `"claude-sonnet-4-5-20250929"` |
+| `package_install_script` | Shell commands for package installation | `"pip install -e ."`           |
+
+Note: All values are converted to strings before being passed to the workflow.
+
 ## Troubleshooting
 
 **"Resource not accessible by integration"**

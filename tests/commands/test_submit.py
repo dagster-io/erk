@@ -18,6 +18,7 @@ from erk.cli.commands.submit import (
     _close_orphaned_draft_prs,
     _strip_plan_markers,
     is_issue_extraction_plan,
+    load_workflow_config,
     submit_cmd,
 )
 from erk.core.context import ErkContext
@@ -1504,3 +1505,175 @@ def test_submit_standard_plan_does_not_add_skip_extraction_label(tmp_path: Path)
     assert len(fake_github.updated_pr_bodies) == 1
     _, updated_body = fake_github.updated_pr_bodies[0]
     assert "erk pr checkout" in updated_body
+
+
+def test_load_workflow_config_file_not_found(tmp_path: Path) -> None:
+    """Test load_workflow_config returns empty dict when config file doesn't exist."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    result = load_workflow_config(repo_root, "dispatch-erk-queue.yml")
+
+    assert result == {}
+
+
+def test_load_workflow_config_valid_toml(tmp_path: Path) -> None:
+    """Test load_workflow_config returns string dict from valid TOML."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    # Create workflow config file
+    config_dir = repo_root / ".erk" / "workflows"
+    config_dir.mkdir(parents=True)
+    config_file = config_dir / "dispatch-erk-queue.toml"
+    config_file.write_text(
+        'kit_names = "erk,gt,devrun"\n'
+        'model_name = "claude-sonnet-4-5-20250929"\n'
+        'package_install_script = ""\n',
+        encoding="utf-8",
+    )
+
+    result = load_workflow_config(repo_root, "dispatch-erk-queue.yml")
+
+    assert result == {
+        "kit_names": "erk,gt,devrun",
+        "model_name": "claude-sonnet-4-5-20250929",
+        "package_install_script": "",
+    }
+
+
+def test_load_workflow_config_converts_values_to_strings(tmp_path: Path) -> None:
+    """Test load_workflow_config converts non-string values to strings."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    # Create workflow config file with non-string values
+    config_dir = repo_root / ".erk" / "workflows"
+    config_dir.mkdir(parents=True)
+    config_file = config_dir / "my-workflow.toml"
+    config_file.write_text(
+        'timeout = 300\nenabled = true\nname = "test"\n',
+        encoding="utf-8",
+    )
+
+    result = load_workflow_config(repo_root, "my-workflow.yml")
+
+    # All values should be strings
+    assert result == {
+        "timeout": "300",
+        "enabled": "True",
+        "name": "test",
+    }
+
+
+def test_load_workflow_config_strips_yml_extension(tmp_path: Path) -> None:
+    """Test load_workflow_config strips .yml extension from workflow name."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    config_dir = repo_root / ".erk" / "workflows"
+    config_dir.mkdir(parents=True)
+    config_file = config_dir / "my-workflow.toml"
+    config_file.write_text('key = "value"\n', encoding="utf-8")
+
+    # Pass with .yml extension
+    result = load_workflow_config(repo_root, "my-workflow.yml")
+
+    assert result == {"key": "value"}
+
+
+def test_load_workflow_config_strips_yaml_extension(tmp_path: Path) -> None:
+    """Test load_workflow_config strips .yaml extension from workflow name."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    config_dir = repo_root / ".erk" / "workflows"
+    config_dir.mkdir(parents=True)
+    config_file = config_dir / "my-workflow.toml"
+    config_file.write_text('key = "value"\n', encoding="utf-8")
+
+    # Pass with .yaml extension
+    result = load_workflow_config(repo_root, "my-workflow.yaml")
+
+    assert result == {"key": "value"}
+
+
+def test_submit_uses_workflow_config(tmp_path: Path) -> None:
+    """Test submit includes workflow config inputs when triggering workflow."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    # Create workflow config file
+    config_dir = repo_root / ".erk" / "workflows"
+    config_dir.mkdir(parents=True)
+    config_file = config_dir / "dispatch-erk-queue-git.toml"
+    config_file.write_text(
+        'kit_names = "erk,gt,devrun"\nmodel_name = "claude-sonnet-4-5-20250929"\n',
+        encoding="utf-8",
+    )
+
+    now = datetime.now(UTC)
+    issue = IssueInfo(
+        number=123,
+        title="Test with workflow config",
+        body=_make_plan_body(),
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    plan = Plan(
+        plan_identifier="123",
+        title="Test with workflow config",
+        body=_make_plan_body(),
+        state=PlanState.OPEN,
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+    )
+    fake_github = FakeGitHub()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        plan_store=fake_plan_store,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+
+    # Verify workflow was triggered with config inputs
+    assert len(fake_github.triggered_workflows) == 1
+    workflow, inputs = fake_github.triggered_workflows[0]
+    assert workflow == "dispatch-erk-queue-git.yml"
+    # Required inputs
+    assert inputs["issue_number"] == "123"
+    assert inputs["submitted_by"] == "test-user"
+    # Config-based inputs from .erk/workflows/dispatch-erk-queue-git.toml
+    assert inputs["kit_names"] == "erk,gt,devrun"
+    assert inputs["model_name"] == "claude-sonnet-4-5-20250929"
