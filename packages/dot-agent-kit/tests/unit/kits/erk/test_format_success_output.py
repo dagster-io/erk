@@ -36,6 +36,8 @@ def test_format_success_output_contains_next_steps() -> None:
     assert "erk implement 42" in result.output
     assert "erk implement 42 --dangerous" in result.output
     assert "erk implement 42 --yolo" in result.output
+    assert "erk submit 42" in result.output
+    assert "/erk:submit-plan" in result.output
 
 
 def test_format_success_output_contains_json_metadata() -> None:
@@ -147,9 +149,10 @@ def test_format_success_output_command_labels() -> None:
 
     assert result.exit_code == 0
     assert "View Issue:" in result.output
-    assert "Interactive Execution:" in result.output
-    assert "Dangerous Interactive Execution:" in result.output
-    assert "Yolo One Shot:" in result.output
+    assert "Interactive:" in result.output
+    assert "Dangerous Interactive:" in result.output
+    assert "Dangerous, Non-Interactive, Auto-Submit:" in result.output
+    assert "Submit to Queue:" in result.output
 
 
 def test_format_success_output_missing_issue_number() -> None:

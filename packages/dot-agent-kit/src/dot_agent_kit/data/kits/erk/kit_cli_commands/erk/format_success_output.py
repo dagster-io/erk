@@ -22,9 +22,11 @@ Examples:
     Next steps:
 
     View Issue: gh issue view 123 --web
-    Interactive Execution: erk implement 123
-    Dangerous Interactive Execution: erk implement 123 --dangerous
-    Yolo One Shot: erk implement 123 --yolo
+    Interactive: erk implement 123
+    Dangerous Interactive: erk implement 123 --dangerous
+    Dangerous, Non-Interactive, Auto-Submit: erk implement 123 --yolo
+    Submit to Queue: erk submit 123
+      # Or use: /erk:submit-plan
 
     ---
 
@@ -35,6 +37,7 @@ Examples:
 import json
 
 import click
+from erk_shared.output.next_steps import format_next_steps_plain
 
 
 @click.command(name="format-success-output")
@@ -50,19 +53,14 @@ def format_success_output(issue_number: int, issue_url: str) -> None:
     Outputs:
         Formatted markdown with:
         - Success header with issue number and URL
-        - Next steps section with 4 commands
+        - Next steps section with commands
         - JSON metadata footer
     """
     # Generate formatted output
     output = f"""✅ GitHub issue created: #{issue_number}
 {issue_url}
 
-Next steps:
-
-View Issue: gh issue view {issue_number} --web
-Interactive Execution: erk implement {issue_number}
-Dangerous Interactive Execution: erk implement {issue_number} --dangerous
-Yolo One Shot: erk implement {issue_number} --yolo
+{format_next_steps_plain(issue_number)}
 
 ---
 
