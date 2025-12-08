@@ -8,6 +8,8 @@ from typing import Any
 
 import yaml
 
+from erk_shared.output.next_steps import format_next_steps_markdown
+
 logger = logging.getLogger(__name__)
 
 
@@ -897,31 +899,7 @@ def format_execution_commands(issue_number: int) -> str:
     Returns:
         Formatted markdown with copy-pasteable commands
     """
-    return f"""## Execution Commands
-
-**Submit to Erk Queue:**
-```bash
-erk submit {issue_number}
-```
-
----
-
-### Local Execution
-
-**Standard mode (interactive):**
-```bash
-erk implement {issue_number}
-```
-
-**Yolo mode (fully automated, skips confirmation):**
-```bash
-erk implement {issue_number} --yolo
-```
-
-**Dangerous mode (auto-submit PR after implementation):**
-```bash
-erk implement {issue_number} --dangerous
-```"""
+    return format_next_steps_markdown(issue_number)
 
 
 def format_plan_issue_body_simple(plan_content: str) -> str:

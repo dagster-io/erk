@@ -28,6 +28,7 @@ import click
 from erk_shared.extraction.session_context import collect_session_context
 from erk_shared.github.metadata import render_session_content_blocks
 from erk_shared.github.plan_issues import create_plan_issue
+from erk_shared.output.next_steps import format_next_steps_plain
 from erk_shared.scratch.scratch import get_scratch_dir
 
 from dot_agent_kit.context_helpers import (
@@ -177,6 +178,11 @@ def plan_save_to_issue(
     # Detect enrichment status for informational output
     is_enriched = "## Enrichment Details" in plan
 
+    # At this point result.success is True, so issue_number must be set
+    # Guard for type narrowing
+    if result.issue_number is None:
+        raise RuntimeError("Unexpected: issue_number is None after successful create_plan_issue")
+
     if output_format == "display":
         click.echo(f"Plan saved to GitHub issue #{result.issue_number}")
         click.echo(f"URL: {result.issue_url}")
@@ -184,15 +190,7 @@ def plan_save_to_issue(
         if session_context_chunks > 0:
             click.echo(f"Session context: {session_context_chunks} chunks")
         click.echo()
-        click.echo("Next steps:")
-        click.echo()
-        issue_num = result.issue_number
-        click.echo(f"View Issue: gh issue view {issue_num} --web")
-        click.echo(f"Interactive: erk implement {issue_num}")
-        click.echo(f"Dangerous Interactive: erk implement {issue_num} --dangerous")
-        click.echo(f"Dangerous, Non-Interactive, Auto-Submit: erk implement {issue_num} --yolo")
-        click.echo(f"Submit to Queue: erk submit {issue_num}")
-        click.echo("  # Or use: /erk:submit-plan")
+        click.echo(format_next_steps_plain(result.issue_number))
     else:
         click.echo(
             json.dumps(
