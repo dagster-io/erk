@@ -71,12 +71,129 @@ result = runner.invoke(
 
 ## Key Methods
 
-| Method                                             | Description                           |
-| -------------------------------------------------- | ------------------------------------- |
-| `get_current_session_id()`                         | Returns configured current session ID |
-| `find_sessions(project_cwd, min_size=0, limit=10)` | Returns sessions from fake data       |
-| `read_session(project_cwd, session_id)`            | Returns session content               |
-| `has_project(project_cwd)`                         | Checks if project exists              |
+### `get_current_session_id() -> str | None`
+
+Returns the current session ID (from constructor).
+
+```python
+store = FakeClaudeCodeSessionStore(current_session_id="abc-123")
+session_id = store.get_current_session_id()
+assert session_id == "abc-123"
+```
+
+### `find_sessions(project_cwd: Path, *, min_size: int = 0, limit: int = 10) -> list[Session]`
+
+Finds sessions for a project, sorted newest first (by `modified_at`).
+
+```python
+sessions = store.find_sessions(
+    Path("/my/project"),
+    min_size=1000,  # Filter out small sessions
+    limit=5,        # Return at most 5
+)
+
+for session in sessions:
+    print(session.session_id, session.size_bytes, session.is_current)
+```
+
+**Returns**:
+```python
+@dataclass
+class Session:
+    session_id: str
+    size_bytes: int
+    modified_at: float
+    is_current: bool  # True if matches current_session_id
+```
+
+### `read_session(project_cwd: Path, session_id: str, *, include_agents: bool = True) -> SessionContent | None`
+
+Reads full session content (main + agent logs).
+
+```python
+content = store.read_session(
+    Path("/my/project"),
+    session_id="abc-123",
+    include_agents=True,
+)
+
+if content:
+    print(content.main_content)  # JSONL from main session
+    for agent_id, agent_log in content.agent_logs:
+        print(f"Agent {agent_id}: {agent_log}")
+```
+
+**Returns**:
+```python
+@dataclass
+class SessionContent:
+    main_content: str  # JSONL content
+    agent_logs: list[tuple[str, str]]  # (agent_id, JSONL content)
+```
+
+### `has_project(project_cwd: Path) -> bool`
+
+Checks if project has any session data.
+
+```python
+assert store.has_project(Path("/my/project")) is True
+assert store.has_project(Path("/other")) is False
+```
+
+## Mock Elimination Workflow
+
+### Before: Mock-Heavy Test
+
+```python
+# BAD: Using mocks
+def test_list_sessions(mocker):
+    mock_store = mocker.MagicMock()
+    mock_store.find_sessions.return_value = [
+        Session("abc", 1024, 1000.0, True),
+    ]
+
+    ctx = DotAgentContext(session_store=mock_store, ...)
+    result = list_sessions_command(ctx)
+
+    mock_store.find_sessions.assert_called_once()
+```
+
+**Problems**:
+- Mock configuration brittle (method names, argument order)
+- No type checking (mock accepts anything)
+- Test doesn't verify fake implementation
+
+### After: Fake-Based Test
+
+```python
+# GOOD: Using fake
+def test_list_sessions(tmp_path: Path):
+    store = FakeClaudeCodeSessionStore(
+        current_session_id="abc",
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "abc": FakeSessionData(
+                        content="...",
+                        size_bytes=1024,
+                        modified_at=1000.0,
+                    )
+                }
+            )
+        },
+    )
+
+    ctx = DotAgentContext.for_test(session_store=store, cwd=tmp_path)
+    result = list_sessions_command(ctx)
+
+    assert result.exit_code == 0
+    assert "abc" in result.output
+```
+
+**Benefits**:
+- Real implementation (no mock setup)
+- Type-safe (constructor enforces structure)
+- Tests fake behavior (catches fake bugs)
 
 ## Real-World Example
 

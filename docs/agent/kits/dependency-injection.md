@@ -355,6 +355,96 @@ def my_command(ctx: click.Context) -> None:
 
 The production context captures `Path.cwd()` once at CLI entry point and stores it in `DotAgentContext.cwd`. Commands access it via `require_cwd(ctx)`, enabling tests to inject arbitrary paths without filesystem manipulation.
 
+## Scratch Storage Access in Kit CLI Commands
+
+### Correct Import Path
+
+Use `erk_shared.scratch.scratch` module for session-specific scratch storage:
+
+```python
+from erk_shared.scratch.scratch import get_scratch_dir
+from dot_agent_kit.context_helpers import require_cwd
+
+@click.command()
+@click.pass_context
+def my_command(ctx: click.Context) -> None:
+    cwd = require_cwd(ctx)
+
+    # Get scratch directory for current session
+    scratch_dir = get_scratch_dir(
+        repo_root=cwd,  # Will find repo root from worktree
+        session_id=os.environ.get("SESSION_ID"),
+    )
+
+    # Write session-specific data
+    output_file = scratch_dir / "my_data.json"
+    output_file.write_text(json.dumps(data))
+```
+
+### Repo Root Resolution
+
+`get_scratch_dir()` accepts a worktree path and resolves it to repo root:
+
+```python
+# Both work - get_scratch_dir handles resolution
+scratch_dir = get_scratch_dir(repo_root=Path("/repo"))
+scratch_dir = get_scratch_dir(repo_root=Path("/repo/worktrees/feature"))
+
+# Returns: /repo/.erk/scratch/<session-id>/
+```
+
+### Common Mistakes
+
+❌ **WRONG: Using `/tmp/` for AI workflow files**
+
+```python
+# BAD: Files scattered across /tmp, not session-scoped
+output_file = Path(f"/tmp/my_data_{session_id}.json")
+```
+
+❌ **WRONG: Manual path construction**
+
+```python
+# BAD: Hardcoded path structure, breaks if .erk location changes
+scratch_dir = cwd / ".erk" / "scratch" / session_id
+```
+
+❌ **WRONG: Not scoping by session**
+
+```python
+# BAD: Shared across sessions, causes conflicts
+output_file = cwd / ".erk" / "my_data.json"
+```
+
+✅ **CORRECT: Using get_scratch_dir()**
+
+```python
+# GOOD: Session-scoped, repo-aware, follows conventions
+scratch_dir = get_scratch_dir(repo_root=cwd, session_id=session_id)
+output_file = scratch_dir / "my_data.json"
+```
+
+### Testing with Scratch Storage
+
+```python
+def test_command_with_scratch_storage(tmp_path: Path) -> None:
+    """Test command that writes to scratch storage."""
+    # Arrange
+    session_id = "test-session-123"
+    ctx = DotAgentContext.for_test(cwd=tmp_path)
+
+    # Act
+    with patch.dict(os.environ, {"SESSION_ID": session_id}):
+        result = runner.invoke(my_command, obj=ctx)
+
+    # Assert
+    scratch_dir = get_scratch_dir(repo_root=tmp_path, session_id=session_id)
+    output_file = scratch_dir / "my_data.json"
+    assert output_file.exists()
+    data = json.loads(output_file.read_text())
+    assert data["key"] == "value"
+```
+
 ## See Also
 
 - [fake-driven-testing skill](.claude/docs/fake-driven-testing/) - Layer 4 testing strategy
