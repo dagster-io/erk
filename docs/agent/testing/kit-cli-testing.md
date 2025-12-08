@@ -61,6 +61,7 @@ def for_test(
     github_issues: GitHubIssues | None = None,
     git: Git | None = None,
     github: GitHub | None = None,
+    session_store: ClaudeCodeSessionStore | None = None,
     debug: bool = False,
     repo_root: Path | None = None,
     cwd: Path | None = None,
@@ -71,6 +72,7 @@ def for_test(
     - github_issues: Defaults to FakeGitHubIssues()
     - git: Defaults to FakeGit()
     - github: Defaults to FakeGitHub()
+    - session_store: Defaults to FakeClaudeCodeSessionStore()
     - repo_root: Defaults to Path("/fake/repo")
     - cwd: Defaults to Path("/fake/worktree")
 
@@ -217,22 +219,30 @@ def test_command_with_multiple_dependencies() -> None:
 From `test_plan_save_to_issue.py`:
 
 ```python
-def test_plan_save_to_issue_success() -> None:
+def test_plan_save_to_issue_success(plans_dir: Path, tmp_path: Path) -> None:
     """Test successful plan extraction and issue creation."""
-    fake_gh = FakeGitHubIssues()
-    runner = CliRunner()
-
+    # Arrange: Create plan file and configure fakes
     plan = "# My Feature\n\n- Step 1\n- Step 2"
+    (plans_dir / "test-project-abc123.md").write_text(plan)
 
-    with patch(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-        return_value=plan,
-    ):
-        result = runner.invoke(
-            plan_save_to_issue,
-            ["--format", "json"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh),
-        )
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature"},
+        trunk_branches={tmp_path: "main"},
+    )
+    fake_store = FakeClaudeCodeSessionStore(current_session_id=None)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json"],
+        obj=DotAgentContext.for_test(
+            github_issues=fake_gh,
+            git=fake_git,
+            session_store=fake_store,
+            cwd=tmp_path,
+        ),
+    )
 
     assert result.exit_code == 0
     output = json.loads(result.output)
@@ -243,40 +253,50 @@ def test_plan_save_to_issue_success() -> None:
 
 **Key points:**
 
-- Uses `DotAgentContext.for_test()` with only `github_issues` specified
-- Other dependencies (git, github) use default fakes
+- Uses `DotAgentContext.for_test()` with multiple fakes
+- No mocks needed - all dependencies injected via fakes
 - Inspects fake state after command execution
 - Validates JSON output format
 
-### Example 2: Testing Error Paths
+### Example 2: Testing with Session Store
 
 ```python
-def test_plan_save_to_issue_no_plan() -> None:
-    """Test error when no plan found."""
-    fake_gh = FakeGitHubIssues()
-    runner = CliRunner()
+def test_uses_session_store_for_current_session_id(tmp_path: Path) -> None:
+    """Test that command uses session store for current session ID."""
+    session_id = "store-session-abc123"
+    session_content = '{"type": "user", "message": {"content": "test"}}\n'
 
-    with patch(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-        return_value=None,
-    ):
-        result = runner.invoke(
-            plan_save_to_issue,
-            ["--format", "json"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh),
-        )
+    fake_store = FakeClaudeCodeSessionStore(
+        current_session_id=session_id,
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    session_id: FakeSessionData(
+                        content=session_content,
+                        size_bytes=2000,
+                        modified_at=1234567890.0,
+                    )
+                }
+            )
+        },
+    )
 
-    assert result.exit_code == 1
+    result = runner.invoke(
+        my_command,
+        ["--format", "json"],
+        obj=DotAgentContext.for_test(session_store=fake_store, cwd=tmp_path),
+    )
+
+    assert result.exit_code == 0
     output = json.loads(result.output)
-    assert output["success"] is False
-    assert "No plan found" in output["error"]
+    assert output["session_ids"] == [session_id]
 ```
 
 **Key points:**
 
-- Tests error handling path
-- Validates exit code and error message
-- Still uses `DotAgentContext.for_test()` for consistency
+- Uses `FakeClaudeCodeSessionStore` for session data
+- No file system or mocking needed for session ID lookup
+- See [Testing with FakeClaudeCodeSessionStore](session-store-testing.md) for more details
 
 ## Comparison with Other Testing Approaches
 
@@ -479,6 +499,8 @@ def test_impl_init_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
 
 ## See Also
 
-- [fake-driven-testing skill](.claude/docs/fake-driven-testing/) - Complete 5-layer testing strategy
+- [fake-driven-testing skill](/.claude/skills/fake-driven-testing/) - Complete 5-layer testing strategy
 - [Kit CLI Dependency Injection](../kits/dependency-injection.md) - How dependencies are injected in commands
 - [Testing Guide](testing.md) - General testing patterns
+- [Testing with FakeClaudeCodeSessionStore](session-store-testing.md) - Session store fake details
+- [Mock Elimination Workflow](mock-elimination.md) - Replacing mocks with fakes

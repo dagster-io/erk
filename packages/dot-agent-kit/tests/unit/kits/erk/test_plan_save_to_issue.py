@@ -2,7 +2,6 @@
 
 import json
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from click.testing import CliRunner
@@ -16,7 +15,6 @@ from erk_shared.github.issues import FakeGitHubIssues
 
 from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue import (
-    _get_session_id_from_file,
     plan_save_to_issue,
 )
 
@@ -102,6 +100,9 @@ def test_plan_save_to_issue_no_plan(plans_dir: Path) -> None:
 def test_plan_save_to_issue_format(plans_dir: Path) -> None:
     """Verify plan format (metadata in body, plan in comment)."""
     fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit()
+    # Empty session store - no sessions available, so no session context added
+    fake_store = FakeClaudeCodeSessionStore(current_session_id=None)
     runner = CliRunner()
 
     # Create plan file
@@ -111,7 +112,11 @@ def test_plan_save_to_issue_format(plans_dir: Path) -> None:
     result = runner.invoke(
         plan_save_to_issue,
         [],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=DotAgentContext.for_test(
+            github_issues=fake_gh,
+            git=fake_git,
+            session_store=fake_store,
+        ),
     )
 
     assert result.exit_code == 0
@@ -148,6 +153,13 @@ def test_plan_save_to_issue_display_format(plans_dir: Path) -> None:
     assert "Plan saved to GitHub issue #1" in result.output
     assert "URL: " in result.output
     assert "Enrichment: No" in result.output
+    # Verify Next steps section with copy/pasteable commands
+    assert "Next steps:" in result.output
+    assert "View Issue: gh issue view 1 --web" in result.output
+    assert "Interactive: erk implement 1" in result.output
+    assert "Dangerous Interactive: erk implement 1 --dangerous" in result.output
+    assert "Dangerous, Non-Interactive, Auto-Submit: erk implement 1 --yolo" in result.output
+    assert "Submit to Queue: erk submit issue 1" in result.output
 
 
 def test_plan_save_to_issue_label_created(plans_dir: Path) -> None:
@@ -403,154 +415,132 @@ def test_plan_save_to_issue_display_format_shows_session_context(
     assert "chunks" in result.output
 
 
-def test_get_session_id_from_file_returns_content(tmp_path: Path) -> None:
-    """Test _get_session_id_from_file reads session ID from file."""
-    session_file = tmp_path / ".erk" / "scratch" / "current-session-id"
-    session_file.parent.mkdir(parents=True)
-    session_file.write_text("test-session-id-12345", encoding="utf-8")
-
-    with patch(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._session_id_file_path",
-        return_value=session_file,
-    ):
-        result = _get_session_id_from_file()
-        assert result == "test-session-id-12345"
-
-
-def test_get_session_id_from_file_strips_whitespace(tmp_path: Path) -> None:
-    """Test _get_session_id_from_file strips whitespace from file content."""
-    session_file = tmp_path / ".erk" / "scratch" / "current-session-id"
-    session_file.parent.mkdir(parents=True)
-    session_file.write_text("  test-session-id-12345  \n", encoding="utf-8")
-
-    with patch(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._session_id_file_path",
-        return_value=session_file,
-    ):
-        result = _get_session_id_from_file()
-        assert result == "test-session-id-12345"
-
-
-def test_get_session_id_from_file_returns_none_when_missing(tmp_path: Path) -> None:
-    """Test _get_session_id_from_file returns None when file doesn't exist."""
-    nonexistent_file = tmp_path / ".erk" / "scratch" / "current-session-id"
-
-    with patch(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._session_id_file_path",
-        return_value=nonexistent_file,
-    ):
-        result = _get_session_id_from_file()
-        assert result is None
-
-
-def test_plan_save_to_issue_reads_session_id_from_file(tmp_path: Path) -> None:
-    """Test plan_save_to_issue reads session ID from file when not provided via flag."""
+def test_plan_save_to_issue_uses_session_store_for_current_session_id(
+    plans_dir: Path, tmp_path: Path
+) -> None:
+    """Test that session ID is retrieved from session store when not provided via flag."""
     fake_gh = FakeGitHubIssues()
-    fake_git = FakeGit()
-    fake_store = FakeClaudeCodeSessionStore()
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature"},
+        trunk_branches={tmp_path: "main"},
+    )
+
+    store_session_id = "store-based-session-id"
+    session_content = '{"type": "user", "message": {"content": "Test"}}\n'
+
+    # Session store configured with current_session_id
+    fake_store = FakeClaudeCodeSessionStore(
+        current_session_id=store_session_id,
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    store_session_id: FakeSessionData(
+                        content=session_content,
+                        size_bytes=2000,
+                        modified_at=1234567890.0,
+                    )
+                }
+            )
+        },
+    )
+
     runner = CliRunner()
 
-    plan = "# Feature Plan\n\n- Step 1"
-    file_session_id = "file-based-session-id"
+    # Create plan file
+    plan_content = "# Feature Plan\n\n- Step 1"
+    (plans_dir / "store-session-test.md").write_text(plan_content, encoding="utf-8")
 
-    # Create session ID file
-    session_file = tmp_path / ".erk" / "scratch" / "current-session-id"
-    session_file.parent.mkdir(parents=True)
-    session_file.write_text(file_session_id, encoding="utf-8")
-
-    with (
-        runner.isolated_filesystem(temp_dir=tmp_path),
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._session_id_file_path",
-            return_value=session_file,
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json"],  # No --session-id flag
+        obj=DotAgentContext.for_test(
+            github_issues=fake_gh,
+            git=fake_git,
+            session_store=fake_store,
+            cwd=tmp_path,
         ),
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-            return_value=plan,
-        ) as mock_get_plan,
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._create_plan_saved_marker",
-        ),
-    ):
-        result = runner.invoke(
-            plan_save_to_issue,
-            ["--format", "json"],  # No --session-id flag
-            obj=DotAgentContext.for_test(
-                github_issues=fake_gh, git=fake_git, session_store=fake_store
-            ),
-        )
+    )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    # The session from store should be captured
+    assert store_session_id in output["session_ids"]
 
-    # Verify get_latest_plan was called with the file-based session ID
-    mock_get_plan.assert_called_once()
-    call_args = mock_get_plan.call_args
-    assert call_args.kwargs.get("session_id") == file_session_id
 
+def test_plan_save_to_issue_flag_overrides_session_store(plans_dir: Path, tmp_path: Path) -> None:
+    """Test --session-id flag takes priority over session store's current_session_id.
 
-def test_plan_save_to_issue_flag_overrides_file(tmp_path: Path) -> None:
-    """Test --session-id flag takes priority over file-based session ID."""
+    When --session-id is provided, it should be used as effective_session_id,
+    overriding session_store.get_current_session_id(). This test verifies that
+    the flag session is captured even when the store has a different current session.
+    """
     fake_gh = FakeGitHubIssues()
-    fake_git = FakeGit()
-    fake_store = FakeClaudeCodeSessionStore()
-    runner = CliRunner()
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature"},
+        trunk_branches={tmp_path: "main"},
+    )
 
-    plan = "# Feature Plan\n\n- Step 1"
-    file_session_id = "file-based-session-id"
+    store_session_id = "store-based-session-id"
     flag_session_id = "flag-based-session-id"
+    session_content = '{"type": "user", "message": {"content": "Test"}}\n'
 
-    # Create session ID file
-    session_file = tmp_path / ".erk" / "scratch" / "current-session-id"
-    session_file.parent.mkdir(parents=True)
-    session_file.write_text(file_session_id, encoding="utf-8")
+    # Session store has current_session_id set to store_session_id,
+    # but ONLY the flag_session_id session exists in the project.
+    # This tests that the flag is used to look up sessions.
+    fake_store = FakeClaudeCodeSessionStore(
+        current_session_id=store_session_id,  # Store points to different session
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    # Only flag session exists - if store session was used, no sessions found
+                    flag_session_id: FakeSessionData(
+                        content=session_content,
+                        size_bytes=2000,
+                        modified_at=1234567891.0,
+                    ),
+                }
+            )
+        },
+    )
 
-    with (
-        runner.isolated_filesystem(temp_dir=tmp_path),
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._session_id_file_path",
-            return_value=session_file,
+    runner = CliRunner()
+
+    # Create plan file
+    plan_content = "# Feature Plan\n\n- Step 1"
+    (plans_dir / "override-session-test.md").write_text(plan_content, encoding="utf-8")
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json", "--session-id", flag_session_id],
+        obj=DotAgentContext.for_test(
+            github_issues=fake_gh,
+            git=fake_git,
+            session_store=fake_store,
+            cwd=tmp_path,
         ),
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-            return_value=plan,
-        ) as mock_get_plan,
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._create_plan_saved_marker",
-        ),
-    ):
-        result = runner.invoke(
-            plan_save_to_issue,
-            ["--format", "json", "--session-id", flag_session_id],
-            obj=DotAgentContext.for_test(
-                github_issues=fake_gh, git=fake_git, session_store=fake_store
-            ),
-        )
+    )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    # The flag session should be captured
+    assert flag_session_id in output["session_ids"]
 
-    # Verify get_latest_plan was called with the flag-based session ID (not file)
-    mock_get_plan.assert_called_once()
-    call_args = mock_get_plan.call_args
-    assert call_args.kwargs.get("session_id") == flag_session_id
 
-
-def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
+def test_plan_save_to_issue_creates_marker_file(tmp_path: Path, plans_dir: Path) -> None:
     """Test plan_save_to_issue creates marker file on success."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    fake_store = FakeClaudeCodeSessionStore()
+    test_session_id = "marker-test-session-id"
+    fake_store = FakeClaudeCodeSessionStore(current_session_id=test_session_id)
     runner = CliRunner()
 
-    plan = "# Feature Plan\n\n- Step 1"
-    test_session_id = "marker-test-session-id"
+    # Create plan file
+    plan_content = "# Feature Plan\n\n- Step 1"
+    (plans_dir / "marker-test.md").write_text(plan_content, encoding="utf-8")
 
-    with (
-        runner.isolated_filesystem(temp_dir=tmp_path) as td,
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-            return_value=plan,
-        ),
-    ):
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
         result = runner.invoke(
             plan_save_to_issue,
             ["--format", "json", "--session-id", test_session_id],
@@ -566,29 +556,22 @@ def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
         assert marker_file.exists()
 
 
-def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None:
+def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path, plans_dir: Path) -> None:
     """Test marker file is not created when no session ID is available."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    fake_store = FakeClaudeCodeSessionStore()
+    # Session store with no current session ID
+    fake_store = FakeClaudeCodeSessionStore(current_session_id=None)
     runner = CliRunner()
 
-    plan = "# Feature Plan\n\n- Step 1"
+    # Create plan file
+    plan_content = "# Feature Plan\n\n- Step 1"
+    (plans_dir / "no-marker-test.md").write_text(plan_content, encoding="utf-8")
 
-    with (
-        runner.isolated_filesystem(temp_dir=tmp_path) as td,
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._get_session_id_from_file",
-            return_value=None,
-        ),
-        patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue.get_latest_plan",
-            return_value=plan,
-        ),
-    ):
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
         result = runner.invoke(
             plan_save_to_issue,
-            ["--format", "json"],  # No --session-id, and file returns None
+            ["--format", "json"],  # No --session-id, and store has None
             obj=DotAgentContext.for_test(
                 github_issues=fake_gh, git=fake_git, session_store=fake_store
             ),

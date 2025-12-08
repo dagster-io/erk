@@ -22,7 +22,6 @@ Exit Codes:
 """
 
 import json
-from functools import cache
 from pathlib import Path
 
 import click
@@ -38,20 +37,6 @@ from dot_agent_kit.context_helpers import (
     require_session_store,
 )
 from dot_agent_kit.data.kits.erk.session_plan_extractor import get_latest_plan
-
-
-@cache
-def _session_id_file_path() -> Path:
-    """Return path to the session ID file (cached to avoid import-time computation)."""
-    return Path(".erk/scratch/current-session-id")
-
-
-def _get_session_id_from_file() -> str | None:
-    """Read session ID from worktree-scoped file if it exists."""
-    session_file = _session_id_file_path()
-    if session_file.exists():
-        return session_file.read_text(encoding="utf-8").strip()
-    return None
 
 
 def _create_plan_saved_marker(session_id: str) -> None:
@@ -88,13 +73,14 @@ def plan_save_to_issue(
 
     Combines plan extraction and issue creation in a single operation.
     """
-    # Get GitHub Issues from context
+    # Get dependencies from context
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
+    session_store = require_session_store(ctx)
 
-    # Resolve session ID: --session-id flag > file > None
-    effective_session_id = session_id or _get_session_id_from_file()
+    # Resolve session ID: --session-id flag > session store > None
+    effective_session_id = session_id or session_store.get_current_session_id()
 
     # Step 1: Extract plan (priority: plan_file > session_id > most recent)
     if plan_file:
@@ -149,7 +135,6 @@ def plan_save_to_issue(
     session_ids: list[str] = []
 
     git = require_git(ctx)
-    session_store = require_session_store(ctx)
     session_result = collect_session_context(
         git=git,
         cwd=cwd,
@@ -193,6 +178,15 @@ def plan_save_to_issue(
         click.echo(f"Enrichment: {'Yes' if is_enriched else 'No'}")
         if session_context_chunks > 0:
             click.echo(f"Session context: {session_context_chunks} chunks")
+        click.echo()
+        click.echo("Next steps:")
+        click.echo()
+        issue_num = result.issue_number
+        click.echo(f"View Issue: gh issue view {issue_num} --web")
+        click.echo(f"Interactive: erk implement {issue_num}")
+        click.echo(f"Dangerous Interactive: erk implement {issue_num} --dangerous")
+        click.echo(f"Dangerous, Non-Interactive, Auto-Submit: erk implement {issue_num} --yolo")
+        click.echo(f"Submit to Queue: erk submit issue {issue_num}")
     else:
         click.echo(
             json.dumps(
