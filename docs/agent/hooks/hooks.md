@@ -427,7 +427,7 @@ When a hook needs to allow future operations after user confirmation, use a skip
 
 ```python
 def _get_skip_marker_path(session_id: str, repo_root: Path) -> Path:
-    return repo_root / ".erk" / "scratch" / session_id / "skip-plan-save"
+    return repo_root / ".erk" / "scratch" / "sessions" / session_id / "skip-plan-save"
 
 def check_and_consume_marker(session_id: str, repo_root: Path) -> bool:
     marker = _get_skip_marker_path(session_id, repo_root)

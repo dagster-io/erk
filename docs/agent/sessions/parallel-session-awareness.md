@@ -101,7 +101,7 @@ def get_scratch_dir() -> Path | None:
     if not session_id:
         return None
 
-    scratch_dir = Path.cwd() / ".erk" / "scratch" / session_id
+    scratch_dir = repo_root / ".erk" / "scratch" / "sessions" / session_id
     scratch_dir.mkdir(parents=True, exist_ok=True)
     return scratch_dir
 
