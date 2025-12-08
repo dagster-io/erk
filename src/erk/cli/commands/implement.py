@@ -339,6 +339,25 @@ class WorktreeCreationResult:
     impl_dir: Path
 
 
+def get_impl_location(worktree_path: Path, project: ProjectContext | None) -> Path:
+    """Determine where to create .impl/ folder based on project context.
+
+    In monorepos, .impl/ should be placed at the project root (where .erk/project.toml
+    lives) rather than the worktree root. This ensures Claude starts in the correct
+    context for the project.
+
+    Args:
+        worktree_path: Path to the worktree root
+        project: Project context if running from within a project, None otherwise
+
+    Returns:
+        Path where .impl/ folder should be created (NOT including the .impl/ suffix)
+    """
+    if project is not None:
+        return worktree_path / project.path_from_repo
+    return worktree_path
+
+
 def _detect_target_type(target: str) -> TargetInfo:
     """Detect whether target is an issue number, issue URL, or file path.
 
@@ -810,13 +829,7 @@ def _create_worktree_with_plan_content(
     # Create .impl/ folder with plan content
     # Use overwrite=True since new worktrees created from branches with existing
     # .impl/ folders inherit that folder, and we want to replace it with the new plan
-    #
-    # In monorepos, place .impl/ at project root (where .erk/project.toml lives)
-    # rather than worktree root, so Claude starts in the right context
-    if project is not None:
-        impl_location = wt_path / project.path_from_repo
-    else:
-        impl_location = wt_path
+    impl_location = get_impl_location(wt_path, project)
 
     ctx.feedback.info("Creating .impl/ folder with plan...")
     create_impl_folder(
