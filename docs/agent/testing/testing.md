@@ -96,6 +96,42 @@ git_ops = FakeGit(
 )
 ```
 
+#### Non-Root Worktree Testing
+
+When testing worktree-related code, **include tests that simulate running from a non-root worktree**. This catches bugs where code incorrectly uses path comparison instead of the `is_root` field.
+
+**Why this matters**: Code that works when run from the repo root may fail when run from a worktree, especially code that determines if a worktree is the root worktree.
+
+**Pattern**:
+
+```python
+def test_worktree_name_uses_is_root_flag() -> None:
+    """Test from non-root worktree to catch path comparison bugs."""
+    repo_dir = Path("/repo")
+    worktree_path = repo_dir / "worktrees" / "my-feature"
+
+    git = FakeGit(
+        worktrees={
+            repo_dir: [
+                WorktreeInfo(path=repo_dir, branch="main", is_root=True),
+                WorktreeInfo(path=worktree_path, branch="my-feature", is_root=False),
+            ],
+        },
+        # Key: set cwd to the NON-ROOT worktree
+        current_branches={worktree_path: "my-feature"},
+        git_common_dirs={worktree_path: repo_dir / ".git"},
+    )
+
+    # Run from the non-root worktree
+    test_ctx = ErkContext.for_test(git=git, cwd=worktree_path)
+
+    # Your test assertions here
+    result = my_command(test_ctx)
+    assert result.root_worktree_name == "root"  # Not "my-feature"
+```
+
+**Common bug caught by this pattern**: Using `wt.path == repo.root` instead of `wt.is_root` to detect the root worktree. See [WorktreeInfo Patterns](../architecture/worktree-info-patterns.md) for details.
+
 #### macOS Symlink Resolution
 
 On macOS, `/tmp` and `/var` are symlinks to `/private/tmp` and `/private/var`. When paths are resolved:

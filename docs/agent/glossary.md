@@ -283,6 +283,10 @@ main (trunk)
 
 **Purpose**: Break large features into reviewable chunks while maintaining dependencies.
 
+**Related commands**:
+
+- `erk stack list` (alias: `erk stack ls`) - Lists the Graphite stack for the current branch, showing which branches have associated worktrees. Filters to branches with worktrees and displays a Rich table with branch name, worktree directory, and current branch marker.
+
 ### Default Branch
 
 See: [Trunk Branch](#trunk-branch)
