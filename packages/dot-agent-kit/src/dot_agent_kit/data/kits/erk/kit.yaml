@@ -124,8 +124,8 @@ kit_cli_commands:
   - name: marker-delete
     path: kit_cli_commands/erk/marker_delete.py
     description: Delete a marker from the current worktree
-  - name: marker-exists
-    path: kit_cli_commands/erk/marker_exists.py
+  - name: check-marker
+    path: kit_cli_commands/erk/check_marker.py
     description: Check if a marker exists in the current worktree
   - name: add-issue-label
     path: kit_cli_commands/erk/add_issue_label.py

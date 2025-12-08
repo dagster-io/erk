@@ -127,11 +127,11 @@ Lists Claude Code sessions for the current project.
 }
 ```
 
-### marker-exists
+### check-marker
 
 Check if a marker file exists.
 
-**Command**: `dot-agent run erk marker-exists pending-extraction`
+**Command**: `dot-agent run erk check-marker pending-extraction`
 
 **Output**:
 
