@@ -10,12 +10,16 @@ and is created once at CLI entry point, then threaded through the application.
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues, RealGitHubIssues
+
+if TYPE_CHECKING:
+    from erk_shared.github.types import RepoInfo
 
 
 @dataclass(frozen=True)
@@ -108,6 +112,31 @@ class DotAgentContext:
         )
 
 
+def get_repo_info(git: Git, repo_root: Path) -> "RepoInfo | None":
+    """Detect repository info from git remote URL.
+
+    Parses the origin remote URL to extract owner/name for GitHub API calls.
+    Returns None if no origin remote is configured or URL cannot be parsed.
+
+    Args:
+        git: Git interface for operations
+        repo_root: Repository root path
+
+    Returns:
+        RepoInfo with owner/name, or None if not determinable
+    """
+    from erk_shared.github.parsing import parse_git_remote_url
+    from erk_shared.github.types import RepoInfo
+
+    try:
+        remote_url = git.get_remote_url(repo_root)
+        owner, name = parse_git_remote_url(remote_url)
+        return RepoInfo(owner=owner, name=name)
+    except ValueError:
+        # No origin remote configured or URL cannot be parsed
+        return None
+
+
 def create_context(*, debug: bool) -> DotAgentContext:
     """Create production context with real implementations.
 
@@ -147,10 +176,14 @@ def create_context(*, debug: bool) -> DotAgentContext:
     repo_root = Path(result.stdout.strip())
     cwd = Path.cwd()
 
+    # Create git instance and detect repo_info
+    git = RealGit()
+    repo_info = get_repo_info(git, repo_root)
+
     return DotAgentContext(
         github_issues=RealGitHubIssues(),
-        git=RealGit(),
-        github=RealGitHub(time=RealTime()),
+        git=git,
+        github=RealGitHub(time=RealTime(), repo_info=repo_info),
         session_store=RealClaudeCodeSessionStore(),
         debug=debug,
         repo_root=repo_root,
