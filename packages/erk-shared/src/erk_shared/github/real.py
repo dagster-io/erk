@@ -28,6 +28,7 @@ from erk_shared.github.parsing import (
     execute_gh_command,
     parse_aggregated_check_counts,
     parse_gh_auth_status_output,
+    parse_git_remote_url,
 )
 from erk_shared.github.types import (
     BRANCH_NOT_AVAILABLE,
@@ -1515,18 +1516,21 @@ query {{
         return ("UNKNOWN", "UNKNOWN")
 
     def get_repo_info(self, repo_root: Path) -> RepoInfo:
-        """Get repository owner and name from GitHub CLI.
+        """Get repository owner and name from git remote URL.
 
-        Uses `gh repo view --json owner,name` to get repo info.
+        Parses the origin remote URL locally - no API call needed.
 
         Raises:
-            RuntimeError: If gh command fails (auth issues, network errors, etc.)
+            RuntimeError: If git command fails
+            ValueError: If remote URL is not a valid GitHub URL
         """
-        cmd = ["gh", "repo", "view", "--json", "owner,name"]
-        stdout = execute_gh_command(cmd, repo_root)
-        data = json.loads(stdout)
-        owner = data["owner"]["login"]
-        name = data["name"]
+        result = run_subprocess_with_context(
+            ["git", "remote", "get-url", "origin"],
+            operation_context="get git remote URL",
+            cwd=repo_root,
+        )
+        remote_url = result.stdout.strip()
+        owner, name = parse_git_remote_url(remote_url)
         return RepoInfo(owner=owner, name=name)
 
     def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
