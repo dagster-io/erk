@@ -70,6 +70,26 @@ def _format_resolution_comment(comment: str) -> str:
     return f"{comment}\n\n_Addressed via `/erk:pr-address` at {timestamp}_"
 
 
+def _ensure_not_error[T](result: T | ResolveThreadError) -> T:
+    """Ensure result is not an error, otherwise output JSON and exit.
+
+    Provides type narrowing: takes `T | ResolveThreadError` and returns `T`.
+
+    Args:
+        result: Value that may be a ResolveThreadError
+
+    Returns:
+        The value unchanged if not an error (with narrowed type T)
+
+    Raises:
+        SystemExit: If result is ResolveThreadError (with exit code 0)
+    """
+    if isinstance(result, ResolveThreadError):
+        click.echo(json.dumps(asdict(result), indent=2))
+        raise SystemExit(0)
+    return result
+
+
 def _add_comment_if_provided(
     github: "GitHub",
     repo_root: Path,
@@ -112,11 +132,9 @@ def resolve_review_thread(ctx: click.Context, thread_id: str, comment: str | Non
     github = require_github(ctx)
 
     # Add comment first if provided
-    comment_result = _add_comment_if_provided(github, repo_root, thread_id, comment)
-    if isinstance(comment_result, ResolveThreadError):
-        click.echo(json.dumps(asdict(comment_result), indent=2))
-        raise SystemExit(0)
-    comment_added = comment_result
+    comment_added = _ensure_not_error(
+        _add_comment_if_provided(github, repo_root, thread_id, comment)
+    )
 
     # Attempt to resolve the thread
     try:
