@@ -41,6 +41,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before running `kit sync` after adding artifacts to kit.yaml** → Read [Kit Artifact and Symlink Management](kits/dev/artifact-management.md) first. Must use `--force` flag if version wasn't bumped.
 
+**CRITICAL: Before removing agents from kit.yaml artifacts** → Read [Kit Artifact and Symlink Management](kits/dev/artifact-management.md) first. When removing an agent from kit.yaml, also remove the corresponding symlink from .claude/agents/. The test_no_broken_symlinks_in_claude_directory integration test will fail if orphaned symlinks remain.
+
 **CRITICAL: Before writing to /tmp/** → Read [Scratch Storage](planning/scratch-storage.md) first. AI workflow files belong in .erk/scratch/<session-id>/, NOT /tmp/.
 
 **CRITICAL: Before creating temp files for AI workflows** → Read [Scratch Storage](planning/scratch-storage.md) first. Use worktree-scoped scratch storage for session-specific data.

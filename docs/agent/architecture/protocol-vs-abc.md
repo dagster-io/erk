@@ -18,6 +18,7 @@ A detailed guide for choosing between `typing.Protocol` and `abc.ABC` when desig
 - [Quick Decision Tree](#quick-decision-tree)
 - [Core Concepts](#core-concepts)
 - [When to Use Protocol](#when-to-use-protocol)
+- [Composite Protocols for Subset Dependencies](#composite-protocols-for-subset-dependencies)
 - [When to Use ABC](#when-to-use-abc)
 - [Protocol with @property for Frozen Dataclasses](#protocol-with-property-for-frozen-dataclasses)
 - [Real-World Example: GtKit Refactoring](#real-world-example-gtkit-refactoring)
@@ -113,6 +114,85 @@ class GtKit(Protocol):
 - `ErkContext` already has `git`, `gh`, and `graphite` attributes
 - No code changes needed to `ErkContext`
 - Any object with these attributes works
+
+## Composite Protocols for Subset Dependencies
+
+When an operation only needs a subset of `ErkContext` dependencies, create a Protocol that captures just those requirements:
+
+```python
+from typing import Protocol
+
+from erk.integration.git import Git
+from erk.integration.gh import GitHub
+
+
+class GitPrKit(Protocol):
+    """Minimal interface for git PR operations.
+
+    Only requires git and github, not the full ErkContext.
+    """
+
+    @property
+    def git(self) -> Git: ...
+
+    @property
+    def github(self) -> GitHub: ...
+```
+
+**Key insight:** `ErkContext` already has `git` and `github` properties, so it satisfies `GitPrKit` via structural typing without any changes.
+
+### Benefits
+
+**Operations can be tested with minimal fakes:**
+
+```python
+@dataclass
+class FakeGitPrKit:
+    """Minimal fake for testing GitPr operations."""
+
+    git: FakeGit
+    github: FakeGitHub
+
+
+def test_pr_operation():
+    kit = FakeGitPrKit(git=FakeGit(), github=FakeGitHub())
+    result = run_pr_operation(kit)  # Accepts FakeGitPrKit or ErkContext
+    assert result.success
+```
+
+**Operations can be called from multiple contexts:**
+
+```python
+def run_pr_operation(kit: GitPrKit) -> PRResult:
+    """Works with ErkContext or any other type with git + github."""
+    kit.git.push("feature")
+    pr_url = kit.github.create_pr("feature")
+    return PRResult(pr_url)
+
+
+# From main CLI (full context)
+ctx = create_erk_context()
+run_pr_operation(ctx)  # ctx satisfies GitPrKit
+
+# From kit CLI (minimal fake)
+kit = RealGitPrKit.from_env()
+run_pr_operation(kit)  # kit satisfies GitPrKit
+```
+
+**Clear documentation of actual dependencies:**
+
+Instead of accepting `ErkContext` (which has dozens of attributes), the function signature shows exactly what it needs: `git` and `github`.
+
+### When to Create Subset Protocols
+
+Create a subset Protocol when:
+
+1. **Operation doesn't need full ErkContext** - Only uses 2-3 integrations
+2. **Want minimal test setup** - Don't want to construct full fake context
+3. **Documenting dependencies** - Make requirements explicit in signature
+4. **Reusing operations** - Called from different contexts (main CLI, kit CLI, agent)
+
+**Example:** Git PR operations only need `git` and `github`, not `graphite`, `time`, `cwd`, etc.
 
 ## When to Use ABC
 
