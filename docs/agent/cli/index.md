@@ -3,6 +3,7 @@
 
 # Cli Documentation
 
+- **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
 - **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
 - **[list-formatting.md](list-formatting.md)** — formatting list output, designing list commands, ensuring consistent list display
 - **[output-styling.md](output-styling.md)** — styling CLI output, using colors in CLI, formatting terminal output

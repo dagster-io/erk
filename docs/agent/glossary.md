@@ -4,6 +4,7 @@ read_when:
   - "understanding project terminology"
   - "confused about domain-specific terms"
   - "working with worktrees, plans, or stacks"
+  - "working with objectives or turns"
 ---
 
 # Erk Glossary
@@ -1005,6 +1006,108 @@ A parameter (like `repo_root`) whose presence/absence determines which execution
 **Example**: `PlanDetailScreen` uses `repo_root` to decide whether streaming execution is available or commands are disabled.
 
 **Related**: [Command Execution Strategies](tui/command-execution.md)
+
+---
+
+## Objectives System
+
+The objectives system enables incremental, bounded progress toward long-running goals. Objectives act as "plan factories" - they generate focused implementation plans rather than being implemented directly.
+
+### Objective
+
+A long-running goal that produces bounded plans when evaluated against the codebase.
+
+**Purpose**: Break large, complex goals into reviewable, implementable chunks. Instead of tackling "migrate all errors to Ensure class" in one massive PR, an objective evaluates the codebase, identifies a manageable subset of violations, and creates a plan for that subset.
+
+**Storage**: `.erk/objectives/<name>/`
+
+### Turn
+
+A single evaluation cycle where Claude assesses current state against the objective's desired state.
+
+**Output**: Either `STATUS: COMPLETE` (objective fully achieved) or `STATUS: GAPS_FOUND` (work remaining).
+
+**Mechanism**:
+
+1. Claude receives objective definition + accumulated notes + codebase access
+2. Evaluates current state vs desired state
+3. Reports status with optional gap description
+4. If gaps found, creates bounded implementation plan
+
+**CLI**: `erk objective turn <objective-name>`
+
+### ObjectiveType
+
+Discriminator for objective behavior:
+
+| Type          | Description                       | Example                        |
+| ------------- | --------------------------------- | ------------------------------ |
+| `COMPLETABLE` | Finite end state exists           | "Migrate all errors to Ensure" |
+| `PERPETUAL`   | Ongoing guard, never fully "done" | "No direct time.sleep() calls" |
+
+**Impact**: `COMPLETABLE` objectives can report `STATUS: COMPLETE`. `PERPETUAL` objectives always find gaps or report nothing to do in this turn.
+
+### ObjectiveDefinition
+
+A frozen dataclass containing the static configuration for an objective.
+
+**Location**: `.erk/objectives/<name>/definition.yaml`
+
+**Fields**:
+
+| Field                | Purpose                                       |
+| -------------------- | --------------------------------------------- |
+| `name`               | Unique identifier (kebab-case)                |
+| `objective_type`     | COMPLETABLE or PERPETUAL                      |
+| `desired_state`      | What "done" looks like                        |
+| `rationale`          | Why this objective matters                    |
+| `examples`           | Before/after patterns showing desired changes |
+| `scope_includes`     | Directories/patterns to examine               |
+| `scope_excludes`     | Directories/patterns to skip                  |
+| `evaluation_prompt`  | Instructions for assessing gaps               |
+| `plan_sizing_prompt` | Guidelines for bounding plan size             |
+
+**File**: `packages/erk-shared/src/erk_shared/objectives/types.py`
+
+### ObjectiveNotes
+
+Accumulated knowledge from previous turns. Notes persist across future turns, building institutional memory about edge cases, patterns, and decisions.
+
+**Location**: `.erk/objectives/<name>/notes.yaml`
+
+**Entry fields**:
+
+- `timestamp`: ISO 8601 format
+- `content`: The insight or observation
+- `source_turn`: Optional reference to generating turn
+
+**Purpose**: Prevent rediscovering the same insights. If a previous turn learned "files in vendor/ should be excluded", that knowledge persists.
+
+### TurnResult
+
+A frozen dataclass capturing the outcome of running a turn.
+
+**Fields**:
+
+| Field               | Type          | Description                   |
+| ------------------- | ------------- | ----------------------------- |
+| `objective_name`    | `str`         | Which objective was evaluated |
+| `gap_found`         | `bool`        | Whether work remains          |
+| `gap_description`   | `str \| None` | Human-readable gap summary    |
+| `plan_issue_number` | `int \| None` | GitHub issue created for plan |
+| `plan_issue_url`    | `str \| None` | URL to the created issue      |
+| `timestamp`         | `str`         | ISO 8601 format               |
+
+**File**: `packages/erk-shared/src/erk_shared/objectives/types.py`
+
+### Key Files
+
+| Concern | Location                                                   |
+| ------- | ---------------------------------------------------------- |
+| Types   | `packages/erk-shared/src/erk_shared/objectives/types.py`   |
+| Turn    | `packages/erk-shared/src/erk_shared/objectives/turn.py`    |
+| Storage | `packages/erk-shared/src/erk_shared/objectives/storage.py` |
+| CLI     | `src/erk/cli/commands/objective/`                          |
 
 ---
 

@@ -11,6 +11,8 @@ read_when:
 
 Action-triggered rules that fire when you're about to perform specific actions.
 
+**CRITICAL: Before choosing between execute_interactive and execute_interactive_command** → Read [ClaudeExecutor Pattern Documentation](architecture/claude-executor-patterns.md) first. execute_interactive() NEVER returns (uses os.execvp). Use execute_interactive_command() if you need control to return.
+
 **CRITICAL: Before passing dry_run boolean flags through function parameters** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. Use dependency injection with DryRunGit/DryRunGitHub wrappers instead of boolean flags.
 
 **CRITICAL: Before calling os.chdir() in erk code** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx, repo_root=repo.root). Stale ctx.cwd causes FileNotFoundError.
