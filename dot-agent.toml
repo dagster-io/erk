@@ -111,6 +111,14 @@ invocation = "dot-agent kit-command erk exit-plan-mode-hook"
 description = "Auto-save plan to GitHub on Plan Mode exit"
 timeout = 30
 
+[[kits.erk.hooks]]
+id = "tripwires-reminder-hook"
+lifecycle = "UserPromptSubmit"
+matcher = "*"
+invocation = "dot-agent kit-command erk tripwires-reminder-hook"
+description = "Reminds Claude to check tripwires before common operations"
+timeout = 30
+
 [kits.gt]
 kit_id = "gt"
 source_type = "bundled"
