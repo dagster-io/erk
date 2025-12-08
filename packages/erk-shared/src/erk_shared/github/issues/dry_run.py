@@ -95,3 +95,11 @@ class DryRunGitHubIssues(GitHubIssues):
     ) -> list[PRReference]:
         """Delegate to wrapped implementation (read-only operation)."""
         return self._wrapped.get_prs_referencing_issue(repo_root, issue_number)
+
+    def add_reaction_to_comment(
+        self,
+        repo_root: Path,
+        comment_id: int,
+        reaction: str,
+    ) -> None:
+        """No-op for adding reaction in dry-run mode."""

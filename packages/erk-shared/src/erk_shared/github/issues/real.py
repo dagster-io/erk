@@ -173,7 +173,7 @@ class RealGitHubIssues(GitHubIssues):
         """Fetch all comments with their URLs for an issue using gh CLI.
 
         Uses JSON array output format to preserve multi-line comment bodies
-        and extract html_url for each comment.
+        and extract html_url, id, and author for each comment.
 
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
@@ -183,7 +183,7 @@ class RealGitHubIssues(GitHubIssues):
             "api",
             f"repos/{{owner}}/{{repo}}/issues/{number}/comments",
             "--jq",
-            "[.[] | {body, url: .html_url}]",
+            "[.[] | {body, url: .html_url, id, author: .user.login}]",
         ]
         stdout = execute_gh_command(cmd, repo_root)
 
@@ -191,7 +191,10 @@ class RealGitHubIssues(GitHubIssues):
             return []
 
         data = json.loads(stdout)
-        return [IssueComment(body=item["body"], url=item["url"]) for item in data]
+        return [
+            IssueComment(body=item["body"], url=item["url"], id=item["id"], author=item["author"])
+            for item in data
+        ]
 
     def ensure_label_exists(
         self,
@@ -326,3 +329,28 @@ class RealGitHubIssues(GitHubIssues):
             )
             for item in data
         ]
+
+    def add_reaction_to_comment(
+        self,
+        repo_root: Path,
+        comment_id: int,
+        reaction: str,
+    ) -> None:
+        """Add a reaction to an issue/PR comment using gh API.
+
+        Uses the REST API to add a reaction. The API is idempotent -
+        adding the same reaction twice returns the existing reaction.
+
+        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+        on failures (not installed, not authenticated, comment not found).
+        """
+        cmd = [
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/issues/comments/{comment_id}/reactions",
+            "-X",
+            "POST",
+            "-f",
+            f"content={reaction}",
+        ]
+        execute_gh_command(cmd, repo_root)

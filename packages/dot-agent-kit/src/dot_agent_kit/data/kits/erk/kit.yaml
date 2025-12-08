@@ -152,6 +152,12 @@ kit_cli_commands:
   - name: resolve-review-thread
     path: kit_cli_commands/erk/resolve_review_thread.py
     description: Resolve a PR review thread via GraphQL mutation
+  - name: get-pr-discussion-comments
+    path: kit_cli_commands/erk/get_pr_discussion_comments.py
+    description: Fetch PR discussion comments (main conversation) for agent context injection
+  - name: add-reaction-to-comment
+    path: kit_cli_commands/erk/add_reaction_to_comment.py
+    description: Add a reaction to a PR/issue comment to mark it as addressed
   - name: tripwires-reminder-hook
     path: kit_cli_commands/erk/tripwires_reminder_hook.py
     description: Remind to check tripwires before common dangerous operations

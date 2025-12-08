@@ -39,10 +39,14 @@ class IssueComment:
     Attributes:
         body: Markdown body of the comment
         url: Full GitHub URL to the comment (html_url)
+        id: Numeric comment ID for reactions API
+        author: Comment author's GitHub login
     """
 
     body: str
     url: str
+    id: int
+    author: str
 
 
 @dataclass(frozen=True)
