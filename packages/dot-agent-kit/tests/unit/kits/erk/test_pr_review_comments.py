@@ -364,3 +364,85 @@ def test_resolve_review_thread_json_structure_success(tmp_path: Path) -> None:
     # Verify success structure
     assert output["success"] is True
     assert output["thread_id"] == "PRRT_test"
+
+
+# ============================================================================
+# resolve-review-thread --comment Flag Tests
+# ============================================================================
+
+
+def test_resolve_review_thread_with_comment(tmp_path: Path) -> None:
+    """Test resolving a review thread with a comment."""
+    fake_github = FakeGitHub()
+    fake_git = FakeGit()
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+
+        result = runner.invoke(
+            resolve_review_thread,
+            ["--thread-id", "PRRT_abc123", "--comment", "Resolved via automation"],
+            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+        )
+
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["thread_id"] == "PRRT_abc123"
+    assert output["comment_added"] is True
+
+    # Verify both reply and resolution were tracked
+    assert len(fake_github.thread_replies) == 1
+    assert fake_github.thread_replies[0] == ("PRRT_abc123", "Resolved via automation")
+    assert "PRRT_abc123" in fake_github.resolved_thread_ids
+
+
+def test_resolve_review_thread_without_comment(tmp_path: Path) -> None:
+    """Test resolving a review thread without a comment."""
+    fake_github = FakeGitHub()
+    fake_git = FakeGit()
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+
+        result = runner.invoke(
+            resolve_review_thread,
+            ["--thread-id", "PRRT_abc123"],
+            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+        )
+
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["comment_added"] is False
+
+    # Verify no reply was added, but resolution still happened
+    assert len(fake_github.thread_replies) == 0
+    assert "PRRT_abc123" in fake_github.resolved_thread_ids
+
+
+def test_resolve_review_thread_json_structure_with_comment(tmp_path: Path) -> None:
+    """Test JSON output structure includes comment_added field."""
+    fake_github = FakeGitHub()
+    fake_git = FakeGit()
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+
+        result = runner.invoke(
+            resolve_review_thread,
+            ["--thread-id", "PRRT_test", "--comment", "Test comment"],
+            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+        )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+
+    # Verify success structure includes comment_added
+    assert output["success"] is True
+    assert output["thread_id"] == "PRRT_test"
+    assert "comment_added" in output
+    assert output["comment_added"] is True

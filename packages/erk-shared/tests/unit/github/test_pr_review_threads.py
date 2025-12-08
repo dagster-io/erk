@@ -223,3 +223,26 @@ def test_pr_review_thread_outdated_flag() -> None:
     )
 
     assert thread.is_outdated is True
+
+
+def test_fake_add_review_thread_reply_tracks_replies() -> None:
+    """Test that add_review_thread_reply tracks the thread_id and body."""
+    github = FakeGitHub()
+
+    result = github.add_review_thread_reply(Path("/repo"), "PRRT_1", "Fixed this issue")
+
+    assert result is True
+    assert len(github.thread_replies) == 1
+    assert github.thread_replies[0] == ("PRRT_1", "Fixed this issue")
+
+
+def test_fake_add_review_thread_reply_multiple() -> None:
+    """Test that multiple replies are tracked."""
+    github = FakeGitHub()
+
+    github.add_review_thread_reply(Path("/repo"), "PRRT_1", "First reply")
+    github.add_review_thread_reply(Path("/repo"), "PRRT_2", "Second reply")
+
+    assert len(github.thread_replies) == 2
+    assert github.thread_replies[0] == ("PRRT_1", "First reply")
+    assert github.thread_replies[1] == ("PRRT_2", "Second reply")
