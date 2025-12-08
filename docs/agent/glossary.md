@@ -954,6 +954,92 @@ dot-agent run erk check-impl --dry-run
 
 ---
 
+## Objectives System
+
+### Objective
+
+A long-running goal that produces bounded implementation plans when evaluated against the codebase. Objectives act as "plan factories" - they generate focused plans rather than being implemented directly.
+
+**Purpose**: Enable incremental, bounded progress toward goals that cannot be completed in a single session.
+
+**Storage**: `.erk/objectives/<name>/` containing `definition.yaml` and `notes.yaml`
+
+**Key Files**:
+
+- Types: `packages/erk-shared/src/erk_shared/objectives/types.py`
+- Turn logic: `packages/erk-shared/src/erk_shared/objectives/turn.py`
+- Storage: `packages/erk-shared/src/erk_shared/objectives/storage.py`
+- CLI commands: `src/erk/cli/commands/objective/`
+
+### Turn
+
+A single evaluation cycle where Claude assesses the current codebase state against an objective's desired state.
+
+**Outcomes**:
+
+- `STATUS: COMPLETE` - Objective fully satisfied
+- `STATUS: GAPS_FOUND` - Gaps identified, plan generated
+
+**Process**:
+
+1. Claude examines files in scope
+2. Compares against desired state
+3. Either declares completion or generates bounded plan
+4. Optionally adds notes for future turns
+
+### ObjectiveType
+
+Classification of objective completion behavior:
+
+- **COMPLETABLE**: Has a finite end state (e.g., "all Python files use modern type syntax")
+- **PERPETUAL**: Ongoing maintenance (e.g., "keep documentation aligned with code")
+
+### ObjectiveDefinition
+
+Frozen dataclass defining an objective's configuration.
+
+**Fields**:
+
+| Field                | Purpose                         |
+| -------------------- | ------------------------------- |
+| `name`               | Unique identifier (kebab-case)  |
+| `objective_type`     | COMPLETABLE or PERPETUAL        |
+| `desired_state`      | What "done" looks like          |
+| `rationale`          | Why this objective matters      |
+| `examples`           | Before/after patterns           |
+| `scope_includes`     | Directories/patterns to examine |
+| `scope_excludes`     | Directories/patterns to skip    |
+| `evaluation_prompt`  | Instructions for assessing gaps |
+| `plan_sizing_prompt` | Guidelines for bounding plans   |
+
+**Location**: `packages/erk-shared/src/erk_shared/objectives/types.py`
+
+### ObjectiveNotes
+
+Frozen dataclass containing accumulated notes from objective turns.
+
+**Purpose**: Build institutional knowledge across turns. Each turn can add observations that inform future evaluations.
+
+**Fields**:
+
+- `notes: list[str]` - Chronologically ordered notes
+
+**Location**: `packages/erk-shared/src/erk_shared/objectives/types.py`
+
+### FakeObjectiveStore
+
+Testing implementation of `ObjectiveStore` that operates in-memory without filesystem operations.
+
+**Setup**: Create with pre-populated `ObjectiveDefinition` and `ObjectiveNotes`.
+
+**Injection**: Use `build_workspace_test_context()` helper with `objectives=store` parameter.
+
+**Location**: `packages/erk-shared/src/erk_shared/objectives/storage.py`
+
+**Related**: [FakeObjectiveStore Testing Pattern](testing/fake-objective-store.md)
+
+---
+
 ## Kit Maintenance
 
 ### Kit Consolidation
