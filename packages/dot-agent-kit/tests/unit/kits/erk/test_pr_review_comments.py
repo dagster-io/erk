@@ -394,7 +394,10 @@ def test_resolve_review_thread_with_comment(tmp_path: Path) -> None:
 
     # Verify both reply and resolution were tracked
     assert len(fake_github.thread_replies) == 1
-    assert fake_github.thread_replies[0] == ("PRRT_abc123", "Resolved via automation")
+    thread_id, comment_body = fake_github.thread_replies[0]
+    assert thread_id == "PRRT_abc123"
+    assert comment_body.startswith("Resolved via automation\n\n")
+    assert "_Addressed via `/erk:pr-address` at" in comment_body
     assert "PRRT_abc123" in fake_github.resolved_thread_ids
 
 

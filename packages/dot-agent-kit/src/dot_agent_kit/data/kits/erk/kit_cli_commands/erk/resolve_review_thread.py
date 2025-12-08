@@ -27,6 +27,7 @@ Examples:
 
 import json
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -56,6 +57,19 @@ class ResolveThreadError:
     message: str
 
 
+def _format_resolution_comment(comment: str) -> str:
+    """Format a resolution comment with timestamp and source attribution.
+
+    Args:
+        comment: The user-provided comment text
+
+    Returns:
+        Formatted comment with timestamp and /erk:pr-address attribution
+    """
+    timestamp = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M %Z")
+    return f"{comment}\n\n_Addressed via `/erk:pr-address` at {timestamp}_"
+
+
 def _add_comment_if_provided(
     github: "GitHub",
     repo_root: Path,
@@ -70,8 +84,9 @@ def _add_comment_if_provided(
     if comment is None:
         return False
 
+    formatted_comment = _format_resolution_comment(comment)
     try:
-        return github.add_review_thread_reply(repo_root, thread_id, comment)
+        return github.add_review_thread_reply(repo_root, thread_id, formatted_comment)
     except RuntimeError as e:
         return ResolveThreadError(
             success=False,
