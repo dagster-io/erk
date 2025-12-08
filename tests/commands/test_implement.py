@@ -1652,9 +1652,7 @@ def test_impl_folder_created_at_project_root_in_monorepo() -> None:
         # Verify .impl/ was created at project root (python_modules/my-project/),
         # NOT at worktree root
         project_impl_path = worktree_path / "python_modules" / "my-project" / ".impl"
-        assert project_impl_path.exists(), (
-            f".impl/ should be at project root: {project_impl_path}"
-        )
+        assert project_impl_path.exists(), f".impl/ should be at project root: {project_impl_path}"
         assert (project_impl_path / "plan.md").exists()
         assert (project_impl_path / "progress.md").exists()
         assert (project_impl_path / "issue.json").exists()
@@ -1738,9 +1736,7 @@ def test_impl_folder_plan_file_mode_respects_project_context() -> None:
         plan_file.write_text(plan_content, encoding="utf-8")
 
         # Build context with cwd inside the project
-        ctx = build_workspace_test_context(
-            env, git=git, claude_executor=executor, cwd=project_path
-        )
+        ctx = build_workspace_test_context(env, git=git, claude_executor=executor, cwd=project_path)
 
         # Change to project directory before invoking command
         os.chdir(project_path)
@@ -1755,7 +1751,5 @@ def test_impl_folder_plan_file_mode_respects_project_context() -> None:
 
         # Verify .impl/ was created at project root within worktree
         project_impl_path = worktree_path / "packages" / "my-app" / ".impl"
-        assert project_impl_path.exists(), (
-            f".impl/ should be at project root: {project_impl_path}"
-        )
+        assert project_impl_path.exists(), f".impl/ should be at project root: {project_impl_path}"
         assert (project_impl_path / "plan.md").read_text(encoding="utf-8") == plan_content

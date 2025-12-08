@@ -69,7 +69,8 @@ def test_list_not_in_project_directory() -> None:
         result = runner.invoke(list_installed_kits)
 
         assert result.exit_code == 1
-        assert "Error: No dot-agent.toml found" in result.output
+        # Config is now expected at .agent/dot-agent.toml
+        assert "Error: No .agent/dot-agent.toml found" in result.output
 
 
 def test_list_single_kit() -> None:

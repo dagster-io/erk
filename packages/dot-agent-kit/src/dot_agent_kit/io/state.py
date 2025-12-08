@@ -112,13 +112,38 @@ def _load_dev_mode_from_pyproject(project_dir: Path) -> bool:
     return False
 
 
+def _find_config_path(project_dir: Path) -> Path | None:
+    """Find config file, checking new location first then falling back to old.
+
+    Args:
+        project_dir: Project root directory
+
+    Returns:
+        Path to config file if found, None otherwise
+    """
+    # New location: .agent/dot-agent.toml
+    new_path = project_dir / ".agent" / "dot-agent.toml"
+    if new_path.exists():
+        return new_path
+
+    # Fallback: old location at project root
+    old_path = project_dir / "dot-agent.toml"
+    if old_path.exists():
+        return old_path
+
+    return None
+
+
 def load_project_config(project_dir: Path) -> ProjectConfig | None:
     """Load dot-agent.toml from project directory.
 
+    Checks .agent/dot-agent.toml first (new location), then falls back to
+    dot-agent.toml at project root (old location) for backwards compatibility.
+
     Returns None if file doesn't exist.
     """
-    config_path = project_dir / "dot-agent.toml"
-    if not config_path.exists():
+    config_path = _find_config_path(project_dir)
+    if config_path is None:
         return None
 
     with open(config_path, "rb") as f:
@@ -198,15 +223,22 @@ def require_project_config(project_dir: Path) -> ProjectConfig:
     """
     config = load_project_config(project_dir)
     if config is None:
-        msg = "Error: No dot-agent.toml found. Run 'dot-agent init' to create one."
+        msg = "Error: No .agent/dot-agent.toml found. Run 'dot-agent init' to create one."
         user_output(msg)
         raise SystemExit(1)
     return config
 
 
 def save_project_config(project_dir: Path, config: ProjectConfig) -> None:
-    """Save dot-agent.toml to project directory."""
-    config_path = project_dir / "dot-agent.toml"
+    """Save dot-agent.toml to .agent/ directory.
+
+    Always saves to the new location (.agent/dot-agent.toml).
+    Creates .agent/ directory if it doesn't exist.
+    """
+    agent_dir = project_dir / ".agent"
+    if not agent_dir.exists():
+        agent_dir.mkdir(parents=True)
+    config_path = agent_dir / "dot-agent.toml"
 
     # Convert ProjectConfig to dict
     data = {

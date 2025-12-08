@@ -5,6 +5,7 @@ from pathlib import Path
 import click
 
 from dot_agent_kit.cli.output import user_output
+from dot_agent_kit.io.git import resolve_project_dir
 from dot_agent_kit.io.registry import rebuild_registry
 from dot_agent_kit.io.state import require_project_config, save_project_config
 from dot_agent_kit.operations.sync import check_for_updates, sync_all_kits, sync_kit
@@ -48,7 +49,7 @@ def sync(kit_id: str | None, verbose: bool, force: bool) -> None:
         # Repair registry (sync with no updates)
         dot-agent kit sync
     """
-    project_dir = Path.cwd()
+    project_dir = resolve_project_dir(Path.cwd())
 
     config = require_project_config(project_dir)
 

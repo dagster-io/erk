@@ -10,6 +10,7 @@ import click
 from dot_agent_kit.cli.output import user_output
 from dot_agent_kit.hooks.installer import install_hooks, remove_hooks
 from dot_agent_kit.hooks.settings import load_settings, save_settings
+from dot_agent_kit.io.git import resolve_project_dir
 from dot_agent_kit.io.manifest import load_kit_manifest
 from dot_agent_kit.io.state import create_default_config, load_project_config, save_project_config
 from dot_agent_kit.models.config import InstalledKit, ProjectConfig
@@ -349,7 +350,7 @@ def install(kit_id: str, force: bool) -> None:
         dot-agent kit install devrun --force
     """
     # Get installation context
-    project_dir = Path.cwd()
+    project_dir = resolve_project_dir(Path.cwd())
     context = get_installation_context(project_dir)
 
     # Load project config

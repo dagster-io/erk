@@ -16,6 +16,7 @@ from dot_agent_kit.cli.list_formatting import (
     format_subsection_header,
 )
 from dot_agent_kit.cli.output import user_output
+from dot_agent_kit.io.git import resolve_project_dir
 from dot_agent_kit.io.state import require_project_config
 from dot_agent_kit.models.artifact import (
     ARTIFACT_TYPE_PLURALS,
@@ -347,7 +348,7 @@ def _list_artifacts(
 
 def _list_kits_impl(artifacts: bool) -> None:
     """Implementation of list command logic."""
-    project_dir = Path.cwd()
+    project_dir = resolve_project_dir(Path.cwd())
     config = require_project_config(project_dir)
 
     if len(config.kits) == 0:

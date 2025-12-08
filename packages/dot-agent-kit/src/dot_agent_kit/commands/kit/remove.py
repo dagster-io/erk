@@ -6,6 +6,7 @@ import click
 
 from dot_agent_kit.cli.output import user_output
 from dot_agent_kit.hooks.installer import remove_hooks
+from dot_agent_kit.io.git import resolve_project_dir
 from dot_agent_kit.io.state import require_project_config, save_project_config
 from dot_agent_kit.models.config import ProjectConfig
 
@@ -15,7 +16,7 @@ kit_id_argument = click.argument("kit-id")
 
 def _remove_kit_impl(kit_id: str) -> None:
     """Implementation of kit removal logic."""
-    project_dir = Path.cwd()
+    project_dir = resolve_project_dir(Path.cwd())
 
     # Load project config
     config = require_project_config(project_dir)

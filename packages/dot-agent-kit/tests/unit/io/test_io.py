@@ -447,3 +447,129 @@ artifacts = ["agents/test.md"]
 
     assert config is not None
     assert config.dev_mode is False
+
+
+def test_load_config_from_new_location(tmp_project: Path) -> None:
+    """Test loading config from new .agent/dot-agent.toml location."""
+    # Create config in new location
+    agent_dir = tmp_project / ".agent"
+    agent_dir.mkdir()
+    config_path = agent_dir / "dot-agent.toml"
+    config_path.write_text(
+        """
+version = "1"
+
+[kits.test-kit]
+kit_id = "test-kit"
+source_type = "bundled"
+version = "1.0.0"
+installed_at = "2024-01-01T00:00:00"
+artifacts = ["agents/test.md"]
+""",
+        encoding="utf-8",
+    )
+
+    config = load_project_config(tmp_project)
+
+    assert config is not None
+    assert "test-kit" in config.kits
+
+
+def test_load_config_prefers_new_location_over_old(tmp_project: Path) -> None:
+    """Test that new .agent/dot-agent.toml location takes precedence over old."""
+    # Create config in BOTH locations with different content
+    # Old location
+    old_config_path = tmp_project / "dot-agent.toml"
+    old_config_path.write_text(
+        """
+version = "1"
+
+[kits.old-kit]
+kit_id = "old-kit"
+source_type = "bundled"
+version = "1.0.0"
+installed_at = "2024-01-01T00:00:00"
+artifacts = ["agents/old.md"]
+""",
+        encoding="utf-8",
+    )
+
+    # New location
+    agent_dir = tmp_project / ".agent"
+    agent_dir.mkdir()
+    new_config_path = agent_dir / "dot-agent.toml"
+    new_config_path.write_text(
+        """
+version = "1"
+
+[kits.new-kit]
+kit_id = "new-kit"
+source_type = "bundled"
+version = "2.0.0"
+installed_at = "2024-01-01T00:00:00"
+artifacts = ["agents/new.md"]
+""",
+        encoding="utf-8",
+    )
+
+    config = load_project_config(tmp_project)
+
+    assert config is not None
+    # Should have new-kit from new location, not old-kit
+    assert "new-kit" in config.kits
+    assert "old-kit" not in config.kits
+
+
+def test_load_config_falls_back_to_old_location(tmp_project: Path) -> None:
+    """Test that config falls back to old dot-agent.toml location."""
+    # Create config ONLY in old location
+    old_config_path = tmp_project / "dot-agent.toml"
+    old_config_path.write_text(
+        """
+version = "1"
+
+[kits.legacy-kit]
+kit_id = "legacy-kit"
+source_type = "bundled"
+version = "1.0.0"
+installed_at = "2024-01-01T00:00:00"
+artifacts = ["agents/legacy.md"]
+""",
+        encoding="utf-8",
+    )
+
+    config = load_project_config(tmp_project)
+
+    assert config is not None
+    assert "legacy-kit" in config.kits
+
+
+def test_save_config_creates_agent_directory(tmp_project: Path) -> None:
+    """Test that save_project_config creates .agent/ directory if needed."""
+    config = create_default_config()
+
+    # .agent directory should not exist yet
+    agent_dir = tmp_project / ".agent"
+    assert not agent_dir.exists()
+
+    # Save config
+    save_project_config(tmp_project, config)
+
+    # .agent directory should now exist
+    assert agent_dir.exists()
+    assert (agent_dir / "dot-agent.toml").exists()
+
+
+def test_save_config_always_uses_new_location(tmp_project: Path) -> None:
+    """Test that save_project_config always saves to .agent/dot-agent.toml."""
+    config = create_default_config()
+
+    # Save config
+    save_project_config(tmp_project, config)
+
+    # Should be saved to new location
+    new_path = tmp_project / ".agent" / "dot-agent.toml"
+    old_path = tmp_project / "dot-agent.toml"
+
+    assert new_path.exists()
+    assert not old_path.exists()
