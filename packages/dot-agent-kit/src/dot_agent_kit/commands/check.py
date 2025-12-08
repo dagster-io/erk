@@ -16,6 +16,7 @@ from dot_agent_kit.hooks.settings import (
 )
 from dot_agent_kit.io.manifest import load_kit_manifest
 from dot_agent_kit.io.state import load_project_config
+from dot_agent_kit.models.artifact import ARTIFACT_TARGET_DIRS
 from dot_agent_kit.models.config import InstalledKit, ProjectConfig
 from dot_agent_kit.models.types import SOURCE_TYPE_BUNDLED, SOURCE_TYPE_PACKAGE
 from dot_agent_kit.operations.validation import validate_project
@@ -243,12 +244,15 @@ def compare_artifact_lists(
     """
     # Build set of expected paths from manifest
     manifest_paths = set()
-    for _artifact_type, paths in manifest_artifacts.items():
+    for artifact_type, paths in manifest_artifacts.items():
+        # Get base directory for this artifact type
+        base_dir = ARTIFACT_TARGET_DIRS.get(artifact_type, ".claude")  # type: ignore[arg-type]
         for path in paths:
             # Transform manifest path to installed path
             # Manifest: "commands/gt/land-branch.md"
-            # Installed: ".claude/commands/gt/land-branch.md"
-            full_path = f".claude/{path}"
+            # Installed: ".claude/commands/gt/land-branch.md" (for commands)
+            # or ".github/workflows/erk/deploy.yml" (for workflows)
+            full_path = f"{base_dir}/{path}"
             manifest_paths.add(full_path)
 
     installed_paths = set(installed_artifacts)
@@ -265,11 +269,17 @@ def check_artifact_sync(
     bundled_base: Path,
 ) -> SyncCheckResult:
     """Check if an artifact is in sync with bundled source."""
-    # Normalize artifact path: remove .claude/ prefix if present
-    normalized_path = artifact_rel_path.replace(".claude/", "")
+    # Normalize artifact path: remove base directory prefix if present
+    # Handles both .claude/ and .github/ prefixes
+    normalized_path = artifact_rel_path
+    for base_dir in ARTIFACT_TARGET_DIRS.values():
+        prefix = f"{base_dir}/"
+        if normalized_path.startswith(prefix):
+            normalized_path = normalized_path[len(prefix) :]
+            break
 
-    # Artifact path in .claude/
-    local_path = project_dir / ".claude" / normalized_path
+    # Local path is stored in artifact_rel_path (relative to project root)
+    local_path = project_dir / artifact_rel_path
 
     # Corresponding bundled path
     bundled_path = bundled_base / normalized_path

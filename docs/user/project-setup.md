@@ -2,19 +2,74 @@
 
 This guide covers how to configure your repository to work with erk's planning and implementation workflows.
 
+## Prerequisites
+
+### Install dot-agent-kit
+
+Erk depends on dot-agent-kit for Claude Code integration. Install the kits that provide erk's slash commands and agents:
+
+```bash
+# Install the erk kit (provides /erk:* commands and agents)
+dot-agent kit install erk
+
+# Verify installation
+dot-agent kit list
+```
+
+The erk kit includes:
+
+- **Commands**: `/erk:plan-implement`, `/erk:save-plan`, `/erk:replan`, etc.
+- **Agents**: `issue-wt-creator`, `plan-extractor`
+- **Workflows**: GitHub Actions templates for erk queue processing
+
+### Optional: Install Related Kits
+
+For the full erk experience, consider installing these complementary kits:
+
+```bash
+# Graphite integration for stacked PRs
+dot-agent kit install gt
+
+# Development runner for CI iteration
+dot-agent kit install devrun
+
+# Python coding standards (if your project uses Python)
+dot-agent kit install dignified-python
+```
+
 ## Directory Structure
 
-Erk uses a `.erk/` directory in your repository root for project-specific configuration:
+Erk uses specific directories in your repository:
 
 ```
 your-repo/
 ├── .erk/
-│   └── post-implement.md    # Custom CI workflow (optional)
+│   ├── post-implement.md    # Custom CI workflow (optional)
+│   └── scratch/             # Session-specific temporary files
 ├── .impl/                   # Created per-worktree for implementation plans
 │   ├── plan.md
-│   └── progress.md
+│   ├── progress.md
+│   └── issue.json
+├── .github/
+│   └── workflows/
+│       └── erk/             # Installed erk GitHub Actions (from kit)
 └── ...
 ```
+
+## .gitignore Configuration
+
+Add these entries to your `.gitignore` to exclude erk's temporary and session-specific files:
+
+```gitignore
+# Erk temporary files
+.erk/scratch/
+.impl/
+```
+
+**Why these are ignored:**
+
+- **`.erk/scratch/`**: Session-specific scratch storage. Each Claude session creates temporary files here scoped by session ID. These are ephemeral and should not be committed.
+- **`.impl/`**: Implementation plan files created per-worktree. These track in-progress work and are deleted after successful PR submission.
 
 ## Post-Implementation CI Configuration
 

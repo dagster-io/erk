@@ -14,10 +14,10 @@ from dot_agent_kit.models.config import InstalledKit, ProjectConfig
 def discover_installed_artifacts(
     project_dir: Path, config: ProjectConfig | None = None
 ) -> dict[str, set[str]]:
-    """Discover artifacts present in .claude/ directory.
+    """Discover artifacts present in .claude/ and .github/workflows/ directories.
 
     Scans the .claude/ directory structure to identify which kits have
-    artifacts installed, without checking config files.
+    artifacts installed, and .github/workflows/ for workflow artifacts.
 
     Args:
         project_dir: Project root directory
@@ -25,13 +25,12 @@ def discover_installed_artifacts(
 
     Returns:
         Dictionary mapping kit_id to set of artifact types found.
-        Example: {"devrun": {"agent", "skill"}, "gt": {"command", "skill"}}
+        Example: {"devrun": {"agent", "skill"}, "gt": {"command", "skill", "workflow"}}
     """
-    claude_dir = project_dir / ".claude"
-    if not claude_dir.exists():
-        return {}
-
     discovered: dict[str, set[str]] = {}
+
+    # Scan .claude/ for standard artifacts
+    claude_dir = project_dir / ".claude"
 
     # Scan each artifact type directory
     for artifact_type in ["agents", "commands", "skills"]:
@@ -71,6 +70,18 @@ def discover_installed_artifacts(
                     if kit_id not in discovered:
                         discovered[kit_id] = set()
                     discovered[kit_id].add("agent")
+
+    # Workflows are in .github/workflows/<kit_name>/ directories
+    workflows_base = project_dir / ".github" / "workflows"
+    if workflows_base.exists():
+        for kit_dir in workflows_base.iterdir():
+            if not kit_dir.is_dir():
+                continue
+            kit_id = kit_dir.name
+            # Check for workflow files in the kit subdirectory
+            has_workflows = any(kit_dir.glob("*.yml")) or any(kit_dir.glob("*.yaml"))
+            if has_workflows:
+                discovered.setdefault(kit_id, set()).add("workflow")
 
     return discovered
 

@@ -21,8 +21,8 @@ class ArtifactLevel(Enum):
 
 
 # Artifact type literals
-ArtifactType = Literal["skill", "command", "agent", "hook", "doc"]
-ArtifactTypePlural = Literal["skills", "commands", "agents", "hooks", "docs"]
+ArtifactType = Literal["skill", "command", "agent", "hook", "doc", "workflow"]
+ArtifactTypePlural = Literal["skills", "commands", "agents", "hooks", "docs", "workflows"]
 
 # Mapping from singular to plural forms
 ARTIFACT_TYPE_PLURALS: dict[ArtifactType, ArtifactTypePlural] = {
@@ -31,6 +31,18 @@ ARTIFACT_TYPE_PLURALS: dict[ArtifactType, ArtifactTypePlural] = {
     "agent": "agents",
     "hook": "hooks",
     "doc": "docs",
+    "workflow": "workflows",
+}
+
+# Target directories for artifact types (relative to project root)
+# Most artifacts go to .claude/, but workflows go to .github/
+ARTIFACT_TARGET_DIRS: dict[ArtifactType, str] = {
+    "skill": ".claude",
+    "command": ".claude",
+    "agent": ".claude",
+    "hook": ".claude",
+    "doc": ".claude",
+    "workflow": ".github",
 }
 
 

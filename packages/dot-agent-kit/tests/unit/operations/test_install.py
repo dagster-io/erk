@@ -472,3 +472,153 @@ def test_install_kit_with_docs_and_agents(tmp_project: Path) -> None:
     doc_path = tmp_project / ".claude" / "docs" / "tools" / "make.md"
     assert doc_path.exists()
     assert "# Make Documentation" in doc_path.read_text(encoding="utf-8")
+
+
+def test_install_kit_with_workflow(tmp_project: Path) -> None:
+    """Test installation of kit with workflow artifact to .github/workflows/."""
+    # Create mock kit with workflow
+    kit_dir = tmp_project / "mock_kit"
+    kit_dir.mkdir()
+
+    manifest = kit_dir / "kit.yaml"
+    manifest.write_text(
+        "name: test-kit\n"
+        "version: 1.0.0\n"
+        "description: Test kit with workflow\n"
+        "artifacts:\n"
+        "  workflow:\n"
+        "    - workflows/test-kit/deploy.yml\n",
+        encoding="utf-8",
+    )
+
+    # Create workflow file with nested structure
+    workflows_dir = kit_dir / "workflows" / "test-kit"
+    workflows_dir.mkdir(parents=True)
+    (workflows_dir / "deploy.yml").write_text(
+        "name: Deploy\non: push\njobs: {}\n",
+        encoding="utf-8",
+    )
+
+    # Mock resolution
+    resolved = ResolvedKit(
+        kit_id="test-kit",
+        version="1.0.0",
+        source_type="package",
+        manifest_path=manifest,
+        artifacts_base=kit_dir,
+    )
+
+    # Install
+    installed = install_kit(resolved, tmp_project)
+
+    # Verify installation metadata
+    assert installed.kit_id == "test-kit"
+    assert installed.version == "1.0.0"
+    assert len(installed.artifacts) == 1
+
+    # Verify workflow file is installed in .github/workflows/ (NOT .claude/)
+    workflow_path = tmp_project / ".github" / "workflows" / "test-kit" / "deploy.yml"
+    assert workflow_path.exists()
+    assert "name: Deploy" in workflow_path.read_text(encoding="utf-8")
+
+    # Verify NO workflow was installed in .claude/
+    assert not (tmp_project / ".claude" / "workflows").exists()
+
+
+def test_install_kit_with_workflow_and_agents(tmp_project: Path) -> None:
+    """Test installation of kit with both workflows and agents."""
+    # Create mock kit
+    kit_dir = tmp_project / "mock_kit"
+    kit_dir.mkdir()
+
+    manifest = kit_dir / "kit.yaml"
+    manifest.write_text(
+        "name: mixed-kit\n"
+        "version: 1.0.0\n"
+        "description: Kit with both workflow and agent\n"
+        "artifacts:\n"
+        "  agent:\n"
+        "    - agents/mixed-kit/helper.md\n"
+        "  workflow:\n"
+        "    - workflows/mixed-kit/ci.yml\n",
+        encoding="utf-8",
+    )
+
+    # Create agent
+    agents_dir = kit_dir / "agents" / "mixed-kit"
+    agents_dir.mkdir(parents=True)
+    (agents_dir / "helper.md").write_text("# Helper Agent", encoding="utf-8")
+
+    # Create workflow
+    workflows_dir = kit_dir / "workflows" / "mixed-kit"
+    workflows_dir.mkdir(parents=True)
+    (workflows_dir / "ci.yml").write_text(
+        "name: CI\non: [push, pull_request]\njobs: {}\n",
+        encoding="utf-8",
+    )
+
+    # Mock resolution
+    resolved = ResolvedKit(
+        kit_id="mixed-kit",
+        version="1.0.0",
+        source_type="package",
+        manifest_path=manifest,
+        artifacts_base=kit_dir,
+    )
+
+    # Install
+    installed = install_kit(resolved, tmp_project)
+
+    # Verify both artifact types
+    assert len(installed.artifacts) == 2
+
+    # Verify agent installed in .claude/
+    agent_path = tmp_project / ".claude" / "agents" / "mixed-kit" / "helper.md"
+    assert agent_path.exists()
+    assert "# Helper Agent" in agent_path.read_text(encoding="utf-8")
+
+    # Verify workflow installed in .github/
+    workflow_path = tmp_project / ".github" / "workflows" / "mixed-kit" / "ci.yml"
+    assert workflow_path.exists()
+    assert "name: CI" in workflow_path.read_text(encoding="utf-8")
+
+
+def test_install_kit_workflow_creates_github_directory(tmp_project: Path) -> None:
+    """Test installation creates .github directory structure when needed."""
+    # Create mock kit
+    kit_dir = tmp_project / "mock_kit"
+    kit_dir.mkdir()
+
+    manifest = kit_dir / "kit.yaml"
+    manifest.write_text(
+        "name: test-kit\n"
+        "version: 1.0.0\n"
+        "description: Test\n"
+        "artifacts:\n"
+        "  workflow:\n"
+        "    - workflows/test-kit/build.yml\n",
+        encoding="utf-8",
+    )
+
+    workflows_dir = kit_dir / "workflows" / "test-kit"
+    workflows_dir.mkdir(parents=True)
+    (workflows_dir / "build.yml").write_text("name: Build\n", encoding="utf-8")
+
+    resolved = ResolvedKit(
+        kit_id="test-kit",
+        version="1.0.0",
+        source_type="package",
+        manifest_path=manifest,
+        artifacts_base=kit_dir,
+    )
+
+    # Verify .github doesn't exist before install
+    assert not (tmp_project / ".github").exists()
+
+    # Install
+    install_kit(resolved, tmp_project)
+
+    # Verify directories created
+    assert (tmp_project / ".github").exists()
+    assert (tmp_project / ".github" / "workflows").exists()
+    assert (tmp_project / ".github" / "workflows" / "test-kit" / "build.yml").exists()

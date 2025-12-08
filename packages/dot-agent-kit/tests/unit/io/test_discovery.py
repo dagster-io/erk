@@ -298,3 +298,120 @@ def test_discover_multiple_artifact_types(tmp_project: Path) -> None:
     assert "command" in discovered["mykit"]
     assert "agent" in discovered["mykit"]
     assert len(discovered["mykit"]) == 3
+
+
+def test_discover_workflows_in_github_directory(tmp_project: Path) -> None:
+    """Test discovering workflow artifacts in .github/workflows/<kit>/ directories."""
+    config = ProjectConfig(
+        version="1",
+        kits={
+            "mykit": InstalledKit(
+                kit_id="mykit",
+                source_type="package",
+                version="1.0.0",
+                artifacts=[],
+            ),
+        },
+    )
+
+    # Create workflow files in .github/workflows/mykit/
+    workflows_dir = tmp_project / ".github" / "workflows" / "mykit"
+    workflows_dir.mkdir(parents=True)
+    (workflows_dir / "ci.yml").write_text("name: CI\n", encoding="utf-8")
+    (workflows_dir / "deploy.yaml").write_text("name: Deploy\n", encoding="utf-8")
+
+    # Discover
+    discovered = discover_installed_artifacts(tmp_project, config)
+
+    assert "mykit" in discovered
+    assert "workflow" in discovered["mykit"]
+
+
+def test_discover_workflows_ignores_files_at_workflows_root(tmp_project: Path) -> None:
+    """Test that files directly in .github/workflows/ are not detected as kit workflows."""
+    config = ProjectConfig(version="1", kits={})
+
+    # Create workflow files directly in .github/workflows/ (no kit subdirectory)
+    workflows_dir = tmp_project / ".github" / "workflows"
+    workflows_dir.mkdir(parents=True)
+    (workflows_dir / "ci.yml").write_text("name: CI\n", encoding="utf-8")
+
+    # Discover
+    discovered = discover_installed_artifacts(tmp_project, config)
+
+    # No kits should be detected - workflows at root are not kit artifacts
+    assert len(discovered) == 0
+
+
+def test_discover_multiple_kit_workflows(tmp_project: Path) -> None:
+    """Test discovering workflows from multiple kits."""
+    config = ProjectConfig(
+        version="1",
+        kits={
+            "kit-a": InstalledKit(
+                kit_id="kit-a",
+                source_type="package",
+                version="1.0.0",
+                artifacts=[],
+            ),
+            "kit-b": InstalledKit(
+                kit_id="kit-b",
+                source_type="package",
+                version="1.0.0",
+                artifacts=[],
+            ),
+        },
+    )
+
+    # Create workflows for kit-a
+    kit_a_workflows = tmp_project / ".github" / "workflows" / "kit-a"
+    kit_a_workflows.mkdir(parents=True)
+    (kit_a_workflows / "build.yml").write_text("name: Build\n", encoding="utf-8")
+
+    # Create workflows for kit-b
+    kit_b_workflows = tmp_project / ".github" / "workflows" / "kit-b"
+    kit_b_workflows.mkdir(parents=True)
+    (kit_b_workflows / "test.yaml").write_text("name: Test\n", encoding="utf-8")
+
+    # Discover
+    discovered = discover_installed_artifacts(tmp_project, config)
+
+    assert "kit-a" in discovered
+    assert "workflow" in discovered["kit-a"]
+    assert "kit-b" in discovered
+    assert "workflow" in discovered["kit-b"]
+
+
+def test_discover_kit_with_workflows_and_other_artifacts(tmp_project: Path) -> None:
+    """Test discovering kit with both workflows (.github) and other artifacts (.claude)."""
+    config = ProjectConfig(
+        version="1",
+        kits={
+            "mykit": InstalledKit(
+                kit_id="mykit",
+                source_type="package",
+                version="1.0.0",
+                artifacts=[],
+            ),
+        },
+    )
+
+    # Create workflow in .github/
+    workflows_dir = tmp_project / ".github" / "workflows" / "mykit"
+    workflows_dir.mkdir(parents=True)
+    (workflows_dir / "ci.yml").write_text("name: CI\n", encoding="utf-8")
+
+    # Create command in .claude/
+    claude_dir = tmp_project / ".claude"
+    commands_dir = claude_dir / "commands" / "mykit"
+    commands_dir.mkdir(parents=True)
+    (commands_dir / "deploy.md").write_text("# Deploy Command", encoding="utf-8")
+
+    # Discover
+    discovered = discover_installed_artifacts(tmp_project, config)
+
+    # Kit should have both workflow and command detected
+    assert "mykit" in discovered
+    assert "workflow" in discovered["mykit"]
+    assert "command" in discovered["mykit"]
+    assert len(discovered["mykit"]) == 2
