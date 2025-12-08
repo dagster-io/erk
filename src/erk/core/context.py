@@ -18,6 +18,7 @@ from erk_shared.integrations.graphite.dry_run import DryRunGraphite
 from erk_shared.integrations.graphite.real import RealGraphite
 from erk_shared.integrations.time.abc import Time
 from erk_shared.integrations.time.real import RealTime
+from erk_shared.objectives.storage import FileObjectiveStore, ObjectiveStore
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.store import PlanStore
@@ -71,6 +72,7 @@ class ErkContext:
     plan_list_service: PlanListService
     planner_registry: PlannerRegistry
     session_store: ClaudeCodeSessionStore
+    objectives: ObjectiveStore
     cwd: Path  # Current working directory at CLI invocation
     global_config: GlobalConfig | None
     local_config: LoadedConfig
@@ -136,6 +138,7 @@ class ErkContext:
         from erk_shared.github.issues import FakeGitHubIssues
         from erk_shared.integrations.graphite.fake import FakeGraphite
         from erk_shared.integrations.time.fake import FakeTime
+        from erk_shared.objectives.storage import FakeObjectiveStore
         from erk_shared.plan_store.fake import FakePlanStore
         from tests.fakes.claude_executor import FakeClaudeExecutor
         from tests.fakes.completion import FakeCompletion
@@ -164,6 +167,7 @@ class ErkContext:
             plan_list_service=PlanListService(fake_github, fake_issues),
             planner_registry=FakePlannerRegistry(),
             session_store=FakeClaudeCodeSessionStore(),
+            objectives=FakeObjectiveStore(),
             cwd=cwd,
             global_config=None,
             local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
@@ -189,6 +193,7 @@ class ErkContext:
         plan_list_service: PlanListService | None = None,
         planner_registry: PlannerRegistry | None = None,
         session_store: ClaudeCodeSessionStore | None = None,
+        objectives: ObjectiveStore | None = None,
         cwd: Path | None = None,
         global_config: GlobalConfig | None = None,
         local_config: LoadedConfig | None = None,
@@ -252,6 +257,7 @@ class ErkContext:
         from erk_shared.github.issues import FakeGitHubIssues
         from erk_shared.integrations.graphite.fake import FakeGraphite
         from erk_shared.integrations.time.fake import FakeTime
+        from erk_shared.objectives.storage import FakeObjectiveStore
         from erk_shared.plan_store.fake import FakePlanStore
         from tests.fakes.claude_executor import FakeClaudeExecutor
         from tests.fakes.completion import FakeCompletion
@@ -305,6 +311,9 @@ class ErkContext:
         if session_store is None:
             session_store = FakeClaudeCodeSessionStore()
 
+        if objectives is None:
+            objectives = FakeObjectiveStore()
+
         if global_config is None:
             global_config = GlobalConfig(
                 erk_root=Path("/test/erks"),
@@ -346,6 +355,7 @@ class ErkContext:
             plan_list_service=plan_list_service,
             planner_registry=planner_registry,
             session_store=session_store,
+            objectives=objectives,
             cwd=cwd or sentinel_path(),
             global_config=global_config,
             local_config=local_config,
@@ -528,6 +538,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
         plan_list_service=plan_list_service,
         planner_registry=RealPlannerRegistry(),
         session_store=session_store,
+        objectives=FileObjectiveStore(),
         cwd=cwd,
         global_config=global_config,
         local_config=local_config,
