@@ -17,6 +17,7 @@ from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionSto
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues
+from erk_shared.prompt_executor import PromptExecutor
 
 
 def require_github_issues(ctx: click.Context) -> GitHubIssues:
@@ -219,3 +220,31 @@ def get_current_branch(ctx: click.Context) -> str | None:
     cwd = require_cwd(ctx)
     git = require_git(ctx)
     return git.get_current_branch(cwd)
+
+
+def require_prompt_executor(ctx: click.Context) -> PromptExecutor:
+    """Get PromptExecutor from context, exiting with error if not initialized.
+
+    Uses LBYL pattern to check context before accessing.
+
+    Args:
+        ctx: Click context (must have DotAgentContext in ctx.obj)
+
+    Returns:
+        PromptExecutor instance from context
+
+    Raises:
+        SystemExit: If context not initialized (exits with code 1)
+
+    Example:
+        >>> @click.command()
+        >>> @click.pass_context
+        >>> def my_command(ctx: click.Context) -> None:
+        ...     executor = require_prompt_executor(ctx)
+        ...     result = executor.execute_prompt("Generate summary", model="haiku")
+    """
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+
+    return ctx.obj.prompt_executor

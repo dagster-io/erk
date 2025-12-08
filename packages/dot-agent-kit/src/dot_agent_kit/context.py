@@ -17,6 +17,7 @@ from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionSto
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues, RealGitHubIssues
+from erk_shared.prompt_executor import PromptExecutor
 
 if TYPE_CHECKING:
     from erk_shared.github.types import RepoInfo
@@ -35,6 +36,7 @@ class DotAgentContext:
         git: Git operations integration for branch/commit queries
         github: GitHub integration for PR operations
         session_store: Session storage for Claude Code sessions
+        prompt_executor: Executor for single-shot Claude prompts
         debug: Debug flag for error handling (full stack traces)
         repo_root: Repository root directory (detected at CLI entry)
         cwd: Current working directory (worktree path)
@@ -44,6 +46,7 @@ class DotAgentContext:
     git: Git
     github: GitHub
     session_store: ClaudeCodeSessionStore
+    prompt_executor: PromptExecutor
     debug: bool
     repo_root: Path
     cwd: Path
@@ -54,6 +57,7 @@ class DotAgentContext:
         git: Git | None = None,
         github: GitHub | None = None,
         session_store: ClaudeCodeSessionStore | None = None,
+        prompt_executor: PromptExecutor | None = None,
         debug: bool = False,
         repo_root: Path | None = None,
         cwd: Path | None = None,
@@ -68,6 +72,7 @@ class DotAgentContext:
             git: Optional Git implementation. If None, creates FakeGit.
             github: Optional GitHub implementation. If None, creates FakeGitHub.
             session_store: Optional SessionStore. If None, creates FakeClaudeCodeSessionStore.
+            prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
             debug: Whether to enable debug mode (default False).
             repo_root: Repository root path (defaults to Path("/fake/repo"))
             cwd: Current working directory (defaults to Path("/fake/worktree"))
@@ -88,6 +93,7 @@ class DotAgentContext:
         from erk_shared.git.fake import FakeGit
         from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
+        from erk_shared.prompt_executor.fake import FakePromptExecutor
 
         # Provide defaults - ensures non-None values for type checker
         resolved_github_issues: GitHubIssues = (
@@ -98,6 +104,9 @@ class DotAgentContext:
         resolved_session_store: ClaudeCodeSessionStore = (
             session_store if session_store is not None else FakeClaudeCodeSessionStore()
         )
+        resolved_prompt_executor: PromptExecutor = (
+            prompt_executor if prompt_executor is not None else FakePromptExecutor()
+        )
         resolved_repo_root: Path = repo_root if repo_root is not None else Path("/fake/repo")
         resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
 
@@ -106,6 +115,7 @@ class DotAgentContext:
             git=resolved_git,
             github=resolved_github,
             session_store=resolved_session_store,
+            prompt_executor=resolved_prompt_executor,
             debug=debug,
             repo_root=resolved_repo_root,
             cwd=resolved_cwd,
@@ -160,6 +170,7 @@ def create_context(*, debug: bool) -> DotAgentContext:
     from erk_shared.git.real import RealGit
     from erk_shared.github.real import RealGitHub
     from erk_shared.integrations.time.real import RealTime
+    from erk_shared.prompt_executor.real import RealPromptExecutor
 
     # Detect repo root using git rev-parse
     result = subprocess.run(
@@ -185,6 +196,7 @@ def create_context(*, debug: bool) -> DotAgentContext:
         git=git,
         github=RealGitHub(time=RealTime(), repo_info=repo_info),
         session_store=RealClaudeCodeSessionStore(),
+        prompt_executor=RealPromptExecutor(),
         debug=debug,
         repo_root=repo_root,
         cwd=cwd,
