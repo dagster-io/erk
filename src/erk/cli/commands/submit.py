@@ -310,7 +310,7 @@ def _submit_single_issue(
             user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
 
             # Update PR body with checkout command footer
-            footer = build_pr_body_footer(pr_number=pr_number)
+            footer = build_pr_body_footer(pr_number=pr_number, issue_number=issue_number)
             ctx.github.update_pr_body(repo.root, pr_number, pr_body + footer)
 
             # Add extraction skip label if this is an extraction plan
@@ -380,7 +380,7 @@ def _submit_single_issue(
         user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
 
         # Update PR body with checkout command footer
-        footer = build_pr_body_footer(pr_number=pr_number)
+        footer = build_pr_body_footer(pr_number=pr_number, issue_number=issue_number)
         ctx.github.update_pr_body(repo.root, pr_number, pr_body + footer)
 
         # Add extraction skip label if this is an extraction plan
