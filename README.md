@@ -1,107 +1,170 @@
-# The TAO of `erk`
+# erk
 
-`erk` is a CLI tool built for the orchestration and management of plan-oriented agentic engineering.
+`erk` is a CLI tool for plan-oriented agentic engineering.
 
-## What is Plan-Oriented Agentic Engineering?
+For the philosophy and design principles behind erk, see [The TAO of erk](TAO.md).
 
-AI is transforming software development. What started with in-IDE copilots, intelligent typeaheads, and standalone conversational chat interfaces is now evolving into an entire new generation of tooling.
+## User Setup
 
-Planning has become an increasingly important modality. Widely popularized by Claude Code, it is now getting incorporated into other popular tools such as Cursor.
+### Prerequisites
 
-`erk` believes that planning is the foundational skill of agentic engineering and will remain essential for the foreseeable future, even as model capabilities increase.
+Ensure you have these tools installed:
 
-Planning enables larger units of work to execute with higher quality outcomes. This property also means massive increases in throughput through parallelization. Without planning, you are limited to making serial chains of work more productive via typeaheads or synchronous code generation steps.
+- `python` (3.10+)
+- `claude` - Claude Code CLI
+- `uv` - Fast Python environment management
+- `gt` - Graphite for stacked PRs
+- `gh` - GitHub CLI
 
-More problematically, without planning you are unlikely to provide sufficient context to a model, leaving your instructions too open for interpretation. This is often interpreted as a hallucination. But the reality is that if insufficient context was given, there is no way for the model to fulfill your requirements: It will be forced to invent them.
+### Shell Configuration
 
-Put another way: no matter how powerful they become, models cannot solve the "Garbage-In-Garbage-Out" problem. Planning is the right tool in professional software engineering to ensure that the right context is provided to the agent.
+Add to your shell profile (`.zshrc` or `.bashrc`):
 
-## The Gap: No Engineering Process, Tooling, or Workflows Around Plans
+```bash
+eval "$(erk completion zsh)"  # or bash
+```
 
-Claude Code popularized "plan mode" as a first-class capability in agentic engineering tools. Other tools, such as Cursor and Windsurf, have since followed suit. The ecosystem clearly sees a lot of uptake and progress in the technique.
+This enables:
+- Tab completion for erk commands
+- Automatic virtual environment activation when switching worktrees
 
-Yet despite this recognition, planning remains poorly integrated into actual developer workflows in practice. The primitives exist, but there is no coherent process that ties them together.
+## Local Plan-Driven Workflow
 
-Engineers who want to work in a plan-oriented way face significant friction. Plans are saved as markdown files and must be managed manually, or exist only ephemerally in agent context. There is no system of record. Plans cannot be queried, tracked, or closed. They are not attached to any automation or workflow.
+The primary workflow: create a plan, save it, implement it, ship it. **Often completes without touching an IDE.**
 
-Parallel execution is similarly ad-hoc. Git worktrees provide isolation, but management around them is primitive and tedious. Developers have to manually bookkeep locations, environments, and so forth.
+### Planning Phase
 
-Many tools and companies working on parts of this problem, but usually in a way that is more about "vibecoding" rather than professional software engineering. Siloed tools, poor integration with native engineering workflows, and lack of true automation are non-starters for engineers working on at-scale, complex systems.
+1. Start a Claude Code session:
+   ```bash
+   claude
+   ```
 
-This is a solveable problem. It just requires a renewed embrace of engineering process and better tools.
+2. Enter plan mode and develop your plan
 
-## The Solution: `erk`
+3. Save plan to GitHub issue (system prompts automatically after plan mode)
 
-`erk` is a tool centered around an opinionated workflow that unifies plans, worktrees, and compute into a coherent engineering process. It is uncompromisingly plan-oriented: you create plans, you implement plans, and complete plans, often without touching an IDE.
+### Implementation
 
-### Plans as System of Record
+4. Execute the plan:
+   ```bash
+   erk implement <issue-number>
+   ```
 
-In `erk`, plans are not files on disk or ephemeral context in an agent session. They are persisted in a system of record. In this initial version, that system is GitHub issues. This means plans:
+   This creates a worktree, activates the environment, and runs Claude Code with the plan.
 
-- Can be saved, listed, and tracked for bookkeeping
-- Integrate directly into engineering workflows such as code review
-- Can be opened, closed, and attached to pull requests
-- Are hubs of context that build up the memory of an engineering organization
+### PR Submission
 
-### Worktrees Are First-Class
+5. Submit the PR:
+   ```bash
+   erk pr submit
+   ```
 
-Worktrees are essential to high-output agentic engineering. Without worktrees (or a similar abstraction), you cannot parallelize work across multiple agents, eliminating much of the promise of the technology.
+   Or from within Claude Code: `/erk:pr-submit`
 
-`erk` believes that worktrees should be as first-class as branches in modern engineering workflows. The only reason they aren't right now is tooling quality.
+### Code Review Iteration
 
-In tools like `git` and `gt`—which `erk` is built on—you checkout branches. In `erk`, you checkout worktrees, which are created ephemerally and tied to a _branch_ and an _environment_.
+6. Review PR feedback in GitHub
 
-In the initial version, the toolchain is `gt`, `git`, `uv` (Python environment management), and `gh` (for issues and automation). When you checkout a worktree, it creates or switches to:
+7. Address feedback:
+   ```
+   /erk:pr-address
+   ```
 
-- A worktree
-- A branch
-- A virtual environment (which it syncs and activates)
+8. Repeat until approved
 
-Additionally there is _typically_ a single plan associated with that worktree.
+### Landing
 
-With those things in place, agents can author code in parallel in an orderly, controlled fashion. The process is seamless.
+9. Merge and clean up:
+   ```bash
+   erk pr land
+   ```
 
-With `erk` creating a worktree, switching between them, and activating the correct environment happens seamlessly—as easily as checking out a branch. `erk` integrates with Graphite for stacked PRs and uv for instant virtual environment activation. The friction that normally prevents parallel local execution is removed.
+> **Note:** This entire workflow—from planning through shipping—can happen without opening an IDE. You create plans, submit code, review feedback in GitHub, address it via Claude Code, and land.
 
-### Compute
+## Iteration Patterns
 
-Agents need compute and environments to autonomously and safely execute in parallel.
+### Quick Iteration
 
-By default, `erk` provides isolation at the worktree and virtual environment level on your machine. This enables parallelization but does not solve security and safety issues. Each agent has full access to the file system, and most agentic systems have permissions in place to prompt users when potentially destructive operations could occur. This severely limits autonomy.
+For rapid commits within a worktree:
 
-Remote, sandboxed execution is the solution to this. In those environments the coding agents can operate in "dangerous" mode and bypass the permission system entirely. `erk` supports this natively.
+```
+/quick-submit
+```
 
-As an initial remote execution engine, `erk` uses GitHub Actions. You can submit work to the `erk` queue as easily as executing on your own machine. You are no longer limited by monitoring permissions (just turn them off) nor are you limited by the compute capacity of your laptop (you can infinitely scale).
-You are only limited by your ability to generate plans and manage workflows.
+Commits all changes and submits with Graphite.
 
-## Putting It All Together: The Workflow
+### Rebasing and Stack Management
 
-**Plan → Save → Implement → Review and Iterate → Ship**
+When your stack needs rebasing:
 
-1. **Plan:** Within an agentic tool—in this case, Claude Code—you construct a plan. This is where context leaves your head and enters the system.
+```bash
+erk pr auto-restack
+```
 
-2. **Save:** The plan is saved to the system of record. In `erk`, this is a slash command within `claude` that creates a tool-managed GitHub issue. The plan is now trackable, queryable, and attached to your engineering workflow.
+Or from Claude Code: `/erk:auto-restack`
 
-3. **Implement:** Execute the plan locally with `erk implement` or dispatch it remotely with `erk submit`. Local execution creates a worktree, activates the environment, and invokes `claude`. Remote execution triggers a `gh` action that creates a PR. All of this is tracked and managed by `erk`.
+To fix merge conflicts during a rebase:
 
-4. **Review and Iterate:** Review the code. If the output is close but not complete, seamlessly check out the worktree locally and iterate. If more substantial work is needed, issue a follow-up plan.
+```
+/erk:merge-conflicts-fix
+```
 
-5. **Ship:** Merge the PR. The plan closes automatically, leaving the issue and the PR as a permanent record of what was planned, what was done, and any discussion along the way. Clean up your mess and build up the engineering organization's memory over time.
+## Documentation Extraction
 
-## Current Scope
+Erk supports extracting reusable documentation from implementation sessions into the `docs/agent/` folder—a directory of **agent-generated, agent-consumed documentation**.
 
-`erk` is an internal tool developed at Dagster Labs. It reflects our beliefs about how agentic engineering should work and how we want to work ourselves.
+This documentation:
+- Captures patterns discovered during implementation
+- Gets loaded by future agent sessions via AGENTS.md routing
+- Builds institutional knowledge over time
 
-The philosophy is general, but the current implementation is opinionated and specific. To use `erk` effectively today, you need:
+To extract documentation from a session:
 
-- `python`: Programming Language
-- `claude`: Claude Code
-- `uv`: Fast Python Environment Management
-- `gt`: Graphite for stacked PRs
-- `gh`: Github for issues, PRs, and Actions
+```
+/erk:create-extraction-plan
+```
 
-This is the toolchain we use internally. `erk` is designed to be extensible to other languages, systems of record, and compute backends. Our next toolchain will be TypeScript-focused. Beyond that, we have no plans for additional stacks.
+## Remote Execution
 
-If you're outside Dagster Labs and find this useful, you're welcome to explore, but you will likely have challenges using the tool in your environment.
+For sandboxed, parallel execution via GitHub Actions:
 
-This is also meant to be a showcase and a place to interact with collaborators where we have deep partnerships and context. For the broader public, we will not actively fix bugs, work on features, or accept contributions that do not directly apply to the work at Dagster Labs.
+1. Create a plan (via Claude Code plan mode)
+
+2. Submit for remote execution:
+   ```bash
+   erk submit <issue-number>
+   ```
+
+The agent runs in GitHub Actions and creates a PR automatically.
+
+## Debugging Remote PRs
+
+When a remote implementation needs local iteration:
+
+```bash
+erk pr checkout <pr-number>
+erk pr sync
+```
+
+This checks out the PR into a local worktree for debugging and iteration.
+
+## Planless Workflow
+
+For smaller changes that don't require formal planning:
+
+1. Create a worktree:
+   ```bash
+   erk wt create <branch-name>
+   ```
+
+2. Iterate normally in Claude Code
+
+3. Submit PR:
+   ```bash
+   erk pr submit
+   ```
+
+4. Merge and clean up:
+   ```bash
+   erk pr land
+   ```
