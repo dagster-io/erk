@@ -292,11 +292,16 @@ def _submit_single_issue(
             user_output(click.style("✓", fg="green") + " Placeholder commit pushed")
 
             # Now create the PR
+            # IMPORTANT: "Closes #N" MUST be in the initial body passed to create_pr(),
+            # NOT added via update. GitHub's willCloseTarget API field is set at PR
+            # creation time and is NOT updated when the body is edited afterward.
             pr_body = (
                 f"**Author:** @{submitted_by}\n"
                 f"**Plan:** #{issue_number}\n\n"
                 f"**Status:** Queued for implementation\n\n"
-                f"This PR will be marked ready for review after implementation completes."
+                f"This PR will be marked ready for review after implementation completes.\n\n"
+                f"---\n\n"
+                f"Closes #{issue_number}"
             )
             pr_title = _strip_plan_markers(issue.title)
             pr_number = ctx.github.create_pr(
@@ -361,12 +366,17 @@ def _submit_single_issue(
         user_output(click.style("✓", fg="green") + " Branch pushed to remote")
 
         # Create draft PR
+        # IMPORTANT: "Closes #N" MUST be in the initial body passed to create_pr(),
+        # NOT added via update. GitHub's willCloseTarget API field is set at PR
+        # creation time and is NOT updated when the body is edited afterward.
         user_output("Creating draft PR...")
         pr_body = (
             f"**Author:** @{submitted_by}\n"
             f"**Plan:** #{issue_number}\n\n"
             f"**Status:** Queued for implementation\n\n"
-            f"This PR will be marked ready for review after implementation completes."
+            f"This PR will be marked ready for review after implementation completes.\n\n"
+            f"---\n\n"
+            f"Closes #{issue_number}"
         )
         pr_title = _strip_plan_markers(issue.title)
         pr_number = ctx.github.create_pr(

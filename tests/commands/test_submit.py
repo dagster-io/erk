@@ -507,7 +507,12 @@ def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
 
 
 def test_submit_includes_closes_issue_in_pr_body(tmp_path: Path) -> None:
-    """Test submit adds 'Closes #N' to PR body footer to enable auto-close on merge."""
+    """Test submit includes 'Closes #N' in INITIAL PR body to enable willCloseTarget.
+
+    GitHub's willCloseTarget API field is set at PR creation time and is NOT updated
+    when the PR body is edited afterward. This test verifies that 'Closes #N' is
+    included in the body passed to create_pr(), not just added via update_pr_body().
+    """
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -566,7 +571,15 @@ def test_submit_includes_closes_issue_in_pr_body(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
 
-    # Verify PR body was updated with "Closes #123" for auto-close on merge
+    # CRITICAL: Verify "Closes #123" is in the INITIAL body passed to create_pr()
+    # GitHub's willCloseTarget API field is set at creation time and NOT updated afterward
+    assert len(fake_github.created_prs) == 1
+    branch, title, initial_body, base, draft = fake_github.created_prs[0]
+    assert "Closes #123" in initial_body, (
+        "Closes #123 must be in initial PR body for GitHub's willCloseTarget to work"
+    )
+
+    # Verify PR body was also updated (to add checkout command footer)
     assert len(fake_github.updated_pr_bodies) == 1
     pr_number, updated_body = fake_github.updated_pr_bodies[0]
     assert pr_number == 999  # FakeGitHub returns 999 for created PRs
