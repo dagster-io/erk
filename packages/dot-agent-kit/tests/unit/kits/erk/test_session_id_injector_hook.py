@@ -31,10 +31,8 @@ def test_session_id_injector_hook_writes_session_id_to_file(tmp_path: Path) -> N
     assert session_file.exists(), f"Session file not found: {list(tmp_path.rglob('*'))}"
     assert session_file.read_text(encoding="utf-8") == session_id
 
-    # Verify LLM reminder is still output
-    assert "<reminder>" in result.output
-    assert f"SESSION_CONTEXT: session_id={session_id}" in result.output
-    assert "</reminder>" in result.output
+    # Verify LLM reminder is still output (compressed format)
+    assert f"📌 session: {session_id}" in result.output
 
 
 def test_session_id_injector_hook_creates_parent_directories(tmp_path: Path) -> None:

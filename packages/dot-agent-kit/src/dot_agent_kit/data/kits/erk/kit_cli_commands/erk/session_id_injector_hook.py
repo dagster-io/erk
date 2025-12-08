@@ -77,9 +77,7 @@ def session_id_injector_hook() -> None:
         session_file.write_text(session_id, encoding="utf-8")
 
         # Still output reminder for LLM context
-        click.echo("<reminder>")
-        click.echo(f"SESSION_CONTEXT: session_id={session_id}")
-        click.echo("</reminder>")
+        click.echo(f"📌 session: {session_id}")
     # If no session ID available, output nothing (hook doesn't fire unnecessarily)
 
 
