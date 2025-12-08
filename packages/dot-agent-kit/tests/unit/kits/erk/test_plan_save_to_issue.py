@@ -159,7 +159,8 @@ def test_plan_save_to_issue_display_format(plans_dir: Path) -> None:
     assert "Interactive: erk implement 1" in result.output
     assert "Dangerous Interactive: erk implement 1 --dangerous" in result.output
     assert "Dangerous, Non-Interactive, Auto-Submit: erk implement 1 --yolo" in result.output
-    assert "Submit to Queue: erk submit issue 1" in result.output
+    assert "Submit to Queue: erk submit 1" in result.output
+    assert "/erk:submit-plan" in result.output
 
 
 def test_plan_save_to_issue_label_created(plans_dir: Path) -> None:

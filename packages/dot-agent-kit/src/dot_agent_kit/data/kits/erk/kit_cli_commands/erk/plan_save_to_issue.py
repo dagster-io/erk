@@ -191,7 +191,8 @@ def plan_save_to_issue(
         click.echo(f"Interactive: erk implement {issue_num}")
         click.echo(f"Dangerous Interactive: erk implement {issue_num} --dangerous")
         click.echo(f"Dangerous, Non-Interactive, Auto-Submit: erk implement {issue_num} --yolo")
-        click.echo(f"Submit to Queue: erk submit issue {issue_num}")
+        click.echo(f"Submit to Queue: erk submit {issue_num}")
+        click.echo("  # Or use: /erk:submit-plan")
     else:
         click.echo(
             json.dumps(
