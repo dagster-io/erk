@@ -99,7 +99,7 @@ Process all comments (both types) in the order shown in the summary table.
 2. **Show the comment** with context showing thread number, file:line, author, comment body, and current code
 3. **Make the fix** following the reviewer's feedback
 4. **Explain what you changed** to the user
-5. **Mark resolved** (see Step 5a)
+5. **Mark resolved** (see Step 5)
 
 #### For Discussion Comments:
 
@@ -110,9 +110,9 @@ Process all comments (both types) in the order shown in the summary table.
    - If it's just acknowledgment/thanks, note it and move on
 3. **Take action if needed** (update docs, add tests, etc.)
 4. **Explain what you did** to the user
-5. **Mark addressed** (see Step 5b)
+5. **Mark addressed** (see Step 6)
 
-### Step 5a: Mark Review Thread Resolved
+### Step 5: Mark Review Thread Resolved
 
 After addressing a review thread, resolve it:
 
@@ -122,7 +122,7 @@ dot-agent run erk resolve-review-thread --thread-id "PRRT_abc123"
 
 Report: "Resolved review thread on src/foo.py:42"
 
-### Step 5b: Mark Discussion Comment Addressed
+### Step 6: Mark Discussion Comment Addressed
 
 After addressing a discussion comment, add a reaction:
 
@@ -132,14 +132,14 @@ dot-agent run erk add-reaction-to-comment --comment-id 12345
 
 Report: "Added reaction to discussion comment from reviewer"
 
-### Step 6: Continue or Complete
+### Step 7: Continue or Complete
 
 After resolving/addressing a comment:
 
 - If more comments remain, continue to the next one
 - If all comments addressed, display completion message with summary of changes and next steps (run tests, commit, push)
 
-### Step 7: Handle Outdated Review Threads
+### Step 8: Handle Outdated Review Threads
 
 If a review thread has `is_outdated: true`:
 
