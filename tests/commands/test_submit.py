@@ -506,6 +506,74 @@ def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
     assert "erk pr checkout 999 && erk pr sync" in updated_body
 
 
+def test_submit_includes_closes_issue_in_pr_body(tmp_path: Path) -> None:
+    """Test submit adds 'Closes #N' to PR body footer to enable auto-close on merge."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+    issue = IssueInfo(
+        number=123,
+        title="Implement feature X",
+        body=_make_plan_body(),
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    plan = Plan(
+        plan_identifier="123",
+        title="Implement feature X",
+        body=_make_plan_body(),
+        state=PlanState.OPEN,
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+    )
+    fake_github = FakeGitHub()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        plan_store=fake_plan_store,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+
+    # Verify PR body was updated with "Closes #123" for auto-close on merge
+    assert len(fake_github.updated_pr_bodies) == 1
+    pr_number, updated_body = fake_github.updated_pr_bodies[0]
+    assert pr_number == 999  # FakeGitHub returns 999 for created PRs
+    assert "Closes #123" in updated_body
+    assert "erk pr checkout 999 && erk pr sync" in updated_body
+
+
 def test_close_orphaned_draft_prs_closes_old_drafts(tmp_path: Path) -> None:
     """Test _close_orphaned_draft_prs closes old draft PRs linked to issue."""
     repo_root = tmp_path / "repo"
