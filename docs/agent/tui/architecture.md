@@ -128,15 +128,15 @@ if app.exit_command:
 
 DataTable subclass displaying plans with columns:
 
-| Column | Source | Format |
-|--------|--------|--------|
-| Issue | `issue_number` | `#123` link |
-| Title | `title` | Truncated to 50 chars |
-| PR | `pr_display` | `#456 👀` with status emoji |
-| Checks | `checks_display` | `✓` or `✗` |
-| Worktree | `worktree_name` | Name or empty |
-| Local Impl | `local_impl_display` | `2h ago` |
-| Remote Impl | `remote_impl_display` | `1d ago` |
+| Column      | Source                | Format                      |
+| ----------- | --------------------- | --------------------------- |
+| Issue       | `issue_number`        | `#123` link                 |
+| Title       | `title`               | Truncated to 50 chars       |
+| PR          | `pr_display`          | `#456 👀` with status emoji |
+| Checks      | `checks_display`      | `✓` or `✗`                  |
+| Worktree    | `worktree_name`       | Name or empty               |
+| Local Impl  | `local_impl_display`  | `2h ago`                    |
+| Remote Impl | `remote_impl_display` | `1d ago`                    |
 
 ### Status Bar
 

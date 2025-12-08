@@ -64,12 +64,12 @@ Validates `.impl/` folder and extracts phases.
 ```json
 {
   "valid": true,
-  "impl_type": "impl",              // "impl" or "worker-impl"
+  "impl_type": "impl", // "impl" or "worker-impl"
   "has_issue_tracking": true,
-  "issue_number": 123,              // Optional, present if issue.json exists
+  "issue_number": 123, // Optional, present if issue.json exists
   "phases": [
-    {"number": 1, "text": "Create data model"},
-    {"number": 2, "text": "Implement API endpoint"}
+    { "number": 1, "text": "Create data model" },
+    { "number": 2, "text": "Implement API endpoint" }
   ],
   "related_docs": {
     "skills": ["dignified-python-313", "fake-driven-testing"],
@@ -90,11 +90,11 @@ Validates `.impl/` folder and extracts phases.
 
 **Error Types**:
 
-| error_type | Description |
-|------------|-------------|
-| `no_impl_folder` | Neither `.impl/` nor `.worker-impl/` exists |
-| `no_plan_file` | `plan.md` missing from impl folder |
-| `no_progress_file` | `progress.md` missing from impl folder |
+| error_type         | Description                                 |
+| ------------------ | ------------------------------------------- |
+| `no_impl_folder`   | Neither `.impl/` nor `.worker-impl/` exists |
+| `no_plan_file`     | `plan.md` missing from impl folder          |
+| `no_progress_file` | `progress.md` missing from impl folder      |
 
 ### list-sessions
 
@@ -136,7 +136,7 @@ Check if a marker file exists.
 **Output**:
 
 ```json
-{"exists": true}
+{ "exists": true }
 ```
 
 ### marker-delete
@@ -148,7 +148,7 @@ Delete a marker file.
 **Output**:
 
 ```json
-{"success": true, "deleted": "pending-extraction"}
+{ "success": true, "deleted": "pending-extraction" }
 ```
 
 ### mark-step
@@ -224,10 +224,10 @@ Create a worktree.
 
 **Status Values**:
 
-| status | Description |
-|--------|-------------|
+| status    | Description              |
+| --------- | ------------------------ |
 | `created` | New worktree was created |
-| `exists` | Worktree already existed |
+| `exists`  | Worktree already existed |
 
 ### erk plan log
 
@@ -271,13 +271,13 @@ Include a clear success/valid indicator:
 Use typed errors for programmatic handling:
 
 ```json
-{"error_type": "validation_error", "message": "..."}
+{ "error_type": "validation_error", "message": "..." }
 ```
 
 Not:
 
 ```json
-{"error": "Something went wrong"}
+{ "error": "Something went wrong" }
 ```
 
 ### 3. Consistent Casing
@@ -285,7 +285,7 @@ Not:
 Use `snake_case` for JSON keys (matches Python conventions):
 
 ```json
-{"issue_number": 123, "branch_name": "feature-x"}
+{ "issue_number": 123, "branch_name": "feature-x" }
 ```
 
 ### 4. Nullable Fields
@@ -302,7 +302,7 @@ Use `null` for absent optional data, not empty strings:
 Always use ISO 8601 format for timestamps:
 
 ```json
-{"created_at": "2024-01-15T10:30:00Z"}
+{ "created_at": "2024-01-15T10:30:00Z" }
 ```
 
 ### 6. Exit Codes
