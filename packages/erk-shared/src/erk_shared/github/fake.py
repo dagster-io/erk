@@ -129,7 +129,12 @@ class FakeGitHub(GitHub):
         self._updated_pr_bases.append((pr_number, new_base))
 
     def update_pr_body(self, repo_root: Path, pr_number: int, body: str) -> None:
-        """Record PR body update in mutation tracking list."""
+        """Record PR body update in mutation tracking list.
+
+        Raises RuntimeError if pr_update_should_succeed is False.
+        """
+        if not self._pr_update_should_succeed:
+            raise RuntimeError("PR update failed (configured to fail)")
         self._updated_pr_bodies.append((pr_number, body))
 
     def merge_pr(

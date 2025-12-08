@@ -66,14 +66,9 @@ jobs:
       - name: Detect trunk branch
         id: trunk
         run: |
-          if git ls-remote --heads origin main | grep -q main; then
-            echo "trunk_branch=main" >> $GITHUB_OUTPUT
-          elif git ls-remote --heads origin master | grep -q master; then
-            echo "trunk_branch=master" >> $GITHUB_OUTPUT
-          else
-            echo "❌ Could not detect trunk branch (main or master)"
-            exit 1
-          fi
+          source $HOME/.cargo/env
+          result=$(dot-agent run erk detect-trunk-branch)
+          echo "trunk_branch=$(echo "$result" | jq -r '.trunk_branch')" >> $GITHUB_OUTPUT
 
       # =================================================================
       # PHASE 2: CREATE BRANCH AND SETUP

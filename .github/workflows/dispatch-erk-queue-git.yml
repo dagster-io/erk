@@ -93,16 +93,9 @@ jobs:
       - name: Detect trunk branch
         id: trunk
         run: |
-          if git ls-remote --heads origin main | grep -q main; then
-            echo "trunk_branch=main" >> $GITHUB_OUTPUT
-            echo "Detected trunk branch: main"
-          elif git ls-remote --heads origin master | grep -q master; then
-            echo "trunk_branch=master" >> $GITHUB_OUTPUT
-            echo "Detected trunk branch: master"
-          else
-            echo "❌ Could not detect trunk branch (main or master)"
-            exit 1
-          fi
+          source $HOME/.cargo/env
+          result=$(dot-agent run erk detect-trunk-branch)
+          echo "trunk_branch=$(echo "$result" | jq -r '.trunk_branch')" >> $GITHUB_OUTPUT
 
       # =================================================================
       # PHASE 2: BRANCH SETUP
@@ -161,43 +154,14 @@ jobs:
           PR_NUMBER: ${{ inputs.pr_number }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          STARTED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          WORKFLOW_RUN_ID="${{ github.run_id }}"
-          WORKFLOW_RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-          cat > comment_body.md <<EOF
-          ⚙️ GitHub Action Started
-
-          <details>
-          <summary>📋 Metadata</summary>
-
-          <!-- erk:metadata-block:workflow-started -->
-          \`\`\`yaml
-          schema: workflow-started
-          status: started
-          started_at: $STARTED_AT
-          workflow_run_id: "$WORKFLOW_RUN_ID"
-          workflow_run_url: $WORKFLOW_RUN_URL
-          branch_name: $BRANCH_NAME
-          issue_number: $ISSUE_NUMBER
-          \`\`\`
-          <!-- /erk:metadata-block:workflow-started -->
-
-          </details>
-
-          ---
-
-          Setup completed successfully.
-
-          **Branch:** \`$BRANCH_NAME\`
-          **PR:** [#$PR_NUMBER](https://github.com/${{ github.repository }}/pull/$PR_NUMBER)
-          **Status:** Ready for implementation
-
-          [View workflow run]($WORKFLOW_RUN_URL)
-          EOF
-
-          gh issue comment "$ISSUE_NUMBER" --body-file comment_body.md
-          rm -f comment_body.md
+          source $HOME/.cargo/env
+          dot-agent run erk post-workflow-started-comment \
+            --issue-number "$ISSUE_NUMBER" \
+            --branch-name "$BRANCH_NAME" \
+            --pr-number "$PR_NUMBER" \
+            --run-id "${{ github.run_id }}" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --repository "${{ github.repository }}"
 
       - name: Add remote execution note to PR
         env:
@@ -304,28 +268,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
           ISSUE_NUMBER: ${{ inputs.issue_number }}
-          SUBMITTED_BY: ${{ inputs.submitted_by }}
           IMPL_SHA: ${{ steps.submit.outputs.impl_sha }}
         run: |
-          # Get the implementation commit message using the captured SHA
-          commit_body=$(git log "$IMPL_SHA" -1 --pretty=%B)
-
-          # Get PR number for checkout instructions
-          PR_NUMBER=$(gh pr view "$BRANCH_NAME" --json number -q .number)
-
-          # Get standardized body footer from get-pr-body-footer
-          pr_metadata=$(dot-agent run erk get-pr-body-footer --pr-number "$PR_NUMBER" --issue-number "$ISSUE_NUMBER" 2>/dev/null || echo "")
-
-          # Build PR body: summary + footer
-          cat > pr_body.md <<BODY_EOF
-          ## Summary
-
-          $commit_body
-          $pr_metadata
-          BODY_EOF
-
-          gh pr edit "$BRANCH_NAME" --body-file pr_body.md
-          rm -f pr_body.md
+          source $HOME/.cargo/env
+          dot-agent run erk update-pr-summary \
+            --branch-name "$BRANCH_NAME" \
+            --issue-number "$ISSUE_NUMBER" \
+            --commit-sha "$IMPL_SHA"
           echo "✅ PR body updated with implementation summary"
 
       - name: Trigger CI workflows

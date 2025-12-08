@@ -166,6 +166,15 @@ kit_cli_commands:
   - name: get-pr-review-comments
     path: kit_cli_commands/erk/get_pr_review_comments.py
     description: Fetch PR review comments for agent context injection
+  - name: detect-trunk-branch
+    path: kit_cli_commands/erk/detect_trunk_branch.py
+    description: Detect whether repo uses main or master as trunk branch
+  - name: post-workflow-started-comment
+    path: kit_cli_commands/erk/post_workflow_started_comment.py
+    description: Post workflow started comment to GitHub issue with YAML metadata
+  - name: update-pr-summary
+    path: kit_cli_commands/erk/update_pr_summary.py
+    description: Update PR body with implementation summary from commit message
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit
