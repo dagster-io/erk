@@ -1,5 +1,6 @@
 """Tests for unified implement command."""
 
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -1590,3 +1591,171 @@ def test_interactive_mode_preserves_relative_path_from_plan_file() -> None:
         assert len(executor.interactive_calls) == 1
         worktree_path, dangerous, command, target_subpath = executor.interactive_calls[0]
         assert target_subpath == Path("docs")
+
+
+# Project-Aware .impl/ Placement Tests (Monorepo Support)
+
+
+def test_impl_folder_created_at_project_root_in_monorepo() -> None:
+    """Verify .impl/ is created at project root (where .erk/project.toml exists).
+
+    When running `erk implement` from within a project subdirectory in a monorepo,
+    the .impl/ folder should be created at the project root, not the worktree root.
+    This ensures Claude starts in the correct context for the project.
+    """
+    plan_issue = _create_sample_plan_issue()
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Create a monorepo project structure:
+        # repo/
+        #   python_modules/
+        #     my-project/
+        #       .erk/
+        #         project.toml  <-- Project marker
+        #       src/
+        #         main.py
+        project_path = env.cwd / "python_modules" / "my-project"
+        project_path.mkdir(parents=True)
+        (project_path / ".erk").mkdir()
+        (project_path / ".erk" / "project.toml").write_text("", encoding="utf-8")
+
+        subdir = project_path / "src"
+        subdir.mkdir()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch="main", is_root=True)]},
+        )
+        store = FakePlanStore(plans={"42": plan_issue})
+        executor = FakeClaudeExecutor(claude_available=True)
+
+        # Build context with cwd inside the project
+        ctx = build_workspace_test_context(
+            env, git=git, plan_store=store, claude_executor=executor, cwd=subdir
+        )
+
+        # Change to project subdirectory before invoking command
+        os.chdir(subdir)
+
+        result = runner.invoke(implement, ["#42"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Created worktree" in result.output
+
+        # Verify worktree was created
+        assert len(git.added_worktrees) == 1
+        worktree_path = git.added_worktrees[0][0]
+
+        # Verify .impl/ was created at project root (python_modules/my-project/),
+        # NOT at worktree root
+        project_impl_path = worktree_path / "python_modules" / "my-project" / ".impl"
+        assert project_impl_path.exists(), (
+            f".impl/ should be at project root: {project_impl_path}"
+        )
+        assert (project_impl_path / "plan.md").exists()
+        assert (project_impl_path / "progress.md").exists()
+        assert (project_impl_path / "issue.json").exists()
+
+        # Verify .impl/ was NOT created at worktree root
+        worktree_root_impl = worktree_path / ".impl"
+        assert not worktree_root_impl.exists(), (
+            f".impl/ should NOT be at worktree root when in a project: {worktree_root_impl}"
+        )
+
+
+def test_impl_folder_created_at_worktree_root_when_no_project() -> None:
+    """Verify .impl/ is created at worktree root when no project context exists.
+
+    When running `erk implement` from a directory that is not inside a project
+    (no .erk/project.toml in parent directories), the .impl/ folder should be
+    created at the worktree root as before.
+    """
+    plan_issue = _create_sample_plan_issue()
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Create a simple subdirectory (no project marker)
+        subdir = env.cwd / "src" / "lib"
+        subdir.mkdir(parents=True)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch="main", is_root=True)]},
+        )
+        store = FakePlanStore(plans={"42": plan_issue})
+        executor = FakeClaudeExecutor(claude_available=True)
+
+        # Build context with cwd in subdirectory (but no project)
+        ctx = build_workspace_test_context(
+            env, git=git, plan_store=store, claude_executor=executor, cwd=subdir
+        )
+
+        # Change to subdirectory before invoking command
+        os.chdir(subdir)
+
+        result = runner.invoke(implement, ["#42"], obj=ctx)
+
+        assert result.exit_code == 0
+
+        # Verify worktree was created
+        assert len(git.added_worktrees) == 1
+        worktree_path = git.added_worktrees[0][0]
+
+        # Verify .impl/ was created at worktree root (default behavior)
+        worktree_root_impl = worktree_path / ".impl"
+        assert worktree_root_impl.exists(), (
+            f".impl/ should be at worktree root when no project: {worktree_root_impl}"
+        )
+        assert (worktree_root_impl / "plan.md").exists()
+
+
+def test_impl_folder_plan_file_mode_respects_project_context() -> None:
+    """Verify plan file mode also creates .impl/ at project root in monorepo."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Create a monorepo project structure
+        project_path = env.cwd / "packages" / "my-app"
+        project_path.mkdir(parents=True)
+        (project_path / ".erk").mkdir()
+        (project_path / ".erk" / "project.toml").write_text("", encoding="utf-8")
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch="main", is_root=True)]},
+        )
+        executor = FakeClaudeExecutor(claude_available=True)
+
+        # Create plan file at worktree root
+        plan_content = "# Implementation Plan\n\nImplement feature X."
+        plan_file = env.cwd / "feature-plan.md"
+        plan_file.write_text(plan_content, encoding="utf-8")
+
+        # Build context with cwd inside the project
+        ctx = build_workspace_test_context(
+            env, git=git, claude_executor=executor, cwd=project_path
+        )
+
+        # Change to project directory before invoking command
+        os.chdir(project_path)
+
+        result = runner.invoke(implement, [str(plan_file)], obj=ctx)
+
+        assert result.exit_code == 0
+
+        # Verify worktree was created
+        assert len(git.added_worktrees) == 1
+        worktree_path = git.added_worktrees[0][0]
+
+        # Verify .impl/ was created at project root within worktree
+        project_impl_path = worktree_path / "packages" / "my-app" / ".impl"
+        assert project_impl_path.exists(), (
+            f".impl/ should be at project root: {project_impl_path}"
+        )
+        assert (project_impl_path / "plan.md").read_text(encoding="utf-8") == plan_content

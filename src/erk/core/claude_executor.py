@@ -769,24 +769,28 @@ class RealClaudeExecutor(ClaudeExecutor):
 
         Implementation details:
         - Verifies Claude CLI is available
-        - Changes to worktree directory (optionally to subpath if it exists)
+        - Changes to worktree directory (and to subpath if provided)
         - Builds command arguments with the specified command
         - Replaces current process using os.execvp
 
         Note:
             This function never returns - the process is replaced by Claude CLI.
+
+            The target_subpath is trusted to exist because it was computed from
+            the source worktree's directory structure. Since the new worktree
+            shares git history with the source, the path should exist.
         """
         # Verify Claude is available
         if not self.is_claude_available():
             raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
 
-        # Change to worktree directory (optionally to subpath if it exists)
+        # Change to worktree directory (optionally to subpath)
+        # Trust the computed subpath exists - it was derived from the source worktree
+        # which has the same git history. If it doesn't exist, os.chdir will raise
+        # FileNotFoundError which is the appropriate error.
         if target_subpath is not None:
             target_dir = worktree_path / target_subpath
-            if target_dir.is_dir():
-                os.chdir(target_dir)
-            else:
-                os.chdir(worktree_path)
+            os.chdir(target_dir)
         else:
             os.chdir(worktree_path)
 

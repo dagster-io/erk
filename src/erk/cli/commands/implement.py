@@ -32,6 +32,7 @@ from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import ErkContext
+from erk.core.project_discovery import ProjectContext, discover_project
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.core.worktree_utils import compute_relative_path_in_worktree
 
@@ -323,6 +324,19 @@ class ForceDeleteOptions:
     def any_enabled(self) -> bool:
         """Return True if any force delete option is enabled."""
         return self.worktree or self.branch
+
+
+@dataclass(frozen=True)
+class WorktreeCreationResult:
+    """Result of creating a worktree with plan content.
+
+    Attributes:
+        worktree_path: Path to the created worktree root
+        impl_dir: Path to the .impl/ directory (may be inside a project subdirectory)
+    """
+
+    worktree_path: Path
+    impl_dir: Path
 
 
 def _detect_target_type(target: str) -> TargetInfo:
@@ -648,7 +662,7 @@ def _create_worktree_with_plan_content(
     linked_branch_name: str | None = None,
     base_branch: str,
     force_delete: ForceDeleteOptions | None = None,
-) -> Path | None:
+) -> WorktreeCreationResult | None:
     """Create worktree with plan content.
 
     Args:
@@ -665,7 +679,7 @@ def _create_worktree_with_plan_content(
         force_delete: Options for force-deleting existing worktree/branch
 
     Returns:
-        Path to created worktree, or None if dry-run mode
+        WorktreeCreationResult with paths, or None if dry-run mode
     """
     if force_delete is None:
         force_delete = ForceDeleteOptions()
@@ -673,6 +687,10 @@ def _create_worktree_with_plan_content(
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
     repo_root = repo.root
+
+    # Detect project context from source directory (for monorepo support)
+    # If running from within a project subdirectory, we'll create .impl/ there
+    project: ProjectContext | None = discover_project(ctx.cwd, repo_root, ctx.git)
 
     # Determine branch name and worktree name
     # - linked_branch_name: use the issue-linked branch for the worktree
@@ -792,15 +810,26 @@ def _create_worktree_with_plan_content(
     # Create .impl/ folder with plan content
     # Use overwrite=True since new worktrees created from branches with existing
     # .impl/ folders inherit that folder, and we want to replace it with the new plan
+    #
+    # In monorepos, place .impl/ at project root (where .erk/project.toml lives)
+    # rather than worktree root, so Claude starts in the right context
+    if project is not None:
+        impl_location = wt_path / project.path_from_repo
+    else:
+        impl_location = wt_path
+
     ctx.feedback.info("Creating .impl/ folder with plan...")
     create_impl_folder(
-        worktree_path=wt_path,
+        worktree_path=impl_location,
         plan_content=plan_source.plan_content,
         overwrite=True,
     )
     ctx.feedback.success("✓ Created .impl/ folder")
 
-    return wt_path
+    return WorktreeCreationResult(
+        worktree_path=wt_path,
+        impl_dir=impl_location / ".impl",
+    )
 
 
 def _output_activation_instructions(
@@ -900,7 +929,7 @@ def _implement_from_issue(
     )
 
     # Create worktree with plan content, using the branch name
-    wt_path = _create_worktree_with_plan_content(
+    result = _create_worktree_with_plan_content(
         ctx,
         plan_source=issue_plan_source.plan_source,
         worktree_name=worktree_name,
@@ -913,14 +942,16 @@ def _implement_from_issue(
     )
 
     # Early return for dry-run mode
-    if wt_path is None:
+    if result is None:
         return
 
+    wt_path = result.worktree_path
+
     # Save issue reference for PR linking (issue-specific)
+    # Use impl_dir from result to handle monorepo project-root placement
     ctx.feedback.info("Saving issue reference for PR linking...")
     plan = ctx.plan_store.get_plan(repo.root, issue_number)
-    impl_dir = wt_path / ".impl"
-    save_issue_reference(impl_dir, int(issue_number), plan.url)
+    save_issue_reference(result.impl_dir, int(issue_number), plan.url)
 
     ctx.feedback.success(f"✓ Saved issue reference: {plan.url}")
 
@@ -986,7 +1017,7 @@ def _implement_from_file(
     plan_source = _prepare_plan_source_from_file(ctx, plan_file)
 
     # Create worktree with plan content
-    wt_path = _create_worktree_with_plan_content(
+    result = _create_worktree_with_plan_content(
         ctx,
         plan_source=plan_source,
         worktree_name=worktree_name,
@@ -999,8 +1030,10 @@ def _implement_from_file(
     )
 
     # Early return for dry-run mode
-    if wt_path is None:
+    if result is None:
         return
+
+    wt_path = result.worktree_path
 
     # Delete original plan file (move semantics, file-specific)
     ctx.feedback.info(f"Removing original plan file: {plan_file.name}...")
