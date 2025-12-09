@@ -78,6 +78,39 @@ The index contains:
 3. **When unclear** - Place at root level; categorize later when patterns emerge
 4. **Create new category** - When 3+ related docs exist at root level
 
+### Category Quick Reference
+
+Use this table to choose the right category:
+
+| Category       | Use For                                                       | NOT For                                    |
+| -------------- | ------------------------------------------------------------- | ------------------------------------------ |
+| `architecture` | Cross-cutting internal patterns (gateways, dry-run, Protocol) | CLI-specific patterns                      |
+| `cli`          | CLI command patterns, output formatting, fast-path strategies | Internal architecture                      |
+| `commands`     | Slash command authoring (`.claude/commands/`)                 | CLI commands (`src/erk/cli/`)              |
+| `erk`          | User-facing erk workflows (worktrees, PRs, Graphite)          | Internal implementation details            |
+| `hooks`        | Hook development patterns                                     | General CLI patterns                       |
+| `kits`         | Kit CLI and artifact management                               | Non-kit features                           |
+| `planning`     | Plans, `.impl/` folders, agent delegation                     | Implementation patterns                    |
+| `reference`    | API specs, format specs                                       | How-to guides                              |
+| `sessions`     | Session logs, parallel sessions                               | General logging                            |
+| `testing`      | Erk-specific test patterns                                    | General Python testing (use skill instead) |
+
+### Distinguishing cli/ vs architecture/
+
+This is the most common confusion:
+
+- **cli/**: Patterns for **building CLI commands** - how users interact with the tool
+  - Fast-path patterns (skipping expensive ops)
+  - Output formatting and styling
+  - Script mode behavior
+  - Command organization
+
+- **architecture/**: **Internal implementation patterns** - how the code works
+  - Gateway ABCs and dependency injection
+  - Dry-run via wrapper classes
+  - Shell integration constraints
+  - Protocol vs ABC decisions
+
 ## Document Structure Template
 
 ```markdown
