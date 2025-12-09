@@ -612,7 +612,7 @@ jobs:
 | File                                                       | Change                                                                 |
 | ---------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `src/erk/cli/commands/submit.py`                           | Remove branch/PR creation, `distinct_id`, simplify to dispatch-only    |
-| `.github/workflows/erk-impl.yml`             | Add run comment, branch creation, `.impl/` reconstruction, PR creation |
+| `.github/workflows/erk-impl.yml`                           | Add run comment, branch creation, `.impl/` reconstruction, PR creation |
 | `packages/erk-shared/src/erk_shared/worker_impl_folder.py` | Delete (no longer needed)                                              |
 | `packages/erk-shared/src/erk_shared/distinct_id.py`        | Delete (no longer needed)                                              |
 | `packages/erk-shared/src/erk_shared/impl_folder.py`        | Add `reconstruct_from_issue()`                                         |
