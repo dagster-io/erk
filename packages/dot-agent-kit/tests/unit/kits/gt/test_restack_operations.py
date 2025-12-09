@@ -31,6 +31,7 @@ class TestRestackPreflight:
             .with_branch("feature-branch", parent="main")
             .with_commits(1)
             .with_rebase_in_progress(False)
+            .with_clean_working_tree()
         )
 
         result = render_events(execute_restack_preflight(ops, tmp_path))
@@ -49,6 +50,7 @@ class TestRestackPreflight:
             .with_branch("feature-branch", parent="main")
             .with_commits(1)
             .with_conflicts(["file1.py", "file2.py"])
+            .with_clean_working_tree()
         )
 
         result = render_events(execute_restack_preflight(ops, tmp_path))
@@ -67,6 +69,7 @@ class TestRestackPreflight:
             .with_branch("feature-branch", parent="main")
             .with_commits(3)
             .with_squash_failure(stderr="Something went wrong")
+            .with_clean_working_tree()
         )
 
         result = render_events(execute_restack_preflight(ops, tmp_path))
@@ -82,6 +85,7 @@ class TestRestackPreflight:
             .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(0)
+            .with_clean_working_tree()
         )
 
         result = render_events(execute_restack_preflight(ops, tmp_path))
@@ -98,6 +102,7 @@ class TestRestackPreflight:
             .with_branch("feature-branch", parent="main")
             .with_commits(3)
             .with_squash_conflict()
+            .with_clean_working_tree()
         )
 
         result = render_events(execute_restack_preflight(ops, tmp_path))
@@ -105,6 +110,23 @@ class TestRestackPreflight:
         assert isinstance(result, RestackPreflightError)
         assert result.success is False
         assert result.error_type == "squash_conflict"
+
+    def test_dirty_working_tree_returns_error(self, tmp_path: Path) -> None:
+        """Test error when working tree has uncommitted changes."""
+        ops = (
+            FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
+            .with_branch("feature-branch", parent="main")
+            .with_commits(1)
+            .with_uncommitted_files(["modified.py"])
+        )
+
+        result = render_events(execute_restack_preflight(ops, tmp_path))
+
+        assert isinstance(result, RestackPreflightError)
+        assert result.success is False
+        assert result.error_type == "dirty_working_tree"
+        assert "uncommitted changes" in result.message
 
 
 class TestRestackContinue:
