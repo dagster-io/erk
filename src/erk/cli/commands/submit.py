@@ -111,6 +111,11 @@ class SubmitResult:
     workflow_url: str
 
 
+def _make_clickable_url(url: str) -> str:
+    """Format URL as OSC 8 clickable terminal hyperlink."""
+    return f"\033]8;;{url}\033\\{url}\033]8;;\033\\"
+
+
 def _build_workflow_run_url(issue_url: str, run_id: str) -> str:
     """Construct GitHub Actions workflow run URL from issue URL and run ID.
 
@@ -650,7 +655,7 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None
     user_output("Submitted issues:")
     for r in results:
         user_output(f"  • #{r.issue_number}: {r.issue_title}")
-        user_output(f"    Issue: {r.issue_url}")
+        user_output(f"    Issue: {_make_clickable_url(r.issue_url)}")
         if r.pr_url:
-            user_output(f"    PR: {r.pr_url}")
-        user_output(f"    Workflow: {r.workflow_url}")
+            user_output(f"    PR: {_make_clickable_url(r.pr_url)}")
+        user_output(f"    Workflow: {_make_clickable_url(r.workflow_url)}")

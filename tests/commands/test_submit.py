@@ -16,6 +16,7 @@ from erk_shared.plan_store.types import Plan, PlanState
 from erk.cli.commands.submit import (
     ERK_PLAN_LABEL,
     _close_orphaned_draft_prs,
+    _make_clickable_url,
     _strip_plan_markers,
     is_issue_extraction_plan,
     load_workflow_config,
@@ -1677,3 +1678,89 @@ def test_submit_uses_workflow_config(tmp_path: Path) -> None:
     # Config-based inputs from .erk/workflows/erk-impl.toml
     assert inputs["kit_names"] == "erk,gt,devrun"
     assert inputs["model_name"] == "claude-sonnet-4-5-20250929"
+
+
+def test_make_clickable_url_formats_osc8_sequence() -> None:
+    """Test _make_clickable_url returns correct OSC 8 escape sequence."""
+    url = "https://github.com/test-owner/test-repo/issues/123"
+    result = _make_clickable_url(url)
+
+    # OSC 8 format: \033]8;;URL\033\\display_text\033]8;;\033\\
+    expected = f"\033]8;;{url}\033\\{url}\033]8;;\033\\"
+    assert result == expected
+
+
+def test_submit_output_contains_clickable_urls(tmp_path: Path) -> None:
+    """Test submit output contains clickable URLs using OSC 8 escape sequences."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+    issue = IssueInfo(
+        number=123,
+        title="Implement feature X",
+        body=_make_plan_body(),
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+    )
+
+    plan = Plan(
+        plan_identifier="123",
+        title="Implement feature X",
+        body=_make_plan_body(),
+        state=PlanState.OPEN,
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+    )
+    fake_github = FakeGitHub()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = ErkContext.for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        plan_store=fake_plan_store,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+
+    # Verify output contains OSC 8 escape sequences for clickable URLs
+    # The OSC 8 opener sequence is \033]8;;URL
+    assert "\033]8;;" in result.output
+
+    # Verify specific URLs are wrapped in OSC 8 sequences
+    # Issue URL
+    issue_url = "https://github.com/test-owner/test-repo/issues/123"
+    assert f"\033]8;;{issue_url}\033\\" in result.output
+    # Workflow URL (FakeGitHub returns run_id "1234567890")
+    workflow_url = "https://github.com/test-owner/test-repo/actions/runs/1234567890"
+    assert f"\033]8;;{workflow_url}\033\\" in result.output
+    # PR URL (FakeGitHub returns PR number 999)
+    pr_url = "https://github.com/test-owner/test-repo/pull/999"
+    assert f"\033]8;;{pr_url}\033\\" in result.output
