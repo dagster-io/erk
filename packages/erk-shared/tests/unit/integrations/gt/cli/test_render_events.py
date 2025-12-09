@@ -16,7 +16,7 @@ T = TypeVar("T")
 
 def _create_event_generator(
     events: list[ProgressEvent | CompletionEvent[T]],
-) -> Generator[ProgressEvent | CompletionEvent[T]]:
+) -> Generator[ProgressEvent | CompletionEvent[T], None, None]:
     """Helper to create a generator from a list of events."""
     yield from events
 
