@@ -4,6 +4,8 @@ read_when:
   - "working with erk-specific hooks"
   - "understanding context-aware reminders"
   - "modifying project hooks"
+  - "creating project-scoped hooks"
+  - "testing hooks with @project_scoped decorator"
 ---
 
 # Claude Code Hooks in erk
@@ -140,6 +142,79 @@ Use AskUserQuestion to ask the user:
 
 **Location**: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/exit_plan_mode_hook.py`
 
+## Project-Scoped Hooks
+
+Hooks can be decorated with `@project_scoped` to silently skip execution when not in a managed project (one with `.agent/dot-agent.toml`).
+
+### Why Use Project-Scoped Hooks?
+
+In monorepo or multi-project environments, hooks installed at the user level (`~/.claude/`) would fire in ALL repositories, even those not using dot-agent-kit. This causes:
+
+- Confusing reminders in unrelated projects
+- Performance overhead from unnecessary hook execution
+- Noise in projects that don't need the guidance
+
+### Using the Decorator
+
+```python
+from dot_agent_kit.hooks.decorators import project_scoped
+
+@click.command()
+@project_scoped  # Add AFTER @click.command()
+def my_reminder_hook() -> None:
+    click.echo("🔴 CRITICAL: Your reminder here")
+```
+
+**Behavior**:
+| Scenario | Behavior |
+|----------|----------|
+| In repo with `.agent/dot-agent.toml` | Hook fires normally |
+| In repo without `.agent/dot-agent.toml` | Hook exits silently (no output) |
+| Not in git repo | Hook exits silently |
+
+### Current Project-Scoped Hooks
+
+All erk reminder hooks use this decorator:
+
+- `devrun-reminder-hook`
+- `dignified-python-reminder-hook`
+- `fake-driven-testing-reminder-hook`
+- `session-id-injector-hook`
+- `tripwires-reminder-hook`
+- `exit-plan-mode-hook`
+
+### Detection Utility
+
+The `@project_scoped` decorator uses `is_in_managed_project()` internally. You can use this directly for more complex conditional logic:
+
+```python
+from dot_agent_kit.hooks.scope import is_in_managed_project
+
+@click.command()
+def my_hook() -> None:
+    if not is_in_managed_project():
+        # Custom handling for non-managed projects
+        click.echo("ℹ️ Tip: Install dot-agent-kit for full features")
+        return
+
+    # Normal hook logic
+    click.echo("🔴 CRITICAL: Your reminder")
+```
+
+**Function signature**:
+
+```python
+def is_in_managed_project() -> bool:
+    """Check if current directory is in a managed project.
+
+    Returns True if:
+    1. Current directory is inside a git repository
+    2. Repository root contains .agent/dot-agent.toml
+
+    Returns False otherwise (fails silently, no exceptions).
+    """
+```
+
 ## Common Tasks
 
 ### Viewing Installed Hooks
@@ -261,6 +336,51 @@ claude "Show me example.py"
 - Exit code 2 blocks operation
 - Timeout doesn't cause hangs
 - Matcher fires on correct files/events
+
+### Testing Project-Scoped Hooks
+
+When testing hooks that use `@project_scoped`, you must mock `is_in_managed_project` to return `True`, otherwise the hook will silently exit before your test logic runs.
+
+**Pattern**:
+
+```python
+from unittest.mock import patch
+from click.testing import CliRunner
+
+def test_my_scoped_hook() -> None:
+    runner = CliRunner()
+
+    with patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True):
+        result = runner.invoke(my_hook)
+
+    assert result.exit_code == 0
+    assert "expected output" in result.output
+```
+
+**Common mistake** (causes silent test failures):
+
+```python
+# ❌ WRONG - Hook silently exits, test passes but doesn't test anything
+def test_my_hook() -> None:
+    runner = CliRunner()
+    result = runner.invoke(my_hook)
+    assert result.exit_code == 0  # Passes but hook didn't run!
+```
+
+**Testing unmanaged project behavior**:
+
+```python
+def test_hook_silent_in_unmanaged_project() -> None:
+    runner = CliRunner()
+
+    with patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=False):
+        result = runner.invoke(my_hook)
+
+    assert result.exit_code == 0
+    assert result.output == ""  # No output when not in managed project
+```
+
+**Important**: The patch target is always `dot_agent_kit.hooks.decorators.is_in_managed_project`, regardless of where your hook is defined. This is because the decorator imports and uses the function at decoration time.
 
 ## Troubleshooting
 

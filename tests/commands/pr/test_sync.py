@@ -105,7 +105,7 @@ def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
         assert result.exit_code == 0
         assert "Base branch: main" in result.output
         assert "Branch tracked with Graphite" in result.output
-        assert "Squashed 2 commits into 1" in result.output
+        assert "Squashed commits into 1" in result.output
         assert "Commit message updated" in result.output
         assert "/erk:auto-restack" in result.output
         assert "synchronized with Graphite" in result.output
@@ -114,7 +114,7 @@ def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
         assert len(graphite.track_branch_calls) == 1
         assert graphite.track_branch_calls[0] == (env.cwd, "feature-branch", "main")
 
-        # Verify squash was called (execute_squash calls graphite.squash_branch internally)
+        # Verify squash was called (execute_squash calls graphite.squash_branch_idempotent)
         assert len(graphite.squash_branch_calls) == 1
         assert graphite.squash_branch_calls[0][0] == env.cwd
 
@@ -331,6 +331,8 @@ def test_pr_sync_fails_when_cross_repo_fork(tmp_path: Path) -> None:
 
 def test_pr_sync_handles_squash_single_commit(tmp_path: Path) -> None:
     """Test sync handles single-commit case gracefully (no squash needed)."""
+    import subprocess
+
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
@@ -347,10 +349,18 @@ def test_pr_sync_handles_squash_single_commit(tmp_path: Path) -> None:
             pr_details={111: pr_details},
         )
 
-        # No squash_branch_raises needed - execute_squash checks commit count first
-        graphite = FakeGraphite(branches={})
+        # Configure gt squash to return "nothing to squash" (Graphite sees single commit)
+        nothing_to_squash_error = subprocess.CalledProcessError(
+            returncode=1,
+            cmd=["gt", "squash"],
+            stderr="ERROR: Only one commit in branch, nothing to squash.",
+        )
+        graphite = FakeGraphite(
+            branches={},
+            squash_branch_raises=nothing_to_squash_error,
+        )
 
-        # Single commit ahead - execute_squash will skip squashing
+        # Single commit ahead - squash_branch_idempotent handles "nothing to squash"
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "single-commit-branch"},
@@ -365,13 +375,13 @@ def test_pr_sync_handles_squash_single_commit(tmp_path: Path) -> None:
 
         result = runner.invoke(pr_group, ["sync"], obj=ctx)
 
-        # Should succeed - execute_squash detects single commit and skips
+        # Should succeed - squash_branch_idempotent handles "nothing to squash" gracefully
         assert result.exit_code == 0
         assert "Already a single commit, no squash needed" in result.output
         assert "synchronized with Graphite" in result.output
 
-        # Verify squash was NOT called (single commit detected beforehand)
-        assert len(graphite.squash_branch_calls) == 0
+        # Verify squash WAS called (idempotent method handles single commit case)
+        assert len(graphite.squash_branch_calls) == 1
 
 
 def test_pr_sync_handles_submit_failure_gracefully(tmp_path: Path) -> None:

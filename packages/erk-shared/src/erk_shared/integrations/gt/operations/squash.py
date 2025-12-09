@@ -5,7 +5,6 @@ are 2 or more commits. If already a single commit, returns success with
 no operation performed.
 """
 
-import subprocess
 from collections.abc import Generator
 from pathlib import Path
 
@@ -31,11 +30,10 @@ def execute_squash(
     """
     repo_root = ops.git.get_repository_root(cwd)
 
-    # Step 1: Get trunk branch
+    # Step 1: Get trunk branch and count commits for progress reporting
     yield ProgressEvent("Detecting trunk branch...")
     trunk = ops.git.detect_trunk_branch(repo_root)
 
-    # Step 2: Count commits
     yield ProgressEvent(f"Counting commits ahead of {trunk}...")
     commit_count = ops.git.count_commits_ahead(cwd, trunk)
     if commit_count == 0:
@@ -48,52 +46,11 @@ def execute_squash(
         )
         return
 
-    # Step 3: If already single commit, return success with no-op
-    if commit_count == 1:
-        yield ProgressEvent("Already a single commit, no squash needed.", style="success")
-        yield CompletionEvent(
-            SquashSuccess(
-                success=True,
-                action="already_single_commit",
-                commit_count=1,
-                message="Already a single commit, no squash needed.",
-            )
-        )
-        return
-
-    # Step 4: Squash commits
+    # Step 2: Attempt squash using idempotent method
+    # This handles the case where git count differs from Graphite's view
     yield ProgressEvent(f"Squashing {commit_count} commits...")
-    try:
-        ops.graphite.squash_branch(repo_root, quiet=True)
-    except subprocess.CalledProcessError as e:
-        combined = (e.stdout if hasattr(e, "stdout") else "") + (
-            e.stderr if hasattr(e, "stderr") else ""
-        )
-        if "conflict" in combined.lower():
-            yield CompletionEvent(
-                SquashError(
-                    success=False,
-                    error="squash_conflict",
-                    message="Merge conflicts detected during squash.",
-                )
-            )
-            return
-        stderr = e.stderr if hasattr(e, "stderr") else ""
-        yield CompletionEvent(
-            SquashError(
-                success=False,
-                error="squash_failed",
-                message=f"Failed to squash: {stderr.strip()}",
-            )
-        )
-        return
+    result = ops.graphite.squash_branch_idempotent(repo_root, quiet=True)
 
-    yield ProgressEvent(f"Squashed {commit_count} commits into 1.", style="success")
-    yield CompletionEvent(
-        SquashSuccess(
-            success=True,
-            action="squashed",
-            commit_count=commit_count,
-            message=f"Squashed {commit_count} commits into 1.",
-        )
-    )
+    if result.success:
+        yield ProgressEvent(result.message, style="success")
+    yield CompletionEvent(result)

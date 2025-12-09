@@ -2,10 +2,14 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from erk_shared.git.abc import Git
 from erk_shared.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.integrations.graphite.types import BranchMetadata
+
+if TYPE_CHECKING:
+    from erk_shared.integrations.gt.types import SquashError, SquashSuccess
 
 
 class Graphite(ABC):
@@ -265,3 +269,78 @@ class Graphite(ABC):
             subprocess.CalledProcessError: If continue fails (e.g., unresolved conflicts)
         """
         ...
+
+    def squash_branch_idempotent(
+        self, repo_root: Path, *, quiet: bool = True
+    ) -> "SquashSuccess | SquashError":
+        """Squash commits idempotently - succeeds even if already single commit.
+
+        This is a convenience method that wraps squash_branch() and handles the
+        common case where git's commit count (against trunk) differs from
+        Graphite's view (against parent branch). When Graphite reports "nothing
+        to squash", this is treated as success rather than an error.
+
+        This composites the primitive squash_branch() operation with error
+        handling to provide a more ergonomic API for callers who don't need
+        to distinguish between "squashed N commits" and "already single commit".
+
+        Args:
+            repo_root: Repository root directory
+            quiet: If True, suppress output from gt squash
+
+        Returns:
+            SquashSuccess if squash succeeded or was unnecessary
+            SquashError if squash failed (conflict or other error)
+
+        Example:
+            >>> result = graphite.squash_branch_idempotent(repo_root)
+            >>> if result.success:
+            ...     print(result.message)  # "Squashed commits" or "Already single commit"
+            >>> else:
+            ...     print(f"Error: {result.message}")
+        """
+        import subprocess
+
+        # Import at runtime to avoid circular dependency
+        from erk_shared.integrations.gt.types import SquashError, SquashSuccess
+
+        try:
+            self.squash_branch(repo_root, quiet=quiet)
+            return SquashSuccess(
+                success=True,
+                action="squashed",
+                commit_count=1,  # After squash, always 1 commit
+                message="Squashed commits into 1.",
+            )
+        except (RuntimeError, subprocess.CalledProcessError) as e:
+            # Build error message from exception
+            # RuntimeError: from run_subprocess_with_context (real implementation)
+            # CalledProcessError: from FakeGraphite (test implementation)
+            if isinstance(e, subprocess.CalledProcessError):
+                error_msg = (
+                    (e.stderr if hasattr(e, "stderr") and e.stderr else "")
+                    + (e.stdout if hasattr(e, "stdout") and e.stdout else "")
+                ).lower()
+            else:
+                error_msg = str(e).lower()
+
+            # "nothing to squash" means Graphite sees only 1 commit.
+            # This is success - the branch is already in the desired state.
+            if "nothing to squash" in error_msg:
+                return SquashSuccess(
+                    success=True,
+                    action="already_single_commit",
+                    commit_count=1,
+                    message="Already a single commit, no squash needed.",
+                )
+            if "conflict" in error_msg:
+                return SquashError(
+                    success=False,
+                    error="squash_conflict",
+                    message="Merge conflicts detected during squash.",
+                )
+            return SquashError(
+                success=False,
+                error="squash_failed",
+                message=f"Failed to squash: {e}",
+            )
