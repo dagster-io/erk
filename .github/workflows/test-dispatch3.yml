@@ -1,0 +1,25 @@
+name: Test Dispatch 3
+run-name: "${{ inputs.issue_number }}:${{ inputs.distinct_id }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "GitHub issue number to implement"
+        required: true
+        type: string
+      distinct_id:
+        description: "Unique identifier for run discovery (base36)"
+        required: true
+        type: string
+
+concurrency:
+  group: implement-issue-${{ github.event.inputs.issue_number }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo inputs
+        run: echo "${{ inputs.issue_number }}"
