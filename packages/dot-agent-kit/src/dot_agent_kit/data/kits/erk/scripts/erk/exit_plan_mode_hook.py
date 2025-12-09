@@ -10,7 +10,7 @@ Exit codes:
     2: Block (plan exists, no skip marker - prompt user)
 
 This command is invoked via:
-    dot-agent kit-command erk exit-plan-mode-hook
+    erk kit exec erk exit-plan-mode-hook
 """
 
 import json

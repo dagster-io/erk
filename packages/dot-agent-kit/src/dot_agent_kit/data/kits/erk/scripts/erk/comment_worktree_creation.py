@@ -3,7 +3,7 @@
 This kit CLI command wraps add_worktree_creation_comment() for agent invocation.
 
 Usage:
-    dot-agent kit-command erk comment-worktree-creation <issue_number> <worktree_name> <branch_name>
+    erk kit exec erk comment-worktree-creation <issue_number> <worktree_name> <branch_name>
 
 Output:
     Silent on success (agent shows its own success message)
@@ -14,7 +14,7 @@ Exit Codes:
     1: Error (not in git repo, gh CLI failure, or issue not found)
 
 Examples:
-    $ dot-agent kit-command erk comment-worktree-creation 123 feature-name feature-branch
+    $ erk kit exec erk comment-worktree-creation 123 feature-name feature-branch
 """
 
 import click

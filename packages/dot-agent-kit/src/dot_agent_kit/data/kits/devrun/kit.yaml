@@ -22,6 +22,6 @@ hooks:
   - id: devrun-reminder-hook
     lifecycle: UserPromptSubmit
     matcher: "*"
-    invocation: dot-agent kit-command devrun devrun-reminder-hook
+    invocation: erk kit exec devrun devrun-reminder-hook
     description: Output devrun agent reminder on every prompt
     timeout: 30

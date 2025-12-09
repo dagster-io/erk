@@ -1,7 +1,7 @@
 """Convert plan title to filename.
 
 Usage:
-    dot-agent kit-command erk issue-title-to-filename "Plan Title"
+    erk kit exec erk issue-title-to-filename "Plan Title"
 
 Single source of truth for filename transformation across:
 - /erk:save-plan

@@ -345,11 +345,11 @@ def execute_assemble(plan_path: Path, discoveries_path: Path) -> None:
 **LLM's role (in command markdown):**
 
 ```markdown
-1. Call `dot-agent kit-command erk command discover`
+1. Call `erk kit exec erk command discover`
 2. Parse JSON output
 3. Analyze compressed_xml semantically
 4. Structure discoveries as JSON
-5. Call `dot-agent kit-command erk command assemble`
+5. Call `erk kit exec erk command assemble`
 6. Compose final output from returned data
 ```
 

@@ -13,6 +13,6 @@ hooks:
   - id: fake-driven-testing-reminder-hook
     lifecycle: UserPromptSubmit
     matcher: "*.py"
-    invocation: dot-agent kit-command fake-driven-testing fake-driven-testing-reminder-hook
+    invocation: erk kit exec fake-driven-testing fake-driven-testing-reminder-hook
     description: Output fake-driven-testing reminder when Python files are in context
     timeout: 30

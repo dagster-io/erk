@@ -50,13 +50,13 @@ There are two distinct types of commands in the kit system:
    - Expand to prompts when invoked
    - Example: `/gt:submit-branch`
 
-2. **Kit cli commands** - Python executables (`.py`) invoked via CLI with `dot-agent kit-command kit-id command-name`
+2. **Kit cli commands** - Python executables (`.py`) invoked via CLI with `erk kit exec kit-id command-name`
    - Stored in `kit_cli_commands/` directory within the kit
    - Listed in `kit.yaml` under `kit_cli_commands`
    - Defined in kit directories as Python scripts
    - Listed in `kit.yaml` under `kit_cli_commands`
    - Execute Python code directly
-   - Example: `dot-agent kit-command gt submit-branch`
+   - Example: `erk kit exec gt submit-branch`
 
 This distinction is important when creating kits and defining their capabilities in `kit.yaml`.
 
@@ -125,7 +125,7 @@ kit_cli_commands:
 - **Agents**: Discovered by filename (e.g., `agents/my-kit/helper.md` → invoked as "helper")
 - **Skills**: Discovered by directory name (e.g., `skills/my-kit/pytest/SKILL.md` → invoked as "pytest")
 - **Slash commands**: Discovered by filename (e.g., `commands/my-kit/build.md` → invoked as "/build")
-- **Kit cli commands**: Invoked via CLI (e.g., `dot-agent kit-command my-kit build` for command defined in `kit_cli_commands`)
+- **Kit cli commands**: Invoked via CLI (e.g., `erk kit exec my-kit build` for command defined in `kit_cli_commands`)
 
 The namespace directory (`my-kit/`) is **organizational only** - it doesn't become part of the invocation name.
 
@@ -366,7 +366,7 @@ To remove an artifact from a bundled kit:
 
 - File: `kit_cli_commands/{kit-name}/my_command.py`
 - Entry: `kit_cli_commands` list in kit.yaml
-- Invoked as: `dot-agent kit-command {kit-id} my-cli-command`
+- Invoked as: `erk kit exec {kit-id} my-cli-command`
 
 **Adding documentation:**
 

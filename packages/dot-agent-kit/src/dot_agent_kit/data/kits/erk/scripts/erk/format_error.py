@@ -4,7 +4,7 @@ This kit CLI command generates standardized error messages with brief descriptio
 details, and suggested actions.
 
 Usage:
-    dot-agent kit-command erk format-error \\
+    erk kit exec erk format-error \\
         --brief "Brief error description" \\
         --details "Detailed error message" \\
         --action "First action" \\
@@ -17,7 +17,7 @@ Exit Codes:
     0: Success
 
 Examples:
-    $ dot-agent kit-command erk format-error \\
+    $ erk kit exec erk format-error \\
         --brief "No plan found" \\
         --details "Could not find a valid implementation plan in conversation" \\
         --action "Ensure plan is in conversation" \\

@@ -10,7 +10,7 @@ $PLAN_CONTENT
 EOF
 
 # Create issue from file (command accepts raw content despite name)
-issue_url=$(dot-agent kit-command erk create-enriched-plan-from-context --plan-file "$tmpfile")
+issue_url=$(erk kit exec erk create-enriched-plan-from-context --plan-file "$tmpfile")
 exit_code=$?
 
 # Clean up temp file

@@ -27,6 +27,6 @@ hooks:
   - id: version-aware-reminder-hook
     lifecycle: UserPromptSubmit
     matcher: "*.py"
-    invocation: dot-agent kit-command dignified-python version-aware-reminder-hook
+    invocation: erk kit exec dignified-python version-aware-reminder-hook
     description: Output dignified-python compliance reminder when Python files are in context
     timeout: 30
