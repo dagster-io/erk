@@ -1,11 +1,18 @@
 """Automate Graphite restacking with intelligent conflict resolution.
 
-Delegates to the /erk:auto-restack slash command via Claude CLI.
+Fast path: If restack succeeds without conflicts, completes without Claude.
+Slow path: If conflicts detected, delegates to Claude for intelligent resolution.
 """
 
-from pathlib import Path
-
 import click
+from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.integrations.gt.operations.restack_finalize import execute_restack_finalize
+from erk_shared.integrations.gt.operations.restack_preflight import execute_restack_preflight
+from erk_shared.integrations.gt.types import (
+    RestackFinalizeError,
+    RestackPreflightError,
+    RestackPreflightSuccess,
+)
 
 from erk.cli.output import stream_auto_restack
 from erk.core.context import ErkContext
@@ -29,15 +36,53 @@ def pr_auto_restack(ctx: ErkContext) -> None:
       # Auto-restack with conflict resolution
       erk pr auto-restack
     """
-    executor = ctx.claude_executor
+    cwd = ctx.cwd
 
-    # Verify Claude is available
+    # Phase 1: Try fast path (preflight: squash + attempt restack)
+    preflight_result: RestackPreflightSuccess | RestackPreflightError | None = None
+    for event in execute_restack_preflight(ctx, cwd):
+        match event:
+            case ProgressEvent(message=msg):
+                click.echo(click.style(f"  {msg}", dim=True), err=True)
+            case CompletionEvent(result=result):
+                preflight_result = result
+
+    # Handle preflight errors
+    if isinstance(preflight_result, RestackPreflightError):
+        raise click.ClickException(preflight_result.message)
+
+    # Type guard: at this point preflight_result must be RestackPreflightSuccess
+    if preflight_result is None:
+        raise click.ClickException("Preflight operation did not complete")
+
+    # Fast path success: No conflicts
+    if not preflight_result.has_conflicts:
+        # Verify completion
+        for event in execute_restack_finalize(ctx, cwd):
+            match event:
+                case CompletionEvent(result=result):
+                    if isinstance(result, RestackFinalizeError):
+                        raise click.ClickException(result.message)
+
+        click.echo(click.style("Restack complete!", fg="green", bold=True))
+        return
+
+    # Slow path: Conflicts detected, invoke Claude
+    click.echo(
+        click.style(
+            f"Conflicts detected in {len(preflight_result.conflicts)} file(s). "
+            "Falling back to Claude...",
+            fg="yellow",
+        )
+    )
+
+    executor = ctx.claude_executor
     if not executor.is_claude_available():
         raise click.ClickException(
-            "Claude CLI not found\n\nInstall from: https://claude.com/download"
+            "Conflicts require Claude for resolution.\n\nInstall from: https://claude.com/download"
         )
 
-    result = stream_auto_restack(executor, Path.cwd())
+    result = stream_auto_restack(executor, cwd)
 
     if result.requires_interactive:
         raise click.ClickException("Semantic conflict requires interactive resolution")
