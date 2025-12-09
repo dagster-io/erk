@@ -37,7 +37,7 @@ from erk.cli.commands.objective.turn_cmd import turn_objective
 
 @click.group("objective")
 def objective_group() -> None:
-    """Manage objectives (plan factories for long-running goals)."""
+    """Manage objectives."""
     pass
 
 

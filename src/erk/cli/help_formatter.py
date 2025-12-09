@@ -74,6 +74,7 @@ class ErkCommandGroup(click.Group):
             "planner",
             "pr",
             "project",
+            "objective",
         ]
         top_level_plans = ["dash", "implement", "submit"]
         initialization = ["init"]
