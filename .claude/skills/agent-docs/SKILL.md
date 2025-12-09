@@ -219,7 +219,7 @@ Main session logs are `.jsonl` files that don't start with `agent-`. Agent
 subprocess logs use the `agent-<id>.jsonl` naming convention.
 
 To list sessions for a project, use:
-dot-agent run erk list-sessions
+erk kit exec erk list-sessions
 
 See `preprocess_session.py` for the canonical implementation.
 ```
@@ -318,7 +318,7 @@ The following files are **auto-generated** from frontmatter metadata:
 ### Workflow for Changes
 
 1. **Edit the source frontmatter** in the relevant documentation file(s)
-2. **Run sync**: `dot-agent docs sync`
+2. **Run sync**: `erk docs sync`
 3. **Verify changes** in the generated files
 4. **Commit both** the source and generated files
 
@@ -332,11 +332,11 @@ To add a tripwire rule:
      - action: "doing something dangerous"
        warning: "Do this instead."
    ```
-2. Run `dot-agent docs sync` to regenerate `tripwires.md`
+2. Run `erk docs sync` to regenerate `tripwires.md`
 
 ## Quick Reference
 
 - Full navigation: [docs/agent/guide.md](docs/agent/guide.md)
 - Category index: [docs/agent/index.md](docs/agent/index.md)
-- Regenerate indexes: `dot-agent docs sync`
+- Regenerate indexes: `erk docs sync`
 - Run validation: `make fast-ci`

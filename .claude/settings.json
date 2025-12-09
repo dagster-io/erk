@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dot-agent:*)",
+      "Bash(erk:*)",
       "Read(/tmp/*)",
       "Write(/tmp/*)"
     ],

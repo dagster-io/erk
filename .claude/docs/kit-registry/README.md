@@ -32,9 +32,9 @@ After this ONE-TIME edit, no further manual intervention is needed.
 
 The registry is automatically maintained by kit commands:
 
-- **`dot-agent kit install <kit-id>`**: Generates registry entry and adds @-include
-- **`dot-agent kit remove <kit-id>`**: Removes registry entry and @-include
-- **`dot-agent kit update <kit-id>`**: Regenerates registry entry with new version
+- **`erk kit install <kit-id>`**: Generates registry entry and adds @-include
+- **`erk kit remove <kit-id>`**: Removes registry entry and @-include
+- **`erk kit update <kit-id>`**: Regenerates registry entry with new version
 
 ### Registry Structure
 
@@ -79,32 +79,32 @@ Example:
 
 Manual registry management is available via CLI commands:
 
-### `dot-agent kit sync`
+### `erk kit sync`
 
 Sync all installed kits and rebuild the registry. Useful if:
 
 - Registry gets out of sync
-- Migrating from older dot-agent version
+- Migrating from older erk version
 - Recovering from manual edits
 
 ```bash
-dot-agent kit sync
+erk kit sync
 ```
 
-### `dot-agent kit registry show`
+### `erk kit registry show`
 
 Display the current registry contents:
 
 ```bash
-dot-agent kit registry show
+erk kit registry show
 ```
 
-### `dot-agent kit registry validate`
+### `erk kit registry validate`
 
 Verify registry matches installed kits:
 
 ```bash
-dot-agent kit registry validate
+erk kit registry validate
 ```
 
 Checks:
@@ -122,7 +122,7 @@ Checks:
 **Solution**: Run sync command to rebuild registry
 
 ```bash
-dot-agent kit sync
+erk kit sync
 ```
 
 ### Missing registry entry
@@ -133,10 +133,10 @@ dot-agent kit sync
 
 ```bash
 # Option 1: Sync all kits and rebuild registry
-dot-agent kit sync
+erk kit sync
 
 # Option 2: Reinstall specific kit
-dot-agent kit install <kit-id> --force
+erk kit install <kit-id> --force
 ```
 
 ### Registry file missing
@@ -146,7 +146,7 @@ dot-agent kit install <kit-id> --force
 **Solution**: Run sync command - it will create the file
 
 ```bash
-dot-agent kit sync
+erk kit sync
 ```
 
 ## Design Rationale

@@ -123,4 +123,4 @@ Category descriptions in `docs/agent/index.md` help agents understand when to ex
 ),
 ```
 
-After editing, run `dot-agent docs sync` to regenerate `docs/agent/index.md`.
+After editing, run `erk docs sync` to regenerate `docs/agent/index.md`.

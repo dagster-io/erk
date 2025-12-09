@@ -22,7 +22,7 @@ Documentation metadata lives in YAML frontmatter at the top of each source file.
 
 ## Generated Files
 
-The sync command (`dot-agent docs sync`) produces these files:
+The sync command (`erk docs sync`) produces these files:
 
 | File                             | Source                            | Purpose                                         |
 | -------------------------------- | --------------------------------- | ----------------------------------------------- |
@@ -34,7 +34,7 @@ All generated files include a banner warning against direct edits:
 
 ```markdown
 <!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
-<!-- Edit source frontmatter, then run 'dot-agent docs sync' to regenerate. -->
+<!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. -->
 ```
 
 ## Generation Pipeline

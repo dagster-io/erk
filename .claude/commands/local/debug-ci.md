@@ -76,7 +76,7 @@ Present the failure information clearly:
 ### docs-check / docs-sync-check
 
 **Error**: "Files out of sync: N change(s) needed"
-**Fix**: Run `uv run dot-agent docs sync` then commit
+**Fix**: Run `erk docs sync` then commit
 
 ### lint
 

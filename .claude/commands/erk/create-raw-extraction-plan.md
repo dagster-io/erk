@@ -13,7 +13,7 @@ Creates a GitHub issue containing raw preprocessed session data. Used by `erk pr
 Run session discovery:
 
 ```bash
-dot-agent run erk list-sessions --min-size 1024
+erk kit exec erk list-sessions --min-size 1024
 ```
 
 Parse the JSON output to get:
@@ -39,7 +39,7 @@ Use the same auto-selection logic as `/erk:create-extraction-plan`:
 For each selected session, run preprocessing:
 
 ```bash
-dot-agent run erk preprocess-session <project_dir>/<session_id>.jsonl --stdout
+erk kit exec erk preprocess-session <project_dir>/<session_id>.jsonl --stdout
 ```
 
 Capture the output XML. If multiple sessions, concatenate them with session ID headers.
@@ -57,7 +57,7 @@ Write the preprocessed session XML to a scratch file, then use the `render-sessi
 # Agent writes output to .erk/scratch/<session-id>/session-content.xml
 
 # Render session content blocks
-dot-agent run erk render-session-content \
+erk kit exec erk render-session-content \
     --session-file=.erk/scratch/<session-id>/session-content.xml \
     --session-label="<branch-name>" \
     --extraction-hints="Session data for future documentation extraction"
@@ -93,7 +93,7 @@ Before creating the issue, extract these values:
 **Create the issue:**
 
 ```bash
-dot-agent run erk create-extraction-plan \
+erk kit exec erk create-extraction-plan \
     --plan-content="<issue-body-content>" \
     --session-id="<current-session-id>" \
     --extraction-session-ids="<comma-separated-session-ids>"
@@ -171,7 +171,7 @@ gh issue comment <issue-number> --body "<comment-body>"
 After successfully creating the extraction issue, delete the pending extraction marker:
 
 ```bash
-dot-agent run erk marker-delete pending-extraction
+erk kit exec erk marker-delete pending-extraction
 ```
 
 This allows the user to delete the worktree without needing `--force`.

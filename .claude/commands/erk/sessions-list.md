@@ -28,7 +28,7 @@ Displays a table with:
 ### Step 1: Get Sessions List
 
 ```bash
-dot-agent run erk list-sessions
+erk kit exec erk list-sessions
 ```
 
 Parse the JSON output which contains:
