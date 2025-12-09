@@ -14,7 +14,7 @@ from unittest.mock import patch
 from click.testing import CliRunner
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import IssueInfo
-from erk_shared.github.types import GitHubRepoLocation, PullRequestInfo
+from erk_shared.github.types import CreatorFilter, GitHubRepoLocation, PullRequestInfo
 from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -53,7 +53,7 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
                 labels: list[str],
                 state: str | None = None,
                 limit: int | None = None,
-                creator: str | None = None,
+                creator: CreatorFilter | None = None,
             ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
                 nonlocal captured_repo_root
                 captured_repo_root = location.root

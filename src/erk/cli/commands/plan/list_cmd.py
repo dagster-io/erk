@@ -12,7 +12,13 @@ from erk_shared.github.metadata import (
     extract_plan_header_remote_impl_at,
     extract_plan_header_worktree_name,
 )
-from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
+from erk_shared.github.types import (
+    AllUsers,
+    CreatorFilter,
+    GitHubRepoId,
+    GitHubRepoLocation,
+    PullRequestInfo,
+)
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.integrations.browser.real import RealBrowserLauncher
 from erk_shared.integrations.clipboard.real import RealClipboard
@@ -229,12 +235,17 @@ def _build_plans_table(
     owner = repo.github.owner
     repo_name = repo.github.repo
 
-    # Determine creator filter: None for all users, authenticated username otherwise
-    creator: str | None = None
-    if not all_users:
+    # Determine creator filter: AllUsers for all users, authenticated username otherwise
+    creator: CreatorFilter
+    if all_users:
+        creator = AllUsers()
+    else:
         is_authenticated, username, _ = ctx.github.check_auth_status()
         if is_authenticated and username:
             creator = username
+        else:
+            # Fall back to all users if not authenticated
+            creator = AllUsers()
 
     # Use PlanListService for batched API calls
     # Skip workflow runs when not needed for better performance
@@ -552,12 +563,17 @@ def _run_interactive_mode(
     owner = repo.github.owner
     repo_name = repo.github.repo
 
-    # Determine creator filter: None for all users, authenticated username otherwise
-    creator: str | None = None
-    if not all_users:
+    # Determine creator filter: AllUsers for all users, authenticated username otherwise
+    creator: CreatorFilter
+    if all_users:
+        creator = AllUsers()
+    else:
         is_authenticated, username, _ = ctx.github.check_auth_status()
         if is_authenticated and username:
             creator = username
+        else:
+            # Fall back to all users if not authenticated
+            creator = AllUsers()
 
     # Build labels - default to ["erk-plan"]
     labels = label if label else ("erk-plan",)

@@ -9,6 +9,7 @@ from pathlib import Path
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
+    CreatorFilter,
     GitHubRepoLocation,
     PRDetails,
     PRNotFound,
@@ -463,7 +464,7 @@ class FakeGitHub(GitHub):
         labels: list[str],
         state: str | None = None,
         limit: int | None = None,
-        creator: str | None = None,
+        creator: CreatorFilter | None = None,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Get issues and PR linkages from pre-configured data.
 
@@ -475,13 +476,23 @@ class FakeGitHub(GitHub):
             labels: Labels to filter by
             state: Filter by state ("open", "closed", or None for OPEN default)
             limit: Maximum issues to return (default: all)
-            creator: Filter by creator username (e.g., "octocat")
+            creator: Filter by creator. Use:
+                - AllUsers(): Show all users' issues
+                - str: Filter to specific username
+                - None: Show all users (backward compat)
 
         Returns:
             Tuple of (filtered_issues, pr_linkages for those issues)
         """
         # Default to OPEN to match gh CLI behavior (gh issue list defaults to open)
         effective_state = state if state is not None else "open"
+
+        # Convert CreatorFilter to str | None for filtering
+        # AllUsers or None means no filter (show all users)
+        creator_username: str | None = None
+        if isinstance(creator, str):
+            creator_username = creator
+        # AllUsers() or None -> creator_username stays None (no filter)
 
         # Filter issues by labels, state, and creator
         filtered_issues = []
@@ -493,7 +504,7 @@ class FakeGitHub(GitHub):
             if issue.state.lower() != effective_state.lower():
                 continue
             # Check creator filter
-            if creator is not None and issue.author != creator:
+            if creator_username is not None and issue.author != creator_username:
                 continue
             filtered_issues.append(issue)
 
