@@ -32,6 +32,9 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
     def _get_project_dir(self, project_cwd: Path) -> Path | None:
         """Internal: Map cwd to Claude Code project directory.
 
+        First checks exact match, then walks up the directory tree
+        to find parent directories that have Claude projects.
+
         Args:
             project_cwd: Working directory to look up
 
@@ -42,14 +45,22 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
         if not projects_dir.exists():
             return None
 
-        # Encode path using Claude Code's scheme
-        encoded = str(project_cwd).replace("/", "-").replace(".", "-")
-        project_dir = projects_dir / encoded
+        current = project_cwd.resolve()
 
-        if not project_dir.exists():
-            return None
+        while True:
+            # Encode path using Claude Code's scheme
+            encoded = str(current).replace("/", "-").replace(".", "-")
+            project_dir = projects_dir / encoded
 
-        return project_dir
+            if project_dir.exists():
+                return project_dir
+
+            parent = current.parent
+            if parent == current:  # Hit filesystem root
+                break
+            current = parent
+
+        return None
 
     def has_project(self, project_cwd: Path) -> bool:
         """Check if a Claude Code project exists for the given working directory."""

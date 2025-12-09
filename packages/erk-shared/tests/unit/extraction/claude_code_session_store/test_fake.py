@@ -37,11 +37,46 @@ class TestFakeClaudeCodeSessionStore:
         store = FakeClaudeCodeSessionStore()
         assert store.has_project(Path("/nonexistent")) is False
 
+    def test_has_project_finds_parent_project(self) -> None:
+        """Walk-up finds project in parent directory."""
+        parent = Path("/code/repo")
+        child = Path("/code/repo/packages/foo")
+
+        store = FakeClaudeCodeSessionStore(projects={parent: FakeProject(sessions={})})
+
+        assert store.has_project(parent) is True
+        assert store.has_project(child) is True  # Finds parent
+
+    def test_has_project_returns_false_when_no_ancestor_project(self) -> None:
+        """Returns False when no project at or above path."""
+        store = FakeClaudeCodeSessionStore(projects={Path("/other/repo"): FakeProject(sessions={})})
+
+        assert store.has_project(Path("/code/repo")) is False
+
     def test_find_sessions_returns_empty_for_missing_project(self) -> None:
         """Test find_sessions returns empty list for unconfigured project."""
         store = FakeClaudeCodeSessionStore()
         sessions = store.find_sessions(Path("/nonexistent"))
         assert sessions == []
+
+    def test_find_sessions_from_subdirectory(self) -> None:
+        """Sessions found when querying from subdirectory."""
+        parent = Path("/code/repo")
+        child = Path("/code/repo/src/lib")
+
+        store = FakeClaudeCodeSessionStore(
+            projects={
+                parent: FakeProject(
+                    sessions={
+                        "abc123": FakeSessionData(content="...", size_bytes=100, modified_at=1000.0)
+                    }
+                )
+            }
+        )
+
+        sessions = store.find_sessions(child)
+        assert len(sessions) == 1
+        assert sessions[0].session_id == "abc123"
 
     def test_find_sessions_returns_sessions_sorted_by_modified_at(self) -> None:
         """Test sessions are sorted newest first."""
@@ -161,6 +196,30 @@ class TestFakeClaudeCodeSessionStore:
         store = FakeClaudeCodeSessionStore()
         result = store.read_session(Path("/nonexistent"), "any-id")
         assert result is None
+
+    def test_read_session_from_subdirectory(self) -> None:
+        """Session read when querying from subdirectory."""
+        parent = Path("/code/repo")
+        child = Path("/code/repo/src/lib")
+        main_content = '{"type": "user", "message": "Hello"}\n'
+
+        store = FakeClaudeCodeSessionStore(
+            projects={
+                parent: FakeProject(
+                    sessions={
+                        "test-session": FakeSessionData(
+                            content=main_content,
+                            size_bytes=100,
+                            modified_at=1000.0,
+                        )
+                    }
+                )
+            }
+        )
+
+        result = store.read_session(child, "test-session")
+        assert result is not None
+        assert result.main_content == main_content
 
     def test_read_session_returns_none_for_missing_session(self) -> None:
         """Test read_session returns None for unconfigured session."""

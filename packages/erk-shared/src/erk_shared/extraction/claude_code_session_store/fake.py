@@ -56,9 +56,27 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
         """Return the configured current session ID."""
         return self._current_session_id
 
+    def _find_project_for_path(self, project_cwd: Path) -> Path | None:
+        """Find project at or above the given path.
+
+        Walks up the directory tree to find a matching project.
+        """
+        current = project_cwd.resolve()
+
+        while True:
+            if current in self._projects:
+                return current
+
+            parent = current.parent
+            if parent == current:  # Hit filesystem root
+                break
+            current = parent
+
+        return None
+
     def has_project(self, project_cwd: Path) -> bool:
-        """Check if project exists in fake data."""
-        return project_cwd in self._projects
+        """Check if project exists at or above the given path."""
+        return self._find_project_for_path(project_cwd) is not None
 
     def find_sessions(
         self,
@@ -71,10 +89,11 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
 
         Returns sessions sorted by modified_at descending (newest first).
         """
-        if project_cwd not in self._projects:
+        project_path = self._find_project_for_path(project_cwd)
+        if project_path is None:
             return []
 
-        project = self._projects[project_cwd]
+        project = self._projects[project_path]
 
         # Filter and collect sessions
         session_list: list[tuple[str, FakeSessionData]] = []
@@ -108,10 +127,11 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
         include_agents: bool = True,
     ) -> SessionContent | None:
         """Read session content from fake data."""
-        if project_cwd not in self._projects:
+        project_path = self._find_project_for_path(project_cwd)
+        if project_path is None:
             return None
 
-        project = self._projects[project_cwd]
+        project = self._projects[project_path]
         if session_id not in project.sessions:
             return None
 
