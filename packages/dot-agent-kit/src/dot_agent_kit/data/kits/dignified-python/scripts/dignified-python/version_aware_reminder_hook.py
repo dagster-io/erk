@@ -10,8 +10,11 @@ import sys
 
 import click
 
+from dot_agent_kit.hooks.decorators import project_scoped
+
 
 @click.command()
+@project_scoped
 def version_aware_reminder_hook() -> None:
     """Output dignified-python compliance reminder with detected Python version."""
     # Detect Python version from runtime

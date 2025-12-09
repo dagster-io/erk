@@ -16,7 +16,8 @@ def test_no_session_id_allows_exit() -> None:
     """Test when no session ID is provided (no stdin)."""
     runner = CliRunner()
 
-    result = runner.invoke(exit_plan_mode_hook)
+    with patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True):
+        result = runner.invoke(exit_plan_mode_hook)
 
     # No session ID means exit 0 (allow exit)
     assert result.exit_code == 0
@@ -37,7 +38,10 @@ def test_skip_marker_present_deletes_and_allows(tmp_path: Path) -> None:
     mock_git_result = MagicMock()
     mock_git_result.stdout = str(tmp_path) + "\n"
 
-    with patch("subprocess.run", return_value=mock_git_result):
+    with (
+        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
+        patch("subprocess.run", return_value=mock_git_result),
+    ):
         stdin_data = json.dumps({"session_id": session_id})
         result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
 
@@ -64,7 +68,10 @@ def test_saved_marker_present_blocks_to_prevent_plan_dialog(
     mock_git_result = MagicMock()
     mock_git_result.stdout = str(tmp_path) + "\n"
 
-    with patch("subprocess.run", return_value=mock_git_result):
+    with (
+        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
+        patch("subprocess.run", return_value=mock_git_result),
+    ):
         stdin_data = json.dumps({"session_id": session_id})
         result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
 
@@ -93,7 +100,10 @@ def test_skip_marker_takes_precedence_over_saved_marker(tmp_path: Path) -> None:
     mock_git_result = MagicMock()
     mock_git_result.stdout = str(tmp_path) + "\n"
 
-    with patch("subprocess.run", return_value=mock_git_result):
+    with (
+        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
+        patch("subprocess.run", return_value=mock_git_result),
+    ):
         stdin_data = json.dumps({"session_id": session_id})
         result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
 
@@ -122,6 +132,7 @@ def test_plan_exists_no_marker_blocks(tmp_path: Path) -> None:
 
     # Mock extract_slugs_from_session to return our slug
     with (
+        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
         patch("subprocess.run", return_value=mock_git_result),
         patch(
             "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
@@ -162,6 +173,7 @@ def test_no_plan_allows_exit(tmp_path: Path) -> None:
 
     # Mock extract_slugs_from_session to return empty (no plan)
     with (
+        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
         patch("subprocess.run", return_value=mock_git_result),
         patch(
             "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
@@ -191,6 +203,7 @@ def test_git_not_in_repo_allows_plan_check(tmp_path: Path) -> None:
 
     # Mock extract_slugs_from_session to return our slug
     with (
+        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
         patch("subprocess.run", side_effect=mock_git_error),
         patch(
             "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
@@ -210,7 +223,8 @@ def test_invalid_json_stdin_allows_exit() -> None:
     """Test when stdin contains invalid JSON."""
     runner = CliRunner()
 
-    result = runner.invoke(exit_plan_mode_hook, input="not valid json")
+    with patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True):
+        result = runner.invoke(exit_plan_mode_hook, input="not valid json")
 
     # Invalid JSON means exit 0 (allow exit)
     assert result.exit_code == 0
@@ -221,7 +235,8 @@ def test_stdin_missing_session_id_key_allows_exit() -> None:
     runner = CliRunner()
 
     stdin_data = json.dumps({"other_key": "value"})
-    result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
+    with patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True):
+        result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
 
     assert result.exit_code == 0
     assert "No session context available" in result.output
@@ -239,6 +254,7 @@ def test_plans_dir_not_exists_allows_exit(tmp_path: Path) -> None:
     mock_git_result.stdout = str(tmp_path) + "\n"
 
     with (
+        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
         patch("subprocess.run", return_value=mock_git_result),
         patch("pathlib.Path.home", return_value=tmp_path),
     ):
@@ -264,6 +280,7 @@ def test_slug_exists_but_plan_file_missing(tmp_path: Path) -> None:
 
     # Mock extract_slugs_from_session to return a slug, but plan file won't exist
     with (
+        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
         patch("subprocess.run", return_value=mock_git_result),
         patch(
             "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
