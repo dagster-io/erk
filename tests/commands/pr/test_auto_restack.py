@@ -2,6 +2,7 @@
 
 from click.testing import CliRunner
 from erk_shared.git.fake import FakeGit
+from erk_shared.integrations.graphite.fake import FakeGraphite
 
 from erk.cli.commands.pr import pr_group
 from tests.fakes.claude_executor import FakeClaudeExecutor
@@ -10,50 +11,64 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
 def test_pr_auto_restack_success() -> None:
-    """Test successful auto-restack."""
+    """Test successful auto-restack via fast path (no conflicts)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
             default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "feature-branch"},
+            commits_ahead={(env.cwd, "main"): 1},  # Has commits to restack
+            rebase_in_progress=False,  # No conflicts
         )
 
+        graphite = FakeGraphite()
         claude_executor = FakeClaudeExecutor(claude_available=True)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(
+            env, git=git, graphite=graphite, claude_executor=claude_executor
+        )
 
         result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Restack complete!" in result.output
 
-        # Verify the slash command was called
-        assert len(claude_executor.executed_commands) == 1
-        command, _, dangerous, _ = claude_executor.executed_commands[0]
-        assert command == "/erk:auto-restack"
-        assert dangerous is True  # Restack modifies git state
+        # Fast path: Claude should NOT be invoked (no conflicts)
+        assert len(claude_executor.executed_commands) == 0
+
+        # Graphite restack should have been called
+        assert len(graphite.restack_calls) == 1
 
 
 def test_pr_auto_restack_fails_when_claude_not_available() -> None:
-    """Test that command fails when Claude CLI is not available."""
+    """Test that command fails when Claude CLI is not available and conflicts exist."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
+            local_branches={env.cwd: ["main", "feature-branch"]},
             default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            commits_ahead={(env.cwd, "main"): 1},  # Has commits to restack
+            rebase_in_progress=True,  # Conflicts detected
+            conflicted_files=["src/file.py"],
         )
 
+        graphite = FakeGraphite()
         claude_executor = FakeClaudeExecutor(claude_available=False)
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(
+            env, git=git, graphite=graphite, claude_executor=claude_executor
+        )
 
         result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
 
         assert result.exit_code != 0
-        assert "Claude CLI not found" in result.output
+        assert "Conflicts require Claude" in result.output
         assert "claude.com/download" in result.output
 
         # Verify no command was executed
@@ -68,15 +83,22 @@ def test_pr_auto_restack_fails_on_command_error() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
             default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "feature-branch"},
+            commits_ahead={(env.cwd, "main"): 1},  # Has commits to restack
+            rebase_in_progress=True,  # Conflicts detected
+            conflicted_files=["src/file.py"],
         )
 
+        graphite = FakeGraphite()
         claude_executor = FakeClaudeExecutor(
             claude_available=True,
             command_should_fail=True,
         )
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(
+            env, git=git, graphite=graphite, claude_executor=claude_executor
+        )
 
         result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
 
@@ -93,16 +115,23 @@ def test_pr_auto_restack_aborts_on_semantic_conflict() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature-branch"]},
             default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "feature-branch"},
+            commits_ahead={(env.cwd, "main"): 1},  # Has commits to restack
+            rebase_in_progress=True,  # Conflicts detected
+            conflicted_files=["src/file.py"],
         )
 
+        graphite = FakeGraphite()
         # Simulate Claude using AskUserQuestion tool (semantic conflict)
         claude_executor = FakeClaudeExecutor(
             claude_available=True,
             simulated_tool_events=["Using AskUserQuestion..."],
         )
 
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
+        ctx = build_workspace_test_context(
+            env, git=git, graphite=graphite, claude_executor=claude_executor
+        )
 
         result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
 
@@ -111,3 +140,68 @@ def test_pr_auto_restack_aborts_on_semantic_conflict() -> None:
         assert "Semantic conflict detected" in result.output
         assert "interactive resolution" in result.output
         assert "claude /erk:auto-restack" in result.output
+
+
+def test_pr_auto_restack_fallback_on_conflicts() -> None:
+    """Test fallback: conflicts detected, Claude IS invoked."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            commits_ahead={(env.cwd, "main"): 1},  # Single commit, no squash needed
+            rebase_in_progress=True,  # Conflicts detected
+            conflicted_files=["src/file.py"],
+        )
+
+        graphite = FakeGraphite()
+        claude_executor = FakeClaudeExecutor(claude_available=True)
+
+        ctx = build_workspace_test_context(
+            env, git=git, graphite=graphite, claude_executor=claude_executor
+        )
+
+        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+
+        # Claude handles it, so should succeed
+        assert result.exit_code == 0
+        assert "Restack complete!" in result.output
+
+        # Fallback path: Claude SHOULD be invoked
+        assert len(claude_executor.executed_commands) == 1
+        command, _, dangerous, _ = claude_executor.executed_commands[0]
+        assert command == "/erk:auto-restack"
+        assert dangerous is True
+
+
+def test_pr_auto_restack_preflight_error() -> None:
+    """Test preflight error: error reported, Claude NOT invoked."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            commits_ahead={(env.cwd, "main"): 0},  # No commits - this should error
+        )
+
+        graphite = FakeGraphite()
+        claude_executor = FakeClaudeExecutor(claude_available=True)
+
+        ctx = build_workspace_test_context(
+            env, git=git, graphite=graphite, claude_executor=claude_executor
+        )
+
+        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+
+        # Preflight error
+        assert result.exit_code != 0
+        assert "No commits found" in result.output
+
+        # Preflight error: Claude should NOT be invoked
+        assert len(claude_executor.executed_commands) == 0
