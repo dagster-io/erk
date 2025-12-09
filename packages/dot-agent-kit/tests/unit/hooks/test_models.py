@@ -16,7 +16,7 @@ class TestHookEntry:
 
     def test_create_valid_entry(self) -> None:
         """Test creating valid hook entry."""
-        cmd = 'DOT_AGENT_KIT_ID=test-kit DOT_AGENT_HOOK_ID=test-hook python3 "/path/to/script.py"'
+        cmd = 'ERK_KIT_ID=test-kit ERK_HOOK_ID=test-hook python3 "/path/to/script.py"'
         entry = HookEntry(command=cmd, timeout=30)
         assert entry.command == cmd
         assert entry.timeout == 30
@@ -43,7 +43,7 @@ class TestMatcherGroup:
 
     def test_create_valid_group(self) -> None:
         """Test creating valid matcher group."""
-        cmd = "DOT_AGENT_KIT_ID=test-kit DOT_AGENT_HOOK_ID=test-hook python3 script.py"
+        cmd = "ERK_KIT_ID=test-kit ERK_HOOK_ID=test-hook python3 script.py"
         entry = HookEntry(command=cmd, timeout=30)
         group = MatcherGroup(matcher="**", hooks=[entry])
         assert group.matcher == "**"
@@ -73,7 +73,7 @@ class TestClaudeSettings:
 
     def test_create_with_hooks(self) -> None:
         """Test creating settings with hooks."""
-        cmd = "DOT_AGENT_KIT_ID=test-kit DOT_AGENT_HOOK_ID=test-hook python3 script.py"
+        cmd = "ERK_KIT_ID=test-kit ERK_HOOK_ID=test-hook python3 script.py"
         entry = HookEntry(command=cmd, timeout=30)
         group = MatcherGroup(matcher="**", hooks=[entry])
         settings = ClaudeSettings(hooks={"UserPromptSubmit": [group]})

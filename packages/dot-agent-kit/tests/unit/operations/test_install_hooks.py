@@ -87,7 +87,7 @@ def test_install_kit_installs_hooks(tmp_path: Path) -> None:
                 kit_id = extract_kit_id_from_command(hook_entry.command)
                 if kit_id == "test-kit":
                     # Verify hook ID is in command
-                    assert "DOT_AGENT_HOOK_ID=test-hook" in hook_entry.command
+                    assert "ERK_HOOK_ID=test-hook" in hook_entry.command
                     assert hook_entry.timeout == 30
                     found_hook = True
                     break
@@ -238,7 +238,7 @@ def test_install_kit_replaces_old_hooks_on_reinstall(tmp_path: Path) -> None:
                     # Extract hook ID
                     import re
 
-                    match = re.search(r"DOT_AGENT_HOOK_ID=(\S+)", hook_entry.command)
+                    match = re.search(r"ERK_HOOK_ID=(\S+)", hook_entry.command)
                     if match:
                         hook_ids.append(match.group(1))
 

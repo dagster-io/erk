@@ -132,7 +132,7 @@ def assert_hook_installed(
                 if entry_kit_id == kit_id:
                     import re
 
-                    hook_id_match = re.search(r"DOT_AGENT_HOOK_ID=(\S+)", hook_entry.command)
+                    hook_id_match = re.search(r"ERK_HOOK_ID=(\S+)", hook_entry.command)
                     entry_hook_id = hook_id_match.group(1) if hook_id_match else None
                     if entry_hook_id == hook_id:
                         found = True
@@ -405,7 +405,7 @@ class TestInstallCommandWithHooks:
                         if entry_kit_id == "versioned-kit":
                             import re
 
-                            pattern = r"DOT_AGENT_HOOK_ID=(\S+)"
+                            pattern = r"ERK_HOOK_ID=(\S+)"
                             hook_id_match = re.search(pattern, hook_entry.command)
                             if hook_id_match:
                                 all_hook_ids.append(hook_id_match.group(1))

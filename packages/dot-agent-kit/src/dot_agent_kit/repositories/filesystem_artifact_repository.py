@@ -187,7 +187,7 @@ class FilesystemArtifactRepository(ArtifactRepository):
                     # Managed hook with kit metadata
                     import re
 
-                    hook_id_match = re.search(r"DOT_AGENT_HOOK_ID=(\S+)", entry.command)
+                    hook_id_match = re.search(r"ERK_HOOK_ID=(\S+)", entry.command)
                     entry_hook_id = hook_id_match.group(1) if hook_id_match else "unknown"
                     hook_name = f"{entry_kit_id}:{entry_hook_id}"
                     kit_id = entry_kit_id
@@ -477,7 +477,7 @@ class FilesystemArtifactRepository(ArtifactRepository):
                 # Managed hook with kit metadata
                 import re
 
-                hook_id_match = re.search(r"DOT_AGENT_HOOK_ID=(\S+)", entry.command)
+                hook_id_match = re.search(r"ERK_HOOK_ID=(\S+)", entry.command)
                 entry_hook_id = hook_id_match.group(1) if hook_id_match else "unknown"
                 hook_name = f"{entry_kit_id}:{entry_hook_id}"
                 kit_id = entry_kit_id

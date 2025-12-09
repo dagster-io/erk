@@ -5,17 +5,17 @@ from dot_agent_kit.hooks.models import ClaudeSettings, HookDefinition, HookEntry
 
 
 def test_extract_hooks_extracts_hook_id_from_command() -> None:
-    """Test that hook ID is correctly extracted from DOT_AGENT_HOOK_ID env var.
+    """Test that hook ID is correctly extracted from ERK_HOOK_ID env var.
 
     This is a regression test for the bug where _extract_hooks_for_kit would
     use kit_id as fallback instead of extracting the actual hook ID from the
-    DOT_AGENT_HOOK_ID environment variable in the command string.
+    ERK_HOOK_ID environment variable in the command string.
     """
-    # Setup: Create settings with a hook that has DOT_AGENT_HOOK_ID
+    # Setup: Create settings with a hook that has ERK_HOOK_ID
     hook_entry = HookEntry(
         type="command",
         command=(
-            "DOT_AGENT_KIT_ID=my-kit DOT_AGENT_HOOK_ID=my-hook "
+            "ERK_KIT_ID=my-kit ERK_HOOK_ID=my-hook "
             'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/my-kit/script.py"'
         ),
         timeout=30,
@@ -52,24 +52,22 @@ def test_extract_hooks_extracts_hook_id_from_command() -> None:
     assert len(extracted_hooks) == 1, "Should extract one hook"
     assert extracted_hooks[0].hook_id == "my-hook", (
         f"Expected hook_id 'my-hook', got '{extracted_hooks[0].hook_id}'. "
-        "Hook ID should be extracted from DOT_AGENT_HOOK_ID env var, not fallback to kit_id"
+        "Hook ID should be extracted from ERK_HOOK_ID env var, not fallback to kit_id"
     )
     assert extracted_hooks[0].lifecycle == "UserPromptSubmit"
     assert extracted_hooks[0].timeout == 30
 
 
 def test_extract_hooks_fails_without_hook_id() -> None:
-    """Test that extraction fails hard when DOT_AGENT_HOOK_ID is missing.
+    """Test that extraction fails hard when ERK_HOOK_ID is missing.
 
-    Old format commands that don't have DOT_AGENT_HOOK_ID should cause an error,
+    Old format commands that don't have ERK_HOOK_ID should cause an error,
     not silently fall back to using kit_id as hook_id.
     """
-    # Setup: Create settings with old format (no DOT_AGENT_HOOK_ID)
+    # Setup: Create settings with old format (no ERK_HOOK_ID)
     hook_entry = HookEntry(
         type="command",
-        command=(
-            'DOT_AGENT_KIT_ID=my-kit python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/my-kit/script.py"'
-        ),
+        command=('ERK_KIT_ID=my-kit python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/my-kit/script.py"'),
         timeout=30,
     )
 
@@ -88,9 +86,9 @@ def test_extract_hooks_fails_without_hook_id() -> None:
     # Execute & Verify: Should raise ValueError for old format
     try:
         _extract_hooks_for_kit(settings, "my-kit", [])
-        raise AssertionError("Should have raised ValueError for missing DOT_AGENT_HOOK_ID")
+        raise AssertionError("Should have raised ValueError for missing ERK_HOOK_ID")
     except ValueError as e:
-        assert "DOT_AGENT_HOOK_ID" in str(e), "Error should mention missing DOT_AGENT_HOOK_ID"
+        assert "ERK_HOOK_ID" in str(e), "Error should mention missing ERK_HOOK_ID"
 
 
 def test_extract_hooks_handles_multiple_hooks_for_same_kit() -> None:
@@ -99,7 +97,7 @@ def test_extract_hooks_handles_multiple_hooks_for_same_kit() -> None:
     hook1 = HookEntry(
         type="command",
         command=(
-            "DOT_AGENT_KIT_ID=my-kit DOT_AGENT_HOOK_ID=hook-1 "
+            "ERK_KIT_ID=my-kit ERK_HOOK_ID=hook-1 "
             'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/my-kit/h1.py"'
         ),
         timeout=30,
@@ -107,7 +105,7 @@ def test_extract_hooks_handles_multiple_hooks_for_same_kit() -> None:
     hook2 = HookEntry(
         type="command",
         command=(
-            "DOT_AGENT_KIT_ID=my-kit DOT_AGENT_HOOK_ID=hook-2 "
+            "ERK_KIT_ID=my-kit ERK_HOOK_ID=hook-2 "
             'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/my-kit/h2.py"'
         ),
         timeout=60,
@@ -161,7 +159,7 @@ def test_extract_hooks_ignores_other_kits() -> None:
     hook1 = HookEntry(
         type="command",
         command=(
-            "DOT_AGENT_KIT_ID=kit-a DOT_AGENT_HOOK_ID=hook-a "
+            "ERK_KIT_ID=kit-a ERK_HOOK_ID=hook-a "
             'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/kit-a/script.py"'
         ),
         timeout=30,
@@ -169,7 +167,7 @@ def test_extract_hooks_ignores_other_kits() -> None:
     hook2 = HookEntry(
         type="command",
         command=(
-            "DOT_AGENT_KIT_ID=kit-b DOT_AGENT_HOOK_ID=hook-b "
+            "ERK_KIT_ID=kit-b ERK_HOOK_ID=hook-b "
             'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/kit-b/script.py"'
         ),
         timeout=30,

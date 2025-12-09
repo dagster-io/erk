@@ -51,8 +51,8 @@ class TestLoadSettings:
                             "hooks": [
                                 {
                                     "command": (
-                                        "DOT_AGENT_KIT_ID=test-kit "
-                                        "DOT_AGENT_HOOK_ID=test-hook python3 script.py"
+                                        "ERK_KIT_ID=test-kit "
+                                        "ERK_HOOK_ID=test-hook python3 script.py"
                                     ),
                                     "timeout": 30,
                                 }
@@ -121,7 +121,7 @@ class TestAddHookToSettings:
     def test_add_to_empty_settings(self) -> None:
         """Test adding hook to empty settings."""
         settings = ClaudeSettings()
-        cmd = "DOT_AGENT_KIT_ID=test-kit DOT_AGENT_HOOK_ID=test-hook python3 script.py"
+        cmd = "ERK_KIT_ID=test-kit ERK_HOOK_ID=test-hook python3 script.py"
         entry = HookEntry(command=cmd, timeout=30)
 
         new_settings = add_hook_to_settings(settings, "UserPromptSubmit", "**", entry)
@@ -133,12 +133,12 @@ class TestAddHookToSettings:
 
     def test_add_to_existing_matcher(self) -> None:
         """Test adding hook to existing matcher group."""
-        cmd1 = "DOT_AGENT_KIT_ID=kit1 DOT_AGENT_HOOK_ID=hook1 python3 script1.py"
+        cmd1 = "ERK_KIT_ID=kit1 ERK_HOOK_ID=hook1 python3 script1.py"
         entry1 = HookEntry(command=cmd1, timeout=30)
         group = MatcherGroup(matcher="**", hooks=[entry1])
         settings = ClaudeSettings(hooks={"UserPromptSubmit": [group]})
 
-        cmd2 = "DOT_AGENT_KIT_ID=kit2 DOT_AGENT_HOOK_ID=hook2 python3 script2.py"
+        cmd2 = "ERK_KIT_ID=kit2 ERK_HOOK_ID=hook2 python3 script2.py"
         entry2 = HookEntry(command=cmd2, timeout=30)
 
         new_settings = add_hook_to_settings(settings, "UserPromptSubmit", "**", entry2)
@@ -149,12 +149,12 @@ class TestAddHookToSettings:
 
     def test_add_new_matcher_to_lifecycle(self) -> None:
         """Test adding hook with new matcher to existing lifecycle."""
-        cmd1 = "DOT_AGENT_KIT_ID=kit1 DOT_AGENT_HOOK_ID=hook1 python3 script1.py"
+        cmd1 = "ERK_KIT_ID=kit1 ERK_HOOK_ID=hook1 python3 script1.py"
         entry1 = HookEntry(command=cmd1, timeout=30)
         group = MatcherGroup(matcher="**", hooks=[entry1])
         settings = ClaudeSettings(hooks={"UserPromptSubmit": [group]})
 
-        cmd2 = "DOT_AGENT_KIT_ID=kit2 DOT_AGENT_HOOK_ID=hook2 python3 script2.py"
+        cmd2 = "ERK_KIT_ID=kit2 ERK_HOOK_ID=hook2 python3 script2.py"
         entry2 = HookEntry(command=cmd2, timeout=30)
 
         new_settings = add_hook_to_settings(settings, "UserPromptSubmit", "*.py", entry2)
@@ -175,7 +175,7 @@ class TestRemoveHooksByKit:
 
     def test_remove_all_hooks_for_kit(self) -> None:
         """Test removing all hooks for a kit."""
-        cmd = "DOT_AGENT_KIT_ID=test-kit DOT_AGENT_HOOK_ID=hook1 python3 script.py"
+        cmd = "ERK_KIT_ID=test-kit ERK_HOOK_ID=hook1 python3 script.py"
         entry = HookEntry(command=cmd, timeout=30)
         group = MatcherGroup(matcher="**", hooks=[entry])
         settings = ClaudeSettings(hooks={"UserPromptSubmit": [group]})
@@ -187,8 +187,8 @@ class TestRemoveHooksByKit:
 
     def test_remove_partial_hooks(self) -> None:
         """Test removing some hooks but not all."""
-        cmd1 = "DOT_AGENT_KIT_ID=kit1 DOT_AGENT_HOOK_ID=hook1 python3 script1.py"
-        cmd2 = "DOT_AGENT_KIT_ID=kit2 DOT_AGENT_HOOK_ID=hook2 python3 script2.py"
+        cmd1 = "ERK_KIT_ID=kit1 ERK_HOOK_ID=hook1 python3 script1.py"
+        cmd2 = "ERK_KIT_ID=kit2 ERK_HOOK_ID=hook2 python3 script2.py"
         entry1 = HookEntry(command=cmd1, timeout=30)
         entry2 = HookEntry(command=cmd2, timeout=30)
         group = MatcherGroup(matcher="**", hooks=[entry1, entry2])
@@ -212,7 +212,7 @@ class TestGetAllHooks:
 
     def test_get_all_hooks(self) -> None:
         """Test getting all hooks."""
-        cmd = "DOT_AGENT_KIT_ID=test-kit DOT_AGENT_HOOK_ID=test-hook python3 script.py"
+        cmd = "ERK_KIT_ID=test-kit ERK_HOOK_ID=test-hook python3 script.py"
         entry = HookEntry(command=cmd, timeout=30)
         group = MatcherGroup(matcher="**", hooks=[entry])
         settings = ClaudeSettings(hooks={"UserPromptSubmit": [group]})
@@ -223,7 +223,7 @@ class TestGetAllHooks:
         lifecycle, matcher, hook_entry = hooks[0]
         assert lifecycle == "UserPromptSubmit"
         assert matcher == "**"
-        assert "DOT_AGENT_KIT_ID=test-kit" in hook_entry.command
+        assert "ERK_KIT_ID=test-kit" in hook_entry.command
 
 
 class TestMergeMatcherGroups:
@@ -236,7 +236,7 @@ class TestMergeMatcherGroups:
 
     def test_merge_no_duplicates(self) -> None:
         """Test merging when no duplicates exist."""
-        cmd = "DOT_AGENT_KIT_ID=test-kit DOT_AGENT_HOOK_ID=test-hook python3 script.py"
+        cmd = "ERK_KIT_ID=test-kit ERK_HOOK_ID=test-hook python3 script.py"
         entry = HookEntry(command=cmd, timeout=30)
         group1 = MatcherGroup(matcher="**", hooks=[entry])
         group2 = MatcherGroup(matcher="*.py", hooks=[entry])
@@ -247,8 +247,8 @@ class TestMergeMatcherGroups:
 
     def test_merge_duplicates(self) -> None:
         """Test merging duplicate matchers."""
-        cmd1 = "DOT_AGENT_KIT_ID=kit1 DOT_AGENT_HOOK_ID=hook1 python3 script1.py"
-        cmd2 = "DOT_AGENT_KIT_ID=kit2 DOT_AGENT_HOOK_ID=hook2 python3 script2.py"
+        cmd1 = "ERK_KIT_ID=kit1 ERK_HOOK_ID=hook1 python3 script1.py"
+        cmd2 = "ERK_KIT_ID=kit2 ERK_HOOK_ID=hook2 python3 script2.py"
         entry1 = HookEntry(command=cmd1, timeout=30)
         entry2 = HookEntry(command=cmd2, timeout=30)
 
@@ -262,7 +262,7 @@ class TestMergeMatcherGroups:
 
     def test_preserves_order(self) -> None:
         """Test that first occurrence order is preserved."""
-        cmd = "DOT_AGENT_KIT_ID=test-kit DOT_AGENT_HOOK_ID=test-hook python3 script.py"
+        cmd = "ERK_KIT_ID=test-kit ERK_HOOK_ID=test-hook python3 script.py"
         entry = HookEntry(command=cmd, timeout=30)
         group1 = MatcherGroup(matcher="*.py", hooks=[entry])
         group2 = MatcherGroup(matcher="**", hooks=[entry])

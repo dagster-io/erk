@@ -19,7 +19,7 @@ def create_test_hook_entry(
 ) -> dict:
     """Factory for creating test hook entry dictionaries."""
     # Encode metadata in command via environment variables
-    command_with_metadata = f"DOT_AGENT_KIT_ID={kit_id} DOT_AGENT_HOOK_ID={hook_id} {command}"
+    command_with_metadata = f"ERK_KIT_ID={kit_id} ERK_HOOK_ID={hook_id} {command}"
     return {
         "command": command_with_metadata,
         "timeout": timeout,
@@ -233,7 +233,7 @@ class TestHookShowCommand:
         assert "Lifecycle: pre" in result.output
         assert "Matcher: **/*.py" in result.output
         assert "Timeout: 45s" in result.output
-        expected_cmd = "DOT_AGENT_KIT_ID=my-kit DOT_AGENT_HOOK_ID=my-hook echo hello world"
+        expected_cmd = "ERK_KIT_ID=my-kit ERK_HOOK_ID=my-hook echo hello world"
         assert f"Command: {expected_cmd}" in result.output
 
     def test_show_hook_in_post_lifecycle(self, cli_runner: CliRunner, tmp_path: Path) -> None:
@@ -464,7 +464,7 @@ class TestHookCommandsIntegration:
         assert result.exit_code == 0
         assert "Hook: kit1:hook1" in result.output
         assert "Lifecycle: pre" in result.output
-        expected_cmd1 = "DOT_AGENT_KIT_ID=kit1 DOT_AGENT_HOOK_ID=hook1 echo first"
+        expected_cmd1 = "ERK_KIT_ID=kit1 ERK_HOOK_ID=hook1 echo first"
         assert f"Command: {expected_cmd1}" in result.output
         assert "Timeout: 30s" in result.output
 
@@ -473,7 +473,7 @@ class TestHookCommandsIntegration:
         assert result.exit_code == 0
         assert "Hook: kit2:hook2" in result.output
         assert "Lifecycle: post" in result.output
-        expected_cmd2 = "DOT_AGENT_KIT_ID=kit2 DOT_AGENT_HOOK_ID=hook2 echo second"
+        expected_cmd2 = "ERK_KIT_ID=kit2 ERK_HOOK_ID=hook2 echo second"
         assert f"Command: {expected_cmd2}" in result.output
         assert "Timeout: 60s" in result.output
 

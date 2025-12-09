@@ -28,15 +28,15 @@ def test_extract_hooks_for_kit_filters_correctly() -> None:
                     hooks=[
                         HookEntry(
                             command=(
-                                "DOT_AGENT_KIT_ID=dignified-python "
-                                "DOT_AGENT_HOOK_ID=my-hook python3 /path/to/script.py"
+                                "ERK_KIT_ID=dignified-python "
+                                "ERK_HOOK_ID=my-hook python3 /path/to/script.py"
                             ),
                             timeout=30,
                         ),
                         HookEntry(
                             command=(
-                                "DOT_AGENT_KIT_ID=other-kit "
-                                "DOT_AGENT_HOOK_ID=other-hook python3 /path/to/other.py"
+                                "ERK_KIT_ID=other-kit "
+                                "ERK_HOOK_ID=other-hook python3 /path/to/other.py"
                             ),
                             timeout=30,
                         ),
@@ -87,7 +87,7 @@ def test_extract_hooks_for_kit_no_matching_kit() -> None:
                     matcher="*",
                     hooks=[
                         HookEntry(
-                            command="DOT_AGENT_KIT_ID=other-kit python3 /path/to/script.py",
+                            command="ERK_KIT_ID=other-kit python3 /path/to/script.py",
                             timeout=30,
                         ),
                     ],
@@ -114,8 +114,8 @@ def test_extract_hooks_invalid_format_uppercase() -> None:
                     hooks=[
                         HookEntry(
                             command=(
-                                "DOT_AGENT_KIT_ID=test-kit "
-                                "DOT_AGENT_HOOK_ID=Invalid-Hook python3 /path/to/script.py"
+                                "ERK_KIT_ID=test-kit "
+                                "ERK_HOOK_ID=Invalid-Hook python3 /path/to/script.py"
                             ),
                             timeout=30,
                         ),
@@ -155,8 +155,7 @@ def test_extract_hooks_invalid_format_spaces() -> None:
                     hooks=[
                         HookEntry(
                             command=(
-                                "DOT_AGENT_KIT_ID=test-kit "
-                                "DOT_AGENT_HOOK_ID=my hook python3 /path/to/script.py"
+                                "ERK_KIT_ID=test-kit ERK_HOOK_ID=my hook python3 /path/to/script.py"
                             ),
                             timeout=30,
                         ),
@@ -196,8 +195,8 @@ def test_extract_hooks_invalid_format_special_chars() -> None:
                     hooks=[
                         HookEntry(
                             command=(
-                                "DOT_AGENT_KIT_ID=test-kit "
-                                "DOT_AGENT_HOOK_ID=my@hook! python3 /path/to/script.py"
+                                "ERK_KIT_ID=test-kit "
+                                "ERK_HOOK_ID=my@hook! python3 /path/to/script.py"
                             ),
                             timeout=30,
                         ),
@@ -236,8 +235,8 @@ def test_extract_hooks_id_not_in_manifest() -> None:
                     hooks=[
                         HookEntry(
                             command=(
-                                "DOT_AGENT_KIT_ID=test-kit "
-                                "DOT_AGENT_HOOK_ID=unknown-hook python3 /path/to/script.py"
+                                "ERK_KIT_ID=test-kit "
+                                "ERK_HOOK_ID=unknown-hook python3 /path/to/script.py"
                             ),
                             timeout=30,
                         ),
@@ -286,8 +285,8 @@ def test_extract_hooks_empty_manifest_with_hooks() -> None:
                     hooks=[
                         HookEntry(
                             command=(
-                                "DOT_AGENT_KIT_ID=test-kit "
-                                "DOT_AGENT_HOOK_ID=some-hook python3 /path/to/script.py"
+                                "ERK_KIT_ID=test-kit "
+                                "ERK_HOOK_ID=some-hook python3 /path/to/script.py"
                             ),
                             timeout=30,
                         ),
@@ -324,8 +323,8 @@ def test_detect_hook_drift_no_drift() -> None:
         InstalledHook(
             hook_id="compliance-reminder-hook",
             command=(
-                "DOT_AGENT_KIT_ID=dignified-python "
-                "DOT_AGENT_HOOK_ID=compliance-reminder-hook "
+                "ERK_KIT_ID=dignified-python "
+                "ERK_HOOK_ID=compliance-reminder-hook "
                 "dot-agent run dignified-python compliance-reminder-hook"
             ),
             timeout=30,
@@ -379,7 +378,7 @@ def test_detect_hook_drift_outdated_command_format() -> None:
     installed_hooks = [
         InstalledHook(
             hook_id="compliance-reminder-hook",
-            command="DOT_AGENT_KIT_ID=dignified-python python3 /path/to/script.py",
+            command="ERK_KIT_ID=dignified-python python3 /path/to/script.py",
             timeout=30,
             lifecycle="UserPromptSubmit",
             matcher="*",
@@ -401,7 +400,7 @@ def test_detect_hook_drift_obsolete_hook() -> None:
     installed_hooks = [
         InstalledHook(
             hook_id="old-hook",
-            command="DOT_AGENT_KIT_ID=dignified-python python3 /path/to/old.py",
+            command="ERK_KIT_ID=dignified-python python3 /path/to/old.py",
             timeout=30,
             lifecycle="UserPromptSubmit",
             matcher="*",
@@ -433,7 +432,7 @@ def test_detect_hook_drift_hook_id_mismatch() -> None:
     installed_hooks = [
         InstalledHook(
             hook_id="suggest-dignified-python",
-            command="DOT_AGENT_KIT_ID=dignified-python python3 /path/to/script.py",
+            command="ERK_KIT_ID=dignified-python python3 /path/to/script.py",
             timeout=30,
             lifecycle="UserPromptSubmit",
             matcher="*",
@@ -473,14 +472,14 @@ def test_detect_hook_drift_multiple_issues() -> None:
     installed_hooks = [
         InstalledHook(
             hook_id="hook-1",
-            command="DOT_AGENT_KIT_ID=test-kit python3 /path/to/hook1.py",
+            command="ERK_KIT_ID=test-kit python3 /path/to/hook1.py",
             timeout=30,
             lifecycle="UserPromptSubmit",
             matcher="*",
         ),
         InstalledHook(
             hook_id="old-hook",
-            command="DOT_AGENT_KIT_ID=test-kit python3 /path/to/old.py",
+            command="ERK_KIT_ID=test-kit python3 /path/to/old.py",
             timeout=30,
             lifecycle="UserPromptSubmit",
             matcher="*",
@@ -550,9 +549,7 @@ def test_check_command_skip_non_bundled_kits(tmp_path: Path) -> None:
                         "matcher": "*",
                         "hooks": [
                             {
-                                "command": (
-                                    "DOT_AGENT_KIT_ID=package-kit python3 /path/to/script.py"
-                                ),
+                                "command": ("ERK_KIT_ID=package-kit python3 /path/to/script.py"),
                                 "timeout": 30,
                             }
                         ],
@@ -674,8 +671,8 @@ def test_check_command_detects_hook_drift_integration(tmp_path: Path) -> None:
                         "hooks": [
                             {
                                 "command": (
-                                    "DOT_AGENT_KIT_ID=test-kit "
-                                    "DOT_AGENT_HOOK_ID=old-hook python3 /path/to/old_hook.py"
+                                    "ERK_KIT_ID=test-kit "
+                                    "ERK_HOOK_ID=old-hook python3 /path/to/old_hook.py"
                                 ),
                                 "timeout": 30,
                             }
@@ -796,8 +793,8 @@ def test_detect_hook_drift_matcher_mismatch() -> None:
         InstalledHook(
             hook_id="compliance-hook",
             command=(
-                "DOT_AGENT_KIT_ID=test-kit "
-                "DOT_AGENT_HOOK_ID=compliance-hook "
+                "ERK_KIT_ID=test-kit "
+                "ERK_HOOK_ID=compliance-hook "
                 "dot-agent run test-kit compliance-hook"
             ),
             timeout=30,
@@ -833,8 +830,8 @@ def test_detect_hook_drift_matcher_none_normalized() -> None:
         InstalledHook(
             hook_id="compliance-hook",
             command=(
-                "DOT_AGENT_KIT_ID=test-kit "
-                "DOT_AGENT_HOOK_ID=compliance-hook "
+                "ERK_KIT_ID=test-kit "
+                "ERK_HOOK_ID=compliance-hook "
                 "dot-agent run test-kit compliance-hook"
             ),
             timeout=30,
@@ -871,8 +868,8 @@ def test_check_command_detects_matcher_drift(tmp_path: Path) -> None:
                         "hooks": [
                             {
                                 "command": (
-                                    "DOT_AGENT_KIT_ID=test-kit "
-                                    "DOT_AGENT_HOOK_ID=compliance-hook "
+                                    "ERK_KIT_ID=test-kit "
+                                    "ERK_HOOK_ID=compliance-hook "
                                     "dot-agent run test-kit compliance-hook"
                                 ),
                                 "timeout": 30,

@@ -55,7 +55,7 @@ def show_hook(hook_spec: str) -> None:
     for lifecycle, matcher, entry in hooks:
         entry_kit_id = extract_kit_id_from_command(entry.command)
         if entry_kit_id:
-            hook_id_match = re.search(r"DOT_AGENT_HOOK_ID=(\S+)", entry.command)
+            hook_id_match = re.search(r"ERK_HOOK_ID=(\S+)", entry.command)
             entry_hook_id = hook_id_match.group(1) if hook_id_match else None
             if entry_kit_id == kit_id and entry_hook_id == hook_id:
                 found = (lifecycle, matcher, entry)
