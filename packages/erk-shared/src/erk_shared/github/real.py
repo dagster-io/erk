@@ -33,6 +33,7 @@ from erk_shared.github.parsing import (
 from erk_shared.github.types import (
     BRANCH_NOT_AVAILABLE,
     DISPLAY_TITLE_NOT_AVAILABLE,
+    CreatorFilter,
     GitHubRepoId,
     GitHubRepoLocation,
     PRDetails,
@@ -1051,7 +1052,8 @@ query {{
         labels: list[str],
         state: str | None = None,
         limit: int | None = None,
-        creator: str | None = None,
+        *,
+        creator: CreatorFilter,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Fetch issues and linked PRs in a single GraphQL query.
 
@@ -1059,7 +1061,13 @@ query {{
         to get PR linkages in one API call.
         """
         repo_id = location.repo_id
-        query = self._build_issues_with_pr_linkages_query(repo_id, labels, state, limit, creator)
+        # Convert CreatorFilter to str | None for GraphQL query
+        # AllUsers means no filter (show all users), str means filter to username
+        creator_username = creator if isinstance(creator, str) else None
+
+        query = self._build_issues_with_pr_linkages_query(
+            repo_id, labels, state, limit, creator_username
+        )
         response = self._execute_batch_pr_query(query, location.root)
         return self._parse_issues_with_pr_linkages(response, repo_id)
 

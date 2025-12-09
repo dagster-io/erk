@@ -53,6 +53,25 @@ class PRNotFound:
 
 
 @dataclass(frozen=True)
+class AllUsers:
+    """Sentinel indicating "show all users" filter intent.
+
+    Used instead of None for creator filtering to distinguish:
+    - AllUsers(): Explicitly request all users' data
+    - str: Filter to a specific username
+
+    This prevents silent failures where None could mean either
+    "not set" or "all users", and ensures callers must be explicit.
+    """
+
+    pass
+
+
+# Type alias for creator filter parameter
+CreatorFilter = str | AllUsers
+
+
+@dataclass(frozen=True)
 class PRDetails:
     """Comprehensive PR information from a single GitHub API call.
 

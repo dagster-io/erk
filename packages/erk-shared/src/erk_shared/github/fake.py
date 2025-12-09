@@ -9,6 +9,7 @@ from pathlib import Path
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
+    CreatorFilter,
     GitHubRepoLocation,
     PRDetails,
     PRNotFound,
@@ -463,7 +464,8 @@ class FakeGitHub(GitHub):
         labels: list[str],
         state: str | None = None,
         limit: int | None = None,
-        creator: str | None = None,
+        *,
+        creator: CreatorFilter,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Get issues and PR linkages from pre-configured data.
 
@@ -475,7 +477,9 @@ class FakeGitHub(GitHub):
             labels: Labels to filter by
             state: Filter by state ("open", "closed", or None for OPEN default)
             limit: Maximum issues to return (default: all)
-            creator: Filter by creator username (e.g., "octocat")
+            creator: Filter by creator. Use:
+                - AllUsers(): Show all users' issues
+                - str: Filter to specific username
 
         Returns:
             Tuple of (filtered_issues, pr_linkages for those issues)
@@ -492,8 +496,8 @@ class FakeGitHub(GitHub):
             # Check state filter
             if issue.state.lower() != effective_state.lower():
                 continue
-            # Check creator filter
-            if creator is not None and issue.author != creator:
+            # Check creator filter (skip if AllUsers, otherwise match username)
+            if isinstance(creator, str) and issue.author != creator:
                 continue
             filtered_issues.append(issue)
 
