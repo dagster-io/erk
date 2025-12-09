@@ -23,7 +23,7 @@ BUNDLED KIT SOURCE                    INSTALLED ARTIFACTS
 (packages/dot-agent-kit/              (project/.claude/)
  data/kits/<kit-name>/)
 
-kit.yaml (manifest)          -->      Listed in dot-agent.toml
+kit.yaml (manifest)          -->      Listed in kits.toml
 skills/foo/SKILL.md          -->      .claude/skills/foo/SKILL.md (symlink to source)
 docs/bar/guide.md            -->      .claude/docs/bar/guide.md (symlink to source)
 ```
@@ -57,7 +57,7 @@ The installation process creates symlinks FROM `.claude/` TO the bundled kit. If
 1. Copy files from `.claude/docs/<name>/` to `packages/.../kits/<kit>/docs/<name>/`
 2. Add paths to `kit.yaml` under `artifacts: doc:`
 3. Delete the original files from `.claude/docs/`
-4. Run `dot-agent kit sync --force` to recreate symlinks
+4. Run `erk kit sync --force` to recreate symlinks
 
 **Option 2: Reference External Docs**
 If the docs are shared across multiple kits or shouldn't be bundled:
@@ -70,7 +70,7 @@ If the docs are shared across multiple kits or shouldn't be bundled:
 
 1. Create the file directly in `packages/.../kits/<kit>/docs/<path>/`
 2. Add the path to `kit.yaml` under `artifacts: doc:`
-3. Run `dot-agent kit sync --force` to install
+3. Run `erk kit sync --force` to install
 
 ## Why "kit sync" Says "Up to Date" But Artifacts Are Missing
 
@@ -82,7 +82,7 @@ If the docs are shared across multiple kits or shouldn't be bundled:
 **If you added new artifacts without bumping version:**
 
 ```bash
-dot-agent kit sync --force  # Required to pick up new artifacts
+erk kit sync --force  # Required to pick up new artifacts
 ```
 
 ## Troubleshooting

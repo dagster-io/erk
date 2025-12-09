@@ -523,5 +523,5 @@ This includes:
 - **Official Claude Code Hooks**: https://code.claude.com/docs/en/hooks
 - **Official Hooks Guide**: https://code.claude.com/docs/en/hooks-guide.md
 - **dot-agent-kit Hook Development**: `../../packages/dot-agent-kit/docs/HOOKS.md`
-- **Kit System Overview**: `../../.agent/kits/README.md`
+- **Kit System Overview**: `../../.erk/kits/README.md`
 - **Project Glossary**: `glossary.md`
