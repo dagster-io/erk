@@ -276,6 +276,85 @@ class TestFakeClaudeCodeSessionStore:
         assert result.agent_logs[2][0] == "agent-zzz"
 
 
+class TestFakeClaudeCodeSessionStorePlans:
+    """Tests for get_latest_plan in FakeClaudeCodeSessionStore.
+
+    Layer 1: Fake Infrastructure Tests.
+    """
+
+    def test_get_latest_plan_returns_plan_content(self) -> None:
+        """Test get_latest_plan returns plan content when plans are configured."""
+        plan_content = "# My Feature\n\n- Step 1\n- Step 2"
+        store = FakeClaudeCodeSessionStore(
+            plans={"my-feature": plan_content},
+        )
+        result = store.get_latest_plan(Path("/my/project"))
+        assert result == plan_content
+
+    def test_get_latest_plan_returns_none_when_empty(self) -> None:
+        """Test get_latest_plan returns None when no plans configured."""
+        store = FakeClaudeCodeSessionStore()
+        result = store.get_latest_plan(Path("/my/project"))
+        assert result is None
+
+    def test_get_latest_plan_with_session_id_match(self) -> None:
+        """Test get_latest_plan returns matching plan when session_id matches key."""
+        plan_a = "# Plan A"
+        plan_b = "# Plan B"
+        store = FakeClaudeCodeSessionStore(
+            plans={
+                "session-a": plan_a,
+                "session-b": plan_b,
+            },
+        )
+
+        # Session ID matches a plan key
+        result = store.get_latest_plan(Path("/my/project"), session_id="session-b")
+        assert result == plan_b
+
+    def test_get_latest_plan_fallback_to_first(self) -> None:
+        """Test get_latest_plan falls back to first plan when session_id doesn't match."""
+        plan_a = "# Plan A"
+        plan_b = "# Plan B"
+        store = FakeClaudeCodeSessionStore(
+            plans={
+                "slug-a": plan_a,
+                "slug-b": plan_b,
+            },
+        )
+
+        # Session ID doesn't match any plan key - falls back to first
+        result = store.get_latest_plan(Path("/my/project"), session_id="unknown-session")
+        # First plan in dict iteration order
+        assert result == plan_a
+
+    def test_get_latest_plan_no_session_id_returns_first(self) -> None:
+        """Test get_latest_plan returns first plan when no session_id provided."""
+        plan_a = "# Plan A"
+        plan_b = "# Plan B"
+        store = FakeClaudeCodeSessionStore(
+            plans={
+                "slug-a": plan_a,
+                "slug-b": plan_b,
+            },
+        )
+
+        result = store.get_latest_plan(Path("/my/project"))
+        assert result == plan_a
+
+    def test_get_latest_plan_ignores_project_cwd(self) -> None:
+        """Test get_latest_plan returns same plan regardless of project_cwd."""
+        plan_content = "# My Feature"
+        store = FakeClaudeCodeSessionStore(
+            plans={"my-feature": plan_content},
+        )
+
+        # Same result for different project paths
+        result1 = store.get_latest_plan(Path("/project/a"))
+        result2 = store.get_latest_plan(Path("/project/b"))
+        assert result1 == result2 == plan_content
+
+
 class TestSessionDomainTypes:
     """Tests for Session and SessionContent domain types."""
 

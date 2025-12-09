@@ -102,3 +102,21 @@ class ClaudeCodeSessionStore(ABC):
             SessionContent with raw JSONL strings, or None if not found.
         """
         ...
+
+    @abstractmethod
+    def get_latest_plan(
+        self,
+        project_cwd: Path,
+        *,
+        session_id: str | None = None,
+    ) -> str | None:
+        """Get the latest plan from ~/.claude/plans/, optionally session-scoped.
+
+        Args:
+            project_cwd: Project working directory (for session lookup hint)
+            session_id: Optional session ID for session-scoped lookup
+
+        Returns:
+            Plan content as markdown string, or None if no plan found
+        """
+        ...

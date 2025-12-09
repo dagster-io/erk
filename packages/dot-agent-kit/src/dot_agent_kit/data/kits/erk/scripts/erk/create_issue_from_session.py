@@ -21,13 +21,16 @@ Exit Codes:
 """
 
 import json
-from pathlib import Path
 
 import click
 from erk_shared.github.plan_issues import create_plan_issue
 
-from dot_agent_kit.context_helpers import require_github_issues, require_repo_root
-from dot_agent_kit.data.kits.erk.session_plan_extractor import get_latest_plan
+from dot_agent_kit.context_helpers import (
+    require_cwd,
+    require_github_issues,
+    require_repo_root,
+    require_session_store,
+)
 
 
 @click.command(name="create-issue-from-session")
@@ -45,13 +48,14 @@ def create_issue_from_session(ctx: click.Context, session_id: str | None) -> Non
     - Issue body: metadata-only (schema_version, created_at, created_by, worktree_name)
     - First comment: plan content wrapped in markers
     """
-    # Get GitHub Issues from context
+    # Get dependencies from context
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
-    cwd = Path.cwd()
+    cwd = require_cwd(ctx)
+    session_store = require_session_store(ctx)
 
     # Extract latest plan from session
-    plan_text = get_latest_plan(str(cwd), session_id)
+    plan_text = session_store.get_latest_plan(cwd, session_id=session_id)
 
     if not plan_text:
         result = {"success": False, "error": "No plan found in Claude session files"}

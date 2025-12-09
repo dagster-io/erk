@@ -3,7 +3,6 @@
 import json
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
 from erk_shared.extraction.claude_code_session_store import (
     FakeClaudeCodeSessionStore,
@@ -19,36 +18,22 @@ from dot_agent_kit.data.kits.erk.scripts.erk.plan_save_to_issue import (
 )
 
 
-@pytest.fixture
-def plans_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """Create a plans directory and monkeypatch get_plans_dir to use it.
-
-    This fixture replaces the @patch decorator for get_latest_plan by allowing
-    tests to create real plan files. The get_plans_dir() function is monkeypatched
-    to return a temp directory, and tests write real .md files there.
-    """
-    plans = tmp_path / ".claude" / "plans"
-    plans.mkdir(parents=True)
-    monkeypatch.setattr(
-        "dot_agent_kit.data.kits.erk.session_plan_extractor.get_plans_dir",
-        lambda: plans,
-    )
-    return plans
-
-
-def test_plan_save_to_issue_success(plans_dir: Path) -> None:
+def test_plan_save_to_issue_success() -> None:
     """Test successful plan extraction and issue creation."""
     fake_gh = FakeGitHubIssues()
-    runner = CliRunner()
-
-    # Create real plan file instead of mocking get_latest_plan
     plan_content = "# My Feature\n\n- Step 1\n- Step 2"
-    (plans_dir / "test-plan.md").write_text(plan_content, encoding="utf-8")
+    fake_store = FakeClaudeCodeSessionStore(
+        plans={"test-plan": plan_content},
+    )
+    runner = CliRunner()
 
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "json"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=DotAgentContext.for_test(
+            github_issues=fake_gh,
+            session_store=fake_store,
+        ),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -59,19 +44,22 @@ def test_plan_save_to_issue_success(plans_dir: Path) -> None:
     assert output["enriched"] is False
 
 
-def test_plan_save_to_issue_enriched_plan(plans_dir: Path) -> None:
+def test_plan_save_to_issue_enriched_plan() -> None:
     """Test detection of enriched plan."""
     fake_gh = FakeGitHubIssues()
-    runner = CliRunner()
-
-    # Create plan file with enrichment section
     plan_content = "# My Feature\n\n## Enrichment Details\n\nContext here"
-    (plans_dir / "enriched-plan.md").write_text(plan_content, encoding="utf-8")
+    fake_store = FakeClaudeCodeSessionStore(
+        plans={"enriched-plan": plan_content},
+    )
+    runner = CliRunner()
 
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "json"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=DotAgentContext.for_test(
+            github_issues=fake_gh,
+            session_store=fake_store,
+        ),
     )
 
     assert result.exit_code == 0
@@ -79,16 +67,20 @@ def test_plan_save_to_issue_enriched_plan(plans_dir: Path) -> None:
     assert output["enriched"] is True
 
 
-def test_plan_save_to_issue_no_plan(plans_dir: Path) -> None:
+def test_plan_save_to_issue_no_plan() -> None:
     """Test error when no plan found."""
     fake_gh = FakeGitHubIssues()
+    # Empty session store - no plans
+    fake_store = FakeClaudeCodeSessionStore()
     runner = CliRunner()
 
-    # plans_dir exists but is empty - no plan files
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "json"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=DotAgentContext.for_test(
+            github_issues=fake_gh,
+            session_store=fake_store,
+        ),
     )
 
     assert result.exit_code == 1
@@ -97,17 +89,16 @@ def test_plan_save_to_issue_no_plan(plans_dir: Path) -> None:
     assert "No plan found" in output["error"]
 
 
-def test_plan_save_to_issue_format(plans_dir: Path) -> None:
+def test_plan_save_to_issue_format() -> None:
     """Verify plan format (metadata in body, plan in comment)."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    # Empty session store - no sessions available, so no session context added
-    fake_store = FakeClaudeCodeSessionStore(current_session_id=None)
-    runner = CliRunner()
-
-    # Create plan file
     plan_content = "# Test Plan\n\n- Step 1"
-    (plans_dir / "format-test.md").write_text(plan_content, encoding="utf-8")
+    fake_store = FakeClaudeCodeSessionStore(
+        current_session_id=None,
+        plans={"format-test": plan_content},
+    )
+    runner = CliRunner()
 
     result = runner.invoke(
         plan_save_to_issue,
@@ -134,19 +125,22 @@ def test_plan_save_to_issue_format(plans_dir: Path) -> None:
     assert "Step 1" in comment
 
 
-def test_plan_save_to_issue_display_format(plans_dir: Path) -> None:
+def test_plan_save_to_issue_display_format() -> None:
     """Test display output format."""
     fake_gh = FakeGitHubIssues()
-    runner = CliRunner()
-
-    # Create plan file
     plan_content = "# Test Feature\n\n- Implementation step"
-    (plans_dir / "display-test.md").write_text(plan_content, encoding="utf-8")
+    fake_store = FakeClaudeCodeSessionStore(
+        plans={"display-test": plan_content},
+    )
+    runner = CliRunner()
 
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "display"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=DotAgentContext.for_test(
+            github_issues=fake_gh,
+            session_store=fake_store,
+        ),
     )
 
     assert result.exit_code == 0
@@ -163,19 +157,22 @@ def test_plan_save_to_issue_display_format(plans_dir: Path) -> None:
     assert "/erk:submit-plan" in result.output
 
 
-def test_plan_save_to_issue_label_created(plans_dir: Path) -> None:
+def test_plan_save_to_issue_label_created() -> None:
     """Test that erk-plan label is created."""
     fake_gh = FakeGitHubIssues()
-    runner = CliRunner()
-
-    # Create plan file
     plan_content = "# Feature\n\nSteps here"
-    (plans_dir / "label-test.md").write_text(plan_content, encoding="utf-8")
+    fake_store = FakeClaudeCodeSessionStore(
+        plans={"label-test": plan_content},
+    )
+    runner = CliRunner()
 
     result = runner.invoke(
         plan_save_to_issue,
         [],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=DotAgentContext.for_test(
+            github_issues=fake_gh,
+            session_store=fake_store,
+        ),
     )
 
     assert result.exit_code == 0
@@ -188,7 +185,7 @@ def test_plan_save_to_issue_label_created(plans_dir: Path) -> None:
     assert color == "0E8A16"
 
 
-def test_plan_save_to_issue_session_context_captured(plans_dir: Path, tmp_path: Path) -> None:
+def test_plan_save_to_issue_session_context_captured(tmp_path: Path) -> None:
     """Test that session context is captured and posted as comments."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
@@ -196,11 +193,12 @@ def test_plan_save_to_issue_session_context_captured(plans_dir: Path, tmp_path: 
         trunk_branches={tmp_path: "main"},
     )
 
-    # Create session data in FakeClaudeCodeSessionStore
+    # Create session data and plan in FakeClaudeCodeSessionStore
     session_content = (
         '{"type": "user", "message": {"content": "Hello"}}\n'
         '{"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi!"}]}}\n'
     )
+    plan_content = "# Feature Plan\n\n- Step 1"
     fake_store = FakeClaudeCodeSessionStore(
         current_session_id="test-session-id",
         projects={
@@ -214,13 +212,10 @@ def test_plan_save_to_issue_session_context_captured(plans_dir: Path, tmp_path: 
                 }
             )
         },
+        plans={"session-context-test": plan_content},
     )
 
     runner = CliRunner()
-
-    # Create plan file
-    plan_content = "# Feature Plan\n\n- Step 1"
-    (plans_dir / "session-context-test.md").write_text(plan_content, encoding="utf-8")
 
     result = runner.invoke(
         plan_save_to_issue,
@@ -251,18 +246,18 @@ def test_plan_save_to_issue_session_context_captured(plans_dir: Path, tmp_path: 
     assert "session-content" in session_comment
 
 
-def test_plan_save_to_issue_session_context_skipped_when_none(plans_dir: Path) -> None:
+def test_plan_save_to_issue_session_context_skipped_when_none() -> None:
     """Test session context is skipped when no sessions available."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    # Empty session store - no projects
-    fake_store = FakeClaudeCodeSessionStore(current_session_id=None)
+    plan_content = "# Feature Plan\n\n- Step 1"
+    # Session store with no sessions but has a plan
+    fake_store = FakeClaudeCodeSessionStore(
+        current_session_id=None,
+        plans={"no-session-test": plan_content},
+    )
 
     runner = CliRunner()
-
-    # Create plan file
-    plan_content = "# Feature Plan\n\n- Step 1"
-    (plans_dir / "no-session-test.md").write_text(plan_content, encoding="utf-8")
 
     result = runner.invoke(
         plan_save_to_issue,
@@ -284,17 +279,17 @@ def test_plan_save_to_issue_session_context_skipped_when_none(plans_dir: Path) -
     assert len(fake_gh.added_comments) == 1
 
 
-def test_plan_save_to_issue_json_output_includes_session_metadata(plans_dir: Path) -> None:
+def test_plan_save_to_issue_json_output_includes_session_metadata() -> None:
     """Test JSON output includes session_context_chunks and session_ids fields."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    fake_store = FakeClaudeCodeSessionStore(current_session_id=None)
+    plan_content = "# Feature\n\n- Step 1"
+    fake_store = FakeClaudeCodeSessionStore(
+        current_session_id=None,
+        plans={"metadata-test": plan_content},
+    )
 
     runner = CliRunner()
-
-    # Create plan file
-    plan_content = "# Feature\n\n- Step 1"
-    (plans_dir / "metadata-test.md").write_text(plan_content, encoding="utf-8")
 
     result = runner.invoke(
         plan_save_to_issue,
@@ -316,9 +311,7 @@ def test_plan_save_to_issue_json_output_includes_session_metadata(plans_dir: Pat
     assert isinstance(output["session_ids"], list)
 
 
-def test_plan_save_to_issue_passes_session_id_to_session_store(
-    plans_dir: Path, tmp_path: Path
-) -> None:
+def test_plan_save_to_issue_passes_session_id_to_session_store(tmp_path: Path) -> None:
     """Test that --session-id argument affects session selection."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
@@ -328,8 +321,9 @@ def test_plan_save_to_issue_passes_session_id_to_session_store(
 
     test_session_id = "test-session-12345"
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
+    plan_content = "# Feature Plan\n\n- Step 1"
 
-    # Session store with the specific session ID
+    # Session store with the specific session ID and plan
     fake_store = FakeClaudeCodeSessionStore(
         current_session_id=test_session_id,
         projects={
@@ -343,13 +337,10 @@ def test_plan_save_to_issue_passes_session_id_to_session_store(
                 }
             )
         },
+        plans={"session-id-test": plan_content},
     )
 
     runner = CliRunner()
-
-    # Create plan file
-    plan_content = "# Feature Plan\n\n- Step 1"
-    (plans_dir / "session-id-test.md").write_text(plan_content, encoding="utf-8")
 
     result = runner.invoke(
         plan_save_to_issue,
@@ -370,9 +361,7 @@ def test_plan_save_to_issue_passes_session_id_to_session_store(
     assert test_session_id in output["session_ids"]
 
 
-def test_plan_save_to_issue_display_format_shows_session_context(
-    plans_dir: Path, tmp_path: Path
-) -> None:
+def test_plan_save_to_issue_display_format_shows_session_context(tmp_path: Path) -> None:
     """Test display format shows session context chunk count when present."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
@@ -381,6 +370,7 @@ def test_plan_save_to_issue_display_format_shows_session_context(
     )
 
     session_content = '{"type": "user", "message": {"content": "Hello"}}\n'
+    plan_content = "# Feature Plan\n\n- Step 1"
     fake_store = FakeClaudeCodeSessionStore(
         current_session_id="test-session-id",
         projects={
@@ -394,13 +384,10 @@ def test_plan_save_to_issue_display_format_shows_session_context(
                 }
             )
         },
+        plans={"display-session-test": plan_content},
     )
 
     runner = CliRunner()
-
-    # Create plan file
-    plan_content = "# Feature Plan\n\n- Step 1"
-    (plans_dir / "display-session-test.md").write_text(plan_content, encoding="utf-8")
 
     result = runner.invoke(
         plan_save_to_issue,
@@ -419,9 +406,7 @@ def test_plan_save_to_issue_display_format_shows_session_context(
     assert "chunks" in result.output
 
 
-def test_plan_save_to_issue_uses_session_store_for_current_session_id(
-    plans_dir: Path, tmp_path: Path
-) -> None:
+def test_plan_save_to_issue_uses_session_store_for_current_session_id(tmp_path: Path) -> None:
     """Test that session ID is retrieved from session store when not provided via flag."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
@@ -431,8 +416,9 @@ def test_plan_save_to_issue_uses_session_store_for_current_session_id(
 
     store_session_id = "store-based-session-id"
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
+    plan_content = "# Feature Plan\n\n- Step 1"
 
-    # Session store configured with current_session_id
+    # Session store configured with current_session_id and plan
     fake_store = FakeClaudeCodeSessionStore(
         current_session_id=store_session_id,
         projects={
@@ -446,13 +432,10 @@ def test_plan_save_to_issue_uses_session_store_for_current_session_id(
                 }
             )
         },
+        plans={"store-session-test": plan_content},
     )
 
     runner = CliRunner()
-
-    # Create plan file
-    plan_content = "# Feature Plan\n\n- Step 1"
-    (plans_dir / "store-session-test.md").write_text(plan_content, encoding="utf-8")
 
     result = runner.invoke(
         plan_save_to_issue,
@@ -473,7 +456,7 @@ def test_plan_save_to_issue_uses_session_store_for_current_session_id(
     assert store_session_id in output["session_ids"]
 
 
-def test_plan_save_to_issue_flag_overrides_session_store(plans_dir: Path, tmp_path: Path) -> None:
+def test_plan_save_to_issue_flag_overrides_session_store(tmp_path: Path) -> None:
     """Test --session-id flag takes priority over session store's current_session_id.
 
     When --session-id is provided, it should be used as effective_session_id,
@@ -489,6 +472,7 @@ def test_plan_save_to_issue_flag_overrides_session_store(plans_dir: Path, tmp_pa
     store_session_id = "store-based-session-id"
     flag_session_id = "flag-based-session-id"
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
+    plan_content = "# Feature Plan\n\n- Step 1"
 
     # Session store has current_session_id set to store_session_id,
     # but ONLY the flag_session_id session exists in the project.
@@ -507,13 +491,10 @@ def test_plan_save_to_issue_flag_overrides_session_store(plans_dir: Path, tmp_pa
                 }
             )
         },
+        plans={"override-session-test": plan_content},
     )
 
     runner = CliRunner()
-
-    # Create plan file
-    plan_content = "# Feature Plan\n\n- Step 1"
-    (plans_dir / "override-session-test.md").write_text(plan_content, encoding="utf-8")
 
     result = runner.invoke(
         plan_save_to_issue,
@@ -534,17 +515,17 @@ def test_plan_save_to_issue_flag_overrides_session_store(plans_dir: Path, tmp_pa
     assert flag_session_id in output["session_ids"]
 
 
-def test_plan_save_to_issue_creates_marker_file(tmp_path: Path, plans_dir: Path) -> None:
+def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
     """Test plan_save_to_issue creates marker file on success."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
     test_session_id = "marker-test-session-id"
-    fake_store = FakeClaudeCodeSessionStore(current_session_id=test_session_id)
-    runner = CliRunner()
-
-    # Create plan file
     plan_content = "# Feature Plan\n\n- Step 1"
-    (plans_dir / "marker-test.md").write_text(plan_content, encoding="utf-8")
+    fake_store = FakeClaudeCodeSessionStore(
+        current_session_id=test_session_id,
+        plans={"marker-test": plan_content},
+    )
+    runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as td:
         result = runner.invoke(
@@ -564,17 +545,17 @@ def test_plan_save_to_issue_creates_marker_file(tmp_path: Path, plans_dir: Path)
         assert marker_file.exists()
 
 
-def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path, plans_dir: Path) -> None:
+def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None:
     """Test marker file is not created when no session ID is available."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    # Session store with no current session ID
-    fake_store = FakeClaudeCodeSessionStore(current_session_id=None)
-    runner = CliRunner()
-
-    # Create plan file
     plan_content = "# Feature Plan\n\n- Step 1"
-    (plans_dir / "no-marker-test.md").write_text(plan_content, encoding="utf-8")
+    # Session store with no current session ID but has plan
+    fake_store = FakeClaudeCodeSessionStore(
+        current_session_id=None,
+        plans={"no-marker-test": plan_content},
+    )
+    runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as td:
         result = runner.invoke(

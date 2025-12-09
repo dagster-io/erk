@@ -38,7 +38,6 @@ from dot_agent_kit.context_helpers import (
     require_repo_root,
     require_session_store,
 )
-from dot_agent_kit.data.kits.erk.session_plan_extractor import get_latest_plan
 
 
 def _create_plan_saved_marker(session_id: str, repo_root: Path) -> None:
@@ -92,7 +91,7 @@ def plan_save_to_issue(
     if plan_file:
         plan = plan_file.read_text(encoding="utf-8")
     else:
-        plan = get_latest_plan(str(cwd), session_id=effective_session_id)
+        plan = session_store.get_latest_plan(cwd, session_id=effective_session_id)
 
     if not plan:
         if output_format == "display":
