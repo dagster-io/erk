@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 from erk_shared.git.fake import FakeGit
 
@@ -11,6 +12,7 @@ from erk.core.health_checks import (
     check_erk_version,
     check_gitignore_entries,
     check_repository,
+    check_uv_version,
 )
 from tests.fakes.context import create_test_context
 
@@ -191,6 +193,9 @@ def test_check_repository_uses_repo_root_not_cwd(tmp_path: Path) -> None:
     assert "erk setup detected" in result.message.lower()
 
 
+# --- Gitignore Tests ---
+
+
 def test_check_gitignore_entries_no_gitignore(tmp_path: Path) -> None:
     """Test gitignore check when no .gitignore file exists."""
     result = check_gitignore_entries(tmp_path)
@@ -253,3 +258,54 @@ def test_check_gitignore_entries_missing_both(tmp_path: Path) -> None:
     assert ".impl/" in result.message
     assert result.details is not None
     assert "erk init" in result.details
+
+
+# --- UV Version Check Tests ---
+
+
+def test_check_uv_version_not_found() -> None:
+    """Test check_uv_version when uv is not installed."""
+    with patch("erk.core.health_checks.shutil.which", return_value=None):
+        result = check_uv_version()
+
+    assert result.name == "uv"
+    assert result.passed is False
+    assert "not found in PATH" in result.message
+    assert result.details is not None
+    assert "https://docs.astral.sh/uv" in result.details
+
+
+def test_check_uv_version_available() -> None:
+    """Test check_uv_version when uv is installed."""
+    with (
+        patch("erk.core.health_checks.shutil.which", return_value="/usr/bin/uv"),
+        patch("erk.core.health_checks.subprocess.run") as mock_run,
+    ):
+        mock_run.return_value.stdout = "uv 0.9.2"
+        mock_run.return_value.stderr = ""
+
+        result = check_uv_version()
+
+    assert result.name == "uv"
+    assert result.passed is True
+    assert "0.9.2" in result.message
+    assert result.details is not None
+    assert "uv self update" in result.details
+
+
+def test_check_uv_version_with_build_info() -> None:
+    """Test check_uv_version parses version with build info."""
+    with (
+        patch("erk.core.health_checks.shutil.which", return_value="/usr/bin/uv"),
+        patch("erk.core.health_checks.subprocess.run") as mock_run,
+    ):
+        mock_run.return_value.stdout = "uv 0.9.2 (Homebrew 2025-10-10)"
+        mock_run.return_value.stderr = ""
+
+        result = check_uv_version()
+
+    assert result.name == "uv"
+    assert result.passed is True
+    assert "0.9.2" in result.message
+    # Should NOT include the build info in version
+    assert "Homebrew" not in result.message
