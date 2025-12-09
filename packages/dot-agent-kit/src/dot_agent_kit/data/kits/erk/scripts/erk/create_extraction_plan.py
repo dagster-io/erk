@@ -34,6 +34,7 @@ from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, delete_marker
 from erk_shared.scratch.scratch import write_scratch_file
 
 from dot_agent_kit.context_helpers import require_cwd, require_github_issues, require_repo_root
+from dot_agent_kit.operations.agent_docs import check_docs_agent_ready
 
 
 @click.command(name="create-extraction-plan")
@@ -90,6 +91,20 @@ def create_extraction_plan(
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
+
+    # Validate docs/agent is ready before creating extraction plans
+    is_ready, warning = check_docs_agent_ready(repo_root)
+    if not is_ready:
+        click.echo(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": warning,
+                    "suggestion": "Run 'erk docs init' first",
+                }
+            )
+        )
+        raise SystemExit(1)
 
     # Validate options: must provide either --plan-content or --plan-file
     if plan_content is None and plan_file is None:

@@ -6,6 +6,22 @@ description: Create an extraction plan for documentation improvements
 
 Analyzes session context to identify documentation gaps and creates an extraction plan issue to track the improvements.
 
+## Prerequisites
+
+Before running this command, ensure `docs/agent/` exists and has at least one documentation file:
+
+```bash
+# Initialize docs/agent if it doesn't exist
+erk docs init
+
+# Verify it's ready
+ls docs/agent/*.md
+```
+
+If `docs/agent/` is missing or empty, the command will fail with a suggestion to run `erk docs init` first.
+
+**Note:** Running `erk init` for a new project automatically initializes `docs/agent/` with template files (glossary.md, conventions.md, guide.md).
+
 ## Usage
 
 ```bash

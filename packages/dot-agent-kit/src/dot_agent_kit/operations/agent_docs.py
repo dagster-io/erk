@@ -690,3 +690,115 @@ def _update_generated_file(
     if not dry_run:
         file_path.write_text(content, encoding="utf-8")
     updated.append(rel_path)
+
+
+# =============================================================================
+# docs/agent Initialization
+# =============================================================================
+
+
+@dataclass(frozen=True)
+class InitResult:
+    """Result of initializing docs/agent directory.
+
+    Attributes:
+        created: List of file paths that were created.
+        skipped: List of file paths that already existed (not overwritten).
+        overwritten: List of file paths that were overwritten (with --force).
+    """
+
+    created: list[str]
+    skipped: list[str]
+    overwritten: list[str]
+
+
+# Directory containing template files for docs/agent initialization.
+# Each template has valid frontmatter (title, read_when) to pass validation.
+TEMPLATES_DIR = Path(__file__).parent.parent / "data" / "templates" / "docs_agent"
+
+# Template files that will be created when initializing docs/agent.
+DOCS_AGENT_TEMPLATE_FILES: list[str] = [
+    "glossary.md",
+    "conventions.md",
+    "guide.md",
+]
+
+
+def _load_docs_agent_templates() -> dict[str, str]:
+    """Load template content from standalone files.
+
+    Returns:
+        Dictionary mapping filename to template content.
+    """
+    templates: dict[str, str] = {}
+    for filename in DOCS_AGENT_TEMPLATE_FILES:
+        template_path = TEMPLATES_DIR / filename
+        templates[filename] = template_path.read_text(encoding="utf-8")
+    return templates
+
+
+def init_docs_agent(project_root: Path, *, force: bool = False) -> InitResult:
+    """Initialize the docs/agent directory with template files.
+
+    Creates docs/agent/ directory if it doesn't exist and populates it with
+    starter template files (glossary.md, conventions.md, guide.md).
+
+    Args:
+        project_root: Path to the project root.
+        force: If True, overwrite existing files.
+
+    Returns:
+        InitResult with lists of created, skipped, and overwritten files.
+    """
+    agent_docs_root = project_root / AGENT_DOCS_DIR
+
+    created: list[str] = []
+    skipped: list[str] = []
+    overwritten: list[str] = []
+
+    # Create directory if it doesn't exist
+    if not agent_docs_root.exists():
+        agent_docs_root.mkdir(parents=True)
+
+    # Load and write template files
+    templates = _load_docs_agent_templates()
+    for filename, content in templates.items():
+        file_path = agent_docs_root / filename
+        rel_path = f"{AGENT_DOCS_DIR}/{filename}"
+
+        if file_path.exists():
+            if force:
+                file_path.write_text(content, encoding="utf-8")
+                overwritten.append(rel_path)
+            else:
+                skipped.append(rel_path)
+        else:
+            file_path.write_text(content, encoding="utf-8")
+            created.append(rel_path)
+
+    return InitResult(created=created, skipped=skipped, overwritten=overwritten)
+
+
+def check_docs_agent_ready(project_root: Path) -> tuple[bool, str | None]:
+    """Check if docs/agent directory is ready for use.
+
+    A directory is considered ready if it exists and contains at least one
+    markdown file (not counting index.md which is auto-generated).
+
+    Args:
+        project_root: Path to the project root.
+
+    Returns:
+        Tuple of (is_ready, warning_message). If ready, warning is None.
+    """
+    agent_docs_root = project_root / AGENT_DOCS_DIR
+
+    if not agent_docs_root.exists():
+        return False, f"Directory {AGENT_DOCS_DIR}/ does not exist"
+
+    # Check for at least one .md file (excluding index.md)
+    md_files = [f for f in agent_docs_root.glob("*.md") if f.name != "index.md"]
+    if not md_files:
+        return False, f"Directory {AGENT_DOCS_DIR}/ has no documentation files"
+
+    return True, None

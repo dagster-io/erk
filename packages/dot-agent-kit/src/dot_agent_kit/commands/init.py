@@ -7,6 +7,7 @@ import click
 from dot_agent_kit.cli.output import user_output
 from dot_agent_kit.io.git import resolve_project_dir
 from dot_agent_kit.io.state import create_default_config, save_project_config
+from dot_agent_kit.operations.agent_docs import init_docs_agent
 
 
 @click.command()
@@ -22,6 +23,9 @@ def init(force: bool) -> None:
     Creates a new kits.toml configuration file in .erk/ directory
     at the git repo root (or current directory if not in a git repo).
     Also creates .erk/ directory if it doesn't exist.
+
+    Additionally initializes docs/agent/ with template files for agent
+    documentation (glossary, conventions, guide).
 
     Use --force to overwrite an existing configuration.
     """
@@ -45,5 +49,13 @@ def init(force: bool) -> None:
     save_project_config(project_dir, config)
 
     user_output(f"Created {config_path}")
+
+    # Initialize docs/agent with template files
+    docs_result = init_docs_agent(project_dir, force=force)
+    if docs_result.created:
+        user_output()
+        for path in docs_result.created:
+            user_output(f"Created {path}")
+
     user_output("\nYou can now install kits using:")
     user_output("  erk kit install <kit-name>")
