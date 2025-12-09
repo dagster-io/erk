@@ -75,6 +75,11 @@ class ErkCommandGroup(click.Group):
             "pr",
             "project",
             "objective",
+            # Kit management groups (from dot-agent-kit)
+            "artifact",
+            "docs",
+            "hook",
+            "kit",
         ]
         top_level_plans = ["dash", "implement", "submit"]
         initialization = ["init"]

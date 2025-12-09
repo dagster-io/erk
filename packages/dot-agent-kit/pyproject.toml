@@ -16,9 +16,6 @@ dependencies = [
     "tomli-w>=1.0",
 ]
 
-[project.scripts]
-dot-agent = "dot_agent_kit.cli:main"
-
 [tool.uv.sources]
 erk-shared = { workspace = true }
 
