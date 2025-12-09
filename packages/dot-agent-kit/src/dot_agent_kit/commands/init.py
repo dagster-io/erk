@@ -45,5 +45,3 @@ def init(force: bool) -> None:
     save_project_config(project_dir, config)
 
     user_output(f"Created {config_path}")
-    user_output("\nYou can now install kits using:")
-    user_output("  dot-agent kit install <kit-name>")

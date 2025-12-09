@@ -4,16 +4,17 @@ This guide covers how to configure your repository to work with erk's planning a
 
 ## Prerequisites
 
-### Install dot-agent-kit
+### Initialize Erk
 
-Erk depends on dot-agent-kit for Claude Code integration. Install the kits that provide erk's slash commands and agents:
+Run `erk init` to set up erk for your project. This will:
+
+1. Create your global config with worktree storage location
+2. Auto-install required kits (erk, gt)
+3. Prompt for optional kits (devrun, dignified-python)
+4. Set up shell integration
 
 ```bash
-# Install the erk kit (provides /erk:* commands and agents)
-dot-agent kit install erk
-
-# Verify installation
-dot-agent kit list
+erk init
 ```
 
 The erk kit includes:
@@ -22,19 +23,16 @@ The erk kit includes:
 - **Agents**: `issue-wt-creator`, `plan-extractor`
 - **Workflows**: GitHub Actions templates for erk queue processing
 
-### Optional: Install Related Kits
+### Advanced: Manual Kit Installation
 
-For the full erk experience, consider installing these complementary kits:
+For advanced users who want to install additional kits manually:
 
 ```bash
-# Graphite integration for stacked PRs
-dot-agent kit install gt
+# List available kits
+dot-agent kit list
 
-# Development runner for CI iteration
-dot-agent kit install devrun
-
-# Python coding standards (if your project uses Python)
-dot-agent kit install dignified-python
+# Install a specific kit
+dot-agent kit install <kit-name>
 ```
 
 ## Directory Structure

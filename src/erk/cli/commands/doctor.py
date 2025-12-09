@@ -33,8 +33,8 @@ def doctor_cmd(ctx: ErkContext) -> None:
     Checks for:
 
     \b
-      - CLI tools: erk, claude, gt, gh, dot-agent
-      - dot-agent health: kit configuration
+      - CLI tools: erk, claude, gt, gh
+      - Kit health: kit configuration
       - Repository: git setup, .erk/ directory
       - Claude settings: hooks, configuration
 
@@ -51,9 +51,9 @@ def doctor_cmd(ctx: ErkContext) -> None:
     results = run_all_checks(ctx)
 
     # Group results by category
-    cli_tool_names = ("erk", "claude", "graphite", "github", "dot-agent")
+    cli_tool_names = ("erk", "claude", "graphite", "github")
     cli_checks = [r for r in results if r.name in cli_tool_names]
-    health_checks = [r for r in results if r.name == "dot-agent health"]
+    health_checks = [r for r in results if r.name == "kit health"]
     repo_checks = [r for r in results if r.name in ("repository", "claude settings")]
 
     # Display CLI availability

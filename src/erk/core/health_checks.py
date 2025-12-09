@@ -181,15 +181,15 @@ def check_github_cli() -> CheckResult:
         )
 
 
-def check_dot_agent() -> CheckResult:
-    """Check if dot-agent is installed and available in PATH."""
+def check_kit_system() -> CheckResult:
+    """Check if kit system (dot-agent) is installed and available in PATH."""
     dot_agent_path = shutil.which("dot-agent")
     if dot_agent_path is None:
         return CheckResult(
-            name="dot-agent",
+            name="kit-system",
             passed=False,
-            message="dot-agent not found in PATH",
-            details="dot-agent is required for kit commands",
+            message="Kit system not found in PATH",
+            details="Kit system is required for Claude Code integrations",
         )
 
     # Try to get version
@@ -203,35 +203,35 @@ def check_dot_agent() -> CheckResult:
         )
         version_output = result.stdout.strip() or result.stderr.strip() or "installed"
         return CheckResult(
-            name="dot-agent",
+            name="kit-system",
             passed=True,
-            message=f"dot-agent available: {version_output}",
+            message=f"Kit system available: {version_output}",
             details=version_output,
         )
     except subprocess.TimeoutExpired:
         return CheckResult(
-            name="dot-agent",
+            name="kit-system",
             passed=True,
-            message="dot-agent found (version check timed out)",
+            message="Kit system found (version check timed out)",
             details="timeout",
         )
     except Exception:
         return CheckResult(
-            name="dot-agent",
+            name="kit-system",
             passed=True,
-            message="dot-agent found (version check failed)",
+            message="Kit system found (version check failed)",
             details="unknown",
         )
 
 
-def check_dot_agent_health() -> CheckResult:
-    """Run dot-agent check to verify kit health."""
+def check_kit_health() -> CheckResult:
+    """Run kit health check to verify kit configuration."""
     dot_agent_path = shutil.which("dot-agent")
     if dot_agent_path is None:
         return CheckResult(
-            name="dot-agent health",
+            name="kit health",
             passed=False,
-            message="Cannot run check: dot-agent not found",
+            message="Cannot run check: kit system not found",
         )
 
     try:
@@ -244,29 +244,29 @@ def check_dot_agent_health() -> CheckResult:
         )
         if result.returncode == 0:
             return CheckResult(
-                name="dot-agent health",
+                name="kit health",
                 passed=True,
-                message="dot-agent check passed",
+                message="Kit health check passed",
                 details=result.stdout.strip() if result.stdout else None,
             )
         else:
             return CheckResult(
-                name="dot-agent health",
+                name="kit health",
                 passed=False,
-                message="dot-agent check failed",
+                message="Kit health check failed",
                 details=result.stderr.strip() if result.stderr else result.stdout.strip(),
             )
     except subprocess.TimeoutExpired:
         return CheckResult(
-            name="dot-agent health",
+            name="kit health",
             passed=False,
-            message="dot-agent check timed out",
+            message="Kit health check timed out",
         )
     except Exception as e:
         return CheckResult(
-            name="dot-agent health",
+            name="kit health",
             passed=False,
-            message=f"dot-agent check error: {e}",
+            message=f"Kit health check error: {e}",
         )
 
 
@@ -405,12 +405,11 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         check_claude_cli(),
         check_graphite_cli(),
         check_github_cli(),
-        check_dot_agent(),
     ]
 
-    # Only run dot-agent health check if dot-agent is available
+    # Only run kit health check if kit system is available
     if shutil.which("dot-agent") is not None:
-        results.append(check_dot_agent_health())
+        results.append(check_kit_health())
 
     # Add repository check
     results.append(check_repository(ctx))

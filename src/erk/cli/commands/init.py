@@ -1,4 +1,5 @@
 import dataclasses
+import subprocess
 from pathlib import Path
 
 import click
@@ -21,6 +22,51 @@ from erk.core.shell import Shell
 def detect_graphite(shell_ops: Shell) -> bool:
     """Detect if Graphite (gt) is installed and available in PATH."""
     return shell_ops.get_installed_tool_path("gt") is not None
+
+
+def install_kit(kit_name: str) -> bool:
+    """Install a kit via dot-agent. Returns True on success."""
+    result = subprocess.run(
+        ["dot-agent", "kit", "install", kit_name],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.returncode == 0
+
+
+def install_kits_on_first_init(shell: Shell) -> None:
+    """Install required and optional kits during first-time initialization.
+
+    Skips kit installation if dot-agent is not available in PATH.
+    """
+    # Check if dot-agent is available before attempting kit installation
+    if shell.get_installed_tool_path("dot-agent") is None:
+        return
+
+    user_output("\nInstalling kits...")
+
+    # Required kits - install silently
+    for kit in ("erk", "gt"):
+        user_output(f"  Installing {kit} kit...")
+        if install_kit(kit):
+            user_output(click.style("  ✓", fg="green") + f" Installed {kit} kit")
+        else:
+            user_output(click.style("  ⚠", fg="yellow") + f" Failed to install {kit} kit")
+
+    # Optional kits - prompt user
+    optional_kits = [
+        ("devrun", "dev tool integration"),
+        ("dignified-python", "Python coding standards"),
+    ]
+
+    for kit_name, description in optional_kits:
+        if click.confirm(f"\nInstall {kit_name} kit ({description})?", default=True):
+            user_output(f"  Installing {kit_name} kit...")
+            if install_kit(kit_name):
+                user_output(click.style("  ✓", fg="green") + f" Installed {kit_name} kit")
+            else:
+                user_output(click.style("  ⚠", fg="yellow") + f" Failed to install {kit_name} kit")
 
 
 def create_and_save_global_config(
@@ -245,6 +291,9 @@ def init_cmd(
             user_output("Graphite (gt) detected - will use 'gt create' for new branches")
         else:
             user_output("Graphite (gt) not detected - will use 'git' for branch creation")
+
+        # Install kits automatically
+        install_kits_on_first_init(ctx.shell)
 
     # When --repo is set, verify that global config exists
     if repo and not ctx.config_store.exists():
