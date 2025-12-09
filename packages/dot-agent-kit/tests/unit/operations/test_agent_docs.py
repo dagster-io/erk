@@ -419,7 +419,7 @@ class TestGenerateRootIndex:
         assert "|" not in content
 
     def test_generate_with_categories(self) -> None:
-        """Generate index with categories using bullet list format."""
+        """Generate index with categories using simplified format."""
         from dot_agent_kit.operations.agent_docs import CategoryInfo, DocInfo
 
         categories = [
@@ -431,8 +431,8 @@ class TestGenerateRootIndex:
         content = generate_root_index([], categories)
         assert content.startswith(GENERATED_FILE_BANNER.rstrip())
         assert "## Categories" in content
-        # Bullet list format: - **[link](link)** — doc names
-        assert "- **[planning/](planning/)** — lifecycle" in content
+        # Simplified format: just category link, no doc names (reduces merge conflicts)
+        assert "- [planning/](planning/)" in content
         # No table syntax
         assert "|" not in content
 

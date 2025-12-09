@@ -5,18 +5,18 @@
 
 ## Categories
 
-- **[architecture/](architecture/)** — at-reference-resolution, claude-cli-integration, claude-cli-progress, claude-executor-patterns, cli-binary-ops-pattern, command-boundaries, commandresult-extension-pattern, erk-architecture, erk-shared-package, event-progress-pattern, extraction-origin-tracking, gateway-abc-implementation, gateway-inventory, generated-files, github-graphql, github-interface-patterns, github-parsing, impl-folder-lifecycle, issue-reference-flow, markers, not-found-sentinel, pathlib-symlinks, pr-finalization-paths, pre-destruction-capture, protocol-vs-abc, restack-operations, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
-- **[cli/](cli/)** — command-group-structure, command-organization, json-schema, list-formatting, output-styling, script-mode, shell-aliases, template-variables
-- **[commands/](commands/)** — optimization-patterns, tripwires
-- **[erk/](erk/)** — auto-restack, branch-cleanup, graphite-branch-setup, pr-sync-workflow
-- **[hooks/](hooks/)** — erk, hooks
-- **[kits/](kits/)** — artifact-synchronization, cli-command-development, cli-commands, code-architecture, dependency-injection, artifact-management, kit-check, push-down-pattern, registry-discovery
-- **[planning/](planning/)** — agent-delegation, enrichment, lifecycle, plan-schema, scratch-storage, workflow
-- **[reference/](reference/)** — claude-cli-stream-json
-- **[sessions/](sessions/)** — context-analysis, context-optimization, layout, parallel-session-awareness, tools
-- **[testing/](testing/)** — cascading-import-cleanup, fake-objective-store, import-conflict-resolution, integration-test-speed, kit-cli-testing, mock-elimination, rebase-conflicts, session-log-fixtures, session-store-testing, testing
-- **[textual/](textual/)** — background-workers, quirks, testing, widget-development
-- **[tui/](tui/)** — architecture, command-execution, command-palette, streaming-output, textual-async
+- [architecture/](architecture/)
+- [cli/](cli/)
+- [commands/](commands/)
+- [erk/](erk/)
+- [hooks/](hooks/)
+- [kits/](kits/)
+- [planning/](planning/)
+- [reference/](reference/)
+- [sessions/](sessions/)
+- [testing/](testing/)
+- [textual/](textual/)
+- [tui/](tui/)
 
 ## Uncategorized
 

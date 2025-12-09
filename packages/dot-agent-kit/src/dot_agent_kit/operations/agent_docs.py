@@ -450,8 +450,7 @@ def generate_root_index(
         lines.append("## Categories")
         lines.append("")
         for category in categories:
-            doc_names = ", ".join(Path(d.rel_path).stem for d in category.docs)
-            lines.append(f"- **[{category.name}/]({category.name}/)** — {doc_names}")
+            lines.append(f"- [{category.name}/]({category.name}/)")
         lines.append("")
 
     if uncategorized:
