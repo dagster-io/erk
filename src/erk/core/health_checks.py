@@ -224,6 +224,58 @@ def check_dot_agent() -> CheckResult:
         )
 
 
+def check_uv_version() -> CheckResult:
+    """Check if uv is installed.
+
+    Shows version and upgrade instructions. erk works best with recent uv versions.
+    """
+    uv_path = shutil.which("uv")
+    if uv_path is None:
+        return CheckResult(
+            name="uv",
+            passed=False,
+            message="uv not found in PATH",
+            details="Install from: https://docs.astral.sh/uv/getting-started/installation/",
+        )
+
+    # Get installed version
+    try:
+        result = subprocess.run(
+            ["uv", "--version"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+        version_output = result.stdout.strip() or result.stderr.strip()
+
+        # Parse version (format: "uv 0.9.2" or "uv 0.9.2 (Homebrew 2025-10-10)")
+        parts = version_output.split()
+        version = parts[1] if len(parts) >= 2 else version_output
+
+    except subprocess.TimeoutExpired:
+        return CheckResult(
+            name="uv",
+            passed=True,
+            message="uv found (version check timed out)",
+            details="Upgrade: uv self update",
+        )
+    except Exception:
+        return CheckResult(
+            name="uv",
+            passed=True,
+            message="uv found (version check failed)",
+            details="Upgrade: uv self update",
+        )
+
+    return CheckResult(
+        name="uv",
+        passed=True,
+        message=f"uv available: {version}",
+        details="erk works best with recent versions. Upgrade: uv self update",
+    )
+
+
 def check_dot_agent_health() -> CheckResult:
     """Run dot-agent check to verify kit health."""
     dot_agent_path = shutil.which("dot-agent")
@@ -451,6 +503,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         check_claude_cli(),
         check_graphite_cli(),
         check_github_cli(),
+        check_uv_version(),
         check_dot_agent(),
     ]
 
