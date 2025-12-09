@@ -96,7 +96,8 @@ def verify_pr_closed_or_merged(ctx: ErkContext, repo_root: Path, branch: str) ->
         user_output(
             click.style("Error: ", fg="red")
             + f"Pull request for branch '{branch}' is still open.\n"
-            "Only closed or merged branches can be deleted with --delete-current."
+            + f"{pr_details.url}\n"
+            + "Only closed or merged branches can be deleted with --delete-current."
         )
         raise SystemExit(1)
 
