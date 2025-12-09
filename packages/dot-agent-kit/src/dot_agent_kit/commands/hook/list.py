@@ -43,12 +43,12 @@ def _extract_hook_metadata(command: str) -> tuple[str | None, str | None, str | 
     kit_id = extract_kit_id_from_command(command)
 
     hook_id = None
-    hook_id_match = re.search(r"DOT_AGENT_HOOK_ID=(\S+)", command)
+    hook_id_match = re.search(r"ERK_HOOK_ID=(\S+)", command)
     if hook_id_match:
         hook_id = hook_id_match.group(1)
 
     version = None
-    version_match = re.search(r"DOT_AGENT_KIT_VERSION=(\S+)", command)
+    version_match = re.search(r"ERK_KIT_VERSION=(\S+)", command)
     if version_match:
         version = version_match.group(1)
 

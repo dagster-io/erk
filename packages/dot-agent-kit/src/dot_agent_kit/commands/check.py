@@ -343,7 +343,7 @@ def _process_hook_entry(
         )
 
     # Try to extract hook ID
-    hook_id_match = re.search(r"DOT_AGENT_HOOK_ID=(\S+)", hook_entry.command)
+    hook_id_match = re.search(r"ERK_HOOK_ID=(\S+)", hook_entry.command)
     if hook_id_match:
         hook_id = hook_id_match.group(1)
         return HookValidationDetail(
@@ -361,7 +361,7 @@ def _process_hook_entry(
         kit_id=command_kit_id,
         hook_id=None,
         action="parse_error",
-        error_message="Missing DOT_AGENT_HOOK_ID environment variable",
+        error_message="Missing ERK_HOOK_ID environment variable",
     )
 
 
@@ -403,14 +403,14 @@ def _extract_hooks_for_kit(
 
                 if command_kit_id == kit_id:
                     # Extract hook ID from command
-                    # Format: DOT_AGENT_KIT_ID=kit-name DOT_AGENT_HOOK_ID=hook-id python3 ...
+                    # Format: ERK_KIT_ID=kit-name ERK_HOOK_ID=hook-id python3 ...
                     import re
 
-                    hook_id_match = re.search(r"DOT_AGENT_HOOK_ID=(\S+)", hook_entry.command)
+                    hook_id_match = re.search(r"ERK_HOOK_ID=(\S+)", hook_entry.command)
                     if not hook_id_match:
                         raise ValueError(
                             f"Hook command for kit '{kit_id}' is missing "
-                            f"DOT_AGENT_HOOK_ID environment variable. "
+                            f"ERK_HOOK_ID environment variable. "
                             f"Command: {hook_entry.command}"
                         )
 
@@ -484,8 +484,8 @@ def _detect_hook_drift(
             # Check if command format matches expectations
             installed = installed_by_id[expected_hook.id]
 
-            # Expected format: "DOT_AGENT_KIT_ID={kit_id} DOT_AGENT_HOOK_ID={hook_id} {invocation}"
-            expected_env_prefix = f"DOT_AGENT_KIT_ID={kit_id} DOT_AGENT_HOOK_ID={expected_hook.id}"
+            # Expected format: "ERK_KIT_ID={kit_id} ERK_HOOK_ID={hook_id} {invocation}"
+            expected_env_prefix = f"ERK_KIT_ID={kit_id} ERK_HOOK_ID={expected_hook.id}"
             expected_command = f"{expected_env_prefix} {expected_hook.invocation}"
 
             # Check if command matches expected format
@@ -894,7 +894,7 @@ def check(verbose: bool) -> None:
                     status = click.style("⊘", fg="yellow")
                     msg = (
                         f"{status} {lifecycle_display} Skipped: Not a dot-agent managed hook "
-                        f"(no DOT_AGENT_KIT_ID found)"
+                        f"(no ERK_KIT_ID found)"
                     )
                     user_output(msg)
                     # Show command preview (first 80 chars)

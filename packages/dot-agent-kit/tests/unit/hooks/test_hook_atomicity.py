@@ -100,8 +100,8 @@ def test_atomic_hook_update_success():
 
         # Check that no old hook IDs remain
         for hook in all_hooks:
-            assert "DOT_AGENT_KIT_ID=test-kit" in hook.command
-            assert "DOT_AGENT_HOOK_ID=old_hook" not in hook.command
+            assert "ERK_KIT_ID=test-kit" in hook.command
+            assert "ERK_HOOK_ID=old_hook" not in hook.command
 
 
 def test_atomic_hook_update_rollback_on_failure():
@@ -247,7 +247,7 @@ def test_atomic_hook_update_removes_hooks_when_none_in_manifest():
                     all_hooks.extend(group.hooks)
 
         for hook in all_hooks:
-            assert "DOT_AGENT_KIT_ID=test-kit" not in hook.command
+            assert "ERK_KIT_ID=test-kit" not in hook.command
 
 
 def test_atomic_hook_update_cleans_up_partial_installation_on_failure():
@@ -290,4 +290,4 @@ def test_atomic_hook_update_cleans_up_partial_installation_on_failure():
                 for lifecycle_groups in settings.hooks.values():
                     for group in lifecycle_groups:
                         for hook in group.hooks:
-                            assert "DOT_AGENT_KIT_ID=test-kit" not in hook.command
+                            assert "ERK_KIT_ID=test-kit" not in hook.command

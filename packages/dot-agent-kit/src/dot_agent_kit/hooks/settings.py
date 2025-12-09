@@ -10,11 +10,11 @@ from dot_agent_kit.hooks.models import ClaudeSettings, HookEntry, MatcherGroup
 
 
 def extract_kit_id_from_command(command: str) -> str | None:
-    """Extract kit_id from DOT_AGENT_KIT_ID environment variable in command.
+    """Extract kit_id from ERK_KIT_ID environment variable in command.
 
     Returns None if kit_id not found in command.
     """
-    match = re.search(r"DOT_AGENT_KIT_ID=(\S+)", command)
+    match = re.search(r"ERK_KIT_ID=(\S+)", command)
     if match:
         return match.group(1)
     return None

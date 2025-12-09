@@ -42,7 +42,7 @@ def install_hooks(
 
     for hook_def in hooks:
         # Inject environment variables for metadata tracking
-        env_prefix = f"DOT_AGENT_KIT_ID={kit_id} DOT_AGENT_HOOK_ID={hook_def.id}"
+        env_prefix = f"ERK_KIT_ID={kit_id} ERK_HOOK_ID={hook_def.id}"
         command_with_metadata = f"{env_prefix} {hook_def.invocation}"
 
         entry = HookEntry(

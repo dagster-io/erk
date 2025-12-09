@@ -382,8 +382,8 @@ def _kit_command_exists(command: str) -> bool:
     still validating that the kit command is defined.
     """
     # Parse command to extract the base kit command
-    # Old format: DOT_AGENT_KIT_ID=erk ... dot-agent kit-command erk <command-name>
-    # New format: DOT_AGENT_KIT_ID=erk ... erk kit exec erk <command-name>
+    # Old format: ERK_KIT_ID=erk ... dot-agent kit-command erk <command-name>
+    # New format: ERK_KIT_ID=erk ... erk kit exec erk <command-name>
     try:
         # Quick check - just see if the kit-command is recognized
         # We don't want to actually run hooks, just validate they exist
