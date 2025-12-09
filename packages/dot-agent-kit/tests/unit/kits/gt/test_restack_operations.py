@@ -5,6 +5,7 @@ Tests the three-phase restack flow: preflight, continue, finalize.
 
 from pathlib import Path
 
+from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.operations.restack_continue import execute_restack_continue
 from erk_shared.integrations.gt.operations.restack_finalize import execute_restack_finalize
@@ -111,22 +112,31 @@ class TestRestackPreflight:
         assert result.success is False
         assert result.error_type == "squash_conflict"
 
-    def test_dirty_working_tree_returns_error(self, tmp_path: Path) -> None:
-        """Test error when working tree has uncommitted changes."""
+    def test_dirty_working_tree_auto_commits(self, tmp_path: Path) -> None:
+        """Test that uncommitted changes are auto-committed before restack."""
         ops = (
             FakeGtKitOps()
             .with_repo_root(str(tmp_path))
             .with_branch("feature-branch", parent="main")
             .with_commits(1)
             .with_uncommitted_files(["modified.py"])
+            .with_rebase_in_progress(False)
         )
 
         result = render_events(execute_restack_preflight(ops, tmp_path))
 
-        assert isinstance(result, RestackPreflightError)
-        assert result.success is False
-        assert result.error_type == "dirty_working_tree"
-        assert "uncommitted changes" in result.message
+        # Should succeed after auto-committing
+        assert isinstance(result, RestackPreflightSuccess)
+        assert result.success is True
+        assert result.has_conflicts is False
+        assert result.branch_name == "feature-branch"
+
+        # Verify a WIP commit was created
+        fake_git = ops.git
+        assert isinstance(fake_git, FakeGit)
+        assert len(fake_git.commits) >= 1
+        commit_messages = [msg for _, msg, _ in fake_git.commits]
+        assert "WIP: auto-commit before restack" in commit_messages
 
 
 class TestRestackContinue:
