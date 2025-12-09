@@ -74,6 +74,7 @@ def make_issue_info(number: int, body: str) -> IssueInfo:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
 

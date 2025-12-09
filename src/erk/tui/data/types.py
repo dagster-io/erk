@@ -77,6 +77,7 @@ class PlanFilters:
         limit: Maximum number of results (None for no limit)
         show_prs: Whether to include PR data
         show_runs: Whether to include workflow run data
+        creator: Filter by creator username (None for all users)
     """
 
     labels: tuple[str, ...]
@@ -85,6 +86,7 @@ class PlanFilters:
     limit: int | None
     show_prs: bool
     show_runs: bool
+    creator: str | None = None
 
     @staticmethod
     def default() -> "PlanFilters":
@@ -96,4 +98,5 @@ class PlanFilters:
             limit=None,
             show_prs=False,
             show_runs=False,
+            creator=None,
         )

@@ -32,6 +32,7 @@ def make_issue_info(number: int, labels: list[str] | None = None) -> IssueInfo:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
 

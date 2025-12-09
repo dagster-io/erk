@@ -322,6 +322,7 @@ class GitHub(ABC):
         labels: list[str],
         state: str | None = None,
         limit: int | None = None,
+        creator: str | None = None,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Fetch issues and linked PRs in a single GraphQL query.
 
@@ -334,6 +335,8 @@ class GitHub(ABC):
             labels: Labels to filter by (e.g., ["erk-plan"])
             state: Filter by state ("open", "closed", or None for all)
             limit: Maximum issues to return (default: 100)
+            creator: Filter by creator username (e.g., "octocat"). If provided,
+                only issues created by this user are returned.
 
         Returns:
             Tuple of (issues, pr_linkages) where:

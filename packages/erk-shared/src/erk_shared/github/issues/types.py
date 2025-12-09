@@ -17,6 +17,7 @@ class IssueInfo:
     assignees: list[str]
     created_at: datetime
     updated_at: datetime
+    author: str  # GitHub login of the issue creator
 
 
 @dataclass(frozen=True)

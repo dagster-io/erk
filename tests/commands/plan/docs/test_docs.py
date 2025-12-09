@@ -30,6 +30,7 @@ def _make_issue(
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
     )
 
 

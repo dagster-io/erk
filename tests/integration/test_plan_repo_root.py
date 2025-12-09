@@ -53,6 +53,7 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
                 labels: list[str],
                 state: str | None = None,
                 limit: int | None = None,
+                creator: str | None = None,
             ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
                 nonlocal captured_repo_root
                 captured_repo_root = location.root

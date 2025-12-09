@@ -463,10 +463,11 @@ class FakeGitHub(GitHub):
         labels: list[str],
         state: str | None = None,
         limit: int | None = None,
+        creator: str | None = None,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Get issues and PR linkages from pre-configured data.
 
-        Filters pre-configured issues by labels and state, then returns
+        Filters pre-configured issues by labels, state, and creator, then returns
         matching PR linkages from pr_issue_linkages mapping.
 
         Args:
@@ -474,6 +475,7 @@ class FakeGitHub(GitHub):
             labels: Labels to filter by
             state: Filter by state ("open", "closed", or None for OPEN default)
             limit: Maximum issues to return (default: all)
+            creator: Filter by creator username (e.g., "octocat")
 
         Returns:
             Tuple of (filtered_issues, pr_linkages for those issues)
@@ -481,7 +483,7 @@ class FakeGitHub(GitHub):
         # Default to OPEN to match gh CLI behavior (gh issue list defaults to open)
         effective_state = state if state is not None else "open"
 
-        # Filter issues by labels
+        # Filter issues by labels, state, and creator
         filtered_issues = []
         for issue in self._issues:
             # Check if issue has all required labels
@@ -489,6 +491,9 @@ class FakeGitHub(GitHub):
                 continue
             # Check state filter
             if issue.state.lower() != effective_state.lower():
+                continue
+            # Check creator filter
+            if creator is not None and issue.author != creator:
                 continue
             filtered_issues.append(issue)
 

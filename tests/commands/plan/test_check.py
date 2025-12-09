@@ -43,6 +43,7 @@ def test_check_valid_plan_passes() -> None:
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
     )
 
     runner = CliRunner()
@@ -79,6 +80,7 @@ def test_check_missing_plan_header_fails() -> None:
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
     )
 
     runner = CliRunner()
@@ -119,6 +121,7 @@ def test_check_missing_required_field_fails() -> None:
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
     )
 
     runner = CliRunner()
@@ -161,6 +164,7 @@ def test_check_missing_first_comment_fails() -> None:
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
     )
 
     runner = CliRunner()
@@ -201,6 +205,7 @@ def test_check_missing_plan_body_fails() -> None:
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
     )
 
     runner = CliRunner()
@@ -249,6 +254,7 @@ def test_check_github_url_parsing() -> None:
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
     )
 
     runner = CliRunner()
@@ -325,6 +331,7 @@ def test_validate_plan_format_passes_valid_plan(tmp_path: Path) -> None:
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
     )
 
     issues = FakeGitHubIssues(
@@ -356,6 +363,7 @@ def test_validate_plan_format_fails_missing_plan_header(tmp_path: Path) -> None:
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
     )
 
     issues = FakeGitHubIssues(
@@ -395,6 +403,7 @@ def test_validate_plan_format_fails_missing_first_comment(tmp_path: Path) -> Non
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
     )
 
     issues = FakeGitHubIssues(
@@ -433,6 +442,7 @@ def test_validate_plan_format_fails_missing_plan_body(tmp_path: Path) -> None:
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
     )
 
     issues = FakeGitHubIssues(

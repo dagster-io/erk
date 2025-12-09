@@ -104,6 +104,7 @@ def test_create_from_issue_with_valid_issue() -> None:
                     assignees=[],
                     created_at=now,
                     updated_at=now,
+                    author="test-user",
                 )
             }
         )
@@ -184,6 +185,7 @@ def test_create_from_issue_missing_label() -> None:
                     assignees=[],
                     created_at=now,
                     updated_at=now,
+                    author="test-user",
                 )
             }
         )
@@ -233,6 +235,7 @@ def test_create_from_issue_url_parsing() -> None:
                     assignees=[],
                     created_at=now,
                     updated_at=now,
+                    author="test-user",
                 )
             }
         )
@@ -285,6 +288,7 @@ def test_create_from_issue_name_derivation() -> None:
                     assignees=[],
                     created_at=now,
                     updated_at=now,
+                    author="test-user",
                 )
             }
         )
@@ -374,6 +378,7 @@ def test_create_from_issue_readonly_operation() -> None:
                     assignees=[],
                     created_at=now,
                     updated_at=now,
+                    author="test-user",
                 )
             }
         )
@@ -435,6 +440,7 @@ def test_create_from_issue_tracks_branch_with_graphite() -> None:
                     assignees=[],
                     created_at=now,
                     updated_at=now,
+                    author="test-user",
                 )
             }
         )
@@ -518,6 +524,7 @@ def test_create_from_issue_no_graphite_tracking_when_disabled() -> None:
                     assignees=[],
                     created_at=now,
                     updated_at=now,
+                    author="test-user",
                 )
             }
         )

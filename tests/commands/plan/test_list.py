@@ -24,6 +24,7 @@ def plan_to_issue(plan: Plan) -> IssueInfo:
         assignees=plan.assignees,
         created_at=plan.created_at,
         updated_at=plan.updated_at,
+        author="test-user",
     )
 
 
@@ -222,8 +223,8 @@ def test_plan_list_empty_results() -> None:
         assert "No plans found matching the criteria" in result.output
 
 
-def test_plan_list_all_flag_shows_run_columns() -> None:
-    """Test that --all flag enables run columns."""
+def test_plan_list_runs_flag_shows_run_columns() -> None:
+    """Test that --runs flag enables run columns."""
     from erk_shared.github.types import WorkflowRun
 
     plan_body = """<!-- erk:metadata-block:plan-header -->
@@ -268,15 +269,15 @@ last_dispatched_node_id: 'WFR_all_flag'
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        result = runner.invoke(cli, ["plan", "list", "--all"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
 
         assert result.exit_code == 0
         assert "#200" in result.output
         assert "99999" in result.output
 
 
-def test_plan_list_short_all_flag() -> None:
-    """Test that -a short flag works same as --all."""
+def test_plan_list_short_runs_flag() -> None:
+    """Test that -r short flag works same as --runs."""
     from erk_shared.github.types import WorkflowRun
 
     plan_body = """<!-- erk:metadata-block:plan-header -->
@@ -321,7 +322,7 @@ last_dispatched_node_id: 'WFR_short_flag'
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        result = runner.invoke(cli, ["plan", "list", "-a"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "list", "-r"], obj=ctx)
 
         assert result.exit_code == 0
         assert "#201" in result.output

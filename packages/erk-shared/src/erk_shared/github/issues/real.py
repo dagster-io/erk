@@ -66,6 +66,9 @@ class RealGitHubIssues(GitHubIssues):
         stdout = execute_gh_command(cmd, repo_root)
         data = json.loads(stdout)
 
+        # Extract author login (user who created the issue)
+        author = data.get("user", {}).get("login", "")
+
         return IssueInfo(
             number=data["number"],
             title=data["title"],
@@ -76,6 +79,7 @@ class RealGitHubIssues(GitHubIssues):
             assignees=[assignee["login"] for assignee in data.get("assignees", [])],
             created_at=datetime.fromisoformat(data["created_at"].replace("Z", "+00:00")),
             updated_at=datetime.fromisoformat(data["updated_at"].replace("Z", "+00:00")),
+            author=author,
         )
 
     def add_comment(self, repo_root: Path, number: int, body: str) -> None:
@@ -113,7 +117,7 @@ class RealGitHubIssues(GitHubIssues):
             "issue",
             "list",
             "--json",
-            "number,title,body,state,url,labels,assignees,createdAt,updatedAt",
+            "number,title,body,state,url,labels,assignees,createdAt,updatedAt,author",
         ]
 
         if labels:
@@ -140,6 +144,7 @@ class RealGitHubIssues(GitHubIssues):
                 assignees=[assignee["login"] for assignee in issue.get("assignees", [])],
                 created_at=datetime.fromisoformat(issue["createdAt"].replace("Z", "+00:00")),
                 updated_at=datetime.fromisoformat(issue["updatedAt"].replace("Z", "+00:00")),
+                author=issue.get("author", {}).get("login", ""),
             )
             for issue in data
         ]

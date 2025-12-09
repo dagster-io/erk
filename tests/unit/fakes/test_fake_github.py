@@ -456,6 +456,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_labels() -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
     issue2 = IssueInfo(
         number=2,
@@ -467,6 +468,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_labels() -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
     ops = FakeGitHub(issues=[issue1, issue2])
 
@@ -492,6 +494,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_state() -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
     closed_issue = IssueInfo(
         number=2,
@@ -503,6 +506,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_state() -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
     ops = FakeGitHub(issues=[open_issue, closed_issue])
 
@@ -529,6 +533,7 @@ def test_fake_github_get_issues_with_pr_linkages_returns_pr_linkages() -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
     pr = PullRequestInfo(
         number=123,
@@ -569,6 +574,7 @@ def test_fake_github_get_issues_with_pr_linkages_respects_limit() -> None:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         )
         for i in range(10)
     ]
@@ -596,6 +602,7 @@ def test_fake_github_get_issues_with_pr_linkages_no_linkages_for_filtered_issues
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
     issue2 = IssueInfo(
         number=2,
@@ -607,6 +614,7 @@ def test_fake_github_get_issues_with_pr_linkages_no_linkages_for_filtered_issues
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
     pr = PullRequestInfo(
         number=99,
