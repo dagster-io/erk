@@ -1,4 +1,4 @@
 name: command
-version: 0.1.0
+version: 0.2.0
 description: Execute Claude Code slash commands from CLI (ops layer implementation)
 license: See LICENSE.md

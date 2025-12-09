@@ -285,7 +285,7 @@ toml = [
 
 [[package]]
 name = "dot-agent-kit"
-version = "0.1.29"
+version = "0.2.0"
 source = { editable = "packages/dot-agent-kit" }
 dependencies = [
     { name = "click" },
@@ -314,7 +314,7 @@ requires-dist = [
 
 [[package]]
 name = "erk"
-version = "0.1.29"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
@@ -367,7 +367,7 @@ dev = [
 
 [[package]]
 name = "erk-dev"
-version = "0.1.10"
+version = "0.2.0"
 source = { editable = "packages/erk-dev" }
 dependencies = [
     { name = "click" },
@@ -378,7 +378,7 @@ requires-dist = [{ name = "click", specifier = ">=8.1.7" }]
 
 [[package]]
 name = "erk-shared"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "packages/erk-shared" }
 dependencies = [
     { name = "click" },

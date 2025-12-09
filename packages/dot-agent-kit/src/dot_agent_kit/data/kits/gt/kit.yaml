@@ -1,5 +1,5 @@
 name: gt
-version: 0.1.0
+version: 0.2.0
 description: Graphite stack management with landing and submission commands
 license: See LICENSE.md
 scripts:
