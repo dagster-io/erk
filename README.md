@@ -1,3 +1,4 @@
+# up
 # erk
 
 `erk` is a CLI tool for plan-oriented agentic engineering.
