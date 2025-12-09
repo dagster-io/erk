@@ -83,8 +83,8 @@ def test_build_hook_validation_error_message_with_missing_fields() -> None:
     assert "invocation" in message
     assert "description" in message
     # Should include remediation steps
-    assert "dot-agent kit install" in message
-    assert "manually edit dot-agent.toml" in message
+    assert "erk kit install" in message
+    assert "manually edit kits.toml" in message
 
 
 def test_build_hook_validation_error_message_with_invalid_fields() -> None:

@@ -359,7 +359,7 @@ The agent handles all workflow orchestration, error handling, and result reporti
 
 If the agent is part of a kit (not project-specific), update the kit registry:
 
-**File:** `.agent/kits/<kit-name>/registry-entry.md`
+**File:** `.erk/kits/<kit-name>/registry-entry.md`
 
 Add agent documentation:
 ```markdown
@@ -587,7 +587,7 @@ Task(subagent_type="agent", prompt="Execute complete workflow")
 **Method 1: Kit Registry**
 
 ```markdown
-@.agent/kits/kit-registry.md
+@.erk/kits/kit-registry.md
 ```
 
 Shows all installed kits with their agents and usage patterns.

@@ -97,7 +97,7 @@ def sync_command(*, dry_run: bool, check: bool) -> None:
                 fg="yellow",
             )
         )
-        user_output("  Run 'dot-agent docs validate' to see errors")
+        user_output("  Run 'erk docs validate' to see errors")
         user_output()
 
     # Summary
@@ -108,7 +108,7 @@ def sync_command(*, dry_run: bool, check: bool) -> None:
             msg = f"✗ Files out of sync: {total_changes} change(s) needed"
             user_output(click.style(msg, fg="red", bold=True))
             user_output()
-            user_output("Run 'dot-agent docs sync' to regenerate files from frontmatter.")
+            user_output("Run 'erk docs sync' to regenerate files from frontmatter.")
             raise SystemExit(1)
         elif dry_run:
             user_output(click.style(f"Would make {total_changes} change(s)", fg="cyan", bold=True))

@@ -18,7 +18,7 @@ This project uses **dot-agent-kit** to manage Claude Code hooks. This provides:
 
 - **Kit-based organization**: Hooks bundled with related skills, commands, and agents
 - **Atomic installation**: Install/remove entire kit including hooks
-- **Metadata tracking**: Track hook sources in `dot-agent.toml`
+- **Metadata tracking**: Track hook sources in `kits.toml`
 - **Version control**: Hooks are code artifacts in the repository
 
 **Architecture**:
@@ -35,9 +35,9 @@ packages/dot-agent-kit/src/dot_agent_kit/data/kits/{kit-name}/
 
 **Installation flow**:
 
-1. `dot-agent kit install {kit-name}` reads `kit.yaml`
+1. `erk kit install {kit-name}` reads `kit.yaml`
 2. Writes hook configuration to `.claude/settings.json`
-3. Tracks installation in `dot-agent.toml` metadata
+3. Tracks installation in `kits.toml` metadata
 4. Claude Code reads `.claude/settings.json` at startup
 5. Hook fires when lifecycle event + matcher conditions met
 
@@ -48,7 +48,7 @@ packages/dot-agent-kit/src/dot_agent_kit/data/kits/{kit-name}/
 
 **Related documentation**:
 
-- Kit system overview: `.agent/kits/README.md`
+- Kit system overview: `.erk/kits/README.md`
 - Technical implementation: `packages/dot-agent-kit/docs/HOOKS.md`
 
 ## Current Hooks
@@ -146,7 +146,7 @@ Use AskUserQuestion to ask the user:
 
 ```bash
 # List all installed hooks
-dot-agent kit list
+erk kit list
 
 # Show hook configuration in Claude
 /hooks  # Run inside Claude Code session
@@ -166,13 +166,13 @@ Hooks are bundled in kits, so modifications require reinstallation:
 2. **Remove the kit**:
 
    ```bash
-   dot-agent kit remove devrun
+   erk kit remove devrun
    ```
 
 3. **Reinstall the kit**:
 
    ```bash
-   dot-agent kit install devrun
+   erk kit install devrun
    ```
 
 4. **Verify**:
@@ -182,7 +182,7 @@ Hooks are bundled in kits, so modifications require reinstallation:
    cat .claude/settings.json | grep -A 5 "devrun-reminder-hook"
 
    # Test hook directly
-   dot-agent kit-command devrun devrun-reminder-hook
+   erk kit-command devrun devrun-reminder-hook
    ```
 
 **Important**: Changes to hook scripts don't take effect until reinstalled. The hook configuration in `.claude/settings.json` is written during `kit install`.
@@ -222,13 +222,13 @@ See comprehensive guide: `packages/dot-agent-kit/docs/HOOKS.md`
      - id: my-reminder-hook
        lifecycle: UserPromptSubmit
        matcher: "*.txt"
-       invocation: "dot-agent kit-command {kit-name} my-reminder-hook"
+       invocation: "erk kit-command {kit-name} my-reminder-hook"
    ```
 
 4. **Install and test**:
    ```bash
-   dot-agent kit install {kit-name}
-   dot-agent kit-command {kit-name} my-reminder-hook  # Test directly
+   erk kit install {kit-name}
+   erk kit-command {kit-name} my-reminder-hook  # Test directly
    ```
 
 ### Testing Hooks
@@ -237,7 +237,7 @@ See comprehensive guide: `packages/dot-agent-kit/docs/HOOKS.md`
 
 ```bash
 # Run hook command directly
-dot-agent kit-command {kit-name} {hook-name}
+erk kit-command {kit-name} {hook-name}
 
 # Or run Python script directly
 python packages/dot-agent-kit/src/dot_agent_kit/data/kits/{kit-name}/kit_cli_commands/{kit-name}/{hook_name}.py
@@ -273,7 +273,7 @@ claude "Show me example.py"
 cat .claude/settings.json | grep -A 10 "hooks"
 
 # Verify kit installed
-dot-agent kit list
+erk kit list
 ```
 
 **Check 2: Matcher conditions met**
@@ -293,7 +293,7 @@ claude --debug
 
 **Common causes**:
 
-- Hook not installed (run `dot-agent kit install {kit-name}`)
+- Hook not installed (run `erk kit install {kit-name}`)
 - Matcher doesn't match current context
 - Hook script has errors (test independently)
 - Claude Code settings cache stale (restart Claude)
@@ -304,7 +304,7 @@ claude --debug
 
 ```bash
 # Run hook command directly
-dot-agent kit-command {kit-name} {hook-name}
+erk kit-command {kit-name} {hook-name}
 
 # Check exit code
 echo $?  # Should be 0 or 2
@@ -368,13 +368,13 @@ claude --debug
 
 ```bash
 # Remove kit
-dot-agent kit remove {kit-name}
+erk kit remove {kit-name}
 
 # Reinstall kit
-dot-agent kit install {kit-name}
+erk kit install {kit-name}
 
 # Verify changes
-dot-agent kit-command {kit-name} {hook-name}
+erk kit-command {kit-name} {hook-name}
 ```
 
 **Why**: Hook configuration is written to `.claude/settings.json` during installation. Source file changes don't auto-update installed hooks.
@@ -387,5 +387,5 @@ dot-agent kit-command {kit-name} {hook-name}
 - **Official Claude Code Hooks**: https://code.claude.com/docs/en/hooks
 - **Official Hooks Guide**: https://code.claude.com/docs/en/hooks-guide.md
 - **dot-agent-kit Hook Development**: `../../packages/dot-agent-kit/docs/HOOKS.md`
-- **Kit System Overview**: `../../.agent/kits/README.md`
+- **Kit System Overview**: `../../.erk/kits/README.md`
 - **Project Glossary**: `../glossary.md`

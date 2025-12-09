@@ -28,11 +28,11 @@ def show() -> None:
     all installed kit documentation entries.
     """
     project_dir = Path.cwd()
-    registry_path = project_dir / ".agent" / "kits" / "kit-registry.md"
+    registry_path = project_dir / ".erk" / "kits" / "kit-registry.md"
 
     if not registry_path.exists():
         user_output("No registry found")
-        user_output("Run 'dot-agent kit sync' to create the registry")
+        user_output("Run 'erk kit sync' to create the registry")
         raise SystemExit(1)
 
     content = registry_path.read_text(encoding="utf-8")
@@ -50,12 +50,12 @@ def validate() -> None:
     """
     project_dir = Path.cwd()
     config = require_project_config(project_dir)
-    registry_path = project_dir / ".agent" / "kits" / "kit-registry.md"
+    registry_path = project_dir / ".erk" / "kits" / "kit-registry.md"
 
     # Check registry file exists
     if not registry_path.exists():
-        user_output("❌ Registry file not found: .agent/kits/kit-registry.md")
-        user_output("Run 'dot-agent kit sync' to create it")
+        user_output("❌ Registry file not found: .erk/kits/kit-registry.md")
+        user_output("Run 'erk kit sync' to create it")
         raise SystemExit(1)
 
     # Read registry content
@@ -84,7 +84,7 @@ def validate() -> None:
         registry_lines = [line.strip() for line in content.split("\n") if line.startswith("@")]
         registry_kits = set()
         for line in registry_lines:
-            if line.startswith("@.agent/kits/") and line.endswith("/registry-entry.md"):
+            if line.startswith("@.erk/kits/") and line.endswith("/registry-entry.md"):
                 kit_id = line.split("/")[2]
                 registry_kits.add(kit_id)
         version_mismatches = []
@@ -113,7 +113,7 @@ def validate() -> None:
 
     # Check that registry entry files exist
     for kit_id in registry_kits:
-        entry_path = project_dir / ".agent" / "kits" / kit_id / "registry-entry.md"
+        entry_path = project_dir / ".erk" / "kits" / kit_id / "registry-entry.md"
         if not entry_path.exists():
             issues.append(f"Registry entry file missing for {kit_id}: {entry_path}")
 
@@ -121,7 +121,7 @@ def validate() -> None:
         user_output("❌ Registry validation failed:")
         for issue in issues:
             user_output(f"  - {issue}")
-        user_output("\nRun 'dot-agent kit sync' to fix these issues")
+        user_output("\nRun 'erk kit sync' to fix these issues")
         raise SystemExit(1)
 
     user_output(f"✓ Registry valid: {len(installed_kits)} kit(s) properly registered")

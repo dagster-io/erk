@@ -91,7 +91,7 @@ class UnknownFieldsResult:
 
 
 def detect_unknown_top_level_fields(data: dict) -> list[str]:
-    """Detect unknown fields at the top level of dot-agent.toml.
+    """Detect unknown fields at the top level of kits.toml.
 
     Args:
         data: Raw TOML data as dictionary
@@ -124,7 +124,7 @@ def validate_unknown_fields(
     project_dir: Path,
     config: ProjectConfig,
 ) -> list[UnknownFieldsResult]:
-    """Validate that no unknown fields exist in dot-agent.toml.
+    """Validate that no unknown fields exist in kits.toml.
 
     Args:
         project_dir: Project root directory
@@ -136,7 +136,7 @@ def validate_unknown_fields(
     results = []
 
     # Reload raw TOML data
-    toml_path = project_dir / "dot-agent.toml"
+    toml_path = project_dir / ".erk" / "kits.toml"
     if not toml_path.exists():
         return results
 
@@ -196,7 +196,7 @@ def validate_kit_fields(kit: InstalledKit) -> list[str]:
         errors.append("version is empty")
 
     # Validate artifacts list is non-empty (except for bundled kits which can
-    # define artifacts in their bundled kit.yaml instead of dot-agent.toml)
+    # define artifacts in their bundled kit.yaml instead of kits.toml)
     if not kit.artifacts and kit.source_type != SOURCE_TYPE_BUNDLED:
         errors.append("artifacts list is empty")
 
@@ -716,7 +716,7 @@ def check(verbose: bool) -> None:
     sync_passed = True
     if not config_exists:
         if verbose:
-            user_output("No dot-agent.toml found - skipping sync check")
+            user_output("No kits.toml found - skipping sync check")
     elif len(config.kits) == 0:
         if verbose:
             user_output("No kits installed - skipping sync check")
@@ -845,7 +845,7 @@ def check(verbose: bool) -> None:
             if out_of_sync_count > 0 or missing_count > 0 or obsolete_count > 0:
                 if verbose:
                     user_output()
-                    user_output("Run 'dot-agent kit sync --force' to update artifacts")
+                    user_output("Run 'erk kit sync --force' to update artifacts")
                 sync_passed = False
             else:
                 if verbose:
@@ -864,7 +864,7 @@ def check(verbose: bool) -> None:
     hook_passed = True
     if not config_exists:
         if verbose:
-            user_output("No dot-agent.toml found - skipping hook validation")
+            user_output("No kits.toml found - skipping hook validation")
     elif len(config.kits) == 0:
         if verbose:
             user_output("No kits installed - skipping hook validation")
@@ -963,7 +963,7 @@ def check(verbose: bool) -> None:
                     user_output(f"  {warn_check} Warnings: {warn_num}")
 
                 user_output()
-                sync_msg = "Run 'dot-agent kit sync --force' to update hook configuration"
+                sync_msg = "Run 'erk kit sync --force' to update hook configuration"
                 user_output(sync_msg)
             hook_passed = False
 
@@ -977,7 +977,7 @@ def check(verbose: bool) -> None:
     unknown_fields_passed = True
     if not config_exists:
         if verbose:
-            user_output("No dot-agent.toml found - skipping unknown field detection")
+            user_output("No kits.toml found - skipping unknown field detection")
     else:
         unknown_field_results = validate_unknown_fields(project_dir, config)
 

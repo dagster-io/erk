@@ -88,7 +88,7 @@ This ensures implementing agents have access to documentation you discovered dur
 
 - **[glossary.md](docs/agent/glossary.md)** — terminology, definitions
 - **[conventions.md](docs/agent/conventions.md)** — naming standards
-- **[kit-registry.md](.agent/kits/kit-registry.md)** — installed kits
+- **[kit-registry.md](.erk/kits/kit-registry.md)** — installed kits
 
 ## Graphite Stack Quick Reference
 

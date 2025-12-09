@@ -1,4 +1,4 @@
-"""Init command for creating .agent/dot-agent.toml configuration."""
+"""Init command for creating .erk/kits.toml configuration."""
 
 from pathlib import Path
 
@@ -14,20 +14,20 @@ from dot_agent_kit.io.state import create_default_config, save_project_config
     "--force",
     "-f",
     is_flag=True,
-    help="Overwrite existing .agent/dot-agent.toml if present",
+    help="Overwrite existing .erk/kits.toml if present",
 )
 def init(force: bool) -> None:
-    """Initialize .agent/dot-agent.toml configuration file.
+    """Initialize .erk/kits.toml configuration file.
 
-    Creates a new dot-agent.toml configuration file in .agent/ directory
+    Creates a new kits.toml configuration file in .erk/ directory
     at the git repo root (or current directory if not in a git repo).
-    Also creates .agent/ directory if it doesn't exist.
+    Also creates .erk/ directory if it doesn't exist.
 
     Use --force to overwrite an existing configuration.
     """
     project_dir = resolve_project_dir(Path.cwd())
-    config_path = project_dir / ".agent" / "dot-agent.toml"
-    agent_dir = project_dir / ".agent"
+    config_path = project_dir / ".erk" / "kits.toml"
+    erk_dir = project_dir / ".erk"
 
     # Check if config already exists
     if config_path.exists() and not force:
@@ -35,10 +35,10 @@ def init(force: bool) -> None:
         user_output("Use --force to overwrite")
         raise SystemExit(1)
 
-    # Create .agent directory if it doesn't exist
-    if not agent_dir.exists():
-        agent_dir.mkdir(parents=True)
-        user_output(f"Created {agent_dir}/")
+    # Create .erk directory if it doesn't exist
+    if not erk_dir.exists():
+        erk_dir.mkdir(parents=True)
+        user_output(f"Created {erk_dir}/")
 
     # Create default config
     config = create_default_config()
@@ -46,4 +46,4 @@ def init(force: bool) -> None:
 
     user_output(f"Created {config_path}")
     user_output("\nYou can now install kits using:")
-    user_output("  dot-agent kit install <kit-name>")
+    user_output("  erk kit install <kit-name>")

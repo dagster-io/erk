@@ -1,5 +1,5 @@
 <!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
-<!-- Edit source frontmatter, then run 'dot-agent docs sync' to regenerate. -->
+<!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. -->
 
 # Sessions Documentation
 

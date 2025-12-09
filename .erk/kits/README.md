@@ -13,19 +13,19 @@ The kit registry provides:
 Load the kit registry to discover what functionality is available in this project:
 
 ```markdown
-@.agent/kits/kit-registry.md
+@.erk/kits/kit-registry.md
 ```
 
 The registry will expand to show all installed kits with references to their individual documentation. Each kit entry provides information about available agents, commands, and skills.
 
 ## For Developers
 
-Manage kits using `dot-agent kit` commands:
+Manage kits using `erk kit` commands:
 
-- `dot-agent kit list` - Show installed kits
-- `dot-agent kit install <kit-id>` - Install a kit
-- `dot-agent kit sync` - Regenerate registry from installed kits
+- `erk kit list` - Show installed kits
+- `erk kit install <kit-id>` - Install a kit
+- `erk kit sync` - Regenerate registry from installed kits
 
 ## Maintenance
 
-The `kit-registry.md` file and individual `registry-entry.md` files are auto-generated. Do not edit them manually - changes will be overwritten by `dot-agent kit sync`.
+The `kit-registry.md` file and individual `registry-entry.md` files are auto-generated. Do not edit them manually - changes will be overwritten by `erk kit sync`.

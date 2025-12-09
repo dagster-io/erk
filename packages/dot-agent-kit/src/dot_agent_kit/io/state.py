@@ -1,4 +1,4 @@
-"""State file I/O for dot-agent.toml."""
+"""State file I/O for kits.toml."""
 
 from pathlib import Path
 
@@ -73,8 +73,8 @@ def _build_hook_validation_error_message(
         [
             "",
             "Suggested action:",
-            f"  1. Run 'dot-agent kit install {kit_name}' to reinstall with correct configuration",
-            "  2. Or manually edit dot-agent.toml to add missing fields",
+            f"  1. Run 'erk kit install {kit_name}' to reinstall with correct configuration",
+            "  2. Or manually edit kits.toml to add missing fields",
             "  3. Check kit documentation for hook format",
         ]
     )
@@ -113,7 +113,7 @@ def _load_dev_mode_from_pyproject(project_dir: Path) -> bool:
 
 
 def _find_config_path(project_dir: Path) -> Path | None:
-    """Find config file, checking new location first then falling back to old.
+    """Find kits.toml config file.
 
     Args:
         project_dir: Project root directory
@@ -121,24 +121,16 @@ def _find_config_path(project_dir: Path) -> Path | None:
     Returns:
         Path to config file if found, None otherwise
     """
-    # New location: .agent/dot-agent.toml
-    new_path = project_dir / ".agent" / "dot-agent.toml"
-    if new_path.exists():
-        return new_path
-
-    # Fallback: old location at project root
-    old_path = project_dir / "dot-agent.toml"
-    if old_path.exists():
-        return old_path
-
+    config_path = project_dir / ".erk" / "kits.toml"
+    if config_path.exists():
+        return config_path
     return None
 
 
 def load_project_config(project_dir: Path) -> ProjectConfig | None:
-    """Load dot-agent.toml from project directory.
+    """Load kits.toml from project directory.
 
-    Checks .agent/dot-agent.toml first (new location), then falls back to
-    dot-agent.toml at project root (old location) for backwards compatibility.
+    Checks .erk/kits.toml for kit configuration.
 
     Returns None if file doesn't exist.
     """
@@ -210,7 +202,7 @@ def load_project_config(project_dir: Path) -> ProjectConfig | None:
 
 
 def require_project_config(project_dir: Path) -> ProjectConfig:
-    """Load dot-agent.toml and exit with error if not found.
+    """Load kits.toml and exit with error if not found.
 
     This is a convenience wrapper around load_project_config that enforces
     the config must exist, displaying a helpful error message if not.
@@ -219,26 +211,26 @@ def require_project_config(project_dir: Path) -> ProjectConfig:
         ProjectConfig if found
 
     Raises:
-        SystemExit: If dot-agent.toml not found
+        SystemExit: If kits.toml not found
     """
     config = load_project_config(project_dir)
     if config is None:
-        msg = "Error: No .agent/dot-agent.toml found. Run 'dot-agent init' to create one."
+        msg = "Error: No .erk/kits.toml found. Run 'erk kit init' to create one."
         user_output(msg)
         raise SystemExit(1)
     return config
 
 
 def save_project_config(project_dir: Path, config: ProjectConfig) -> None:
-    """Save dot-agent.toml to .agent/ directory.
+    """Save kits.toml to .erk/ directory.
 
-    Always saves to the new location (.agent/dot-agent.toml).
-    Creates .agent/ directory if it doesn't exist.
+    Always saves to .erk/kits.toml.
+    Creates .erk/ directory if it doesn't exist.
     """
-    agent_dir = project_dir / ".agent"
-    if not agent_dir.exists():
-        agent_dir.mkdir(parents=True)
-    config_path = agent_dir / "dot-agent.toml"
+    erk_dir = project_dir / ".erk"
+    if not erk_dir.exists():
+        erk_dir.mkdir(parents=True)
+    config_path = erk_dir / "kits.toml"
 
     # Convert ProjectConfig to dict
     data = {

@@ -81,7 +81,7 @@ def test_create_kit_registry_file(tmp_path: Path) -> None:
 
     # Verify file created
     assert result_path.exists()
-    assert result_path == tmp_path / ".agent" / "kits" / "test-kit" / "registry-entry.md"
+    assert result_path == tmp_path / ".erk" / "kits" / "test-kit" / "registry-entry.md"
 
     # Verify content matches
     assert result_path.read_text(encoding="utf-8") == entry_content
@@ -91,7 +91,7 @@ def test_add_kit_to_registry_new_file(tmp_path: Path) -> None:
     """Test adding kit to new registry with structured format."""
     add_kit_to_registry("test-kit", tmp_path, "1.0.0", "bundled")
 
-    registry_path = tmp_path / ".agent" / "kits" / "kit-registry.md"
+    registry_path = tmp_path / ".erk" / "kits" / "kit-registry.md"
 
     # Verify registry created
     assert registry_path.exists()
@@ -106,7 +106,7 @@ def test_add_kit_to_registry_new_file(tmp_path: Path) -> None:
 
     # Verify structured entry added
     assert 'ENTRY_START kit_id="test-kit"' in content
-    assert "@.agent/kits/test-kit/registry-entry.md" in content
+    assert "@.erk/kits/test-kit/registry-entry.md" in content
 
 
 def test_add_kit_to_registry_existing_file(tmp_path: Path) -> None:
@@ -117,7 +117,7 @@ def test_add_kit_to_registry_existing_file(tmp_path: Path) -> None:
     # Add new kit to existing registry
     add_kit_to_registry("new-kit", tmp_path, "2.0.0", "bundled")
 
-    registry_path = tmp_path / ".agent" / "kits" / "kit-registry.md"
+    registry_path = tmp_path / ".erk" / "kits" / "kit-registry.md"
     content = registry_path.read_text(encoding="utf-8")
 
     # Verify structured format
@@ -127,8 +127,8 @@ def test_add_kit_to_registry_existing_file(tmp_path: Path) -> None:
     # Verify both kits present with metadata
     assert 'ENTRY_START kit_id="existing-kit"' in content
     assert 'ENTRY_START kit_id="new-kit"' in content
-    assert "@.agent/kits/existing-kit/registry-entry.md" in content
-    assert "@.agent/kits/new-kit/registry-entry.md" in content
+    assert "@.erk/kits/existing-kit/registry-entry.md" in content
+    assert "@.erk/kits/new-kit/registry-entry.md" in content
 
 
 def test_add_kit_to_registry_duplicate(tmp_path: Path) -> None:
@@ -136,7 +136,7 @@ def test_add_kit_to_registry_duplicate(tmp_path: Path) -> None:
     # Add kit once
     add_kit_to_registry("test-kit", tmp_path, "1.0.0", "bundled")
 
-    registry_path = tmp_path / ".agent" / "kits" / "kit-registry.md"
+    registry_path = tmp_path / ".erk" / "kits" / "kit-registry.md"
     content_after_first = registry_path.read_text(encoding="utf-8")
 
     # Add same kit again
@@ -154,18 +154,18 @@ def test_add_kit_to_registry_duplicate(tmp_path: Path) -> None:
 def test_remove_kit_from_registry(tmp_path: Path) -> None:
     """Test removing kit from registry."""
     # Create registry with kit
-    registry_path = tmp_path / ".agent" / "kits" / "kit-registry.md"
+    registry_path = tmp_path / ".erk" / "kits" / "kit-registry.md"
     registry_path.parent.mkdir(parents=True, exist_ok=True)
     registry_path.write_text(
         "# Kit Documentation Registry\n\n"
-        "@.agent/kits/kit1/registry-entry.md\n\n"
-        "@.agent/kits/kit2/registry-entry.md\n\n"
-        "@.agent/kits/kit3/registry-entry.md\n",
+        "@.erk/kits/kit1/registry-entry.md\n\n"
+        "@.erk/kits/kit2/registry-entry.md\n\n"
+        "@.erk/kits/kit3/registry-entry.md\n",
         encoding="utf-8",
     )
 
     # Create kit registry directory
-    kit_dir = tmp_path / ".agent" / "kits" / "kit2"
+    kit_dir = tmp_path / ".erk" / "kits" / "kit2"
     kit_dir.mkdir(parents=True, exist_ok=True)
     (kit_dir / "registry-entry.md").write_text("content", encoding="utf-8")
 
@@ -175,11 +175,11 @@ def test_remove_kit_from_registry(tmp_path: Path) -> None:
     content = registry_path.read_text(encoding="utf-8")
 
     # Verify kit2 removed
-    assert "@.agent/kits/kit2/registry-entry.md" not in content
+    assert "@.erk/kits/kit2/registry-entry.md" not in content
 
     # Verify other kits still present
-    assert "@.agent/kits/kit1/registry-entry.md" in content
-    assert "@.agent/kits/kit3/registry-entry.md" in content
+    assert "@.erk/kits/kit1/registry-entry.md" in content
+    assert "@.erk/kits/kit3/registry-entry.md" in content
 
     # Verify directory deleted
     assert not kit_dir.exists()
@@ -188,7 +188,7 @@ def test_remove_kit_from_registry(tmp_path: Path) -> None:
 def test_remove_kit_from_registry_nonexistent(tmp_path: Path) -> None:
     """Test removing nonexistent kit (should not error)."""
     # Create empty registry
-    registry_path = tmp_path / ".agent" / "kits" / "kit-registry.md"
+    registry_path = tmp_path / ".erk" / "kits" / "kit-registry.md"
     registry_path.parent.mkdir(parents=True, exist_ok=True)
     registry_path.write_text("# Kit Documentation Registry\n\n", encoding="utf-8")
 
@@ -205,7 +205,7 @@ def test_rebuild_registry(tmp_path: Path) -> None:
 
     rebuild_registry(tmp_path, config)
 
-    registry_path = tmp_path / ".agent" / "kits" / "kit-registry.md"
+    registry_path = tmp_path / ".erk" / "kits" / "kit-registry.md"
 
     # Verify registry created
     assert registry_path.exists()
@@ -250,11 +250,11 @@ def test_parse_doc_registry_entries() -> None:
 <!-- BEGIN_ENTRIES -->
 
 <!-- ENTRY_START kit_id="devrun" version="0.1.0" source="bundled" -->
-@.agent/kits/devrun/registry-entry.md
+@.erk/kits/devrun/registry-entry.md
 <!-- ENTRY_END -->
 
 <!-- ENTRY_START kit_id="gt" version="0.2.0" source="standalone" -->
-@.agent/kits/gt/registry-entry.md
+@.erk/kits/gt/registry-entry.md
 <!-- ENTRY_END -->
 
 <!-- END_ENTRIES -->
@@ -269,7 +269,7 @@ def test_parse_doc_registry_entries() -> None:
     assert entries[0].kit_id == "devrun"
     assert entries[0].version == "0.1.0"
     assert entries[0].source_type == "bundled"
-    assert entries[0].include_path == ".agent/kits/devrun/registry-entry.md"
+    assert entries[0].include_path == ".erk/kits/devrun/registry-entry.md"
 
     # Check second entry
     assert entries[1].kit_id == "gt"
@@ -286,13 +286,13 @@ def test_generate_doc_registry_content() -> None:
             kit_id="kit-b",
             version="2.0.0",
             source_type="bundled",
-            include_path=".agent/kits/kit-b/registry-entry.md",
+            include_path=".erk/kits/kit-b/registry-entry.md",
         ),
         DocRegistryEntry(
             kit_id="kit-a",
             version="1.0.0",
             source_type="standalone",
-            include_path=".agent/kits/kit-a/registry-entry.md",
+            include_path=".erk/kits/kit-a/registry-entry.md",
         ),
     ]
 
@@ -323,14 +323,14 @@ def test_old_format_migration() -> None:
 
     try:
         # Create old format registry
-        registry_path = tmp_path / ".agent" / "kits" / "kit-registry.md"
+        registry_path = tmp_path / ".erk" / "kits" / "kit-registry.md"
         registry_path.parent.mkdir(parents=True, exist_ok=True)
         registry_path.write_text(
-            "# Kit Documentation Registry\n\n@.agent/kits/old-kit/registry-entry.md\n",
+            "# Kit Documentation Registry\n\n@.erk/kits/old-kit/registry-entry.md\n",
             encoding="utf-8",
         )
 
-        # Create dot-agent.toml with kit info
+        # Create kits.toml with kit info
         config = ProjectConfig(
             version="1",
             kits={
