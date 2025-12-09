@@ -51,7 +51,7 @@ def create_extraction_branch(
     repo_root = require_repo_root(ctx)
     cwd = Path.cwd()
 
-    branch_name = f"extraction-docs-{issue_number}"
+    branch_name = f"extraction-docs-P{issue_number}"
 
     # Check if branch already exists locally
     local_branches = git.list_local_branches(repo_root)

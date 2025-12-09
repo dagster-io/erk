@@ -497,7 +497,17 @@ def test_fake_git_get_branch_issue_extracts_from_branch_name() -> None:
     """Test get_branch_issue extracts issue number from branch name prefix."""
     git_ops = FakeGit()
 
-    # Branch names with issue number prefix
+    # Branch names with P-prefixed issue number (new format uses uppercase P)
+    assert (
+        git_ops.get_branch_issue(Path("/repo"), "P2382-convert-erk-create-raw-ext-12-05-2359")
+        == 2382
+    )
+    assert git_ops.get_branch_issue(Path("/repo"), "P42-fix-bug") == 42
+    assert git_ops.get_branch_issue(Path("/repo"), "P123-feature-name") == 123
+    # Lowercase p also supported for backwards compatibility
+    assert git_ops.get_branch_issue(Path("/repo"), "p100-lowercase-prefix") == 100
+
+    # Branch names with legacy format (no P prefix, backwards compatibility)
     assert (
         git_ops.get_branch_issue(Path("/repo"), "2382-convert-erk-create-raw-ext-12-05-2359")
         == 2382

@@ -126,9 +126,9 @@ def test_create_from_issue_with_valid_issue() -> None:
 
         # Assert: Worktree created with branch name derived from issue title
         # Branch name is sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
-        # "123-Add User Authentication" -> "123-add-user-authentication-01-15-1430"
+        # "P123-Add User Authentication" -> "P123-add-user-authentication-01-15-1430"
         worktrees_dir = repo_dir / "worktrees"
-        expected_worktree_path = worktrees_dir / "123-add-user-authentication-01-15-1430"
+        expected_worktree_path = worktrees_dir / "P123-add-user-authentication-01-15-1430"
         assert expected_worktree_path.exists(), (
             f"Expected worktree at {expected_worktree_path}, found: {list(worktrees_dir.glob('*'))}"
         )
@@ -300,10 +300,11 @@ def test_create_from_issue_name_derivation() -> None:
         )
 
         # Assert: Name = sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
-        # "111-Fix: Database..." -> "111-fix-database-connection-iss-01-15-1430"
+        # "P111-Fix: Database..." -> "P111-fix-database-connection-is-01-15-1430"
+        # Note: truncated to 31 chars before timestamp suffix
         assert result.exit_code == 0
         worktrees_dir = repo_dir / "worktrees"
-        expected_worktree_path = worktrees_dir / "111-fix-database-connection-iss-01-15-1430"
+        expected_worktree_path = worktrees_dir / "P111-fix-database-connection-is-01-15-1430"
         assert expected_worktree_path.exists(), (
             f"Expected worktree at {expected_worktree_path}, found: {list(worktrees_dir.glob('*'))}"
         )

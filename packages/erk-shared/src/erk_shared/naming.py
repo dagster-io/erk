@@ -362,16 +362,22 @@ def extract_trailing_number(name: str) -> tuple[str, int | None]:
 def extract_leading_issue_number(branch_name: str) -> int | None:
     """Extract leading issue number from a branch name.
 
-    Branch names follow the pattern: {issue_number}-{slug}-{timestamp}
-    Examples: "2382-convert-erk-create-raw-ext-12-05-2359"
+    Branch names follow the pattern: P{issue_number}-{slug}-{timestamp}
+    Examples: "P2382-convert-erk-create-raw-ext-12-05-2359"
+
+    Also supports legacy format without "P" prefix for backwards compatibility.
 
     Args:
         branch_name: Branch name to parse
 
     Returns:
-        Issue number if branch starts with digits followed by hyphen, else None
+        Issue number if branch starts with optional "P" followed by digits and hyphen, else None
 
     Examples:
+        >>> extract_leading_issue_number("P2382-convert-erk-create-raw-ext-12-05-2359")
+        2382
+        >>> extract_leading_issue_number("P42-fix-bug")
+        42
         >>> extract_leading_issue_number("2382-convert-erk-create-raw-ext-12-05-2359")
         2382
         >>> extract_leading_issue_number("42-fix-bug")
@@ -381,7 +387,7 @@ def extract_leading_issue_number(branch_name: str) -> int | None:
         >>> extract_leading_issue_number("master")
         None
     """
-    match = re.match(r"^(\d+)-", branch_name)
+    match = re.match(r"^[Pp]?(\d+)-", branch_name)
     if match:
         return int(match.group(1))
     return None

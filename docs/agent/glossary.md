@@ -119,16 +119,24 @@ The absolute path to a specific erk directory.
 
 ### Branch Naming Convention
 
-Erk branches follow the pattern `{issue_number}-{slug}-{timestamp}`:
+Erk branches follow the pattern `P{issue_number}-{slug}-{timestamp}`:
 
+- **P** - Prefix indicating a "plan" branch (linked to a GitHub issue)
 - `{issue_number}` - GitHub issue number (extracted by `extract_leading_issue_number()`)
-- `{slug}` - Kebab-case description of the work
+- `{slug}` - Kebab-case description of the work (max 31 chars before timestamp)
 - `{timestamp}` - Creation timestamp in `MM-DD-HHMM` format
 
 **Examples**:
 
-- `2382-convert-erk-create-raw-ext-12-05-2359`
-- `123-fix-auth-bug-01-15-1430`
+- `P2843-add-p-prefix-to-branch-nam-12-09-0934`
+- `P123-fix-auth-bug-01-15-1430`
+
+**Why the "P" prefix?**: Distinguishes erk-managed plan branches from manually-created branches, making it easy to identify which branches are linked to GitHub issues.
+
+**Backwards Compatibility**: `extract_leading_issue_number()` supports both formats via the pattern `^[Pp]?(\d+)-`:
+
+- New format: `P123-feature` → extracts `123`
+- Legacy format: `123-feature` → extracts `123`
 
 **Automatic extraction**: `get_branch_issue()` uses this pattern to determine which GitHub issue a branch relates to, without requiring git config setup.
 

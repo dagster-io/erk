@@ -612,7 +612,7 @@ class RealGit(Git):
     def get_branch_issue(self, repo_root: Path, branch: str) -> int | None:
         """Extract GitHub issue number from branch name.
 
-        Branch names follow the pattern: {issue_number}-{slug}-{timestamp}
+        Branch names follow the pattern: P{issue_number}-{slug}-{timestamp}
         """
         from erk_shared.naming import extract_leading_issue_number
 

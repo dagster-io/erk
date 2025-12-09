@@ -698,9 +698,13 @@ def create_wt(
             )
             raise SystemExit(1)
 
-        # Create branch name: truncate to 31 chars, then append timestamp suffix
+        # Create branch name: P prefix + issue number + sanitized title + timestamp
+        # Apply P prefix AFTER sanitization since sanitize_worktree_name lowercases input
+        # Truncate total to 31 chars before adding timestamp suffix
         trunk_branch = ctx.git.detect_trunk_branch(repo.root)
-        base_branch_name = sanitize_worktree_name(f"{issue_number_parsed}-{issue_info.title}")
+        prefix = f"P{issue_number_parsed}-"
+        sanitized_title = sanitize_worktree_name(issue_info.title)
+        base_branch_name = (prefix + sanitized_title)[:31].rstrip("-")
         timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
         branch_name = base_branch_name + timestamp_suffix
 
