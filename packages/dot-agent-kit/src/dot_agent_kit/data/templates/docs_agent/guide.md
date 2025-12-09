@@ -28,7 +28,7 @@ title: Document Title
 read_when:
   - "condition when agent should read this"
   - "another condition"
-tripwires:  # Optional
+tripwires: # Optional
   - action: "before doing X"
     warning: "Do Y instead because Z."
 ---
