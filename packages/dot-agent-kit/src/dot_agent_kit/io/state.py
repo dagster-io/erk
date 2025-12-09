@@ -215,7 +215,7 @@ def require_project_config(project_dir: Path) -> ProjectConfig:
     """
     config = load_project_config(project_dir)
     if config is None:
-        msg = "Error: No .erk/kits.toml found. Run 'erk kit init' to create one."
+        msg = "Error: No .erk/kits.toml found. Run 'erk init' to create one."
         user_output(msg)
         raise SystemExit(1)
     return config
