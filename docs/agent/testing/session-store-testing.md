@@ -77,6 +77,7 @@ result = runner.invoke(
 | `find_sessions(project_cwd, min_size=0, limit=10)` | Returns sessions from fake data       |
 | `read_session(project_cwd, session_id)`            | Returns session content               |
 | `has_project(project_cwd)`                         | Checks if project exists              |
+| `get_latest_plan(project_cwd, session_id=None)`    | Returns plan content from fake plans  |
 
 ## Real-World Example
 
@@ -165,7 +166,83 @@ def test_flag_overrides_session_store(tmp_path: Path) -> None:
     assert result.exit_code == 0
 ```
 
+## Testing Plan Access
+
+The `FakeClaudeCodeSessionStore` supports fake plan data via the `plans` parameter:
+
+### Basic Plan Setup
+
+```python
+fake_store = FakeClaudeCodeSessionStore(
+    plans={"my-feature": "# My Feature Plan\n\n- Step 1\n- Step 2"},
+)
+
+# Returns plan content
+plan = fake_store.get_latest_plan(tmp_path)
+assert plan == "# My Feature Plan\n\n- Step 1\n- Step 2"
+```
+
+### Session-Scoped Plan Lookup
+
+When `session_id` matches a key in `plans`, that specific plan is returned:
+
+```python
+fake_store = FakeClaudeCodeSessionStore(
+    plans={
+        "session-abc": "# Plan for Session ABC",
+        "session-xyz": "# Plan for Session XYZ",
+    },
+)
+
+# Returns specific plan when session_id matches
+plan = fake_store.get_latest_plan(tmp_path, session_id="session-abc")
+assert "Session ABC" in plan
+```
+
+### Testing "No Plan Found"
+
+```python
+fake_store = FakeClaudeCodeSessionStore(plans={})  # Empty plans
+plan = fake_store.get_latest_plan(tmp_path)
+assert plan is None
+```
+
+### Replacing Monkeypatch Patterns
+
+Before (monkeypatch approach):
+
+```python
+@pytest.fixture
+def plans_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    plans = tmp_path / ".claude" / "plans"
+    plans.mkdir(parents=True)
+    monkeypatch.setattr(
+        "some.module.get_plans_dir",
+        lambda: plans,
+    )
+    return plans
+
+def test_something(plans_dir: Path) -> None:
+    (plans_dir / "test.md").write_text("# Plan")
+    # ...
+```
+
+After (fake store approach):
+
+```python
+def test_something() -> None:
+    fake_store = FakeClaudeCodeSessionStore(
+        plans={"test": "# Plan"},
+    )
+    result = runner.invoke(
+        my_command,
+        obj=DotAgentContext.for_test(session_store=fake_store),
+    )
+    # ...
+```
+
 ## Related Topics
 
+- [Local Plans Architecture](../architecture/local-plans.md) - How the local plans system works
 - [Kit CLI Testing Patterns](kit-cli-testing.md) - General patterns for testing kit CLI commands
 - [Mock Elimination Workflow](mock-elimination.md) - How to replace mocks with fakes
