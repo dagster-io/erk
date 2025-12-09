@@ -33,6 +33,7 @@ from erk_shared.github.metadata import (
 )
 from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 
+from dot_agent_kit.cli.schema import SchemaCommand, build_epilog
 from dot_agent_kit.context_helpers import (
     require_git,
     require_github_issues,
@@ -87,7 +88,11 @@ def create_pr_published_block(
     return create_metadata_block(key="erk-pr-published", data=data)
 
 
-@click.command(name="post-pr-comment")
+@click.command(
+    name="post-pr-comment",
+    cls=SchemaCommand,
+    epilog=build_epilog(PrCommentSuccess, PrCommentError),
+)
 @click.option("--pr-url", required=True, help="GitHub PR URL")
 @click.option("--pr-number", required=True, type=int, help="GitHub PR number")
 @click.pass_context

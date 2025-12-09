@@ -61,6 +61,8 @@ from pathlib import Path
 
 import click
 
+from dot_agent_kit.cli.schema import SchemaCommand, build_epilog
+
 
 @dataclass
 class ProjectInfo:
@@ -174,7 +176,11 @@ def find_project_info(path: Path) -> ProjectInfo | ProjectError:
     )
 
 
-@click.command(name="find-project-dir")
+@click.command(
+    name="find-project-dir",
+    cls=SchemaCommand,
+    epilog=build_epilog(ProjectInfo, ProjectError),
+)
 @click.option(
     "--path",
     type=click.Path(exists=True, path_type=Path),
