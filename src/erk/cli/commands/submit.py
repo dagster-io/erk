@@ -66,14 +66,17 @@ def load_workflow_config(repo_root: Path, workflow_name: str) -> dict[str, str]:
 
     Args:
         repo_root: Repository root path
-        workflow_name: Workflow filename (with or without .yml/.yaml extension)
+        workflow_name: Workflow filename (with or without .yml/.yaml extension).
+            May include path components (e.g., "erk/dispatch-erk-queue.yml"),
+            but only the basename is used for config lookup.
 
     Returns:
         Dict of string key-value pairs for workflow inputs.
         Returns empty dict if config file doesn't exist.
     """
-    # Strip .yml/.yaml extension if present
-    config_name = workflow_name.removesuffix(".yml").removesuffix(".yaml")
+    # Extract basename and strip .yml/.yaml extension
+    basename = Path(workflow_name).name
+    config_name = basename.removesuffix(".yml").removesuffix(".yaml")
     config_path = repo_root / ".erk" / "workflows" / f"{config_name}.toml"
 
     if not config_path.exists():

@@ -151,7 +151,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     # Verify workflow was triggered
     assert len(fake_github.triggered_workflows) == 1
     workflow, inputs = fake_github.triggered_workflows[0]
-    assert workflow == "erk-impl.yml"
+    assert workflow == "erk/dispatch-erk-queue.yml"
     assert inputs["issue_number"] == "123"
 
     # Verify local branch was cleaned up
@@ -1525,7 +1525,7 @@ def test_load_workflow_config_valid_toml(tmp_path: Path) -> None:
     # Create workflow config file
     config_dir = repo_root / ".erk" / "workflows"
     config_dir.mkdir(parents=True)
-    config_file = config_dir / "erk-impl.toml"
+    config_file = config_dir / "dispatch-erk-queue.toml"
     config_file.write_text(
         'kit_names = "erk,gt,devrun"\n'
         'model_name = "claude-sonnet-4-5-20250929"\n'
@@ -1533,7 +1533,7 @@ def test_load_workflow_config_valid_toml(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    result = load_workflow_config(repo_root, "erk-impl.yml")
+    result = load_workflow_config(repo_root, "erk/dispatch-erk-queue.yml")
 
     assert result == {
         "kit_names": "erk,gt,devrun",
@@ -1606,7 +1606,7 @@ def test_submit_uses_workflow_config(tmp_path: Path) -> None:
     # Create workflow config file
     config_dir = repo_root / ".erk" / "workflows"
     config_dir.mkdir(parents=True)
-    config_file = config_dir / "erk-impl.toml"
+    config_file = config_dir / "dispatch-erk-queue.toml"
     config_file.write_text(
         'kit_names = "erk,gt,devrun"\nmodel_name = "claude-sonnet-4-5-20250929"\n',
         encoding="utf-8",
@@ -1670,10 +1670,10 @@ def test_submit_uses_workflow_config(tmp_path: Path) -> None:
     # Verify workflow was triggered with config inputs
     assert len(fake_github.triggered_workflows) == 1
     workflow, inputs = fake_github.triggered_workflows[0]
-    assert workflow == "erk-impl.yml"
+    assert workflow == "erk/dispatch-erk-queue.yml"
     # Required inputs
     assert inputs["issue_number"] == "123"
     assert inputs["submitted_by"] == "test-user"
-    # Config-based inputs from .erk/workflows/erk-impl.toml
+    # Config-based inputs from .erk/workflows/dispatch-erk-queue.toml
     assert inputs["kit_names"] == "erk,gt,devrun"
     assert inputs["model_name"] == "claude-sonnet-4-5-20250929"
