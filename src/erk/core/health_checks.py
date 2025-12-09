@@ -347,8 +347,10 @@ def check_claude_settings(repo_root: Path) -> CheckResult:
                 continue
             hook_cmd = hook.get("command")
             if hook_cmd is not None and isinstance(hook_cmd, str):
-                # Check if the command looks like a dot-agent kit command
-                if "dot-agent" in hook_cmd and "kit-command" in hook_cmd:
+                # Check if the command looks like a kit command (old or new format)
+                is_old_format = "dot-agent" in hook_cmd and "kit-command" in hook_cmd
+                is_new_format = "erk kit exec" in hook_cmd
+                if is_old_format or is_new_format:
                     # Extract kit command name for warning
                     parts = hook_cmd.split()
                     if len(parts) >= 4:
@@ -380,7 +382,8 @@ def _kit_command_exists(command: str) -> bool:
     still validating that the kit command is defined.
     """
     # Parse command to extract the base kit command
-    # Format: DOT_AGENT_KIT_ID=erk ... dot-agent kit-command erk <command-name>
+    # Old format: DOT_AGENT_KIT_ID=erk ... dot-agent kit-command erk <command-name>
+    # New format: DOT_AGENT_KIT_ID=erk ... erk kit exec erk <command-name>
     try:
         # Quick check - just see if the kit-command is recognized
         # We don't want to actually run hooks, just validate they exist

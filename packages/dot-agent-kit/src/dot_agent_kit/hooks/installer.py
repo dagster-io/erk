@@ -28,7 +28,7 @@ def install_hooks(
 
     Note:
         Updates settings.json with hook entries using invocation commands.
-        Hook invocations are typically 'dot-agent kit-command {kit_id} {hook_id}'.
+        Hook invocations are typically 'erk kit exec {kit_id} {hook_id}'.
     """
     if not hooks:
         return 0

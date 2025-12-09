@@ -33,7 +33,7 @@ def test_install_kit_installs_hooks(tmp_path: Path) -> None:
                 "id": "test-hook",
                 "lifecycle": "UserPromptSubmit",
                 "matcher": "*",
-                "invocation": "dot-agent kit-command test-kit test-hook",
+                "invocation": "erk kit exec test-kit test-hook",
                 "description": "Test hook",
                 "timeout": 30,
             }
@@ -165,7 +165,7 @@ def test_install_kit_replaces_old_hooks_on_reinstall(tmp_path: Path) -> None:
                 "id": "old-hook",
                 "lifecycle": "UserPromptSubmit",
                 "matcher": "*",
-                "invocation": "dot-agent kit-command versioned-kit old-hook",
+                "invocation": "erk kit exec versioned-kit old-hook",
                 "description": "Old hook",
                 "timeout": 30,
             }
@@ -204,7 +204,7 @@ def test_install_kit_replaces_old_hooks_on_reinstall(tmp_path: Path) -> None:
                 "id": "new-hook",
                 "lifecycle": "UserPromptSubmit",
                 "matcher": "*",
-                "invocation": "dot-agent kit-command versioned-kit new-hook",
+                "invocation": "erk kit exec versioned-kit new-hook",
                 "description": "New hook",
                 "timeout": 60,
             }

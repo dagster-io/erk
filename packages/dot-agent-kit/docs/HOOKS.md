@@ -187,7 +187,7 @@ Create `{hook_name}.py`:
 {Kit Name} Reminder Command
 
 Outputs the {kit-name} reminder for UserPromptSubmit hook.
-This command is invoked via dot-agent kit-command {kit-name} {hook-name}.
+This command is invoked via erk kit exec {kit-name} {hook-name}.
 """
 
 import click
@@ -233,7 +233,7 @@ hooks:
   - id: { hook-name } # Must match kit_cli_commands name
     lifecycle: UserPromptSubmit
     matcher: "*" # or "*.py" for Python files only
-    invocation: dot-agent kit-command {kit-name} {hook-name}
+    invocation: erk kit exec {kit-name} {hook-name}
     description: Hook description
     timeout: 30
 ```
@@ -248,7 +248,7 @@ uv pip install -e packages/dot-agent-kit --force-reinstall --no-deps
 uv run dot-agent kit install {kit-name}
 
 # Test the hook directly
-uv run dot-agent kit-command {kit-name} {hook-name}
+uv run erk kit exec {kit-name} {hook-name}
 
 # Verify installation
 uv run dot-agent kit show {kit-name}
@@ -285,7 +285,7 @@ When renaming a hook (e.g., `compliance-reminder-hook` → `dignified-python-rem
 
    hooks:
      - id: new-hook-name
-       invocation: dot-agent kit-command {kit} new-hook-name
+       invocation: erk kit exec {kit} new-hook-name
    ```
 
 4. **Reinstall the kit**:
@@ -335,7 +335,7 @@ Currently supported:
 
 ```bash
 # Test hook execution directly
-uv run dot-agent kit-command {kit-name} {hook-name}
+uv run erk kit exec {kit-name} {hook-name}
 
 # Should output plain text reminder:
 # 🔴 CRITICAL: Your reminder text here
