@@ -2,11 +2,14 @@
 
 import functools
 from collections.abc import Callable
+from typing import TypeVar
 
 from dot_agent_kit.hooks.scope import is_in_managed_project
 
+F = TypeVar("F", bound=Callable[..., None])
 
-def project_scoped[F: Callable[..., None]](func: F) -> F:
+
+def project_scoped(func: F) -> F:
     """Decorator to make a hook only fire within managed projects.
 
     Usage:

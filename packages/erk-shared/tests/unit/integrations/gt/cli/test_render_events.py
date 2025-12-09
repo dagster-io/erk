@@ -4,14 +4,17 @@ Tests the event rendering helper for consuming operation generators.
 """
 
 from collections.abc import Generator
+from typing import TypeVar
 from unittest.mock import patch
 
 import pytest
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 
+T = TypeVar("T")
 
-def _create_event_generator[T](
+
+def _create_event_generator(
     events: list[ProgressEvent | CompletionEvent[T]],
 ) -> Generator[ProgressEvent | CompletionEvent[T]]:
     """Helper to create a generator from a list of events."""

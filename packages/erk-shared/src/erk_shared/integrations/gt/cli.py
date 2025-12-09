@@ -22,7 +22,7 @@ STYLE_MAP: dict[str, dict[str, str | bool]] = {
 }
 
 
-def render_events[T](
+def render_events(
     events: Generator[ProgressEvent | CompletionEvent[T]],
 ) -> T:
     """Consume event stream, render progress to stderr, return result.

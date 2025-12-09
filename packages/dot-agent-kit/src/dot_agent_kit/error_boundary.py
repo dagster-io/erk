@@ -11,10 +11,10 @@ from typing import Any, TypeVar
 
 from dot_agent_kit.sources.exceptions import DotAgentNonIdealStateException
 
-F = TypeVar("F", bound=Callable[..., Any])
+T = TypeVar("T", bound=Callable[..., Any])
 
 
-def cli_error_boundary[T: Callable[..., Any]](func: T) -> T:
+def cli_error_boundary(func: T) -> T:
     """Decorator that catches all exceptions and displays appropriate error messages.
 
     This decorator should be applied to CLI command entry points to provide

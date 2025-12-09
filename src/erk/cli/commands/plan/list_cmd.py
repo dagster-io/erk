@@ -1,6 +1,7 @@
 """Command to list plans with filtering."""
 
 from collections.abc import Callable
+from typing import ParamSpec, TypeVar
 
 import click
 from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
@@ -35,6 +36,9 @@ from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.tui.app import ErkDashApp
 from erk.tui.data.provider import RealPlanDataProvider
 from erk.tui.data.types import PlanFilters
+
+P = ParamSpec("P")
+T = TypeVar("T")
 
 
 def _issue_to_plan(issue: IssueInfo) -> Plan:
@@ -145,7 +149,7 @@ def format_remote_run_cell(last_remote_impl_at: str | None) -> str:
     return relative_time if relative_time else "-"
 
 
-def plan_filter_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
+def plan_filter_options(f: Callable[P, T]) -> Callable[P, T]:
     """Shared filter options for plan list commands."""
     f = click.option(
         "--label",
@@ -187,7 +191,7 @@ def plan_filter_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
     return f
 
 
-def dash_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
+def dash_options(f: Callable[P, T]) -> Callable[P, T]:
     """TUI-specific options for dash command."""
     f = click.option(
         "--interval",

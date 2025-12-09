@@ -29,7 +29,7 @@ import json
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 
 import click
 
@@ -37,6 +37,8 @@ from dot_agent_kit.context_helpers import require_github, require_repo_root
 
 if TYPE_CHECKING:
     from erk_shared.github.abc import GitHub
+
+T = TypeVar("T")
 
 
 @dataclass(frozen=True)
@@ -70,7 +72,7 @@ def _format_resolution_comment(comment: str) -> str:
     return f"{comment}\n\n_Addressed via `/erk:pr-address` at {timestamp}_"
 
 
-def _ensure_not_error[T](result: T | ResolveThreadError) -> T:
+def _ensure_not_error(result: T | ResolveThreadError) -> T:
     """Ensure result is not an error, otherwise output JSON and exit.
 
     Provides type narrowing: takes `T | ResolveThreadError` and returns `T`.

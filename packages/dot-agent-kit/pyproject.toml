@@ -3,7 +3,7 @@ name = "dot-agent-kit"
 version = "0.1.28"
 description = "Kit management for Claude Code"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
     "click>=8.1.0",
     "erk-shared",
@@ -31,6 +31,6 @@ packages = ["src/dot_agent_kit"]
 
 [tool.pyright]
 include = ["src", "tests"]
-pythonVersion = "3.12"
+pythonVersion = "3.11"
 typeCheckingMode = "strict"
 reportPrivateUsage = false

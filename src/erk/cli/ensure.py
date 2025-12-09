@@ -15,7 +15,7 @@ Domain-Specific Methods:
 
 import shutil
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import click
 from erk_shared.github.types import PRDetails
@@ -31,6 +31,8 @@ from erk_shared.output.output import user_output
 if TYPE_CHECKING:
     from erk.core.context import ErkContext
     from erk.core.project_discovery import ProjectContext
+
+T = TypeVar("T")
 
 
 class Ensure:
@@ -53,7 +55,7 @@ class Ensure:
             raise SystemExit(1)
 
     @staticmethod
-    def truthy[T](value: T, error_message: str) -> T:
+    def truthy(value: T, error_message: str) -> T:
         """Ensure value is truthy, otherwise output styled error and exit.
 
         Args:
@@ -73,7 +75,7 @@ class Ensure:
         return value
 
     @staticmethod
-    def not_none[T](value: T | None, error_message: str) -> T:
+    def not_none(value: T | None, error_message: str) -> T:
         """Ensure value is not None, otherwise output styled error and exit.
 
         This method provides type narrowing: it takes `T | None` and returns `T`,
@@ -486,7 +488,7 @@ class Ensure:
             raise SystemExit(1)
 
     @staticmethod
-    def ideal_state[T](result: T | NonIdealState) -> T:
+    def ideal_state(result: T | NonIdealState) -> T:
         """Ensure result is not a NonIdealState, otherwise exit with error.
 
         This method provides type narrowing: it takes `T | NonIdealState` and
