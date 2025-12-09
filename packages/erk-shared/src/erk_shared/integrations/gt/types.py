@@ -242,6 +242,7 @@ RestackPreflightErrorType = Literal[
     "no_commits",
     "restack_failed",
     "not_in_repo",
+    "dirty_working_tree",
 ]
 
 

@@ -240,3 +240,37 @@ def test_pr_auto_restack_preflight_error() -> None:
 
         # Preflight error: Claude should NOT be invoked
         assert len(claude_executor.executed_commands) == 0
+
+
+def test_pr_auto_restack_fails_with_dirty_working_tree() -> None:
+    """Test that command fails early when working tree has uncommitted changes."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            commits_ahead={(env.cwd, "main"): 1},  # Has commits to restack
+            dirty_worktrees={env.cwd},  # Working tree has uncommitted changes
+        )
+
+        graphite = FakeGraphite()
+        claude_executor = FakeClaudeExecutor(claude_available=True)
+
+        ctx = build_workspace_test_context(
+            env, git=git, graphite=graphite, claude_executor=claude_executor
+        )
+
+        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+
+        # Should fail with dirty working tree error
+        assert result.exit_code != 0
+        assert "uncommitted changes" in result.output
+
+        # Claude should NOT be invoked (early fail)
+        assert len(claude_executor.executed_commands) == 0
+
+        # Graphite restack should NOT have been attempted
+        assert len(graphite.restack_calls) == 0

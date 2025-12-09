@@ -36,6 +36,18 @@ def execute_restack_preflight(
     repo_root = ops.git.get_repository_root(cwd)
     branch_name = ops.git.get_current_branch(cwd) or "unknown"
 
+    # Step 0: Check for uncommitted changes (fail fast)
+    if not ops.git.is_worktree_clean(cwd):
+        yield CompletionEvent(
+            RestackPreflightError(
+                success=False,
+                error_type="dirty_working_tree",
+                message="Working tree has uncommitted changes. Commit or stash changes first.",
+                details={},
+            )
+        )
+        return
+
     # Step 1: Squash commits (reuse existing squash operation)
     yield ProgressEvent("Squashing commits...")
     for event in execute_squash(ops, cwd):
