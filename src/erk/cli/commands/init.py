@@ -295,8 +295,22 @@ def init_cmd(
             "Add .env to .gitignore?",
         )
 
-        # Write if modified
-        if env_added:
+        # Add .erk/scratch/
+        gitignore_content, scratch_added = _add_gitignore_entry_with_prompt(
+            gitignore_content,
+            ".erk/scratch/",
+            "Add .erk/scratch/ to .gitignore (session-specific working files)?",
+        )
+
+        # Add .impl/
+        gitignore_content, impl_added = _add_gitignore_entry_with_prompt(
+            gitignore_content,
+            ".impl/",
+            "Add .impl/ to .gitignore (temporary implementation plans)?",
+        )
+
+        # Write if any entry was modified
+        if env_added or scratch_added or impl_added:
             gitignore_path.write_text(gitignore_content, encoding="utf-8")
             user_output(f"Updated {gitignore_path}")
 

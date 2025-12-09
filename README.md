@@ -22,7 +22,14 @@ Ensure you have these tools installed:
 erk init
 ```
 
-This creates your global config and prompts for shell integration setup.
+This command:
+
+- Prompts for worktrees root directory (where all worktrees are stored)
+- Creates global config at `~/.erk/config.toml`
+- Detects Graphite (`gt`) availability for branch creation
+- Creates repo-specific `config.toml` with preset selection (`auto`, `generic`, `dagster`)
+- Offers to add `.env`, `.erk/scratch/`, and `.impl/` to `.gitignore`
+- Shows shell integration setup instructions (completion + auto-activation)
 
 ### Shell Integration
 

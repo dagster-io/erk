@@ -9,6 +9,7 @@ from erk.core.health_checks import (
     CheckResult,
     check_claude_settings,
     check_erk_version,
+    check_gitignore_entries,
     check_repository,
 )
 from tests.fakes.context import create_test_context
@@ -188,3 +189,67 @@ def test_check_repository_uses_repo_root_not_cwd(tmp_path: Path) -> None:
     assert result.name == "repository"
     assert result.passed is True
     assert "erk setup detected" in result.message.lower()
+
+
+def test_check_gitignore_entries_no_gitignore(tmp_path: Path) -> None:
+    """Test gitignore check when no .gitignore file exists."""
+    result = check_gitignore_entries(tmp_path)
+
+    assert result.name == "gitignore"
+    assert result.passed is True
+    assert "No .gitignore file" in result.message
+
+
+def test_check_gitignore_entries_all_present(tmp_path: Path) -> None:
+    """Test gitignore check when all required entries are present."""
+    gitignore = tmp_path / ".gitignore"
+    gitignore.write_text("*.pyc\n.erk/scratch/\n.impl/\n", encoding="utf-8")
+
+    result = check_gitignore_entries(tmp_path)
+
+    assert result.name == "gitignore"
+    assert result.passed is True
+    assert "Required gitignore entries present" in result.message
+
+
+def test_check_gitignore_entries_missing_scratch(tmp_path: Path) -> None:
+    """Test gitignore check when .erk/scratch/ entry is missing."""
+    gitignore = tmp_path / ".gitignore"
+    gitignore.write_text("*.pyc\n.impl/\n", encoding="utf-8")
+
+    result = check_gitignore_entries(tmp_path)
+
+    assert result.name == "gitignore"
+    assert result.passed is False
+    assert ".erk/scratch/" in result.message
+    assert result.details is not None
+    assert "erk init" in result.details
+
+
+def test_check_gitignore_entries_missing_impl(tmp_path: Path) -> None:
+    """Test gitignore check when .impl/ entry is missing."""
+    gitignore = tmp_path / ".gitignore"
+    gitignore.write_text("*.pyc\n.erk/scratch/\n", encoding="utf-8")
+
+    result = check_gitignore_entries(tmp_path)
+
+    assert result.name == "gitignore"
+    assert result.passed is False
+    assert ".impl/" in result.message
+    assert result.details is not None
+    assert "erk init" in result.details
+
+
+def test_check_gitignore_entries_missing_both(tmp_path: Path) -> None:
+    """Test gitignore check when both required entries are missing."""
+    gitignore = tmp_path / ".gitignore"
+    gitignore.write_text("*.pyc\n__pycache__/\n", encoding="utf-8")
+
+    result = check_gitignore_entries(tmp_path)
+
+    assert result.name == "gitignore"
+    assert result.passed is False
+    assert ".erk/scratch/" in result.message
+    assert ".impl/" in result.message
+    assert result.details is not None
+    assert "erk init" in result.details
