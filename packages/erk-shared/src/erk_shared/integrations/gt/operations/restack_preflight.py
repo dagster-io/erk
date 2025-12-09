@@ -65,27 +65,34 @@ def execute_restack_preflight(
     except (subprocess.CalledProcessError, RuntimeError):
         pass  # Expected if conflicts
 
-    # Step 3: Check for conflicts
-    if ops.git.is_rebase_in_progress(cwd):
+    # Step 3: Check for conflicts and loop until resolution or actual conflict
+    while ops.git.is_rebase_in_progress(cwd):
         conflicts = ops.git.get_conflicted_files(cwd)
-        yield ProgressEvent(f"Found {len(conflicts)} conflict(s)", style="warning")
-        yield CompletionEvent(
-            RestackPreflightSuccess(
-                success=True,
-                has_conflicts=True,
-                conflicts=conflicts,
-                branch_name=branch_name,
-                message=f"{len(conflicts)} conflict(s) detected",
+        if conflicts:
+            # Actual conflicts exist - delegate to Claude
+            yield ProgressEvent(f"Found {len(conflicts)} conflict(s)", style="warning")
+            yield CompletionEvent(
+                RestackPreflightSuccess(
+                    success=True,
+                    has_conflicts=True,
+                    conflicts=conflicts,
+                    branch_name=branch_name,
+                    message=f"{len(conflicts)} conflict(s) detected",
+                )
             )
+            return
+        # No conflicts but rebase in progress - continue
+        yield ProgressEvent("Continuing rebase...")
+        ops.git.rebase_continue(cwd)
+
+    # Rebase complete - fast path success
+    yield ProgressEvent("Restack completed successfully", style="success")
+    yield CompletionEvent(
+        RestackPreflightSuccess(
+            success=True,
+            has_conflicts=False,
+            conflicts=[],
+            branch_name=branch_name,
+            message="Restack completed successfully",
         )
-    else:
-        yield ProgressEvent("Restack completed successfully", style="success")
-        yield CompletionEvent(
-            RestackPreflightSuccess(
-                success=True,
-                has_conflicts=False,
-                conflicts=[],
-                branch_name=branch_name,
-                message="Restack completed successfully",
-            )
-        )
+    )

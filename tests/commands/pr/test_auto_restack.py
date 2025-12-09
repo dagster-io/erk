@@ -177,6 +177,41 @@ def test_pr_auto_restack_fallback_on_conflicts() -> None:
         assert dangerous is True
 
 
+def test_pr_auto_restack_fast_path_with_rebase_in_progress_but_no_conflicts() -> None:
+    """Test fast path: rebase in progress but no actual conflicts (rebase_continue clears state)."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            commits_ahead={(env.cwd, "main"): 1},  # Has commits to restack
+            rebase_in_progress=True,  # Rebase in progress...
+            conflicted_files=[],  # ...but NO actual conflicts
+            rebase_continue_clears_rebase=True,  # rebase_continue will complete the rebase
+        )
+
+        graphite = FakeGraphite()
+        claude_executor = FakeClaudeExecutor(claude_available=True)
+
+        ctx = build_workspace_test_context(
+            env, git=git, graphite=graphite, claude_executor=claude_executor
+        )
+
+        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Restack complete!" in result.output
+
+        # Fast path: Claude should NOT be invoked (no actual conflicts)
+        assert len(claude_executor.executed_commands) == 0
+
+        # rebase_continue should have been called to clear the rebase state
+        assert len(git.rebase_continue_calls) == 1
+
+
 def test_pr_auto_restack_preflight_error() -> None:
     """Test preflight error: error reported, Claude NOT invoked."""
     runner = CliRunner()

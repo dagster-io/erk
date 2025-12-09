@@ -11,6 +11,23 @@ read_when:
 
 The `erk pr auto-restack` command automates Graphite restacking with intelligent conflict resolution. It runs `gt restack` and automatically handles merge conflicts, looping until completion.
 
+## Fast Path vs Slow Path
+
+The command uses two execution paths for efficiency:
+
+**Fast Path** (no Claude required):
+
+- When `gt restack` completes without conflicts
+- Command finishes immediately with no AI involvement
+- Fastest possible execution
+
+**Slow Path** (Claude for conflict resolution):
+
+- When conflicts are detected during restack
+- Falls back to Claude for intelligent conflict classification
+- Handles mechanical conflicts automatically
+- Prompts for semantic conflicts requiring user input
+
 ## When to Use Auto-Restack
 
 **Use auto-restack when:**
@@ -58,11 +75,11 @@ The preflight:
 - Runs `gt restack --no-interactive`
 - Detects any conflicts that arise
 
-If no conflicts, the restack completes immediately.
+**Fast path exit**: If no conflicts are detected, the command completes immediately without invoking Claude. This is the optimal path for clean restacks.
 
-### Phase 2: Conflict Resolution Loop
+### Phase 2: Conflict Resolution Loop (Slow Path)
 
-When conflicts are detected:
+When conflicts are detected, the command falls back to Claude for intelligent resolution:
 
 ```
 ⚡ Conflict detected in 2 files:
@@ -112,27 +129,24 @@ The finalize verifies:
 - No rebase is still in progress
 - Working tree is clean
 
-## Example: Successful Run
+## Example: Fast Path (No Conflicts)
 
 ```
 $ erk pr auto-restack
-🔄 Starting Graphite restack...
-📦 Squashing commits...
-✅ Commits squashed (3 → 1)
-🔄 Running gt restack...
-✅ Restack completed successfully
-
-✅ Restack complete!
+  Squashing commits...
+  Running gt restack...
+Restack complete!
 ```
 
-## Example: Run with Conflicts
+This is the fast path - no conflicts were detected, so the command completed without Claude involvement.
+
+## Example: Slow Path (Conflicts Detected)
 
 ```
 $ erk pr auto-restack
-🔄 Starting Graphite restack...
-📦 Squashing commits...
-✅ Commits squashed (2 → 1)
-🔄 Running gt restack...
+  Squashing commits...
+  Running gt restack...
+Conflicts detected in 3 file(s). Falling back to Claude...
 
 ⚡ Conflict detected in 3 files:
    - packages/erk-shared/src/erk_shared/git/fake.py
