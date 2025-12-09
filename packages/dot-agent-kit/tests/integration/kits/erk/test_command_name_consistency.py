@@ -99,9 +99,9 @@ def test_erk_kit_command_names_match_decorators():
     """
     # Load kit manifest
     manifest = load_erk_kit_manifest()
-    kit_cli_commands = manifest.get("kit_cli_commands", [])
+    scripts = manifest.get("scripts", [])
 
-    if not kit_cli_commands:
+    if not scripts:
         pytest.skip("No kit CLI commands defined in erk kit.yaml")
 
     # Base directory for kit commands
@@ -117,7 +117,7 @@ def test_erk_kit_command_names_match_decorators():
     mismatches = []
 
     # Check each command
-    for cmd_def in kit_cli_commands:
+    for cmd_def in scripts:
         expected_name = cmd_def["name"]
         relative_path = cmd_def["path"]
 
@@ -205,7 +205,7 @@ def test_all_command_files_are_registered():
     at CI time rather than at runtime.
     """
     manifest = load_erk_kit_manifest()
-    registered_paths = {cmd["path"] for cmd in manifest.get("kit_cli_commands", [])}
+    registered_paths = {cmd["path"] for cmd in manifest.get("scripts", [])}
 
     kit_base_dir = (
         Path(__file__).parent.parent.parent.parent.parent
@@ -215,7 +215,7 @@ def test_all_command_files_are_registered():
         / "kits"
         / "erk"
     )
-    command_dir = kit_base_dir / "kit_cli_commands" / "erk"
+    command_dir = kit_base_dir / "scripts" / "erk"
 
     if not command_dir.exists():
         pytest.skip(f"Command directory not found: {command_dir}")
@@ -224,7 +224,7 @@ def test_all_command_files_are_registered():
     for py_file in sorted(command_dir.glob("*.py")):
         if py_file.name == "__init__.py":
             continue
-        relative_path = f"kit_cli_commands/erk/{py_file.name}"
+        relative_path = f"scripts/erk/{py_file.name}"
         if relative_path not in registered_paths:
             unregistered.append(py_file.name)
 
@@ -232,5 +232,5 @@ def test_all_command_files_are_registered():
         error_msg = "Unregistered kit CLI command files found:\n\n"
         for filename in unregistered:
             error_msg += f"  • {filename}\n"
-        error_msg += "\nFix: Add entries to kit.yaml kit_cli_commands section"
+        error_msg += "\nFix: Add entries to kit.yaml scripts section"
         pytest.fail(error_msg)

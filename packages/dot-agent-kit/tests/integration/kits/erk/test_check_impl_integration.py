@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.check_impl import (
+from dot_agent_kit.data.kits.erk.scripts.erk.check_impl import (
     check_impl,
 )
 

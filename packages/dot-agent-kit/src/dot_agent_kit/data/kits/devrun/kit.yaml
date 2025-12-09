@@ -14,9 +14,9 @@ artifacts:
     - docs/devrun/tools/pyright.md
     - docs/devrun/tools/pytest.md
     - docs/devrun/tools/ruff.md
-kit_cli_commands:
+scripts:
   - name: devrun-reminder-hook
-    path: kit_cli_commands/devrun/devrun_reminder_hook.py
+    path: scripts/devrun/devrun_reminder_hook.py
     description: Output devrun agent reminder for UserPromptSubmit hook
 hooks:
   - id: devrun-reminder-hook

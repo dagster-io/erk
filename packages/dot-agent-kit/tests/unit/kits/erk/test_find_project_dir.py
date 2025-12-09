@@ -8,7 +8,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.find_project_dir import (
+from dot_agent_kit.data.kits.erk.scripts.erk.find_project_dir import (
     ProjectError,
     ProjectInfo,
     encode_path_to_project_folder,

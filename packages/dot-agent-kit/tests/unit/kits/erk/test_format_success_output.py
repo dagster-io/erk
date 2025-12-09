@@ -4,7 +4,7 @@ import json
 
 from click.testing import CliRunner
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.format_success_output import (
+from dot_agent_kit.data.kits.erk.scripts.erk.format_success_output import (
     format_success_output,
 )
 

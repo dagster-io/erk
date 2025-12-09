@@ -108,7 +108,7 @@ def test_wheel_contains_skill_markdown(
         ("gt", "submit_branch.py"),
     ],
 )
-def test_wheel_contains_kit_cli_commands(
+def test_wheel_contains_scripts(
     build_wheel: Path,
     kit_name: str,
     command_script: str,
@@ -116,9 +116,7 @@ def test_wheel_contains_kit_cli_commands(
     """Test that kit CLI command scripts are included in the wheel."""
     with zipfile.ZipFile(build_wheel) as wheel:
         files = wheel.namelist()
-        expected_path = (
-            f"dot_agent_kit/data/kits/{kit_name}/kit_cli_commands/{kit_name}/{command_script}"
-        )
+        expected_path = f"dot_agent_kit/data/kits/{kit_name}/scripts/{kit_name}/{command_script}"
         assert any(expected_path in f for f in files), f"Missing {expected_path}"
 
 
@@ -129,7 +127,7 @@ def test_wheel_contains_all_init_files(build_wheel: Path) -> None:
         "dot_agent_kit/data/kits/__init__.py",
         "dot_agent_kit/data/kits/gt/__init__.py",
         "dot_agent_kit/data/kits/gt/commands/__init__.py",
-        "dot_agent_kit/data/kits/gt/kit_cli_commands/__init__.py",
+        "dot_agent_kit/data/kits/gt/scripts/__init__.py",
         "dot_agent_kit/data/kits/gt/skills/__init__.py",
         "dot_agent_kit/data/kits/gt/skills/gt-graphite/__init__.py",
         "dot_agent_kit/data/kits/gt/skills/gt-graphite/references/__init__.py",

@@ -15,7 +15,7 @@ from erk_shared.github.abc import GitHub
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.update_pr_summary import (
+from dot_agent_kit.data.kits.erk.scripts.erk.update_pr_summary import (
     _build_pr_body,
     update_pr_summary,
 )

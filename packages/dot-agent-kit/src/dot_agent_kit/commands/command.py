@@ -9,13 +9,13 @@ from pathlib import Path
 import click
 
 from dot_agent_kit.cli.output import user_output
-from dot_agent_kit.data.kits.command.kit_cli_commands.command.models import (
+from dot_agent_kit.data.kits.command.scripts.command.models import (
     CommandNotFoundError,
 )
-from dot_agent_kit.data.kits.command.kit_cli_commands.command.ops import (
+from dot_agent_kit.data.kits.command.scripts.command.ops import (
     RealClaudeCliOps,
 )
-from dot_agent_kit.data.kits.command.kit_cli_commands.command.resolution import (
+from dot_agent_kit.data.kits.command.scripts.command.resolution import (
     resolve_command_file,
 )
 

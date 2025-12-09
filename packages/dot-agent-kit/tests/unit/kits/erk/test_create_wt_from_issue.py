@@ -13,7 +13,7 @@ from erk_shared.integrations.erk_wt import (
     WorktreeCreationResult,
 )
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_wt_from_issue import (
+from dot_agent_kit.data.kits.erk.scripts.erk.create_wt_from_issue import (
     WorktreeCreationSuccess,
     create_wt_from_issue_impl,
     has_erk_plan_label,

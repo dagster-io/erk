@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from dot_agent_kit.data.kits.command.kit_cli_commands.command.ops import (
+from dot_agent_kit.data.kits.command.scripts.command.ops import (
     FakeClaudeCliOps,
     RealClaudeCliOps,
 )
@@ -37,7 +37,7 @@ class TestRealClaudeCliOps:
             with patch("builtins.print") as mock_print:
                 # Mock the command_status context manager to avoid Rich Console interactions
                 with patch(
-                    "dot_agent_kit.data.kits.command.kit_cli_commands.command.ops.command_status"
+                    "dot_agent_kit.data.kits.command.scripts.command.ops.command_status"
                 ) as mock_status:
                     # Make the context manager return a mock Status object
                     mock_status.return_value.__enter__ = MagicMock()

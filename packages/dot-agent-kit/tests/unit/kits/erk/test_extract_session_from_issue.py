@@ -15,7 +15,7 @@ from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata import render_session_content_block
 
 from dot_agent_kit.context import DotAgentContext
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.extract_session_from_issue import (
+from dot_agent_kit.data.kits.erk.scripts.erk.extract_session_from_issue import (
     extract_session_from_issue,
 )
 

@@ -8,7 +8,7 @@ from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, create_marker, marker_exists
 
 from dot_agent_kit.context import DotAgentContext
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_extraction_plan import (
+from dot_agent_kit.data.kits.erk.scripts.erk.create_extraction_plan import (
     create_extraction_plan,
 )
 

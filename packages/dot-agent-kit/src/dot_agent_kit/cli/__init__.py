@@ -39,7 +39,7 @@ class LazyGroup(click.Group):
         from dot_agent_kit.commands.hook.group import hook_group
         from dot_agent_kit.commands.init import init
         from dot_agent_kit.commands.kit.group import kit_group
-        from dot_agent_kit.commands.kit_command.group import kit_command_group
+        from dot_agent_kit.commands.kit_exec.group import kit_exec_group
         from dot_agent_kit.commands.md.group import md_group
         from dot_agent_kit.commands.status import st, status
 
@@ -55,15 +55,23 @@ class LazyGroup(click.Group):
         self.add_command(docs_group)
         self.add_command(hook_group)
         self.add_command(kit_group)
-        self.add_command(kit_command_group)
         self.add_command(md_group)
 
-        # Add 'run' as an alias for 'kit-command' for backwards compatibility
-        # Users can use either 'dot-agent run' or 'dot-agent kit-command'
+        # Add 'kit-command' as backward-compatible alias for 'kit exec'
+        # Users can use 'dot-agent kit-command' which wraps 'dot-agent kit exec'
+        kit_command_alias = click.Group(
+            name="kit-command",
+            help="(Alias for 'kit exec') Execute scripts from bundled kits.",
+            commands=kit_exec_group.commands,
+        )
+        self.add_command(kit_command_alias)
+
+        # Add 'run' as an alias for 'kit exec' for backwards compatibility
+        # Users can use either 'dot-agent run' or 'dot-agent kit exec'
         run_alias = click.Group(
             name="run",
-            help="(Alias for kit-command) Run kit cli commands from bundled kits.",
-            commands=kit_command_group.commands,
+            help="(Alias for 'kit exec') Execute scripts from bundled kits.",
+            commands=kit_exec_group.commands,
         )
         self.add_command(run_alias)
 

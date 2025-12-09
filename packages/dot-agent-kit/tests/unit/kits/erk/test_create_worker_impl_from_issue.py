@@ -12,7 +12,7 @@ from click.testing import CliRunner
 from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_worker_impl_from_issue import (
+from dot_agent_kit.data.kits.erk.scripts.erk.create_worker_impl_from_issue import (
     create_worker_impl_from_issue,
 )
 
@@ -40,12 +40,12 @@ def test_create_worker_impl_from_issue_success(
 
     # Mock GitHubPlanStore to return our fake
     monkeypatch.setattr(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_worker_impl_from_issue.GitHubPlanStore",
+        "dot_agent_kit.data.kits.erk.scripts.erk.create_worker_impl_from_issue.GitHubPlanStore",
         lambda github_issues: fake_plan_store,
     )
     # Mock RealGitHubIssues (not used since GitHubPlanStore is mocked)
     monkeypatch.setattr(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_worker_impl_from_issue.RealGitHubIssues",
+        "dot_agent_kit.data.kits.erk.scripts.erk.create_worker_impl_from_issue.RealGitHubIssues",
         lambda: None,
     )
 
@@ -86,12 +86,12 @@ def test_create_worker_impl_from_issue_plan_not_found(
 
     # Mock GitHubPlanStore to return our empty fake
     monkeypatch.setattr(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_worker_impl_from_issue.GitHubPlanStore",
+        "dot_agent_kit.data.kits.erk.scripts.erk.create_worker_impl_from_issue.GitHubPlanStore",
         lambda github_issues: fake_plan_store,
     )
     # Mock RealGitHubIssues (not used since GitHubPlanStore is mocked)
     monkeypatch.setattr(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_worker_impl_from_issue.RealGitHubIssues",
+        "dot_agent_kit.data.kits.erk.scripts.erk.create_worker_impl_from_issue.RealGitHubIssues",
         lambda: None,
     )
 
@@ -139,12 +139,12 @@ def test_create_worker_impl_from_issue_uses_cwd_when_no_repo_root(
 
     # Mock GitHubPlanStore to return our fake
     monkeypatch.setattr(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_worker_impl_from_issue.GitHubPlanStore",
+        "dot_agent_kit.data.kits.erk.scripts.erk.create_worker_impl_from_issue.GitHubPlanStore",
         lambda github_issues: fake_plan_store,
     )
     # Mock RealGitHubIssues (not used since GitHubPlanStore is mocked)
     monkeypatch.setattr(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_worker_impl_from_issue.RealGitHubIssues",
+        "dot_agent_kit.data.kits.erk.scripts.erk.create_worker_impl_from_issue.RealGitHubIssues",
         lambda: None,
     )
 

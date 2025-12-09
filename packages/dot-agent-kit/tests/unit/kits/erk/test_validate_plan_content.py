@@ -4,7 +4,7 @@ import json
 
 from click.testing import CliRunner
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.validate_plan_content import (
+from dot_agent_kit.data.kits.erk.scripts.erk.validate_plan_content import (
     _validate_plan_content,
     validate_plan_content,
 )

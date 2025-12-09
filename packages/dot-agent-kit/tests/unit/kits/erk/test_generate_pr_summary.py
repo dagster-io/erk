@@ -8,7 +8,7 @@ Uses fake-driven testing with injected dependencies via DotAgentContext.
 from click.testing import CliRunner
 
 from dot_agent_kit.context import DotAgentContext
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.generate_pr_summary import (
+from dot_agent_kit.data.kits.erk.scripts.erk.generate_pr_summary import (
     _build_prompt,
     generate_pr_summary,
 )

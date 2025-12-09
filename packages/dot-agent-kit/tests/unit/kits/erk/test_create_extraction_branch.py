@@ -12,7 +12,7 @@ from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues import FakeGitHubIssues
 
 from dot_agent_kit.context import DotAgentContext
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.create_extraction_branch import (
+from dot_agent_kit.data.kits.erk.scripts.erk.create_extraction_branch import (
     create_extraction_branch,
 )
 

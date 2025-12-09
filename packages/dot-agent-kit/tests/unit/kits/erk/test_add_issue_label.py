@@ -14,7 +14,7 @@ from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 
 from dot_agent_kit.context import DotAgentContext
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.add_issue_label import (
+from dot_agent_kit.data.kits.erk.scripts.erk.add_issue_label import (
     add_issue_label,
 )
 

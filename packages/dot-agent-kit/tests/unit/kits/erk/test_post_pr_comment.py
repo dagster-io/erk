@@ -15,7 +15,7 @@ from erk_shared.github.issues.types import IssueInfo
 from erk_shared.impl_folder import save_issue_reference
 
 from dot_agent_kit.context import DotAgentContext
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.post_pr_comment import (
+from dot_agent_kit.data.kits.erk.scripts.erk.post_pr_comment import (
     create_pr_published_block,
     post_pr_comment,
 )

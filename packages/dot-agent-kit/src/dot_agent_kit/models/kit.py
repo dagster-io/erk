@@ -7,15 +7,15 @@ from dot_agent_kit.hooks.models import HookDefinition
 
 
 @dataclass(frozen=True)
-class KitCliCommandDefinition:
-    """Kit cli command definition in kit manifest."""
+class ScriptDefinition:
+    """Script definition in kit manifest."""
 
     name: str
     path: str
     description: str
 
     def validate(self) -> list[str]:
-        """Validate command definition fields.
+        """Validate script definition fields.
 
         Returns:
             List of error messages (empty if valid)
@@ -37,11 +37,11 @@ class KitCliCommandDefinition:
         if ".." in self.path:
             errors.append(f"Path '{self.path}' cannot contain '..' (directory traversal)")
 
-        # Validate path starts with kit_cli_commands/
-        if not self.path.startswith("kit_cli_commands/"):
+        # Validate path starts with scripts/
+        if not self.path.startswith("scripts/"):
             errors.append(
-                f"Path '{self.path}' must start with 'kit_cli_commands/' "
-                "(kit CLI commands must be in kit_cli_commands directory)"
+                f"Path '{self.path}' must start with 'scripts/' "
+                "(scripts must be in scripts directory)"
             )
 
         # Validate description is non-empty
@@ -62,7 +62,7 @@ class KitManifest:
     license: str | None = None
     homepage: str | None = None
     hooks: list[HookDefinition] = field(default_factory=list)
-    kit_cli_commands: list[KitCliCommandDefinition] = field(default_factory=list)
+    scripts: list[ScriptDefinition] = field(default_factory=list)
 
     def validate_namespace_pattern(self) -> list[str]:
         """Check if artifacts follow recommended hyphenated naming convention.

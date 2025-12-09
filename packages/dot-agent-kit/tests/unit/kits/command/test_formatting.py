@@ -1,6 +1,6 @@
 """Layer 3 tests: Pure formatting function tests (no I/O, no mocking)."""
 
-from dot_agent_kit.data.kits.command.kit_cli_commands.command.formatting import (
+from dot_agent_kit.data.kits.command.scripts.command.formatting import (
     format_complex_parameter,
     format_string_parameter,
     format_string_result,

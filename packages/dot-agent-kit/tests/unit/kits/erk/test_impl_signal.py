@@ -14,7 +14,7 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.impl_signal import (
+from dot_agent_kit.data.kits.erk.scripts.erk.impl_signal import (
     _get_branch_name,
     _get_worktree_name,
     impl_signal,

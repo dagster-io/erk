@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.preprocess_session import (
+from dot_agent_kit.data.kits.erk.scripts.erk.preprocess_session import (
     deduplicate_assistant_messages,
     deduplicate_documentation_blocks,
     discover_agent_logs,

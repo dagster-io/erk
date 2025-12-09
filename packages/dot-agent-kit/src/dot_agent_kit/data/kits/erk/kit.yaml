@@ -30,153 +30,153 @@ artifacts:
     - docs/erk/includes/validate-git-repository.md
     - docs/erk/includes/validate-github-cli.md
     - docs/erk/includes/validate-plan-structure.md
-kit_cli_commands:
+scripts:
   - name: find-project-dir
-    path: kit_cli_commands/erk/find_project_dir.py
+    path: scripts/erk/find_project_dir.py
     description: Find Claude Code project directory for a given filesystem path
   - name: session-id-injector-hook
-    path: kit_cli_commands/erk/session_id_injector_hook.py
+    path: scripts/erk/session_id_injector_hook.py
     description: Inject session ID into conversation context for plan creation
   - name: preprocess-session
-    path: kit_cli_commands/erk/preprocess_session.py
+    path: scripts/erk/preprocess_session.py
     description: Compress JSONL session logs to XML format, auto-discovering agent logs for comprehensive preprocessing
   - name: comment-worktree-creation
-    path: kit_cli_commands/erk/comment_worktree_creation.py
+    path: scripts/erk/comment_worktree_creation.py
     description: Post GitHub comment documenting worktree creation
   - name: parse-issue-reference
-    path: kit_cli_commands/erk/parse_issue_reference.py
+    path: scripts/erk/parse_issue_reference.py
     description: Parse GitHub issue number from URL or plain number
   - name: issue-title-to-filename
-    path: kit_cli_commands/erk/issue_title_to_filename.py
+    path: scripts/erk/issue_title_to_filename.py
     description: Convert GitHub issue title to plan filename
   - name: post-start-comment
-    path: kit_cli_commands/erk/post_start_comment.py
+    path: scripts/erk/post_start_comment.py
     description: Post implementation start comment to GitHub issue with worktree, branch, and steps list
   - name: post-plan-comment
-    path: kit_cli_commands/erk/post_plan_comment.py
+    path: scripts/erk/post_plan_comment.py
     description: Post plan issue comment with workflow instructions
   - name: plan-save-to-issue
-    path: kit_cli_commands/erk/plan_save_to_issue.py
+    path: scripts/erk/plan_save_to_issue.py
     description: Extract plan from ~/.claude/plans/ and create GitHub issue with schema v2 format
   - name: wrap-plan-in-metadata-block
-    path: kit_cli_commands/erk/wrap_plan_in_metadata_block.py
+    path: scripts/erk/wrap_plan_in_metadata_block.py
     description: Wrap plan content in collapsible GitHub metadata block
   - name: create-wt-from-issue
-    path: kit_cli_commands/erk/create_wt_from_issue.py
+    path: scripts/erk/create_wt_from_issue.py
     description: Create worktree from GitHub issue with erk-plan label
   - name: create-plan-from-context
-    path: kit_cli_commands/erk/create_plan_from_context.py
+    path: scripts/erk/create_plan_from_context.py
     description: Create GitHub issue from plan content (stdin) with erk-plan label
   - name: check-impl
-    path: kit_cli_commands/erk/check_impl.py
+    path: scripts/erk/check_impl.py
     description: Check .impl/ folder structure and validate prerequisites
   - name: validate-plan-content
-    path: kit_cli_commands/erk/validate_plan_content.py
+    path: scripts/erk/validate_plan_content.py
     description: Validate plan content structure and quality from stdin
   - name: format-success-output
-    path: kit_cli_commands/erk/format_success_output.py
+    path: scripts/erk/format_success_output.py
     description: Format success output for GitHub issue creation with next steps and metadata
   - name: format-error
-    path: kit_cli_commands/erk/format_error.py
+    path: scripts/erk/format_error.py
     description: Format error messages with consistent structure and suggested actions
   - name: create-worker-impl-from-issue
-    path: kit_cli_commands/erk/create_worker_impl_from_issue.py
+    path: scripts/erk/create_worker_impl_from_issue.py
     description: Create .worker-impl/ folder from GitHub issue with plan content
   - name: update-dispatch-info
-    path: kit_cli_commands/erk/update_dispatch_info.py
+    path: scripts/erk/update_dispatch_info.py
     description: Update dispatch info in GitHub issue plan-header metadata
   - name: post-pr-comment
-    path: kit_cli_commands/erk/post_pr_comment.py
+    path: scripts/erk/post_pr_comment.py
     description: Post PR link comment to GitHub issue after PR publication
   - name: mark-step
-    path: kit_cli_commands/erk/mark_step.py
+    path: scripts/erk/mark_step.py
     description: Mark one or more steps as completed/incomplete in progress.md (supports batching to avoid race conditions)
   - name: get-progress
-    path: kit_cli_commands/erk/get_progress.py
+    path: scripts/erk/get_progress.py
     description: Query progress information from progress.md frontmatter
   - name: extract-latest-plan
-    path: kit_cli_commands/erk/extract_latest_plan.py
+    path: scripts/erk/extract_latest_plan.py
     description: Extract the latest plan from Claude session files
   - name: create-issue-from-session
-    path: kit_cli_commands/erk/create_issue_from_session.py
+    path: scripts/erk/create_issue_from_session.py
     description: Extract plan from Claude session and create GitHub issue
   - name: mark-impl-started
-    path: kit_cli_commands/erk/mark_impl_started.py
+    path: scripts/erk/mark_impl_started.py
     description: Update last_local_impl_at in GitHub issue plan-header metadata
   - name: get-pr-body-footer
-    path: kit_cli_commands/erk/get_pr_body_footer.py
+    path: scripts/erk/get_pr_body_footer.py
     description: Generate PR body footer with checkout command for remote implementations
   - name: add-remote-execution-note
-    path: kit_cli_commands/erk/add_remote_execution_note.py
+    path: scripts/erk/add_remote_execution_note.py
     description: Add remote execution tracking note to PR body for workflow runs
   - name: create-extraction-plan
-    path: kit_cli_commands/erk/create_extraction_plan.py
+    path: scripts/erk/create_extraction_plan.py
     description: Create extraction plan issue from stdin with erk-plan and erk-extraction labels
   - name: list-sessions
-    path: kit_cli_commands/erk/list_sessions.py
+    path: scripts/erk/list_sessions.py
     description: List Claude Code sessions with metadata for the current project
   - name: exit-plan-mode-hook
-    path: kit_cli_commands/erk/exit_plan_mode_hook.py
+    path: scripts/erk/exit_plan_mode_hook.py
     description: Save plan to GitHub when ExitPlanMode is called
   - name: render-session-content
-    path: kit_cli_commands/erk/render_session_content.py
+    path: scripts/erk/render_session_content.py
     description: Render session XML as GitHub comment blocks with automatic chunking
   - name: marker-delete
-    path: kit_cli_commands/erk/marker_delete.py
+    path: scripts/erk/marker_delete.py
     description: Delete a marker from the current worktree
   - name: check-marker
-    path: kit_cli_commands/erk/check_marker.py
+    path: scripts/erk/check_marker.py
     description: Check if a marker exists in the current worktree
   - name: add-issue-label
-    path: kit_cli_commands/erk/add_issue_label.py
+    path: scripts/erk/add_issue_label.py
     description: Add a label to a GitHub issue
   - name: create-extraction-branch
-    path: kit_cli_commands/erk/create_extraction_branch.py
+    path: scripts/erk/create_extraction_branch.py
     description: Create branch for extraction workflow
   - name: extract-session-from-issue
-    path: kit_cli_commands/erk/extract_session_from_issue.py
+    path: scripts/erk/extract_session_from_issue.py
     description: Extract session data from GitHub issue comments
   - name: mark-impl-ended
-    path: kit_cli_commands/erk/mark_impl_ended.py
+    path: scripts/erk/mark_impl_ended.py
     description: Update implementation ended event in GitHub issue and local state file
   - name: post-extraction-comment
-    path: kit_cli_commands/erk/post_extraction_comment.py
+    path: scripts/erk/post_extraction_comment.py
     description: Post extraction workflow status comments to GitHub issues
   - name: impl-init
-    path: kit_cli_commands/erk/impl_init.py
+    path: scripts/erk/impl_init.py
     description: Initialize implementation by validating .impl/ folder and extracting phases
   - name: impl-signal
-    path: kit_cli_commands/erk/impl_signal.py
+    path: scripts/erk/impl_signal.py
     description: Signal implementation events (started/ended) to GitHub
   - name: get-pr-review-comments
-    path: kit_cli_commands/erk/get_pr_review_comments.py
+    path: scripts/erk/get_pr_review_comments.py
     description: Fetch PR review comments for agent context injection
   - name: resolve-review-thread
-    path: kit_cli_commands/erk/resolve_review_thread.py
+    path: scripts/erk/resolve_review_thread.py
     description: Resolve a PR review thread via GraphQL mutation
   - name: get-pr-discussion-comments
-    path: kit_cli_commands/erk/get_pr_discussion_comments.py
+    path: scripts/erk/get_pr_discussion_comments.py
     description: Fetch PR discussion comments (main conversation) for agent context injection
   - name: add-reaction-to-comment
-    path: kit_cli_commands/erk/add_reaction_to_comment.py
+    path: scripts/erk/add_reaction_to_comment.py
     description: Add a reaction to a PR/issue comment to mark it as addressed
   - name: tripwires-reminder-hook
-    path: kit_cli_commands/erk/tripwires_reminder_hook.py
+    path: scripts/erk/tripwires_reminder_hook.py
     description: Remind to check tripwires before common dangerous operations
   - name: get-pr-review-comments
-    path: kit_cli_commands/erk/get_pr_review_comments.py
+    path: scripts/erk/get_pr_review_comments.py
     description: Fetch PR review comments for agent context injection
   - name: detect-trunk-branch
-    path: kit_cli_commands/erk/detect_trunk_branch.py
+    path: scripts/erk/detect_trunk_branch.py
     description: Detect whether repo uses main or master as trunk branch
   - name: post-workflow-started-comment
-    path: kit_cli_commands/erk/post_workflow_started_comment.py
+    path: scripts/erk/post_workflow_started_comment.py
     description: Post workflow started comment to GitHub issue with YAML metadata
   - name: generate-pr-summary
-    path: kit_cli_commands/erk/generate_pr_summary.py
+    path: scripts/erk/generate_pr_summary.py
     description: Generate PR summary from PR diff using Claude (no commit messages)
   - name: update-pr-summary
-    path: kit_cli_commands/erk/update_pr_summary.py
+    path: scripts/erk/update_pr_summary.py
     description: Update PR body with implementation summary from commit message
 hooks:
   - id: session-id-injector-hook

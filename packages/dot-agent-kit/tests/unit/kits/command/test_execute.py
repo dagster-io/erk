@@ -5,11 +5,11 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from dot_agent_kit.data.kits.command.kit_cli_commands.command.execute import (
+from dot_agent_kit.data.kits.command.scripts.command.execute import (
     execute,
     execute_command_impl,
 )
-from dot_agent_kit.data.kits.command.kit_cli_commands.command.ops import (
+from dot_agent_kit.data.kits.command.scripts.command.ops import (
     FakeClaudeCliOps,
 )
 

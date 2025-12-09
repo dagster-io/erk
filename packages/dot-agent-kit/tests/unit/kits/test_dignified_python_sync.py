@@ -74,9 +74,7 @@ def test_unified_kit_structure():
         pytest.fail("Unified kit missing kit.yaml")
 
     # Check version-aware hook file
-    hook_file = (
-        unified_kit_dir / "kit_cli_commands" / "dignified-python" / "version_aware_reminder_hook.py"
-    )
+    hook_file = unified_kit_dir / "scripts" / "dignified-python" / "version_aware_reminder_hook.py"
     if not hook_file.exists():
         pytest.fail("Unified kit missing hook file version_aware_reminder_hook.py")
 

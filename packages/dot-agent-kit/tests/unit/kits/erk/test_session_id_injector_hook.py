@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.session_id_injector_hook import (
+from dot_agent_kit.data.kits.erk.scripts.erk.session_id_injector_hook import (
     session_id_injector_hook,
 )
 
@@ -77,7 +77,7 @@ def test_session_id_injector_hook_github_planning_disabled(tmp_path: Path) -> No
     stdin_data = json.dumps({"session_id": session_id})
 
     with patch(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.session_id_injector_hook._is_github_planning_enabled",
+        "dot_agent_kit.data.kits.erk.scripts.erk.session_id_injector_hook._is_github_planning_enabled",
         return_value=False,
     ):
         result = runner.invoke(session_id_injector_hook, input=stdin_data)

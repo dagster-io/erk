@@ -10,7 +10,7 @@ from click.testing import CliRunner
 from erk_shared.github.fake import FakeGitHub
 
 from dot_agent_kit.context import DotAgentContext
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.add_remote_execution_note import (
+from dot_agent_kit.data.kits.erk.scripts.erk.add_remote_execution_note import (
     add_remote_execution_note,
 )
 

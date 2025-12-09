@@ -19,7 +19,7 @@ from erk_shared.extraction.claude_code_session_store import (
 from erk_shared.git.fake import FakeGit
 
 from dot_agent_kit.context import DotAgentContext
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.list_sessions import (
+from dot_agent_kit.data.kits.erk.scripts.erk.list_sessions import (
     _list_sessions_from_store,
     extract_summary,
     format_display_time,

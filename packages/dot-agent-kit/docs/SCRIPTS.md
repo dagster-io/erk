@@ -1,10 +1,10 @@
-# Kit CLI Commands
+# Kit Scripts
 
 ## Definition & Purpose
 
-**Kit CLI commands** are Python scripts that handle mechanical git/gh/gt operations in isolated subprocess contexts, outputting structured JSON results. They exist as a **performance and cost-optimization pattern** for Claude Code interactions.
+**Kit scripts** are Python scripts that handle mechanical git/gh/gt operations in isolated subprocess contexts, outputting structured JSON results. They exist as a **performance and cost-optimization pattern** for Claude Code interactions.
 
-### Why Kit CLI Commands Exist
+### Why Kit Scripts Exist
 
 Traditional approach:
 
@@ -17,10 +17,10 @@ User → Claude → Multiple git/gh/gt commands in main context → Parse output
 - Token costs accumulate quickly
 - Large outputs waste context space
 
-Kit CLI command approach:
+Kit script approach:
 
 ```
-User → Claude → Single kit CLI command (subprocess) → JSON output
+User → Claude → Single kit script (subprocess) → JSON output
 ```
 
 - **Performance**: Deterministic Python execution is much faster than LLM-based orchestration
@@ -29,15 +29,15 @@ User → Claude → Single kit CLI command (subprocess) → JSON output
 - **Clarity**: Only final JSON result enters main Claude context
 - **Maintainability**: Cleaner conversation flow and easier to test
 
-## When to Use Kit CLI Commands
+## When to Use Kit Scripts
 
-Create a kit CLI command when:
+Create a kit script when:
 
 - **Performance and cost benefits**: Multiple git/gh/gt commands that can be executed deterministically (faster than LLM orchestration)
 - **Workflow is repeatable**: The same sequence of operations will be used regularly
 - **Structure is beneficial**: JSON output makes parsing and decision-making cleaner
 
-Do NOT create a kit CLI command when:
+Do NOT create a kit script when:
 
 - **Single operation**: One git command is sufficient
 - **Highly variable**: Workflow changes significantly each time
@@ -45,13 +45,13 @@ Do NOT create a kit CLI command when:
 
 ## Architecture Patterns
 
-Kit CLI commands follow two distinct patterns based on complexity:
+Kit scripts follow two distinct patterns based on complexity:
 
 ### Single-Phase Pattern
 
 **When to use**: Straightforward workflows without AI analysis between steps
 
-**Canonical example**: [`update_pr.py`](../src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/update_pr.py)
+**Canonical example**: [`update_pr.py`](../src/dot_agent_kit/data/kits/gt/scripts/gt/update_pr.py)
 
 **Structure**:
 
@@ -72,7 +72,7 @@ Kit CLI commands follow two distinct patterns based on complexity:
 
 **When to use**: Complex workflows requiring AI analysis between mechanical steps
 
-**Canonical example**: [`submit_branch.py`](../src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/submit_branch.py)
+**Canonical example**: [`submit_branch.py`](../src/dot_agent_kit/data/kits/gt/scripts/gt/submit_branch.py)
 
 **Characteristics**:
 
@@ -93,21 +93,21 @@ Kit CLI commands follow two distinct patterns based on complexity:
 
 **Study these files to understand patterns - they are the authoritative implementations**:
 
-- **Single-phase**: [`update_pr.py`](../src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/update_pr.py) - Complete workflow example
-- **Two-phase**: [`submit_branch.py`](../src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/submit_branch.py) - Complex workflow with AI integration
+- **Single-phase**: [`update_pr.py`](../src/dot_agent_kit/data/kits/gt/scripts/gt/update_pr.py) - Complete workflow example
+- **Two-phase**: [`submit_branch.py`](../src/dot_agent_kit/data/kits/gt/scripts/gt/submit_branch.py) - Complex workflow with AI integration
 - **Testing**: [`test_update_pr.py`](../tests/kits/gt/test_update_pr.py) - Comprehensive test patterns
 
 **IMPORTANT**: Follow these examples to avoid pattern drift. All patterns below are demonstrated in these files.
 
 ### Structure Overview
 
-See [`update_pr.py`](../src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/update_pr.py) for single-phase implementation and [`submit_branch.py`](../src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/submit_branch.py) for two-phase implementation.
+See [`update_pr.py`](../src/dot_agent_kit/data/kits/gt/scripts/gt/update_pr.py) for single-phase implementation and [`submit_branch.py`](../src/dot_agent_kit/data/kits/gt/scripts/gt/submit_branch.py) for two-phase implementation.
 
-All commands output JSON with `success` field and appropriate data/error fields. See canonical examples for complete structure.
+All scripts output JSON with `success` field and appropriate data/error fields. See canonical examples for complete structure.
 
 ## Registration
 
-Kit CLI commands must be registered in the kit's `kit.yaml` file in the `kit_cli_commands` section (not `artifacts`). See existing kit.yaml files for examples.
+Kit scripts must be registered in the kit's `kit.yaml` file in the `scripts` section (not `artifacts`). See existing kit.yaml files for examples.
 
 ## Testing
 
@@ -117,19 +117,19 @@ Kit CLI commands must be registered in the kit's `kit.yaml` file in the `kit_cli
 
 ### 1. Create Python File
 
-Location: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/<kit-name>/kit_cli_commands/<kit-name>/my_command.py`
+Location: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/<kit-name>/scripts/<kit-name>/my_script.py`
 
 ### 2. Implement Following Canonical Pattern
 
-Study and follow the structure from [`update_pr.py`](../src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/update_pr.py) for single-phase or [`submit_branch.py`](../src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/submit_branch.py) for two-phase.
+Study and follow the structure from [`update_pr.py`](../src/dot_agent_kit/data/kits/gt/scripts/gt/update_pr.py) for single-phase or [`submit_branch.py`](../src/dot_agent_kit/data/kits/gt/scripts/gt/submit_branch.py) for two-phase.
 
 ### 3. Register in kit.yaml
 
-Add entry to `kit_cli_commands` section (see Registration section above).
+Add entry to `scripts` section (see Registration section above).
 
 ### 4. Create Slash Command
 
-Create `.claude/commands/<kit>/<name>.md` to invoke the command and parse JSON response.
+Create `.claude/commands/<kit>/<name>.md` to invoke the script and parse JSON response.
 
 ### 5. Write Tests
 
@@ -144,7 +144,7 @@ uv run pytest tests/kits/<kit>/test_<name>.py
 ### 7. Verify Registration
 
 ```bash
-uv run dot-agent kit-command <kit> --help
+uv run dot-agent kit exec <kit> --help
 ```
 
 ## Common Patterns
@@ -180,24 +180,24 @@ All follow the LBYL pattern: check returncode, return simple types, no exception
 
 ## Relationship to Slash Commands
 
-**Kit CLI commands** and **slash commands** work together:
+**Kit scripts** and **slash commands** work together:
 
-- **Kit CLI command**: Handles mechanical operations, outputs JSON
-- **Slash command**: Invokes kit CLI command, parses JSON, interprets for user
+- **Kit script**: Handles mechanical operations, outputs JSON
+- **Slash command**: Invokes kit script, parses JSON, interprets for user
 
 **Example flow**:
 
 1. User runs: `/gt:pr-update`
-2. Slash command invokes: `dot-agent kit-command gt update-pr`
-3. Kit CLI command executes git/gh/gt operations
-4. Kit CLI command outputs JSON: `{"success": true, "pr_number": 123, ...}`
+2. Slash command invokes: `dot-agent kit exec gt update-pr`
+3. Kit script executes git/gh/gt operations
+4. Kit script outputs JSON: `{"success": true, "pr_number": 123, ...}`
 5. Slash command parses JSON and reports to user: "Successfully updated PR #123"
 
 **Why this split?**
 
 - **Performance and cost**: Deterministic operations execute in fast Python, stay out of slow LLM context
-- **Reusability**: Kit CLI commands can be used by multiple slash commands
-- **Testability**: Kit CLI commands can be tested independently
+- **Reusability**: Kit scripts can be used by multiple slash commands
+- **Testability**: Kit scripts can be tested independently
 - **Clarity**: Clear separation between mechanical operations and AI interpretation
 
 ## Related Documentation
