@@ -255,30 +255,30 @@ class TestValidateAtReference:
         broken = validate_at_reference(ref, source, tmp_path)
         assert broken == []
 
-    def test_agent_dir_path_resolved_from_repo_root(self, tmp_path: Path) -> None:
-        """Test paths starting with .agent/ are resolved from repo root."""
+    def test_erk_dir_path_resolved_from_repo_root(self, tmp_path: Path) -> None:
+        """Test paths starting with .erk/ are resolved from repo root."""
         # Create nested directory structure
-        nested_dir = tmp_path / ".agent" / "kits" / "my-kit"
+        nested_dir = tmp_path / ".erk" / "kits" / "my-kit"
         nested_dir.mkdir(parents=True)
 
         # Create source file in nested directory
         source = nested_dir / "config.md"
-        source.write_text("@.agent/docs/readme.md", encoding="utf-8")
+        source.write_text("@.erk/docs/readme.md", encoding="utf-8")
 
-        # Create target file at repo root's .agent/docs/
-        docs_dir = tmp_path / ".agent" / "docs"
+        # Create target file at repo root's .erk/docs/
+        docs_dir = tmp_path / ".erk" / "docs"
         docs_dir.mkdir(parents=True)
         target = docs_dir / "readme.md"
         target.write_text("# Readme", encoding="utf-8")
 
         ref = AtReference(
-            raw_text="@.agent/docs/readme.md",
-            file_path=".agent/docs/readme.md",
+            raw_text="@.erk/docs/readme.md",
+            file_path=".erk/docs/readme.md",
             fragment=None,
             line_number=1,
         )
 
-        # Should find the file at repo_root/.agent/docs/readme.md
+        # Should find the file at repo_root/.erk/docs/readme.md
         broken = validate_at_reference(ref, source, tmp_path)
         assert broken == []
 

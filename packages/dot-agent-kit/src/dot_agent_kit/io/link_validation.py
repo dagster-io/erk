@@ -142,7 +142,7 @@ def validate_at_reference(
 
     Path resolution:
     - Absolute paths (starting with /) are resolved relative to repo root
-    - Paths starting with .claude/ or .agent/ are resolved from repo root
+    - Paths starting with .claude/ or .erk/ are resolved from repo root
     - Other relative paths are resolved relative to the source file's directory
     - Home directory paths (~/) are skipped (not validated)
     - Shell variable paths ($) are skipped (not validated)
@@ -170,8 +170,8 @@ def validate_at_reference(
     if file_path_str.startswith("/"):
         # Absolute path - relative to repo root
         resolved_path = repo_root / file_path_str.lstrip("/")
-    elif file_path_str.startswith(".claude/") or file_path_str.startswith(".agent/"):
-        # Repo-relative paths starting with .claude/ or .agent/ are resolved from repo root
+    elif file_path_str.startswith(".claude/") or file_path_str.startswith(".erk/"):
+        # Repo-relative paths starting with .claude/ or .erk/ are resolved from repo root
         resolved_path = repo_root / file_path_str
     else:
         # Relative path - relative to source file's directory

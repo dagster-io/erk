@@ -224,7 +224,7 @@ def create_kit_registry_file(kit_id: str, entry_content: str, project_dir: Path)
     Raises:
         IOError: If file cannot be created
     """
-    registry_dir = project_dir / ".agent" / "kits" / kit_id
+    registry_dir = project_dir / ".erk" / "kits" / kit_id
 
     # Create directory if it doesn't exist
     if not registry_dir.exists():
@@ -251,7 +251,7 @@ def add_kit_to_registry(kit_id: str, project_dir: Path, version: str, source_typ
     """
     from dot_agent_kit.io.state import load_project_config
 
-    registry_path = project_dir / ".agent" / "kits" / "kit-registry.md"
+    registry_path = project_dir / ".erk" / "kits" / "kit-registry.md"
 
     # Create registry file if it doesn't exist
     if not registry_path.exists():
@@ -275,7 +275,7 @@ def add_kit_to_registry(kit_id: str, project_dir: Path, version: str, source_typ
                         kit_id=kit_id_iter,
                         version=installed_kit.version,
                         source_type=installed_kit.source_type,
-                        include_path=f".agent/kits/{kit_id_iter}/registry-entry.md",
+                        include_path=f".erk/kits/{kit_id_iter}/registry-entry.md",
                     )
                 )
         content = generate_doc_registry_content(entries)
@@ -295,7 +295,7 @@ def add_kit_to_registry(kit_id: str, project_dir: Path, version: str, source_typ
         kit_id=kit_id,
         version=version,
         source_type=source_type,
-        include_path=f".agent/kits/{kit_id}/registry-entry.md",
+        include_path=f".erk/kits/{kit_id}/registry-entry.md",
     )
     entries.append(new_entry)
 
@@ -311,7 +311,7 @@ def remove_kit_from_registry(kit_id: str, project_dir: Path) -> None:
         kit_id: Kit identifier
         project_dir: Project root directory
     """
-    registry_path = project_dir / ".agent" / "kits" / "kit-registry.md"
+    registry_path = project_dir / ".erk" / "kits" / "kit-registry.md"
 
     # Remove entry from registry if it exists
     if registry_path.exists():
@@ -328,7 +328,7 @@ def remove_kit_from_registry(kit_id: str, project_dir: Path) -> None:
             registry_path.write_text(new_content, encoding="utf-8")
         else:
             # Old format - simple line removal
-            include_line = f"@.agent/kits/{kit_id}/registry-entry.md"
+            include_line = f"@.erk/kits/{kit_id}/registry-entry.md"
             lines = content.split("\n")
             filtered_lines = []
 
@@ -343,7 +343,7 @@ def remove_kit_from_registry(kit_id: str, project_dir: Path) -> None:
             registry_path.write_text("\n".join(filtered_lines), encoding="utf-8")
 
     # Delete kit registry directory
-    kit_registry_dir = project_dir / ".agent" / "kits" / kit_id
+    kit_registry_dir = project_dir / ".erk" / "kits" / kit_id
     if kit_registry_dir.exists():
         shutil.rmtree(kit_registry_dir)
 
@@ -363,7 +363,7 @@ def rebuild_registry(project_dir: Path, config: ProjectConfig) -> None:
     from dot_agent_kit.sources.resolver import KitResolver
     from dot_agent_kit.sources.standalone import StandalonePackageSource
 
-    registry_path = project_dir / ".agent" / "kits" / "kit-registry.md"
+    registry_path = project_dir / ".erk" / "kits" / "kit-registry.md"
 
     failures = []
     entries = []
@@ -395,7 +395,7 @@ def rebuild_registry(project_dir: Path, config: ProjectConfig) -> None:
                     kit_id=kit_id,
                     version=installed_kit.version,
                     source_type=installed_kit.source_type,
-                    include_path=f".agent/kits/{kit_id}/registry-entry.md",
+                    include_path=f".erk/kits/{kit_id}/registry-entry.md",
                 )
             )
         except Exception as e:

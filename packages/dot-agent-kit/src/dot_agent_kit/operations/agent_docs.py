@@ -74,7 +74,7 @@ CATEGORY_DESCRIPTIONS: dict[str, str] = {
 
 # Banner for auto-generated files
 GENERATED_FILE_BANNER = """<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
-<!-- Edit source frontmatter, then run 'dot-agent docs sync' to regenerate. -->
+<!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. -->
 
 """
 
