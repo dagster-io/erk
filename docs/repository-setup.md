@@ -5,10 +5,10 @@ One-time setup for enabling erk in a repository.
 ## Install Kits
 
 ```bash
-dot-agent kit install erk
-dot-agent kit install devrun
-dot-agent kit install dignified-python
-dot-agent kit install gt
+erk kit install erk
+erk kit install devrun
+erk kit install dignified-python
+erk kit install gt
 ```
 
 These kits provide:

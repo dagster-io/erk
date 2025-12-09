@@ -4,16 +4,16 @@ This guide covers how to configure your repository to work with erk's planning a
 
 ## Prerequisites
 
-### Install dot-agent-kit
+### Install Kits
 
-Erk depends on dot-agent-kit for Claude Code integration. Install the kits that provide erk's slash commands and agents:
+Install the kits that provide erk's slash commands and agents:
 
 ```bash
 # Install the erk kit (provides /erk:* commands and agents)
-dot-agent kit install erk
+erk kit install erk
 
 # Verify installation
-dot-agent kit list
+erk kit list
 ```
 
 The erk kit includes:
@@ -28,13 +28,13 @@ For the full erk experience, consider installing these complementary kits:
 
 ```bash
 # Graphite integration for stacked PRs
-dot-agent kit install gt
+erk kit install gt
 
 # Development runner for CI iteration
-dot-agent kit install devrun
+erk kit install devrun
 
 # Python coding standards (if your project uses Python)
-dot-agent kit install dignified-python
+erk kit install dignified-python
 ```
 
 ## Directory Structure

@@ -959,14 +959,14 @@ A marker state indicating a merged PR is queued for insight extraction. When `er
 
 ### Kit CLI Command
 
-A Python Click command registered in a kit's `kit.yaml` and invoked via `dot-agent run <kit-name> <command>`.
+A Python Click command registered in a kit's `kit.yaml` and invoked via `erk kit exec <kit-name> <command>`.
 
-**Location**: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/<kit-name>/kit_cli_commands/<kit-name>/`
+**Location**: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/<kit-name>/scripts/<kit-name>/`
 
 **Example**:
 
 ```bash
-dot-agent run erk check-impl --dry-run
+erk kit exec erk check-impl --dry-run
 ```
 
 **See also**: [Kit CLI Command Development](kits/cli-command-development.md)
@@ -984,7 +984,7 @@ When merging multiple kits into a unified kit:
 1. ✅ Create unified `data/kits/{new-kit}/kit.yaml` with all artifacts
 2. ✅ Update `data/registry.yaml` - replace old entries with single new entry
 3. ✅ Delete orphaned kit directories (old kit dirs without kit.yaml)
-4. ✅ Verify: `dot-agent kit search` shows new unified kit
+4. ✅ Verify: `erk kit search` shows new unified kit
 5. ✅ Verify: All skills from old kits are loadable from new kit
 
 **Common failure mode**: Forgetting to update `registry.yaml` after consolidation causes old kit IDs to fail resolution (no `kit.yaml` in expected location).

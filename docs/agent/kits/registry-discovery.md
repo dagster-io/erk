@@ -8,12 +8,12 @@ read_when:
 
 # Kit Registry Discovery
 
-How `dot-agent kit search` finds and lists available kits.
+How `erk kit search` finds and lists available kits.
 
 ## Discovery Flow
 
 ```
-dot-agent kit search
+erk kit search
     ↓
 load_registry()  (io/registry.py)
     ↓

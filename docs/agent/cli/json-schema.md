@@ -51,13 +51,13 @@ Use consistent envelope pattern:
 
 ## Kit CLI Command JSON Schemas
 
-Kit CLI commands invoked via `dot-agent run <kit> <command>` produce JSON for agent consumption.
+Kit CLI commands invoked via `erk kit exec <kit> <command>` produce JSON for agent consumption.
 
 ### impl-init
 
 Validates `.impl/` folder and extracts phases.
 
-**Command**: `dot-agent run erk impl-init --json`
+**Command**: `erk kit exec erk impl-init --json`
 
 **Success Output**:
 
@@ -100,7 +100,7 @@ Validates `.impl/` folder and extracts phases.
 
 Lists Claude Code sessions for the current project.
 
-**Command**: `dot-agent run erk list-sessions --min-size 1024`
+**Command**: `erk kit exec erk list-sessions --min-size 1024`
 
 **Output**:
 
@@ -131,7 +131,7 @@ Lists Claude Code sessions for the current project.
 
 Check if a marker file exists.
 
-**Command**: `dot-agent run erk check-marker pending-extraction`
+**Command**: `erk kit exec erk check-marker pending-extraction`
 
 **Output**:
 
@@ -143,7 +143,7 @@ Check if a marker file exists.
 
 Delete a marker file.
 
-**Command**: `dot-agent run erk marker-delete pending-extraction`
+**Command**: `erk kit exec erk marker-delete pending-extraction`
 
 **Output**:
 
@@ -155,7 +155,7 @@ Delete a marker file.
 
 Mark implementation steps as complete.
 
-**Command**: `dot-agent run erk mark-step 1 2 3`
+**Command**: `erk kit exec erk mark-step 1 2 3`
 
 **Output**:
 
@@ -171,7 +171,7 @@ Mark implementation steps as complete.
 
 Validate implementation folder (precursor to impl-init).
 
-**Command**: `dot-agent run erk check-impl`
+**Command**: `erk kit exec erk check-impl`
 
 **Output** (same as impl-init but without phases):
 
@@ -188,7 +188,7 @@ Validate implementation folder (precursor to impl-init).
 
 Render session XML for GitHub issue comments.
 
-**Command**: `dot-agent run erk render-session-content --session-file=<path> --session-label=<label>`
+**Command**: `erk kit exec erk render-session-content --session-file=<path> --session-label=<label>`
 
 **Output**:
 

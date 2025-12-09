@@ -255,8 +255,16 @@ Before implementing:
 
 ## PR Sequence
 
-1. **PR 1: Facade layer + remove dot-agent** - Add `erk kit/artifact/hook` commands wrapping dot-agent, remove `dot-agent` entry point
-2. **PR 2: Rename to scripts** - `kit_cli_commands` → `scripts`, `kit-command` → `kit exec`
-3. **PR 3: Config migration** - `.agent/` → `.erk/`, `dot-agent.toml` → `kits.toml`
-4. **PR 4: Hook updates** - Change invocations to `erk kit exec`
-5. **PR 5: Apply migration** - Run migration on erk repo itself
+1. ✅ **PR #2809: Facade layer + config migration** - Add `erk kit/artifact/hook/docs` facade commands, migrate config to `.erk/` (MERGED)
+2. ✅ **PR #2787: Rename to scripts** - `kit_cli_commands` → `scripts`, updated CLI structure (MERGED)
+3. ✅ **PR #2803: Replace invocations** - Replace `dot-agent kit-command` with `erk kit exec` in all kit commands (MERGED)
+4. ✅ **PR #2810: Rename env vars** - Rename `DOT_AGENT_*` environment variables to `ERK_*` prefix (MERGED)
+5. ✅ **PR #?: Documentation updates** - Update docs to use `erk kit` instead of `dot-agent` (this branch)
+
+## Progress Notes
+
+- Phases 1-3 were consolidated into fewer PRs than originally planned
+- The facade, scripts rename, and config migration shipped together in #2809
+- Hook invocations updated in #2803
+- Environment variables renamed from `DOT_AGENT_*` to `ERK_*` in #2810
+- Documentation updated: `.claude/settings.json` permissions, user-facing docs, skills, and commands now use `erk` commands

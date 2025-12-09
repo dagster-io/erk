@@ -103,7 +103,7 @@ Project directories use **deterministic path encoding**:
 - Contains the main conversation thread
 - Includes user messages, assistant responses, and tool results
 
-**Discovery:** Main session logs are `.jsonl` files in the project directory that don't start with `agent-`. Use `dot-agent run erk list-sessions` to list sessions for the current project.
+**Discovery:** Main session logs are `.jsonl` files in the project directory that don't start with `agent-`. Use `erk kit exec erk list-sessions` to list sessions for the current project.
 
 ### Agent Subprocess Logs
 
@@ -383,7 +383,7 @@ See `erk_shared/scratch/scratch.py:get_scratch_dir()` for the canonical implemen
 2. Construct path: `~/.claude/projects/<encoded-path>`
 3. Check if directory exists
 
-**CLI:** Use `dot-agent run erk find-project-dir` to find the project directory for the current working directory.
+**CLI:** Use `erk kit exec erk find-project-dir` to find the project directory for the current working directory.
 
 **Implementation:** See `find_project_info()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/find_project_dir.py`
 
@@ -442,7 +442,7 @@ See `erk_shared/scratch/scratch.py:get_scratch_dir()` for the canonical implemen
 3. Sort by modification time (most recent first)
 4. Extract session ID from filename (`.stem`)
 
-**CLI:** Use `dot-agent run erk find-project-dir` which outputs the latest session ID.
+**CLI:** Use `erk kit exec erk find-project-dir` which outputs the latest session ID.
 
 **Implementation:** Part of `find_project_info()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/find_project_dir.py`
 
@@ -586,13 +586,13 @@ These are rough estimates. Actual counts depend on:
 
 ### Get Project Directory for Current Working Directory
 
-Use `dot-agent run erk find-project-dir` to get the project directory for the current path. The directory path is constructed by encoding the working directory path (see "Project Directory Encoding" above).
+Use `erk kit exec erk find-project-dir` to get the project directory for the current path. The directory path is constructed by encoding the working directory path (see "Project Directory Encoding" above).
 
 ### List All Sessions for a Project
 
 Session IDs are the filenames (stems) of `.jsonl` files that don't start with `agent-`.
 
-**CLI:** Use `dot-agent run erk list-sessions` to list sessions for the current project.
+**CLI:** Use `erk kit exec erk list-sessions` to list sessions for the current project.
 
 ### Get Session ID from Environment
 

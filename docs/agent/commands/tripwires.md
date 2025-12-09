@@ -33,7 +33,7 @@ tripwires:
 ---
 ```
 
-When `dot-agent docs sync` runs, it collects all tripwires and generates `docs/agent/generated/tripwires.md`, which is included via `@` reference in AGENTS.md. See [AGENT-DOC-STANDARD.md](../../AGENT-DOC-STANDARD.md) for the complete frontmatter specification.
+When `erk docs sync` runs, it collects all tripwires and generates `docs/agent/generated/tripwires.md`, which is included via `@` reference in AGENTS.md. See [AGENT-DOC-STANDARD.md](../../AGENT-DOC-STANDARD.md) for the complete frontmatter specification.
 
 ### Generated Output
 
@@ -80,7 +80,7 @@ Add a tripwire to the relevant doc's frontmatter:
 1. Identify the **action pattern** that preceded the mistake
 2. Find the **documentation** that would have prevented it
 3. Add a `tripwires:` entry with `action` and `warning` fields
-4. Run `dot-agent docs sync` to regenerate the tripwires file
+4. Run `erk docs sync` to regenerate the tripwires file
 
 ## Anti-Patterns
 

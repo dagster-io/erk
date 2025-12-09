@@ -264,7 +264,7 @@ This ensures only one implementation runs per issue at a time.
 #### Phase 1: Checkout & Setup
 
 - Checkout repository with full history
-- Install tools: `uv`, `erk`, `dot-agent-kit`, `claude`, `prettier`
+- Install tools: `uv`, `erk`, `claude`, `prettier`
 - Configure git with submitter identity
 - Detect trunk branch (main or master)
 
@@ -366,9 +366,9 @@ steps:
 Use kit CLI commands to update progress:
 
 ```bash
-dot-agent run erk mark-step 1        # Mark step 1 complete
-dot-agent run erk mark-step 1 2 3    # Mark multiple steps
-dot-agent run erk get-progress       # Show current progress
+erk kit exec erk mark-step 1        # Mark step 1 complete
+erk kit exec erk mark-step 1 2 3    # Mark multiple steps
+erk kit exec erk get-progress       # Show current progress
 ```
 
 ---
@@ -622,5 +622,5 @@ gh run view 1234567890 --json displayTitle -q '.displayTitle' | cut -d: -f1
 
 - [Planning Workflow](workflow.md) - `.impl/` folder structure and commands
 - [Plan Enrichment](enrichment.md) - Context preservation in plans
-- [Kit CLI Commands](../kits/cli-commands.md) - Available `dot-agent run erk` commands
+- [Kit CLI Commands](../kits/cli-commands.md) - Available `erk kit exec erk` commands
 - [Glossary](../glossary.md) - Erk terminology definitions

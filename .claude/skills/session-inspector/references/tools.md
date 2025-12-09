@@ -4,14 +4,14 @@ Complete reference for kit CLI commands and jq recipes for analyzing Claude Code
 
 ## Kit CLI Commands
 
-All commands invoked via `dot-agent run erk <command>`.
+All commands invoked via `erk kit exec erk <command>`.
 
 ### list-sessions
 
 List sessions for the current worktree with metadata.
 
 ```bash
-dot-agent run erk list-sessions [--limit N] [--min-size BYTES]
+erk kit exec erk list-sessions [--limit N] [--min-size BYTES]
 ```
 
 **Options:**
@@ -55,7 +55,7 @@ dot-agent run erk list-sessions [--limit N] [--min-size BYTES]
 Convert raw JSONL session log to compressed XML format.
 
 ```bash
-dot-agent run erk preprocess-session <log-path> [OPTIONS]
+erk kit exec erk preprocess-session <log-path> [OPTIONS]
 ```
 
 **Options:**
@@ -97,7 +97,7 @@ dot-agent run erk preprocess-session <log-path> [OPTIONS]
 Extract the latest plan from session files.
 
 ```bash
-dot-agent run erk extract-latest-plan [--session-id SESSION_ID]
+erk kit exec erk extract-latest-plan [--session-id SESSION_ID]
 ```
 
 **Options:**
@@ -124,7 +124,7 @@ dot-agent run erk extract-latest-plan [--session-id SESSION_ID]
 Extract plan from session and create GitHub issue.
 
 ```bash
-dot-agent run erk create-issue-from-session [--session-id SESSION_ID]
+erk kit exec erk create-issue-from-session [--session-id SESSION_ID]
 ```
 
 **Output:**
@@ -154,7 +154,7 @@ Or on failure:
 Render session XML as GitHub comment blocks with automatic chunking.
 
 ```bash
-dot-agent run erk render-session-content --session-file <path> [OPTIONS]
+erk kit exec erk render-session-content --session-file <path> [OPTIONS]
 ```
 
 **Options:**
@@ -189,7 +189,7 @@ dot-agent run erk render-session-content --session-file <path> [OPTIONS]
 Extract session XML content from GitHub issue comments.
 
 ```bash
-dot-agent run erk extract-session-from-issue <issue-number> [OPTIONS]
+erk kit exec erk extract-session-from-issue <issue-number> [OPTIONS]
 ```
 
 **Options:**
@@ -429,7 +429,7 @@ cat session.jsonl | jq 'select(.type == "summary")'
 
 3. View agent conversation:
    ```bash
-   dot-agent run erk preprocess-session agent-<id>.jsonl --stdout | head -200
+   erk kit exec erk preprocess-session agent-<id>.jsonl --stdout | head -200
    ```
 
 ### Compare Session Sizes
@@ -449,21 +449,21 @@ grep -l "specific text" "$PROJECT_DIR"/*.jsonl | grep -v agent-
 ### Extract Plan from Specific Session
 
 ```bash
-dot-agent run erk extract-latest-plan --session-id abc123-def456
+erk kit exec erk extract-latest-plan --session-id abc123-def456
 ```
 
 ### Full Extraction Workflow
 
 ```bash
 # 1. List sessions and find the one to extract from
-dot-agent run erk list-sessions --limit 20
+erk kit exec erk list-sessions --limit 20
 
 # 2. Preprocess to XML
-dot-agent run erk preprocess-session /path/to/session.jsonl --stdout > session.xml
+erk kit exec erk preprocess-session /path/to/session.jsonl --stdout > session.xml
 
 # 3. Render as GitHub comment blocks
-dot-agent run erk render-session-content --session-file session.xml
+erk kit exec erk render-session-content --session-file session.xml
 
 # 4. Or create issue directly
-dot-agent run erk create-issue-from-session --session-id abc123
+erk kit exec erk create-issue-from-session --session-id abc123
 ```

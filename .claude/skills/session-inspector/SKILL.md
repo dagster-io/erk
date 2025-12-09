@@ -38,7 +38,7 @@ Invoke this skill when users:
 
 ## Quick Reference: Kit CLI Commands
 
-All commands invoked via `dot-agent run erk <command>`:
+All commands invoked via `erk kit exec erk <command>`:
 
 | Command                      | Purpose                                          |
 | ---------------------------- | ------------------------------------------------ |
@@ -61,7 +61,7 @@ All commands invoked via `dot-agent run erk <command>`:
 ### 1. List Sessions
 
 ```bash
-dot-agent run erk list-sessions [--limit N] [--min-size BYTES]
+erk kit exec erk list-sessions [--limit N] [--min-size BYTES]
 ```
 
 **Options:**
@@ -79,7 +79,7 @@ dot-agent run erk list-sessions [--limit N] [--min-size BYTES]
 ### 2. Preprocess Session to XML
 
 ```bash
-dot-agent run erk preprocess-session <log-path> [OPTIONS]
+erk kit exec erk preprocess-session <log-path> [OPTIONS]
 ```
 
 **Options:**
@@ -100,7 +100,7 @@ dot-agent run erk preprocess-session <log-path> [OPTIONS]
 ### 3. Extract Plan from Session
 
 ```bash
-dot-agent run erk extract-latest-plan [--session-id SESSION_ID]
+erk kit exec erk extract-latest-plan [--session-id SESSION_ID]
 ```
 
 Extracts most recent plan from session. Uses session-scoped lookup via slug field,
@@ -109,7 +109,7 @@ falls back to mtime-based lookup if no session-specific plan found.
 ### 4. Create GitHub Issue from Session
 
 ```bash
-dot-agent run erk create-issue-from-session [--session-id SESSION_ID]
+erk kit exec erk create-issue-from-session [--session-id SESSION_ID]
 ```
 
 Extracts plan and creates GitHub issue with session content. Returns JSON with
@@ -118,7 +118,7 @@ issue_number and issue_url.
 ### 5. Render Session for GitHub
 
 ```bash
-dot-agent run erk render-session-content --session-file <path> [--session-label LABEL] [--extraction-hints HINTS]
+erk kit exec erk render-session-content --session-file <path> [--session-label LABEL] [--extraction-hints HINTS]
 ```
 
 Renders session XML as GitHub comment blocks with automatic chunking for large content.
@@ -126,7 +126,7 @@ Renders session XML as GitHub comment blocks with automatic chunking for large c
 ### 6. Extract Session from GitHub Issue
 
 ```bash
-dot-agent run erk extract-session-from-issue <issue-number> [--output PATH] [--session-id ID]
+erk kit exec erk extract-session-from-issue <issue-number> [--output PATH] [--session-id ID]
 ```
 
 Extracts and combines chunked session content from GitHub issue comments.
@@ -207,9 +207,9 @@ file_path = write_scratch_file(content, session_id=session_id, suffix=".xml")
 
 ### Find What Happened in a Session
 
-1. List sessions: `dot-agent run erk list-sessions`
+1. List sessions: `erk kit exec erk list-sessions`
 2. Find by summary or time
-3. Preprocess: `dot-agent run erk preprocess-session <file> --stdout | head -500`
+3. Preprocess: `erk kit exec erk preprocess-session <file> --stdout | head -500`
 
 ### Debug Context Blowout
 
@@ -220,13 +220,13 @@ file_path = write_scratch_file(content, session_id=session_id, suffix=".xml")
 ### Extract Plan for Implementation
 
 ```bash
-dot-agent run erk extract-latest-plan --session-id <id>
+erk kit exec erk extract-latest-plan --session-id <id>
 ```
 
 ### Create Issue from Session Plan
 
 ```bash
-dot-agent run erk create-issue-from-session --session-id <id>
+erk kit exec erk create-issue-from-session --session-id <id>
 ```
 
 ### Find Agent Subprocess Logs

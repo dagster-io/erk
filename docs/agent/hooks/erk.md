@@ -14,7 +14,7 @@ Project-specific guide for using Claude Code hooks in the erk repository.
 
 ## How Hooks Work in This Project
 
-This project uses **dot-agent-kit** to manage Claude Code hooks. This provides:
+This project uses **erk kit** commands to manage Claude Code hooks. This provides:
 
 - **Kit-based organization**: Hooks bundled with related skills, commands, and agents
 - **Atomic installation**: Install/remove entire kit including hooks
@@ -44,7 +44,7 @@ packages/dot-agent-kit/src/dot_agent_kit/data/kits/{kit-name}/
 **Key difference from native Claude Code hooks**:
 
 - **Native**: Manually edit `.claude/settings.json`, full control over all features
-- **dot-agent-kit**: Use kit commands, hooks bundled with related artifacts, currently command-based only
+- **erk kit**: Use kit commands, hooks bundled with related artifacts, currently command-based only
 
 **Related documentation**:
 
