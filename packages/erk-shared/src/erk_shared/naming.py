@@ -487,7 +487,7 @@ def default_branch_for_worktree(name: str) -> str:
 def derive_branch_name_from_title(title: str) -> str:
     """Derive branch name from issue/plan title.
 
-    This function matches the logic used by the erk-dispatch workflow
+    This function matches the logic used by the impl-dispatch workflow
     to ensure CLI and workflow produce identical branch names.
 
     Transforms:

@@ -7,7 +7,7 @@
 #
 # Note: Trivial change to force GitHub to re-parse workflow_dispatch trigger (2025-12-09)
 
-name: Dispatch Erk Queue (Git Only)
+name: Implementation Dispatch
 run-name: "${{ inputs.issue_number }}:${{ inputs.distinct_id }}"
 
 on:

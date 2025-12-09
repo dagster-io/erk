@@ -63,7 +63,7 @@ erk admin github-pr-setting --disable
 
 ## Workflow Configuration
 
-Customize workflow parameters by creating `.erk/workflows/erk-dispatch.toml` in your repository:
+Customize workflow parameters by creating `.erk/workflows/impl-dispatch.toml` in your repository:
 
 ```toml
 # Kits to install (comma-separated)

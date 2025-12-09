@@ -231,14 +231,14 @@ issue_number: 123
 validation_results:
   issue_is_open: true
   has_erk_plan_label: true
-expected_workflow: erk-dispatch
+expected_workflow: impl-dispatch
 ```
 
 ---
 
 ## Phase 3: Workflow Dispatch
 
-The `erk-dispatch.yml` workflow handles remote implementation.
+The `impl-dispatch.yml` workflow handles remote implementation.
 
 ### Workflow Inputs
 
@@ -528,7 +528,7 @@ issue_number: 123
 validation_results:
   issue_is_open: true
   has_erk_plan_label: true
-expected_workflow: erk-dispatch
+expected_workflow: impl-dispatch
 ```
 
 ### `workflow-started` Schema
@@ -580,7 +580,7 @@ BRANCH=$(git branch -r | grep "origin/123-" | head -1 | sed 's/origin\///')
 gh pr list --head "$BRANCH"
 
 # Find workflow runs
-gh run list --workflow=erk-dispatch.yml | grep "123:"
+gh run list --workflow=impl-dispatch.yml | grep "123:"
 ```
 
 ### From Branch Name
