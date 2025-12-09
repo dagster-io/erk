@@ -14,6 +14,8 @@ from pathlib import Path
 
 import click
 
+from dot_agent_kit.hooks.decorators import project_scoped
+
 
 def _get_repo_root() -> Path:
     """Get the repository root via git rev-parse.
@@ -47,6 +49,7 @@ def _is_github_planning_enabled() -> bool:
 
 
 @click.command(name="session-id-injector-hook")
+@project_scoped
 def session_id_injector_hook() -> None:
     """Inject session ID into conversation context when relevant."""
     # Early exit if github_planning is disabled - output nothing

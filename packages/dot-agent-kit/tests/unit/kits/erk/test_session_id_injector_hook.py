@@ -21,7 +21,10 @@ def test_session_id_injector_hook_writes_session_id_to_file(tmp_path: Path) -> N
     mock_git_result = MagicMock()
     mock_git_result.stdout = str(tmp_path) + "\n"
 
-    with patch("subprocess.run", return_value=mock_git_result):
+    with (
+        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
+        patch("subprocess.run", return_value=mock_git_result),
+    ):
         result = runner.invoke(session_id_injector_hook, input=stdin_data)
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -49,7 +52,10 @@ def test_session_id_injector_hook_creates_parent_directories(tmp_path: Path) -> 
     mock_git_result = MagicMock()
     mock_git_result.stdout = str(tmp_path) + "\n"
 
-    with patch("subprocess.run", return_value=mock_git_result):
+    with (
+        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
+        patch("subprocess.run", return_value=mock_git_result),
+    ):
         result = runner.invoke(session_id_injector_hook, input=stdin_data)
 
     assert result.exit_code == 0
@@ -60,7 +66,8 @@ def test_session_id_injector_hook_no_session_id_no_file_created(tmp_path: Path) 
     """Test that no file is created when no session ID is provided."""
     runner = CliRunner()
 
-    result = runner.invoke(session_id_injector_hook, input="")
+    with patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True):
+        result = runner.invoke(session_id_injector_hook, input="")
 
     assert result.exit_code == 0
     assert result.output == ""
@@ -76,9 +83,12 @@ def test_session_id_injector_hook_github_planning_disabled(tmp_path: Path) -> No
     session_id = "test-session-should-not-appear"
     stdin_data = json.dumps({"session_id": session_id})
 
-    with patch(
-        "dot_agent_kit.data.kits.erk.scripts.erk.session_id_injector_hook._is_github_planning_enabled",
-        return_value=False,
+    with (
+        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
+        patch(
+            "dot_agent_kit.data.kits.erk.scripts.erk.session_id_injector_hook._is_github_planning_enabled",
+            return_value=False,
+        ),
     ):
         result = runner.invoke(session_id_injector_hook, input=stdin_data)
 
@@ -107,7 +117,10 @@ def test_session_id_injector_hook_overwrites_existing_file(tmp_path: Path) -> No
 
     # Run hook with new session ID
     stdin_data = json.dumps({"session_id": new_session_id})
-    with patch("subprocess.run", return_value=mock_git_result):
+    with (
+        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
+        patch("subprocess.run", return_value=mock_git_result),
+    ):
         result = runner.invoke(session_id_injector_hook, input=stdin_data)
 
     assert result.exit_code == 0

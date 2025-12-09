@@ -23,6 +23,7 @@ from pathlib import Path
 import click
 
 from dot_agent_kit.data.kits.erk.session_plan_extractor import extract_slugs_from_session
+from dot_agent_kit.hooks.decorators import project_scoped
 
 
 def _is_github_planning_enabled() -> bool:
@@ -178,6 +179,7 @@ def _output_blocking_message(session_id: str) -> None:
 
 
 @click.command(name="exit-plan-mode-hook")
+@project_scoped
 def exit_plan_mode_hook() -> None:
     """Prompt user about plan saving when ExitPlanMode is called.
 
