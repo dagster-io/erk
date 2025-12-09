@@ -1,7 +1,7 @@
 """Tests for erk split command.
 
 This file tests the split command which creates individual worktrees for each
-branch in a Graphite stack.
+branch in a worktree stack.
 """
 
 from click.testing import CliRunner
@@ -250,7 +250,7 @@ def test_split_detached_head_state() -> None:
         stack_branches = ["main", "feat-1", "feat-2"]
         current_branch = None  # Detached HEAD
 
-        # For detached HEAD, use "main" as key for graphite stacks
+        # For detached HEAD, use "main" as key for worktree stacks
         graphite_ops = FakeGraphite(stacks={"main": stack_branches})
         git_ops = FakeGit(
             worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch=current_branch, is_root=True)]},

@@ -177,7 +177,7 @@ class SimpleRenderer:
         user_output()
 
     def _render_stack(self, status: StatusData) -> None:
-        """Render Graphite stack section if available.
+        """Render worktree stack section if available.
 
         Args:
             status: Status data

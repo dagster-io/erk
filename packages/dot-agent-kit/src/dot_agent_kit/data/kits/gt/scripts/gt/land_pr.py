@@ -1,4 +1,4 @@
-"""Land a single PR from Graphite stack CLI command."""
+"""Land a single PR from worktree stack CLI command."""
 
 import json
 from dataclasses import asdict
@@ -13,7 +13,7 @@ from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
 
 @click.command()
 def land_pr() -> None:
-    """Land a single PR from Graphite stack without affecting upstack branches."""
+    """Land a single PR from worktree stack without affecting upstack branches."""
     try:
         ops = RealGtKit()
         cwd = Path.cwd()

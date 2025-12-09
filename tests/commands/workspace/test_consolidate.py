@@ -1,7 +1,7 @@
 """Tests for erk consolidate command.
 
 This file tests the consolidate command which removes worktrees containing
-branches from the current Graphite stack.
+branches from the current worktree stack.
 """
 
 import pytest

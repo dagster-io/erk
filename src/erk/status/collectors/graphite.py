@@ -1,4 +1,4 @@
-"""Graphite stack collector."""
+"""Worktree stack collector."""
 
 from pathlib import Path
 
@@ -8,7 +8,7 @@ from erk.status.models.status_data import StackPosition
 
 
 class GraphiteStackCollector(StatusCollector):
-    """Collects Graphite stack position information."""
+    """Collects worktree stack position information."""
 
     @property
     def name(self) -> str:
@@ -36,7 +36,7 @@ class GraphiteStackCollector(StatusCollector):
     def collect(
         self, ctx: ErkContext, worktree_path: Path, repo_root: Path
     ) -> StackPosition | None:
-        """Collect Graphite stack information.
+        """Collect worktree stack information.
 
         Args:
             ctx: Erk context

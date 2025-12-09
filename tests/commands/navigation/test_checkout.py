@@ -169,7 +169,7 @@ def test_checkout_creates_worktree_for_unchecked_branch() -> None:
 def test_checkout_to_branch_in_stack_but_not_checked_out() -> None:
     """Test that checkout auto-creates worktree when branch exists in repo but is not checked out.
 
-    With auto-creation behavior, branches that exist in Graphite stacks but are not
+    With auto-creation behavior, branches that exist in worktree stacks but are not
     directly checked out will have a worktree created automatically.
     """
     runner = CliRunner()

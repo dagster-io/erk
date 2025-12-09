@@ -92,7 +92,7 @@ class Graphite(ABC):
 
     @abstractmethod
     def get_branch_stack(self, git_ops: Git, repo_root: Path, branch: str) -> list[str] | None:
-        """Get the linear graphite stack for a given branch.
+        """Get the linear worktree stack for a given branch.
 
         This function builds the linear chain of branches that the given branch belongs to.
         The chain includes:

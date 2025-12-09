@@ -1,7 +1,7 @@
 """Pure business logic for worktree consolidation operations.
 
 This module contains the core logic for determining which worktrees can be
-safely consolidated (removed) when consolidating a Graphite stack into a
+safely consolidated (removed) when consolidating a worktree stack into a
 single worktree. All functions are pure and testable without filesystem I/O.
 """
 

@@ -170,7 +170,7 @@ class RealGraphite(Graphite):
         return self._branches_cache
 
     def get_branch_stack(self, git_ops: Git, repo_root: Path, branch: str) -> list[str] | None:
-        """Get the linear graphite stack for a given branch."""
+        """Get the linear worktree stack for a given branch."""
         # Get all branch metadata
         all_branches = self.get_all_branches(git_ops, repo_root)
         if not all_branches:

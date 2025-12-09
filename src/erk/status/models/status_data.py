@@ -249,7 +249,7 @@ class GitStatus:
 
 @dataclass(frozen=True)
 class StackPosition:
-    """Graphite stack position information."""
+    """Worktree stack position information."""
 
     stack: list[str]
     current_branch: str
