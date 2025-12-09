@@ -690,3 +690,166 @@ def _update_generated_file(
     if not dry_run:
         file_path.write_text(content, encoding="utf-8")
     updated.append(rel_path)
+
+
+# =============================================================================
+# docs/agent Initialization
+# =============================================================================
+
+
+@dataclass(frozen=True)
+class InitResult:
+    """Result of initializing docs/agent directory.
+
+    Attributes:
+        created: List of file paths that were created.
+        skipped: List of file paths that already existed (not overwritten).
+        overwritten: List of file paths that were overwritten (with --force).
+    """
+
+    created: list[str]
+    skipped: list[str]
+    overwritten: list[str]
+
+
+# Template content for docs/agent initialization files.
+# Each template has valid frontmatter (title, read_when) to pass validation.
+DOCS_AGENT_TEMPLATES: dict[str, str] = {
+    "glossary.md": """---
+title: Glossary
+read_when:
+  - "looking up terminology or definitions"
+---
+
+# Glossary
+
+Define project-specific terms and concepts here.
+
+## Example Entry
+
+**Term Name**: Brief definition of what this term means in the context of this project.
+""",
+    "conventions.md": """---
+title: Code Conventions
+read_when:
+  - "writing code that should follow project conventions"
+  - "reviewing code for style compliance"
+---
+
+# Code Conventions
+
+Document project-specific coding conventions and standards here.
+
+## Naming Conventions
+
+- **Functions/variables**: `snake_case`
+- **Classes**: `PascalCase`
+- **Constants**: `UPPER_SNAKE_CASE`
+
+## File Organization
+
+Describe how files should be organized in this project.
+""",
+    "guide.md": """---
+title: Agent Documentation Guide
+read_when:
+  - "learning how to write agent documentation"
+  - "understanding the docs/agent structure"
+---
+
+# Agent Documentation Guide
+
+This directory contains documentation specifically written for AI agents working on this codebase.
+
+## Structure
+
+- **Root files** (`glossary.md`, `conventions.md`, etc.): General project knowledge
+- **Subdirectories**: Category-specific documentation (architecture, testing, etc.)
+
+## Adding Documentation
+
+1. Create a `.md` file with frontmatter containing `title` and `read_when` fields
+2. Run `erk docs sync` to regenerate index files
+3. Run `erk docs validate` to check frontmatter
+
+## Frontmatter Format
+
+```yaml
+---
+title: Document Title
+read_when:
+  - "condition when agent should read this"
+  - "another condition"
+tripwires:  # Optional
+  - action: "before doing X"
+    warning: "Do Y instead because Z."
+---
+```
+""",
+}
+
+
+def init_docs_agent(project_root: Path, *, force: bool = False) -> InitResult:
+    """Initialize the docs/agent directory with template files.
+
+    Creates docs/agent/ directory if it doesn't exist and populates it with
+    starter template files (glossary.md, conventions.md, guide.md).
+
+    Args:
+        project_root: Path to the project root.
+        force: If True, overwrite existing files.
+
+    Returns:
+        InitResult with lists of created, skipped, and overwritten files.
+    """
+    agent_docs_root = project_root / AGENT_DOCS_DIR
+
+    created: list[str] = []
+    skipped: list[str] = []
+    overwritten: list[str] = []
+
+    # Create directory if it doesn't exist
+    if not agent_docs_root.exists():
+        agent_docs_root.mkdir(parents=True)
+
+    # Write template files
+    for filename, content in DOCS_AGENT_TEMPLATES.items():
+        file_path = agent_docs_root / filename
+        rel_path = f"{AGENT_DOCS_DIR}/{filename}"
+
+        if file_path.exists():
+            if force:
+                file_path.write_text(content, encoding="utf-8")
+                overwritten.append(rel_path)
+            else:
+                skipped.append(rel_path)
+        else:
+            file_path.write_text(content, encoding="utf-8")
+            created.append(rel_path)
+
+    return InitResult(created=created, skipped=skipped, overwritten=overwritten)
+
+
+def check_docs_agent_ready(project_root: Path) -> tuple[bool, str | None]:
+    """Check if docs/agent directory is ready for use.
+
+    A directory is considered ready if it exists and contains at least one
+    markdown file (not counting index.md which is auto-generated).
+
+    Args:
+        project_root: Path to the project root.
+
+    Returns:
+        Tuple of (is_ready, warning_message). If ready, warning is None.
+    """
+    agent_docs_root = project_root / AGENT_DOCS_DIR
+
+    if not agent_docs_root.exists():
+        return False, f"Directory {AGENT_DOCS_DIR}/ does not exist"
+
+    # Check for at least one .md file (excluding index.md)
+    md_files = [f for f in agent_docs_root.glob("*.md") if f.name != "index.md"]
+    if not md_files:
+        return False, f"Directory {AGENT_DOCS_DIR}/ has no documentation files"
+
+    return True, None

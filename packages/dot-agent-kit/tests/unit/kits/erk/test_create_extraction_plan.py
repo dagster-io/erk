@@ -13,8 +13,31 @@ from dot_agent_kit.data.kits.erk.scripts.erk.create_extraction_plan import (
 )
 
 
+def _setup_docs_agent(tmp_path: Path) -> None:
+    """Set up a minimal docs/agent directory for tests.
+
+    The create-extraction-plan command validates that docs/agent exists and has
+    at least one .md file before proceeding.
+    """
+    agent_docs = tmp_path / "docs" / "agent"
+    agent_docs.mkdir(parents=True)
+    # Create a minimal doc file to pass validation
+    (agent_docs / "glossary.md").write_text(
+        """---
+title: Glossary
+read_when:
+  - "looking up terms"
+---
+
+# Glossary
+""",
+        encoding="utf-8",
+    )
+
+
 def test_create_extraction_plan_with_plan_content_success(tmp_path: Path) -> None:
     """Test successful issue creation with --plan-content option."""
+    _setup_docs_agent(tmp_path)
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
@@ -48,6 +71,7 @@ def test_create_extraction_plan_with_plan_content_success(tmp_path: Path) -> Non
 
 def test_create_extraction_plan_writes_to_scratch(tmp_path: Path) -> None:
     """Test that --plan-content writes to scratch directory."""
+    _setup_docs_agent(tmp_path)
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
@@ -80,6 +104,7 @@ def test_create_extraction_plan_writes_to_scratch(tmp_path: Path) -> None:
 
 def test_create_extraction_plan_with_plan_file_success(tmp_path: Path) -> None:
     """Test backwards compatibility with --plan-file option."""
+    _setup_docs_agent(tmp_path)
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
@@ -106,15 +131,16 @@ def test_create_extraction_plan_with_plan_file_success(tmp_path: Path) -> None:
     assert "scratch_path" not in output
 
 
-def test_create_extraction_plan_requires_plan_content_or_file() -> None:
+def test_create_extraction_plan_requires_plan_content_or_file(tmp_path: Path) -> None:
     """Test error when neither --plan-content nor --plan-file provided."""
+    _setup_docs_agent(tmp_path)
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
     result = runner.invoke(
         create_extraction_plan,
         ["--extraction-session-ids", "session-123"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=DotAgentContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
     )
 
     assert result.exit_code == 1
@@ -125,6 +151,7 @@ def test_create_extraction_plan_requires_plan_content_or_file() -> None:
 
 def test_create_extraction_plan_rejects_both_options(tmp_path: Path) -> None:
     """Test error when both --plan-content and --plan-file provided."""
+    _setup_docs_agent(tmp_path)
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
@@ -152,6 +179,7 @@ def test_create_extraction_plan_rejects_both_options(tmp_path: Path) -> None:
 
 def test_create_extraction_plan_requires_session_id_with_content(tmp_path: Path) -> None:
     """Test error when --plan-content is provided without --session-id."""
+    _setup_docs_agent(tmp_path)
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
@@ -174,6 +202,7 @@ def test_create_extraction_plan_requires_session_id_with_content(tmp_path: Path)
 
 def test_create_extraction_plan_requires_extraction_session_ids(tmp_path: Path) -> None:
     """Test error when no extraction_session_ids provided."""
+    _setup_docs_agent(tmp_path)
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
@@ -196,6 +225,7 @@ def test_create_extraction_plan_requires_extraction_session_ids(tmp_path: Path) 
 
 def test_create_extraction_plan_empty_content_error(tmp_path: Path) -> None:
     """Test error when plan content is empty."""
+    _setup_docs_agent(tmp_path)
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
@@ -220,6 +250,7 @@ def test_create_extraction_plan_empty_content_error(tmp_path: Path) -> None:
 
 def test_create_extraction_plan_creates_labels(tmp_path: Path) -> None:
     """Test that erk-plan and erk-extraction labels are created."""
+    _setup_docs_agent(tmp_path)
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
@@ -246,6 +277,7 @@ def test_create_extraction_plan_creates_labels(tmp_path: Path) -> None:
 
 def test_create_extraction_plan_issue_format(tmp_path: Path) -> None:
     """Verify extraction plan format (metadata in body, plan in comment)."""
+    _setup_docs_agent(tmp_path)
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
@@ -284,6 +316,7 @@ def test_create_extraction_plan_issue_format(tmp_path: Path) -> None:
 
 def test_create_extraction_plan_deletes_pending_extraction_marker(tmp_path: Path) -> None:
     """Test that pending extraction marker is deleted on success."""
+    _setup_docs_agent(tmp_path)
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
