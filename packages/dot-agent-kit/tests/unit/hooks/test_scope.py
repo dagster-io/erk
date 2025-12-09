@@ -15,11 +15,11 @@ class TestIsInManagedProject:
     """Tests for is_in_managed_project function."""
 
     def test_returns_true_when_config_exists(self, tmp_path: Path) -> None:
-        """Test returns True when .agent/dot-agent.toml exists at repo root."""
-        # Setup: Create .agent/dot-agent.toml
-        agent_dir = tmp_path / ".agent"
-        agent_dir.mkdir()
-        (agent_dir / "dot-agent.toml").write_text("version = 1", encoding="utf-8")
+        """Test returns True when .erk/dot-agent.toml exists at repo root."""
+        # Setup: Create .erk/dot-agent.toml
+        erk_dir = tmp_path / ".erk"
+        erk_dir.mkdir()
+        (erk_dir / "dot-agent.toml").write_text("version = 1", encoding="utf-8")
 
         # Mock git rev-parse to return our temp path as repo root
         with patch("dot_agent_kit.hooks.scope.subprocess.run") as mock_run:
@@ -34,8 +34,8 @@ class TestIsInManagedProject:
         assert result is True
 
     def test_returns_false_when_config_missing(self, tmp_path: Path) -> None:
-        """Test returns False when .agent/dot-agent.toml is missing."""
-        # No .agent directory created
+        """Test returns False when .erk/dot-agent.toml is missing."""
+        # No .erk directory created
 
         # Mock git rev-parse to return our temp path as repo root
         with patch("dot_agent_kit.hooks.scope.subprocess.run") as mock_run:
@@ -49,11 +49,11 @@ class TestIsInManagedProject:
 
         assert result is False
 
-    def test_returns_false_when_agent_dir_exists_but_no_toml(self, tmp_path: Path) -> None:
-        """Test returns False when .agent/ exists but dot-agent.toml is missing."""
-        # Create .agent/ directory but not the toml file
-        agent_dir = tmp_path / ".agent"
-        agent_dir.mkdir()
+    def test_returns_false_when_erk_dir_exists_but_no_toml(self, tmp_path: Path) -> None:
+        """Test returns False when .erk/ exists but dot-agent.toml is missing."""
+        # Create .erk/ directory but not the toml file
+        erk_dir = tmp_path / ".erk"
+        erk_dir.mkdir()
 
         with patch("dot_agent_kit.hooks.scope.subprocess.run") as mock_run:
             mock_run.return_value = subprocess.CompletedProcess(
@@ -147,11 +147,11 @@ class TestProjectScopedIntegration:
     """Integration tests for project_scoped with actual filesystem."""
 
     def test_hook_fires_in_managed_project(self, cli_runner: CliRunner, tmp_path: Path) -> None:
-        """Test hook fires when .agent/dot-agent.toml exists."""
+        """Test hook fires when .erk/dot-agent.toml exists."""
         # Setup managed project
-        agent_dir = tmp_path / ".agent"
-        agent_dir.mkdir()
-        (agent_dir / "dot-agent.toml").write_text("version = 1", encoding="utf-8")
+        erk_dir = tmp_path / ".erk"
+        erk_dir.mkdir()
+        (erk_dir / "dot-agent.toml").write_text("version = 1", encoding="utf-8")
 
         @click.command()
         @project_scoped
@@ -172,14 +172,14 @@ class TestProjectScopedIntegration:
         assert "Hook fired" in result.output
 
     def test_hook_silent_in_unmanaged_project(self, cli_runner: CliRunner, tmp_path: Path) -> None:
-        """Test hook is silent when .agent/dot-agent.toml is missing."""
+        """Test hook is silent when .erk/dot-agent.toml is missing."""
 
         @click.command()
         @project_scoped
         def test_hook() -> None:
             click.echo("Hook fired")
 
-        # Mock git to return our temp path (no .agent/dot-agent.toml)
+        # Mock git to return our temp path (no .erk/dot-agent.toml)
         with patch("dot_agent_kit.hooks.scope.subprocess.run") as mock_run:
             mock_run.return_value = subprocess.CompletedProcess(
                 args=["git", "rev-parse", "--show-toplevel"],

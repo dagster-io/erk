@@ -7,7 +7,7 @@ from pathlib import Path
 def is_in_managed_project() -> bool:
     """Check if cwd is within a dot-agent managed project.
 
-    Detection: Looks for .agent/dot-agent.toml at git repo root.
+    Detection: Looks for .erk/dot-agent.toml at git repo root.
 
     Returns:
         True if in a managed project, False otherwise.
@@ -21,7 +21,7 @@ def is_in_managed_project() -> bool:
             check=True,
         )
         repo_root = Path(result.stdout.strip())
-        return (repo_root / ".agent" / "dot-agent.toml").exists()
+        return (repo_root / ".erk" / "dot-agent.toml").exists()
     except subprocess.CalledProcessError:
         # Not in a git repo
         return False
