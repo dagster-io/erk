@@ -144,3 +144,24 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
             main_content=main_content,
             agent_logs=agent_logs,
         )
+
+    def get_latest_plan(
+        self,
+        project_cwd: Path,
+        *,
+        session_id: str | None = None,
+    ) -> str | None:
+        """Get latest plan from ~/.claude/plans/.
+
+        Args:
+            project_cwd: Project working directory (used as hint for session lookup)
+            session_id: Optional session ID for session-scoped lookup
+
+        Returns:
+            Plan content as markdown string, or None if no plan found
+        """
+        from erk_shared.extraction.local_plans import get_latest_plan_content
+
+        # Note: project_cwd could be used for session correlation in future
+        _ = project_cwd
+        return get_latest_plan_content(session_id=session_id)

@@ -16,11 +16,9 @@ Exit Codes:
     1: Error - no plan found or other error
 """
 
-import os
-
 import click
 
-from dot_agent_kit.data.kits.erk.session_plan_extractor import get_latest_plan
+from dot_agent_kit.context_helpers import require_cwd, require_session_store
 
 
 @click.command(name="extract-latest-plan")
@@ -28,16 +26,18 @@ from dot_agent_kit.data.kits.erk.session_plan_extractor import get_latest_plan
     "--session-id",
     help="Session ID to search within (optional, searches all sessions if not provided)",
 )
-def extract_latest_plan(session_id: str | None) -> None:
+@click.pass_context
+def extract_latest_plan(ctx: click.Context, session_id: str | None) -> None:
     """Extract the latest plan from Claude session files.
 
     Searches for the most recent ExitPlanMode tool use and extracts the plan text.
     """
-    # Get current working directory
-    cwd = os.getcwd()
+    # Get dependencies from context
+    cwd = require_cwd(ctx)
+    session_store = require_session_store(ctx)
 
     # Extract latest plan
-    plan_text = get_latest_plan(cwd, session_id)
+    plan_text = session_store.get_latest_plan(cwd, session_id=session_id)
 
     if not plan_text:
         click.echo(

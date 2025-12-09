@@ -39,15 +39,18 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
         *,
         current_session_id: str | None = None,
         projects: dict[Path, FakeProject] | None = None,
+        plans: dict[str, str] | None = None,
     ) -> None:
         """Initialize fake store with test data.
 
         Args:
             current_session_id: Simulated current session ID
             projects: Map of project_cwd -> FakeProject with session data
+            plans: Map of slug -> plan content for fake plan data
         """
         self._current_session_id = current_session_id
         self._projects = projects or {}
+        self._plans = plans or {}
 
     def get_current_session_id(self) -> str | None:
         """Return the configured current session ID."""
@@ -124,3 +127,33 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
             main_content=session_data.content,
             agent_logs=agent_logs,
         )
+
+    def get_latest_plan(
+        self,
+        project_cwd: Path,
+        *,
+        session_id: str | None = None,
+    ) -> str | None:
+        """Return fake plan content.
+
+        If session_id matches a key in _plans, returns that plan.
+        Otherwise returns the first plan (simulating most-recent by mtime).
+
+        Args:
+            project_cwd: Project working directory (unused in fake)
+            session_id: Optional session ID for session-scoped lookup
+
+        Returns:
+            Plan content as markdown string, or None if no plans configured
+        """
+        _ = project_cwd  # Unused in fake
+
+        # If session_id provided and matches a plan slug, return it
+        if session_id and session_id in self._plans:
+            return self._plans[session_id]
+
+        # Fall back to first plan (simulating most recent by mtime)
+        if self._plans:
+            return next(iter(self._plans.values()))
+
+        return None
