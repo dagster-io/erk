@@ -4,8 +4,9 @@ from pathlib import Path
 
 from dot_agent_kit.operations.agent_docs import (
     AGENT_DOCS_DIR,
-    DOCS_AGENT_TEMPLATES,
+    DOCS_AGENT_TEMPLATE_FILES,
     InitResult,
+    _load_docs_agent_templates,
     check_docs_agent_ready,
     init_docs_agent,
     parse_frontmatter,
@@ -14,11 +15,12 @@ from dot_agent_kit.operations.agent_docs import (
 
 
 class TestDocsAgentTemplates:
-    """Tests for DOCS_AGENT_TEMPLATES constants."""
+    """Tests for docs/agent template files."""
 
     def test_templates_have_valid_frontmatter(self) -> None:
         """All templates must have valid frontmatter to pass validation."""
-        for filename, content in DOCS_AGENT_TEMPLATES.items():
+        templates = _load_docs_agent_templates()
+        for filename, content in templates.items():
             parsed, parse_error = parse_frontmatter(content)
             assert parse_error is None, f"{filename}: {parse_error}"
             assert parsed is not None, f"{filename}: no frontmatter parsed"
@@ -31,9 +33,9 @@ class TestDocsAgentTemplates:
 
     def test_templates_include_expected_files(self) -> None:
         """Templates include glossary, conventions, and guide."""
-        assert "glossary.md" in DOCS_AGENT_TEMPLATES
-        assert "conventions.md" in DOCS_AGENT_TEMPLATES
-        assert "guide.md" in DOCS_AGENT_TEMPLATES
+        assert "glossary.md" in DOCS_AGENT_TEMPLATE_FILES
+        assert "conventions.md" in DOCS_AGENT_TEMPLATE_FILES
+        assert "guide.md" in DOCS_AGENT_TEMPLATE_FILES
 
 
 class TestInitDocsAgent:
@@ -47,7 +49,7 @@ class TestInitDocsAgent:
         result = init_docs_agent(tmp_path)
 
         assert agent_docs.exists()
-        assert len(result.created) == len(DOCS_AGENT_TEMPLATES)
+        assert len(result.created) == len(DOCS_AGENT_TEMPLATE_FILES)
         assert result.skipped == []
         assert result.overwritten == []
 
@@ -55,8 +57,9 @@ class TestInitDocsAgent:
         """Create all template files with correct content."""
         result = init_docs_agent(tmp_path)
         agent_docs = tmp_path / AGENT_DOCS_DIR
+        templates = _load_docs_agent_templates()
 
-        for filename in DOCS_AGENT_TEMPLATES:
+        for filename in DOCS_AGENT_TEMPLATE_FILES:
             file_path = agent_docs / filename
             assert file_path.exists(), f"{filename} was not created"
 
@@ -64,7 +67,7 @@ class TestInitDocsAgent:
             assert expected_rel_path in result.created
 
             content = file_path.read_text(encoding="utf-8")
-            assert content == DOCS_AGENT_TEMPLATES[filename]
+            assert content == templates[filename]
 
     def test_init_skips_existing_files_without_force(self, tmp_path: Path) -> None:
         """Skip existing files when force=False."""
@@ -108,7 +111,8 @@ class TestInitDocsAgent:
         assert f"{AGENT_DOCS_DIR}/glossary.md" not in result.skipped
 
         # Content should be replaced with template
-        assert glossary_path.read_text(encoding="utf-8") == DOCS_AGENT_TEMPLATES["glossary.md"]
+        templates = _load_docs_agent_templates()
+        assert glossary_path.read_text(encoding="utf-8") == templates["glossary.md"]
 
     def test_init_returns_correct_result_type(self, tmp_path: Path) -> None:
         """Return InitResult dataclass with correct structure."""
@@ -128,7 +132,7 @@ class TestInitDocsAgent:
         result = init_docs_agent(tmp_path, force=True)
 
         # All files should be overwritten (not created)
-        assert len(result.overwritten) == len(DOCS_AGENT_TEMPLATES)
+        assert len(result.overwritten) == len(DOCS_AGENT_TEMPLATE_FILES)
         assert len(result.created) == 0
         assert len(result.skipped) == 0
 

@@ -4,12 +4,10 @@ This command creates the docs/agent/ directory structure with starter templates
 for agent documentation (glossary, conventions, guide).
 """
 
-import subprocess
-from pathlib import Path
-
 import click
 
 from dot_agent_kit.cli.output import user_output
+from dot_agent_kit.context_helpers import require_repo_root
 from dot_agent_kit.operations.agent_docs import init_docs_agent
 
 
@@ -20,7 +18,8 @@ from dot_agent_kit.operations.agent_docs import init_docs_agent
     is_flag=True,
     help="Overwrite existing template files.",
 )
-def init_command(*, force: bool) -> None:
+@click.pass_context
+def init_command(ctx: click.Context, *, force: bool) -> None:
     """Initialize docs/agent directory with template files.
 
     Creates docs/agent/ directory if it doesn't exist and adds starter
@@ -36,18 +35,7 @@ def init_command(*, force: bool) -> None:
 
     Use --force to overwrite existing files with fresh templates.
     """
-    # Find repository root
-    result = subprocess.run(
-        ["git", "rev-parse", "--show-toplevel"],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    project_root = Path(result.stdout.strip())
-
-    if not project_root.exists():
-        user_output(click.style("✗ Error: Repository root not found", fg="red"))
-        raise SystemExit(1)
+    project_root = require_repo_root(ctx)
 
     # Initialize docs/agent
     init_result = init_docs_agent(project_root, force=force)

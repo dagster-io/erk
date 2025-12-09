@@ -712,81 +712,29 @@ class InitResult:
     overwritten: list[str]
 
 
-# Template content for docs/agent initialization files.
+# Directory containing template files for docs/agent initialization.
 # Each template has valid frontmatter (title, read_when) to pass validation.
-DOCS_AGENT_TEMPLATES: dict[str, str] = {
-    "glossary.md": """---
-title: Glossary
-read_when:
-  - "looking up terminology or definitions"
----
+TEMPLATES_DIR = Path(__file__).parent.parent / "data" / "templates" / "docs_agent"
 
-# Glossary
+# Template files that will be created when initializing docs/agent.
+DOCS_AGENT_TEMPLATE_FILES: list[str] = [
+    "glossary.md",
+    "conventions.md",
+    "guide.md",
+]
 
-Define project-specific terms and concepts here.
 
-## Example Entry
+def _load_docs_agent_templates() -> dict[str, str]:
+    """Load template content from standalone files.
 
-**Term Name**: Brief definition of what this term means in the context of this project.
-""",
-    "conventions.md": """---
-title: Code Conventions
-read_when:
-  - "writing code that should follow project conventions"
-  - "reviewing code for style compliance"
----
-
-# Code Conventions
-
-Document project-specific coding conventions and standards here.
-
-## Naming Conventions
-
-- **Functions/variables**: `snake_case`
-- **Classes**: `PascalCase`
-- **Constants**: `UPPER_SNAKE_CASE`
-
-## File Organization
-
-Describe how files should be organized in this project.
-""",
-    "guide.md": """---
-title: Agent Documentation Guide
-read_when:
-  - "learning how to write agent documentation"
-  - "understanding the docs/agent structure"
----
-
-# Agent Documentation Guide
-
-This directory contains documentation specifically written for AI agents working on this codebase.
-
-## Structure
-
-- **Root files** (`glossary.md`, `conventions.md`, etc.): General project knowledge
-- **Subdirectories**: Category-specific documentation (architecture, testing, etc.)
-
-## Adding Documentation
-
-1. Create a `.md` file with frontmatter containing `title` and `read_when` fields
-2. Run `erk docs sync` to regenerate index files
-3. Run `erk docs validate` to check frontmatter
-
-## Frontmatter Format
-
-```yaml
----
-title: Document Title
-read_when:
-  - "condition when agent should read this"
-  - "another condition"
-tripwires:  # Optional
-  - action: "before doing X"
-    warning: "Do Y instead because Z."
----
-```
-""",
-}
+    Returns:
+        Dictionary mapping filename to template content.
+    """
+    templates: dict[str, str] = {}
+    for filename in DOCS_AGENT_TEMPLATE_FILES:
+        template_path = TEMPLATES_DIR / filename
+        templates[filename] = template_path.read_text(encoding="utf-8")
+    return templates
 
 
 def init_docs_agent(project_root: Path, *, force: bool = False) -> InitResult:
@@ -812,8 +760,9 @@ def init_docs_agent(project_root: Path, *, force: bool = False) -> InitResult:
     if not agent_docs_root.exists():
         agent_docs_root.mkdir(parents=True)
 
-    # Write template files
-    for filename, content in DOCS_AGENT_TEMPLATES.items():
+    # Load and write template files
+    templates = _load_docs_agent_templates()
+    for filename, content in templates.items():
         file_path = agent_docs_root / filename
         rel_path = f"{AGENT_DOCS_DIR}/{filename}"
 
