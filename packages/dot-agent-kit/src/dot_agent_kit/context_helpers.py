@@ -17,6 +17,7 @@ from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionSto
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues
+from erk_shared.project_discovery import discover_project
 from erk_shared.prompt_executor import PromptExecutor
 
 
@@ -91,6 +92,48 @@ def require_repo_root(ctx: click.Context) -> Path:
 
     click.echo("Error: Context missing repo_root", err=True)
     raise SystemExit(1)
+
+
+def require_project_root(ctx: click.Context) -> Path:
+    """Get project root from context, exiting with error if not in a project.
+
+    A project is a directory containing `.erk/project.toml`. This function
+    walks up from cwd to repo_root looking for the project marker.
+
+    Uses LBYL pattern to check context before accessing. Falls back to repo_root
+    if not within a project subdirectory.
+
+    Args:
+        ctx: Click context (must have DotAgentContext or ErkContext in ctx.obj)
+
+    Returns:
+        Path to project root (directory containing .erk/project.toml),
+        or repo_root if not in a project
+
+    Raises:
+        SystemExit: If context not initialized (exits with code 1)
+
+    Example:
+        >>> @click.command()
+        >>> @click.pass_context
+        >>> def my_command(ctx: click.Context) -> None:
+        ...     project_root = require_project_root(ctx)
+        ...     docs_dir = project_root / "docs" / "agent"
+    """
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+
+    cwd = require_cwd(ctx)
+    repo_root = require_repo_root(ctx)
+    git = require_git(ctx)
+
+    project = discover_project(cwd, repo_root, git)
+    if project is not None:
+        return project.root
+
+    # Not in a project - fall back to repo_root
+    return repo_root
 
 
 def require_git(ctx: click.Context) -> Git:

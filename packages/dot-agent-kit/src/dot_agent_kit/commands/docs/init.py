@@ -7,7 +7,7 @@ for agent documentation (glossary, conventions, guide).
 import click
 
 from dot_agent_kit.cli.output import user_output
-from dot_agent_kit.context_helpers import require_repo_root
+from dot_agent_kit.context_helpers import require_project_root
 from dot_agent_kit.operations.agent_docs import init_docs_agent
 
 
@@ -35,7 +35,7 @@ def init_command(ctx: click.Context, *, force: bool) -> None:
 
     Use --force to overwrite existing files with fresh templates.
     """
-    project_root = require_repo_root(ctx)
+    project_root = require_project_root(ctx)
 
     # Initialize docs/agent
     init_result = init_docs_agent(project_root, force=force)
