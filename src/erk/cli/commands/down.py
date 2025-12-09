@@ -35,7 +35,7 @@ from erk.core.worktree_utils import compute_relative_path_in_worktree
 )
 @click.pass_obj
 def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> None:
-    """Move to parent branch in Graphite stack.
+    """Move to parent branch in worktree stack.
 
     With shell integration (recommended):
       erk down

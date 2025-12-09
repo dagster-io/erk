@@ -1,4 +1,4 @@
-"""Stack operation commands for managing Graphite stacks."""
+"""Stack operation commands for managing worktree stacks."""
 
 import click
 
@@ -11,7 +11,7 @@ from erk.cli.commands.stack.split_old.command import split_cmd as split_stack
 
 @click.group("stack")
 def stack_group() -> None:
-    """Manage Graphite stack operations."""
+    """Manage worktree stack operations."""
     pass
 
 

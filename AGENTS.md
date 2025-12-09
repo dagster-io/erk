@@ -48,7 +48,7 @@ These fundamentally change how you write code. Load before ANY code work:
 
 Load when the context applies:
 
-- **Graphite stacks, `gt` commands** → Load `gt-graphite` skill
+- **Worktree stacks, `gt` commands** → Load `gt-graphite` skill
 - **Writing agent documentation** → Load `agent-docs` skill
 
 ### Tier 3: Tool Routing
@@ -90,7 +90,7 @@ This ensures implementing agents have access to documentation you discovered dur
 - **[conventions.md](docs/agent/conventions.md)** — naming standards
 - **[kit-registry.md](.erk/kits/kit-registry.md)** — installed kits
 
-## Graphite Stack Quick Reference
+## Worktree Stack Quick Reference
 
 - **UPSTACK** = away from trunk (toward leaves/top)
 - **DOWNSTACK** = toward trunk (main at BOTTOM)

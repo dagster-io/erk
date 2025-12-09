@@ -1,4 +1,4 @@
-"""List Graphite stack with worktree info."""
+"""List worktree stack with branch info."""
 
 import click
 from rich.console import Console
@@ -14,7 +14,7 @@ from erk.core.context import ErkContext
 @click.command("list")
 @click.pass_obj
 def list_stack(ctx: ErkContext) -> None:
-    """List the Graphite stack with worktree info.
+    """List the worktree stack with branch info.
 
     Shows branches in the current stack that have associated worktrees,
     displayed top-to-bottom (upstack children at top, downstack trunk at bottom).

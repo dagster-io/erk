@@ -279,13 +279,17 @@ This pattern applies to:
 
 The default branch of the repository (typically `main` or `master`).
 
-**Graphite terminology**: The "trunk" of the stack tree - the base from which all feature branches grow.
+The base branch from which all feature branches grow (trunk of the stack tree).
 
 **Detection**: `git symbolic-ref refs/remotes/origin/HEAD`
 
 ### Stack
 
-**Graphite concept**: A linear chain of dependent branches.
+A linear chain of dependent branches managed as worktrees by erk.
+
+**Erk concept**: A stack represents branches that depend on each other, where each branch's changes build on the parent branch. Erk manages these as separate worktrees for parallel development.
+
+**Underlying**: Uses Graphite for branch dependency tracking (`gt` commands).
 
 **Example**:
 
@@ -296,7 +300,7 @@ main (trunk)
             └─> feature-a-3 (adds user views)
 ```
 
-**Purpose**: Break large features into reviewable chunks while maintaining dependencies.
+**Purpose**: Break large features into reviewable chunks while maintaining dependencies, with each branch in its own worktree.
 
 ### Default Branch
 
