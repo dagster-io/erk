@@ -231,9 +231,10 @@ def init_cmd(
         first_time_init = True
         config_path = ctx.config_store.path()
         user_output(f"Global config not found at {config_path}")
-        user_output("Please provide the path where you want to store all worktrees.")
-        user_output("(This directory will contain subdirectories for each repository)")
-        erk_root = click.prompt("Worktrees root directory", type=Path)
+        user_output("Please provide the path for your .erk folder.")
+        user_output("(This directory will contain worktrees for each repository)")
+        default_erk_root = Path.home() / ".erk"
+        erk_root = click.prompt(".erk folder", type=Path, default=str(default_erk_root))
         erk_root = erk_root.expanduser().resolve()
         config = create_and_save_global_config(ctx, erk_root, shell_setup_complete=False)
         # Update context with newly created config

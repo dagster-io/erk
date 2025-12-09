@@ -82,7 +82,7 @@ def test_init_prompts_for_erk_root() -> None:
             result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
 
         assert result.exit_code == 0, result.output
-        assert "Worktrees root directory" in result.output
+        assert ".erk folder" in result.output
         # Verify config was saved correctly to in-memory ops
         loaded_config = global_config_ops.load()
         assert loaded_config.erk_root == erk_root.resolve()
