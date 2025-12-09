@@ -19,12 +19,12 @@ dot-agent dev kit-check [--kit KIT_NAME] [--verbose]
 
 ## What It Validates
 
-### 1. Kit Registry (`.agent/kits/kit-registry.md`)
+### 1. Kit Registry (`.erk/kits/kit-registry.md`)
 
 - All kits listed exist in the kits directory
 - Kit metadata is properly formatted
 
-### 2. Kit Configuration (`.agent/kits/<kit>/kit.toml` or `kit.yaml`)
+### 2. Kit Configuration (`.erk/kits/<kit>/kit.toml` or `kit.yaml`)
 
 - All artifact references point to existing files
 - Artifact types are valid (skill, command, agent, hook, doc)
