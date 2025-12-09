@@ -605,15 +605,20 @@ class FakeGit(Git):
         For erk_isolated_fs_env (real directories), falls back to
         checking the real filesystem for paths within known worktrees.
         """
-        from tests.test_utils.paths import SentinelPath
-
         # First check if path is explicitly marked as existing
         if path in self._existing_paths:
             return True
 
-        # Don't check real filesystem for sentinel paths (pure test mode)
-        if isinstance(path, SentinelPath):
-            return False
+        # Try to import SentinelPath - it may not be available in all packages
+        try:
+            from tests.test_utils.paths import SentinelPath
+
+            # Don't check real filesystem for sentinel paths (pure test mode)
+            if isinstance(path, SentinelPath):
+                return False
+        except ImportError:
+            # SentinelPath not available (e.g., when used from dot-agent-kit)
+            pass
 
         # For real filesystem tests, check if path is under any existing path
         for existing_path in self._existing_paths:
@@ -669,17 +674,22 @@ class FakeGit(Git):
         """
         import os
 
-        from tests.test_utils.paths import SentinelPath
-
         # Check if path should be treated as existing
         if not self.path_exists(path):
             return False
 
-        # Don't try to chdir to sentinel paths - they're not real filesystem paths
-        if isinstance(path, SentinelPath):
-            # Track the attempt even for sentinel paths (tests need to verify intent)
-            self._chdir_history.append(path)
-            return False
+        # Try to import SentinelPath - it may not be available in all packages
+        try:
+            from tests.test_utils.paths import SentinelPath
+
+            # Don't try to chdir to sentinel paths - they're not real filesystem paths
+            if isinstance(path, SentinelPath):
+                # Track the attempt even for sentinel paths (tests need to verify intent)
+                self._chdir_history.append(path)
+                return False
+        except ImportError:
+            # SentinelPath not available (e.g., when used from dot-agent-kit)
+            pass
 
         # For real filesystem paths, change directory
         os.chdir(path)
