@@ -20,8 +20,6 @@ from erk_shared.impl_folder import (
     read_last_dispatched_run_id,
     read_plan_author,
     save_issue_reference,
-    update_progress,
-    update_progress_frontmatter,
 )
 
 
@@ -190,24 +188,6 @@ def test_get_progress_path_not_exists(tmp_path: Path) -> None:
     """Test getting progress path when it doesn't exist."""
     progress_path = get_progress_path(tmp_path)
     assert progress_path is None
-
-
-def test_update_progress(tmp_path: Path) -> None:
-    """Test updating progress.md content."""
-    plan_content = "# Test\n\n1. Step one\n2. Step two"
-    create_impl_folder(tmp_path, plan_content, overwrite=False)
-
-    # Update progress with completed first step
-    new_progress = """# Progress Tracking
-
-- [x] 1. Step one
-- [ ] 2. Step two
-"""
-    update_progress(tmp_path, new_progress)
-
-    # Verify update
-    progress_file = tmp_path / ".impl" / "progress.md"
-    assert progress_file.read_text(encoding="utf-8") == new_progress
 
 
 def test_extract_steps_numbered_with_period(tmp_path: Path) -> None:
@@ -447,65 +427,6 @@ completed_steps: 3
     result = parse_progress_frontmatter(content)
 
     assert result is None
-
-
-def test_update_progress_frontmatter_replaces_existing(tmp_path: Path) -> None:
-    """Test updating existing front matter preserves checkbox content."""
-    plan_content = "# Test\n\n1. Step one\n2. Step two"
-    create_impl_folder(tmp_path, plan_content, overwrite=False)
-
-    # Manually mark first checkbox as completed
-    progress_file = tmp_path / ".impl" / "progress.md"
-    content = progress_file.read_text(encoding="utf-8")
-    content = content.replace("- [ ] 1. Step one", "- [x] 1. Step one")
-    progress_file.write_text(content, encoding="utf-8")
-
-    # Update front matter to reflect 1/2 completed
-    update_progress_frontmatter(tmp_path, 1, 2)
-
-    # Verify front matter updated
-    updated_content = progress_file.read_text(encoding="utf-8")
-    assert "completed_steps: 1" in updated_content
-    assert "total_steps: 2" in updated_content
-
-    # Verify checkboxes preserved
-    assert "- [x] 1. Step one" in updated_content
-    assert "- [ ] 2. Step two" in updated_content
-
-
-def test_update_progress_frontmatter_adds_if_missing(tmp_path: Path) -> None:
-    """Test adding front matter to file that doesn't have it."""
-    # Create progress file without front matter
-    plan_folder = tmp_path / ".impl"
-    plan_folder.mkdir()
-    progress_file = plan_folder / "progress.md"
-    progress_file.write_text(
-        """# Progress Tracking
-
-- [x] 1. Step one
-- [ ] 2. Step two
-""",
-        encoding="utf-8",
-    )
-
-    # Add front matter
-    update_progress_frontmatter(tmp_path, 1, 2)
-
-    # Verify front matter added
-    updated_content = progress_file.read_text(encoding="utf-8")
-    assert updated_content.startswith("---\n")
-    assert "completed_steps: 1" in updated_content
-    assert "total_steps: 2" in updated_content
-
-    # Verify checkboxes preserved
-    assert "- [x] 1. Step one" in updated_content
-    assert "- [ ] 2. Step two" in updated_content
-
-
-def test_update_progress_frontmatter_no_file(tmp_path: Path) -> None:
-    """Test updating front matter when file doesn't exist does nothing."""
-    # Should not raise error
-    update_progress_frontmatter(tmp_path, 1, 2)
 
 
 # ============================================================================

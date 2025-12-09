@@ -98,17 +98,6 @@ def get_progress_path(worktree_path: Path) -> Path | None:
     return None
 
 
-def update_progress(worktree_path: Path, progress_content: str) -> None:
-    """Update progress.md with new content.
-
-    Args:
-        worktree_path: Path to the worktree directory
-        progress_content: New content for progress.md
-    """
-    progress_file = worktree_path / ".impl" / "progress.md"
-    progress_file.write_text(progress_content, encoding="utf-8")
-
-
 def extract_steps_from_plan(plan_content: str) -> list[str]:
     """Extract numbered steps from plan markdown.
 
@@ -202,41 +191,6 @@ def parse_progress_frontmatter(content: str) -> dict[str, Any] | None:
         return None
 
     return metadata
-
-
-def update_progress_frontmatter(worktree_path: Path, completed: int, total: int) -> None:
-    """Update YAML front matter in progress.md with current progress.
-
-    Replaces or adds front matter section while preserving all checkbox content.
-
-    Args:
-        worktree_path: Path to the worktree directory
-        completed: Number of completed steps
-        total: Total number of steps
-    """
-    progress_file = worktree_path / ".impl" / "progress.md"
-
-    # Check if file exists before reading
-    if not progress_file.exists():
-        return
-
-    content = progress_file.read_text(encoding="utf-8")
-
-    # Generate new front matter
-    new_front_matter = f"---\ncompleted_steps: {completed}\ntotal_steps: {total}\n---\n\n"
-
-    # Check if existing front matter exists
-    front_matter_pattern = re.compile(r"^---\s*\n.*?\n---\s*\n\n", re.DOTALL)
-    match = front_matter_pattern.match(content)
-
-    if match:
-        # Replace existing front matter
-        updated_content = front_matter_pattern.sub(new_front_matter, content)
-    else:
-        # Add front matter at the beginning
-        updated_content = new_front_matter + content
-
-    progress_file.write_text(updated_content, encoding="utf-8")
 
 
 def generate_progress_content(steps: list[str]) -> str:
