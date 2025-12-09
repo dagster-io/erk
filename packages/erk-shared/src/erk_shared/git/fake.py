@@ -793,10 +793,13 @@ class FakeGit(Git):
     def add_all(self, cwd: Path) -> None:
         """Stage all changes for commit (git add -A).
 
+        Also clears dirty worktree state since changes are now staged.
         Raises configured exception if add_all_raises was set.
         """
         if self._add_all_raises is not None:
             raise self._add_all_raises
+        # Clear dirty state - changes are staged for commit
+        self._dirty_worktrees.discard(cwd)
 
     def amend_commit(self, cwd: Path, message: str) -> None:
         """Amend the current commit with a new message."""

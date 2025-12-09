@@ -322,6 +322,9 @@ class FakeGtKitOps:
         repo_root = Path(self._repo_root)
         # FakeGit uses file_statuses: dict[Path, tuple[staged, modified, untracked]]
         self._git_file_statuses[repo_root] = ([], files, [])  # files as modified
+        # Also mark the worktree as dirty so is_worktree_clean() returns False
+        self._git_builder_state.dirty_worktrees.add(repo_root)
+        self._git_builder_state.existing_paths.add(repo_root)
         self._git_instance = None
         return self
 

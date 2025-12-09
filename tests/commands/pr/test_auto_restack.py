@@ -242,8 +242,8 @@ def test_pr_auto_restack_preflight_error() -> None:
         assert len(claude_executor.executed_commands) == 0
 
 
-def test_pr_auto_restack_fails_with_dirty_working_tree() -> None:
-    """Test that command fails early when working tree has uncommitted changes."""
+def test_pr_auto_restack_auto_commits_dirty_working_tree() -> None:
+    """Test that command auto-commits when working tree has uncommitted changes."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
@@ -254,6 +254,7 @@ def test_pr_auto_restack_fails_with_dirty_working_tree() -> None:
             current_branches={env.cwd: "feature-branch"},
             commits_ahead={(env.cwd, "main"): 1},  # Has commits to restack
             dirty_worktrees={env.cwd},  # Working tree has uncommitted changes
+            rebase_in_progress=False,  # No conflicts
         )
 
         graphite = FakeGraphite()
@@ -265,12 +266,14 @@ def test_pr_auto_restack_fails_with_dirty_working_tree() -> None:
 
         result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
 
-        # Should fail with dirty working tree error
-        assert result.exit_code != 0
-        assert "uncommitted changes" in result.output
+        # Should succeed after auto-committing
+        assert result.exit_code == 0
+        assert "Auto-committing" in result.output
 
-        # Claude should NOT be invoked (early fail)
-        assert len(claude_executor.executed_commands) == 0
+        # A commit should have been created with the WIP message
+        assert len(git.commits) >= 1
+        commit_messages = [msg for _, msg, _ in git.commits]
+        assert "WIP: auto-commit before restack" in commit_messages
 
-        # Graphite restack should NOT have been attempted
-        assert len(graphite.restack_calls) == 0
+        # Graphite restack should have been called (we proceed after auto-commit)
+        assert len(graphite.restack_calls) == 1
