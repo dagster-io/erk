@@ -14,7 +14,7 @@ from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues import FakeGitHubIssues
 
 from dot_agent_kit.context import DotAgentContext
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue import (
+from dot_agent_kit.data.kits.erk.scripts.erk.plan_save_to_issue import (
     plan_save_to_issue,
 )
 

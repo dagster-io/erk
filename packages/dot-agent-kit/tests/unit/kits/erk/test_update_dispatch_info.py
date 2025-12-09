@@ -14,7 +14,7 @@ from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata import find_metadata_block
 
 from dot_agent_kit.context import DotAgentContext
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.update_dispatch_info import (
+from dot_agent_kit.data.kits.erk.scripts.erk.update_dispatch_info import (
     update_dispatch_info,
 )
 

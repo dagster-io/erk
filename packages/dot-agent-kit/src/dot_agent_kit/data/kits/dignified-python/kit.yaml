@@ -19,9 +19,9 @@ artifacts:
     - docs/dignified-python/version-specific/312/checklist.md
     - docs/dignified-python/version-specific/313/type-annotations-delta.md
     - docs/dignified-python/version-specific/313/checklist.md
-kit_cli_commands:
+scripts:
   - name: version-aware-reminder-hook
-    path: kit_cli_commands/dignified-python/version_aware_reminder_hook.py
+    path: scripts/dignified-python/version_aware_reminder_hook.py
     description: Output dignified-python compliance reminder with runtime version detection
 hooks:
   - id: version-aware-reminder-hook

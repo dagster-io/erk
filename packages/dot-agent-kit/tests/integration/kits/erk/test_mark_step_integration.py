@@ -10,7 +10,7 @@ import pytest
 from click.testing import CliRunner
 from erk_shared.impl_folder import create_impl_folder, parse_progress_frontmatter
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.mark_step import mark_step
+from dot_agent_kit.data.kits.erk.scripts.erk.mark_step import mark_step
 
 
 @pytest.fixture

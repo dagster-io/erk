@@ -5,7 +5,7 @@ Tests the PR body footer generation for remote implementation PRs.
 
 from click.testing import CliRunner
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.get_pr_body_footer import (
+from dot_agent_kit.data.kits.erk.scripts.erk.get_pr_body_footer import (
     get_pr_body_footer,
 )
 

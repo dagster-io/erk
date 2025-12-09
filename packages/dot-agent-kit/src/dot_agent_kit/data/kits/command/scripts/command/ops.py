@@ -7,13 +7,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from dot_agent_kit.cli.progress import command_status
-from dot_agent_kit.data.kits.command.kit_cli_commands.command.formatting import (
+from dot_agent_kit.data.kits.command.scripts.command.formatting import (
     format_complex_parameter,
     format_string_parameter,
     format_string_result,
     format_structured_result,
 )
-from dot_agent_kit.data.kits.command.kit_cli_commands.command.message_parsing import (
+from dot_agent_kit.data.kits.command.scripts.command.message_parsing import (
     ToolResult,
     ToolUse,
     build_result_status_string,

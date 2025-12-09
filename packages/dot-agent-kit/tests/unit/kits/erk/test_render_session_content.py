@@ -5,7 +5,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.render_session_content import (
+from dot_agent_kit.data.kits.erk.scripts.erk.render_session_content import (
     render_session_content,
 )
 

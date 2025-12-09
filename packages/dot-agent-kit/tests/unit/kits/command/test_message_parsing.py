@@ -1,6 +1,6 @@
 """Layer 3 tests: Pure message parsing tests (no I/O, no mocking)."""
 
-from dot_agent_kit.data.kits.command.kit_cli_commands.command.message_parsing import (
+from dot_agent_kit.data.kits.command.scripts.command.message_parsing import (
     build_result_status_string,
     extract_text_from_assistant_message,
     extract_tool_results_from_user_message,

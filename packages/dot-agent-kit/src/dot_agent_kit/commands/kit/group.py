@@ -5,6 +5,7 @@ import click
 from dot_agent_kit.commands.kit import install, registry, search, show, sync
 from dot_agent_kit.commands.kit.list import list_installed_kits, ls
 from dot_agent_kit.commands.kit.remove import remove, rm
+from dot_agent_kit.commands.kit_exec.group import kit_exec_group
 
 
 @click.group()
@@ -19,6 +20,7 @@ def kit_group() -> None:
       show       Show detailed information about a kit
       sync       Sync all or specific kits with their sources
       registry   Manage kit documentation registry
+      exec       Execute scripts from bundled kits
     """
 
 
@@ -32,3 +34,4 @@ kit_group.add_command(search.search)
 kit_group.add_command(show.show)
 kit_group.add_command(sync.sync)
 kit_group.add_command(registry.registry)
+kit_group.add_command(kit_exec_group, name="exec")

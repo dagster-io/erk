@@ -615,7 +615,7 @@ class FilesystemArtifactRepository(ArtifactRepository):
 
             # Load manifest to get CLI commands
             manifest = load_kit_manifest(manifest_path)
-            cli_commands = [cmd.name for cmd in manifest.kit_cli_commands]
+            cli_commands = [cmd.name for cmd in manifest.scripts]
 
             # Scan for available docs in kit's docs directory
             kit_base = manifest_path.parent

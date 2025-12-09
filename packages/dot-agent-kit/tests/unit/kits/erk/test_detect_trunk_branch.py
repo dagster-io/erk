@@ -12,12 +12,12 @@ from click.testing import CliRunner
 from erk_shared.git.abc import Git
 from erk_shared.git.fake import FakeGit
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.detect_trunk_branch import (
+from dot_agent_kit.data.kits.erk.scripts.erk.detect_trunk_branch import (
     DetectedTrunk,
     DetectionError,
     _detect_trunk_branch_impl,
 )
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.detect_trunk_branch import (
+from dot_agent_kit.data.kits.erk.scripts.erk.detect_trunk_branch import (
     detect_trunk_branch as detect_trunk_branch_command,
 )
 

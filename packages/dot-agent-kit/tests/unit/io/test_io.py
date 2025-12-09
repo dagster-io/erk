@@ -102,7 +102,7 @@ def test_load_kit_manifest_with_commands(tmp_path: Path) -> None:
         "name: test-kit\n"
         "version: 1.0.0\n"
         "description: Test kit\n"
-        "kit_cli_commands:\n"
+        "scripts:\n"
         "  - name: compliance-reminder-hook\n"
         "    path: commands/compliance_reminder_hook.py\n"
         "    description: Output dignified-python compliance reminder for UserPromptSubmit hook\n"
@@ -117,16 +117,16 @@ def test_load_kit_manifest_with_commands(tmp_path: Path) -> None:
     assert manifest.name == "test-kit"
     assert manifest.version == "1.0.0"
     assert manifest.description == "Test kit"
-    assert len(manifest.kit_cli_commands) == 2
-    assert manifest.kit_cli_commands[0].name == "compliance-reminder-hook"
-    assert manifest.kit_cli_commands[0].path == "commands/compliance_reminder_hook.py"
+    assert len(manifest.scripts) == 2
+    assert manifest.scripts[0].name == "compliance-reminder-hook"
+    assert manifest.scripts[0].path == "commands/compliance_reminder_hook.py"
     assert (
-        manifest.kit_cli_commands[0].description
+        manifest.scripts[0].description
         == "Output dignified-python compliance reminder for UserPromptSubmit hook"
     )
-    assert manifest.kit_cli_commands[1].name == "validate-exceptions"
-    assert manifest.kit_cli_commands[1].path == "commands/validate_exceptions.py"
-    assert manifest.kit_cli_commands[1].description == "Validate exception handling patterns"
+    assert manifest.scripts[1].name == "validate-exceptions"
+    assert manifest.scripts[1].path == "commands/validate_exceptions.py"
+    assert manifest.scripts[1].description == "Validate exception handling patterns"
 
 
 def test_load_registry() -> None:

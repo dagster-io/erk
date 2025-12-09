@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from dot_agent_kit.data.kits.command.kit_cli_commands.command.models import (
+from dot_agent_kit.data.kits.command.scripts.command.models import (
     CommandNotFoundError,
 )
 

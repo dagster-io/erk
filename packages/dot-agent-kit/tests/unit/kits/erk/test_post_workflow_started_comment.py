@@ -15,10 +15,10 @@ from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.post_workflow_started_comment import (
+from dot_agent_kit.data.kits.erk.scripts.erk.post_workflow_started_comment import (
     _build_workflow_started_comment,
 )
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.post_workflow_started_comment import (
+from dot_agent_kit.data.kits.erk.scripts.erk.post_workflow_started_comment import (
     post_workflow_started_comment as post_workflow_started_comment_command,
 )
 

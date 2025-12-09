@@ -2,7 +2,7 @@
 
 from click.testing import CliRunner
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.format_error import format_error
+from dot_agent_kit.data.kits.erk.scripts.erk.format_error import format_error
 
 
 def test_format_error_single_action() -> None:

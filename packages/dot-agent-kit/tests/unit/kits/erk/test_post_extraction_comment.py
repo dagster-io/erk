@@ -14,7 +14,7 @@ from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 
 from dot_agent_kit.context import DotAgentContext
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.post_extraction_comment import (
+from dot_agent_kit.data.kits.erk.scripts.erk.post_extraction_comment import (
     _format_complete_comment,
     _format_failed_comment,
     _format_no_changes_comment,

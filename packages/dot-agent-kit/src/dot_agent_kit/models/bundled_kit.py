@@ -17,6 +17,6 @@ class BundledKitInfo:
 
     kit_id: str
     version: str
-    cli_commands: list[str]  # Command names from kit_cli_commands section
+    cli_commands: list[str]  # Command names from scripts section
     available_docs: list[str]  # Doc paths relative to kit (e.g., "tools/gt.md")
     level: str  # "user" or "project"

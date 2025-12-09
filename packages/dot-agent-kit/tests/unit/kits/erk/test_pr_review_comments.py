@@ -13,10 +13,10 @@ from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PRReviewComment, PRReviewThread
 
 from dot_agent_kit.context import DotAgentContext
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.get_pr_review_comments import (
+from dot_agent_kit.data.kits.erk.scripts.erk.get_pr_review_comments import (
     get_pr_review_comments,
 )
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.resolve_review_thread import (
+from dot_agent_kit.data.kits.erk.scripts.erk.resolve_review_thread import (
     resolve_review_thread,
 )
 

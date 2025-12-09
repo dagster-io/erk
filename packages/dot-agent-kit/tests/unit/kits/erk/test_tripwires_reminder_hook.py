@@ -2,7 +2,7 @@
 
 from click.testing import CliRunner
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.tripwires_reminder_hook import (
+from dot_agent_kit.data.kits.erk.scripts.erk.tripwires_reminder_hook import (
     tripwires_reminder_hook,
 )
 

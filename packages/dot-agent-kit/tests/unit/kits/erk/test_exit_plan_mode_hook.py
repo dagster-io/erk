@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.exit_plan_mode_hook import (
+from dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook import (
     exit_plan_mode_hook,
 )
 
@@ -124,7 +124,7 @@ def test_plan_exists_no_marker_blocks(tmp_path: Path) -> None:
     with (
         patch("subprocess.run", return_value=mock_git_result),
         patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.exit_plan_mode_hook.extract_slugs_from_session",
+            "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
             return_value=["test-slug"],
         ),
         patch("pathlib.Path.home", return_value=tmp_path),
@@ -164,7 +164,7 @@ def test_no_plan_allows_exit(tmp_path: Path) -> None:
     with (
         patch("subprocess.run", return_value=mock_git_result),
         patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.exit_plan_mode_hook.extract_slugs_from_session",
+            "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
             return_value=[],
         ),
     ):
@@ -193,7 +193,7 @@ def test_git_not_in_repo_allows_plan_check(tmp_path: Path) -> None:
     with (
         patch("subprocess.run", side_effect=mock_git_error),
         patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.exit_plan_mode_hook.extract_slugs_from_session",
+            "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
             return_value=["test-slug"],
         ),
         patch("pathlib.Path.home", return_value=tmp_path),
@@ -266,7 +266,7 @@ def test_slug_exists_but_plan_file_missing(tmp_path: Path) -> None:
     with (
         patch("subprocess.run", return_value=mock_git_result),
         patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.exit_plan_mode_hook.extract_slugs_from_session",
+            "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
             return_value=["nonexistent-slug"],
         ),
         patch("pathlib.Path.home", return_value=tmp_path),

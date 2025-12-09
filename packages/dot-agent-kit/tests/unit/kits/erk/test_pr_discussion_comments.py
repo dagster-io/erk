@@ -15,10 +15,10 @@ from erk_shared.github.issues.types import IssueComment
 from erk_shared.github.types import PRDetails
 
 from dot_agent_kit.context import DotAgentContext
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.add_reaction_to_comment import (
+from dot_agent_kit.data.kits.erk.scripts.erk.add_reaction_to_comment import (
     add_reaction_to_comment,
 )
-from dot_agent_kit.data.kits.erk.kit_cli_commands.erk.get_pr_discussion_comments import (
+from dot_agent_kit.data.kits.erk.scripts.erk.get_pr_discussion_comments import (
     get_pr_discussion_comments,
 )
 

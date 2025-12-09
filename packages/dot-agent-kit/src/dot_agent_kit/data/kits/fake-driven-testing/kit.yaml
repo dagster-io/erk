@@ -5,9 +5,9 @@ license: See LICENSE.md
 artifacts:
   skill:
     - skills/fake-driven-testing/SKILL.md
-kit_cli_commands:
+scripts:
   - name: fake-driven-testing-reminder-hook
-    path: kit_cli_commands/fake-driven-testing/fake_driven_testing_reminder_hook.py
+    path: scripts/fake-driven-testing/fake_driven_testing_reminder_hook.py
     description: Output fake-driven-testing reminder for UserPromptSubmit hook
 hooks:
   - id: fake-driven-testing-reminder-hook
