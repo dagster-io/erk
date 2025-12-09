@@ -270,6 +270,49 @@ def check_dot_agent_health() -> CheckResult:
         )
 
 
+def check_gitignore_entries(repo_root: Path) -> CheckResult:
+    """Check that required gitignore entries exist.
+
+    Args:
+        repo_root: Path to the repository root (where .gitignore should be located)
+
+    Returns:
+        CheckResult indicating whether required entries are present
+    """
+    required_entries = [".erk/scratch/", ".impl/"]
+    gitignore_path = repo_root / ".gitignore"
+
+    # No gitignore file - pass (user may not have one yet)
+    if not gitignore_path.exists():
+        return CheckResult(
+            name="gitignore",
+            passed=True,
+            message="No .gitignore file (entries not needed yet)",
+        )
+
+    gitignore_content = gitignore_path.read_text(encoding="utf-8")
+
+    # Check for missing entries
+    missing_entries: list[str] = []
+    for entry in required_entries:
+        if entry not in gitignore_content:
+            missing_entries.append(entry)
+
+    if missing_entries:
+        return CheckResult(
+            name="gitignore",
+            passed=False,
+            message=f"Missing gitignore entries: {', '.join(missing_entries)}",
+            details="Run 'erk init' to add missing entries",
+        )
+
+    return CheckResult(
+        name="gitignore",
+        passed=True,
+        message="Required gitignore entries present",
+    )
+
+
 def check_repository(ctx: ErkContext) -> CheckResult:
     """Check repository setup."""
     # First check if we're in a git repo using git_common_dir
@@ -418,11 +461,12 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
     # Add repository check
     results.append(check_repository(ctx))
 
-    # Check Claude settings if we're in a repo
+    # Check Claude settings and gitignore if we're in a repo
     # (get_git_common_dir returns None if not in a repo)
     git_dir = ctx.git.get_git_common_dir(ctx.cwd)
     if git_dir is not None:
         repo_root = ctx.git.get_repository_root(ctx.cwd)
         results.append(check_claude_settings(repo_root))
+        results.append(check_gitignore_entries(repo_root))
 
     return results
