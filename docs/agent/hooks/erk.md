@@ -6,6 +6,8 @@ read_when:
   - "modifying project hooks"
   - "creating project-scoped hooks"
   - "testing hooks with @project_scoped decorator"
+  - "using @project_scoped decorator"
+  - "creating hooks that only fire in managed projects"
 ---
 
 # Claude Code Hooks in erk
@@ -166,11 +168,12 @@ def my_reminder_hook() -> None:
 ```
 
 **Behavior**:
-| Scenario | Behavior |
-|----------|----------|
-| In repo with `.agent/dot-agent.toml` | Hook fires normally |
+
+| Scenario                                | Behavior                        |
+| --------------------------------------- | ------------------------------- |
+| In repo with `.agent/dot-agent.toml`    | Hook fires normally             |
 | In repo without `.agent/dot-agent.toml` | Hook exits silently (no output) |
-| Not in git repo | Hook exits silently |
+| Not in git repo                         | Hook exits silently             |
 
 ### Current Project-Scoped Hooks
 
