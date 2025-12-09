@@ -55,7 +55,7 @@ class DryRunGitHub(GitHub):
         verbose: bool = False,
         subject: str | None = None,
         body: str | None = None,
-    ) -> bool:
+    ) -> bool | str:
         """No-op for merging PR in dry-run mode."""
         # Do nothing - prevents actual PR merge
         return True

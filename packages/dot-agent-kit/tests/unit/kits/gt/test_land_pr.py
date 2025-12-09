@@ -106,7 +106,7 @@ class TestLandPrExecution:
         assert "MERGED" in result.message
 
     def test_land_pr_error_merge_failed(self, tmp_path: Path) -> None:
-        """Test error when PR merge fails."""
+        """Test error when PR merge fails includes error message."""
         # Setup: feature branch on main with open PR but merge configured to fail
         ops = (
             FakeGtKitOps()
@@ -122,6 +122,8 @@ class TestLandPrExecution:
         assert result.success is False
         assert result.error_type == "merge_failed"
         assert "Failed to merge PR #123" in result.message
+        # Verify the error message from the fake is included in output
+        assert "Merge failed (configured to fail in test)" in result.message
 
     def test_land_pr_with_master_trunk(self, tmp_path: Path) -> None:
         """Test successfully landing a PR when trunk is 'master' instead of 'main'."""

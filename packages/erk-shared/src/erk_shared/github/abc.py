@@ -65,7 +65,7 @@ class GitHub(ABC):
         verbose: bool = False,
         subject: str | None = None,
         body: str | None = None,
-    ) -> bool:
+    ) -> bool | str:
         """Merge a pull request on GitHub.
 
         Args:
@@ -79,7 +79,7 @@ class GitHub(ABC):
                   If provided, included as the commit body text.
 
         Returns:
-            True on success, False on failure
+            True on success, error message string on failure
         """
         ...
 

@@ -154,7 +154,7 @@ class RealGitHub(GitHub):
         verbose: bool = False,
         subject: str | None = None,
         body: str | None = None,
-    ) -> bool:
+    ) -> bool | str:
         """Merge a pull request on GitHub via gh CLI."""
         cmd = ["gh", "pr", "merge", str(pr_number)]
         if squash:
@@ -175,8 +175,8 @@ class RealGitHub(GitHub):
             if verbose and result.stdout:
                 user_output(result.stdout)
             return True
-        except RuntimeError:
-            return False
+        except RuntimeError as e:
+            return str(e)
 
     def _generate_distinct_id(self) -> str:
         """Generate a random base36 ID for workflow dispatch correlation.

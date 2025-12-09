@@ -88,7 +88,7 @@ class PrintingGitHub(PrintingBase, GitHub):
         verbose: bool = False,
         subject: str | None = None,
         body: str | None = None,
-    ) -> bool:
+    ) -> bool | str:
         """Merge PR with printed output."""
         merge_type = "--squash" if squash else "--merge"
         self._emit(self._format_command(f"gh pr merge {pr_number} {merge_type}"))

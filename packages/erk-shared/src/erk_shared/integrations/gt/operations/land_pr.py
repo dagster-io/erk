@@ -121,14 +121,14 @@ def execute_land_pr(
     yield ProgressEvent(f"Merging PR #{pr_number}...")
     subject = f"{pr_details.title} (#{pr_number})" if pr_details.title else None
     body = pr_details.body or None
-    if not ops.github.merge_pr(repo_root, pr_number, subject=subject, body=body):
+    merge_result = ops.github.merge_pr(repo_root, pr_number, subject=subject, body=body)
+    if merge_result is not True:
+        error_detail = merge_result if isinstance(merge_result, str) else "Unknown error"
         yield CompletionEvent(
             LandPrError(
                 success=False,
                 error_type="merge_failed",
-                message=(
-                    f"Failed to merge PR #{pr_number}\n\nPlease resolve the issue and try again."
-                ),
+                message=f"Failed to merge PR #{pr_number}\n\n{error_detail}",
                 details={
                     "current_branch": branch_name,
                     "pr_number": pr_number,

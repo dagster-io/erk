@@ -147,14 +147,15 @@ class FakeGitHub(GitHub):
         verbose: bool = False,
         subject: str | None = None,
         body: str | None = None,
-    ) -> bool:
+    ) -> bool | str:
         """Record PR merge in mutation tracking list.
 
-        Returns value of merge_should_succeed flag (default True).
+        Returns True on success, error message string on failure.
         """
         if self._merge_should_succeed:
             self._merged_prs.append(pr_number)
-        return self._merge_should_succeed
+            return True
+        return "Merge failed (configured to fail in test)"
 
     def trigger_workflow(
         self,

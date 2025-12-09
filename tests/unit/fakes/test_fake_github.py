@@ -812,3 +812,24 @@ def test_fake_github_get_pr_for_branch_returns_pr_not_found_when_pr_exists_but_n
 
     assert isinstance(result, PRNotFound)
     assert result.branch == "some-branch"
+
+
+def test_fake_github_merge_pr_returns_true_on_success() -> None:
+    """Test merge_pr returns True (not just truthy) on success."""
+    ops = FakeGitHub(merge_should_succeed=True)
+
+    result = ops.merge_pr(sentinel_path(), 123)
+
+    assert result is True
+    assert ops.merged_prs == [123]
+
+
+def test_fake_github_merge_pr_returns_error_string_on_failure() -> None:
+    """Test merge_pr returns error message string on failure."""
+    ops = FakeGitHub(merge_should_succeed=False)
+
+    result = ops.merge_pr(sentinel_path(), 123)
+
+    assert isinstance(result, str)
+    assert "Merge failed" in result
+    assert ops.merged_prs == []  # PR was not merged
