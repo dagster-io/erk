@@ -140,6 +140,113 @@ To fix merge conflicts during a rebase:
 /erk:merge-conflicts-fix
 ```
 
+## Common Workflows
+
+### Auto-Restack: Intelligent Conflict Resolution
+
+When working with stacked PRs, rebasing is a frequent operation. `erk pr auto-restack` automates this process with intelligent conflict resolution.
+
+**What it does:**
+
+1. Runs `gt restack` to rebase your stack onto the latest trunk
+2. If conflicts occur, launches Claude Code with the `/erk:merge-conflicts-fix` command
+3. After resolution, automatically continues the restack process
+4. Repeats until the entire stack is cleanly rebased
+
+**Basic usage:**
+
+```bash
+erk pr auto-restack
+```
+
+**From within Claude Code:**
+
+```
+/erk:auto-restack
+```
+
+**When to use it:**
+
+- After merging a PR that's below yours in the stack
+- When trunk has been updated and you need to incorporate changes
+- When Graphite shows your stack needs rebasing
+- After running `erk pr land` on a parent branch
+
+**How conflict resolution works:**
+
+When conflicts are detected, erk spawns a Claude Code session that:
+
+1. Identifies all conflicting files
+2. Analyzes the nature of each conflict (content vs import conflicts)
+3. Resolves conflicts while preserving the intent of both changes
+4. Stages resolved files and continues the rebase
+
+**Example scenario:**
+
+```
+trunk ← feature-a ← feature-b ← feature-c (you are here)
+```
+
+If `feature-a` merges into trunk, running `erk pr auto-restack` will:
+
+1. Rebase `feature-b` onto the new trunk
+2. Resolve any conflicts (with Claude's help if needed)
+3. Rebase `feature-c` onto the updated `feature-b`
+4. Resolve any conflicts at this level too
+
+The result: your entire stack is cleanly rebased with minimal manual intervention.
+
+### Checkout PR from GitHub
+
+When reviewing or debugging a PR—whether from a teammate or a remote agent run—you can check it out directly using the PR number or URL from the GitHub page.
+
+**Basic usage:**
+
+```bash
+# Using PR number
+erk pr checkout 123
+
+# Using GitHub URL (copy directly from browser)
+erk pr checkout https://github.com/owner/repo/pull/123
+```
+
+This creates a local worktree for the PR branch and changes your shell to that directory.
+
+**Syncing with Graphite:**
+
+After checkout, sync with Graphite to enable stack management:
+
+```bash
+erk pr sync
+```
+
+This registers the branch with Graphite so you can use standard `gt` commands (`gt pr`, `gt land`, etc.).
+
+**Complete workflow:**
+
+```bash
+# 1. Checkout the PR (copy URL from GitHub)
+erk pr checkout https://github.com/myorg/myrepo/pull/456
+
+# 2. Sync with Graphite
+erk pr sync
+
+# 3. Now iterate normally
+claude
+# ... make changes ...
+/quick-submit
+
+# 4. Or land when approved
+erk pr land
+```
+
+**When to use it:**
+
+- Reviewing a teammate's PR locally
+- Debugging a PR created by remote agent execution
+- Taking over a PR that needs local iteration
+- Running tests or making fixes on someone else's branch
+
 ## Documentation Extraction
 
 Erk supports extracting reusable documentation from implementation sessions into the `docs/agent/` folder—a directory of **agent-generated, agent-consumed documentation**.
