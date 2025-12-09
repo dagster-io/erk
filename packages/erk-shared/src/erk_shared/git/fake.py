@@ -96,6 +96,7 @@ class FakeGit(Git):
         conflicted_files: list[str] | None = None,
         rebase_in_progress: bool = False,
         rebase_continue_raises: Exception | None = None,
+        rebase_continue_clears_rebase: bool = False,
         commit_messages_since: dict[tuple[Path, str], list[str]] | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
@@ -134,6 +135,7 @@ class FakeGit(Git):
             conflicted_files: List of file paths with merge conflicts
             rebase_in_progress: Whether a rebase is currently in progress
             rebase_continue_raises: Exception to raise when rebase_continue() is called
+            rebase_continue_clears_rebase: If True, rebase_continue() clears the rebase state
             commit_messages_since: Mapping of (cwd, base_branch) -> list of commit messages
         """
         self._worktrees = worktrees or {}
@@ -167,6 +169,7 @@ class FakeGit(Git):
         self._conflicted_files = conflicted_files or []
         self._rebase_in_progress = rebase_in_progress
         self._rebase_continue_raises = rebase_continue_raises
+        self._rebase_continue_clears_rebase = rebase_continue_clears_rebase
         self._commit_messages_since = commit_messages_since or {}
 
         # Mutation tracking
@@ -871,6 +874,8 @@ class FakeGit(Git):
         if self._rebase_continue_raises is not None:
             raise self._rebase_continue_raises
         self._rebase_continue_calls.append(cwd)
+        if self._rebase_continue_clears_rebase:
+            self._rebase_in_progress = False
 
     @property
     def rebase_continue_calls(self) -> list[Path]:
