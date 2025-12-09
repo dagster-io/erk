@@ -122,7 +122,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     assert "Workflow:" in result.output
 
     # Branch name is sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
-    expected_branch = "123-implement-feature-x-01-15-1430"
+    expected_branch = "P123-implement-feature-x-01-15-1430"
 
     # Verify branch was created via git (from origin/<current_branch>)
     # Note: submit defaults to current branch as base, not trunk_branch

@@ -231,8 +231,12 @@ def _validate_issue_for_submit(
     # Use provided base_branch instead of detecting trunk
     logger.debug("base_branch=%s", base_branch)
 
-    # Compute branch name: truncate to 31 chars, then append timestamp suffix
-    base_branch_name = sanitize_worktree_name(f"{issue_number}-{issue.title}")
+    # Compute branch name: P prefix + issue number + sanitized title + timestamp
+    # Apply P prefix AFTER sanitization since sanitize_worktree_name lowercases input
+    # Truncate total to 31 chars before adding timestamp suffix
+    prefix = f"P{issue_number}-"
+    sanitized_title = sanitize_worktree_name(issue.title)
+    base_branch_name = (prefix + sanitized_title)[:31].rstrip("-")
     logger.debug("base_branch_name=%s", base_branch_name)
     timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
     logger.debug("timestamp_suffix=%s", timestamp_suffix)

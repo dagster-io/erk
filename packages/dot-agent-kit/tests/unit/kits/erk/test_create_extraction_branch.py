@@ -48,13 +48,13 @@ def test_create_extraction_branch_success(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["branch_name"] == "extraction-docs-123"
+    assert output["branch_name"] == "extraction-docs-P123"
     assert output["issue_number"] == 123
 
     # Verify git operations occurred
     assert len(fake_git.checked_out_branches) >= 1
     assert len(fake_git.created_branches) == 1
-    assert fake_git.created_branches[0][1] == "extraction-docs-123"
+    assert fake_git.created_branches[0][1] == "extraction-docs-P123"
     assert len(fake_git.pushed_branches) == 1
 
 
@@ -81,7 +81,7 @@ def test_create_extraction_branch_with_main(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["branch_name"] == "extraction-docs-456"
+    assert output["branch_name"] == "extraction-docs-P456"
 
 
 # ============================================================================
@@ -97,7 +97,7 @@ def test_create_extraction_branch_already_exists(tmp_path: Path) -> None:
         cwd = Path.cwd()
         fake_git = FakeGit(
             trunk_branches={cwd: "master"},
-            local_branches={cwd: ["master", "extraction-docs-123"]},  # Already exists
+            local_branches={cwd: ["master", "extraction-docs-P123"]},  # Already exists
         )
         fake_gh = FakeGitHubIssues()
 
@@ -281,7 +281,7 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
 
     # Verify values
     assert output["success"] is True
-    assert output["branch_name"] == "extraction-docs-404"
+    assert output["branch_name"] == "extraction-docs-P404"
     assert output["issue_number"] == 404
 
 
@@ -293,7 +293,7 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
         cwd = Path.cwd()
         fake_git = FakeGit(
             trunk_branches={cwd: "master"},
-            local_branches={cwd: ["master", "extraction-docs-505"]},
+            local_branches={cwd: ["master", "extraction-docs-P505"]},
         )
         fake_gh = FakeGitHubIssues()
 
@@ -357,12 +357,12 @@ def test_git_operations_sequence(tmp_path: Path) -> None:
     # Verify branch was created from trunk
     assert len(fake_git.created_branches) == 1
     _, branch_name, start_point = fake_git.created_branches[0]
-    assert branch_name == "extraction-docs-606"
+    assert branch_name == "extraction-docs-P606"
     assert start_point == "master"
 
     # Verify push with upstream tracking
     assert len(fake_git.pushed_branches) == 1
     remote, branch, set_upstream = fake_git.pushed_branches[0]
     assert remote == "origin"
-    assert branch == "extraction-docs-606"
+    assert branch == "extraction-docs-P606"
     assert set_upstream is True
