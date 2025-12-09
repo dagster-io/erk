@@ -5,18 +5,18 @@
 
 ## Categories
 
-- [architecture/](architecture/)
-- [cli/](cli/)
-- [commands/](commands/)
-- [erk/](erk/)
-- [hooks/](hooks/)
-- [kits/](kits/)
-- [planning/](planning/)
-- [reference/](reference/)
-- [sessions/](sessions/)
-- [testing/](testing/)
-- [textual/](textual/)
-- [tui/](tui/)
+- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+- [kits/](kits/) — Explore when working on kit CLI or artifact management. Add docs here for kit development patterns.
+- [planning/](planning/) — Explore when working with plans, .impl/ folders, or agent delegation. Add docs here for planning workflow patterns.
+- [reference/](reference/) — Explore for API/format specifications. Add docs here for reference material that doesn't fit other categories.
+- [sessions/](sessions/) — Explore when working with session logs or parallel sessions. Add docs here for session management patterns.
+- [testing/](testing/) — Explore when writing tests or debugging test infrastructure. Add docs here for testing patterns specific to erk.
+- [textual/](textual/) — Explore when working with Textual framework. Add docs here for Textual-specific patterns.
+- [tui/](tui/) — Explore when working on the erk TUI application. Add docs here for TUI feature implementation.
 
 ## Uncategorized
 

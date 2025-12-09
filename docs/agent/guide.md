@@ -96,3 +96,31 @@ docs/agent/
 | Organizing CLI commands             | [CLI Development](cli/) - see command-organization.md                                    |
 | Python coding standards             | Load `dignified-python-313` skill                                                        |
 | Understanding agentic programming   | [../writing/agentic-programming/](../writing/agentic-programming/agentic-programming.md) |
+
+## Adding Category Descriptions
+
+Category descriptions in `docs/agent/index.md` help agents understand when to explore each category and where to add new docs.
+
+**Location:** Descriptions are defined in `CATEGORY_DESCRIPTIONS` in `packages/dot-agent-kit/src/dot_agent_kit/operations/agent_docs.py`.
+
+**Format:** Each description should answer two questions:
+
+1. **When to explore** — What tasks or questions should lead an agent here?
+2. **When to add docs** — What type of documentation belongs in this category?
+
+**Template:**
+
+```
+"Explore when [doing X]. Add docs here for [type of content]."
+```
+
+**Example:**
+
+```python
+"cli": (
+    "Explore when building CLI commands or output formatting. "
+    "Add docs here for Click patterns and terminal UX."
+),
+```
+
+After editing, run `dot-agent docs sync` to regenerate `docs/agent/index.md`.
