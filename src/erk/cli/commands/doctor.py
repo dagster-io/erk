@@ -51,10 +51,16 @@ def doctor_cmd(ctx: ErkContext) -> None:
     results = run_all_checks(ctx)
 
     # Group results by category
-    cli_tool_names = ("erk", "claude", "graphite", "github", "uv", "dot-agent")
+    cli_tool_names = {"erk", "claude", "graphite", "github", "uv", "dot-agent"}
+    health_check_names = {"dot-agent health"}
+    repo_check_names = {"repository", "claude settings", "gitignore"}
+
     cli_checks = [r for r in results if r.name in cli_tool_names]
-    health_checks = [r for r in results if r.name == "dot-agent health"]
-    repo_checks = [r for r in results if r.name in ("repository", "claude settings")]
+    health_checks = [r for r in results if r.name in health_check_names]
+    repo_checks = [r for r in results if r.name in repo_check_names]
+
+    # Track displayed check names to catch any uncategorized checks
+    displayed_names = cli_tool_names | health_check_names | repo_check_names
 
     # Display CLI availability
     click.echo(click.style("CLI Tools", bold=True))
@@ -74,6 +80,14 @@ def doctor_cmd(ctx: ErkContext) -> None:
     for result in repo_checks:
         _format_check_result(result)
     click.echo("")
+
+    # Display any uncategorized checks (defensive - catches missing categorization)
+    other_checks = [r for r in results if r.name not in displayed_names]
+    if other_checks:
+        click.echo(click.style("Other Checks", bold=True))
+        for result in other_checks:
+            _format_check_result(result)
+        click.echo("")
 
     # Summary
     passed = sum(1 for r in results if r.passed)
