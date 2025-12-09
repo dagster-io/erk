@@ -52,10 +52,11 @@ def require_github_issues(ctx: click.Context) -> GitHubIssues:
 def require_repo_root(ctx: click.Context) -> Path:
     """Get repo root from context, exiting with error if not initialized.
 
-    Uses LBYL pattern to check context before accessing.
+    Uses LBYL pattern to check context before accessing. Handles both
+    DotAgentContext (has repo_root directly) and ErkContext (has repo.root).
 
     Args:
-        ctx: Click context (must have DotAgentContext in ctx.obj)
+        ctx: Click context (must have DotAgentContext or ErkContext in ctx.obj)
 
     Returns:
         Path to repository root
@@ -75,7 +76,21 @@ def require_repo_root(ctx: click.Context) -> Path:
         click.echo("Error: Context not initialized", err=True)
         raise SystemExit(1)
 
-    return ctx.obj.repo_root
+    # Handle DotAgentContext (has repo_root directly)
+    if hasattr(ctx.obj, "repo_root"):
+        return ctx.obj.repo_root
+
+    # Handle ErkContext (has repo.root, but repo could be NoRepoSentinel)
+    if hasattr(ctx.obj, "repo"):
+        repo = ctx.obj.repo
+        if hasattr(repo, "root"):
+            return repo.root
+        # repo is NoRepoSentinel - not in a git repository
+        click.echo("Error: Not in a git repository", err=True)
+        raise SystemExit(1)
+
+    click.echo("Error: Context missing repo_root", err=True)
+    raise SystemExit(1)
 
 
 def require_git(ctx: click.Context) -> Git:

@@ -75,3 +75,77 @@ def test_require_repo_root_exits_when_context_none() -> None:
         require_repo_root(mock_click_ctx)
 
     assert exc_info.value.code == 1
+
+
+def test_require_repo_root_handles_erk_context_with_repo() -> None:
+    """Test that require_repo_root works with ErkContext (has repo.root)."""
+    from dataclasses import dataclass
+    from unittest.mock import MagicMock
+
+    @dataclass
+    class MockRepoContext:
+        root: Path
+
+    @dataclass
+    class MockErkContext:
+        repo: MockRepoContext
+
+    custom_path = Path("/test/erk/repo")
+    erk_ctx = MockErkContext(repo=MockRepoContext(root=custom_path))
+
+    mock_click_ctx = MagicMock()
+    mock_click_ctx.obj = erk_ctx
+
+    # Act
+    result = require_repo_root(mock_click_ctx)
+
+    # Assert
+    assert result == custom_path
+
+
+def test_require_repo_root_exits_when_not_in_git_repo() -> None:
+    """Test that require_repo_root exits when repo is NoRepoSentinel."""
+    from dataclasses import dataclass
+    from unittest.mock import MagicMock
+
+    @dataclass
+    class MockNoRepoSentinel:
+        """Mock sentinel - no 'root' attribute."""
+
+        message: str = "Not inside a git repository"
+
+    @dataclass
+    class MockErkContext:
+        repo: MockNoRepoSentinel
+
+    erk_ctx = MockErkContext(repo=MockNoRepoSentinel())
+
+    mock_click_ctx = MagicMock()
+    mock_click_ctx.obj = erk_ctx
+
+    # Act & Assert
+    with pytest.raises(SystemExit) as exc_info:
+        require_repo_root(mock_click_ctx)
+
+    assert exc_info.value.code == 1
+
+
+def test_require_repo_root_exits_when_context_missing_repo_root() -> None:
+    """Test that require_repo_root exits when context has neither repo_root nor repo."""
+    from dataclasses import dataclass
+    from unittest.mock import MagicMock
+
+    @dataclass
+    class MockUnknownContext:
+        """A context type without repo_root or repo."""
+
+        some_other_field: str = "value"
+
+    mock_click_ctx = MagicMock()
+    mock_click_ctx.obj = MockUnknownContext()
+
+    # Act & Assert
+    with pytest.raises(SystemExit) as exc_info:
+        require_repo_root(mock_click_ctx)
+
+    assert exc_info.value.code == 1
