@@ -41,7 +41,7 @@ def get_stack_branches(
     current_branch: str | None,
     trunk_branch: str,
 ) -> list[str]:
-    """Get the Graphite stack for the current or trunk branch.
+    """Get the worktree stack for the current or trunk branch.
 
     Handles detached HEAD state by falling back to trunk branch stack.
 

@@ -367,7 +367,7 @@ class WorktreeScenario:
         return self
 
     def with_graphite_stack(self, branches: list[str]) -> "WorktreeScenario":
-        """Add Graphite stack for a branch (last branch is current).
+        """Add worktree stack for a branch (last branch is current).
 
         Args:
             branches: List of branch names from trunk to current

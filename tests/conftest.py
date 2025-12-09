@@ -152,7 +152,7 @@ def repo_with_pr(tmp_path: Path):
 
 @pytest.fixture
 def graphite_stack_repo(tmp_path: Path):
-    """Repository with Graphite stack (3 levels).
+    """Repository with worktree stack (3 levels).
 
     Returns:
         WorktreeScenario with main -> level-1 -> level-2 stack

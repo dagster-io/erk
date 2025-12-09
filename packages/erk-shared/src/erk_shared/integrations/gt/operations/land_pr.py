@@ -1,6 +1,6 @@
-"""Land a single PR from Graphite stack without affecting upstack branches.
+"""Land a single PR from worktree stack without affecting upstack branches.
 
-This script safely lands a single PR from a Graphite stack by:
+This script safely lands a single PR from a worktree stack by:
 1. Validating the branch is exactly one level up from trunk
 2. Checking an open pull request exists
 3. Squash-merging the PR to trunk

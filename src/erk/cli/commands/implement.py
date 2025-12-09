@@ -933,7 +933,7 @@ def _implement_from_issue(
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
 
-    # Determine base branch (respects Graphite stacking)
+    # Determine base branch (respects worktree stacking)
     base_branch = _determine_base_branch(ctx, repo.root)
 
     # Prepare plan source from issue (creates branch via git)
@@ -1023,7 +1023,7 @@ def _implement_from_file(
     # Discover repo context
     repo = discover_repo_context(ctx, ctx.cwd)
 
-    # Determine base branch (respects Graphite stacking)
+    # Determine base branch (respects worktree stacking)
     base_branch = _determine_base_branch(ctx, repo.root)
 
     # Prepare plan source from file

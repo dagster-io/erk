@@ -201,7 +201,7 @@ def test_renderer_without_plan_file() -> None:
 
 
 def test_renderer_with_stack_position() -> None:
-    """Test rendering with Graphite stack position."""
+    """Test rendering with worktree stack position."""
     # Arrange
     worktree_info = WorktreeDisplayInfo.feature(
         Path("/tmp/test"), "feature-2", name="test-worktree"

@@ -1391,7 +1391,7 @@ def test_yolo_flag_conflicts_with_script() -> None:
         assert "mutually exclusive" in result.output
 
 
-# Graphite Stacking Tests
+# Worktree Stacking Tests
 
 
 def test_implement_from_worktree_stacks_on_current_branch_with_graphite() -> None:

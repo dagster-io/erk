@@ -812,7 +812,7 @@ def test_from_current_branch_with_main_in_use_prefers_graphite_parent() -> None:
             post_create_shell=None,
         )
 
-        # Set up Graphite stack: main -> feature-1 -> feature-2
+        # Set up worktree stack: main -> feature-1 -> feature-2
         from erk_shared.integrations.graphite.types import BranchMetadata
 
         branch_metadata = {
@@ -890,7 +890,7 @@ def test_from_current_branch_with_parent_in_use_falls_back_to_detached_head() ->
         config_toml = repo_dir / "config.toml"
         config_toml.write_text("", encoding="utf-8")
 
-        # Set up Graphite stack: main -> feature-1 -> feature-2
+        # Set up worktree stack: main -> feature-1 -> feature-2
         from erk_shared.integrations.graphite.types import BranchMetadata
 
         {
@@ -937,7 +937,7 @@ def test_from_current_branch_without_graphite_falls_back_to_main() -> None:
     """Test that --from-current-branch falls back to main when no Graphite parent exists.
 
     Scenario:
-    - Current worktree is on standalone-feature (not in any Graphite stack)
+    - Current worktree is on standalone-feature (not in any worktree stack)
     - Root worktree has other-branch checked out (not main)
     - main is available
 
@@ -956,7 +956,7 @@ def test_from_current_branch_without_graphite_falls_back_to_main() -> None:
         config_toml = repo_dir / "config.toml"
         config_toml.write_text("", encoding="utf-8")
 
-        # Set up minimal Graphite stack (standalone-feature not in it)
+        # Set up minimal worktree stack (standalone-feature not in it)
         from erk_shared.integrations.graphite.types import BranchMetadata
 
         {
@@ -994,7 +994,7 @@ def test_from_current_branch_no_graphite_main_in_use_uses_detached_head() -> Non
     """Test that --from-current-branch uses detached HEAD when no parent and main is in use.
 
     Scenario:
-    - Current worktree is on standalone-feature (not in any Graphite stack)
+    - Current worktree is on standalone-feature (not in any worktree stack)
     - Root worktree has main checked out
 
     Expected: Should use detached HEAD since no parent exists and main is in use
@@ -1012,7 +1012,7 @@ def test_from_current_branch_no_graphite_main_in_use_uses_detached_head() -> Non
         config_toml = repo_dir / "config.toml"
         config_toml.write_text("", encoding="utf-8")
 
-        # Set up minimal Graphite stack (standalone-feature not in it)
+        # Set up minimal worktree stack (standalone-feature not in it)
         from erk_shared.integrations.graphite.types import BranchMetadata
 
         {
