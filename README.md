@@ -32,6 +32,22 @@ This creates your global config and prompts for shell integration setup.
 
 To view the instructions again later: `erk init --shell`
 
+Or append directly:
+
+```bash
+erk init --shell >> ~/.zshrc  # or ~/.bashrc
+```
+
+### Verify Setup
+
+Run the doctor command to verify your environment:
+
+```bash
+erk doctor
+```
+
+This checks that all prerequisites are installed and configured correctly.
+
 ## Local Plan-Driven Workflow
 
 The primary workflow: create a plan, save it, implement it, ship it. **Often completes without touching an IDE.**
@@ -179,3 +195,51 @@ For smaller changes that don't require formal planning:
    ```bash
    erk pr land
    ```
+
+## Monorepo Support
+
+Erk supports monorepos with multiple projects. Understanding where files live is important:
+
+### Repo Root vs Project Root
+
+- **Repo root**: The top-level directory containing `.git/`. This is where `.erk/` lives.
+- **Project root**: A subdirectory (or the repo root itself) containing a `pyproject.toml`. This is where `.impl/` lives.
+
+In a simple repo, these are the same directory. In a monorepo, you might have:
+
+```
+my-monorepo/           # repo root
+├── .erk/              # erk config (repo-scoped)
+├── .git/
+├── frontend/
+│   └── pyproject.toml
+└── backend/           # project root (when working here)
+    ├── .impl/         # implementation plans (project-scoped)
+    └── pyproject.toml
+```
+
+### What Lives Where
+
+| Location   | Scope        | Contents                                         |
+| ---------- | ------------ | ------------------------------------------------ |
+| `.erk/`    | Repo root    | Erk configuration, scratch storage, session data |
+| `.impl/`   | Project root | Implementation plans for the current project     |
+| `.claude/` | Repo root    | Claude Code commands, skills, hooks              |
+
+When you run `erk implement`, erk detects your project root and places `.impl/` there, ensuring plans are scoped to the correct project context.
+
+**Note:** `.claude/` is repo-scoped, but Claude Code sessions should be started from the project root. This ensures Claude has the correct working directory context for the project you're working on.
+
+### Gitignore
+
+`erk init` automatically adds these entries to your `.gitignore`. If you ran `erk init`, this is already configured:
+
+```gitignore
+# At repo root
+.erk/scratch/
+
+# At each project root (or repo root for single-project repos)
+.impl/
+```
+
+`.impl/` contains temporary implementation plans that shouldn't be committed. `.erk/scratch/` holds session-specific working files.
