@@ -86,7 +86,7 @@ def test_session_id_injector_hook_github_planning_disabled(tmp_path: Path) -> No
     with (
         patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
         patch(
-            "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.session_id_injector_hook._is_github_planning_enabled",
+            "dot_agent_kit.data.kits.erk.scripts.erk.session_id_injector_hook._is_github_planning_enabled",
             return_value=False,
         ),
     ):
