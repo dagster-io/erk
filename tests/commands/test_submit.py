@@ -74,6 +74,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     # Create plan for the issue
@@ -176,6 +177,7 @@ def test_submit_missing_erk_plan_label(tmp_path: Path) -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     fake_github_issues = FakeGitHubIssues(issues={123: issue})
@@ -228,6 +230,7 @@ def test_submit_closed_issue(tmp_path: Path) -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     fake_github_issues = FakeGitHubIssues(issues={123: issue})
@@ -316,6 +319,7 @@ def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     # Create plan for the issue
@@ -384,6 +388,7 @@ def test_submit_requires_gh_authentication(tmp_path: Path) -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     fake_github_issues = FakeGitHubIssues(issues={123: issue})
@@ -451,6 +456,7 @@ def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     plan = Plan(
@@ -528,6 +534,7 @@ def test_submit_includes_closes_issue_in_pr_body(tmp_path: Path) -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     plan = Plan(
@@ -763,6 +770,7 @@ def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     plan = Plan(
@@ -841,6 +849,7 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
     issue_456 = IssueInfo(
         number=456,
@@ -852,6 +861,7 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     plan_123 = Plan(
@@ -952,6 +962,7 @@ def test_submit_multiple_issues_atomic_validation_failure(tmp_path: Path) -> Non
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
     # Second issue is CLOSED (invalid)
     issue_456 = IssueInfo(
@@ -964,6 +975,7 @@ def test_submit_multiple_issues_atomic_validation_failure(tmp_path: Path) -> Non
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     fake_github_issues = FakeGitHubIssues(issues={123: issue_123, 456: issue_456})
@@ -1016,6 +1028,7 @@ def test_submit_single_issue_still_works(tmp_path: Path) -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     plan = Plan(
@@ -1086,6 +1099,7 @@ def test_submit_updates_dispatch_info_in_issue(tmp_path: Path) -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     plan = Plan(
@@ -1154,6 +1168,7 @@ def test_submit_warns_when_node_id_not_available(tmp_path: Path) -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     plan = Plan(
@@ -1227,6 +1242,7 @@ def test_submit_with_custom_base_branch(tmp_path: Path) -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     # Create plan for the issue
@@ -1304,6 +1320,7 @@ def test_submit_with_invalid_base_branch(tmp_path: Path) -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     fake_github_issues = FakeGitHubIssues(issues={123: issue})
@@ -1380,6 +1397,7 @@ def test_submit_extraction_plan_adds_skip_extraction_label(tmp_path: Path) -> No
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     plan = Plan(
@@ -1454,6 +1472,7 @@ def test_submit_standard_plan_does_not_add_skip_extraction_label(tmp_path: Path)
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     plan = Plan(
@@ -1623,6 +1642,7 @@ def test_submit_uses_workflow_config(tmp_path: Path) -> None:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
     plan = Plan(

@@ -57,6 +57,7 @@ class PlanListService:
         state: str | None = None,
         limit: int | None = None,
         skip_workflow_runs: bool = False,
+        creator: str | None = None,
     ) -> PlanListData:
         """Batch fetch all data needed for plan listing.
 
@@ -66,6 +67,8 @@ class PlanListService:
             state: Filter by state ("open", "closed", or None for all)
             limit: Maximum number of issues to return (None for no limit)
             skip_workflow_runs: If True, skip fetching workflow runs (for performance)
+            creator: Filter by creator username (e.g., "octocat"). If provided,
+                only issues created by this user are returned.
 
         Returns:
             PlanListData containing issues, PR linkages, and workflow runs
@@ -76,6 +79,7 @@ class PlanListService:
             labels,
             state=state,
             limit=limit,
+            creator=creator,
         )
 
         # Conditionally fetch workflow runs (skip for performance when not needed)

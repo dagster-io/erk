@@ -34,6 +34,7 @@ def plan_to_issue(plan: Plan) -> IssueInfo:
         assignees=plan.assignees,
         created_at=plan.created_at,
         updated_at=plan.updated_at,
+        author="test-user",
     )
 
 
@@ -1544,8 +1545,8 @@ def test_plan_list_pr_column_no_pr_linked() -> None:
         assert "⛔" not in result.output
 
 
-def test_plan_list_all_flag_shows_all_columns() -> None:
-    """Test that --all flag enables run columns (PR columns always visible)."""
+def test_plan_list_runs_flag_shows_run_columns() -> None:
+    """Test that --runs flag enables run columns (PR columns always visible)."""
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo, WorkflowRun
 
@@ -1605,8 +1606,8 @@ last_dispatched_node_id: 'WFR_all_flag'
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        # Act - Use --all flag
-        result = runner.invoke(cli, ["plan", "list", "--all"], obj=ctx)
+        # Act - Use --runs flag
+        result = runner.invoke(cli, ["plan", "list", "--runs"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1615,12 +1616,12 @@ last_dispatched_node_id: 'WFR_all_flag'
         assert "#300" in result.output  # PR number
         assert "👀" in result.output  # Open PR emoji
         assert "✅" in result.output  # Checks passing
-        # Run columns should appear (from -r via --all)
+        # Run columns should appear (from --runs flag)
         assert "99999" in result.output  # run-id
 
 
-def test_plan_list_all_flag_short_form() -> None:
-    """Test that -a short flag works same as --all (enables run columns)."""
+def test_plan_list_runs_flag_short_form() -> None:
+    """Test that -r short flag works same as --runs (enables run columns)."""
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.types import PullRequestInfo, WorkflowRun
 
@@ -1680,8 +1681,8 @@ last_dispatched_node_id: 'WFR_short_flag'
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
-        # Act - Use -a short flag
-        result = runner.invoke(cli, ["plan", "list", "-a"], obj=ctx)
+        # Act - Use -r short flag
+        result = runner.invoke(cli, ["plan", "list", "-r"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -1689,7 +1690,7 @@ last_dispatched_node_id: 'WFR_short_flag'
         # PR columns always appear (no longer gated by flag)
         assert "#301" in result.output  # PR number
         assert "🎉" in result.output  # Merged PR emoji
-        # Run columns should appear (from -r via -a)
+        # Run columns should appear (from -r flag)
         assert "88888" in result.output  # run-id
 
 

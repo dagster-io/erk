@@ -15,6 +15,7 @@ def create_test_issue(
     assignees: list[str] | None = None,
     created_at: datetime | None = None,
     updated_at: datetime | None = None,
+    author: str = "test-user",
 ) -> IssueInfo:
     """Factory for creating IssueInfo instances in tests with sensible defaults.
 
@@ -28,6 +29,7 @@ def create_test_issue(
         assignees: List of assignees (defaults to empty list)
         created_at: Creation timestamp (defaults to 2024-01-01)
         updated_at: Update timestamp (defaults to 2024-01-01)
+        author: Author username (defaults to "test-user")
 
     Returns:
         IssueInfo instance with provided or default values
@@ -53,4 +55,5 @@ def create_test_issue(
         assignees=assignees,
         created_at=created_at,
         updated_at=updated_at,
+        author=author,
     )

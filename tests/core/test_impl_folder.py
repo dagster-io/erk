@@ -685,6 +685,7 @@ def test_add_worktree_creation_comment_success(tmp_path: Path) -> None:
                 assignees=[],
                 created_at=datetime.now(UTC),
                 updated_at=datetime.now(UTC),
+                author="test-user",
             )
         }
     )

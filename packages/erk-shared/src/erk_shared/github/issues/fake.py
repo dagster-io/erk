@@ -122,6 +122,8 @@ class FakeGitHubIssues(GitHubIssues):
         url = f"https://github.com/test-owner/test-repo/issues/{issue_number}"
 
         now = datetime.now(UTC)
+        # Use configured username as author for created issues
+        author = self._username or "test-user"
         self._issues[issue_number] = IssueInfo(
             number=issue_number,
             title=title,
@@ -132,6 +134,7 @@ class FakeGitHubIssues(GitHubIssues):
             assignees=[],
             created_at=now,
             updated_at=now,
+            author=author,
         )
         self._created_issues.append((title, body, labels))
 
@@ -181,6 +184,7 @@ class FakeGitHubIssues(GitHubIssues):
             assignees=old_issue.assignees,
             created_at=old_issue.created_at,
             updated_at=datetime.now(UTC),  # Update timestamp
+            author=old_issue.author,
         )
         self._issues[number] = updated_issue
 
@@ -269,6 +273,7 @@ class FakeGitHubIssues(GitHubIssues):
                 assignees=current_issue.assignees,
                 created_at=current_issue.created_at,
                 updated_at=current_issue.updated_at,
+                author=current_issue.author,
             )
 
     def remove_label_from_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
@@ -295,6 +300,7 @@ class FakeGitHubIssues(GitHubIssues):
                 assignees=current_issue.assignees,
                 created_at=current_issue.created_at,
                 updated_at=current_issue.updated_at,
+                author=current_issue.author,
             )
 
     def close_issue(self, repo_root: Path, number: int) -> None:
@@ -319,6 +325,7 @@ class FakeGitHubIssues(GitHubIssues):
             assignees=current_issue.assignees,
             created_at=current_issue.created_at,
             updated_at=current_issue.updated_at,
+            author=current_issue.author,
         )
         self._closed_issues.append(number)
 

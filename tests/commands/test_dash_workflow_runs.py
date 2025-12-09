@@ -28,6 +28,7 @@ def plan_to_issue(plan: Plan) -> IssueInfo:
         assignees=plan.assignees,
         created_at=plan.created_at,
         updated_at=plan.updated_at,
+        author="test-user",
     )
 
 

@@ -169,24 +169,16 @@ def plan_filter_options(f: Callable[P, T]) -> Callable[P, T]:
         help="Filter by workflow run state",
     )(f)
     f = click.option(
-        "--runs",
-        "-r",
-        is_flag=True,
-        default=False,
-        help="Show workflow run columns (run-id, run-state)",
-    )(f)
-    f = click.option(
         "--limit",
         type=int,
         help="Maximum number of results to return",
     )(f)
     f = click.option(
-        "--all",
-        "-a",
-        "show_all",  # Use 'show_all' to avoid shadowing Python built-in 'all'
+        "--all-users",
+        "-A",
         is_flag=True,
         default=False,
-        help="Show all columns (equivalent to -r)",
+        help="Show plans from all users (default: show only your plans)",
     )(f)
     return f
 
@@ -209,6 +201,7 @@ def _build_plans_table(
     run_state: str | None,
     runs: bool,
     limit: int | None,
+    all_users: bool,
 ) -> tuple[Table | None, int]:
     """Build plan dashboard table.
 
@@ -236,6 +229,13 @@ def _build_plans_table(
     owner = repo.github.owner
     repo_name = repo.github.repo
 
+    # Determine creator filter: None for all users, authenticated username otherwise
+    creator: str | None = None
+    if not all_users:
+        is_authenticated, username, _ = ctx.github.check_auth_status()
+        if is_authenticated and username:
+            creator = username
+
     # Use PlanListService for batched API calls
     # Skip workflow runs when not needed for better performance
     # PR linkages are always fetched via unified GraphQL query (no performance penalty)
@@ -247,6 +247,7 @@ def _build_plans_table(
             state=state,
             limit=limit,
             skip_workflow_runs=not needs_workflow_runs,
+            creator=creator,
         )
     except RuntimeError as e:
         user_output(click.style("Error: ", fg="red") + str(e))
@@ -413,9 +414,10 @@ def _list_plans_impl(
     run_state: str | None,
     runs: bool,
     limit: int | None,
+    all_users: bool,
 ) -> None:
     """Implementation logic for listing plans with optional filters."""
-    table, plan_count = _build_plans_table(ctx, label, state, run_state, runs, limit)
+    table, plan_count = _build_plans_table(ctx, label, state, run_state, runs, limit, all_users)
 
     if table is None:
         user_output("No plans found matching the criteria.")
@@ -524,6 +526,7 @@ def _run_interactive_mode(
     prs: bool,
     limit: int | None,
     interval: float,
+    all_users: bool,
 ) -> None:
     """Run interactive TUI mode.
 
@@ -536,6 +539,7 @@ def _run_interactive_mode(
         prs: Whether to show PR columns
         limit: Maximum number of results
         interval: Refresh interval in seconds
+        all_users: If True, show plans from all users; if False, filter to authenticated user
     """
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
@@ -547,6 +551,13 @@ def _run_interactive_mode(
         raise SystemExit(1)
     owner = repo.github.owner
     repo_name = repo.github.repo
+
+    # Determine creator filter: None for all users, authenticated username otherwise
+    creator: str | None = None
+    if not all_users:
+        is_authenticated, username, _ = ctx.github.check_auth_status()
+        if is_authenticated and username:
+            creator = username
 
     # Build labels - default to ["erk-plan"]
     labels = label if label else ("erk-plan",)
@@ -563,6 +574,7 @@ def _run_interactive_mode(
         limit=limit,
         show_prs=prs,
         show_runs=runs,
+        creator=creator,
     )
 
     # Run the TUI app
@@ -572,36 +584,39 @@ def _run_interactive_mode(
 
 @click.command("list")
 @plan_filter_options
+@click.option(
+    "--runs",
+    "-r",
+    is_flag=True,
+    default=False,
+    help="Show workflow run columns (run-id, run-state)",
+)
 @click.pass_obj
 def list_plans(
     ctx: ErkContext,
     label: tuple[str, ...],
     state: str | None,
     run_state: str | None,
-    runs: bool,
     limit: int | None,
-    show_all: bool,
+    all_users: bool,
+    runs: bool,
 ) -> None:
     """List plans as a static table.
 
-    Displays a table of plans filtered by the specified criteria.
-    For an interactive dashboard, use 'erk dash' instead.
+    By default, shows only plans created by you. Use --all-users (-A)
+    to show plans from all users.
 
     Examples:
-        erk plan list
+        erk plan list                    # Your plans only
+        erk plan list --all-users        # All users' plans
+        erk plan list -A                 # All users' plans (short form)
         erk plan list --state open
         erk plan list --label erk-plan --label bug
         erk plan list --limit 10
         erk plan list --run-state in_progress
         erk plan list --runs
-        erk plan list --all
-        erk plan list -a
     """
-    # Handle --all flag (equivalent to -r)
-    if show_all:
-        runs = True
-
-    _list_plans_impl(ctx, label, state, run_state, runs, limit)
+    _list_plans_impl(ctx, label, state, run_state, runs, limit, all_users)
 
 
 @click.command("dash")
@@ -613,26 +628,30 @@ def dash(
     label: tuple[str, ...],
     state: str | None,
     run_state: str | None,
-    runs: bool,
     limit: int | None,
-    show_all: bool,
+    all_users: bool,
     interval: float,
 ) -> None:
     """Interactive plan dashboard (TUI).
+
+    By default, shows only plans created by you. Use --all-users (-A)
+    to show plans from all users.
 
     Launches an interactive terminal UI for viewing and managing plans.
     Shows all columns (runs) by default. For a static table output, use
     'erk plan list' instead.
 
     Examples:
-        erk dash
+        erk dash                         # Your plans only
+        erk dash --all-users             # All users' plans
+        erk dash -A                      # All users' plans (short form)
         erk dash --interval 10
         erk dash --label erk-plan --state open
         erk dash --limit 10
         erk dash --run-state in_progress
     """
-    # Default to showing all columns (runs=True), can be disabled with explicit --no-runs
+    # Default to showing all columns (runs=True)
     prs = True  # Always show PRs
-    runs = True  # Default to -a behavior
+    runs = True  # Default to showing runs
 
-    _run_interactive_mode(ctx, label, state, run_state, runs, prs, limit, interval)
+    _run_interactive_mode(ctx, label, state, run_state, runs, prs, limit, interval, all_users)

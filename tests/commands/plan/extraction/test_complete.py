@@ -39,6 +39,7 @@ def _make_extraction_issue(
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
     )
 
 
@@ -54,6 +55,7 @@ def _make_source_issue(number: int, title: str) -> IssueInfo:
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
     )
 
 
@@ -141,6 +143,7 @@ def test_complete_idempotent() -> None:
         assignees=[],
         created_at=source_issue.created_at,
         updated_at=source_issue.updated_at,
+        author="test-user",
     )
     issues = FakeGitHubIssues(
         issues={
@@ -178,6 +181,7 @@ def test_complete_rejects_non_extraction_plan() -> None:
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
     )
     issues = FakeGitHubIssues(issues={100: standard_issue})
 
@@ -206,6 +210,7 @@ def test_complete_rejects_issue_without_plan_header() -> None:
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-user",
     )
     issues = FakeGitHubIssues(issues={100: plain_issue})
 

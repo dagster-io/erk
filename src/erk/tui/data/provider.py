@@ -164,6 +164,7 @@ class RealPlanDataProvider(PlanDataProvider):
             state=filters.state,
             limit=filters.limit,
             skip_workflow_runs=not needs_workflow_runs,
+            creator=filters.creator,
         )
 
         # Build local worktree mapping

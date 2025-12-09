@@ -88,6 +88,7 @@ def test_list_runs_single_success_run_with_issue_linkage(tmp_path: Path) -> None
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         ),
     }
     issues_ops = FakeGitHubIssues(issues=issues)
@@ -164,6 +165,7 @@ def test_list_runs_multiple_runs_different_statuses(tmp_path: Path) -> None:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         ),
         143: IssueInfo(
             number=143,
@@ -175,6 +177,7 @@ def test_list_runs_multiple_runs_different_statuses(tmp_path: Path) -> None:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         ),
         144: IssueInfo(
             number=144,
@@ -186,6 +189,7 @@ def test_list_runs_multiple_runs_different_statuses(tmp_path: Path) -> None:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         ),
     }
     issues_ops = FakeGitHubIssues(issues=issues)
@@ -301,6 +305,7 @@ def test_list_runs_default_filters_out_runs_without_plans(tmp_path: Path) -> Non
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         ),
     }
     issues_ops = FakeGitHubIssues(issues=issues)
@@ -368,6 +373,7 @@ def test_list_runs_with_show_legacy_flag_shows_all_runs(tmp_path: Path) -> None:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         ),
     }
     issues_ops = FakeGitHubIssues(issues=issues)
@@ -443,6 +449,7 @@ def test_list_runs_with_pr_linkage(tmp_path: Path) -> None:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         ),
     }
     issues_ops = FakeGitHubIssues(issues=issues)
@@ -498,6 +505,7 @@ def test_list_runs_handles_queued_status(tmp_path: Path) -> None:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         ),
     }
     issues_ops = FakeGitHubIssues(issues=issues)
@@ -551,6 +559,7 @@ def test_list_runs_handles_cancelled_status(tmp_path: Path) -> None:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         ),
     }
     issues_ops = FakeGitHubIssues(issues=issues)
@@ -609,6 +618,7 @@ def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         ),
     }
     issues_ops = FakeGitHubIssues(issues=issues)
@@ -688,6 +698,7 @@ def test_list_runs_filters_missing_issue_data(tmp_path: Path) -> None:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         ),
         143: IssueInfo(
             number=143,
@@ -699,6 +710,7 @@ def test_list_runs_filters_missing_issue_data(tmp_path: Path) -> None:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         ),
     }
     issues_ops = FakeGitHubIssues(issues=issues)
@@ -762,6 +774,7 @@ def test_list_runs_displays_submission_time(tmp_path: Path) -> None:
             assignees=[],
             created_at=timestamp,
             updated_at=timestamp,
+            author="test-user",
         ),
     }
     issues_ops = FakeGitHubIssues(issues=issues)
@@ -819,6 +832,7 @@ def test_list_runs_handles_missing_timestamp(tmp_path: Path) -> None:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         ),
     }
     issues_ops = FakeGitHubIssues(issues=issues)

@@ -1051,6 +1051,7 @@ query {{
         labels: list[str],
         state: str | None = None,
         limit: int | None = None,
+        creator: str | None = None,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Fetch issues and linked PRs in a single GraphQL query.
 
@@ -1058,7 +1059,7 @@ query {{
         to get PR linkages in one API call.
         """
         repo_id = location.repo_id
-        query = self._build_issues_with_pr_linkages_query(repo_id, labels, state, limit)
+        query = self._build_issues_with_pr_linkages_query(repo_id, labels, state, limit, creator)
         response = self._execute_batch_pr_query(query, location.root)
         return self._parse_issues_with_pr_linkages(response, repo_id)
 
@@ -1068,6 +1069,7 @@ query {{
         labels: list[str],
         state: str | None,
         limit: int | None,
+        creator: str | None = None,
     ) -> str:
         """Build GraphQL query to fetch issues with PR linkages.
 
@@ -1079,6 +1081,7 @@ query {{
             labels: Labels to filter by
             state: Filter by state ("open", "closed", or None for all)
             limit: Maximum issues to return (default: 100)
+            creator: Filter by creator username (server-side filtering)
 
         Returns:
             GraphQL query string
@@ -1095,6 +1098,9 @@ query {{
 
         # Build limit (default 30 matches gh CLI behavior)
         effective_limit = limit if limit is not None else 30
+
+        # Build filterBy clause for creator filtering (server-side)
+        filter_by = f'filterBy: {{createdBy: "{creator}"}}' if creator is not None else ""
 
         # Define the fragment for PR linkage data
         # Uses pre-aggregated count fields for ~15-30x smaller payload
@@ -1121,7 +1127,11 @@ query {{
 }"""
 
         # Build the query - construct issues args separately for line length
-        issues_args = f"labels: {labels_json}, {states_filter} first: {effective_limit}"
+        # Include filterBy if creator is specified
+        filter_clause = f", {filter_by}" if filter_by else ""
+        issues_args = (
+            f"labels: {labels_json}, {states_filter}{filter_clause}, first: {effective_limit}"
+        )
         order_by = "orderBy: {field: UPDATED_AT, direction: DESC}"
         query = f"""{fragment_definition}
 
@@ -1134,6 +1144,7 @@ query {{
         body
         state
         url
+        author {{ login }}
         labels(first: 100) {{ nodes {{ name }} }}
         assignees(first: 100) {{ nodes {{ login }} }}
         createdAt
@@ -1171,6 +1182,10 @@ query {{
         assignees_data = node.get("assignees", {}).get("nodes", [])
         assignees = [assignee.get("login", "") for assignee in assignees_data if assignee]
 
+        # Extract author login
+        author_data = node.get("author")
+        author = author_data.get("login", "") if author_data else ""
+
         return IssueInfo(
             number=issue_number,
             title=node.get("title", ""),
@@ -1181,6 +1196,7 @@ query {{
             assignees=assignees,
             created_at=created_at,
             updated_at=updated_at,
+            author=author,
         )
 
     def _parse_pr_from_timeline_event(

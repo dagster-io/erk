@@ -29,6 +29,7 @@ class TestPlanListService:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         )
         fake_issues = FakeGitHubIssues(issues={42: issue})
         fake_github = FakeGitHub(issues=[issue])
@@ -57,6 +58,7 @@ class TestPlanListService:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         )
         pr = PullRequestInfo(
             number=123,
@@ -116,6 +118,7 @@ class TestPlanListService:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         )
         closed_issue = IssueInfo(
             number=2,
@@ -127,6 +130,7 @@ class TestPlanListService:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         )
         # Configure both issues for the unified query
         fake_github = FakeGitHub(issues=[open_issue, closed_issue])
@@ -155,6 +159,7 @@ class TestPlanListService:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         )
         closed_issue = IssueInfo(
             number=2,
@@ -166,6 +171,7 @@ class TestPlanListService:
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         )
         fake_issues = FakeGitHubIssues(issues={1: open_issue, 2: closed_issue})
         fake_github = FakeGitHub(issues=[open_issue, closed_issue])
@@ -218,6 +224,7 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         )
         # Pre-configure workflow run that matches the node_id
         run = WorkflowRun(
@@ -272,6 +279,7 @@ last_dispatched_node_id: 'WFR_abc123'
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         )
         run = WorkflowRun(
             run_id="12345",
@@ -309,6 +317,7 @@ last_dispatched_node_id: 'WFR_abc123'
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         )
         fake_issues = FakeGitHubIssues(issues={42: issue})
         fake_github = FakeGitHub(issues=[issue])
@@ -347,6 +356,7 @@ last_dispatched_node_id: 'WFR_nonexistent'
             assignees=[],
             created_at=now,
             updated_at=now,
+            author="test-user",
         )
         # No workflow runs configured - node_id won't be found
         fake_issues = FakeGitHubIssues(issues={42: issue})
@@ -391,6 +401,7 @@ class TestPlanListData:
                 assignees=[],
                 created_at=now,
                 updated_at=now,
+                author="test-user",
             )
         ]
         pr = PullRequestInfo(

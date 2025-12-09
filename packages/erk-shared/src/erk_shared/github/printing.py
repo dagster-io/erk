@@ -10,6 +10,7 @@ from erk_shared.github.types import (
     GitHubRepoLocation,
     PRDetails,
     PRNotFound,
+    PRReviewThread,
     PullRequestInfo,
     WorkflowRun,
 )
@@ -218,9 +219,12 @@ class PrintingGitHub(PrintingBase, GitHub):
         labels: list[str],
         state: str | None = None,
         limit: int | None = None,
+        creator: str | None = None,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Get issues with PR linkages (read-only, no printing)."""
-        return self._wrapped.get_issues_with_pr_linkages(location, labels, state=state, limit=limit)
+        return self._wrapped.get_issues_with_pr_linkages(
+            location, labels, state=state, limit=limit, creator=creator
+        )
 
     def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
         """Add label to PR with printed output."""
@@ -230,6 +234,18 @@ class PrintingGitHub(PrintingBase, GitHub):
     def has_pr_label(self, repo_root: Path, pr_number: int, label: str) -> bool:
         """Check if PR has label (read-only, no printing)."""
         return self._wrapped.has_pr_label(repo_root, pr_number, label)
+
+    def get_pr_review_threads(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        *,
+        include_resolved: bool = False,
+    ) -> list[PRReviewThread]:
+        """Get review threads for a pull request (read-only, no printing)."""
+        return self._wrapped.get_pr_review_threads(
+            repo_root, pr_number, include_resolved=include_resolved
+        )
 
     def resolve_review_thread(self, repo_root: Path, thread_id: str) -> bool:
         """Resolve a PR review thread with printed output."""

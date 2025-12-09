@@ -160,9 +160,12 @@ class DryRunGitHub(GitHub):
         labels: list[str],
         state: str | None = None,
         limit: int | None = None,
+        creator: str | None = None,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_issues_with_pr_linkages(location, labels, state=state, limit=limit)
+        return self._wrapped.get_issues_with_pr_linkages(
+            location, labels, state=state, limit=limit, creator=creator
+        )
 
     def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | PRNotFound:
         """Delegate read operation to wrapped implementation."""

@@ -44,6 +44,7 @@ def _create_test_issue(issue_number: int) -> IssueInfo:
         assignees=[],
         created_at=now,
         updated_at=now,
+        author="test-user",
     )
 
 
