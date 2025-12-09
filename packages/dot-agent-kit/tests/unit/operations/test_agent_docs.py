@@ -419,7 +419,7 @@ class TestGenerateRootIndex:
         assert "|" not in content
 
     def test_generate_with_categories(self) -> None:
-        """Generate index with categories using bullet list format."""
+        """Generate index with categories including descriptions."""
         from dot_agent_kit.operations.agent_docs import CategoryInfo, DocInfo
 
         categories = [
@@ -431,10 +431,25 @@ class TestGenerateRootIndex:
         content = generate_root_index([], categories)
         assert content.startswith(GENERATED_FILE_BANNER.rstrip())
         assert "## Categories" in content
-        # Bullet list format: - **[link](link)** — doc names
-        assert "- **[planning/](planning/)** — lifecycle" in content
+        # Categories with descriptions from CATEGORY_DESCRIPTIONS
+        assert "- [planning/](planning/) — Explore when" in content
         # No table syntax
         assert "|" not in content
+
+    def test_generate_with_unknown_category(self) -> None:
+        """Generate index with category that has no description."""
+        from dot_agent_kit.operations.agent_docs import CategoryInfo, DocInfo
+
+        categories = [
+            CategoryInfo(
+                "unknown-category",
+                [DocInfo("unknown-category/doc.md", AgentDocFrontmatter("Doc", ["reading"]))],
+            ),
+        ]
+        content = generate_root_index([], categories)
+        # Unknown categories get no description (just the link)
+        assert "- [unknown-category/](unknown-category/)" in content
+        assert "— Explore" not in content
 
 
 class TestGenerateCategoryIndex:

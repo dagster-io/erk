@@ -5,18 +5,18 @@
 
 ## Categories
 
-- **[architecture/](architecture/)** — at-reference-resolution, claude-cli-integration, claude-cli-progress, claude-executor-patterns, cli-binary-ops-pattern, command-boundaries, commandresult-extension-pattern, erk-architecture, erk-shared-package, event-progress-pattern, extraction-origin-tracking, gateway-abc-implementation, gateway-inventory, generated-files, github-graphql, github-interface-patterns, github-parsing, impl-folder-lifecycle, issue-reference-flow, markers, not-found-sentinel, pathlib-symlinks, pr-finalization-paths, pre-destruction-capture, protocol-vs-abc, restack-operations, sentinel-path-compatibility, shell-integration-constraint, shell-integration-patterns, subprocess-wrappers, symlink-validation-pattern, worktree-metadata
-- **[cli/](cli/)** — command-group-structure, command-organization, json-schema, list-formatting, output-styling, script-mode, shell-aliases, template-variables
-- **[commands/](commands/)** — optimization-patterns, tripwires
-- **[erk/](erk/)** — auto-restack, branch-cleanup, graphite-branch-setup, pr-sync-workflow
-- **[hooks/](hooks/)** — erk, hooks
-- **[kits/](kits/)** — artifact-synchronization, cli-command-development, cli-commands, code-architecture, dependency-injection, artifact-management, kit-check, push-down-pattern, registry-discovery
-- **[planning/](planning/)** — agent-delegation, enrichment, lifecycle, plan-schema, scratch-storage, workflow
-- **[reference/](reference/)** — claude-cli-stream-json
-- **[sessions/](sessions/)** — context-analysis, context-optimization, layout, parallel-session-awareness, tools
-- **[testing/](testing/)** — cascading-import-cleanup, fake-objective-store, import-conflict-resolution, integration-test-speed, kit-cli-testing, mock-elimination, rebase-conflicts, session-log-fixtures, session-store-testing, testing
-- **[textual/](textual/)** — background-workers, quirks, testing, widget-development
-- **[tui/](tui/)** — architecture, command-execution, command-palette, streaming-output, textual-async
+- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+- [kits/](kits/) — Explore when working on kit CLI or artifact management. Add docs here for kit development patterns.
+- [planning/](planning/) — Explore when working with plans, .impl/ folders, or agent delegation. Add docs here for planning workflow patterns.
+- [reference/](reference/) — Explore for API/format specifications. Add docs here for reference material that doesn't fit other categories.
+- [sessions/](sessions/) — Explore when working with session logs or parallel sessions. Add docs here for session management patterns.
+- [testing/](testing/) — Explore when writing tests or debugging test infrastructure. Add docs here for testing patterns specific to erk.
+- [textual/](textual/) — Explore when working with Textual framework. Add docs here for Textual-specific patterns.
+- [tui/](tui/) — Explore when working on the erk TUI application. Add docs here for TUI feature implementation.
 
 ## Uncategorized
 

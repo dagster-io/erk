@@ -20,6 +20,58 @@ from dot_agent_kit.models.agent_doc import (
 AGENT_DOCS_DIR = "docs/agent"
 FRONTMATTER_PATTERN = re.compile(r"^---\s*\n(.*?)\n---", re.DOTALL)
 
+# Category descriptions for root index generation.
+# Format: "Explore when [doing X]. Add docs here for [type of content]."
+# To add a new category, add an entry here and run `dot-agent docs sync`.
+CATEGORY_DESCRIPTIONS: dict[str, str] = {
+    "architecture": (
+        "Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). "
+        "Add docs here for cross-cutting technical patterns."
+    ),
+    "cli": (
+        "Explore when building CLI commands or output formatting. "
+        "Add docs here for Click patterns and terminal UX."
+    ),
+    "commands": (
+        "Explore when creating or optimizing slash commands. "
+        "Add docs here for command authoring patterns."
+    ),
+    "erk": (
+        "Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). "
+        "Add docs here for erk user-facing features."
+    ),
+    "hooks": (
+        "Explore when creating or debugging hooks. Add docs here for hook development patterns."
+    ),
+    "kits": (
+        "Explore when working on kit CLI or artifact management. "
+        "Add docs here for kit development patterns."
+    ),
+    "planning": (
+        "Explore when working with plans, .impl/ folders, or agent delegation. "
+        "Add docs here for planning workflow patterns."
+    ),
+    "reference": (
+        "Explore for API/format specifications. "
+        "Add docs here for reference material that doesn't fit other categories."
+    ),
+    "sessions": (
+        "Explore when working with session logs or parallel sessions. "
+        "Add docs here for session management patterns."
+    ),
+    "testing": (
+        "Explore when writing tests or debugging test infrastructure. "
+        "Add docs here for testing patterns specific to erk."
+    ),
+    "textual": (
+        "Explore when working with Textual framework. Add docs here for Textual-specific patterns."
+    ),
+    "tui": (
+        "Explore when working on the erk TUI application. "
+        "Add docs here for TUI feature implementation."
+    ),
+}
+
 # Banner for auto-generated files
 GENERATED_FILE_BANNER = """<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
 <!-- Edit source frontmatter, then run 'dot-agent docs sync' to regenerate. -->
@@ -450,8 +502,11 @@ def generate_root_index(
         lines.append("## Categories")
         lines.append("")
         for category in categories:
-            doc_names = ", ".join(Path(d.rel_path).stem for d in category.docs)
-            lines.append(f"- **[{category.name}/]({category.name}/)** — {doc_names}")
+            description = CATEGORY_DESCRIPTIONS.get(category.name)
+            if description:
+                lines.append(f"- [{category.name}/]({category.name}/) — {description}")
+            else:
+                lines.append(f"- [{category.name}/]({category.name}/)")
         lines.append("")
 
     if uncategorized:
