@@ -222,7 +222,7 @@ def check_github_auth() -> CheckResult:
                 return CheckResult(
                     name="github auth",
                     passed=True,
-                    message=f"Authenticated as {username}",
+                    message=f"GitHub authenticated as {username}",
                 )
             return CheckResult(
                 name="github auth",
@@ -247,6 +247,76 @@ def check_github_auth() -> CheckResult:
             name="github auth",
             passed=False,
             message=f"Auth check failed: {e}",
+        )
+
+
+def check_workflow_permissions(ctx: ErkContext, repo_root: Path) -> CheckResult:
+    """Check if GitHub Actions workflows can create PRs.
+
+    This is an info-level check - it always passes, but shows whether
+    PR creation is enabled for workflows. This is required for erk's
+    remote implementation feature.
+
+    Args:
+        ctx: ErkContext for repository access
+        repo_root: Path to the repository root
+
+    Returns:
+        CheckResult with info about workflow permission status
+    """
+    # Need GitHub identity to check permissions
+    try:
+        remote_url = ctx.git.get_remote_url(repo_root, "origin")
+    except ValueError:
+        return CheckResult(
+            name="workflow permissions",
+            passed=True,  # Info level
+            message="No origin remote configured",
+        )
+
+    # Parse GitHub owner/repo from remote URL
+    from erk_shared.github.parsing import parse_git_remote_url
+    from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
+
+    try:
+        owner_repo = parse_git_remote_url(remote_url)
+    except ValueError:
+        return CheckResult(
+            name="workflow permissions",
+            passed=True,  # Info level
+            message="Not a GitHub repository",
+        )
+
+    repo_id = GitHubRepoId(owner=owner_repo[0], repo=owner_repo[1])
+    location = GitHubRepoLocation(root=repo_root, repo_id=repo_id)
+
+    # Check workflow permissions via API
+    from erk.core.implementation_queue.github.real import RealGitHubAdmin
+
+    admin = RealGitHubAdmin()
+
+    try:
+        perms = admin.get_workflow_permissions(location)
+        enabled = perms.get("can_approve_pull_request_reviews", False)
+
+        if enabled:
+            return CheckResult(
+                name="workflow permissions",
+                passed=True,
+                message="Workflows can create PRs",
+            )
+        else:
+            return CheckResult(
+                name="workflow permissions",
+                passed=True,  # Info level - always passes
+                message="Workflows cannot create PRs",
+                details="Run 'erk admin github-pr-setting --enable' to allow",
+            )
+    except Exception:
+        return CheckResult(
+            name="workflow permissions",
+            passed=True,  # Info level - don't fail on API errors
+            message="Could not check workflow permissions",
         )
 
 
@@ -633,7 +703,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
     # Add repository check
     results.append(check_repository(ctx))
 
-    # Check Claude settings and gitignore if we're in a repo
+    # Check Claude settings, gitignore, and GitHub checks if we're in a repo
     # (get_git_common_dir returns None if not in a repo)
     git_dir = ctx.git.get_git_common_dir(ctx.cwd)
     if git_dir is not None:
@@ -641,5 +711,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         results.append(check_claude_erk_permission(repo_root))
         results.append(check_claude_settings(repo_root))
         results.append(check_gitignore_entries(repo_root))
+        # GitHub workflow permissions check (requires repo context)
+        results.append(check_workflow_permissions(ctx, repo_root))
 
     return results
