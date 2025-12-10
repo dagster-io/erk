@@ -187,6 +187,69 @@ def check_github_cli() -> CheckResult:
         )
 
 
+def check_github_auth() -> CheckResult:
+    """Check if GitHub CLI is authenticated."""
+    gh_path = shutil.which("gh")
+    if gh_path is None:
+        return CheckResult(
+            name="github auth",
+            passed=False,
+            message="Cannot check auth: gh not installed",
+        )
+
+    try:
+        result = subprocess.run(
+            ["gh", "auth", "status"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=10,
+        )
+        if result.returncode == 0:
+            # Parse output to find username
+            # Format: "✓ Logged in to github.com account username (keyring)"
+            output = result.stdout.strip() or result.stderr.strip()
+            username = None
+            for line in output.split("\n"):
+                if "Logged in to" in line and "account" in line:
+                    # Extract username from "... account username (...)"
+                    parts = line.split("account")
+                    if len(parts) > 1:
+                        username_part = parts[1].strip()
+                        username = username_part.split()[0] if username_part else None
+                    break
+            if username:
+                return CheckResult(
+                    name="github auth",
+                    passed=True,
+                    message=f"Authenticated as {username}",
+                )
+            return CheckResult(
+                name="github auth",
+                passed=True,
+                message="Authenticated to GitHub",
+            )
+        else:
+            return CheckResult(
+                name="github auth",
+                passed=False,
+                message="Not authenticated to GitHub",
+                details="Run: gh auth login",
+            )
+    except subprocess.TimeoutExpired:
+        return CheckResult(
+            name="github auth",
+            passed=False,
+            message="Auth check timed out",
+        )
+    except Exception as e:
+        return CheckResult(
+            name="github auth",
+            passed=False,
+            message=f"Auth check failed: {e}",
+        )
+
+
 def check_dot_agent() -> CheckResult:
     """Check if dot-agent is installed and available in PATH."""
     dot_agent_path = shutil.which("dot-agent")
@@ -558,6 +621,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         check_claude_cli(),
         check_graphite_cli(),
         check_github_cli(),
+        check_github_auth(),
         check_uv_version(),
         check_dot_agent(),
     ]
