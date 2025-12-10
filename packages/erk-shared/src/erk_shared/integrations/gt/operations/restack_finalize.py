@@ -71,19 +71,22 @@ def execute_restack_finalize(
 
     # Parse status output to find unmerged files (UU, AA, DD, AU, UA, DU, UD)
     unmerged_prefixes = ("UU", "AA", "DD", "AU", "UA", "DU", "UD")
-    unmerged_files = [
-        line[3:] for line in status_lines if line[:2] in unmerged_prefixes
-    ]
+    unmerged_files = [line[3:] for line in status_lines if line[:2] in unmerged_prefixes]
 
     if unmerged_files:
         # There are still unresolved conflicts - this is the root cause of issue #2844
+        conflict_count = len(unmerged_files)
+        conflict_list = "\n".join(f"  - {f}" for f in unmerged_files)
+        msg = (
+            f"Restack incomplete: {conflict_count} file(s) still have "
+            f"unresolved conflicts:\n{conflict_list}\n\n"
+            "Resolve these conflicts, then run `gt continue` to complete the restack."
+        )
         yield CompletionEvent(
             RestackFinalizeError(
                 success=False,
                 error_type="unresolved_conflicts",
-                message=f"Restack incomplete: {len(unmerged_files)} file(s) still have unresolved conflicts:\n"
-                + "\n".join(f"  - {f}" for f in unmerged_files)
-                + "\n\nResolve these conflicts, then run `gt continue` to complete the restack.",
+                message=msg,
                 details={"unmerged_files": ",".join(unmerged_files)},
             )
         )
@@ -114,12 +117,20 @@ def execute_restack_finalize(
         # Brief delay for transient file cleanup (graphite metadata, rebase temp files)
         ops.time.sleep(0.1)
         if not ops.git.is_worktree_clean(cwd):
+            msg = (
+                f"Working tree has uncommitted changes. "
+                f"HEAD={head_state} ({detached_info}), dirty_files:\n{dirty_files}"
+            )
             yield CompletionEvent(
                 RestackFinalizeError(
                     success=False,
                     error_type="dirty_working_tree",
-                    message=f"Working tree has uncommitted changes. HEAD={head_state} ({detached_info}), dirty_files:\n{dirty_files}",
-                    details={"head_state": head_state, "dirty_files": dirty_files, "is_detached": str(is_detached)},
+                    message=msg,
+                    details={
+                        "head_state": head_state,
+                        "dirty_files": dirty_files,
+                        "is_detached": str(is_detached),
+                    },
                 )
             )
             return
