@@ -667,6 +667,21 @@ class Git(ABC):
         ...
 
     @abstractmethod
+    def get_head_commit_message_full(self, cwd: Path) -> str:
+        """Get the full commit message (subject + body) of HEAD commit.
+
+        Uses git log -1 --format=%B HEAD to get the complete message.
+        Note: Existing get_commit_message() only returns subject line (%s).
+
+        Args:
+            cwd: Working directory
+
+        Returns:
+            Full commit message including subject and body
+        """
+        ...
+
+    @abstractmethod
     def get_git_user_name(self, cwd: Path) -> str | None:
         """Get the configured git user.name.
 

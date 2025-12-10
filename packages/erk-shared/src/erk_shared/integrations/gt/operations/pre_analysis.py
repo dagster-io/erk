@@ -15,6 +15,7 @@ from collections.abc import Generator
 from pathlib import Path
 
 from erk_shared.github.types import PRNotFound
+from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 from erk_shared.integrations.gt.abc import GtKit
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.integrations.gt.types import PreAnalysisError, PreAnalysisResult
@@ -268,6 +269,20 @@ def execute_pre_analysis(
             )
             return
 
+    # Step 6b: Amend commit message with issue reference if present
+    impl_dir = cwd / ".impl"
+    issue_number: int | None = None
+    if has_issue_reference(impl_dir):
+        issue_ref = read_issue_reference(impl_dir)
+        if issue_ref is not None:
+            issue_number = issue_ref.issue_number
+            current_msg = ops.git.get_head_commit_message_full(cwd)
+            closing_text = f"Closes #{issue_number}"
+            if closing_text not in current_msg:
+                new_msg = f"{current_msg.rstrip()}\n\n{closing_text}"
+                ops.git.amend_commit(cwd, new_msg)
+                yield ProgressEvent(f"Added '{closing_text}' to commit message", style="success")
+
     # Build success message
     message_parts = [f"Pre-analysis complete for branch: {branch_name}"]
 
@@ -294,5 +309,6 @@ def execute_pre_analysis(
             has_conflicts=has_conflicts,
             conflict_details=conflict_details,
             commit_messages=commit_messages if commit_messages else None,
+            issue_number=issue_number,
         )
     )
