@@ -37,16 +37,23 @@ Exit Codes:
     1: Error (if applicable)
 """
 
-from pathlib import Path
-
 import click
+
+from erk_shared.context.helpers import require_cwd, require_git, require_repo_root
 
 
 @click.command(name="command-name")
-def command_name() -> None:
+@click.pass_context
+def command_name(ctx: click.Context) -> None:
     """Click command docstring."""
-    # Implementation
-    click.echo("output")
+    # Get dependencies from context for testability
+    cwd = require_cwd(ctx)
+    repo_root = require_repo_root(ctx)
+    git = require_git(ctx)
+
+    # Implementation using injected dependencies
+    branch = git.get_current_branch(cwd)
+    click.echo(f"On branch: {branch}")
 ```
 
 ## Registration in kit.yaml
@@ -66,31 +73,56 @@ scripts:
 
 Create tests in: `packages/dot-agent-kit/tests/unit/kits/<kit-name>/test_<script_name>.py`
 
-Use CliRunner for testing Click commands:
+Use CliRunner with `DotAgentContext.for_test()` for fake-driven testing (Layer 4):
 
 ```python
 from pathlib import Path
 
 from click.testing import CliRunner
 
+from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.<kit>.scripts.<kit>.<script_name> import command_name
+from erk_shared.git.fake import FakeGit
 
 
-def test_command_name(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.chdir(tmp_path)
+def test_command_name(tmp_path: Path) -> None:
+    # Arrange: Create fake dependencies
+    fake_git = FakeGit()
+    fake_git.set_current_branch("feature-branch")
+
+    # Create test context with injected fakes
+    ctx = DotAgentContext.for_test(
+        git=fake_git,
+        cwd=tmp_path,
+        repo_root=tmp_path,
+    )
+
+    # Act: Invoke command with test context via obj parameter
     runner = CliRunner()
-    result = runner.invoke(command_name)
+    result = runner.invoke(command_name, obj=ctx)
+
+    # Assert
     assert result.exit_code == 0
+    assert "feature-branch" in result.output
 ```
+
+**Why this pattern?**
+
+- Uses in-memory fakes (no subprocess calls, fast tests)
+- Full control over dependencies via `DotAgentContext.for_test()`
+- No monkeypatching needed for paths - inject `cwd` directly
+- Follows Layer 4 testing strategy (business logic over fakes)
 
 ## Common Patterns
 
 ### Reading from .impl/ folder
 
 ```python
+from erk_shared.context.helpers import require_cwd
 from erk_shared.impl_folder import read_issue_reference
 
-cwd = Path.cwd()
+# Use require_cwd(ctx) instead of Path.cwd() for testability
+cwd = require_cwd(ctx)
 impl_dir = cwd / ".impl"
 if impl_dir.exists():
     issue_ref = read_issue_reference(impl_dir)
