@@ -8,13 +8,13 @@ Shared analysis logic for `/erk:extract-agent-docs` and `/erk:extract-agent-docs
 
 ### 1. Where did I learn this?
 
-| Source of Knowledge           | Extraction Candidate? |
-| ----------------------------- | --------------------- |
-| From existing docs/skills     | ❌ NO - system working as designed |
-| From tripwires that fired     | ❌ NO - already handled |
-| From trial-and-error          | ✅ YES - document the learning |
-| From user correction          | ✅ YES - document to prevent recurrence |
-| From external research        | ✅ MAYBE - if project-specific |
+| Source of Knowledge       | Extraction Candidate?                   |
+| ------------------------- | --------------------------------------- |
+| From existing docs/skills | ❌ NO - system working as designed      |
+| From tripwires that fired | ❌ NO - already handled                 |
+| From trial-and-error      | ✅ YES - document the learning          |
+| From user correction      | ✅ YES - document to prevent recurrence |
+| From external research    | ✅ MAYBE - if project-specific          |
 
 ### 2. What would a future agent read differently?
 
@@ -235,9 +235,11 @@ Documentation needed for what was BUILT this session:
 ### Common Extraction Mistake
 
 ❌ **Wrong reasoning:**
+
 > "I added a method to the Git ABC and implemented it in 5 files. This is a pattern that could be documented."
 
 ✅ **Correct reasoning:**
+
 > "The Gateway ABC pattern is already documented in `docs/agent/architecture/gateway-abc-implementation.md` with tripwires configured. I followed the existing docs correctly. This is the system working as designed - NOT a documentation gap."
 
 **The test:** Ask yourself "Did I discover this through friction, or did I learn it from existing docs?" If the latter, skip the suggestion.
