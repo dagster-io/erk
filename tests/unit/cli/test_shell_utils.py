@@ -89,3 +89,56 @@ def test_render_navigation_script_non_root_matches_activation_script(tmp_path: P
     )
 
     assert navigation_result == activation_result
+
+
+# Transparency logging tests
+
+
+def test_render_cd_script_contains_logging_helper() -> None:
+    """cd script includes logging helper functions."""
+    result = render_cd_script(
+        Path("/path/to/dir"),
+        comment="test",
+        success_message="Done",
+    )
+    assert "__erk_log()" in result
+    assert "__erk_log_verbose()" in result
+
+
+def test_render_cd_script_logs_switching_message() -> None:
+    """cd script logs directory name when switching."""
+    result = render_cd_script(
+        Path("/path/to/mydir"),
+        comment="test",
+        success_message="Done",
+    )
+    # Should log the directory name (last component of path)
+    assert '__erk_log "->" "Switching to: mydir"' in result
+
+
+def test_render_cd_script_verbose_shows_full_paths() -> None:
+    """cd script verbose mode shows full directory paths."""
+    result = render_cd_script(
+        Path("/path/to/mydir"),
+        comment="test",
+        success_message="Done",
+    )
+    assert '__erk_log_verbose "->" "Directory: $(pwd) -> /path/to/mydir"' in result
+
+
+def test_render_navigation_script_root_has_logging(tmp_path: Path) -> None:
+    """Root worktree navigation includes transparency logging."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    result = render_navigation_script(
+        repo_root,
+        repo_root,
+        comment="test",
+        success_message="At root",
+    )
+
+    # Should contain logging helper
+    assert "__erk_log()" in result
+    # Should contain switching message
+    assert '__erk_log "->"' in result

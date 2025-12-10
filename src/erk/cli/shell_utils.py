@@ -9,7 +9,7 @@ from pathlib import Path
 
 from erk_shared.debug import debug_log
 
-from erk.cli.activation import render_activation_script
+from erk.cli.activation import _render_logging_helper, render_activation_script
 
 STALE_SCRIPT_MAX_AGE_SECONDS = 3600
 
@@ -26,9 +26,14 @@ def render_cd_script(path: Path, *, comment: str, success_message: str) -> str:
         Shell script that changes directory and shows success message.
     """
     path_str = str(path)
+    path_name = path.name
     quoted_path = "'" + path_str.replace("'", "'\\''") + "'"
+    logging_helper = _render_logging_helper()
     lines = [
         f"# {comment}",
+        logging_helper,
+        f'__erk_log "->" "Switching to: {path_name}"',
+        f'__erk_log_verbose "->" "Directory: $(pwd) -> {path}"',
         f"cd {quoted_path}",
         f'echo "{success_message}"',
     ]
