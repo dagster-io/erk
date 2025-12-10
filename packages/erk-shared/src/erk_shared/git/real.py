@@ -819,3 +819,52 @@ class RealGit(Git):
             operation_context=f"set git config {key}",
             cwd=cwd,
         )
+
+    def get_git_user_name(self, cwd: Path) -> str | None:
+        """Get the configured git user.name."""
+        result = subprocess.run(
+            ["git", "config", "user.name"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return None
+        name = result.stdout.strip()
+        return name if name else None
+
+    def get_branch_commits_with_authors(
+        self, repo_root: Path, branch: str, trunk: str, *, limit: int = 50
+    ) -> list[dict[str, str]]:
+        """Get commits on branch not on trunk, with author and timestamp."""
+        result = subprocess.run(
+            [
+                "git",
+                "log",
+                f"{trunk}..{branch}",
+                f"-n{limit}",
+                "--format=%H%x00%an%x00%aI",
+            ],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return []
+
+        commits = []
+        for line in result.stdout.strip().split("\n"):
+            if not line:
+                continue
+            parts = line.split("\x00")
+            if len(parts) == 3:
+                commits.append(
+                    {
+                        "sha": parts[0],
+                        "author": parts[1],
+                        "timestamp": parts[2],
+                    }
+                )
+        return commits

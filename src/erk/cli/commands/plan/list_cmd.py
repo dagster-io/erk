@@ -36,6 +36,7 @@ from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.tui.app import ErkDashApp
 from erk.tui.data.provider import RealPlanDataProvider
 from erk.tui.data.types import PlanFilters
+from erk.tui.sorting.types import SortKey, SortState
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -190,6 +191,12 @@ def dash_options(f: Callable[P, T]) -> Callable[P, T]:
         type=float,
         default=15.0,
         help="Refresh interval in seconds (default: 15.0)",
+    )(f)
+    f = click.option(
+        "--sort",
+        type=click.Choice(["issue", "activity"], case_sensitive=False),
+        default="issue",
+        help="Sort order: by issue number (default) or recent branch activity",
     )(f)
     return f
 
@@ -527,6 +534,7 @@ def _run_interactive_mode(
     limit: int | None,
     interval: float,
     all_users: bool,
+    sort: str,
 ) -> None:
     """Run interactive TUI mode.
 
@@ -540,6 +548,7 @@ def _run_interactive_mode(
         limit: Maximum number of results
         interval: Refresh interval in seconds
         all_users: If True, show plans from all users; if False, filter to authenticated user
+        sort: Sort order ("issue" or "activity")
     """
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
@@ -577,8 +586,13 @@ def _run_interactive_mode(
         creator=creator,
     )
 
+    # Convert sort string to SortState
+    initial_sort = SortState(
+        key=SortKey.BRANCH_ACTIVITY if sort == "activity" else SortKey.ISSUE_NUMBER
+    )
+
     # Run the TUI app
-    app = ErkDashApp(provider, filters, refresh_interval=interval)
+    app = ErkDashApp(provider, filters, refresh_interval=interval, initial_sort=initial_sort)
     app.run()
 
 
@@ -631,6 +645,7 @@ def dash(
     limit: int | None,
     all_users: bool,
     interval: float,
+    sort: str,
 ) -> None:
     """Interactive plan dashboard (TUI).
 
@@ -649,9 +664,10 @@ def dash(
         erk dash --label erk-plan --state open
         erk dash --limit 10
         erk dash --run-state in_progress
+        erk dash --sort activity         # Sort by recent branch activity
     """
     # Default to showing all columns (runs=True)
     prs = True  # Always show PRs
     runs = True  # Default to showing runs
 
-    _run_interactive_mode(ctx, label, state, run_state, runs, prs, limit, interval, all_users)
+    _run_interactive_mode(ctx, label, state, run_state, runs, prs, limit, interval, all_users, sort)

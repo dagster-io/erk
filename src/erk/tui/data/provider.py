@@ -29,6 +29,7 @@ from erk.core.display_utils import (
 from erk.core.pr_utils import select_display_pr
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
 from erk.tui.data.types import PlanFilters, PlanRowData
+from erk.tui.sorting.types import BranchActivity
 
 
 class PlanDataProvider(ABC):
@@ -99,6 +100,24 @@ class PlanDataProvider(ABC):
         Args:
             issue_number: The issue number to submit
             issue_url: The issue URL for repository context
+        """
+        ...
+
+    @abstractmethod
+    def fetch_branch_activity(
+        self, rows: list[PlanRowData]
+    ) -> dict[int, BranchActivity]:
+        """Fetch branch activity for plans that exist locally.
+
+        Examines commits on each local branch (not in trunk) to determine
+        the most recent activity.
+
+        Args:
+            rows: List of plan rows to fetch activity for
+
+        Returns:
+            Mapping of issue_number to BranchActivity for plans with local worktrees.
+            Plans without local worktrees are not included in the result.
         """
         ...
 
@@ -259,6 +278,48 @@ class RealPlanDataProvider(PlanDataProvider):
             check=True,
             capture_output=True,
         )
+
+    def fetch_branch_activity(
+        self, rows: list[PlanRowData]
+    ) -> dict[int, BranchActivity]:
+        """Fetch branch activity for plans that exist locally.
+
+        Args:
+            rows: List of plan rows to fetch activity for
+
+        Returns:
+            Mapping of issue_number to BranchActivity for plans with local worktrees.
+        """
+        result: dict[int, BranchActivity] = {}
+
+        # Get trunk branch
+        trunk = self._ctx.git.detect_trunk_branch(self._location.root)
+
+        for row in rows:
+            # Only fetch for plans with local branches
+            if not row.exists_locally or row.worktree_branch is None:
+                continue
+
+            # Get commits on branch not in trunk
+            commits = self._ctx.git.get_branch_commits_with_authors(
+                self._location.root,
+                row.worktree_branch,
+                trunk,
+                limit=1,  # Only need most recent
+            )
+
+            if commits:
+                # Parse ISO timestamp from git
+                timestamp_str = commits[0]["timestamp"]
+                commit_at = datetime.fromisoformat(timestamp_str)
+                result[row.issue_number] = BranchActivity(
+                    last_commit_at=commit_at,
+                    last_commit_author=commits[0]["author"],
+                )
+            else:
+                result[row.issue_number] = BranchActivity.empty()
+
+        return result
 
     def _build_worktree_mapping(self) -> dict[int, tuple[str, str | None]]:
         """Build mapping of issue number to (worktree name, branch).

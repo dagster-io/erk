@@ -98,6 +98,8 @@ class FakeGit(Git):
         rebase_continue_raises: Exception | None = None,
         rebase_continue_clears_rebase: bool = False,
         commit_messages_since: dict[tuple[Path, str], list[str]] | None = None,
+        git_user_name: str | None = None,
+        branch_commits_with_authors: dict[str, list[dict[str, str]]] | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -137,6 +139,9 @@ class FakeGit(Git):
             rebase_continue_raises: Exception to raise when rebase_continue() is called
             rebase_continue_clears_rebase: If True, rebase_continue() clears the rebase state
             commit_messages_since: Mapping of (cwd, base_branch) -> list of commit messages
+            git_user_name: Configured git user.name to return from get_git_user_name()
+            branch_commits_with_authors: Mapping of branch name -> list of commit dicts
+                with keys: sha, author, timestamp
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -171,6 +176,8 @@ class FakeGit(Git):
         self._rebase_continue_raises = rebase_continue_raises
         self._rebase_continue_clears_rebase = rebase_continue_clears_rebase
         self._commit_messages_since = commit_messages_since or {}
+        self._git_user_name = git_user_name
+        self._branch_commits_with_authors = branch_commits_with_authors or {}
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -912,3 +919,14 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return self._config_settings.copy()
+
+    def get_git_user_name(self, cwd: Path) -> str | None:
+        """Get the configured git user.name."""
+        return self._git_user_name
+
+    def get_branch_commits_with_authors(
+        self, repo_root: Path, branch: str, trunk: str, *, limit: int = 50
+    ) -> list[dict[str, str]]:
+        """Get commits on branch not on trunk, with author and timestamp."""
+        commits = self._branch_commits_with_authors.get(branch, [])
+        return commits[:limit]

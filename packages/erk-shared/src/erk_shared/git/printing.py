@@ -278,3 +278,13 @@ class PrintingGit(PrintingBase, Git):
         """Set git config with printed output."""
         self._emit(self._format_command(f"git config --{scope} {key} {value}"))
         self._wrapped.config_set(cwd, key, value, scope=scope)
+
+    def get_git_user_name(self, cwd: Path) -> str | None:
+        """Get git user.name (read-only, no printing)."""
+        return self._wrapped.get_git_user_name(cwd)
+
+    def get_branch_commits_with_authors(
+        self, repo_root: Path, branch: str, trunk: str, *, limit: int = 50
+    ) -> list[dict[str, str]]:
+        """Get branch commits with authors (read-only, no printing)."""
+        return self._wrapped.get_branch_commits_with_authors(repo_root, branch, trunk, limit=limit)

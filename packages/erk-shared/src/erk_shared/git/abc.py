@@ -665,3 +665,38 @@ class Git(ABC):
             subprocess.CalledProcessError: If git command fails
         """
         ...
+
+    @abstractmethod
+    def get_git_user_name(self, cwd: Path) -> str | None:
+        """Get the configured git user.name.
+
+        Args:
+            cwd: Working directory
+
+        Returns:
+            The configured user.name, or None if not set
+        """
+        ...
+
+    @abstractmethod
+    def get_branch_commits_with_authors(
+        self, repo_root: Path, branch: str, trunk: str, *, limit: int = 50
+    ) -> list[dict[str, str]]:
+        """Get commits on branch not on trunk, with author and timestamp.
+
+        Returns commits unique to the branch (not present on trunk),
+        ordered from newest to oldest.
+
+        Args:
+            repo_root: Path to the repository root
+            branch: Branch name to get commits from
+            trunk: Trunk branch name to compare against
+            limit: Maximum number of commits to retrieve
+
+        Returns:
+            List of commit info dicts with keys:
+            - sha: Commit SHA (full)
+            - author: Author name
+            - timestamp: ISO 8601 timestamp (author date)
+        """
+        ...

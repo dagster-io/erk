@@ -32,6 +32,7 @@ class StatusBar(Static):
         self._last_update: str | None = None
         self._fetch_duration: float | None = None
         self._message: str | None = None
+        self._sort_mode: str | None = None
 
     def set_plan_count(self, count: int) -> None:
         """Update the plan count display.
@@ -71,6 +72,15 @@ class StatusBar(Static):
         self._fetch_duration = duration_secs
         self._update_display()
 
+    def set_sort_mode(self, mode: str) -> None:
+        """Set the current sort mode display.
+
+        Args:
+            mode: Sort mode label (e.g., "by issue#", "by recent activity")
+        """
+        self._sort_mode = mode
+        self._update_display()
+
     def _update_display(self) -> None:
         """Render the status bar content."""
         parts: list[str] = []
@@ -80,6 +90,10 @@ class StatusBar(Static):
             parts.append("1 plan")
         else:
             parts.append(f"{self._plan_count} plans")
+
+        # Sort mode
+        if self._sort_mode:
+            parts.append(f"sorted {self._sort_mode}")
 
         # Last update time with optional duration
         if self._last_update:
@@ -97,6 +111,6 @@ class StatusBar(Static):
             parts.append(self._message)
 
         # Key hints
-        parts.append("Enter:open  p:PR  /:filter  Space:detail  r:refresh  q:quit  ?:help")
+        parts.append("Enter:open  p:PR  /:filter  s:sort  r:refresh  q:quit  ?:help")
 
         self.update(" │ ".join(parts))

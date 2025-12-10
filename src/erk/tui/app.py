@@ -24,6 +24,8 @@ from erk.tui.data.provider import PlanDataProvider
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.filtering.logic import filter_plans
 from erk.tui.filtering.types import FilterMode, FilterState
+from erk.tui.sorting.logic import sort_plans
+from erk.tui.sorting.types import BranchActivity, SortKey, SortState
 from erk.tui.widgets.command_output import CommandOutputPanel
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
@@ -182,10 +184,11 @@ class HelpScreen(ModalScreen):
                 yield Label("i       Show implement command", classes="help-binding")
 
             with Vertical(classes="help-section"):
-                yield Label("Filter", classes="help-section-title")
+                yield Label("Filter & Sort", classes="help-section-title")
                 yield Label("/       Start filter mode", classes="help-binding")
                 yield Label("Esc     Clear filter / exit filter", classes="help-binding")
                 yield Label("Enter   Return focus to table", classes="help-binding")
+                yield Label("s       Toggle sort mode", classes="help-binding")
 
             with Vertical(classes="help-section"):
                 yield Label("General", classes="help-section-title")
@@ -816,6 +819,7 @@ class ErkDashApp(App):
         # in the plan detail modal (Enter → Ctrl+P → "Close Plan")
         Binding("i", "show_implement", "Implement"),
         Binding("slash", "start_filter", "Filter", key_display="/"),
+        Binding("s", "toggle_sort", "Sort"),
         Binding("ctrl+p", "command_palette", "Commands"),
     ]
 
@@ -838,6 +842,7 @@ class ErkDashApp(App):
         provider: PlanDataProvider,
         filters: PlanFilters,
         refresh_interval: float = 15.0,
+        initial_sort: SortState | None = None,
     ) -> None:
         """Initialize the dashboard app.
 
@@ -845,6 +850,7 @@ class ErkDashApp(App):
             provider: Data provider for fetching plan data
             filters: Filter options for the plan list
             refresh_interval: Seconds between auto-refresh (0 to disable)
+            initial_sort: Initial sort state (defaults to by issue number)
         """
         super().__init__()
         self._provider = provider
@@ -858,6 +864,9 @@ class ErkDashApp(App):
         self._refresh_task: asyncio.Task | None = None
         self._loading = True
         self._filter_state = FilterState.initial()
+        self._sort_state = initial_sort if initial_sort is not None else SortState.initial()
+        self._activity_by_issue: dict[int, BranchActivity] = {}
+        self._activity_loading = False
 
     def compose(self) -> ComposeResult:
         """Create the application layout."""
@@ -894,6 +903,13 @@ class ErkDashApp(App):
         loop = asyncio.get_running_loop()
         rows = await loop.run_in_executor(None, self._provider.fetch_plans, self._plan_filters)
 
+        # If sorting by activity, also fetch activity data
+        if self._sort_state.key == SortKey.BRANCH_ACTIVITY:
+            activity = await loop.run_in_executor(
+                None, self._provider.fetch_branch_activity, rows
+            )
+            self._activity_by_issue = activity
+
         # Calculate duration
         duration = time.monotonic() - start_time
         update_time = datetime.now().strftime("%H:%M:%S")
@@ -917,11 +933,8 @@ class ErkDashApp(App):
         self._all_rows = rows
         self._loading = False
 
-        # Apply current filter if active
-        if self._filter_state.mode == FilterMode.ACTIVE and self._filter_state.query:
-            self._rows = filter_plans(rows, self._filter_state.query)
-        else:
-            self._rows = rows
+        # Apply filter and sort
+        self._rows = self._apply_filter_and_sort(rows)
 
         if self._table is not None:
             self._loading_label.display = False
@@ -930,8 +943,31 @@ class ErkDashApp(App):
 
         if self._status_bar is not None:
             self._status_bar.set_plan_count(len(self._rows))
+            self._status_bar.set_sort_mode(self._sort_state.display_label)
             if update_time is not None:
                 self._status_bar.set_last_update(update_time, duration)
+
+    def _apply_filter_and_sort(self, rows: list[PlanRowData]) -> list[PlanRowData]:
+        """Apply current filter and sort to rows.
+
+        Args:
+            rows: Raw rows to process
+
+        Returns:
+            Filtered and sorted rows
+        """
+        # Apply filter first
+        if self._filter_state.mode == FilterMode.ACTIVE and self._filter_state.query:
+            filtered = filter_plans(rows, self._filter_state.query)
+        else:
+            filtered = rows
+
+        # Apply sort
+        return sort_plans(
+            filtered,
+            self._sort_state.key,
+            self._activity_by_issue if self._sort_state.key == SortKey.BRANCH_ACTIVITY else None,
+        )
 
     def _start_refresh_timer(self) -> None:
         """Start the auto-refresh countdown timer."""
@@ -974,6 +1010,44 @@ class ErkDashApp(App):
     def action_help(self) -> None:
         """Show help screen."""
         self.push_screen(HelpScreen())
+
+    def action_toggle_sort(self) -> None:
+        """Toggle between sort modes."""
+        self._sort_state = self._sort_state.toggle()
+
+        # If switching to activity sort, load activity data in background
+        if self._sort_state.key == SortKey.BRANCH_ACTIVITY and not self._activity_by_issue:
+            self._load_activity_and_resort()
+        else:
+            # Re-sort with current data
+            self._rows = self._apply_filter_and_sort(self._all_rows)
+            if self._table is not None:
+                self._table.populate(self._rows)
+
+        # Update status bar
+        if self._status_bar is not None:
+            self._status_bar.set_sort_mode(self._sort_state.display_label)
+
+    @work(thread=True)
+    def _load_activity_and_resort(self) -> None:
+        """Load branch activity in background, then resort."""
+        self._activity_loading = True
+
+        # Fetch activity data
+        activity = self._provider.fetch_branch_activity(self._all_rows)
+
+        # Update on main thread
+        self.app.call_from_thread(self._on_activity_loaded, activity)
+
+    def _on_activity_loaded(self, activity: dict[int, BranchActivity]) -> None:
+        """Handle activity data loaded - resort the table."""
+        self._activity_by_issue = activity
+        self._activity_loading = False
+
+        # Re-sort with new activity data
+        self._rows = self._apply_filter_and_sort(self._all_rows)
+        if self._table is not None:
+            self._table.populate(self._rows)
 
     def action_show_detail(self) -> None:
         """Show plan detail modal for selected row."""
@@ -1022,10 +1096,7 @@ class ErkDashApp(App):
 
     def _apply_filter(self) -> None:
         """Apply current filter query to the table."""
-        if self._filter_state.query:
-            self._rows = filter_plans(self._all_rows, self._filter_state.query)
-        else:
-            self._rows = self._all_rows
+        self._rows = self._apply_filter_and_sort(self._all_rows)
 
         if self._table is not None:
             self._table.populate(self._rows)
@@ -1041,7 +1112,7 @@ class ErkDashApp(App):
             self._filter_input.disabled = True
 
         self._filter_state = FilterState.initial()
-        self._rows = self._all_rows
+        self._rows = self._apply_filter_and_sort(self._all_rows)
 
         if self._table is not None:
             self._table.populate(self._rows)

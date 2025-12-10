@@ -284,3 +284,13 @@ class DryRunGit(Git):
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
         """No-op for setting git config in dry-run mode."""
         pass
+
+    def get_git_user_name(self, cwd: Path) -> str | None:
+        """Get git user.name (read-only, delegates to wrapped)."""
+        return self._wrapped.get_git_user_name(cwd)
+
+    def get_branch_commits_with_authors(
+        self, repo_root: Path, branch: str, trunk: str, *, limit: int = 50
+    ) -> list[dict[str, str]]:
+        """Get branch commits with authors (read-only, delegates to wrapped)."""
+        return self._wrapped.get_branch_commits_with_authors(repo_root, branch, trunk, limit=limit)
