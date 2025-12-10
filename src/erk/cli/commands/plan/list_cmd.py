@@ -304,18 +304,27 @@ def _build_plans_table(
         if not plans:
             return None, 0
 
+    # Build activity timestamps for display column (always computed)
+    trunk = ctx.git.detect_trunk_branch(repo_root)
+
+    # Build issue -> branch mapping from worktrees
+    issue_to_branch: dict[int, str] = {}
+    for wt in worktrees:
+        impl_folder = wt.path / ".impl"
+        if impl_folder.exists() and impl_folder.is_dir():
+            issue_ref = read_issue_reference(impl_folder)
+            if issue_ref is not None and wt.branch is not None:
+                issue_to_branch[issue_ref.issue_number] = wt.branch
+
+    # Build activity timestamps for display and sorting
+    activity_by_issue: dict[int, str] = {}
+    for issue_num, branch in issue_to_branch.items():
+        timestamp = ctx.git.get_branch_last_commit_time(repo_root, branch, trunk)
+        if timestamp is not None:
+            activity_by_issue[issue_num] = timestamp
+
     # Apply activity-based sorting if requested
     if sort == "activity":
-        trunk = ctx.git.detect_trunk_branch(repo_root)
-
-        # Build issue -> branch mapping from worktrees
-        issue_to_branch: dict[int, str] = {}
-        for wt in worktrees:
-            impl_folder = wt.path / ".impl"
-            if impl_folder.exists() and impl_folder.is_dir():
-                issue_ref = read_issue_reference(impl_folder)
-                if issue_ref is not None and wt.branch is not None:
-                    issue_to_branch[issue_ref.issue_number] = wt.branch
 
         def get_last_commit_time(plan: Plan) -> tuple[bool, datetime]:
             """Return sort key: (has_local_activity, commit_time).
@@ -323,13 +332,9 @@ def _build_plans_table(
             Plans with local activity sort first (by recency), then others by issue#.
             """
             issue_number = plan.metadata.get("number")
-            if not isinstance(issue_number, int) or issue_number not in issue_to_branch:
+            if not isinstance(issue_number, int) or issue_number not in activity_by_issue:
                 return (False, datetime.min)
-            branch = issue_to_branch[issue_number]
-            timestamp = ctx.git.get_branch_last_commit_time(repo_root, branch, trunk)
-            if timestamp is not None:
-                return (True, datetime.fromisoformat(timestamp))
-            return (False, datetime.min)
+            return (True, datetime.fromisoformat(activity_by_issue[issue_number]))
 
         # Sort: plans with local activity first (by recency), then others by issue#
         plans = sorted(plans, key=get_last_commit_time, reverse=True)
@@ -344,6 +349,7 @@ def _build_plans_table(
     table.add_column("pr", no_wrap=True)
     table.add_column("chks", no_wrap=True)
     table.add_column("local-wt", no_wrap=True)
+    table.add_column("activity", no_wrap=True)
     table.add_column("local-impl", no_wrap=True)
     if runs:
         table.add_column("remote-impl", no_wrap=True)
@@ -436,8 +442,21 @@ def _build_plans_table(
         # Format workflow run outcome
         run_outcome_cell = format_workflow_outcome(workflow_run)
 
+        # Format activity cell (last commit time on local branch)
+        activity_cell = "-"
+        if isinstance(issue_number, int) and issue_number in activity_by_issue:
+            activity_cell = format_relative_time(activity_by_issue[issue_number]) or "-"
+
         # Build row based on which columns are enabled
-        row: list[str] = [issue_id, title, pr_cell, checks_cell, worktree_name_cell, local_run_cell]
+        row: list[str] = [
+            issue_id,
+            title,
+            pr_cell,
+            checks_cell,
+            worktree_name_cell,
+            activity_cell,
+            local_run_cell,
+        ]
         if runs:
             row.extend([remote_run_cell, run_id_cell, run_outcome_cell])
         table.add_row(*row)
