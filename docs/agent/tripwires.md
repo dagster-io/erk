@@ -33,6 +33,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before adding a new method to Graphite ABC** → Read [Gateway ABC Implementation Checklist](architecture/gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
 
+**CRITICAL: Before assuming git rebase cleanup implies clean completion** → Read [Git and Graphite Edge Cases Catalog](architecture/git-graphite-quirks.md) first. Rebase dirs can be cleaned up while unmerged files remain and HEAD is detached. Check for unmerged files explicitly.
+
 **CRITICAL: Before passing variables to gh api graphql as JSON blob** → Read [GitHub GraphQL API Patterns](architecture/github-graphql.md) first. Variables must be passed individually with -f (strings) and -F (typed). The syntax `-f variables={...}` does NOT work.
 
 **CRITICAL: Before checking if get_pr_for_branch() returned a PR** → Read [Not-Found Sentinel Pattern](architecture/not-found-sentinel.md) first. Use `isinstance(pr, PRNotFound)` not `pr is not None`. PRNotFound is a sentinel object, not None.

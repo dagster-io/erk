@@ -301,3 +301,4 @@ def auto_restack(ops: GtKit, cwd: Path) -> RestackResult:
 - [Event-Based Progress Pattern](event-progress-pattern.md) - Progress reporting pattern
 - [Auto-Restack Command Usage](../erk/auto-restack.md) - User-facing workflow guide
 - [Erk Architecture Patterns](erk-architecture.md) - Dependency injection context
+- [Git and Graphite Edge Cases](git-graphite-quirks.md) - Catalog of surprising git/gt behaviors
