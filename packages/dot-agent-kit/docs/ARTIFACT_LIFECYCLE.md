@@ -65,8 +65,8 @@ Update references:
 
 ```bash
 # From repository root
-dot-agent kit remove <kit-name>
-dot-agent kit install bundled:<kit-name> --force
+erk kit remove <kit-name>
+erk kit install bundled:<kit-name> --force
 ```
 
 This recreates the symlink with the correct target.
@@ -74,7 +74,7 @@ This recreates the symlink with the correct target.
 **5. Verify the changes**
 
 ```bash
-dot-agent check
+erk check
 ```
 
 Should show: `✅ All checks passed!`
@@ -99,16 +99,16 @@ This refactoring split one command into two separate commands:
 # Updated references to new two-step workflow
 
 # 4. Reinstall
-dot-agent kit remove erk
-dot-agent kit install bundled:erk --force
+erk kit remove erk
+erk kit install bundled:erk --force
 
 # 5. Verify
-dot-agent check
+erk check
 ```
 
 ### Common Mistakes
 
-❌ **Renaming file but forgetting kit.yaml** → `dot-agent check` shows "Missing artifact"
+❌ **Renaming file but forgetting kit.yaml** → `erk check` shows "Missing artifact"
 ❌ **Updating kit.yaml but not reinstalling** → Old symlink remains, points to non-existent file
 ❌ **Forgetting cross-references** → Other commands reference non-existent command name
 
@@ -155,8 +155,8 @@ Replace invocations with:
 **4. Force-reinstall the kit**
 
 ```bash
-dot-agent kit remove <kit-name>
-dot-agent kit install bundled:<kit-name> --force
+erk kit remove <kit-name>
+erk kit install bundled:<kit-name> --force
 ```
 
 This removes the orphaned symlink.
@@ -165,10 +165,10 @@ This removes the orphaned symlink.
 
 ```bash
 # Should not list the deleted artifact
-dot-agent artifact list
+erk artifact list
 
 # Should pass with no missing artifacts
-dot-agent check
+erk check
 ```
 
 ### Real Example: view-pr and view-plan deletion
@@ -185,13 +185,13 @@ git rm commands/erk/view-plan.md
 # 3. No cross-references existed (these were standalone commands)
 
 # 4. Reinstall both kits
-dot-agent kit remove gt
-dot-agent kit install bundled:gt --force
-dot-agent kit remove erk
-dot-agent kit install bundled:erk --force
+erk kit remove gt
+erk kit install bundled:gt --force
+erk kit remove erk
+erk kit install bundled:erk --force
 
 # 5. Verify
-dot-agent check
+erk check
 ```
 
 ## Moving an Artifact
@@ -236,14 +236,14 @@ grep -r "old/path/artifact.md" packages/dot-agent-kit/
 **4. Force-reinstall**
 
 ```bash
-dot-agent kit remove <kit-name>
-dot-agent kit install bundled:<kit-name> --force
+erk kit remove <kit-name>
+erk kit install bundled:<kit-name> --force
 ```
 
 **5. Verify**
 
 ```bash
-dot-agent check
+erk check
 ```
 
 ### Moving Between Kits
@@ -276,10 +276,10 @@ After any artifact modification:
 
 ```bash
 # 1. Check kit integrity
-dot-agent check
+erk check
 
 # 2. List artifacts to verify installation
-dot-agent artifact list
+erk artifact list
 
 # 3. Test the artifact (if command)
 /command-name --help  # or actual invocation
@@ -288,7 +288,7 @@ dot-agent artifact list
 ls -la .claude/commands/<namespace>/
 ```
 
-### Interpreting `dot-agent check` Output
+### Interpreting `erk check` Output
 
 **✅ Success:**
 
@@ -330,7 +330,7 @@ Fix: Reinstall kit to recreate symlink
 
 **Symptoms:**
 
-- `dot-agent check` shows missing artifact
+- `erk check` shows missing artifact
 - Command invocation fails
 
 **Causes:**
@@ -343,7 +343,7 @@ Fix: Reinstall kit to recreate symlink
 
 - Update kit.yaml manifest
 - Force-reinstall kit
-- Run `dot-agent check` to verify
+- Run `erk check` to verify
 
 ### "Symlink points to non-existent file"
 
@@ -361,15 +361,15 @@ Fix: Reinstall kit to recreate symlink
 
 ```bash
 # Remove and reinstall kit
-dot-agent kit remove <kit-name>
-dot-agent kit install bundled:<kit-name> --force
+erk kit remove <kit-name>
+erk kit install bundled:<kit-name> --force
 ```
 
 ### "Command not discoverable after changes"
 
 **Symptoms:**
 
-- Artifact appears in `dot-agent artifact list`
+- Artifact appears in `erk artifact list`
 - Command still doesn't work
 
 **Causes:**
@@ -423,8 +423,8 @@ Use this checklist before committing kit changes:
 - [ ] Source files renamed/moved/deleted as intended
 - [ ] kit.yaml manifest updated with correct paths
 - [ ] Cross-references in other artifacts updated
-- [ ] Force-reinstalled kit: `dot-agent kit install bundled:X --force`
-- [ ] Ran validation: `dot-agent check` shows ✅
+- [ ] Force-reinstalled kit: `erk kit install bundled:X --force`
+- [ ] Ran validation: `erk check` shows ✅
 - [ ] Tested artifact invocation works correctly
 - [ ] Committed changes with clear description
 ```

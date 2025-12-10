@@ -24,8 +24,8 @@ Hooks are automated triggers that run commands at specific lifecycle events in C
 ### How Hooks Work
 
 1. **Definition**: Hooks are defined in `kit.yaml` with two required sections
-2. **Installation**: `dot-agent kit install` writes hook configuration to:
-   - `dot-agent.toml` (kit metadata)
+2. **Installation**: `erk kit install` writes hook configuration to:
+   - `kits.toml` (kit metadata)
    - `.claude/settings.json` (Claude Code configuration)
 3. **Execution**: When lifecycle event fires, Claude Code:
    - Runs the invocation command
@@ -127,9 +127,9 @@ The following Claude Code hook capabilities are **not yet supported** by dot-age
 | Feature               | dot-agent-kit                                                | Native Claude Code                                         |
 | --------------------- | ------------------------------------------------------------ | ---------------------------------------------------------- |
 | **Organization**      | Kit-based: hooks bundled with related skills/commands/agents | Manual: edit `.claude/settings.json` directly              |
-| **Installation**      | Atomic: `dot-agent kit install {kit}` installs all artifacts | Manual: copy/paste hook configuration                      |
-| **Removal**           | Atomic: `dot-agent kit remove {kit}` removes all artifacts   | Manual: delete hook entries from settings.json             |
-| **Metadata Tracking** | Tracked in `dot-agent.toml` with source information          | No metadata tracking                                       |
+| **Installation**      | Atomic: `erk kit install {kit}` installs all artifacts       | Manual: copy/paste hook configuration                      |
+| **Removal**           | Atomic: `erk kit remove {kit}` removes all artifacts         | Manual: delete hook entries from settings.json             |
+| **Metadata Tracking** | Tracked in `kits.toml` with source information               | No metadata tracking                                       |
 | **Version Control**   | Hooks are code artifacts in repository                       | Configuration-only (settings.json)                         |
 | **Portability**       | Project-portable: kits work across projects                  | Must manually replicate per project                        |
 | **Hook Types**        | Command-based only (currently)                               | Command-based AND prompt-based                             |
@@ -245,13 +245,13 @@ hooks:
 ```bash
 # In development mode (with symlinks)
 uv pip install -e packages/dot-agent-kit --force-reinstall --no-deps
-uv run dot-agent kit install {kit-name}
+erk kit install {kit-name}
 
 # Test the hook directly
-uv run erk kit exec {kit-name} {hook-name}
+erk kit exec {kit-name} {hook-name}
 
 # Verify installation
-uv run dot-agent kit show {kit-name}
+erk kit show {kit-name}
 ```
 
 ## Modifying Existing Hooks
@@ -291,8 +291,8 @@ When renaming a hook (e.g., `compliance-reminder-hook` → `dignified-python-rem
 4. **Reinstall the kit**:
    ```bash
    uv pip install -e packages/dot-agent-kit --force-reinstall --no-deps
-   uv run dot-agent kit remove {kit-name}
-   uv run dot-agent kit install {kit-name}
+   erk kit remove {kit-name}
+   erk kit install {kit-name}
    ```
 
 ### Common Pitfall: Function Name Mismatch
@@ -335,7 +335,7 @@ Currently supported:
 
 ```bash
 # Test hook execution directly
-uv run erk kit exec {kit-name} {hook-name}
+erk kit exec {kit-name} {hook-name}
 
 # Should output plain text reminder:
 # 🔴 CRITICAL: Your reminder text here
@@ -345,8 +345,8 @@ uv run erk kit exec {kit-name} {hook-name}
 
 ### Verification Checklist
 
-- [ ] Hook appears in `dot-agent kit show {kit-name}`
-- [ ] Hook ID in `dot-agent.toml` matches kit.yaml
+- [ ] Hook appears in `erk kit show {kit-name}`
+- [ ] Hook ID in `kits.toml` matches kit.yaml
 - [ ] Hook configuration in `.claude/settings.json`
 - [ ] Direct execution produces expected output
 - [ ] Function name matches file name
@@ -409,7 +409,7 @@ Hooks from different kits can work together:
 
 **Check**:
 
-1. Hook appears in `dot-agent kit show {kit-name}`
+1. Hook appears in `erk kit show {kit-name}`
 2. `.claude/settings.json` contains hook configuration
 3. Matcher pattern matches current context
 4. No syntax errors in hook script
@@ -423,8 +423,8 @@ Hooks from different kits can work together:
 ```bash
 # Force reinstall package and kit
 uv pip install -e packages/dot-agent-kit --force-reinstall --no-deps
-uv run dot-agent kit remove {kit-name}
-uv run dot-agent kit install {kit-name}
+erk kit remove {kit-name}
+erk kit install {kit-name}
 ```
 
 ### Common Errors

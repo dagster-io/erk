@@ -73,10 +73,10 @@ Task tool with:
 
 #### Sync-Kit Failures
 
-Run dot-agent sync to update local artifacts:
+Run erk sync to update local artifacts:
 
 ```bash
-uv run dot-agent sync
+erk sync
 ```
 
 #### MD-Check Failures
@@ -194,7 +194,7 @@ All CI checks passed after N iteration(s):
 
 ✅ **Tests**: PASSED
 
-✅ **Sync-Kit (dot-agent check)**: PASSED
+✅ **Sync-Kit (erk check)**: PASSED
 
 The code is ready for commit/PR.
 

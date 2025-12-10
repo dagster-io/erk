@@ -144,7 +144,7 @@ uv run pytest tests/kits/<kit>/test_<name>.py
 ### 7. Verify Registration
 
 ```bash
-uv run dot-agent kit exec <kit> --help
+erk kit exec <kit> --help
 ```
 
 ## Common Patterns
@@ -188,7 +188,7 @@ All follow the LBYL pattern: check returncode, return simple types, no exception
 **Example flow**:
 
 1. User runs: `/gt:pr-update`
-2. Slash command invokes: `dot-agent kit exec gt update-pr`
+2. Slash command invokes: `erk kit exec gt update-pr`
 3. Kit script executes git/gh/gt operations
 4. Kit script outputs JSON: `{"success": true, "pr_number": 123, ...}`
 5. Slash command parses JSON and reports to user: "Successfully updated PR #123"

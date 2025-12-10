@@ -5,7 +5,7 @@ Kit management system for Claude Code.
 ## Package vs CLI
 
 - **Package name**: `dot-agent-kit` (what you install)
-- **CLI command**: `dot-agent` (what you run)
+- **CLI command**: `erk` (what you run)
 
 This naming follows the convention where the package name describes what it provides (a kit management system), while the CLI command is concise for frequent use.
 
@@ -23,18 +23,18 @@ pip install dot-agent-kit
 
 ## Usage
 
-After installation, use the `dot-agent` command:
+After installation, use the `erk` command:
 
 ```bash
 # Initialize configuration
-dot-agent init
+erk init
 
 # View available commands
-dot-agent --help
+erk --help
 
 # Manage kits
-dot-agent kit install <kit-name>
-dot-agent kit list
+erk kit install <kit-name>
+erk kit list
 ```
 
 ## Creating Kits
@@ -257,23 +257,23 @@ To add a new bundled kit to the dot-agent-kit registry:
 4. **Test the kit** is discoverable:
 
    ```bash
-   dot-agent kit search
+   erk kit search
    ```
 
 5. **Install and verify the kit**:
 
    ```bash
    # Install using the bundled: prefix
-   dot-agent kit install bundled:my-kit
+   erk kit install bundled:my-kit
 
    # Verify installation
-   dot-agent check
+   erk check
    ```
 
 **Note**: The `source:` field in registry.yaml determines the prefix users must use:
 
-- `source: bundled:my-kit` → install with `dot-agent kit install bundled:my-kit`
-- `source: package:my-kit` → install with `dot-agent kit install package:my-kit`
+- `source: bundled:my-kit` → install with `erk kit install bundled:my-kit`
+- `source: package:my-kit` → install with `erk kit install package:my-kit`
 
 The kit will now appear in the available kits list and can be installed by users.
 
@@ -325,13 +325,13 @@ To add a new artifact to a bundled kit:
 
    ```bash
    # Uninstall existing kit
-   dot-agent kit uninstall bundled:{kit-name}
+   erk kit uninstall bundled:{kit-name}
 
    # Reinstall with new artifacts
-   dot-agent kit install bundled:{kit-name}
+   erk kit install bundled:{kit-name}
 
    # Verify installation
-   dot-agent check
+   erk check
    ```
 
 ### Removing Artifacts from a Kit
@@ -380,12 +380,12 @@ To remove an artifact from a bundled kit:
 
 This is the most common issue when renaming artifacts.
 
-- **Symptom**: `dot-agent check` shows "Missing artifacts (in manifest but not installed)"
+- **Symptom**: `erk check` shows "Missing artifacts (in manifest but not installed)"
 - **Cause**: kit.yaml still references old filename, or kit wasn't reinstalled after rename
 - **Fix**:
   1. Update kit.yaml with new artifact path
-  2. Force-reinstall kit: `dot-agent kit install bundled:{kit-name} --force`
-  3. Verify: `dot-agent check` should show ✅
+  2. Force-reinstall kit: `erk kit install bundled:{kit-name} --force`
+  3. Verify: `erk check` should show ✅
 - **See**: [ARTIFACT_LIFECYCLE.md](docs/ARTIFACT_LIFECYCLE.md#renaming-an-artifact) for complete rename procedure
 
 **Stale symlink:**
@@ -399,12 +399,12 @@ This is the most common issue when renaming artifacts.
 
 - **When needed**: After any changes to kit.yaml (adding/removing/renaming artifacts)
 - **Why**: Symlinks sync file contents automatically, but structural changes require reinstallation
-- **How**: `dot-agent kit remove {kit-name}` then `dot-agent kit install bundled:{kit-name} --force`
+- **How**: `erk kit remove {kit-name}` then `erk kit install bundled:{kit-name} --force`
 - **Safe in dev mode**: Symlinks point to source files, so no data is lost
 
 **Command not found after changes:**
 
-- **Symptom**: Artifact appears in `dot-agent artifact list` but invocation fails
+- **Symptom**: Artifact appears in `erk artifact list` but invocation fails
 - **Possible causes**:
   - Cross-references in other files still use old command name
   - Naming convention violated (must use kebab-case, not snake_case)
@@ -427,7 +427,7 @@ This is the most common issue when renaming artifacts.
 
 - Ensure each kit uses its own namespace directory (`{kit-name}/`)
 - Check for duplicate artifact names across kits
-- Review installed artifacts with `dot-agent check`
+- Review installed artifacts with `erk check`
 
 **Further troubleshooting:**
 

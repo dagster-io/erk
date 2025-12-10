@@ -13,7 +13,7 @@ For creating new kits from scratch, see [README.md](README.md).
 | Step | Action                                          | Notes                             |
 | ---- | ----------------------------------------------- | --------------------------------- |
 | 1    | Enable dev_mode in pyproject.toml               | One-time setup                    |
-| 2    | Install kits (creates symlinks)                 | `dot-agent kit install --all`     |
+| 2    | Install kits (creates symlinks)                 | `erk kit install --all`           |
 | 3    | Edit `.claude/` files directly in your worktree | Changes immediately affect source |
 | 4    | Test and iterate on changes                     | No sync needed - changes are live |
 | 5    | Commit your changes                             | `git add . && git commit`         |
@@ -40,7 +40,7 @@ This enables symlink-based kit installation for development.
 Run the kit install command to create symlinks:
 
 ```bash
-dot-agent kit install --all --overwrite
+erk kit install --all --overwrite
 ```
 
 With `dev_mode = true`, this creates symlinks from `.claude/` to the kit source files in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/`. You'll see output like:
@@ -121,8 +121,8 @@ Use this checklist when making structural changes to kits (rename/move/delete/ad
 
 - [ ] Updated kit.yaml manifest with new paths/entries
 - [ ] Updated cross-references in other artifacts (search for old names)
-- [ ] Force-reinstalled kit: `dot-agent kit install bundled:{kit-name} --force`
-- [ ] Verified installation: `dot-agent check` shows ✅
+- [ ] Force-reinstalled kit: `erk kit install bundled:{kit-name} --force`
+- [ ] Verified installation: `erk check` shows ✅
 - [ ] Tested artifact invocation works correctly
 - [ ] Committed source files (in packages/, not .claude/)
 ```
@@ -136,15 +136,15 @@ Use this checklist when making structural changes to kits (rename/move/delete/ad
 1. ✅ File renamed in source directory
 2. ❌ kit.yaml still references old filename
 3. ❌ Symlink points to non-existent file
-4. ❌ `dot-agent check` reports "Missing artifact"
+4. ❌ `erk check` reports "Missing artifact"
 
 **Correct procedure:**
 
 1. Rename source file: `git mv old-name.md new-name.md`
 2. Update kit.yaml: Change artifact path to new filename
 3. Update cross-references: Search for old command name in other files
-4. Force-reinstall: `dot-agent kit install bundled:{kit-name} --force`
-5. Verify: `dot-agent check` should show ✅
+4. Force-reinstall: `erk kit install bundled:{kit-name} --force`
+5. Verify: `erk check` should show ✅
 
 **See**: [docs/ARTIFACT_LIFECYCLE.md](docs/ARTIFACT_LIFECYCLE.md) for detailed procedures on renaming, moving, and deleting artifacts.
 
@@ -152,7 +152,7 @@ Use this checklist when making structural changes to kits (rename/move/delete/ad
 
 The system automatically protects symlinks:
 
-- **During sync**: `dot-agent kit sync` skips symlinked artifacts and reports:
+- **During sync**: `erk kit sync` skips symlinked artifacts and reports:
 
   ```
   Skipping symlinked artifacts in dev mode:
@@ -185,7 +185,7 @@ To switch back to copy-based installation:
 
 2. Reinstall kits:
    ```bash
-   dot-agent kit install --all --overwrite
+   erk kit install --all --overwrite
    ```
 
 This reverts to copying files instead of creating symlinks.
@@ -239,7 +239,7 @@ Two distinct patterns exist:
 Slash commands invoke kit CLI commands and parse their JSON responses:
 
 1. User runs: `/gt:pr-update`
-2. Slash command invokes: `dot-agent kit-command gt update-pr`
+2. Slash command invokes: `erk kit exec gt update-pr`
 3. Kit CLI command executes operations, outputs JSON
 4. Slash command parses JSON and reports to user
 

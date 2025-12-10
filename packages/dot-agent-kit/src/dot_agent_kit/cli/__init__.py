@@ -57,7 +57,7 @@ class LazyGroup(click.Group):
         self.add_command(md_group)
 
         # Add 'kit-command' as backward-compatible alias for 'kit exec'
-        # Users can use 'dot-agent kit-command' which wraps 'dot-agent kit exec'
+        # Users can use 'erk kit-command' which wraps 'erk kit exec'
         kit_command_alias = click.Group(
             name="kit-command",
             help="(Alias for 'kit exec') Execute scripts from bundled kits.",
@@ -66,7 +66,7 @@ class LazyGroup(click.Group):
         self.add_command(kit_command_alias)
 
         # Add 'run' as an alias for 'kit exec' for backwards compatibility
-        # Users can use either 'dot-agent run' or 'dot-agent kit exec'
+        # Users can use either 'erk run' or 'erk kit exec'
         run_alias = click.Group(
             name="run",
             help="(Alias for 'kit exec') Execute scripts from bundled kits.",

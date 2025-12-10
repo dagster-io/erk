@@ -54,7 +54,7 @@ def create_worker_impl_from_issue(
         repo_root = Path.cwd()
 
     # Direct instantiation of required dependencies (avoids erk import)
-    # This allows the command to work when run via dot-agent without uv
+    # This allows the command to work when run via erk kit exec without uv
     github_issues = RealGitHubIssues()
     plan_store = GitHubPlanStore(github_issues)
 
