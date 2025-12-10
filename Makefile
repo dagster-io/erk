@@ -71,7 +71,7 @@ test-integration: test-integration-erk test-integration-dot-agent-kit
 test-all: test-all-erk test-erk-dev test-unit-dot-agent-kit test-integration-dot-agent-kit
 
 check:
-	uv run dot-agent check
+	uv run erk kit check
 
 md-check:
 	uv run erk md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl"
@@ -84,10 +84,10 @@ kit-md-check:
 	cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run erk md check --check-links
 
 docs-validate:
-	uv run dot-agent docs validate
+	uv run erk docs validate
 
 docs-sync-check:
-	uv run dot-agent docs sync --check
+	uv run erk docs sync --check
 
 # Removed: land-branch command has been deprecated
 # Removed: sync-dignified-python-universal (obsolete - shared content now referenced directly)
@@ -102,14 +102,14 @@ fast-ci:
 	echo "\n--- Markdown Check ---" && uv run erk md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl" || exit_code=1; \
 	echo "\n--- Kit Markdown Check ---" && (cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run erk md check --check-links --exclude ".impl" --exclude ".worker-impl") || exit_code=1; \
 	cd $(CURDIR); \
-	echo "\n--- Docs Validate ---" && uv run dot-agent docs validate || exit_code=1; \
-	echo "\n--- Docs Sync Check ---" && uv run dot-agent docs sync --check || exit_code=1; \
+	echo "\n--- Docs Validate ---" && uv run erk docs validate || exit_code=1; \
+	echo "\n--- Docs Sync Check ---" && uv run erk docs sync --check || exit_code=1; \
 	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
 	echo "\n--- Unit Tests (dot-agent-kit) ---" && (cd packages/dot-agent-kit && uv run pytest tests/unit/ -n auto) || exit_code=1; \
 	cd $(CURDIR); \
-	echo "\n--- Dot-Agent Check ---" && uv run dot-agent check || exit_code=1; \
+	echo "\n--- Kit Check ---" && uv run erk kit check || exit_code=1; \
 	exit $$exit_code
 
 # CI target: Run all tests (unit + integration) for comprehensive validation
@@ -122,15 +122,15 @@ all-ci:
 	echo "\n--- Markdown Check ---" && uv run erk md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl" || exit_code=1; \
 	echo "\n--- Kit Markdown Check ---" && (cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run erk md check --check-links --exclude ".impl" --exclude ".worker-impl") || exit_code=1; \
 	cd $(CURDIR); \
-	echo "\n--- Docs Validate ---" && uv run dot-agent docs validate || exit_code=1; \
-	echo "\n--- Docs Sync Check ---" && uv run dot-agent docs sync --check || exit_code=1; \
+	echo "\n--- Docs Validate ---" && uv run erk docs validate || exit_code=1; \
+	echo "\n--- Docs Sync Check ---" && uv run erk docs sync --check || exit_code=1; \
 	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
 	echo "\n--- Integration Tests (erk) ---" && uv run pytest tests/integration/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
 	echo "\n--- Unit Tests (dot-agent-kit) ---" && (cd packages/dot-agent-kit && uv run pytest tests/unit/ -n auto) || exit_code=1; \
 	echo "\n--- Integration Tests (dot-agent-kit) ---" && (cd packages/dot-agent-kit && uv run pytest tests/integration/ -n auto) || exit_code=1; \
-	echo "\n--- Dot-Agent Check ---" && uv run dot-agent check || exit_code=1; \
+	echo "\n--- Kit Check ---" && uv run erk kit check || exit_code=1; \
 	exit $$exit_code
 
 # Clean build artifacts

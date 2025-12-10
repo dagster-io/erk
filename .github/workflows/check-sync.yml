@@ -37,4 +37,4 @@ jobs:
       - name: Install dependencies
         run: uv sync
       - name: Check artifacts and bundled kit sync status
-        run: uv run --package dot-agent-kit dot-agent check
+        run: uv run --package erk erk kit check

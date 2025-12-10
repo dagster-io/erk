@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from click.testing import CliRunner
 
-from dot_agent_kit.cli import cli
+from erk.cli.cli import cli
 
 
 def test_check_passes_with_valid_files(tmp_path: Path) -> None:
