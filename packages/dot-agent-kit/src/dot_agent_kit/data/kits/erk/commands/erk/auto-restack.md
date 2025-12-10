@@ -36,6 +36,8 @@ While there are conflicts:
 
 #### 2a: Resolve Each Conflict
 
+**CRITICAL: You MUST resolve ALL files in the `conflicts` list before continuing.** Missing even one file will cause the restack to fail. Do not proceed to step 2b until every file has been resolved.
+
 For each file in the `conflicts` list:
 
 <!-- prettier-ignore -->
@@ -67,7 +69,8 @@ dot-agent run gt restack-finalize
 Parse the JSON result:
 
 - If `success: true`: Display success message
-- If `success: false`: Report the issue (rebase still in progress, dirty working tree)
+- If `success: false` with `error_type: "unresolved_conflicts"`: **Loop back to Step 2** - there are files you missed resolving. The error includes the list of unresolved files.
+- If `success: false` with other error types: Report the issue (rebase still in progress, dirty working tree)
 
 **IMPORTANT: Do not suggest specific next actions** (like "push" or "submit PR"). The user knows what they were doing before the restack was needed. Just confirm the branch is ready.
 
