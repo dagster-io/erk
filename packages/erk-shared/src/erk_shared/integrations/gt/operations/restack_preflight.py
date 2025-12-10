@@ -72,8 +72,12 @@ def execute_restack_preflight(
         pass  # Expected if conflicts
 
     # Step 3: Check for conflicts and loop until resolution or actual conflict
-    while ops.git.is_rebase_in_progress(cwd):
+    # Check both is_rebase_in_progress AND conflicted files, because sometimes
+    # rebase dirs get cleaned up but UU files remain (issue #2844)
+    while True:
+        rebase_in_progress = ops.git.is_rebase_in_progress(cwd)
         conflicts = ops.git.get_conflicted_files(cwd)
+
         if conflicts:
             # Actual conflicts exist - delegate to Claude
             yield ProgressEvent(f"Found {len(conflicts)} conflict(s)", style="warning")
@@ -87,7 +91,12 @@ def execute_restack_preflight(
                 )
             )
             return
-        # No conflicts but rebase in progress - continue
+
+        if not rebase_in_progress:
+            # No rebase in progress and no conflicts - we're done
+            break
+
+        # Rebase in progress but no conflicts - continue
         yield ProgressEvent("Continuing rebase...")
         ops.git.rebase_continue(cwd)
 
