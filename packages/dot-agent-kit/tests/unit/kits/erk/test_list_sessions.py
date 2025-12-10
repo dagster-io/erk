@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from click.testing import CliRunner
+from erk_shared.context import ErkContext
 from erk_shared.extraction.claude_code_session_store import (
     FakeClaudeCodeSessionStore,
     FakeProject,
@@ -18,7 +19,6 @@ from erk_shared.extraction.claude_code_session_store import (
 )
 from erk_shared.git.fake import FakeGit
 
-from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.scripts.erk.list_sessions import (
     _list_sessions_from_store,
     extract_summary,
@@ -474,7 +474,7 @@ def test_cli_success(tmp_path: Path) -> None:
             )
         }
     )
-    context = DotAgentContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(list_sessions, [], obj=context)
@@ -494,7 +494,7 @@ def test_cli_project_not_found(tmp_path: Path) -> None:
     )
     # Empty session store - no projects
     fake_store = FakeClaudeCodeSessionStore()
-    context = DotAgentContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(list_sessions, [], obj=context)
@@ -524,7 +524,7 @@ def test_cli_output_structure(tmp_path: Path) -> None:
             )
         }
     )
-    context = DotAgentContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(list_sessions, [], obj=context)
@@ -576,7 +576,7 @@ def test_cli_limit_option(tmp_path: Path) -> None:
             )
         }
     )
-    context = DotAgentContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(list_sessions, ["--limit", "3"], obj=context)
@@ -611,7 +611,7 @@ def test_cli_marks_current_session(tmp_path: Path) -> None:
             )
         },
     )
-    context = DotAgentContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
 
     runner = CliRunner(env={"SESSION_CONTEXT": "session_id=current-session"})
     result = runner.invoke(list_sessions, [], obj=context)
@@ -743,7 +743,7 @@ def test_cli_min_size_option(tmp_path: Path) -> None:
             )
         }
     )
-    context = DotAgentContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(list_sessions, ["--min-size", "100"], obj=context)

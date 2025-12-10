@@ -6,8 +6,8 @@ Uses fake-driven testing with injected dependencies via DotAgentContext.
 """
 
 from click.testing import CliRunner
+from erk_shared.context import ErkContext
 
-from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.scripts.erk.generate_pr_summary import (
     _build_prompt,
     generate_pr_summary,
@@ -73,7 +73,7 @@ def test_generate_pr_summary_exits_on_empty_diff() -> None:
     # Create fake GitHub that returns empty diff
     fake_github = FakeGitHub(pr_diffs={123: ""})
 
-    test_ctx = DotAgentContext.for_test(github=fake_github)
+    test_ctx = ErkContext.for_test(github=fake_github)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -93,7 +93,7 @@ def test_generate_pr_summary_exits_on_whitespace_only_diff() -> None:
     # Create fake GitHub that returns whitespace-only diff
     fake_github = FakeGitHub(pr_diffs={123: "   \n\t\n  "})
 
-    test_ctx = DotAgentContext.for_test(github=fake_github)
+    test_ctx = ErkContext.for_test(github=fake_github)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -119,7 +119,7 @@ def test_generate_pr_summary_truncates_large_diff() -> None:
     # Use FakePromptExecutor to avoid actual Claude CLI call
     fake_executor = FakePromptExecutor(output="Summary output")
 
-    test_ctx = DotAgentContext.for_test(
+    test_ctx = ErkContext.for_test(
         github=fake_github,
         prompt_executor=fake_executor,
     )

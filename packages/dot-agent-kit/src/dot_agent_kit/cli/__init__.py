@@ -1,7 +1,6 @@
 import click
 
 from dot_agent_kit.cli.output import user_output
-from dot_agent_kit.context import create_context
 from dot_agent_kit.version import __version__
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
@@ -86,7 +85,9 @@ def cli(ctx: click.Context, debug: bool) -> None:
     """Manage Claude Code kits."""
     # Only create context if not already provided (e.g., by tests)
     if ctx.obj is None:
-        ctx.obj = create_context(debug=debug)
+        from erk_shared.context.factories import create_minimal_context
+
+        ctx.obj = create_minimal_context(debug=debug)
 
     if ctx.invoked_subcommand is None:
         user_output(ctx.get_help())

@@ -52,9 +52,8 @@ from pathlib import Path
 from typing import Literal
 
 import click
+from erk_shared.context.helpers import require_git, require_repo_root
 from erk_shared.git.abc import Git
-
-from dot_agent_kit.context_helpers import require_git, require_repo_root
 
 
 @dataclass

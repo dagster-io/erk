@@ -56,8 +56,8 @@ class DotAgentContext:
 
 ```python
 import click
-from dot_agent_kit.context_helpers import (
-    require_github_issues,
+from dot_agent_kit.context_helpers import require_github_issues
+from erk_shared.context.helpers import (
     require_repo_root,
     require_git,
     require_cwd,
@@ -142,14 +142,14 @@ def mark_impl_started(ctx: click.Context) -> None:
 
 ## Testing Kit CLI Commands
 
-### Pattern 1: Using `DotAgentContext.for_test()` (Recommended)
+### Pattern 1: Using `ErkContext.for_test()` (Recommended)
 
 For commands that use `@click.pass_context`, inject test context via `obj` parameter:
 
 ```python
 from click.testing import CliRunner
+from erk_shared.context import ErkContext
 from erk_shared.github.issues import FakeGitHubIssues
-from dot_agent_kit.context import DotAgentContext
 
 def test_my_command() -> None:
     """Test command with fake dependencies."""
@@ -161,7 +161,7 @@ def test_my_command() -> None:
     result = runner.invoke(
         my_command,
         ["--arg", "value"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
     # Assert

@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.context import ErkContext
 from erk_shared.extraction.claude_code_session_store import (
     FakeClaudeCodeSessionStore,
     FakeProject,
@@ -12,7 +13,6 @@ from erk_shared.extraction.claude_code_session_store import (
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues import FakeGitHubIssues
 
-from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.scripts.erk.plan_save_to_issue import (
     plan_save_to_issue,
 )
@@ -30,7 +30,7 @@ def test_plan_save_to_issue_success() -> None:
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "json"],
-        obj=DotAgentContext.for_test(
+        obj=ErkContext.for_test(
             github_issues=fake_gh,
             session_store=fake_store,
         ),
@@ -56,7 +56,7 @@ def test_plan_save_to_issue_enriched_plan() -> None:
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "json"],
-        obj=DotAgentContext.for_test(
+        obj=ErkContext.for_test(
             github_issues=fake_gh,
             session_store=fake_store,
         ),
@@ -77,7 +77,7 @@ def test_plan_save_to_issue_no_plan() -> None:
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "json"],
-        obj=DotAgentContext.for_test(
+        obj=ErkContext.for_test(
             github_issues=fake_gh,
             session_store=fake_store,
         ),
@@ -103,7 +103,7 @@ def test_plan_save_to_issue_format() -> None:
     result = runner.invoke(
         plan_save_to_issue,
         [],
-        obj=DotAgentContext.for_test(
+        obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
             session_store=fake_store,
@@ -137,7 +137,7 @@ def test_plan_save_to_issue_display_format() -> None:
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "display"],
-        obj=DotAgentContext.for_test(
+        obj=ErkContext.for_test(
             github_issues=fake_gh,
             session_store=fake_store,
         ),
@@ -169,7 +169,7 @@ def test_plan_save_to_issue_label_created() -> None:
     result = runner.invoke(
         plan_save_to_issue,
         [],
-        obj=DotAgentContext.for_test(
+        obj=ErkContext.for_test(
             github_issues=fake_gh,
             session_store=fake_store,
         ),
@@ -220,7 +220,7 @@ def test_plan_save_to_issue_session_context_captured(tmp_path: Path) -> None:
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "json"],
-        obj=DotAgentContext.for_test(
+        obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
             session_store=fake_store,
@@ -262,7 +262,7 @@ def test_plan_save_to_issue_session_context_skipped_when_none() -> None:
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "json"],
-        obj=DotAgentContext.for_test(
+        obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
             session_store=fake_store,
@@ -294,7 +294,7 @@ def test_plan_save_to_issue_json_output_includes_session_metadata() -> None:
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "json"],
-        obj=DotAgentContext.for_test(
+        obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
             session_store=fake_store,
@@ -345,7 +345,7 @@ def test_plan_save_to_issue_passes_session_id_to_session_store(tmp_path: Path) -
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "json", "--session-id", test_session_id],
-        obj=DotAgentContext.for_test(
+        obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
             session_store=fake_store,
@@ -392,7 +392,7 @@ def test_plan_save_to_issue_display_format_shows_session_context(tmp_path: Path)
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "display"],
-        obj=DotAgentContext.for_test(
+        obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
             session_store=fake_store,
@@ -440,7 +440,7 @@ def test_plan_save_to_issue_uses_session_store_for_current_session_id(tmp_path: 
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "json"],  # No --session-id flag
-        obj=DotAgentContext.for_test(
+        obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
             session_store=fake_store,
@@ -499,7 +499,7 @@ def test_plan_save_to_issue_flag_overrides_session_store(tmp_path: Path) -> None
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "json", "--session-id", flag_session_id],
-        obj=DotAgentContext.for_test(
+        obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
             session_store=fake_store,
@@ -531,7 +531,7 @@ def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
         result = runner.invoke(
             plan_save_to_issue,
             ["--format", "json", "--session-id", test_session_id],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, session_store=fake_store, repo_root=Path(td)
             ),
         )
@@ -561,9 +561,7 @@ def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None
         result = runner.invoke(
             plan_save_to_issue,
             ["--format", "json"],  # No --session-id, and store has None
-            obj=DotAgentContext.for_test(
-                github_issues=fake_gh, git=fake_git, session_store=fake_store
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, session_store=fake_store),
         )
 
         assert result.exit_code == 0, f"Failed: {result.output}"

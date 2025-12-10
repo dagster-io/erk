@@ -5,16 +5,13 @@ from pathlib import Path
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import GitHubIssues
+from erk_shared.integrations.completion import FakeCompletion
 from erk_shared.integrations.graphite.fake import FakeGraphite
+from erk_shared.integrations.shell import FakeShell
 
-from erk.cli.config import LoadedConfig
 from erk.core.claude_executor import ClaudeExecutor
-from erk.core.config_store import GlobalConfig
-from erk.core.context import ErkContext
-from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+from erk.core.context import ErkContext, GlobalConfig, LoadedConfig, NoRepoSentinel, RepoContext
 from erk.core.script_writer import ScriptWriter
-from tests.fakes.completion import FakeCompletion
-from tests.fakes.shell import FakeShell
 
 
 def create_test_context(

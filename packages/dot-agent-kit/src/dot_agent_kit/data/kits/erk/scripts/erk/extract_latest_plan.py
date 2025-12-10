@@ -17,8 +17,7 @@ Exit Codes:
 """
 
 import click
-
-from dot_agent_kit.context_helpers import require_cwd, require_session_store
+from erk_shared.context.helpers import require_cwd, require_session_store
 
 
 @click.command(name="extract-latest-plan")

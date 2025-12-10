@@ -32,6 +32,7 @@ from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 
 import click
+from erk_shared.context.helpers import require_cwd, require_repo_root
 from erk_shared.env import in_github_actions
 from erk_shared.github.metadata import (
     update_plan_header_local_impl_event,
@@ -39,11 +40,7 @@ from erk_shared.github.metadata import (
 )
 from erk_shared.impl_folder import read_issue_reference, write_local_run_state
 
-from dot_agent_kit.context_helpers import (
-    require_cwd,
-    require_github_issues,
-    require_repo_root,
-)
+from dot_agent_kit.context_helpers import require_github_issues
 
 
 @dataclass(frozen=True)

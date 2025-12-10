@@ -44,10 +44,9 @@ from pathlib import Path
 from typing import Literal
 
 import click
+from erk_shared.context.helpers import require_cwd, require_git, require_github
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
-
-from dot_agent_kit.context_helpers import require_cwd, require_git, require_github
 
 
 @dataclass

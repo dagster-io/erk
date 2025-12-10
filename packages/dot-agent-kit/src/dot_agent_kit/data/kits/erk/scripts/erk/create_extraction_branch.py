@@ -19,8 +19,7 @@ import json
 from pathlib import Path
 
 import click
-
-from dot_agent_kit.context_helpers import require_git, require_repo_root
+from erk_shared.context.helpers import require_git, require_repo_root
 
 
 @click.command(name="create-extraction-branch")

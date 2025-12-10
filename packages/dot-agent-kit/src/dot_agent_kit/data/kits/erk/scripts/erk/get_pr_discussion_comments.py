@@ -26,14 +26,10 @@ import json
 from typing import TypedDict
 
 import click
+from erk_shared.context.helpers import get_current_branch, require_github, require_repo_root
 
 from dot_agent_kit.cli_result import exit_with_error
-from dot_agent_kit.context_helpers import (
-    get_current_branch,
-    require_github,
-    require_github_issues,
-    require_repo_root,
-)
+from dot_agent_kit.context_helpers import require_github_issues
 from dot_agent_kit.non_ideal_state import (
     BranchDetectionFailed,
     GitHubAPIFailed,

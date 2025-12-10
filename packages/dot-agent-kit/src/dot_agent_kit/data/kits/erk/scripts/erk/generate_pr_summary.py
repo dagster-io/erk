@@ -27,14 +27,13 @@ Examples:
 """
 
 import click
-from erk_shared.integrations.gt.prompts import COMMIT_MESSAGE_SYSTEM_PROMPT, truncate_diff
-
-from dot_agent_kit.context_helpers import (
+from erk_shared.context.helpers import (
     require_git,
     require_github,
     require_prompt_executor,
     require_repo_root,
 )
+from erk_shared.integrations.gt.prompts import COMMIT_MESSAGE_SYSTEM_PROMPT, truncate_diff
 
 
 def _build_prompt(diff_content: str, current_branch: str, parent_branch: str) -> str:

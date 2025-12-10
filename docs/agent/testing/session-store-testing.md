@@ -50,17 +50,17 @@ fake_store = FakeClaudeCodeSessionStore(
 )
 ```
 
-## Injecting via DotAgentContext
+## Injecting via ErkContext
 
-Pass the fake store through `DotAgentContext.for_test()`:
+Pass the fake store through `ErkContext.for_test()`:
 
 ```python
-from dot_agent_kit.context import DotAgentContext
+from erk_shared.context import ErkContext
 
 result = runner.invoke(
     my_command,
     ["--format", "json"],
-    obj=DotAgentContext.for_test(
+    obj=ErkContext.for_test(
         github_issues=fake_gh,
         git=fake_git,
         session_store=fake_store,

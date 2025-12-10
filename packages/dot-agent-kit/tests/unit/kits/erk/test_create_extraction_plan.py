@@ -4,10 +4,10 @@ import json
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.context import ErkContext
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, create_marker, marker_exists
 
-from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.scripts.erk.create_extraction_plan import (
     create_extraction_plan,
 )
@@ -54,7 +54,7 @@ def test_create_extraction_plan_with_plan_content_success(tmp_path: Path) -> Non
             "--extraction-session-ids",
             session_id,
         ],
-        obj=DotAgentContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
+        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -88,7 +88,7 @@ def test_create_extraction_plan_writes_to_scratch(tmp_path: Path) -> None:
             "--extraction-session-ids",
             session_id,
         ],
-        obj=DotAgentContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
+        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
     )
 
     assert result.exit_code == 0
@@ -120,7 +120,7 @@ def test_create_extraction_plan_with_plan_file_success(tmp_path: Path) -> None:
             "--extraction-session-ids",
             "session-abc",
         ],
-        obj=DotAgentContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
+        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -140,7 +140,7 @@ def test_create_extraction_plan_requires_plan_content_or_file(tmp_path: Path) ->
     result = runner.invoke(
         create_extraction_plan,
         ["--extraction-session-ids", "session-123"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
+        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
     )
 
     assert result.exit_code == 1
@@ -168,7 +168,7 @@ def test_create_extraction_plan_rejects_both_options(tmp_path: Path) -> None:
             "--extraction-session-ids",
             "session-123",
         ],
-        obj=DotAgentContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
+        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
     )
 
     assert result.exit_code == 1
@@ -191,7 +191,7 @@ def test_create_extraction_plan_requires_session_id_with_content(tmp_path: Path)
             "--extraction-session-ids",
             "session-123",
         ],
-        obj=DotAgentContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
+        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
     )
 
     assert result.exit_code == 1
@@ -214,7 +214,7 @@ def test_create_extraction_plan_requires_extraction_session_ids(tmp_path: Path) 
             "--session-id",
             "session-123",
         ],
-        obj=DotAgentContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
+        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
     )
 
     assert result.exit_code == 1
@@ -239,7 +239,7 @@ def test_create_extraction_plan_empty_content_error(tmp_path: Path) -> None:
             "--extraction-session-ids",
             "session-123",
         ],
-        obj=DotAgentContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
+        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
     )
 
     assert result.exit_code == 1
@@ -264,7 +264,7 @@ def test_create_extraction_plan_creates_labels(tmp_path: Path) -> None:
             "--extraction-session-ids",
             "session-123",
         ],
-        obj=DotAgentContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
+        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
     )
 
     assert result.exit_code == 0
@@ -291,7 +291,7 @@ def test_create_extraction_plan_issue_format(tmp_path: Path) -> None:
             "--extraction-session-ids",
             "session-abc",
         ],
-        obj=DotAgentContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
+        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=tmp_path),
     )
 
     assert result.exit_code == 0
@@ -334,7 +334,7 @@ def test_create_extraction_plan_deletes_pending_extraction_marker(tmp_path: Path
             "--extraction-session-ids",
             "test-session-123",
         ],
-        obj=DotAgentContext.for_test(github_issues=fake_gh, repo_root=tmp_path, cwd=tmp_path),
+        obj=ErkContext.for_test(github_issues=fake_gh, repo_root=tmp_path, cwd=tmp_path),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
