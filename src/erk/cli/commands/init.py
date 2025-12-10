@@ -1,4 +1,5 @@
 import dataclasses
+import json
 from pathlib import Path
 
 import click
@@ -154,7 +155,14 @@ def offer_claude_permission_setup(repo_root: Path) -> None:
         repo_root: Path to the repository root
     """
     settings_path = get_repo_claude_settings_path(repo_root)
-    settings = read_claude_settings(settings_path)
+
+    try:
+        settings = read_claude_settings(settings_path)
+    except json.JSONDecodeError as e:
+        warning = click.style("⚠️  Warning: ", fg="yellow")
+        user_output(warning + "Invalid JSON in .claude/settings.json")
+        user_output(f"   {e}")
+        return
 
     # No settings file - skip silently (repo may not have Claude settings)
     if settings is None:
@@ -174,13 +182,8 @@ def offer_claude_permission_setup(repo_root: Path) -> None:
 
     # Add permission and write
     new_settings = add_erk_permission(settings)
-    try:
-        write_claude_settings(settings_path, new_settings)
-        user_output(click.style("✓", fg="green") + f" Added {ERK_PERMISSION} to {settings_path}")
-    except (PermissionError, OSError) as e:
-        user_output(click.style("❌ Error: ", fg="red") + f"Could not update {settings_path}")
-        user_output(str(e))
-        user_output(f"\nYou can add the permission manually: {ERK_PERMISSION}")
+    write_claude_settings(settings_path, new_settings)
+    user_output(click.style("✓", fg="green") + f" Added {ERK_PERMISSION} to {settings_path}")
 
 
 @click.command("init")

@@ -16,6 +16,7 @@ This file uses minimal mocking for external boundaries:
    - Tests inject FakeConfigStore with desired initial state
 """
 
+import json
 import os
 from pathlib import Path
 from unittest import mock
@@ -1137,8 +1138,6 @@ def test_shell_setup_permission_error_first_init() -> None:
 
 def test_init_offers_claude_permission_when_missing() -> None:
     """Test that init offers to add erk permission when Claude settings exist."""
-    import json
-
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
@@ -1175,8 +1174,6 @@ def test_init_offers_claude_permission_when_missing() -> None:
 
 def test_init_skips_claude_permission_when_already_configured() -> None:
     """Test that init skips prompt when erk permission already exists."""
-    import json
-
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
@@ -1236,8 +1233,6 @@ def test_init_skips_claude_permission_when_no_settings() -> None:
 
 def test_init_handles_declined_claude_permission() -> None:
     """Test that init handles user declining Claude permission gracefully."""
-    import json
-
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"

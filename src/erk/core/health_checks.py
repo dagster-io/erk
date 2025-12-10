@@ -385,7 +385,16 @@ def check_claude_erk_permission(repo_root: Path) -> CheckResult:
         CheckResult with info about permission status
     """
     settings_path = get_repo_claude_settings_path(repo_root)
-    settings = read_claude_settings(settings_path)
+
+    try:
+        settings = read_claude_settings(settings_path)
+    except json.JSONDecodeError as e:
+        return CheckResult(
+            name="claude erk permission",
+            passed=False,
+            message="Invalid JSON in .claude/settings.json",
+            details=str(e),
+        )
 
     # No settings file - repo may not have Claude settings
     if settings is None:

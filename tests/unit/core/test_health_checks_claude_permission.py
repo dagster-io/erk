@@ -73,9 +73,10 @@ def test_check_handles_invalid_json(tmp_path: Path) -> None:
 
     result = check_claude_erk_permission(tmp_path)
 
-    # Should be treated as if file doesn't exist
-    assert result.passed is True
-    assert "no .claude/settings.json" in result.message.lower()
+    # Should report invalid JSON as a failed check
+    assert result.passed is False
+    assert "invalid json" in result.message.lower()
+    assert result.details is not None
 
 
 def test_check_handles_empty_settings(tmp_path: Path) -> None:

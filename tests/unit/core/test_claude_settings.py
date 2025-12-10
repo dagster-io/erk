@@ -2,12 +2,22 @@
 
 These are pure unit tests (Layer 3) - no I/O, no fakes, no mocks.
 Testing the pure transformation functions for Claude settings manipulation.
+
+Also includes integration tests (Layer 2) for read/write operations on disk.
 """
+
+import json
+from pathlib import Path
+
+import pytest
 
 from erk.core.claude_settings import (
     ERK_PERMISSION,
     add_erk_permission,
+    get_repo_claude_settings_path,
     has_erk_permission,
+    read_claude_settings,
+    write_claude_settings,
 )
 
 
@@ -145,3 +155,120 @@ def test_add_erk_permission_is_pure_function() -> None:
 def test_erk_permission_constant_value() -> None:
     """Test that ERK_PERMISSION has the expected value."""
     assert ERK_PERMISSION == "Bash(erk:*)"
+
+
+# --- Integration tests using filesystem ---
+
+
+def test_read_write_roundtrip_with_representative_settings(tmp_path: Path) -> None:
+    """Test read/write roundtrip with a representative settings.json file.
+
+    This integration test uses a realistic settings structure similar to what
+    you'd find in an actual erk repository, including permissions, hooks, and
+    various configuration keys.
+    """
+    # Representative settings matching real-world usage
+    representative_settings = {
+        "permissions": {
+            "allow": [
+                "Bash(git:*)",
+                "Read(/tmp/*)",
+                "Write(/tmp/*)",
+            ],
+            "deny": [],
+            "ask": [],
+        },
+        "hooks": {
+            "SessionStart": [
+                {
+                    "matcher": "*",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": "echo 'session started'",
+                            "timeout": 5,
+                        }
+                    ],
+                }
+            ],
+            "UserPromptSubmit": [
+                {
+                    "matcher": "*.py",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": "echo 'python file'",
+                            "timeout": 30,
+                        }
+                    ],
+                }
+            ],
+        },
+    }
+
+    # Write to disk
+    settings_path = get_repo_claude_settings_path(tmp_path)
+    write_claude_settings(settings_path, representative_settings)
+
+    # Verify file exists
+    assert settings_path.exists()
+
+    # Read back and verify
+    loaded_settings = read_claude_settings(settings_path)
+    assert loaded_settings is not None
+    assert loaded_settings == representative_settings
+
+    # Verify JSON formatting (pretty printed with indent=2)
+    raw_content = settings_path.read_text(encoding="utf-8")
+    assert "  " in raw_content  # Has indentation
+
+
+def test_add_permission_to_representative_settings(tmp_path: Path) -> None:
+    """Test adding erk permission to a representative settings file."""
+    # Start with settings that don't have erk permission
+    initial_settings = {
+        "permissions": {
+            "allow": ["Bash(git:*)", "Read(/tmp/*)"],
+            "deny": [],
+            "ask": ["Write(*)"],
+        },
+        "hooks": {
+            "SessionStart": [{"matcher": "*", "hooks": []}],
+        },
+    }
+
+    settings_path = get_repo_claude_settings_path(tmp_path)
+    write_claude_settings(settings_path, initial_settings)
+
+    # Read, modify, and write back
+    settings = read_claude_settings(settings_path)
+    assert settings is not None
+    assert not has_erk_permission(settings)
+
+    updated = add_erk_permission(settings)
+    write_claude_settings(settings_path, updated)
+
+    # Verify final state
+    final = read_claude_settings(settings_path)
+    assert final is not None
+    assert has_erk_permission(final)
+    # Verify other settings preserved
+    assert final["permissions"]["ask"] == ["Write(*)"]
+    assert "hooks" in final
+
+
+def test_read_returns_none_for_nonexistent_file(tmp_path: Path) -> None:
+    """Test that read_claude_settings returns None when file doesn't exist."""
+    settings_path = tmp_path / ".claude" / "settings.json"
+    result = read_claude_settings(settings_path)
+    assert result is None
+
+
+def test_read_raises_on_invalid_json(tmp_path: Path) -> None:
+    """Test that read_claude_settings raises JSONDecodeError for invalid JSON."""
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings_path.write_text("{ invalid json", encoding="utf-8")
+
+    with pytest.raises(json.JSONDecodeError):
+        read_claude_settings(settings_path)

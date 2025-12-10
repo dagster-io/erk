@@ -71,16 +71,17 @@ def read_claude_settings(settings_path: Path) -> dict | None:
         settings_path: Path to settings.json file
 
     Returns:
-        Parsed settings dict, or None if file doesn't exist or is invalid
+        Parsed settings dict, or None if file doesn't exist
+
+    Raises:
+        json.JSONDecodeError: If file contains invalid JSON
+        OSError: If file cannot be read
     """
     if not settings_path.exists():
         return None
 
-    try:
-        content = settings_path.read_text(encoding="utf-8")
-        return json.loads(content)
-    except (json.JSONDecodeError, OSError):
-        return None
+    content = settings_path.read_text(encoding="utf-8")
+    return json.loads(content)
 
 
 def write_claude_settings(settings_path: Path, settings: dict) -> None:
