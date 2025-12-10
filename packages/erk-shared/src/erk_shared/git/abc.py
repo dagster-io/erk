@@ -650,3 +650,18 @@ class Git(ABC):
             List of full commit messages (subject + body) for each unique commit
         """
         ...
+
+    @abstractmethod
+    def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
+        """Set a git configuration value.
+
+        Args:
+            cwd: Working directory
+            key: Configuration key (e.g., "user.name", "user.email")
+            value: Configuration value
+            scope: Configuration scope ("local", "global", or "system")
+
+        Raises:
+            subprocess.CalledProcessError: If git command fails
+        """
+        ...

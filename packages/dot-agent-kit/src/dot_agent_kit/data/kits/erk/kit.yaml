@@ -169,6 +169,15 @@ scripts:
   - name: update-pr-summary
     path: scripts/erk/update_pr_summary.py
     description: Update PR body with implementation summary from commit message
+  - name: configure-git-user
+    path: scripts/erk/configure_git_user.py
+    description: Configure git user identity from GitHub username for CI environments
+  - name: create-impl-run-info
+    path: scripts/erk/create_impl_run_info.py
+    description: Create .impl/run-info.json with workflow run metadata
+  - name: update-pr-body
+    path: scripts/erk/update_pr_body.py
+    description: Update PR body with AI-generated summary and standardized footer
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit
