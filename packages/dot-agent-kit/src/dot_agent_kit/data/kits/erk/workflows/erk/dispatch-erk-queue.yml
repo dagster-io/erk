@@ -116,10 +116,10 @@ jobs:
 
       - name: Configure git
         env:
-          SUBMITTED_BY: ${{ inputs.submitted_by }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "$SUBMITTED_BY"
-          git config user.email "${SUBMITTED_BY}@users.noreply.github.com"
+          source $HOME/.cargo/env
+          dot-agent run erk configure-git-user
 
       - name: Detect trunk branch
         id: trunk
@@ -151,7 +151,6 @@ jobs:
         env:
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
           ISSUE_NUMBER: ${{ inputs.issue_number }}
-          SUBMITTED_BY: ${{ inputs.submitted_by }}
           GH_TOKEN: ${{ github.token }}
         run: |
           source $HOME/.cargo/env
@@ -170,10 +169,7 @@ jobs:
             exit 1
           fi
 
-          # Commit if changed
-          git config user.name "$SUBMITTED_BY"
-          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
-
+          # Commit if changed (git already configured by configure-git-user step)
           git add .worker-impl
           if [[ -n $(git status --porcelain) ]]; then
             git commit -m "Update plan for issue #$ISSUE_NUMBER (rerun)"
@@ -247,16 +243,15 @@ jobs:
       # PHASE 4: IMPLEMENTATION
       # =================================================================
       - name: Set up implementation folder
+        env:
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
+          source $HOME/.cargo/env
           cp -r .worker-impl .impl
           echo "✓ Copied .worker-impl/ to .impl/"
 
-          cat > .impl/run-info.json <<EOF
-          {
-            "run_id": "${{ github.run_id }}",
-            "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          }
-          EOF
+          dot-agent run erk create-impl-run-info --run-id "$RUN_ID" --run-url "$RUN_URL"
           echo "✓ Created .impl/run-info.json"
 
       - name: Run implementation
@@ -304,14 +299,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ inputs.issue_number }}
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
-          SUBMITTED_BY: ${{ inputs.submitted_by }}
           MODEL_NAME: ${{ inputs.model_name }}
         run: |
-          # Configure git author
-          git config user.name "$SUBMITTED_BY"
-          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
-
           # Submit with pure git - .worker-impl/ was already deleted, so agent sees only impl changes
+          # Git already configured by configure-git-user step
           claude --print \
             --model "$MODEL_NAME" \
             --output-format stream-json \
@@ -335,44 +326,25 @@ jobs:
         if: steps.implement.outputs.implementation_success == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
           ISSUE_NUMBER: ${{ inputs.issue_number }}
-          SUBMITTED_BY: ${{ inputs.submitted_by }}
-          IMPL_SHA: ${{ steps.submit.outputs.impl_sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          # Get the implementation commit message using the captured SHA
-          commit_body=$(git log "$IMPL_SHA" -1 --pretty=%B)
-
-          # Get PR number for checkout instructions
-          PR_NUMBER=$(gh pr view "$BRANCH_NAME" --json number -q .number)
-
-          # Get standardized body footer from get-pr-body-footer
-          pr_metadata=$(dot-agent run erk get-pr-body-footer --pr-number "$PR_NUMBER" --issue-number "$ISSUE_NUMBER" 2>/dev/null || echo "")
-
-          # Build PR body: summary + footer
-          cat > pr_body.md <<BODY_EOF
-          ## Summary
-
-          $commit_body
-          $pr_metadata
-          BODY_EOF
-
-          gh pr edit "$BRANCH_NAME" --body-file pr_body.md
-          rm -f pr_body.md
+          source $HOME/.cargo/env
+          dot-agent run erk update-pr-body \
+            --issue-number "$ISSUE_NUMBER" \
+            --run-id "$RUN_ID" \
+            --run-url "$RUN_URL"
           echo "✅ PR body updated with implementation summary"
 
       - name: Trigger CI workflows
         if: steps.implement.outputs.implementation_success == 'true'
         env:
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
-          SUBMITTED_BY: ${{ inputs.submitted_by }}
         run: |
-          # Configure git author
-          git config user.name "$SUBMITTED_BY"
-          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
-
           # Push empty commit to trigger CI via push event
           # Using PAT from checkout step allows triggering other workflows
+          # Git already configured by configure-git-user step
           git commit --allow-empty -m "Trigger CI workflows"
           git push origin "$BRANCH_NAME"
           echo "✅ CI workflows triggered via push event"

@@ -119,16 +119,18 @@ def test_impl_success(tmp_path: Path) -> None:
     )
 
     github = FakeGitHub(
-        prs={"feature-branch": PullRequestInfo(
-            number=123,
-            state="OPEN",
-            url="https://github.com/owner/repo/pull/123",
-            is_draft=False,
-            title="Test PR",
-            checks_passing=True,
-            owner="test-owner",
-            repo="test-repo",
-        )},
+        prs={
+            "feature-branch": PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
         pr_details={123: pr_details},
         pr_diffs={123: "+added line\n-removed line"},
     )
@@ -181,16 +183,18 @@ def test_impl_empty_diff(tmp_path: Path) -> None:
     )
 
     github = FakeGitHub(
-        prs={"feature-branch": PullRequestInfo(
-            number=123,
-            state="OPEN",
-            url="https://github.com/owner/repo/pull/123",
-            is_draft=False,
-            title="Test PR",
-            checks_passing=True,
-            owner="test-owner",
-            repo="test-repo",
-        )},
+        prs={
+            "feature-branch": PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
         pr_details={123: pr_details},
         pr_diffs={123: ""},  # Empty diff
     )
@@ -227,16 +231,18 @@ def test_impl_claude_failure(tmp_path: Path) -> None:
     )
 
     github = FakeGitHub(
-        prs={"feature-branch": PullRequestInfo(
-            number=123,
-            state="OPEN",
-            url="https://github.com/owner/repo/pull/123",
-            is_draft=False,
-            title="Test PR",
-            checks_passing=True,
-            owner="test-owner",
-            repo="test-repo",
-        )},
+        prs={
+            "feature-branch": PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
         pr_details={123: pr_details},
         pr_diffs={123: "+some diff"},
     )
@@ -279,16 +285,18 @@ def test_cli_success(tmp_path: Path) -> None:
     )
 
     github = FakeGitHub(
-        prs={"feature-branch": PullRequestInfo(
-            number=123,
-            state="OPEN",
-            url="https://github.com/owner/repo/pull/123",
-            is_draft=False,
-            title="Test PR",
-            checks_passing=True,
-            owner="test-owner",
-            repo="test-repo",
-        )},
+        prs={
+            "feature-branch": PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
         pr_details={123: pr_details},
         pr_diffs={123: "+added line"},
     )
@@ -333,16 +341,18 @@ def test_cli_with_workflow_run(tmp_path: Path) -> None:
     )
 
     github = FakeGitHub(
-        prs={"feature-branch": PullRequestInfo(
-            number=123,
-            state="OPEN",
-            url="https://github.com/owner/repo/pull/123",
-            is_draft=False,
-            title="Test PR",
-            checks_passing=True,
-            owner="test-owner",
-            repo="test-repo",
-        )},
+        prs={
+            "feature-branch": PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
         pr_details={123: pr_details},
         pr_diffs={123: "+added line"},
     )
@@ -357,9 +367,12 @@ def test_cli_with_workflow_run(tmp_path: Path) -> None:
     result = runner.invoke(
         update_pr_body_command,
         [
-            "--issue-number", "456",
-            "--run-id", "789",
-            "--run-url", "https://github.com/owner/repo/actions/runs/789",
+            "--issue-number",
+            "456",
+            "--run-id",
+            "789",
+            "--run-url",
+            "https://github.com/owner/repo/actions/runs/789",
         ],
         obj=ctx,
     )
@@ -424,16 +437,18 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
     )
 
     github = FakeGitHub(
-        prs={"feature-branch": PullRequestInfo(
-            number=123,
-            state="OPEN",
-            url="https://github.com/owner/repo/pull/123",
-            is_draft=False,
-            title="Test PR",
-            checks_passing=True,
-            owner="test-owner",
-            repo="test-repo",
-        )},
+        prs={
+            "feature-branch": PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
         pr_details={123: pr_details},
         pr_diffs={123: "+added line"},
     )
