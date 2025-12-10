@@ -37,6 +37,7 @@ from erk_shared.plan_store.store import PlanStore
 from erk_shared.project_discovery import ProjectContext
 from erk_shared.prompt_executor import PromptExecutor
 
+
 @dataclass(frozen=True)
 class ErkContext:
     """Immutable context holding all dependencies for erk and dot-agent-kit operations.

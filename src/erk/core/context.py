@@ -19,6 +19,16 @@ from erk_shared.context.types import GlobalConfig as GlobalConfig
 from erk_shared.context.types import LoadedConfig as LoadedConfig
 from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
 from erk_shared.context.types import RepoContext as RepoContext
+
+# Import ABCs and fakes from erk_shared.core
+from erk_shared.core import (
+    ClaudeExecutor,
+    ConfigStore,
+    FakePlanListService,
+    PlanListService,
+    PlannerRegistry,
+    ScriptWriter,
+)
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
 from erk_shared.git.abc import Git
 from erk_shared.git.dry_run import DryRunGit
@@ -47,16 +57,6 @@ from erk_shared.prompt_executor import PromptExecutor
 from erk_shared.prompt_executor.real import RealPromptExecutor
 
 from erk.cli.config import load_config
-# Import ABCs and fakes from erk_shared.core
-from erk_shared.core import (
-    ClaudeExecutor,
-    ConfigStore,
-    FakePlanListService,
-    PlanListService,
-    PlannerRegistry,
-    ScriptWriter,
-)
-
 from erk.core.claude_executor import RealClaudeExecutor
 from erk.core.completion import RealCompletion
 from erk.core.config_store import RealConfigStore
@@ -118,7 +118,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         config_store=FakeConfigStore(config=None),
         script_writer=FakeScriptWriter(),
         feedback=FakeUserFeedback(),
-        plan_list_service=PlanListService(fake_github, fake_issues),
+        plan_list_service=FakePlanListService(),
         planner_registry=FakePlannerRegistry(),
         session_store=FakeClaudeCodeSessionStore(),
         objectives=FakeObjectiveStore(),

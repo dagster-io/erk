@@ -22,10 +22,10 @@ from erk_shared.core.claude_executor import IssueNumberEvent as IssueNumberEvent
 from erk_shared.core.claude_executor import NoOutputEvent as NoOutputEvent
 from erk_shared.core.claude_executor import NoTurnsEvent as NoTurnsEvent
 from erk_shared.core.claude_executor import PrNumberEvent as PrNumberEvent
-from erk_shared.core.claude_executor import PrTitleEvent as PrTitleEvent
-from erk_shared.core.claude_executor import PrUrlEvent as PrUrlEvent
 from erk_shared.core.claude_executor import ProcessErrorEvent as ProcessErrorEvent
 from erk_shared.core.claude_executor import PromptResult as PromptResult
+from erk_shared.core.claude_executor import PrTitleEvent as PrTitleEvent
+from erk_shared.core.claude_executor import PrUrlEvent as PrUrlEvent
 from erk_shared.core.claude_executor import SpinnerUpdateEvent as SpinnerUpdateEvent
 from erk_shared.core.claude_executor import TextEvent as TextEvent
 from erk_shared.core.claude_executor import ToolEvent as ToolEvent

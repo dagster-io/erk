@@ -9,17 +9,16 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+from erk_shared.context.types import GlobalConfig
 from erk_shared.core.claude_executor import (
     ClaudeEvent,
     ClaudeExecutor,
-    CommandResult,
     PromptResult,
 )
 from erk_shared.core.config_store import ConfigStore
 from erk_shared.core.plan_list_service import PlanListData, PlanListService
 from erk_shared.core.planner_registry import PlannerRegistry, RegisteredPlanner
 from erk_shared.core.script_writer import ScriptResult, ScriptWriter
-from erk_shared.context.types import GlobalConfig
 from erk_shared.github.types import GitHubRepoLocation
 
 
