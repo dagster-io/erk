@@ -5,6 +5,14 @@ import click
 from erk_shared.output.output import user_output
 
 from erk.cli.core import discover_repo_context
+from erk.core.claude_settings import (
+    ERK_PERMISSION,
+    add_erk_permission,
+    get_repo_claude_settings_path,
+    has_erk_permission,
+    read_claude_settings,
+    write_claude_settings,
+)
 from erk.core.config_store import GlobalConfig
 from erk.core.context import ErkContext
 from erk.core.init_utils import (
@@ -133,6 +141,46 @@ def perform_shell_setup(shell_ops: Shell) -> bool:
 def _get_presets_dir() -> Path:
     """Get the path to the presets directory."""
     return Path(__file__).parent.parent / "presets"
+
+
+def offer_claude_permission_setup(repo_root: Path) -> None:
+    """Offer to add erk permission to repo's Claude Code settings.
+
+    This checks if the repo's .claude/settings.json exists and whether the erk
+    permission is already configured. If the file exists but permission is missing,
+    it prompts the user to add it.
+
+    Args:
+        repo_root: Path to the repository root
+    """
+    settings_path = get_repo_claude_settings_path(repo_root)
+    settings = read_claude_settings(settings_path)
+
+    # No settings file - skip silently (repo may not have Claude settings)
+    if settings is None:
+        return
+
+    # Permission already exists - skip silently
+    if has_erk_permission(settings):
+        return
+
+    # Offer to add permission
+    user_output("\nClaude settings found. The erk permission allows Claude to run")
+    user_output("erk commands without prompting for approval each time.")
+
+    if not click.confirm(f"Add {ERK_PERMISSION} to .claude/settings.json?", default=True):
+        user_output("Skipped. You can add the permission manually to .claude/settings.json")
+        return
+
+    # Add permission and write
+    new_settings = add_erk_permission(settings)
+    try:
+        write_claude_settings(settings_path, new_settings)
+        user_output(click.style("✓", fg="green") + f" Added {ERK_PERMISSION} to {settings_path}")
+    except (PermissionError, OSError) as e:
+        user_output(click.style("❌ Error: ", fg="red") + f"Could not update {settings_path}")
+        user_output(str(e))
+        user_output(f"\nYou can add the permission manually: {ERK_PERMISSION}")
 
 
 @click.command("init")
@@ -314,6 +362,9 @@ def init_cmd(
         if env_added or scratch_added or impl_added:
             gitignore_path.write_text(gitignore_content, encoding="utf-8")
             user_output(f"Updated {gitignore_path}")
+
+    # Offer to add erk permission to repo's Claude Code settings
+    offer_claude_permission_setup(repo_context.root)
 
     # On first-time init, offer shell setup if not already completed
     if first_time_init:
