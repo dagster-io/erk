@@ -1161,12 +1161,13 @@ def test_init_offers_claude_permission_when_missing() -> None:
             global_config=global_config,
         )
 
-        # Accept permission addition
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\n")
+        # Accept permission addition (two prompts: 1) add permission, 2) confirm write)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\ny\n")
 
         assert result.exit_code == 0, result.output
         assert "Claude settings found" in result.output
         assert "Bash(erk:*)" in result.output
+        assert "Proceed with writing changes?" in result.output
         # Verify permission was added
         updated_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
         assert "Bash(erk:*)" in updated_settings["permissions"]["allow"]
@@ -1259,6 +1260,40 @@ def test_init_handles_declined_claude_permission() -> None:
 
         assert result.exit_code == 0, result.output
         assert "Skipped" in result.output
+        # Verify permission was NOT added
+        unchanged_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
+        assert "Bash(erk:*)" not in unchanged_settings["permissions"]["allow"]
+
+
+def test_init_handles_declined_write_confirmation() -> None:
+    """Test that init handles user declining write confirmation gracefully."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        # Create Claude settings in repo without erk permission
+        claude_settings_path = env.cwd / ".claude" / "settings.json"
+        claude_settings_path.parent.mkdir(parents=True)
+        original_settings = {"permissions": {"allow": ["Bash(git:*)"]}}
+        claude_settings_path.write_text(json.dumps(original_settings), encoding="utf-8")
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        # Accept permission prompt (y) but decline write confirmation (n)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\n")
+
+        assert result.exit_code == 0, result.output
+        assert "Proceed with writing changes?" in result.output
+        assert "No changes made to settings.json" in result.output
         # Verify permission was NOT added
         unchanged_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
         assert "Bash(erk:*)" not in unchanged_settings["permissions"]["allow"]

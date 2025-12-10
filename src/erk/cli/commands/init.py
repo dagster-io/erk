@@ -180,8 +180,15 @@ def offer_claude_permission_setup(repo_root: Path) -> None:
         user_output("Skipped. You can add the permission manually to .claude/settings.json")
         return
 
-    # Add permission and write
+    # Add permission
     new_settings = add_erk_permission(settings)
+
+    # Confirm before overwriting
+    user_output(f"\nThis will update: {settings_path}")
+    if not click.confirm("Proceed with writing changes?", default=True):
+        user_output("Skipped. No changes made to settings.json")
+        return
+
     write_claude_settings(settings_path, new_settings)
     user_output(click.style("✓", fg="green") + f" Added {ERK_PERMISSION} to {settings_path}")
 
