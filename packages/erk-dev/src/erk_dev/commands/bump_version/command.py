@@ -6,6 +6,27 @@ from pathlib import Path
 import click
 
 
+def get_current_version(repo_root: Path) -> str | None:
+    """Get current version from root pyproject.toml."""
+    pyproject = repo_root / "pyproject.toml"
+    if not pyproject.exists():
+        return None
+    content = pyproject.read_text(encoding="utf-8")
+    match = re.search(r'version\s*=\s*"([^"]+)"', content)
+    if match is None:
+        return None
+    return match.group(1)
+
+
+def increment_patch(version: str) -> str:
+    """Increment patch version: N.M.P -> N.M.P+1."""
+    parts = version.split(".")
+    if len(parts) != 3:
+        raise ValueError(f"Invalid semver: {version}")
+    major, minor, patch = parts
+    return f"{major}.{minor}.{int(patch) + 1}"
+
+
 def find_repo_root(start: Path) -> Path | None:
     """Walk up to find repo root (contains pyproject.toml with [tool.uv.workspace])."""
     current = start
@@ -93,19 +114,27 @@ def update_kit_registry_md(path: Path, new_version: str, dry_run: bool) -> int:
 
 
 @click.command("bump-version")
-@click.argument("version")
+@click.argument("version", required=False, default=None)
 @click.option("--dry-run", is_flag=True, help="Show what would change without modifying files")
-def bump_version_command(version: str, dry_run: bool) -> None:
+def bump_version_command(version: str | None, dry_run: bool) -> None:
     """Bump all package and kit versions to VERSION.
 
     VERSION should be in semver format (e.g., 0.2.1, 1.0.0).
+    If not provided, increments the patch version (e.g., 4.2.1 -> 4.2.2).
     """
-    if not re.match(r"^\d+\.\d+\.\d+$", version):
-        raise click.ClickException(f"Invalid version format: {version}. Expected X.Y.Z")
-
     repo_root = find_repo_root(Path.cwd())
     if repo_root is None:
         raise click.ClickException("Could not find repository root")
+
+    # Auto-detect and increment if version not provided
+    if version is None:
+        current = get_current_version(repo_root)
+        if current is None:
+            raise click.ClickException("Could not detect current version from pyproject.toml")
+        version = increment_patch(current)
+        click.echo(f"Auto-bumping: {current} -> {version}")
+    elif not re.match(r"^\d+\.\d+\.\d+$", version):
+        raise click.ClickException(f"Invalid version format: {version}. Expected X.Y.Z")
 
     if dry_run:
         click.echo("[DRY RUN] Would update:")
