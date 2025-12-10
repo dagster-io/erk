@@ -84,12 +84,12 @@ def test_real_shell_ops_run_erk_sync_calls_subprocess():
         # Verify command structure and parameters
         call_args = mock_run.call_args
         cmd = call_args[0][0]
-        assert cmd == ["erk", "sync", "-f"]
+        assert cmd == ["erk", "kit", "sync", "-f"]
 
         # Verify kwargs
         kwargs = call_args[1]
         assert kwargs["cwd"] == repo_root
-        assert kwargs["operation_context"] == "execute erk sync subprocess"
+        assert kwargs["operation_context"] == "execute erk kit sync subprocess"
         assert kwargs["capture_output"] is True
 
 
@@ -107,7 +107,7 @@ def test_real_shell_ops_run_erk_sync_verbose_mode():
         # Verify command includes --verbose
         call_args = mock_run.call_args
         cmd = call_args[0][0]
-        assert cmd == ["erk", "sync", "-f", "--verbose"]
+        assert cmd == ["erk", "kit", "sync", "-f", "--verbose"]
 
         # Verify capture_output is False in verbose mode
         kwargs = call_args[1]
@@ -128,7 +128,7 @@ def test_real_shell_ops_run_erk_sync_without_force():
         # Verify command does not include -f
         call_args = mock_run.call_args
         cmd = call_args[0][0]
-        assert cmd == ["erk", "sync"]
+        assert cmd == ["erk", "kit", "sync"]
         assert "-f" not in cmd
 
 
@@ -140,8 +140,8 @@ def test_real_shell_ops_run_erk_sync_propagates_error():
     with patch("erk_shared.integrations.shell.real.run_subprocess_with_context") as mock_run:
         # Simulate subprocess failure (run_subprocess_with_context raises RuntimeError)
         mock_run.side_effect = RuntimeError(
-            "Failed to execute erk sync subprocess\n"
-            "Command: erk sync -f\n"
+            "Failed to execute erk kit sync subprocess\n"
+            "Command: erk kit sync -f\n"
             "Exit code: 1\n"
             "stderr: sync failed"
         )
@@ -151,5 +151,5 @@ def test_real_shell_ops_run_erk_sync_propagates_error():
             ops.run_erk_sync(repo_root, force=True, verbose=False)
             raise AssertionError("Expected RuntimeError to be raised")
         except RuntimeError as e:
-            assert "Failed to execute erk sync subprocess" in str(e)
+            assert "Failed to execute erk kit sync subprocess" in str(e)
             assert "sync failed" in str(e)

@@ -13,7 +13,7 @@ Note: These helpers are now thin wrappers around erk_shared.context.helpers.
 The implementations have been moved to erk_shared for sharing with the erk package.
 """
 
-import click
+import click  # noqa: F401 - used for type hints in docstrings
 from erk_shared.context.helpers import get_current_branch as get_current_branch
 from erk_shared.context.helpers import require_cwd as require_cwd
 from erk_shared.context.helpers import require_git as require_git

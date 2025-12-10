@@ -10,7 +10,10 @@ pattern for accessing dependencies from the ErkContext. These functions:
 This eliminates code duplication across kit CLI commands.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 
@@ -22,6 +25,9 @@ from erk_shared.github.issues import GitHubIssues
 from erk_shared.project_discovery import discover_project
 from erk_shared.prompt_executor import PromptExecutor
 
+if TYPE_CHECKING:
+    from erk_shared.context.context import ErkContext
+
 
 def require_issues(ctx: click.Context) -> GitHubIssues:
     """Get GitHub Issues from context, exiting with error if not initialized.
@@ -29,10 +35,8 @@ def require_issues(ctx: click.Context) -> GitHubIssues:
     Uses LBYL pattern to check context before accessing. If context is not
     initialized (ctx.obj is None), prints error to stderr and exits with code 1.
 
-    Handles both ErkContext (with .issues) and simple test contexts (with .github_issues).
-
     Args:
-        ctx: Click context (must have ErkContext or compatible context in ctx.obj)
+        ctx: Click context (must have ErkContext in ctx.obj)
 
     Returns:
         GitHubIssues instance from context
@@ -47,17 +51,19 @@ def require_issues(ctx: click.Context) -> GitHubIssues:
         ...     issues = require_issues(ctx)
         ...     issues.add_comment(repo_root, issue_number, body)
     """
+    from erk_shared.context.context import ErkContext
+
     if ctx.obj is None:
         click.echo("Error: Context not initialized", err=True)
         raise SystemExit(1)
 
-    # Handle simple test context with github_issues
-    if hasattr(ctx.obj, "github_issues"):
-        return ctx.obj.github_issues
-
-    # Handle ErkContext with issues
+    # Use isinstance for ErkContext, fall back to hasattr for duck typing in tests
+    if isinstance(ctx.obj, ErkContext):
+        return ctx.obj.issues
     if hasattr(ctx.obj, "issues"):
         return ctx.obj.issues
+    if hasattr(ctx.obj, "github_issues"):
+        return ctx.obj.github_issues
 
     click.echo("Error: Context missing issues", err=True)
     raise SystemExit(1)
@@ -66,8 +72,7 @@ def require_issues(ctx: click.Context) -> GitHubIssues:
 def require_repo_root(ctx: click.Context) -> Path:
     """Get repo root from context, exiting with error if not initialized.
 
-    Uses LBYL pattern to check context before accessing. Handles both
-    contexts with repo_root directly and contexts with repo.root.
+    Uses LBYL pattern to check context before accessing.
 
     Args:
         ctx: Click context (must have ErkContext in ctx.obj)
@@ -86,21 +91,28 @@ def require_repo_root(ctx: click.Context) -> Path:
         ...     issues = require_issues(ctx)
         ...     issues.create_issue(repo_root, title, body, labels)
     """
+    from erk_shared.context.context import ErkContext
+
     if ctx.obj is None:
         click.echo("Error: Context not initialized", err=True)
         raise SystemExit(1)
 
-    # Handle simple context with repo_root directly (e.g., test contexts)
-    if hasattr(ctx.obj, "repo_root"):
-        return ctx.obj.repo_root
-
-    # Handle ErkContext with repo.root
+    # Use isinstance for ErkContext, fall back to hasattr for duck typing in tests
+    if isinstance(ctx.obj, ErkContext):
+        repo = ctx.obj.repo
+        if isinstance(repo, NoRepoSentinel):
+            click.echo("Error: Not in a git repository", err=True)
+            raise SystemExit(1)
+        return repo.root
     if hasattr(ctx.obj, "repo"):
         repo = ctx.obj.repo
         if isinstance(repo, NoRepoSentinel):
             click.echo("Error: Not in a git repository", err=True)
             raise SystemExit(1)
         return repo.root
+
+    if hasattr(ctx.obj, "repo_root"):
+        return ctx.obj.repo_root
 
     click.echo("Error: Context missing repo", err=True)
     raise SystemExit(1)

@@ -1,0 +1,162 @@
+"""Factory functions for creating ErkContext instances.
+
+This module provides factory functions for creating production contexts
+with real implementations. Used by CLI entry points.
+"""
+
+import subprocess
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from erk_shared.context.context import ErkContext
+    from erk_shared.git.abc import Git
+    from erk_shared.github.types import RepoInfo
+
+
+def get_repo_info(git: "Git", repo_root: Path) -> "RepoInfo | None":
+    """Detect repository info from git remote URL.
+
+    Parses the origin remote URL to extract owner/name for GitHub API calls.
+    Returns None if no origin remote is configured or URL cannot be parsed.
+
+    Args:
+        git: Git interface for operations
+        repo_root: Repository root path
+
+    Returns:
+        RepoInfo with owner/name, or None if not determinable
+    """
+    from erk_shared.github.parsing import parse_git_remote_url
+    from erk_shared.github.types import RepoInfo
+
+    try:
+        remote_url = git.get_remote_url(repo_root)
+        owner, name = parse_git_remote_url(remote_url)
+        return RepoInfo(owner=owner, name=name)
+    except ValueError:
+        return None
+
+
+def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkContext":
+    """Create production context with real implementations for dot-agent-kit.
+
+    This factory creates a minimal context suitable for dot-agent-kit commands.
+    It uses real implementations for GitHub, git, and session store, but uses
+    fake implementations for erk-specific services (ClaudeExecutor, etc.) that
+    dot-agent-kit doesn't need.
+
+    Detects repository root using git rev-parse. Returns context with
+    NoRepoSentinel if not in a git repository.
+
+    Args:
+        debug: If True, enable debug mode (full stack traces in error handling)
+        cwd: Current working directory (defaults to Path.cwd())
+
+    Returns:
+        ErkContext with real GitHub integrations and detected repo context
+
+    Example:
+        >>> ctx = create_minimal_context(debug=False)
+        >>> issue_number = ctx.issues.create_issue(ctx.repo_root, title, body, labels)
+    """
+    from erk_shared.context.context import ErkContext
+    from erk_shared.context.types import LoadedConfig, NoRepoSentinel, RepoContext
+    from erk_shared.extraction.claude_code_session_store import RealClaudeCodeSessionStore
+    from erk_shared.git.real import RealGit
+    from erk_shared.github.issues import RealGitHubIssues
+    from erk_shared.github.real import RealGitHub
+    from erk_shared.integrations.completion import FakeCompletion
+    from erk_shared.integrations.feedback import SuppressedFeedback
+    from erk_shared.integrations.graphite.fake import FakeGraphite
+    from erk_shared.integrations.shell import FakeShell
+    from erk_shared.integrations.time.fake import FakeTime
+    from erk_shared.integrations.time.real import RealTime
+    from erk_shared.objectives.storage import FakeObjectiveStore
+    from erk_shared.plan_store.fake import FakePlanStore
+    from erk_shared.prompt_executor.real import RealPromptExecutor
+
+    resolved_cwd = cwd if cwd is not None else Path.cwd()
+
+    # Detect repo root using git rev-parse
+    result = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    # Create git instance
+    git = RealGit()
+
+    if result.returncode != 0:
+        # Not in a git repository
+        repo: RepoContext | NoRepoSentinel = NoRepoSentinel()
+        repo_info = None
+    else:
+        repo_root = Path(result.stdout.strip())
+        repo_info = get_repo_info(git, repo_root)
+        repo = RepoContext(
+            root=repo_root,
+            repo_name=repo_root.name,
+            repo_dir=Path.home() / ".erk" / "repos" / repo_root.name,
+            worktrees_dir=Path.home() / ".erk" / "repos" / repo_root.name / "worktrees",
+        )
+
+    # Create fake implementations for erk-specific services that dot-agent-kit doesn't need
+    class FakeClaudeExecutor:
+        def execute_interactive(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+            raise NotImplementedError("ClaudeExecutor not available in minimal context")
+
+        def execute_interactive_command(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+            raise NotImplementedError("ClaudeExecutor not available in minimal context")
+
+    class FakeConfigStore:
+        def exists(self) -> bool:
+            return False
+
+        def load(self):  # noqa: ANN201
+            raise NotImplementedError("ConfigStore not available in minimal context")
+
+        def save(self, config) -> None:  # noqa: ANN001
+            raise NotImplementedError("ConfigStore not available in minimal context")
+
+        def path(self) -> Path:
+            return Path("/fake/config")
+
+    class FakeScriptWriter:
+        pass
+
+    class FakePlannerRegistry:
+        pass
+
+    class FakePlanListService:
+        pass
+
+    return ErkContext(
+        git=git,
+        github=RealGitHub(time=RealTime(), repo_info=repo_info),
+        issues=RealGitHubIssues(),
+        session_store=RealClaudeCodeSessionStore(),
+        prompt_executor=RealPromptExecutor(),
+        graphite=FakeGraphite(),
+        time=FakeTime(),
+        plan_store=FakePlanStore(),
+        objectives=FakeObjectiveStore(),
+        shell=FakeShell(),
+        completion=FakeCompletion(),
+        feedback=SuppressedFeedback(),
+        claude_executor=FakeClaudeExecutor(),
+        config_store=FakeConfigStore(),
+        script_writer=FakeScriptWriter(),
+        planner_registry=FakePlannerRegistry(),
+        plan_list_service=FakePlanListService(),
+        cwd=resolved_cwd,
+        repo=repo,
+        project=None,
+        repo_info=repo_info,
+        global_config=None,
+        local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
+        dry_run=False,
+        debug=debug,
+    )

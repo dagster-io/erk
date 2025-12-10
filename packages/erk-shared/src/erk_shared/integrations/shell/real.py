@@ -29,12 +29,12 @@ class RealShell(Shell):
         return shutil.which(tool_name)
 
     def run_erk_sync(self, repo_root: Path, *, force: bool, verbose: bool) -> None:
-        """Run erk sync command as subprocess.
+        """Run erk kit sync command as subprocess.
 
-        Executes erk sync in the specified repository directory.
+        Executes erk kit sync in the specified repository directory.
         Output is shown in verbose mode, captured otherwise.
         """
-        cmd = ["erk", "sync"]
+        cmd = ["erk", "kit", "sync"]
         if force:
             cmd.append("-f")
         if verbose:
@@ -42,7 +42,7 @@ class RealShell(Shell):
 
         run_subprocess_with_context(
             cmd,
-            operation_context="execute erk sync subprocess",
+            operation_context="execute erk kit sync subprocess",
             cwd=repo_root,
             capture_output=not verbose,
         )

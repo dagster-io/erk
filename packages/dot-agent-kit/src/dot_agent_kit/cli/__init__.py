@@ -1,145 +1,9 @@
-import subprocess
-from pathlib import Path
-from typing import TYPE_CHECKING
-
 import click
 
 from dot_agent_kit.cli.output import user_output
 from dot_agent_kit.version import __version__
 
-if TYPE_CHECKING:
-    from erk_shared.context import ErkContext
-    from erk_shared.git.abc import Git
-    from erk_shared.github.types import RepoInfo
-
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
-
-
-def _get_repo_info(git: "Git", repo_root: Path) -> "RepoInfo | None":
-    """Detect repository info from git remote URL.
-
-    Parses the origin remote URL to extract owner/name for GitHub API calls.
-    Returns None if no origin remote is configured or URL cannot be parsed.
-    """
-    from erk_shared.github.parsing import parse_git_remote_url
-    from erk_shared.github.types import RepoInfo
-
-    try:
-        remote_url = git.get_remote_url(repo_root)
-        owner, name = parse_git_remote_url(remote_url)
-        return RepoInfo(owner=owner, name=name)
-    except ValueError:
-        return None
-
-
-def _create_context(*, debug: bool) -> "ErkContext":
-    """Create production context with real implementations for dot-agent-kit.
-
-    This is the canonical factory for creating the application context.
-    Called once at CLI entry point to create the context for the entire
-    command execution.
-
-    Detects repository root using git rev-parse. Exits with error if not in a git repository.
-    """
-    from erk_shared.context import ErkContext, LoadedConfig, RepoContext
-    from erk_shared.extraction.claude_code_session_store import RealClaudeCodeSessionStore
-    from erk_shared.git.real import RealGit
-    from erk_shared.github.issues import RealGitHubIssues
-    from erk_shared.github.real import RealGitHub
-    from erk_shared.integrations.completion import FakeCompletion
-    from erk_shared.integrations.feedback import SuppressedFeedback
-    from erk_shared.integrations.graphite.fake import FakeGraphite
-    from erk_shared.integrations.shell import FakeShell
-    from erk_shared.integrations.time.fake import FakeTime
-    from erk_shared.integrations.time.real import RealTime
-    from erk_shared.objectives.storage import FakeObjectiveStore
-    from erk_shared.plan_store.fake import FakePlanStore
-    from erk_shared.prompt_executor.real import RealPromptExecutor
-
-    # Detect repo root using git rev-parse
-    result = subprocess.run(
-        ["git", "rev-parse", "--show-toplevel"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-
-    if result.returncode != 0:
-        click.echo("Error: Not in a git repository", err=True)
-        raise SystemExit(1)
-
-    repo_root = Path(result.stdout.strip())
-    cwd = Path.cwd()
-
-    # Create git instance and detect repo_info
-    git = RealGit()
-    repo_info = _get_repo_info(git, repo_root)
-
-    # Create minimal repo context for dot-agent-kit
-    repo = RepoContext(
-        root=repo_root,
-        repo_name=repo_root.name,
-        repo_dir=Path.home() / ".erk" / "repos" / repo_root.name,
-        worktrees_dir=Path.home() / ".erk" / "repos" / repo_root.name / "worktrees",
-    )
-
-    # Create fake implementations for erk-specific services that dot-agent-kit doesn't need
-    class FakeClaudeExecutor:
-        def execute_interactive(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
-            raise NotImplementedError("ClaudeExecutor not available in dot-agent-kit context")
-
-        def execute_interactive_command(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
-            raise NotImplementedError("ClaudeExecutor not available in dot-agent-kit context")
-
-    class FakeConfigStore:
-        def exists(self) -> bool:
-            return False
-
-        def load(self):  # noqa: ANN201
-            raise NotImplementedError("ConfigStore not available in dot-agent-kit context")
-
-        def save(self, config) -> None:  # noqa: ANN001
-            raise NotImplementedError("ConfigStore not available in dot-agent-kit context")
-
-        def path(self) -> Path:
-            return Path("/fake/config")
-
-    class FakeScriptWriter:
-        pass
-
-    class FakePlannerRegistry:
-        pass
-
-    class FakePlanListService:
-        pass
-
-    return ErkContext(
-        git=git,
-        github=RealGitHub(time=RealTime(), repo_info=repo_info),
-        issues=RealGitHubIssues(),
-        session_store=RealClaudeCodeSessionStore(),
-        prompt_executor=RealPromptExecutor(),
-        graphite=FakeGraphite(),
-        time=FakeTime(),
-        plan_store=FakePlanStore(),
-        objectives=FakeObjectiveStore(),
-        shell=FakeShell(),
-        completion=FakeCompletion(),
-        feedback=SuppressedFeedback(),
-        claude_executor=FakeClaudeExecutor(),
-        config_store=FakeConfigStore(),
-        script_writer=FakeScriptWriter(),
-        planner_registry=FakePlannerRegistry(),
-        plan_list_service=FakePlanListService(),
-        cwd=cwd,
-        repo=repo,
-        project=None,
-        repo_info=repo_info,
-        global_config=None,
-        local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
-        dry_run=False,
-        debug=debug,
-    )
 
 
 class LazyGroup(click.Group):
@@ -221,7 +85,9 @@ def cli(ctx: click.Context, debug: bool) -> None:
     """Manage Claude Code kits."""
     # Only create context if not already provided (e.g., by tests)
     if ctx.obj is None:
-        ctx.obj = _create_context(debug=debug)
+        from erk_shared.context.factories import create_minimal_context
+
+        ctx.obj = create_minimal_context(debug=debug)
 
     if ctx.invoked_subcommand is None:
         user_output(ctx.get_help())

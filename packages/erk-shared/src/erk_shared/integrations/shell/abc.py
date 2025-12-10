@@ -81,9 +81,9 @@ class Shell(ABC):
 
     @abstractmethod
     def run_erk_sync(self, repo_root: Path, *, force: bool, verbose: bool) -> None:
-        """Run erk sync command as subprocess.
+        """Run erk kit sync command as subprocess.
 
-        This is used by commands that need to invoke erk sync
+        This is used by commands that need to invoke erk kit sync
         to clean up worktrees and branches (e.g., land-stack cleanup phase).
 
         Args:
@@ -92,6 +92,6 @@ class Shell(ABC):
             verbose: If True, pass --verbose flag for detailed output
 
         Raises:
-            RuntimeError: If erk sync command fails (with enriched error context)
+            RuntimeError: If erk kit sync command fails (with enriched error context)
         """
         ...
