@@ -2,6 +2,34 @@
 
 Shared analysis logic for `/erk:extract-agent-docs` and `/erk:extract-agent-docs-from-log` commands.
 
+## ⚠️ CRITICAL: Validation Before Suggesting
+
+**Before suggesting ANY documentation extraction, you MUST answer these questions for each potential suggestion:**
+
+### 1. Where did I learn this?
+
+| Source of Knowledge           | Extraction Candidate? |
+| ----------------------------- | --------------------- |
+| From existing docs/skills     | ❌ NO - system working as designed |
+| From tripwires that fired     | ❌ NO - already handled |
+| From trial-and-error          | ✅ YES - document the learning |
+| From user correction          | ✅ YES - document to prevent recurrence |
+| From external research        | ✅ MAYBE - if project-specific |
+
+### 2. What would a future agent read differently?
+
+- If nothing new → **skip the suggestion**
+- If genuinely novel insight → **extract it**
+
+### 3. Is this application or discovery?
+
+- **Applying existing patterns** = The docs are good. Not an extraction candidate.
+- **Discovering undocumented patterns** = Genuine gap. Extract it.
+
+**Key insight:** Successfully using existing documentation is evidence the docs are good, NOT evidence they need more content.
+
+---
+
 ## Two Categories of Documentation Needs
 
 This command detects TWO distinct types of documentation gaps:
@@ -194,6 +222,7 @@ Documentation needed for what was BUILT this session:
 - **Session-specific context** - Information that won't generalize to other sessions
 - **Already well-documented patterns** - Check existing docs first; don't duplicate
 - **User preferences** - Individual workflow preferences aren't project documentation
+- **Patterns you successfully followed** - If you used existing docs correctly, that's the system working
 
 **Signs you should NOT create a doc:**
 
@@ -201,6 +230,17 @@ Documentation needed for what was BUILT this session:
 - It would need updating every sprint or release
 - Only one person would ever need this information
 - The "pattern" was actually a bug or mistake, not a convention
+- You correctly followed existing documentation (that's success, not a gap)
+
+### Common Extraction Mistake
+
+❌ **Wrong reasoning:**
+> "I added a method to the Git ABC and implemented it in 5 files. This is a pattern that could be documented."
+
+✅ **Correct reasoning:**
+> "The Gateway ABC pattern is already documented in `docs/agent/architecture/gateway-abc-implementation.md` with tripwires configured. I followed the existing docs correctly. This is the system working as designed - NOT a documentation gap."
+
+**The test:** Ask yourself "Did I discover this through friction, or did I learn it from existing docs?" If the latter, skip the suggestion.
 
 ## Before Dismissing as "Edge Case"
 

@@ -811,3 +811,11 @@ class RealGit(Git):
         if result.returncode != 0:
             return []
         return [msg.strip() for msg in result.stdout.split(separator) if msg.strip()]
+
+    def config_set(self, cwd: Path, key: str, value: str) -> None:
+        """Set a git config value."""
+        run_subprocess_with_context(
+            ["git", "config", key, value],
+            operation_context=f"set git config '{key}'",
+            cwd=cwd,
+        )

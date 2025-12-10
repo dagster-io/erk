@@ -187,6 +187,7 @@ class FakeGit(Git):
         self._pushed_branches: list[tuple[str, str, bool]] = []
         self._created_branches: list[tuple[Path, str, str]] = []  # (cwd, branch_name, start_point)
         self._rebase_continue_calls: list[Path] = []
+        self._config_settings: list[tuple[Path, str, str]] = []
 
     def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
         """List all worktrees in the repository.
@@ -898,3 +899,19 @@ class FakeGit(Git):
     def get_commit_messages_since(self, cwd: Path, base_branch: str) -> list[str]:
         """Get full commit messages for commits in HEAD but not in base_branch."""
         return self._commit_messages_since.get((cwd, base_branch), [])
+
+    def config_set(self, cwd: Path, key: str, value: str) -> None:
+        """Set a git config value.
+
+        Records the config set for test assertions.
+        """
+        self._config_settings.append((cwd, key, value))
+
+    @property
+    def config_settings(self) -> list[tuple[Path, str, str]]:
+        """Get list of config settings set during test.
+
+        Returns list of (cwd, key, value) tuples.
+        This property is for test assertions only.
+        """
+        return list(self._config_settings)

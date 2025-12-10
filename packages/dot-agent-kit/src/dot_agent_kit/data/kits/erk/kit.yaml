@@ -169,6 +169,36 @@ scripts:
   - name: update-pr-summary
     path: scripts/erk/update_pr_summary.py
     description: Update PR body with implementation summary from commit message
+  - name: set-gha-output
+    path: scripts/erk/set_gha_output.py
+    description: Parse JSON and write key/value to GITHUB_OUTPUT for workflow step outputs
+  - name: configure-git-user
+    path: scripts/erk/configure_git_user.py
+    description: Set git user.name and user.email from GitHub username
+  - name: commit-and-push-if-dirty
+    path: scripts/erk/commit_and_push_if_dirty.py
+    description: Conditional commit and push when working directory has changes
+  - name: trigger-ci-push
+    path: scripts/erk/trigger_ci_push.py
+    description: Create empty commit and push to trigger CI workflows
+  - name: clean-worker-impl
+    path: scripts/erk/clean_worker_impl.py
+    description: Safely remove .worker-impl directory if it exists
+  - name: create-impl-run-info
+    path: scripts/erk/create_impl_run_info.py
+    description: Create .impl/run-info.json with workflow run metadata
+  - name: get-pr-number-for-branch
+    path: scripts/erk/get_pr_number_for_branch.py
+    description: Look up PR number from branch name via GitHub API
+  - name: generate-pr-body
+    path: scripts/erk/generate_pr_body.py
+    description: Generate complete PR body with summary and footer using Claude
+  - name: write-pr-body-file
+    path: scripts/erk/write_pr_body_file.py
+    description: Write content to file avoiding heredoc issues in bash
+  - name: set-gha-exit-status
+    path: scripts/erk/set_gha_exit_status.py
+    description: Run command and capture exit status for GitHub Actions output
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit

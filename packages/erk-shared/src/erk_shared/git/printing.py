@@ -273,3 +273,8 @@ class PrintingGit(PrintingBase, Git):
     def get_commit_messages_since(self, cwd: Path, base_branch: str) -> list[str]:
         """Get commit messages since base branch (read-only, no printing)."""
         return self._wrapped.get_commit_messages_since(cwd, base_branch)
+
+    def config_set(self, cwd: Path, key: str, value: str) -> None:
+        """Set git config with printed output."""
+        self._emit(self._format_command(f'git config {key} "{value}"'))
+        self._wrapped.config_set(cwd, key, value)

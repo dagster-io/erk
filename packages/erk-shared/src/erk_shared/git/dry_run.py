@@ -280,3 +280,8 @@ class DryRunGit(Git):
     def get_commit_messages_since(self, cwd: Path, base_branch: str) -> list[str]:
         """Get commit messages since base branch (read-only, delegates to wrapped)."""
         return self._wrapped.get_commit_messages_since(cwd, base_branch)
+
+    def config_set(self, cwd: Path, key: str, value: str) -> None:
+        """No-op for setting git config in dry-run mode."""
+        # Do nothing - prevents actual config changes
+        pass
