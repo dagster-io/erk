@@ -1,4 +1,4 @@
-"""Tests for dot-agent md check command."""
+"""Tests for erk md check command."""
 
 import subprocess
 from pathlib import Path

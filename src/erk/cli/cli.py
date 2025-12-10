@@ -3,9 +3,11 @@ import logging
 import click
 
 from dot_agent_kit.commands.artifact.group import artifact_group
+from dot_agent_kit.commands.dev.group import dev_group
 from dot_agent_kit.commands.docs.group import docs_group
 from dot_agent_kit.commands.hook.group import hook_group
 from dot_agent_kit.commands.kit.group import kit_group
+from dot_agent_kit.commands.md.group import md_group
 from erk.cli.alias import register_with_aliases
 from erk.cli.commands.admin import admin_group
 from erk.cli.commands.checkout import checkout_cmd
@@ -74,9 +76,11 @@ cli.add_command(prepare_cwd_recovery_cmd)
 
 # Kit management command groups (facade imports from dot-agent-kit)
 cli.add_command(artifact_group)
+cli.add_command(dev_group)
 cli.add_command(docs_group)
 cli.add_command(hook_group)
 cli.add_command(kit_group)
+cli.add_command(md_group)
 
 
 def main() -> None:

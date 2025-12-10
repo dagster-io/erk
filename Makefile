@@ -74,14 +74,14 @@ check:
 	uv run dot-agent check
 
 md-check:
-	uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl"
+	uv run erk md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl"
 
 # Kit markdown check: Validate @ references in kit data files
 # These are excluded from md-check because they may have template-style references,
 # but we still want to validate that actual file includes are correct
 # NOTE: cd is required because the command validates from the current directory
 kit-md-check:
-	cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run dot-agent md check --check-links
+	cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run erk md check --check-links
 
 docs-validate:
 	uv run dot-agent docs validate
@@ -99,8 +99,8 @@ fast-ci:
 	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
-	echo "\n--- Markdown Check ---" && uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl" || exit_code=1; \
-	echo "\n--- Kit Markdown Check ---" && (cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run dot-agent md check --check-links --exclude ".impl" --exclude ".worker-impl") || exit_code=1; \
+	echo "\n--- Markdown Check ---" && uv run erk md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl" || exit_code=1; \
+	echo "\n--- Kit Markdown Check ---" && (cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run erk md check --check-links --exclude ".impl" --exclude ".worker-impl") || exit_code=1; \
 	cd $(CURDIR); \
 	echo "\n--- Docs Validate ---" && uv run dot-agent docs validate || exit_code=1; \
 	echo "\n--- Docs Sync Check ---" && uv run dot-agent docs sync --check || exit_code=1; \
@@ -119,8 +119,8 @@ all-ci:
 	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
-	echo "\n--- Markdown Check ---" && uv run dot-agent md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl" || exit_code=1; \
-	echo "\n--- Kit Markdown Check ---" && (cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run dot-agent md check --check-links --exclude ".impl" --exclude ".worker-impl") || exit_code=1; \
+	echo "\n--- Markdown Check ---" && uv run erk md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl" || exit_code=1; \
+	echo "\n--- Kit Markdown Check ---" && (cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run erk md check --check-links --exclude ".impl" --exclude ".worker-impl") || exit_code=1; \
 	cd $(CURDIR); \
 	echo "\n--- Docs Validate ---" && uv run dot-agent docs validate || exit_code=1; \
 	echo "\n--- Docs Sync Check ---" && uv run dot-agent docs sync --check || exit_code=1; \
