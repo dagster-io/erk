@@ -8,7 +8,7 @@ from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
 
-from erk.core.services.plan_list_service import PlanListData, PlanListService
+from erk.core.services.plan_list_service import PlanListData, RealPlanListService
 
 TEST_LOCATION = GitHubRepoLocation(root=Path("/test/repo"), repo_id=GitHubRepoId("owner", "repo"))
 
@@ -34,7 +34,7 @@ class TestPlanListService:
         fake_issues = FakeGitHubIssues(issues={42: issue})
         fake_github = FakeGitHub(issues=[issue])
 
-        service = PlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
@@ -77,7 +77,7 @@ class TestPlanListService:
         )
         fake_issues = FakeGitHubIssues(issues={42: issue})
 
-        service = PlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
@@ -95,7 +95,7 @@ class TestPlanListService:
         fake_issues = FakeGitHubIssues()
         fake_github = FakeGitHub()
 
-        service = PlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
@@ -136,7 +136,7 @@ class TestPlanListService:
         fake_github = FakeGitHub(issues=[open_issue, closed_issue])
         fake_issues = FakeGitHubIssues(issues={1: open_issue, 2: closed_issue})
 
-        service = PlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
@@ -176,7 +176,7 @@ class TestPlanListService:
         fake_issues = FakeGitHubIssues(issues={1: open_issue, 2: closed_issue})
         fake_github = FakeGitHub(issues=[open_issue, closed_issue])
 
-        service = PlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
@@ -243,7 +243,7 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
             workflow_runs_by_node_id={"WFR_abc123": run},
         )
 
-        service = PlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
@@ -294,7 +294,7 @@ last_dispatched_node_id: 'WFR_abc123'
             workflow_runs_by_node_id={"WFR_abc123": run},
         )
 
-        service = PlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
@@ -322,7 +322,7 @@ last_dispatched_node_id: 'WFR_abc123'
         fake_issues = FakeGitHubIssues(issues={42: issue})
         fake_github = FakeGitHub(issues=[issue])
 
-        service = PlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
@@ -362,7 +362,7 @@ last_dispatched_node_id: 'WFR_nonexistent'
         fake_issues = FakeGitHubIssues(issues={42: issue})
         fake_github = FakeGitHub(issues=[issue])
 
-        service = PlanListService(fake_github, fake_issues)
+        service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],

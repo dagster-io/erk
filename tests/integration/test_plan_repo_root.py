@@ -20,7 +20,7 @@ from erk_shared.plan_store.types import Plan, PlanState
 
 from erk.cli.commands.plan.get import get_plan
 from erk.cli.commands.plan.list_cmd import dash
-from erk.core.services.plan_list_service import PlanListService
+from erk.core.services.plan_list_service import RealPlanListService
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
@@ -63,7 +63,7 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
         # Create PlanListService with tracking GitHub
         from erk_shared.github.issues import FakeGitHubIssues
 
-        plan_list_service = PlanListService(github, FakeGitHubIssues())
+        plan_list_service = RealPlanListService(github, FakeGitHubIssues())
         ctx = env.build_context(github=github, plan_list_service=plan_list_service)
 
         # Act: Run the dash command

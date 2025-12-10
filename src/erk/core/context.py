@@ -47,15 +47,24 @@ from erk_shared.prompt_executor import PromptExecutor
 from erk_shared.prompt_executor.real import RealPromptExecutor
 
 from erk.cli.config import load_config
-from erk.core.claude_executor import ClaudeExecutor, RealClaudeExecutor
+# Import ABCs and fakes from erk_shared.core
+from erk_shared.core import (
+    ClaudeExecutor,
+    ConfigStore,
+    FakePlanListService,
+    PlanListService,
+    PlannerRegistry,
+    ScriptWriter,
+)
+
+from erk.core.claude_executor import RealClaudeExecutor
 from erk.core.completion import RealCompletion
-from erk.core.config_store import ConfigStore, RealConfigStore
-from erk.core.planner.registry_abc import PlannerRegistry
+from erk.core.config_store import RealConfigStore
 from erk.core.planner.registry_real import RealPlannerRegistry
 from erk.core.project_discovery import ProjectContext, discover_project
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
-from erk.core.script_writer import RealScriptWriter, ScriptWriter
-from erk.core.services.plan_list_service import PlanListService
+from erk.core.script_writer import RealScriptWriter
+from erk.core.services.plan_list_service import RealPlanListService
 from erk.core.shell import RealShell
 
 
@@ -241,7 +250,9 @@ def context_for_test(
         feedback = FakeUserFeedback()
 
     if plan_list_service is None:
-        plan_list_service = PlanListService(github, issues)
+        # If github and issues were provided, wire them up via RealPlanListService
+        # so that tests get realistic behavior when testing plan list functionality
+        plan_list_service = RealPlanListService(github, issues)
 
     if planner_registry is None:
         planner_registry = FakePlannerRegistry()
@@ -452,7 +463,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     github: GitHub = RealGitHub(time, repo_info)
     issues: GitHubIssues = RealGitHubIssues()
     plan_store: PlanStore = GitHubPlanStore(issues)
-    plan_list_service: PlanListService = PlanListService(github, issues)
+    plan_list_service: PlanListService = RealPlanListService(github, issues)
 
     # 7. Load local config (or defaults if no repo)
     if isinstance(repo, NoRepoSentinel):

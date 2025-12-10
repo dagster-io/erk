@@ -3,17 +3,13 @@
 This module provides ErkContext - the unified context that holds all dependencies
 for erk and dot-agent-kit operations.
 
-Note: Factory methods (minimal, for_test, etc.) are NOT defined here because they
-require erk-specific ABCs (ClaudeExecutor, etc.) and test fakes. Those factories
-are defined in erk.core.context to avoid circular imports.
-
-Use ErkContext directly for type hints, and use the factories from erk.core.context
-for instantiation.
+The ABCs for erk-specific services (ClaudeExecutor, ConfigStore, ScriptWriter,
+PlannerRegistry, PlanListService) are defined in erk_shared.core, enabling
+proper type hints without circular imports. Real implementations remain in erk.
 """
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from erk_shared.context.types import (
     GlobalConfig,
@@ -21,6 +17,11 @@ from erk_shared.context.types import (
     NoRepoSentinel,
     RepoContext,
 )
+from erk_shared.core.claude_executor import ClaudeExecutor
+from erk_shared.core.config_store import ConfigStore
+from erk_shared.core.plan_list_service import PlanListService
+from erk_shared.core.planner_registry import PlannerRegistry
+from erk_shared.core.script_writer import ScriptWriter
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
@@ -36,16 +37,6 @@ from erk_shared.plan_store.store import PlanStore
 from erk_shared.project_discovery import ProjectContext
 from erk_shared.prompt_executor import PromptExecutor
 
-if TYPE_CHECKING:
-    # These ABCs stay in erk package due to their dependencies.
-    # Imported for type checking only - forward references resolve to these at analysis time.
-    from erk.core.claude_executor import ClaudeExecutor as ClaudeExecutor
-    from erk.core.config_store import ConfigStore as ConfigStore
-    from erk.core.planner.registry_abc import PlannerRegistry as PlannerRegistry
-    from erk.core.script_writer import ScriptWriter as ScriptWriter
-    from erk.core.services.plan_list_service import PlanListService as PlanListService
-
-
 @dataclass(frozen=True)
 class ErkContext:
     """Immutable context holding all dependencies for erk and dot-agent-kit operations.
@@ -59,7 +50,6 @@ class ErkContext:
     Note:
     - global_config may be None only during init command before config is created.
       All other commands should have a valid GlobalConfig.
-    - Factory methods (minimal, for_test) are in erk.core.context, not here.
 
     DotAgentContext Compatibility:
     - github_issues -> issues (renamed for consistency)
@@ -83,13 +73,12 @@ class ErkContext:
     completion: Completion
     feedback: UserFeedback
 
-    # Erk-specific (ABCs stay in erk, resolved via TYPE_CHECKING imports)
-    # String literal forward references avoid circular imports at runtime
-    claude_executor: "ClaudeExecutor"
-    config_store: "ConfigStore"
-    script_writer: "ScriptWriter"
-    planner_registry: "PlannerRegistry"
-    plan_list_service: "PlanListService"
+    # Erk-specific services (ABCs now in erk_shared.core for proper type hints)
+    claude_executor: ClaudeExecutor
+    config_store: ConfigStore
+    script_writer: ScriptWriter
+    planner_registry: PlannerRegistry
+    plan_list_service: PlanListService
 
     # Paths
     cwd: Path  # Current working directory at CLI invocation
