@@ -5,6 +5,7 @@ from pathlib import Path
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
+    CreatorFilter,
     GitHubRepoLocation,
     PRDetails,
     PRNotFound,
@@ -160,7 +161,8 @@ class DryRunGitHub(GitHub):
         labels: list[str],
         state: str | None = None,
         limit: int | None = None,
-        creator: str | None = None,
+        *,
+        creator: CreatorFilter,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_issues_with_pr_linkages(

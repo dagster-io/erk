@@ -4,6 +4,7 @@ from collections.abc import Callable
 from typing import ParamSpec, TypeVar
 
 import click
+from erk_shared.github.abc import GitHub
 from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata import (
@@ -12,7 +13,13 @@ from erk_shared.github.metadata import (
     extract_plan_header_remote_impl_at,
     extract_plan_header_worktree_name,
 )
-from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
+from erk_shared.github.types import (
+    AllUsers,
+    CreatorFilter,
+    GitHubRepoId,
+    GitHubRepoLocation,
+    PullRequestInfo,
+)
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.integrations.browser.real import RealBrowserLauncher
 from erk_shared.integrations.clipboard.real import RealClipboard
@@ -39,6 +46,25 @@ from erk.tui.data.types import PlanFilters
 
 P = ParamSpec("P")
 T = TypeVar("T")
+
+
+def _resolve_creator_filter(github: GitHub, *, all_users: bool) -> CreatorFilter:
+    """Resolve creator filter based on authentication status.
+
+    Args:
+        github: GitHub operations interface
+        all_users: If True, return AllUsers() regardless of auth status
+
+    Returns:
+        AllUsers() if all_users=True or not authenticated,
+        otherwise the authenticated username
+    """
+    if all_users:
+        return AllUsers()
+    is_authenticated, username, _ = github.check_auth_status()
+    if is_authenticated and username:
+        return username
+    return AllUsers()
 
 
 def _issue_to_plan(issue: IssueInfo) -> Plan:
@@ -229,12 +255,7 @@ def _build_plans_table(
     owner = repo.github.owner
     repo_name = repo.github.repo
 
-    # Determine creator filter: None for all users, authenticated username otherwise
-    creator: str | None = None
-    if not all_users:
-        is_authenticated, username, _ = ctx.github.check_auth_status()
-        if is_authenticated and username:
-            creator = username
+    creator = _resolve_creator_filter(ctx.github, all_users=all_users)
 
     # Use PlanListService for batched API calls
     # Skip workflow runs when not needed for better performance
@@ -552,12 +573,7 @@ def _run_interactive_mode(
     owner = repo.github.owner
     repo_name = repo.github.repo
 
-    # Determine creator filter: None for all users, authenticated username otherwise
-    creator: str | None = None
-    if not all_users:
-        is_authenticated, username, _ = ctx.github.check_auth_status()
-        if is_authenticated and username:
-            creator = username
+    creator = _resolve_creator_filter(ctx.github, all_users=all_users)
 
     # Build labels - default to ["erk-plan"]
     labels = label if label else ("erk-plan",)

@@ -10,6 +10,7 @@ from pathlib import Path
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
+    AllUsers,
     GitHubRepoId,
     GitHubRepoLocation,
     PRDetails,
@@ -437,6 +438,7 @@ def test_fake_github_get_issues_with_pr_linkages_empty() -> None:
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
         TEST_LOCATION,
         labels=["erk-plan"],
+        creator=AllUsers(),
     )
 
     assert issues == []
@@ -475,6 +477,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_labels() -> None:
     issues, _ = ops.get_issues_with_pr_linkages(
         TEST_LOCATION,
         labels=["erk-plan"],
+        creator=AllUsers(),
     )
 
     assert len(issues) == 1
@@ -514,6 +517,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_state() -> None:
         TEST_LOCATION,
         labels=["erk-plan"],
         state="open",
+        creator=AllUsers(),
     )
 
     assert len(issues) == 1
@@ -553,6 +557,7 @@ def test_fake_github_get_issues_with_pr_linkages_returns_pr_linkages() -> None:
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
         TEST_LOCATION,
         labels=["erk-plan"],
+        creator=AllUsers(),
     )
 
     assert len(issues) == 1
@@ -584,6 +589,7 @@ def test_fake_github_get_issues_with_pr_linkages_respects_limit() -> None:
         TEST_LOCATION,
         labels=["erk-plan"],
         limit=3,
+        creator=AllUsers(),
     )
 
     assert len(result_issues) == 3
@@ -635,6 +641,7 @@ def test_fake_github_get_issues_with_pr_linkages_no_linkages_for_filtered_issues
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
         TEST_LOCATION,
         labels=["erk-plan"],
+        creator=AllUsers(),
     )
 
     # Only issue 1 matches, so no PR linkages should be returned

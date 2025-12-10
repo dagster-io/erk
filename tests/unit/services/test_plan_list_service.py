@@ -6,7 +6,13 @@ from pathlib import Path
 import pytest
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
-from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
+from erk_shared.github.types import (
+    AllUsers,
+    GitHubRepoId,
+    GitHubRepoLocation,
+    PullRequestInfo,
+    WorkflowRun,
+)
 
 from erk.core.services.plan_list_service import PlanListData, PlanListService
 
@@ -38,6 +44,7 @@ class TestPlanListService:
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
+            creator=AllUsers(),
         )
 
         assert len(result.issues) == 1
@@ -81,6 +88,7 @@ class TestPlanListService:
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
+            creator=AllUsers(),
         )
 
         # Unified path returns issues from get_issues_with_pr_linkages
@@ -99,6 +107,7 @@ class TestPlanListService:
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
+            creator=AllUsers(),
         )
 
         assert result.issues == []
@@ -141,6 +150,7 @@ class TestPlanListService:
             location=TEST_LOCATION,
             labels=["erk-plan"],
             state="open",
+            creator=AllUsers(),
         )
 
         assert len(result.issues) == 1
@@ -181,6 +191,7 @@ class TestPlanListService:
             location=TEST_LOCATION,
             labels=["erk-plan"],
             state="closed",
+            creator=AllUsers(),
         )
 
         assert len(result.issues) == 1
@@ -247,6 +258,7 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
+            creator=AllUsers(),
         )
 
         # Verify workflow run was fetched and mapped to issue
@@ -299,6 +311,7 @@ last_dispatched_node_id: 'WFR_abc123'
             location=TEST_LOCATION,
             labels=["erk-plan"],
             skip_workflow_runs=True,
+            creator=AllUsers(),
         )
 
         # Workflow runs dict should be empty when skipped
@@ -326,6 +339,7 @@ last_dispatched_node_id: 'WFR_abc123'
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
+            creator=AllUsers(),
         )
 
         # No workflow runs should be fetched (no node_ids to fetch)
@@ -366,6 +380,7 @@ last_dispatched_node_id: 'WFR_nonexistent'
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
             labels=["erk-plan"],
+            creator=AllUsers(),
         )
 
         # Issue should have None for workflow run (not found)

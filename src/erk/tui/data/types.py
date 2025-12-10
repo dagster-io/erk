@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from datetime import datetime
 
+from erk_shared.github.types import AllUsers, CreatorFilter
+
 
 @dataclass(frozen=True)
 class PlanRowData:
@@ -77,7 +79,9 @@ class PlanFilters:
         limit: Maximum number of results (None for no limit)
         show_prs: Whether to include PR data
         show_runs: Whether to include workflow run data
-        creator: Filter by creator username (None for all users)
+        creator: Filter by creator. Use:
+            - AllUsers(): Show all users' issues
+            - str: Filter to specific username
     """
 
     labels: tuple[str, ...]
@@ -86,11 +90,11 @@ class PlanFilters:
     limit: int | None
     show_prs: bool
     show_runs: bool
-    creator: str | None = None
+    creator: CreatorFilter = AllUsers()
 
     @staticmethod
     def default() -> "PlanFilters":
-        """Create default filters (open erk-plan issues)."""
+        """Create default filters (open erk-plan issues, all users)."""
         return PlanFilters(
             labels=("erk-plan",),
             state=None,
@@ -98,5 +102,5 @@ class PlanFilters:
             limit=None,
             show_prs=False,
             show_runs=False,
-            creator=None,
+            creator=AllUsers(),
         )

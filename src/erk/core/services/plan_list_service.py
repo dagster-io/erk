@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues, IssueInfo
 from erk_shared.github.metadata import extract_plan_header_dispatch_info
-from erk_shared.github.types import GitHubRepoLocation, PullRequestInfo, WorkflowRun
+from erk_shared.github.types import CreatorFilter, GitHubRepoLocation, PullRequestInfo, WorkflowRun
 
 
 @dataclass(frozen=True)
@@ -57,7 +57,7 @@ class PlanListService:
         state: str | None = None,
         limit: int | None = None,
         skip_workflow_runs: bool = False,
-        creator: str | None = None,
+        creator: CreatorFilter,
     ) -> PlanListData:
         """Batch fetch all data needed for plan listing.
 
@@ -67,8 +67,9 @@ class PlanListService:
             state: Filter by state ("open", "closed", or None for all)
             limit: Maximum number of issues to return (None for no limit)
             skip_workflow_runs: If True, skip fetching workflow runs (for performance)
-            creator: Filter by creator username (e.g., "octocat"). If provided,
-                only issues created by this user are returned.
+            creator: Filter by creator. Use:
+                - AllUsers(): Show all users' issues
+                - str: Filter to specific username
 
         Returns:
             PlanListData containing issues, PR linkages, and workflow runs
