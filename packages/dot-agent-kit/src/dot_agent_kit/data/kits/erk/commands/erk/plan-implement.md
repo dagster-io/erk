@@ -16,7 +16,7 @@ description: Execute the implementation plan from .impl/ folder in current direc
 ### Step 0: Initialize
 
 ```bash
-dot-agent run erk impl-init --json
+erk kit exec erk impl-init --json
 ```
 
 If validation fails, display error and stop. Use returned `phases` for TodoWrite entries.
@@ -43,7 +43,7 @@ Create todo entries for each phase from impl-init output.
 ### Step 4: Signal GitHub Started
 
 ```bash
-dot-agent run erk impl-signal started 2>/dev/null || true
+erk kit exec erk impl-signal started 2>/dev/null || true
 ```
 
 ### Step 5: Execute Each Phase Sequentially
@@ -62,7 +62,7 @@ For each phase:
    - Follow project AGENTS.md standards
 4. **Mark phase as completed**:
    ```bash
-   dot-agent run erk mark-step <step_number>
+   erk kit exec erk mark-step <step_number>
    ```
    **NEVER** run multiple `mark-step` commands in parallel - use batching: `mark-step 1 2 3`
 5. **Report progress**: changes made, tests added, what's next
@@ -89,7 +89,7 @@ Check CLAUDE.md/AGENTS.md for CI commands. Run linting, type checking, tests. Ad
 ### Step 9: Signal GitHub Ended
 
 ```bash
-dot-agent run erk impl-signal ended 2>/dev/null || true
+erk kit exec erk impl-signal ended 2>/dev/null || true
 ```
 
 ### Step 10: Run CI Iteratively

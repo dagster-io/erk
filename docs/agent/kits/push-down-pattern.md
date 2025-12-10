@@ -54,7 +54,7 @@ Benefits: Testable, no permission prompt, structured JSON output.
 
 ```bash
 # Agent markdown invocation
-parse_result=$(dot-agent run erk parse-issue-reference "$issue_arg")
+parse_result=$(erk kit exec erk parse-issue-reference "$issue_arg")
 
 if ! echo "$parse_result" | jq -e '.success' > /dev/null; then
     error_msg=$(echo "$parse_result" | jq -r '.message')

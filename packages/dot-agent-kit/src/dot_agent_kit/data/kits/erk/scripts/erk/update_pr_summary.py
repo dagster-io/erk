@@ -8,7 +8,7 @@ This replaces ~20 lines of bash (git log, heredoc assembly, gh pr edit) in
 GitHub Actions workflows.
 
 Usage:
-    dot-agent run erk update-pr-summary \\
+    erk kit exec erk update-pr-summary \\
         --branch-name my-feature-branch \\
         --issue-number 123 \\
         --commit-sha abc123def
@@ -21,7 +21,7 @@ Exit Codes:
     1: Error (git command failed, PR not found, or GitHub API failed)
 
 Examples:
-    $ dot-agent run erk update-pr-summary \\
+    $ erk kit exec erk update-pr-summary \\
         --branch-name feat-auth \\
         --issue-number 456 \\
         --commit-sha abc123

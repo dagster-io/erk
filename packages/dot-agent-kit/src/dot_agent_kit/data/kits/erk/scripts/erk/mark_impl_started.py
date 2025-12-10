@@ -8,7 +8,7 @@ with the appropriate event fields based on the execution environment:
 Also writes .impl/local-run-state.json for fast local access (no GitHub API needed).
 
 Usage:
-    dot-agent run erk mark-impl-started
+    erk kit exec erk mark-impl-started
 
 Output:
     JSON with success status or error information
@@ -18,10 +18,10 @@ Exit Codes:
     0: Always (even on error, to support || true pattern)
 
 Examples:
-    $ dot-agent run erk mark-impl-started
+    $ erk kit exec erk mark-impl-started
     {"success": true, "issue_number": 123}
 
-    $ dot-agent run erk mark-impl-started
+    $ erk kit exec erk mark-impl-started
     {"success": false, "error_type": "no_issue_reference", "message": "..."}
 """
 

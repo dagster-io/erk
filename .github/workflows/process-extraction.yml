@@ -67,7 +67,7 @@ jobs:
         id: trunk
         run: |
           source $HOME/.cargo/env
-          result=$(dot-agent run erk detect-trunk-branch)
+          result=$(erk kit exec erk detect-trunk-branch)
           echo "trunk_branch=$(echo "$result" | jq -r '.trunk_branch')" >> $GITHUB_OUTPUT
 
       # =================================================================
@@ -81,7 +81,7 @@ jobs:
           TRUNK_BRANCH: ${{ steps.trunk.outputs.trunk_branch }}
         run: |
           source $HOME/.cargo/env
-          result=$(dot-agent run erk create-extraction-branch \
+          result=$(erk kit exec erk create-extraction-branch \
             --issue-number "$ISSUE_NUMBER" \
             --trunk-branch "$TRUNK_BRANCH")
           echo "branch_name=$(echo "$result" | jq -r '.branch_name')" >> $GITHUB_OUTPUT
@@ -93,7 +93,7 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
           source $HOME/.cargo/env
-          result=$(dot-agent run erk create-worker-impl-from-issue "$ISSUE_NUMBER")
+          result=$(erk kit exec erk create-worker-impl-from-issue "$ISSUE_NUMBER")
           success=$(echo "$result" | jq -r '.success')
           echo "worker_impl_success=$success" >> $GITHUB_OUTPUT
 
@@ -167,7 +167,7 @@ jobs:
           PR_URL: ${{ steps.submit.outputs.pr_url }}
         run: |
           source $HOME/.cargo/env
-          dot-agent run erk post-extraction-comment \
+          erk kit exec erk post-extraction-comment \
             --issue-number "$ISSUE_NUMBER" \
             --status complete \
             --pr-url "$PR_URL"
@@ -179,7 +179,7 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
           source $HOME/.cargo/env
-          dot-agent run erk post-extraction-comment \
+          erk kit exec erk post-extraction-comment \
             --issue-number "$ISSUE_NUMBER" \
             --status no-changes
 
@@ -194,7 +194,7 @@ jobs:
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           source $HOME/.cargo/env
-          dot-agent run erk post-extraction-comment \
+          erk kit exec erk post-extraction-comment \
             --issue-number "$ISSUE_NUMBER" \
             --status failed \
             --workflow-run-url "$WORKFLOW_RUN_URL"

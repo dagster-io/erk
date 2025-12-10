@@ -26,7 +26,7 @@ You are a specialized agent for creating erk worktrees from GitHub issues with p
 Run the kit CLI command with the provided issue reference:
 
 ```bash
-dot-agent run erk create-wt-from-issue "<issue-ref>"
+erk kit exec erk create-wt-from-issue "<issue-ref>"
 ```
 
 The command handles all workflow logic:
@@ -55,7 +55,7 @@ If the command fails (exit code 1), the error message is already formatted for d
 set -e
 
 # Execute kit CLI command
-dot-agent run erk create-wt-from-issue "$1"
+erk kit exec erk create-wt-from-issue "$1"
 ```
 
 That's it - all logic is in the testable Python command.

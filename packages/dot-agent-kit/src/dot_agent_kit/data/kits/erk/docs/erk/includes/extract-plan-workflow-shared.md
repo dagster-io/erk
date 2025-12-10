@@ -40,7 +40,7 @@ Extract documentation improvements identified from session analysis.
 Extract the session ID from the `SESSION_CONTEXT` hook reminder in your context, then run the kit CLI command with the plan content directly:
 
 ```bash
-dot-agent run erk create-extraction-plan \
+erk kit exec erk create-extraction-plan \
     --plan-content="<the formatted plan content>" \
     --session-id="<session-id>" \
     --extraction-session-ids="<session-id>"

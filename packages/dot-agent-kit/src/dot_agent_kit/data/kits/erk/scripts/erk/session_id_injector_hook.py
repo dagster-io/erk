@@ -3,7 +3,7 @@
 Session ID Injector Hook
 
 Injects the current session ID into conversation context for /erk:enhance-and-save-plan.
-This command is invoked via dot-agent run erk session-id-injector-hook.
+This command is invoked via erk kit exec erk session-id-injector-hook.
 """
 
 import json

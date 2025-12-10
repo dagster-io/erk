@@ -4,7 +4,7 @@ This kit CLI command appends a remote execution tracking note to a PR body.
 Used by GitHub Actions workflows to track workflow runs that executed against a PR.
 
 Usage:
-    dot-agent run erk add-remote-execution-note --pr-number 123 --run-id 456 --run-url https://...
+    erk kit exec erk add-remote-execution-note --pr-number 123 --run-id 456 --run-url https://...
 
 Output:
     Success message on stdout
@@ -14,7 +14,7 @@ Exit Codes:
     1: Error (missing arguments, gh command failed)
 
 Examples:
-    $ dot-agent run erk add-remote-execution-note \\
+    $ erk kit exec erk add-remote-execution-note \\
         --pr-number 1895 \\
         --run-id 12345678 \\
         --run-url https://github.com/owner/repo/actions/runs/12345678

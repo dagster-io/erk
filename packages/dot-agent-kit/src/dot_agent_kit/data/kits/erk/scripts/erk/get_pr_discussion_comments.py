@@ -4,8 +4,8 @@ This kit CLI command fetches discussion comments from the PR's main conversation
 (not inline code review comments) and outputs them as JSON for agent processing.
 
 Usage:
-    dot-agent run erk get-pr-discussion-comments
-    dot-agent run erk get-pr-discussion-comments --pr 123
+    erk kit exec erk get-pr-discussion-comments
+    erk kit exec erk get-pr-discussion-comments --pr 123
 
 Output:
     JSON with success status, PR info, and discussion comments
@@ -15,10 +15,10 @@ Exit Codes:
     1: Context not initialized
 
 Examples:
-    $ dot-agent run erk get-pr-discussion-comments
+    $ erk kit exec erk get-pr-discussion-comments
     {"success": true, "pr_number": 123, "comments": [...]}
 
-    $ dot-agent run erk get-pr-discussion-comments --pr 456
+    $ erk kit exec erk get-pr-discussion-comments --pr 456
     {"success": true, "pr_number": 456, "comments": [...]}
 """
 

@@ -160,7 +160,7 @@ jobs:
 
           # Update .worker-impl/ with fresh plan
           rm -rf .worker-impl
-          dot-agent run erk create-worker-impl-from-issue "$ISSUE_NUMBER"
+          erk kit exec erk create-worker-impl-from-issue "$ISSUE_NUMBER"
 
           if [ $? -ne 0 ]; then
             gh issue comment "$ISSUE_NUMBER" --body "❌ **Plan Update Failed**
@@ -234,7 +234,7 @@ jobs:
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           source $HOME/.cargo/env
-          dot-agent run erk add-remote-execution-note \
+          erk kit exec erk add-remote-execution-note \
             --pr-number "$PR_NUMBER" \
             --run-id "$WORKFLOW_RUN_ID" \
             --run-url "$WORKFLOW_RUN_URL"
@@ -330,11 +330,25 @@ jobs:
           RUN_ID: ${{ github.run_id }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          source $HOME/.cargo/env
-          dot-agent run erk update-pr-body \
-            --issue-number "$ISSUE_NUMBER" \
-            --run-id "$RUN_ID" \
-            --run-url "$RUN_URL"
+          # Get the implementation commit message using the captured SHA
+          commit_body=$(git log "$IMPL_SHA" -1 --pretty=%B)
+
+          # Get PR number for checkout instructions
+          PR_NUMBER=$(gh pr view "$BRANCH_NAME" --json number -q .number)
+
+          # Get standardized body footer from get-pr-body-footer
+          pr_metadata=$(erk kit exec erk get-pr-body-footer --pr-number "$PR_NUMBER" --issue-number "$ISSUE_NUMBER" 2>/dev/null || echo "")
+
+          # Build PR body: summary + footer
+          cat > pr_body.md <<BODY_EOF
+          ## Summary
+
+          $commit_body
+          $pr_metadata
+          BODY_EOF
+
+          gh pr edit "$BRANCH_NAME" --body-file pr_body.md
+          rm -f pr_body.md
           echo "✅ PR body updated with implementation summary"
 
       - name: Trigger CI workflows

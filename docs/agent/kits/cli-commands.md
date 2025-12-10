@@ -771,6 +771,6 @@ When a slash command needs to pass content to a kit CLI command:
 Write plan to temp file and call CLI:
 
 \`\`\`bash
-dot-agent run erk plan-save-to-issue --plan-file="/tmp/plan-session-abc123.md"
+erk kit exec erk plan-save-to-issue --plan-file="/tmp/plan-session-abc123.md"
 \`\`\`
 ```

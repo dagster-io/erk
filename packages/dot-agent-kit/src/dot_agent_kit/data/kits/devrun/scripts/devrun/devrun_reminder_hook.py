@@ -3,7 +3,7 @@
 Devrun Reminder Command
 
 Outputs the devrun agent reminder for UserPromptSubmit hook.
-This command is invoked via dot-agent run devrun devrun-reminder-hook.
+This command is invoked via erk kit exec devrun devrun-reminder-hook.
 """
 
 import click

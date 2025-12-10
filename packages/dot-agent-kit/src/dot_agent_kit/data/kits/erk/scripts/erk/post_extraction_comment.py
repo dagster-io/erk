@@ -1,7 +1,7 @@
 """Post extraction workflow status comments to GitHub issues.
 
 Usage:
-    dot-agent run erk post-extraction-comment \
+    erk kit exec erk post-extraction-comment \
         --issue-number 123 \
         --status started \
         --workflow-run-url "https://..."

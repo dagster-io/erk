@@ -73,10 +73,10 @@ class ErkWtKit(ABC):
     """Operations interface for erk worktree creation from issues.
 
     This interface wraps all subprocess calls needed by create_wt_from_issue command:
-    - dot-agent run erk parse-issue-reference
+    - erk kit exec erk parse-issue-reference
     - gh issue view
     - erk create --from-plan
-    - dot-agent run erk comment-worktree-creation
+    - erk kit exec erk comment-worktree-creation
     - gh issue edit
     """
 

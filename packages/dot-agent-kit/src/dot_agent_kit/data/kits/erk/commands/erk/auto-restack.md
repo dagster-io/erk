@@ -21,7 +21,7 @@ This command runs `gt restack` and automatically handles any merge conflicts tha
 ### Step 1: Run Preflight
 
 ```bash
-dot-agent run gt restack-preflight
+erk kit exec gt restack-preflight
 ```
 
 Parse the JSON result:
@@ -49,7 +49,7 @@ After resolving all current conflicts:
 2. Continue the restack (stages files and runs gt continue):
 
 ```bash
-dot-agent run gt restack-continue <resolved-files...>
+erk kit exec gt restack-continue <resolved-files...>
 ```
 
 Parse the JSON result:
@@ -61,7 +61,7 @@ Parse the JSON result:
 ### Step 3: Verify Completion
 
 ```bash
-dot-agent run gt restack-finalize
+erk kit exec gt restack-finalize
 ```
 
 Parse the JSON result:

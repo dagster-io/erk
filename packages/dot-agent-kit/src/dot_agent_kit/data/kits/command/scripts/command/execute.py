@@ -53,8 +53,8 @@ def execute(command_name: str, json: bool) -> None:
     """Execute a Claude Code slash command via out-of-process CLI.
 
     Examples:
-        dot-agent run command execute gt:submit-branch
-        dot-agent run command execute ensure-ci --json
+        erk kit exec command execute gt:submit-branch
+        erk kit exec command execute ensure-ci --json
     """
     try:
         cli_ops = RealClaudeCliOps()

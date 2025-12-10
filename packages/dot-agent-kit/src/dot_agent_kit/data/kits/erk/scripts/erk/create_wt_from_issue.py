@@ -4,7 +4,7 @@ This kit CLI command provides deterministic worktree creation from GitHub issues
 replacing the non-deterministic agent-based workflow.
 
 Usage:
-    dot-agent run erk create-wt-from-issue <issue-number-or-url>
+    erk kit exec erk create-wt-from-issue <issue-number-or-url>
 
 Output:
     User-friendly formatted output with next steps
@@ -14,7 +14,7 @@ Exit Codes:
     1: Error (parsing failed, issue not found, missing label, etc.)
 
 Examples:
-    $ dot-agent run erk create-wt-from-issue 776
+    $ erk kit exec erk create-wt-from-issue 776
     ✅ Worktree created from issue #776: **feature-name**
 
     Branch: `issue-776-25-11-22`
@@ -26,7 +26,7 @@ Examples:
 
     `erk checkout issue-776-25-11-22 && claude --permission-mode acceptEdits "/erk:plan-implement"`
 
-    $ dot-agent run erk create-wt-from-issue https://github.com/owner/repo/issues/776
+    $ erk kit exec erk create-wt-from-issue https://github.com/owner/repo/issues/776
     (same as above)
 """
 

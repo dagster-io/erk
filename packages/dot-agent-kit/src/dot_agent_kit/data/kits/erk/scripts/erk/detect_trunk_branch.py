@@ -16,7 +16,7 @@ fi
 ```
 
 Usage:
-    dot-agent run erk detect-trunk-branch
+    erk kit exec erk detect-trunk-branch
 
 Output:
     JSON object with success status and detected trunk branch
@@ -26,19 +26,19 @@ Exit Codes:
     1: Error (neither main nor master exists on remote)
 
 Examples:
-    $ dot-agent run erk detect-trunk-branch
+    $ erk kit exec erk detect-trunk-branch
     {
       "success": true,
       "trunk_branch": "main"
     }
 
-    $ dot-agent run erk detect-trunk-branch  # in repo with master only
+    $ erk kit exec erk detect-trunk-branch  # in repo with master only
     {
       "success": true,
       "trunk_branch": "master"
     }
 
-    $ dot-agent run erk detect-trunk-branch  # in repo without main/master
+    $ erk kit exec erk detect-trunk-branch  # in repo without main/master
     {
       "success": false,
       "error": "trunk_not_found",

@@ -61,7 +61,7 @@ fi
 **After**: Agent invokes tested Python command, reads structured JSON:
 
 ```bash
-parse_result=$(dot-agent run erk parse-issue-reference "$issue_arg")
+parse_result=$(erk kit exec erk parse-issue-reference "$issue_arg")
 issue_number=$(echo "$parse_result" | jq -r '.issue_number')
 ```
 

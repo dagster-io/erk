@@ -61,7 +61,7 @@ You receive JSON input with these fields:
 }
 ```
 
-**Architecture Note:** In enriched mode, the calling command uses `dot-agent run erk save-plan-from-session` to extract the plan from `~/.claude/plans/` BEFORE launching this agent. This separates mechanical extraction (kit CLI) from semantic enrichment (agent).
+**Architecture Note:** In enriched mode, the calling command uses `erk kit exec erk save-plan-from-session` to extract the plan from `~/.claude/plans/` BEFORE launching this agent. This separates mechanical extraction (kit CLI) from semantic enrichment (agent).
 
 ## Complete Workflow
 
@@ -73,7 +73,7 @@ Check if `plan_content` is provided in the input JSON:
 
 **Case 1: plan_content is populated (primary path)**
 
-The plan has been **pre-extracted** by the calling command using `dot-agent run erk save-plan-from-session`. You do NOT need to search conversation context or session files.
+The plan has been **pre-extracted** by the calling command using `erk kit exec erk save-plan-from-session`. You do NOT need to search conversation context or session files.
 
 **Example input:**
 
@@ -108,7 +108,7 @@ Your job: Find plan in conversation, apply guidance, extract context, ask questi
 Use kit CLI to extract plan from `~/.claude/plans/`:
 
 ```bash
-plan_json=$(dot-agent run erk save-plan-from-session --session-id "$session_id" --format json)
+plan_json=$(erk kit exec erk save-plan-from-session --session-id "$session_id" --format json)
 plan_content=$(echo "$plan_json" | jq -r '.plan_content')
 ```
 

@@ -555,7 +555,7 @@ List sessions by modification time to find recent activity:
 
 ```bash
 # Find project directory for current path
-dot-agent run erk find-project-dir
+erk kit exec erk find-project-dir
 
 # Example output:
 # Project: -Users-schrockn--erk-repos-erk

@@ -29,7 +29,7 @@ Create a Python file in `kit_cli_commands/erk/` with this pattern:
 """Short description of what the command does.
 
 Usage:
-    dot-agent run erk your-command [options]
+    erk kit exec erk your-command [options]
 
 Exit Codes:
     0: Success
@@ -76,7 +76,7 @@ kit_cli_commands:
 Commands are invoked via:
 
 ```bash
-dot-agent run erk your-command arg_value --json
+erk kit exec erk your-command arg_value --json
 ```
 
 ## Key Patterns

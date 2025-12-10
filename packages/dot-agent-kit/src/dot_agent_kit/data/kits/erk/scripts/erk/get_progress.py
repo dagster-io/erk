@@ -4,8 +4,8 @@ This kit CLI command reads the YAML frontmatter from .impl/progress.md and
 returns progress information including completion status and steps array.
 
 Usage:
-    dot-agent run erk get-progress
-    dot-agent run erk get-progress --json
+    erk kit exec erk get-progress
+    erk kit exec erk get-progress --json
 
 Output:
     JSON format: {"completed_steps": X, "total_steps": Y, "percentage": Z, "steps": [...]}
@@ -16,7 +16,7 @@ Exit Codes:
     1: Error (missing file, malformed YAML)
 
 Examples:
-    $ dot-agent run erk get-progress
+    $ erk kit exec erk get-progress
     Progress: 5/10 (50%)
 
     - [x] 1. Implement feature A
@@ -24,7 +24,7 @@ Examples:
     - [ ] 3. Implement feature B
     ...
 
-    $ dot-agent run erk get-progress --json
+    $ erk kit exec erk get-progress --json
     {
       "completed_steps": 5,
       "total_steps": 10,

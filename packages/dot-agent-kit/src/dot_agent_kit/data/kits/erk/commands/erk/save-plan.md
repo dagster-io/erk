@@ -17,7 +17,7 @@ Get the session ID from the `SESSION_CONTEXT` reminder in your conversation cont
 Run this command with the extracted session ID:
 
 ```bash
-dot-agent run erk plan-save-to-issue --format display --session-id="<session-id-from-step-1>"
+erk kit exec erk plan-save-to-issue --format display --session-id="<session-id-from-step-1>"
 ```
 
 ### Step 3: Display Results

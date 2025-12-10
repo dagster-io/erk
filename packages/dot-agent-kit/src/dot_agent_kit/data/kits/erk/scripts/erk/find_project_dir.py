@@ -16,13 +16,13 @@ This command returns the project directory path and metadata about session logs.
 
 Usage:
     # Find project directory for current directory
-    dot-agent run erk find-project-dir
+    erk kit exec erk find-project-dir
 
     # Find project directory for specific path
-    dot-agent run erk find-project-dir --path /some/path
+    erk kit exec erk find-project-dir --path /some/path
 
     # JSON output for scripting
-    dot-agent run erk find-project-dir --json
+    erk kit exec erk find-project-dir --json
 
 Output:
     JSON object with success status and project information
@@ -32,7 +32,7 @@ Exit Codes:
     1: Error (project directory not found or other error)
 
 Examples:
-    $ dot-agent run erk find-project-dir
+    $ erk kit exec erk find-project-dir
     {
       "success": true,
       "project_dir": "/Users/foo/.claude/projects/-Users-foo-code-erk",
@@ -42,7 +42,7 @@ Examples:
       "latest_session_id": "abc123"
     }
 
-    $ dot-agent run erk find-project-dir --path /nonexistent
+    $ erk kit exec erk find-project-dir --path /nonexistent
     {
       "success": false,
       "error": "Project directory not found",

@@ -22,8 +22,8 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 Run both kit CLI commands to get review comments AND discussion comments:
 
 ```bash
-dot-agent run erk get-pr-review-comments
-dot-agent run erk get-pr-discussion-comments
+erk kit exec erk get-pr-review-comments
+erk kit exec erk get-pr-discussion-comments
 ```
 
 **Review Comments JSON:**
@@ -117,7 +117,7 @@ Process all comments (both types) in the order shown in the summary table.
 After addressing a review thread, resolve it with a resolution comment:
 
 ```bash
-dot-agent run erk resolve-review-thread --thread-id "PRRT_abc123" --comment "Resolved via /erk:pr-address at $(date '+%Y-%m-%d %I:%M %p %Z')"
+erk kit exec erk resolve-review-thread --thread-id "PRRT_abc123" --comment "Resolved via /erk:pr-address at $(date '+%Y-%m-%d %I:%M %p %Z')"
 ```
 
 Report: "Resolved review thread on src/foo.py:42"
@@ -127,7 +127,7 @@ Report: "Resolved review thread on src/foo.py:42"
 After addressing a discussion comment, add a reaction:
 
 ```bash
-dot-agent run erk add-reaction-to-comment --comment-id 12345
+erk kit exec erk add-reaction-to-comment --comment-id 12345
 ```
 
 Report: "Added reaction to discussion comment from reviewer"

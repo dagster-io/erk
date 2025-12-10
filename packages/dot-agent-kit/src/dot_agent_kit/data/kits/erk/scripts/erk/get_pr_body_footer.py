@@ -5,8 +5,8 @@ the `erk pr checkout` command. This is used by the GitHub Actions workflow when
 creating PRs from remote implementations.
 
 Usage:
-    dot-agent run erk get-pr-body-footer --pr-number 123
-    dot-agent run erk get-pr-body-footer --pr-number 123 --issue-number 456
+    erk kit exec erk get-pr-body-footer --pr-number 123
+    erk kit exec erk get-pr-body-footer --pr-number 123 --issue-number 456
 
 Output:
     Markdown footer with checkout command and optional issue closing reference
@@ -16,7 +16,7 @@ Exit Codes:
     1: Error (missing pr-number)
 
 Examples:
-    $ dot-agent run erk get-pr-body-footer --pr-number 1895
+    $ erk kit exec erk get-pr-body-footer --pr-number 1895
 
     ---
 
@@ -26,7 +26,7 @@ Examples:
     erk pr checkout 1895 && erk pr sync
     ```
 
-    $ dot-agent run erk get-pr-body-footer --pr-number 1895 --issue-number 123
+    $ erk kit exec erk get-pr-body-footer --pr-number 1895 --issue-number 123
 
     ---
 

@@ -4,7 +4,7 @@ This kit CLI command posts a single comprehensive start comment to GitHub issues
 with worktree name, branch name, complete steps list, and structured YAML metadata.
 
 Usage:
-    dot-agent run erk post-start-comment
+    erk kit exec erk post-start-comment
 
 Output:
     JSON with success status or error information
@@ -14,10 +14,10 @@ Exit Codes:
     0: Always (even on error, to support || true pattern)
 
 Examples:
-    $ dot-agent run erk post-start-comment
+    $ erk kit exec erk post-start-comment
     {"success": true, "issue_number": 123, "total_steps": 5}
 
-    $ dot-agent run erk post-start-comment
+    $ erk kit exec erk post-start-comment
     {"success": false, "error_type": "no_issue_reference", "message": "..."}
 """
 

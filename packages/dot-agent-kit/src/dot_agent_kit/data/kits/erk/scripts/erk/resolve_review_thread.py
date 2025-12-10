@@ -4,8 +4,8 @@ This kit CLI command resolves a single PR review thread and outputs
 JSON with the result. Optionally adds a reply comment before resolving.
 
 Usage:
-    dot-agent run erk resolve-review-thread --thread-id "PRRT_xxxx"
-    dot-agent run erk resolve-review-thread --thread-id "PRRT_xxxx" --comment "Resolved via ..."
+    erk kit exec erk resolve-review-thread --thread-id "PRRT_xxxx"
+    erk kit exec erk resolve-review-thread --thread-id "PRRT_xxxx" --comment "Resolved via ..."
 
 Output:
     JSON with success status
@@ -15,13 +15,13 @@ Exit Codes:
     1: Context not initialized
 
 Examples:
-    $ dot-agent run erk resolve-review-thread --thread-id "PRRT_abc123"
+    $ erk kit exec erk resolve-review-thread --thread-id "PRRT_abc123"
     {"success": true, "thread_id": "PRRT_abc123"}
 
-    $ dot-agent run erk resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed"
+    $ erk kit exec erk resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed"
     {"success": true, "thread_id": "PRRT_abc123", "comment_added": true}
 
-    $ dot-agent run erk resolve-review-thread --thread-id "invalid"
+    $ erk kit exec erk resolve-review-thread --thread-id "invalid"
     {"success": false, "error_type": "resolution_failed", "message": "..."}
 """
 

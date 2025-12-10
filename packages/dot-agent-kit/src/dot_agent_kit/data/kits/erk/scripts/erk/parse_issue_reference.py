@@ -9,10 +9,10 @@ This replaces bash-based regex parsing in agent markdown with tested Python code
 
 Usage:
     # Parse plain issue number
-    dot-agent run erk parse-issue-reference "776"
+    erk kit exec erk parse-issue-reference "776"
 
     # Parse full GitHub URL
-    dot-agent run erk parse-issue-reference "https://github.com/owner/repo/issues/776"
+    erk kit exec erk parse-issue-reference "https://github.com/owner/repo/issues/776"
 
 Output:
     JSON object with success status and parsed issue number
@@ -22,19 +22,19 @@ Exit Codes:
     1: Error (invalid input format)
 
 Examples:
-    $ dot-agent run erk parse-issue-reference "776"
+    $ erk kit exec erk parse-issue-reference "776"
     {
       "success": true,
       "issue_number": 776
     }
 
-    $ dot-agent run erk parse-issue-reference "https://github.com/dagster-io/erk/issues/776"
+    $ erk kit exec erk parse-issue-reference "https://github.com/dagster-io/erk/issues/776"
     {
       "success": true,
       "issue_number": 776
     }
 
-    $ dot-agent run erk parse-issue-reference "not-a-number"
+    $ erk kit exec erk parse-issue-reference "not-a-number"
     {
       "success": false,
       "error": "invalid_format",

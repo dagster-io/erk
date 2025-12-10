@@ -3,7 +3,7 @@
 Session Log Preprocessor
 
 Compresses JSONL session logs to XML format by removing metadata and deduplicating messages.
-This command is invoked via dot-agent run erk preprocess-session <log-path>.
+This command is invoked via erk kit exec erk preprocess-session <log-path>.
 """
 
 import json

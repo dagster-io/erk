@@ -7,7 +7,7 @@ This kit CLI command combines validation and initialization for /erk:plan-implem
 - Parses "Related Documentation" section for skills and docs
 
 Usage:
-    dot-agent run erk impl-init --json
+    erk kit exec erk impl-init --json
 
 Output:
     JSON with validation status, phases, and related docs
@@ -18,7 +18,7 @@ Exit Codes:
     1: Validation error
 
 Examples:
-    $ dot-agent run erk impl-init --json
+    $ erk kit exec erk impl-init --json
     {"valid": true, "impl_type": "impl", "has_issue_tracking": true, ...}
 """
 

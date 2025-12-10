@@ -1,7 +1,7 @@
 """Extract plan from ~/.claude/plans/ and create GitHub issue in one operation.
 
 Usage:
-    dot-agent run erk plan-save-to-issue [OPTIONS]
+    erk kit exec erk plan-save-to-issue [OPTIONS]
 
 This command combines plan extraction and issue creation:
 1. Extract plan from specified file, session-scoped lookup, or latest from ~/.claude/plans/

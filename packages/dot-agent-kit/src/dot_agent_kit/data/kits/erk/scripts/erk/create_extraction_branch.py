@@ -1,7 +1,7 @@
 """Create and push a branch for extraction documentation.
 
 Usage:
-    dot-agent run erk create-extraction-branch \
+    erk kit exec erk create-extraction-branch \
         --issue-number 123 \
         --trunk-branch master
 
