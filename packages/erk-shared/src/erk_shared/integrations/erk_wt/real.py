@@ -1,7 +1,7 @@
 """Real subprocess-based implementation of erk worktree operations interface.
 
 This module provides concrete implementations that wrap subprocess.run calls
-for dot-agent and gh commands used by create_wt_from_issue. This is the production
+for erk and gh commands used by create_wt_from_issue. This is the production
 implementation.
 
 Design:
@@ -28,7 +28,7 @@ class RealErkWtKit(ErkWtKit):
     """Real erk worktree operations using subprocess."""
 
     def parse_issue_reference(self, issue_arg: str) -> IssueParseResult:
-        """Parse issue reference using dot-agent CLI command.
+        """Parse issue reference using erk kit exec CLI command.
 
         Args:
             issue_arg: Issue number or GitHub URL
@@ -37,7 +37,7 @@ class RealErkWtKit(ErkWtKit):
             IssueParseResult with success status and parsed issue number or error
         """
         result = subprocess.run(
-            ["dot-agent", "run", "erk", "parse-issue-reference", issue_arg],
+            ["erk", "kit", "exec", "erk", "parse-issue-reference", issue_arg],
             capture_output=True,
             text=True,
             check=False,
@@ -175,8 +175,9 @@ class RealErkWtKit(ErkWtKit):
         """
         result = subprocess.run(
             [
-                "dot-agent",
-                "run",
+                "erk",
+                "kit",
+                "exec",
                 "erk",
                 "comment-worktree-creation",
                 str(issue_number),
