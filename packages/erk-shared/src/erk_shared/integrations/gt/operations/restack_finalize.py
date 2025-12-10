@@ -44,17 +44,21 @@ def execute_restack_finalize(
         return
 
     # Step 2: Verify clean working tree
+    # Retry once after brief delay to handle transient files from git rebase/graphite
     yield ProgressEvent("Checking working tree status...")
     if not ops.git.is_worktree_clean(cwd):
-        yield CompletionEvent(
-            RestackFinalizeError(
-                success=False,
-                error_type="dirty_working_tree",
-                message="Working tree has uncommitted changes",
-                details={},
+        # Brief delay for transient file cleanup (graphite metadata, rebase temp files)
+        ops.time.sleep(0.1)
+        if not ops.git.is_worktree_clean(cwd):
+            yield CompletionEvent(
+                RestackFinalizeError(
+                    success=False,
+                    error_type="dirty_working_tree",
+                    message="Working tree has uncommitted changes",
+                    details={},
+                )
             )
-        )
-        return
+            return
 
     yield ProgressEvent("Restack verified successfully", style="success")
     yield CompletionEvent(

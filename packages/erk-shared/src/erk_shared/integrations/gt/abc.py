@@ -20,6 +20,7 @@ from typing import Protocol
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.integrations.graphite.abc import Graphite
+from erk_shared.integrations.time.abc import Time
 
 
 class GtKit(Protocol):
@@ -55,4 +56,9 @@ class GtKit(Protocol):
     @property
     def graphite(self) -> Graphite:
         """Graphite operations interface."""
+        ...
+
+    @property
+    def time(self) -> Time:
+        """Time operations interface for testable sleep/timing."""
         ...

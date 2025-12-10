@@ -18,6 +18,7 @@ from erk_shared.github.abc import GitHub
 from erk_shared.github.real import RealGitHub
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.real import RealGraphite
+from erk_shared.integrations.time.abc import Time
 from erk_shared.integrations.time.real import RealTime
 
 
@@ -34,9 +35,11 @@ class RealGtKit:
     git: Git
     github: GitHub
     graphite: Graphite
+    time: Time
 
     def __init__(self) -> None:
         """Initialize real operations instances."""
+        self.time = RealTime()
         self.git = RealGit()
-        self.github = RealGitHub(time=RealTime())
+        self.github = RealGitHub(time=self.time)
         self.graphite = RealGraphite()

@@ -23,6 +23,8 @@ from erk_shared.github.types import PRDetails, PullRequestInfo
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
+from erk_shared.integrations.time.abc import Time
+from erk_shared.integrations.time.fake import FakeTime
 
 
 @dataclass
@@ -72,6 +74,7 @@ class FakeGtKitOps:
         github_builder_state: GitHubBuilderState | None = None,
         git_builder_state: GitBuilderState | None = None,
         main_graphite: Graphite | None = None,
+        main_time: Time | None = None,
     ) -> None:
         """Initialize with optional initial states."""
         # State accumulators for FakeGit (lazy construction)
@@ -101,6 +104,9 @@ class FakeGtKitOps:
 
         # Graphite instance
         self._main_graphite = main_graphite if main_graphite is not None else FakeGraphite()
+
+        # Time instance
+        self._main_time = main_time if main_time is not None else FakeTime()
 
     def _build_fake_git(self) -> FakeGit:
         """Build FakeGit from accumulated state.
@@ -269,6 +275,11 @@ class FakeGtKitOps:
     def graphite(self) -> Graphite:
         """Get the Graphite operations interface."""
         return self._main_graphite
+
+    @property
+    def time(self) -> Time:
+        """Get the Time operations interface."""
+        return self._main_time
 
     # Declarative setup methods
 
@@ -762,5 +773,37 @@ class FakeGtKitOps:
         self._git_file_statuses[repo_root] = ([], [], [])  # All empty
         # Add to existing_paths so is_worktree_clean returns True
         self._git_builder_state.existing_paths.add(repo_root)
+        self._git_instance = None
+        return self
+
+    def with_transient_dirty_state(self) -> "FakeGtKitOps":
+        """Configure a worktree that starts dirty but becomes clean after time.sleep().
+
+        This simulates transient files (like graphite metadata or git rebase temp files)
+        that disappear shortly after a restack operation completes.
+
+        Returns:
+            Self for chaining
+        """
+        repo_root = Path(self._repo_root)
+        # Start dirty
+        self._git_builder_state.dirty_worktrees.add(repo_root)
+        self._git_builder_state.existing_paths.add(repo_root)
+
+        # Create a custom FakeTime that clears the dirty state on sleep
+        class TransientDirtyFakeTime(FakeTime):
+            """FakeTime that clears dirty worktrees on sleep."""
+
+            def __init__(self, git_builder_state: GitBuilderState, worktree: Path) -> None:
+                super().__init__()
+                self._git_builder_state = git_builder_state
+                self._worktree = worktree
+
+            def sleep(self, seconds: float) -> None:
+                super().sleep(seconds)
+                # Clear dirty state after sleep (simulating transient file cleanup)
+                self._git_builder_state.dirty_worktrees.discard(self._worktree)
+
+        self._main_time = TransientDirtyFakeTime(self._git_builder_state, repo_root)
         self._git_instance = None
         return self

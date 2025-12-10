@@ -225,3 +225,32 @@ class TestRestackFinalize:
         assert isinstance(result, RestackFinalizeError)
         assert result.success is False
         assert result.error_type == "dirty_working_tree"
+
+    def test_finalize_retries_on_transient_dirty_state(self, tmp_path: Path) -> None:
+        """Test finalize succeeds when dirty state clears after brief delay.
+
+        This tests the fix for issue #2844 where transient files from
+        gt restack (graphite metadata, git rebase temp files) caused
+        is_worktree_clean() to return False immediately after restack,
+        but the files would disappear shortly after.
+        """
+        ops = (
+            FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
+            .with_branch("feature-branch", parent="main")
+            .with_rebase_in_progress(False)
+            .with_transient_dirty_state()
+        )
+
+        result = render_events(execute_restack_finalize(ops, tmp_path))
+
+        # Should succeed after retry - transient dirty state clears after sleep
+        assert isinstance(result, RestackFinalizeSuccess)
+        assert result.success is True
+        assert result.branch_name == "feature-branch"
+
+        # Verify sleep was called (the retry mechanism was triggered)
+        from erk_shared.integrations.time.fake import FakeTime
+
+        assert isinstance(ops.time, FakeTime)
+        assert ops.time.sleep_calls == [0.1]  # 0.1 second retry delay
