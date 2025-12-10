@@ -4,6 +4,8 @@ read_when:
   - "working with session logs"
   - "parsing session logs"
   - "understanding ~/.claude/projects/ structure"
+  - "debugging session lookup issues"
+  - "implementing features that depend on project directory resolution"
 ---
 
 # Claude Code Session Layout
@@ -373,19 +375,24 @@ See `erk_shared/scratch/scratch.py:get_scratch_dir()` for the canonical implemen
 
 ## Key Algorithms
 
-### Finding Project Directory for Path
+### Finding Project Directory for Path (with Walk-Up Search)
 
 **Use Case:** Get session logs for a specific filesystem path
 
 **Algorithm:**
 
-1. Encode the filesystem path using replacement rules (see "Project Directory Encoding" above)
-2. Construct path: `~/.claude/projects/<encoded-path>`
-3. Check if directory exists
+1. Start with the given path (resolved to absolute)
+2. Encode the path using replacement rules (see "Project Directory Encoding" above)
+3. Construct path: `~/.claude/projects/<encoded-path>`
+4. Check if directory exists
+5. If not found, walk up to the parent directory
+6. Repeat steps 2-5 until finding a match or hitting the filesystem root
+
+**Why walk-up?** This enables running erk commands from subdirectories of a Claude project. If you start Claude Code in `/Users/dev/myrepo` but later `cd` into `/Users/dev/myrepo/src/components`, the walk-up search finds the parent project.
 
 **CLI:** Use `erk kit exec erk find-project-dir` to find the project directory for the current working directory.
 
-**Implementation:** See `find_project_info()` in `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/find_project_dir.py`
+**Implementation:** See `RealClaudeCodeSessionStore._get_project_dir()` in `packages/erk-shared/src/erk_shared/extraction/claude_code_session_store/real.py`
 
 ### Finding Project Directory for Session ID
 

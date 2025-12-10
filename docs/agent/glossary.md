@@ -181,6 +181,19 @@ A frozen dataclass containing project information.
 
 See `src/erk/core/project_discovery.py` for the canonical definition.
 
+### Claude Code Project Directory
+
+The directory where Claude Code stores session data for a specific project. Located at `~/.claude/projects/<encoded-path>` where the path is encoded by replacing `/` and `.` with `-`.
+
+**Contents**:
+
+- `<session-id>.jsonl` - Main session logs (UUID format)
+- `agent-<agent-id>.jsonl` - Subagent logs from Task tool invocations
+
+**Walk-up discovery**: When looking up a project from a working directory, the session store checks if an exact match exists for the current path, then walks up to parent directories until finding a match or hitting the filesystem root. This enables running erk commands from subdirectories of a Claude project.
+
+**See**: [Claude Code Session Layout](sessions/layout.md)
+
 ---
 
 ## Path Hierarchy in CLI Commands
