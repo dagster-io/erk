@@ -13,7 +13,6 @@ This eliminates code duplication across kit CLI commands.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import click
 
@@ -24,9 +23,6 @@ from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues
 from erk_shared.project_discovery import discover_project
 from erk_shared.prompt_executor import PromptExecutor
-
-if TYPE_CHECKING:
-    from erk_shared.context.context import ErkContext
 
 
 def require_issues(ctx: click.Context) -> GitHubIssues:

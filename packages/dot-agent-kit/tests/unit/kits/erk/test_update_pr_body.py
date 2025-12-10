@@ -8,12 +8,12 @@ import json
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.context import ErkContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo
 from erk_shared.prompt_executor.fake import FakePromptExecutor
 
-from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.scripts.erk.update_pr_body import (
     UpdateError,
     UpdateSuccess,
@@ -303,7 +303,7 @@ def test_cli_success(tmp_path: Path) -> None:
 
     executor = FakePromptExecutor(output="Generated summary")
 
-    ctx = DotAgentContext.for_test(
+    ctx = ErkContext.for_test(
         git=git, github=github, prompt_executor=executor, repo_root=tmp_path, cwd=tmp_path
     )
 
@@ -359,7 +359,7 @@ def test_cli_with_workflow_run(tmp_path: Path) -> None:
 
     executor = FakePromptExecutor(output="Generated summary")
 
-    ctx = DotAgentContext.for_test(
+    ctx = ErkContext.for_test(
         git=git, github=github, prompt_executor=executor, repo_root=tmp_path, cwd=tmp_path
     )
 
@@ -389,7 +389,7 @@ def test_cli_error_exit_code(tmp_path: Path) -> None:
     github = FakeGitHub()
     executor = FakePromptExecutor()
 
-    ctx = DotAgentContext.for_test(
+    ctx = ErkContext.for_test(
         git=git, github=github, prompt_executor=executor, repo_root=tmp_path, cwd=tmp_path
     )
 
@@ -455,7 +455,7 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
 
     executor = FakePromptExecutor(output="Summary")
 
-    ctx = DotAgentContext.for_test(
+    ctx = ErkContext.for_test(
         git=git, github=github, prompt_executor=executor, repo_root=tmp_path, cwd=tmp_path
     )
 
@@ -484,7 +484,7 @@ def test_cli_json_output_structure_error(tmp_path: Path) -> None:
     github = FakeGitHub()
     executor = FakePromptExecutor()
 
-    ctx = DotAgentContext.for_test(
+    ctx = ErkContext.for_test(
         git=git, github=github, prompt_executor=executor, repo_root=tmp_path, cwd=tmp_path
     )
 
