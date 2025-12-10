@@ -9,11 +9,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.context import ErkContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 
-from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.scripts.erk.post_extraction_comment import (
     _format_complete_comment,
     _format_failed_comment,
@@ -131,7 +131,7 @@ def test_post_started_comment_success(tmp_path: Path) -> None:
         result = runner.invoke(
             post_extraction_comment,
             ["--issue-number", "100", "--status", "started"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -168,7 +168,7 @@ def test_post_started_comment_with_workflow_url(tmp_path: Path) -> None:
                 "--workflow-run-url",
                 "https://github.com/owner/repo/actions/runs/12345",
             ],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -197,7 +197,7 @@ def test_post_failed_comment_success(tmp_path: Path) -> None:
                 "--error-message",
                 "Session content was malformed",
             ],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -230,7 +230,7 @@ def test_post_complete_comment_success(tmp_path: Path) -> None:
                 "--pr-url",
                 "https://github.com/owner/repo/pull/456",
             ],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -256,7 +256,7 @@ def test_post_no_changes_comment_success(tmp_path: Path) -> None:
         result = runner.invoke(
             post_extraction_comment,
             ["--issue-number", "500", "--status", "no-changes"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -291,7 +291,7 @@ def test_post_comment_github_api_failure(tmp_path: Path) -> None:
         result = runner.invoke(
             post_extraction_comment,
             ["--issue-number", "600", "--status", "started"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -319,7 +319,7 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
         result = runner.invoke(
             post_extraction_comment,
             ["--issue-number", "700", "--status", "started"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -355,7 +355,7 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
         result = runner.invoke(
             post_extraction_comment,
             ["--issue-number", "800", "--status", "started"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -397,7 +397,7 @@ def test_started_comment_contains_metadata(tmp_path: Path) -> None:
                 "--workflow-run-url",
                 "https://example.com/run/123",
             ],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -425,7 +425,7 @@ def test_failed_comment_contains_retry_instructions(tmp_path: Path) -> None:
         result = runner.invoke(
             post_extraction_comment,
             ["--issue-number", "1000", "--status", "failed"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -456,7 +456,7 @@ def test_complete_comment_contains_review_prompt(tmp_path: Path) -> None:
                 "--pr-url",
                 "https://github.com/owner/repo/pull/999",
             ],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )

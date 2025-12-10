@@ -14,16 +14,16 @@ This document covers testing patterns specific to kit CLI commands that use `Dot
 
 Kit CLI commands use Click's context system (`@click.pass_context`) to receive dependencies. Testing these commands requires passing a test context via the `obj` parameter to `CliRunner.invoke()`.
 
-## The DotAgentContext.for_test() Pattern
+## The ErkContext.for_test() Pattern
 
-`DotAgentContext.for_test()` is the canonical factory method for creating test contexts with fake dependencies.
+`ErkContext.for_test()` is the canonical factory method for creating test contexts with fake dependencies.
 
 ### Basic Usage
 
 ```python
 from click.testing import CliRunner
+from erk_shared.context import ErkContext
 from erk_shared.github.issues import FakeGitHubIssues
-from dot_agent_kit.context import DotAgentContext
 
 def test_my_command() -> None:
     """Test command with fake dependencies."""
@@ -35,7 +35,7 @@ def test_my_command() -> None:
     result = runner.invoke(
         my_command,
         ["--arg", "value"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
     # Assert

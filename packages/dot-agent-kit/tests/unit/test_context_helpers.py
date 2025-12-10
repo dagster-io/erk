@@ -6,8 +6,8 @@ Layer 3 (Pure Unit Tests): Testing getter functions in isolation.
 from pathlib import Path
 
 import pytest
+from erk_shared.context import ErkContext
 
-from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.context_helpers import (
     require_github_issues,
     require_project_root,
@@ -23,7 +23,7 @@ def test_require_github_issues_returns_issues_when_context_initialized() -> None
 
     # Create context and mock Click context
     github_issues = FakeGitHubIssues()
-    test_ctx = DotAgentContext.for_test(github_issues=github_issues)
+    test_ctx = ErkContext.for_test(github_issues=github_issues)
 
     mock_click_ctx = MagicMock()
     mock_click_ctx.obj = test_ctx
@@ -55,7 +55,7 @@ def test_require_repo_root_returns_path_when_context_initialized() -> None:
 
     # Create context with custom repo_root
     custom_path = Path("/test/repo")
-    test_ctx = DotAgentContext.for_test(repo_root=custom_path)
+    test_ctx = ErkContext.for_test(repo_root=custom_path)
 
     mock_click_ctx = MagicMock()
     mock_click_ctx.obj = test_ctx
@@ -171,7 +171,7 @@ def test_require_project_root_returns_project_when_found(tmp_path: Path) -> None
     # Create fake git with existing paths
     git = FakeGit(existing_paths={repo_root, project_root, cwd, project_config})
 
-    test_ctx = DotAgentContext.for_test(repo_root=repo_root, cwd=cwd, git=git)
+    test_ctx = ErkContext.for_test(repo_root=repo_root, cwd=cwd, git=git)
 
     mock_click_ctx = MagicMock()
     mock_click_ctx.obj = test_ctx
@@ -199,7 +199,7 @@ def test_require_project_root_falls_back_to_repo_root_when_no_project(tmp_path: 
     # Create fake git with existing paths (no project config)
     git = FakeGit(existing_paths={repo_root, cwd})
 
-    test_ctx = DotAgentContext.for_test(repo_root=repo_root, cwd=cwd, git=git)
+    test_ctx = ErkContext.for_test(repo_root=repo_root, cwd=cwd, git=git)
 
     mock_click_ctx = MagicMock()
     mock_click_ctx.obj = test_ctx

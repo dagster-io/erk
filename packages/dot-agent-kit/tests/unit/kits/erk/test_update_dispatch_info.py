@@ -9,11 +9,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.context import ErkContext
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata import find_metadata_block
 
-from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.scripts.erk.update_dispatch_info import (
     update_dispatch_info,
 )
@@ -92,7 +92,7 @@ def test_update_dispatch_info_success() -> None:
     result = runner.invoke(
         update_dispatch_info,
         ["123", "12345678", "WFR_kwLOPxC3hc8AAAAEnZK8rQ", "2025-11-25T15:00:00Z"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
     assert result.exit_code == 0
@@ -123,7 +123,7 @@ def test_update_dispatch_info_overwrites_existing() -> None:
     result = runner.invoke(
         update_dispatch_info,
         ["456", "new-run-id", "WFR_kwLOPxC3hc8AAAAEnZK8rQ", "2025-11-25T16:00:00Z"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
     assert result.exit_code == 0
@@ -148,7 +148,7 @@ def test_update_dispatch_info_preserves_other_content() -> None:
     result = runner.invoke(
         update_dispatch_info,
         ["789", "test-run", "WFR_kwLOPxC3hc8AAAAEnZK8rQ", "2025-11-25T17:00:00Z"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
     assert result.exit_code == 0
@@ -171,7 +171,7 @@ def test_update_dispatch_info_issue_not_found() -> None:
     result = runner.invoke(
         update_dispatch_info,
         ["999", "test-run", "WFR_kwLOPxC3hc8AAAAEnZK8rQ", "2025-11-25T18:00:00Z"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
     assert result.exit_code == 1
@@ -193,7 +193,7 @@ This is an issue created before plan-header blocks were introduced.
     result = runner.invoke(
         update_dispatch_info,
         ["100", "test-run", "WFR_kwLOPxC3hc8AAAAEnZK8rQ", "2025-11-25T19:00:00Z"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
     assert result.exit_code == 1
@@ -216,7 +216,7 @@ def test_update_dispatch_info_github_api_failure() -> None:
     result = runner.invoke(
         update_dispatch_info,
         ["200", "test-run", "WFR_kwLOPxC3hc8AAAAEnZK8rQ", "2025-11-25T20:00:00Z"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
     assert result.exit_code == 1
@@ -240,7 +240,7 @@ def test_json_output_structure_success() -> None:
     result = runner.invoke(
         update_dispatch_info,
         ["321", "run-12345", "WFR_kwLOPxC3hc8AAAAEnZK8rQ", "2025-11-25T21:00:00Z"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
     assert result.exit_code == 0
@@ -273,7 +273,7 @@ def test_json_output_structure_error() -> None:
     result = runner.invoke(
         update_dispatch_info,
         ["999", "run-abc", "WFR_kwLOPxC3hc8AAAAEnZK8rQ", "2025-11-25T22:00:00Z"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
     assert result.exit_code == 1

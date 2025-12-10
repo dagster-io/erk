@@ -15,7 +15,7 @@ from erk_shared.github.issues import GitHubIssues
 from erk_shared.prompt_executor import PromptExecutor
 
 
-def for_test(
+def context_for_test(
     github_issues: GitHubIssues | None = None,
     git: Git | None = None,
     github: GitHub | None = None,

@@ -9,6 +9,7 @@ from dot_agent_kit.version import __version__
 
 if TYPE_CHECKING:
     from erk_shared.context import ErkContext
+    from erk_shared.git.abc import Git
     from erk_shared.github.types import RepoInfo
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
@@ -20,7 +21,6 @@ def _get_repo_info(git: "Git", repo_root: Path) -> "RepoInfo | None":
     Parses the origin remote URL to extract owner/name for GitHub API calls.
     Returns None if no origin remote is configured or URL cannot be parsed.
     """
-    from erk_shared.git.abc import Git
     from erk_shared.github.parsing import parse_git_remote_url
     from erk_shared.github.types import RepoInfo
 

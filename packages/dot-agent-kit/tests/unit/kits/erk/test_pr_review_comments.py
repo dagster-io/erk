@@ -8,11 +8,11 @@ import json
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.context import ErkContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PRReviewComment, PRReviewThread
 
-from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.scripts.erk.get_pr_review_comments import (
     get_pr_review_comments,
 )
@@ -90,7 +90,7 @@ def test_get_pr_review_comments_with_pr_number(tmp_path: Path) -> None:
         result = runner.invoke(
             get_pr_review_comments,
             ["--pr", "123"],
-            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -122,7 +122,7 @@ def test_get_pr_review_comments_filters_resolved_by_default(tmp_path: Path) -> N
         result = runner.invoke(
             get_pr_review_comments,
             ["--pr", "123"],
-            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -150,7 +150,7 @@ def test_get_pr_review_comments_include_resolved_flag(tmp_path: Path) -> None:
         result = runner.invoke(
             get_pr_review_comments,
             ["--pr", "123", "--include-resolved"],
-            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -175,7 +175,7 @@ def test_get_pr_review_comments_no_threads(tmp_path: Path) -> None:
         result = runner.invoke(
             get_pr_review_comments,
             ["--pr", "123"],
-            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -201,7 +201,7 @@ def test_get_pr_review_comments_pr_not_found(tmp_path: Path) -> None:
         result = runner.invoke(
             get_pr_review_comments,
             ["--pr", "999"],
-            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0  # Graceful degradation
@@ -227,7 +227,7 @@ def test_resolve_review_thread_success(tmp_path: Path) -> None:
         result = runner.invoke(
             resolve_review_thread,
             ["--thread-id", "PRRT_abc123"],
-            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -252,14 +252,14 @@ def test_resolve_review_thread_multiple(tmp_path: Path) -> None:
         runner.invoke(
             resolve_review_thread,
             ["--thread-id", "PRRT_1"],
-            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
         # Resolve second thread
         runner.invoke(
             resolve_review_thread,
             ["--thread-id", "PRRT_2"],
-            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     # Both should be tracked
@@ -284,7 +284,7 @@ def test_resolve_review_thread_missing_thread_id(tmp_path: Path) -> None:
         result = runner.invoke(
             resolve_review_thread,
             [],  # Missing --thread-id
-            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     # Click should return error for missing required option
@@ -315,7 +315,7 @@ def test_get_pr_review_comments_json_structure(tmp_path: Path) -> None:
         result = runner.invoke(
             get_pr_review_comments,
             ["--pr", "123"],
-            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0
@@ -355,7 +355,7 @@ def test_resolve_review_thread_json_structure_success(tmp_path: Path) -> None:
         result = runner.invoke(
             resolve_review_thread,
             ["--thread-id", "PRRT_test"],
-            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0
@@ -383,7 +383,7 @@ def test_resolve_review_thread_with_comment(tmp_path: Path) -> None:
         result = runner.invoke(
             resolve_review_thread,
             ["--thread-id", "PRRT_abc123", "--comment", "Resolved via automation"],
-            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -413,7 +413,7 @@ def test_resolve_review_thread_without_comment(tmp_path: Path) -> None:
         result = runner.invoke(
             resolve_review_thread,
             ["--thread-id", "PRRT_abc123"],
-            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -438,7 +438,7 @@ def test_resolve_review_thread_json_structure_with_comment(tmp_path: Path) -> No
         result = runner.invoke(
             resolve_review_thread,
             ["--thread-id", "PRRT_test", "--comment", "Test comment"],
-            obj=DotAgentContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0

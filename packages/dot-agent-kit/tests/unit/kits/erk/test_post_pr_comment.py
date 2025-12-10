@@ -9,12 +9,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.context import ErkContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.impl_folder import save_issue_reference
 
-from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.scripts.erk.post_pr_comment import (
     create_pr_published_block,
     post_pr_comment,
@@ -98,7 +98,7 @@ def test_post_pr_comment_success(tmp_path: Path) -> None:
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
         )
 
     # Assert
@@ -129,7 +129,7 @@ def test_post_pr_comment_no_issue_reference(tmp_path: Path) -> None:
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
         )
 
     assert result.exit_code == 0  # Always exits 0 for || true pattern
@@ -154,7 +154,7 @@ def test_post_pr_comment_invalid_issue_json(tmp_path: Path) -> None:
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
         )
 
     assert result.exit_code == 0
@@ -177,7 +177,7 @@ def test_post_pr_comment_branch_detection_failed(tmp_path: Path) -> None:
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
         )
 
     assert result.exit_code == 0
@@ -204,7 +204,7 @@ def test_post_pr_comment_github_api_failure(tmp_path: Path) -> None:
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
         )
 
     assert result.exit_code == 0
@@ -232,7 +232,7 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/456", "--pr-number", "456"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
         )
 
     assert result.exit_code == 0
@@ -266,7 +266,7 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
         )
 
     assert result.exit_code == 0
@@ -309,7 +309,7 @@ def test_comment_contains_pr_metadata(tmp_path: Path) -> None:
                 "--pr-number",
                 "999",
             ],
-            obj=DotAgentContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
         )
 
     assert result.exit_code == 0

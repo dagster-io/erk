@@ -8,13 +8,13 @@ import json
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.context import ErkContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueComment
 from erk_shared.github.types import PRDetails
 
-from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.scripts.erk.add_reaction_to_comment import (
     add_reaction_to_comment,
 )
@@ -81,7 +81,7 @@ def test_get_pr_discussion_comments_with_pr_number(tmp_path: Path) -> None:
         result = runner.invoke(
             get_pr_discussion_comments,
             ["--pr", "123"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github=fake_github,
                 github_issues=fake_github_issues,
                 git=fake_git,
@@ -117,7 +117,7 @@ def test_get_pr_discussion_comments_no_comments(tmp_path: Path) -> None:
         result = runner.invoke(
             get_pr_discussion_comments,
             ["--pr", "123"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github=fake_github,
                 github_issues=fake_github_issues,
                 git=fake_git,
@@ -150,7 +150,7 @@ def test_get_pr_discussion_comments_pr_not_found(tmp_path: Path) -> None:
         result = runner.invoke(
             get_pr_discussion_comments,
             ["--pr", "999"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github=fake_github,
                 github_issues=fake_github_issues,
                 git=fake_git,
@@ -182,7 +182,7 @@ def test_add_reaction_to_comment_success(tmp_path: Path) -> None:
         result = runner.invoke(
             add_reaction_to_comment,
             ["--comment-id", "12345"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_github_issues,
                 git=fake_git,
                 repo_root=cwd,
@@ -212,7 +212,7 @@ def test_add_reaction_to_comment_custom_reaction(tmp_path: Path) -> None:
         result = runner.invoke(
             add_reaction_to_comment,
             ["--comment-id", "12345", "--reaction", "rocket"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_github_issues,
                 git=fake_git,
                 repo_root=cwd,
@@ -237,7 +237,7 @@ def test_add_reaction_to_comment_multiple(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
-        ctx = DotAgentContext.for_test(
+        ctx = ErkContext.for_test(
             github_issues=fake_github_issues,
             git=fake_git,
             repo_root=cwd,
@@ -280,7 +280,7 @@ def test_add_reaction_to_comment_missing_comment_id(tmp_path: Path) -> None:
         result = runner.invoke(
             add_reaction_to_comment,
             [],  # Missing --comment-id
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_github_issues,
                 git=fake_git,
                 repo_root=cwd,
@@ -314,7 +314,7 @@ def test_get_pr_discussion_comments_json_structure(tmp_path: Path) -> None:
         result = runner.invoke(
             get_pr_discussion_comments,
             ["--pr", "123"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github=fake_github,
                 github_issues=fake_github_issues,
                 git=fake_git,
@@ -353,7 +353,7 @@ def test_add_reaction_to_comment_json_structure_success(tmp_path: Path) -> None:
         result = runner.invoke(
             add_reaction_to_comment,
             ["--comment-id", "12345"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_github_issues,
                 git=fake_git,
                 repo_root=cwd,

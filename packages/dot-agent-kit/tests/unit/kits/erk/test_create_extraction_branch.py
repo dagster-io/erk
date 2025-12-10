@@ -8,10 +8,10 @@ import json
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.context import ErkContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues import FakeGitHubIssues
 
-from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.scripts.erk.create_extraction_branch import (
     create_extraction_branch,
 )
@@ -40,7 +40,7 @@ def test_create_extraction_branch_success(tmp_path: Path) -> None:
         result = runner.invoke(
             create_extraction_branch,
             ["--issue-number", "123", "--trunk-branch", "master"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -73,7 +73,7 @@ def test_create_extraction_branch_with_main(tmp_path: Path) -> None:
         result = runner.invoke(
             create_extraction_branch,
             ["--issue-number", "456", "--trunk-branch", "main"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -104,7 +104,7 @@ def test_create_extraction_branch_already_exists(tmp_path: Path) -> None:
         result = runner.invoke(
             create_extraction_branch,
             ["--issue-number", "123", "--trunk-branch", "master"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -135,7 +135,7 @@ def test_create_extraction_branch_checkout_fails(tmp_path: Path) -> None:
         result = runner.invoke(
             create_extraction_branch,
             ["--issue-number", "789", "--trunk-branch", "master"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -166,7 +166,7 @@ def test_create_extraction_branch_pull_fails(tmp_path: Path) -> None:
         result = runner.invoke(
             create_extraction_branch,
             ["--issue-number", "101", "--trunk-branch", "master"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -197,7 +197,7 @@ def test_create_extraction_branch_create_fails(tmp_path: Path) -> None:
         result = runner.invoke(
             create_extraction_branch,
             ["--issue-number", "202", "--trunk-branch", "master"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -230,7 +230,7 @@ def test_create_extraction_branch_push_fails(tmp_path: Path) -> None:
         result = runner.invoke(
             create_extraction_branch,
             ["--issue-number", "303", "--trunk-branch", "master"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -261,7 +261,7 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
         result = runner.invoke(
             create_extraction_branch,
             ["--issue-number", "404", "--trunk-branch", "master"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -300,7 +300,7 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
         result = runner.invoke(
             create_extraction_branch,
             ["--issue-number", "505", "--trunk-branch", "master"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -338,7 +338,7 @@ def test_git_operations_sequence(tmp_path: Path) -> None:
         result = runner.invoke(
             create_extraction_branch,
             ["--issue-number", "606", "--trunk-branch", "master"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )

@@ -7,9 +7,9 @@ Uses FakeGitHub for fast, reliable testing (Layer 4: Business Logic over Fakes).
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.context import ErkContext
 from erk_shared.github.fake import FakeGitHub
 
-from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.scripts.erk.add_remote_execution_note import (
     add_remote_execution_note,
 )
@@ -39,7 +39,7 @@ def test_add_remote_execution_note_success(tmp_path: Path) -> None:
                 "--run-url",
                 "https://github.com/owner/repo/actions/runs/12345678",
             ],
-            obj=DotAgentContext.for_test(github=fake_github, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -74,7 +74,7 @@ def test_add_remote_execution_note_to_empty_body(tmp_path: Path) -> None:
                 "--run-url",
                 "https://example.com/runs/99999",
             ],
-            obj=DotAgentContext.for_test(github=fake_github, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -113,7 +113,7 @@ This PR implements feature X.
                 "--run-url",
                 "https://github.com/test/repo/runs/11111",
             ],
-            obj=DotAgentContext.for_test(github=fake_github, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -145,7 +145,7 @@ def test_add_remote_execution_note_when_body_is_none(tmp_path: Path) -> None:
                 "--run-url",
                 "https://example.com/77777",
             ],
-            obj=DotAgentContext.for_test(github=fake_github, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -177,7 +177,7 @@ def test_missing_pr_number(tmp_path: Path) -> None:
                 "--run-url",
                 "https://example.com/123",
             ],
-            obj=DotAgentContext.for_test(github=fake_github, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code != 0
@@ -200,7 +200,7 @@ def test_missing_run_id(tmp_path: Path) -> None:
                 "--run-url",
                 "https://example.com/123",
             ],
-            obj=DotAgentContext.for_test(github=fake_github, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code != 0
@@ -223,7 +223,7 @@ def test_missing_run_url(tmp_path: Path) -> None:
                 "--run-id",
                 "123",
             ],
-            obj=DotAgentContext.for_test(github=fake_github, repo_root=cwd, cwd=cwd),
+            obj=ErkContext.for_test(github=fake_github, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code != 0

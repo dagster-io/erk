@@ -136,3 +136,52 @@ class ErkContext:
         backward compatibility with code written for the old DotAgentContext.
         """
         return self.issues
+
+    @staticmethod
+    def for_test(
+        github_issues: GitHubIssues | None = None,
+        git: Git | None = None,
+        github: GitHub | None = None,
+        session_store: ClaudeCodeSessionStore | None = None,
+        prompt_executor: PromptExecutor | None = None,
+        debug: bool = False,
+        repo_root: Path | None = None,
+        cwd: Path | None = None,
+    ) -> "ErkContext":
+        """Create test context with optional pre-configured implementations.
+
+        Provides full control over all context parameters with sensible test defaults
+        for any unspecified values. Uses fakes by default to avoid subprocess calls.
+
+        Args:
+            github_issues: Optional GitHubIssues implementation. If None, creates FakeGitHubIssues.
+            git: Optional Git implementation. If None, creates FakeGit.
+            github: Optional GitHub implementation. If None, creates FakeGitHub.
+            session_store: Optional SessionStore. If None, creates FakeClaudeCodeSessionStore.
+            prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
+            debug: Whether to enable debug mode (default False).
+            repo_root: Repository root path (defaults to Path("/fake/repo"))
+            cwd: Current working directory (defaults to Path("/fake/worktree"))
+
+        Returns:
+            ErkContext configured with provided values and test defaults
+
+        Example:
+            >>> from erk_shared.github.issues import FakeGitHubIssues
+            >>> from erk_shared.git.fake import FakeGit
+            >>> github = FakeGitHubIssues()
+            >>> git_ops = FakeGit()
+            >>> ctx = ErkContext.for_test(github_issues=github, git=git_ops, debug=True)
+        """
+        from erk_shared.context.testing import context_for_test
+
+        return context_for_test(
+            github_issues=github_issues,
+            git=git,
+            github=github,
+            session_store=session_store,
+            prompt_executor=prompt_executor,
+            debug=debug,
+            repo_root=repo_root,
+            cwd=cwd,
+        )

@@ -9,12 +9,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
+from erk_shared.context import ErkContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata import render_session_content_block
 
-from dot_agent_kit.context import DotAgentContext
 from dot_agent_kit.data.kits.erk.scripts.erk.extract_session_from_issue import (
     extract_session_from_issue,
 )
@@ -62,7 +62,7 @@ def test_extract_session_single_comment(tmp_path: Path) -> None:
         result = runner.invoke(
             extract_session_from_issue,
             ["100"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -102,7 +102,7 @@ def test_extract_session_multiple_chunks(tmp_path: Path) -> None:
         result = runner.invoke(
             extract_session_from_issue,
             ["200"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -133,7 +133,7 @@ def test_extract_session_with_explicit_output_path(tmp_path: Path) -> None:
         result = runner.invoke(
             extract_session_from_issue,
             ["300", "--output", str(output_path)],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -168,7 +168,7 @@ def test_extract_session_with_session_id(tmp_path: Path) -> None:
         result = runner.invoke(
             extract_session_from_issue,
             ["400", "--session-id", "custom-session-id"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -207,7 +207,7 @@ def test_extract_session_mixed_comments(tmp_path: Path) -> None:
         result = runner.invoke(
             extract_session_from_issue,
             ["500"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -238,7 +238,7 @@ def test_extract_session_no_content_found(tmp_path: Path) -> None:
         result = runner.invoke(
             extract_session_from_issue,
             ["600"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -265,7 +265,7 @@ def test_extract_session_no_comments(tmp_path: Path) -> None:
         result = runner.invoke(
             extract_session_from_issue,
             ["700"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -300,7 +300,7 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
         result = runner.invoke(
             extract_session_from_issue,
             ["800"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -338,7 +338,7 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
         result = runner.invoke(
             extract_session_from_issue,
             ["900"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -380,7 +380,7 @@ def test_stdout_outputs_xml_to_stdout(tmp_path: Path) -> None:
         result = runner.invoke(
             extract_session_from_issue,
             ["1000", "--stdout"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -409,7 +409,7 @@ def test_stdout_outputs_metadata_to_stderr(tmp_path: Path) -> None:
         result = runner.invoke(
             extract_session_from_issue,
             ["1100", "--stdout"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )
@@ -443,7 +443,7 @@ def test_stdout_does_not_write_file(tmp_path: Path) -> None:
         result = runner.invoke(
             extract_session_from_issue,
             ["1200", "--stdout"],
-            obj=DotAgentContext.for_test(
+            obj=ErkContext.for_test(
                 github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
             ),
         )

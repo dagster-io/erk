@@ -14,7 +14,6 @@ from erk_shared.context.helpers import require_project_root as require_project_r
 from erk_shared.context.helpers import require_prompt_executor as require_prompt_executor
 from erk_shared.context.helpers import require_repo_root as require_repo_root
 from erk_shared.context.helpers import require_session_store as require_session_store
-from erk_shared.context.testing import for_test as for_test
 from erk_shared.context.types import GlobalConfig as GlobalConfig
 from erk_shared.context.types import LoadedConfig as LoadedConfig
 from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
