@@ -292,7 +292,9 @@ class RestackContinueError:
     details: dict[str, str]
 
 
-RestackFinalizeErrorType = Literal["rebase_still_in_progress", "dirty_working_tree"]
+RestackFinalizeErrorType = Literal[
+    "rebase_still_in_progress", "dirty_working_tree", "unresolved_conflicts"
+]
 
 
 @dataclass(frozen=True)

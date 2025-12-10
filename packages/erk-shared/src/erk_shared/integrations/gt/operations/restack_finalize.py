@@ -2,29 +2,18 @@
 
 Validates that no rebase is in progress and working tree is clean.
 
-Issue #2844 Investigation:
---------------------------
-When running `erk pr auto-restack` with conflicts, after Claude resolves
-the conflicts, this finalize step fails with "Working tree has uncommitted changes".
+Issue #2844 Root Cause (FOUND):
+-------------------------------
+When `gt continue` is run after conflict resolution, if there are still
+unresolved conflicts (UU files), the rebase-merge directory gets cleaned up
+but HEAD remains detached and unmerged files remain. This leaves git in
+a broken state where:
+- is_rebase_in_progress() returns False (no rebase dirs)
+- is_worktree_clean() returns False (UU/staged files exist)
+- HEAD is detached (pointing to commit hash, not branch)
 
-The bug happens reliably when there are conflicts. The hypothesis is that
-after `gt continue` completes the restack, there's some state where:
-- The rebase is complete (not in progress)
-- But is_worktree_clean() returns False
-
-Diagnostic information is collected when this happens:
-- HEAD state (branch name or commit hash)
-- Whether HEAD is detached (shell showed `git:(d168a3512) ✗` in original report)
-- Which files show as dirty via `git status --porcelain`
-
-A retry with 0.1s delay was added as a temporary fix for transient files,
-but the root cause needs investigation based on the diagnostic output.
-
-TODO for follow-up session:
-1. Trigger the bug with conflicts
-2. Check the error message for HEAD state, detached status, and dirty files
-3. Based on that, implement proper fix (may need to handle detached HEAD,
-   or specific file patterns, or wait for gt continue to fully complete)
+The fix: Check for unmerged files (UU status) specifically and give a
+helpful error message directing the user to resolve remaining conflicts.
 """
 
 from collections.abc import Generator
@@ -67,19 +56,43 @@ def execute_restack_finalize(
         )
         return
 
-    # Step 2: Verify clean working tree
+    # Step 2: Check for unmerged files (UU status) - indicates incomplete conflict resolution
+    # This happens when gt continue runs but conflicts weren't fully resolved
+    yield ProgressEvent("Checking for unresolved conflicts...")
+    import subprocess
+
+    status_result = subprocess.run(
+        ["git", "-C", str(cwd), "status", "--porcelain"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    status_lines = status_result.stdout.strip().split("\n") if status_result.stdout.strip() else []
+
+    # Parse status output to find unmerged files (UU, AA, DD, AU, UA, DU, UD)
+    unmerged_prefixes = ("UU", "AA", "DD", "AU", "UA", "DU", "UD")
+    unmerged_files = [
+        line[3:] for line in status_lines if line[:2] in unmerged_prefixes
+    ]
+
+    if unmerged_files:
+        # There are still unresolved conflicts - this is the root cause of issue #2844
+        yield CompletionEvent(
+            RestackFinalizeError(
+                success=False,
+                error_type="unresolved_conflicts",
+                message=f"Restack incomplete: {len(unmerged_files)} file(s) still have unresolved conflicts:\n"
+                + "\n".join(f"  - {f}" for f in unmerged_files)
+                + "\n\nResolve these conflicts, then run `gt continue` to complete the restack.",
+                details={"unmerged_files": ",".join(unmerged_files)},
+            )
+        )
+        return
+
+    # Step 3: Verify clean working tree
     # Retry once after brief delay to handle transient files from git rebase/graphite
     yield ProgressEvent("Checking working tree status...")
     if not ops.git.is_worktree_clean(cwd):
-        # Diagnostic: capture git status for debugging
-        import subprocess
-
-        status_result = subprocess.run(
-            ["git", "-C", str(cwd), "status", "--porcelain"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
         head_result = subprocess.run(
             ["git", "-C", str(cwd), "rev-parse", "--abbrev-ref", "HEAD"],
             capture_output=True,
