@@ -1,6 +1,7 @@
 """Command to list plans with filtering."""
 
 from collections.abc import Callable
+from datetime import datetime
 from typing import ParamSpec, TypeVar
 
 import click
@@ -180,6 +181,12 @@ def plan_filter_options(f: Callable[P, T]) -> Callable[P, T]:
         default=False,
         help="Show plans from all users (default: show only your plans)",
     )(f)
+    f = click.option(
+        "--sort",
+        type=click.Choice(["issue", "activity"], case_sensitive=False),
+        default="issue",
+        help="Sort order: by issue number (default) or recent branch activity",
+    )(f)
     return f
 
 
@@ -202,6 +209,7 @@ def _build_plans_table(
     runs: bool,
     limit: int | None,
     all_users: bool,
+    sort: str,
 ) -> tuple[Table | None, int]:
     """Build plan dashboard table.
 
@@ -295,6 +303,36 @@ def _build_plans_table(
         # Check if filtering resulted in no plans
         if not plans:
             return None, 0
+
+    # Apply activity-based sorting if requested
+    if sort == "activity":
+        trunk = ctx.git.detect_trunk_branch(repo_root)
+
+        # Build issue -> branch mapping from worktrees
+        issue_to_branch: dict[int, str] = {}
+        for wt in worktrees:
+            impl_folder = wt.path / ".impl"
+            if impl_folder.exists() and impl_folder.is_dir():
+                issue_ref = read_issue_reference(impl_folder)
+                if issue_ref is not None and wt.branch is not None:
+                    issue_to_branch[issue_ref.issue_number] = wt.branch
+
+        def get_last_commit_time(plan: Plan) -> tuple[bool, datetime]:
+            """Return sort key: (has_local_activity, commit_time).
+
+            Plans with local activity sort first (by recency), then others by issue#.
+            """
+            issue_number = plan.metadata.get("number")
+            if not isinstance(issue_number, int) or issue_number not in issue_to_branch:
+                return (False, datetime.min)
+            branch = issue_to_branch[issue_number]
+            timestamp = ctx.git.get_branch_last_commit_time(repo_root, branch, trunk)
+            if timestamp is not None:
+                return (True, datetime.fromisoformat(timestamp))
+            return (False, datetime.min)
+
+        # Sort: plans with local activity first (by recency), then others by issue#
+        plans = sorted(plans, key=get_last_commit_time, reverse=True)
 
     # Determine use_graphite for URL selection
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
@@ -415,9 +453,12 @@ def _list_plans_impl(
     runs: bool,
     limit: int | None,
     all_users: bool,
+    sort: str,
 ) -> None:
     """Implementation logic for listing plans with optional filters."""
-    table, plan_count = _build_plans_table(ctx, label, state, run_state, runs, limit, all_users)
+    table, plan_count = _build_plans_table(
+        ctx, label, state, run_state, runs, limit, all_users, sort
+    )
 
     if table is None:
         user_output("No plans found matching the criteria.")
@@ -599,6 +640,7 @@ def list_plans(
     run_state: str | None,
     limit: int | None,
     all_users: bool,
+    sort: str,
     runs: bool,
 ) -> None:
     """List plans as a static table.
@@ -615,8 +657,9 @@ def list_plans(
         erk plan list --limit 10
         erk plan list --run-state in_progress
         erk plan list --runs
+        erk plan list --sort activity    # Sort by recent branch activity
     """
-    _list_plans_impl(ctx, label, state, run_state, runs, limit, all_users)
+    _list_plans_impl(ctx, label, state, run_state, runs, limit, all_users, sort)
 
 
 @click.command("dash")
@@ -630,6 +673,7 @@ def dash(
     run_state: str | None,
     limit: int | None,
     all_users: bool,
+    sort: str,  # noqa: ARG001  # Accepted from shared options but not used by TUI
     interval: float,
 ) -> None:
     """Interactive plan dashboard (TUI).

@@ -327,3 +327,230 @@ last_dispatched_node_id: 'WFR_short_flag'
         assert result.exit_code == 0
         assert "#201" in result.output
         assert "88888" in result.output
+
+
+def test_plan_list_sort_issue_default() -> None:
+    """Test that --sort issue (default) returns plans sorted by issue number descending."""
+    plan1 = Plan(
+        plan_identifier="1",
+        title="First Issue",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/1",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"number": 1},
+    )
+    plan2 = Plan(
+        plan_identifier="2",
+        title="Second Issue",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/2",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 2, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={"number": 2},
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
+        github = FakeGitHub(issues=[plan_to_issue(plan1), plan_to_issue(plan2)])
+        ctx = build_workspace_test_context(env, issues=issues, github=github)
+
+        result = runner.invoke(cli, ["plan", "list", "--sort", "issue"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Found 2 plan(s)" in result.output
+        # Both issues appear (order determined by API, not by sorting since "issue" sort
+        # uses the natural API order which is already by issue number descending)
+        assert "#1" in result.output
+        assert "#2" in result.output
+
+
+def test_plan_list_sort_activity_with_local_branch() -> None:
+    """Test that --sort activity puts plans with recent local branch activity first."""
+    from erk_shared.git.abc import WorktreeInfo
+
+    from tests.test_utils.env_helpers import erk_isolated_fs_env
+
+    # Plan 1: older issue, but has local branch with recent activity
+    plan1 = Plan(
+        plan_identifier="1",
+        title="Older Issue with Activity",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/1",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"number": 1},
+    )
+    # Plan 2: newer issue, no local branch
+    plan2 = Plan(
+        plan_identifier="2",
+        title="Newer Issue no Activity",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/2",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 2, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={"number": 2},
+    )
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Create worktree directory with .impl/issue.json for plan 1
+        repo_name = env.cwd.name
+        repo_dir = env.erk_root / repo_name
+        feature_wt = repo_dir / "feature-for-issue-1"
+        feature_wt.mkdir(parents=True)
+
+        # Create .impl/issue.json linking worktree to issue 1
+        impl_dir = feature_wt / ".impl"
+        impl_dir.mkdir()
+        issue_json = impl_dir / "issue.json"
+        issue_json.write_text(
+            '{"issue_number": 1, "issue_url": "https://github.com/owner/repo/issues/1", '
+            '"created_at": "2025-01-20T10:00:00+00:00", "synced_at": "2025-01-20T10:00:00+00:00"}',
+            encoding="utf-8",
+        )
+
+        # Build FakeGit with worktree and branch commit times
+        from erk_shared.git.fake import FakeGit
+
+        git = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=feature_wt, branch="feature-for-issue-1", is_root=False),
+                ],
+            },
+            git_common_dirs={env.cwd: env.git_dir},
+            trunk_branches={env.cwd: "main"},
+            branch_last_commit_times={
+                "feature-for-issue-1": "2025-01-20T12:00:00+00:00",
+            },
+        )
+
+        issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
+        github = FakeGitHub(issues=[plan_to_issue(plan1), plan_to_issue(plan2)])
+        ctx = build_workspace_test_context(env, git=git, issues=issues, github=github)
+
+        result = runner.invoke(cli, ["plan", "list", "--sort", "activity"], obj=ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "Found 2 plan(s)" in result.output
+
+        # Plan 1 (with activity) should appear before Plan 2 (no activity)
+        # Check order by finding positions in output
+        pos1 = result.output.find("Older Issue with Activity")
+        pos2 = result.output.find("Newer Issue no Activity")
+        assert pos1 < pos2, (
+            f"Plan with activity should appear first. "
+            f"pos1={pos1}, pos2={pos2}, output={result.output}"
+        )
+
+
+def test_plan_list_sort_activity_orders_by_recency() -> None:
+    """Test that --sort activity orders multiple local branches by recency."""
+    from erk_shared.git.abc import WorktreeInfo
+
+    from tests.test_utils.env_helpers import erk_isolated_fs_env
+
+    # Plan 1: has local branch with older commit
+    plan1 = Plan(
+        plan_identifier="1",
+        title="Issue with Older Commit",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/1",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"number": 1},
+    )
+    # Plan 2: has local branch with newer commit
+    plan2 = Plan(
+        plan_identifier="2",
+        title="Issue with Newer Commit",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/2",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 2, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={"number": 2},
+    )
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_name = env.cwd.name
+        repo_dir = env.erk_root / repo_name
+
+        # Create worktree for issue 1
+        wt1 = repo_dir / "feature-for-issue-1"
+        wt1.mkdir(parents=True)
+        impl1 = wt1 / ".impl"
+        impl1.mkdir()
+        (impl1 / "issue.json").write_text(
+            '{"issue_number": 1, "issue_url": "https://github.com/owner/repo/issues/1", '
+            '"created_at": "2025-01-20T10:00:00+00:00", "synced_at": "2025-01-20T10:00:00+00:00"}',
+            encoding="utf-8",
+        )
+
+        # Create worktree for issue 2
+        wt2 = repo_dir / "feature-for-issue-2"
+        wt2.mkdir(parents=True)
+        impl2 = wt2 / ".impl"
+        impl2.mkdir()
+        (impl2 / "issue.json").write_text(
+            '{"issue_number": 2, "issue_url": "https://github.com/owner/repo/issues/2", '
+            '"created_at": "2025-01-20T10:00:00+00:00", "synced_at": "2025-01-20T10:00:00+00:00"}',
+            encoding="utf-8",
+        )
+
+        # Build FakeGit - issue 2's branch has MORE RECENT commit
+        from erk_shared.git.fake import FakeGit
+
+        git = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=wt1, branch="feature-for-issue-1", is_root=False),
+                    WorktreeInfo(path=wt2, branch="feature-for-issue-2", is_root=False),
+                ],
+            },
+            git_common_dirs={env.cwd: env.git_dir},
+            trunk_branches={env.cwd: "main"},
+            branch_last_commit_times={
+                "feature-for-issue-1": "2025-01-20T10:00:00+00:00",  # Older commit
+                "feature-for-issue-2": "2025-01-20T14:00:00+00:00",  # Newer commit
+            },
+        )
+
+        issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
+        github = FakeGitHub(issues=[plan_to_issue(plan1), plan_to_issue(plan2)])
+        ctx = build_workspace_test_context(env, git=git, issues=issues, github=github)
+
+        result = runner.invoke(cli, ["plan", "list", "--sort", "activity"], obj=ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "Found 2 plan(s)" in result.output
+
+        # Plan 2 (newer commit) should appear before Plan 1 (older commit)
+        pos1 = result.output.find("Issue with Older Commit")
+        pos2 = result.output.find("Issue with Newer Commit")
+        assert pos2 < pos1, (
+            f"Plan with newer commit should appear first. "
+            f"pos1={pos1}, pos2={pos2}, output={result.output}"
+        )
