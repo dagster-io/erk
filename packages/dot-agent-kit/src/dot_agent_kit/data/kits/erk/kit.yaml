@@ -199,6 +199,9 @@ scripts:
   - name: set-gha-exit-status
     path: scripts/erk/set_gha_exit_status.py
     description: Run command and capture exit status for GitHub Actions output
+  - name: update-pr-body
+    path: scripts/erk/update_pr_body.py
+    description: Update PR body with generated summary and footer (consolidates multiple commands)
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit

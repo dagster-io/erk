@@ -68,7 +68,8 @@ jobs:
         id: trunk
         run: |
           source $HOME/.cargo/env
-          erk kit exec erk detect-trunk-branch | erk kit exec erk set-gha-output --key trunk_branch --jq-path '.trunk_branch'
+          TRUNK=$(erk kit exec erk detect-trunk-branch | jq -r '.trunk_branch')
+          echo "trunk_branch=$TRUNK" >> $GITHUB_OUTPUT
 
       - name: Set branch and PR from inputs
         id: find_pr
@@ -195,13 +196,7 @@ jobs:
           ISSUE_NUMBER: ${{ inputs.issue_number }}
         run: |
           source $HOME/.cargo/env
-          PR_RESULT=$(erk kit exec erk get-pr-number-for-branch --branch "$BRANCH_NAME")
-          PR_NUMBER=$(echo "$PR_RESULT" | jq -r '.pr_number')
-          BODY_RESULT=$(erk kit exec erk generate-pr-body --pr-number "$PR_NUMBER" --issue-number "$ISSUE_NUMBER")
-          PR_BODY=$(echo "$BODY_RESULT" | jq -r '.body')
-          erk kit exec erk write-pr-body-file --content "$PR_BODY" --output pr_body.md
-          gh pr edit "$BRANCH_NAME" --body-file pr_body.md
-          rm -f pr_body.md
+          erk kit exec erk update-pr-body --branch "$BRANCH_NAME" --issue-number "$ISSUE_NUMBER"
           echo "PR body updated with implementation summary"
 
       - name: Trigger CI workflows
