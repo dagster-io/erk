@@ -819,3 +819,14 @@ class RealGit(Git):
             operation_context=f"set git config {key}",
             cwd=cwd,
         )
+
+    def get_head_commit_message_full(self, cwd: Path) -> str:
+        """Get the full commit message of HEAD."""
+        result = subprocess.run(
+            ["git", "log", "-1", "--format=%B", "HEAD"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout.strip()

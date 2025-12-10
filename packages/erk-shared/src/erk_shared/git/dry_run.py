@@ -284,3 +284,7 @@ class DryRunGit(Git):
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
         """No-op for setting git config in dry-run mode."""
         pass
+
+    def get_head_commit_message_full(self, cwd: Path) -> str:
+        """Get full commit message (read-only, delegates to wrapped)."""
+        return self._wrapped.get_head_commit_message_full(cwd)

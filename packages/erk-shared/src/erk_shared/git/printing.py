@@ -278,3 +278,7 @@ class PrintingGit(PrintingBase, Git):
         """Set git config with printed output."""
         self._emit(self._format_command(f"git config --{scope} {key} {value}"))
         self._wrapped.config_set(cwd, key, value, scope=scope)
+
+    def get_head_commit_message_full(self, cwd: Path) -> str:
+        """Get full commit message (read-only, no printing)."""
+        return self._wrapped.get_head_commit_message_full(cwd)

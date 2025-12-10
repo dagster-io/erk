@@ -98,6 +98,7 @@ class FakeGit(Git):
         rebase_continue_raises: Exception | None = None,
         rebase_continue_clears_rebase: bool = False,
         commit_messages_since: dict[tuple[Path, str], list[str]] | None = None,
+        head_commit_messages_full: dict[Path, str] | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -137,6 +138,7 @@ class FakeGit(Git):
             rebase_continue_raises: Exception to raise when rebase_continue() is called
             rebase_continue_clears_rebase: If True, rebase_continue() clears the rebase state
             commit_messages_since: Mapping of (cwd, base_branch) -> list of commit messages
+            head_commit_messages_full: Mapping of cwd -> full commit message for HEAD
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -171,6 +173,7 @@ class FakeGit(Git):
         self._rebase_continue_raises = rebase_continue_raises
         self._rebase_continue_clears_rebase = rebase_continue_clears_rebase
         self._commit_messages_since = commit_messages_since or {}
+        self._head_commit_messages_full = head_commit_messages_full or {}
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -808,6 +811,9 @@ class FakeGit(Git):
         if self._commits:
             last_commit = self._commits[-1]
             self._commits[-1] = (last_commit[0], message, last_commit[2])
+        else:
+            # If no commits tracked yet, create one to track the amend
+            self._commits.append((cwd, message, []))
 
     def count_commits_ahead(self, cwd: Path, base_branch: str) -> int:
         """Count commits in HEAD that are not in base_branch."""
@@ -912,3 +918,22 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return self._config_settings.copy()
+
+    def get_head_commit_message_full(self, cwd: Path) -> str:
+        """Get the full commit message (subject + body) of HEAD.
+
+        Returns:
+            Full commit message from head_commit_messages_full if configured,
+            or the message from the most recent commit if commits were created,
+            or empty string as fallback.
+        """
+        # Check configured messages first
+        if cwd in self._head_commit_messages_full:
+            return self._head_commit_messages_full[cwd]
+
+        # Fallback: return message from most recent commit at this cwd
+        for commit_cwd, message, _files in reversed(self._commits):
+            if commit_cwd == cwd:
+                return message
+
+        return ""

@@ -14,6 +14,8 @@ from erk_shared.integrations.graphite.types import BranchMetadata
 from erk_shared.integrations.gt.events import CompletionEvent
 from erk_shared.integrations.gt.operations.pre_analysis import execute_pre_analysis
 from erk_shared.integrations.gt.types import PreAnalysisError, PreAnalysisResult
+from erk_shared.integrations.time.abc import Time
+from erk_shared.integrations.time.fake import FakeTime
 
 
 class FakeGtKit:
@@ -23,6 +25,7 @@ class FakeGtKit:
         self._git = git
         self._github = github
         self._graphite = graphite
+        self._time = FakeTime()
 
     @property
     def git(self) -> FakeGit:
@@ -35,6 +38,10 @@ class FakeGtKit:
     @property
     def graphite(self) -> FakeGraphite:
         return self._graphite
+
+    @property
+    def time(self) -> Time:
+        return self._time
 
 
 def _get_completion_result(ops: FakeGtKit, cwd: Path) -> PreAnalysisResult | PreAnalysisError:
@@ -414,3 +421,177 @@ class TestPreAnalysisCapturesCommitMessages:
         assert result.success is True
         # Empty list should be converted to None
         assert result.commit_messages is None
+
+
+class TestPreAnalysisIssueLinking:
+    """Tests for issue linking during pre-analysis."""
+
+    def test_amends_commit_with_closes_tag_when_issue_reference_exists(
+        self, tmp_path: Path
+    ) -> None:
+        """Pre-analysis should amend commit message with Closes #N when issue.json exists."""
+        import json
+
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+
+        # Create .impl/issue.json
+        impl_dir = repo_root / ".impl"
+        impl_dir.mkdir()
+        issue_data = {
+            "issue_number": 123,
+            "issue_url": "https://github.com/test/repo/issues/123",
+            "created_at": "2024-01-01T00:00:00Z",
+            "synced_at": "2024-01-01T00:00:00Z",
+        }
+        (impl_dir / "issue.json").write_text(json.dumps(issue_data), encoding="utf-8")
+
+        fake_git = FakeGit(
+            current_branches={repo_root: "feature"},
+            trunk_branches={repo_root: "main"},
+            repository_roots={repo_root: repo_root},
+            commits_ahead={(repo_root, "main"): 1},
+            head_commit_messages_full={repo_root: "Implement feature\n\nAdded the feature."},
+        )
+
+        fake_graphite = FakeGraphite(
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha="abc123",
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha="def456",
+                ),
+            },
+        )
+
+        fake_github = FakeGitHub()
+
+        ops = FakeGtKit(fake_git, fake_github, fake_graphite)
+        result = _get_completion_result(ops, repo_root)
+
+        assert isinstance(result, PreAnalysisResult)
+        assert result.success is True
+        assert result.issue_number == 123
+
+        # Check that amend_commit was called with the Closes tag
+        assert len(fake_git.commits) == 1
+        _cwd, message, _files = fake_git.commits[0]
+        assert "Closes #123" in message
+        assert "Implement feature" in message
+
+    def test_does_not_duplicate_closes_tag_if_already_present(
+        self, tmp_path: Path
+    ) -> None:
+        """Pre-analysis should not add duplicate Closes #N if already in commit message."""
+        import json
+
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+
+        # Create .impl/issue.json
+        impl_dir = repo_root / ".impl"
+        impl_dir.mkdir()
+        issue_data = {
+            "issue_number": 123,
+            "issue_url": "https://github.com/test/repo/issues/123",
+            "created_at": "2024-01-01T00:00:00Z",
+            "synced_at": "2024-01-01T00:00:00Z",
+        }
+        (impl_dir / "issue.json").write_text(json.dumps(issue_data), encoding="utf-8")
+
+        # Commit message already has Closes #123
+        fake_git = FakeGit(
+            current_branches={repo_root: "feature"},
+            trunk_branches={repo_root: "main"},
+            repository_roots={repo_root: repo_root},
+            commits_ahead={(repo_root, "main"): 1},
+            head_commit_messages_full={
+                repo_root: "Implement feature\n\nAdded the feature.\n\nCloses #123"
+            },
+        )
+
+        fake_graphite = FakeGraphite(
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha="abc123",
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha="def456",
+                ),
+            },
+        )
+
+        fake_github = FakeGitHub()
+
+        ops = FakeGtKit(fake_git, fake_github, fake_graphite)
+        result = _get_completion_result(ops, repo_root)
+
+        assert isinstance(result, PreAnalysisResult)
+        assert result.success is True
+        assert result.issue_number == 123
+
+        # amend_commit should NOT have been called since tag already exists
+        # (FakeGit.commits would be empty if no commit/amend was made)
+        assert len(fake_git.commits) == 0
+
+    def test_skips_issue_linking_when_no_issue_reference(self, tmp_path: Path) -> None:
+        """Pre-analysis should skip issue linking when no .impl/issue.json exists."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+
+        # No .impl/issue.json created
+
+        fake_git = FakeGit(
+            current_branches={repo_root: "feature"},
+            trunk_branches={repo_root: "main"},
+            repository_roots={repo_root: repo_root},
+            commits_ahead={(repo_root, "main"): 1},
+        )
+
+        fake_graphite = FakeGraphite(
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha="abc123",
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha="def456",
+                ),
+            },
+        )
+
+        fake_github = FakeGitHub()
+
+        ops = FakeGtKit(fake_git, fake_github, fake_graphite)
+        result = _get_completion_result(ops, repo_root)
+
+        assert isinstance(result, PreAnalysisResult)
+        assert result.success is True
+        assert result.issue_number is None
+
+        # No amend_commit should have been called
+        assert len(fake_git.commits) == 0
