@@ -434,11 +434,11 @@ def test_parse_issue_pr_linkages_handles_missing_optional_fields() -> None:
     assert pr.has_conflicts is None
 
 
-def test_parse_issue_pr_linkages_filters_non_closing_prs() -> None:
-    """Test parsing filters out PRs that don't close the issue (willCloseTarget=false)."""
+def test_parse_issue_pr_linkages_includes_all_referencing_prs() -> None:
+    """Test parsing includes all PRs regardless of willCloseTarget."""
     ops = RealGitHub(FakeTime())
 
-    # Timeline response with PRs that mention but don't close the issue (aggregated format)
+    # Timeline response with PRs that reference the issue (aggregated format)
     response = {
         "data": {
             "repository": {
@@ -478,10 +478,12 @@ def test_parse_issue_pr_linkages_filters_non_closing_prs() -> None:
 
     result = ops._parse_issue_pr_linkages(response, GitHubRepoId("owner", "repo"))
 
-    # Should only include the closing PR
+    # Should include all PRs regardless of willCloseTarget
     assert 100 in result
-    assert len(result[100]) == 1
-    assert result[100][0].number == 200  # Only the closing PR
+    assert len(result[100]) == 2
+    # Sorted by created_at descending - PR 200 (Jan 2) comes before PR 201 (Jan 1)
+    assert result[100][0].number == 200
+    assert result[100][1].number == 201
 
 
 def test_parse_issue_pr_linkages_handles_issue_not_found() -> None:

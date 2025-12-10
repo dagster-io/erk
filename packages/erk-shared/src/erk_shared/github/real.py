@@ -504,9 +504,10 @@ class RealGitHub(GitHub):
     ) -> dict[int, list[PullRequestInfo]]:
         """Get PRs linked to issues via CrossReferencedEvent timeline.
 
-        Uses GraphQL CrossReferencedEvent with willCloseTarget filter to find PRs
-        that will close each issue when merged. Used by erk dash for batch queries
-        with full PR data (CI status, mergeability).
+        Uses GraphQL CrossReferencedEvent to find all PRs that reference each issue,
+        regardless of whether they will close the issue when merged. Includes open,
+        closed, and draft PRs. Used by erk dash for batch queries with full PR data
+        (CI status, mergeability).
 
         For simpler single-issue queries, see GitHubIssues.get_prs_referencing_issue().
 
@@ -598,8 +599,8 @@ query {{
     ) -> dict[int, list[PullRequestInfo]]:
         """Parse GraphQL response from issue timeline query.
 
-        Processes CrossReferencedEvent timeline items to extract PRs that
-        will close each issue (willCloseTarget=true).
+        Processes CrossReferencedEvent timeline items to extract all PRs that
+        reference each issue.
 
         Args:
             response: GraphQL response data
@@ -628,10 +629,6 @@ query {{
 
             for node in nodes:
                 if node is None:
-                    continue
-
-                # Filter to only closing PRs
-                if not node.get("willCloseTarget"):
                     continue
 
                 source = node.get("source")
@@ -1206,9 +1203,6 @@ query {{
 
         Returns tuple of (PullRequestInfo, created_at_timestamp) or None if invalid.
         """
-        if not event.get("willCloseTarget"):
-            return None
-
         source = event.get("source")
         if source is None:
             return None
