@@ -1297,3 +1297,167 @@ def test_init_handles_declined_write_confirmation() -> None:
         # Verify permission was NOT added
         unchanged_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
         assert "Bash(erk:*)" not in unchanged_settings["permissions"]["allow"]
+
+
+def test_init_creates_kits_toml() -> None:
+    """Test that init creates .erk/kits.toml file."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        result = runner.invoke(cli, ["init"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        # Verify kits.toml was created
+        kits_toml_path = env.cwd / ".erk" / "kits.toml"
+        assert kits_toml_path.exists()
+        assert f"Created {kits_toml_path}" in result.output
+
+
+def test_init_skips_kits_toml_if_exists_without_force() -> None:
+    """Test that init skips kits.toml creation if already exists (without --force).
+
+    When kits.toml already exists and --force is not used, the command should
+    report that kit config already exists and not overwrite it.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        # Pre-create .erk/kits.toml
+        erk_dir = env.cwd / ".erk"
+        erk_dir.mkdir(parents=True)
+        kits_toml_path = erk_dir / "kits.toml"
+        original_content = 'version = "1"\n'
+        kits_toml_path.write_text(original_content, encoding="utf-8")
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        # Run without --force - kits.toml should be skipped since it exists
+        result = runner.invoke(cli, ["init"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        # Verify kits.toml was reported as already existing (not overwritten)
+        assert f"Kit config already exists: {kits_toml_path}" in result.output
+        # Verify content was not changed
+        assert kits_toml_path.read_text(encoding="utf-8") == original_content
+
+
+def test_init_force_overwrites_kits_toml() -> None:
+    """Test that --force overwrites existing kits.toml."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+        repo_dir = erk_root / "repos" / env.cwd.name
+        repo_dir.mkdir(parents=True)
+
+        # Pre-create config.toml so it doesn't block
+        config_path = repo_dir / "config.toml"
+        config_path.write_text("# Old config\n", encoding="utf-8")
+
+        # Pre-create .erk/kits.toml with old content
+        erk_dir = env.cwd / ".erk"
+        erk_dir.mkdir(parents=True)
+        kits_toml_path = erk_dir / "kits.toml"
+        kits_toml_path.write_text('# Old kits config\nversion = "0"\n', encoding="utf-8")
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        result = runner.invoke(cli, ["init", "--force"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        # Verify kits.toml was overwritten
+        content = kits_toml_path.read_text(encoding="utf-8")
+        assert "# Old kits config" not in content
+        assert f"Created {kits_toml_path}" in result.output
+
+
+def test_init_creates_docs_agent_templates() -> None:
+    """Test that init creates docs/agent/ template files."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        result = runner.invoke(cli, ["init"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        # Verify docs/agent/ templates were created
+        docs_agent_dir = env.cwd / "docs" / "agent"
+        assert docs_agent_dir.exists()
+        assert (docs_agent_dir / "glossary.md").exists()
+        assert (docs_agent_dir / "conventions.md").exists()
+        assert (docs_agent_dir / "guide.md").exists()
+        # Verify output mentions creation
+        assert "docs/agent/glossary.md" in result.output
+
+
+def test_init_skips_docs_agent_if_exists() -> None:
+    """Test that init skips docs/agent/ files if they already exist."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        # Pre-create docs/agent/ files
+        docs_agent_dir = env.cwd / "docs" / "agent"
+        docs_agent_dir.mkdir(parents=True)
+        (docs_agent_dir / "glossary.md").write_text("# Existing glossary\n", encoding="utf-8")
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        result = runner.invoke(cli, ["init"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        # Verify existing file was skipped
+        assert "Skipped docs/agent/glossary.md (already exists)" in result.output
+        # Verify content was not overwritten
+        content = (docs_agent_dir / "glossary.md").read_text(encoding="utf-8")
+        assert "# Existing glossary" in content
