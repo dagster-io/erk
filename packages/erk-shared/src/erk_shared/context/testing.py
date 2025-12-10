@@ -8,6 +8,13 @@ from pathlib import Path
 
 from erk_shared.context.context import ErkContext
 from erk_shared.context.types import LoadedConfig, RepoContext
+from erk_shared.core.fakes import (
+    FakeClaudeExecutor,
+    FakeConfigStore,
+    FakePlanListService,
+    FakePlannerRegistry,
+    FakeScriptWriter,
+)
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
@@ -51,7 +58,7 @@ def context_for_test(
         >>> from erk_shared.git.fake import FakeGit
         >>> github = FakeGitHubIssues()
         >>> git_ops = FakeGit()
-        >>> ctx = for_test(github_issues=github, git=git_ops, debug=True)
+        >>> ctx = context_for_test(github_issues=github, git=git_ops, debug=True)
     """
     from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
     from erk_shared.git.fake import FakeGit
@@ -88,22 +95,6 @@ def context_for_test(
         repo_dir=Path("/fake/erk/repos") / resolved_repo_root.name,
         worktrees_dir=Path("/fake/erk/repos") / resolved_repo_root.name / "worktrees",
     )
-
-    # Create stub implementations for erk-specific services
-    class FakeClaudeExecutor:
-        pass
-
-    class FakeConfigStore:
-        pass
-
-    class FakeScriptWriter:
-        pass
-
-    class FakePlannerRegistry:
-        pass
-
-    class FakePlanListService:
-        pass
 
     return ErkContext(
         git=resolved_git,

@@ -8,30 +8,15 @@ get_issues_with_pr_linkages() to fetch issues + PR linkages in a single API call
 instead of separate calls for issues (~500ms) and PR linkages (~1500ms).
 """
 
-from dataclasses import dataclass
-
+from erk_shared.core.plan_list_service import PlanListData as PlanListData
+from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.github.abc import GitHub
-from erk_shared.github.issues import GitHubIssues, IssueInfo
+from erk_shared.github.issues import GitHubIssues
 from erk_shared.github.metadata import extract_plan_header_dispatch_info
-from erk_shared.github.types import GitHubRepoLocation, PullRequestInfo, WorkflowRun
+from erk_shared.github.types import GitHubRepoLocation, WorkflowRun
 
 
-@dataclass(frozen=True)
-class PlanListData:
-    """Combined data for plan listing.
-
-    Attributes:
-        issues: List of IssueInfo objects
-        pr_linkages: Mapping of issue_number -> list of PRs that close that issue
-        workflow_runs: Mapping of issue_number -> most relevant WorkflowRun
-    """
-
-    issues: list[IssueInfo]
-    pr_linkages: dict[int, list[PullRequestInfo]]
-    workflow_runs: dict[int, WorkflowRun | None]
-
-
-class PlanListService:
+class RealPlanListService(PlanListService):
     """Service for efficiently fetching plan list data.
 
     Composes GitHub and GitHubIssues integrations to batch fetch all data

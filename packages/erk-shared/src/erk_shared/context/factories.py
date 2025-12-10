@@ -8,6 +8,14 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from erk_shared.core.fakes import (
+    FakeClaudeExecutor,
+    FakeConfigStore,
+    FakePlanListService,
+    FakePlannerRegistry,
+    FakeScriptWriter,
+)
+
 if TYPE_CHECKING:
     from erk_shared.context.context import ErkContext
     from erk_shared.git.abc import Git
@@ -103,36 +111,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkConte
             worktrees_dir=Path.home() / ".erk" / "repos" / repo_root.name / "worktrees",
         )
 
-    # Create fake implementations for erk-specific services that dot-agent-kit doesn't need
-    class FakeClaudeExecutor:
-        def execute_interactive(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
-            raise NotImplementedError("ClaudeExecutor not available in minimal context")
-
-        def execute_interactive_command(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
-            raise NotImplementedError("ClaudeExecutor not available in minimal context")
-
-    class FakeConfigStore:
-        def exists(self) -> bool:
-            return False
-
-        def load(self):  # noqa: ANN201
-            raise NotImplementedError("ConfigStore not available in minimal context")
-
-        def save(self, config) -> None:  # noqa: ANN001
-            raise NotImplementedError("ConfigStore not available in minimal context")
-
-        def path(self) -> Path:
-            return Path("/fake/config")
-
-    class FakeScriptWriter:
-        pass
-
-    class FakePlannerRegistry:
-        pass
-
-    class FakePlanListService:
-        pass
-
+    # Use fake implementations for erk-specific services that dot-agent-kit doesn't need
     return ErkContext(
         git=git,
         github=RealGitHub(time=RealTime(), repo_info=repo_info),

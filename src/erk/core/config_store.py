@@ -1,60 +1,16 @@
 """Global configuration data structures and loading.
 
-Provides immutable global config data loaded from ~/.erk/config.toml.
-Replaces lazy-loading ConfigStore pattern with eager loading at entry point.
+Provides the RealConfigStore implementation and re-exports ABC and types
+from erk_shared.core for backward compatibility.
 """
 
 import os
 import tomllib
-from abc import ABC, abstractmethod
 from pathlib import Path
 
-# Re-export GlobalConfig from erk_shared for backwards compatibility
+# Re-export ABC and types from erk_shared.core for backward compatibility
 from erk_shared.context.types import GlobalConfig as GlobalConfig
-
-
-class ConfigStore(ABC):
-    """Abstract interface for global config operations.
-
-    Provides dependency injection for global config access, enabling
-    in-memory implementations for tests without touching filesystem.
-    """
-
-    @abstractmethod
-    def exists(self) -> bool:
-        """Check if global config exists."""
-        ...
-
-    @abstractmethod
-    def load(self) -> GlobalConfig:
-        """Load global config.
-
-        Returns:
-            GlobalConfig instance with loaded values
-
-        Raises:
-            FileNotFoundError: If config doesn't exist
-            ValueError: If config is missing required fields or malformed
-        """
-        ...
-
-    @abstractmethod
-    def save(self, config: GlobalConfig) -> None:
-        """Save global config.
-
-        Args:
-            config: GlobalConfig instance to save
-        """
-        ...
-
-    @abstractmethod
-    def path(self) -> Path:
-        """Get the path to the global config file.
-
-        Returns:
-            Path to config file (for error messages and debugging)
-        """
-        ...
+from erk_shared.core.config_store import ConfigStore as ConfigStore
 
 
 class RealConfigStore(ConfigStore):

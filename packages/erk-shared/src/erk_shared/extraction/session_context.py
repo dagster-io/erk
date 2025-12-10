@@ -117,7 +117,9 @@ def collect_session_context(
             agent_logs=session_content.agent_logs,
             session_id=session.session_id,
         )
-        if xml_content:  # Skip empty sessions
+        # Skip semantically empty sessions (just <session>\n</session> wrapper)
+        is_empty_xml = xml_content.strip() in ("", "<session>\n</session>")
+        if xml_content and not is_empty_xml:
             session_xmls.append((session.session_id, xml_content))
 
     if not session_xmls:

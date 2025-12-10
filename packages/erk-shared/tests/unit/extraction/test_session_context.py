@@ -176,15 +176,25 @@ def test_collect_session_context_multiple_sessions(tmp_path: Path) -> None:
 
 
 def test_collect_session_context_uses_provided_session_id(tmp_path: Path) -> None:
-    """Test that provided session_id is used instead of auto-detecting."""
+    """Test that provided session_id overrides get_current_session_id() for early return.
+
+    Note: The current_session_id parameter is used for:
+    1. Early return when no session ID available (bypasses store's get_current_session_id())
+    2. Passing to auto_select_sessions
+
+    The is_current flag on sessions is still determined by the store's
+    get_current_session_id() during find_sessions(). This test verifies
+    the early return bypass behavior.
+    """
     fake_git = FakeGit(
         current_branches={tmp_path: "feature"},
         trunk_branches={tmp_path: "main"},
     )
 
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
+    # Store returns None for current_session_id - would normally cause early return
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id="auto-detected-session",  # Different from provided
+        current_session_id=None,  # No current session ID from store
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -193,18 +203,22 @@ def test_collect_session_context_uses_provided_session_id(tmp_path: Path) -> Non
                         size_bytes=1500,
                         modified_at=1234567890.0,
                     ),
-                    "auto-detected-session": FakeSessionData(
-                        content=session_content,
-                        size_bytes=1500,
-                        modified_at=1234567800.0,
-                    ),
                 }
             )
         },
     )
 
-    # Provide explicit session_id
-    result = collect_session_context(
+    # Without provided session_id, would return None due to missing current_session_id
+    result_without = collect_session_context(
+        git=fake_git,
+        cwd=tmp_path,
+        session_store=fake_store,
+        min_size=0,
+    )
+    assert result_without is None  # Early return when no session ID
+
+    # With provided session_id, should proceed despite store returning None
+    result_with = collect_session_context(
         git=fake_git,
         cwd=tmp_path,
         session_store=fake_store,
@@ -212,9 +226,9 @@ def test_collect_session_context_uses_provided_session_id(tmp_path: Path) -> Non
         min_size=0,
     )
 
-    assert result is not None
-    # The provided session should be marked as current and selected
-    assert "provided-session" in result.session_ids
+    assert result_with is not None
+    # Session should be found (selection uses all substantial sessions when no current)
+    assert "provided-session" in result_with.session_ids
 
 
 def test_collect_session_context_with_agent_logs(tmp_path: Path) -> None:
