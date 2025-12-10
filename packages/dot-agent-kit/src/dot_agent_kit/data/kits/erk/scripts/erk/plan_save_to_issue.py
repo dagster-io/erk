@@ -25,19 +25,19 @@ import json
 from pathlib import Path
 
 import click
+from erk_shared.context.helpers import (
+    require_cwd,
+    require_git,
+    require_repo_root,
+    require_session_store,
+)
 from erk_shared.extraction.session_context import collect_session_context
 from erk_shared.github.metadata import render_session_content_blocks
 from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.output.next_steps import format_next_steps_plain
 from erk_shared.scratch.scratch import get_scratch_dir
 
-from dot_agent_kit.context_helpers import (
-    require_cwd,
-    require_git,
-    require_github_issues,
-    require_repo_root,
-    require_session_store,
-)
+from dot_agent_kit.context_helpers import require_github_issues
 
 
 def _create_plan_saved_marker(session_id: str, repo_root: Path) -> None:

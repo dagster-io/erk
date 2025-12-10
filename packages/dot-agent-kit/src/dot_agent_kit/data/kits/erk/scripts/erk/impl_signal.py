@@ -35,6 +35,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import click
+from erk_shared.context.helpers import require_repo_root
 from erk_shared.env import in_github_actions
 from erk_shared.github.metadata import (
     create_start_status_block,
@@ -48,10 +49,7 @@ from erk_shared.impl_folder import (
     write_local_run_state,
 )
 
-from dot_agent_kit.context_helpers import (
-    require_github_issues,
-    require_repo_root,
-)
+from dot_agent_kit.context_helpers import require_github_issues
 
 
 @dataclass(frozen=True)

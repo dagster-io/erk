@@ -43,19 +43,18 @@ from pathlib import Path
 from typing import Literal
 
 import click
+from erk_shared.context.helpers import (
+    require_git,
+    require_github,
+    require_prompt_executor,
+    require_repo_root,
+)
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.pr_footer import build_pr_body_footer, build_remote_execution_note
 from erk_shared.github.types import PRNotFound
 from erk_shared.integrations.gt.prompts import COMMIT_MESSAGE_SYSTEM_PROMPT, truncate_diff
 from erk_shared.prompt_executor import PromptExecutor
-
-from dot_agent_kit.context_helpers import (
-    require_git,
-    require_github,
-    require_prompt_executor,
-    require_repo_root,
-)
 
 
 @dataclass

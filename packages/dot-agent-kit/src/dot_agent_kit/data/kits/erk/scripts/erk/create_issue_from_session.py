@@ -23,14 +23,10 @@ Exit Codes:
 import json
 
 import click
+from erk_shared.context.helpers import require_cwd, require_repo_root, require_session_store
 from erk_shared.github.plan_issues import create_plan_issue
 
-from dot_agent_kit.context_helpers import (
-    require_cwd,
-    require_github_issues,
-    require_repo_root,
-    require_session_store,
-)
+from dot_agent_kit.context_helpers import require_github_issues
 
 
 @click.command(name="create-issue-from-session")

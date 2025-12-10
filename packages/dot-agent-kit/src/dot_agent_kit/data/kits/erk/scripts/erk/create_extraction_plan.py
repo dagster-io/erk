@@ -29,11 +29,12 @@ import json
 from pathlib import Path
 
 import click
+from erk_shared.context.helpers import require_cwd, require_repo_root
 from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, delete_marker
 from erk_shared.scratch.scratch import write_scratch_file
 
-from dot_agent_kit.context_helpers import require_cwd, require_github_issues, require_repo_root
+from dot_agent_kit.context_helpers import require_github_issues
 from dot_agent_kit.operations.agent_docs import check_docs_agent_ready
 
 

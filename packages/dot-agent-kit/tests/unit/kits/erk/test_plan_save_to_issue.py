@@ -561,9 +561,7 @@ def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None
         result = runner.invoke(
             plan_save_to_issue,
             ["--format", "json"],  # No --session-id, and store has None
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, session_store=fake_store
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, session_store=fake_store),
         )
 
         assert result.exit_code == 0, f"Failed: {result.output}"

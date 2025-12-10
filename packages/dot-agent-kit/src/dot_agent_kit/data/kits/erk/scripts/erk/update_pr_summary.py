@@ -35,14 +35,9 @@ import json
 from dataclasses import asdict, dataclass
 
 import click
+from erk_shared.context.helpers import require_git, require_github, require_repo_root
 from erk_shared.github.pr_footer import build_pr_body_footer
 from erk_shared.github.types import PRNotFound
-
-from dot_agent_kit.context_helpers import (
-    require_git,
-    require_github,
-    require_repo_root,
-)
 
 
 @dataclass(frozen=True)

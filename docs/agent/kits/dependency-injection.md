@@ -56,8 +56,8 @@ class DotAgentContext:
 
 ```python
 import click
-from dot_agent_kit.context_helpers import (
-    require_github_issues,
+from dot_agent_kit.context_helpers import require_github_issues
+from erk_shared.context.helpers import (
     require_repo_root,
     require_git,
     require_cwd,

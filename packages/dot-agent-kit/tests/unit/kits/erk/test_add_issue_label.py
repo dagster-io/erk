@@ -56,9 +56,7 @@ def test_add_label_success(tmp_path: Path) -> None:
         result = runner.invoke(
             add_issue_label,
             ["--issue-number", "100", "--label", "extraction-failed"],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -83,9 +81,7 @@ def test_add_label_different_label(tmp_path: Path) -> None:
         result = runner.invoke(
             add_issue_label,
             ["--issue-number", "200", "--label", "extraction-complete"],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -109,9 +105,7 @@ def test_add_label_issue_already_has_label(tmp_path: Path) -> None:
         result = runner.invoke(
             add_issue_label,
             ["--issue-number", "300", "--label", "extraction-failed"],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     # Should succeed - adding existing label is a no-op
@@ -144,9 +138,7 @@ def test_add_label_github_api_failure(tmp_path: Path) -> None:
         result = runner.invoke(
             add_issue_label,
             ["--issue-number", "400", "--label", "extraction-failed"],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 1
@@ -175,9 +167,7 @@ def test_add_label_network_error(tmp_path: Path) -> None:
         result = runner.invoke(
             add_issue_label,
             ["--issue-number", "500", "--label", "test-label"],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 1
@@ -206,9 +196,7 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
         result = runner.invoke(
             add_issue_label,
             ["--issue-number", "600", "--label", "test-label"],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0
@@ -249,9 +237,7 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
         result = runner.invoke(
             add_issue_label,
             ["--issue-number", "700", "--label", "some-label"],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 1
@@ -284,9 +270,7 @@ def test_missing_issue_number(tmp_path: Path) -> None:
         result = runner.invoke(
             add_issue_label,
             ["--label", "some-label"],  # Missing --issue-number
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     # Click should return error for missing required option
@@ -306,9 +290,7 @@ def test_missing_label(tmp_path: Path) -> None:
         result = runner.invoke(
             add_issue_label,
             ["--issue-number", "123"],  # Missing --label
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     # Click should return error for missing required option

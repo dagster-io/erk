@@ -30,13 +30,8 @@ from dataclasses import asdict, dataclass
 from typing import NoReturn, TypedDict
 
 import click
+from erk_shared.context.helpers import get_current_branch, require_github, require_repo_root
 from erk_shared.github.types import PRDetails, PRNotFound, PRReviewThread
-
-from dot_agent_kit.context_helpers import (
-    get_current_branch,
-    require_github,
-    require_repo_root,
-)
 
 
 class ReviewCommentDict(TypedDict):

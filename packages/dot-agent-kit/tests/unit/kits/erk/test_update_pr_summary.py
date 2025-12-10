@@ -5,13 +5,11 @@ Uses FakeGit and FakeGitHub for dependency injection instead of mocking.
 """
 
 import json
-from dataclasses import dataclass
 from pathlib import Path
 
 from click.testing import CliRunner
-from erk_shared.git.abc import Git
+from erk_shared.context import ErkContext
 from erk_shared.git.fake import FakeGit
-from erk_shared.github.abc import GitHub
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo
 
@@ -19,15 +17,6 @@ from dot_agent_kit.data.kits.erk.scripts.erk.update_pr_summary import (
     _build_pr_body,
     update_pr_summary,
 )
-
-
-@dataclass
-class CLIContext:
-    """Context for CLI command injection in tests."""
-
-    git: Git
-    github: GitHub
-    repo_root: Path
 
 
 def _create_pr_info(branch: str, pr_number: int) -> PullRequestInfo:
@@ -123,7 +112,7 @@ def test_cli_success(tmp_path: Path) -> None:
         prs={branch: _create_pr_info(branch, pr_number)},
         pr_details={pr_number: _create_pr_details(branch, pr_number)},
     )
-    ctx = CLIContext(git=fake_git, github=fake_github, repo_root=tmp_path)
+    ctx = ErkContext.for_test(git=fake_git, github=fake_github, repo_root=tmp_path)
 
     result = runner.invoke(
         update_pr_summary,
@@ -163,7 +152,7 @@ def test_cli_commit_not_found(tmp_path: Path) -> None:
         prs={branch: _create_pr_info(branch, pr_number)},
         pr_details={pr_number: _create_pr_details(branch, pr_number)},
     )
-    ctx = CLIContext(git=fake_git, github=fake_github, repo_root=tmp_path)
+    ctx = ErkContext.for_test(git=fake_git, github=fake_github, repo_root=tmp_path)
 
     result = runner.invoke(
         update_pr_summary,
@@ -196,7 +185,7 @@ def test_cli_pr_not_found(tmp_path: Path) -> None:
         prs={},  # No PRs configured
         pr_details={},
     )
-    ctx = CLIContext(git=fake_git, github=fake_github, repo_root=tmp_path)
+    ctx = ErkContext.for_test(git=fake_git, github=fake_github, repo_root=tmp_path)
 
     result = runner.invoke(
         update_pr_summary,
@@ -232,7 +221,7 @@ def test_cli_github_api_failure(tmp_path: Path) -> None:
         pr_details={pr_number: _create_pr_details(branch, pr_number)},
         pr_update_should_succeed=False,  # Configure to fail on update
     )
-    ctx = CLIContext(git=fake_git, github=fake_github, repo_root=tmp_path)
+    ctx = ErkContext.for_test(git=fake_git, github=fake_github, repo_root=tmp_path)
 
     result = runner.invoke(
         update_pr_summary,

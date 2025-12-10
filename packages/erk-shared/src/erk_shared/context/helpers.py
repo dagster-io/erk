@@ -53,16 +53,11 @@ def require_issues(ctx: click.Context) -> GitHubIssues:
         click.echo("Error: Context not initialized", err=True)
         raise SystemExit(1)
 
-    # Use isinstance for ErkContext, fall back to hasattr for duck typing in tests
-    if isinstance(ctx.obj, ErkContext):
-        return ctx.obj.issues
-    if hasattr(ctx.obj, "issues"):
-        return ctx.obj.issues
-    if hasattr(ctx.obj, "github_issues"):
-        return ctx.obj.github_issues
+    if not isinstance(ctx.obj, ErkContext):
+        click.echo("Error: Context must be ErkContext", err=True)
+        raise SystemExit(1)
 
-    click.echo("Error: Context missing issues", err=True)
-    raise SystemExit(1)
+    return ctx.obj.issues
 
 
 def require_repo_root(ctx: click.Context) -> Path:
@@ -93,25 +88,16 @@ def require_repo_root(ctx: click.Context) -> Path:
         click.echo("Error: Context not initialized", err=True)
         raise SystemExit(1)
 
-    # Use isinstance for ErkContext, fall back to hasattr for duck typing in tests
-    if isinstance(ctx.obj, ErkContext):
-        repo = ctx.obj.repo
-        if isinstance(repo, NoRepoSentinel):
-            click.echo("Error: Not in a git repository", err=True)
-            raise SystemExit(1)
-        return repo.root
-    if hasattr(ctx.obj, "repo"):
-        repo = ctx.obj.repo
-        if isinstance(repo, NoRepoSentinel):
-            click.echo("Error: Not in a git repository", err=True)
-            raise SystemExit(1)
-        return repo.root
+    if not isinstance(ctx.obj, ErkContext):
+        click.echo("Error: Context must be ErkContext", err=True)
+        raise SystemExit(1)
 
-    if hasattr(ctx.obj, "repo_root"):
-        return ctx.obj.repo_root
+    repo = ctx.obj.repo
+    if isinstance(repo, NoRepoSentinel):
+        click.echo("Error: Not in a git repository", err=True)
+        raise SystemExit(1)
 
-    click.echo("Error: Context missing repo", err=True)
-    raise SystemExit(1)
+    return repo.root
 
 
 def require_project_root(ctx: click.Context) -> Path:

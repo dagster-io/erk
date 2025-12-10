@@ -10,8 +10,9 @@ Output:
 import json
 
 import click
+from erk_shared.context.helpers import require_repo_root
 
-from dot_agent_kit.context_helpers import require_github_issues, require_repo_root
+from dot_agent_kit.context_helpers import require_github_issues
 
 
 @click.command(name="add-issue-label")

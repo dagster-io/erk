@@ -20,8 +20,9 @@ import json
 from datetime import UTC, datetime
 
 import click
+from erk_shared.context.helpers import require_repo_root
 
-from dot_agent_kit.context_helpers import require_github_issues, require_repo_root
+from dot_agent_kit.context_helpers import require_github_issues
 
 
 def _format_started_comment(workflow_run_url: str | None) -> str:

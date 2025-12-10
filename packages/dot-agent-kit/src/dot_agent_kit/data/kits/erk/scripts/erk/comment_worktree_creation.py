@@ -18,9 +18,10 @@ Examples:
 """
 
 import click
+from erk_shared.context.helpers import require_repo_root
 from erk_shared.impl_folder import add_worktree_creation_comment
 
-from dot_agent_kit.context_helpers import require_github_issues, require_repo_root
+from dot_agent_kit.context_helpers import require_github_issues
 
 
 @click.command(name="comment-worktree-creation")

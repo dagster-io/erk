@@ -20,10 +20,11 @@ import json
 from pathlib import Path
 
 import click
+from erk_shared.context.helpers import require_repo_root
 from erk_shared.github.metadata import extract_session_content_from_comments
 from erk_shared.scratch.scratch import write_scratch_file
 
-from dot_agent_kit.context_helpers import require_github_issues, require_repo_root
+from dot_agent_kit.context_helpers import require_github_issues
 
 
 @click.command(name="extract-session-from-issue")

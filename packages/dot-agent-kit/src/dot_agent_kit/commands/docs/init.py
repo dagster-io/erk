@@ -5,9 +5,9 @@ for agent documentation (glossary, conventions, guide).
 """
 
 import click
+from erk_shared.context.helpers import require_project_root
 
 from dot_agent_kit.cli.output import user_output
-from dot_agent_kit.context_helpers import require_project_root
 from dot_agent_kit.operations.agent_docs import init_docs_agent
 
 

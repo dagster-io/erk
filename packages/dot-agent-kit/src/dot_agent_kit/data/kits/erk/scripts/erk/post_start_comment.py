@@ -27,6 +27,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import click
+from erk_shared.context.helpers import require_repo_root
 from erk_shared.github.metadata import (
     create_start_status_block,
     render_erk_issue_event,
@@ -36,10 +37,7 @@ from erk_shared.impl_folder import (
     read_issue_reference,
 )
 
-from dot_agent_kit.context_helpers import (
-    require_github_issues,
-    require_repo_root,
-)
+from dot_agent_kit.context_helpers import require_github_issues
 
 
 @dataclass(frozen=True)

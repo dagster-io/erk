@@ -131,9 +131,7 @@ def test_post_started_comment_success(tmp_path: Path) -> None:
         result = runner.invoke(
             post_extraction_comment,
             ["--issue-number", "100", "--status", "started"],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -168,9 +166,7 @@ def test_post_started_comment_with_workflow_url(tmp_path: Path) -> None:
                 "--workflow-run-url",
                 "https://github.com/owner/repo/actions/runs/12345",
             ],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0
@@ -197,9 +193,7 @@ def test_post_failed_comment_success(tmp_path: Path) -> None:
                 "--error-message",
                 "Session content was malformed",
             ],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -230,9 +224,7 @@ def test_post_complete_comment_success(tmp_path: Path) -> None:
                 "--pr-url",
                 "https://github.com/owner/repo/pull/456",
             ],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -256,9 +248,7 @@ def test_post_no_changes_comment_success(tmp_path: Path) -> None:
         result = runner.invoke(
             post_extraction_comment,
             ["--issue-number", "500", "--status", "no-changes"],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0, result.output
@@ -291,9 +281,7 @@ def test_post_comment_github_api_failure(tmp_path: Path) -> None:
         result = runner.invoke(
             post_extraction_comment,
             ["--issue-number", "600", "--status", "started"],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 1
@@ -319,9 +307,7 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
         result = runner.invoke(
             post_extraction_comment,
             ["--issue-number", "700", "--status", "started"],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0
@@ -355,9 +341,7 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
         result = runner.invoke(
             post_extraction_comment,
             ["--issue-number", "800", "--status", "started"],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 1
@@ -397,9 +381,7 @@ def test_started_comment_contains_metadata(tmp_path: Path) -> None:
                 "--workflow-run-url",
                 "https://example.com/run/123",
             ],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0
@@ -425,9 +407,7 @@ def test_failed_comment_contains_retry_instructions(tmp_path: Path) -> None:
         result = runner.invoke(
             post_extraction_comment,
             ["--issue-number", "1000", "--status", "failed"],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0
@@ -456,9 +436,7 @@ def test_complete_comment_contains_review_prompt(tmp_path: Path) -> None:
                 "--pr-url",
                 "https://github.com/owner/repo/pull/999",
             ],
-            obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd
-            ),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
     assert result.exit_code == 0

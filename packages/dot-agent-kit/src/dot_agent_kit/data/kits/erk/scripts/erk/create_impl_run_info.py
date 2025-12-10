@@ -43,8 +43,7 @@ from pathlib import Path
 from typing import Literal
 
 import click
-
-from dot_agent_kit.context_helpers import require_cwd
+from erk_shared.context.helpers import require_cwd
 
 
 @dataclass

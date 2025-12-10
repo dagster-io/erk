@@ -42,11 +42,9 @@ from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 
 import click
+from erk_shared.context.helpers import require_repo_root
 
-from dot_agent_kit.context_helpers import (
-    require_github_issues,
-    require_repo_root,
-)
+from dot_agent_kit.context_helpers import require_github_issues
 
 
 @dataclass(frozen=True)

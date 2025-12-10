@@ -6,12 +6,11 @@ Uses FakeGitHubIssues for dependency injection instead of mocking.
 
 import json
 import re
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
-from erk_shared.github.issues.abc import GitHubIssues
+from erk_shared.context import ErkContext
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 
@@ -21,14 +20,6 @@ from dot_agent_kit.data.kits.erk.scripts.erk.post_workflow_started_comment impor
 from dot_agent_kit.data.kits.erk.scripts.erk.post_workflow_started_comment import (
     post_workflow_started_comment as post_workflow_started_comment_command,
 )
-
-
-@dataclass
-class CLIContext:
-    """Context for CLI command injection in tests."""
-
-    github_issues: GitHubIssues
-    repo_root: Path
 
 
 def _create_test_issue(issue_number: int) -> IssueInfo:
@@ -160,7 +151,7 @@ def test_cli_success(tmp_path: Path) -> None:
     fake_github = FakeGitHubIssues(
         issues={123: _create_test_issue(123)},
     )
-    ctx = CLIContext(github_issues=fake_github, repo_root=tmp_path)
+    ctx = ErkContext.for_test(github_issues=fake_github, repo_root=tmp_path)
 
     result = runner.invoke(
         post_workflow_started_comment_command,
@@ -198,7 +189,7 @@ def test_cli_github_api_failure(tmp_path: Path) -> None:
     runner = CliRunner()
     # Issue not in the fake, so add_comment will raise RuntimeError
     fake_github = FakeGitHubIssues(issues={})
-    ctx = CLIContext(github_issues=fake_github, repo_root=tmp_path)
+    ctx = ErkContext.for_test(github_issues=fake_github, repo_root=tmp_path)
 
     result = runner.invoke(
         post_workflow_started_comment_command,
@@ -244,7 +235,7 @@ def test_cli_passes_correct_args_to_github(tmp_path: Path) -> None:
     fake_github = FakeGitHubIssues(
         issues={789: _create_test_issue(789)},
     )
-    ctx = CLIContext(github_issues=fake_github, repo_root=tmp_path)
+    ctx = ErkContext.for_test(github_issues=fake_github, repo_root=tmp_path)
 
     runner.invoke(
         post_workflow_started_comment_command,
