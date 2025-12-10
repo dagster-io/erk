@@ -10,6 +10,7 @@ import click
 from erk_dev.commands.branch_commit_count.command import (
     branch_commit_count_command,
 )
+from erk_dev.commands.bump_version.command import bump_version_command
 from erk_dev.commands.clean_cache.command import clean_cache_command
 from erk_dev.commands.codex_review.command import codex_review_command
 from erk_dev.commands.completion.command import completion_command
@@ -33,6 +34,7 @@ def cli() -> None:
 
 # Register all commands
 cli.add_command(branch_commit_count_command)
+cli.add_command(bump_version_command)
 cli.add_command(clean_cache_command)
 cli.add_command(codex_review_command)
 cli.add_command(completion_command)
