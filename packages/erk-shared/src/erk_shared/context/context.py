@@ -13,7 +13,7 @@ for instantiation.
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from erk_shared.context.types import (
     GlobalConfig,
@@ -38,7 +38,7 @@ from erk_shared.prompt_executor import PromptExecutor
 
 if TYPE_CHECKING:
     # These ABCs stay in erk package due to their dependencies.
-    # Imported only for documentation - actual type hints use Any to avoid import cycles.
+    # Imported for type checking only - forward references resolve to these at analysis time.
     from erk.core.claude_executor import ClaudeExecutor as ClaudeExecutor
     from erk.core.config_store import ConfigStore as ConfigStore
     from erk.core.planner.registry_abc import PlannerRegistry as PlannerRegistry
@@ -83,13 +83,13 @@ class ErkContext:
     completion: Completion
     feedback: UserFeedback
 
-    # Erk-specific (ABCs stay in erk, injected as Any to avoid import cycle)
-    # Type hints are provided for static analysis via TYPE_CHECKING
-    claude_executor: Any  # ClaudeExecutor at runtime
-    config_store: Any  # ConfigStore at runtime
-    script_writer: Any  # ScriptWriter at runtime
-    planner_registry: Any  # PlannerRegistry at runtime
-    plan_list_service: Any  # PlanListService at runtime
+    # Erk-specific (ABCs stay in erk, resolved via TYPE_CHECKING imports)
+    # String literal forward references avoid circular imports at runtime
+    claude_executor: "ClaudeExecutor"
+    config_store: "ConfigStore"
+    script_writer: "ScriptWriter"
+    planner_registry: "PlannerRegistry"
+    plan_list_service: "PlanListService"
 
     # Paths
     cwd: Path  # Current working directory at CLI invocation
