@@ -1,19 +1,19 @@
 """Tests for gt quick-submit kit CLI command.
 
 This command wraps subprocess calls to git and gt, so we test by invoking
-the command through dot-agent CLI.
+the command through erk kit exec CLI.
 """
 
 import subprocess
 
 
 class TestQuickSubmitIntegration:
-    """Integration tests for quick-submit command via dot-agent CLI."""
+    """Integration tests for quick-submit command via erk kit exec CLI."""
 
     def test_quick_submit_help(self) -> None:
         """Test that quick-submit help is accessible."""
         result = subprocess.run(
-            ["dot-agent", "run", "gt", "quick-submit", "--help"],
+            ["erk", "kit", "exec", "gt", "quick-submit", "--help"],
             capture_output=True,
             text=True,
             check=False,
@@ -25,7 +25,7 @@ class TestQuickSubmitIntegration:
         """Test the full flow description in help text."""
         # For now, verify the command structure works
         result = subprocess.run(
-            ["dot-agent", "run", "gt", "quick-submit", "--help"],
+            ["erk", "kit", "exec", "gt", "quick-submit", "--help"],
             capture_output=True,
             text=True,
             check=False,
@@ -37,7 +37,7 @@ class TestQuickSubmitIntegration:
     def test_command_is_registered(self) -> None:
         """Verify quick-submit is available in gt kit."""
         result = subprocess.run(
-            ["dot-agent", "run", "gt", "--help"],
+            ["erk", "kit", "exec", "gt", "--help"],
             capture_output=True,
             text=True,
             check=False,
