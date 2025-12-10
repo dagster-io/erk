@@ -320,49 +320,6 @@ def check_workflow_permissions(ctx: ErkContext, repo_root: Path) -> CheckResult:
         )
 
 
-def check_dot_agent() -> CheckResult:
-    """Check if dot-agent is installed and available in PATH."""
-    dot_agent_path = shutil.which("dot-agent")
-    if dot_agent_path is None:
-        return CheckResult(
-            name="dot-agent",
-            passed=False,
-            message="dot-agent not found in PATH",
-            details="dot-agent is required for kit commands",
-        )
-
-    # Try to get version
-    try:
-        result = subprocess.run(
-            ["dot-agent", "--version"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=5,
-        )
-        version_output = result.stdout.strip() or result.stderr.strip() or "installed"
-        return CheckResult(
-            name="dot-agent",
-            passed=True,
-            message=f"dot-agent available: {version_output}",
-            details=version_output,
-        )
-    except subprocess.TimeoutExpired:
-        return CheckResult(
-            name="dot-agent",
-            passed=True,
-            message="dot-agent found (version check timed out)",
-            details="timeout",
-        )
-    except Exception:
-        return CheckResult(
-            name="dot-agent",
-            passed=True,
-            message="dot-agent found (version check failed)",
-            details="unknown",
-        )
-
-
 def check_uv_version() -> CheckResult:
     """Check if uv is installed.
 
@@ -415,50 +372,47 @@ def check_uv_version() -> CheckResult:
     )
 
 
-def check_dot_agent_health() -> CheckResult:
-    """Run dot-agent check to verify kit health."""
-    dot_agent_path = shutil.which("dot-agent")
-    if dot_agent_path is None:
+def check_docs_agent(repo_root: Path) -> CheckResult:
+    """Check if docs/agent/ templates exist and are valid.
+
+    Args:
+        repo_root: Path to the repository root
+
+    Returns:
+        CheckResult indicating whether docs/agent/ is properly configured
+    """
+    docs_agent_dir = repo_root / "docs" / "agent"
+
+    # Check if directory exists
+    if not docs_agent_dir.exists():
         return CheckResult(
-            name="dot-agent health",
-            passed=False,
-            message="Cannot run check: dot-agent not found",
+            name="docs/agent",
+            passed=True,  # Info level - not required
+            message="No docs/agent/ directory",
+            details="Run 'erk init' to create agent documentation templates",
         )
 
-    try:
-        result = subprocess.run(
-            ["dot-agent", "check"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=30,
-        )
-        if result.returncode == 0:
-            return CheckResult(
-                name="dot-agent health",
-                passed=True,
-                message="dot-agent check passed",
-                details=result.stdout.strip() if result.stdout else None,
-            )
-        else:
-            return CheckResult(
-                name="dot-agent health",
-                passed=False,
-                message="dot-agent check failed",
-                details=result.stderr.strip() if result.stderr else result.stdout.strip(),
-            )
-    except subprocess.TimeoutExpired:
+    # Check for expected template files
+    expected_files = ["glossary.md", "conventions.md", "guide.md"]
+    missing_files: list[str] = []
+
+    for filename in expected_files:
+        if not (docs_agent_dir / filename).exists():
+            missing_files.append(filename)
+
+    if missing_files:
         return CheckResult(
-            name="dot-agent health",
-            passed=False,
-            message="dot-agent check timed out",
+            name="docs/agent",
+            passed=True,  # Info level - warn but don't fail
+            message=f"Missing template files: {', '.join(missing_files)}",
+            details="Run 'erk init --force' to recreate templates",
         )
-    except Exception as e:
-        return CheckResult(
-            name="dot-agent health",
-            passed=False,
-            message=f"dot-agent check error: {e}",
-        )
+
+    return CheckResult(
+        name="docs/agent",
+        passed=True,
+        message="Agent documentation templates present",
+    )
 
 
 def check_gitignore_entries(repo_root: Path) -> CheckResult:
@@ -630,10 +584,9 @@ def check_claude_settings(repo_root: Path) -> CheckResult:
                 continue
             hook_cmd = hook.get("command")
             if hook_cmd is not None and isinstance(hook_cmd, str):
-                # Check if the command looks like a kit command (old or new format)
-                is_old_format = "dot-agent" in hook_cmd and "kit-command" in hook_cmd
-                is_new_format = "erk kit exec" in hook_cmd
-                if is_old_format or is_new_format:
+                # Check if the command looks like a kit command
+                is_kit_command = "erk kit exec" in hook_cmd
+                if is_kit_command:
                     # Extract kit command name for warning
                     parts = hook_cmd.split()
                     if len(parts) >= 4:
@@ -665,8 +618,7 @@ def _kit_command_exists(command: str) -> bool:
     still validating that the kit command is defined.
     """
     # Parse command to extract the base kit command
-    # Old format: ERK_KIT_ID=erk ... dot-agent kit-command erk <command-name>
-    # New format: ERK_KIT_ID=erk ... erk kit exec erk <command-name>
+    # Format: ERK_KIT_ID=erk ... erk kit exec erk <command-name>
     try:
         # Quick check - just see if the kit-command is recognized
         # We don't want to actually run hooks, just validate they exist
@@ -693,12 +645,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         check_github_cli(),
         check_github_auth(),
         check_uv_version(),
-        check_dot_agent(),
     ]
-
-    # Only run dot-agent health check if dot-agent is available
-    if shutil.which("dot-agent") is not None:
-        results.append(check_dot_agent_health())
 
     # Add repository check
     results.append(check_repository(ctx))
@@ -711,6 +658,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         results.append(check_claude_erk_permission(repo_root))
         results.append(check_claude_settings(repo_root))
         results.append(check_gitignore_entries(repo_root))
+        results.append(check_docs_agent(repo_root))
         # GitHub workflow permissions check (requires repo context)
         results.append(check_workflow_permissions(ctx, repo_root))
 

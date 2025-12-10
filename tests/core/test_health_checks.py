@@ -9,6 +9,7 @@ from erk_shared.git.fake import FakeGit
 from erk.core.health_checks import (
     CheckResult,
     check_claude_settings,
+    check_docs_agent,
     check_erk_version,
     check_gitignore_entries,
     check_repository,
@@ -309,3 +310,86 @@ def test_check_uv_version_with_build_info() -> None:
     assert "0.9.2" in result.message
     # Should NOT include the build info in version
     assert "Homebrew" not in result.message
+
+
+# --- docs/agent Tests ---
+
+
+def test_check_docs_agent_no_directory(tmp_path: Path) -> None:
+    """Test docs/agent check when directory doesn't exist."""
+    result = check_docs_agent(tmp_path)
+
+    assert result.name == "docs/agent"
+    assert result.passed is True
+    assert "No docs/agent/ directory" in result.message
+    assert result.details is not None
+    assert "erk init" in result.details
+
+
+def test_check_docs_agent_all_templates_present(tmp_path: Path) -> None:
+    """Test docs/agent check when all template files exist."""
+    docs_agent = tmp_path / "docs" / "agent"
+    docs_agent.mkdir(parents=True)
+
+    # Create all expected template files
+    (docs_agent / "glossary.md").write_text("# Glossary", encoding="utf-8")
+    (docs_agent / "conventions.md").write_text("# Conventions", encoding="utf-8")
+    (docs_agent / "guide.md").write_text("# Guide", encoding="utf-8")
+
+    result = check_docs_agent(tmp_path)
+
+    assert result.name == "docs/agent"
+    assert result.passed is True
+    assert "Agent documentation templates present" in result.message
+    assert result.details is None
+
+
+def test_check_docs_agent_missing_glossary(tmp_path: Path) -> None:
+    """Test docs/agent check when glossary.md is missing."""
+    docs_agent = tmp_path / "docs" / "agent"
+    docs_agent.mkdir(parents=True)
+
+    # Create only some template files
+    (docs_agent / "conventions.md").write_text("# Conventions", encoding="utf-8")
+    (docs_agent / "guide.md").write_text("# Guide", encoding="utf-8")
+
+    result = check_docs_agent(tmp_path)
+
+    assert result.name == "docs/agent"
+    assert result.passed is True  # Info level, not failure
+    assert "glossary.md" in result.message
+    assert result.details is not None
+    assert "erk init --force" in result.details
+
+
+def test_check_docs_agent_missing_multiple(tmp_path: Path) -> None:
+    """Test docs/agent check when multiple template files are missing."""
+    docs_agent = tmp_path / "docs" / "agent"
+    docs_agent.mkdir(parents=True)
+
+    # Create only guide.md
+    (docs_agent / "guide.md").write_text("# Guide", encoding="utf-8")
+
+    result = check_docs_agent(tmp_path)
+
+    assert result.name == "docs/agent"
+    assert result.passed is True  # Info level, not failure
+    assert "glossary.md" in result.message
+    assert "conventions.md" in result.message
+    assert result.details is not None
+    assert "erk init --force" in result.details
+
+
+def test_check_docs_agent_empty_directory(tmp_path: Path) -> None:
+    """Test docs/agent check when directory exists but is empty."""
+    docs_agent = tmp_path / "docs" / "agent"
+    docs_agent.mkdir(parents=True)
+
+    result = check_docs_agent(tmp_path)
+
+    assert result.name == "docs/agent"
+    assert result.passed is True  # Info level
+    # All three files should be mentioned as missing
+    assert "glossary.md" in result.message
+    assert "conventions.md" in result.message
+    assert "guide.md" in result.message
