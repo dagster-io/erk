@@ -145,7 +145,6 @@ build: clean
 # Reinstall erk and dot-agent tools in editable mode
 reinstall-erk-tools:
 	uv tool install --force -e .
-	cd packages/dot-agent-kit && uv tool install --force -e .
 
 # Publish packages to PyPI
 # Use erk-dev publish-to-pypi command instead (recommended)
