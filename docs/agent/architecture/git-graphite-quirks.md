@@ -5,9 +5,6 @@ read_when:
   - "handling rebase/restack edge cases"
   - "writing conflict detection logic"
   - "troubleshooting detached HEAD states"
-tripwires:
-  - action: "assuming git rebase cleanup implies clean completion"
-    warning: "Rebase dirs can be cleaned up while unmerged files remain and HEAD is detached. Check for unmerged files explicitly."
 ---
 
 # Git and Graphite Edge Cases Catalog
@@ -15,8 +12,6 @@ tripwires:
 This document catalogs surprising edge cases and quirks discovered when working with git and Graphite (gt). Each entry includes the discovery context, the surprising behavior, and the workaround.
 
 ## Rebase Cleanup Without Completion (Issue #2844)
-
-**Discovered**: December 2024
 
 **Surprising Behavior**: When `gt continue` runs after conflict resolution but conflicts weren't fully resolved, the rebase-merge directory gets cleaned up BUT:
 
@@ -48,8 +43,6 @@ unmerged_files = [
 **Location in Codebase**: `packages/erk-shared/src/erk_shared/integrations/gt/operations/restack_finalize.py`
 
 ## Transient Dirty State After Rebase
-
-**Discovered**: December 2024
 
 **Surprising Behavior**: After `gt restack --no-interactive` completes, there can be a brief window where `is_worktree_clean()` returns `False` due to:
 
@@ -101,16 +94,12 @@ is_detached = symbolic_result.returncode != 0
 
 ## Adding New Quirks
 
-When you discover a new edge case:
+When you discover a new edge case, add it to this document with:
 
-1. Add it to this document with:
-   - **Discovered**: Date
-   - **Surprising Behavior**: What you expected vs what happened
-   - **Why It's Surprising**: The assumption that was violated
-   - **Detection Pattern**: Code to detect/handle this case
-   - **Location in Codebase**: Where the fix/workaround lives
-
-2. Consider adding a tripwire to `tripwires.md` if the pattern is dangerous enough.
+- **Surprising Behavior**: What you expected vs what happened
+- **Why It's Surprising**: The assumption that was violated
+- **Detection Pattern**: Code to detect/handle this case
+- **Location in Codebase**: Where the fix/workaround lives
 
 ## Related Documentation
 
