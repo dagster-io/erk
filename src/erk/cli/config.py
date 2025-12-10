@@ -2,14 +2,8 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-
-@dataclass(frozen=True)
-class LoadedConfig:
-    """In-memory representation of merged repo + project config."""
-
-    env: dict[str, str]
-    post_create_commands: list[str]
-    post_create_shell: str | None
+# Re-export LoadedConfig from erk_shared for backwards compatibility
+from erk_shared.context.types import LoadedConfig as LoadedConfig
 
 
 @dataclass(frozen=True)

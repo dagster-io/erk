@@ -4,57 +4,15 @@ Discovers git repository information from a given path without requiring
 full ErkContext (enables config loading before context creation).
 """
 
-from dataclasses import dataclass
 from pathlib import Path
 
+# Re-export context types from erk_shared for backwards compatibility
+from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
+from erk_shared.context.types import RepoContext as RepoContext
 from erk_shared.git.abc import Git
 from erk_shared.git.real import RealGit
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.types import GitHubRepoId
-
-
-@dataclass(frozen=True)
-class RepoContext:
-    """Represents a git repo root and its managed worktrees directory.
-
-    Attributes:
-        root: The actual working tree root (where git commands run).
-              For worktrees, this is the worktree directory.
-              For main repos, this equals main_repo_root.
-        repo_name: Name of the repository (derived from main_repo_root).
-        repo_dir: Path to erk metadata directory (~/.erk/repos/<repo-name>).
-        worktrees_dir: Path to worktrees directory (~/.erk/repos/<repo-name>/worktrees).
-        main_repo_root: The main repository root (for consistent metadata paths).
-                       For worktrees, this is the parent repo's root directory.
-                       For main repos, this equals root.
-                       Defaults to root for backwards compatibility.
-        github: GitHub repository identity, if available.
-    """
-
-    root: Path
-    repo_name: str
-    repo_dir: Path  # ~/.erk/repos/<repo-name>
-    worktrees_dir: Path  # ~/.erk/repos/<repo-name>/worktrees
-    main_repo_root: Path | None = None  # Defaults to root for backwards compatibility
-    github: GitHubRepoId | None = None  # None if not a GitHub repo or no remote
-
-    def __post_init__(self) -> None:
-        """Set main_repo_root to root if not provided."""
-        if self.main_repo_root is None:
-            # Use object.__setattr__ because dataclass is frozen
-            object.__setattr__(self, "main_repo_root", self.root)
-
-
-@dataclass(frozen=True)
-class NoRepoSentinel:
-    """Sentinel value indicating execution outside a git repository.
-
-    Used when commands run outside git repositories (e.g., before init,
-    in non-git directories). Commands that require repo context can check
-    for this sentinel and fail fast.
-    """
-
-    message: str = "Not inside a git repository"
 
 
 def discover_repo_or_sentinel(

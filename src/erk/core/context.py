@@ -1,10 +1,21 @@
-"""Application context with dependency injection."""
+"""Application context with dependency injection.
+
+This module provides the ErkContext and factory functions for erk CLI.
+The unified ErkContext dataclass is defined in erk_shared.context and
+re-exported here with factory methods.
+"""
 
 from dataclasses import dataclass
 from pathlib import Path
 
 import click
 import tomlkit
+
+# Re-export types from erk_shared.context
+from erk_shared.context.types import GlobalConfig as GlobalConfig
+from erk_shared.context.types import LoadedConfig as LoadedConfig
+from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
+from erk_shared.context.types import RepoContext as RepoContext
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
 from erk_shared.git.abc import Git
 from erk_shared.git.dry_run import DryRunGit
@@ -15,73 +26,101 @@ from erk_shared.github.issues import DryRunGitHubIssues, GitHubIssues, RealGitHu
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.real import RealGitHub
 from erk_shared.github.types import RepoInfo
+
+# Import erk-specific integrations
+from erk_shared.integrations.completion import Completion
+from erk_shared.integrations.feedback import InteractiveFeedback, SuppressedFeedback, UserFeedback
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.dry_run import DryRunGraphite
 from erk_shared.integrations.graphite.real import RealGraphite
+from erk_shared.integrations.shell import Shell
 from erk_shared.integrations.time.abc import Time
 from erk_shared.integrations.time.real import RealTime
 from erk_shared.objectives.storage import FileObjectiveStore, ObjectiveStore
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.store import PlanStore
+from erk_shared.prompt_executor import PromptExecutor
+from erk_shared.prompt_executor.real import RealPromptExecutor
 
-from erk.cli.config import LoadedConfig, load_config
+from erk.cli.config import load_config
 from erk.core.claude_executor import ClaudeExecutor, RealClaudeExecutor
-from erk.core.completion import Completion, RealCompletion
-from erk.core.config_store import (
-    ConfigStore,
-    GlobalConfig,
-    RealConfigStore,
-)
+from erk.core.completion import RealCompletion
+from erk.core.config_store import ConfigStore, RealConfigStore
 from erk.core.planner.registry_abc import PlannerRegistry
 from erk.core.planner.registry_real import RealPlannerRegistry
 from erk.core.project_discovery import ProjectContext, discover_project
-from erk.core.repo_discovery import (
-    NoRepoSentinel,
-    RepoContext,
-    discover_repo_or_sentinel,
-    ensure_erk_metadata_dir,
-)
+from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
 from erk.core.script_writer import RealScriptWriter, ScriptWriter
 from erk.core.services.plan_list_service import PlanListService
-from erk.core.shell import RealShell, Shell
-from erk.core.user_feedback import InteractiveFeedback, SuppressedFeedback, UserFeedback
+from erk.core.shell import RealShell
 
 
 @dataclass(frozen=True)
 class ErkContext:
-    """Immutable context holding all dependencies for erk operations.
+    """Immutable context holding all dependencies for erk and dot-agent-kit operations.
 
     Created at CLI entry point and threaded through the application.
     Frozen to prevent accidental modification at runtime.
 
     Note: global_config may be None only during init command before config is created.
     All other commands should have a valid GlobalConfig.
+
+    DotAgentContext Compatibility:
+    - github_issues -> issues (renamed for consistency)
+    - repo_root property -> repo.root (access via repo property or require_repo_root helper)
+    - debug field -> debug (preserved)
     """
 
+    # Gateway integrations (from erk_shared)
     git: Git
     github: GitHub
     issues: GitHubIssues
-    plan_store: PlanStore
     graphite: Graphite
-    shell: Shell
-    claude_executor: ClaudeExecutor
-    completion: Completion
     time: Time
+    session_store: ClaudeCodeSessionStore
+    plan_store: PlanStore
+    objectives: ObjectiveStore
+    prompt_executor: PromptExecutor  # From DotAgentContext
+
+    # Shell/CLI integrations
+    shell: Shell
+    completion: Completion
+    feedback: UserFeedback
+
+    # Erk-specific
+    claude_executor: ClaudeExecutor
     config_store: ConfigStore
     script_writer: ScriptWriter
-    feedback: UserFeedback
-    plan_list_service: PlanListService
     planner_registry: PlannerRegistry
-    session_store: ClaudeCodeSessionStore
-    objectives: ObjectiveStore
+    plan_list_service: PlanListService
+
+    # Paths
     cwd: Path  # Current working directory at CLI invocation
-    global_config: GlobalConfig | None
-    local_config: LoadedConfig
+
+    # Repository context
     repo: RepoContext | NoRepoSentinel
     project: ProjectContext | None  # None if not in a project subdirectory
     repo_info: RepoInfo | None  # None when not in a GitHub repo
+
+    # Configuration
+    global_config: GlobalConfig | None
+    local_config: LoadedConfig
+
+    # Mode flags
     dry_run: bool
+    debug: bool  # From DotAgentContext - enables debug output/stack traces
+
+    @property
+    def repo_root(self) -> Path:
+        """DotAgentContext compatibility - get repo root from repo.
+
+        Raises:
+            RuntimeError: If not in a git repository
+        """
+        if isinstance(self.repo, NoRepoSentinel):
+            raise RuntimeError("Not in a git repository")
+        return self.repo.root
 
     @property
     def trunk_branch(self) -> str | None:
@@ -108,30 +147,6 @@ class ErkContext:
         Returns:
             ErkContext with git configured and other dependencies using test defaults
 
-        Example:
-            Before (7 lines):
-            >>> from erk_shared.git.fake import FakeGit
-            >>> from erk_shared.github.fake import FakeGitHub
-            >>> from erk_shared.integrations.graphite.fake import FakeGraphite
-            >>> from tests.fakes.shell import FakeShell
-            >>> ctx = ErkContext(
-            ...     git=git,
-            ...     github=FakeGitHub(),
-            ...     graphite=FakeGraphite(),
-            ...     shell=FakeShell(),
-            ...     cwd=cwd,
-            ...     global_config=None,
-            ...     local_config=LoadedConfig(
-            ...         env={}, post_create_commands=[], post_create_shell=None
-            ...     ),
-            ...     repo=NoRepoSentinel(),
-            ...     dry_run=False,
-            ...     trunk_branch=None,
-            ... )
-
-            After (1 line):
-            >>> ctx = ErkContext.minimal(git, cwd)
-
         Note:
             For more complex test setup with custom configs or multiple integration classes,
             use ErkContext.for_test() instead.
@@ -139,15 +154,16 @@ class ErkContext:
         from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
         from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
+        from erk_shared.integrations.completion import FakeCompletion
+        from erk_shared.integrations.feedback import FakeUserFeedback
         from erk_shared.integrations.graphite.fake import FakeGraphite
+        from erk_shared.integrations.shell import FakeShell
         from erk_shared.integrations.time.fake import FakeTime
         from erk_shared.objectives.storage import FakeObjectiveStore
         from erk_shared.plan_store.fake import FakePlanStore
+        from erk_shared.prompt_executor.fake import FakePromptExecutor
         from tests.fakes.claude_executor import FakeClaudeExecutor
-        from tests.fakes.completion import FakeCompletion
         from tests.fakes.script_writer import FakeScriptWriter
-        from tests.fakes.shell import FakeShell
-        from tests.fakes.user_feedback import FakeUserFeedback
 
         from erk.core.config_store import FakeConfigStore
         from erk.core.planner.registry_fake import FakePlannerRegistry
@@ -171,6 +187,7 @@ class ErkContext:
             planner_registry=FakePlannerRegistry(),
             session_store=FakeClaudeCodeSessionStore(),
             objectives=FakeObjectiveStore(),
+            prompt_executor=FakePromptExecutor(),
             cwd=cwd,
             global_config=None,
             local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
@@ -178,6 +195,7 @@ class ErkContext:
             project=None,
             repo_info=None,
             dry_run=dry_run,
+            debug=False,
         )
 
     @staticmethod
@@ -198,6 +216,7 @@ class ErkContext:
         planner_registry: PlannerRegistry | None = None,
         session_store: ClaudeCodeSessionStore | None = None,
         objectives: ObjectiveStore | None = None,
+        prompt_executor: PromptExecutor | None = None,
         cwd: Path | None = None,
         global_config: GlobalConfig | None = None,
         local_config: LoadedConfig | None = None,
@@ -205,6 +224,7 @@ class ErkContext:
         project: ProjectContext | None = None,
         repo_info: RepoInfo | None = None,
         dry_run: bool = False,
+        debug: bool = False,
     ) -> "ErkContext":
         """Create test context with optional pre-configured integration classes.
 
@@ -228,47 +248,34 @@ class ErkContext:
                           If None, creates empty FakeScriptWriter.
             feedback: Optional UserFeedback implementation.
                         If None, creates FakeUserFeedback.
-            cwd: Optional current working directory. If None, uses Path("/test/default/cwd").
+            prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
+            cwd: Optional current working directory. If None, uses sentinel_path().
             global_config: Optional GlobalConfig. If None, uses test defaults.
             local_config: Optional LoadedConfig. If None, uses empty defaults.
             repo: Optional RepoContext or NoRepoSentinel. If None, uses NoRepoSentinel().
+            project: Optional ProjectContext. If None, stays None.
+            repo_info: Optional RepoInfo. If None, stays None.
             dry_run: Whether to enable dry-run mode (default False).
+            debug: Whether to enable debug mode (default False).
 
         Returns:
             ErkContext configured with provided values and test defaults
-
-        Example:
-            Simple case (use .minimal() instead):
-            >>> git = FakeGit(default_branches={Path("/repo"): "main"})
-            >>> ctx = ErkContext.for_test(git=git)
-
-            Complex case with multiple integration classes:
-            >>> git = FakeGit(default_branches={Path("/repo"): "main"})
-            >>> github = FakeGitHub(prs={123: PR(...)})
-            >>> graphite = FakeGraphite(stack_info={"feature": StackInfo(...)})
-            >>> ctx = ErkContext.for_test(
-            ...     git=git,
-            ...     github=github,
-            ...     graphite=graphite,
-            ... )
-
-        Note:
-            For simple cases that only need git, use ErkContext.minimal()
-            which is more concise.
         """
         from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
         from erk_shared.git.fake import FakeGit
         from erk_shared.github.fake import FakeGitHub
         from erk_shared.github.issues import FakeGitHubIssues
+        from erk_shared.integrations.completion import FakeCompletion
+        from erk_shared.integrations.feedback import FakeUserFeedback
+        from erk_shared.integrations.graphite.dry_run import DryRunGraphite
         from erk_shared.integrations.graphite.fake import FakeGraphite
+        from erk_shared.integrations.shell import FakeShell
         from erk_shared.integrations.time.fake import FakeTime
         from erk_shared.objectives.storage import FakeObjectiveStore
         from erk_shared.plan_store.fake import FakePlanStore
+        from erk_shared.prompt_executor.fake import FakePromptExecutor
         from tests.fakes.claude_executor import FakeClaudeExecutor
-        from tests.fakes.completion import FakeCompletion
         from tests.fakes.script_writer import FakeScriptWriter
-        from tests.fakes.shell import FakeShell
-        from tests.fakes.user_feedback import FakeUserFeedback
         from tests.test_utils.paths import sentinel_path
 
         from erk.core.config_store import FakeConfigStore
@@ -319,6 +326,9 @@ class ErkContext:
         if objectives is None:
             objectives = FakeObjectiveStore()
 
+        if prompt_executor is None:
+            prompt_executor = FakePromptExecutor()
+
         if global_config is None:
             global_config = GlobalConfig(
                 erk_root=Path("/test/erks"),
@@ -361,6 +371,7 @@ class ErkContext:
             planner_registry=planner_registry,
             session_store=session_store,
             objectives=objectives,
+            prompt_executor=prompt_executor,
             cwd=cwd or sentinel_path(),
             global_config=global_config,
             local_config=local_config,
@@ -368,6 +379,7 @@ class ErkContext:
             project=project,
             repo_info=repo_info,
             dry_run=dry_run,
+            debug=debug,
         )
 
 
@@ -437,7 +449,7 @@ def safe_cwd() -> tuple[Path | None, str | None]:
         )
 
 
-def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
+def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) -> ErkContext:
     """Create production context with real implementations.
 
     Called at CLI entry point to create the context for the entire
@@ -448,6 +460,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
                  print intended actions without executing them
         script: If True, use SuppressedFeedback to suppress diagnostic output
                 for shell integration mode (default False)
+        debug: If True, enable debug mode for error handling (default False)
 
     Returns:
         ErkContext with real implementations, wrapped in dry-run
@@ -536,10 +549,11 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
         github = DryRunGitHub(github)
         issues = DryRunGitHubIssues(issues)
 
-    # 10. Create session store
+    # 10. Create session store and prompt executor
     from erk_shared.extraction.claude_code_session_store import RealClaudeCodeSessionStore
 
     session_store: ClaudeCodeSessionStore = RealClaudeCodeSessionStore()
+    prompt_executor: PromptExecutor = RealPromptExecutor()
 
     # 11. Create context with all values
     return ErkContext(
@@ -559,6 +573,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
         planner_registry=RealPlannerRegistry(),
         session_store=session_store,
         objectives=FileObjectiveStore(),
+        prompt_executor=prompt_executor,
         cwd=cwd,
         global_config=global_config,
         local_config=local_config,
@@ -566,6 +581,7 @@ def create_context(*, dry_run: bool, script: bool = False) -> ErkContext:
         project=project,
         repo_info=repo_info,
         dry_run=dry_run,
+        debug=debug,
     )
 
 
@@ -589,4 +605,4 @@ def regenerate_context(existing_ctx: ErkContext) -> ErkContext:
         # After os.chdir() or worktree removal
         ctx = regenerate_context(ctx)
     """
-    return create_context(dry_run=existing_ctx.dry_run)
+    return create_context(dry_run=existing_ctx.dry_run, debug=existing_ctx.debug)

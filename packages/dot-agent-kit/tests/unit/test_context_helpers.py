@@ -112,17 +112,13 @@ def test_require_repo_root_exits_when_not_in_git_repo() -> None:
     from dataclasses import dataclass
     from unittest.mock import MagicMock
 
-    @dataclass
-    class MockNoRepoSentinel:
-        """Mock sentinel - no 'root' attribute."""
-
-        message: str = "Not inside a git repository"
+    from erk_shared.context.types import NoRepoSentinel
 
     @dataclass
     class MockErkContext:
-        repo: MockNoRepoSentinel
+        repo: NoRepoSentinel
 
-    erk_ctx = MockErkContext(repo=MockNoRepoSentinel())
+    erk_ctx = MockErkContext(repo=NoRepoSentinel())
 
     mock_click_ctx = MagicMock()
     mock_click_ctx.obj = erk_ctx
