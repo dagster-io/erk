@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk.cli.activation import render_activation_script
+from erk.cli.activation import _render_logging_helper, render_activation_script
 
 
 def test_render_activation_script_without_subpath() -> None:
@@ -83,3 +83,87 @@ def test_render_activation_script_quotes_paths_with_spaces() -> None:
     # shlex.quote adds single quotes for paths with spaces
     assert "'/path/with spaces/worktree'" in script
     assert "'sub dir/nested'" in script
+
+
+# Transparency logging tests
+
+
+def test_render_logging_helper_contains_functions() -> None:
+    """Logging helper includes __erk_log and __erk_log_verbose functions."""
+    helper = _render_logging_helper()
+    assert "__erk_log()" in helper
+    assert "__erk_log_verbose()" in helper
+
+
+def test_render_logging_helper_handles_quiet_mode() -> None:
+    """Logging helper respects ERK_QUIET environment variable."""
+    helper = _render_logging_helper()
+    assert "ERK_QUIET" in helper
+    assert '[ -n "$ERK_QUIET" ] && return' in helper
+
+
+def test_render_logging_helper_handles_verbose_mode() -> None:
+    """Logging helper respects ERK_VERBOSE environment variable."""
+    helper = _render_logging_helper()
+    assert "ERK_VERBOSE" in helper
+    assert '[ -z "$ERK_VERBOSE" ] && return' in helper
+
+
+def test_render_logging_helper_uses_tty_detection() -> None:
+    """Logging helper checks for TTY before using colors."""
+    helper = _render_logging_helper()
+    assert "[ -t 2 ]" in helper
+    # Should use ANSI colors for TTY
+    assert "\\033[0;36m" in helper
+
+
+def test_render_logging_helper_outputs_to_stderr() -> None:
+    """Logging helper outputs to stderr."""
+    helper = _render_logging_helper()
+    assert ">&2" in helper
+
+
+def test_render_activation_script_contains_logging_helper() -> None:
+    """Activation script includes the logging helper functions."""
+    script = render_activation_script(worktree_path=Path("/path/to/worktree"))
+    assert "__erk_log()" in script
+    assert "__erk_log_verbose()" in script
+
+
+def test_render_activation_script_logs_switching_message() -> None:
+    """Activation script logs the cd command with full worktree path."""
+    script = render_activation_script(worktree_path=Path("/path/to/worktree"))
+    assert '__erk_log "->" "cd /path/to/worktree"' in script
+
+
+def test_render_activation_script_logs_venv_activation() -> None:
+    """Activation script logs venv path with Python version when activating."""
+    script = render_activation_script(worktree_path=Path("/path/to/worktree"))
+    # Should show venv path with Python version in parentheses
+    assert "/path/to/worktree/.venv" in script
+    assert "sys.version_info" in script  # Dynamic version extraction
+
+
+def test_render_activation_script_logs_env_loading() -> None:
+    """Activation script logs when loading .env file."""
+    script = render_activation_script(worktree_path=Path("/path/to/worktree"))
+    assert '__erk_log "->" "Loading .env"' in script
+
+
+def test_render_activation_script_shows_full_paths_in_normal_mode() -> None:
+    """Activation script shows full paths in normal (non-verbose) mode."""
+    script = render_activation_script(worktree_path=Path("/path/to/worktree"))
+    # Normal log shows cd command with full path
+    assert '__erk_log "->" "cd /path/to/worktree"' in script
+    # Normal log shows full path for venv with Python version
+    assert "Activating venv: /path/to/worktree/.venv" in script
+
+
+def test_render_activation_script_with_subpath_logs_correctly() -> None:
+    """Activation script with subpath still logs full worktree path."""
+    script = render_activation_script(
+        worktree_path=Path("/path/to/worktree"),
+        target_subpath=Path("src/lib"),
+    )
+    # Should log cd command with full worktree path
+    assert '__erk_log "->" "cd /path/to/worktree"' in script

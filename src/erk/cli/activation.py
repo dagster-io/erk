@@ -8,6 +8,32 @@ import shlex
 from pathlib import Path
 
 
+def _render_logging_helper() -> str:
+    """Return shell helper functions for transparency logging.
+
+    These helpers handle ERK_QUIET and ERK_VERBOSE environment variables
+    to control output verbosity during worktree activation.
+
+    Normal mode (default): Shows brief progress indicators
+    Quiet mode (ERK_QUIET=1): Suppresses transparency output (errors still shown)
+    Verbose mode (ERK_VERBOSE=1): Shows full details with paths
+    """
+    return """# Transparency logging helper
+__erk_log() {
+  [ -n "$ERK_QUIET" ] && return
+  local prefix="$1" msg="$2"
+  if [ -t 2 ]; then
+    printf '\\033[0;36m%s\\033[0m %s\\n' "$prefix" "$msg" >&2
+  else
+    printf '%s %s\\n' "$prefix" "$msg" >&2
+  fi
+}
+__erk_log_verbose() {
+  [ -z "$ERK_VERBOSE" ] && return
+  __erk_log "$1" "$2"
+}"""
+
+
 def render_activation_script(
     *,
     worktree_path: Path,
@@ -50,7 +76,8 @@ def render_activation_script(
     if target_subpath is not None:
         subpath_quoted = shlex.quote(str(target_subpath))
         # Check if subpath exists in target worktree, fall back to root with warning
-        cd_command = f"""cd {wt}
+        cd_command = f"""__erk_log "->" "cd {worktree_path}"
+cd {wt}
 # Try to preserve relative directory position
 if [ -d {subpath_quoted} ]; then
   cd {subpath_quoted}
@@ -58,9 +85,13 @@ else
   echo "Warning: '{target_subpath}' doesn't exist in target, using worktree root" >&2
 fi"""
     else:
-        cd_command = f"cd {wt}"
+        cd_command = f"""__erk_log "->" "cd {worktree_path}"
+cd {wt}"""
+
+    logging_helper = _render_logging_helper()
 
     return f"""# {comment}
+{logging_helper}
 {cd_command}
 # Unset VIRTUAL_ENV to avoid conflicts with previous activations
 unset VIRTUAL_ENV
@@ -71,10 +102,15 @@ if [ ! -d {venv_dir} ]; then
 fi
 if [ -f {venv_activate} ]; then
   . {venv_activate}
+  __py_ver=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
+  __erk_log "->" "Activating venv: {worktree_path / ".venv"} ($__py_ver)"
 fi
 # Load .env into the environment (allexport)
 set -a
-if [ -f ./.env ]; then . ./.env; fi
+if [ -f ./.env ]; then
+  __erk_log "->" "Loading .env"
+  . ./.env
+fi
 set +a
 # Optional: show where we are
 {final_message}
