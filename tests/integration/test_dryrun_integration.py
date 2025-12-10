@@ -21,7 +21,7 @@ from erk_shared.integrations.graphite.fake import FakeGraphite
 
 from erk.cli.cli import cli
 from erk.core.config_store import GlobalConfig
-from erk.core.context import ErkContext, create_context
+from erk.core.context import context_for_test, create_context
 from tests.fakes.shell import FakeShell
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.paths import sentinel_path
@@ -103,7 +103,7 @@ def test_dryrun_read_operations_still_work(tmp_path: Path) -> None:
     )
 
     # Wrap fakes in dry-run wrappers
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         git=DryRunGit(git_ops),
         global_config=global_config_ops,
         github=DryRunGitHub(FakeGitHub()),

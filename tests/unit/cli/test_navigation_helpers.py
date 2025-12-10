@@ -12,7 +12,7 @@ from erk_shared.git.fake import FakeGit
 from erk.cli.commands.completions import complete_branch_names, complete_plan_files
 from erk.cli.commands.navigation_helpers import activate_root_repo, delete_branch_and_worktree
 from erk.core.config_store import GlobalConfig
-from erk.core.context import ErkContext
+from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from tests.fakes.script_writer import FakeScriptWriter
 
@@ -64,7 +64,7 @@ def test_complete_branch_names_local_branches(tmp_path: Path) -> None:
         show_pr_info=False,
     )
 
-    ctx_obj = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+    ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
     # Create mock Click context
     mock_ctx = Mock(spec=click.Context)
@@ -102,7 +102,7 @@ def test_complete_branch_names_remote_branches_strip_prefix(tmp_path: Path) -> N
         show_pr_info=False,
     )
 
-    ctx_obj = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+    ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
     # Create mock Click context
     mock_ctx = Mock(spec=click.Context)
@@ -140,7 +140,7 @@ def test_complete_branch_names_deduplication(tmp_path: Path) -> None:
         show_pr_info=False,
     )
 
-    ctx_obj = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+    ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
     # Create mock Click context
     mock_ctx = Mock(spec=click.Context)
@@ -179,7 +179,7 @@ def test_complete_branch_names_filters_by_prefix(tmp_path: Path) -> None:
         show_pr_info=False,
     )
 
-    ctx_obj = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+    ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
     # Create mock Click context
     mock_ctx = Mock(spec=click.Context)
@@ -256,7 +256,7 @@ def test_complete_plan_files_finds_markdown_files(tmp_path: Path) -> None:
         show_pr_info=False,
     )
 
-    ctx_obj = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+    ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
     # Create mock Click context
     mock_ctx = Mock(spec=click.Context)
@@ -298,7 +298,7 @@ def test_complete_plan_files_no_markdown_files(tmp_path: Path) -> None:
         show_pr_info=False,
     )
 
-    ctx_obj = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+    ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
     # Create mock Click context
     mock_ctx = Mock(spec=click.Context)
@@ -341,7 +341,7 @@ def test_complete_plan_files_filters_by_prefix(tmp_path: Path) -> None:
         show_pr_info=False,
     )
 
-    ctx_obj = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+    ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
     # Create mock Click context
     mock_ctx = Mock(spec=click.Context)
@@ -418,7 +418,7 @@ def test_complete_plan_files_returns_sorted_results(tmp_path: Path) -> None:
         show_pr_info=False,
     )
 
-    ctx_obj = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+    ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
     # Create mock Click context
     mock_ctx = Mock(spec=click.Context)
@@ -459,7 +459,7 @@ def test_delete_branch_and_worktree_escapes_cwd_when_inside(tmp_path: Path) -> N
         show_pr_info=False,
     )
 
-    ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+    ctx = context_for_test(git=git, cwd=repo_root, global_config=global_config)
     repo = make_test_repo_context(repo_root, erk_root=erk_root)
 
     # Change to the worktree directory (simulating being inside it)
@@ -509,7 +509,7 @@ def test_delete_branch_and_worktree_no_escape_when_outside(tmp_path: Path) -> No
         show_pr_info=False,
     )
 
-    ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+    ctx = context_for_test(git=git, cwd=repo_root, global_config=global_config)
     repo = make_test_repo_context(repo_root, erk_root=erk_root)
 
     # Stay at repo_root (not inside worktree)
@@ -573,7 +573,7 @@ def test_delete_branch_and_worktree_escapes_via_symlink(tmp_path: Path) -> None:
         show_pr_info=False,
     )
 
-    ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+    ctx = context_for_test(git=git, cwd=repo_root, global_config=global_config)
     repo = make_test_repo_context(repo_root, erk_root=erk_root)
 
     # Change to the ACTUAL worktree directory (resolved path)
@@ -638,7 +638,7 @@ def test_delete_branch_and_worktree_uses_main_repo_root(tmp_path: Path) -> None:
         show_pr_info=False,
     )
 
-    ctx = ErkContext.for_test(git=git, cwd=main_repo, global_config=global_config)
+    ctx = context_for_test(git=git, cwd=main_repo, global_config=global_config)
 
     # Simulate running from worktree: repo.root == worktree_path, but main_repo_root is different
     repo = make_test_repo_context(
@@ -696,7 +696,7 @@ def test_delete_branch_and_worktree_escapes_from_subdirectory(tmp_path: Path) ->
         show_pr_info=False,
     )
 
-    ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+    ctx = context_for_test(git=git, cwd=repo_root, global_config=global_config)
     repo = make_test_repo_context(repo_root, erk_root=erk_root)
 
     # Change to a subdirectory inside the worktree
@@ -759,7 +759,7 @@ def test_activate_root_repo_uses_main_repo_root_not_worktree_path(tmp_path: Path
 
     script_writer = FakeScriptWriter()
 
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         git=git,
         cwd=worktree_path,
         global_config=global_config,

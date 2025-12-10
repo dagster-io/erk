@@ -116,14 +116,14 @@ def test_load_global_config_missing_erk_root(
 def test_create_global_config_creates_parent_directory(tmp_path: Path) -> None:
     # Test that create_and_save_global_config creates parent directory
     from erk.core.config_store import FakeConfigStore
-    from erk.core.context import ErkContext
+    from erk.core.context import context_for_test
 
     config_file = tmp_path / ".erk" / "config.toml"
     assert not config_file.parent.exists()
 
     # Create test context with FakeConfigStore
     global_config_ops = FakeConfigStore(config=None)
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         shell=FakeShell(),
         config_store=global_config_ops,
         global_config=None,

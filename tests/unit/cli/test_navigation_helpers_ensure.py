@@ -7,7 +7,7 @@ from erk_shared.git.fake import FakeGit
 
 from erk.cli.commands.navigation_helpers import ensure_graphite_enabled
 from erk.core.config_store import GlobalConfig
-from erk.core.context import ErkContext
+from erk.core.context import context_for_test
 
 
 class TestEnsureGraphiteEnabled:
@@ -36,7 +36,7 @@ class TestEnsureGraphiteEnabled:
             show_pr_info=False,
         )
 
-        ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+        ctx = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
         # Act & Assert - should not raise
         ensure_graphite_enabled(ctx)
@@ -64,7 +64,7 @@ class TestEnsureGraphiteEnabled:
             show_pr_info=False,
         )
 
-        ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+        ctx = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
         # Act & Assert
         with pytest.raises(SystemExit) as exc_info:
@@ -86,7 +86,7 @@ class TestEnsureGraphiteEnabled:
             git_common_dirs={repo_root: git_dir},
         )
 
-        ctx = ErkContext.for_test(
+        ctx = context_for_test(
             git=git,
             cwd=repo_root,
             global_config=None,  # No global config
@@ -123,7 +123,7 @@ class TestEnsureGraphiteEnabled:
             show_pr_info=False,
         )
 
-        ctx = ErkContext.for_test(git=git, cwd=repo_root, global_config=global_config)
+        ctx = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
         # Act
         with pytest.raises(SystemExit):

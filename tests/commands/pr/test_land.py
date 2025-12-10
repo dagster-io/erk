@@ -835,7 +835,7 @@ def test_pr_land_extraction_origin_skips_extraction_even_with_insights_flag() ->
 
 def test_is_extraction_origin_pr_returns_true_when_label_present(tmp_path: Path) -> None:
     """Test is_extraction_origin_pr returns True when PR has erk-skip-extraction label."""
-    from erk.core.context import ErkContext
+    from erk.core.context import context_for_test
 
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
@@ -844,7 +844,7 @@ def test_is_extraction_origin_pr_returns_true_when_label_present(tmp_path: Path)
     # PR has erk-skip-extraction label
     github_ops.set_pr_labels(456, {ERK_SKIP_EXTRACTION_LABEL})
 
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         github=github_ops,
     )
@@ -856,7 +856,7 @@ def test_is_extraction_origin_pr_returns_true_when_label_present(tmp_path: Path)
 
 def test_is_extraction_origin_pr_returns_false_when_label_absent(tmp_path: Path) -> None:
     """Test is_extraction_origin_pr returns False when PR has no erk-skip-extraction label."""
-    from erk.core.context import ErkContext
+    from erk.core.context import context_for_test
 
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
@@ -865,7 +865,7 @@ def test_is_extraction_origin_pr_returns_false_when_label_absent(tmp_path: Path)
     # PR has other labels, but not erk-skip-extraction
     github_ops.set_pr_labels(456, {"bug", "enhancement"})
 
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         github=github_ops,
     )
@@ -877,7 +877,7 @@ def test_is_extraction_origin_pr_returns_false_when_label_absent(tmp_path: Path)
 
 def test_is_extraction_origin_pr_returns_false_when_no_labels(tmp_path: Path) -> None:
     """Test is_extraction_origin_pr returns False when PR has no labels."""
-    from erk.core.context import ErkContext
+    from erk.core.context import context_for_test
 
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
@@ -885,7 +885,7 @@ def test_is_extraction_origin_pr_returns_false_when_no_labels(tmp_path: Path) ->
     # No labels configured for this PR
     github_ops = FakeGitHub()
 
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         github=github_ops,
     )

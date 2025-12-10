@@ -9,14 +9,14 @@ from pathlib import Path
 from erk_shared.git.fake import FakeGit
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 
-from erk.core.context import ErkContext
+from erk.core.context import minimal_context
 from erk.status.collectors.impl import PlanFileCollector
 
 
 def test_plan_collector_no_plan_folder(tmp_path: Path) -> None:
     """Test collector returns None when no .impl/ folder exists."""
     git = FakeGit()
-    ctx = ErkContext.minimal(git, tmp_path)
+    ctx = minimal_context(git, tmp_path)
     collector = PlanFileCollector()
 
     result = collector.collect(ctx, tmp_path, tmp_path)
@@ -34,7 +34,7 @@ def test_plan_collector_with_plan_no_issue(tmp_path: Path) -> None:
     create_impl_folder(tmp_path, plan_content, overwrite=False)
 
     git = FakeGit()
-    ctx = ErkContext.minimal(git, tmp_path)
+    ctx = minimal_context(git, tmp_path)
     collector = PlanFileCollector()
 
     result = collector.collect(ctx, tmp_path, tmp_path)
@@ -55,7 +55,7 @@ def test_plan_collector_with_issue_reference(tmp_path: Path) -> None:
     save_issue_reference(plan_folder, 42, "https://github.com/owner/repo/issues/42")
 
     git = FakeGit()
-    ctx = ErkContext.minimal(git, tmp_path)
+    ctx = minimal_context(git, tmp_path)
     collector = PlanFileCollector()
 
     result = collector.collect(ctx, tmp_path, tmp_path)
@@ -101,7 +101,7 @@ def test_plan_collector_issue_reference_with_progress(tmp_path: Path) -> None:
     progress_file.write_text(updated_content, encoding="utf-8")
 
     git = FakeGit()
-    ctx = ErkContext.minimal(git, tmp_path)
+    ctx = minimal_context(git, tmp_path)
     collector = PlanFileCollector()
 
     result = collector.collect(ctx, tmp_path, tmp_path)
@@ -125,7 +125,7 @@ def test_plan_collector_invalid_issue_reference(tmp_path: Path) -> None:
     issue_file.write_text("not valid json", encoding="utf-8")
 
     git = FakeGit()
-    ctx = ErkContext.minimal(git, tmp_path)
+    ctx = minimal_context(git, tmp_path)
     collector = PlanFileCollector()
 
     result = collector.collect(ctx, tmp_path, tmp_path)

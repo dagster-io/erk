@@ -39,7 +39,7 @@ from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 
 from erk.core.config_store import GlobalConfig
-from erk.core.context import ErkContext
+from erk.core.context import context_for_test
 from tests.fakes.shell import FakeShell
 
 
@@ -406,7 +406,7 @@ class WorktreeScenario:
 
         self.shell = FakeShell()
 
-        self.ctx = ErkContext.for_test(
+        self.ctx = context_for_test(
             git=self.git,
             global_config=global_config,
             github=self.github,

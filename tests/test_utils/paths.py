@@ -182,7 +182,7 @@ def sentinel_path(path: str = "/test/sentinel") -> Path:
         SentinelPath that throws on filesystem operations
 
     Note:
-        - ErkContext.for_test() accepts any Path without validating existence
+        - context_for_test() accepts any Path without validating existence
         - CliRunner.invoke() doesn't validate ctx.cwd exists
         - FakeGit should provide path_exists() for path checks
         - All tests share the same sentinel path - tests are isolated via separate

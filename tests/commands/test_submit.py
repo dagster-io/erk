@@ -21,7 +21,7 @@ from erk.cli.commands.submit import (
     load_workflow_config,
     submit_cmd,
 )
-from erk.core.context import ErkContext
+from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 
 
@@ -106,7 +106,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -194,7 +194,7 @@ def test_submit_missing_erk_plan_label(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -247,7 +247,7 @@ def test_submit_closed_issue(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -286,7 +286,7 @@ def test_submit_issue_not_found(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -352,7 +352,7 @@ def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -403,7 +403,7 @@ def test_submit_requires_gh_authentication(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -487,7 +487,7 @@ def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -565,7 +565,7 @@ def test_submit_includes_closes_issue_in_pr_body(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -620,7 +620,7 @@ def test_close_orphaned_draft_prs_closes_old_drafts(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         github=fake_github,
         issues=fake_issues,
@@ -659,7 +659,7 @@ def test_close_orphaned_draft_prs_skips_non_drafts(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         github=fake_github,
         issues=fake_issues,
@@ -698,7 +698,7 @@ def test_close_orphaned_draft_prs_skips_already_closed(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         github=fake_github,
         issues=fake_issues,
@@ -735,7 +735,7 @@ def test_close_orphaned_draft_prs_no_linked_prs(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         github=fake_github,
         issues=fake_issues,
@@ -811,7 +811,7 @@ def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -917,7 +917,7 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -992,7 +992,7 @@ def test_submit_multiple_issues_atomic_validation_failure(tmp_path: Path) -> Non
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -1059,7 +1059,7 @@ def test_submit_single_issue_still_works(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -1130,7 +1130,7 @@ def test_submit_updates_dispatch_info_in_issue(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -1206,7 +1206,7 @@ def test_submit_warns_when_node_id_not_available(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -1276,7 +1276,7 @@ def test_submit_with_custom_base_branch(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -1339,7 +1339,7 @@ def test_submit_with_invalid_base_branch(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -1428,7 +1428,7 @@ def test_submit_extraction_plan_adds_skip_extraction_label(tmp_path: Path) -> No
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -1503,7 +1503,7 @@ def test_submit_standard_plan_does_not_add_skip_extraction_label(tmp_path: Path)
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
@@ -1673,7 +1673,7 @@ def test_submit_uses_workflow_config(tmp_path: Path) -> None:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
     )
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,

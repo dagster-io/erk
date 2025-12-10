@@ -106,6 +106,9 @@ scripts:
   - name: get-pr-body-footer
     path: scripts/erk/get_pr_body_footer.py
     description: Generate PR body footer with checkout command for remote implementations
+  - name: get-closing-text
+    path: scripts/erk/get_closing_text.py
+    description: Get closing text for PR body based on .impl/issue.json reference
   - name: add-remote-execution-note
     path: scripts/erk/add_remote_execution_note.py
     description: Add remote execution tracking note to PR body for workflow runs

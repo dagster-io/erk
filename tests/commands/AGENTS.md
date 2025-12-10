@@ -76,7 +76,7 @@ global_config = GlobalConfig(
     show_pr_checks=False,
 )
 
-test_ctx = ErkContext.for_test(
+test_ctx = context_for_test(
     git=git,
     global_config=global_config,
     script_writer=env.script_writer,

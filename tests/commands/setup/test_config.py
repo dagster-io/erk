@@ -10,7 +10,7 @@ from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk.cli.cli import cli
 from erk.cli.config import LoadedConfig
 from erk.core.config_store import GlobalConfig
-from erk.core.context import ErkContext
+from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from tests.test_utils.env_helpers import erk_inmem_env
 
@@ -121,7 +121,7 @@ def test_config_list_not_in_git_repo() -> None:
             Path("/fake/erks"), use_graphite=False, shell_setup_complete=False
         )
 
-        test_ctx = ErkContext.for_test(
+        test_ctx = context_for_test(
             git=git_ops,
             graphite=FakeGraphite(),
             github=FakeGitHub(),

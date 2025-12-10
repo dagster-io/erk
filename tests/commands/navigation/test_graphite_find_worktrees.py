@@ -9,7 +9,7 @@ from erk_shared.integrations.graphite.real import RealGraphite
 
 from erk.cli.graphite import find_worktrees_containing_branch
 from erk.core.config_store import GlobalConfig
-from erk.core.context import ErkContext
+from erk.core.context import context_for_test
 from tests.fakes.shell import FakeShell
 from tests.test_utils.graphite_helpers import setup_graphite_stack
 
@@ -47,7 +47,7 @@ def test_find_worktrees_containing_branch_no_match(tmp_path: Path) -> None:
 
     graphite_ops = RealGraphite()
 
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         git=git_ops,
         global_config=GlobalConfig.test(
             Path("/fake/erks"), use_graphite=False, shell_setup_complete=False

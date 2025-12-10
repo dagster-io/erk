@@ -1,15 +1,18 @@
 """Application context with dependency injection.
 
-This module provides the ErkContext and factory functions for erk CLI.
+This module provides factory functions for erk CLI context creation.
 The unified ErkContext dataclass is defined in erk_shared.context and
-re-exported here with factory methods.
+re-exported here for backwards compatibility.
 """
 
-from dataclasses import dataclass
 from pathlib import Path
 
 import click
 import tomlkit
+
+# Re-export ErkContext from erk_shared for isinstance() compatibility
+# This ensures that both erk CLI and kit commands use the same class identity
+from erk_shared.context.context import ErkContext as ErkContext
 
 # Re-export types from erk_shared.context
 from erk_shared.context.types import GlobalConfig as GlobalConfig
@@ -56,331 +59,254 @@ from erk.core.services.plan_list_service import PlanListService
 from erk.core.shell import RealShell
 
 
-@dataclass(frozen=True)
-class ErkContext:
-    """Immutable context holding all dependencies for erk and dot-agent-kit operations.
+def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
+    """Create minimal context with only git configured, rest are test defaults.
 
-    Created at CLI entry point and threaded through the application.
-    Frozen to prevent accidental modification at runtime.
+    Useful for simple tests that only need git operations. Other integration
+    classes are initialized with their standard test defaults (fake implementations).
 
-    Note: global_config may be None only during init command before config is created.
-    All other commands should have a valid GlobalConfig.
+    Args:
+        git: The Git implementation (usually FakeGit with test configuration)
+        cwd: Current working directory path for the context
+        dry_run: Whether to enable dry-run mode (default False)
 
-    DotAgentContext Compatibility:
-    - github_issues -> issues (renamed for consistency)
-    - repo_root property -> repo.root (access via repo property or require_repo_root helper)
-    - debug field -> debug (preserved)
+    Returns:
+        ErkContext with git configured and other dependencies using test defaults
+
+    Note:
+        For more complex test setup with custom configs or multiple integration classes,
+        use context_for_test() instead.
     """
+    from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
+    from erk_shared.github.fake import FakeGitHub
+    from erk_shared.github.issues import FakeGitHubIssues
+    from erk_shared.integrations.completion import FakeCompletion
+    from erk_shared.integrations.feedback import FakeUserFeedback
+    from erk_shared.integrations.graphite.fake import FakeGraphite
+    from erk_shared.integrations.shell import FakeShell
+    from erk_shared.integrations.time.fake import FakeTime
+    from erk_shared.objectives.storage import FakeObjectiveStore
+    from erk_shared.plan_store.fake import FakePlanStore
+    from erk_shared.prompt_executor.fake import FakePromptExecutor
+    from tests.fakes.claude_executor import FakeClaudeExecutor
+    from tests.fakes.script_writer import FakeScriptWriter
 
-    # Gateway integrations (from erk_shared)
-    git: Git
-    github: GitHub
-    issues: GitHubIssues
-    graphite: Graphite
-    time: Time
-    session_store: ClaudeCodeSessionStore
-    plan_store: PlanStore
-    objectives: ObjectiveStore
-    prompt_executor: PromptExecutor  # From DotAgentContext
+    from erk.core.config_store import FakeConfigStore
+    from erk.core.planner.registry_fake import FakePlannerRegistry
 
-    # Shell/CLI integrations
-    shell: Shell
-    completion: Completion
-    feedback: UserFeedback
+    fake_github = FakeGitHub()
+    fake_issues = FakeGitHubIssues()
+    return ErkContext(
+        git=git,
+        github=fake_github,
+        issues=fake_issues,
+        plan_store=FakePlanStore(),
+        graphite=FakeGraphite(),
+        shell=FakeShell(),
+        claude_executor=FakeClaudeExecutor(),
+        completion=FakeCompletion(),
+        time=FakeTime(),
+        config_store=FakeConfigStore(config=None),
+        script_writer=FakeScriptWriter(),
+        feedback=FakeUserFeedback(),
+        plan_list_service=PlanListService(fake_github, fake_issues),
+        planner_registry=FakePlannerRegistry(),
+        session_store=FakeClaudeCodeSessionStore(),
+        objectives=FakeObjectiveStore(),
+        prompt_executor=FakePromptExecutor(),
+        cwd=cwd,
+        global_config=None,
+        local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
+        repo=NoRepoSentinel(),
+        project=None,
+        repo_info=None,
+        dry_run=dry_run,
+        debug=False,
+    )
 
-    # Erk-specific
-    claude_executor: ClaudeExecutor
-    config_store: ConfigStore
-    script_writer: ScriptWriter
-    planner_registry: PlannerRegistry
-    plan_list_service: PlanListService
 
-    # Paths
-    cwd: Path  # Current working directory at CLI invocation
+def context_for_test(
+    git: Git | None = None,
+    github: GitHub | None = None,
+    issues: GitHubIssues | None = None,
+    plan_store: PlanStore | None = None,
+    graphite: Graphite | None = None,
+    shell: Shell | None = None,
+    claude_executor: ClaudeExecutor | None = None,
+    completion: Completion | None = None,
+    time: Time | None = None,
+    config_store: ConfigStore | None = None,
+    script_writer: ScriptWriter | None = None,
+    feedback: UserFeedback | None = None,
+    plan_list_service: PlanListService | None = None,
+    planner_registry: PlannerRegistry | None = None,
+    session_store: ClaudeCodeSessionStore | None = None,
+    objectives: ObjectiveStore | None = None,
+    prompt_executor: PromptExecutor | None = None,
+    cwd: Path | None = None,
+    global_config: GlobalConfig | None = None,
+    local_config: LoadedConfig | None = None,
+    repo: RepoContext | NoRepoSentinel | None = None,
+    project: ProjectContext | None = None,
+    repo_info: RepoInfo | None = None,
+    dry_run: bool = False,
+    debug: bool = False,
+) -> ErkContext:
+    """Create test context with optional pre-configured integration classes.
 
-    # Repository context
-    repo: RepoContext | NoRepoSentinel
-    project: ProjectContext | None  # None if not in a project subdirectory
-    repo_info: RepoInfo | None  # None when not in a GitHub repo
+    Provides full control over all context parameters with sensible test defaults
+    for any unspecified values. Use this for complex test scenarios that need
+    specific configurations for multiple integration classes.
 
-    # Configuration
-    global_config: GlobalConfig | None
-    local_config: LoadedConfig
+    Args:
+        git: Optional Git implementation. If None, creates empty FakeGit.
+        github: Optional GitHub implementation. If None, creates empty FakeGitHub.
+        issues: Optional GitHubIssues implementation.
+                   If None, creates empty FakeGitHubIssues.
+        graphite: Optional Graphite implementation.
+                     If None, creates empty FakeGraphite.
+        shell: Optional Shell implementation. If None, creates empty FakeShell.
+        completion: Optional Completion implementation.
+                       If None, creates empty FakeCompletion.
+        config_store: Optional ConfigStore implementation.
+                          If None, creates FakeConfigStore with test config.
+        script_writer: Optional ScriptWriter implementation.
+                      If None, creates empty FakeScriptWriter.
+        feedback: Optional UserFeedback implementation.
+                    If None, creates FakeUserFeedback.
+        prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
+        cwd: Optional current working directory. If None, uses sentinel_path().
+        global_config: Optional GlobalConfig. If None, uses test defaults.
+        local_config: Optional LoadedConfig. If None, uses empty defaults.
+        repo: Optional RepoContext or NoRepoSentinel. If None, uses NoRepoSentinel().
+        project: Optional ProjectContext. If None, stays None.
+        repo_info: Optional RepoInfo. If None, stays None.
+        dry_run: Whether to enable dry-run mode (default False).
+        debug: Whether to enable debug mode (default False).
 
-    # Mode flags
-    dry_run: bool
-    debug: bool  # From DotAgentContext - enables debug output/stack traces
+    Returns:
+        ErkContext configured with provided values and test defaults
+    """
+    from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
+    from erk_shared.git.fake import FakeGit
+    from erk_shared.github.fake import FakeGitHub
+    from erk_shared.github.issues import FakeGitHubIssues
+    from erk_shared.integrations.completion import FakeCompletion
+    from erk_shared.integrations.feedback import FakeUserFeedback
+    from erk_shared.integrations.graphite.dry_run import DryRunGraphite
+    from erk_shared.integrations.graphite.fake import FakeGraphite
+    from erk_shared.integrations.shell import FakeShell
+    from erk_shared.integrations.time.fake import FakeTime
+    from erk_shared.objectives.storage import FakeObjectiveStore
+    from erk_shared.plan_store.fake import FakePlanStore
+    from erk_shared.prompt_executor.fake import FakePromptExecutor
+    from tests.fakes.claude_executor import FakeClaudeExecutor
+    from tests.fakes.script_writer import FakeScriptWriter
+    from tests.test_utils.paths import sentinel_path
 
-    @property
-    def repo_root(self) -> Path:
-        """DotAgentContext compatibility - get repo root from repo.
+    from erk.core.config_store import FakeConfigStore
+    from erk.core.planner.registry_fake import FakePlannerRegistry
 
-        Raises:
-            RuntimeError: If not in a git repository
-        """
-        if isinstance(self.repo, NoRepoSentinel):
-            raise RuntimeError("Not in a git repository")
-        return self.repo.root
+    if git is None:
+        git = FakeGit()
 
-    @property
-    def trunk_branch(self) -> str | None:
-        """Get the trunk branch name from git detection.
+    if github is None:
+        github = FakeGitHub()
 
-        Returns None if not in a repository, otherwise uses git to detect trunk.
-        """
-        if isinstance(self.repo, NoRepoSentinel):
-            return None
-        return self.git.detect_trunk_branch(self.repo.root)
+    if issues is None:
+        issues = FakeGitHubIssues()
 
-    @staticmethod
-    def minimal(git: Git, cwd: Path, dry_run: bool = False) -> "ErkContext":
-        """Create minimal context with only git configured, rest are test defaults.
+    if plan_store is None:
+        plan_store = FakePlanStore()
 
-        Useful for simple tests that only need git operations. Other integration
-        classes are initialized with their standard test defaults (fake implementations).
+    if graphite is None:
+        graphite = FakeGraphite()
 
-        Args:
-            git: The Git implementation (usually FakeGit with test configuration)
-            cwd: Current working directory path for the context
-            dry_run: Whether to enable dry-run mode (default False)
+    if shell is None:
+        shell = FakeShell()
 
-        Returns:
-            ErkContext with git configured and other dependencies using test defaults
+    if claude_executor is None:
+        claude_executor = FakeClaudeExecutor()
 
-        Note:
-            For more complex test setup with custom configs or multiple integration classes,
-            use ErkContext.for_test() instead.
-        """
-        from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
-        from erk_shared.github.fake import FakeGitHub
-        from erk_shared.github.issues import FakeGitHubIssues
-        from erk_shared.integrations.completion import FakeCompletion
-        from erk_shared.integrations.feedback import FakeUserFeedback
-        from erk_shared.integrations.graphite.fake import FakeGraphite
-        from erk_shared.integrations.shell import FakeShell
-        from erk_shared.integrations.time.fake import FakeTime
-        from erk_shared.objectives.storage import FakeObjectiveStore
-        from erk_shared.plan_store.fake import FakePlanStore
-        from erk_shared.prompt_executor.fake import FakePromptExecutor
-        from tests.fakes.claude_executor import FakeClaudeExecutor
-        from tests.fakes.script_writer import FakeScriptWriter
+    if completion is None:
+        completion = FakeCompletion()
 
-        from erk.core.config_store import FakeConfigStore
-        from erk.core.planner.registry_fake import FakePlannerRegistry
+    if time is None:
+        time = FakeTime()
 
-        fake_github = FakeGitHub()
-        fake_issues = FakeGitHubIssues()
-        return ErkContext(
-            git=git,
-            github=fake_github,
-            issues=fake_issues,
-            plan_store=FakePlanStore(),
-            graphite=FakeGraphite(),
-            shell=FakeShell(),
-            claude_executor=FakeClaudeExecutor(),
-            completion=FakeCompletion(),
-            time=FakeTime(),
-            config_store=FakeConfigStore(config=None),
-            script_writer=FakeScriptWriter(),
-            feedback=FakeUserFeedback(),
-            plan_list_service=PlanListService(fake_github, fake_issues),
-            planner_registry=FakePlannerRegistry(),
-            session_store=FakeClaudeCodeSessionStore(),
-            objectives=FakeObjectiveStore(),
-            prompt_executor=FakePromptExecutor(),
-            cwd=cwd,
-            global_config=None,
-            local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
-            repo=NoRepoSentinel(),
-            project=None,
-            repo_info=None,
-            dry_run=dry_run,
-            debug=False,
+    if script_writer is None:
+        script_writer = FakeScriptWriter()
+
+    if feedback is None:
+        feedback = FakeUserFeedback()
+
+    if plan_list_service is None:
+        plan_list_service = PlanListService(github, issues)
+
+    if planner_registry is None:
+        planner_registry = FakePlannerRegistry()
+
+    if session_store is None:
+        session_store = FakeClaudeCodeSessionStore()
+
+    if objectives is None:
+        objectives = FakeObjectiveStore()
+
+    if prompt_executor is None:
+        prompt_executor = FakePromptExecutor()
+
+    if global_config is None:
+        global_config = GlobalConfig(
+            erk_root=Path("/test/erks"),
+            use_graphite=False,
+            shell_setup_complete=False,
+            show_pr_info=True,
+            github_planning=True,
         )
 
-    @staticmethod
-    def for_test(
-        git: Git | None = None,
-        github: GitHub | None = None,
-        issues: GitHubIssues | None = None,
-        plan_store: PlanStore | None = None,
-        graphite: Graphite | None = None,
-        shell: Shell | None = None,
-        claude_executor: ClaudeExecutor | None = None,
-        completion: Completion | None = None,
-        time: Time | None = None,
-        config_store: ConfigStore | None = None,
-        script_writer: ScriptWriter | None = None,
-        feedback: UserFeedback | None = None,
-        plan_list_service: PlanListService | None = None,
-        planner_registry: PlannerRegistry | None = None,
-        session_store: ClaudeCodeSessionStore | None = None,
-        objectives: ObjectiveStore | None = None,
-        prompt_executor: PromptExecutor | None = None,
-        cwd: Path | None = None,
-        global_config: GlobalConfig | None = None,
-        local_config: LoadedConfig | None = None,
-        repo: RepoContext | NoRepoSentinel | None = None,
-        project: ProjectContext | None = None,
-        repo_info: RepoInfo | None = None,
-        dry_run: bool = False,
-        debug: bool = False,
-    ) -> "ErkContext":
-        """Create test context with optional pre-configured integration classes.
+    if config_store is None:
+        config_store = FakeConfigStore(config=global_config)
 
-        Provides full control over all context parameters with sensible test defaults
-        for any unspecified values. Use this for complex test scenarios that need
-        specific configurations for multiple integration classes.
+    if local_config is None:
+        local_config = LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
 
-        Args:
-            git: Optional Git implementation. If None, creates empty FakeGit.
-            github: Optional GitHub implementation. If None, creates empty FakeGitHub.
-            issues: Optional GitHubIssues implementation.
-                       If None, creates empty FakeGitHubIssues.
-            graphite: Optional Graphite implementation.
-                         If None, creates empty FakeGraphite.
-            shell: Optional Shell implementation. If None, creates empty FakeShell.
-            completion: Optional Completion implementation.
-                           If None, creates empty FakeCompletion.
-            config_store: Optional ConfigStore implementation.
-                              If None, creates FakeConfigStore with test config.
-            script_writer: Optional ScriptWriter implementation.
-                          If None, creates empty FakeScriptWriter.
-            feedback: Optional UserFeedback implementation.
-                        If None, creates FakeUserFeedback.
-            prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
-            cwd: Optional current working directory. If None, uses sentinel_path().
-            global_config: Optional GlobalConfig. If None, uses test defaults.
-            local_config: Optional LoadedConfig. If None, uses empty defaults.
-            repo: Optional RepoContext or NoRepoSentinel. If None, uses NoRepoSentinel().
-            project: Optional ProjectContext. If None, stays None.
-            repo_info: Optional RepoInfo. If None, stays None.
-            dry_run: Whether to enable dry-run mode (default False).
-            debug: Whether to enable debug mode (default False).
+    if repo is None:
+        repo = NoRepoSentinel()
 
-        Returns:
-            ErkContext configured with provided values and test defaults
-        """
-        from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
-        from erk_shared.git.fake import FakeGit
-        from erk_shared.github.fake import FakeGitHub
-        from erk_shared.github.issues import FakeGitHubIssues
-        from erk_shared.integrations.completion import FakeCompletion
-        from erk_shared.integrations.feedback import FakeUserFeedback
-        from erk_shared.integrations.graphite.dry_run import DryRunGraphite
-        from erk_shared.integrations.graphite.fake import FakeGraphite
-        from erk_shared.integrations.shell import FakeShell
-        from erk_shared.integrations.time.fake import FakeTime
-        from erk_shared.objectives.storage import FakeObjectiveStore
-        from erk_shared.plan_store.fake import FakePlanStore
-        from erk_shared.prompt_executor.fake import FakePromptExecutor
-        from tests.fakes.claude_executor import FakeClaudeExecutor
-        from tests.fakes.script_writer import FakeScriptWriter
-        from tests.test_utils.paths import sentinel_path
+    # Apply dry-run wrappers if needed (matching production behavior)
+    if dry_run:
+        git = DryRunGit(git)
+        graphite = DryRunGraphite(graphite)
+        github = DryRunGitHub(github)
+        issues = DryRunGitHubIssues(issues)
 
-        from erk.core.config_store import FakeConfigStore
-        from erk.core.planner.registry_fake import FakePlannerRegistry
-
-        if git is None:
-            git = FakeGit()
-
-        if github is None:
-            github = FakeGitHub()
-
-        if issues is None:
-            issues = FakeGitHubIssues()
-
-        if plan_store is None:
-            plan_store = FakePlanStore()
-
-        if graphite is None:
-            graphite = FakeGraphite()
-
-        if shell is None:
-            shell = FakeShell()
-
-        if claude_executor is None:
-            claude_executor = FakeClaudeExecutor()
-
-        if completion is None:
-            completion = FakeCompletion()
-
-        if time is None:
-            time = FakeTime()
-
-        if script_writer is None:
-            script_writer = FakeScriptWriter()
-
-        if feedback is None:
-            feedback = FakeUserFeedback()
-
-        if plan_list_service is None:
-            plan_list_service = PlanListService(github, issues)
-
-        if planner_registry is None:
-            planner_registry = FakePlannerRegistry()
-
-        if session_store is None:
-            session_store = FakeClaudeCodeSessionStore()
-
-        if objectives is None:
-            objectives = FakeObjectiveStore()
-
-        if prompt_executor is None:
-            prompt_executor = FakePromptExecutor()
-
-        if global_config is None:
-            global_config = GlobalConfig(
-                erk_root=Path("/test/erks"),
-                use_graphite=False,
-                shell_setup_complete=False,
-                show_pr_info=True,
-                github_planning=True,
-            )
-
-        if config_store is None:
-            config_store = FakeConfigStore(config=global_config)
-
-        if local_config is None:
-            local_config = LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
-
-        if repo is None:
-            repo = NoRepoSentinel()
-
-        # Apply dry-run wrappers if needed (matching production behavior)
-        if dry_run:
-            git = DryRunGit(git)
-            graphite = DryRunGraphite(graphite)
-            github = DryRunGitHub(github)
-            issues = DryRunGitHubIssues(issues)
-
-        return ErkContext(
-            git=git,
-            github=github,
-            issues=issues,
-            plan_store=plan_store,
-            graphite=graphite,
-            shell=shell,
-            claude_executor=claude_executor,
-            completion=completion,
-            time=time,
-            config_store=config_store,
-            script_writer=script_writer,
-            feedback=feedback,
-            plan_list_service=plan_list_service,
-            planner_registry=planner_registry,
-            session_store=session_store,
-            objectives=objectives,
-            prompt_executor=prompt_executor,
-            cwd=cwd or sentinel_path(),
-            global_config=global_config,
-            local_config=local_config,
-            repo=repo,
-            project=project,
-            repo_info=repo_info,
-            dry_run=dry_run,
-            debug=debug,
-        )
+    return ErkContext(
+        git=git,
+        github=github,
+        issues=issues,
+        plan_store=plan_store,
+        graphite=graphite,
+        shell=shell,
+        claude_executor=claude_executor,
+        completion=completion,
+        time=time,
+        config_store=config_store,
+        script_writer=script_writer,
+        feedback=feedback,
+        plan_list_service=plan_list_service,
+        planner_registry=planner_registry,
+        session_store=session_store,
+        objectives=objectives,
+        prompt_executor=prompt_executor,
+        cwd=cwd or sentinel_path(),
+        global_config=global_config,
+        local_config=local_config,
+        repo=repo,
+        project=project,
+        repo_info=repo_info,
+        dry_run=dry_run,
+        debug=debug,
+    )
 
 
 def write_trunk_to_pyproject(repo_root: Path, trunk: str, git: Git | None = None) -> None:

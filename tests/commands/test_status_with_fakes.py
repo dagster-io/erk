@@ -25,7 +25,7 @@ from erk_shared.git.fake import FakeGit
 
 from erk.cli.commands.status import status_cmd
 from erk.core.config_store import GlobalConfig
-from erk.core.context import ErkContext
+from erk.core.context import context_for_test
 from tests.fakes.context import create_test_context
 from tests.test_utils.builders import WorktreeScenario
 
@@ -140,7 +140,7 @@ def test_status_cmd_displays_all_collector_sections(tmp_path: Path) -> None:
 
     # Update context with correct cwd for feature worktree
     feature_dir = scenario.repo_dir / "feature"
-    ctx = ErkContext.for_test(
+    ctx = context_for_test(
         git=scenario.ctx.git,
         global_config=scenario.ctx.global_config,
         github=scenario.ctx.github,

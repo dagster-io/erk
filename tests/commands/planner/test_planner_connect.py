@@ -11,7 +11,7 @@ from unittest.mock import patch
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.core.context import ErkContext
+from erk.core.context import context_for_test
 from erk.core.planner.registry_fake import FakePlannerRegistry
 from erk.core.planner.types import RegisteredPlanner
 
@@ -41,7 +41,7 @@ def test_planner_without_subcommand_connects_to_default() -> None:
     with name=None explicitly to avoid Sentinel.UNSET being passed instead.
     """
     registry = FakePlannerRegistry()
-    ctx = ErkContext.for_test(planner_registry=registry)
+    ctx = context_for_test(planner_registry=registry)
 
     runner = CliRunner()
     # Use bare "planner" command without subcommand
@@ -56,7 +56,7 @@ def test_planner_without_subcommand_connects_to_default() -> None:
 def test_connect_no_planners_shows_error() -> None:
     """Test connect with no registered planners shows error."""
     registry = FakePlannerRegistry()
-    ctx = ErkContext.for_test(planner_registry=registry)
+    ctx = context_for_test(planner_registry=registry)
 
     runner = CliRunner()
     result = runner.invoke(cli, ["planner", "connect"], obj=ctx)
@@ -69,7 +69,7 @@ def test_connect_no_default_shows_error() -> None:
     """Test connect without default planner shows error."""
     planner = _make_planner(name="my-planner")
     registry = FakePlannerRegistry(planners=[planner])  # No default set
-    ctx = ErkContext.for_test(planner_registry=registry)
+    ctx = context_for_test(planner_registry=registry)
 
     runner = CliRunner()
     result = runner.invoke(cli, ["planner", "connect"], obj=ctx)
@@ -82,7 +82,7 @@ def test_connect_named_planner_not_found() -> None:
     """Test connect with nonexistent named planner shows error."""
     planner = _make_planner(name="existing")
     registry = FakePlannerRegistry(planners=[planner])
-    ctx = ErkContext.for_test(planner_registry=registry)
+    ctx = context_for_test(planner_registry=registry)
 
     runner = CliRunner()
     result = runner.invoke(cli, ["planner", "connect", "nonexistent"], obj=ctx)
@@ -98,7 +98,7 @@ def test_connect_warns_if_not_configured() -> None:
     """
     planner = _make_planner(name="unconfigured", configured=False)
     registry = FakePlannerRegistry(planners=[planner], default_planner="unconfigured")
-    ctx = ErkContext.for_test(planner_registry=registry)
+    ctx = context_for_test(planner_registry=registry)
 
     runner = CliRunner()
 
@@ -119,7 +119,7 @@ def test_connect_updates_last_connected_timestamp() -> None:
     """Test that connect updates the last_connected_at timestamp."""
     planner = _make_planner(name="my-planner")
     registry = FakePlannerRegistry(planners=[planner], default_planner="my-planner")
-    ctx = ErkContext.for_test(planner_registry=registry)
+    ctx = context_for_test(planner_registry=registry)
 
     runner = CliRunner()
 
@@ -139,7 +139,7 @@ def test_connect_with_named_planner() -> None:
     planner1 = _make_planner(name="planner-1", gh_name="gh-name-1")
     planner2 = _make_planner(name="planner-2", gh_name="gh-name-2")
     registry = FakePlannerRegistry(planners=[planner1, planner2], default_planner="planner-1")
-    ctx = ErkContext.for_test(planner_registry=registry)
+    ctx = context_for_test(planner_registry=registry)
 
     runner = CliRunner()
 
@@ -157,7 +157,7 @@ def test_connect_default_opens_vscode() -> None:
     """Test that connect (without --ssh) opens VS Code desktop."""
     planner = _make_planner(name="my-planner", gh_name="my-gh-codespace")
     registry = FakePlannerRegistry(planners=[planner], default_planner="my-planner")
-    ctx = ErkContext.for_test(planner_registry=registry)
+    ctx = context_for_test(planner_registry=registry)
 
     runner = CliRunner()
 
@@ -182,7 +182,7 @@ def test_connect_with_ssh_flag_uses_ssh() -> None:
     """Test that connect --ssh runs claude via SSH in a bash login shell."""
     planner = _make_planner(name="my-planner", gh_name="my-gh-codespace")
     registry = FakePlannerRegistry(planners=[planner], default_planner="my-planner")
-    ctx = ErkContext.for_test(planner_registry=registry)
+    ctx = context_for_test(planner_registry=registry)
 
     runner = CliRunner()
 

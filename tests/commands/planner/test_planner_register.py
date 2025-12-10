@@ -7,7 +7,7 @@ from click.testing import CliRunner
 from erk_shared.integrations.time.fake import FakeTime
 
 from erk.cli.cli import cli
-from erk.core.context import ErkContext
+from erk.core.context import context_for_test
 from erk.core.planner.registry_fake import FakePlannerRegistry
 from erk.core.planner.types import RegisteredPlanner
 
@@ -33,7 +33,7 @@ def test_register_duplicate_name_shows_error() -> None:
     """Test register with existing name shows error."""
     existing = _make_planner(name="my-planner")
     registry = FakePlannerRegistry(planners=[existing])
-    ctx = ErkContext.for_test(planner_registry=registry)
+    ctx = context_for_test(planner_registry=registry)
 
     runner = CliRunner()
     result = runner.invoke(cli, ["planner", "register", "my-planner"], obj=ctx)
@@ -45,7 +45,7 @@ def test_register_duplicate_name_shows_error() -> None:
 def test_register_no_codespaces_shows_error() -> None:
     """Test register with no available codespaces shows error."""
     registry = FakePlannerRegistry()
-    ctx = ErkContext.for_test(planner_registry=registry)
+    ctx = context_for_test(planner_registry=registry)
 
     runner = CliRunner()
 
@@ -63,7 +63,7 @@ def test_register_codespace_selection() -> None:
     """Test registering a codespace from list."""
     registry = FakePlannerRegistry()
     fake_time = FakeTime(current_time=datetime(2025, 6, 15, 10, 0, 0, tzinfo=UTC))
-    ctx = ErkContext.for_test(planner_registry=registry, time=fake_time)
+    ctx = context_for_test(planner_registry=registry, time=fake_time)
 
     runner = CliRunner()
 
@@ -96,7 +96,7 @@ def test_register_first_planner_sets_default() -> None:
     """Test that first registered planner is set as default."""
     registry = FakePlannerRegistry()
     fake_time = FakeTime(current_time=datetime(2025, 6, 15, 10, 0, 0, tzinfo=UTC))
-    ctx = ErkContext.for_test(planner_registry=registry, time=fake_time)
+    ctx = context_for_test(planner_registry=registry, time=fake_time)
 
     runner = CliRunner()
 
@@ -120,7 +120,7 @@ def test_register_subsequent_planner_not_default() -> None:
     existing = _make_planner(name="existing")
     registry = FakePlannerRegistry(planners=[existing], default_planner="existing")
     fake_time = FakeTime(current_time=datetime(2025, 6, 15, 10, 0, 0, tzinfo=UTC))
-    ctx = ErkContext.for_test(planner_registry=registry, time=fake_time)
+    ctx = context_for_test(planner_registry=registry, time=fake_time)
 
     runner = CliRunner()
 
@@ -143,7 +143,7 @@ def test_register_prompts_for_configure() -> None:
     """Test that register prompts to run configure."""
     registry = FakePlannerRegistry()
     fake_time = FakeTime(current_time=datetime(2025, 6, 15, 10, 0, 0, tzinfo=UTC))
-    ctx = ErkContext.for_test(planner_registry=registry, time=fake_time)
+    ctx = context_for_test(planner_registry=registry, time=fake_time)
 
     runner = CliRunner()
 

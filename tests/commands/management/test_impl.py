@@ -11,7 +11,7 @@ from erk.cli.cli import cli
 from erk.cli.commands.shell_integration import hidden_shell_cmd
 from erk.cli.shell_utils import render_cd_script
 from erk.core.config_store import FakeConfigStore, GlobalConfig
-from erk.core.context import ErkContext
+from erk.core.context import context_for_test
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
@@ -143,7 +143,7 @@ def test_create_with_both_name_and_plan_fails() -> None:
         global_config_ops = FakeConfigStore(config=global_config)
 
         # Create test context
-        test_ctx = ErkContext.for_test(
+        test_ctx = context_for_test(
             git=git_ops,
             config_store=global_config_ops,
             global_config=global_config,
@@ -184,7 +184,7 @@ def test_create_rejects_reserved_name_root() -> None:
         global_config_ops = FakeConfigStore(config=global_config)
 
         # Create test context
-        test_ctx = ErkContext.for_test(
+        test_ctx = context_for_test(
             git=git_ops,
             config_store=global_config_ops,
             global_config=global_config,
@@ -229,7 +229,7 @@ def test_create_rejects_reserved_name_root_case_insensitive() -> None:
         global_config_ops = FakeConfigStore(config=global_config)
 
         # Create test context
-        test_ctx = ErkContext.for_test(
+        test_ctx = context_for_test(
             git=git_ops,
             config_store=global_config_ops,
             global_config=global_config,
@@ -274,7 +274,7 @@ def test_create_rejects_main_as_worktree_name() -> None:
         global_config_ops = FakeConfigStore(config=global_config)
 
         # Create test context
-        test_ctx = ErkContext.for_test(
+        test_ctx = context_for_test(
             git=git_ops,
             config_store=global_config_ops,
             global_config=global_config,
@@ -320,7 +320,7 @@ def test_create_rejects_master_as_worktree_name() -> None:
         global_config_ops = FakeConfigStore(config=global_config)
 
         # Create test context
-        test_ctx = ErkContext.for_test(
+        test_ctx = context_for_test(
             git=git_ops,
             config_store=global_config_ops,
             global_config=global_config,

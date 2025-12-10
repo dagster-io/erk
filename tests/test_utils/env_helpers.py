@@ -28,7 +28,7 @@ Usage Pattern:
 
             git = FakeGit(git_common_dirs={cwd: git_dir})
             global_config = GlobalConfig.test(...)
-            test_ctx = ErkContext.for_test(cwd=cwd, ...)
+            test_ctx = context_for_test(cwd=cwd, ...)
 
             result = runner.invoke(cli, ["command"], obj=test_ctx)
     ```
@@ -41,7 +41,7 @@ Usage Pattern:
             git = FakeGit(git_common_dirs={env.cwd: env.git_dir})
             global_config = GlobalConfig.test(...)
             script_writer=env.script_writer,
-            test_ctx = ErkContext.for_test(cwd=env.cwd, ...)
+            test_ctx = context_for_test(cwd=env.cwd, ...)
 
             result = runner.invoke(cli, ["command"], obj=test_ctx)
     ```
@@ -66,7 +66,7 @@ Advanced Usage (complex worktree scenarios):
             )
 
             script_writer=env.script_writer,
-            test_ctx = ErkContext.for_test(cwd=env.cwd, git=git, ...)
+            test_ctx = context_for_test(cwd=env.cwd, git=git, ...)
     ```
 
 Directory Structure Created:
@@ -92,7 +92,7 @@ from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
 
 from erk.core.config_store import GlobalConfig
-from erk.core.context import ErkContext
+from erk.core.context import ErkContext, context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk.core.script_writer import RealScriptWriter
 from tests.fakes.script_writer import FakeScriptWriter
@@ -404,7 +404,7 @@ class ErkIsolatedFsEnv:
             shell: Custom FakeShell instance
             repo: Custom RepoContext (default: None)
             dry_run: Whether to wrap with DryRunGit
-            **kwargs: Additional ErkContext.for_test() parameters
+            **kwargs: Additional context_for_test() parameters
 
         Returns:
             ErkContext configured for testing
@@ -421,7 +421,7 @@ class ErkIsolatedFsEnv:
                     default_branches={env.cwd: "main"},
                     current_branches={env.cwd: "feature-1"},
                 )
-                ctx = ErkContext.for_test(..., git=git_ops, ...)
+                ctx = context_for_test(..., git=git_ops, ...)
 
                 # After (1 line):
                 ctx = env.build_context(current_branch="feature-1")
@@ -534,7 +534,7 @@ class ErkIsolatedFsEnv:
         if "trunk_branch" in kwargs:
             kwargs.pop("trunk_branch")
 
-        return ErkContext.for_test(
+        return context_for_test(
             git=git,
             graphite=graphite,
             github=github,
@@ -611,7 +611,7 @@ def erk_isolated_fs_env(runner: CliRunner) -> Generator[ErkIsolatedFsEnv]:
                 # env.git_dir is available (.git directory)
                 # env.script_writer is available (RealScriptWriter for temp files)
                 git = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-                test_ctx = ErkContext.for_test(
+                test_ctx = context_for_test(
                     cwd=env.cwd,
                     script_writer=env.script_writer,
                     ...
@@ -821,7 +821,7 @@ class ErkInMemEnv:
             existing_paths: Set of sentinel paths to treat as existing (pure mode only)
             file_contents: Mapping of sentinel paths to file content (pure mode only)
             dry_run: Whether to wrap with DryRunGit
-            **kwargs: Additional ErkContext.for_test() parameters
+            **kwargs: Additional context_for_test() parameters
 
         Returns:
             ErkContext configured for testing
@@ -838,7 +838,7 @@ class ErkInMemEnv:
                     default_branches={env.cwd: "main"},
                     current_branches={env.cwd: "feature-1"},
                 )
-                ctx = ErkContext.for_test(..., git=git_ops, ...)
+                ctx = context_for_test(..., git=git_ops, ...)
 
                 # After (1 line):
                 ctx = env.build_context(current_branch="feature-1")
@@ -951,7 +951,7 @@ class ErkInMemEnv:
         if "trunk_branch" in kwargs:
             kwargs.pop("trunk_branch")
 
-        return ErkContext.for_test(
+        return context_for_test(
             git=git,
             graphite=graphite,
             github=github,
@@ -1121,7 +1121,7 @@ def erk_inmem_env(
             with erk_inmem_env(runner) as env:
                 # No filesystem I/O, all operations in-memory
                 git = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-                ctx = ErkContext.for_test(
+                ctx = context_for_test(
                     cwd=env.cwd,
                     git=git,
                     script_writer=env.script_writer,

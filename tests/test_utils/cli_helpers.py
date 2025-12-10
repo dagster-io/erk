@@ -108,7 +108,7 @@ def cli_test_repo(tmp_path: Path) -> Generator[CLITestRepo]:
             with erk_isolated_fs_env(runner) as env:
                 # Much simpler! No HOME setup, no os.chdir, uses fakes
                 git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-                test_ctx = ErkContext.for_test(git=git_ops, cwd=env.cwd)
+                test_ctx = context_for_test(git=git_ops, cwd=env.cwd)
                 result = runner.invoke(cli, ["wt", "create", "feature"], obj=test_ctx)
         ```
 

@@ -10,7 +10,14 @@ from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.shell import FakeShell
 
 from erk.core.claude_executor import ClaudeExecutor
-from erk.core.context import ErkContext, GlobalConfig, LoadedConfig, NoRepoSentinel, RepoContext
+from erk.core.context import (
+    ErkContext,
+    GlobalConfig,
+    LoadedConfig,
+    NoRepoSentinel,
+    RepoContext,
+    context_for_test,
+)
 from erk.core.script_writer import ScriptWriter
 
 
@@ -31,8 +38,8 @@ def create_test_context(
 ) -> ErkContext:
     """Create test context with optional pre-configured ops.
 
-    This is a convenience wrapper around ErkContext.for_test() for backward
-    compatibility. New code should use ErkContext.for_test() directly.
+    This is a convenience wrapper around context_for_test() for backward
+    compatibility. New code should use context_for_test() directly.
 
     Args:
         git: Optional FakeGit with test configuration.
@@ -77,7 +84,7 @@ def create_test_context(
         # Without any ops (empty fakes)
         >>> ctx = create_test_context()
     """
-    return ErkContext.for_test(
+    return context_for_test(
         git=git,
         github=github,
         issues=issues,
