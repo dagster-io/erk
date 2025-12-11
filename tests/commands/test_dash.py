@@ -1735,5 +1735,5 @@ last_remote_impl_at: '2024-11-21T12:00:00Z'
 
         # Assert - Column headers should appear in output
         assert result.exit_code == 0
-        assert "local-impl" in result.output
+        assert "lcl-impl" in result.output
         assert "remote-impl" in result.output
