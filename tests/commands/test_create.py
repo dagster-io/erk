@@ -446,7 +446,7 @@ def test_create_from_issue_tracks_branch_with_graphite() -> None:
         )
 
         # Create FakeGraphite to track calls
-        from erk_shared.integrations.graphite.fake import FakeGraphite
+        from erk_shared.gateways.graphite.fake import FakeGraphite
 
         fake_graphite = FakeGraphite()
 
@@ -530,7 +530,7 @@ def test_create_from_issue_no_graphite_tracking_when_disabled() -> None:
         )
 
         # Create FakeGraphite to track calls
-        from erk_shared.integrations.graphite.fake import FakeGraphite
+        from erk_shared.gateways.graphite.fake import FakeGraphite
 
         fake_graphite = FakeGraphite()
 

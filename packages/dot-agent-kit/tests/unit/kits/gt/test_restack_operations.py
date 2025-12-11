@@ -5,18 +5,18 @@ Tests the three-phase restack flow: preflight, continue, finalize.
 
 from pathlib import Path
 
-from erk_shared.git.fake import FakeGit
-from erk_shared.integrations.gt.cli import render_events
-from erk_shared.integrations.gt.operations.restack_continue import execute_restack_continue
-from erk_shared.integrations.gt.operations.restack_finalize import execute_restack_finalize
-from erk_shared.integrations.gt.operations.restack_preflight import execute_restack_preflight
-from erk_shared.integrations.gt.types import (
+from erk_shared.gateways.gt.cli import render_events
+from erk_shared.gateways.gt.operations.restack_continue import execute_restack_continue
+from erk_shared.gateways.gt.operations.restack_finalize import execute_restack_finalize
+from erk_shared.gateways.gt.operations.restack_preflight import execute_restack_preflight
+from erk_shared.gateways.gt.types import (
     RestackContinueSuccess,
     RestackFinalizeError,
     RestackFinalizeSuccess,
     RestackPreflightError,
     RestackPreflightSuccess,
 )
+from erk_shared.git.fake import FakeGit
 
 from tests.unit.kits.gt.fake_ops import FakeGtKitOps
 
@@ -250,7 +250,7 @@ class TestRestackFinalize:
         assert result.branch_name == "feature-branch"
 
         # Verify sleep was called (the retry mechanism was triggered)
-        from erk_shared.integrations.time.fake import FakeTime
+        from erk_shared.gateways.time.fake import FakeTime
 
         assert isinstance(ops.time, FakeTime)
         assert ops.time.sleep_calls == [0.1]  # 0.1 second retry delay

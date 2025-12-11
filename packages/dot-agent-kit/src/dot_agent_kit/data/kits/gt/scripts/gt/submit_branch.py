@@ -5,11 +5,11 @@ from dataclasses import asdict
 from pathlib import Path
 
 import click
-from erk_shared.integrations.gt.cli import render_events
-from erk_shared.integrations.gt.operations.finalize import execute_finalize
-from erk_shared.integrations.gt.operations.preflight import execute_preflight
-from erk_shared.integrations.gt.real import RealGtKit
-from erk_shared.integrations.gt.types import (
+from erk_shared.gateways.gt.cli import render_events
+from erk_shared.gateways.gt.operations.finalize import execute_finalize
+from erk_shared.gateways.gt.operations.preflight import execute_preflight
+from erk_shared.gateways.gt.real import RealGtKit
+from erk_shared.gateways.gt.types import (
     PostAnalysisError,
     PreAnalysisError,
 )

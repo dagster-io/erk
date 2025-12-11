@@ -5,10 +5,10 @@ Slow path: If conflicts detected, delegates to Claude for intelligent resolution
 """
 
 import click
-from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
-from erk_shared.integrations.gt.operations.restack_finalize import execute_restack_finalize
-from erk_shared.integrations.gt.operations.restack_preflight import execute_restack_preflight
-from erk_shared.integrations.gt.types import (
+from erk_shared.gateways.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.gateways.gt.operations.restack_finalize import execute_restack_finalize
+from erk_shared.gateways.gt.operations.restack_preflight import execute_restack_preflight
+from erk_shared.gateways.gt.types import (
     RestackFinalizeError,
     RestackPreflightError,
     RestackPreflightSuccess,

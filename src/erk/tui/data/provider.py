@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
 
+from erk_shared.gateways.browser.abc import BrowserLauncher
+from erk_shared.gateways.clipboard.abc import Clipboard
 from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata import (
@@ -15,8 +17,6 @@ from erk_shared.github.metadata import (
 from erk_shared.github.parsing import github_repo_location_from_url
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
 from erk_shared.impl_folder import read_issue_reference
-from erk_shared.integrations.browser.abc import BrowserLauncher
-from erk_shared.integrations.clipboard.abc import Clipboard
 from erk_shared.plan_store.types import Plan, PlanState
 
 from erk.core.context import ErkContext

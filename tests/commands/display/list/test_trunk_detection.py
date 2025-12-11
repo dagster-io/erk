@@ -11,10 +11,10 @@ This file trusts that unit layer and only tests CLI integration.
 
 import pytest
 from click.testing import CliRunner
+from erk_shared.gateways.graphite.fake import FakeGraphite
+from erk_shared.gateways.graphite.types import BranchMetadata
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
-from erk_shared.integrations.graphite.fake import FakeGraphite
-from erk_shared.integrations.graphite.types import BranchMetadata
 
 from erk.cli.cli import cli
 from tests.test_utils.env_helpers import erk_inmem_env

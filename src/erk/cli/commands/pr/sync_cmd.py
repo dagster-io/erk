@@ -18,10 +18,10 @@ Flow:
 from pathlib import Path
 
 import click
+from erk_shared.gateways.gt.events import CompletionEvent
+from erk_shared.gateways.gt.operations import execute_squash
+from erk_shared.gateways.gt.types import SquashError
 from erk_shared.github.types import PRNotFound
-from erk_shared.integrations.gt.events import CompletionEvent
-from erk_shared.integrations.gt.operations import execute_squash
-from erk_shared.integrations.gt.types import SquashError
 from erk_shared.output.output import user_output
 
 from erk.cli.ensure import Ensure

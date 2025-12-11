@@ -12,7 +12,7 @@ Note: Git operations are now tested via the core Git interface in erk_shared.git
 GitHub operations are now tested via the main GitHub interface in erk_shared.github.
 """
 
-from erk_shared.integrations.gt import (
+from erk_shared.gateways.gt import (
     RealGtKit,
 )
 

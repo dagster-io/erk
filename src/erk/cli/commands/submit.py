@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import click
+from erk_shared.gateways.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata import (
     create_submission_queued_block,
@@ -21,7 +22,6 @@ from erk_shared.github.parsing import (
 )
 from erk_shared.github.pr_footer import build_pr_body_footer
 from erk_shared.github.types import PRNotFound
-from erk_shared.integrations.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 from erk_shared.naming import (
     format_branch_timestamp_suffix,
     sanitize_worktree_name,

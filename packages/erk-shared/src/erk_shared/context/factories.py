@@ -71,15 +71,15 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkConte
     from erk_shared.context.context import ErkContext
     from erk_shared.context.types import LoadedConfig, NoRepoSentinel, RepoContext
     from erk_shared.extraction.claude_code_session_store import RealClaudeCodeSessionStore
+    from erk_shared.gateways.completion import FakeCompletion
+    from erk_shared.gateways.feedback import SuppressedFeedback
+    from erk_shared.gateways.graphite.fake import FakeGraphite
+    from erk_shared.gateways.shell import FakeShell
+    from erk_shared.gateways.time.fake import FakeTime
+    from erk_shared.gateways.time.real import RealTime
     from erk_shared.git.real import RealGit
     from erk_shared.github.issues import RealGitHubIssues
     from erk_shared.github.real import RealGitHub
-    from erk_shared.integrations.completion import FakeCompletion
-    from erk_shared.integrations.feedback import SuppressedFeedback
-    from erk_shared.integrations.graphite.fake import FakeGraphite
-    from erk_shared.integrations.shell import FakeShell
-    from erk_shared.integrations.time.fake import FakeTime
-    from erk_shared.integrations.time.real import RealTime
     from erk_shared.objectives.storage import FakeObjectiveStore
     from erk_shared.plan_store.fake import FakePlanStore
     from erk_shared.prompt_executor.real import RealPromptExecutor

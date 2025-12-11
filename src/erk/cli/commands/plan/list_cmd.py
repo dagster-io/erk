@@ -5,6 +5,8 @@ from datetime import datetime
 from typing import ParamSpec, TypeVar
 
 import click
+from erk_shared.gateways.browser.real import RealBrowserLauncher
+from erk_shared.gateways.clipboard.real import RealClipboard
 from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata import (
@@ -15,8 +17,6 @@ from erk_shared.github.metadata import (
 )
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
 from erk_shared.impl_folder import read_issue_reference
-from erk_shared.integrations.browser.real import RealBrowserLauncher
-from erk_shared.integrations.clipboard.real import RealClipboard
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import Plan, PlanState
 from rich.console import Console, Group

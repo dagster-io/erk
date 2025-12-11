@@ -72,7 +72,7 @@ def test_real_shell_ops_run_erk_sync_calls_subprocess():
     repo_root = Path("/test/repo")
 
     # Mock run_subprocess_with_context to verify the call without actually running erk
-    with patch("erk_shared.integrations.shell.real.run_subprocess_with_context") as mock_run:
+    with patch("erk_shared.gateways.shell.real.run_subprocess_with_context") as mock_run:
         mock_run.return_value = MagicMock(returncode=0)
 
         # Call with force=True, verbose=False
@@ -98,7 +98,7 @@ def test_real_shell_ops_run_erk_sync_verbose_mode():
     ops = RealShell()
     repo_root = Path("/test/repo")
 
-    with patch("erk_shared.integrations.shell.real.run_subprocess_with_context") as mock_run:
+    with patch("erk_shared.gateways.shell.real.run_subprocess_with_context") as mock_run:
         mock_run.return_value = MagicMock(returncode=0)
 
         # Call with force=True, verbose=True
@@ -119,7 +119,7 @@ def test_real_shell_ops_run_erk_sync_without_force():
     ops = RealShell()
     repo_root = Path("/test/repo")
 
-    with patch("erk_shared.integrations.shell.real.run_subprocess_with_context") as mock_run:
+    with patch("erk_shared.gateways.shell.real.run_subprocess_with_context") as mock_run:
         mock_run.return_value = MagicMock(returncode=0)
 
         # Call with force=False
@@ -137,7 +137,7 @@ def test_real_shell_ops_run_erk_sync_propagates_error():
     ops = RealShell()
     repo_root = Path("/test/repo")
 
-    with patch("erk_shared.integrations.shell.real.run_subprocess_with_context") as mock_run:
+    with patch("erk_shared.gateways.shell.real.run_subprocess_with_context") as mock_run:
         # Simulate subprocess failure (run_subprocess_with_context raises RuntimeError)
         mock_run.side_effect = RuntimeError(
             "Failed to execute erk kit sync subprocess\n"

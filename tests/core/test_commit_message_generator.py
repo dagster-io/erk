@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.gateways.gt.events import CompletionEvent, ProgressEvent
 
 from erk.core.commit_message_generator import (
     CommitMessageGenerator,

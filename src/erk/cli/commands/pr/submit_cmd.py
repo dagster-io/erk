@@ -11,10 +11,10 @@ import uuid
 from pathlib import Path
 
 import click
-from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
-from erk_shared.integrations.gt.operations.finalize import execute_finalize
-from erk_shared.integrations.gt.operations.preflight import execute_preflight
-from erk_shared.integrations.gt.types import (
+from erk_shared.gateways.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.gateways.gt.operations.finalize import execute_finalize
+from erk_shared.gateways.gt.operations.preflight import execute_preflight
+from erk_shared.gateways.gt.types import (
     FinalizeResult,
     PostAnalysisError,
     PreAnalysisError,

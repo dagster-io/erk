@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
+from erk_shared.gateways.gt.cli import render_events
+from erk_shared.gateways.gt.operations.land_pr import execute_land_pr
+from erk_shared.gateways.gt.types import LandPrError, LandPrSuccess
 from erk_shared.git.fake import FakeGit
-from erk_shared.integrations.gt.cli import render_events
-from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
-from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
 
 from tests.unit.kits.gt.fake_ops import FakeGtKitOps
 

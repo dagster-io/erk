@@ -1,7 +1,7 @@
 """Tests for ErkDashApp using Textual Pilot."""
 
 import pytest
-from erk_shared.integrations.clipboard.fake import FakeClipboard
+from erk_shared.gateways.clipboard.fake import FakeClipboard
 
 from erk.tui.app import ErkDashApp, HelpScreen, PlanDetailScreen
 from erk.tui.data.types import PlanFilters

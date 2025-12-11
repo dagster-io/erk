@@ -6,10 +6,10 @@ branches from the current worktree stack.
 
 import pytest
 from click.testing import CliRunner
+from erk_shared.gateways.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.integrations.graphite.fake import FakeGraphite
 
 from erk.cli.cli import cli
 from tests.fakes.shell import FakeShell
