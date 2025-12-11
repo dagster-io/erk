@@ -1029,17 +1029,19 @@ query {{
             f"owner={repo_id.owner}",
             "-f",
             f"repo={repo_id.repo}",
-            "-f",
-            f"labels={json.dumps(labels)}",
-            "-f",
-            f"states={json.dumps(states)}",
             "-F",
             f"first={effective_limit}",
         ]
 
-        # Add filterBy if creator specified (pass as JSON object)
+        # Add array elements using key[]=value syntax (gh CLI requirement for arrays)
+        for label in labels:
+            cmd.extend(["-F", f"labels[]={label}"])
+        for state in states:
+            cmd.extend(["-F", f"states[]={state}"])
+
+        # Add filterBy if creator specified (use object field syntax)
         if creator is not None:
-            cmd.extend(["-f", f"filterBy={json.dumps({'createdBy': creator})}"])
+            cmd.extend(["-f", f"filterBy[createdBy]={creator}"])
 
         stdout = execute_gh_command(cmd, location.root)
         response = json.loads(stdout)
