@@ -1070,8 +1070,10 @@ query {{
     ) -> str:
         """Build GraphQL query to fetch issues with PR linkages.
 
-        Uses repository.issues() connection with timelineItems to get
-        cross-referenced PRs in a single query.
+        Uses CrossReferencedEvent timeline items to find ALL PRs that reference
+        each issue, including the willCloseTarget field to distinguish PRs that
+        will close the issue when merged (via "Closes #N" keywords) from PRs
+        that merely reference the issue.
 
         Args:
             repo_id: GitHub repository identity (owner and repo name)
@@ -1099,30 +1101,6 @@ query {{
         # Build filterBy clause for creator filtering (server-side)
         filter_by = f'filterBy: {{createdBy: "{creator}"}}' if creator is not None else ""
 
-        # Define the fragment for PR linkage data
-        # Uses pre-aggregated count fields for ~15-30x smaller payload
-        fragment_definition = """fragment IssuePRLinkageFields on CrossReferencedEvent {
-  willCloseTarget
-  source {
-    ... on PullRequest {
-      number
-      state
-      url
-      isDraft
-      createdAt
-      statusCheckRollup {
-        state
-        contexts(last: 1) {
-          totalCount
-          checkRunCountsByState { state count }
-          statusContextCountsByState { state count }
-        }
-      }
-      mergeable
-    }
-  }
-}"""
-
         # Build the query - construct issues args separately for line length
         # Include filterBy if creator is specified
         filter_clause = f", {filter_by}" if filter_by else ""
@@ -1130,9 +1108,10 @@ query {{
             f"labels: {labels_json}, {states_filter}{filter_clause}, first: {effective_limit}"
         )
         order_by = "orderBy: {field: UPDATED_AT, direction: DESC}"
-        query = f"""{fragment_definition}
 
-query {{
+        # Query issues with timeline events to get ALL referencing PRs
+        # willCloseTarget indicates whether the PR will close the issue when merged
+        query = f"""query {{
   repository(owner: "{repo_id.owner}", name: "{repo_id.repo}") {{
     issues({issues_args}, {order_by}) {{
       nodes {{
@@ -1149,7 +1128,25 @@ query {{
         timelineItems(itemTypes: [CROSS_REFERENCED_EVENT], first: 20) {{
           nodes {{
             ... on CrossReferencedEvent {{
-              ...IssuePRLinkageFields
+              willCloseTarget
+              source {{
+                ... on PullRequest {{
+                  number
+                  state
+                  url
+                  isDraft
+                  createdAt
+                  statusCheckRollup {{
+                    state
+                    contexts(last: 1) {{
+                      totalCount
+                      checkRunCountsByState {{ state count }}
+                      statusContextCountsByState {{ state count }}
+                    }}
+                  }}
+                  mergeable
+                }}
+              }}
             }}
           }}
         }}
@@ -1202,6 +1199,8 @@ query {{
         """Parse PR info from a timeline CrossReferencedEvent.
 
         Returns tuple of (PullRequestInfo, created_at_timestamp) or None if invalid.
+        The willCloseTarget field from the event indicates whether the PR will
+        close this issue when merged.
         """
         source = event.get("source")
         if source is None:
@@ -1218,6 +1217,7 @@ query {{
 
         checks_passing, checks_counts = self._parse_status_rollup(source.get("statusCheckRollup"))
         has_conflicts = self._parse_mergeable_status(source.get("mergeable"))
+        will_close_target = event.get("willCloseTarget", False)
 
         pr_info = PullRequestInfo(
             number=pr_number,
@@ -1230,6 +1230,7 @@ query {{
             repo=repo_id.repo,
             has_conflicts=has_conflicts,
             checks_counts=checks_counts,
+            will_close_target=will_close_target,
         )
         return (pr_info, created_at_pr)
 
@@ -1276,13 +1277,19 @@ query {{
         response: dict[str, Any],
         repo_id: GitHubRepoId,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
-        """Parse GraphQL response to extract issues and PR linkages."""
+        """Parse GraphQL response to extract issues and PR linkages.
+
+        Uses CrossReferencedEvent timeline items to build the issue -> PR mapping.
+        This captures ALL PRs that reference each issue, with willCloseTarget
+        indicating whether the PR will close the issue when merged.
+        """
         issues: list[IssueInfo] = []
         pr_linkages: dict[int, list[PullRequestInfo]] = {}
 
-        nodes = response.get("data", {}).get("repository", {}).get("issues", {}).get("nodes", [])
+        repo_data = response.get("data", {}).get("repository", {})
+        issue_nodes = repo_data.get("issues", {}).get("nodes", [])
 
-        for node in nodes:
+        for node in issue_nodes:
             if node is None:
                 continue
 

@@ -70,7 +70,9 @@ def _issue_to_plan(issue: IssueInfo) -> Plan:
 
 
 def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str | None) -> str:
-    """Format PR cell with clickable link and emoji: #123 👀 or #123 👀💥
+    """Format PR cell with clickable link and emoji: #123 👀 or #123 👀🔗
+
+    The 🔗 emoji is appended for PRs that will auto-close the linked issue when merged.
 
     Args:
         pr: PR information
@@ -82,6 +84,10 @@ def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str
     """
     emoji = get_pr_status_emoji(pr)
     pr_text = f"#{pr.number}"
+
+    # Append 🔗 for PRs that will close the issue when merged
+    if pr.will_close_target:
+        emoji += "🔗"
 
     # Determine which URL to use
     url = graphite_url if use_graphite else pr.url
