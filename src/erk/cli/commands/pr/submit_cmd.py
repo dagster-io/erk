@@ -5,10 +5,11 @@ Unified PR submission with two-layer architecture:
 2. Graphite layer: Optional enhancement via gt submit
 
 The workflow:
-1. Pre-analysis: Auth checks, get diff for AI
-2. Generate: AI-generated commit message via Claude CLI
-3. Core submit: git push + gh pr create
+1. Core submit: git push + gh pr create
+2. Get diff for AI: GitHub API
+3. Generate: AI-generated commit message via Claude CLI
 4. Graphite enhance: Optional gt submit for stack metadata
+5. Finalize: Update PR with AI-generated title/body
 """
 
 import os
@@ -18,12 +19,16 @@ from pathlib import Path
 import click
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.integrations.gt.operations.finalize import execute_finalize
-from erk_shared.integrations.gt.operations.preflight import execute_preflight
-from erk_shared.integrations.gt.types import (
-    FinalizeResult,
-    PostAnalysisError,
-    PreAnalysisError,
-    PreflightResult,
+from erk_shared.integrations.gt.types import FinalizeResult, PostAnalysisError
+from erk_shared.integrations.pr.diff_extraction import execute_diff_extraction
+from erk_shared.integrations.pr.graphite_enhance import execute_graphite_enhance
+from erk_shared.integrations.pr.submit import execute_core_submit
+from erk_shared.integrations.pr.types import (
+    CoreSubmitError,
+    CoreSubmitResult,
+    GraphiteEnhanceError,
+    GraphiteEnhanceResult,
+    GraphiteSkipped,
 )
 
 from erk.core.commit_message_generator import (
@@ -86,31 +91,43 @@ def pr_submit(ctx: ErkContext, debug: bool, no_graphite: bool) -> None:
     cwd = Path.cwd()
     session_id = os.environ.get("SESSION_ID", str(uuid.uuid4()))
 
-    # Phase 1: Preflight (auth, squash, submit, get diff)
-    # NOTE: This still uses the Graphite-based preflight for now to maintain
-    # the existing AI commit message generation flow. Future iterations can
-    # refactor this to use a pure git-based approach.
-    click.echo(click.style("Phase 1: Preflight checks", bold=True))
-    preflight_result = _run_preflight(ctx, cwd, session_id, debug)
+    # Phase 1: Core submit (git push + gh pr create)
+    click.echo(click.style("Phase 1: Creating PR", bold=True))
+    core_result = _run_core_submit(ctx, cwd, debug)
 
-    if isinstance(preflight_result, PreAnalysisError):
-        raise click.ClickException(preflight_result.message)
-    if isinstance(preflight_result, PostAnalysisError):
-        raise click.ClickException(preflight_result.message)
+    if isinstance(core_result, CoreSubmitError):
+        raise click.ClickException(core_result.message)
 
-    click.echo(click.style(f"   PR #{preflight_result.pr_number} created", fg="green"))
+    click.echo(click.style(f"   PR #{core_result.pr_number} created", fg="green"))
     click.echo("")
 
-    # Phase 2: Generate commit message
-    click.echo(click.style("Phase 2: Generating PR description", bold=True))
+    # Phase 2: Get diff for AI
+    click.echo(click.style("Phase 2: Getting diff", bold=True))
+    diff_file = _run_diff_extraction(ctx, cwd, core_result.pr_number, session_id, debug)
+
+    if diff_file is None:
+        raise click.ClickException("Failed to extract diff for AI analysis")
+
+    click.echo("")
+
+    # Get branch info for AI context
+    repo_root = ctx.git.get_repository_root(cwd)
+    current_branch = ctx.git.get_current_branch(cwd) or core_result.branch_name
+    trunk_branch = ctx.git.detect_trunk_branch(repo_root)
+
+    # Get commit messages for AI context
+    commit_messages = ctx.git.get_commit_messages_since(cwd, trunk_branch)
+
+    # Phase 3: Generate commit message
+    click.echo(click.style("Phase 3: Generating PR description", bold=True))
     msg_gen = CommitMessageGenerator(ctx.claude_executor)
     msg_result = _run_commit_message_generation(
         msg_gen,
-        diff_file=Path(preflight_result.diff_file),
-        repo_root=Path(preflight_result.repo_root),
-        current_branch=preflight_result.current_branch,
-        parent_branch=preflight_result.parent_branch,
-        commit_messages=preflight_result.commit_messages,
+        diff_file=diff_file,
+        repo_root=Path(repo_root),
+        current_branch=current_branch,
+        parent_branch=trunk_branch,
+        commit_messages=commit_messages,
         debug=debug,
     )
 
@@ -119,15 +136,33 @@ def pr_submit(ctx: ErkContext, debug: bool, no_graphite: bool) -> None:
 
     click.echo("")
 
-    # Phase 3: Finalize (update PR metadata)
-    click.echo(click.style("Phase 3: Updating PR metadata", bold=True))
+    # Phase 4: Graphite enhancement (optional)
+    graphite_url: str | None = None
+    if not no_graphite:
+        click.echo(click.style("Phase 4: Graphite enhancement", bold=True))
+        graphite_result = _run_graphite_enhance(ctx, cwd, core_result.pr_number, debug)
+
+        if isinstance(graphite_result, GraphiteEnhanceResult):
+            graphite_url = graphite_result.graphite_url
+            click.echo("")
+        elif isinstance(graphite_result, GraphiteSkipped):
+            if debug:
+                click.echo(click.style(f"   {graphite_result.message}", dim=True))
+            click.echo("")
+        elif isinstance(graphite_result, GraphiteEnhanceError):
+            # Graphite errors are warnings, not fatal
+            click.echo(click.style(f"   Warning: {graphite_result.message}", fg="yellow"))
+            click.echo("")
+
+    # Phase 5: Finalize (update PR metadata)
+    click.echo(click.style("Phase 5: Updating PR metadata", bold=True))
     finalize_result = _run_finalize(
         ctx,
         cwd,
-        pr_number=preflight_result.pr_number,
+        pr_number=core_result.pr_number,
         title=msg_result.title or "Update",
         body=msg_result.body or "",
-        diff_file=preflight_result.diff_file,
+        diff_file=str(diff_file),
         debug=debug,
     )
 
@@ -143,24 +178,21 @@ def pr_submit(ctx: ErkContext, debug: bool, no_graphite: bool) -> None:
     click.echo(f"✅ {clickable_url}")
 
     # Show Graphite URL if available
-    if finalize_result.graphite_url:
-        styled_graphite = click.style(finalize_result.graphite_url, fg="cyan", underline=True)
-        clickable_graphite = (
-            f"\033]8;;{finalize_result.graphite_url}\033\\{styled_graphite}\033]8;;\033\\"
-        )
+    if graphite_url:
+        styled_graphite = click.style(graphite_url, fg="cyan", underline=True)
+        clickable_graphite = f"\033]8;;{graphite_url}\033\\{styled_graphite}\033]8;;\033\\"
         click.echo(f"📊 {clickable_graphite}")
 
 
-def _run_preflight(
+def _run_core_submit(
     ctx: ErkContext,
     cwd: Path,
-    session_id: str,
     debug: bool,
-) -> PreflightResult | PreAnalysisError | PostAnalysisError:
-    """Run preflight phase and return result."""
-    result: PreflightResult | PreAnalysisError | PostAnalysisError | None = None
+) -> CoreSubmitResult | CoreSubmitError:
+    """Run core submit phase (git push + gh pr create)."""
+    result: CoreSubmitResult | CoreSubmitError | None = None
 
-    for event in execute_preflight(ctx, cwd, session_id):
+    for event in execute_core_submit(ctx, cwd, pr_title="WIP", pr_body=""):
         if isinstance(event, ProgressEvent):
             if debug:
                 _render_progress(event)
@@ -168,11 +200,57 @@ def _run_preflight(
             result = event.result
 
     if result is None:
-        return PostAnalysisError(
+        return CoreSubmitError(
             success=False,
             error_type="submit_failed",
-            message="Preflight did not complete",
+            message="Core submit did not complete",
             details={},
+        )
+
+    return result
+
+
+def _run_diff_extraction(
+    ctx: ErkContext,
+    cwd: Path,
+    pr_number: int,
+    session_id: str,
+    debug: bool,
+) -> Path | None:
+    """Run diff extraction phase."""
+    result: Path | None = None
+
+    for event in execute_diff_extraction(ctx, cwd, pr_number, session_id):
+        if isinstance(event, ProgressEvent):
+            if debug:
+                _render_progress(event)
+        elif isinstance(event, CompletionEvent):
+            result = event.result
+
+    return result
+
+
+def _run_graphite_enhance(
+    ctx: ErkContext,
+    cwd: Path,
+    pr_number: int,
+    debug: bool,
+) -> GraphiteEnhanceResult | GraphiteEnhanceError | GraphiteSkipped:
+    """Run Graphite enhancement phase."""
+    result: GraphiteEnhanceResult | GraphiteEnhanceError | GraphiteSkipped | None = None
+
+    for event in execute_graphite_enhance(ctx, cwd, pr_number):
+        if isinstance(event, ProgressEvent):
+            if debug:
+                _render_progress(event)
+        elif isinstance(event, CompletionEvent):
+            result = event.result
+
+    if result is None:
+        return GraphiteSkipped(
+            success=True,
+            reason="incomplete",
+            message="Graphite enhancement did not complete",
         )
 
     return result

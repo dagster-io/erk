@@ -1,8 +1,9 @@
 """Tests for erk pr submit command.
 
 These tests verify the CLI layer behavior of the submit command.
-The command now uses Python orchestration (preflight -> generate -> finalize)
-rather than delegating to a Claude slash command.
+The command now uses Python orchestration with two-layer architecture:
+- Core layer: git push + gh pr create (via execute_core_submit)
+- Graphite layer: Optional enhancement (via execute_graphite_enhance)
 """
 
 from pathlib import Path
@@ -11,11 +12,11 @@ from unittest.mock import Mock, patch
 from click.testing import CliRunner
 from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.gt.events import CompletionEvent
-from erk_shared.integrations.gt.types import (
-    FinalizeResult,
-    PostAnalysisError,
-    PreAnalysisError,
-    PreflightResult,
+from erk_shared.integrations.gt.types import FinalizeResult, PostAnalysisError
+from erk_shared.integrations.pr.types import (
+    CoreSubmitError,
+    CoreSubmitResult,
+    GraphiteSkipped,
 )
 
 from erk.cli.commands.pr import pr_group
@@ -45,11 +46,11 @@ def test_pr_submit_fails_when_claude_not_available() -> None:
         assert "claude.com/download" in result.output
 
 
-@patch("erk.cli.commands.pr.submit_cmd.execute_preflight")
-def test_pr_submit_fails_when_preflight_returns_pre_analysis_error(
-    mock_preflight: Mock,
+@patch("erk.cli.commands.pr.submit_cmd.execute_core_submit")
+def test_pr_submit_fails_when_core_submit_returns_error(
+    mock_core_submit: Mock,
 ) -> None:
-    """Test that command fails when preflight returns PreAnalysisError."""
+    """Test that command fails when core submit returns CoreSubmitError."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
@@ -61,15 +62,15 @@ def test_pr_submit_fails_when_preflight_returns_pre_analysis_error(
 
         claude_executor = FakeClaudeExecutor(claude_available=True)
 
-        # Mock preflight to return an error
-        mock_preflight.return_value = iter(
+        # Mock core_submit to return an error
+        mock_core_submit.return_value = iter(
             [
                 CompletionEvent(
-                    PreAnalysisError(
+                    CoreSubmitError(
                         success=False,
-                        error_type="gt_not_authenticated",
-                        message="Graphite CLI (gt) is not authenticated",
-                        details={"authenticated": False},
+                        error_type="github_auth_failed",
+                        message="GitHub CLI is not authenticated. Run 'gh auth login'.",
+                        details={},
                     )
                 )
             ]
@@ -83,11 +84,13 @@ def test_pr_submit_fails_when_preflight_returns_pre_analysis_error(
         assert "not authenticated" in result.output
 
 
-@patch("erk.cli.commands.pr.submit_cmd.execute_preflight")
-def test_pr_submit_fails_when_preflight_returns_post_analysis_error(
-    mock_preflight: Mock,
+@patch("erk.cli.commands.pr.submit_cmd.execute_diff_extraction")
+@patch("erk.cli.commands.pr.submit_cmd.execute_core_submit")
+def test_pr_submit_fails_when_diff_extraction_fails(
+    mock_core_submit: Mock,
+    mock_diff_extraction: Mock,
 ) -> None:
-    """Test that command fails when preflight returns PostAnalysisError."""
+    """Test that command fails when diff extraction returns None."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
@@ -99,33 +102,41 @@ def test_pr_submit_fails_when_preflight_returns_post_analysis_error(
 
         claude_executor = FakeClaudeExecutor(claude_available=True)
 
-        # Mock preflight to return a submit error
-        mock_preflight.return_value = iter(
+        # Mock core submit to succeed
+        mock_core_submit.return_value = iter(
             [
                 CompletionEvent(
-                    PostAnalysisError(
-                        success=False,
-                        error_type="submit_failed",
-                        message="Failed to submit branch",
-                        details={"branch_name": "feature"},
+                    CoreSubmitResult(
+                        success=True,
+                        pr_number=123,
+                        pr_url="https://github.com/org/repo/pull/123",
+                        branch_name="feature",
+                        issue_number=None,
+                        was_created=True,
+                        message="Created PR #123",
                     )
                 )
             ]
         )
+
+        # Mock diff extraction to fail
+        mock_diff_extraction.return_value = iter([CompletionEvent(None)])
 
         ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
 
         assert result.exit_code != 0
-        assert "submit" in result.output.lower()
+        assert "Failed to extract diff" in result.output
 
 
-@patch("erk.cli.commands.pr.submit_cmd.execute_finalize")
-@patch("erk.cli.commands.pr.submit_cmd.execute_preflight")
+@patch("erk.cli.commands.pr.submit_cmd.execute_graphite_enhance")
+@patch("erk.cli.commands.pr.submit_cmd.execute_diff_extraction")
+@patch("erk.cli.commands.pr.submit_cmd.execute_core_submit")
 def test_pr_submit_fails_when_commit_message_generation_fails(
-    mock_preflight: Mock,
-    mock_finalize: Mock,
+    mock_core_submit: Mock,
+    mock_diff_extraction: Mock,
+    mock_graphite_enhance: Mock,
     tmp_path: Path,
 ) -> None:
     """Test that command fails when commit message generation fails."""
@@ -148,22 +159,34 @@ def test_pr_submit_fails_when_commit_message_generation_fails(
             simulated_prompt_error="Claude CLI execution failed",
         )
 
-        # Mock preflight to succeed
-        mock_preflight.return_value = iter(
+        # Mock core submit to succeed
+        mock_core_submit.return_value = iter(
             [
                 CompletionEvent(
-                    PreflightResult(
+                    CoreSubmitResult(
                         success=True,
                         pr_number=123,
                         pr_url="https://github.com/org/repo/pull/123",
-                        graphite_url="https://app.graphite.dev/github/pr/123",
                         branch_name="feature",
-                        diff_file=str(diff_file),
-                        repo_root=str(tmp_path),
-                        current_branch="feature",
-                        parent_branch="main",
                         issue_number=None,
-                        message="Preflight complete",
+                        was_created=True,
+                        message="Created PR #123",
+                    )
+                )
+            ]
+        )
+
+        # Mock diff extraction to succeed
+        mock_diff_extraction.return_value = iter([CompletionEvent(diff_file)])
+
+        # Mock graphite enhance (should not be called since message gen fails first)
+        mock_graphite_enhance.return_value = iter(
+            [
+                CompletionEvent(
+                    GraphiteSkipped(
+                        success=True,
+                        reason="not_called",
+                        message="Not called",
                     )
                 )
             ]
@@ -176,14 +199,15 @@ def test_pr_submit_fails_when_commit_message_generation_fails(
         assert result.exit_code != 0
         assert "Failed to generate message" in result.output
 
-        # Finalize should not be called when message generation fails
-        mock_finalize.assert_not_called()
-
 
 @patch("erk.cli.commands.pr.submit_cmd.execute_finalize")
-@patch("erk.cli.commands.pr.submit_cmd.execute_preflight")
+@patch("erk.cli.commands.pr.submit_cmd.execute_graphite_enhance")
+@patch("erk.cli.commands.pr.submit_cmd.execute_diff_extraction")
+@patch("erk.cli.commands.pr.submit_cmd.execute_core_submit")
 def test_pr_submit_fails_when_finalize_fails(
-    mock_preflight: Mock,
+    mock_core_submit: Mock,
+    mock_diff_extraction: Mock,
+    mock_graphite_enhance: Mock,
     mock_finalize: Mock,
     tmp_path: Path,
 ) -> None:
@@ -206,22 +230,34 @@ def test_pr_submit_fails_when_finalize_fails(
             simulated_prompt_output="Add feature\n\nThis adds a new feature.",
         )
 
-        # Mock preflight to succeed
-        mock_preflight.return_value = iter(
+        # Mock core submit to succeed
+        mock_core_submit.return_value = iter(
             [
                 CompletionEvent(
-                    PreflightResult(
+                    CoreSubmitResult(
                         success=True,
                         pr_number=123,
                         pr_url="https://github.com/org/repo/pull/123",
-                        graphite_url="https://app.graphite.dev/github/pr/123",
                         branch_name="feature",
-                        diff_file=str(diff_file),
-                        repo_root=str(tmp_path),
-                        current_branch="feature",
-                        parent_branch="main",
                         issue_number=None,
-                        message="Preflight complete",
+                        was_created=True,
+                        message="Created PR #123",
+                    )
+                )
+            ]
+        )
+
+        # Mock diff extraction to succeed
+        mock_diff_extraction.return_value = iter([CompletionEvent(diff_file)])
+
+        # Mock graphite enhance to skip
+        mock_graphite_enhance.return_value = iter(
+            [
+                CompletionEvent(
+                    GraphiteSkipped(
+                        success=True,
+                        reason="not_tracked",
+                        message="Branch not tracked",
                     )
                 )
             ]
@@ -250,9 +286,13 @@ def test_pr_submit_fails_when_finalize_fails(
 
 
 @patch("erk.cli.commands.pr.submit_cmd.execute_finalize")
-@patch("erk.cli.commands.pr.submit_cmd.execute_preflight")
+@patch("erk.cli.commands.pr.submit_cmd.execute_graphite_enhance")
+@patch("erk.cli.commands.pr.submit_cmd.execute_diff_extraction")
+@patch("erk.cli.commands.pr.submit_cmd.execute_core_submit")
 def test_pr_submit_success(
-    mock_preflight: Mock,
+    mock_core_submit: Mock,
+    mock_diff_extraction: Mock,
+    mock_graphite_enhance: Mock,
     mock_finalize: Mock,
     tmp_path: Path,
 ) -> None:
@@ -275,22 +315,34 @@ def test_pr_submit_success(
             simulated_prompt_output="Add awesome feature\n\nThis PR adds an awesome new feature.",
         )
 
-        # Mock preflight to succeed
-        mock_preflight.return_value = iter(
+        # Mock core submit to succeed
+        mock_core_submit.return_value = iter(
             [
                 CompletionEvent(
-                    PreflightResult(
+                    CoreSubmitResult(
                         success=True,
                         pr_number=123,
                         pr_url="https://github.com/org/repo/pull/123",
-                        graphite_url="https://app.graphite.dev/github/pr/123",
                         branch_name="feature",
-                        diff_file=str(diff_file),
-                        repo_root=str(tmp_path),
-                        current_branch="feature",
-                        parent_branch="main",
                         issue_number=None,
-                        message="Preflight complete",
+                        was_created=True,
+                        message="Created PR #123",
+                    )
+                )
+            ]
+        )
+
+        # Mock diff extraction to succeed
+        mock_diff_extraction.return_value = iter([CompletionEvent(diff_file)])
+
+        # Mock graphite enhance to skip
+        mock_graphite_enhance.return_value = iter(
+            [
+                CompletionEvent(
+                    GraphiteSkipped(
+                        success=True,
+                        reason="not_tracked",
+                        message="Branch not tracked by Graphite",
                     )
                 )
             ]
@@ -330,13 +382,17 @@ def test_pr_submit_success(
 
 
 @patch("erk.cli.commands.pr.submit_cmd.execute_finalize")
-@patch("erk.cli.commands.pr.submit_cmd.execute_preflight")
-def test_pr_submit_shows_graphite_url(
-    mock_preflight: Mock,
+@patch("erk.cli.commands.pr.submit_cmd.execute_graphite_enhance")
+@patch("erk.cli.commands.pr.submit_cmd.execute_diff_extraction")
+@patch("erk.cli.commands.pr.submit_cmd.execute_core_submit")
+def test_pr_submit_with_no_graphite_flag(
+    mock_core_submit: Mock,
+    mock_diff_extraction: Mock,
+    mock_graphite_enhance: Mock,
     mock_finalize: Mock,
     tmp_path: Path,
 ) -> None:
-    """Test that Graphite URL is displayed on success."""
+    """Test that --no-graphite flag skips Graphite enhancement."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
@@ -354,25 +410,23 @@ def test_pr_submit_shows_graphite_url(
             simulated_prompt_output="Title\n\nBody",
         )
 
-        mock_preflight.return_value = iter(
+        mock_core_submit.return_value = iter(
             [
                 CompletionEvent(
-                    PreflightResult(
+                    CoreSubmitResult(
                         success=True,
                         pr_number=123,
                         pr_url="https://github.com/org/repo/pull/123",
-                        graphite_url="https://app.graphite.dev/github/pr/123",
                         branch_name="feature",
-                        diff_file=str(diff_file),
-                        repo_root=str(tmp_path),
-                        current_branch="feature",
-                        parent_branch="main",
                         issue_number=None,
-                        message="Preflight complete",
+                        was_created=True,
+                        message="Created PR #123",
                     )
                 )
             ]
         )
+
+        mock_diff_extraction.return_value = iter([CompletionEvent(diff_file)])
 
         mock_finalize.return_value = iter(
             [
@@ -382,7 +436,7 @@ def test_pr_submit_shows_graphite_url(
                         pr_number=123,
                         pr_url="https://github.com/org/repo/pull/123",
                         pr_title="Title",
-                        graphite_url="https://app.graphite.dev/github/pr/123",
+                        graphite_url="",
                         branch_name="feature",
                         issue_number=None,
                         message="Successfully updated PR",
@@ -393,9 +447,8 @@ def test_pr_submit_shows_graphite_url(
 
         ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
 
-        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
 
         assert result.exit_code == 0
-        # Both URLs should be in output
-        assert "github.com/org/repo/pull/123" in result.output
-        assert "app.graphite.dev" in result.output
+        # Graphite enhance should not have been called
+        mock_graphite_enhance.assert_not_called()
