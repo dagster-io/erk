@@ -496,19 +496,15 @@ def test_check_hooks_disabled_no_hooks_key(tmp_path: Path, monkeypatch: pytest.M
 
 
 def test_check_hooks_disabled_invalid_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test when settings file has invalid JSON (should be ignored)."""
+    """Test when settings file has invalid JSON raises error."""
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     claude_dir = tmp_path / ".claude"
     claude_dir.mkdir()
     settings = claude_dir / "settings.json"
     settings.write_text("{invalid json", encoding="utf-8")
 
-    result = check_hooks_disabled()
-
-    # Invalid JSON is silently ignored (checked elsewhere)
-    assert result.name == "claude hooks"
-    assert result.passed is True
-    assert result.warning is False
+    with pytest.raises(json.JSONDecodeError):
+        check_hooks_disabled()
 
 
 # --- CheckResult warning field tests ---

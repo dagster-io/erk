@@ -395,14 +395,11 @@ def check_hooks_disabled() -> CheckResult:
     for settings_path in settings_files:
         if not settings_path.exists():
             continue
-        try:
-            content = settings_path.read_text(encoding="utf-8")
-            settings = json.loads(content)
-            hooks = settings.get("hooks", {})
-            if hooks.get("disabled") is True:
-                disabled_in.append(settings_path.name)
-        except json.JSONDecodeError:
-            pass  # Invalid JSON is checked elsewhere
+        content = settings_path.read_text(encoding="utf-8")
+        settings = json.loads(content)
+        hooks = settings.get("hooks", {})
+        if hooks.get("disabled") is True:
+            disabled_in.append(settings_path.name)
 
     if disabled_in:
         return CheckResult(
