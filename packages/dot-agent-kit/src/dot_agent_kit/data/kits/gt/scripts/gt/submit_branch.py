@@ -53,6 +53,11 @@ def preflight(session_id: str, no_graphite: bool) -> None:
     Returns JSON with PR info and path to temp diff file for AI analysis.
     This is phase 1 of the 2-phase workflow for slash command orchestration.
     """
+    _execute_preflight(session_id, use_graphite=not no_graphite)
+
+
+def _execute_preflight(session_id: str, use_graphite: bool) -> None:
+    """Execute preflight phase with positively-named parameters."""
     try:
         ctx = create_minimal_context(debug=False)
         cwd = Path.cwd()
@@ -85,7 +90,7 @@ def preflight(session_id: str, no_graphite: bool) -> None:
 
         # Phase 3: Graphite enhancement (optional)
         graphite_url: str | None = None
-        if not no_graphite:
+        if use_graphite:
             click.echo("Phase 3: Graphite enhancement...", err=True)
             graphite_result = render_events(
                 execute_graphite_enhance(ctx, cwd, core_result.pr_number)

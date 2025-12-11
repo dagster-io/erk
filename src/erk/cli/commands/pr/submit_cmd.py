@@ -79,6 +79,11 @@ def pr_submit(ctx: ErkContext, debug: bool, no_graphite: bool) -> None:
       # Submit PR without Graphite enhancement
       erk pr submit --no-graphite
     """
+    _execute_pr_submit(ctx, debug=debug, use_graphite=not no_graphite)
+
+
+def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool) -> None:
+    """Execute PR submission with positively-named parameters."""
     # Verify Claude is available (needed for commit message generation)
     if not ctx.claude_executor.is_claude_available():
         raise click.ClickException(
@@ -138,7 +143,7 @@ def pr_submit(ctx: ErkContext, debug: bool, no_graphite: bool) -> None:
 
     # Phase 4: Graphite enhancement (optional)
     graphite_url: str | None = None
-    if not no_graphite:
+    if use_graphite:
         click.echo(click.style("Phase 4: Graphite enhancement", bold=True))
         graphite_result = _run_graphite_enhance(ctx, cwd, core_result.pr_number, debug)
 
