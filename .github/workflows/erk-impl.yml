@@ -171,6 +171,7 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
 
       - name: Submit branch with proper commit message
         id: submit
@@ -208,8 +209,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
           ISSUE_NUMBER: ${{ inputs.issue_number }}
+          PR_NUMBER: ${{ inputs.pr_number }}
         run: |
-          PR_NUMBER=$(gh pr view "$BRANCH_NAME" --json number -q .number)
           pr_summary=$(erk kit exec erk generate-pr-summary --pr-number "$PR_NUMBER")
           pr_metadata=$(erk kit exec erk get-pr-body-footer --pr-number "$PR_NUMBER" --issue-number "$ISSUE_NUMBER" 2>/dev/null || echo "")
           cat > pr_body.md <<BODY_EOF
