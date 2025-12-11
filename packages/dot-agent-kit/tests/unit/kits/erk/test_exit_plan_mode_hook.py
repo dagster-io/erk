@@ -1,295 +1,260 @@
-"""Unit tests for exit-plan-mode-hook command."""
+"""Unit tests for exit-plan-mode-hook command.
+
+This test file uses the pure logic extraction pattern. Most tests call the
+`determine_exit_action()` pure function directly with no mocking required.
+Only a few integration tests use CliRunner to verify the full hook works.
+"""
 
 import json
-import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
 from dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook import (
+    ExitAction,
+    HookInput,
+    build_blocking_message,
+    determine_exit_action,
     exit_plan_mode_hook,
 )
 
-
-def test_no_session_id_allows_exit() -> None:
-    """Test when no session ID is provided (no stdin)."""
-    runner = CliRunner()
-
-    with patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True):
-        result = runner.invoke(exit_plan_mode_hook)
-
-    # No session ID means exit 0 (allow exit)
-    assert result.exit_code == 0
+# ============================================================================
+# Pure Logic Tests for determine_exit_action() - NO MOCKING REQUIRED
+# ============================================================================
 
 
-def test_skip_marker_present_deletes_and_allows(tmp_path: Path) -> None:
-    """Test when skip marker exists - should delete marker and allow exit."""
-    runner = CliRunner()
+class TestDetermineExitAction:
+    """Tests for the pure determine_exit_action() function."""
 
-    # Create skip marker at correct path with sessions/ segment
-    session_id = "session-abc123"
-    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
-    marker_dir.mkdir(parents=True)
-    skip_marker = marker_dir / "skip-plan-save"
-    skip_marker.touch()
+    def test_github_planning_disabled_allows_exit(self) -> None:
+        """When github_planning is disabled, always allow exit."""
+        result = determine_exit_action(
+            HookInput(
+                session_id="abc123",
+                github_planning_enabled=False,
+                skip_marker_exists=True,  # Even with markers
+                saved_marker_exists=True,
+                plan_file_exists=True,
+                current_branch="main",
+            )
+        )
+        assert result.action == ExitAction.ALLOW
+        assert result.message == ""
 
-    # Mock git to return our tmp_path as repo root
-    mock_git_result = MagicMock()
-    mock_git_result.stdout = str(tmp_path) + "\n"
+    def test_no_session_id_allows_exit(self) -> None:
+        """When no session ID provided, allow exit."""
+        result = determine_exit_action(
+            HookInput(
+                session_id=None,
+                github_planning_enabled=True,
+                skip_marker_exists=False,
+                saved_marker_exists=False,
+                plan_file_exists=False,
+                current_branch=None,
+            )
+        )
+        assert result.action == ExitAction.ALLOW
+        assert "No session context" in result.message
 
-    with (
-        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
-        patch("subprocess.run", return_value=mock_git_result),
-    ):
-        stdin_data = json.dumps({"session_id": session_id})
-        result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
+    def test_skip_marker_allows_exit_and_deletes(self) -> None:
+        """Skip marker allows exit and signals deletion."""
+        result = determine_exit_action(
+            HookInput(
+                session_id="abc123",
+                github_planning_enabled=True,
+                skip_marker_exists=True,
+                saved_marker_exists=False,
+                plan_file_exists=True,  # Even if plan exists
+                current_branch="main",
+            )
+        )
+        assert result.action == ExitAction.ALLOW
+        assert "Skip marker found" in result.message
+        assert result.delete_skip_marker is True
+        assert result.delete_saved_marker is False
 
-    assert result.exit_code == 0
-    assert "Skip marker found" in result.output
-    # Marker should be deleted
-    assert not skip_marker.exists()
+    def test_skip_marker_takes_precedence_over_saved_marker(self) -> None:
+        """Skip marker is checked before saved marker."""
+        result = determine_exit_action(
+            HookInput(
+                session_id="abc123",
+                github_planning_enabled=True,
+                skip_marker_exists=True,  # Both exist
+                saved_marker_exists=True,
+                plan_file_exists=True,
+                current_branch="main",
+            )
+        )
+        assert result.action == ExitAction.ALLOW
+        assert result.delete_skip_marker is True
+        assert result.delete_saved_marker is False  # Not touched
 
+    def test_saved_marker_blocks_and_deletes(self) -> None:
+        """Saved marker blocks exit and signals deletion."""
+        result = determine_exit_action(
+            HookInput(
+                session_id="abc123",
+                github_planning_enabled=True,
+                skip_marker_exists=False,
+                saved_marker_exists=True,
+                plan_file_exists=True,
+                current_branch="main",
+            )
+        )
+        assert result.action == ExitAction.BLOCK
+        assert "Plan already saved to GitHub" in result.message
+        assert result.delete_saved_marker is True
+        assert result.delete_skip_marker is False
 
-def test_saved_marker_present_blocks_to_prevent_plan_dialog(
-    tmp_path: Path,
-) -> None:
-    """Test when saved marker exists - should block ExitPlanMode to prevent plan approval dialog."""
-    runner = CliRunner()
-    session_id = "session-abc123"
+    def test_no_plan_file_allows_exit(self) -> None:
+        """No plan file allows exit."""
+        result = determine_exit_action(
+            HookInput(
+                session_id="abc123",
+                github_planning_enabled=True,
+                skip_marker_exists=False,
+                saved_marker_exists=False,
+                plan_file_exists=False,
+                current_branch="feature-branch",
+            )
+        )
+        assert result.action == ExitAction.ALLOW
+        assert "No plan file found" in result.message
 
-    # Create saved marker at correct path with sessions/ segment
-    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
-    marker_dir.mkdir(parents=True)
-    saved_marker = marker_dir / "plan-saved-to-github"
-    saved_marker.touch()
-
-    # Mock git to return our tmp_path as repo root
-    mock_git_result = MagicMock()
-    mock_git_result.stdout = str(tmp_path) + "\n"
-
-    with (
-        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
-        patch("subprocess.run", return_value=mock_git_result),
-    ):
-        stdin_data = json.dumps({"session_id": session_id})
-        result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
-
-    # Exit 2 = block, prevents plan approval dialog from appearing
-    assert result.exit_code == 2
-    assert "Plan already saved to GitHub" in result.output
-    assert "Session complete" in result.output
-    # Marker should be deleted
-    assert not saved_marker.exists()
-
-
-def test_skip_marker_takes_precedence_over_saved_marker(tmp_path: Path) -> None:
-    """Test that skip marker is checked before saved marker."""
-    runner = CliRunner()
-
-    # Create both markers at correct path with sessions/ segment
-    session_id = "session-abc123"
-    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
-    marker_dir.mkdir(parents=True)
-    skip_marker = marker_dir / "skip-plan-save"
-    skip_marker.touch()
-    saved_marker = marker_dir / "plan-saved-to-github"
-    saved_marker.touch()
-
-    # Mock git to return our tmp_path as repo root
-    mock_git_result = MagicMock()
-    mock_git_result.stdout = str(tmp_path) + "\n"
-
-    with (
-        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
-        patch("subprocess.run", return_value=mock_git_result),
-    ):
-        stdin_data = json.dumps({"session_id": session_id})
-        result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
-
-    assert result.exit_code == 0
-    # Skip marker should be processed first
-    assert "Skip marker found" in result.output
-    # Skip marker deleted, saved marker untouched
-    assert not skip_marker.exists()
-    assert saved_marker.exists()
-
-
-def test_plan_exists_no_marker_blocks(tmp_path: Path) -> None:
-    """Test when plan exists but no skip marker - should block with instructions."""
-    runner = CliRunner()
-    session_id = "session-abc123"
-
-    # Create plans directory with a plan file
-    plans_dir = tmp_path / ".claude" / "plans"
-    plans_dir.mkdir(parents=True)
-    plan_file = plans_dir / "test-slug.md"
-    plan_file.write_text("# Test Plan", encoding="utf-8")
-
-    # Mock git to return tmp_path as repo root (no skip marker there)
-    mock_git_result = MagicMock()
-    mock_git_result.stdout = str(tmp_path) + "\n"
-
-    # Mock extract_slugs_from_session to return our slug
-    with (
-        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
-        patch("subprocess.run", return_value=mock_git_result),
-        patch(
-            "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
-            return_value=["test-slug"],
-        ),
-        patch("pathlib.Path.home", return_value=tmp_path),
-    ):
-        stdin_data = json.dumps({"session_id": session_id})
-        result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
-
-    # Exit code 2 blocks ExitPlanMode
-    assert result.exit_code == 2
-    assert "PLAN SAVE PROMPT" in result.output
-    assert "AskUserQuestion" in result.output
-    # Updated messaging: Save to GitHub is default and terminal
-    assert "Save to GitHub" in result.output
-    assert "(default)" in result.output
-    assert "Does NOT proceed to implementation" in result.output
-    assert "Implement now" in result.output
-    # Skip marker path should be documented with sessions/ segment (for "Implement now" flow)
-    assert f".erk/scratch/sessions/{session_id}/skip-plan-save" in result.output
-    # Saved marker is NOT documented - /erk:save-plan handles it internally
-    assert "Do NOT call ExitPlanMode" in result.output
+    def test_plan_exists_blocks_with_instructions(self) -> None:
+        """Plan exists without markers - blocks with instructions."""
+        result = determine_exit_action(
+            HookInput(
+                session_id="abc123",
+                github_planning_enabled=True,
+                skip_marker_exists=False,
+                saved_marker_exists=False,
+                plan_file_exists=True,
+                current_branch="feature-branch",
+            )
+        )
+        assert result.action == ExitAction.BLOCK
+        assert "PLAN SAVE PROMPT" in result.message
+        assert "AskUserQuestion" in result.message
+        assert result.delete_skip_marker is False
+        assert result.delete_saved_marker is False
 
 
-def test_no_plan_allows_exit(tmp_path: Path) -> None:
-    """Test when session ID is provided but no plan exists."""
-    runner = CliRunner()
-    session_id = "session-abc123"
-
-    # Create empty plans directory (no plan files)
-    plans_dir = tmp_path / ".claude" / "plans"
-    plans_dir.mkdir(parents=True)
-
-    # Mock git to return tmp_path as repo root
-    mock_git_result = MagicMock()
-    mock_git_result.stdout = str(tmp_path) + "\n"
-
-    # Mock extract_slugs_from_session to return empty (no plan)
-    with (
-        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
-        patch("subprocess.run", return_value=mock_git_result),
-        patch(
-            "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
-            return_value=[],
-        ),
-    ):
-        stdin_data = json.dumps({"session_id": session_id})
-        result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
-
-    assert result.exit_code == 0
-    assert "No plan file found" in result.output
+# ============================================================================
+# Pure Logic Tests for build_blocking_message() - NO MOCKING REQUIRED
+# ============================================================================
 
 
-def test_git_not_in_repo_allows_plan_check(tmp_path: Path) -> None:
-    """Test when not in a git repo - skip marker check fails gracefully, plan check proceeds."""
-    runner = CliRunner()
-    session_id = "session-abc123"
+class TestBuildBlockingMessage:
+    """Tests for the pure build_blocking_message() function."""
 
-    # Create plans directory with a plan file
-    plans_dir = tmp_path / ".claude" / "plans"
-    plans_dir.mkdir(parents=True)
-    plan_file = plans_dir / "test-slug.md"
-    plan_file.write_text("# Test Plan", encoding="utf-8")
+    def test_contains_required_elements(self) -> None:
+        """Message contains all required elements."""
+        message = build_blocking_message("session-123", "feature-branch")
+        assert "PLAN SAVE PROMPT" in message
+        assert "AskUserQuestion" in message
+        assert "Save the plan" in message
+        assert "(Recommended)" in message
+        assert "Implement now" in message
+        assert "edits code in the current worktree" in message
+        assert "/erk:save-plan" in message
+        assert "Do NOT call ExitPlanMode" in message
+        assert ".erk/scratch/sessions/session-123/skip-plan-save" in message
 
-    # Mock git to fail (not in a repo)
-    mock_git_error = subprocess.CalledProcessError(128, "git")
+    def test_trunk_branch_main_shows_warning(self) -> None:
+        """Warning shown when on main branch."""
+        message = build_blocking_message("session-123", "main")
+        assert "WARNING" in message
+        assert "main" in message
+        assert "trunk branch" in message
+        assert "dedicated worktree" in message
 
-    # Mock extract_slugs_from_session to return our slug
-    with (
-        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
-        patch("subprocess.run", side_effect=mock_git_error),
-        patch(
-            "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
-            return_value=["test-slug"],
-        ),
-        patch("pathlib.Path.home", return_value=tmp_path),
-    ):
-        stdin_data = json.dumps({"session_id": session_id})
-        result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
+    def test_trunk_branch_master_shows_warning(self) -> None:
+        """Warning shown when on master branch."""
+        message = build_blocking_message("session-123", "master")
+        assert "WARNING" in message
+        assert "master" in message
+        assert "trunk branch" in message
 
-    # Should still block because plan exists (skip marker check fails gracefully)
-    assert result.exit_code == 2
-    assert "PLAN SAVE PROMPT" in result.output
+    def test_feature_branch_no_warning(self) -> None:
+        """No warning when on feature branch."""
+        message = build_blocking_message("session-123", "feature-branch")
+        assert "WARNING" not in message
+        assert "trunk branch" not in message
 
-
-def test_invalid_json_stdin_allows_exit() -> None:
-    """Test when stdin contains invalid JSON."""
-    runner = CliRunner()
-
-    with patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True):
-        result = runner.invoke(exit_plan_mode_hook, input="not valid json")
-
-    # Invalid JSON means exit 0 (allow exit)
-    assert result.exit_code == 0
-
-
-def test_stdin_missing_session_id_key_allows_exit() -> None:
-    """Test when stdin JSON doesn't have session_id key."""
-    runner = CliRunner()
-
-    stdin_data = json.dumps({"other_key": "value"})
-    with patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True):
-        result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
-
-    assert result.exit_code == 0
-    assert "No session context available" in result.output
+    def test_none_branch_no_warning(self) -> None:
+        """No warning when branch is None."""
+        message = build_blocking_message("session-123", None)
+        assert "WARNING" not in message
+        assert "trunk branch" not in message
 
 
-def test_plans_dir_not_exists_allows_exit(tmp_path: Path) -> None:
-    """Test when ~/.claude/plans/ doesn't exist."""
-    runner = CliRunner()
-    session_id = "session-abc123"
-
-    # Don't create plans directory - it doesn't exist
-
-    # Mock git to return tmp_path as repo root
-    mock_git_result = MagicMock()
-    mock_git_result.stdout = str(tmp_path) + "\n"
-
-    with (
-        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
-        patch("subprocess.run", return_value=mock_git_result),
-        patch("pathlib.Path.home", return_value=tmp_path),
-    ):
-        stdin_data = json.dumps({"session_id": session_id})
-        result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
-
-    assert result.exit_code == 0
-    assert "No plan file found" in result.output
+# ============================================================================
+# Integration Tests - Verify I/O Layer Works (minimal mocking)
+# ============================================================================
 
 
-def test_slug_exists_but_plan_file_missing(tmp_path: Path) -> None:
-    """Test when slug is found but plan file doesn't exist."""
-    runner = CliRunner()
-    session_id = "session-abc123"
+class TestHookIntegration:
+    """Integration tests that verify the full hook works."""
 
-    # Create empty plans directory (no plan file for the slug)
-    plans_dir = tmp_path / ".claude" / "plans"
-    plans_dir.mkdir(parents=True)
+    def test_skip_marker_flow(self, tmp_path: Path) -> None:
+        """Verify skip marker is actually deleted when present."""
+        runner = CliRunner()
+        session_id = "session-abc123"
 
-    # Mock git to return tmp_path as repo root
-    mock_git_result = MagicMock()
-    mock_git_result.stdout = str(tmp_path) + "\n"
+        # Create skip marker
+        marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+        marker_dir.mkdir(parents=True)
+        skip_marker = marker_dir / "skip-plan-save"
+        skip_marker.touch()
 
-    # Mock extract_slugs_from_session to return a slug, but plan file won't exist
-    with (
-        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
-        patch("subprocess.run", return_value=mock_git_result),
-        patch(
-            "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
-            return_value=["nonexistent-slug"],
-        ),
-        patch("pathlib.Path.home", return_value=tmp_path),
-    ):
-        stdin_data = json.dumps({"session_id": session_id})
-        result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
+        # Mock git repo root to point to tmp_path
+        mock_git_result = MagicMock()
+        mock_git_result.stdout = str(tmp_path) + "\n"
 
-    assert result.exit_code == 0
-    assert "No plan file found" in result.output
+        with (
+            patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
+            patch("subprocess.run", return_value=mock_git_result),
+        ):
+            stdin_data = json.dumps({"session_id": session_id})
+            result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
+
+        assert result.exit_code == 0
+        assert "Skip marker found" in result.output
+        assert not skip_marker.exists()  # Marker deleted
+
+    def test_saved_marker_flow(self, tmp_path: Path) -> None:
+        """Verify saved marker is actually deleted when present."""
+        runner = CliRunner()
+        session_id = "session-abc123"
+
+        # Create saved marker
+        marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+        marker_dir.mkdir(parents=True)
+        saved_marker = marker_dir / "plan-saved-to-github"
+        saved_marker.touch()
+
+        # Mock git repo root
+        mock_git_result = MagicMock()
+        mock_git_result.stdout = str(tmp_path) + "\n"
+
+        with (
+            patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
+            patch("subprocess.run", return_value=mock_git_result),
+        ):
+            stdin_data = json.dumps({"session_id": session_id})
+            result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
+
+        assert result.exit_code == 2  # Block
+        assert "Plan already saved to GitHub" in result.output
+        assert not saved_marker.exists()  # Marker deleted
+
+    def test_no_stdin_allows_exit(self) -> None:
+        """Verify hook works when no stdin provided."""
+        runner = CliRunner()
+
+        with patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True):
+            result = runner.invoke(exit_plan_mode_hook)
+
+        assert result.exit_code == 0

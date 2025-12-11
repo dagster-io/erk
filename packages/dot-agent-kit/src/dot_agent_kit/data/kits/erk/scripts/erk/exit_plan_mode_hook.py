@@ -18,12 +18,149 @@ import os
 import subprocess
 import sys
 import tomllib
+from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 
 import click
 
 from dot_agent_kit.data.kits.erk.session_plan_extractor import extract_slugs_from_session
 from dot_agent_kit.hooks.decorators import project_scoped
+
+# ============================================================================
+# Data Classes for Pure Logic
+# ============================================================================
+
+
+class ExitAction(Enum):
+    """Exit action for the hook."""
+
+    ALLOW = 0  # Exit code 0 - allow ExitPlanMode
+    BLOCK = 2  # Exit code 2 - block ExitPlanMode
+
+
+@dataclass(frozen=True)
+class HookInput:
+    """All inputs needed for decision logic."""
+
+    session_id: str | None
+    github_planning_enabled: bool
+    skip_marker_exists: bool
+    saved_marker_exists: bool
+    plan_file_exists: bool
+    current_branch: str | None
+
+
+@dataclass(frozen=True)
+class HookOutput:
+    """Decision result from pure logic."""
+
+    action: ExitAction
+    message: str
+    delete_skip_marker: bool = False
+    delete_saved_marker: bool = False
+
+
+# ============================================================================
+# Pure Functions (no I/O, fully testable without mocking)
+# ============================================================================
+
+
+def build_blocking_message(session_id: str, current_branch: str | None) -> str:
+    """Build the blocking message with AskUserQuestion instructions.
+
+    Pure function - string building only. Testable without mocking.
+    """
+    lines = [
+        "PLAN SAVE PROMPT",
+        "",
+        "A plan exists for this session but has not been saved.",
+        "",
+        "Use AskUserQuestion to ask the user:",
+        '  "Would you like to save this plan, or implement now?"',
+        "",
+        "Options:",
+        '  - "Save the plan" (Recommended): Save plan as a GitHub issue and stop. '
+        "Does NOT proceed to implementation.",
+        '  - "Implement now": Skip saving, proceed directly to implementation '
+        "(edits code in the current worktree).",
+    ]
+
+    if current_branch in ("master", "main"):
+        lines.extend(
+            [
+                "",
+                f"⚠️  WARNING: Currently on '{current_branch}'. "
+                "We strongly discourage editing directly on the trunk branch. "
+                "Consider saving the plan and implementing in a dedicated worktree instead.",
+            ]
+        )
+
+    lines.extend(
+        [
+            "",
+            "If user chooses 'Save the plan':",
+            "  1. Run /erk:save-plan",
+            "  2. STOP - Do NOT call ExitPlanMode. The save-plan command handles everything.",
+            "     Stay in plan mode and let the user exit manually if desired.",
+            "",
+            "If user chooses 'Implement now':",
+            "  1. Create skip marker:",
+            f"     mkdir -p .erk/scratch/sessions/{session_id} && "
+            f"touch .erk/scratch/sessions/{session_id}/skip-plan-save",
+            "  2. Call ExitPlanMode",
+        ]
+    )
+
+    return "\n".join(lines)
+
+
+def determine_exit_action(hook_input: HookInput) -> HookOutput:
+    """Determine what action to take based on inputs.
+
+    Pure function - all decision logic, no I/O. Testable without mocking!
+    """
+    # Early exit if github_planning is disabled
+    if not hook_input.github_planning_enabled:
+        return HookOutput(ExitAction.ALLOW, "")
+
+    # No session context
+    if hook_input.session_id is None:
+        return HookOutput(ExitAction.ALLOW, "No session context available, allowing exit")
+
+    # Skip marker present (user chose "Implement now")
+    if hook_input.skip_marker_exists:
+        return HookOutput(
+            ExitAction.ALLOW,
+            "Skip marker found, allowing exit",
+            delete_skip_marker=True,
+        )
+
+    # Saved marker present (user chose "Save to GitHub")
+    if hook_input.saved_marker_exists:
+        return HookOutput(
+            ExitAction.BLOCK,
+            "✅ Plan already saved to GitHub. Session complete - no further action needed.",
+            delete_saved_marker=True,
+        )
+
+    # No plan file
+    if not hook_input.plan_file_exists:
+        return HookOutput(
+            ExitAction.ALLOW,
+            "No plan file found for this session, allowing exit",
+        )
+
+    # Plan exists, no skip marker - block and instruct
+    return HookOutput(
+        ExitAction.BLOCK,
+        build_blocking_message(hook_input.session_id, hook_input.current_branch),
+    )
+
+
+# ============================================================================
+# I/O Helper Functions
+# ============================================================================
 
 
 def _is_github_planning_enabled() -> bool:
@@ -136,46 +273,76 @@ def _find_session_plan(session_id: str) -> Path | None:
     return None
 
 
-def _output_blocking_message(session_id: str) -> None:
-    """Output the blocking message with AskUserQuestion instructions.
+def _get_current_branch_within_hook() -> str | None:
+    """Get the current git branch name.
 
-    Args:
-        session_id: The session ID for the skip marker path
+    Returns:
+        Branch name, or None if detached HEAD
     """
-    click.echo("PLAN SAVE PROMPT", err=True)
-    click.echo("", err=True)
-    click.echo("A plan exists for this session but has not been saved to GitHub.", err=True)
-    click.echo("", err=True)
-    click.echo("Use AskUserQuestion to ask the user:", err=True)
-    click.echo('  "Would you like to save this plan to GitHub first, or implement now?"', err=True)
-    click.echo("", err=True)
-    click.echo("Options:", err=True)
-    click.echo(
-        '  - "Save to GitHub" (default): Save plan to GitHub and stop. '
-        "Does NOT proceed to implementation.",
-        err=True,
+    result = subprocess.run(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=True,
     )
-    click.echo(
-        '  - "Implement now": Skip saving, proceed directly to implementation.',
-        err=True,
+    return result.stdout.strip()
+
+
+# ============================================================================
+# Main Hook Entry Point
+# ============================================================================
+
+
+def _gather_inputs() -> HookInput:
+    """Gather all inputs from environment. All I/O happens here."""
+    session_id = _get_session_id_from_stdin()
+
+    # Determine marker existence
+    skip_marker_exists = False
+    saved_marker_exists = False
+    if session_id:
+        skip_marker = _get_skip_marker_path(session_id)
+        skip_marker_exists = skip_marker is not None and skip_marker.exists()
+        saved_marker = _get_saved_marker_path(session_id)
+        saved_marker_exists = saved_marker is not None and saved_marker.exists()
+
+    # Determine plan existence
+    plan_file_exists = False
+    if session_id:
+        plan_file = _find_session_plan(session_id)
+        plan_file_exists = plan_file is not None
+
+    # Get current branch (only if we need to show the blocking message)
+    current_branch = None
+    if session_id and plan_file_exists and not skip_marker_exists and not saved_marker_exists:
+        current_branch = _get_current_branch_within_hook()
+
+    return HookInput(
+        session_id=session_id,
+        github_planning_enabled=_is_github_planning_enabled(),
+        skip_marker_exists=skip_marker_exists,
+        saved_marker_exists=saved_marker_exists,
+        plan_file_exists=plan_file_exists,
+        current_branch=current_branch,
     )
-    click.echo("", err=True)
-    click.echo("If user chooses 'Save to GitHub':", err=True)
-    click.echo("  1. Run /erk:save-plan", err=True)
-    click.echo(
-        "  2. STOP - Do NOT call ExitPlanMode. The save-plan command handles everything.",
-        err=True,
-    )
-    click.echo("     Stay in plan mode and let the user exit manually if desired.", err=True)
-    click.echo("", err=True)
-    click.echo("If user chooses 'Implement now':", err=True)
-    click.echo("  1. Create skip marker:", err=True)
-    click.echo(
-        f"     mkdir -p .erk/scratch/sessions/{session_id} && "
-        f"touch .erk/scratch/sessions/{session_id}/skip-plan-save",
-        err=True,
-    )
-    click.echo("  2. Call ExitPlanMode", err=True)
+
+
+def _execute_result(result: HookOutput, session_id: str | None) -> None:
+    """Execute the decision result. All I/O happens here."""
+    if result.delete_skip_marker and session_id:
+        skip_marker = _get_skip_marker_path(session_id)
+        if skip_marker:
+            skip_marker.unlink()
+
+    if result.delete_saved_marker and session_id:
+        saved_marker = _get_saved_marker_path(session_id)
+        if saved_marker:
+            saved_marker.unlink()
+
+    if result.message:
+        click.echo(result.message, err=True)
+
+    sys.exit(result.action.value)
 
 
 @click.command(name="exit-plan-mode-hook")
@@ -190,41 +357,14 @@ def exit_plan_mode_hook() -> None:
         0: Success - allow exit (no plan, skip marker, or no session)
         2: Block - plan exists, prompt user for action
     """
-    # Early exit if github_planning is disabled
-    if not _is_github_planning_enabled():
-        sys.exit(0)
+    # Gather all inputs (I/O layer)
+    hook_input = _gather_inputs()
 
-    session_id = _get_session_id_from_stdin()
+    # Pure decision logic (no I/O)
+    result = determine_exit_action(hook_input)
 
-    if not session_id:
-        click.echo("No session context available, allowing exit")
-        sys.exit(0)
-
-    # Check for skip marker first (user chose "Implement now")
-    skip_marker = _get_skip_marker_path(session_id)
-    if skip_marker and skip_marker.exists():
-        skip_marker.unlink()  # Delete marker (one-time use)
-        click.echo("Skip marker found, allowing exit")
-        sys.exit(0)
-
-    # Check for saved marker (user chose "Save to GitHub" - terminal action)
-    # Block ExitPlanMode to prevent plan approval dialog from appearing.
-    # The save-plan command already displayed success info.
-    saved_marker = _get_saved_marker_path(session_id)
-    if saved_marker and saved_marker.exists():
-        saved_marker.unlink()  # Delete marker (one-time use)
-        click.echo("✅ Plan already saved to GitHub. Session complete - no further action needed.")
-        sys.exit(2)  # Block to prevent plan approval dialog
-
-    # Check if plan exists for this session
-    plan_file = _find_session_plan(session_id)
-    if not plan_file:
-        click.echo("No plan file found for this session, allowing exit")
-        sys.exit(0)
-
-    # Plan exists, no skip marker - BLOCK and instruct
-    _output_blocking_message(session_id)
-    sys.exit(2)
+    # Execute result (I/O layer)
+    _execute_result(result, hook_input.session_id)
 
 
 if __name__ == "__main__":
