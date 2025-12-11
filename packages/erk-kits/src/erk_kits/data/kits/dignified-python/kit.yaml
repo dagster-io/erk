@@ -1,5 +1,5 @@
 name: dignified-python
-version: 0.2.1
+version: 0.2.2
 description: Version-aware Python coding standards with automatic version detection
 license: See LICENSE.md
 artifacts:

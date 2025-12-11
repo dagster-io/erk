@@ -18,6 +18,8 @@ from erk_dev.commands.create_agents_symlinks.command import (
     create_agents_symlinks_command,
 )
 from erk_dev.commands.publish_to_pypi.command import publish_to_pypi_command
+from erk_dev.commands.release_info.command import release_info_command
+from erk_dev.commands.release_update.command import release_update_command
 from erk_dev.commands.reserve_pypi_name.command import (
     reserve_pypi_name_command,
 )
@@ -40,5 +42,7 @@ cli.add_command(codex_review_command)
 cli.add_command(completion_command)
 cli.add_command(create_agents_symlinks_command)
 cli.add_command(publish_to_pypi_command)
+cli.add_command(release_info_command)
+cli.add_command(release_update_command)
 cli.add_command(reserve_pypi_name_command)
 cli.add_command(slash_command_command)

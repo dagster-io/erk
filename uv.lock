@@ -285,7 +285,7 @@ toml = [
 
 [[package]]
 name = "erk"
-version = "0.2.1"
+version = "0.2.2"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
@@ -348,7 +348,7 @@ dev = [
 
 [[package]]
 name = "erk-dev"
-version = "0.2.1"
+version = "0.2.2"
 source = { editable = "packages/erk-dev" }
 dependencies = [
     { name = "click" },
@@ -364,7 +364,7 @@ source = { editable = "packages/erk-kits" }
 
 [[package]]
 name = "erk-shared"
-version = "0.2.1"
+version = "0.2.2"
 source = { editable = "packages/erk-shared" }
 dependencies = [
     { name = "click" },

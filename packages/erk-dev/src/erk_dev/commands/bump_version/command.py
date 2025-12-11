@@ -1,6 +1,7 @@
 """Bump all package and kit versions to a specified version."""
 
 import re
+from datetime import datetime
 from pathlib import Path
 
 import click
@@ -41,16 +42,20 @@ def find_repo_root(start: Path) -> Path | None:
 
 
 def update_toml_version(path: Path, new_version: str, dry_run: bool) -> tuple[bool, str | None]:
-    """Update version = "X.Y.Z" in TOML file. Returns (success, old_version)."""
-    content = path.read_text(encoding="utf-8")
-    pattern = r'(version\s*=\s*")([^"]+)(")'
+    """Update version = "X.Y.Z" in TOML file. Returns (success, old_version).
 
-    match = re.search(pattern, content)
+    Only matches 'version' at start of line to avoid matching 'target-version' etc.
+    """
+    content = path.read_text(encoding="utf-8")
+    # Use ^ with MULTILINE to match 'version' at start of line only
+    pattern = r'^(version\s*=\s*")([^"]+)(")'
+
+    match = re.search(pattern, content, re.MULTILINE)
     if match is None:
         return False, None
 
     old_version = match.group(2)
-    new_content = re.sub(pattern, rf"\g<1>{new_version}\3", content)
+    new_content = re.sub(pattern, rf"\g<1>{new_version}\3", content, count=1, flags=re.MULTILINE)
 
     if not dry_run:
         path.write_text(new_content, encoding="utf-8")
@@ -111,6 +116,78 @@ def update_kit_registry_md(path: Path, new_version: str, dry_run: bool) -> int:
     if not dry_run:
         path.write_text(new_content, encoding="utf-8")
     return count
+
+
+def update_changelog_header(path: Path, new_version: str, dry_run: bool) -> bool:
+    """Update CHANGELOG.md to move [Unreleased] content to new version section.
+
+    Transforms:
+        ## [Unreleased]
+        <content>
+        ## [X.Y.Z] - YYYY-MM-DD
+
+    Into:
+        ## [Unreleased]
+        ## [NEW_VERSION] - YYYY-MM-DD
+        <content>
+        ## [X.Y.Z] - YYYY-MM-DD
+
+    Returns True if updated, False if changelog not found or no unreleased section.
+    """
+    if not path.exists():
+        return False
+
+    content = path.read_text(encoding="utf-8")
+
+    # Check if [Unreleased] section exists
+    if "## [Unreleased]" not in content:
+        return False
+
+    # Get today's date in YYYY-MM-DD format
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    # Pattern to match [Unreleased] section followed by content until next ## section
+    # This regex captures:
+    # 1. The [Unreleased] header
+    # 2. The content between [Unreleased] and the next version header
+    pattern = r"(## \[Unreleased\])\n(.*?)(## \[\d)"
+
+    match = re.search(pattern, content, re.DOTALL)
+    if match is None:
+        # No version section after [Unreleased], handle edge case
+        # Look for [Unreleased] at end of file
+        simple_pattern = r"(## \[Unreleased\])\n(.*?)$"
+        match = re.search(simple_pattern, content, re.DOTALL)
+        if match is None:
+            return False
+
+        unreleased_content = match.group(2).strip()
+        if not unreleased_content:
+            # No content in unreleased section
+            return False
+
+        # Replace [Unreleased]\n<content> with [Unreleased]\n\n## [VERSION] - DATE\n<content>
+        new_section = f"## [Unreleased]\n\n## [{new_version}] - {today}\n\n{unreleased_content}\n"
+        new_content = re.sub(simple_pattern, new_section, content, flags=re.DOTALL)
+    else:
+        unreleased_content = match.group(2).strip()
+        next_version_start = match.group(3)
+
+        if not unreleased_content:
+            # Empty unreleased section - just add the new version header
+            new_section = f"## [Unreleased]\n\n## [{new_version}] - {today}\n\n{next_version_start}"
+        else:
+            # Move unreleased content under new version header
+            new_section = (
+                f"## [Unreleased]\n\n## [{new_version}] - {today}\n\n"
+                f"{unreleased_content}\n\n{next_version_start}"
+            )
+
+        new_content = re.sub(pattern, new_section, content, flags=re.DOTALL)
+
+    if not dry_run:
+        path.write_text(new_content, encoding="utf-8")
+    return True
 
 
 @click.command("bump-version")
@@ -178,6 +255,18 @@ def bump_version_command(version: str | None, dry_run: bool) -> None:
     if registry.exists():
         count = update_kit_registry_md(registry, version, dry_run)
         click.echo(f"  .erk/kits/kit-registry.md: {count} entries")
+
+    # 5. CHANGELOG.md
+    click.echo("\nChangelog:")
+    changelog = repo_root / "CHANGELOG.md"
+    if changelog.exists():
+        updated = update_changelog_header(changelog, version, dry_run)
+        if updated:
+            click.echo(f"  CHANGELOG.md: [Unreleased] -> [{version}]")
+        else:
+            click.echo("  CHANGELOG.md: no unreleased content")
+    else:
+        click.echo("  CHANGELOG.md: not found")
 
     if dry_run:
         click.echo("\n[DRY RUN] No files modified")

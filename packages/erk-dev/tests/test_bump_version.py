@@ -8,6 +8,7 @@ from erk_dev.commands.bump_version.command import (
     find_repo_root,
     get_current_version,
     increment_patch,
+    update_changelog_header,
     update_dot_agent_toml,
     update_kit_registry_md,
     update_toml_version,
@@ -153,3 +154,65 @@ class TestUpdateKitRegistryMd:
         md_file.write_text("# Kit Registry\n\nNo entries.\n", encoding="utf-8")
         count = update_kit_registry_md(md_file, "2.0.0", dry_run=False)
         assert count == 0
+
+
+class TestUpdateChangelogHeader:
+    """Tests for update_changelog_header function."""
+
+    def test_moves_unreleased_to_versioned(self, tmp_path: Path) -> None:
+        changelog = tmp_path / "CHANGELOG.md"
+        content = (
+            "# Changelog\n\n## [Unreleased]\n\n"
+            "### Added\n- New feature\n\n## [1.0.0] - 2025-01-01\n"
+        )
+        changelog.write_text(content, encoding="utf-8")
+        result = update_changelog_header(changelog, "1.1.0", dry_run=False)
+        assert result is True
+        content = changelog.read_text(encoding="utf-8")
+        # New version section should be added
+        assert "## [1.1.0] -" in content
+        # Content should be under new version
+        assert "### Added\n- New feature" in content
+        # Unreleased should now be empty (just header)
+        assert "## [Unreleased]\n\n## [1.1.0]" in content
+
+    def test_preserves_unreleased_header(self, tmp_path: Path) -> None:
+        changelog = tmp_path / "CHANGELOG.md"
+        changelog.write_text(
+            "# Changelog\n\n## [Unreleased]\n\n- Feature X\n\n## [1.0.0] - 2025-01-01\n",
+            encoding="utf-8",
+        )
+        update_changelog_header(changelog, "1.1.0", dry_run=False)
+        content = changelog.read_text(encoding="utf-8")
+        # [Unreleased] section should still exist
+        assert "## [Unreleased]" in content
+
+    def test_returns_false_when_no_unreleased(self, tmp_path: Path) -> None:
+        changelog = tmp_path / "CHANGELOG.md"
+        changelog.write_text("# Changelog\n\n## [1.0.0] - 2025-01-01\n", encoding="utf-8")
+        result = update_changelog_header(changelog, "1.1.0", dry_run=False)
+        assert result is False
+
+    def test_returns_false_when_file_not_exists(self, tmp_path: Path) -> None:
+        changelog = tmp_path / "CHANGELOG.md"
+        result = update_changelog_header(changelog, "1.1.0", dry_run=False)
+        assert result is False
+
+    def test_dry_run_does_not_modify(self, tmp_path: Path) -> None:
+        changelog = tmp_path / "CHANGELOG.md"
+        original = "# Changelog\n\n## [Unreleased]\n\n- Feature X\n\n## [1.0.0] - 2025-01-01\n"
+        changelog.write_text(original, encoding="utf-8")
+        result = update_changelog_header(changelog, "1.1.0", dry_run=True)
+        assert result is True
+        assert changelog.read_text(encoding="utf-8") == original
+
+    def test_handles_empty_unreleased_section(self, tmp_path: Path) -> None:
+        changelog = tmp_path / "CHANGELOG.md"
+        changelog.write_text(
+            "# Changelog\n\n## [Unreleased]\n\n## [1.0.0] - 2025-01-01\n", encoding="utf-8"
+        )
+        result = update_changelog_header(changelog, "1.1.0", dry_run=False)
+        assert result is True
+        content = changelog.read_text(encoding="utf-8")
+        # Empty unreleased should still create new version header
+        assert "## [1.1.0] -" in content

@@ -3,7 +3,7 @@ version = "1"
 [kits.devrun]
 kit_id = "devrun"
 source_type = "bundled"
-version = "0.2.1"
+version = "0.2.2"
 artifacts = [
     ".claude/agents/devrun/devrun.md",
     ".claude/docs/devrun/tools/gt.md",
@@ -25,7 +25,7 @@ timeout = 30
 [kits.fake-driven-testing]
 kit_id = "fake-driven-testing"
 source_type = "bundled"
-version = "0.2.1"
+version = "0.2.2"
 artifacts = [
     ".claude/skills/fake-driven-testing/SKILL.md",
 ]
@@ -41,7 +41,7 @@ timeout = 30
 [kits.dignified-python]
 kit_id = "dignified-python"
 source_type = "bundled"
-version = "0.2.1"
+version = "0.2.2"
 artifacts = [
     ".claude/skills/dignified-python-310/SKILL.md",
     ".claude/skills/dignified-python-311/SKILL.md",
@@ -70,7 +70,7 @@ timeout = 30
 [kits.erk]
 kit_id = "erk"
 source_type = "bundled"
-version = "0.2.1"
+version = "0.2.2"
 artifacts = [
     ".claude/commands/erk/plan-implement.md",
     ".claude/commands/erk/merge-conflicts-fix.md",
@@ -124,7 +124,7 @@ timeout = 30
 [kits.gt]
 kit_id = "gt"
 source_type = "bundled"
-version = "0.2.1"
+version = "0.2.2"
 artifacts = [
     ".claude/commands/gt/pr-submit.md",
     ".claude/skills/gt-graphite/SKILL.md",

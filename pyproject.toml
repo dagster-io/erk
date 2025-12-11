@@ -8,7 +8,7 @@ erk-shared = { workspace = true }
 
 [project]
 name = "erk"
-version = "0.2.1"
+version = "0.2.2"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -53,6 +53,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/erk"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"CHANGELOG.md" = "erk/data/CHANGELOG.md"
 
 [tool.ruff]
 target-version = "py311"
