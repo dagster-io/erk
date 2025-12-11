@@ -171,26 +171,20 @@ def test_trunk_branch_shows_warning(tmp_path: Path) -> None:
     plan_file = plans_dir / "test-slug.md"
     plan_file.write_text("# Test Plan", encoding="utf-8")
 
-    # Mock git to return tmp_path as repo root AND "main" as current branch
-    def mock_subprocess_run(
-        cmd: list[str],
-        capture_output: bool = False,  # noqa: FBT001, FBT002
-        text: bool = False,  # noqa: FBT001, FBT002
-        check: bool = False,  # noqa: FBT001, FBT002
-    ) -> MagicMock:
-        result = MagicMock()
-        if cmd == ["git", "rev-parse", "--show-toplevel"]:
-            result.stdout = str(tmp_path) + "\n"
-        elif cmd == ["git", "rev-parse", "--abbrev-ref", "HEAD"]:
-            result.stdout = "main\n"
-        return result
+    # Mock git to return tmp_path as repo root
+    mock_git_result = MagicMock()
+    mock_git_result.stdout = str(tmp_path) + "\n"
 
     with (
         patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
-        patch("subprocess.run", side_effect=mock_subprocess_run),
+        patch("subprocess.run", return_value=mock_git_result),
         patch(
             "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
             return_value=["test-slug"],
+        ),
+        patch(
+            "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook._get_current_branch_within_hook",
+            return_value="main",
         ),
         patch("pathlib.Path.home", return_value=tmp_path),
     ):
@@ -216,26 +210,20 @@ def test_feature_branch_no_warning(tmp_path: Path) -> None:
     plan_file = plans_dir / "test-slug.md"
     plan_file.write_text("# Test Plan", encoding="utf-8")
 
-    # Mock git to return tmp_path as repo root AND "feature-branch" as current branch
-    def mock_subprocess_run(
-        cmd: list[str],
-        capture_output: bool = False,  # noqa: FBT001, FBT002
-        text: bool = False,  # noqa: FBT001, FBT002
-        check: bool = False,  # noqa: FBT001, FBT002
-    ) -> MagicMock:
-        result = MagicMock()
-        if cmd == ["git", "rev-parse", "--show-toplevel"]:
-            result.stdout = str(tmp_path) + "\n"
-        elif cmd == ["git", "rev-parse", "--abbrev-ref", "HEAD"]:
-            result.stdout = "feature-branch\n"
-        return result
+    # Mock git to return tmp_path as repo root
+    mock_git_result = MagicMock()
+    mock_git_result.stdout = str(tmp_path) + "\n"
 
     with (
         patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
-        patch("subprocess.run", side_effect=mock_subprocess_run),
+        patch("subprocess.run", return_value=mock_git_result),
         patch(
             "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
             return_value=["test-slug"],
+        ),
+        patch(
+            "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook._get_current_branch_within_hook",
+            return_value="feature-branch",
         ),
         patch("pathlib.Path.home", return_value=tmp_path),
     ):
@@ -298,6 +286,10 @@ def test_git_not_in_repo_allows_plan_check(tmp_path: Path) -> None:
         patch(
             "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
             return_value=["test-slug"],
+        ),
+        patch(
+            "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook._get_current_branch_within_hook",
+            return_value="feature-branch",
         ),
         patch("pathlib.Path.home", return_value=tmp_path),
     ):

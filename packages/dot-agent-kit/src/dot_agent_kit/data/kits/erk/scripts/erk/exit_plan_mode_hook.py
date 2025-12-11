@@ -136,22 +136,19 @@ def _find_session_plan(session_id: str) -> Path | None:
     return None
 
 
-def _get_current_branch() -> str | None:
+def _get_current_branch_within_hook() -> str | None:
     """Get the current git branch name.
 
     Returns:
-        Branch name, or None if not in a git repo or detached HEAD
+        Branch name, or None if detached HEAD
     """
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        return result.stdout.strip()
-    except subprocess.CalledProcessError:
-        return None
+    result = subprocess.run(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout.strip()
 
 
 def _output_blocking_message(session_id: str) -> None:
@@ -160,7 +157,7 @@ def _output_blocking_message(session_id: str) -> None:
     Args:
         session_id: The session ID for the skip marker path
     """
-    current_branch = _get_current_branch()
+    current_branch = _get_current_branch_within_hook()
     is_on_trunk = current_branch in ("master", "main")
 
     click.echo("PLAN SAVE PROMPT", err=True)
