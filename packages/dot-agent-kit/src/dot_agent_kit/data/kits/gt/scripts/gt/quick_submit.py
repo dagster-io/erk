@@ -86,7 +86,7 @@ def quick_submit() -> None:
 
     # Run gt submit
     submit_result = subprocess.run(
-        ["gt", "submit"],
+        ["gt", "submit", "--no-edit", "--no-interactive"],
         cwd=cwd,
         capture_output=True,
         text=True,
