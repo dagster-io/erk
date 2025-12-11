@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from unittest.mock import patch
 
 from click.testing import CliRunner
-from erk_shared.integrations.time.fake import FakeTime
+from erk_shared.gateways.time.fake import FakeTime
 
 from erk.cli.cli import cli
 from erk.core.context import context_for_test

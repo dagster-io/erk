@@ -3,8 +3,8 @@ import subprocess
 from pathlib import Path
 
 import click
+from erk_shared.gateways.graphite.abc import Graphite
 from erk_shared.git.abc import Git
-from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.output.output import user_output
 
 from erk.cli.commands.completions import complete_worktree_names

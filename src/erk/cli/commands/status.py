@@ -1,7 +1,7 @@
 """Status command implementation."""
 
 import click
-from erk_shared.integrations.parallel.real import RealParallelTaskRunner
+from erk_shared.gateways.parallel.real import RealParallelTaskRunner
 
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure

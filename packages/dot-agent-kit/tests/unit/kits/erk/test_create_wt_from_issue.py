@@ -5,13 +5,13 @@ Tests worktree creation from GitHub issues with erk-plan label using fakes.
 
 from pathlib import Path
 
-from erk_shared.github.metadata import MetadataBlock, render_metadata_block
-from erk_shared.integrations.erk_wt import (
+from erk_shared.gateways.erk_wt import (
     FakeErkWtKit,
     IssueData,
     IssueParseResult,
     WorktreeCreationResult,
 )
+from erk_shared.github.metadata import MetadataBlock, render_metadata_block
 
 from dot_agent_kit.data.kits.erk.scripts.erk.create_wt_from_issue import (
     WorktreeCreationSuccess,

@@ -4,7 +4,7 @@ import logging
 from collections.abc import Callable
 from pathlib import Path
 
-from erk_shared.integrations.parallel.abc import ParallelTaskRunner
+from erk_shared.gateways.parallel.abc import ParallelTaskRunner
 
 from erk.core.context import ErkContext
 from erk.status.collectors.base import StatusCollector

@@ -1,12 +1,12 @@
 """Command to validate PR rules for the current branch."""
 
 import click
-from erk_shared.github.types import PRNotFound
-from erk_shared.impl_folder import read_issue_reference
-from erk_shared.integrations.pr.submit import (
+from erk_shared.gateways.pr.submit import (
     has_checkout_footer_for_pr,
     has_issue_closing_reference,
 )
+from erk_shared.github.types import PRNotFound
+from erk_shared.impl_folder import read_issue_reference
 from erk_shared.output.output import user_output
 
 from erk.cli.ensure import Ensure
@@ -35,8 +35,7 @@ def pr_check(ctx: ErkContext) -> None:
     pr = ctx.github.get_pr_for_branch(repo_root, branch)
     if isinstance(pr, PRNotFound):
         user_output(
-            click.style("Error: ", fg="red")
-            + f"No pull request found for branch '{branch}'"
+            click.style("Error: ", fg="red") + f"No pull request found for branch '{branch}'"
         )
         raise SystemExit(1)
 

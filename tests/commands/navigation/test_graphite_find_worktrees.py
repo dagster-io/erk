@@ -2,10 +2,10 @@
 
 from pathlib import Path
 
+from erk_shared.gateways.graphite.real import RealGraphite
 from erk_shared.git.abc import WorktreeInfo, find_worktree_for_branch
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.integrations.graphite.real import RealGraphite
 
 from erk.cli.graphite import find_worktrees_containing_branch
 from erk.core.config_store import GlobalConfig

@@ -2,7 +2,7 @@
 
 Testing Generator-Based Operations
 ----------------------------------
-Operations in erk_shared.integrations.gt.operations yield ProgressEvent and
+Operations in erk_shared.gateways.gt.operations yield ProgressEvent and
 CompletionEvent objects. To test them:
 
 1. Use render_events() to consume the generator and get the final result:
@@ -23,18 +23,18 @@ from unittest.mock import Mock, patch
 
 import pytest
 from click.testing import CliRunner
-from erk_shared.github.pr_footer import build_pr_body_footer
-from erk_shared.integrations.gt.cli import render_events
-from erk_shared.integrations.gt.operations.finalize import execute_finalize
-from erk_shared.integrations.gt.operations.pre_analysis import execute_pre_analysis
-from erk_shared.integrations.gt.operations.preflight import execute_preflight
-from erk_shared.integrations.gt.types import (
+from erk_shared.gateways.gt.cli import render_events
+from erk_shared.gateways.gt.operations.finalize import execute_finalize
+from erk_shared.gateways.gt.operations.pre_analysis import execute_pre_analysis
+from erk_shared.gateways.gt.operations.preflight import execute_preflight
+from erk_shared.gateways.gt.types import (
     FinalizeResult,
     PostAnalysisError,
     PreAnalysisError,
     PreAnalysisResult,
     PreflightResult,
 )
+from erk_shared.github.pr_footer import build_pr_body_footer
 
 from tests.unit.kits.gt.fake_ops import FakeGtKitOps
 
@@ -399,7 +399,7 @@ class TestPreAnalysisExecution:
 class TestExecutePreflight:
     """Tests for execute_preflight() function."""
 
-    @patch("erk_shared.integrations.gt.operations.preflight.time.sleep")
+    @patch("erk_shared.gateways.gt.operations.preflight.time.sleep")
     def test_preflight_success(self, mock_sleep: Mock, tmp_path: Path) -> None:
         """Test successful preflight execution."""
         ops = (
@@ -443,7 +443,7 @@ class TestExecutePreflight:
         assert isinstance(result, PreAnalysisError)
         assert result.error_type == "gt_not_authenticated"
 
-    @patch("erk_shared.integrations.gt.operations.preflight.time.sleep")
+    @patch("erk_shared.gateways.gt.operations.preflight.time.sleep")
     def test_preflight_submit_error(self, mock_sleep: Mock, tmp_path: Path) -> None:
         """Test preflight returns error when submit fails."""
         ops = (

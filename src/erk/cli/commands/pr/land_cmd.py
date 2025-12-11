@@ -20,10 +20,10 @@ from pathlib import Path
 
 import click
 from erk_shared.extraction.raw_extraction import create_raw_extraction_plan
-from erk_shared.integrations.gt.cli import render_events
-from erk_shared.integrations.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
-from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
-from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
+from erk_shared.gateways.gt.cli import render_events
+from erk_shared.gateways.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
+from erk_shared.gateways.gt.operations.land_pr import execute_land_pr
+from erk_shared.gateways.gt.types import LandPrError, LandPrSuccess
 from erk_shared.output.output import user_output
 
 from erk.cli.commands.navigation_helpers import (

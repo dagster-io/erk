@@ -17,13 +17,13 @@ import uuid
 from pathlib import Path
 
 import click
-from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
-from erk_shared.integrations.gt.operations.finalize import execute_finalize
-from erk_shared.integrations.gt.types import FinalizeResult, PostAnalysisError
-from erk_shared.integrations.pr.diff_extraction import execute_diff_extraction
-from erk_shared.integrations.pr.graphite_enhance import execute_graphite_enhance
-from erk_shared.integrations.pr.submit import execute_core_submit
-from erk_shared.integrations.pr.types import (
+from erk_shared.gateways.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.gateways.gt.operations.finalize import execute_finalize
+from erk_shared.gateways.gt.types import FinalizeResult, PostAnalysisError
+from erk_shared.gateways.pr.diff_extraction import execute_diff_extraction
+from erk_shared.gateways.pr.graphite_enhance import execute_graphite_enhance
+from erk_shared.gateways.pr.submit import execute_core_submit
+from erk_shared.gateways.pr.types import (
     CoreSubmitError,
     CoreSubmitResult,
     GraphiteEnhanceError,
