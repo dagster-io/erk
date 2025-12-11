@@ -12,6 +12,7 @@ This layer works independently of Graphite and can be enhanced with
 gt submit afterward via graphite_enhance.py.
 """
 
+import re
 from collections.abc import Generator
 from pathlib import Path
 
@@ -26,9 +27,8 @@ from erk_shared.integrations.pr.types import CoreSubmitError, CoreSubmitResult
 def has_body_footer(body: str) -> bool:
     """Check if PR body already contains a footer section.
 
-    Currently checks for the 'erk pr checkout' marker that is included in the
-    standard PR footer. This function can evolve to handle multiple footer
-    formats or custom markers as needed.
+    Checks for the 'erk pr checkout' marker that is included in the
+    standard PR footer.
 
     Args:
         body: The PR body text to check
@@ -37,6 +37,38 @@ def has_body_footer(body: str) -> bool:
         True if the body already contains a footer section
     """
     return "erk pr checkout" in body
+
+
+def has_checkout_footer_for_pr(body: str, pr_number: int) -> bool:
+    """Check if PR body contains checkout footer for a specific PR number.
+
+    Used to validate that a PR's body contains the correct checkout command.
+    This is more strict than has_body_footer() as it validates the PR number.
+
+    Args:
+        body: The PR body text to check
+        pr_number: The PR number to validate against
+
+    Returns:
+        True if the body contains 'erk pr checkout <pr_number>'
+    """
+    return bool(re.search(rf"erk pr checkout {pr_number}\b", body))
+
+
+def has_issue_closing_reference(body: str, issue_number: int) -> bool:
+    """Check if PR body contains a closing reference for a specific issue.
+
+    Checks for patterns like "Closes #123" (case-insensitive) that GitHub
+    recognizes as issue closing keywords.
+
+    Args:
+        body: The PR body text to check
+        issue_number: The issue number to validate against
+
+    Returns:
+        True if the body contains 'Closes #<issue_number>'
+    """
+    return bool(re.search(rf"Closes\s+#{issue_number}\b", body, re.IGNORECASE))
 
 
 def execute_core_submit(

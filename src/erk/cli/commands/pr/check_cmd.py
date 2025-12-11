@@ -1,10 +1,12 @@
 """Command to validate PR rules for the current branch."""
 
-import re
-
 import click
 from erk_shared.github.types import PRNotFound
 from erk_shared.impl_folder import read_issue_reference
+from erk_shared.integrations.pr.submit import (
+    has_checkout_footer_for_pr,
+    has_issue_closing_reference,
+)
 from erk_shared.output.output import user_output
 
 from erk.cli.ensure import Ensure
@@ -55,24 +57,17 @@ def pr_check(ctx: ErkContext) -> None:
     issue_ref = read_issue_reference(impl_dir)
 
     if issue_ref is not None:
-        # Check for "Closes #N" pattern
         expected_issue_number = issue_ref.issue_number
-        closing_pattern = rf"Closes\s+#{expected_issue_number}\b"
-        has_closing_ref = bool(re.search(closing_pattern, pr_body, re.IGNORECASE))
-
-        if has_closing_ref:
+        if has_issue_closing_reference(pr_body, expected_issue_number):
             msg = f"PR body contains issue closing reference (Closes #{expected_issue_number})"
             checks.append((True, msg))
         else:
-            issue_num = expected_issue_number
-            msg = f"PR body missing issue closing reference (expected: Closes #{issue_num})"
+            expected = f"Closes #{expected_issue_number}"
+            msg = f"PR body missing issue closing reference (expected: {expected})"
             checks.append((False, msg))
 
     # Check 2: Checkout footer
-    footer_pattern = rf"erk pr checkout {pr_number}\b"
-    has_footer = bool(re.search(footer_pattern, pr_body))
-
-    if has_footer:
+    if has_checkout_footer_for_pr(pr_body, pr_number):
         checks.append((True, "PR body contains checkout footer"))
     else:
         checks.append((False, "PR body missing checkout footer"))

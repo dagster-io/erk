@@ -130,7 +130,7 @@ class TestExecuteGraphiteEnhance:
         result = completion[0].result
         assert isinstance(result, GraphiteEnhanceResult)
         assert result.success is True
-        assert "graphite.com" in result.graphite_url
+        assert result.graphite_url.startswith("https://app.graphite.com/")
 
         # Verify submit_stack was called
         assert len(graphite._submit_stack_calls) == 1
