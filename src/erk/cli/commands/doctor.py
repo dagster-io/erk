@@ -12,10 +12,12 @@ from erk.core.health_checks import CheckResult, run_all_checks
 
 def _format_check_result(result: CheckResult) -> None:
     """Format and display a single check result."""
-    if result.passed:
-        icon = click.style("✅", fg="green")
-    else:
+    if not result.passed:
         icon = click.style("❌", fg="red")
+    elif result.warning:
+        icon = click.style("⚠️", fg="yellow")
+    else:
+        icon = click.style("✅", fg="green")
 
     click.echo(f"{icon} {result.message}")
 
@@ -53,7 +55,13 @@ def doctor_cmd(ctx: ErkContext) -> None:
     # Group results by category
     cli_tool_names = {"erk", "claude", "graphite", "github", "uv", "dot-agent"}
     health_check_names = {"dot-agent health"}
-    repo_check_names = {"repository", "claude settings", "gitignore", "claude erk permission"}
+    repo_check_names = {
+        "repository",
+        "claude settings",
+        "gitignore",
+        "claude erk permission",
+        "claude hooks",
+    }
     github_check_names = {"github auth", "workflow permissions"}
 
     cli_checks = [r for r in results if r.name in cli_tool_names]
