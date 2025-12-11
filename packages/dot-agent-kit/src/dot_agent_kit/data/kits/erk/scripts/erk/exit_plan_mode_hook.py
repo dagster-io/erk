@@ -136,31 +136,63 @@ def _find_session_plan(session_id: str) -> Path | None:
     return None
 
 
+def _get_current_branch() -> str | None:
+    """Get the current git branch name.
+
+    Returns:
+        Branch name, or None if not in a git repo or detached HEAD
+    """
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError:
+        return None
+
+
 def _output_blocking_message(session_id: str) -> None:
     """Output the blocking message with AskUserQuestion instructions.
 
     Args:
         session_id: The session ID for the skip marker path
     """
+    current_branch = _get_current_branch()
+    is_on_trunk = current_branch in ("master", "main")
+
     click.echo("PLAN SAVE PROMPT", err=True)
     click.echo("", err=True)
-    click.echo("A plan exists for this session but has not been saved to GitHub.", err=True)
+    click.echo("A plan exists for this session but has not been saved.", err=True)
     click.echo("", err=True)
     click.echo("Use AskUserQuestion to ask the user:", err=True)
-    click.echo('  "Would you like to save this plan to GitHub first, or implement now?"', err=True)
+    click.echo('  "Would you like to save this plan, or implement now?"', err=True)
     click.echo("", err=True)
     click.echo("Options:", err=True)
     click.echo(
-        '  - "Save to GitHub" (default): Save plan to GitHub and stop. '
+        '  - "Save the plan" (Recommended): Save plan as a GitHub issue and stop. '
         "Does NOT proceed to implementation.",
         err=True,
     )
     click.echo(
-        '  - "Implement now": Skip saving, proceed directly to implementation.',
+        '  - "Implement now": Skip saving, proceed directly to implementation '
+        "(edits code in the current worktree).",
         err=True,
     )
+
+    if is_on_trunk:
+        click.echo("", err=True)
+        click.echo(
+            f"⚠️  WARNING: Currently on '{current_branch}'. "
+            "We strongly discourage editing directly on the trunk branch. "
+            "Consider saving the plan and implementing in a dedicated worktree instead.",
+            err=True,
+        )
+
     click.echo("", err=True)
-    click.echo("If user chooses 'Save to GitHub':", err=True)
+    click.echo("If user chooses 'Save the plan':", err=True)
     click.echo("  1. Run /erk:save-plan", err=True)
     click.echo(
         "  2. STOP - Do NOT call ExitPlanMode. The save-plan command handles everything.",
