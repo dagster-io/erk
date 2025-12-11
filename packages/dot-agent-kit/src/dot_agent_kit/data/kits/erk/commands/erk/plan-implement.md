@@ -110,7 +110,7 @@ After CI passes:
 gh pr create --fill --label "ai-generated" || gh pr edit --add-label "ai-generated"
 ```
 
-### Step 12: Validate PR Rules
+Then validate PR rules:
 
 ```bash
 erk pr check
@@ -118,7 +118,7 @@ erk pr check
 
 If checks fail, display output and warn user.
 
-### Step 13: Output Format
+### Step 12: Output Format
 
 - **Start**: "Executing implementation plan from .impl/plan.md"
 - **Each phase**: "Phase X: [brief description]" with code changes
