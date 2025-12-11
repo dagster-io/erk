@@ -23,10 +23,10 @@ def pr_check(ctx: ErkContext) -> None:
     2. Has the standard checkout command footer
     """
     # Get current branch
-    branch = ctx.git.get_current_branch(ctx.cwd)
-    if branch is None:
-        user_output(click.style("Error: ", fg="red") + "Not on a branch (detached HEAD)")
-        raise SystemExit(1)
+    branch = Ensure.not_none(
+        ctx.git.get_current_branch(ctx.cwd),
+        "Not on a branch (detached HEAD)",
+    )
 
     # Get repo root for GitHub operations
     repo_root = ctx.git.get_repository_root(ctx.cwd)
@@ -35,7 +35,8 @@ def pr_check(ctx: ErkContext) -> None:
     pr = ctx.github.get_pr_for_branch(repo_root, branch)
     if isinstance(pr, PRNotFound):
         user_output(
-            click.style("Error: ", fg="red") + f"No pull request found for branch '{branch}'"
+            click.style("Error: ", fg="red")
+            + f"No pull request found for branch '{branch}'"
         )
         raise SystemExit(1)
 
