@@ -50,7 +50,7 @@ build-backend = "hatchling.build"
 packages = ["src/erk"]
 
 [tool.ruff]
-target-version = "0.2.1"
+target-version = "py311"
 line-length = 100
 src = ["src"]
 # exclude = [".claude/skills/"]
