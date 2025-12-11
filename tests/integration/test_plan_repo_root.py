@@ -75,7 +75,7 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
         captured_filters = None
 
         class MockApp:
-            def __init__(self, provider, filters, refresh_interval):
+            def __init__(self, provider, filters, refresh_interval, initial_sort=None):
                 nonlocal captured_provider, captured_filters
                 captured_provider = provider
                 captured_filters = filters

@@ -905,9 +905,7 @@ class ErkDashApp(App):
 
         # If sorting by activity, also fetch activity data
         if self._sort_state.key == SortKey.BRANCH_ACTIVITY:
-            activity = await loop.run_in_executor(
-                None, self._provider.fetch_branch_activity, rows
-            )
+            activity = await loop.run_in_executor(None, self._provider.fetch_branch_activity, rows)
             self._activity_by_issue = activity
 
         # Calculate duration

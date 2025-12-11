@@ -104,9 +104,7 @@ class PlanDataProvider(ABC):
         ...
 
     @abstractmethod
-    def fetch_branch_activity(
-        self, rows: list[PlanRowData]
-    ) -> dict[int, BranchActivity]:
+    def fetch_branch_activity(self, rows: list[PlanRowData]) -> dict[int, BranchActivity]:
         """Fetch branch activity for plans that exist locally.
 
         Examines commits on each local branch (not in trunk) to determine
@@ -279,9 +277,7 @@ class RealPlanDataProvider(PlanDataProvider):
             capture_output=True,
         )
 
-    def fetch_branch_activity(
-        self, rows: list[PlanRowData]
-    ) -> dict[int, BranchActivity]:
+    def fetch_branch_activity(self, rows: list[PlanRowData]) -> dict[int, BranchActivity]:
         """Fetch branch activity for plans that exist locally.
 
         Args:
