@@ -881,16 +881,18 @@ query {{
         if not node_ids:
             return {}
 
-        # Use parameterized query with variable passed via -f flag
+        # Use parameterized query with array elements passed individually
+        # CRITICAL: gh api graphql requires arrays to be passed as -f key[]=val1 -f key[]=val2
+        # Using -f key=json.dumps([...]) passes the array as a literal string, not an array
         cmd = [
             "gh",
             "api",
             "graphql",
             "-f",
             f"query={GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY}",
-            "-f",
-            f"nodeIds={json.dumps(node_ids)}",
         ]
+        for node_id in node_ids:
+            cmd.extend(["-f", f"nodeIds[]={node_id}"])
         stdout = execute_gh_command(cmd, repo_root)
         response = json.loads(stdout)
 
@@ -1019,6 +1021,11 @@ query {{
         effective_limit = limit if limit is not None else 30
 
         # Build command with parameterized query and variables
+        # IMPORTANT: gh api graphql requires special syntax for arrays and objects:
+        # - Arrays: use key[]=value1 -f key[]=value2 (NOT -F key=["value1"])
+        # - Objects: use key[subkey]=value (NOT -F key={"subkey": "value"})
+        # - Strings: use -f key=value
+        # - Integers: use -F key=123
         cmd = [
             "gh",
             "api",
@@ -1029,17 +1036,21 @@ query {{
             f"owner={repo_id.owner}",
             "-f",
             f"repo={repo_id.repo}",
-            "-f",
-            f"labels={json.dumps(labels)}",
-            "-f",
-            f"states={json.dumps(states)}",
             "-F",
             f"first={effective_limit}",
         ]
 
-        # Add filterBy if creator specified (pass as JSON object)
+        # Add labels array using gh's array syntax: labels[]=value
+        for label in labels:
+            cmd.extend(["-f", f"labels[]={label}"])
+
+        # Add states array using gh's array syntax: states[]=value
+        for state_val in states:
+            cmd.extend(["-f", f"states[]={state_val}"])
+
+        # Add filterBy if creator specified using gh's object syntax: filterBy[createdBy]=value
         if creator is not None:
-            cmd.extend(["-f", f"filterBy={json.dumps({'createdBy': creator})}"])
+            cmd.extend(["-f", f"filterBy[createdBy]={creator}"])
 
         stdout = execute_gh_command(cmd, location.root)
         response = json.loads(stdout)
