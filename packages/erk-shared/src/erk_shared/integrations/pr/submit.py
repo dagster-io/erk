@@ -15,16 +15,32 @@ gt submit afterward via graphite_enhance.py.
 from collections.abc import Generator
 from pathlib import Path
 
+from erk_shared.context.context import ErkContext
 from erk_shared.github.pr_footer import build_pr_body_footer
 from erk_shared.github.types import PRNotFound
 from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
-from erk_shared.integrations.pr.abc import PrKit
 from erk_shared.integrations.pr.types import CoreSubmitError, CoreSubmitResult
 
 
+def has_body_footer(body: str) -> bool:
+    """Check if PR body already contains a footer section.
+
+    Currently checks for the 'erk pr checkout' marker that is included in the
+    standard PR footer. This function can evolve to handle multiple footer
+    formats or custom markers as needed.
+
+    Args:
+        body: The PR body text to check
+
+    Returns:
+        True if the body already contains a footer section
+    """
+    return "erk pr checkout" in body
+
+
 def execute_core_submit(
-    ops: PrKit,
+    ctx: ErkContext,
     cwd: Path,
     pr_title: str,
     pr_body: str,
@@ -37,7 +53,7 @@ def execute_core_submit(
     stack metadata afterward.
 
     Args:
-        ops: PrKit interface providing git and github operations
+        ctx: ErkContext providing git and github operations
         cwd: Working directory (must be in a git repository)
         pr_title: Title for the PR (first line of commit message)
         pr_body: Body for the PR (remaining commit message lines)
@@ -48,7 +64,7 @@ def execute_core_submit(
     """
     # Step 1: Check GitHub authentication
     yield ProgressEvent("Checking GitHub authentication...")
-    is_gh_authed, gh_username, _ = ops.github.check_auth_status()
+    is_gh_authed, gh_username, _ = ctx.github.check_auth_status()
     if not is_gh_authed:
         yield CompletionEvent(
             CoreSubmitError(
@@ -62,8 +78,8 @@ def execute_core_submit(
     yield ProgressEvent(f"Authenticated as {gh_username}", style="success")
 
     # Step 2: Get repository root and current branch
-    repo_root = ops.git.get_repository_root(cwd)
-    branch_name = ops.git.get_current_branch(cwd)
+    repo_root = ctx.git.get_repository_root(cwd)
+    branch_name = ctx.git.get_current_branch(cwd)
     if branch_name is None:
         yield CompletionEvent(
             CoreSubmitError(
@@ -77,15 +93,15 @@ def execute_core_submit(
     yield ProgressEvent(f"On branch: {branch_name}")
 
     # Step 3: Check for uncommitted changes and commit if present
-    if ops.git.has_uncommitted_changes(cwd):
+    if ctx.git.has_uncommitted_changes(cwd):
         yield ProgressEvent("Found uncommitted changes, staging and committing...")
-        ops.git.add_all(cwd)
-        ops.git.commit(cwd, "WIP: Prepare for PR submission")
+        ctx.git.add_all(cwd)
+        ctx.git.commit(cwd, "WIP: Prepare for PR submission")
         yield ProgressEvent("Created WIP commit", style="success")
 
     # Step 4: Verify there are commits to push
-    trunk_branch = ops.git.detect_trunk_branch(repo_root)
-    commit_count = ops.git.count_commits_ahead(cwd, trunk_branch)
+    trunk_branch = ctx.git.detect_trunk_branch(repo_root)
+    commit_count = ctx.git.count_commits_ahead(cwd, trunk_branch)
     if commit_count == 0:
         yield CompletionEvent(
             CoreSubmitError(
@@ -109,12 +125,12 @@ def execute_core_submit(
 
     # Step 6: Push branch to remote
     yield ProgressEvent("Pushing branch to origin...")
-    ops.git.push_to_remote(cwd, "origin", branch_name, set_upstream=True)
+    ctx.git.push_to_remote(cwd, "origin", branch_name, set_upstream=True)
     yield ProgressEvent("Branch pushed to origin", style="success")
 
     # Step 7: Check for existing PR
     yield ProgressEvent("Checking for existing PR...")
-    existing_pr = ops.github.get_pr_for_branch(repo_root, branch_name)
+    existing_pr = ctx.github.get_pr_for_branch(repo_root, branch_name)
 
     if isinstance(existing_pr, PRNotFound):
         # Create new PR
@@ -127,7 +143,7 @@ def execute_core_submit(
         )
         full_body = pr_body + footer
 
-        pr_number = ops.github.create_pr(
+        pr_number = ctx.github.create_pr(
             repo_root,
             branch=branch_name,
             title=pr_title,
@@ -136,7 +152,7 @@ def execute_core_submit(
         )
 
         # Get PR URL
-        pr_details = ops.github.get_pr(repo_root, pr_number)
+        pr_details = ctx.github.get_pr(repo_root, pr_number)
         if isinstance(pr_details, PRNotFound):
             # This shouldn't happen but handle gracefully
             pr_url = f"https://github.com/{branch_name}/pull/{pr_number}"
@@ -149,7 +165,7 @@ def execute_core_submit(
             issue_number=issue_number,
         )
         updated_body = pr_body + updated_footer
-        ops.github.update_pr_body(repo_root, pr_number, updated_body)
+        ctx.github.update_pr_body(repo_root, pr_number, updated_body)
 
         yield ProgressEvent(f"Created PR #{pr_number}", style="success")
         yield CompletionEvent(
@@ -175,14 +191,14 @@ def execute_core_submit(
             issue_number=issue_number,
         )
         # Get current body and update if needed
-        current_body = ops.github.get_pr_body(repo_root, pr_number)
+        current_body = ctx.github.get_pr_body(repo_root, pr_number)
         if current_body is None:
             current_body = ""
 
-        # Check if footer already present (by looking for checkout command)
-        if "erk pr checkout" not in current_body:
+        # Check if footer already present
+        if not has_body_footer(current_body):
             updated_body = current_body + footer
-            ops.github.update_pr_body(repo_root, pr_number, updated_body)
+            ctx.github.update_pr_body(repo_root, pr_number, updated_body)
             yield ProgressEvent("Updated PR footer", style="success")
 
         yield ProgressEvent(f"Updated existing PR #{pr_number}", style="success")

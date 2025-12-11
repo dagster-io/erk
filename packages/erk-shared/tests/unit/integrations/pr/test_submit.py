@@ -4,31 +4,16 @@ Tests the execute_core_submit() function which handles git push + gh pr create
 without requiring Graphite.
 """
 
-from dataclasses import dataclass
 from pathlib import Path
 
-from erk_shared.git.abc import Git
+from erk_shared.context.testing import context_for_test
 from erk_shared.git.fake import FakeGit
-from erk_shared.github.abc import GitHub
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo
-from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.integrations.pr.submit import execute_core_submit
 from erk_shared.integrations.pr.types import CoreSubmitError, CoreSubmitResult
-
-
-@dataclass
-class FakePrKit:
-    """Fake PrKit implementation for testing.
-
-    This satisfies the PrKit Protocol using concrete Fake implementations.
-    """
-
-    git: Git
-    github: GitHub
-    graphite: Graphite
 
 
 class TestExecuteCoreSubmit:
@@ -42,9 +27,9 @@ class TestExecuteCoreSubmit:
         )
         github = FakeGitHub(authenticated=False)
         graphite = FakeGraphite()
-        ops = FakePrKit(git=git, github=github, graphite=graphite)
+        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        events = list(execute_core_submit(ops, tmp_path, "Title", "Body"))
+        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body"))
 
         # Find the completion event
         completion = [e for e in events if isinstance(e, CompletionEvent)]
@@ -62,9 +47,9 @@ class TestExecuteCoreSubmit:
         )
         github = FakeGitHub(authenticated=True)
         graphite = FakeGraphite()
-        ops = FakePrKit(git=git, github=github, graphite=graphite)
+        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        events = list(execute_core_submit(ops, tmp_path, "Title", "Body"))
+        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body"))
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
         assert len(completion) == 1
@@ -82,9 +67,9 @@ class TestExecuteCoreSubmit:
         )
         github = FakeGitHub(authenticated=True)
         graphite = FakeGraphite()
-        ops = FakePrKit(git=git, github=github, graphite=graphite)
+        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        events = list(execute_core_submit(ops, tmp_path, "Title", "Body"))
+        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body"))
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
         assert len(completion) == 1
@@ -103,9 +88,9 @@ class TestExecuteCoreSubmit:
         )
         github = FakeGitHub(authenticated=True)
         graphite = FakeGraphite()
-        ops = FakePrKit(git=git, github=github, graphite=graphite)
+        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        events = list(execute_core_submit(ops, tmp_path, "Title", "Body"))
+        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body"))
 
         # Find progress events
         progress_events = [e for e in events if isinstance(e, ProgressEvent)]
@@ -177,9 +162,9 @@ class TestExecuteCoreSubmit:
         )
 
         graphite = FakeGraphite()
-        ops = FakePrKit(git=git, github=github, graphite=graphite)
+        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        events = list(execute_core_submit(ops, tmp_path, "New Title", "New Body"))
+        events = list(execute_core_submit(ctx, tmp_path, "New Title", "New Body"))
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
         assert len(completion) == 1
@@ -204,9 +189,9 @@ class TestExecuteCoreSubmit:
         )
         github = FakeGitHub(authenticated=True)
         graphite = FakeGraphite()
-        ops = FakePrKit(git=git, github=github, graphite=graphite)
+        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        list(execute_core_submit(ops, tmp_path, "Title", "Body"))
+        list(execute_core_submit(ctx, tmp_path, "Title", "Body"))
 
         # Should have committed WIP changes
         assert len(git._commits) == 1
@@ -238,9 +223,9 @@ class TestExecuteCoreSubmit:
         )
         github = FakeGitHub(authenticated=True)
         graphite = FakeGraphite()
-        ops = FakePrKit(git=git, github=github, graphite=graphite)
+        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        events = list(execute_core_submit(ops, tmp_path, "Title", "Body"))
+        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body"))
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
         result = completion[0].result
@@ -262,9 +247,9 @@ class TestExecuteCoreSubmit:
         )
         github = FakeGitHub(authenticated=True)
         graphite = FakeGraphite()
-        ops = FakePrKit(git=git, github=github, graphite=graphite)
+        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        events = list(execute_core_submit(ops, tmp_path, "Title", "Body"))
+        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body"))
 
         progress_events = [e for e in events if isinstance(e, ProgressEvent)]
         # Should have multiple progress events for each step
