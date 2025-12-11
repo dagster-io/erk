@@ -35,8 +35,7 @@ def pr_check(ctx: ErkContext) -> None:
     pr = ctx.github.get_pr_for_branch(repo_root, branch)
     if isinstance(pr, PRNotFound):
         user_output(
-            click.style("Error: ", fg="red")
-            + f"No pull request found for branch '{branch}'"
+            click.style("Error: ", fg="red") + f"No pull request found for branch '{branch}'"
         )
         raise SystemExit(1)
 

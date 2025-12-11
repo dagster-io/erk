@@ -54,7 +54,7 @@ def doctor_cmd(ctx: ErkContext) -> None:
 
     # Group results by category
     cli_tool_names = {"erk", "claude", "graphite", "github", "uv", "dot-agent"}
-    health_check_names = {"dot-agent health"}
+    health_check_names = {"dot-agent health", "orphaned artifacts"}
     repo_check_names = {
         "repository",
         "claude settings",

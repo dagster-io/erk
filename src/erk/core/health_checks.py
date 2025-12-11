@@ -417,6 +417,55 @@ def check_hooks_disabled() -> CheckResult:
     )
 
 
+def check_orphaned_artifacts(repo_root: Path) -> CheckResult:
+    """Check for orphaned artifacts in .claude/ directory.
+
+    Detects directories that appear kit-related but the kit isn't installed.
+    This is a warning-level check - orphaned files don't break anything.
+
+    Args:
+        repo_root: Path to the repository root
+
+    Returns:
+        CheckResult with warning if orphaned artifacts found
+    """
+    from dot_agent_kit.io.state import load_project_config
+    from dot_agent_kit.operations.orphan_detection import detect_orphaned_artifacts
+
+    claude_dir = repo_root / ".claude"
+    if not claude_dir.exists():
+        return CheckResult(
+            name="orphaned artifacts",
+            passed=True,
+            message="No .claude/ directory",
+        )
+
+    config = load_project_config(repo_root)
+    result = detect_orphaned_artifacts(repo_root, config)
+
+    if not result.orphaned_directories:
+        return CheckResult(
+            name="orphaned artifacts",
+            passed=True,
+            message="No orphaned artifacts found",
+        )
+
+    # Build details listing orphaned paths
+    details_lines: list[str] = []
+    for orphan in result.orphaned_directories:
+        details_lines.append(f"{orphan.path}/ ({orphan.reason})")
+    details_lines.append("")
+    details_lines.append("Run 'rm -r <path>' to clean up orphaned directories")
+
+    return CheckResult(
+        name="orphaned artifacts",
+        passed=True,  # Warning only - doesn't fail the check
+        warning=True,
+        message=f"Found {len(result.orphaned_directories)} orphaned artifact(s)",
+        details="\n".join(details_lines),
+    )
+
+
 def check_docs_agent(repo_root: Path) -> CheckResult:
     """Check if docs/agent/ templates exist and are valid.
 
@@ -705,6 +754,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         results.append(check_claude_settings(repo_root))
         results.append(check_gitignore_entries(repo_root))
         results.append(check_docs_agent(repo_root))
+        results.append(check_orphaned_artifacts(repo_root))
         # GitHub workflow permissions check (requires repo context)
         results.append(check_workflow_permissions(ctx, repo_root))
 

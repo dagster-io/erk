@@ -535,3 +535,82 @@ def test_check_result_warning_defaults_false() -> None:
     )
 
     assert result.warning is False
+
+
+# --- Orphaned Artifacts Tests ---
+
+
+def test_check_orphaned_artifacts_no_claude_dir(tmp_path: Path) -> None:
+    """Test orphaned artifacts check when .claude/ doesn't exist."""
+    from erk.core.health_checks import check_orphaned_artifacts
+
+    result = check_orphaned_artifacts(tmp_path)
+
+    assert result.name == "orphaned artifacts"
+    assert result.passed is True
+    assert result.warning is False
+    assert "No .claude/ directory" in result.message
+
+
+def test_check_orphaned_artifacts_none_found(tmp_path: Path) -> None:
+    """Test orphaned artifacts check when no orphans exist."""
+    from erk.core.health_checks import check_orphaned_artifacts
+
+    # Create empty .claude directory
+    (tmp_path / ".claude").mkdir()
+
+    result = check_orphaned_artifacts(tmp_path)
+
+    assert result.name == "orphaned artifacts"
+    assert result.passed is True
+    assert result.warning is False
+    assert "No orphaned artifacts found" in result.message
+
+
+def test_check_orphaned_artifacts_found(tmp_path: Path) -> None:
+    """Test orphaned artifacts check when orphans are found."""
+    from erk.core.health_checks import check_orphaned_artifacts
+
+    # Create orphaned artifact directory (no kits.toml means all are orphaned)
+    (tmp_path / ".claude" / "commands" / "old-kit").mkdir(parents=True)
+
+    result = check_orphaned_artifacts(tmp_path)
+
+    assert result.name == "orphaned artifacts"
+    assert result.passed is True  # Warning only, doesn't fail
+    assert result.warning is True
+    assert "1 orphaned artifact(s)" in result.message
+    assert result.details is not None
+    assert ".claude/commands/old-kit/" in result.details
+    assert "rm -r" in result.details
+
+
+def test_check_orphaned_artifacts_multiple_found(tmp_path: Path) -> None:
+    """Test orphaned artifacts check when multiple orphans are found."""
+    from erk.core.health_checks import check_orphaned_artifacts
+
+    # Create multiple orphaned artifact directories
+    (tmp_path / ".claude" / "commands" / "old-kit").mkdir(parents=True)
+    (tmp_path / ".claude" / "agents" / "removed-kit").mkdir(parents=True)
+
+    result = check_orphaned_artifacts(tmp_path)
+
+    assert result.name == "orphaned artifacts"
+    assert result.passed is True
+    assert result.warning is True
+    assert "2 orphaned artifact(s)" in result.message
+
+
+def test_check_orphaned_artifacts_local_not_orphaned(tmp_path: Path) -> None:
+    """Test that .claude/commands/local/ is not considered orphaned."""
+    from erk.core.health_checks import check_orphaned_artifacts
+
+    # Create local directory (reserved, should be skipped)
+    (tmp_path / ".claude" / "commands" / "local").mkdir(parents=True)
+
+    result = check_orphaned_artifacts(tmp_path)
+
+    assert result.name == "orphaned artifacts"
+    assert result.passed is True
+    assert result.warning is False
+    assert "No orphaned artifacts found" in result.message
