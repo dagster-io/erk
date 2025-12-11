@@ -8,12 +8,13 @@ from erk_shared.objectives.turn import (
 )
 from erk_shared.output.output import user_output
 
+from erk.cli.commands.completions import complete_objective_names
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 
 
 @click.command("turn")
-@click.argument("name", type=str)
+@click.argument("name", type=str, shell_complete=complete_objective_names)
 @click.option(
     "--prompt-only",
     is_flag=True,

@@ -3,12 +3,13 @@
 import click
 from erk_shared.output.output import user_output
 
+from erk.cli.commands.completions import complete_objective_names
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 
 
 @click.command("get")
-@click.argument("name", type=str)
+@click.argument("name", type=str, shell_complete=complete_objective_names)
 @click.pass_obj
 def get_objective(ctx: ErkContext, name: str) -> None:
     """Display details for a specific objective.
