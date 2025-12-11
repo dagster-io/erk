@@ -164,6 +164,7 @@ class PreAnalysisResult:
     has_conflicts: bool = False
     conflict_details: dict[str, str] | None = None
     commit_messages: list[str] | None = None  # Full commit messages for AI context
+    issue_number: int | None = None  # Issue number if linked via .impl/issue.json
 
 
 @dataclass

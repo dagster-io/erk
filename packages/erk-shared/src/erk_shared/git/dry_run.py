@@ -285,6 +285,10 @@ class DryRunGit(Git):
         """No-op for setting git config in dry-run mode."""
         pass
 
+    def get_head_commit_message_full(self, cwd: Path) -> str:
+        """Get full commit message (read-only, delegates to wrapped)."""
+        return self._wrapped.get_head_commit_message_full(cwd)
+
     def get_git_user_name(self, cwd: Path) -> str | None:
         """Get git user.name (read-only, delegates to wrapped)."""
         return self._wrapped.get_git_user_name(cwd)
