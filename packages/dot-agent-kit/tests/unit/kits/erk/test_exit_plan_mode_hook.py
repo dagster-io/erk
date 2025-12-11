@@ -147,15 +147,105 @@ def test_plan_exists_no_marker_blocks(tmp_path: Path) -> None:
     assert result.exit_code == 2
     assert "PLAN SAVE PROMPT" in result.output
     assert "AskUserQuestion" in result.output
-    # Updated messaging: Save to GitHub is default and terminal
-    assert "Save to GitHub" in result.output
-    assert "(default)" in result.output
+    # Updated messaging: Save the plan is recommended and terminal
+    assert "Save the plan" in result.output
+    assert "(Recommended)" in result.output
     assert "Does NOT proceed to implementation" in result.output
     assert "Implement now" in result.output
+    # Clarification about worktree editing
+    assert "edits code in the current worktree" in result.output
     # Skip marker path should be documented with sessions/ segment (for "Implement now" flow)
     assert f".erk/scratch/sessions/{session_id}/skip-plan-save" in result.output
     # Saved marker is NOT documented - /erk:save-plan handles it internally
     assert "Do NOT call ExitPlanMode" in result.output
+
+
+def test_trunk_branch_shows_warning(tmp_path: Path) -> None:
+    """Test that warning is shown when on master/main branch."""
+    runner = CliRunner()
+    session_id = "session-abc123"
+
+    # Create plans directory with a plan file
+    plans_dir = tmp_path / ".claude" / "plans"
+    plans_dir.mkdir(parents=True)
+    plan_file = plans_dir / "test-slug.md"
+    plan_file.write_text("# Test Plan", encoding="utf-8")
+
+    # Mock git to return tmp_path as repo root AND "main" as current branch
+    def mock_subprocess_run(
+        cmd: list[str],
+        capture_output: bool = False,  # noqa: FBT001, FBT002
+        text: bool = False,  # noqa: FBT001, FBT002
+        check: bool = False,  # noqa: FBT001, FBT002
+    ) -> MagicMock:
+        result = MagicMock()
+        if cmd == ["git", "rev-parse", "--show-toplevel"]:
+            result.stdout = str(tmp_path) + "\n"
+        elif cmd == ["git", "rev-parse", "--abbrev-ref", "HEAD"]:
+            result.stdout = "main\n"
+        return result
+
+    with (
+        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
+        patch("subprocess.run", side_effect=mock_subprocess_run),
+        patch(
+            "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
+            return_value=["test-slug"],
+        ),
+        patch("pathlib.Path.home", return_value=tmp_path),
+    ):
+        stdin_data = json.dumps({"session_id": session_id})
+        result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
+
+    assert result.exit_code == 2
+    # Check warning about trunk branch
+    assert "WARNING" in result.output
+    assert "main" in result.output
+    assert "trunk branch" in result.output
+    assert "dedicated worktree" in result.output
+
+
+def test_feature_branch_no_warning(tmp_path: Path) -> None:
+    """Test that no warning is shown when on a feature branch."""
+    runner = CliRunner()
+    session_id = "session-abc123"
+
+    # Create plans directory with a plan file
+    plans_dir = tmp_path / ".claude" / "plans"
+    plans_dir.mkdir(parents=True)
+    plan_file = plans_dir / "test-slug.md"
+    plan_file.write_text("# Test Plan", encoding="utf-8")
+
+    # Mock git to return tmp_path as repo root AND "feature-branch" as current branch
+    def mock_subprocess_run(
+        cmd: list[str],
+        capture_output: bool = False,  # noqa: FBT001, FBT002
+        text: bool = False,  # noqa: FBT001, FBT002
+        check: bool = False,  # noqa: FBT001, FBT002
+    ) -> MagicMock:
+        result = MagicMock()
+        if cmd == ["git", "rev-parse", "--show-toplevel"]:
+            result.stdout = str(tmp_path) + "\n"
+        elif cmd == ["git", "rev-parse", "--abbrev-ref", "HEAD"]:
+            result.stdout = "feature-branch\n"
+        return result
+
+    with (
+        patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True),
+        patch("subprocess.run", side_effect=mock_subprocess_run),
+        patch(
+            "dot_agent_kit.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
+            return_value=["test-slug"],
+        ),
+        patch("pathlib.Path.home", return_value=tmp_path),
+    ):
+        stdin_data = json.dumps({"session_id": session_id})
+        result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
+
+    assert result.exit_code == 2
+    # No warning about trunk branch on feature branches
+    assert "WARNING" not in result.output
+    assert "trunk branch" not in result.output
 
 
 def test_no_plan_allows_exit(tmp_path: Path) -> None:
