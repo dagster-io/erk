@@ -488,9 +488,7 @@ class TestPreAnalysisIssueLinking:
         assert "Closes #123" in message
         assert "Implement feature" in message
 
-    def test_does_not_duplicate_closes_tag_if_already_present(
-        self, tmp_path: Path
-    ) -> None:
+    def test_does_not_duplicate_closes_tag_if_already_present(self, tmp_path: Path) -> None:
         """Pre-analysis should not add duplicate Closes #N if already in commit message."""
         import json
 

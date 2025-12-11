@@ -266,6 +266,7 @@ class RestackPreflightError:
     error_type: RestackPreflightErrorType
     message: str
     details: dict[str, str]
+    conflicts: list[str] = ()  # File paths with conflicts
 
 
 RestackContinueErrorType = Literal["stage_failed", "continue_failed"]
