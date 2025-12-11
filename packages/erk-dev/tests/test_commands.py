@@ -39,11 +39,20 @@ def test_create_agents_symlinks_help() -> None:
     assert "Create CLAUDE.md reference" in result.output
 
 
+def test_bump_version_help() -> None:
+    """Test bump-version help output."""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["bump-version", "--help"])
+    assert result.exit_code == 0
+    assert "Bump all package and kit versions" in result.output
+
+
 def test_cli_help_shows_commands() -> None:
     """Test that CLI help shows available commands."""
     runner = CliRunner()
     result = runner.invoke(cli, ["--help"])
     assert result.exit_code == 0
+    assert "bump-version" in result.output
     assert "clean-cache" in result.output
     assert "completion" in result.output
     assert "publish-to-pypi" in result.output
