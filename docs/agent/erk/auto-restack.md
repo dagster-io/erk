@@ -5,6 +5,9 @@ read_when:
   - "dealing with rebase conflicts in Graphite stacks"
   - "automating conflict resolution"
   - "understanding when to use auto-restack vs manual gt restack"
+tripwires:
+  - action: "running gt sync or gt repo sync on user's behalf"
+    warning: "NEVER run 'gt sync' or 'gt repo sync' automatically. This command synchronizes all Graphite branches with GitHub and can delete branches, modify stack relationships, and make irreversible changes. The user must run this command explicitly."
 ---
 
 # Auto-Restack Command Usage

@@ -43,6 +43,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before writing `__all__` to a Python file** → Read [Code Conventions](conventions.md) first. Re-export modules are forbidden. Import directly from where code is defined.
 
+**CRITICAL: Before running gt sync or gt repo sync on user's behalf** → Read [Auto-Restack Command Usage](erk/auto-restack.md) first. NEVER run 'gt sync' or 'gt repo sync' automatically. This command synchronizes all Graphite branches with GitHub and can delete branches, modify stack relationships, and make irreversible changes. The user must run this command explicitly.
+
 **CRITICAL: Before using Path.cwd() in kit CLI commands** → Read [Kit CLI Dependency Injection Patterns](kits/dependency-injection.md) first. Use require_cwd(ctx) instead. Path.cwd() bypasses dependency injection and makes tests require monkeypatching.
 
 **CRITICAL: Before creating symlinks in bundled kit source directories** → Read [Kit Artifact and Symlink Management](kits/dev/artifact-management.md) first. Bundled kits should contain real files, NOT symlinks. The installation process creates symlinks FROM .claude/ TO kit sources.
