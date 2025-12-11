@@ -31,65 +31,6 @@ class _SubmitResult(NamedTuple):
     error: RuntimeError | None = None
 
 
-def _run_gt_submit_with_progress(
-    ops: GtKit,
-    repo_root: Path,
-    progress_callback: Generator,
-) -> _SubmitResult:
-    """Run gt submit with descriptive progress markers.
-
-    Displays periodic progress updates during the submit operation.
-    This function should only be called after a separate restack phase.
-
-    Args:
-        ops: GtKit operations interface
-        repo_root: Repository root directory
-        progress_callback: Generator to yield progress events to
-
-    Returns:
-        _SubmitResult with success status and optional error
-    """
-    start_time = time.time()
-    result_holder: list[_SubmitResult] = []
-
-    # Run submit in background thread
-    def run_submit():
-        try:
-            ops.graphite.submit_stack(repo_root, publish=True, restack=False, quiet=False)
-            result_holder.append(_SubmitResult(success=True))
-        except RuntimeError as e:
-            result_holder.append(_SubmitResult(success=False, error=e))
-
-    thread = threading.Thread(target=run_submit, daemon=True)
-    thread.start()
-
-    # Progress markers: (threshold_seconds, description)
-    progress_markers = [
-        (10, "Pushing to remote"),
-        (20, "Creating PR"),
-        (30, "Finalizing"),
-    ]
-
-    marker_idx = 0
-
-    # Monitor progress and show markers
-    while thread.is_alive():
-        elapsed = time.time() - start_time
-
-        # Show next marker if threshold reached
-        if marker_idx < len(progress_markers):
-            threshold, description = progress_markers[marker_idx]
-            if elapsed >= threshold:
-                # Note: We can't yield from inside this function as it's not a generator
-                # The progress markers will be shown in the main function
-                marker_idx += 1
-
-        # Check every second
-        thread.join(timeout=1.0)
-
-    return result_holder[0] if result_holder else _SubmitResult(success=False)
-
-
 def _execute_submit_only(
     ops: GtKit,
     cwd: Path,
