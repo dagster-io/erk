@@ -146,7 +146,7 @@ Use AskUserQuestion to ask the user:
 
 ## Project-Scoped Hooks
 
-Hooks can be decorated with `@project_scoped` to silently skip execution when not in a managed project (one with `.erk/dot-agent.toml`).
+Hooks can be decorated with `@project_scoped` to silently skip execution when not in a managed project (one with `.erk/kits.toml`).
 
 ### Why Use Project-Scoped Hooks?
 
@@ -169,11 +169,11 @@ def my_reminder_hook() -> None:
 
 **Behavior**:
 
-| Scenario                              | Behavior                        |
-| ------------------------------------- | ------------------------------- |
-| In repo with `.erk/dot-agent.toml`    | Hook fires normally             |
-| In repo without `.erk/dot-agent.toml` | Hook exits silently (no output) |
-| Not in git repo                       | Hook exits silently             |
+| Scenario                         | Behavior                        |
+| -------------------------------- | ------------------------------- |
+| In repo with `.erk/kits.toml`    | Hook fires normally             |
+| In repo without `.erk/kits.toml` | Hook exits silently (no output) |
+| Not in git repo                  | Hook exits silently             |
 
 ### Current Project-Scoped Hooks
 
@@ -212,7 +212,7 @@ def is_in_managed_project() -> bool:
 
     Returns True if:
     1. Current directory is inside a git repository
-    2. Repository root contains .erk/dot-agent.toml
+    2. Repository root contains .erk/kits.toml
 
     Returns False otherwise (fails silently, no exceptions).
     """
