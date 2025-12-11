@@ -348,9 +348,9 @@ def _build_plans_table(
     table.add_column("title", no_wrap=True)
     table.add_column("pr", no_wrap=True)
     table.add_column("chks", no_wrap=True)
-    table.add_column("local-wt", no_wrap=True)
-    table.add_column("activity", no_wrap=True)
-    table.add_column("local-impl", no_wrap=True)
+    table.add_column("lcl-wt", no_wrap=True)
+    table.add_column("lcl-actvty", no_wrap=True)
+    table.add_column("lcl-impl", no_wrap=True)
     if runs:
         table.add_column("remote-impl", no_wrap=True)
         table.add_column("run-id", no_wrap=True)
