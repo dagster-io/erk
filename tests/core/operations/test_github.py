@@ -169,26 +169,21 @@ def test_build_issue_pr_linkage_query_structure() -> None:
     # Note: labels field appears in issues query, not PR source
 
 
-def test_build_issues_with_pr_linkages_query_structure() -> None:
+def test_issues_with_pr_linkages_query_structure() -> None:
     """Test that issues with PR linkages query uses timeline events."""
-    ops = RealGitHub(FakeTime())
+    from erk_shared.github.graphql_queries import GET_ISSUES_WITH_PR_LINKAGES_QUERY
 
-    query = ops._build_issues_with_pr_linkages_query(
-        GitHubRepoId("test-owner", "test-repo"),
-        labels=["erk-plan"],
-        state="open",
-        limit=50,
-    )
+    query = GET_ISSUES_WITH_PR_LINKAGES_QUERY
 
     # Validate basic GraphQL syntax
-    assert "query {" in query
-    assert 'repository(owner: "test-owner", name: "test-repo")' in query
+    assert "query(" in query
+    assert "repository(owner: $owner, name: $repo)" in query
 
-    # Validate issues query
+    # Validate issues query (parameterized version uses variables)
     assert "issues(" in query
-    assert 'labels: ["erk-plan"]' in query
-    assert "states: [OPEN]" in query
-    assert "first: 50" in query
+    assert "labels: $labels" in query
+    assert "states: $states" in query
+    assert "first: $first" in query
 
     # Validate issue fields
     assert "number" in query

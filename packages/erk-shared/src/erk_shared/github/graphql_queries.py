@@ -50,3 +50,104 @@ ADD_REVIEW_THREAD_REPLY_MUTATION = """mutation($threadId: ID!, $body: String!) {
     }
   }
 }"""
+
+# Fragment for PR linkage data on CrossReferencedEvent
+# Used by _build_issue_pr_linkage_query for batch issue queries
+ISSUE_PR_LINKAGE_FRAGMENT = """fragment IssuePRLinkageFields on CrossReferencedEvent {
+  willCloseTarget
+  source {
+    ... on PullRequest {
+      number
+      state
+      url
+      isDraft
+      createdAt
+      statusCheckRollup {
+        state
+        contexts(last: 1) {
+          totalCount
+          checkRunCountsByState { state count }
+          statusContextCountsByState { state count }
+        }
+      }
+      mergeable
+    }
+  }
+}"""
+
+# Parameterized query for workflow runs by node IDs
+# Uses the nodes(ids: [...]) interface for efficient batch fetching
+GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY = """query($nodeIds: [ID!]!) {
+  nodes(ids: $nodeIds) {
+    ... on WorkflowRun {
+      id
+      databaseId
+      url
+      createdAt
+      checkSuite {
+        status
+        conclusion
+        commit { oid }
+      }
+    }
+  }
+}"""
+
+# Parameterized query for issues with PR linkages
+# Note: filterBy is optional - pass null if not filtering by creator
+GET_ISSUES_WITH_PR_LINKAGES_QUERY = """query(
+  $owner: String!
+  $repo: String!
+  $labels: [String!]!
+  $states: [IssueState!]!
+  $first: Int!
+  $filterBy: IssueFilters
+) {
+  repository(owner: $owner, name: $repo) {
+    issues(
+      labels: $labels
+      states: $states
+      filterBy: $filterBy
+      first: $first
+      orderBy: {field: UPDATED_AT, direction: DESC}
+    ) {
+      nodes {
+        number
+        title
+        body
+        state
+        url
+        author { login }
+        labels(first: 100) { nodes { name } }
+        assignees(first: 100) { nodes { login } }
+        createdAt
+        updatedAt
+        timelineItems(itemTypes: [CROSS_REFERENCED_EVENT], first: 20) {
+          nodes {
+            ... on CrossReferencedEvent {
+              willCloseTarget
+              source {
+                ... on PullRequest {
+                  number
+                  state
+                  url
+                  isDraft
+                  createdAt
+                  statusCheckRollup {
+                    state
+                    contexts(last: 1) {
+                      totalCount
+                      checkRunCountsByState { state count }
+                      statusContextCountsByState { state count }
+                    }
+                  }
+                  mergeable
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}"""

@@ -21,7 +21,10 @@ from erk_shared.debug import debug_log
 from erk_shared.github.abc import GitHub
 from erk_shared.github.graphql_queries import (
     ADD_REVIEW_THREAD_REPLY_MUTATION,
+    GET_ISSUES_WITH_PR_LINKAGES_QUERY,
     GET_PR_REVIEW_THREADS_QUERY,
+    GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
+    ISSUE_PR_LINKAGE_FRAGMENT,
     RESOLVE_REVIEW_THREAD_MUTATION,
 )
 from erk_shared.github.issues.types import IssueInfo
@@ -539,6 +542,9 @@ class RealGitHub(GitHub):
         - contexts(last: 1) with totalCount, checkRunCountsByState, statusContextCountsByState
         - Removes title and labels fields (not needed for dash)
 
+        Note: This method still builds dynamic alias queries because GraphQL doesn't
+        support variable alias names. The fragment is reused from graphql_queries.py.
+
         Args:
             issue_numbers: List of issue numbers to query
             repo_id: GitHub repository identity (owner and repo name)
@@ -546,30 +552,6 @@ class RealGitHub(GitHub):
         Returns:
             GraphQL query string
         """
-        # Define the fragment once at the top of the query
-        # Uses pre-aggregated count fields for ~15-30x smaller payload vs fetching 100 nodes
-        fragment_definition = """fragment IssuePRLinkageFields on CrossReferencedEvent {
-  willCloseTarget
-  source {
-    ... on PullRequest {
-      number
-      state
-      url
-      isDraft
-      createdAt
-      statusCheckRollup {
-        state
-        contexts(last: 1) {
-          totalCount
-          checkRunCountsByState { state count }
-          statusContextCountsByState { state count }
-        }
-      }
-      mergeable
-    }
-  }
-}"""
-
         # Build aliased issue queries using the fragment spread
         issue_queries = []
         for issue_num in issue_numbers:
@@ -584,8 +566,8 @@ class RealGitHub(GitHub):
     }}"""
             issue_queries.append(issue_query)
 
-        # Combine fragment definition and query
-        query = f"""{fragment_definition}
+        # Combine fragment definition (from constant) and query
+        query = f"""{ISSUE_PR_LINKAGE_FRAGMENT}
 
 query {{
   repository(owner: "{repo_id.owner}", name: "{repo_id.repo}") {{
@@ -899,46 +881,21 @@ query {{
         if not node_ids:
             return {}
 
-        # Build GraphQL query using nodes() interface
-        query = self._build_workflow_runs_nodes_query(node_ids)
-        response = self._execute_batch_pr_query(query, repo_root)
+        # Use parameterized query with variable passed via -f flag
+        cmd = [
+            "gh",
+            "api",
+            "graphql",
+            "-f",
+            f"query={GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY}",
+            "-f",
+            f"nodeIds={json.dumps(node_ids)}",
+        ]
+        stdout = execute_gh_command(cmd, repo_root)
+        response = json.loads(stdout)
 
         # Parse response into WorkflowRun objects
         return self._parse_workflow_runs_nodes_response(response, node_ids)
-
-    def _build_workflow_runs_nodes_query(self, node_ids: list[str]) -> str:
-        """Build GraphQL query to fetch workflow runs by node IDs.
-
-        Uses the nodes(ids: [...]) interface which efficiently fetches
-        multiple objects in a single API call. WorkflowRun implements Node.
-
-        Args:
-            node_ids: List of GraphQL node IDs
-
-        Returns:
-            GraphQL query string
-        """
-        # Escape node IDs for use in JSON array
-        node_ids_json = json.dumps(node_ids)
-
-        query = f"""query {{
-  nodes(ids: {node_ids_json}) {{
-    ... on WorkflowRun {{
-      id
-      databaseId
-      url
-      createdAt
-      checkSuite {{
-        status
-        conclusion
-        commit {{
-          oid
-        }}
-      }}
-    }}
-  }}
-}}"""
-        return query
 
     def _parse_workflow_runs_nodes_response(
         self,
@@ -1056,105 +1013,37 @@ query {{
         to get PR linkages in one API call.
         """
         repo_id = location.repo_id
-        query = self._build_issues_with_pr_linkages_query(repo_id, labels, state, limit, creator)
-        response = self._execute_batch_pr_query(query, location.root)
-        return self._parse_issues_with_pr_linkages(response, repo_id)
 
-    def _build_issues_with_pr_linkages_query(
-        self,
-        repo_id: GitHubRepoId,
-        labels: list[str],
-        state: str | None,
-        limit: int | None,
-        creator: str | None = None,
-    ) -> str:
-        """Build GraphQL query to fetch issues with PR linkages.
-
-        Uses CrossReferencedEvent timeline items to find ALL PRs that reference
-        each issue, including the willCloseTarget field to distinguish PRs that
-        will close the issue when merged (via "Closes #N" keywords) from PRs
-        that merely reference the issue.
-
-        Args:
-            repo_id: GitHub repository identity (owner and repo name)
-            labels: Labels to filter by
-            state: Filter by state ("open", "closed", or None for all)
-            limit: Maximum issues to return (default: 100)
-            creator: Filter by creator username (server-side filtering)
-
-        Returns:
-            GraphQL query string
-        """
-        # Build labels array for query
-        labels_json = json.dumps(labels)
-
-        # Build states filter
-        # Default to OPEN to match gh CLI behavior (gh issue list defaults to open)
-        if state is not None:
-            states_filter = f"states: [{state.upper()}]"
-        else:
-            states_filter = "states: [OPEN]"
-
-        # Build limit (default 30 matches gh CLI behavior)
+        # Build states array - default to OPEN to match gh CLI behavior
+        states = [state.upper()] if state else ["OPEN"]
         effective_limit = limit if limit is not None else 30
 
-        # Build filterBy clause for creator filtering (server-side)
-        filter_by = f'filterBy: {{createdBy: "{creator}"}}' if creator is not None else ""
+        # Build command with parameterized query and variables
+        cmd = [
+            "gh",
+            "api",
+            "graphql",
+            "-f",
+            f"query={GET_ISSUES_WITH_PR_LINKAGES_QUERY}",
+            "-f",
+            f"owner={repo_id.owner}",
+            "-f",
+            f"repo={repo_id.repo}",
+            "-f",
+            f"labels={json.dumps(labels)}",
+            "-f",
+            f"states={json.dumps(states)}",
+            "-F",
+            f"first={effective_limit}",
+        ]
 
-        # Build the query - construct issues args separately for line length
-        # Include filterBy if creator is specified
-        filter_clause = f", {filter_by}" if filter_by else ""
-        issues_args = (
-            f"labels: {labels_json}, {states_filter}{filter_clause}, first: {effective_limit}"
-        )
-        order_by = "orderBy: {field: UPDATED_AT, direction: DESC}"
+        # Add filterBy if creator specified (pass as JSON object)
+        if creator is not None:
+            cmd.extend(["-f", f"filterBy={json.dumps({'createdBy': creator})}"])
 
-        # Query issues with timeline events to get ALL referencing PRs
-        # willCloseTarget indicates whether the PR will close the issue when merged
-        query = f"""query {{
-  repository(owner: "{repo_id.owner}", name: "{repo_id.repo}") {{
-    issues({issues_args}, {order_by}) {{
-      nodes {{
-        number
-        title
-        body
-        state
-        url
-        author {{ login }}
-        labels(first: 100) {{ nodes {{ name }} }}
-        assignees(first: 100) {{ nodes {{ login }} }}
-        createdAt
-        updatedAt
-        timelineItems(itemTypes: [CROSS_REFERENCED_EVENT], first: 20) {{
-          nodes {{
-            ... on CrossReferencedEvent {{
-              willCloseTarget
-              source {{
-                ... on PullRequest {{
-                  number
-                  state
-                  url
-                  isDraft
-                  createdAt
-                  statusCheckRollup {{
-                    state
-                    contexts(last: 1) {{
-                      totalCount
-                      checkRunCountsByState {{ state count }}
-                      statusContextCountsByState {{ state count }}
-                    }}
-                  }}
-                  mergeable
-                }}
-              }}
-            }}
-          }}
-        }}
-      }}
-    }}
-  }}
-}}"""
-        return query
+        stdout = execute_gh_command(cmd, location.root)
+        response = json.loads(stdout)
+        return self._parse_issues_with_pr_linkages(response, repo_id)
 
     def _parse_issue_node(self, node: dict[str, Any]) -> IssueInfo | None:
         """Parse a single issue node from GraphQL response.
