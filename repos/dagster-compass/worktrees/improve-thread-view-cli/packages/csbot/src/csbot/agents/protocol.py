@@ -1,5 +1,7 @@
 """Protocol defining the interface all agent implementations must follow."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from dataclasses import dataclass
@@ -14,6 +16,24 @@ class ContextData:
     incorrect_understanding: str
     correct_understanding: str
     search_keywords: str
+
+
+@dataclass(frozen=True)
+class AgentCompressionConfig:
+    """Config for mid-execution history compression in stream_messages_with_tools.
+
+    When enabled, this allows the agent loop to compress conversation history
+    when it exceeds the threshold, preventing context window exceeded errors.
+    """
+
+    compression_agent: AsyncAgent
+    """Agent to use for summarization (e.g., a Haiku-based agent for speed/cost)."""
+
+    threshold_tokens: int = 100_000
+    """Trigger compression when history exceeds this token count."""
+
+    target_tokens: int = 20_000
+    """Target size after compression."""
 
 
 class AsyncAgent(ABC):
@@ -35,8 +55,22 @@ class AsyncAgent(ABC):
         max_tokens: int,
         on_history_added: Callable[[AgentMessage], Awaitable[None]] | None = None,
         on_token_usage: Callable[[int, dict[str, Any]], Awaitable[None]] | None = None,
+        compression_config: AgentCompressionConfig | None = None,
     ) -> AsyncGenerator[AgentBlockEvent]:
-        """Stream agent responses with tool support."""
+        """Stream agent responses with tool support.
+
+        Args:
+            model: Model name to use for this request.
+            system: System prompt.
+            messages: Initial conversation messages.
+            tools: Available tools for the agent to call.
+            max_tokens: Maximum tokens for response.
+            on_history_added: Callback when history is updated.
+            on_token_usage: Callback for token usage tracking.
+            compression_config: Optional config for mid-execution history compression.
+                When provided, the agent loop will compress history if it exceeds
+                the threshold, preventing context window exceeded errors.
+        """
         ...
 
     @abstractmethod

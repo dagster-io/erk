@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from typing import Any, Literal, NotRequired, TypedDict
 
 from csbot.agents.messages import AgentBlockEvent, AgentMessage
-from csbot.agents.protocol import AsyncAgent
+from csbot.agents.protocol import AgentCompressionConfig, AsyncAgent
 
 
 class ContentBlockDict(TypedDict, total=False):
@@ -70,6 +70,7 @@ class RecordingAnthropicAgent(AsyncAgent):
         max_tokens: int,
         on_history_added: Callable[[AgentMessage], Awaitable[None]] | None = None,
         on_token_usage: Callable[[int, dict[str, Any]], Awaitable[None]] | None = None,
+        compression_config: AgentCompressionConfig | None = None,
     ) -> AsyncGenerator[AgentBlockEvent]:
         """Stream messages and capture AgentBlockEvents for recording."""
         async for event in self.agent.stream_messages_with_tools(
@@ -80,6 +81,7 @@ class RecordingAnthropicAgent(AsyncAgent):
             max_tokens=max_tokens,
             on_history_added=on_history_added,
             on_token_usage=on_token_usage,
+            compression_config=compression_config,
         ):
             # Record the event with timestamp
             self.recorded_events.append(

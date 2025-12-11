@@ -28,7 +28,7 @@ from csbot.agents.messages import (
     AgentTextBlock,
     AgentToolUseBlock,
 )
-from csbot.agents.protocol import AsyncAgent
+from csbot.agents.protocol import AgentCompressionConfig, AsyncAgent
 from csbot.agents.timeouts import iterator_with_timeout
 from csbot.slackbot.exceptions import UserFacingError
 from csbot.utils.json_utils import safe_json_dumps
@@ -40,6 +40,12 @@ if TYPE_CHECKING:
         AgentInputJSONDelta,
         AgentTextDelta,
     )
+
+from csbot.agents.compression import (
+    compress_history,
+    estimate_tokens_for_history,
+    is_context_window_exceeded_exception,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -151,6 +157,7 @@ class AnthropicAgent(AsyncAgent):
         max_tokens: int,
         on_history_added: Callable[[AgentMessage], Awaitable[None]] | None = None,
         on_token_usage: Callable[[int, dict[str, Any]], Awaitable[None]] | None = None,
+        compression_config: AgentCompressionConfig | None = None,
     ) -> AsyncGenerator[AgentBlockEvent]:
         """Stream agent responses with tool support."""
 
@@ -182,26 +189,59 @@ class AnthropicAgent(AsyncAgent):
             while looping:
                 looping = False
 
+                # Proactive compression: compress before API call if threshold exceeded
+                if compression_config is not None:
+                    history_tokens = estimate_tokens_for_history(history)
+                    if history_tokens > compression_config.threshold_tokens:
+                        logger.info(
+                            "Proactively compressing history",
+                            history_tokens=history_tokens,
+                            threshold=compression_config.threshold_tokens,
+                            target=compression_config.target_tokens,
+                        )
+                        history = await compress_history(
+                            history,
+                            compression_config.target_tokens,
+                            compression_config.compression_agent,
+                        )
+
                 history_with_cache_control = prepare_messages_with_cache_control(history)
 
-                next_messages = await self.client.messages.create(
-                    model=model,
-                    max_tokens=max_tokens,
-                    system=[
-                        {
-                            "type": "text",
-                            "text": system,
-                            "cache_control": {"type": "ephemeral"},
-                        }
-                    ],
-                    messages=[
-                        agent_to_anthropic_message_param(message)
-                        for message in history_with_cache_control
-                    ],
-                    stream=True,
-                    tools=[create_anthropic_tool_param(name, tool) for name, tool in tools.items()]
-                    + mcp_tools,
-                )
+                # Reactive compression: retry on context window exceeded error
+                try:
+                    next_messages = await self.client.messages.create(
+                        model=model,
+                        max_tokens=max_tokens,
+                        system=[
+                            {
+                                "type": "text",
+                                "text": system,
+                                "cache_control": {"type": "ephemeral"},
+                            }
+                        ],
+                        messages=[
+                            agent_to_anthropic_message_param(message)
+                            for message in history_with_cache_control
+                        ],
+                        stream=True,
+                        tools=[create_anthropic_tool_param(name, tool) for name, tool in tools.items()]
+                        + mcp_tools,
+                    )
+                except Exception as e:
+                    if is_context_window_exceeded_exception(e) and compression_config is not None:
+                        logger.warning(
+                            "Context window exceeded, compressing and retrying",
+                            error=str(e),
+                            history_length=len(history),
+                        )
+                        history = await compress_history(
+                            history,
+                            compression_config.target_tokens,
+                            compression_config.compression_agent,
+                        )
+                        looping = True
+                        continue
+                    raise
 
                 # Track token usage from streaming events
                 # Note: Anthropic reports CUMULATIVE totals in both message_start and message_delta,

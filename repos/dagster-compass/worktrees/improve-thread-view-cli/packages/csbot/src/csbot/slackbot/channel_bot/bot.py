@@ -31,6 +31,7 @@ from slack_sdk.web.async_slack_response import AsyncSlackResponse
 
 from csbot.agents.factory import create_agent_from_config
 from csbot.agents.messages import AgentTextMessage
+from csbot.agents.protocol import AgentCompressionConfig
 from csbot.contextengine.contextstore_protocol import (
     ContextStore,
 )
@@ -445,6 +446,9 @@ class CompassChannelBaseBotInstance(abc.ABC):
         self.ai_config = ai_config
         self.agent = create_agent_from_config(ai_config)
 
+        # Compression agent is created lazily when needed
+        self._compression_agent: AsyncAgent | None = None
+
         self.kv_store = kv_store
         self.analytics_store = analytics_store
         self.github_config = github_config
@@ -557,6 +561,43 @@ class CompassChannelBaseBotInstance(abc.ABC):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
 
         return format_attribution(action, display_name, timestamp, permalink)
+
+    def _create_compression_agent(self):
+        """Create a compression agent using Haiku for speed/cost efficiency.
+
+        Returns a Haiku-based agent suitable for summarization tasks.
+        Falls back to the main agent's model if Haiku is not available.
+        """
+        from csbot.slackbot.slackbot_core import AnthropicConfig
+
+        # Use Haiku model for compression (fast and cheap)
+        compression_model = "claude-3-5-haiku-20241022"
+
+        if self.ai_config.provider == "anthropic":
+            compression_config = AnthropicConfig(
+                provider="anthropic",
+                api_key=self.ai_config.api_key,
+                model=compression_model,  # type: ignore[arg-type]
+            )
+            return create_agent_from_config(compression_config)
+        else:
+            # For Bedrock, use the same config (can't easily switch models)
+            return create_agent_from_config(self.ai_config)
+
+    def _get_compression_config(self) -> AgentCompressionConfig:
+        """Get the compression config for background tasks.
+
+        Returns an AgentCompressionConfig with sensible defaults for
+        background task compression. Creates the compression agent lazily
+        on first call.
+        """
+        if self._compression_agent is None:
+            self._compression_agent = self._create_compression_agent()
+        return AgentCompressionConfig(
+            compression_agent=self._compression_agent,
+            threshold_tokens=100_000,  # Compress when exceeding ~100k tokens
+            target_tokens=20_000,  # Target ~20k tokens after compression
+        )
 
     async def get_tools_for_message(
         self,
@@ -2659,6 +2700,7 @@ class CompassChannelBaseBotInstance(abc.ABC):
                     token_breakdown=token_breakdown,
                 )
             ),
+            compression_config=self._get_compression_config(),
         )
 
         deltas: list[AgentBlockDelta] = []
