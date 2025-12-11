@@ -1,0 +1,4 @@
+organization_id,bot_id,connection_name,created_at,updated_at
+1,TCC8P0589-dagster-compass-dev,dev_warehouse,2024-01-01 00:00:00,2024-01-01 00:00:00
+1,TCC8P0589-dagster-compass-dev-multi1,dev_warehouse,2024-01-01 00:00:00,2024-01-01 00:00:00
+1,TCC8P0589-dagster-compass-dev-multi2,dev_warehouse,2024-01-01 00:00:00,2024-01-01 00:00:00

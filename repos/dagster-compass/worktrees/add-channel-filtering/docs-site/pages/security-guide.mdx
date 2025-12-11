@@ -1,0 +1,152 @@
+# Dagster Compass Security Guide
+
+## What is Dagster Compass?
+
+Dagster Compass is an AI-powered data analysis assistant that enables teams to interact with their data through natural language queries in Slack. Built by Dagster Labs, Compass leverages LLM providers such as Anthropic and OpenAI to provide intelligent data analysis and visualization while maintaining enterprise-grade security.
+
+## 🔐 Key Security Points
+
+### Your Data Stays With You
+
+- **We DON'T store**: Your actual database data, query results, or sensitive business information
+- **We DO store**: Slack conversations, configuration settings, usage analytics, and documentation you provide for context
+
+### How It Works
+
+1. You ask questions in Slack
+2. Compass generates SQL queries
+3. Queries run in YOUR data warehouse
+4. Results are processed and answered in Slack
+5. Only the conversation is saved, not your raw data
+
+### Digging Deeper
+
+You can access a print-friendly version of the conversation, including SQL queries, by clicking the "🌐 See all steps" button
+
+- Link Generation: Clicking the button generates a JWT-authenticated URL to view the full thread in a web browser
+- Token Validation: The link is validated server-side and converted to a secure session cookie
+
+"🌐 See all steps" links are:
+
+- NOT publicly accessible
+- Cryptographically authenticated
+- Organization- and thread-scoped
+- Short-lived (re-click the link in Slack to regenerate)
+- URL-safe
+
+## 🛡️ Security Features
+
+### Encryption
+
+- **In Transit**: All data encrypted using TLS 1.2+
+- **At Rest**: All stored data encrypted with AES-256
+
+### Access Controls
+
+- **Read-Only**: Can only view data, never modify or delete
+- **Channel-Based**: Bot only accesses channels you invite it to, and each channel can have separate data warehouse service accounts
+- **Multi-Factor Authentication**: Required for all admin access
+- **Service Accounts**: Use dedicated accounts with minimal permissions
+
+### AI Privacy
+
+- Your data is **never** used to train AI models
+- AI providers (Anthropic, OpenAI) don't retain your queries
+- Enterprise agreements ensure data privacy
+
+## 🏗️ Infrastructure
+
+### Where Things Live
+
+- **Conversations**: Slack Enterprise Grid (isolated workspace)
+- **Application**: Render.com (AWS-based, SOC 2 certified)
+- **Context Docs**: GitHub repositories (version controlled)
+- **Payments**: Stripe (if applicable)
+
+### Isolation
+
+- Each customer has completely separate:
+    - Slack workspace
+    - Database connections
+    - Bot instances per channel
+    - GitHub repositories for context
+
+## 📊 Monitoring & Compliance
+
+### What We Track
+
+- System performance and health
+- Usage patterns (anonymized)
+- Conversation history (in Slack)
+- All configuration changes
+
+### Security Monitoring
+
+- Automated threat detection & DDoS protection
+- Unusual query pattern alerts
+- Rate limiting to prevent abuse
+- Regular security audits
+
+## 🗑️ Data Retention
+
+### Default Retention Periods
+
+- **Slack Conversations**: Follow your Slack policies
+- **Analytics**: 180 days
+- **Session Data**: Auto-cleanup after 180 days
+
+### Data Deletion
+
+- Delete conversations anytime from Slack
+- Account deletion removes all stored data
+- GDPR/CCPA right to erasure compliance
+
+## ✅ Your Responsibilities
+
+### Must-Do's
+
+1. **Secure Your Data Warehouse**
+    - Use dedicated read-only service accounts with minimum required permissions
+    - Rotate credentials periodically based on your policies
+    - Maintain secure data warehouse environments
+2. **Manage Slack Access**
+    - Control who can use and administer Compass internally - only invite trained users to Compass Slack channels
+    - Train users on appropriate usage
+3. **Review Context Documents**
+    - Review and approve context documentation
+    - Keep context accurate and relevant
+4. **Monitor Usage**
+    - Review data warehouse audit logs regularly
+    - Check for unusual activity
+
+## 📞 Need Help?
+
+- **Security Issues**: [security@dagsterlabs.com](mailto:security@dagsterlabs.com)
+- **Report Vulnerabilities**: [vulnerability@dagsterlabs.com](mailto:vulnerability@dagsterlabs.com)
+- **General Support**: [compass-support@dagsterlabs.com](mailto:compass-support@dagsterlabs.com)
+- **Documentation**: [Help Docs](https://docs.compass.dagster.io/)
+- **System Status**: [dagstercloud.statuspage.io](https://dagstercloud.statuspage.io/)
+
+---
+
+## Quick Security Checklist
+
+✅ Your actual database stays in your warehouse
+
+✅ Only final query results are stored
+
+✅ All connections encrypted
+
+✅ Read-only access to data warehouses
+
+✅ No AI training on your data
+
+✅ Complete Slack workspace isolation
+
+✅ Regular security audits
+
+✅ 24/7 monitoring
+
+---
+
+*Remember: Dagster Compass is designed to be a secure extension of your data team. Your actual data always stays in your control.*

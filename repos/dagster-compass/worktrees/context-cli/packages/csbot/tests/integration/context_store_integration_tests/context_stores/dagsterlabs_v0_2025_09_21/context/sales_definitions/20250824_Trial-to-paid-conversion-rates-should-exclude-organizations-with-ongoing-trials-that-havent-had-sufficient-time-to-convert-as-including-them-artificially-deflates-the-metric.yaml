@@ -1,0 +1,16 @@
+topic: trial-to-paid conversion rate calculation methodology
+incorrect_understanding:
+  When calculating trial-to-paid conversion rates, I should
+  include all organizations created in a period including those with ongoing free
+  trials, which artificially deflates conversion rates since recent trials haven't
+  had sufficient time to convert
+correct_understanding:
+  When calculating trial-to-paid conversion rates, I should only
+  include organizations that have had sufficient time to complete their trial period
+  and make a conversion decision. Recent organizations with ongoing trials should
+  be excluded from conversion rate calculations as they artificially deflate the metric
+  by not having had the opportunity to convert yet.
+search_keywords:
+  trial-to-paid conversion, conversion rate calculation, trial period,
+  ongoing trials, conversion methodology, SaaS metrics, trial completion, conversion
+  decision, metric deflation, sufficient time

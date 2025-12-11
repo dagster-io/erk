@@ -1,0 +1,11 @@
+topic: quarter definitions
+incorrect_understanding:
+  "Standard calendar quarters are used: Q1 = Jan-Mar, Q2 =
+  Apr-Jun, Q3 = Jul-Sep, Q4 = Oct-Dec"
+correct_understanding:
+  "Dagster Labs uses non-standard fiscal quarters: Q1 = Feb-Apr,
+  Q2 = May-Jul, Q3 = Aug-Oct, Q4 = Nov-Jan"
+search_keywords:
+  Dagster Labs, fiscal quarters, non-standard quarters, Q1 February
+  April, Q2 May July, Q3 August October, Q4 November January, calendar quarters, business
+  quarters, fiscal year

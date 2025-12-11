@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/static/compass-logo-mark.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Compass</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+      integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/css/main.css" />
+
+    <!-- Server-injected configuration -->
+    <script type="application/json" id="compass-config">
+      {
+        "envName": "__ENV_NAME__"
+      }
+    </script>
+
+    <!-- Datadog RUM - Conditionally loaded based on environment -->
+    <script>
+      (function () {
+        try {
+          var configElement = document.getElementById('compass-config');
+          if (configElement) {
+            var config = JSON.parse(configElement.innerHTML);
+            var envName = config.envName;
+
+            // Only load Datadog RUM in non-development environments
+            if (envName && envName !== '__ENV_NAME__' && envName !== 'development') {
+              var script = document.createElement('script');
+              script.src = 'https://www.datadoghq-browser-agent.com/us1/v6/datadog-rum.js';
+              script.type = 'text/javascript';
+              script.onload = function () {
+                if (window.DD_RUM) {
+                  window.DD_RUM.init({
+                    clientToken: 'pub7b184da1a8bb26c8b885ffc1c76aaec0',
+                    applicationId: '728bba04-efa3-42a8-a142-36ab521910a5',
+                    site: 'datadoghq.com',
+                    service: 'compass',
+                    env: envName,
+                    sessionSampleRate: 100,
+                    sessionReplaySampleRate: 20,
+                    trackBfcacheViews: true,
+                    defaultPrivacyLevel: 'mask-user-input',
+                  });
+                }
+              };
+              document.head.appendChild(script);
+            }
+          }
+        } catch (e) {
+          console.error('Failed to initialize Datadog RUM:', e);
+        }
+      })();
+    </script>
+    <!-- End Datadog RUM -->
+
+    <!-- Google Tag Manager -->
+    <script>
+      (function (w, d, s, l, i) {
+        w[l] = w[l] || [];
+        w[l].push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != 'dataLayer' ? '&l=' + l : '';
+        j.async = true;
+        j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+        f.parentNode.insertBefore(j, f);
+      })(window, document, 'script', 'dataLayer', 'GTM-TWC48XJ6');
+    </script>
+    <!-- End Google Tag Manager -->
+  </head>
+  <body class="antialiased">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript
+      ><iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-TWC48XJ6"
+        height="0"
+        width="0"
+        style="display: none; visibility: hidden"
+      ></iframe
+    ></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

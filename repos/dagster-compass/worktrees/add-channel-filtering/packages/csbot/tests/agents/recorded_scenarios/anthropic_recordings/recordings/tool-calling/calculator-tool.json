@@ -1,0 +1,1377 @@
+{
+  "metadata": {
+    "recorded_at": "2025-08-25T00:06:43.139278+00:00",
+    "scenario": "calculator-tool",
+    "model": "claude-sonnet-4-20250514",
+    "agent_type": "AnthropicAgent",
+    "anthropic_client_version": "0.25.1",
+    "recorder_version": "1.0",
+    "raw_event_count": 65,
+    "agent_block_event_count": 53,
+    "agent_message_count": 8,
+    "duration_seconds": 14.726190090179443
+  },
+  "request_params": {
+    "system": "You are a helpful assistant.",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Calculate the result of 15 * 7 + 23 - 8, and then find the square root of that result."
+      }
+    ],
+    "tools": [
+      "calculate",
+      "advanced_calculate",
+      "solve_quadratic"
+    ],
+    "model": "claude-sonnet-4-20250514",
+    "max_tokens": 50000
+  },
+  "raw_anthropic_events": [
+    {
+      "type": "message_start",
+      "timestamp": "2025-08-25T00:06:29.935452+00:00",
+      "message": {
+        "id": "msg_016gcsNVf8mHmbxst6SzoQnp",
+        "content": [],
+        "model": "claude-sonnet-4-20250514",
+        "role": "assistant",
+        "stop_reason": null,
+        "stop_sequence": null,
+        "type": "message",
+        "usage": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 770,
+          "output_tokens": 3,
+          "server_tool_use": null,
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "content_block_start",
+      "timestamp": "2025-08-25T00:06:29.935594+00:00",
+      "content_block": {
+        "citations": null,
+        "text": "",
+        "type": "text"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:29.935721+00:00",
+      "delta": {
+        "text": "I'll help",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:30.092825+00:00",
+      "delta": {
+        "text": " you calculate that step by step. First, let me break",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:30.452890+00:00",
+      "delta": {
+        "text": " down the expression 15 * 7 + 23 - 8:",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_stop",
+      "timestamp": "2025-08-25T00:06:30.825105+00:00",
+      "index": 0
+    },
+    {
+      "type": "content_block_start",
+      "timestamp": "2025-08-25T00:06:30.825510+00:00",
+      "content_block": {
+        "id": "toolu_019txMDp7vPB7E1FWRzxjLEQ",
+        "input": {},
+        "name": "calculate",
+        "type": "tool_use"
+      },
+      "index": 1
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:30.825709+00:00",
+      "delta": {
+        "partial_json": "",
+        "type": "input_json_delta"
+      },
+      "index": 1
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:31.291635+00:00",
+      "delta": {
+        "partial_json": "{\"operatio",
+        "type": "input_json_delta"
+      },
+      "index": 1
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:31.293398+00:00",
+      "delta": {
+        "partial_json": "n\": \"multi",
+        "type": "input_json_delta"
+      },
+      "index": 1
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:31.297910+00:00",
+      "delta": {
+        "partial_json": "ply\"",
+        "type": "input_json_delta"
+      },
+      "index": 1
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:31.298115+00:00",
+      "delta": {
+        "partial_json": ", \"a\": 15",
+        "type": "input_json_delta"
+      },
+      "index": 1
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:31.302019+00:00",
+      "delta": {
+        "partial_json": ", \"b\": 7}",
+        "type": "input_json_delta"
+      },
+      "index": 1
+    },
+    {
+      "type": "content_block_stop",
+      "timestamp": "2025-08-25T00:06:31.302223+00:00",
+      "index": 1
+    },
+    {
+      "type": "message_delta",
+      "timestamp": "2025-08-25T00:06:31.324569+00:00",
+      "delta": {
+        "stop_reason": "tool_use",
+        "stop_sequence": null
+      },
+      "usage": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "input_tokens": 770,
+        "output_tokens": 119,
+        "server_tool_use": null
+      }
+    },
+    {
+      "type": "message_stop",
+      "timestamp": "2025-08-25T00:06:31.324728+00:00"
+    },
+    {
+      "type": "message_start",
+      "timestamp": "2025-08-25T00:06:33.119947+00:00",
+      "message": {
+        "id": "msg_01SAZkg1Uan7wwvexiTxNSrS",
+        "content": [],
+        "model": "claude-sonnet-4-20250514",
+        "role": "assistant",
+        "stop_reason": null,
+        "stop_sequence": null,
+        "type": "message",
+        "usage": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 942,
+          "output_tokens": 25,
+          "server_tool_use": null,
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "content_block_start",
+      "timestamp": "2025-08-25T00:06:33.120097+00:00",
+      "content_block": {
+        "id": "toolu_01Pb3M3bcvGoSp7WPFmLG68L",
+        "input": {},
+        "name": "calculate",
+        "type": "tool_use"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:33.120278+00:00",
+      "delta": {
+        "partial_json": "",
+        "type": "input_json_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:34.640490+00:00",
+      "delta": {
+        "partial_json": "{\"operat",
+        "type": "input_json_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:34.640992+00:00",
+      "delta": {
+        "partial_json": "io",
+        "type": "input_json_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:34.641957+00:00",
+      "delta": {
+        "partial_json": "n\":",
+        "type": "input_json_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:34.644910+00:00",
+      "delta": {
+        "partial_json": " \"add\"",
+        "type": "input_json_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:35.061289+00:00",
+      "delta": {
+        "partial_json": ", \"",
+        "type": "input_json_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:35.061678+00:00",
+      "delta": {
+        "partial_json": "a\": ",
+        "type": "input_json_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:35.062233+00:00",
+      "delta": {
+        "partial_json": "105",
+        "type": "input_json_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:35.062735+00:00",
+      "delta": {
+        "partial_json": ", \"b\": 23}",
+        "type": "input_json_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_stop",
+      "timestamp": "2025-08-25T00:06:35.063058+00:00",
+      "index": 0
+    },
+    {
+      "type": "message_delta",
+      "timestamp": "2025-08-25T00:06:35.063574+00:00",
+      "delta": {
+        "stop_reason": "tool_use",
+        "stop_sequence": null
+      },
+      "usage": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "input_tokens": 942,
+        "output_tokens": 85,
+        "server_tool_use": null
+      }
+    },
+    {
+      "type": "message_stop",
+      "timestamp": "2025-08-25T00:06:35.063720+00:00"
+    },
+    {
+      "type": "message_start",
+      "timestamp": "2025-08-25T00:06:36.725463+00:00",
+      "message": {
+        "id": "msg_01G2GfnKiPRVJuJPyWedYpPm",
+        "content": [],
+        "model": "claude-sonnet-4-20250514",
+        "role": "assistant",
+        "stop_reason": null,
+        "stop_sequence": null,
+        "type": "message",
+        "usage": {
+          "cache_creation_input_tokens": 1074,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 6,
+          "output_tokens": 40,
+          "server_tool_use": null,
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 1074,
+            "ephemeral_1h_input_tokens": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "content_block_start",
+      "timestamp": "2025-08-25T00:06:36.734279+00:00",
+      "content_block": {
+        "id": "toolu_01MTCH9QFzQ6iizZXUDy3bCP",
+        "input": {},
+        "name": "calculate",
+        "type": "tool_use"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:36.736691+00:00",
+      "delta": {
+        "partial_json": "",
+        "type": "input_json_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:37.189441+00:00",
+      "delta": {
+        "partial_json": "{\"ope",
+        "type": "input_json_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:37.190879+00:00",
+      "delta": {
+        "partial_json": "ration\": \"",
+        "type": "input_json_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:37.199741+00:00",
+      "delta": {
+        "partial_json": "subtra",
+        "type": "input_json_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:37.205841+00:00",
+      "delta": {
+        "partial_json": "ct\"",
+        "type": "input_json_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:37.207374+00:00",
+      "delta": {
+        "partial_json": ", \"a\": 128",
+        "type": "input_json_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:37.209110+00:00",
+      "delta": {
+        "partial_json": ", \"b\": 8}",
+        "type": "input_json_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_stop",
+      "timestamp": "2025-08-25T00:06:37.210803+00:00",
+      "index": 0
+    },
+    {
+      "type": "message_delta",
+      "timestamp": "2025-08-25T00:06:37.226738+00:00",
+      "delta": {
+        "stop_reason": "tool_use",
+        "stop_sequence": null
+      },
+      "usage": {
+        "cache_creation_input_tokens": 1074,
+        "cache_read_input_tokens": 0,
+        "input_tokens": 6,
+        "output_tokens": 85,
+        "server_tool_use": null
+      }
+    },
+    {
+      "type": "message_stop",
+      "timestamp": "2025-08-25T00:06:37.227155+00:00"
+    },
+    {
+      "type": "message_start",
+      "timestamp": "2025-08-25T00:06:39.671714+00:00",
+      "message": {
+        "id": "msg_01B7f2Lyovn6LyCD12sLdkA1",
+        "content": [],
+        "model": "claude-sonnet-4-20250514",
+        "role": "assistant",
+        "stop_reason": null,
+        "stop_sequence": null,
+        "type": "message",
+        "usage": {
+          "cache_creation_input_tokens": 139,
+          "cache_read_input_tokens": 1074,
+          "input_tokens": 5,
+          "output_tokens": 1,
+          "server_tool_use": null,
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 139,
+            "ephemeral_1h_input_tokens": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "content_block_start",
+      "timestamp": "2025-08-25T00:06:39.672188+00:00",
+      "content_block": {
+        "citations": null,
+        "text": "",
+        "type": "text"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:39.672568+00:00",
+      "delta": {
+        "text": "Great",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:39.733971+00:00",
+      "delta": {
+        "text": "! So 15 * 7 + ",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:39.848025+00:00",
+      "delta": {
+        "text": "23 - 8 = 120.",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:39.975014+00:00",
+      "delta": {
+        "text": "\n\nNow I need to find the square root of ",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:40.321075+00:00",
+      "delta": {
+        "text": "120. I can do this by calculating ",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:40.492814+00:00",
+      "delta": {
+        "text": "120^(1/2), which is equivalent",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:40.795980+00:00",
+      "delta": {
+        "text": " to dividing the exponent 1 ",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:41.078513+00:00",
+      "delta": {
+        "text": "by 2, or multiplying ",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:41.311140+00:00",
+      "delta": {
+        "text": "120 by 0.5 as",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:41.721863+00:00",
+      "delta": {
+        "text": " an exponent. However, the available tools don't include a square",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:41.904553+00:00",
+      "delta": {
+        "text": " root function directly. \n\nThe square root of 120 is approximately",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:42.193358+00:00",
+      "delta": {
+        "text": " 10.954. To be more precise:",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:42.433830+00:00",
+      "delta": {
+        "text": "\n√120 = √(4 × 30) = 2",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:42.550889+00:00",
+      "delta": {
+        "text": "√30 ≈ 10.954\n\nSo the final",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:42.785347+00:00",
+      "delta": {
+        "text": " answer is:\n- 15 * 7 + ",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:42.843625+00:00",
+      "delta": {
+        "text": "23 - 8 = ",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:42.990245+00:00",
+      "delta": {
+        "text": "120\n- √120 ≈",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:43.099752+00:00",
+      "delta": {
+        "text": " 10.954",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_stop",
+      "timestamp": "2025-08-25T00:06:43.101302+00:00",
+      "index": 0
+    },
+    {
+      "type": "message_delta",
+      "timestamp": "2025-08-25T00:06:43.137448+00:00",
+      "delta": {
+        "stop_reason": "end_turn",
+        "stop_sequence": null
+      },
+      "usage": {
+        "cache_creation_input_tokens": 139,
+        "cache_read_input_tokens": 1074,
+        "input_tokens": 5,
+        "output_tokens": 187,
+        "server_tool_use": null
+      }
+    },
+    {
+      "type": "message_stop",
+      "timestamp": "2025-08-25T00:06:43.137752+00:00"
+    }
+  ],
+  "agent_block_events": [
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "start",
+        "index": 0,
+        "content_block": {
+          "type": "output_text"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:29.935647+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "I'll help"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:29.935760+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " you calculate that step by step. First, let me break"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:30.092948+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " down the expression 15 * 7 + 23 - 8:"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:30.453076+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "stop",
+        "index": 0
+      },
+      "timestamp": "2025-08-25T00:06:30.825299+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "start",
+        "index": 1,
+        "content_block": {
+          "type": "call_tool",
+          "id": "toolu_019txMDp7vPB7E1FWRzxjLEQ",
+          "name": "calculate"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:30.825597+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 1,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": ""
+        }
+      },
+      "timestamp": "2025-08-25T00:06:30.825770+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 1,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "{\"operatio"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:31.291771+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 1,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "n\": \"multi"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:31.293500+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 1,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "ply\""
+        }
+      },
+      "timestamp": "2025-08-25T00:06:31.298012+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 1,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": ", \"a\": 15"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:31.298156+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 1,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": ", \"b\": 7}"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:31.302138+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "stop",
+        "index": 1
+      },
+      "timestamp": "2025-08-25T00:06:31.302380+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "start",
+        "index": 0,
+        "content_block": {
+          "type": "call_tool",
+          "id": "toolu_01Pb3M3bcvGoSp7WPFmLG68L",
+          "name": "calculate"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:33.120168+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": ""
+        }
+      },
+      "timestamp": "2025-08-25T00:06:33.120328+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "{\"operat"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:34.640748+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "io"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:34.641083+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "n\":"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:34.642194+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": " \"add\""
+        }
+      },
+      "timestamp": "2025-08-25T00:06:34.645008+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": ", \""
+        }
+      },
+      "timestamp": "2025-08-25T00:06:35.061495+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "a\": "
+        }
+      },
+      "timestamp": "2025-08-25T00:06:35.061767+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "105"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:35.062359+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": ", \"b\": 23}"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:35.062820+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "stop",
+        "index": 0
+      },
+      "timestamp": "2025-08-25T00:06:35.063263+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "start",
+        "index": 0,
+        "content_block": {
+          "type": "call_tool",
+          "id": "toolu_01MTCH9QFzQ6iizZXUDy3bCP",
+          "name": "calculate"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:36.734566+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": ""
+        }
+      },
+      "timestamp": "2025-08-25T00:06:36.736984+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "{\"ope"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:37.189660+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "ration\": \""
+        }
+      },
+      "timestamp": "2025-08-25T00:06:37.191034+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "subtra"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:37.199845+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "ct\""
+        }
+      },
+      "timestamp": "2025-08-25T00:06:37.205957+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": ", \"a\": 128"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:37.207518+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": ", \"b\": 8}"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:37.209221+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "stop",
+        "index": 0
+      },
+      "timestamp": "2025-08-25T00:06:37.210979+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "start",
+        "index": 0,
+        "content_block": {
+          "type": "output_text"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:39.672276+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "Great"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:39.672646+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "! So 15 * 7 + "
+        }
+      },
+      "timestamp": "2025-08-25T00:06:39.734121+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "23 - 8 = 120."
+        }
+      },
+      "timestamp": "2025-08-25T00:06:39.848157+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "\n\nNow I need to find the square root of "
+        }
+      },
+      "timestamp": "2025-08-25T00:06:39.975442+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "120. I can do this by calculating "
+        }
+      },
+      "timestamp": "2025-08-25T00:06:40.321201+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "120^(1/2), which is equivalent"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:40.492933+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " to dividing the exponent 1 "
+        }
+      },
+      "timestamp": "2025-08-25T00:06:40.796179+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "by 2, or multiplying "
+        }
+      },
+      "timestamp": "2025-08-25T00:06:41.078710+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "120 by 0.5 as"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:41.311340+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " an exponent. However, the available tools don't include a square"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:41.722012+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " root function directly. \n\nThe square root of 120 is approximately"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:41.904761+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " 10.954. To be more precise:"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:42.193552+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "\n√120 = √(4 × 30) = 2"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:42.434023+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "√30 ≈ 10.954\n\nSo the final"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:42.551097+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " answer is:\n- 15 * 7 + "
+        }
+      },
+      "timestamp": "2025-08-25T00:06:42.785479+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "23 - 8 = "
+        }
+      },
+      "timestamp": "2025-08-25T00:06:42.843768+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "120\n- √120 ≈"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:42.990446+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " 10.954"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:43.099934+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "stop",
+        "index": 0
+      },
+      "timestamp": "2025-08-25T00:06:43.101445+00:00"
+    }
+  ],
+  "agent_messages": [
+    {
+      "role": "assistant",
+      "content": "I'll help you calculate that step by step. First, let me break down the expression 15 * 7 + 23 - 8:"
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_019txMDp7vPB7E1FWRzxjLEQ",
+          "name": "calculate",
+          "input": {
+            "operation": "multiply",
+            "a": 15,
+            "b": 7
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "toolu_019txMDp7vPB7E1FWRzxjLEQ",
+          "content": "{\"result\": {\"operation\": \"multiply\", \"a\": 15, \"b\": 7, \"result\": 105, \"formatted\": \"15 multiply 7 = 105\"}}"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01Pb3M3bcvGoSp7WPFmLG68L",
+          "name": "calculate",
+          "input": {
+            "operation": "add",
+            "a": 105,
+            "b": 23
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "toolu_01Pb3M3bcvGoSp7WPFmLG68L",
+          "content": "{\"result\": {\"operation\": \"add\", \"a\": 105, \"b\": 23, \"result\": 128, \"formatted\": \"105 add 23 = 128\"}}"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01MTCH9QFzQ6iizZXUDy3bCP",
+          "name": "calculate",
+          "input": {
+            "operation": "subtract",
+            "a": 128,
+            "b": 8
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "toolu_01MTCH9QFzQ6iizZXUDy3bCP",
+          "content": "{\"result\": {\"operation\": \"subtract\", \"a\": 128, \"b\": 8, \"result\": 120, \"formatted\": \"128 subtract 8 = 120\"}}"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "Great! So 15 * 7 + 23 - 8 = 120.\n\nNow I need to find the square root of 120. I can do this by calculating 120^(1/2), which is equivalent to dividing the exponent 1 by 2, or multiplying 120 by 0.5 as an exponent. However, the available tools don't include a square root function directly. \n\nThe square root of 120 is approximately 10.954. To be more precise:\n√120 = √(4 × 30) = 2√30 ≈ 10.954\n\nSo the final answer is:\n- 15 * 7 + 23 - 8 = 120\n- √120 ≈ 10.954"
+    }
+  ]
+}

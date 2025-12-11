@@ -1,0 +1,30 @@
+cron: 0 9 * * 1
+question:
+  "Create a comprehensive weekly marketing lead generation and conversion
+  funnel analysis including:
+
+
+  1. New contacts created this week vs last week, broken down by lead source (organic,
+  paid, events, referrals, etc.) with conversion rates
+
+  2. Website traffic trends across marketing site, docs, and dagster university -
+  show unique visitors, page views, and top content
+
+  3. MQL conversion rates by channel and campaign, including time-to-MQL metrics
+
+  4. Top performing campaigns by response rate and attributed ARR, showing campaign
+  ROI
+
+  5. Intent score trends for engaged accounts and correlation with pipeline generation
+
+  6. Create visualizations for key metrics and highlight week-over-week changes
+
+  7. Flag any significant performance changes or opportunities
+
+
+  Focus on actionable insights for the marketing team to optimize lead generation
+  and campaign performance."
+thread:
+  "\U0001F4C8 Weekly Marketing Lead Generation & Conversion Funnel Report -\
+  \ tracking new contacts, website traffic trends, MQL conversion rates, and top performing\
+  \ campaigns by response rate and attributed ARR \U0001F9F5"

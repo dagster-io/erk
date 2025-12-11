@@ -1,0 +1,161 @@
+# Adding Data
+
+## Add Your Warehouse
+
+After you join the Compass governance channel in Slack click Add your warehouse.
+
+![Slack message](/images/data-1.png)
+
+This will take you to the setup page where you can choose your data source and connect it to Compass.
+
+![Add data](/images/data-2.png)
+
+## Supported Data Warehouses
+
+Currently supported data warehouses: Snowflake, BigQuery, AWS Athena, and AWS Redshift.
+
+Coming soon: CSV uploads and Databricks.
+
+### Snowflake
+
+<details>
+<summary>Setup Instructions</summary>
+
+- Contact your Snowflake administrator to create an account
+- Get your account identifier from the Snowflake console URL
+- Set up password or private key authentication
+- Request access to a warehouse and appropriate role
+
+</details>
+
+<details>
+<summary>Required Snowflake Privileges</summary>
+
+- `USAGE` on schema – Access schema objects
+- `SELECT` on tables – Query table data for analysis
+- `SHOW` privilege – View table metadata and structure
+
+</details>
+
+<details>
+<summary>Network Information</summary>
+
+**Connection Method:** HTTPS over port 443
+
+**IP Addresses:** `52.25.53.27`, `44.242.128.111`, `52.35.195.86`
+
+Connects to `<account>.snowflakecomputing.com` – may require firewall allowlisting
+
+</details>
+
+### AWS Athena
+
+<details>
+<summary>Setup Instructions</summary>
+
+- Create an IAM user in AWS Console
+- Attach appropriate Athena and Glue policies
+- Generate access keys for the IAM user
+- Create an S3 bucket for query results
+
+</details>
+
+<details>
+<summary>Required AWS IAM Permissions</summary>
+
+- `athena:StartQueryExecution` – Run SQL queries
+- `athena:GetQueryExecution` – Monitor query status
+- `athena:GetQueryResults` – Retrieve query results
+- `s3:ListBucket` – Browse data locations
+- `s3:PutObject` – Write query results to S3
+- `s3:GetObject` – Read query results from S3
+- `glue:GetDatabases` – List available databases
+- `glue:GetDatabase` – Read database metadata
+- `glue:GetTables` – List tables in databases
+- `glue:GetTable` – Read table schema and metadata
+
+</details>
+
+<details>
+<summary>Network Information</summary>
+
+**Connection Method:** HTTPS over port 443
+
+Connects to AWS API endpoints – no specific firewall rules needed
+
+</details>
+
+### AWS Redshift
+
+<details>
+<summary>Setup Instructions</summary>
+
+- Contact your AWS administrator for cluster endpoint
+- Request a database user account with appropriate permissions
+- Ensure your network can reach the Redshift cluster
+- Test connection using standard PostgreSQL tools
+
+</details>
+
+<details>
+<summary>Required Redshift Permissions</summary>
+
+- `CONNECT` privilege on database – Establish connections
+- Valid username and password – Authentication credentials
+- `USAGE` on schema – Access schema objects
+- `SELECT` on `information_schema.schemata` – List available schemas
+- `SELECT` on `pg_tables` – List tables in schemas
+- `SELECT` on `information_schema.tables` – Access table metadata
+- `SELECT` privilege on tables – Query table data for analysis
+- `SELECT` on `pg_class` and `pg_namespace` – Access table descriptions
+
+</details>
+
+<details>
+<summary>Network Information</summary>
+
+**Connection Method:** PostgreSQL protocol over port `5439`
+
+**Port:** 5439
+
+**IP Addresses:** `52.25.53.27`, `44.242.128.111`, `52.35.195.86`
+
+May require VPN access or IP allowlisting depending on cluster configuration
+
+</details>
+
+### Google BigQuery
+
+<details>
+<summary>Setup Instructions</summary>
+
+- Sign in to Google Cloud Console
+- Create a service account with BigQuery permissions
+- Download the service account JSON key
+- Copy and paste the JSON content above
+
+</details>
+
+<details>
+<summary>Required BigQuery IAM Roles</summary>
+
+- `BigQuery Job User`
+- `BigQuery Metadata Viewer`
+- `BigQuery Data Viewer`
+
+</details>
+
+<details>
+<summary>Network Information</summary>
+
+**Connection Method:** HTTPS over port 443
+
+**IP Addresses:** `52.25.53.27`, `44.242.128.111`, `52.35.195.86`
+
+</details>
+
+## Need Help?
+
+Reach out to [Compass support](mailto:compass-support@dagsterlabs.com) if you are having issues.
+
+### Next ➡️ &nbsp;&nbsp;[Slack Admin Setup](/admins/slack-admin-setup)

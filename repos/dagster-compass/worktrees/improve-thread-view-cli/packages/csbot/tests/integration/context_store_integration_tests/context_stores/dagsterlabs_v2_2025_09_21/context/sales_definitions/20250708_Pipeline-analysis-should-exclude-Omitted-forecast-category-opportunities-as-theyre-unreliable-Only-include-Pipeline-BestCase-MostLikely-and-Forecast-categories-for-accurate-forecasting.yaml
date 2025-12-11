@@ -1,0 +1,13 @@
+topic: pipeline analysis forecast category filtering
+incorrect_understanding:
+  When analyzing pipeline, I should include all opportunities
+  regardless of forecast category, including those marked as "Omitted"
+correct_understanding:
+  When analyzing pipeline, I should exclude opportunities with
+  forecast category "Omitted" as these are not considered reliable for forecasting
+  purposes. Pipeline analysis should only include forecast categories like Pipeline,
+  BestCase, MostLikely, and Forecast.
+search_keywords:
+  pipeline analysis, forecast category, omitted opportunities, forecasting
+  reliability, BestCase, MostLikely, Pipeline category, opportunity filtering, sales
+  forecasting, forecast accuracy

@@ -1,0 +1,5 @@
+{
+  "cron": "0 22 * * 1-5",
+  "question": "show me all the net new meetings scheduled today - including first opportunity meetings, first account meetings, and recently scheduled meetings (created within the last 7 days). provide a breakdown by meeting type, organizer, account, and meeting details with total counts and attendee information.\n\nAdditional context: User requested to move the daily report timing from evenings (22:00) to mornings. Please update the cron schedule to run in the morning hours instead.",
+  "thread": "daily net new meetings summary - your automated report showing all first opportunity meetings, first account meetings, and recently scheduled meetings for today with details on organizers, accounts, and attendee counts \ud83d\udcc5",
+}

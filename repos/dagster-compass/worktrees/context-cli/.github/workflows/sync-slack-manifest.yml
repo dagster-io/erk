@@ -1,0 +1,236 @@
+name: Sync Slack Bot Manifests
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "infra/slack_bot_manifests/*.json"
+      - "infra/slack_bot_manifests/app_config.yaml"
+  schedule:
+    - cron: "0 * * * *" # Run every hour to sync prod manifest
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: write
+
+jobs:
+  setup-and-detect:
+    runs-on: ubuntu-latest
+    outputs:
+      changed-manifests: ${{ steps.changes.outputs.manifests }}
+      config-token: ${{ steps.rotate_token.outputs.CONFIG_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Rotate Slack config token
+        id: rotate_token
+        run: |
+          echo "Rotating Slack configuration token..."
+
+          # Use GET request with URL parameter as per Slack API docs
+          rotate_response=$(curl -s -G \
+            --data-urlencode "refresh_token=${{ secrets.SLACK_REFRESH_TOKEN }}" \
+            https://slack.com/api/tooling.tokens.rotate)
+
+          echo "Rotation response: $rotate_response"
+
+          # Check if rotation was successful
+          if echo "$rotate_response" | jq -e '.ok == true' > /dev/null; then
+            new_token=$(echo "$rotate_response" | jq -r '.token')
+            new_refresh_token=$(echo "$rotate_response" | jq -r '.refresh_token')
+            echo "CONFIG_TOKEN=$new_token" >> $GITHUB_OUTPUT
+            echo "NEW_REFRESH_TOKEN=$new_refresh_token" >> $GITHUB_OUTPUT
+            echo "✅ Token rotated successfully"
+          else
+            echo "❌ Token rotation failed, using existing token"
+            echo "$rotate_response" | jq '.error // .errors'
+            echo "CONFIG_TOKEN=${{ secrets.SLACK_CONFIG_TOKEN }}" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Update GitHub secrets with new tokens
+        env:
+          GH_TOKEN: ${{ secrets.UPDATE_SECRETS_GH_PAT }}
+        run: |
+          # Update SLACK_CONFIG_TOKEN secret using GitHub CLI with PAT
+          echo "${{ steps.rotate_token.outputs.CONFIG_TOKEN }}" | \
+            gh secret set SLACK_CONFIG_TOKEN --repo ${{ github.repository }}
+
+          # Update SLACK_REFRESH_TOKEN secret using GitHub CLI with PAT
+          echo "${{ steps.rotate_token.outputs.NEW_REFRESH_TOKEN }}" | \
+            gh secret set SLACK_REFRESH_TOKEN --repo ${{ github.repository }}
+
+          echo "✅ GitHub secrets updated successfully"
+
+      - name: Detect changed manifest files
+        id: changes
+        run: |
+          # On scheduled or manual runs, always sync prod and staging manifests
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Scheduled/manual run: syncing prod and staging manifests"
+            echo "manifests=[\"infra/slack_bot_manifests/prod_manifest.json\",\"infra/slack_bot_manifests/staging_manifest.json\"]" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          changed_files=$(git diff --name-only HEAD~1 HEAD | grep "infra/slack_bot_manifests/.*\.json$" || true)
+
+          if [ -z "$changed_files" ]; then
+            echo "No manifest files changed"
+            echo "manifests=[]" >> $GITHUB_OUTPUT
+          else
+            # Convert to JSON array format for matrix (compact format)
+            manifests_json=$(echo "$changed_files" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+            echo "Changed manifests: $manifests_json"
+            echo "manifests=$manifests_json" >> $GITHUB_OUTPUT
+          fi
+
+  sync-manifest:
+    needs: setup-and-detect
+    if: needs.setup-and-detect.outputs.changed-manifests != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        manifest_file: ${{ fromJson(needs.setup-and-detect.outputs.changed-manifests) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Get app ID for manifest
+        id: get_app_id
+        run: |
+          # Get the manifest filename from the full path
+          manifest_filename=$(basename "${{ matrix.manifest_file }}")
+
+          # Read app configuration from YAML file
+          config_file="infra/slack_bot_manifests/app_config.yaml"
+
+          if [ ! -f "$config_file" ]; then
+            echo "Configuration file not found: $config_file"
+            exit 1
+          fi
+
+          # Extract app ID and env name from config
+          app_id=$(yq eval ".apps.\"$manifest_filename\".app_id" "$config_file")
+          env_name=$(yq eval ".apps.\"$manifest_filename\".env_name" "$config_file")
+
+          if [ "$app_id" = "null" ] || [ "$env_name" = "null" ]; then
+            echo "Configuration not found for manifest: $manifest_filename"
+            echo "Available configurations:"
+            yq eval '.apps | keys' "$config_file"
+            exit 1
+          fi
+
+          echo "APP_ID=$app_id" >> $GITHUB_OUTPUT
+          echo "ENV_NAME=$env_name" >> $GITHUB_OUTPUT
+          echo "Found configuration for $manifest_filename: env=$env_name, app_id=$app_id"
+
+      - name: Fetch current manifest and flip background color
+        run: |
+          # Fetch the current manifest from Slack to get the actual background color and description
+          echo "Fetching current manifest from Slack..."
+          export_response=$(curl -s -X POST \
+            -H "Authorization: Bearer ${{ needs.setup-and-detect.outputs.config-token }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"app_id\": \"${{ steps.get_app_id.outputs.APP_ID }}\"}" \
+            https://slack.com/api/apps.manifest.export)
+
+          if ! echo "$export_response" | jq -e '.ok == true' > /dev/null; then
+            echo "❌ Failed to fetch current manifest"
+            echo "$export_response" | jq '.error // .errors'
+            exit 1
+          fi
+
+          # Extract current background color from Slack's manifest
+          current_color=$(echo "$export_response" | jq -r '.manifest.display_information.background_color')
+          echo "Current background color in Slack: $current_color"
+
+          # Extract current description from Slack's manifest
+          current_description=$(echo "$export_response" | jq -r '.manifest.display_information.description')
+          echo "Current description in Slack: $current_description"
+
+          # Define two colors that differ by 1 in the blue channel
+          COLOR_A="#001633"
+          COLOR_B="#001634"
+
+          if [ "$current_color" = "$COLOR_A" ]; then
+            new_color="$COLOR_B"
+          else
+            new_color="$COLOR_A"
+          fi
+
+          # Toggle period at end of description
+          if [[ "$current_description" == *. ]]; then
+            # Remove trailing period
+            new_description="${current_description%.}"
+          else
+            # Add trailing period
+            new_description="${current_description}."
+          fi
+
+          # Update both background color and description in our local manifest file
+          jq --arg color "$new_color" --arg desc "$new_description" \
+            '.display_information.background_color = $color | .display_information.description = $desc' \
+            "${{ matrix.manifest_file }}" > "${{ matrix.manifest_file }}.tmp"
+          mv "${{ matrix.manifest_file }}.tmp" "${{ matrix.manifest_file }}"
+
+          echo "Flipped background color from $current_color to $new_color"
+          echo "Toggled description from '$current_description' to '$new_description'"
+
+      - name: Validate manifest
+        id: validate
+        run: |
+          echo "Validating ${{ matrix.manifest_file }}..."
+
+          # Create validation payload with manifest field
+          validation_payload=$(jq -n --slurpfile manifest ${{ matrix.manifest_file }} '{
+            manifest: ($manifest[0] | tostring)
+          }')
+
+          validate_response=$(curl -s -X POST \
+            -H "Authorization: Bearer ${{ needs.setup-and-detect.outputs.config-token }}" \
+            -H "Content-Type: application/json; charset=utf-8" \
+            -d "$validation_payload" \
+            https://slack.com/api/apps.manifest.validate)
+
+          echo "Validation response: $validate_response"
+
+          # Check if validation was successful
+          if echo "$validate_response" | jq -e '.ok == true' > /dev/null; then
+            echo "✅ ${{ matrix.manifest_file }} validation passed"
+          else
+            echo "❌ ${{ matrix.manifest_file }} validation failed"
+            echo "$validate_response" | jq '.error // .errors'
+            exit 1
+          fi
+
+      - name: Update Slack app manifest
+        id: update
+        run: |
+          echo "Updating ${{ steps.get_app_id.outputs.ENV_NAME }} app manifest..."
+          response=$(curl -X POST \
+            -H "Authorization: Bearer ${{ needs.setup-and-detect.outputs.config-token }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"app_id\": \"${{ steps.get_app_id.outputs.APP_ID }}\", \
+            \"manifest\": $(cat ${{ matrix.manifest_file }})}" \
+            https://slack.com/api/apps.manifest.update)
+
+          echo "Response: $response"
+
+          # Check if update was successful
+          if echo "$response" | jq -e '.ok == true' > /dev/null; then
+            echo "✅ ${{ steps.get_app_id.outputs.ENV_NAME }} manifest updated successfully"
+          else
+            echo "❌ ${{ steps.get_app_id.outputs.ENV_NAME }} manifest update failed"
+            echo "$response" | jq '.error // .errors'
+            exit 1
+          fi

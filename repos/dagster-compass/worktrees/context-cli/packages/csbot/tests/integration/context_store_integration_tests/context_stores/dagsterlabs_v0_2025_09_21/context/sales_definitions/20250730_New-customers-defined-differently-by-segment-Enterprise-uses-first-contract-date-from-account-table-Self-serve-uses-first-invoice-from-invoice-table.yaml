@@ -1,0 +1,11 @@
+topic: new customers definition
+incorrect_understanding:
+  I might not know the specific definition of new customers
+  for enterprise vs self-serve segments
+correct_understanding:
+  "For enterprise: new customers are defined by first contract
+  date on the account table. For self-serve: new customers are defined by first invoice
+  on the self serve invoice table"
+search_keywords:
+  new customers, enterprise, self-serve, first contract date, account
+  table, first invoice, invoice table, customer definition, segmentation

@@ -1,0 +1,207 @@
+/* Custom dark mode background */
+html.dark,
+html.dark body {
+  background-color: #010e1f !important;
+}
+
+/* Override all Nextra dark mode backgrounds - using RGB values */
+.dark {
+  --nextra-bg: 1, 14, 31 !important;  /* RGB values for #010e1f */
+  --nextra-primary-1: #010e1f;
+  --nextra-primary-2: #021a33;
+}
+
+/* Specific overrides for all Nextra components */
+.dark .nextra-nav-container,
+.dark .nextra-nav-container-blur,
+.dark .nextra-sidebar,
+.dark .nextra-content,
+.dark nav,
+.dark footer,
+.dark main,
+.dark article,
+.dark aside,
+.dark .nx-bg-white,
+.dark [class*="bg-white"],
+.dark [class*="bg-gray"],
+.dark li > button,
+.dark li > a,
+.dark header {
+  background-color: #010e1f !important;
+}
+
+/* Remove shadows from sticky elements in dark mode but don't set background */
+.dark .nx-sticky {
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Target the backdrop blur div - simpler and more effective */
+.dark .nx-sticky > div:first-child {
+  background-color: rgba(1, 14, 31, 0.8) !important;
+}
+
+/* Make sure the nav container inside has correct background */
+.dark .nextra-nav-container {
+  background: transparent !important;
+}
+
+/* The actual nav content */
+.dark .nextra-nav-container nav {
+  background-color: transparent !important;
+}
+
+/* On This Page section and TOC */
+.dark .nextra-toc,
+.dark .nx-border-gray-200,
+.dark [class*="border-gray"] {
+  background-color: #010e1f !important;
+}
+
+/* Theme switcher button and all buttons with background */
+.dark button[title*="theme"],
+.dark button[title*="Theme"],
+.dark .nx-bg-black\/\[\.05\],
+.dark [class*="bg-black"],
+.dark .nx-bg-gray-100\/70,
+.dark .nx-bg-gray-100,
+.dark [class*="gray-100"],
+.dark [class*="slate"],
+.dark [class*="zinc"] {
+  background-color: #010e1f !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Sidebar active item - only for actual active items */
+.dark li.active > a,
+.dark .nx-bg-primary-100.nx-text-primary-600 {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Feedback section (Need help? Email us) - more specific */
+.dark .nextra-feedback,
+.dark [class*="feedback"],
+.dark .nx-mt-8,
+.dark .nx-pt-8 {
+  background-color: #010e1f !important;
+}
+
+/* Borders - consistent for both light and dark */
+.nextra-nav-container,
+footer,
+.nx-border-t,
+[class*="border-t"],
+.nx-border-b,
+[class*="border-b"] {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.dark .nextra-nav-container,
+.dark footer,
+.dark .nx-border-t,
+.dark [class*="border-t"],
+.dark .nx-border-b,
+.dark [class*="border-b"],
+.dark .nx-border-gray-200,
+.dark [class*="border-gray"] {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Search bar background */
+.dark input[type="search"],
+.dark .nextra-search input {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Left sidebar navigation text size */
+aside li,
+aside a,
+aside button,
+nav.nextra-menu-desktop li,
+nav.nextra-menu-desktop a,
+.nx-text-sm {
+  font-size: 1rem !important;
+}
+
+/* Images in main content area */
+main img,
+article img,
+.nextra-content img {
+  max-width: 75% !important;
+  height: auto;
+}
+
+/* YouTube embeds - responsive and with spacing */
+main iframe,
+article iframe,
+.nextra-content iframe {
+  margin-top: 2rem !important;
+  margin-bottom: 2rem !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  aspect-ratio: 16 / 9;
+  height: auto !important;
+}
+
+/* Blockquotes and callout styling */
+main blockquote,
+article blockquote,
+.nextra-content blockquote {
+  font-size: 1.125rem !important;
+  line-height: 1.5 !important;
+  padding: 1.5rem !important;
+  border-left: 4px solid rgba(59, 130, 246, 0.8) !important;
+  background-color: rgba(245, 245, 245, 1) !important;
+  margin: 1.5rem 0 !important;
+  border-radius: 0.5rem !important;
+}
+
+.dark main blockquote,
+.dark article blockquote,
+.dark .nextra-content blockquote {
+  background-color: #1c2534 !important;
+  border-left-color: rgb(59, 130, 246) !important;
+}
+
+blockquote p {
+  margin: 0.75rem 0 !important;
+  font-size: 1.125rem !important;
+  line-height: 1.5 !important;
+  font-weight: 400 !important;
+}
+
+blockquote p:first-child {
+  margin-top: 0 !important;
+}
+
+blockquote p:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Make text in blockquotes bold and fully visible */
+blockquote strong,
+blockquote em {
+  color: inherit !important;
+  font-weight: 600 !important;
+  font-style: normal !important;
+}
+
+/* Light mode text */
+blockquote {
+  color: rgb(30, 41, 59) !important;
+}
+
+blockquote p {
+  color: rgb(30, 41, 59) !important;
+  opacity: 1 !important;
+}
+
+/* Dark mode text */
+.dark blockquote {
+  color: rgb(226, 232, 240) !important;
+}
+
+.dark blockquote p {
+  color: rgb(226, 232, 240) !important;
+  opacity: 1 !important;
+}

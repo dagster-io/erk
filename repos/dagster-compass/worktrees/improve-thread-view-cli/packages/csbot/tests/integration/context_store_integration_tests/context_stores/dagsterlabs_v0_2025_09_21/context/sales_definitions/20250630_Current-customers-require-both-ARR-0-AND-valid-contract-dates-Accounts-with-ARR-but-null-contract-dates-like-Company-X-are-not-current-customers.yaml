@@ -1,0 +1,13 @@
+topic: current customer definition for manufacturing analysis
+incorrect_understanding:
+  I included Hasbro as a current customer because it had ARR
+  value, but it has null values for first_contract_start_date and last_contract_end_date,
+  which means it's not actually a current customer
+correct_understanding:
+  For current customers, I should filter for accounts that have
+  both ARR > 0 AND valid contract dates (first_contract_start_date IS NOT NULL), not
+  just ARR alone. Accounts with ARR but no contract dates are not current customers.
+search_keywords:
+  current customers, ARR, contract dates, first_contract_start_date,
+  last_contract_end_date, customer definition, manufacturing analysis, Hasbro, null
+  values, customer filtering

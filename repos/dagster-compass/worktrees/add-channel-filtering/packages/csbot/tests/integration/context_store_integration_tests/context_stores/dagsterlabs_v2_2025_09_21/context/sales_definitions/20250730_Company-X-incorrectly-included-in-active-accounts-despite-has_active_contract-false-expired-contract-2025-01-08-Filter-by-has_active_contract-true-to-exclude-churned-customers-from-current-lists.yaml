@@ -1,0 +1,13 @@
+topic: dialpad churn status verification
+incorrect_understanding:
+  I included Dialpad in the active serverless enterprise accounts
+  list even though they have has_active_contract = false and their contract ended
+  on 2025-01-08
+correct_understanding:
+  When listing current enterprise accounts, I should filter by
+  has_active_contract = true to exclude churned customers like Dialpad. Accounts with
+  expired contracts should not be included in current customer lists even if they
+  still have ARR values in the system.
+search_keywords:
+  dialpad, churn, has_active_contract, expired contract, serverless
+  enterprise, active accounts, ARR, customer filtering, contract status, churned customers

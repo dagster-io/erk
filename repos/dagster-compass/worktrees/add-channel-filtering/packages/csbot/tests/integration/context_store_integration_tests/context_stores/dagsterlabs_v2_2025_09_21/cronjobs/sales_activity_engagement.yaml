@@ -1,0 +1,32 @@
+cron: 0 10 * * 4
+question:
+  "Create a comprehensive weekly sales activity and engagement analysis including:
+
+
+  1. Meeting volume trends and sentiment scores from sales call transcripts, broken
+  down by rep and account type
+
+  2. Response times to first outreach compared to industry benchmarks and internal
+  targets
+
+  3. Opportunity win rates by sales rep, account segment, and lead source with coaching
+  insights
+
+  4. Upcoming renewals and expansion opportunities with risk assessment based on recent
+  activity
+
+  5. Account engagement patterns showing meeting frequency and quality scores
+
+  6. Sales activity correlation with deal progression and close rates
+
+  7. Create visualizations for rep performance and account health metrics
+
+  8. Identify accounts needing immediate attention or intervention
+
+
+  Focus on actionable insights to improve sales execution, account management, and
+  revenue retention."
+thread:
+  "\U0001F91D Weekly Sales Account Activity & Engagement Analysis - tracking\
+  \ meeting volume, response times, sentiment analysis, and renewal opportunities\
+  \ \U0001F9F5"

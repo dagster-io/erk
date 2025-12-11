@@ -1,0 +1,14 @@
+topic: Summer Observe campaign SAL attribution
+incorrect_understanding:
+  When looking for SALs touched by a campaign, I should include
+  all historical opportunities where the campaign appears in any touch attribution
+  field, regardless of when the SAL occurred relative to the campaign start date
+correct_understanding:
+  "When looking for SALs touched by a campaign, I should focus
+  on SALs that occurred during or after the campaign period. For the Summer Observe
+  campaign (started May 26, 2025), the actual SALs influenced are those with SAL dates
+  on/after the campaign start date, which totals 2 SALs: Company X and Company Y"
+search_keywords:
+  Summer Observe campaign, SAL attribution, campaign start date, May
+  26 2025, touch attribution, historical opportunities,
+  campaign period, influenced SALs

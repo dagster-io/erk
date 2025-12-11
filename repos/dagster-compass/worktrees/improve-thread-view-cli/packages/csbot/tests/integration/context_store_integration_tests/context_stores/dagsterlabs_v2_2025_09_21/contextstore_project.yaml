@@ -1,0 +1,9 @@
+project_name: company/testproject
+teams:
+  epd: []
+  exec:
+    - exec.user@example.com
+  marketing: []
+  ops: []
+  sales: []
+version: 2

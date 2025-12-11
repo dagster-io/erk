@@ -1,0 +1,526 @@
+# Exported from Render on 2025-08-04T17:31:04Z
+# Generated from render.yaml.jinja - DO NOT EDIT DIRECTLY
+# Run: uv run scripts/generate_render_yaml.py
+databases:
+  - name: compass-bot-db
+    databaseName: compass_bot_db
+    user: compass_bot_db_user
+    plan: pro-4gb
+    region: oregon
+    postgresMajorVersion: "17"
+    diskSizeGB: 5
+# Core bot service and webserver
+services:
+  - type: web
+    name: compass-bot
+    runtime: docker
+    repo: https://github.com/dagster-io/dagster-compass
+    branch: master
+    plan: pro plus
+    envVars:
+      - key: SECRET_ENCRYPTION_KEY
+        sync: false
+      - key: HONEYCOMB_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: SLACK_BOT_TOKEN
+        sync: false
+      - key: SLACK_SIGNING_SECRET
+        sync: false
+      - key: SLACK_ADMIN_TOKEN
+        sync: false
+      - key: COMPASS_DEV_TOOLS_BOT_TOKEN
+        sync: false
+      - key: STRIPE_TOKEN
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: RENDER_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: HTTP_PORT
+        value: "3000"
+      - key: HTTP_HOST
+        value: "0.0.0.0"
+      - key: PROSPECTOR_DATA_BQ_JSON
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: DD_ENV
+        value: staging
+      - key: DD_SERVICE
+        value: compass-bot
+      - key: DD_AGENT_HOST
+        fromService:
+          name: staging-datadog-agent
+          type: pserv
+          property: host
+      - key: DD_AGENT_PORT
+        value: 8126
+      - key: REDIS_URL
+        fromService:
+          name: compass-redis-kv
+          type: keyvalue
+          property: connectionString
+      - key: DATABASE_URL
+        fromDatabase:
+          name: compass-bot-db
+          property: connectionString
+      - key: SEGMENT_WRITE_KEY
+        sync: false
+      - key: TEMPORAL_ENDPOINT
+        sync: false
+      - key: TEMPORAL_API_KEY
+        sync: false
+    region: oregon
+    dockerContext: .
+    dockerfilePath: ./staging.Dockerfile
+    autoDeployTrigger: commit
+  # Datadog agent, to send APM and profiling to Datadog
+  - type: pserv
+    name: staging-datadog-agent
+    plan: starter
+    region: oregon
+    runtime: docker
+    dockerContext: .
+    dockerfilePath: ./datadog-agent.Dockerfile
+    autoDeployTrigger: commit
+    envVars:
+      - key: DD_API_KEY
+        sync: false
+  # Database tailscale reverse proxy
+  - type: pserv
+    name: compass-tailscale-staging
+    runtime: docker
+    repo: https://github.com/dagster-io/dagster-compass
+    branch: master
+    plan: starter
+    region: oregon
+    dockerContext: ./tailscale/db
+    dockerfilePath: ./tailscale/db/tailscale.Dockerfile
+    autoDeployTrigger: off
+    disk:
+      name: tailscale-staging-state
+      mountPath: /var/tailscale
+      sizeGB: 1
+    envVars:
+      - key: TAILSCALE_AUTHKEY
+        sync: false
+      - key: TAILSCALE_HOSTNAME
+        value: staging-compass-db
+      - key: COMPASS_BOT_DB_HOSTNAME
+        fromDatabase:
+          name: compass-bot-db
+          property: host
+  # Admin panel
+  - type: pserv
+    name: compass-admin-panel-staging
+    runtime: docker
+    repo: https://github.com/dagster-io/dagster-compass
+    branch: master
+    plan: starter
+    region: oregon
+    dockerContext: .
+    dockerfilePath: ./staging.Dockerfile
+    dockerCommand: uv run --frozen compass-admin --host 0.0.0.0 --port 8080 --config staging.csbot.config.yaml
+    autoDeployTrigger: commit
+    envVars:
+      - key: HONEYCOMB_API_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: HONEYCOMB_API_KEY
+      - key: SECRET_ENCRYPTION_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: SECRET_ENCRYPTION_KEY
+      - key: ANTHROPIC_API_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: ANTHROPIC_API_KEY
+      - key: GITHUB_TOKEN
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: GITHUB_TOKEN
+      - key: GITHUB_CLIENT_SECRET
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: GITHUB_CLIENT_SECRET
+      - key: SLACK_BOT_TOKEN
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: SLACK_BOT_TOKEN
+      - key: SLACK_SIGNING_SECRET
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: SLACK_SIGNING_SECRET
+      - key: SLACK_ADMIN_TOKEN
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: SLACK_ADMIN_TOKEN
+      - key: COMPASS_DEV_TOOLS_BOT_TOKEN
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: COMPASS_DEV_TOOLS_BOT_TOKEN
+      - key: STRIPE_TOKEN
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: STRIPE_TOKEN
+      - key: STRIPE_PUBLISHABLE_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: STRIPE_PUBLISHABLE_KEY
+      - key: RENDER_API_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: RENDER_API_KEY
+      - key: JWT_SECRET
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: JWT_SECRET
+      - key: PROSPECTOR_DATA_BQ_JSON
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: PROSPECTOR_DATA_BQ_JSON
+      - key: AWS_ACCESS_KEY_ID
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: AWS_ACCESS_KEY_ID
+      - key: AWS_SECRET_ACCESS_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: AWS_SECRET_ACCESS_KEY
+      - key: SEGMENT_WRITE_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: SEGMENT_WRITE_KEY
+      - key: TEMPORAL_ENDPOINT
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: TEMPORAL_ENDPOINT
+      - key: TEMPORAL_API_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: TEMPORAL_API_KEY
+      - key: HTTP_PORT
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: HTTP_PORT
+      - key: HTTP_HOST
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: HTTP_HOST
+      - key: DATABASE_URL
+        fromDatabase:
+          name: compass-bot-db
+          property: connectionString
+  - type: pserv
+    name: compass-tailscale-admin-panel-staging
+    runtime: docker
+    repo: https://github.com/dagster-io/dagster-compass
+    branch: master
+    plan: starter
+    region: oregon
+    dockerContext: ./tailscale/http-reverse-proxy
+    dockerfilePath: ./tailscale/http-reverse-proxy/tailscale.Dockerfile
+    autoDeployTrigger: off
+    disk:
+      name: tailscale-admin-panel-staging-state
+      mountPath: /var/tailscale
+      sizeGB: 1
+    envVars:
+      - key: TAILSCALE_AUTHKEY
+        sync: false
+      - key: TAILSCALE_HOSTNAME
+        value: staging-compass-admin-panel
+      - key: TARGET_SERVICE_HOSTNAME
+        fromService:
+          name: compass-admin-panel-staging
+          type: pserv
+          property: host
+      - key: TARGET_SERVICE_PORT
+        value: "8080"
+  # Redis KV store
+  - type: keyvalue
+    name: compass-redis-kv
+    plan: starter
+    region: oregon
+    maxmemoryPolicy: noeviction
+    ipAllowList: [] # Temporal worker
+  - type: worker
+    name: staging-temporal-worker
+    runtime: docker
+    repo: https://github.com/dagster-io/dagster-compass
+    branch: master
+    plan: pro plus
+    region: oregon
+    dockerContext: .
+    dockerfilePath: ./staging.Dockerfile
+    dockerCommand: uv run --frozen compass-temporal-worker start --config staging.csbot.config.yaml --max-concurrent-activities 10
+    autoDeployTrigger: commit
+    envVars:
+      - key: HONEYCOMB_API_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: HONEYCOMB_API_KEY
+      - key: SECRET_ENCRYPTION_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: SECRET_ENCRYPTION_KEY
+      - key: ANTHROPIC_API_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: ANTHROPIC_API_KEY
+      - key: GITHUB_TOKEN
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: GITHUB_TOKEN
+      - key: GITHUB_CLIENT_SECRET
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: GITHUB_CLIENT_SECRET
+      - key: SLACK_BOT_TOKEN
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: SLACK_BOT_TOKEN
+      - key: SLACK_SIGNING_SECRET
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: SLACK_SIGNING_SECRET
+      - key: SLACK_ADMIN_TOKEN
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: SLACK_ADMIN_TOKEN
+      - key: COMPASS_DEV_TOOLS_BOT_TOKEN
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: COMPASS_DEV_TOOLS_BOT_TOKEN
+      - key: STRIPE_TOKEN
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: STRIPE_TOKEN
+      - key: STRIPE_PUBLISHABLE_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: STRIPE_PUBLISHABLE_KEY
+      - key: RENDER_API_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: RENDER_API_KEY
+      - key: JWT_SECRET
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: JWT_SECRET
+      - key: PROSPECTOR_DATA_BQ_JSON
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: PROSPECTOR_DATA_BQ_JSON
+      - key: AWS_ACCESS_KEY_ID
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: AWS_ACCESS_KEY_ID
+      - key: AWS_SECRET_ACCESS_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: AWS_SECRET_ACCESS_KEY
+      - key: SEGMENT_WRITE_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: SEGMENT_WRITE_KEY
+      - key: TEMPORAL_ENDPOINT
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: TEMPORAL_ENDPOINT
+      - key: TEMPORAL_API_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: TEMPORAL_API_KEY
+      - key: DATABASE_URL
+        fromDatabase:
+          name: compass-bot-db
+          property: connectionString
+      - key: DD_ENV
+        value: staging
+      - key: DD_SERVICE
+        value: compass-temporal-worker
+      - key: DD_AGENT_HOST
+        fromService:
+          name: staging-datadog-agent
+          type: pserv
+          property: host
+      - key: DD_AGENT_PORT
+        value: 8126
+      - key: TEMPORAL_TASK_QUEUE
+        value: compass-queue # Temporal worker for dataset monitoring
+  - type: worker
+    name: staging-temporal-worker-monitoring
+    runtime: docker
+    repo: https://github.com/dagster-io/dagster-compass
+    branch: master
+    plan: pro plus
+    region: oregon
+    dockerContext: .
+    dockerfilePath: ./staging.Dockerfile
+    dockerCommand: uv run --frozen compass-temporal-worker start --config staging.csbot.config.yaml --max-concurrent-activities 10
+    autoDeployTrigger: commit
+    envVars:
+      - key: HONEYCOMB_API_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: HONEYCOMB_API_KEY
+      - key: SECRET_ENCRYPTION_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: SECRET_ENCRYPTION_KEY
+      - key: ANTHROPIC_API_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: ANTHROPIC_API_KEY
+      - key: GITHUB_TOKEN
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: GITHUB_TOKEN
+      - key: GITHUB_CLIENT_SECRET
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: GITHUB_CLIENT_SECRET
+      - key: SLACK_BOT_TOKEN
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: SLACK_BOT_TOKEN
+      - key: SLACK_SIGNING_SECRET
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: SLACK_SIGNING_SECRET
+      - key: SLACK_ADMIN_TOKEN
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: SLACK_ADMIN_TOKEN
+      - key: COMPASS_DEV_TOOLS_BOT_TOKEN
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: COMPASS_DEV_TOOLS_BOT_TOKEN
+      - key: STRIPE_TOKEN
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: STRIPE_TOKEN
+      - key: STRIPE_PUBLISHABLE_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: STRIPE_PUBLISHABLE_KEY
+      - key: RENDER_API_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: RENDER_API_KEY
+      - key: JWT_SECRET
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: JWT_SECRET
+      - key: PROSPECTOR_DATA_BQ_JSON
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: PROSPECTOR_DATA_BQ_JSON
+      - key: AWS_ACCESS_KEY_ID
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: AWS_ACCESS_KEY_ID
+      - key: AWS_SECRET_ACCESS_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: AWS_SECRET_ACCESS_KEY
+      - key: SEGMENT_WRITE_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: SEGMENT_WRITE_KEY
+      - key: TEMPORAL_ENDPOINT
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: TEMPORAL_ENDPOINT
+      - key: TEMPORAL_API_KEY
+        fromService:
+          name: compass-bot
+          type: web
+          envVarKey: TEMPORAL_API_KEY
+      - key: DATABASE_URL
+        fromDatabase:
+          name: compass-bot-db
+          property: connectionString
+      - key: DD_ENV
+        value: staging
+      - key: DD_SERVICE
+        value: compass-temporal-worker-dataset-monitoring
+      - key: DD_AGENT_HOST
+        fromService:
+          name: staging-datadog-agent
+          type: pserv
+          property: host
+      - key: DD_AGENT_PORT
+        value: 8126
+      - key: TEMPORAL_TASK_QUEUE
+        value: dataset-monitoring
+version: "1"

@@ -1,0 +1,12 @@
+topic: customer examples for dagster+ value
+incorrect_understanding: listing all companies in sales conversations as current customers
+correct_understanding:
+  "only companies with active contracts (ARR_ACTIVE_CONTRACTS
+  > 0) are current customers. confirmed current customers getting dagster+ value:
+  company a ($25k-30k arr), company b ($160k-180k arr), company c ($400k-450k arr),
+  company d ($60k-70k arr), company e ($70k-80k arr). companies like prospect a,
+  prospect b, prospect c, prospect d, prospect e are prospects,
+  not current customers"
+search_keywords:
+  Dagster+, active contracts, ARR, current customers, customer value, prospects,
+  sales conversations, enterprise customers, contract analysis

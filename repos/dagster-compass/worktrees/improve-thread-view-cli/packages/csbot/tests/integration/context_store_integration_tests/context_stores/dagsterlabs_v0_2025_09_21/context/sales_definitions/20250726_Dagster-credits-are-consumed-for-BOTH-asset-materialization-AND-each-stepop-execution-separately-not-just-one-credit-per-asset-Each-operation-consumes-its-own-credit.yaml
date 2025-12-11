@@ -1,0 +1,13 @@
+topic: dagster credits consumption model
+incorrect_understanding: 1 asset materialization consumes 1 credit
+correct_understanding:
+  'Credits are consumed when either "an asset is materialized
+  OR a step is run" - these are two different consumption events. An asset materialization
+  AND each individual step/operation both consume credits separately. From the sales
+  transcripts: "a credit is consumed any time an asset is materialized or a step is
+  run" and "anytime an asset is materialized or an op is run, each of those consumes
+  one credit"'
+search_keywords:
+  dagster credits, asset materialization, step execution, op consumption,
+  credit model, billing, operations, separate consumption, dagster pricing, workflow
+  costs

@@ -1,0 +1,597 @@
+{
+  "metadata": {
+    "recorded_at": "2025-08-25T00:06:23.288131+00:00",
+    "scenario": "multilingual",
+    "model": "claude-sonnet-4-20250514",
+    "agent_type": "AnthropicAgent",
+    "anthropic_client_version": "0.25.1",
+    "recorder_version": "1.0",
+    "raw_event_count": 28,
+    "agent_block_event_count": 25,
+    "agent_message_count": 1,
+    "duration_seconds": 6.448503017425537
+  },
+  "request_params": {
+    "system": "You are a helpful assistant.",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Respond in multiple languages: English, French, Spanish, and Japanese."
+      }
+    ],
+    "tools": [],
+    "model": "claude-sonnet-4-20250514",
+    "max_tokens": 50000
+  },
+  "raw_anthropic_events": [
+    {
+      "type": "message_start",
+      "timestamp": "2025-08-25T00:06:18.287200+00:00",
+      "message": {
+        "id": "msg_0177rMer2mC82jLJPnz7SfQx",
+        "content": [],
+        "model": "claude-sonnet-4-20250514",
+        "role": "assistant",
+        "stop_reason": null,
+        "stop_sequence": null,
+        "type": "message",
+        "usage": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 28,
+          "output_tokens": 1,
+          "server_tool_use": null,
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "content_block_start",
+      "timestamp": "2025-08-25T00:06:18.287378+00:00",
+      "content_block": {
+        "citations": null,
+        "text": "",
+        "type": "text"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:18.287514+00:00",
+      "delta": {
+        "text": "I",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:18.574007+00:00",
+      "delta": {
+        "text": "'d be happy to respond in multiple languages! Here's a greeting and introduction in each:\n\n**English:**",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:18.880604+00:00",
+      "delta": {
+        "text": "\nHello! I'm Claude, an AI assistant created by Anthrop",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:18.959923+00:00",
+      "delta": {
+        "text": "ic. I'm here to help you with questions, tasks",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:19.289830+00:00",
+      "delta": {
+        "text": ", creative projects, analysis, and conversation. Please feel free to ask me anything you'",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:19.496256+00:00",
+      "delta": {
+        "text": "d like assistance with.\n\n**French:**\nBonjour !",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:19.592292+00:00",
+      "delta": {
+        "text": " Je suis Claude, un assistant IA créé par Anthropic.",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:19.907791+00:00",
+      "delta": {
+        "text": " Je suis là pour vous aider avec des questions, des tâches, des proj",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:20.044616+00:00",
+      "delta": {
+        "text": "ets créatifs, des analyses et la conversation. N'hésitez pas à me",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:20.401272+00:00",
+      "delta": {
+        "text": " demander tout ce avec quoi vous aimeriez de",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:20.505388+00:00",
+      "delta": {
+        "text": " l'aide.\n\n**Spanish:**\n¡Hola!",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:20.607480+00:00",
+      "delta": {
+        "text": " Soy Claude, un asistente de IA creado por Anthrop",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:20.710805+00:00",
+      "delta": {
+        "text": "ic. Estoy aquí para ayudarte con preguntas,",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:20.863294+00:00",
+      "delta": {
+        "text": " tareas, proyectos creativos, análisis y conversación. Por favor, no dudes en preg",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:21.121129+00:00",
+      "delta": {
+        "text": "untarme cualquier cosa con la que te gustaría recibir ayuda.\n\n**Japanese",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:21.440724+00:00",
+      "delta": {
+        "text": ":**\nこんにちは！私はClaude（クロード）です",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:21.857413+00:00",
+      "delta": {
+        "text": "。Anthropic社によって作られたAIアシ",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:21.974705+00:00",
+      "delta": {
+        "text": "スタントです。質問、タスク、創作",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:22.181878+00:00",
+      "delta": {
+        "text": "プロジェクト、分析、そして会話の",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:22.466239+00:00",
+      "delta": {
+        "text": "お手伝いをします。何でもお",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:22.548006+00:00",
+      "delta": {
+        "text": "気軽にお聞きください。\n\nIs",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:22.956059+00:00",
+      "delta": {
+        "text": " there a specific topic you'd like me to address",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:06:23.234542+00:00",
+      "delta": {
+        "text": " in these languages?",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_stop",
+      "timestamp": "2025-08-25T00:06:23.234796+00:00",
+      "index": 0
+    },
+    {
+      "type": "message_delta",
+      "timestamp": "2025-08-25T00:06:23.267462+00:00",
+      "delta": {
+        "stop_reason": "end_turn",
+        "stop_sequence": null
+      },
+      "usage": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "input_tokens": 28,
+        "output_tokens": 345,
+        "server_tool_use": null
+      }
+    },
+    {
+      "type": "message_stop",
+      "timestamp": "2025-08-25T00:06:23.268718+00:00"
+    }
+  ],
+  "agent_block_events": [
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "start",
+        "index": 0,
+        "content_block": {
+          "type": "output_text"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:18.287435+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "I"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:18.287551+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "'d be happy to respond in multiple languages! Here's a greeting and introduction in each:\n\n**English:**"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:18.574154+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "\nHello! I'm Claude, an AI assistant created by Anthrop"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:18.880751+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "ic. I'm here to help you with questions, tasks"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:18.960063+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": ", creative projects, analysis, and conversation. Please feel free to ask me anything you'"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:19.289947+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "d like assistance with.\n\n**French:**\nBonjour !"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:19.496377+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " Je suis Claude, un assistant IA créé par Anthropic."
+        }
+      },
+      "timestamp": "2025-08-25T00:06:19.592411+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " Je suis là pour vous aider avec des questions, des tâches, des proj"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:19.907906+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "ets créatifs, des analyses et la conversation. N'hésitez pas à me"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:20.044729+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " demander tout ce avec quoi vous aimeriez de"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:20.401470+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " l'aide.\n\n**Spanish:**\n¡Hola!"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:20.505497+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " Soy Claude, un asistente de IA creado por Anthrop"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:20.607643+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "ic. Estoy aquí para ayudarte con preguntas,"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:20.710976+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " tareas, proyectos creativos, análisis y conversación. Por favor, no dudes en preg"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:20.863473+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "untarme cualquier cosa con la que te gustaría recibir ayuda.\n\n**Japanese"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:21.121433+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": ":**\nこんにちは！私はClaude（クロード）です"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:21.441251+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "。Anthropic社によって作られたAIアシ"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:21.857547+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "スタントです。質問、タスク、創作"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:21.974893+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "プロジェクト、分析、そして会話の"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:22.182052+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "お手伝いをします。何でもお"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:22.466444+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "気軽にお聞きください。\n\nIs"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:22.548114+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " there a specific topic you'd like me to address"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:22.956305+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " in these languages?"
+        }
+      },
+      "timestamp": "2025-08-25T00:06:23.234672+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "stop",
+        "index": 0
+      },
+      "timestamp": "2025-08-25T00:06:23.234879+00:00"
+    }
+  ],
+  "agent_messages": [
+    {
+      "role": "assistant",
+      "content": "I'd be happy to respond in multiple languages! Here's a greeting and introduction in each:\n\n**English:**\nHello! I'm Claude, an AI assistant created by Anthropic. I'm here to help you with questions, tasks, creative projects, analysis, and conversation. Please feel free to ask me anything you'd like assistance with.\n\n**French:**\nBonjour ! Je suis Claude, un assistant IA créé par Anthropic. Je suis là pour vous aider avec des questions, des tâches, des projets créatifs, des analyses et la conversation. N'hésitez pas à me demander tout ce avec quoi vous aimeriez de l'aide.\n\n**Spanish:**\n¡Hola! Soy Claude, un asistente de IA creado por Anthropic. Estoy aquí para ayudarte con preguntas, tareas, proyectos creativos, análisis y conversación. Por favor, no dudes en preguntarme cualquier cosa con la que te gustaría recibir ayuda.\n\n**Japanese:**\nこんにちは！私はClaude（クロード）です。Anthropic社によって作られたAIアシスタントです。質問、タスク、創作プロジェクト、分析、そして会話のお手伝いをします。何でもお気軽にお聞きください。\n\nIs there a specific topic you'd like me to address in these languages?"
+    }
+  ]
+}

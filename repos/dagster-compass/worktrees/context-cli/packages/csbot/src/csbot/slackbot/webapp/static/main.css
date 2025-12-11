@@ -1,0 +1,152 @@
+/* Custom styles for the Compass webapp */
+
+:root {
+    --font-geist-sans: 'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+body {
+    font-family: var(--font-geist-sans);
+}
+
+/* Header styling with Geist Sans font */
+.header-text {
+    font-weight: 500;
+    font-family: var(--font-geist-sans);
+    color: #001633;
+}
+
+
+/* Subheader styling with Geist Sans font */
+.subheader-text {
+    font-family: var(--font-geist-sans);
+    font-size: 1.125rem;
+}
+
+/* Gradient background utility */
+.gradient {
+    background-image: linear-gradient(
+        70deg,
+        rgba(60, 57, 238, 0.1) 4.45%,
+        rgba(70, 138, 252, 0.1) 38.12%,
+        rgba(13, 167, 205, 0.1) 74.19%,
+        rgba(73, 197, 244, 0.1) 98.04%
+    );
+}
+
+/* Dark blue gradient for right column */
+.bg-dark-blue-gradient {
+    background: linear-gradient(
+        180deg,
+        #001633 0%,
+        #001633 85%,
+        #002D78 100%
+    );
+}
+
+/* Brand color utilities */
+.blue-brand {
+    color: #3C39EE;
+}
+
+.hover\:text-blue-brand-dark:hover {
+    color: #1713e1;
+}
+
+.bg-blue-brand {
+    background-color: #3C39EE;
+}
+
+.hover\:bg-blue-brand-dark:hover {
+    background-color: #1713e1;
+}
+
+.border-blue-brand {
+    border-color: #3C39EE;
+}
+
+.focus\:ring-blue-brand:focus {
+    --tw-ring-color: #3C39EE;
+}
+
+.teal-brand {
+    color: #0DA7CD;
+}
+
+.light-blue-brand {
+    color: #468AFC;
+}
+
+/* Teal brand background utilities */
+.bg-teal-brand\/10 {
+    background-color: rgba(13, 167, 205, 0.1);
+}
+
+/* Light blue brand background utilities */
+.bg-light-blue-brand\/10 {
+    background-color: rgba(70, 138, 252, 0.1);
+}
+
+.bg-light-blue-brand\/20 {
+    background-color: rgba(70, 138, 252, 0.2);
+}
+
+.border-light-blue-brand\/20 {
+    border-color: rgba(70, 138, 252, 0.2);
+}
+
+.focus\:ring-light-blue-brand:focus {
+    --tw-ring-color: #468AFC;
+}
+
+/* Border color utilities (duplicate removed - already defined above) */
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Page-specific styles */
+
+/* Hide share link section initially */
+#shareSection {
+    display: none;
+}
+
+/* Hide textarea initially */
+#otherTextarea {
+    display: none;
+}
+
+
+/* Chat message styling for thread content */
+.prose .user-message {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+}
+
+/* User avatar styling */
+.user-avatar {
+    background: linear-gradient(135deg, #10b9819e 0%, #34d399 100%);
+    border-radius: 6px;
+    height: 36px;
+    width: 36px;
+}
+
+.user-avatar i {
+    font-size: 28px;
+}

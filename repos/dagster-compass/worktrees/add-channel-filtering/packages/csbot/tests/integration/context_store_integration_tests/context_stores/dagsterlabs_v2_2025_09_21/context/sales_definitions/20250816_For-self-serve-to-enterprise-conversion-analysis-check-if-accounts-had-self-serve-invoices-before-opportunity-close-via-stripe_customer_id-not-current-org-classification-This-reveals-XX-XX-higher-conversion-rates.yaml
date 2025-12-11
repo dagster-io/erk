@@ -1,0 +1,18 @@
+topic: self-serve to enterprise conversion analysis methodology
+incorrect_understanding:
+  When analyzing self-serve to enterprise conversions, I should
+  look at the organization's self_serve_or_enterprise field or current plan type to
+  determine if they were originally self-serve
+correct_understanding:
+  "When analyzing self-serve to enterprise conversions, I should\
+  \ check if accounts had at least one self-serve invoice before their opportunity\
+  \ closed won. Link opportunities \u2192 accounts \u2192 self-serve invoices via\
+  \ stripe_customer_id, and check if MIN(invoice_created_at) < opportunity close_date.\
+  \ The organization classification shows current state, not historical journey. This\
+  \ methodology reveals much higher conversion rates (30-50%) compared to just looking\
+  \ at current org classification."
+search_keywords:
+  self-serve conversion, enterprise conversion, opportunity analysis,
+  stripe customer ID, invoice history, conversion methodology, self-serve invoices,
+  opportunity close date, conversion rates, account analysis, historical journey,
+  org classification

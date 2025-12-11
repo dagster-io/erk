@@ -1,0 +1,88 @@
+# Configuration file for the Compass bot deployed in Render.
+# Associated with Slack app https://api.slack.com/apps/A098Y6GJ2TE
+
+slack_signing_secret: {{ secret('slack_signing_secret', 'SLACK_SIGNING_SECRET') }}
+
+ai_config:
+  provider: bedrock
+  aws_access_key: {{ env('AWS_ACCESS_KEY_ID') }}
+  aws_secret_key: {{ env('AWS_SECRET_ACCESS_KEY') }}
+  aws_region: "us-west-2"
+  inference_profile_arn: arn:aws:bedrock:us-west-2:134857758541:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0
+
+github:
+  app_id: 1922892
+  installation_id: 85011224
+  private_key_path: /etc/secrets/dagster-compass-staging-bot.2025-09-08.private-key.pem
+  client_id: Iv23liaVZ1FIRkRaAhWC
+  client_secret: {{ secret('github_client_secret', 'GITHUB_CLIENT_SECRET') }}
+  rate_limiting_monitor_enabled: true  
+
+# Stripe Configuration (Stripe sandbox, e.g. not real customers/products etc)
+stripe:
+  token: {{ env('STRIPE_TOKEN') }}
+  publishable_key: {{ env('STRIPE_PUBLISHABLE_KEY') }}
+  free_product_id: prod_Swl8Ec25xkX2VE
+  starter_product_id: prod_SwlG9kWDSHrfye
+  team_product_id: prod_SwlG6vM56KdVWv
+  design_partner_product_id: prod_SzigekOHSR6FpX
+  default_product: free
+
+
+# Compass Dev Tools credentials
+slack_admin_token: {{ secret('slack_admin_token', 'SLACK_ADMIN_TOKEN') }}
+compass_dev_tools_bot_token: {{ secret('compass_dev_tools_bot_token', 'COMPASS_DEV_TOOLS_BOT_TOKEN') }}
+
+# Compass bot credential
+compass_bot_token: {{ secret('slack_bot_token', 'SLACK_BOT_TOKEN') }}
+
+secret_store:
+  render_service_id: srv-d28irgpr0fns73b6ehc0
+  render_api_key: {{ secret('render_api_key', 'RENDER_API_KEY') }}
+
+# Temporal Configuration
+temporal:
+  type: cloud
+  namespace: compass-staging.deae7
+  endpoint: {{ env('TEMPORAL_ENDPOINT') }}
+  api_key: {{ env('TEMPORAL_API_KEY') }}
+
+db_config:
+  # Storage Configuration - can be SQLite, PostgreSQL, or Redis:
+  # For PostgreSQL: postgresql://user:password@host:5432/database
+  # For Redis: redis://host:6379/0 or rediss://host:6379/0 (SSL)
+  # For SQLite: sqlite:///path/to/file.db or just /path/to/file.db
+  database_uri: {{ env('DATABASE_URL') }}
+  
+http_port: {{ env('HTTP_PORT', '3000') }}
+http_host: {{ env('HTTP_HOST', '0.0.0.0') }}
+public_url: 'https://staging.dagstercompass.com'
+jwt_secret: {{ env('JWT_SECRET') }}
+
+mode: http
+
+# List of Dagster admin users to invite to newly created Slack teams
+dagster_admins_to_invite:
+  - dagstercompass@dagsterlabs.com
+
+# Prospector Configuration
+prospector_contextstore_repo: dagster-compass/shared-prospector-context
+prospector_data_connection:
+  type: bigquery
+  config:
+    location: us
+    service_account_json_string: '{{ env('PROSPECTOR_DATA_BQ_JSON') }}'
+  table_names: []
+
+segment_write_key: {{ secret('segment_write_key', 'SEGMENT_WRITE_KEY') }}
+
+# when this is specified, only the orgs here will get segment events
+segment_orgs_enabled:
+  - Dagster Labs
+
+thread_health_inspector_config:
+  sample_rate: 10
+  start_delay_seconds: 120
+  honeycomb:
+    dataset: "thread-health"
+    api_key: {{ secret('HONEYCOMB_API_KEY', 'HONEYCOMB_API_KEY') }}

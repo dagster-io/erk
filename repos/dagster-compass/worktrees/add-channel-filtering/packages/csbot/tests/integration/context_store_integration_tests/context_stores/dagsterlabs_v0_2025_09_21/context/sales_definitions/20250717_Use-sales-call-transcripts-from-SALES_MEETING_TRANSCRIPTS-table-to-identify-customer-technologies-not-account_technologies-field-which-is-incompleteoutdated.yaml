@@ -1,0 +1,15 @@
+topic: customer technology identification methodology
+incorrect_understanding:
+  When identifying what technologies or integrations customers
+  use, I should rely on the account_technologies field in the accounts table as the
+  primary source
+correct_understanding:
+  When identifying what technologies or integrations customers
+  use, I should search sales call transcripts in the SALES_MEETING_TRANSCRIPTS table
+  rather than relying on the account_technologies field, which is incomplete and outdated.
+  The transcripts contain real discussions about customer tech stacks, integrations,
+  and technology mentions that provide much more comprehensive and current information.
+search_keywords:
+  customer technology identification, sales call transcripts, SALES_MEETING_TRANSCRIPTS
+  table, account_technologies field, tech stack discovery, customer integrations,
+  technology mentions, sales methodology, data sources, customer research

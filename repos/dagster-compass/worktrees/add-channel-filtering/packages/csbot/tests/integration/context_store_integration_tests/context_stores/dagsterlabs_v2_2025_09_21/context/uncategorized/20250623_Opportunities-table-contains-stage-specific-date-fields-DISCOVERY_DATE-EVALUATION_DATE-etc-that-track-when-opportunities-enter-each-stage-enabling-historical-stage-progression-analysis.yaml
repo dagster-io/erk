@@ -1,0 +1,14 @@
+topic: opportunities table stage date fields
+incorrect_understanding:
+  The opportunities table only shows current stage and doesn't
+  have historical stage change tracking, so I cannot determine when opportunities
+  moved between specific stages
+correct_understanding:
+  The opportunities table has specific date fields for each stage
+  (DISCOVERY_DATE, EVALUATION_DATE, PROPOSAL_DATE, NEGOTIATION_REVIEW_DATE, etc.)
+  that track when opportunities moved into each stage, allowing for accurate stage
+  progression analysis
+search_keywords:
+  opportunities table, stage tracking, date fields, discovery date,
+  evaluation date, proposal date, negotiation review date, stage progression, historical
+  analysis, opportunity stages, stage movement, pipeline tracking

@@ -1,0 +1,14 @@
+topic: win rate analysis filtering
+incorrect_understanding:
+  When analyzing win rates, I should include all opportunity
+  types (new business + existing business) which inflates win rates due to high-converting
+  renewal opportunities
+correct_understanding:
+  When analyzing win rates for sales performance, I should filter
+  to 'New Business' opportunities only, as existing business/renewals have much higher
+  win rates and skew the analysis. New business win rates are much more meaningful
+  for understanding sales effectiveness.
+search_keywords:
+  win rate analysis, new business opportunities, sales performance,
+  renewal opportunities, existing business, sales effectiveness, opportunity filtering,
+  performance metrics, sales analytics, conversion rates

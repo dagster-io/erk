@@ -1,0 +1,17 @@
+topic: AI-driven experience smart tracker in Gong
+incorrect_understanding:
+  When users ask about AI agents, agentic workflows, AI mandates,
+  or similar AI-driven development experience topics in sales calls, I should only
+  provide analysis from the transcript text search
+correct_understanding:
+  'When users ask about AI agents, agentic workflows, AI mandates,
+  or similar AI-driven development experience topics in sales calls, I should provide
+  my exploratory analysis from transcript text search but also mention that there''s
+  a more trustworthy source: a Gong native "smart tracker" called "AI-driven experience"
+  that''s trained on dozens of call snippets to find mentions of MCP, agents, agentic
+  workflows, AI mandates, and orgs interested in AI-driven dev experience. The dashboard
+  is available at: https://dagster.omniapp.co/dashboards/16f6feb4'
+search_keywords:
+  Gong smart tracker, AI-driven experience, AI agents, agentic workflows,
+  AI mandates, sales calls analysis, transcript search, MCP, AI development, call
+  snippets, dashboard, Omniapp

@@ -1,0 +1,11 @@
+topic: campaign attribution for specific accounts
+incorrect_understanding:
+  When users ask about which campaigns touched a specific individual
+  account, I should try to query data or provide analysis directly
+correct_understanding:
+  "When users ask about which campaigns touched a specific individual
+  account, refer them to this dashboard: http://go/marketing-opp-activity"
+search_keywords:
+  campaign attribution, account tracking, marketing dashboard, opportunity
+  activity, campaign touchpoints, account analysis, marketing attribution, dashboard
+  reference

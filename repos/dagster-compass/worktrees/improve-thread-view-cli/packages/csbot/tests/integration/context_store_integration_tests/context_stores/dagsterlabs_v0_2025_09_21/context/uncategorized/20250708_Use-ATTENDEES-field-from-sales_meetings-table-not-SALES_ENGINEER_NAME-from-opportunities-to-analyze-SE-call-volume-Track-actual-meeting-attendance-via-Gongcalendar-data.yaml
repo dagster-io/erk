@@ -1,0 +1,16 @@
+topic: Sales engineer meeting attribution methodology
+incorrect_understanding:
+  When analyzing sales engineer call volume, I should use the
+  SALES_ENGINEER_NAME field from the opportunities table to determine which SE to
+  attribute meetings to
+correct_understanding:
+  When analyzing sales engineer call volume, I should look at
+  the actual meeting attendees in the ATTENDEES field from the sales_meetings table
+  to see which SEs actually attended the meetings. The SALES_ENGINEER_NAME from opportunities
+  shows account ownership, not meeting attendance. Sean Lopp cannot have attended
+  meetings after December 2024, so I need to use actual attendee data from Gong/calendar
+  systems.
+search_keywords:
+  sales engineer, meeting attribution, ATTENDEES field, sales_meetings
+  table, call volume analysis, meeting attendance, Gong data, calendar systems, account
+  ownership, SE attribution methodology

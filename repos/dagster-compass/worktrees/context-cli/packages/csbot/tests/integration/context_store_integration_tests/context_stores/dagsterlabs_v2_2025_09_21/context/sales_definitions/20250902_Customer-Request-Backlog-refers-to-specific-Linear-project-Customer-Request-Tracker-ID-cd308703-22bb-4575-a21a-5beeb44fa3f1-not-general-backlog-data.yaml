@@ -1,0 +1,12 @@
+topic: customer request backlog reference
+incorrect_understanding:
+  when user references "customer request backlog" i should
+  search for general backlog or request data
+correct_understanding:
+  when user references "Customer Request Backlog" they are specifically
+  referring to the Linear project "Customer Request Tracker" with project_id 'cd308703-22bb-4575-a21a-5beeb44fa3f1'
+  that contains customer feature requests and requirements
+search_keywords:
+  Customer Request Backlog, Linear project, Customer Request Tracker,
+  project_id, cd308703-22bb-4575-a21a-5beeb44fa3f1, feature requests, requirements,
+  backlog

@@ -1,0 +1,67 @@
+{
+  "display_information": {
+  "name": "Compass",
+  "description": "AI-powered exploratory analytics within Slack",
+  "background_color": "#001633"
+},
+  "features": {
+    "bot_user": {
+      "display_name": "Compass",
+      "always_online": false
+    },
+    "slash_commands": [
+      {
+        "command": "/compass-admin",
+        "url": "https://dagstercompass.com/slack/commands",
+        "description": "Compass admin",
+        "should_escape": false
+      }
+    ]
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": [
+        "app_mentions:read",
+        "channels:history",
+        "channels:join",
+        "channels:read",
+        "chat:write.customize",
+        "chat:write",
+        "commands",
+        "conversations.connect:manage",
+        "files:read",
+        "files:write",
+        "groups:history",
+        "groups:read",
+        "im:history",
+        "mpim:history",
+        "mpim:read",
+        "pins:read",
+        "pins:write",
+        "users:read.email",
+        "users:read"
+      ]
+    }
+  },
+  "settings": {
+    "event_subscriptions": {
+      "request_url": "https://dagstercompass.com/slack/events",
+      "bot_events": [
+        "app_mention",
+        "member_joined_channel",
+        "message.channels",
+        "message.groups",
+        "message.im",
+        "message.mpim",
+        "shared_channel_invite_accepted"
+      ]
+    },
+    "interactivity": {
+      "is_enabled": true,
+      "request_url": "https://dagstercompass.com/slack/interactive"
+    },
+    "org_deploy_enabled": true,
+    "socket_mode_enabled": false,
+    "token_rotation_enabled": false
+  }
+}

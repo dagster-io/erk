@@ -1,0 +1,75 @@
+# Configuration file for the Compass bot running locally.
+# Associated with Slack app https://api.slack.com/apps/A099K92GLBA
+
+slack_app_token: {{ secret('slack_app_token', 'SLACK_APP_TOKEN') }}
+compass_bot_token: {{ secret('slack_bot_token', 'SLACK_BOT_TOKEN') }}
+
+
+ai_config:
+  provider: anthropic # anthropic
+  api_key: {{ env('ANTHROPIC_API_KEY') }}  # Use ANTHROPIC_API_KEY for anthropic
+  model: claude-haiku-4-5-20251001
+
+github:
+  token: {{ env('GITHUB_TOKEN') }}
+  client_id: Iv23li4zY7XY3FTGJ7vo
+  client_secret: {{ secret('github_client_secret', 'GITHUB_CLIENT_SECRET') }}
+
+# Stripe Configuration
+stripe:
+  token: {{ env('STRIPE_TOKEN') }}
+  publishable_key: {{ env('STRIPE_PUBLISHABLE_KEY') }}
+  free_product_id: prod_Swl8Ec25xkX2VE
+  starter_product_id: prod_SwlG9kWDSHrfye
+  team_product_id: prod_SwlG6vM56KdVWv
+  default_product: free
+
+# Compass Dev Tools credentials (optional - only needed for onboarding features)
+# Set to null for local development since admin tokens are not available
+slack_admin_token: null
+compass_dev_tools_bot_token: null
+is_local: true
+
+# Temporal Configuration
+temporal:
+  type: oss
+  host: localhost
+  port: 7233
+
+db_config:
+  # Storage Configuration - Choose one:
+  # SQLite (file-based, good for local development):
+  database_uri: sqlite://./compassbot.db
+  # Optional seed database folder - if specified, database will be reset and seeded from CSV files on startup
+  seed_database_from: ./seed_data/dagsterlabs_slack
+
+  kek_config:
+    type: plaintext
+    key: fNnln2pTP2QRjtD644VZ0kzE20cfQvrU4ZnqcZK0t_8=
+
+# Redis (in-memory, good for production with Redis server):
+# database_uri: redis://localhost:6379/0
+# Redis with authentication:
+# database_uri: redis://:password@localhost:6379/0
+http_port: {{ env('HTTP_PORT', '3000') }}
+http_host: {{ env('HTTP_HOST', '0.0.0.0') }}
+public_url: 'http://localhost:{{ env('HTTP_PORT', '3000') }}'
+jwt_secret: {{ env('JWT_SECRET') }}
+mode: websocket
+
+# List of Dagster admin users to invite to newly created Slack teams
+dagster_admins_to_invite:
+  - dagstercompass@dagsterlabs.com
+
+thread_health_inspector_config:
+  sample_rate: 100
+  start_delay_seconds: 10
+
+# Prospector Configuration
+prospector_contextstore_repo: dagster-compass/shared-prospector-context
+prospector_data_connection:
+  type: bigquery
+  config:
+    location: us
+    service_account_json_string: '{{ env('PROSPECTOR_DATA_BQ_JSON') }}'
+  table_names: []

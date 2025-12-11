@@ -1,0 +1,12 @@
+topic: self-serve vs enterprise lead categorization
+incorrect_understanding:
+  Revenue segment field (Corporate Sales vs Enterprise Sales)
+  represents self-serve vs enterprise business model
+correct_understanding:
+  Revenue segment represents the type of account/sales team handling
+  it, not the business model. Self-serve is a part of the business but should be identified
+  differently, not through revenue segment field
+search_keywords:
+  revenue segment, self-serve, enterprise, business model, account
+  type, sales team, lead categorization, corporate sales, enterprise sales, business
+  segmentation

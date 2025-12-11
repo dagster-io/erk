@@ -1,0 +1,47 @@
+# Slack App ID configuration for different environments
+# Maps manifest filenames to their corresponding Slack app IDs and client IDs
+apps:
+  ben_local_dev_manifest.json:
+    app_id: "A09953PCCE8"
+    client_id: "420295005281.9311125420484"
+    env_name: ben_local_dev
+
+  local_dev_manifest.json:
+    app_id: "A099K92GLBA"
+    client_id: ~
+    env_name: local_dev
+
+  staging_manifest.json:
+    app_id: "A098Y6GJ2TE"
+    client_id: "420295005281.9304220614932"
+    env_name: staging
+
+  dev_manifest.json:
+    app_id: "A095NCCMZ4L"
+    client_id: ~
+    env_name: dev
+
+  prod_manifest.json:
+    app_id: "A092AHKC68H"
+    client_id: "420295005281.9078597414289"
+    env_name: prod
+
+  neil_local_dev_manifest.json:
+    app_id: "A09FRL51GCX"
+    client_id: ~
+    env_name: neil_local_dev
+
+  yuhan_local_dev_manifest.json:
+    app_id: "A09GLD5V4J2"
+    client_id: "420295005281.9564447990614"
+    env_name: yuhan_local_dev
+
+  maxime_local_dev_manifest.json:
+    app_id: "A09JUFUF3MZ"
+    client_id: "420295005281.9640538513747"
+    env_name: maxime_local_dev
+
+  prha_dev_manifest.json:
+    app_id: "A09HS3VPM2B"
+    client_id: "420295005281.9604131803079"
+    env_name: prha_local_dev

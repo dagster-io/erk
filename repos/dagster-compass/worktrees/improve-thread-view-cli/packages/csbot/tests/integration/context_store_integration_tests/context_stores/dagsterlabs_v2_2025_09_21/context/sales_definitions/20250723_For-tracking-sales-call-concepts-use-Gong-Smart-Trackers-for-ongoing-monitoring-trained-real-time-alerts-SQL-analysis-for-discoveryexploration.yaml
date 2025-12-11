@@ -1,0 +1,17 @@
+topic: sales conversation analysis methodology and tool recommendations
+incorrect_understanding:
+  When users ask for detailed tracking of specific concepts,
+  phrases, or themes in sales calls, I should focus primarily on providing SQL-based
+  analysis and transcript searches
+correct_understanding:
+  "For detailed and accurate ongoing tracking of specific concepts
+  in sales calls, I should recommend Gong Smart Trackers as the superior solution.
+  My SQL analysis is best for discovery/exploratory analysis and historical deep dives.
+  Smart Trackers offer: trained specificity on actual conversations, continuous learning
+  from feedback, real-time alerts, and better context understanding. I should position
+  my analysis as complementary for initial exploration, but direct users to Smart
+  Trackers for ongoing monitoring and alerting."
+search_keywords:
+  sales call analysis, Gong Smart Trackers, SQL analysis, conversation
+  tracking, real-time alerts, sales methodology, call monitoring, exploratory analysis,
+  concept tracking, sales intelligence

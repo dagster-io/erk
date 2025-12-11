@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light;
+  color: rgba(0, 0, 0, 0.87);
+  background-color: #ffffff;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+}
+
+/* Custom Compass styles */
+.header-text {
+  font-weight: 500;
+  color: #001633;
+}
+
+.subheader-text {
+  font-size: 1.125rem;
+}
+
+.gradient {
+  background-image: linear-gradient(
+    70deg,
+    rgba(60, 57, 238, 0.1) 4.45%,
+    rgba(70, 138, 252, 0.1) 38.12%,
+    rgba(13, 167, 205, 0.1) 74.19%,
+    rgba(73, 197, 244, 0.1) 98.04%
+  );
+}
+
+.gradient-overlay {
+  position: relative;
+}
+
+.gradient-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    70deg,
+    rgba(60, 57, 238, 0.05) 4.45%,
+    rgba(70, 138, 252, 0.05) 38.12%,
+    rgba(13, 167, 205, 0.05) 74.19%,
+    rgba(73, 197, 244, 0.05) 98.04%
+  );
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.bg-dark-blue-gradient {
+  background: linear-gradient(180deg, #001633 0%, #001633 85%, #002d78 100%);
+}
+
+.blue-brand {
+  color: #3c39ee;
+}
+
+.hover\:text-blue-brand-dark:hover {
+  color: #1713e1;
+}
+
+.light-blue-brand {
+  color: #468afc;
+}

@@ -1,0 +1,8 @@
+topic: new customers definition
+incorrect_understanding: unclear how to identify new customers
+correct_understanding:
+  "For enterprise: use first contract date on the account table.
+  For self-serve: use first contract on the self serve invoice table"
+search_keywords:
+  new customers, first contract date, enterprise, self-serve, account
+  table, self serve invoice table, customer identification, contract tracking

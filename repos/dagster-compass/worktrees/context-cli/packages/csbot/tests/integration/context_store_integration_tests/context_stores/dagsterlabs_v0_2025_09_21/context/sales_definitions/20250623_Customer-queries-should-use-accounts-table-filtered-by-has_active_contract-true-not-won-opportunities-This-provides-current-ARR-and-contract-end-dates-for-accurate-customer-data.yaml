@@ -1,0 +1,13 @@
+topic: customer definition and contract status
+incorrect_understanding:
+  When asked about customers, I should look at won opportunities
+  from the opportunities table
+correct_understanding:
+  When asked about customers, I should use the accounts table
+  and filter by has_active_contract = true to show only customers with currently active
+  contracts. This gives current ARR and contract end dates, which is more accurate
+  than looking at historical won opportunities
+search_keywords:
+  customers, accounts table, has_active_contract, active contracts,
+  ARR, contract end dates, won opportunities, customer definition, current customers,
+  contract status

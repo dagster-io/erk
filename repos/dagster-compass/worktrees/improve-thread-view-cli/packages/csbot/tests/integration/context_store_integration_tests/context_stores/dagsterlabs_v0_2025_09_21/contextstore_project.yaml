@@ -1,0 +1,18 @@
+# Each contextstore_project.yaml corresponds to a project. In most cases, you'll have one
+# project per company, but in situations where secrecy is required, you
+# may want multiple projects split out into separate repos.
+project_name: company/testproject
+
+# Optionally, you can have multiple teams associated with a project.
+# Context (which includes user feedback and data documentation) can exist
+# on a per-user, per-team, or per-project level. This lets users or teams have
+# their own definitions for terms that differ from other orgs.
+# Currently, we don't enable this for the mcp server or the slackbot, but it does
+# work via the contextstore API.
+teams:
+  exec:
+    - exec.user@example.com
+  epd: []
+  sales: []
+  marketing: []
+  ops: []

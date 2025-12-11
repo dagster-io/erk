@@ -1,0 +1,616 @@
+{
+  "metadata": {
+    "recorded_at": "2025-08-25T00:07:26.499210+00:00",
+    "scenario": "tool-weather",
+    "model": "claude-sonnet-4-20250514",
+    "agent_type": "AnthropicAgent",
+    "anthropic_client_version": "0.25.1",
+    "recorder_version": "1.0",
+    "raw_event_count": 29,
+    "agent_block_event_count": 23,
+    "agent_message_count": 4,
+    "duration_seconds": 15.150600910186768
+  },
+  "request_params": {
+    "system": "You are a helpful assistant.",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What's the weather like in Paris today?"
+      }
+    ],
+    "tools": [
+      "get_weather",
+      "get_forecast"
+    ],
+    "model": "claude-sonnet-4-20250514",
+    "max_tokens": 50000
+  },
+  "raw_anthropic_events": [
+    {
+      "type": "message_start",
+      "timestamp": "2025-08-25T00:07:22.484119+00:00",
+      "message": {
+        "id": "msg_01J3RE8a49eeZDmzcNTqZ9vD",
+        "content": [],
+        "model": "claude-sonnet-4-20250514",
+        "role": "assistant",
+        "stop_reason": null,
+        "stop_sequence": null,
+        "type": "message",
+        "usage": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 581,
+          "output_tokens": 3,
+          "server_tool_use": null,
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "content_block_start",
+      "timestamp": "2025-08-25T00:07:22.486127+00:00",
+      "content_block": {
+        "citations": null,
+        "text": "",
+        "type": "text"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:22.486439+00:00",
+      "delta": {
+        "text": "I'll check",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:22.545879+00:00",
+      "delta": {
+        "text": " the current weather in Paris for you.",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_stop",
+      "timestamp": "2025-08-25T00:07:22.950282+00:00",
+      "index": 0
+    },
+    {
+      "type": "content_block_start",
+      "timestamp": "2025-08-25T00:07:22.951532+00:00",
+      "content_block": {
+        "id": "toolu_01VJ7j3hfYTJyrDZhMqsYSFE",
+        "input": {},
+        "name": "get_weather",
+        "type": "tool_use"
+      },
+      "index": 1
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:22.952235+00:00",
+      "delta": {
+        "partial_json": "",
+        "type": "input_json_delta"
+      },
+      "index": 1
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:23.284034+00:00",
+      "delta": {
+        "partial_json": "{\"loca",
+        "type": "input_json_delta"
+      },
+      "index": 1
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:23.284416+00:00",
+      "delta": {
+        "partial_json": "ti",
+        "type": "input_json_delta"
+      },
+      "index": 1
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:23.284619+00:00",
+      "delta": {
+        "partial_json": "on",
+        "type": "input_json_delta"
+      },
+      "index": 1
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:23.284792+00:00",
+      "delta": {
+        "partial_json": "\": ",
+        "type": "input_json_delta"
+      },
+      "index": 1
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:23.285219+00:00",
+      "delta": {
+        "partial_json": "\"Par",
+        "type": "input_json_delta"
+      },
+      "index": 1
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:23.285551+00:00",
+      "delta": {
+        "partial_json": "is\"}",
+        "type": "input_json_delta"
+      },
+      "index": 1
+    },
+    {
+      "type": "content_block_stop",
+      "timestamp": "2025-08-25T00:07:23.285924+00:00",
+      "index": 1
+    },
+    {
+      "type": "message_delta",
+      "timestamp": "2025-08-25T00:07:23.286613+00:00",
+      "delta": {
+        "stop_reason": "tool_use",
+        "stop_sequence": null
+      },
+      "usage": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "input_tokens": 581,
+        "output_tokens": 65,
+        "server_tool_use": null
+      }
+    },
+    {
+      "type": "message_stop",
+      "timestamp": "2025-08-25T00:07:23.286773+00:00"
+    },
+    {
+      "type": "message_start",
+      "timestamp": "2025-08-25T00:07:24.687637+00:00",
+      "message": {
+        "id": "msg_01ACPR1snEcY7vQEpc3dL1YN",
+        "content": [],
+        "model": "claude-sonnet-4-20250514",
+        "role": "assistant",
+        "stop_reason": null,
+        "stop_sequence": null,
+        "type": "message",
+        "usage": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 710,
+          "output_tokens": 1,
+          "server_tool_use": null,
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "content_block_start",
+      "timestamp": "2025-08-25T00:07:24.688270+00:00",
+      "content_block": {
+        "citations": null,
+        "text": "",
+        "type": "text"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:24.688482+00:00",
+      "delta": {
+        "text": "The",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:24.847810+00:00",
+      "delta": {
+        "text": " weather in Paris today is partly cloudy with a temperature of 68",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:25.136115+00:00",
+      "delta": {
+        "text": "°F (20°C). Here are the current conditions:\n\n- **Temperature**: ",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:25.320951+00:00",
+      "delta": {
+        "text": "68°F \n- **Condition**: Partly cloudy\n- **Humidity**:",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:25.435545+00:00",
+      "delta": {
+        "text": " 65%\n- **Wind Speed**: 8 mph\n- **",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:25.551271+00:00",
+      "delta": {
+        "text": "Visibility**: 10 miles\n\nIt",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:26.454707+00:00",
+      "delta": {
+        "text": "'s a pleasant day with partly cloudy skies in",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:26.497625+00:00",
+      "delta": {
+        "text": " Paris!",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_stop",
+      "timestamp": "2025-08-25T00:07:26.497920+00:00",
+      "index": 0
+    },
+    {
+      "type": "message_delta",
+      "timestamp": "2025-08-25T00:07:26.498067+00:00",
+      "delta": {
+        "stop_reason": "end_turn",
+        "stop_sequence": null
+      },
+      "usage": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "input_tokens": 710,
+        "output_tokens": 95,
+        "server_tool_use": null
+      }
+    },
+    {
+      "type": "message_stop",
+      "timestamp": "2025-08-25T00:07:26.498136+00:00"
+    }
+  ],
+  "agent_block_events": [
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "start",
+        "index": 0,
+        "content_block": {
+          "type": "output_text"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:22.486299+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "I'll check"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:22.486515+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " the current weather in Paris for you."
+        }
+      },
+      "timestamp": "2025-08-25T00:07:22.545957+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "stop",
+        "index": 0
+      },
+      "timestamp": "2025-08-25T00:07:22.950490+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "start",
+        "index": 1,
+        "content_block": {
+          "type": "call_tool",
+          "id": "toolu_01VJ7j3hfYTJyrDZhMqsYSFE",
+          "name": "get_weather"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:22.951689+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 1,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": ""
+        }
+      },
+      "timestamp": "2025-08-25T00:07:22.952385+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 1,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "{\"loca"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:23.284226+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 1,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "ti"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:23.284501+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 1,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "on"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:23.284697+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 1,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "\": "
+        }
+      },
+      "timestamp": "2025-08-25T00:07:23.284844+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 1,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "\"Par"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:23.285280+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 1,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "is\"}"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:23.285617+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "stop",
+        "index": 1
+      },
+      "timestamp": "2025-08-25T00:07:23.286177+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "start",
+        "index": 0,
+        "content_block": {
+          "type": "output_text"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:24.688360+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "The"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:24.688541+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " weather in Paris today is partly cloudy with a temperature of 68"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:24.847991+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "°F (20°C). Here are the current conditions:\n\n- **Temperature**: "
+        }
+      },
+      "timestamp": "2025-08-25T00:07:25.136313+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "68°F \n- **Condition**: Partly cloudy\n- **Humidity**:"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:25.321159+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " 65%\n- **Wind Speed**: 8 mph\n- **"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:25.435746+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "Visibility**: 10 miles\n\nIt"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:25.551468+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "'s a pleasant day with partly cloudy skies in"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:26.454912+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " Paris!"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:26.497825+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "stop",
+        "index": 0
+      },
+      "timestamp": "2025-08-25T00:07:26.497977+00:00"
+    }
+  ],
+  "agent_messages": [
+    {
+      "role": "assistant",
+      "content": "I'll check the current weather in Paris for you."
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01VJ7j3hfYTJyrDZhMqsYSFE",
+          "name": "get_weather",
+          "input": {
+            "location": "Paris"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "toolu_01VJ7j3hfYTJyrDZhMqsYSFE",
+          "content": "{\"result\": {\"location\": \"Paris\", \"temperature\": 68, \"unit\": \"fahrenheit\", \"condition\": \"partly cloudy\", \"humidity\": 65, \"wind_speed\": 8, \"visibility\": \"10 miles\"}}"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "The weather in Paris today is partly cloudy with a temperature of 68°F (20°C). Here are the current conditions:\n\n- **Temperature**: 68°F \n- **Condition**: Partly cloudy\n- **Humidity**: 65%\n- **Wind Speed**: 8 mph\n- **Visibility**: 10 miles\n\nIt's a pleasant day with partly cloudy skies in Paris!"
+    }
+  ]
+}

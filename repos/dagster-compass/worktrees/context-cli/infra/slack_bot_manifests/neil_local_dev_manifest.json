@@ -1,0 +1,62 @@
+{
+    "display_information": {
+        "name": "Compass (neil local dev)",
+        "description": "Locally served Compass instance configured for websockets",
+        "background_color": "#2c2d30"
+    },
+    "features": {
+        "bot_user": {
+            "display_name": "Compass (neil local dev)",
+            "always_online": false
+        }
+    },
+    "oauth_config": {
+        "scopes": {
+            "bot": [
+                "app_mentions:read",
+                "channels:history",
+                "channels:join",
+                "channels:manage",
+                "channels:read",
+                "channels:write.invites",
+                "chat:write",
+                "conversations.connect:manage",
+                "conversations.connect:read",
+                "conversations.connect:write",
+                "files:read",
+                "files:write",
+                "groups:history",
+                "groups:read",
+                "groups:write",
+                "groups:write.invites",
+                "im:history",
+                "mpim:history",
+                "mpim:read",
+                "users:read",
+                "chat:write.customize",
+                "users:read.email",
+                "pins:write",
+                "pins:read"
+            ]
+        }
+    },
+    "settings": {
+        "event_subscriptions": {
+            "bot_events": [
+                "app_mention",
+                "member_joined_channel",
+                "message.channels",
+                "message.groups",
+                "message.im",
+                "message.mpim",
+                "shared_channel_invite_accepted"
+            ]
+        },
+        "interactivity": {
+            "is_enabled": true
+        },
+        "org_deploy_enabled": true,
+        "socket_mode_enabled": true,
+        "token_rotation_enabled": false
+    }
+}

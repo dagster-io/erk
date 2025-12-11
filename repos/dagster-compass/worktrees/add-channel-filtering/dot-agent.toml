@@ -1,0 +1,70 @@
+version = "1"
+
+[kits.devrun]
+kit_id = "devrun"
+source_type = "bundled"
+version = "0.1.0"
+artifacts = [
+    ".claude/agents/devrun/devrun.md",
+    ".claude/docs/devrun/tools/gt.md",
+    ".claude/docs/devrun/tools/make.md",
+    ".claude/docs/devrun/tools/prettier.md",
+    ".claude/docs/devrun/tools/pyright.md",
+    ".claude/docs/devrun/tools/pytest.md",
+    ".claude/docs/devrun/tools/ruff.md",
+]
+
+[[kits.devrun.hooks]]
+id = "devrun-reminder-hook"
+lifecycle = "UserPromptSubmit"
+matcher = "*"
+invocation = "dot-agent run devrun devrun-reminder-hook"
+description = "Output devrun agent reminder on every prompt"
+timeout = 30
+
+[kits.gt]
+kit_id = "gt"
+source_type = "bundled"
+version = "0.1.0"
+artifacts = [
+    ".claude/agents/gt/gt-branch-submitter.md",
+    ".claude/commands/gt/submit-branch.md",
+    ".claude/commands/gt/update-pr.md",
+    ".claude/skills/gt-graphite/SKILL.md",
+    ".claude/skills/gt-graphite/references/gt-reference.md",
+]
+
+[kits.dignified-python-313]
+kit_id = "dignified-python-313"
+source_type = "bundled"
+version = "0.1.0"
+artifacts = [
+    ".claude/skills/dignified-python/SKILL.md",
+]
+
+[[kits.dignified-python-313.hooks]]
+id = "dignified-python-reminder-hook"
+lifecycle = "UserPromptSubmit"
+matcher = "*.py"
+invocation = "dot-agent run dignified-python-313 dignified-python-reminder-hook"
+description = "Output dignified-python compliance reminder when Python files are in context"
+timeout = 30
+
+[kits.fix-merge-conflicts]
+kit_id = "fix-merge-conflicts"
+source_type = "bundled"
+version = "0.1.0"
+artifacts = [
+    ".claude/commands/fix-merge-conflicts/fix-merge-conflicts.md",
+]
+
+[kits.erk]
+kit_id = "erk"
+source_type = "bundled"
+version = "0.1.0"
+artifacts = [
+    ".claude/commands/erk/persist-plan.md",
+    ".claude/commands/erk/create-planned-wt.md",
+    ".claude/commands/erk/implement-plan.md",
+    ".claude/docs/erk/EXAMPLES.md",
+]
