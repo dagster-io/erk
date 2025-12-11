@@ -357,3 +357,21 @@ When you run `erk implement`, erk detects your project root and places `.impl/` 
 ```
 
 `.impl/` contains temporary implementation plans that shouldn't be committed. `.erk/scratch/` holds session-specific working files.
+
+## Plan Mode GitHub Integration
+
+By default, erk modifies Claude Code's plan mode behavior. When you exit plan mode, erk prompts you to save the plan to GitHub as an issue before proceeding. This enables the plan-driven workflow where plans become trackable issues that can be implemented via `erk implement <issue-number>`.
+
+To disable this behavior and use standard Claude Code plan mode:
+
+```bash
+erk config set github_planning false
+```
+
+To re-enable:
+
+```bash
+erk config set github_planning true
+```
+
+When disabled, exiting plan mode works exactly as it does in standard Claude Code.
