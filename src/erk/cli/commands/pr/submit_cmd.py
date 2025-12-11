@@ -1,9 +1,14 @@
 """Submit current branch as a pull request.
 
-Orchestrates the PR submission workflow using Python:
-1. Preflight: Auth checks, squash, submit branch, get diff
+Unified PR submission with two-layer architecture:
+1. Core layer: git push + gh pr create (works without Graphite)
+2. Graphite layer: Optional enhancement via gt submit
+
+The workflow:
+1. Pre-analysis: Auth checks, get diff for AI
 2. Generate: AI-generated commit message via Claude CLI
-3. Finalize: Update PR metadata with generated message
+3. Core submit: git push + gh pr create
+4. Graphite enhance: Optional gt submit for stack metadata
 """
 
 import os
@@ -43,18 +48,31 @@ def _render_progress(event: ProgressEvent) -> None:
 
 @click.command("submit")
 @click.option("--debug", is_flag=True, help="Show diagnostic output")
+@click.option(
+    "--no-graphite",
+    is_flag=True,
+    help="Skip Graphite enhancement (use git + gh only)",
+)
 @click.pass_obj
-def pr_submit(ctx: ErkContext, debug: bool) -> None:
+def pr_submit(ctx: ErkContext, debug: bool, no_graphite: bool) -> None:
     """Submit PR with AI-generated commit message.
 
-    Analyzes your changes, generates a commit message via AI, and
-    creates a pull request using Graphite.
+    Uses a two-layer architecture:
+    - Core layer (always): git push + gh pr create
+    - Graphite layer (optional): gt submit for stack metadata
+
+    The core layer works without Graphite installed. When Graphite is
+    available and the branch is tracked, it will enhance the PR with
+    stack metadata unless --no-graphite is specified.
 
     Examples:
 
     \b
-      # Submit PR
+      # Submit PR (with Graphite if available)
       erk pr submit
+
+      # Submit PR without Graphite enhancement
+      erk pr submit --no-graphite
     """
     # Verify Claude is available (needed for commit message generation)
     if not ctx.claude_executor.is_claude_available():
@@ -69,6 +87,9 @@ def pr_submit(ctx: ErkContext, debug: bool) -> None:
     session_id = os.environ.get("SESSION_ID", str(uuid.uuid4()))
 
     # Phase 1: Preflight (auth, squash, submit, get diff)
+    # NOTE: This still uses the Graphite-based preflight for now to maintain
+    # the existing AI commit message generation flow. Future iterations can
+    # refactor this to use a pure git-based approach.
     click.echo(click.style("Phase 1: Preflight checks", bold=True))
     preflight_result = _run_preflight(ctx, cwd, session_id, debug)
 
