@@ -69,14 +69,14 @@ query {
 
 ## The willCloseTarget Field
 
-`CrossReferencedEvent.willCloseTarget` indicates whether the referencing PR will automatically close the issue when merged.
+[`CrossReferencedEvent.willCloseTarget`](https://docs.github.com/en/graphql/reference/objects#crossreferencedevent) indicates whether the referencing PR will automatically close the issue when merged.
 
 | willCloseTarget | Meaning                                               |
 | --------------- | ----------------------------------------------------- |
 | `true`          | PR body contains "Closes #N" (or equivalent keyword)  |
 | `false`         | PR merely mentions the issue without closing keywords |
 
-**Critical timing detail**: `willCloseTarget` is determined at PR creation time. Editing the PR body afterward to add "Closes #N" does NOT update this field.
+**Critical timing detail**: `willCloseTarget` is determined at PR creation time. Editing the PR body afterward to add "Closes #N" does NOT update this field. This behavior is documented in [GitHub community discussion #24706](https://github.com/orgs/community/discussions/24706).
 
 ### Implications for Erk
 

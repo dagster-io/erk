@@ -61,7 +61,7 @@ This file maps the current worktree to its source GitHub issue.
 
 ### PR Body: `Closes #N`
 
-The "Closes" keyword (or equivalent: "Fixes", "Resolves") in the PR body triggers GitHub's issue auto-close behavior.
+The "Closes" keyword (or equivalent: "Fixes", "Resolves") in the PR body triggers GitHub's issue auto-close behavior. See [GitHub's documentation on linking keywords](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/using-keywords-in-issues-and-pull-requests).
 
 **Critical**: Must be in the **initial** PR body at creation time. See [willCloseTarget timing detail](#willclosetarget-timing).
 
@@ -90,7 +90,7 @@ Uses batch queries via `get_prs_linked_to_issues()` for efficient dashboard disp
 
 ## willCloseTarget Timing
 
-**Important behavior**: GitHub's `willCloseTarget` field is set at PR creation time only.
+**Important behavior**: GitHub's `willCloseTarget` field is set at PR creation time only. This field is part of the [`CrossReferencedEvent` GraphQL type](https://docs.github.com/en/graphql/reference/objects#crossreferencedevent).
 
 | Action                                       | Result                              |
 | -------------------------------------------- | ----------------------------------- |
@@ -98,7 +98,7 @@ Uses batch queries via `get_prs_linked_to_issues()` for efficient dashboard disp
 | Create PR, then edit body to add `Closes #N` | `willCloseTarget: false`            |
 | Create PR with `Closes #N`, then remove it   | `willCloseTarget: true` (unchanged) |
 
-This is why `erk submit` passes the "Closes" text to `create_pr()` rather than adding it via `update_pr_body()`.
+This timing behavior is documented in [GitHub community discussion #24706](https://github.com/orgs/community/discussions/24706). This is why `erk submit` passes the "Closes" text to `create_pr()` rather than adding it via `update_pr_body()`.
 
 ## Debugging Linkage Issues
 
