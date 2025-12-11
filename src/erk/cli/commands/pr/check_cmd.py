@@ -23,7 +23,7 @@ def pr_check(ctx: ErkContext) -> None:
     2. Has the standard checkout command footer
     """
     # Get current branch
-    branch = Ensure.not_none(
+    another_branch = Ensure.not_none(
         ctx.git.get_current_branch(ctx.cwd),
         "Not on a branch (detached HEAD)",
     )
@@ -32,16 +32,17 @@ def pr_check(ctx: ErkContext) -> None:
     repo_root = ctx.git.get_repository_root(ctx.cwd)
 
     # Get PR for branch
-    pr = ctx.github.get_pr_for_branch(repo_root, branch)
+    pr = ctx.github.get_pr_for_branch(repo_root, another_branch)
     if isinstance(pr, PRNotFound):
         user_output(
-            click.style("Error: ", fg="red") + f"No pull request found for branch '{branch}'"
+            click.style("Error: ", fg="red")
+            + f"No pull request found for branch '{another_branch}'"
         )
         raise SystemExit(1)
 
     pr_number = pr.number
 
-    user_output(f"Checking PR #{pr_number} for branch {branch}...")
+    user_output(f"Checking PR #{pr_number} for branch {another_branch}...")
     user_output("")
 
     # Track validation results
