@@ -714,7 +714,6 @@ def dash(
     all_users: bool,
     sort: str,  # noqa: ARG001  # Accepted from shared options but not used by TUI
     interval: float,
-    sort: str,
 ) -> None:
     """Interactive plan dashboard (TUI).
 
