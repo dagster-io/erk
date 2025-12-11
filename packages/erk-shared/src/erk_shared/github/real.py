@@ -1200,7 +1200,8 @@ query {{
 
         Returns tuple of (PullRequestInfo, created_at_timestamp) or None if invalid.
         The willCloseTarget field from the event indicates whether the PR will
-        close this issue when merged.
+        close this issue when merged. PRs with willCloseTarget=False are still
+        included (they reference the issue but won't close it on merge).
         """
         source = event.get("source")
         if source is None:
