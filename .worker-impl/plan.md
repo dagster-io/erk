@@ -15,6 +15,7 @@ The correct pattern is demonstrated in `packages/erk-shared/tests/unit/integrati
 ## Required Fake Configurations
 
 For `execute_core_submit` to succeed:
+
 ```python
 git = FakeGit(
     current_branches={tmp_path: "feature-branch"},
@@ -29,12 +30,14 @@ github = FakeGitHub(
 ```
 
 For `execute_diff_extraction` to succeed:
+
 ```python
 # Needs pr_diffs configured in FakeGitHub
 github = FakeGitHub(pr_diffs={pr_number: "diff content"})
 ```
 
 For `execute_graphite_enhance` to skip (no Graphite tracking):
+
 ```python
 graphite = FakeGraphite(authenticated=True)  # No branches configured = skipped
 ```
@@ -44,6 +47,7 @@ graphite = FakeGraphite(authenticated=True)  # No branches configured = skipped
 ### Step 1: Remove mock imports and decorators
 
 Remove:
+
 ```python
 from unittest.mock import Mock, patch
 ```
@@ -53,9 +57,11 @@ Remove all `@patch("erk.cli.commands.pr.submit_cmd...")` decorators.
 ### Step 2: Refactor each test
 
 #### `test_pr_submit_fails_when_claude_not_available`
+
 - Already correct - uses FakeClaudeExecutor
 
 #### `test_pr_submit_fails_when_core_submit_returns_error`
+
 ```python
 def test_pr_submit_fails_when_core_submit_returns_error() -> None:
     runner = CliRunner()
@@ -76,17 +82,21 @@ def test_pr_submit_fails_when_core_submit_returns_error() -> None:
 ```
 
 #### `test_pr_submit_fails_when_diff_extraction_fails`
+
 - Configure `FakeGitHub` without `pr_diffs` entry (empty dict)
 - Real `execute_diff_extraction` will fail
 
 #### `test_pr_submit_fails_when_commit_message_generation_fails`
+
 - Configure full success path for core_submit and diff_extraction
 - Use `FakeClaudeExecutor(simulated_prompt_error=...)` to fail message gen
 
 #### `test_pr_submit_fails_when_finalize_fails`
+
 - Configure `FakeGitHub(pr_update_should_succeed=False)`
 
 #### `test_pr_submit_success`
+
 ```python
 def test_pr_submit_success(tmp_path: Path) -> None:
     runner = CliRunner()
@@ -120,6 +130,7 @@ def test_pr_submit_success(tmp_path: Path) -> None:
 ```
 
 #### `test_pr_submit_with_no_graphite_flag`
+
 - Same as success test
 - Verify `graphite.submit_stack_calls` is empty with `--no-graphite`
 
@@ -129,14 +140,14 @@ The `write_scratch_file` function writes to `repo_root/.tmp/<session-id>/`. Ensu
 
 ## Mutation Tracking Properties for Assertions
 
-| Property | Tracks |
-|----------|--------|
-| `github.created_prs` | PR creations (branch, title, body, base, draft) |
-| `github.updated_pr_titles` | Title updates (pr_number, title) |
-| `github.updated_pr_bodies` | Body updates (pr_number, body) |
-| `git._pushed_branches` | Push operations (remote, branch, set_upstream) |
-| `graphite.submit_stack_calls` | Graphite submit calls |
-| `claude_executor.prompt_calls` | Claude prompts |
+| Property                       | Tracks                                          |
+| ------------------------------ | ----------------------------------------------- |
+| `github.created_prs`           | PR creations (branch, title, body, base, draft) |
+| `github.updated_pr_titles`     | Title updates (pr_number, title)                |
+| `github.updated_pr_bodies`     | Body updates (pr_number, body)                  |
+| `git._pushed_branches`         | Push operations (remote, branch, set_upstream)  |
+| `graphite.submit_stack_calls`  | Graphite submit calls                           |
+| `claude_executor.prompt_calls` | Claude prompts                                  |
 
 ## Success Criteria
 
