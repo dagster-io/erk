@@ -363,12 +363,12 @@ def print_report(categories: dict[str, CategoryStats], since_date: str) -> None:
 
     print(f"## PRs Merged Since {since_date}\n")
     header = (
-        "| Category                       "
-        "| PRs |   %  |     Py | Py (test) | Markdown | Net LOC |   %  |"
+        "| Category                        "
+        "| PRs |    % |       Py | Py (test) |  Markdown | Net LOC |    % |"
     )
     print(header)
     print(
-        "|--------------------------------|----:|-----:|-------:|----------:|---------:|--------:|-----:|"
+        "|---------------------------------|----:|-----:|---------:|----------:|----------:|--------:|-----:|"
     )
 
     for text, cat, emoji in CATEGORY_DATA:
@@ -378,17 +378,17 @@ def print_report(categories: dict[str, CategoryStats], since_date: str) -> None:
         tot = c.total
         lpct = (tot / total_loc * 100) if total_loc else 0
         print(
-            f"| {emoji}  {text:<26} | {n:>3} | {pct:>3.0f}% | "
-            f"{fmt_num(c.py):>6} | {fmt_num(c.py_test):>9} | {fmt_num(c.md):>8} | "
+            f"| {emoji}  {text:<27} | {n:>3} | {pct:>3.0f}% | "
+            f"{fmt_num(c.py):>8} | {fmt_num(c.py_test):>9} | {fmt_num(c.md):>9} | "
             f"{fmt_num(tot):>7} | {lpct:>3.0f}% |"
         )
 
     print(
-        "|--------------------------------|----:|-----:|-------:|----------:|---------:|--------:|-----:|"
+        "|---------------------------------|----:|-----:|---------:|----------:|----------:|--------:|-----:|"
     )
     print(
-        f"| **TOTAL**                      | {total_prs:>3} | 100% | "
-        f"{fmt_num(total_py):>6} | {fmt_num(total_py_test):>9} | {fmt_num(total_md):>8} | "
+        f"| **TOTAL**                       | {total_prs:>3} | 100% | "
+        f"{fmt_num(total_py):>8} | {fmt_num(total_py_test):>9} | {fmt_num(total_md):>9} | "
         f"{fmt_num(total_loc):>7} | 100% |"
     )
 
