@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 from erk_shared.git.fake import FakeGit
 
 from erk.core.health_checks import (
@@ -12,6 +13,7 @@ from erk.core.health_checks import (
     check_docs_agent,
     check_erk_version,
     check_gitignore_entries,
+    check_hooks_disabled,
     check_repository,
     check_uv_version,
 )
@@ -393,3 +395,143 @@ def test_check_docs_agent_empty_directory(tmp_path: Path) -> None:
     assert "glossary.md" in result.message
     assert "conventions.md" in result.message
     assert "guide.md" in result.message
+
+
+# --- Hooks Disabled Check Tests ---
+
+
+def test_check_hooks_disabled_no_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test when no settings files exist."""
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+    result = check_hooks_disabled()
+
+    assert result.name == "claude hooks"
+    assert result.passed is True
+    assert result.warning is False
+    assert "enabled" in result.message.lower()
+
+
+def test_check_hooks_disabled_in_settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test when hooks.disabled=true in settings.json."""
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir()
+    settings = claude_dir / "settings.json"
+    settings.write_text(json.dumps({"hooks": {"disabled": True}}), encoding="utf-8")
+
+    result = check_hooks_disabled()
+
+    assert result.name == "claude hooks"
+    assert result.passed is True
+    assert result.warning is True
+    assert "settings.json" in result.message
+
+
+def test_check_hooks_disabled_in_local(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test when hooks.disabled=true in settings.local.json."""
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir()
+    settings = claude_dir / "settings.local.json"
+    settings.write_text(json.dumps({"hooks": {"disabled": True}}), encoding="utf-8")
+
+    result = check_hooks_disabled()
+
+    assert result.name == "claude hooks"
+    assert result.passed is True
+    assert result.warning is True
+    assert "settings.local.json" in result.message
+
+
+def test_check_hooks_disabled_in_both(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test when hooks.disabled=true in both settings files."""
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir()
+    (claude_dir / "settings.json").write_text(
+        json.dumps({"hooks": {"disabled": True}}), encoding="utf-8"
+    )
+    (claude_dir / "settings.local.json").write_text(
+        json.dumps({"hooks": {"disabled": True}}), encoding="utf-8"
+    )
+
+    result = check_hooks_disabled()
+
+    assert result.name == "claude hooks"
+    assert result.passed is True
+    assert result.warning is True
+    assert "settings.json" in result.message
+    assert "settings.local.json" in result.message
+
+
+def test_check_hooks_disabled_false(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test when hooks.disabled=false (explicitly enabled)."""
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir()
+    settings = claude_dir / "settings.json"
+    settings.write_text(json.dumps({"hooks": {"disabled": False}}), encoding="utf-8")
+
+    result = check_hooks_disabled()
+
+    assert result.name == "claude hooks"
+    assert result.passed is True
+    assert result.warning is False
+
+
+def test_check_hooks_disabled_no_hooks_key(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test when settings exist but no hooks key."""
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir()
+    settings = claude_dir / "settings.json"
+    settings.write_text(json.dumps({"other_key": "value"}), encoding="utf-8")
+
+    result = check_hooks_disabled()
+
+    assert result.name == "claude hooks"
+    assert result.passed is True
+    assert result.warning is False
+
+
+def test_check_hooks_disabled_invalid_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test when settings file has invalid JSON raises error."""
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir()
+    settings = claude_dir / "settings.json"
+    settings.write_text("{invalid json", encoding="utf-8")
+
+    with pytest.raises(json.JSONDecodeError):
+        check_hooks_disabled()
+
+
+# --- CheckResult warning field tests ---
+
+
+def test_check_result_with_warning() -> None:
+    """Test CheckResult with warning=True."""
+    result = CheckResult(
+        name="test",
+        passed=True,
+        message="Test warning",
+        warning=True,
+    )
+
+    assert result.name == "test"
+    assert result.passed is True
+    assert result.warning is True
+    assert result.message == "Test warning"
+    assert result.details is None
+
+
+def test_check_result_warning_defaults_false() -> None:
+    """Test CheckResult warning defaults to False."""
+    result = CheckResult(
+        name="test",
+        passed=True,
+        message="Test passed",
+    )
+
+    assert result.warning is False

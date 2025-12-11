@@ -28,12 +28,14 @@ class CheckResult:
         passed: Whether the check passed
         message: Human-readable message describing the result
         details: Optional additional details (e.g., version info)
+        warning: If True and passed=True, displays ⚠️ instead of ✅
     """
 
     name: str
     passed: bool
     message: str
     details: str | None = None
+    warning: bool = False
 
 
 def check_erk_version() -> CheckResult:
@@ -372,6 +374,49 @@ def check_uv_version() -> CheckResult:
     )
 
 
+def check_hooks_disabled() -> CheckResult:
+    """Check if Claude Code hooks are globally disabled.
+
+    Checks both global settings files for hooks.disabled=true:
+    - ~/.claude/settings.json
+    - ~/.claude/settings.local.json
+
+    Returns a warning (not failure) if hooks are disabled, since the user
+    may have intentionally disabled them.
+    """
+    home = Path.home()
+    settings_files = [
+        home / ".claude" / "settings.json",
+        home / ".claude" / "settings.local.json",
+    ]
+
+    disabled_in: list[str] = []
+
+    for settings_path in settings_files:
+        if not settings_path.exists():
+            continue
+        content = settings_path.read_text(encoding="utf-8")
+        settings = json.loads(content)
+        hooks = settings.get("hooks", {})
+        if hooks.get("disabled") is True:
+            disabled_in.append(settings_path.name)
+
+    if disabled_in:
+        return CheckResult(
+            name="claude hooks",
+            passed=True,  # Don't fail, just warn
+            warning=True,
+            message=f"Hooks disabled in {', '.join(disabled_in)}",
+            details="Set hooks.disabled=false or remove the setting to enable hooks",
+        )
+
+    return CheckResult(
+        name="claude hooks",
+        passed=True,
+        message="Hooks enabled (not globally disabled)",
+    )
+
+
 def check_docs_agent(repo_root: Path) -> CheckResult:
     """Check if docs/agent/ templates exist and are valid.
 
@@ -645,6 +690,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         check_github_cli(),
         check_github_auth(),
         check_uv_version(),
+        check_hooks_disabled(),
     ]
 
     # Add repository check
