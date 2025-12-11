@@ -4,13 +4,12 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-
 from erk.core.config_store import GlobalConfig
 from erk.status.collectors.github import GitHubPRCollector
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PullRequestInfo
-from erk_shared.integrations.graphite.fake import FakeGraphite
+from erk_shared.gateways.graphite.fake import FakeGraphite
 from tests.fakes.context import create_test_context
 
 

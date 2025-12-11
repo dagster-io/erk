@@ -35,9 +35,9 @@ from pathlib import Path
 
 import click
 
+from erk_shared.gateways.erk_wt import ErkWtKit
 from erk_shared.github.metadata import update_plan_header_worktree_name
 from erk_shared.impl_folder import save_issue_reference
-from erk_shared.integrations.erk_wt import ErkWtKit
 
 
 @dataclass
@@ -176,7 +176,7 @@ def create_wt_from_issue(ctx: click.Context, issue_reference: str) -> None:
 
     ISSUE_REFERENCE: GitHub issue number or full URL
     """
-    from erk_shared.integrations.erk_wt import RealErkWtKit
+    from erk_shared.gateways.erk_wt import RealErkWtKit
 
     ops = RealErkWtKit()
     success, result = create_wt_from_issue_impl(issue_reference, ops)

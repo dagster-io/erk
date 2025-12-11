@@ -17,6 +17,7 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
+from erk_shared.gateways.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata import (
     create_submission_queued_block,
@@ -31,7 +32,6 @@ from erk_shared.github.parsing import (
 )
 from erk_shared.github.pr_footer import build_pr_body_footer
 from erk_shared.github.types import PRNotFound
-from erk_shared.integrations.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 from erk_shared.naming import (
     format_branch_timestamp_suffix,
     sanitize_worktree_name,

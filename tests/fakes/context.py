@@ -2,6 +2,12 @@
 
 from pathlib import Path
 
+from erk_shared.gateways.completion import FakeCompletion
+from erk_shared.gateways.graphite.fake import FakeGraphite
+from erk_shared.gateways.shell import FakeShell
+from erk_shared.git.fake import FakeGit
+from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.issues import GitHubIssues
 from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import (
     ErkContext,

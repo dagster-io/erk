@@ -9,7 +9,7 @@ from erk.core.context import ErkContext
 from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.integrations.graphite.fake import FakeGraphite
+from erk_shared.gateways.graphite.fake import FakeGraphite
 from tests.fakes.shell import FakeShell
 from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
 
