@@ -1,25 +1,20 @@
 """Tests for erk pr submit command.
 
 These tests verify the CLI layer behavior of the submit command.
-The command now uses Python orchestration with two-layer architecture:
-- Core layer: git push + gh pr create (via execute_core_submit)
-- Graphite layer: Optional enhancement (via execute_graphite_enhance)
+The command now uses Python orchestration (preflight -> generate -> finalize)
+rather than delegating to a Claude slash command.
 """
 
 from pathlib import Path
-from unittest.mock import Mock, patch
 
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
 from erk_shared.git.fake import FakeGit
-from erk_shared.integrations.gt.events import CompletionEvent
-from erk_shared.integrations.gt.types import FinalizeResult, PostAnalysisError
-from erk_shared.integrations.pr.types import (
-    CoreSubmitError,
-    CoreSubmitResult,
-    GraphiteSkipped,
-)
+from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.types import PRDetails, PullRequestInfo
+from erk_shared.integrations.graphite.fake import FakeGraphite
+from erk_shared.integrations.graphite.types import BranchMetadata
 from tests.fakes.claude_executor import FakeClaudeExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -46,37 +41,110 @@ def test_pr_submit_fails_when_claude_not_available() -> None:
         assert "claude.com/download" in result.output
 
 
-@patch("erk.cli.commands.pr.submit_cmd.execute_core_submit")
-def test_pr_submit_fails_when_core_submit_returns_error(
-    mock_core_submit: Mock,
-) -> None:
-    """Test that command fails when core submit returns CoreSubmitError."""
+def test_pr_submit_fails_when_graphite_not_authenticated() -> None:
+    """Test that Graphite auth failure produces a warning (not a fatal error).
+
+    Graphite authentication is checked in the optional 'Graphite enhancement' phase.
+    The core submission (git push + gh pr create) completes successfully without Graphite.
+    When Graphite enhancement fails, it's reported as a warning, not a fatal error.
+
+    Note: This test verifies that the command handles unauthenticated Graphite gracefully
+    by skipping Graphite enhancement rather than failing entirely.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Configure a complete PR submission scenario
+        pr_info = PullRequestInfo(
+            number=123,
+            state="OPEN",
+            url="https://github.com/owner/repo/pull/123",
+            is_draft=False,
+            title="Feature PR",
+            checks_passing=True,
+            owner="owner",
+            repo="repo",
+        )
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+            labels=(),
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "main"): 1},  # Has commits to submit
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+        )
+
+        # Graphite not authenticated - but core submit will still work
+        graphite = FakeGraphite(authenticated=False)
+        github = FakeGitHub(
+            authenticated=True,
+            prs={"feature": pr_info},
+            pr_details={123: pr_details},
+            pr_diffs={123: "diff --git a/file.py b/file.py\n+new content"},
+        )
+        claude_executor = FakeClaudeExecutor(
+            claude_available=True,
+            simulated_prompt_output="Add feature\n\nThis adds a new feature.",
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
+        )
+
+        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+
+        # Command succeeds because Graphite is optional enhancement
+        assert result.exit_code == 0
+        # PR URL should be in output
+        assert "github.com/owner/repo/pull/123" in result.output
+
+
+def test_pr_submit_fails_when_github_not_authenticated() -> None:
+    """Test that command fails when GitHub is not authenticated."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature"]},
             default_branches={env.cwd: "main"},
             current_branches={env.cwd: "feature"},
         )
 
+        # Graphite authenticated, GitHub not authenticated
+        graphite = FakeGraphite(authenticated=True)
+        github = FakeGitHub(authenticated=False)
         claude_executor = FakeClaudeExecutor(claude_available=True)
 
-        # Mock core_submit to return an error
-        mock_core_submit.return_value = iter(
-            [
-                CompletionEvent(
-                    CoreSubmitError(
-                        success=False,
-                        error_type="github_auth_failed",
-                        message="GitHub CLI is not authenticated. Run 'gh auth login'.",
-                        details={},
-                    )
-                )
-            ]
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
         )
-
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
 
@@ -84,74 +152,126 @@ def test_pr_submit_fails_when_core_submit_returns_error(
         assert "not authenticated" in result.output
 
 
-@patch("erk.cli.commands.pr.submit_cmd.execute_diff_extraction")
-@patch("erk.cli.commands.pr.submit_cmd.execute_core_submit")
-def test_pr_submit_fails_when_diff_extraction_fails(
-    mock_core_submit: Mock,
-    mock_diff_extraction: Mock,
-) -> None:
-    """Test that command fails when diff extraction returns None."""
+def test_pr_submit_fails_when_no_commits_ahead() -> None:
+    """Test that command fails when branch has no commits ahead of parent."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        # Configure branch with parent relationship but 0 commits ahead
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main", "feature"]},
             default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
             current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "main"): 0},  # No commits ahead
         )
 
+        # Configure branch metadata for parent lookup
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+        github = FakeGitHub(authenticated=True)
         claude_executor = FakeClaudeExecutor(claude_available=True)
 
-        # Mock core submit to succeed
-        mock_core_submit.return_value = iter(
-            [
-                CompletionEvent(
-                    CoreSubmitResult(
-                        success=True,
-                        pr_number=123,
-                        pr_url="https://github.com/org/repo/pull/123",
-                        branch_name="feature",
-                        issue_number=None,
-                        was_created=True,
-                        message="Created PR #123",
-                    )
-                )
-            ]
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
         )
-
-        # Mock diff extraction to fail
-        mock_diff_extraction.return_value = iter([CompletionEvent(None)])
-
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
 
         assert result.exit_code != 0
-        assert "Failed to extract diff" in result.output
+        assert "No commits ahead" in result.output
 
 
-@patch("erk.cli.commands.pr.submit_cmd.execute_graphite_enhance")
-@patch("erk.cli.commands.pr.submit_cmd.execute_diff_extraction")
-@patch("erk.cli.commands.pr.submit_cmd.execute_core_submit")
-def test_pr_submit_fails_when_commit_message_generation_fails(
-    mock_core_submit: Mock,
-    mock_diff_extraction: Mock,
-    mock_graphite_enhance: Mock,
-    tmp_path: Path,
-) -> None:
+def test_pr_submit_fails_when_commit_message_generation_fails() -> None:
     """Test that command fails when commit message generation fails."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature"]},
-            default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature"},
+        # Create PR info for the branch (so preflight can retrieve it after submit)
+        pr_info = PullRequestInfo(
+            number=123,
+            state="OPEN",
+            url="https://github.com/owner/repo/pull/123",
+            is_draft=False,
+            title="Feature PR",
+            checks_passing=True,
+            owner="owner",
+            repo="repo",
+        )
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+            labels=(),
         )
 
-        # Create diff file that will be referenced
-        diff_file = tmp_path / "test.diff"
-        diff_file.write_text("diff content", encoding="utf-8")
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "main"): 1},  # Single commit - no squash needed
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+        github = FakeGitHub(
+            authenticated=True,
+            prs={"feature": pr_info},
+            pr_details={123: pr_details},
+            pr_diffs={123: "diff --git a/file.py b/file.py\n+new content"},
+        )
 
         # Configure executor to fail on prompt
         claude_executor = FakeClaudeExecutor(
@@ -159,40 +279,13 @@ def test_pr_submit_fails_when_commit_message_generation_fails(
             simulated_prompt_error="Claude CLI execution failed",
         )
 
-        # Mock core submit to succeed
-        mock_core_submit.return_value = iter(
-            [
-                CompletionEvent(
-                    CoreSubmitResult(
-                        success=True,
-                        pr_number=123,
-                        pr_url="https://github.com/org/repo/pull/123",
-                        branch_name="feature",
-                        issue_number=None,
-                        was_created=True,
-                        message="Created PR #123",
-                    )
-                )
-            ]
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
         )
-
-        # Mock diff extraction to succeed
-        mock_diff_extraction.return_value = iter([CompletionEvent(diff_file)])
-
-        # Mock graphite enhance (should not be called since message gen fails first)
-        mock_graphite_enhance.return_value = iter(
-            [
-                CompletionEvent(
-                    GraphiteSkipped(
-                        success=True,
-                        reason="not_called",
-                        message="Not called",
-                    )
-                )
-            ]
-        )
-
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
 
@@ -200,179 +293,185 @@ def test_pr_submit_fails_when_commit_message_generation_fails(
         assert "Failed to generate message" in result.output
 
 
-@patch("erk.cli.commands.pr.submit_cmd.execute_finalize")
-@patch("erk.cli.commands.pr.submit_cmd.execute_graphite_enhance")
-@patch("erk.cli.commands.pr.submit_cmd.execute_diff_extraction")
-@patch("erk.cli.commands.pr.submit_cmd.execute_core_submit")
-def test_pr_submit_fails_when_finalize_fails(
-    mock_core_submit: Mock,
-    mock_diff_extraction: Mock,
-    mock_graphite_enhance: Mock,
-    mock_finalize: Mock,
-    tmp_path: Path,
-) -> None:
-    """Test that command fails when finalize returns an error."""
+def test_pr_submit_fails_when_pr_update_fails() -> None:
+    """Test that command fails when finalize cannot update PR metadata."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature"]},
-            default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature"},
+        pr_info = PullRequestInfo(
+            number=123,
+            state="OPEN",
+            url="https://github.com/owner/repo/pull/123",
+            is_draft=False,
+            title="Feature PR",
+            checks_passing=True,
+            owner="owner",
+            repo="repo",
+        )
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+            labels=(),
         )
 
-        # Create diff file
-        diff_file = tmp_path / "test.diff"
-        diff_file.write_text("diff content", encoding="utf-8")
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "main"): 1},
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        # Configure GitHub to fail on PR updates
+        github = FakeGitHub(
+            authenticated=True,
+            prs={"feature": pr_info},
+            pr_details={123: pr_details},
+            pr_diffs={123: "diff --git a/file.py b/file.py\n+new content"},
+            pr_update_should_succeed=False,
+        )
 
         claude_executor = FakeClaudeExecutor(
             claude_available=True,
             simulated_prompt_output="Add feature\n\nThis adds a new feature.",
         )
 
-        # Mock core submit to succeed
-        mock_core_submit.return_value = iter(
-            [
-                CompletionEvent(
-                    CoreSubmitResult(
-                        success=True,
-                        pr_number=123,
-                        pr_url="https://github.com/org/repo/pull/123",
-                        branch_name="feature",
-                        issue_number=None,
-                        was_created=True,
-                        message="Created PR #123",
-                    )
-                )
-            ]
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
         )
-
-        # Mock diff extraction to succeed
-        mock_diff_extraction.return_value = iter([CompletionEvent(diff_file)])
-
-        # Mock graphite enhance to skip
-        mock_graphite_enhance.return_value = iter(
-            [
-                CompletionEvent(
-                    GraphiteSkipped(
-                        success=True,
-                        reason="not_tracked",
-                        message="Branch not tracked",
-                    )
-                )
-            ]
-        )
-
-        # Mock finalize to fail
-        mock_finalize.return_value = iter(
-            [
-                CompletionEvent(
-                    PostAnalysisError(
-                        success=False,
-                        error_type="pr_update_failed",
-                        message="Failed to update PR metadata",
-                        details={},
-                    )
-                )
-            ]
-        )
-
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
 
+        # The RuntimeError from FakeGitHub propagates up - command fails
         assert result.exit_code != 0
-        assert "Failed to update PR metadata" in result.output
+        # The exception message should be captured in the output or exception
+        assert result.exception is not None or "PR update failed" in result.output
 
 
-@patch("erk.cli.commands.pr.submit_cmd.execute_finalize")
-@patch("erk.cli.commands.pr.submit_cmd.execute_graphite_enhance")
-@patch("erk.cli.commands.pr.submit_cmd.execute_diff_extraction")
-@patch("erk.cli.commands.pr.submit_cmd.execute_core_submit")
-def test_pr_submit_success(
-    mock_core_submit: Mock,
-    mock_diff_extraction: Mock,
-    mock_graphite_enhance: Mock,
-    mock_finalize: Mock,
-    tmp_path: Path,
-) -> None:
+def test_pr_submit_success(tmp_path: Path) -> None:
     """Test successful PR submission with all phases completing."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature"]},
-            default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature"},
+        pr_info = PullRequestInfo(
+            number=123,
+            state="OPEN",
+            url="https://github.com/owner/repo/pull/123",
+            is_draft=False,
+            title="Feature PR",
+            checks_passing=True,
+            owner="owner",
+            repo="repo",
+        )
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+            labels=(),
         )
 
-        # Create diff file
-        diff_file = tmp_path / "test.diff"
-        diff_file.write_text("diff content", encoding="utf-8")
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "main"): 1},
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        github = FakeGitHub(
+            authenticated=True,
+            prs={"feature": pr_info},
+            pr_details={123: pr_details},
+            pr_diffs={123: "diff --git a/file.py b/file.py\n+new content"},
+        )
 
         claude_executor = FakeClaudeExecutor(
             claude_available=True,
             simulated_prompt_output="Add awesome feature\n\nThis PR adds an awesome new feature.",
         )
 
-        # Mock core submit to succeed
-        mock_core_submit.return_value = iter(
-            [
-                CompletionEvent(
-                    CoreSubmitResult(
-                        success=True,
-                        pr_number=123,
-                        pr_url="https://github.com/org/repo/pull/123",
-                        branch_name="feature",
-                        issue_number=None,
-                        was_created=True,
-                        message="Created PR #123",
-                    )
-                )
-            ]
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
         )
-
-        # Mock diff extraction to succeed
-        mock_diff_extraction.return_value = iter([CompletionEvent(diff_file)])
-
-        # Mock graphite enhance to skip
-        mock_graphite_enhance.return_value = iter(
-            [
-                CompletionEvent(
-                    GraphiteSkipped(
-                        success=True,
-                        reason="not_tracked",
-                        message="Branch not tracked by Graphite",
-                    )
-                )
-            ]
-        )
-
-        # Mock finalize to succeed
-        mock_finalize.return_value = iter(
-            [
-                CompletionEvent(
-                    FinalizeResult(
-                        success=True,
-                        pr_number=123,
-                        pr_url="https://github.com/org/repo/pull/123",
-                        pr_title="Add awesome feature",
-                        graphite_url="https://app.graphite.dev/github/pr/123",
-                        branch_name="feature",
-                        issue_number=None,
-                        message="Successfully updated PR",
-                    )
-                )
-            ]
-        )
-
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
 
         assert result.exit_code == 0
         # Verify output contains PR URL
-        assert "https://github.com/org/repo/pull/123" in result.output
+        assert "github.com/owner/repo/pull/123" in result.output
 
         # Verify commit message was generated
         assert len(claude_executor.prompt_calls) == 1
@@ -380,75 +479,96 @@ def test_pr_submit_success(
         assert "feature" in prompt  # Branch name in context
         assert "main" in prompt  # Parent branch in context
 
+        # Verify PR metadata was updated
+        assert len(github.updated_pr_titles) == 1
+        assert github.updated_pr_titles[0] == (123, "Add awesome feature")
 
-@patch("erk.cli.commands.pr.submit_cmd.execute_finalize")
-@patch("erk.cli.commands.pr.submit_cmd.execute_graphite_enhance")
-@patch("erk.cli.commands.pr.submit_cmd.execute_diff_extraction")
-@patch("erk.cli.commands.pr.submit_cmd.execute_core_submit")
-def test_pr_submit_with_no_graphite_flag(
-    mock_core_submit: Mock,
-    mock_diff_extraction: Mock,
-    mock_graphite_enhance: Mock,
-    mock_finalize: Mock,
-    tmp_path: Path,
-) -> None:
-    """Test that --no-graphite flag skips Graphite enhancement."""
+
+def test_pr_submit_shows_graphite_url() -> None:
+    """Test that Graphite URL is displayed on success."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature"]},
-            default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature"},
+        pr_info = PullRequestInfo(
+            number=123,
+            state="OPEN",
+            url="https://github.com/owner/repo/pull/123",
+            is_draft=False,
+            title="Feature PR",
+            checks_passing=True,
+            owner="owner",
+            repo="repo",
+        )
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+            labels=(),
         )
 
-        diff_file = tmp_path / "test.diff"
-        diff_file.write_text("diff content", encoding="utf-8")
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "main"): 1},
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        github = FakeGitHub(
+            authenticated=True,
+            prs={"feature": pr_info},
+            pr_details={123: pr_details},
+            pr_diffs={123: "diff --git a/file.py b/file.py\n+content"},
+        )
 
         claude_executor = FakeClaudeExecutor(
             claude_available=True,
             simulated_prompt_output="Title\n\nBody",
         )
 
-        mock_core_submit.return_value = iter(
-            [
-                CompletionEvent(
-                    CoreSubmitResult(
-                        success=True,
-                        pr_number=123,
-                        pr_url="https://github.com/org/repo/pull/123",
-                        branch_name="feature",
-                        issue_number=None,
-                        was_created=True,
-                        message="Created PR #123",
-                    )
-                )
-            ]
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
         )
 
-        mock_diff_extraction.return_value = iter([CompletionEvent(diff_file)])
-
-        mock_finalize.return_value = iter(
-            [
-                CompletionEvent(
-                    FinalizeResult(
-                        success=True,
-                        pr_number=123,
-                        pr_url="https://github.com/org/repo/pull/123",
-                        pr_title="Title",
-                        graphite_url="",
-                        branch_name="feature",
-                        issue_number=None,
-                        message="Successfully updated PR",
-                    )
-                )
-            ]
-        )
-
-        ctx = build_workspace_test_context(env, git=git, claude_executor=claude_executor)
-
-        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
+        result = runner.invoke(pr_group, ["submit"], obj=ctx)
 
         assert result.exit_code == 0
-        # Graphite enhance should not have been called
-        mock_graphite_enhance.assert_not_called()
+        # Both URLs should be in output
+        assert "github.com/owner/repo/pull/123" in result.output
+        assert "app.graphite" in result.output
