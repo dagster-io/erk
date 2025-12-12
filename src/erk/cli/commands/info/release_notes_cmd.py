@@ -13,7 +13,9 @@ from erk.core.release_notes import (
 )
 
 
-def _format_release(release_version: str, release_date: str | None, items: list[str]) -> None:
+def _format_release(
+    release_version: str, release_date: str | None, items: list[tuple[str, int]]
+) -> None:
     """Format and display a single release entry."""
     header = f"[{release_version}]"
     if release_date:
@@ -23,8 +25,10 @@ def _format_release(release_version: str, release_date: str | None, items: list[
     click.echo()
 
     if items:
-        for item in items:
-            click.echo(f"  - {item}")
+        for item_text, indent_level in items:
+            # Base indent (2 spaces) + extra indent per nesting level (2 spaces)
+            indent = "  " + ("  " * indent_level)
+            click.echo(f"{indent}- {item_text}")
     else:
         click.echo(click.style("  (no entries)", dim=True))
 
