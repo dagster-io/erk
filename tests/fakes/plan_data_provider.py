@@ -4,10 +4,10 @@ from pathlib import Path
 
 from erk.tui.data.provider import PlanDataProvider
 from erk.tui.data.types import PlanFilters, PlanRowData
-from erk_shared.integrations.browser.abc import BrowserLauncher
-from erk_shared.integrations.browser.fake import FakeBrowserLauncher
-from erk_shared.integrations.clipboard.abc import Clipboard
-from erk_shared.integrations.clipboard.fake import FakeClipboard
+from erk_shared.gateways.browser.abc import BrowserLauncher
+from erk_shared.gateways.browser.fake import FakeBrowserLauncher
+from erk_shared.gateways.clipboard.abc import Clipboard
+from erk_shared.gateways.clipboard.fake import FakeClipboard
 
 
 class FakePlanDataProvider(PlanDataProvider):

@@ -23,6 +23,9 @@ reliable while still validating the orchestrator's error handling logic.
 import time
 from pathlib import Path
 
+from erk_shared.gateways.parallel.real import RealParallelTaskRunner
+from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.fake import FakeGit
 from erk.core.context import ErkContext
 from erk.status.collectors.base import StatusCollector
 from erk.status.collectors.git import GitStatusCollector

@@ -9,10 +9,10 @@ from pathlib import Path
 
 import click
 
-from erk_shared.integrations.gt.cli import render_events
-from erk_shared.integrations.gt.operations.restack_preflight import execute_restack_preflight
-from erk_shared.integrations.gt.real import RealGtKit
-from erk_shared.integrations.gt.types import RestackPreflightError
+from erk_shared.gateways.gt.cli import render_events
+from erk_shared.gateways.gt.operations.restack_preflight import execute_restack_preflight
+from erk_shared.gateways.gt.real import RealGtKit
+from erk_shared.gateways.gt.types import RestackPreflightError
 
 
 @click.command(name="restack-preflight")

@@ -18,7 +18,7 @@ When wrapping Claude CLI operations, use the generator-based event pattern to pr
 A frozen dataclass for progress notifications during operations:
 
 ```python
-from erk_shared.integrations.gt.events import ProgressEvent
+from erk_shared.gateways.gt.events import ProgressEvent
 
 # Basic progress
 yield ProgressEvent("Reading diff file...")
@@ -35,7 +35,7 @@ yield ProgressEvent("PR has merge conflicts", style="warning")
 A frozen dataclass wrapping the final result:
 
 ```python
-from erk_shared.integrations.gt.events import CompletionEvent
+from erk_shared.gateways.gt.events import CompletionEvent
 
 # Return result via CompletionEvent
 yield CompletionEvent(MyResult(success=True, data=data))
@@ -47,7 +47,7 @@ Convert blocking operations to generators that yield progress:
 
 ```python
 from collections.abc import Generator
-from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.gateways.gt.events import CompletionEvent, ProgressEvent
 
 def my_operation(
     request: MyRequest,

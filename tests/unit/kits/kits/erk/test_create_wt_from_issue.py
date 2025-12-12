@@ -11,12 +11,13 @@ from erk_kits.data.kits.erk.scripts.erk.create_wt_from_issue import (
     has_erk_plan_label,
 )
 from erk_shared.github.metadata import MetadataBlock, render_metadata_block
-from erk_shared.integrations.erk_wt import (
+from erk_shared.gateways.erk_wt import (
     FakeErkWtKit,
     IssueData,
     IssueParseResult,
     WorktreeCreationResult,
 )
+from erk_shared.github.metadata import MetadataBlock, render_metadata_block
 
 
 def _make_issue_body(content: str = "Implementation details") -> str:

@@ -8,7 +8,7 @@ from erk.core.context import context_for_test
 from erk_shared.git.abc import WorktreeInfo, find_worktree_for_branch
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.integrations.graphite.real import RealGraphite
+from erk_shared.gateways.graphite.real import RealGraphite
 from tests.fakes.shell import FakeShell
 from tests.test_utils.graphite_helpers import setup_graphite_stack
 

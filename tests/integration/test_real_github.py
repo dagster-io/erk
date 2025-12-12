@@ -10,6 +10,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+from erk_shared.gateways.time.fake import FakeTime
+from erk_shared.github.real import RealGitHub
 from pytest import MonkeyPatch
 
 from erk_shared.github.real import RealGitHub

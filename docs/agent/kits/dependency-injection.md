@@ -255,7 +255,7 @@ def create_context(*, debug: bool) -> DotAgentContext:
     """
     from erk_shared.git.real import RealGit
     from erk_shared.github.real import RealGitHub
-    from erk_shared.integrations.time.real import RealTime
+    from erk_shared.gateways.time.real import RealTime
 
     # Detect repo root
     result = subprocess.run(

@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from erk_shared.debug import debug_log
+from erk_shared.gateways.time.abc import Time
 from erk_shared.github.abc import GitHub
 from erk_shared.github.graphql_queries import (
     ADD_REVIEW_THREAD_REPLY_MUTATION,
@@ -48,7 +49,6 @@ from erk_shared.github.types import (
     WorkflowRunConclusion,
     WorkflowRunStatus,
 )
-from erk_shared.integrations.time.abc import Time
 from erk_shared.output.output import user_output
 from erk_shared.subprocess_utils import run_subprocess_with_context
 

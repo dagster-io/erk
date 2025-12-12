@@ -18,8 +18,8 @@ from erk.core.worktree_utils import (
     find_worktree_containing_path,
     get_worktree_branch,
 )
+from erk_shared.gateways.graphite.abc import Graphite
 from erk_shared.git.abc import Git
-from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.output.output import user_output
 
 

@@ -119,7 +119,7 @@ class FakeGit(Git):
 
 ```python
 <<<<<<< HEAD
-from erk_shared.integrations.gt.types import (
+from erk_shared.gateways.gt.types import (
     PostAnalysisError,
     PostAnalysisResult,
     PreAnalysisError,
@@ -127,7 +127,7 @@ from erk_shared.integrations.gt.types import (
     RestackPreflightSuccess,
 )
 =======
-from erk_shared.integrations.gt.types import (
+from erk_shared.gateways.gt.types import (
     PostAnalysisError,
     PostAnalysisResult,
     PreAnalysisError,

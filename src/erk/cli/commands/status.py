@@ -11,7 +11,7 @@ from erk.status.collectors.graphite import GraphiteStackCollector
 from erk.status.collectors.impl import PlanFileCollector
 from erk.status.orchestrator import StatusOrchestrator
 from erk.status.renderers.simple import SimpleRenderer
-from erk_shared.integrations.parallel.real import RealParallelTaskRunner
+from erk_shared.gateways.parallel.real import RealParallelTaskRunner
 
 
 @click.command("status")
