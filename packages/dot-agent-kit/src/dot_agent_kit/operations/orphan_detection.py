@@ -34,8 +34,12 @@ class OrphanDetectionResult:
     orphaned_directories: list[OrphanedArtifact]
 
 
-# Directory names to check for kit-organized artifacts
-_ARTIFACT_DIRS = ["commands", "agents", "docs", "skills"]
+# Directory names where orphan detection applies.
+# NOTE: skills/ is intentionally excluded. Claude Code resolves skills by
+# direct folder name, so there's no way to distinguish "local skill I created"
+# from "orphaned kit skill". Commands, agents, and docs use folder namespacing
+# that maps cleanly to kit ownership.
+_TRACKED_ARTIFACT_DIRS = ["commands", "agents", "docs"]
 
 # Reserved directory names that are never considered orphaned
 _RESERVED_DIRS = {"local"}
@@ -119,8 +123,8 @@ def detect_orphaned_artifacts(
 
     orphaned: list[OrphanedArtifact] = []
 
-    # Check all artifact directories
-    for dir_name in _ARTIFACT_DIRS:
+    # Check tracked artifact directories (excludes skills/)
+    for dir_name in _TRACKED_ARTIFACT_DIRS:
         artifact_dir = claude_dir / dir_name
         if not artifact_dir.exists():
             continue
