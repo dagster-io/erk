@@ -226,7 +226,7 @@ def config_set(ctx: ErkContext, key: str, value: str) -> None:
         )
         Ensure.invariant(
             result.returncode == 0,
-            f"Branch '{value}' does not exist in repository.\n"
+            f"Branch '{value}' doesn't exist in repository.\n"
             f"Create the branch first before configuring it as trunk.",
         )
 
