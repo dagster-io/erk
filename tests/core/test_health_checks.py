@@ -13,6 +13,7 @@ from erk.core.health_checks import (
     check_erk_version,
     check_gitignore_entries,
     check_hooks_disabled,
+    check_legacy_config_locations,
     check_repository,
     check_uv_version,
 )
@@ -614,3 +615,106 @@ def test_check_orphaned_artifacts_local_not_orphaned(tmp_path: Path) -> None:
     assert result.passed is True
     assert result.warning is False
     assert "No orphaned artifacts found" in result.message
+
+
+# --- Legacy Config Location Tests ---
+
+
+def test_check_legacy_config_primary_location_exists(tmp_path: Path) -> None:
+    """Test legacy config check when primary location (.erk/config.toml) exists."""
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+    (erk_dir / "config.toml").write_text("[env]", encoding="utf-8")
+
+    result = check_legacy_config_locations(tmp_path, None)
+
+    assert result.name == "legacy config"
+    assert result.passed is True
+    assert result.warning is False
+    assert "primary location" in result.message
+
+
+def test_check_legacy_config_no_legacy_configs(tmp_path: Path) -> None:
+    """Test legacy config check when no legacy configs exist."""
+    # No configs anywhere
+    result = check_legacy_config_locations(tmp_path, None)
+
+    assert result.name == "legacy config"
+    assert result.passed is True
+    assert result.warning is False
+    assert "No legacy config files found" in result.message
+
+
+def test_check_legacy_config_repo_root_legacy(tmp_path: Path) -> None:
+    """Test legacy config check when legacy config at repo root exists."""
+    # Create legacy config at repo root
+    (tmp_path / "config.toml").write_text("[env]", encoding="utf-8")
+
+    result = check_legacy_config_locations(tmp_path, None)
+
+    assert result.name == "legacy config"
+    assert result.passed is True  # Warning only
+    assert result.warning is True
+    assert "1 legacy config file(s)" in result.message
+    assert result.details is not None
+    assert "repo root" in result.details
+    assert str(tmp_path / ".erk" / "config.toml") in result.details
+
+
+def test_check_legacy_config_metadata_dir_legacy(tmp_path: Path) -> None:
+    """Test legacy config check when legacy config in metadata dir exists."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    metadata_dir = tmp_path / "metadata"
+    metadata_dir.mkdir()
+    # Create legacy config in metadata dir
+    (metadata_dir / "config.toml").write_text("[env]", encoding="utf-8")
+
+    result = check_legacy_config_locations(repo_root, metadata_dir)
+
+    assert result.name == "legacy config"
+    assert result.passed is True  # Warning only
+    assert result.warning is True
+    assert "1 legacy config file(s)" in result.message
+    assert result.details is not None
+    assert "metadata dir" in result.details
+
+
+def test_check_legacy_config_both_legacy_locations(tmp_path: Path) -> None:
+    """Test legacy config check when both legacy locations have configs."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    metadata_dir = tmp_path / "metadata"
+    metadata_dir.mkdir()
+    # Create legacy configs in both locations
+    (repo_root / "config.toml").write_text("[env]", encoding="utf-8")
+    (metadata_dir / "config.toml").write_text("[env]", encoding="utf-8")
+
+    result = check_legacy_config_locations(repo_root, metadata_dir)
+
+    assert result.name == "legacy config"
+    assert result.passed is True  # Warning only
+    assert result.warning is True
+    assert "2 legacy config file(s)" in result.message
+    assert result.details is not None
+    # Both locations mentioned
+    assert "repo root" in result.details
+    assert "metadata dir" in result.details
+
+
+def test_check_legacy_config_ignores_legacy_when_primary_exists(tmp_path: Path) -> None:
+    """Test that legacy configs are ignored when primary location exists."""
+    # Create primary config
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+    (erk_dir / "config.toml").write_text("[env]", encoding="utf-8")
+    # Also create legacy config at repo root
+    (tmp_path / "config.toml").write_text("[env]", encoding="utf-8")
+
+    result = check_legacy_config_locations(tmp_path, None)
+
+    # Should report primary location, not warn about legacy
+    assert result.name == "legacy config"
+    assert result.passed is True
+    assert result.warning is False
+    assert "primary location" in result.message

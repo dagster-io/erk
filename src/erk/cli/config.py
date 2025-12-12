@@ -32,8 +32,83 @@ class ProjectConfig:
     post_create_shell: str | None
 
 
-def load_config(config_dir: Path) -> LoadedConfig:
-    """Load config.toml from the given directory if present; otherwise return defaults.
+@dataclass(frozen=True)
+class LegacyConfigLocation:
+    """Information about a detected legacy config location."""
+
+    path: Path
+    description: str
+
+
+def _parse_config_file(cfg_path: Path) -> LoadedConfig:
+    """Parse a config.toml file into a LoadedConfig.
+
+    Args:
+        cfg_path: Path to the config.toml file (must exist)
+
+    Returns:
+        LoadedConfig with parsed values
+    """
+    data = tomllib.loads(cfg_path.read_text(encoding="utf-8"))
+    env = {str(k): str(v) for k, v in data.get("env", {}).items()}
+    post = data.get("post_create", {})
+    commands = [str(x) for x in post.get("commands", [])]
+    shell = post.get("shell")
+    if shell is not None:
+        shell = str(shell)
+    return LoadedConfig(env=env, post_create_commands=commands, post_create_shell=shell)
+
+
+def detect_legacy_config_locations(
+    repo_root: Path, legacy_metadata_dir: Path | None
+) -> list[LegacyConfigLocation]:
+    """Detect legacy config.toml files that should be migrated.
+
+    Legacy locations:
+    1. <repo-root>/config.toml (created by 'erk init --repo')
+    2. ~/.erk/repos/<repo>/config.toml (created by 'erk init' without --repo)
+
+    Args:
+        repo_root: Path to the repository root
+        legacy_metadata_dir: Path to ~/.erk/repos/<repo>/ directory (or None)
+
+    Returns:
+        List of detected legacy config locations
+    """
+    legacy_locations: list[LegacyConfigLocation] = []
+
+    # Check for config at repo root (created by 'erk init --repo')
+    repo_root_config = repo_root / "config.toml"
+    if repo_root_config.exists():
+        legacy_locations.append(
+            LegacyConfigLocation(
+                path=repo_root_config,
+                description="repo root (created by 'erk init --repo')",
+            )
+        )
+
+    # Check for config in ~/.erk/repos/<repo>/ (created by 'erk init')
+    if legacy_metadata_dir is not None:
+        metadata_dir_config = legacy_metadata_dir / "config.toml"
+        if metadata_dir_config.exists():
+            legacy_locations.append(
+                LegacyConfigLocation(
+                    path=metadata_dir_config,
+                    description=f"~/.erk/repos/ metadata dir ({legacy_metadata_dir})",
+                )
+            )
+
+    return legacy_locations
+
+
+def load_config(repo_root: Path, legacy_metadata_dir: Path | None = None) -> LoadedConfig:
+    """Load config.toml for a repository.
+
+    Primary location: <repo-root>/.erk/config.toml (new consolidated location)
+
+    Fallback locations (for migration support):
+    1. <repo-root>/config.toml (created by 'erk init --repo')
+    2. ~/.erk/repos/<repo>/config.toml (created by 'erk init' without --repo)
 
     Example config:
       [env]
@@ -45,20 +120,27 @@ def load_config(config_dir: Path) -> LoadedConfig:
         "uv venv",
         "uv run make dev_install",
       ]
+
+    Args:
+        repo_root: Path to the repository root
+        legacy_metadata_dir: Path to ~/.erk/repos/<repo>/ directory for fallback (or None)
+
+    Returns:
+        LoadedConfig with parsed values or defaults if no config found
     """
+    # Primary location: <repo-root>/.erk/config.toml
+    primary_path = repo_root / ".erk" / "config.toml"
+    if primary_path.exists():
+        return _parse_config_file(primary_path)
 
-    cfg_path = config_dir / "config.toml"
-    if not cfg_path.exists():
-        return LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
+    # Fallback: Check legacy locations and use first found
+    legacy_locations = detect_legacy_config_locations(repo_root, legacy_metadata_dir)
+    if legacy_locations:
+        # Use first legacy location found
+        return _parse_config_file(legacy_locations[0].path)
 
-    data = tomllib.loads(cfg_path.read_text(encoding="utf-8"))
-    env = {str(k): str(v) for k, v in data.get("env", {}).items()}
-    post = data.get("post_create", {})
-    commands = [str(x) for x in post.get("commands", [])]
-    shell = post.get("shell")
-    if shell is not None:
-        shell = str(shell)
-    return LoadedConfig(env=env, post_create_commands=commands, post_create_shell=shell)
+    # No config found anywhere
+    return LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
 
 
 def load_project_config(project_root: Path) -> ProjectConfig:

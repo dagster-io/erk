@@ -3,8 +3,11 @@
 from pathlib import Path
 
 from erk.cli.config import (
+    LegacyConfigLocation,
     LoadedConfig,
     ProjectConfig,
+    detect_legacy_config_locations,
+    load_config,
     load_project_config,
     merge_configs,
 )
@@ -210,3 +213,217 @@ class TestProjectConfig:
 
         with pytest.raises(AttributeError):
             cfg.name = "new-name"  # type: ignore[misc]
+
+
+class TestDetectLegacyConfigLocations:
+    """Tests for detect_legacy_config_locations function."""
+
+    def test_no_legacy_configs(self, tmp_path: Path) -> None:
+        """Returns empty list when no legacy configs exist."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        metadata_dir = tmp_path / "metadata"
+        metadata_dir.mkdir()
+
+        result = detect_legacy_config_locations(repo_root, metadata_dir)
+
+        assert result == []
+
+    def test_detects_repo_root_config(self, tmp_path: Path) -> None:
+        """Detects config.toml at repo root."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        (repo_root / "config.toml").write_text("[env]", encoding="utf-8")
+
+        result = detect_legacy_config_locations(repo_root, None)
+
+        assert len(result) == 1
+        assert result[0].path == repo_root / "config.toml"
+        assert "repo root" in result[0].description
+
+    def test_detects_metadata_dir_config(self, tmp_path: Path) -> None:
+        """Detects config.toml in metadata directory."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        metadata_dir = tmp_path / "metadata"
+        metadata_dir.mkdir()
+        (metadata_dir / "config.toml").write_text("[env]", encoding="utf-8")
+
+        result = detect_legacy_config_locations(repo_root, metadata_dir)
+
+        assert len(result) == 1
+        assert result[0].path == metadata_dir / "config.toml"
+        assert "metadata dir" in result[0].description
+
+    def test_detects_both_legacy_locations(self, tmp_path: Path) -> None:
+        """Detects both repo root and metadata dir configs."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        (repo_root / "config.toml").write_text("[env]", encoding="utf-8")
+        metadata_dir = tmp_path / "metadata"
+        metadata_dir.mkdir()
+        (metadata_dir / "config.toml").write_text("[env]", encoding="utf-8")
+
+        result = detect_legacy_config_locations(repo_root, metadata_dir)
+
+        assert len(result) == 2
+        # Repo root is first
+        assert result[0].path == repo_root / "config.toml"
+        assert result[1].path == metadata_dir / "config.toml"
+
+    def test_handles_none_metadata_dir(self, tmp_path: Path) -> None:
+        """Handles None metadata_dir gracefully."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+
+        result = detect_legacy_config_locations(repo_root, None)
+
+        assert result == []
+
+
+class TestLoadConfig:
+    """Tests for load_config function."""
+
+    def test_returns_defaults_when_no_config_exists(self, tmp_path: Path) -> None:
+        """Returns default config when no config.toml exists anywhere."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+
+        result = load_config(repo_root)
+
+        assert result.env == {}
+        assert result.post_create_commands == []
+        assert result.post_create_shell is None
+
+    def test_loads_from_primary_location(self, tmp_path: Path) -> None:
+        """Loads config from .erk/config.toml (primary location)."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            '[env]\nFOO = "bar"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.env == {"FOO": "bar"}
+
+    def test_loads_from_repo_root_fallback(self, tmp_path: Path) -> None:
+        """Loads config from repo root as fallback."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        (repo_root / "config.toml").write_text(
+            '[env]\nLEGACY = "value"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.env == {"LEGACY": "value"}
+
+    def test_loads_from_metadata_dir_fallback(self, tmp_path: Path) -> None:
+        """Loads config from metadata directory as fallback."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        metadata_dir = tmp_path / "metadata"
+        metadata_dir.mkdir()
+        (metadata_dir / "config.toml").write_text(
+            '[env]\nMETADATA = "val"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root, legacy_metadata_dir=metadata_dir)
+
+        assert result.env == {"METADATA": "val"}
+
+    def test_primary_location_takes_precedence_over_repo_root(self, tmp_path: Path) -> None:
+        """Primary location (.erk/config.toml) takes precedence over repo root."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        # Create legacy config at repo root
+        (repo_root / "config.toml").write_text(
+            '[env]\nSOURCE = "legacy"\n',
+            encoding="utf-8",
+        )
+        # Create primary config
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+        (erk_dir / "config.toml").write_text(
+            '[env]\nSOURCE = "primary"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.env == {"SOURCE": "primary"}
+
+    def test_primary_location_takes_precedence_over_metadata_dir(self, tmp_path: Path) -> None:
+        """Primary location takes precedence over metadata directory."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            '[env]\nSOURCE = "primary"\n',
+            encoding="utf-8",
+        )
+        metadata_dir = tmp_path / "metadata"
+        metadata_dir.mkdir()
+        (metadata_dir / "config.toml").write_text(
+            '[env]\nSOURCE = "metadata"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root, legacy_metadata_dir=metadata_dir)
+
+        assert result.env == {"SOURCE": "primary"}
+
+    def test_repo_root_fallback_takes_precedence_over_metadata_dir(self, tmp_path: Path) -> None:
+        """Repo root fallback takes precedence over metadata directory."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        (repo_root / "config.toml").write_text(
+            '[env]\nSOURCE = "repo_root"\n',
+            encoding="utf-8",
+        )
+        metadata_dir = tmp_path / "metadata"
+        metadata_dir.mkdir()
+        (metadata_dir / "config.toml").write_text(
+            '[env]\nSOURCE = "metadata"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root, legacy_metadata_dir=metadata_dir)
+
+        assert result.env == {"SOURCE": "repo_root"}
+
+    def test_loads_post_create_commands(self, tmp_path: Path) -> None:
+        """Loads post_create commands from config."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            '[post_create]\ncommands = ["cmd1", "cmd2"]\nshell = "bash"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.post_create_commands == ["cmd1", "cmd2"]
+        assert result.post_create_shell == "bash"
+
+
+class TestLegacyConfigLocation:
+    """Tests for LegacyConfigLocation dataclass."""
+
+    def test_frozen(self) -> None:
+        """LegacyConfigLocation is immutable."""
+        import pytest
+
+        loc = LegacyConfigLocation(
+            path=Path("/some/path"),
+            description="test",
+        )
+
+        with pytest.raises(AttributeError):
+            loc.path = Path("/other")  # type: ignore[misc]

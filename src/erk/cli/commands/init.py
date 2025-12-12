@@ -322,14 +322,16 @@ def init_cmd(
     # Now proceed with repo-specific setup
     repo_context = discover_repo_context(ctx, ctx.cwd)
 
-    # Determine config path based on --repo flag
-    if repo:
-        # Repository-level config goes in repo root
-        cfg_path = repo_context.root / "config.toml"
-    else:
-        # Worktree-level config goes in erks_dir
-        repo_dir = ensure_erk_metadata_dir(repo_context)
-        cfg_path = repo_dir / "config.toml"
+    # Ensure .erk directory exists
+    erk_dir = repo_context.root / ".erk"
+    erk_dir.mkdir(parents=True, exist_ok=True)
+
+    # All repo config now goes to .erk/config.toml (consolidated location)
+    # The --repo flag is kept for backwards compatibility but behaves the same
+    cfg_path = erk_dir / "config.toml"
+
+    # Also ensure metadata directory exists (needed for worktrees dir)
+    ensure_erk_metadata_dir(repo_context)
 
     if cfg_path.exists() and not force:
         user_output(f"Config already exists: {cfg_path}. Use --force to overwrite.")

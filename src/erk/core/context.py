@@ -469,8 +469,10 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     if isinstance(repo, NoRepoSentinel):
         local_config = LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
     else:
+        # Ensure metadata directories exist (needed for worktrees)
         repo_dir = ensure_erk_metadata_dir(repo)
-        local_config = load_config(repo_dir)
+        # Load config with new primary location + legacy fallback
+        local_config = load_config(repo.root, legacy_metadata_dir=repo_dir)
 
     # 8. Choose feedback implementation based on mode
     feedback: UserFeedback
