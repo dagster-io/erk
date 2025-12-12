@@ -79,7 +79,7 @@ def pr_auto_restack(ctx: ErkContext, *, dangerous: bool) -> None:
     click.echo(
         click.style(
             f"Conflicts detected in {len(preflight_result.conflicts)} file(s). "
-            "Falling back to Claude...",
+            "Intelligently resolving merge conflicts with Claude",
             fg="yellow",
         )
     )
