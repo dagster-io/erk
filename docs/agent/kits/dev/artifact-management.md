@@ -32,6 +32,50 @@ docs/bar/guide.md            -->      .claude/docs/bar/guide.md (symlink to sour
 
 **Key Insight**: Installed artifacts are symlinks pointing TO bundled kit sources, NOT copies.
 
+## Artifact Path Formats
+
+The kit system uses two different path formats for artifacts:
+
+### Manifest Paths (kit.yaml)
+
+Paths in `kit.yaml` are relative to the kit's artifacts directory and **do NOT include the base directory prefix**:
+
+```yaml
+artifacts:
+  agent:
+    - agents/my-kit/helper.md # NOT .claude/agents/...
+  skill:
+    - skills/my-kit/tool/SKILL.md # NOT .claude/skills/...
+  workflow:
+    - workflows/my-kit/ci.yml # NOT .github/workflows/...
+```
+
+### Installed Paths (kits.toml)
+
+Paths tracked in `kits.toml` include the **full base directory prefix**:
+
+```toml
+[kits.my-kit]
+artifacts = [
+    ".claude/agents/my-kit/helper.md",
+    ".claude/skills/my-kit/tool/SKILL.md",
+    ".github/workflows/my-kit/ci.yml"
+]
+```
+
+### Base Directory Mapping
+
+The `ARTIFACT_TARGET_DIRS` mapping in `dot_agent_kit.models.artifact` defines which base directory each artifact type uses:
+
+- Most types (skill, command, agent, hook, doc) → `.claude/`
+- workflow → `.github/`
+
+### Path Conversion
+
+When comparing manifest artifacts against installed artifacts, use `compare_artifact_lists()` from `dot_agent_kit.commands.check`. This function handles the path prefix conversion automatically using `ARTIFACT_TARGET_DIRS`.
+
+**Do NOT** manually compare manifest paths to installed paths—they will never match due to the prefix difference.
+
 ## CRITICAL: Do NOT Use Symlinks in Bundled Kit Sources
 
 **WRONG** (causes circular symlink problems during sync):
