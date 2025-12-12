@@ -37,15 +37,12 @@ from erk.core.context import create_context
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])  # terse help flags
 
-# Maximum number of items to show in upgrade banner
-MAX_BANNER_ITEMS = 3
-
-
 def _show_version_change_banner() -> None:
-    """Show upgrade banner if version has changed since last run.
+    """Show upgrade banner with full release notes if version has changed.
 
-    This function is designed to never fail - any exception is silently caught
-    to ensure the CLI always works even if release notes are broken.
+    Displays all release notes since the last seen version and prompts user
+    to confirm before continuing. This function is designed to never fail -
+    any exception is silently caught to ensure the CLI always works.
     """
     # Inline import to avoid import-time side effects
     from erk.core.release_notes import check_for_version_change, get_current_version
@@ -57,35 +54,48 @@ def _show_version_change_banner() -> None:
 
         current = get_current_version()
 
-        # Collect all items from new releases
-        all_items: list[str] = []
-        for release in releases:
-            all_items.extend(release.items)
-
-        if not all_items:
-            return
-
-        # Build banner
+        # Build banner header
         click.echo(file=sys.stderr)
         click.echo(
             click.style(f"  ✨ erk updated to v{current}", fg="green", bold=True), file=sys.stderr
         )
-        click.echo(click.style("  " + "─" * 36, dim=True), file=sys.stderr)
-
-        # Show first N items
-        shown_items = all_items[:MAX_BANNER_ITEMS]
-        for item in shown_items:
-            click.echo(f"    • {item}", file=sys.stderr)
-
-        # Show overflow count if needed
-        remaining = len(all_items) - MAX_BANNER_ITEMS
-        if remaining > 0:
-            click.echo(click.style(f"    ... and {remaining} more", dim=True), file=sys.stderr)
-
-        click.echo(click.style("  " + "─" * 36, dim=True), file=sys.stderr)
-        msg = "  Run 'erk info release-notes' to see full notes"
-        click.echo(click.style(msg, dim=True), file=sys.stderr)
+        click.echo(click.style("  " + "─" * 50, dim=True), file=sys.stderr)
         click.echo(file=sys.stderr)
+
+        # Show all releases with their items grouped by category
+        for release in releases:
+            # Skip releases with no items
+            if not release.items:
+                continue
+
+            # Version header
+            header = f"  [{release.version}]"
+            if release.date:
+                header += f" - {release.date}"
+            click.echo(click.style(header, bold=True), file=sys.stderr)
+
+            # Show items grouped by category if available
+            if release.categories:
+                for category, category_items in release.categories.items():
+                    if not category_items:
+                        continue
+                    click.echo(click.style(f"    {category}", dim=True), file=sys.stderr)
+                    for item in category_items:
+                        click.echo(f"      • {item}", file=sys.stderr)
+            else:
+                # Fallback to flat list for releases without categories
+                for item in release.items:
+                    click.echo(f"    • {item}", file=sys.stderr)
+            click.echo(file=sys.stderr)
+
+        click.echo(click.style("  " + "─" * 50, dim=True), file=sys.stderr)
+        click.echo(file=sys.stderr)
+
+        # Prompt user to continue
+        click.pause(info=click.style("  Press Enter to continue...", dim=True), err=True)
+    except click.Abort:
+        # User pressed Ctrl+C or declined - exit gracefully
+        raise SystemExit(0) from None
     except Exception:
         # Never let release notes break the CLI
         pass
