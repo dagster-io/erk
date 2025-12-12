@@ -3,6 +3,9 @@ version: 0.2.1
 description: Erk implementation workflow commands for creating worktrees from plans (.PLAN.md) and executing implementation. Includes commands for plan creation, execution, and quick access.
 license: See LICENSE.md
 artifacts:
+  skill:
+    - skills/erk/SKILL.md
+    - skills/erk/references/erk.md
   command:
     - commands/erk/plan-implement.md
     - commands/erk/merge-conflicts-fix.md
