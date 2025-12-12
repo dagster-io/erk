@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 """Tests for deprecated dot-agent config health check (dogfooder feature)."""
+=======
+"""Tests for deprecated dot-agent config health check (dogfooder-only)."""
+>>>>>>> 1dfcab532 (WIP: auto-commit before restack)
 
 from pathlib import Path
 

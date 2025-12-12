@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 """Integration tests for doctor command with dogfooder features."""
+=======
+"""Dogfooder integration tests for erk doctor command."""
+>>>>>>> 1dfcab532 (WIP: auto-commit before restack)
 
 from click.testing import CliRunner
 

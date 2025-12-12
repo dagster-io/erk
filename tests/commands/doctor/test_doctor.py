@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 """Tests for erk doctor command - production command integration tests."""
+=======
+"""Tests for erk doctor command (production checks)."""
+>>>>>>> 1dfcab532 (WIP: auto-commit before restack)
 
 from click.testing import CliRunner
 
