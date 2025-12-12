@@ -57,6 +57,31 @@ def get_current_version() -> str:
     return importlib.metadata.version("erk")
 
 
+def _parse_version(version: str) -> tuple[int, ...]:
+    """Parse a semantic version string into a tuple of integers.
+
+    Args:
+        version: Version string (e.g., "0.2.4")
+
+    Returns:
+        Tuple of integers (e.g., (0, 2, 4))
+    """
+    return tuple(int(part) for part in version.split("."))
+
+
+def _is_upgrade(current: str, last_seen: str) -> bool:
+    """Check if current version is newer than last_seen version.
+
+    Args:
+        current: Current version string
+        last_seen: Previously seen version string
+
+    Returns:
+        True if current is a newer version than last_seen
+    """
+    return _parse_version(current) > _parse_version(last_seen)
+
+
 def get_last_seen_version() -> str | None:
     """Get the last version the user was notified about.
 
@@ -203,7 +228,14 @@ def check_for_version_change() -> tuple[bool, list[ReleaseEntry]]:
     if current == last_seen:
         return (False, [])
 
-    # Version changed - find all releases between last_seen and current
+    # Only show banner for upgrades, not downgrades
+    # This prevents repeated banners when switching between worktrees
+    # with different erk versions installed
+    if not _is_upgrade(current, last_seen):
+        update_last_seen_version(current)
+        return (False, [])
+
+    # Upgrade detected - find all releases between last_seen and current
     releases = get_releases()
     new_releases: list[ReleaseEntry] = []
 
