@@ -77,6 +77,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         simulated_process_error: str | None = None,
         simulated_prompt_output: str | None = None,
         simulated_prompt_error: str | None = None,
+        simulated_no_work_events: bool = False,
     ) -> None:
         """Initialize fake with predetermined behavior.
 
@@ -97,6 +98,10 @@ class FakeClaudeExecutor(ClaudeExecutor):
                 If None, defaults to "Test Title\n\nTest body"
             simulated_prompt_error: Error message to return from execute_prompt() on failure.
                 If set, execute_prompt() will return a failure result.
+            simulated_no_work_events: Whether to simulate Claude completing successfully
+                but without emitting any work events (TextEvent or ToolEvent). This
+                tests the "empty response" failure mode where Claude produces JSON
+                but no actual work output.
         """
         self._claude_available = claude_available
         self._command_should_fail = command_should_fail
@@ -111,6 +116,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         self._simulated_process_error = simulated_process_error
         self._simulated_prompt_output = simulated_prompt_output
         self._simulated_prompt_error = simulated_prompt_error
+        self._simulated_no_work_events = simulated_no_work_events
         self._executed_commands: list[tuple[str, Path, bool, bool]] = []
         self._interactive_calls: list[tuple[Path, bool, str, Path | None]] = []
         self._interactive_command_calls: list[tuple[str, Path, bool]] = []
@@ -171,6 +177,14 @@ class FakeClaudeExecutor(ClaudeExecutor):
 
         if self._command_should_fail:
             yield ErrorEvent(message=f"Claude command {command} failed (simulated failure)")
+            return
+
+        # No work events simulation: emits only non-work events (spinner, metadata)
+        # This tests the scenario where Claude completes but produces no output
+        if self._simulated_no_work_events:
+            yield SpinnerUpdateEvent(status=f"Running {command}...")
+            yield SpinnerUpdateEvent(status="Completed")
+            # Note: no TextEvent or ToolEvent emitted
             return
 
         # Simulate some basic streaming events

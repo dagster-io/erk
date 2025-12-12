@@ -277,3 +277,37 @@ def test_pr_auto_restack_auto_commits_dirty_working_tree() -> None:
 
         # Graphite restack should have been called (we proceed after auto-commit)
         assert len(graphite.restack_calls) == 1
+
+
+def test_pr_auto_restack_fails_when_no_work_events() -> None:
+    """Test that command fails when Claude completes but produces no work events."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            commits_ahead={(env.cwd, "main"): 1},  # Has commits to restack
+            rebase_in_progress=True,  # Conflicts detected
+            conflicted_files=["src/file.py"],
+        )
+
+        graphite = FakeGraphite()
+        # Simulate Claude completing but emitting no work events
+        claude_executor = FakeClaudeExecutor(
+            claude_available=True,
+            simulated_no_work_events=True,
+        )
+
+        ctx = build_workspace_test_context(
+            env, git=git, graphite=graphite, claude_executor=claude_executor
+        )
+
+        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+
+        # Should fail due to no work events
+        assert result.exit_code != 0
+        assert "without producing any output" in result.output
+        assert "check hooks" in result.output

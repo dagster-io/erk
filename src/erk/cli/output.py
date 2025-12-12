@@ -275,6 +275,7 @@ def stream_auto_restack(
 
     error_message: str | None = None
     success = True
+    has_work_events = False
     last_spinner: str | None = None
     start_time = time.time()
 
@@ -289,8 +290,10 @@ def stream_auto_restack(
     ):
         match event:
             case TextEvent(content=content):
+                has_work_events = True
                 click.echo(content)
             case ToolEvent(summary=summary):
+                has_work_events = True
                 # Check for user input prompts (semantic conflict requiring decision)
                 if "AskUserQuestion" in summary:
                     click.echo("")
@@ -335,6 +338,15 @@ def stream_auto_restack(
                 success = False
             case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | IssueNumberEvent():
                 pass  # PR metadata not relevant for auto-restack
+
+    # Check for no-work-events failure mode
+    if success and not has_work_events:
+        success = False
+        error_message = (
+            "Claude completed without producing any output - "
+            "check hooks or run 'claude /erk:auto-restack' directly to debug"
+        )
+        click.echo(click.style(f"   ⚠️  {error_message}", fg="yellow"))
 
     # Calculate duration and print end marker
     duration = time.time() - start_time
