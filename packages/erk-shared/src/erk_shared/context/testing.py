@@ -20,6 +20,7 @@ from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues
 from erk_shared.integrations.graphite.abc import Graphite
+from erk_shared.integrations.wt_stack.wt_stack import WtStack
 from erk_shared.prompt_executor import PromptExecutor
 
 
@@ -28,6 +29,7 @@ def context_for_test(
     git: Git | None = None,
     github: GitHub | None = None,
     graphite: Graphite | None = None,
+    wt_stack: WtStack | None = None,
     session_store: ClaudeCodeSessionStore | None = None,
     prompt_executor: PromptExecutor | None = None,
     debug: bool = False,
@@ -47,6 +49,7 @@ def context_for_test(
         git: Optional Git implementation. If None, creates FakeGit.
         github: Optional GitHub implementation. If None, creates FakeGitHub.
         graphite: Optional Graphite implementation. If None, creates FakeGraphite.
+        wt_stack: Optional WtStack implementation. If None, creates UnavailableWtStack.
         session_store: Optional SessionStore. If None, creates FakeClaudeCodeSessionStore.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
         debug: Whether to enable debug mode (default False).
@@ -83,13 +86,18 @@ def context_for_test(
     resolved_git: Git = git if git is not None else FakeGit()
     resolved_github: GitHub = github if github is not None else FakeGitHub()
     resolved_graphite: Graphite = graphite if graphite is not None else FakeGraphite()
+    resolved_repo_root: Path = repo_root if repo_root is not None else Path("/fake/repo")
+    resolved_wt_stack: WtStack = (
+        wt_stack
+        if wt_stack is not None
+        else WtStack(resolved_git, resolved_repo_root, resolved_graphite)
+    )
     resolved_session_store: ClaudeCodeSessionStore = (
         session_store if session_store is not None else FakeClaudeCodeSessionStore()
     )
     resolved_prompt_executor: PromptExecutor = (
         prompt_executor if prompt_executor is not None else FakePromptExecutor()
     )
-    resolved_repo_root: Path = repo_root if repo_root is not None else Path("/fake/repo")
     resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
 
     # Create repo context
@@ -107,6 +115,7 @@ def context_for_test(
         session_store=resolved_session_store,
         prompt_executor=resolved_prompt_executor,
         graphite=resolved_graphite,
+        wt_stack=resolved_wt_stack,
         time=FakeTime(),
         plan_store=FakePlanStore(),
         objectives=FakeObjectiveStore(),

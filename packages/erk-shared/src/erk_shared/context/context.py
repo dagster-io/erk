@@ -32,6 +32,7 @@ from erk_shared.integrations.feedback import UserFeedback
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.shell import Shell
 from erk_shared.integrations.time.abc import Time
+from erk_shared.integrations.wt_stack.wt_stack import WtStack
 from erk_shared.objectives.storage import ObjectiveStore
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.project_discovery import ProjectContext
@@ -63,6 +64,7 @@ class ErkContext:
     github: GitHub
     issues: GitHubIssues  # Note: ErkContext naming (was github_issues in DotAgentContext)
     graphite: Graphite
+    wt_stack: WtStack  # Unified worktree+stack operations (Graphite optional)
     time: Time
     session_store: ClaudeCodeSessionStore
     plan_store: PlanStore
