@@ -17,6 +17,7 @@ from erk.core.claude_settings import (
     read_claude_settings,
 )
 from erk.core.context import ErkContext
+from erk.core.repo_discovery import RepoContext
 
 
 @dataclass
@@ -760,6 +761,8 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
 
         from erk.core.health_checks_dogfooder import run_early_dogfooder_checks
 
+        # Get metadata_dir if we have a RepoContext (for legacy config detection)
+        metadata_dir = ctx.repo.repo_dir if isinstance(ctx.repo, RepoContext) else None
         results.extend(run_early_dogfooder_checks(repo_root, metadata_dir))
 
     return results
