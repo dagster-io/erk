@@ -3,10 +3,11 @@
 
 import click
 
-from erk.kits.hooks.decorators import project_scoped
+from erk.kits.hooks.decorators import logged_hook, project_scoped
 
 
 @click.command()
+@logged_hook
 @project_scoped
 def fake_driven_testing_reminder_hook() -> None:
     """Output fake-driven-testing reminder for UserPromptSubmit hook."""

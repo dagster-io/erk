@@ -10,10 +10,11 @@ import sys
 
 import click
 
-from erk.kits.hooks.decorators import project_scoped
+from erk.kits.hooks.decorators import logged_hook, project_scoped
 
 
 @click.command()
+@logged_hook
 @project_scoped
 def version_aware_reminder_hook() -> None:
     """Output dignified-python compliance reminder with detected Python version."""
