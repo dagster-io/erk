@@ -8,6 +8,7 @@ from pathlib import Path
 import click
 
 from dot_agent_kit.cli.output import user_output
+from dot_agent_kit.commands.check import compare_artifact_lists
 from dot_agent_kit.hooks.installer import install_hooks, remove_hooks
 from dot_agent_kit.hooks.settings import load_settings, save_settings
 from dot_agent_kit.io.git import resolve_project_dir
@@ -22,25 +23,43 @@ from dot_agent_kit.sources.resolver import KitResolver, ResolvedKit
 from dot_agent_kit.sources.standalone import StandalonePackageSource
 
 
-def _all_artifacts_are_symlinks(installed: InstalledKit, project_dir: Path) -> bool:
-    """Check if all installed artifacts are symlinks.
+def _is_dev_mode_up_to_date(
+    installed: InstalledKit,
+    resolved: ResolvedKit,
+    project_dir: Path,
+) -> bool:
+    """Check if dev mode installation is up to date.
+
+    Dev mode is up to date when:
+    1. All tracked artifacts exist and are symlinks
+    2. The set of artifacts in kit.yaml matches what's tracked in kits.toml
 
     Args:
-        installed: Installed kit information
+        installed: Installed kit information from kits.toml
+        resolved: Resolved kit from source (for manifest access)
         project_dir: Project root directory
 
     Returns:
-        True if all artifacts exist and are symlinks, False otherwise
+        True if dev mode is current, False if reinstall needed
     """
     if not installed.artifacts:
         return False
 
+    # Check that all tracked artifacts are symlinks
     for artifact_path in installed.artifacts:
         full_path = project_dir / artifact_path
         if not full_path.exists():
             return False
         if not full_path.is_symlink():
             return False
+
+    # Check if kit.yaml has artifacts not in kits.toml (or vice versa)
+    # Uses compare_artifact_lists which handles path prefix conversion
+    manifest = load_kit_manifest(resolved.manifest_path)
+    missing, obsolete = compare_artifact_lists(manifest.artifacts, installed.artifacts)
+
+    if missing or obsolete:
+        return False  # New or removed artifacts - needs sync
 
     return True
 
@@ -66,8 +85,15 @@ def _handle_update_workflow(
     Raises:
         SystemExit: If resolution fails or kit not found
     """
-    # Skip reinstall if artifacts are already symlinks (dev_mode)
-    if _all_artifacts_are_symlinks(installed, project_dir):
+    # Resolve kit early so we can check dev mode status with manifest
+    try:
+        resolved = resolver.resolve(kit_id)
+    except Exception as e:
+        user_output(f"Error: Failed to resolve kit: {e}")
+        raise SystemExit(1) from e
+
+    # Skip reinstall if dev mode is up to date (all symlinks, same artifacts)
+    if _is_dev_mode_up_to_date(installed, resolved, project_dir):
         user_output(
             f"ℹ Kit '{kit_id}' already installed as symlinks (dev_mode)",
         )
