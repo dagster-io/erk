@@ -471,8 +471,9 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     else:
         # Ensure metadata directories exist (needed for worktrees)
         repo_dir = ensure_erk_metadata_dir(repo)
-        # Load config with new primary location + legacy fallback
-        local_config = load_config(repo.root, legacy_metadata_dir=repo_dir)
+        # Load config from primary location (.erk/config.toml)
+        # Legacy locations are detected by 'erk doctor' only
+        local_config = load_config(repo.root)
 
     # 8. Choose feedback implementation based on mode
     feedback: UserFeedback

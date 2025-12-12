@@ -101,14 +101,10 @@ def detect_legacy_config_locations(
     return legacy_locations
 
 
-def load_config(repo_root: Path, legacy_metadata_dir: Path | None = None) -> LoadedConfig:
+def load_config(repo_root: Path) -> LoadedConfig:
     """Load config.toml for a repository.
 
-    Primary location: <repo-root>/.erk/config.toml (new consolidated location)
-
-    Fallback locations (for migration support):
-    1. <repo-root>/config.toml (created by 'erk init --repo')
-    2. ~/.erk/repos/<repo>/config.toml (created by 'erk init' without --repo)
+    Location: <repo-root>/.erk/config.toml
 
     Example config:
       [env]
@@ -121,25 +117,20 @@ def load_config(repo_root: Path, legacy_metadata_dir: Path | None = None) -> Loa
         "uv run make dev_install",
       ]
 
+    Note: Legacy config locations (repo root, ~/.erk/repos/) are NOT supported here.
+    Run 'erk doctor' to detect legacy configs that need migration.
+
     Args:
         repo_root: Path to the repository root
-        legacy_metadata_dir: Path to ~/.erk/repos/<repo>/ directory for fallback (or None)
 
     Returns:
         LoadedConfig with parsed values or defaults if no config found
     """
-    # Primary location: <repo-root>/.erk/config.toml
-    primary_path = repo_root / ".erk" / "config.toml"
-    if primary_path.exists():
-        return _parse_config_file(primary_path)
+    config_path = repo_root / ".erk" / "config.toml"
+    if config_path.exists():
+        return _parse_config_file(config_path)
 
-    # Fallback: Check legacy locations and use first found
-    legacy_locations = detect_legacy_config_locations(repo_root, legacy_metadata_dir)
-    if legacy_locations:
-        # Use first legacy location found
-        return _parse_config_file(legacy_locations[0].path)
-
-    # No config found anywhere
+    # No config found
     return LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
 
 
