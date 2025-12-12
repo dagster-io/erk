@@ -409,6 +409,8 @@ class RealPlanDataProvider(PlanDataProvider):
                 )
                 pr_url = graphite_url if use_graphite and graphite_url else selected_pr.url
                 emoji = get_pr_status_emoji(selected_pr)
+                if selected_pr.will_close_target:
+                    emoji += "🔗"
                 pr_display = f"#{selected_pr.number} {emoji}"
                 checks_display = format_checks_cell(selected_pr)
 

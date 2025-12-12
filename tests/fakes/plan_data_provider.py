@@ -114,6 +114,7 @@ def make_plan_row(
     pr_url: str | None = None,
     pr_title: str | None = None,
     pr_state: str | None = None,
+    pr_display: str | None = None,
     worktree_name: str = "",
     worktree_branch: str | None = None,
     exists_locally: bool = False,
@@ -132,6 +133,7 @@ def make_plan_row(
         pr_url: URL to PR
         pr_title: PR title
         pr_state: PR state (e.g., "OPEN", "MERGED")
+        pr_display: Custom PR display string (overrides default "#N" format)
         worktree_name: Local worktree name
         worktree_branch: Branch name in worktree
         exists_locally: Whether worktree exists locally
@@ -146,9 +148,12 @@ def make_plan_row(
     if issue_url is None:
         issue_url = f"https://github.com/test/repo/issues/{issue_number}"
 
-    pr_display = "-"
+    computed_pr_display = "-"
     if pr_number is not None:
-        pr_display = f"#{pr_number}"
+        computed_pr_display = f"#{pr_number}"
+
+    # Allow override of pr_display for testing indicators like 🔗
+    final_pr_display = pr_display if pr_display is not None else computed_pr_display
 
     return PlanRowData(
         issue_number=issue_number,
@@ -156,7 +161,7 @@ def make_plan_row(
         title=title,
         pr_number=pr_number,
         pr_url=pr_url,
-        pr_display=pr_display,
+        pr_display=final_pr_display,
         checks_display="-",
         worktree_name=worktree_name,
         exists_locally=exists_locally,
