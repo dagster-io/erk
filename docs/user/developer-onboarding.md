@@ -8,6 +8,7 @@ Before you begin, ensure you have:
 
 - **erk CLI installed** - Follow the [erk installation guide](../../README.md) if needed
 - **Claude Code** - The AI-powered CLI that erk extends
+- **Graphite CLI** (if your team uses stacked PRs) - Run `gt auth` after installing to authenticate
 
 ## Step 1: Clone the Repository
 
@@ -25,36 +26,33 @@ Since erk is already configured by the project maintainer, you'll find:
 
 These are committed to git and ready to use.
 
-## Step 2: Verify Your Setup
+## Step 2: Run Erk Doctor
 
-Check that erk recognizes the project configuration:
-
-```bash
-erk status
-```
-
-You should see your project configuration displayed.
-
-## Step 3: Install Kits (Optional)
-
-If the project uses kits that aren't bundled, you may need to install them:
+Run the doctor command to check your setup and identify any issues:
 
 ```bash
-erk kit list  # See what's available
-erk kit sync  # Sync any kits specified in erk.toml
+erk doctor
 ```
 
-## Step 4: Graphite Setup (Optional)
+This will verify your environment and report any problems that need attention.
 
-If your team uses Graphite for stacked PRs:
+### Shell Integration (Important)
+
+For the best experience, set up shell integration so you can navigate between worktrees seamlessly. This is the most important setup step and needs to be done once per developer.
+
+**Option A: Append directly to your shell config**
 
 ```bash
-# Authenticate with Graphite
-gt auth
-
-# Initialize Graphite in the repo (if not already done)
-gt init
+erk shell-init >> ~/.zshrc  # or ~/.bashrc for bash users
 ```
+
+**Option B: Copy and paste manually**
+
+Run `erk shell-init` to see the shell integration code, then copy and paste it into your `~/.zshrc` (or `~/.bashrc`).
+
+After adding shell integration, restart your shell or run `source ~/.zshrc`.
+
+Run `erk doctor` again to confirm all checks pass.
 
 ## Quick Start: Common Erk Commands
 
