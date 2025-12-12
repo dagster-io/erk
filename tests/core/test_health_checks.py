@@ -13,9 +13,11 @@ from erk.core.health_checks import (
     check_erk_version,
     check_gitignore_entries,
     check_hooks_disabled,
-    check_legacy_config_locations,
     check_repository,
     check_uv_version,
+)
+from erk.core.health_checks_dogfooder.legacy_config_locations import (
+    check_legacy_config_locations,
 )
 from erk_shared.git.fake import FakeGit
 from tests.fakes.context import create_test_context
