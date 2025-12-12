@@ -30,7 +30,7 @@ from erk_shared.output.output import machine_output, user_output
     "-f",
     "--force",
     is_flag=True,
-    help="Force deletion even if pending extraction marker exists",
+    help="Force deletion even if marker exists or PR is open (prompts)",
 )
 @click.pass_obj
 def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> None:
@@ -89,7 +89,7 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
         check_clean_working_tree(ctx)
 
         # Validate PR is closed or merged on GitHub
-        verify_pr_closed_or_merged(ctx, repo.root, current_branch)
+        verify_pr_closed_or_merged(ctx, repo.root, current_branch, force)
 
         # Check for pending extraction marker
         check_pending_extraction_marker(current_worktree_path, force)
