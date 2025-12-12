@@ -63,14 +63,22 @@ def doctor_cmd(ctx: ErkContext) -> None:
         "claude hooks",
     }
     github_check_names = {"github auth", "workflow permissions"}
+    early_dogfooder_names = {"deprecated dot-agent config"}
 
     cli_checks = [r for r in results if r.name in cli_tool_names]
     health_checks = [r for r in results if r.name in health_check_names]
     repo_checks = [r for r in results if r.name in repo_check_names]
     github_checks = [r for r in results if r.name in github_check_names]
+    early_dogfooder_checks = [r for r in results if r.name in early_dogfooder_names]
 
     # Track displayed check names to catch any uncategorized checks
-    displayed_names = cli_tool_names | health_check_names | repo_check_names | github_check_names
+    displayed_names = (
+        cli_tool_names
+        | health_check_names
+        | repo_check_names
+        | github_check_names
+        | early_dogfooder_names
+    )
 
     # Display CLI availability
     click.echo(click.style("CLI Tools", bold=True))
@@ -95,6 +103,13 @@ def doctor_cmd(ctx: ErkContext) -> None:
     if github_checks:
         click.echo(click.style("GitHub", bold=True))
         for result in github_checks:
+            _format_check_result(result)
+        click.echo("")
+
+    # Display Early Dogfooder checks (only shown when there are issues)
+    if early_dogfooder_checks:
+        click.echo(click.style("Early Dogfooder", bold=True))
+        for result in early_dogfooder_checks:
             _format_check_result(result)
         click.echo("")
 

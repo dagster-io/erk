@@ -340,7 +340,7 @@ def test_dev_mode_enabled_via_pyproject(tmp_project: Path) -> None:
     pyproject_path = tmp_project / "pyproject.toml"
     pyproject_path.write_text(
         """
-[tool.dot-agent]
+[tool.erk]
 dev_mode = true
 """,
         encoding="utf-8",
@@ -376,7 +376,7 @@ def test_dev_mode_disabled_via_pyproject(tmp_project: Path) -> None:
     pyproject_path = tmp_project / "pyproject.toml"
     pyproject_path.write_text(
         """
-[tool.dot-agent]
+[tool.erk]
 dev_mode = false
 """,
         encoding="utf-8",

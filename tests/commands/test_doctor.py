@@ -1,9 +1,11 @@
 """Tests for erk doctor command."""
 
+from pathlib import Path
+
 from click.testing import CliRunner
 
 from erk.cli.commands.doctor import doctor_cmd
-from erk.core.health_checks import check_workflow_permissions
+from erk.core.health_checks import check_deprecated_dot_agent_config, check_workflow_permissions
 from erk_shared.git.fake import FakeGit
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -162,3 +164,120 @@ def test_check_workflow_permissions_non_github_remote() -> None:
         assert result.passed is True
         assert result.name == "workflow permissions"
         assert "Not a GitHub repository" in result.message
+
+
+def test_check_deprecated_dot_agent_config_passes_when_no_pyproject(
+    tmp_path: Path,
+) -> None:
+    """Test check passes when pyproject.toml doesn't exist."""
+    result = check_deprecated_dot_agent_config(tmp_path)
+    assert result.passed is True
+    assert "No deprecated" in result.message
+
+
+def test_check_deprecated_dot_agent_config_passes_when_no_tool_section(
+    tmp_path: Path,
+) -> None:
+    """Test check passes when pyproject.toml has no [tool] section."""
+    pyproject_path = tmp_path / "pyproject.toml"
+    pyproject_path.write_text(
+        """
+[project]
+name = "test"
+version = "1.0.0"
+""",
+        encoding="utf-8",
+    )
+
+    result = check_deprecated_dot_agent_config(tmp_path)
+    assert result.passed is True
+    assert "No deprecated" in result.message
+
+
+def test_check_deprecated_dot_agent_config_passes_when_using_tool_erk(
+    tmp_path: Path,
+) -> None:
+    """Test check passes when using correct [tool.erk] config."""
+    pyproject_path = tmp_path / "pyproject.toml"
+    pyproject_path.write_text(
+        """
+[tool.erk]
+dev_mode = true
+""",
+        encoding="utf-8",
+    )
+
+    result = check_deprecated_dot_agent_config(tmp_path)
+    assert result.passed is True
+    assert "No deprecated" in result.message
+
+
+def test_check_deprecated_dot_agent_config_fails_when_using_tool_dot_agent(
+    tmp_path: Path,
+) -> None:
+    """Test check fails when using deprecated [tool.dot-agent] config."""
+    pyproject_path = tmp_path / "pyproject.toml"
+    pyproject_path.write_text(
+        """
+[tool.dot-agent]
+dev_mode = true
+""",
+        encoding="utf-8",
+    )
+
+    result = check_deprecated_dot_agent_config(tmp_path)
+
+    assert result.passed is False
+    assert result.name == "deprecated dot-agent config"
+    assert "[tool.dot-agent]" in result.message
+    assert result.details is not None
+    assert "[tool.erk]" in result.details
+    assert "Remediation" in result.details
+
+
+def test_check_deprecated_dot_agent_config_passes_when_no_dev_mode(
+    tmp_path: Path,
+) -> None:
+    """Test check passes when [tool.dot-agent] has no dev_mode."""
+    pyproject_path = tmp_path / "pyproject.toml"
+    pyproject_path.write_text(
+        """
+[tool.dot-agent]
+other_setting = "value"
+""",
+        encoding="utf-8",
+    )
+
+    result = check_deprecated_dot_agent_config(tmp_path)
+    assert result.passed is True
+    assert "No deprecated" in result.message
+
+
+def test_doctor_shows_early_dogfooder_section_on_deprecated_config() -> None:
+    """Test that doctor shows Early Dogfooder section when deprecated config found."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Create deprecated pyproject.toml config
+        pyproject_path = env.cwd / "pyproject.toml"
+        pyproject_path.write_text(
+            """
+[tool.dot-agent]
+dev_mode = true
+""",
+            encoding="utf-8",
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git)
+
+        result = runner.invoke(doctor_cmd, [], obj=ctx)
+
+        # Should show Early Dogfooder section
+        assert "Early Dogfooder" in result.output
+        assert "deprecated" in result.output.lower()
+        assert "[tool.erk]" in result.output
