@@ -28,10 +28,8 @@ This analyzes commits, categorizes changes, and updates CHANGELOG.md with your a
 
 ### 2. Bump Version
 
-Edit `pyproject.toml`:
-
-```toml
-version = "X.Y.Z"  # Update to new version
+```bash
+erk-dev bump-version X.Y.Z
 ```
 
 ### 3. Commit and Push
