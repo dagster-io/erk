@@ -6,33 +6,86 @@ from dot_agent_kit.models.config import InstalledKit, ProjectConfig
 from dot_agent_kit.operations.orphan_detection import (
     OrphanDetectionResult,
     OrphanedArtifact,
-    _extract_kit_prefix_from_skill,
+    _build_declared_directories,
     detect_orphaned_artifacts,
 )
 
 # --- Helper function tests ---
 
 
-def test_extract_kit_prefix_simple_name() -> None:
-    """Test extracting prefix from simple skill name without variant."""
-    assert _extract_kit_prefix_from_skill("simple") == "simple"
+def test_build_declared_directories_empty_config() -> None:
+    """Test building declared directories with no config."""
+    result = _build_declared_directories(None)
+    assert result == set()
 
 
-def test_extract_kit_prefix_with_numeric_variant() -> None:
-    """Test extracting prefix from skill with numeric variant."""
-    assert _extract_kit_prefix_from_skill("dignified-python-313") == "dignified-python"
-    assert _extract_kit_prefix_from_skill("dignified-python-310") == "dignified-python"
+def test_build_declared_directories_no_kits() -> None:
+    """Test building declared directories with empty kits."""
+    config = ProjectConfig(version="1", kits={})
+    result = _build_declared_directories(config)
+    assert result == set()
 
 
-def test_extract_kit_prefix_with_non_numeric_suffix() -> None:
-    """Test extracting prefix from skill with non-numeric suffix."""
-    # Non-numeric suffixes are treated as part of the kit name
-    assert _extract_kit_prefix_from_skill("gt-graphite") == "gt-graphite"
+def test_build_declared_directories_single_artifact() -> None:
+    """Test building declared directories from single artifact."""
+    config = ProjectConfig(
+        version="1",
+        kits={
+            "my-kit": InstalledKit(
+                kit_id="my-kit",
+                source_type="bundled",
+                version="1.0.0",
+                artifacts=[".claude/commands/my-kit/cmd.md"],
+            ),
+        },
+    )
+    result = _build_declared_directories(config)
+    assert result == {Path(".claude/commands/my-kit")}
 
 
-def test_extract_kit_prefix_hyphenated_kit_name() -> None:
-    """Test extracting prefix preserves hyphenated kit names."""
-    assert _extract_kit_prefix_from_skill("my-cool-kit-123") == "my-cool-kit"
+def test_build_declared_directories_multiple_artifacts() -> None:
+    """Test building declared directories from multiple artifacts."""
+    config = ProjectConfig(
+        version="1",
+        kits={
+            "my-kit": InstalledKit(
+                kit_id="my-kit",
+                source_type="bundled",
+                version="1.0.0",
+                artifacts=[
+                    ".claude/commands/my-kit/cmd1.md",
+                    ".claude/commands/my-kit/cmd2.md",
+                    ".claude/agents/my-kit/agent.md",
+                ],
+            ),
+        },
+    )
+    result = _build_declared_directories(config)
+    assert result == {
+        Path(".claude/commands/my-kit"),
+        Path(".claude/agents/my-kit"),
+    }
+
+
+def test_build_declared_directories_skill_with_different_name() -> None:
+    """Test that skill directory name can differ from kit ID.
+
+    This is the key case: gt kit declares .claude/skills/gt-graphite/SKILL.md,
+    so .claude/skills/gt-graphite should be in the declared set.
+    """
+    config = ProjectConfig(
+        version="1",
+        kits={
+            "gt": InstalledKit(
+                kit_id="gt",
+                source_type="bundled",
+                version="1.0.0",
+                artifacts=[".claude/skills/gt-graphite/SKILL.md"],
+            ),
+        },
+    )
+    result = _build_declared_directories(config)
+    assert Path(".claude/skills/gt-graphite") in result
 
 
 # --- No .claude/ directory ---
@@ -72,8 +125,7 @@ def test_detect_all_orphaned_without_config(tmp_project: Path) -> None:
     assert len(result.orphaned_directories) == 1
     orphan = result.orphaned_directories[0]
     assert orphan.path == Path(".claude/commands/old-kit")
-    assert orphan.kit_id == "old-kit"
-    assert "old-kit" in orphan.reason
+    assert "not declared" in orphan.reason
 
 
 # --- local directory is reserved ---
@@ -127,29 +179,68 @@ def test_detect_multiple_orphaned_directories(tmp_project: Path) -> None:
     result = detect_orphaned_artifacts(tmp_project, None)
 
     assert len(result.orphaned_directories) == 3
-    kit_ids = {o.kit_id for o in result.orphaned_directories}
-    assert kit_ids == {"old-kit", "removed-kit", "stale-kit"}
+    paths = {str(o.path) for o in result.orphaned_directories}
+    assert paths == {
+        ".claude/commands/old-kit",
+        ".claude/agents/removed-kit",
+        ".claude/docs/stale-kit",
+    }
 
 
-# --- Skills with prefix matching ---
+# --- Skills with different directory names than kit ID ---
 
 
-def test_detect_orphaned_skill_by_prefix(tmp_project: Path) -> None:
-    """Test detection of orphaned skill using kit prefix matching."""
+def test_detect_skill_not_orphaned_when_declared(tmp_project: Path) -> None:
+    """Test that skill is not orphaned when declared in kit artifacts.
+
+    This tests the key case where skill directory name differs from kit ID:
+    gt kit declares .claude/skills/gt-graphite/SKILL.md
+    """
     claude_dir = tmp_project / ".claude"
-    (claude_dir / "skills" / "dignified-python-313").mkdir(parents=True)
+    (claude_dir / "skills" / "gt-graphite").mkdir(parents=True)
 
-    result = detect_orphaned_artifacts(tmp_project, None)
+    config = ProjectConfig(
+        version="1",
+        kits={
+            "gt": InstalledKit(
+                kit_id="gt",
+                source_type="bundled",
+                version="1.0.0",
+                artifacts=[".claude/skills/gt-graphite/SKILL.md"],
+            ),
+        },
+    )
+
+    result = detect_orphaned_artifacts(tmp_project, config)
+
+    assert result.orphaned_directories == []
+
+
+def test_detect_skill_orphaned_when_not_declared(tmp_project: Path) -> None:
+    """Test that skill is orphaned when not declared by any kit."""
+    claude_dir = tmp_project / ".claude"
+    (claude_dir / "skills" / "unknown-skill").mkdir(parents=True)
+
+    config = ProjectConfig(
+        version="1",
+        kits={
+            "some-kit": InstalledKit(
+                kit_id="some-kit",
+                source_type="bundled",
+                version="1.0.0",
+                artifacts=[".claude/commands/some-kit/cmd.md"],
+            ),
+        },
+    )
+
+    result = detect_orphaned_artifacts(tmp_project, config)
 
     assert len(result.orphaned_directories) == 1
-    orphan = result.orphaned_directories[0]
-    assert orphan.path == Path(".claude/skills/dignified-python-313")
-    assert orphan.kit_id == "dignified-python"
-    assert "dignified-python" in orphan.reason
+    assert result.orphaned_directories[0].path == Path(".claude/skills/unknown-skill")
 
 
-def test_detect_skill_not_orphaned_when_kit_installed(tmp_project: Path) -> None:
-    """Test that skill is not orphaned when its kit is installed."""
+def test_detect_versioned_skill_not_orphaned(tmp_project: Path) -> None:
+    """Test versioned skill like dignified-python-313 when declared."""
     claude_dir = tmp_project / ".claude"
     (claude_dir / "skills" / "dignified-python-313").mkdir(parents=True)
 
@@ -187,7 +278,10 @@ def test_detect_mixed_orphaned_and_valid(tmp_project: Path) -> None:
                 kit_id="installed-kit",
                 source_type="bundled",
                 version="1.0.0",
-                artifacts=[],
+                artifacts=[
+                    ".claude/commands/installed-kit/cmd.md",
+                    ".claude/agents/installed-kit/agent.md",
+                ],
             ),
         },
     )
@@ -195,7 +289,7 @@ def test_detect_mixed_orphaned_and_valid(tmp_project: Path) -> None:
     result = detect_orphaned_artifacts(tmp_project, config)
 
     assert len(result.orphaned_directories) == 1
-    assert result.orphaned_directories[0].kit_id == "orphaned-kit"
+    assert result.orphaned_directories[0].path == Path(".claude/commands/orphaned-kit")
 
 
 # --- Files (not directories) are ignored ---
@@ -221,13 +315,11 @@ def test_orphaned_artifact_dataclass() -> None:
     """Test OrphanedArtifact dataclass creation and access."""
     artifact = OrphanedArtifact(
         path=Path(".claude/commands/old-kit"),
-        reason="kit 'old-kit' not installed",
-        kit_id="old-kit",
+        reason="not declared by any installed kit",
     )
 
     assert artifact.path == Path(".claude/commands/old-kit")
-    assert artifact.reason == "kit 'old-kit' not installed"
-    assert artifact.kit_id == "old-kit"
+    assert artifact.reason == "not declared by any installed kit"
 
 
 def test_orphan_detection_result_dataclass() -> None:
@@ -236,11 +328,44 @@ def test_orphan_detection_result_dataclass() -> None:
         orphaned_directories=[
             OrphanedArtifact(
                 path=Path(".claude/commands/old-kit"),
-                reason="kit 'old-kit' not installed",
-                kit_id="old-kit",
+                reason="not declared by any installed kit",
             )
         ]
     )
 
     assert len(result.orphaned_directories) == 1
-    assert result.orphaned_directories[0].kit_id == "old-kit"
+    assert result.orphaned_directories[0].path == Path(".claude/commands/old-kit")
+
+
+# --- Nested artifact directories ---
+
+
+def test_detect_nested_artifact_paths(tmp_project: Path) -> None:
+    """Test that nested artifact paths are handled correctly.
+
+    Some kits declare artifacts in nested directories like:
+    .claude/docs/erk/includes/file.md
+    """
+    claude_dir = tmp_project / ".claude"
+    (claude_dir / "docs" / "erk").mkdir(parents=True)
+    (claude_dir / "docs" / "erk" / "includes").mkdir(parents=True)
+
+    config = ProjectConfig(
+        version="1",
+        kits={
+            "erk": InstalledKit(
+                kit_id="erk",
+                source_type="bundled",
+                version="1.0.0",
+                artifacts=[
+                    ".claude/docs/erk/README.md",
+                    ".claude/docs/erk/includes/file.md",
+                ],
+            ),
+        },
+    )
+
+    result = detect_orphaned_artifacts(tmp_project, config)
+
+    # .claude/docs/erk is declared, so not orphaned
+    assert result.orphaned_directories == []

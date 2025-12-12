@@ -27,17 +27,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "ERK_KIT_ID=devrun ERK_HOOK_ID=devrun-reminder-hook erk kit exec devrun devrun-reminder-hook",
-            "timeout": 30
-          },
-          {
-            "type": "command",
             "command": "ERK_KIT_ID=erk ERK_HOOK_ID=session-id-injector-hook erk kit exec erk session-id-injector-hook",
             "timeout": 30
           },
           {
             "type": "command",
             "command": "ERK_KIT_ID=erk ERK_HOOK_ID=tripwires-reminder-hook erk kit exec erk tripwires-reminder-hook",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "ERK_KIT_ID=devrun ERK_HOOK_ID=devrun-reminder-hook erk kit exec devrun devrun-reminder-hook",
             "timeout": 30
           }
         ]

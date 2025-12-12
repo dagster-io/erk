@@ -16,13 +16,11 @@ class OrphanedArtifact:
 
     Attributes:
         path: Path relative to project root (e.g., ".claude/commands/old-kit/")
-        reason: Human-readable explanation (e.g., "kit 'old-kit' not installed")
-        kit_id: Inferred kit ID from the directory name
+        reason: Human-readable explanation (e.g., "not declared by any installed kit")
     """
 
     path: Path
     reason: str
-    kit_id: str
 
 
 @dataclass(frozen=True)
@@ -37,38 +35,58 @@ class OrphanDetectionResult:
 
 
 # Directory names to check for kit-organized artifacts
-# These directories use kit IDs as subdirectory names
-_KIT_ORGANIZED_DIRS = ["commands", "agents", "docs"]
-
-# Skills use skill names (not kit IDs) as subdirectory names
-_SKILL_DIR = "skills"
+_ARTIFACT_DIRS = ["commands", "agents", "docs", "skills"]
 
 # Reserved directory names that are never considered orphaned
 _RESERVED_DIRS = {"local"}
 
 
-def _extract_kit_prefix_from_skill(skill_name: str) -> str:
-    """Extract kit ID prefix from a skill name.
+def _build_declared_directories(config: ProjectConfig | None) -> set[Path]:
+    """Build set of directories declared by installed kits.
 
-    Skills are named with the pattern "<kit-id>-<variant>" where the kit ID
-    may contain hyphens. We assume the last hyphen-separated part is the
-    variant if it looks like a version identifier (e.g., "313", "v2").
+    Each artifact path like ".claude/docs/erk/includes/file.md" contributes
+    all its parent directories under .claude/<type>/ to the set:
+    - ".claude/docs/erk/includes"
+    - ".claude/docs/erk"
 
-    Examples:
-        "dignified-python-313" -> "dignified-python"
-        "gt-graphite" -> "gt"
-        "simple" -> "simple"
+    This handles nested artifact structures where we want to mark the
+    top-level kit directory as declared even if only nested files are listed.
+
+    Args:
+        config: Project configuration with installed kits
+
+    Returns:
+        Set of Path objects representing directories declared by kits
     """
-    parts = skill_name.rsplit("-", 1)
-    if len(parts) == 1:
-        return skill_name
+    declared: set[Path] = set()
+    if config is None:
+        return declared
 
-    prefix, suffix = parts
-    # If suffix looks like a version number (digits only), it's a variant
-    if suffix.isdigit():
-        return prefix
-    # Otherwise, return the full name as the kit ID
-    return skill_name
+    # Artifact type directories we care about
+    artifact_types = {"commands", "agents", "docs", "skills"}
+
+    for kit in config.kits.values():
+        for artifact_path_str in kit.artifacts:
+            artifact_path = Path(artifact_path_str)
+
+            # Walk up from artifact parent to .claude/<type>/
+            # e.g., ".claude/docs/erk/includes/file.md"
+            #   -> parent: ".claude/docs/erk/includes"
+            #   -> then: ".claude/docs/erk"
+            #   -> stop at: ".claude/docs" (artifact type dir)
+            current = artifact_path.parent
+            while current.parts:
+                # Stop if we've reached .claude/<type>/
+                if len(current.parts) >= 2 and current.parts[-2] == ".claude":
+                    if current.parts[-1] in artifact_types:
+                        break
+                # Stop if we've gone past .claude
+                if len(current.parts) < 3:
+                    break
+                declared.add(current)
+                current = current.parent
+
+    return declared
 
 
 def detect_orphaned_artifacts(
@@ -78,7 +96,12 @@ def detect_orphaned_artifacts(
     """Detect orphaned artifacts in .claude/ directory.
 
     Scans .claude/commands/, .claude/agents/, .claude/docs/, and .claude/skills/
-    for subdirectories that don't correspond to any installed kit.
+    for subdirectories that don't correspond to any artifact declared by
+    installed kits.
+
+    The detection works by:
+    1. Building a set of parent directories from all declared artifact paths
+    2. Checking if each subdirectory in .claude/ is covered by that set
 
     Args:
         project_dir: Project root directory
@@ -91,15 +114,13 @@ def detect_orphaned_artifacts(
     if not claude_dir.exists():
         return OrphanDetectionResult(orphaned_directories=[])
 
-    # Build set of installed kit IDs
-    installed_kit_ids: set[str] = set()
-    if config is not None:
-        installed_kit_ids = set(config.kits.keys())
+    # Build set of directories declared by installed kits
+    declared_dirs = _build_declared_directories(config)
 
     orphaned: list[OrphanedArtifact] = []
 
-    # Check kit-organized directories (commands/, agents/, docs/)
-    for dir_name in _KIT_ORGANIZED_DIRS:
+    # Check all artifact directories
+    for dir_name in _ARTIFACT_DIRS:
         artifact_dir = claude_dir / dir_name
         if not artifact_dir.exists():
             continue
@@ -114,35 +135,15 @@ def detect_orphaned_artifacts(
             if dir_basename in _RESERVED_DIRS:
                 continue
 
-            # Check if this kit is installed
-            if dir_basename not in installed_kit_ids:
-                relative_path = subdir.relative_to(project_dir)
+            # Get path relative to project root for comparison
+            relative_path = subdir.relative_to(project_dir)
+
+            # Check if this directory is declared by any installed kit
+            if relative_path not in declared_dirs:
                 orphaned.append(
                     OrphanedArtifact(
                         path=relative_path,
-                        reason=f"kit '{dir_basename}' not installed",
-                        kit_id=dir_basename,
-                    )
-                )
-
-    # Check skills directory separately (uses kit prefix matching)
-    skills_dir = claude_dir / _SKILL_DIR
-    if skills_dir.exists():
-        for skill_subdir in skills_dir.iterdir():
-            if not skill_subdir.is_dir():
-                continue
-
-            skill_name = skill_subdir.name
-            kit_prefix = _extract_kit_prefix_from_skill(skill_name)
-
-            # Check if the inferred kit is installed
-            if kit_prefix not in installed_kit_ids:
-                relative_path = skill_subdir.relative_to(project_dir)
-                orphaned.append(
-                    OrphanedArtifact(
-                        path=relative_path,
-                        reason=f"kit '{kit_prefix}' not installed",
-                        kit_id=kit_prefix,
+                        reason="not declared by any installed kit",
                     )
                 )
 
