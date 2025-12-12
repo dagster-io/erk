@@ -10,11 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.3] - 2025-12-12
 
 ### Added
+
 - Add orphaned artifact detection for `.claude/` directory
 - Add hooks disabled check to `erk doctor` command with warning indicator
 - Add critical safety guardrail against automatic remote pushes
 
 ### Changed
+
 - Eliminated the `dot-agent-kit` package entirely and consolidated config:
   - Repository config moved to `.erk/config.toml` with legacy fallback support
   - Consolidate into `erk-kits` + `erk.kits`
@@ -23,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Consolidate PR submission into unified two-layer architecture (core + Graphite)
 
 ### Fixed
+
 - Fix detect no-work-events failure mode in auto-restack command
 - Fix OSError "argument list too long" by passing prompt via stdin instead of command line
 - Fix PR summary generation by passing `PR_NUMBER` through workflow environment
