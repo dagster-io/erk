@@ -205,12 +205,6 @@ def dash_options(f: Callable[P, T]) -> Callable[P, T]:
         default=15.0,
         help="Refresh interval in seconds (default: 15.0)",
     )(f)
-    f = click.option(
-        "--sort",
-        type=click.Choice(["issue", "activity"], case_sensitive=False),
-        default="issue",
-        help="Sort order: by issue number (default) or recent branch activity",
-    )(f)
     return f
 
 

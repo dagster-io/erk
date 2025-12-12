@@ -85,6 +85,17 @@ class TestPlanRowData:
         assert row.worktree_name == "feature-branch"
         assert row.exists_locally is True
 
+    def test_make_plan_row_with_custom_pr_display(self) -> None:
+        """make_plan_row with custom pr_display for link indicator."""
+        row = make_plan_row(
+            123,
+            "Feature",
+            pr_number=456,
+            pr_display="#456 ✅🔗",
+        )
+        assert row.pr_number == 456
+        assert row.pr_display == "#456 ✅🔗"
+
 
 class TestPlanDataTableRowConversion:
     """Tests for PlanDataTable row value conversion."""
@@ -130,6 +141,25 @@ class TestPlanDataTableRowConversion:
         assert len(values) == 6
         assert values[2] == "#456"  # pr display
         assert values[3] == "-"  # checks
+
+    def test_row_to_values_with_pr_link_indicator(self) -> None:
+        """Row conversion shows 🔗 indicator for PRs that will close issues."""
+        filters = PlanFilters(
+            labels=("erk-plan",),
+            state=None,
+            run_state=None,
+            limit=None,
+            show_prs=True,
+            show_runs=False,
+        )
+        table = PlanDataTable(filters)
+        # Use custom pr_display with link indicator (simulates will_close_target=True)
+        row = make_plan_row(123, "Test Plan", pr_number=456, pr_display="#456 ✅🔗")
+
+        values = table._row_to_values(row)
+
+        # PR display should include the link indicator
+        assert values[2] == "#456 ✅🔗"
 
     def test_row_to_values_with_runs(self) -> None:
         """Row conversion with run columns enabled."""
