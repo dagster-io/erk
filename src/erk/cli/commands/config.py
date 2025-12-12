@@ -224,12 +224,11 @@ def config_set(ctx: ErkContext, key: str, value: str) -> None:
             text=True,
             check=False,
         )
-        if result.returncode != 0:
-            user_output(
-                f"Error: Branch '{value}' does not exist in repository.\n"
-                f"Create the branch first before configuring it as trunk."
-            )
-            raise SystemExit(1)
+        Ensure.invariant(
+            result.returncode == 0,
+            f"Branch '{value}' doesn't exist in repository.\n"
+            f"Create the branch first before configuring it as trunk.",
+        )
 
         # Write configuration
         write_trunk_to_pyproject(repo.root, value)
