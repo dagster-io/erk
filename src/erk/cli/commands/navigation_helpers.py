@@ -2,11 +2,6 @@ import os
 from pathlib import Path
 
 import click
-from erk_shared.debug import debug_log
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.github.types import PRNotFound
-from erk_shared.output.output import machine_output, user_output
-from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, marker_exists
 
 from erk.cli.activation import render_activation_script
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
@@ -14,6 +9,11 @@ from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_utils import compute_relative_path_in_worktree
+from erk_shared.debug import debug_log
+from erk_shared.git.abc import WorktreeInfo
+from erk_shared.github.types import PRNotFound
+from erk_shared.output.output import machine_output, user_output
+from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, marker_exists
 
 
 def ensure_graphite_enabled(ctx: ErkContext) -> None:

@@ -73,7 +73,7 @@ Use interactive mode when:
 
 ## Reference Implementation
 
-See `packages/dot-agent-kit/src/dot_agent_kit/data/kits/command/kit_cli_commands/command/ops.py`:
+See `packages/erk-kits/src/erk_kits/data/kits/command/kit_cli_commands/command/ops.py`:
 
 - `RealClaudeCliOps`: Production implementation with streaming output
 - `FakeClaudeCliOps`: Test double for unit testing

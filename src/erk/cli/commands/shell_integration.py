@@ -1,11 +1,11 @@
 import click
-from erk_shared.output.output import machine_output
 
 from erk.cli.shell_integration.handler import (
     PASSTHROUGH_MARKER,
     ShellIntegrationResult,
     handle_shell_request,
 )
+from erk_shared.output.output import machine_output
 
 
 @click.command(

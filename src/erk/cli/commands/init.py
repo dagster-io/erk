@@ -3,15 +3,7 @@ import json
 from pathlib import Path
 
 import click
-from erk_shared.output.output import user_output
 
-from dot_agent_kit.io.state import (
-    create_default_config as create_default_kit_config,
-)
-from dot_agent_kit.io.state import (
-    save_project_config as save_kit_config,
-)
-from dot_agent_kit.operations.agent_docs import init_docs_agent
 from erk.cli.core import discover_repo_context
 from erk.core.claude_settings import (
     ERK_PERMISSION,
@@ -32,6 +24,14 @@ from erk.core.init_utils import (
 )
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.core.shell import Shell
+from erk.kits.io.state import (
+    create_default_config as create_default_kit_config,
+)
+from erk.kits.io.state import (
+    save_project_config as save_kit_config,
+)
+from erk.kits.operations.agent_docs import init_docs_agent
+from erk_shared.output.output import user_output
 
 
 def detect_graphite(shell_ops: Shell) -> bool:

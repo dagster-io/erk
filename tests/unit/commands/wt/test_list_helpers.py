@@ -3,10 +3,6 @@
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from erk_shared.git.abc import BranchSyncInfo
-from erk_shared.git.fake import FakeGit
-from erk_shared.github.types import PullRequestInfo
-
 from erk.cli.commands.wt.list_cmd import (
     _format_impl_cell,
     _format_last_commit_cell,
@@ -15,6 +11,9 @@ from erk.cli.commands.wt.list_cmd import (
     _get_impl_issue,
     _get_sync_status,
 )
+from erk_shared.git.abc import BranchSyncInfo
+from erk_shared.git.fake import FakeGit
+from erk_shared.github.types import PullRequestInfo
 from tests.fakes.context import create_test_context
 
 

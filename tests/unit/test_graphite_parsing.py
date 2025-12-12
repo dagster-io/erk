@@ -5,7 +5,6 @@ from erk_shared.integrations.graphite.parsing import (
     parse_graphite_cache,
     parse_graphite_pr_info,
 )
-
 from tests.conftest import load_fixture
 
 

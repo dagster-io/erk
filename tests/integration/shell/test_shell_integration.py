@@ -195,7 +195,6 @@ def test_shell_integration_switch_invokes_successfully() -> None:
 
     from erk_shared.git.abc import WorktreeInfo
     from erk_shared.git.fake import FakeGit
-
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()
@@ -242,7 +241,6 @@ def test_shell_integration_checkout_invokes_successfully() -> None:
     """Test that __shell checkout invokes command successfully."""
     from erk_shared.git.abc import WorktreeInfo
     from erk_shared.git.fake import FakeGit
-
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()
@@ -279,7 +277,6 @@ def test_shell_integration_up_invokes_successfully() -> None:
     """Test that __shell up invokes command successfully with worktree stack."""
 
     from erk_shared.integrations.graphite.types import BranchMetadata
-
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()
@@ -310,7 +307,6 @@ def test_shell_integration_down_invokes_successfully() -> None:
     """Test that __shell down invokes command successfully with worktree stack."""
 
     from erk_shared.integrations.graphite.types import BranchMetadata
-
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()
@@ -341,7 +337,6 @@ def test_shell_integration_create_invokes_successfully() -> None:
     """Test that __shell create invokes command successfully."""
     from erk_shared.git.abc import WorktreeInfo
     from erk_shared.git.fake import FakeGit
-
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()
@@ -368,7 +363,6 @@ def test_shell_integration_consolidate_invokes_successfully() -> None:
     """Test that __shell consolidate invokes command successfully."""
     from erk_shared.git.abc import WorktreeInfo
     from erk_shared.git.fake import FakeGit
-
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()
@@ -400,7 +394,6 @@ def test_shell_handler_uses_stdout_not_output() -> None:
     """
     from erk_shared.git.abc import WorktreeInfo
     from erk_shared.git.fake import FakeGit
-
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()
@@ -452,7 +445,6 @@ def test_shell_integration_shows_note_for_no_directory_change() -> None:
     """
     from erk_shared.git.abc import WorktreeInfo
     from erk_shared.git.fake import FakeGit
-
     from tests.test_utils.env_helpers import erk_inmem_env
 
     runner = CliRunner()
@@ -492,7 +484,6 @@ def test_shell_integration_create_from_current_branch_returns_script_path() -> N
     """
     from erk_shared.git.abc import WorktreeInfo
     from erk_shared.git.fake import FakeGit
-
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()

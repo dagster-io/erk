@@ -7,6 +7,7 @@ and linking them together via .impl/issue.json.
 from pathlib import Path
 
 import pytest
+
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.impl_folder import (
     create_impl_folder,
@@ -14,7 +15,6 @@ from erk_shared.impl_folder import (
     read_issue_reference,
     save_issue_reference,
 )
-
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.paths import sentinel_path
 

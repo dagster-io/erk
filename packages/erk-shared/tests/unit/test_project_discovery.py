@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+
 from erk_shared.git.fake import FakeGit
 from erk_shared.project_discovery import ProjectContext, discover_project
 

@@ -1,13 +1,13 @@
 """Command to remove the docs-extracted label from a plan (for re-analysis)."""
 
 import click
-from erk_shared.output.output import user_output
 
 from erk.cli.constants import DOCS_EXTRACTED_LABEL
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk_shared.output.output import user_output
 
 
 @click.command("unextract")

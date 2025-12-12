@@ -180,6 +180,6 @@ Potential improvements for future versions:
 
 ## Related Documentation
 
-- [dot-agent-kit GLOSSARY.md](../../../packages/dot-agent-kit/docs/GLOSSARY.md) - Kit terminology
+- [erk-kits GLOSSARY.md](../../../packages/erk-kits/docs/GLOSSARY.md) - Kit terminology
 - [AGENTS.md](../../AGENTS.md) - Main agent instructions
-- Kit manifest format: See `packages/dot-agent-kit/src/dot_agent_kit/data/kits/*/kit.yaml`
+- Kit manifest format: See `packages/erk-kits/src/erk_kits/data/kits/*/kit.yaml`

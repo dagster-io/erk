@@ -1,7 +1,7 @@
-"""Unified context for erk and dot-agent-kit operations.
+"""Unified context for erk and erk-kits operations.
 
 This module provides ErkContext - the unified context that holds all dependencies
-for erk and dot-agent-kit operations.
+for erk and erk-kits operations.
 
 The ABCs for erk-specific services (ClaudeExecutor, ConfigStore, ScriptWriter,
 PlannerRegistry, PlanListService) are defined in erk_shared.core, enabling
@@ -40,13 +40,13 @@ from erk_shared.prompt_executor import PromptExecutor
 
 @dataclass(frozen=True)
 class ErkContext:
-    """Immutable context holding all dependencies for erk and dot-agent-kit operations.
+    """Immutable context holding all dependencies for erk and erk-kits operations.
 
     Created at CLI entry point and threaded through the application via Click's
     context system. Frozen to prevent accidental modification at runtime.
 
     This unified context replaces both the old ErkContext (from erk.core.context)
-    and DotAgentContext (from dot_agent_kit.context).
+    and DotAgentContext (from erk_kits.context).
 
     Note:
     - global_config may be None only during init command before config is created.

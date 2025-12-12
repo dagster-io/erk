@@ -17,7 +17,6 @@ from erk_shared.github.types import (
     PullRequestInfo,
     WorkflowRun,
 )
-
 from tests.test_utils.paths import sentinel_path
 
 TEST_LOCATION = GitHubRepoLocation(root=sentinel_path(), repo_id=GitHubRepoId("owner", "repo"))

@@ -34,5 +34,5 @@ The `md check --check-links` validation in `link_validation.py` must match Claud
 
 ## Related Files
 
-- `packages/dot-agent-kit/src/dot_agent_kit/io/link_validation.py`
-- `packages/dot-agent-kit/src/dot_agent_kit/io/at_reference.py`
+- `packages/erk-kits/src/erk_kits/io/link_validation.py`
+- `packages/erk-kits/src/erk_kits/io/at_reference.py`

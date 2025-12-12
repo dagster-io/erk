@@ -1,7 +1,7 @@
 # Kit Documentation Registry
 
-<!-- AUTO-GENERATED: This file is managed by dot-agent kit commands -->
-<!-- DO NOT EDIT: Changes will be overwritten. Use 'dot-agent kit sync' -->
+<!-- AUTO-GENERATED: This file is managed by erk kit commands -->
+<!-- DO NOT EDIT: Changes will be overwritten. Use 'erk kit sync' -->
 
 <!-- REGISTRY_VERSION: 1 -->
 

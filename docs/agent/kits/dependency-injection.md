@@ -11,7 +11,7 @@ tripwires:
 
 # Kit CLI Dependency Injection Patterns
 
-This document covers the dependency injection patterns for kit CLI commands in dot-agent-kit.
+This document covers the dependency injection patterns for kit CLI commands in erk-kits.
 
 ## Overview
 
@@ -56,7 +56,7 @@ class DotAgentContext:
 
 ```python
 import click
-from dot_agent_kit.context_helpers import require_github_issues
+from erk_kits.context_helpers import require_github_issues
 from erk_shared.context.helpers import (
     require_repo_root,
     require_git,

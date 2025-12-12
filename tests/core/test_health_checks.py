@@ -5,7 +5,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from erk_shared.git.fake import FakeGit
 
 from erk.core.health_checks import (
     CheckResult,
@@ -17,6 +16,7 @@ from erk.core.health_checks import (
     check_repository,
     check_uv_version,
 )
+from erk_shared.git.fake import FakeGit
 from tests.fakes.context import create_test_context
 
 

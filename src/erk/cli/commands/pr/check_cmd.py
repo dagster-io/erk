@@ -1,6 +1,9 @@
 """Command to validate PR rules for the current branch."""
 
 import click
+
+from erk.cli.ensure import Ensure
+from erk.core.context import ErkContext
 from erk_shared.github.types import PRNotFound
 from erk_shared.impl_folder import read_issue_reference
 from erk_shared.integrations.pr.submit import (
@@ -8,9 +11,6 @@ from erk_shared.integrations.pr.submit import (
     has_issue_closing_reference,
 )
 from erk_shared.output.output import user_output
-
-from erk.cli.ensure import Ensure
-from erk.core.context import ErkContext
 
 
 @click.command("check")

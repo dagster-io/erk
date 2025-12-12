@@ -628,7 +628,7 @@ class FakeGit(Git):
             if isinstance(path, SentinelPath):
                 return False
         except ImportError:
-            # SentinelPath not available (e.g., when used from dot-agent-kit)
+            # SentinelPath not available (e.g., when used from erk-kits)
             pass
 
         # For real filesystem tests, check if path is under any existing path
@@ -699,7 +699,7 @@ class FakeGit(Git):
                 self._chdir_history.append(path)
                 return False
         except ImportError:
-            # SentinelPath not available (e.g., when used from dot-agent-kit)
+            # SentinelPath not available (e.g., when used from erk-kits)
             pass
 
         # For real filesystem paths, change directory

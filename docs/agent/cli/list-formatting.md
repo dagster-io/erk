@@ -8,11 +8,11 @@ read_when:
 
 # CLI List Formatting Standards
 
-This document defines the visual design principles for all list commands in the dot-agent-kit CLI, ensuring a consistent and user-friendly experience across `artifact list`, `hook list`, `kit list`, `kit search`, and `status`.
+This document defines the visual design principles for all list commands in the erk-kits CLI, ensuring a consistent and user-friendly experience across `artifact list`, `hook list`, `kit list`, `kit search`, and `status`.
 
 ## Audience
 
-This guide is for **human developers** working on the dot-agent-kit CLI. It focuses on the "why" behind formatting choices and what users should see, not implementation details.
+This guide is for **human developers** working on the erk-kits CLI. It focuses on the "why" behind formatting choices and what users should see, not implementation details.
 
 ## Core Principles
 
@@ -202,7 +202,7 @@ When implementing or modifying list commands:
 
 For technical implementation details, see:
 
-- `packages/dot-agent-kit/src/dot_agent_kit/cli/list_formatting.py` - Shared formatting utilities
-- `packages/dot-agent-kit/src/dot_agent_kit/commands/artifact/formatting.py` - Artifact-specific formatters
+- `packages/erk-kits/src/erk_kits/cli/list_formatting.py` - Shared formatting utilities
+- `packages/erk-kits/src/erk_kits/commands/artifact/formatting.py` - Artifact-specific formatters
 
 This document focuses on **what** the output should look like and **why**, not **how** to implement it.

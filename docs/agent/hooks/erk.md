@@ -28,7 +28,7 @@ This project uses **erk kit** commands to manage Claude Code hooks. This provide
 **Architecture**:
 
 ```
-packages/dot-agent-kit/src/dot_agent_kit/data/kits/{kit-name}/
+packages/erk-kits/src/erk_kits/data/kits/{kit-name}/
 ├── kit_cli_commands/        # Hook implementation scripts
 │   └── {kit-name}/
 │       └── {hook_name}.py   # Python script with Click command
@@ -53,7 +53,7 @@ packages/dot-agent-kit/src/dot_agent_kit/data/kits/{kit-name}/
 **Related documentation**:
 
 - Kit system overview: `.erk/kits/README.md`
-- Technical implementation: `packages/dot-agent-kit/docs/HOOKS.md`
+- Technical implementation: `packages/erk-kits/docs/HOOKS.md`
 
 ## Current Hooks
 
@@ -78,7 +78,7 @@ WHY: Specialized parsing & cost efficiency
 
 **Why**: Development tools have complex output that devrun agent parses efficiently, reducing token costs and improving error handling.
 
-**Location**: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/devrun/`
+**Location**: `packages/erk-kits/src/erk_kits/data/kits/devrun/`
 
 ### 2. dignified-python-reminder-hook
 
@@ -97,7 +97,7 @@ NOTE: Checklist rules are EXCERPTS - skill contains complete philosophy & ration
 
 **Why**: Ensures Python code follows project coding standards (LBYL exception handling, modern type syntax, ABC interfaces).
 
-**Location**: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/dignified-python-313/`
+**Location**: `packages/erk-kits/src/erk_kits/data/kits/dignified-python-313/`
 
 ### 3. fake-driven-testing-reminder-hook
 
@@ -116,7 +116,7 @@ NOTE: Guides test placement, fake usage, integration class architecture patterns
 
 **Why**: Ensures tests follow project testing architecture (fake-driven testing, proper test categorization).
 
-**Location**: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/fake-driven-testing/`
+**Location**: `packages/erk-kits/src/erk_kits/data/kits/fake-driven-testing/`
 
 ### 4. exit-plan-mode-hook
 
@@ -142,7 +142,7 @@ Use AskUserQuestion to ask the user:
 
 **Why**: Prevents losing unsaved plans when exiting Plan Mode. Uses exit code 2 to redirect Claude to ask user preference.
 
-**Location**: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/exit_plan_mode_hook.py`
+**Location**: `packages/erk-kits/src/erk_kits/data/kits/erk/kit_cli_commands/erk/exit_plan_mode_hook.py`
 
 ## Project-Scoped Hooks
 
@@ -150,7 +150,7 @@ Hooks can be decorated with `@project_scoped` to silently skip execution when no
 
 ### Why Use Project-Scoped Hooks?
 
-In monorepo or multi-project environments, hooks installed at the user level (`~/.claude/`) would fire in ALL repositories, even those not using dot-agent-kit. This causes:
+In monorepo or multi-project environments, hooks installed at the user level (`~/.claude/`) would fire in ALL repositories, even those not using erk-kits. This causes:
 
 - Confusing reminders in unrelated projects
 - Performance overhead from unnecessary hook execution
@@ -159,7 +159,7 @@ In monorepo or multi-project environments, hooks installed at the user level (`~
 ### Using the Decorator
 
 ```python
-from dot_agent_kit.hooks.decorators import project_scoped
+from erk_kits.hooks.decorators import project_scoped
 
 @click.command()
 @project_scoped  # Add AFTER @click.command()
@@ -191,13 +191,13 @@ All erk reminder hooks use this decorator:
 The `@project_scoped` decorator uses `is_in_managed_project()` internally. You can use this directly for more complex conditional logic:
 
 ```python
-from dot_agent_kit.hooks.scope import is_in_managed_project
+from erk_kits.hooks.scope import is_in_managed_project
 
 @click.command()
 def my_hook() -> None:
     if not is_in_managed_project():
         # Custom handling for non-managed projects
-        click.echo("ℹ️ Tip: Install dot-agent-kit for full features")
+        click.echo("ℹ️ Tip: Install erk-kits for full features")
         return
 
     # Normal hook logic
@@ -238,7 +238,7 @@ Hooks are bundled in kits, so modifications require reinstallation:
 
    ```bash
    # Example: Edit devrun reminder hook
-   vim packages/dot-agent-kit/src/dot_agent_kit/data/kits/devrun/kit_cli_commands/devrun/devrun_reminder_hook.py
+   vim packages/erk-kits/src/erk_kits/data/kits/devrun/kit_cli_commands/devrun/devrun_reminder_hook.py
    ```
 
 2. **Remove the kit**:
@@ -267,14 +267,14 @@ Hooks are bundled in kits, so modifications require reinstallation:
 
 ### Creating a New Hook
 
-See comprehensive guide: `packages/dot-agent-kit/docs/HOOKS.md`
+See comprehensive guide: `packages/erk-kits/docs/HOOKS.md`
 
 **Quick steps**:
 
 1. **Create directory structure**:
 
    ```bash
-   packages/dot-agent-kit/src/dot_agent_kit/data/kits/{kit-name}/
+   packages/erk-kits/src/erk_kits/data/kits/{kit-name}/
    ├── kit_cli_commands/{kit-name}/{hook_name}.py
    └── kit.yaml
    ```
@@ -318,7 +318,7 @@ See comprehensive guide: `packages/dot-agent-kit/docs/HOOKS.md`
 erk kit-command {kit-name} {hook-name}
 
 # Or run Python script directly
-python packages/dot-agent-kit/src/dot_agent_kit/data/kits/{kit-name}/kit_cli_commands/{kit-name}/{hook_name}.py
+python packages/erk-kits/src/erk_kits/data/kits/{kit-name}/kit_cli_commands/{kit-name}/{hook_name}.py
 ```
 
 **Test hook in Claude Code**:
@@ -353,7 +353,7 @@ from click.testing import CliRunner
 def test_my_scoped_hook() -> None:
     runner = CliRunner()
 
-    with patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=True):
+    with patch("erk_kits.hooks.decorators.is_in_managed_project", return_value=True):
         result = runner.invoke(my_hook)
 
     assert result.exit_code == 0
@@ -376,14 +376,14 @@ def test_my_hook() -> None:
 def test_hook_silent_in_unmanaged_project() -> None:
     runner = CliRunner()
 
-    with patch("dot_agent_kit.hooks.decorators.is_in_managed_project", return_value=False):
+    with patch("erk_kits.hooks.decorators.is_in_managed_project", return_value=False):
         result = runner.invoke(my_hook)
 
     assert result.exit_code == 0
     assert result.output == ""  # No output when not in managed project
 ```
 
-**Important**: The patch target is always `dot_agent_kit.hooks.decorators.is_in_managed_project`, regardless of where your hook is defined. This is because the decorator imports and uses the function at decoration time.
+**Important**: The patch target is always `erk_kits.hooks.decorators.is_in_managed_project`, regardless of where your hook is defined. This is because the decorator imports and uses the function at decoration time.
 
 ## Troubleshooting
 
@@ -509,6 +509,6 @@ erk kit-command {kit-name} {hook-name}
 - **General Claude Code Hooks Guide**: [hooks.md](hooks.md)
 - **Official Claude Code Hooks**: https://code.claude.com/docs/en/hooks
 - **Official Hooks Guide**: https://code.claude.com/docs/en/hooks-guide.md
-- **dot-agent-kit Hook Development**: `../../packages/dot-agent-kit/docs/HOOKS.md`
+- **erk-kits Hook Development**: `../../packages/erk-kits/docs/HOOKS.md`
 - **Kit System Overview**: `../../.erk/kits/README.md`
 - **Project Glossary**: `../glossary.md`

@@ -7,6 +7,7 @@ providing reliable test doubles for CLI tests.
 from pathlib import Path
 
 import pytest
+
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.integrations.graphite.fake import FakeGraphite

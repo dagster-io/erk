@@ -2,9 +2,8 @@
 
 from pathlib import Path
 
-from erk_shared.git.abc import WorktreeInfo
-
 from erk.core.worktree_utils import find_worktree_containing_path
+from erk_shared.git.abc import WorktreeInfo
 
 
 def test_finds_exact_match() -> None:

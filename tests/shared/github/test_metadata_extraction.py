@@ -5,6 +5,7 @@ Tests extraction functions that parse metadata blocks from issue bodies.
 """
 
 import pytest
+
 from erk_shared.github.metadata import (
     extract_plan_header_dispatch_info,
     extract_plan_header_local_impl_at,

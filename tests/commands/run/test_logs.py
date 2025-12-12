@@ -6,12 +6,12 @@ Tests viewing logs for workflow runs with explicit run ID or auto-detection.
 from pathlib import Path
 
 from click.testing import CliRunner
+
+from erk.cli.commands.run.logs_cmd import logs_run
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import WorkflowRun
-
-from erk.cli.commands.run.logs_cmd import logs_run
 from tests.fakes.context import create_test_context
 
 

@@ -15,15 +15,6 @@ from pathlib import Path
 from typing import NamedTuple
 
 import click
-from erk_shared.impl_folder import create_impl_folder, save_issue_reference
-from erk_shared.naming import (
-    ensure_unique_worktree_name_with_date,
-    format_branch_timestamp_suffix,
-    sanitize_worktree_name,
-    strip_plan_from_filename,
-)
-from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import PlanState
 
 from erk.cli.activation import render_activation_script
 from erk.cli.commands.completions import complete_plan_files
@@ -35,6 +26,15 @@ from erk.core.context import ErkContext
 from erk.core.project_discovery import ProjectContext, discover_project
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.core.worktree_utils import compute_relative_path_in_worktree
+from erk_shared.impl_folder import create_impl_folder, save_issue_reference
+from erk_shared.naming import (
+    ensure_unique_worktree_name_with_date,
+    format_branch_timestamp_suffix,
+    sanitize_worktree_name,
+    strip_plan_from_filename,
+)
+from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import PlanState
 
 
 def _determine_base_branch(ctx: ErkContext, repo_root: Path) -> str:

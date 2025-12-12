@@ -5,15 +5,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
 
-from erk_shared.debug import debug_log
-from erk_shared.output.output import user_output
-
 from erk.cli.commands.prepare_cwd_recovery import generate_recovery_script
 from erk.cli.shell_utils import (
     STALE_SCRIPT_MAX_AGE_SECONDS,
     cleanup_stale_scripts,
 )
 from erk.core.context import create_context
+from erk_shared.debug import debug_log
+from erk_shared.output.output import user_output
 
 PASSTHROUGH_MARKER: Final[str] = "__ERK_PASSTHROUGH__"
 PASSTHROUGH_COMMANDS: Final[set[str]] = {"sync"}

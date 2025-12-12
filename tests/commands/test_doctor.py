@@ -1,10 +1,10 @@
 """Tests for erk doctor command."""
 
 from click.testing import CliRunner
-from erk_shared.git.fake import FakeGit
 
 from erk.cli.commands.doctor import doctor_cmd
 from erk.core.health_checks import check_workflow_permissions
+from erk_shared.git.fake import FakeGit
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 

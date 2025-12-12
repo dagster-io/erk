@@ -3,11 +3,11 @@
 from datetime import UTC, datetime
 
 from click.testing import CliRunner
+
+from erk.cli.cli import cli
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
 from erk_shared.plan_store.types import Plan, PlanState
-
-from erk.cli.cli import cli
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 
@@ -375,7 +375,6 @@ def test_plan_list_sort_issue_default() -> None:
 def test_plan_list_sort_activity_with_local_branch() -> None:
     """Test that --sort activity puts plans with recent local branch activity first."""
     from erk_shared.git.abc import WorktreeInfo
-
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     # Plan 1: older issue, but has local branch with recent activity
@@ -462,7 +461,6 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
 def test_plan_list_sort_activity_orders_by_recency() -> None:
     """Test that --sort activity orders multiple local branches by recency."""
     from erk_shared.git.abc import WorktreeInfo
-
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     # Plan 1: has local branch with older commit

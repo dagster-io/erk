@@ -8,10 +8,10 @@ import json
 from pathlib import Path
 
 import pytest
+
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.types import GitHubRepoId
 from erk_shared.integrations.graphite.real import RealGraphite
-
 from tests.conftest import load_fixture
 
 

@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import click
-from erk_shared.output.output import format_duration
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
@@ -29,6 +28,7 @@ from erk.core.claude_executor import (
     TextEvent,
     ToolEvent,
 )
+from erk_shared.output.output import format_duration
 
 
 def format_implement_summary(results: list[CommandResult], total_duration: float) -> Panel:

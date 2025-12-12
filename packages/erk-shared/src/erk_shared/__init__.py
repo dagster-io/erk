@@ -1,4 +1,4 @@
-"""Shared utilities and interfaces for erk and dot-agent-kit.
+"""Shared utilities and interfaces for erk and erk-kits.
 
 Import from submodules:
 - env: in_github_actions

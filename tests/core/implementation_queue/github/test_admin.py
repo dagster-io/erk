@@ -3,7 +3,6 @@
 from pathlib import Path
 
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
-
 from tests.fakes.github_admin import FakeGitHubAdmin
 
 REPO_ROOT = Path("/test/repo")

@@ -75,7 +75,7 @@ class ErkCommandGroup(click.Group):
             "pr",
             "project",
             "objective",
-            # Kit management groups (from dot-agent-kit)
+            # Kit management groups
             "artifact",
             "docs",
             "hook",

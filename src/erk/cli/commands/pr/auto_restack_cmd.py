@@ -5,6 +5,9 @@ Slow path: If conflicts detected, delegates to Claude for intelligent resolution
 """
 
 import click
+
+from erk.cli.output import stream_auto_restack
+from erk.core.context import ErkContext
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.integrations.gt.operations.restack_finalize import execute_restack_finalize
 from erk_shared.integrations.gt.operations.restack_preflight import execute_restack_preflight
@@ -13,9 +16,6 @@ from erk_shared.integrations.gt.types import (
     RestackPreflightError,
     RestackPreflightSuccess,
 )
-
-from erk.cli.output import stream_auto_restack
-from erk.core.context import ErkContext
 
 
 @click.command("auto-restack")

@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import click
-from erk_shared.output.output import user_output
 
 from erk.cli.commands.completions import complete_worktree_names
 from erk.cli.core import discover_repo_context, worktree_path_for
@@ -17,6 +16,7 @@ from erk.core.worktree_utils import (
     find_worktree_with_branch,
     get_worktree_branch,
 )
+from erk_shared.output.output import user_output
 
 
 def _resolve_current_worktree(ctx: ErkContext, repo_root: Path) -> Path:

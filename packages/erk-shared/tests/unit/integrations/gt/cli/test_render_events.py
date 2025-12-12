@@ -8,6 +8,7 @@ from typing import TypeVar
 from unittest.mock import patch
 
 import pytest
+
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 

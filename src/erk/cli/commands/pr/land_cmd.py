@@ -19,12 +19,6 @@ from dataclasses import replace
 from pathlib import Path
 
 import click
-from erk_shared.extraction.raw_extraction import create_raw_extraction_plan
-from erk_shared.integrations.gt.cli import render_events
-from erk_shared.integrations.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
-from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
-from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
-from erk_shared.output.output import user_output
 
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
@@ -41,6 +35,12 @@ from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+from erk_shared.extraction.raw_extraction import create_raw_extraction_plan
+from erk_shared.integrations.gt.cli import render_events
+from erk_shared.integrations.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
+from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
+from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
+from erk_shared.output.output import user_output
 
 
 def is_extraction_origin_pr(ctx: ErkContext, repo_root: Path, pr_number: int) -> bool:

@@ -5,6 +5,7 @@ zero dependencies.
 """
 
 import pytest
+
 from erk_shared.github.metadata import (
     PlanHeaderSchema,
     create_plan_header_block,

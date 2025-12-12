@@ -1,6 +1,7 @@
 """Tests for objective definition and notes parsers."""
 
 import pytest
+
 from erk_shared.objectives.parser import (
     parse_objective_definition,
     parse_objective_notes,

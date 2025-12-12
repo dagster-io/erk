@@ -1,6 +1,6 @@
 # erk-shared
 
-Shared utilities and interfaces for erk and dot-agent-kit packages.
+Shared utilities and interfaces for erk and erk-kits packages.
 
 This package provides:
 
@@ -11,10 +11,10 @@ This package provides:
 
 ## Purpose
 
-This package exists to break the circular dependency between `erk` and `dot-agent-kit`:
+This package exists to break the circular dependency between `erk` and `erk-kits`:
 
-- `erk` imports kit utilities from `dot-agent-kit`
-- `dot-agent-kit` imports interfaces and utilities from `erk`
+- `erk` imports kit utilities from `erk-kits`
+- `erk-kits` imports interfaces and utilities from `erk`
 
 By extracting shared code to `erk-shared`, we create an acyclic dependency graph:
 
@@ -22,10 +22,10 @@ By extracting shared code to `erk-shared`, we create an acyclic dependency graph
 erk-shared (no dependencies)
     ↑
     |
-dot-agent-kit (depends on: erk-shared)
+erk-kits (depends on: erk-shared)
     ↑
     |
-erk (depends on: dot-agent-kit, erk-shared)
+erk (depends on: erk-kits, erk-shared)
 ```
 
 ## Note

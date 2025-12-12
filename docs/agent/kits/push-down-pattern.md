@@ -67,7 +67,7 @@ issue_number=$(echo "$parse_result" | jq -r '.issue_number')
 
 ## Implementation Checklist
 
-1. **Create command file**: `packages/dot-agent-kit/.../kit_cli_commands/{kit}/{command}.py`
+1. **Create command file**: `packages/erk-kits/.../kit_cli_commands/{kit}/{command}.py`
 2. **Use dataclasses for output**: Success and error types with structured fields
 3. **Return JSON**: Use `json.dumps(asdict(result))` for consistent output
 4. **Write unit tests**: Test success cases, edge cases, and error handling

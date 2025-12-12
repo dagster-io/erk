@@ -1,11 +1,11 @@
 """Command to display objective details."""
 
 import click
-from erk_shared.output.output import user_output
 
 from erk.cli.commands.completions import complete_objective_names
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
+from erk_shared.output.output import user_output
 
 
 @click.command("get")

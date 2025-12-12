@@ -1,11 +1,11 @@
 """Command to fetch and display a single plan."""
 
 import click
-from erk_shared.output.output import user_output
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk_shared.output.output import user_output
 
 
 @click.command("get")

@@ -6,12 +6,12 @@ from datetime import datetime
 from typing import Literal, TypeAlias, TypedDict
 
 import click
-from erk_shared.github.metadata import parse_metadata_blocks
-from erk_shared.output.output import user_output
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk_shared.github.metadata import parse_metadata_blocks
+from erk_shared.output.output import user_output
 
 # Event type literals
 EventType: TypeAlias = Literal[

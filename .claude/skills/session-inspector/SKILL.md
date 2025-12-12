@@ -256,7 +256,7 @@ programmatic access to extraction capabilities.
 
 This skill documents capabilities that primarily live in:
 
-- **Kit CLI commands:** `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/kit_cli_commands/erk/`
+- **Kit CLI commands:** `packages/erk-kits/src/erk_kits/data/kits/erk/kit_cli_commands/erk/`
 - **Shared library:** `packages/erk-shared/src/erk_shared/extraction/`
 - **GitHub metadata:** `packages/erk-shared/src/erk_shared/github/metadata.py`
 - **Scratch storage:** `packages/erk-shared/src/erk_shared/scratch/`

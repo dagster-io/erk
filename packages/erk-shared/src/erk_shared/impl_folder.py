@@ -1,11 +1,11 @@
-"""Implementation folder utilities for erk and dot-agent-kit.
+"""Implementation folder utilities for erk and erk-kits.
 
 This module provides shared utilities for managing .impl/ folder structures:
 - plan.md: Immutable implementation plan
 - progress.md: Mutable progress tracking with step checkboxes
 - issue.json: GitHub issue reference (optional)
 
-These utilities are used by both erk (for local operations) and dot-agent-kit
+These utilities are used by both erk (for local operations) and erk-kits
 (for kit CLI commands).
 """
 

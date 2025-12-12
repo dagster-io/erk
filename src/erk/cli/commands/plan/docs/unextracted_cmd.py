@@ -1,7 +1,6 @@
 """Command to list closed plans that haven't been analyzed for documentation."""
 
 import click
-from erk_shared.output.output import user_output
 from rich.console import Console
 from rich.table import Table
 
@@ -10,6 +9,7 @@ from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk_shared.output.output import user_output
 
 
 @click.command("unextracted")

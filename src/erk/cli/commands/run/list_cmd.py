@@ -1,10 +1,6 @@
 """List workflow runs command."""
 
 import click
-from erk_shared.github.emoji import format_checks_cell
-from erk_shared.github.parsing import github_repo_location_from_url
-from erk_shared.github.types import GitHubRepoId
-from erk_shared.output.output import user_output
 from rich.console import Console
 from rich.table import Table
 
@@ -19,6 +15,10 @@ from erk.core.display_utils import (
     format_workflow_outcome,
     format_workflow_run_id,
 )
+from erk_shared.github.emoji import format_checks_cell
+from erk_shared.github.parsing import github_repo_location_from_url
+from erk_shared.github.types import GitHubRepoId
+from erk_shared.output.output import user_output
 
 
 def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:

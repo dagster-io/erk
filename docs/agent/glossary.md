@@ -1007,7 +1007,7 @@ A marker state indicating a merged PR is queued for insight extraction. When `er
 
 A Python Click command registered in a kit's `kit.yaml` and invoked via `erk kit exec <kit-name> <command>`.
 
-**Location**: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/<kit-name>/scripts/<kit-name>/`
+**Location**: `packages/erk-kits/src/erk_kits/data/kits/<kit-name>/scripts/<kit-name>/`
 
 **Example**:
 

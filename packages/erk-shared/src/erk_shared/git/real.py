@@ -2,7 +2,7 @@
 
 This module provides the real Git implementation that executes actual git
 commands via subprocess. Located in erk-shared so it can be used by both
-the main erk package and dot-agent-kit without circular dependencies.
+the main erk package and erk-kits without circular dependencies.
 """
 
 import os

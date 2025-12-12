@@ -3,8 +3,6 @@
 from pathlib import Path
 
 import click
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.output.output import user_output
 
 from erk.cli.activation import render_activation_script
 from erk.cli.alias import alias
@@ -15,6 +13,8 @@ from erk.cli.graphite import find_worktrees_containing_branch
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_utils import compute_relative_path_in_worktree
+from erk_shared.git.abc import WorktreeInfo
+from erk_shared.output.output import user_output
 
 
 def try_switch_root_worktree(ctx: ErkContext, repo: RepoContext, branch: str) -> Path | None:

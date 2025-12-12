@@ -4,11 +4,10 @@ import logging
 from collections.abc import Callable
 from pathlib import Path
 
-from erk_shared.integrations.parallel.abc import ParallelTaskRunner
-
 from erk.core.context import ErkContext
 from erk.status.collectors.base import StatusCollector
 from erk.status.models.status_data import StatusData, WorktreeDisplayInfo
+from erk_shared.integrations.parallel.abc import ParallelTaskRunner
 
 logger = logging.getLogger(__name__)
 

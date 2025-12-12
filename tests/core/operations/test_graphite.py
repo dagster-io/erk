@@ -3,7 +3,6 @@
 from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
-
 from tests.test_utils.paths import sentinel_path
 
 

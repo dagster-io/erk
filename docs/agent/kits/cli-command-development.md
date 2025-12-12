@@ -15,7 +15,7 @@ This guide explains how to add new CLI commands to the erk kit.
 Kit CLI commands live in the kit package:
 
 ```
-packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/
+packages/erk-kits/src/erk_kits/data/kits/erk/
 ├── kit.yaml                           # Command registration
 └── kit_cli_commands/erk/
     └── your_command.py                # Implementation

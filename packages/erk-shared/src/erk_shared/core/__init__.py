@@ -1,4 +1,4 @@
-"""Core ABCs for erk and dot-agent-kit.
+"""Core ABCs for erk and erk-kits.
 
 This module provides abstract base classes that define interfaces for erk-specific
 operations. These ABCs are in erk_shared so that ErkContext can have proper type

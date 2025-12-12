@@ -10,10 +10,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
-from erk_shared.github.real import RealGitHub
-from erk_shared.integrations.time.fake import FakeTime
 from pytest import MonkeyPatch
 
+from erk_shared.github.real import RealGitHub
+from erk_shared.integrations.time.fake import FakeTime
 from tests.integration.test_helpers import mock_subprocess_run
 
 # ============================================================================

@@ -3,9 +3,9 @@
 from pathlib import Path
 
 import pytest
-from erk_shared.git.fake import FakeGit
 
 from erk.core.project_discovery import ProjectContext, discover_project
+from erk_shared.git.fake import FakeGit
 
 
 class TestDiscoverProject:

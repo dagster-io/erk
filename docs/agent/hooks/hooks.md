@@ -510,7 +510,7 @@ For erk-specific hook usage, see **[erk.md](erk.md)**
 
 This includes:
 
-- How dot-agent-kit manages hooks in this project
+- How erk-kits manages hooks in this project
 - Current hooks (devrun, dignified-python, fake-driven-testing)
 - Common tasks (viewing, modifying, creating, testing hooks)
 - Troubleshooting guide
@@ -522,6 +522,6 @@ This includes:
 - **Project-Specific Supplement**: [erk.md](erk.md)
 - **Official Claude Code Hooks**: https://code.claude.com/docs/en/hooks
 - **Official Hooks Guide**: https://code.claude.com/docs/en/hooks-guide.md
-- **dot-agent-kit Hook Development**: `../../packages/dot-agent-kit/docs/HOOKS.md`
+- **erk-kits Hook Development**: `../../packages/erk-kits/docs/HOOKS.md`
 - **Kit System Overview**: `../../.erk/kits/README.md`
 - **Project Glossary**: `glossary.md`

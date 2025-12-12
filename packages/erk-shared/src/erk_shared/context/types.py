@@ -1,4 +1,4 @@
-"""Context types for erk and dot-agent-kit.
+"""Context types for erk and erk-kits.
 
 This module provides the core data types used by ErkContext:
 - RepoContext: Repository discovery result

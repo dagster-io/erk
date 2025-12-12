@@ -29,12 +29,12 @@ Display results
 
 ## Key Files
 
-| File                                                              | Purpose                                                |
-| ----------------------------------------------------------------- | ------------------------------------------------------ |
-| `packages/dot-agent-kit/src/dot_agent_kit/data/registry.yaml`     | Single source of truth for discoverable kits           |
-| `packages/dot-agent-kit/src/dot_agent_kit/io/registry.py`         | Loads and parses registry.yaml                         |
-| `packages/dot-agent-kit/src/dot_agent_kit/sources/bundled.py`     | `BundledKitSource.can_resolve()` - verifies kit exists |
-| `packages/dot-agent-kit/src/dot_agent_kit/commands/kit/search.py` | Search command implementation                          |
+| File                                                    | Purpose                                                |
+| ------------------------------------------------------- | ------------------------------------------------------ |
+| `packages/erk-kits/src/erk_kits/data/registry.yaml`     | Single source of truth for discoverable kits           |
+| `packages/erk-kits/src/erk_kits/io/registry.py`         | Loads and parses registry.yaml                         |
+| `packages/erk-kits/src/erk_kits/sources/bundled.py`     | `BundledKitSource.can_resolve()` - verifies kit exists |
+| `packages/erk-kits/src/erk_kits/commands/kit/search.py` | Search command implementation                          |
 
 ## Troubleshooting: Kit Not Appearing
 

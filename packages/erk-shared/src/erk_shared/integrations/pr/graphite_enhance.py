@@ -51,7 +51,9 @@ class GtSubmitResult(NamedTuple):
     """
 
     success: bool
-    error_event: CompletionEvent[GraphiteEnhanceError] | None
+    error_event: (
+        CompletionEvent[GraphiteEnhanceResult | GraphiteEnhanceError | GraphiteSkipped] | None
+    )
 
 
 def _run_gt_submit(

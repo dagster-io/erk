@@ -2,12 +2,11 @@
 
 from pathlib import Path
 
-from erk_shared.git.fake import FakeGit
-
 from erk.cli.commands.prepare_cwd_recovery import generate_recovery_script
 from erk.core.config_store import GlobalConfig
 from erk.core.context import ErkContext
 from erk.core.script_writer import RealScriptWriter
+from erk_shared.git.fake import FakeGit
 from tests.fakes.context import create_test_context
 
 

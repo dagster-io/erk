@@ -147,7 +147,7 @@ def bump_version_command(version: str | None, dry_run: bool) -> None:
         "pyproject.toml",
         "packages/erk-dev/pyproject.toml",
         "packages/erk-shared/pyproject.toml",
-        "packages/dot-agent-kit/pyproject.toml",
+        "packages/erk-kits/pyproject.toml",
     ]:
         path = repo_root / rel_path
         if path.exists():
@@ -157,7 +157,7 @@ def bump_version_command(version: str | None, dry_run: bool) -> None:
 
     # 2. kit.yaml files
     click.echo("\nBundled kits:")
-    kits_dir = repo_root / "packages/dot-agent-kit/src/dot_agent_kit/data/kits"
+    kits_dir = repo_root / "packages/erk-kits/src/erk_kits/data/kits"
     if kits_dir.exists():
         for kit_yaml in sorted(kits_dir.glob("*/kit.yaml")):
             ok, old = update_yaml_version(kit_yaml, version, dry_run)

@@ -2,13 +2,6 @@
 
 from pathlib import Path
 
-from erk_shared.git.fake import FakeGit
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues import GitHubIssues
-from erk_shared.integrations.completion import FakeCompletion
-from erk_shared.integrations.graphite.fake import FakeGraphite
-from erk_shared.integrations.shell import FakeShell
-
 from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import (
     ErkContext,
@@ -19,6 +12,12 @@ from erk.core.context import (
     context_for_test,
 )
 from erk.core.script_writer import ScriptWriter
+from erk_shared.git.fake import FakeGit
+from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.issues import GitHubIssues
+from erk_shared.integrations.completion import FakeCompletion
+from erk_shared.integrations.graphite.fake import FakeGraphite
+from erk_shared.integrations.shell import FakeShell
 
 
 def create_test_context(

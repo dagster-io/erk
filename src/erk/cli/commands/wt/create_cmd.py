@@ -5,6 +5,16 @@ from collections.abc import Iterable
 from pathlib import Path
 
 import click
+
+from erk.cli.config import LoadedConfig
+from erk.cli.core import discover_repo_context, worktree_path_for
+from erk.cli.ensure import Ensure
+from erk.cli.github_parsing import parse_issue_identifier
+from erk.cli.shell_utils import render_navigation_script
+from erk.cli.subprocess_utils import run_with_error_reporting
+from erk.core.context import ErkContext
+from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+from erk.core.worktree_metadata import set_worktree_project
 from erk_shared.github.issues import IssueInfo
 from erk_shared.impl_folder import create_impl_folder, get_impl_path
 from erk_shared.naming import (
@@ -17,16 +27,6 @@ from erk_shared.naming import (
     strip_plan_from_filename,
 )
 from erk_shared.output.output import user_output
-
-from erk.cli.config import LoadedConfig
-from erk.cli.core import discover_repo_context, worktree_path_for
-from erk.cli.ensure import Ensure
-from erk.cli.github_parsing import parse_issue_identifier
-from erk.cli.shell_utils import render_navigation_script
-from erk.cli.subprocess_utils import run_with_error_reporting
-from erk.core.context import ErkContext
-from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
-from erk.core.worktree_metadata import set_worktree_project
 
 
 def run_post_worktree_setup(

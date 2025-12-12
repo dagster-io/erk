@@ -42,12 +42,12 @@ the code under test performs actual filesystem I/O that cannot be faked.
 """
 
 from click.testing import CliRunner
-from erk_shared.git.abc import WorktreeInfo
-from erk_shared.git.fake import FakeGit
 
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.config import LoadedConfig
 from erk.core.repo_discovery import RepoContext
+from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.fake import FakeGit
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
 

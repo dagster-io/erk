@@ -1,9 +1,9 @@
 """Tests for the project init command."""
 
 from click.testing import CliRunner
-from erk_shared.git.fake import FakeGit
 
 from erk.cli.cli import cli
+from erk_shared.git.fake import FakeGit
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 

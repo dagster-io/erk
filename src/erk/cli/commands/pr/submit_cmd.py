@@ -17,6 +17,13 @@ import uuid
 from pathlib import Path
 
 import click
+
+from erk.core.commit_message_generator import (
+    CommitMessageGenerator,
+    CommitMessageRequest,
+    CommitMessageResult,
+)
+from erk.core.context import ErkContext
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.integrations.gt.operations.finalize import execute_finalize
 from erk_shared.integrations.gt.types import FinalizeResult, PostAnalysisError
@@ -30,13 +37,6 @@ from erk_shared.integrations.pr.types import (
     GraphiteEnhanceResult,
     GraphiteSkipped,
 )
-
-from erk.core.commit_message_generator import (
-    CommitMessageGenerator,
-    CommitMessageRequest,
-    CommitMessageResult,
-)
-from erk.core.context import ErkContext
 
 
 def _render_progress(event: ProgressEvent) -> None:

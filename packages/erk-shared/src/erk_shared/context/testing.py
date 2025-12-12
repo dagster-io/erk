@@ -1,7 +1,7 @@
 """Test factories for creating ErkContext instances.
 
 This module provides factory functions for creating test contexts with
-fake implementations. These are used by both erk and dot-agent-kit tests.
+fake implementations. These are used by both erk and erk-kits tests.
 """
 
 from pathlib import Path

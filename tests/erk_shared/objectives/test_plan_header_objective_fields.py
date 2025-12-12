@@ -1,6 +1,7 @@
 """Tests for objective-related fields in PlanHeaderSchema."""
 
 import pytest
+
 from erk_shared.github.metadata import (
     PlanHeaderSchema,
     create_plan_header_block,

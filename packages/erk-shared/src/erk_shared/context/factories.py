@@ -47,12 +47,12 @@ def get_repo_info(git: "Git", repo_root: Path) -> "RepoInfo | None":
 
 
 def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkContext":
-    """Create production context with real implementations for dot-agent-kit.
+    """Create production context with real implementations for erk-kits.
 
-    This factory creates a minimal context suitable for dot-agent-kit commands.
+    This factory creates a minimal context suitable for erk-kits commands.
     It uses real implementations for GitHub, git, and session store, but uses
     fake implementations for erk-specific services (ClaudeExecutor, etc.) that
-    dot-agent-kit doesn't need.
+    erk-kits doesn't need.
 
     Detects repository root using git rev-parse. Returns context with
     NoRepoSentinel if not in a git repository.
@@ -111,7 +111,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkConte
             worktrees_dir=Path.home() / ".erk" / "repos" / repo_root.name / "worktrees",
         )
 
-    # Use fake implementations for erk-specific services that dot-agent-kit doesn't need
+    # Use fake implementations for erk-specific services that erk-kits doesn't need
     return ErkContext(
         git=git,
         github=RealGitHub(time=RealTime(), repo_info=repo_info),

@@ -4,11 +4,11 @@ import json
 from dataclasses import asdict
 
 import click
-from erk_shared.extraction.raw_extraction import create_raw_extraction_plan
-from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, delete_marker
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
+from erk_shared.extraction.raw_extraction import create_raw_extraction_plan
+from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, delete_marker
 
 
 @click.command("raw")

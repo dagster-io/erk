@@ -2,6 +2,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
+
 from erk_shared.naming import (
     WORKTREE_DATE_SUFFIX_FORMAT,
     default_branch_for_worktree,

@@ -52,11 +52,11 @@ jobs:
           cd $GITHUB_WORKSPACE
 
           # Install workspace packages in dependency order
-          uv tool install --from ./packages/dot-agent-kit --with ./packages/erk-shared dot-agent-kit
-          uv tool install --from . --with ./packages/erk-shared --with ./packages/dot-agent-kit erk
+          uv tool install --from ./packages/erk-kits --with ./packages/erk-shared erk-kits
+          uv tool install --from . --with ./packages/erk-shared --with ./packages/erk-kits erk
 
           # Install erk kit for Claude Code
-          dot-agent kit install erk
+          erk kit install erk
 
       - name: Configure git
         run: |

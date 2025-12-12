@@ -2,10 +2,9 @@
 
 from typing import Any
 
+from erk.core.implementation_queue.github.abc import GitHubAdmin
 from erk_shared.github.types import GitHubRepoLocation
 from erk_shared.printing.base import PrintingBase
-
-from erk.core.implementation_queue.github.abc import GitHubAdmin
 
 
 class PrintingGitHubAdmin(PrintingBase, GitHubAdmin):

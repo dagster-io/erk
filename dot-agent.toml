@@ -18,7 +18,7 @@ artifacts = [
 id = "devrun-reminder-hook"
 lifecycle = "UserPromptSubmit"
 matcher = "*"
-invocation = "dot-agent kit-command devrun devrun-reminder-hook"
+invocation = "erk kit-command devrun devrun-reminder-hook"
 description = "Output devrun agent reminder on every prompt"
 timeout = 30
 
@@ -34,7 +34,7 @@ artifacts = [
 id = "fake-driven-testing-reminder-hook"
 lifecycle = "UserPromptSubmit"
 matcher = "*.py"
-invocation = "dot-agent kit-command fake-driven-testing fake-driven-testing-reminder-hook"
+invocation = "erk kit-command fake-driven-testing fake-driven-testing-reminder-hook"
 description = "Output fake-driven-testing reminder when Python files are in context"
 timeout = 30
 
@@ -63,7 +63,7 @@ artifacts = [
 id = "version-aware-reminder-hook"
 lifecycle = "UserPromptSubmit"
 matcher = "*.py"
-invocation = "dot-agent kit-command dignified-python version-aware-reminder-hook"
+invocation = "erk kit-command dignified-python version-aware-reminder-hook"
 description = "Output dignified-python compliance reminder when Python files are in context"
 timeout = 30
 
@@ -101,7 +101,7 @@ artifacts = [
 id = "session-id-injector-hook"
 lifecycle = "UserPromptSubmit"
 matcher = "*"
-invocation = "dot-agent kit-command erk session-id-injector-hook"
+invocation = "erk kit-command erk session-id-injector-hook"
 description = "Injects session ID into conversation context for plan-related commands"
 timeout = 30
 
@@ -109,7 +109,7 @@ timeout = 30
 id = "exit-plan-mode-hook"
 lifecycle = "PreToolUse"
 matcher = "ExitPlanMode"
-invocation = "dot-agent kit-command erk exit-plan-mode-hook"
+invocation = "erk kit-command erk exit-plan-mode-hook"
 description = "Auto-save plan to GitHub on Plan Mode exit"
 timeout = 30
 
@@ -117,7 +117,7 @@ timeout = 30
 id = "tripwires-reminder-hook"
 lifecycle = "UserPromptSubmit"
 matcher = "*"
-invocation = "dot-agent kit-command erk tripwires-reminder-hook"
+invocation = "erk kit-command erk tripwires-reminder-hook"
 description = "Reminds Claude to check tripwires before common operations"
 timeout = 30
 

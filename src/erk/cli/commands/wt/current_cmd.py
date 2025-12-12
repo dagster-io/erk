@@ -1,13 +1,13 @@
 """Current command implementation - displays current erk name."""
 
 import click
-from erk_shared.output.output import user_output
 
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_utils import find_current_worktree
+from erk_shared.output.output import user_output
 
 
 @click.command("current", hidden=True)

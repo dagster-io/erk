@@ -1,12 +1,12 @@
 ---
 title: erk_shared Package
 read_when:
-  - "sharing code between erk and dot-agent-kit"
+  - "sharing code between erk and erk-kits"
   - "deciding where to put new utilities"
   - "moving code between packages"
 tripwires:
-  - action: "importing from erk package in dot-agent-kit"
-    warning: "dot-agent-kit cannot import from erk. Use erk_shared for shared code."
+  - action: "importing from erk package in erk-kits"
+    warning: "erk-kits cannot import from erk. Use erk_shared for shared code."
 ---
 
 # erk_shared Package
@@ -14,15 +14,15 @@ tripwires:
 The `erk_shared` package (`packages/erk-shared/`) contains code shared between:
 
 - `erk` - Main CLI package
-- `dot-agent-kit` - Kit CLI commands for Claude Code
+- `erk-kits` - Kit CLI commands for Claude Code
 
 ## When to Use erk_shared
 
-| Situation                 | Location                  |
-| ------------------------- | ------------------------- |
-| Code only used by erk CLI | `src/erk/`                |
-| Code only used by kit CLI | `packages/dot-agent-kit/` |
-| Code used by both         | `packages/erk-shared/`    |
+| Situation                 | Location               |
+| ------------------------- | ---------------------- |
+| Code only used by erk CLI | `src/erk/`             |
+| Code only used by kit CLI | `packages/erk-kits/`   |
+| Code used by both         | `packages/erk-shared/` |
 
 ## Package Structure
 
@@ -39,8 +39,8 @@ packages/erk-shared/src/erk_shared/
 ## Import Rules
 
 1. **erk can import from erk_shared** ✅
-2. **dot-agent-kit can import from erk_shared** ✅
-3. **dot-agent-kit cannot import from erk** ❌
+2. **erk-kits can import from erk_shared** ✅
+3. **erk-kits cannot import from erk** ❌
 
 ## Moving Code to erk_shared
 

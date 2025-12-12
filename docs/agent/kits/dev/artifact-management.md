@@ -22,7 +22,7 @@ This guide documents the kit artifact system architecture and common pitfalls.
 
 ```
 BUNDLED KIT SOURCE                    INSTALLED ARTIFACTS
-(packages/dot-agent-kit/              (project/.claude/)
+(packages/erk-kits/              (project/.claude/)
  data/kits/<kit-name>/)
 
 kit.yaml (manifest)          -->      Listed in kits.toml
@@ -37,14 +37,14 @@ docs/bar/guide.md            -->      .claude/docs/bar/guide.md (symlink to sour
 **WRONG** (causes circular symlink problems during sync):
 
 ```
-# In packages/dot-agent-kit/data/kits/my-kit/
+# In packages/erk-kits/data/kits/my-kit/
 docs/foo.md -> ../../../../../.claude/docs/foo.md  # BAD - symlink in kit source
 ```
 
 **RIGHT** (real files in kit source):
 
 ```
-# In packages/dot-agent-kit/data/kits/my-kit/
+# In packages/erk-kits/data/kits/my-kit/
 docs/foo.md  # Real file content lives here
 ```
 
@@ -118,7 +118,7 @@ When you need to edit a file in `.claude/` that's part of an installed kit, **yo
 Installed kit artifacts in `.claude/` are **symlinks** pointing to source files in the kit package:
 
 ```
-.claude/skills/foo/SKILL.md -> packages/dot-agent-kit/data/kits/bar/skills/foo/SKILL.md
+.claude/skills/foo/SKILL.md -> packages/erk-kits/data/kits/bar/skills/foo/SKILL.md
 ```
 
 If you use Write tool on `.claude/skills/foo/SKILL.md`:
@@ -153,7 +153,7 @@ file .claude/skills/foo/SKILL.md
 
    ```bash
    readlink -f .claude/skills/foo/SKILL.md
-   # Output: /path/to/packages/dot-agent-kit/data/kits/bar/skills/foo/SKILL.md
+   # Output: /path/to/packages/erk-kits/data/kits/bar/skills/foo/SKILL.md
    ```
 
 2. **Edit the source file** (not the symlink path):

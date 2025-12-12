@@ -1,7 +1,7 @@
 [project]
 name = "erk-shared"
 version = "0.2.1"
-description = "Shared utilities and interfaces for erk and dot-agent-kit"
+description = "Shared utilities and interfaces for erk and erk-kits"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

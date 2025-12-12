@@ -3,11 +3,11 @@
 from pathlib import Path
 
 import click
-from erk_shared.output.output import user_output
 
 from erk.cli.core import discover_repo_context
 from erk.cli.shell_utils import render_navigation_script
 from erk.core.context import ErkContext
+from erk_shared.output.output import user_output
 
 
 def generate_recovery_script(ctx: ErkContext) -> Path | None:

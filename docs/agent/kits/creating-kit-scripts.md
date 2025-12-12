@@ -15,10 +15,10 @@ Kit scripts are Python Click commands that extend erk's functionality through th
 Kit scripts live in the kit's scripts directory:
 
 ```
-packages/dot-agent-kit/src/dot_agent_kit/data/kits/<kit-name>/scripts/<kit-name>/<script_name>.py
+packages/erk-kits/src/erk_kits/data/kits/<kit-name>/scripts/<kit-name>/<script_name>.py
 ```
 
-Example: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/scripts/erk/get_closing_text.py`
+Example: `packages/erk-kits/src/erk_kits/data/kits/erk/scripts/erk/get_closing_text.py`
 
 ## Script Template
 
@@ -71,7 +71,7 @@ scripts:
 
 ## Testing Pattern
 
-Create tests in: `packages/dot-agent-kit/tests/unit/kits/<kit-name>/test_<script_name>.py`
+Create tests in: `packages/erk-kits/tests/unit/kits/<kit-name>/test_<script_name>.py`
 
 Use CliRunner with `DotAgentContext.for_test()` for fake-driven testing (Layer 4):
 
@@ -80,8 +80,8 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from dot_agent_kit.context import DotAgentContext
-from dot_agent_kit.data.kits.<kit>.scripts.<kit>.<script_name> import command_name
+from erk_kits.context import DotAgentContext
+from erk_kits.data.kits.<kit>.scripts.<kit>.<script_name> import command_name
 from erk_shared.git.fake import FakeGit
 
 

@@ -14,6 +14,7 @@ Example worktrees.toml:
 from pathlib import Path
 
 import tomlkit
+
 from erk_shared.git.abc import Git
 
 

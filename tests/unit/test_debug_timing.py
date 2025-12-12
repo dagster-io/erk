@@ -3,6 +3,7 @@
 import logging
 
 import pytest
+
 from erk_shared.debug_timing import timed_operation
 
 

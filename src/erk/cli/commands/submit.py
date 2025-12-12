@@ -7,6 +7,16 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import click
+
+from erk.cli.constants import (
+    DISPATCH_WORKFLOW_METADATA_NAME,
+    DISPATCH_WORKFLOW_NAME,
+    ERK_PLAN_LABEL,
+)
+from erk.cli.core import discover_repo_context
+from erk.cli.ensure import Ensure
+from erk.core.context import ErkContext
+from erk.core.repo_discovery import RepoContext
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata import (
     create_submission_queued_block,
@@ -28,16 +38,6 @@ from erk_shared.naming import (
 )
 from erk_shared.output.output import user_output
 from erk_shared.worker_impl_folder import create_worker_impl_folder
-
-from erk.cli.constants import (
-    DISPATCH_WORKFLOW_METADATA_NAME,
-    DISPATCH_WORKFLOW_NAME,
-    ERK_PLAN_LABEL,
-)
-from erk.cli.core import discover_repo_context
-from erk.cli.ensure import Ensure
-from erk.core.context import ErkContext
-from erk.core.repo_discovery import RepoContext
 
 logger = logging.getLogger(__name__)
 

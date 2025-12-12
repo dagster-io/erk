@@ -1,0 +1,754 @@
+"""Unit tests for list_sessions kit CLI command.
+
+Tests session discovery, relative time formatting, branch context detection,
+and summary extraction using FakeClaudeCodeSessionStore.
+"""
+
+import json
+import os
+import time
+from pathlib import Path
+from unittest.mock import patch
+
+from click.testing import CliRunner
+
+from erk_kits.data.kits.erk.scripts.erk.list_sessions import (
+    _list_sessions_from_store,
+    extract_summary,
+    format_display_time,
+    format_relative_time,
+    get_branch_context,
+    get_current_session_id,
+    list_sessions,
+)
+from erk_shared.context import ErkContext
+from erk_shared.extraction.claude_code_session_store import (
+    FakeClaudeCodeSessionStore,
+    FakeProject,
+    FakeSessionData,
+)
+from erk_shared.git.fake import FakeGit
+
+
+def _user_msg(text: str) -> str:
+    """Create JSON content for a user message."""
+    return json.dumps({"type": "user", "message": {"content": text}})
+
+
+# ============================================================================
+# 1. Relative Time Formatting Tests (7 tests)
+# ============================================================================
+
+
+def test_format_relative_time_just_now() -> None:
+    """Test that times < 30s show 'just now'."""
+    now = time.time()
+    assert format_relative_time(now - 10) == "just now"
+    assert format_relative_time(now - 29) == "just now"
+
+
+def test_format_relative_time_minutes() -> None:
+    """Test that times < 1h show minutes."""
+    now = time.time()
+    assert format_relative_time(now - 60) == "1m ago"
+    assert format_relative_time(now - 180) == "3m ago"
+    assert format_relative_time(now - 3540) == "59m ago"
+
+
+def test_format_relative_time_hours() -> None:
+    """Test that times < 24h show hours."""
+    now = time.time()
+    assert format_relative_time(now - 3600) == "1h ago"
+    assert format_relative_time(now - 7200) == "2h ago"
+    assert format_relative_time(now - 82800) == "23h ago"
+
+
+def test_format_relative_time_days() -> None:
+    """Test that times < 7d show days."""
+    now = time.time()
+    assert format_relative_time(now - 86400) == "1d ago"
+    assert format_relative_time(now - 172800) == "2d ago"
+    assert format_relative_time(now - 518400) == "6d ago"
+
+
+def test_format_relative_time_older_than_week() -> None:
+    """Test that times >= 7d show absolute date."""
+    now = time.time()
+    result = format_relative_time(now - 604800)  # exactly 7 days
+    # Should return absolute date format (e.g., "Dec 3, 11:38 AM")
+    assert "ago" not in result
+    # Should contain month abbreviation and time
+    assert any(
+        month in result
+        for month in [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        ]
+    )
+
+
+def test_format_relative_time_boundary_30_seconds() -> None:
+    """Test boundary at 30 seconds."""
+    now = time.time()
+    assert format_relative_time(now - 29) == "just now"
+    assert format_relative_time(now - 31) == "0m ago" or format_relative_time(now - 61) == "1m ago"
+
+
+def test_format_display_time_format() -> None:
+    """Test display time format."""
+    # Use a fixed timestamp for predictable output
+    # 2024-12-03 11:38:00 UTC
+    import datetime
+
+    dt = datetime.datetime(2024, 12, 3, 11, 38, 0)
+    mtime = dt.timestamp()
+    result = format_display_time(mtime)
+    assert "Dec" in result
+    assert "3" in result
+    assert "11:38" in result or "11:38 AM" in result
+
+
+# ============================================================================
+# 2. Session ID Extraction Tests (4 tests)
+# ============================================================================
+
+
+def test_get_current_session_id_from_env() -> None:
+    """Test extraction of session ID from SESSION_CONTEXT env var."""
+    with patch.dict(os.environ, {"SESSION_CONTEXT": "session_id=abc123-def456"}):
+        assert get_current_session_id() == "abc123-def456"
+
+
+def test_get_current_session_id_no_env() -> None:
+    """Test that None is returned when env var not set."""
+    with patch.dict(os.environ, {}, clear=True):
+        # Remove SESSION_CONTEXT if it exists
+        env_copy = dict(os.environ)
+        env_copy.pop("SESSION_CONTEXT", None)
+        with patch.dict(os.environ, env_copy, clear=True):
+            assert get_current_session_id() is None
+
+
+def test_get_current_session_id_empty_env() -> None:
+    """Test that None is returned when env var is empty."""
+    with patch.dict(os.environ, {"SESSION_CONTEXT": ""}):
+        assert get_current_session_id() is None
+
+
+def test_get_current_session_id_invalid_format() -> None:
+    """Test that None is returned when format is invalid."""
+    with patch.dict(os.environ, {"SESSION_CONTEXT": "not_a_session_id"}):
+        assert get_current_session_id() is None
+
+
+# ============================================================================
+# 3. Summary Extraction Tests (8 tests)
+# ============================================================================
+
+
+def test_extract_summary_string_content() -> None:
+    """Test extraction from user message with string content."""
+    content = json.dumps(
+        {"type": "user", "message": {"content": "how many session ids does this correspond to?"}}
+    )
+    result = extract_summary(content)
+    assert result == "how many session ids does this correspond to?"
+
+
+def test_extract_summary_structured_content() -> None:
+    """Test extraction from user message with structured content."""
+    msg = {"type": "user", "message": {"content": [{"type": "text", "text": "Please help"}]}}
+    content = json.dumps(msg)
+    result = extract_summary(content)
+    assert result == "Please help"
+
+
+def test_extract_summary_truncates_long_text() -> None:
+    """Test that long summaries are truncated with ellipsis."""
+    long_text = "x" * 100
+    content = json.dumps({"type": "user", "message": {"content": long_text}})
+    result = extract_summary(content, max_length=60)
+    assert len(result) == 60
+    assert result.endswith("...")
+
+
+def test_extract_summary_skips_assistant_messages() -> None:
+    """Test that assistant messages are skipped to find first user message."""
+    asst_msg = {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hello"}]}}
+    user_msg = {"type": "user", "message": {"content": "My actual question"}}
+    lines = [json.dumps(asst_msg), json.dumps(user_msg)]
+    content = "\n".join(lines)
+    result = extract_summary(content)
+    assert result == "My actual question"
+
+
+def test_extract_summary_empty_content() -> None:
+    """Test handling of empty content."""
+    result = extract_summary("")
+    assert result == ""
+
+
+def test_extract_summary_no_user_messages() -> None:
+    """Test handling of content with no user messages."""
+    msg = {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi"}]}}
+    content = json.dumps(msg)
+    result = extract_summary(content)
+    assert result == ""
+
+
+def test_extract_summary_handles_malformed_json() -> None:
+    """Test handling of malformed JSON in content."""
+    content = "{invalid json}\n" + json.dumps({"type": "user", "message": {"content": "Valid"}})
+    result = extract_summary(content)
+    # Should find the valid entry after skipping malformed
+    assert result == "Valid"
+
+
+def test_extract_summary_content_with_newlines() -> None:
+    """Test handling of multi-line content."""
+    content = json.dumps({"type": "user", "message": {"content": "Line one"}})
+    result = extract_summary(content)
+    assert result == "Line one"
+
+
+# ============================================================================
+# 4. Session Discovery Tests (7 tests) - Using FakeClaudeCodeSessionStore
+# ============================================================================
+
+
+def test_list_sessions_finds_all_sessions(tmp_path: Path) -> None:
+    """Test that all sessions are discovered from store."""
+    fake_store = FakeClaudeCodeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "abc123": FakeSessionData(
+                        content=_user_msg("Session abc123"),
+                        size_bytes=100,
+                        modified_at=1000.0,
+                    ),
+                    "def456": FakeSessionData(
+                        content=_user_msg("Session def456"),
+                        size_bytes=100,
+                        modified_at=2000.0,
+                    ),
+                    "ghi789": FakeSessionData(
+                        content=_user_msg("Session ghi789"),
+                        size_bytes=100,
+                        modified_at=3000.0,
+                    ),
+                }
+            )
+        }
+    )
+
+    sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
+    assert len(sessions) == 3
+    assert filtered_count == 0
+
+
+def test_list_sessions_sorted_by_mtime(tmp_path: Path) -> None:
+    """Test that sessions are sorted by mtime (newest first)."""
+    fake_store = FakeClaudeCodeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "old": FakeSessionData(
+                        content=json.dumps({"type": "user", "message": {"content": "Old"}}),
+                        size_bytes=100,
+                        modified_at=1000.0,
+                    ),
+                    "new": FakeSessionData(
+                        content=json.dumps({"type": "user", "message": {"content": "New"}}),
+                        size_bytes=100,
+                        modified_at=2000.0,
+                    ),
+                }
+            )
+        }
+    )
+
+    sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
+    assert len(sessions) == 2
+    assert sessions[0].session_id == "new"  # Newest first
+    assert sessions[1].session_id == "old"
+    assert filtered_count == 0
+
+
+def test_list_sessions_respects_limit(tmp_path: Path) -> None:
+    """Test that limit parameter is respected."""
+    fake_store = FakeClaudeCodeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    f"session{i:02d}": FakeSessionData(
+                        content=_user_msg(f"Session {i}"),
+                        size_bytes=100,
+                        modified_at=float(i),
+                    )
+                    for i in range(20)
+                }
+            )
+        }
+    )
+
+    sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=5)
+    assert len(sessions) == 5
+    assert filtered_count == 0
+
+
+def test_list_sessions_marks_current(tmp_path: Path) -> None:
+    """Test that current session is marked correctly."""
+    fake_store = FakeClaudeCodeSessionStore(
+        current_session_id="current123",
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "current123": FakeSessionData(
+                        content=_user_msg("Current"),
+                        size_bytes=100,
+                        modified_at=2000.0,
+                    ),
+                    "other456": FakeSessionData(
+                        content=_user_msg("Other"),
+                        size_bytes=100,
+                        modified_at=1000.0,
+                    ),
+                }
+            )
+        },
+    )
+
+    sessions, filtered_count = _list_sessions_from_store(
+        fake_store, tmp_path, "current123", limit=10
+    )
+
+    current = next(s for s in sessions if s.session_id == "current123")
+    other = next(s for s in sessions if s.session_id == "other456")
+
+    assert current.is_current is True
+    assert other.is_current is False
+    assert filtered_count == 0
+
+
+def test_list_sessions_empty_project(tmp_path: Path) -> None:
+    """Test handling of project with no sessions."""
+    fake_store = FakeClaudeCodeSessionStore(projects={tmp_path: FakeProject(sessions={})})
+
+    sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
+    assert sessions == []
+    assert filtered_count == 0
+
+
+def test_list_sessions_nonexistent_project(tmp_path: Path) -> None:
+    """Test handling of nonexistent project."""
+    fake_store = FakeClaudeCodeSessionStore()  # No projects
+
+    sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
+    assert sessions == []
+    assert filtered_count == 0
+
+
+def test_list_sessions_extracts_summaries(tmp_path: Path) -> None:
+    """Test that summaries are extracted from session content."""
+    fake_store = FakeClaudeCodeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "session1": FakeSessionData(
+                        content=json.dumps({"type": "user", "message": {"content": "Hello world"}}),
+                        size_bytes=100,
+                        modified_at=1000.0,
+                    )
+                }
+            )
+        }
+    )
+
+    sessions, _ = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
+    assert len(sessions) == 1
+    assert sessions[0].summary == "Hello world"
+
+
+# ============================================================================
+# 5. Branch Context Tests (5 tests)
+# ============================================================================
+
+
+def test_get_branch_context_on_feature_branch(tmp_path: Path) -> None:
+    """Test branch context detection on feature branch."""
+    git = FakeGit(
+        current_branches={tmp_path: "feature-xyz"},
+        trunk_branches={tmp_path: "main"},
+    )
+
+    context = get_branch_context(git, tmp_path)
+    assert context.current_branch == "feature-xyz"
+    assert context.trunk_branch == "main"
+    assert context.is_on_trunk is False
+
+
+def test_get_branch_context_on_main_branch(tmp_path: Path) -> None:
+    """Test branch context detection on main branch."""
+    git = FakeGit(
+        current_branches={tmp_path: "main"},
+        trunk_branches={tmp_path: "main"},
+    )
+
+    context = get_branch_context(git, tmp_path)
+    assert context.current_branch == "main"
+    assert context.trunk_branch == "main"
+    assert context.is_on_trunk is True
+
+
+def test_get_branch_context_detects_master_trunk(tmp_path: Path) -> None:
+    """Test that master is detected as trunk when it exists."""
+    git = FakeGit(
+        current_branches={tmp_path: "master"},
+        trunk_branches={tmp_path: "master"},
+    )
+
+    context = get_branch_context(git, tmp_path)
+    assert context.current_branch == "master"
+    assert context.trunk_branch == "master"
+    assert context.is_on_trunk is True
+
+
+def test_get_branch_context_no_git_repo(tmp_path: Path) -> None:
+    """Test branch context when no branch is available (defaults to empty)."""
+    # FakeGit with no current_branches configured returns None for get_current_branch
+    git = FakeGit()
+
+    context = get_branch_context(git, tmp_path)
+    assert context.current_branch == ""
+    assert context.trunk_branch == "main"  # FakeGit defaults to "main"
+    assert context.is_on_trunk is False
+
+
+def test_get_branch_context_empty_repo(tmp_path: Path) -> None:
+    """Test branch context when current branch is None (empty/new repo)."""
+    # Simulates git repo with no commits (no current branch yet)
+    git = FakeGit(
+        current_branches={tmp_path: None},
+        trunk_branches={tmp_path: "main"},
+    )
+
+    context = get_branch_context(git, tmp_path)
+    # When current_branch is None, we get empty string (per or "" fallback)
+    assert context.current_branch == ""
+    assert context.trunk_branch == "main"
+    assert context.is_on_trunk is False
+
+
+# ============================================================================
+# 6. CLI Command Tests (5 tests) - Using FakeClaudeCodeSessionStore
+# ============================================================================
+
+
+def test_cli_success(tmp_path: Path) -> None:
+    """Test CLI command with successful session listing."""
+    git = FakeGit(
+        current_branches={tmp_path: "feature-branch"},
+        trunk_branches={tmp_path: "main"},
+    )
+    fake_store = FakeClaudeCodeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "abc123": FakeSessionData(
+                        content=_user_msg("Test session"),
+                        size_bytes=100,
+                        modified_at=1234567890.0,
+                    )
+                }
+            )
+        }
+    )
+    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(list_sessions, [], obj=context)
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert len(output["sessions"]) == 1
+    assert output["sessions"][0]["session_id"] == "abc123"
+
+
+def test_cli_project_not_found(tmp_path: Path) -> None:
+    """Test CLI command error when project not found."""
+    git = FakeGit(
+        current_branches={tmp_path: "main"},
+        trunk_branches={tmp_path: "main"},
+    )
+    # Empty session store - no projects
+    fake_store = FakeClaudeCodeSessionStore()
+    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(list_sessions, [], obj=context)
+
+    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert "error" in output
+
+
+def test_cli_output_structure(tmp_path: Path) -> None:
+    """Test that CLI output has expected structure."""
+    git = FakeGit(
+        current_branches={tmp_path: "feature-branch"},
+        trunk_branches={tmp_path: "main"},
+    )
+    fake_store = FakeClaudeCodeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "session": FakeSessionData(
+                        content=json.dumps({"type": "user", "message": {"content": "Test"}}),
+                        size_bytes=100,
+                        modified_at=1234567890.0,
+                    )
+                }
+            )
+        }
+    )
+    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(list_sessions, [], obj=context)
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+
+    # Verify expected keys
+    assert "success" in output
+    assert "branch_context" in output
+    assert "current_session_id" in output
+    assert "sessions" in output
+    assert "project_dir" in output
+
+    # Verify branch_context structure
+    assert "current_branch" in output["branch_context"]
+    assert "trunk_branch" in output["branch_context"]
+    assert "is_on_trunk" in output["branch_context"]
+
+    # Verify session structure
+    if output["sessions"]:
+        session = output["sessions"][0]
+        assert "session_id" in session
+        assert "mtime_display" in session
+        assert "mtime_relative" in session
+        assert "mtime_unix" in session
+        assert "size_bytes" in session
+        assert "summary" in session
+        assert "is_current" in session
+
+
+def test_cli_limit_option(tmp_path: Path) -> None:
+    """Test CLI --limit option."""
+    git = FakeGit(
+        current_branches={tmp_path: "feature-branch"},
+        trunk_branches={tmp_path: "main"},
+    )
+    fake_store = FakeClaudeCodeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    f"session{i:02d}": FakeSessionData(
+                        content=_user_msg(f"Session {i}"),
+                        size_bytes=100,
+                        modified_at=float(i),
+                    )
+                    for i in range(10)
+                }
+            )
+        }
+    )
+    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(list_sessions, ["--limit", "3"], obj=context)
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert len(output["sessions"]) == 3
+
+
+def test_cli_marks_current_session(tmp_path: Path) -> None:
+    """Test that CLI marks current session from SESSION_CONTEXT env."""
+    git = FakeGit(
+        current_branches={tmp_path: "feature-branch"},
+        trunk_branches={tmp_path: "main"},
+    )
+    fake_store = FakeClaudeCodeSessionStore(
+        current_session_id="current-session",
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "current-session": FakeSessionData(
+                        content=json.dumps({"type": "user", "message": {"content": "Current"}}),
+                        size_bytes=100,
+                        modified_at=2000.0,
+                    ),
+                    "other-session": FakeSessionData(
+                        content=json.dumps({"type": "user", "message": {"content": "Other"}}),
+                        size_bytes=100,
+                        modified_at=1000.0,
+                    ),
+                }
+            )
+        },
+    )
+    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+
+    runner = CliRunner(env={"SESSION_CONTEXT": "session_id=current-session"})
+    result = runner.invoke(list_sessions, [], obj=context)
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+
+    current = next(s for s in output["sessions"] if s["session_id"] == "current-session")
+    other = next(s for s in output["sessions"] if s["session_id"] == "other-session")
+
+    assert current["is_current"] is True
+    assert other["is_current"] is False
+
+
+# ============================================================================
+# 7. Size Filtering Tests (4 tests)
+# ============================================================================
+
+
+def test_list_sessions_min_size_filters_tiny_sessions(tmp_path: Path) -> None:
+    """Test that --min-size filters out tiny sessions."""
+    fake_store = FakeClaudeCodeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "tiny": FakeSessionData(
+                        content="x",
+                        size_bytes=10,
+                        modified_at=1000.0,
+                    ),
+                    "large": FakeSessionData(
+                        content=json.dumps({"type": "user", "message": {"content": "x" * 2000}}),
+                        size_bytes=2000,
+                        modified_at=2000.0,
+                    ),
+                }
+            )
+        }
+    )
+
+    sessions, filtered_count = _list_sessions_from_store(
+        fake_store, tmp_path, None, limit=10, min_size=100
+    )
+
+    assert len(sessions) == 1
+    assert sessions[0].session_id == "large"
+    assert filtered_count == 1
+
+
+def test_list_sessions_min_size_zero_no_filtering(tmp_path: Path) -> None:
+    """Test that min_size=0 (default) does not filter."""
+    fake_store = FakeClaudeCodeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "tiny": FakeSessionData(
+                        content="x",
+                        size_bytes=1,
+                        modified_at=1000.0,
+                    ),
+                    "large": FakeSessionData(
+                        content="x" * 1000,
+                        size_bytes=1000,
+                        modified_at=2000.0,
+                    ),
+                }
+            )
+        }
+    )
+
+    sessions, filtered_count = _list_sessions_from_store(
+        fake_store, tmp_path, None, limit=10, min_size=0
+    )
+
+    assert len(sessions) == 2
+    assert filtered_count == 0
+
+
+def test_list_sessions_all_filtered(tmp_path: Path) -> None:
+    """Test when all sessions are filtered by size."""
+    fake_store = FakeClaudeCodeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "tiny1": FakeSessionData(
+                        content="x",
+                        size_bytes=1,
+                        modified_at=1000.0,
+                    ),
+                    "tiny2": FakeSessionData(
+                        content="xx",
+                        size_bytes=2,
+                        modified_at=2000.0,
+                    ),
+                }
+            )
+        }
+    )
+
+    sessions, filtered_count = _list_sessions_from_store(
+        fake_store, tmp_path, None, limit=10, min_size=1000
+    )
+
+    assert len(sessions) == 0
+    assert filtered_count == 2
+
+
+def test_cli_min_size_option(tmp_path: Path) -> None:
+    """Test CLI --min-size option."""
+    git = FakeGit(
+        current_branches={tmp_path: "feature"},
+        trunk_branches={tmp_path: "main"},
+    )
+    fake_store = FakeClaudeCodeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "tiny": FakeSessionData(
+                        content="x",
+                        size_bytes=10,
+                        modified_at=1000.0,
+                    ),
+                    "large": FakeSessionData(
+                        content=json.dumps({"type": "user", "message": {"content": "x" * 2000}}),
+                        size_bytes=2000,
+                        modified_at=2000.0,
+                    ),
+                }
+            )
+        }
+    )
+    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(list_sessions, ["--min-size", "100"], obj=context)
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert len(output["sessions"]) == 1
+    assert output["filtered_count"] == 1

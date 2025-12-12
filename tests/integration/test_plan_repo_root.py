@@ -12,15 +12,15 @@ from pathlib import Path
 from unittest.mock import patch
 
 from click.testing import CliRunner
+
+from erk.cli.commands.plan.get import get_plan
+from erk.cli.commands.plan.list_cmd import dash
+from erk.core.services.plan_list_service import RealPlanListService
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.types import GitHubRepoLocation, PullRequestInfo
 from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
-
-from erk.cli.commands.plan.get import get_plan
-from erk.cli.commands.plan.list_cmd import dash
-from erk.core.services.plan_list_service import RealPlanListService
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 

@@ -3,9 +3,9 @@
 from pathlib import Path
 
 import click
-from erk_shared.output.output import user_output
 
 from erk.cli.commands.stack.split_old.plan import SplitPlan
+from erk_shared.output.output import user_output
 
 
 def display_stack_preview(

@@ -1,6 +1,7 @@
 """Unit tests for GitHub parsing functions with JSON fixtures."""
 
 import pytest
+
 from erk_shared.github.parsing import (
     parse_aggregated_check_counts,
     parse_gh_auth_status_output,

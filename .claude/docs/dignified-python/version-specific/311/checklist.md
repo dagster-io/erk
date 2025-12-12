@@ -1,1 +1,3 @@
-../../../../../packages/dot-agent-kit/src/dot_agent_kit/data/kits/dignified-python/docs/dignified-python/version-specific/311/checklist.md
+- **Use** modern type syntax: `list[str]`, `str | None`
+- **Use** `Self` type from `typing` for self-returning methods
+- **Use** `from __future__ import annotations` when needed (forward refs, circular imports)

@@ -2,12 +2,11 @@
 
 from pathlib import Path
 
-from erk_shared.git.abc import WorktreeInfo
-
 from erk.core.worktree_utils import (
     compute_relative_path_in_worktree,
     find_worktree_containing_path,
 )
+from erk_shared.git.abc import WorktreeInfo
 
 
 def test_compute_relative_path_returns_none_when_at_worktree_root() -> None:

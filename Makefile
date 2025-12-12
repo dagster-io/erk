@@ -30,15 +30,15 @@ test-erk-dev:
 	cd packages/erk-dev && uv run pytest -n auto
 
 # Unit tests: Fast, in-memory tests using fakes
-test-unit-dot-agent-kit:
-	cd packages/dot-agent-kit && uv run pytest tests/unit/ -n auto
+test-unit-erk-kits:
+	cd packages/erk-kits && uv run pytest tests/unit/ -n auto
 
 # Integration tests: Slower tests with real I/O and subprocess calls
-test-integration-dot-agent-kit:
-	cd packages/dot-agent-kit && uv run pytest tests/integration/ -n auto
+test-integration-erk-kits:
+	cd packages/erk-kits && uv run pytest tests/integration/ -n auto
 
-# Backward compatibility: test-dot-agent-kit now runs unit tests only
-test-dot-agent-kit: test-unit-dot-agent-kit
+# Backward compatibility: test-erk-kits now runs unit tests only
+test-erk-kits: test-unit-erk-kits
 
 # === Erk test targets ===
 
@@ -61,14 +61,16 @@ test-erk: test-unit-erk
 # === Combined test targets ===
 
 # Default 'make test': Run unit tests only (fast feedback loop for development)
-# Includes: erk unit tests + all erk-dev tests + all dot-agent-kit tests
-test: test-unit-erk test-erk-dev test-dot-agent-kit
+# Includes: erk unit tests + all erk-dev tests
+# Note: erk-kits has no unit tests yet, so it's excluded from this target
+test: test-unit-erk test-erk-dev
 
 # Integration tests: Run only integration tests across all packages
-test-integration: test-integration-erk test-integration-dot-agent-kit
+# Note: erk-kits has no integration tests (wheel packaging tests are in tests/integration/kits/)
+test-integration: test-integration-erk
 
 # All tests: Run both unit and integration tests (comprehensive validation)
-test-all: test-all-erk test-erk-dev test-unit-dot-agent-kit test-integration-dot-agent-kit
+test-all: test-all-erk test-erk-dev
 
 check:
 	uv run erk kit check
@@ -81,7 +83,7 @@ md-check:
 # but we still want to validate that actual file includes are correct
 # NOTE: cd is required because the command validates from the current directory
 kit-md-check:
-	cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run erk md check --check-links
+	cd packages/erk-kits/src/erk_kits/data/kits && uv run erk md check --check-links
 
 docs-validate:
 	uv run erk docs validate
@@ -100,15 +102,13 @@ fast-ci:
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
 	echo "\n--- Markdown Check ---" && uv run erk md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl" || exit_code=1; \
-	echo "\n--- Kit Markdown Check ---" && (cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run erk md check --check-links --exclude ".impl" --exclude ".worker-impl") || exit_code=1; \
+	echo "\n--- Kit Markdown Check ---" && (cd packages/erk-kits/src/erk_kits/data/kits && uv run erk md check --check-links --exclude ".impl" --exclude ".worker-impl") || exit_code=1; \
 	cd $(CURDIR); \
 	echo "\n--- Docs Validate ---" && uv run erk docs validate || exit_code=1; \
 	echo "\n--- Docs Sync Check ---" && uv run erk docs sync --check || exit_code=1; \
 	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
-	echo "\n--- Unit Tests (dot-agent-kit) ---" && (cd packages/dot-agent-kit && uv run pytest tests/unit/ -n auto) || exit_code=1; \
-	cd $(CURDIR); \
 	echo "\n--- Kit Check ---" && uv run erk kit check || exit_code=1; \
 	exit $$exit_code
 
@@ -120,7 +120,7 @@ all-ci:
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
 	echo "\n--- Markdown Check ---" && uv run erk md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl" || exit_code=1; \
-	echo "\n--- Kit Markdown Check ---" && (cd packages/dot-agent-kit/src/dot_agent_kit/data/kits && uv run erk md check --check-links --exclude ".impl" --exclude ".worker-impl") || exit_code=1; \
+	echo "\n--- Kit Markdown Check ---" && (cd packages/erk-kits/src/erk_kits/data/kits && uv run erk md check --check-links --exclude ".impl" --exclude ".worker-impl") || exit_code=1; \
 	cd $(CURDIR); \
 	echo "\n--- Docs Validate ---" && uv run erk docs validate || exit_code=1; \
 	echo "\n--- Docs Sync Check ---" && uv run erk docs sync --check || exit_code=1; \
@@ -128,8 +128,6 @@ all-ci:
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
 	echo "\n--- Integration Tests (erk) ---" && uv run pytest tests/integration/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
-	echo "\n--- Unit Tests (dot-agent-kit) ---" && (cd packages/dot-agent-kit && uv run pytest tests/unit/ -n auto) || exit_code=1; \
-	echo "\n--- Integration Tests (dot-agent-kit) ---" && (cd packages/dot-agent-kit && uv run pytest tests/integration/ -n auto) || exit_code=1; \
 	echo "\n--- Kit Check ---" && uv run erk kit check || exit_code=1; \
 	exit $$exit_code
 
@@ -137,9 +135,9 @@ all-ci:
 clean:
 	rm -rf dist/*.whl dist/*.tar.gz
 
-# Build erk and dot-agent-kit packages
+# Build erk and erk-kits packages
 build: clean
-	uv build --package dot-agent-kit -o dist
+	uv build --package erk-kits -o dist
 	uv build --package erk -o dist
 
 # Reinstall erk and dot-agent tools in editable mode

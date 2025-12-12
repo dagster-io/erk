@@ -3,13 +3,13 @@
 from pathlib import Path
 
 import pytest
-from erk_shared.git.fake import FakeGit
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.integrations.graphite.fake import FakeGraphite
 
 from erk.core.config_store import GlobalConfig
 from erk.core.context import context_for_test, minimal_context
 from erk.core.repo_discovery import RepoContext
+from erk_shared.git.fake import FakeGit
+from erk_shared.github.fake import FakeGitHub
+from erk_shared.integrations.graphite.fake import FakeGraphite
 from tests.fakes.shell import FakeShell
 from tests.test_utils.paths import sentinel_path
 

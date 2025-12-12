@@ -3,6 +3,7 @@
 import logging
 
 import pytest
+
 from erk_shared.github.metadata_blocks import (
     ImplementationStatusSchema,
     MetadataBlock,

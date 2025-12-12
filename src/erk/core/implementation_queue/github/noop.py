@@ -2,9 +2,8 @@
 
 from typing import Any
 
-from erk_shared.github.types import GitHubRepoLocation
-
 from erk.core.implementation_queue.github.abc import GitHubAdmin
+from erk_shared.github.types import GitHubRepoLocation
 
 
 class NoopGitHubAdmin(GitHubAdmin):

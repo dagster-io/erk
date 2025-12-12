@@ -1,8 +1,6 @@
 """Command to complete an extraction plan and mark source plans as extracted."""
 
 import click
-from erk_shared.github.metadata import find_metadata_block
-from erk_shared.output.output import user_output
 
 from erk.cli.constants import (
     DOCS_EXTRACTED_LABEL,
@@ -13,6 +11,8 @@ from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk_shared.github.metadata import find_metadata_block
+from erk_shared.output.output import user_output
 
 
 @click.command("complete")

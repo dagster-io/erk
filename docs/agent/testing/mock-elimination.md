@@ -107,7 +107,7 @@ def _get_session_id_from_file() -> str | None:
 # Test code
 def test_uses_session_id_from_file(tmp_path: Path) -> None:
     with patch(
-        "dot_agent_kit.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._get_session_id_from_file",
+        "erk_kits.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._get_session_id_from_file",
         return_value="file-session-id",
     ):
         result = runner.invoke(command, obj=DotAgentContext.for_test())

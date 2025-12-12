@@ -9,9 +9,9 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "dot-agent-kit",
     "erk",
     "erk-dev",
+    "erk-kits",
     "erk-shared",
 ]
 
@@ -284,52 +284,28 @@ toml = [
 ]
 
 [[package]]
-name = "dot-agent-kit"
-version = "0.2.1"
-source = { editable = "packages/dot-agent-kit" }
-dependencies = [
-    { name = "click" },
-    { name = "erk-shared" },
-    { name = "pathspec" },
-    { name = "pydantic" },
-    { name = "python-frontmatter" },
-    { name = "pyyaml" },
-    { name = "rich" },
-    { name = "tomli" },
-    { name = "tomli-w" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "click", specifier = ">=8.1.0" },
-    { name = "erk-shared", editable = "packages/erk-shared" },
-    { name = "pathspec", specifier = ">=0.12.0" },
-    { name = "pydantic", specifier = ">=2.0" },
-    { name = "python-frontmatter", specifier = ">=1.0.0" },
-    { name = "pyyaml", specifier = ">=6.0" },
-    { name = "rich", specifier = ">=13.0" },
-    { name = "tomli", specifier = ">=2.0" },
-    { name = "tomli-w", specifier = ">=1.0" },
-]
-
-[[package]]
 name = "erk"
 version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
-    { name = "dot-agent-kit" },
+    { name = "erk-kits" },
     { name = "erk-shared" },
+    { name = "pathspec" },
+    { name = "pydantic" },
     { name = "pyperclip" },
     { name = "python-frontmatter" },
+    { name = "pyyaml" },
+    { name = "rich" },
     { name = "textual" },
     { name = "textual-dev" },
+    { name = "tomli" },
+    { name = "tomli-w" },
     { name = "tomlkit" },
 ]
 
 [package.dev-dependencies]
 dev = [
-    { name = "dot-agent-kit" },
     { name = "erk-dev" },
     { name = "libcst" },
     { name = "pyright" },
@@ -343,18 +319,23 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.1.7" },
-    { name = "dot-agent-kit", editable = "packages/dot-agent-kit" },
+    { name = "erk-kits", editable = "packages/erk-kits" },
     { name = "erk-shared", editable = "packages/erk-shared" },
+    { name = "pathspec", specifier = ">=0.12.0" },
+    { name = "pydantic", specifier = ">=2.0" },
     { name = "pyperclip", specifier = ">=1.8.2" },
     { name = "python-frontmatter", specifier = ">=1.0.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "rich", specifier = ">=13.0" },
     { name = "textual", specifier = ">=3.0.0" },
     { name = "textual-dev", specifier = ">=1.8.0" },
+    { name = "tomli", specifier = ">=2.0" },
+    { name = "tomli-w", specifier = ">=1.0" },
     { name = "tomlkit", specifier = ">=0.12.0" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "dot-agent-kit", editable = "packages/dot-agent-kit" },
     { name = "erk-dev", editable = "packages/erk-dev" },
     { name = "libcst", specifier = ">=1.8.6" },
     { name = "pyright", specifier = ">=1.1.407" },
@@ -375,6 +356,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "click", specifier = ">=8.1.7" }]
+
+[[package]]
+name = "erk-kits"
+version = "0.2.1"
+source = { editable = "packages/erk-kits" }
 
 [[package]]
 name = "erk-shared"

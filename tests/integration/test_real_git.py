@@ -108,7 +108,6 @@ def test_detect_trunk_branch_master(
 ) -> None:
     """Test detecting trunk branch when it's master using real git."""
     from erk_shared.git.real import RealGit
-
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -128,7 +127,6 @@ def test_detect_trunk_branch_with_remote_head(
 ) -> None:
     """Test detecting trunk branch using remote HEAD with real git."""
     from erk_shared.git.real import RealGit
-
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -155,7 +153,6 @@ def test_detect_trunk_branch_neither_exists(
 ) -> None:
     """Test trunk branch detection returns 'main' when neither main nor master exist."""
     from erk_shared.git.real import RealGit
-
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -177,7 +174,6 @@ def test_detect_trunk_branch_neither_exists(
 def test_validate_trunk_branch_exists(tmp_path: Path) -> None:
     """Test validate_trunk_branch succeeds when branch exists."""
     from erk_shared.git.real import RealGit
-
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -193,7 +189,6 @@ def test_validate_trunk_branch_exists(tmp_path: Path) -> None:
 def test_validate_trunk_branch_not_exists(tmp_path: Path) -> None:
     """Test validate_trunk_branch raises RuntimeError when branch doesn't exist."""
     from erk_shared.git.real import RealGit
-
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -288,7 +283,6 @@ def test_add_worktree_from_specific_ref(
 ) -> None:
     """Test adding worktree from specific ref using real git."""
     from erk_shared.git.real import RealGit
-
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -391,7 +385,6 @@ def test_checkout_branch(
 ) -> None:
     """Test checking out a branch using real git."""
     from erk_shared.git.real import RealGit
-
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -417,7 +410,6 @@ def test_checkout_branch_in_worktree(
 ) -> None:
     """Test checking out a branch within a worktree using real git."""
     from erk_shared.git.real import RealGit
-
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -459,7 +451,6 @@ def test_remove_worktree_called_from_worktree_path(
     and use that path for the prune command.
     """
     from erk_shared.git.real import RealGit
-
     from tests.integration.conftest import init_git_repo
 
     # Setup: Create main repo and a worktree
@@ -503,7 +494,6 @@ def test_find_main_git_dir_from_worktree(
 ) -> None:
     """Test _find_main_git_dir correctly resolves main repo from a worktree."""
     from erk_shared.git.real import RealGit
-
     from tests.integration.conftest import init_git_repo
 
     # Setup: Create main repo and a worktree
@@ -536,7 +526,6 @@ def test_find_main_git_dir_from_main_repo(
 ) -> None:
     """Test _find_main_git_dir returns repo_root when called on main repo."""
     from erk_shared.git.real import RealGit
-
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -556,7 +545,6 @@ def test_find_main_git_dir_from_main_repo(
 def test_get_commit_messages_since_returns_messages(tmp_path: Path) -> None:
     """Test get_commit_messages_since returns full commit messages."""
     from erk_shared.git.real import RealGit
-
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -596,7 +584,6 @@ def test_get_commit_messages_since_returns_messages(tmp_path: Path) -> None:
 def test_get_commit_messages_since_returns_empty_for_no_commits(tmp_path: Path) -> None:
     """Test get_commit_messages_since returns empty list when no commits ahead."""
     from erk_shared.git.real import RealGit
-
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"
@@ -616,7 +603,6 @@ def test_get_commit_messages_since_returns_empty_for_no_commits(tmp_path: Path) 
 def test_get_commit_messages_since_returns_empty_for_invalid_branch(tmp_path: Path) -> None:
     """Test get_commit_messages_since returns empty list for nonexistent branch."""
     from erk_shared.git.real import RealGit
-
     from tests.integration.conftest import init_git_repo
 
     repo = tmp_path / "repo"

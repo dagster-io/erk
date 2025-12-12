@@ -2,10 +2,9 @@
 
 from pathlib import Path
 
+from erk.core.repo_discovery import RepoContext, discover_repo_or_sentinel
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
-
-from erk.core.repo_discovery import RepoContext, discover_repo_or_sentinel
 
 
 def test_discover_repo_extracts_github_identity_https(tmp_path: Path):

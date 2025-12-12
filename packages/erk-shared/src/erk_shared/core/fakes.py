@@ -1,6 +1,6 @@
 """Fake implementations for erk-specific ABCs.
 
-These fakes are used in tests and in contexts (like dot-agent-kit) that
+These fakes are used in tests and in contexts (like erk-kits) that
 don't need the real erk implementations.
 """
 

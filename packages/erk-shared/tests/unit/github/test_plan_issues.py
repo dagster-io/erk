@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.plan_issues import CreatePlanIssueResult, create_plan_issue
 

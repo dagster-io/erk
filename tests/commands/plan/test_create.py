@@ -1,10 +1,10 @@
 """Tests for plan create command."""
 
 from click.testing import CliRunner
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.metadata import find_metadata_block
 
 from erk.cli.cli import cli
+from erk_shared.github.issues.fake import FakeGitHubIssues
+from erk_shared.github.metadata import find_metadata_block
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 

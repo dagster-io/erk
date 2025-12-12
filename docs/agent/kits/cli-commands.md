@@ -615,7 +615,7 @@ def execute_assemble(plan_path: Path, discoveries_path: Path) -> None:
 
 ## Command Loading and Naming Conventions
 
-Kit CLI commands are loaded lazily by `LazyKitGroup` in `dot_agent_kit/commands/kit_command/group.py`.
+Kit CLI commands are loaded lazily by `LazyKitGroup` in `erk_kits/commands/kit_command/group.py`.
 
 ### Naming Convention
 

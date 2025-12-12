@@ -8,11 +8,11 @@ import json
 import subprocess
 from pathlib import Path
 
+from pytest import MonkeyPatch
+
 from erk_shared.github.real import RealGitHub
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
 from erk_shared.integrations.time.fake import FakeTime
-from pytest import MonkeyPatch
-
 from tests.integration.test_helpers import mock_subprocess_run
 
 

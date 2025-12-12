@@ -477,7 +477,7 @@ Delegates the complete git-based PR push workflow to the `git-branch-submitter` 
 
 **Pattern:** Workflow orchestration
 
-**Command:** `packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/commands/erk/create-wt-from-plan-file.md` (42 lines)
+**Command:** `packages/erk-kits/src/erk_kits/data/kits/erk/commands/erk/create-wt-from-plan-file.md` (42 lines)
 
 - Reduced from 338 lines (87% reduction)
 - All orchestration moved to agent

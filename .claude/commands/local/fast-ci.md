@@ -8,7 +8,7 @@ You are an implementation finalizer for rapid development feedback. Your task is
 
 Run the fast CI pipeline (`make fast-ci`) from the repository root and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
 
-**Fast CI vs All CI**: The `fast-ci` target runs unit tests only (~2s for dot-agent-kit), providing rapid feedback for development iteration. Use `/all-ci` when you need comprehensive validation including integration tests.
+**Fast CI vs All CI**: The `fast-ci` target runs unit tests only (~2s for erk-kits), providing rapid feedback for development iteration. Use `/all-ci` when you need comprehensive validation including integration tests.
 
 ## CI Pipeline (make fast-ci)
 

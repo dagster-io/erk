@@ -2,21 +2,21 @@ import logging
 
 import click
 
-from dot_agent_kit.commands.artifact.group import artifact_group
-from dot_agent_kit.commands.dev.group import dev_group
-from dot_agent_kit.commands.docs.group import docs_group
-from dot_agent_kit.commands.hook.group import hook_group
-from dot_agent_kit.commands.kit.group import kit_group
-from dot_agent_kit.commands.md.group import md_group
 from erk.cli.alias import register_with_aliases
 from erk.cli.commands.admin import admin_group
+from erk.cli.commands.artifact.group import artifact_group
 from erk.cli.commands.checkout import checkout_cmd
 from erk.cli.commands.completion import completion_group
 from erk.cli.commands.config import config_group
+from erk.cli.commands.dev.group import dev_group
+from erk.cli.commands.docs.group import docs_group
 from erk.cli.commands.doctor import doctor_cmd
 from erk.cli.commands.down import down_cmd
+from erk.cli.commands.hook.group import hook_group
 from erk.cli.commands.implement import implement
 from erk.cli.commands.init import init_cmd
+from erk.cli.commands.kit.group import kit_group
+from erk.cli.commands.md.group import md_group
 from erk.cli.commands.objective import objective_group
 from erk.cli.commands.plan import plan_group
 from erk.cli.commands.plan.list_cmd import dash
@@ -74,7 +74,7 @@ cli.add_command(wt_group)
 cli.add_command(hidden_shell_cmd)
 cli.add_command(prepare_cwd_recovery_cmd)
 
-# Kit management command groups (facade imports from dot-agent-kit)
+# Kit management command groups
 cli.add_command(artifact_group)
 cli.add_command(dev_group)
 cli.add_command(docs_group)

@@ -3,7 +3,7 @@ members = ["packages/*"]
 
 [tool.uv.sources]
 erk-dev = { workspace = true }
-dot-agent-kit = { workspace = true }
+erk-kits = { workspace = true }
 erk-shared = { workspace = true }
 
 [project]
@@ -17,11 +17,17 @@ authors = [
 requires-python = ">=3.11"
 dependencies = [
     "click>=8.1.7",
+    "pathspec>=0.12.0",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
     "python-frontmatter>=1.0.0",
+    "rich>=13.0",
     "tomlkit>=0.12.0",
+    "tomli>=2.0",
+    "tomli-w>=1.0",
     "textual>=3.0.0",
     "pyperclip>=1.8.2",
-    "dot-agent-kit",
+    "erk-kits",
     "erk-shared",
     "textual-dev>=1.8.0",
 ]
@@ -32,7 +38,6 @@ erk = "erk.cli.cli:main"
 [dependency-groups]
 dev = [
     "erk-dev",
-    "dot-agent-kit",
     "ruff>=0.5.0",
     "pytest>=8.0.0",
     "pytest-cov>=5.0.0",
@@ -65,12 +70,12 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["erk", "erk_dev", "dot_agent_kit"]
+known-first-party = ["erk", "erk_dev", "erk_kits", "erk_shared"]
 
 [tool.pyright]
 pythonVersion = "3.11"
 typeCheckingMode = "standard"
-include = ["src", "packages/erk-dev/src", "packages/dot-agent-kit/src", "packages/dot-agent-kit/tests"]
+include = ["src", "packages/erk-dev/src", "packages/erk-kits/src", "packages/erk-shared/src"]
 exclude = [".claude/skills/"]
 venvPath = "."
 venv = ".venv"
@@ -78,9 +83,6 @@ reportMissingImports = "warning"
 
 [tool.pytest.ini_options]
 addopts = "-q"
-testpaths = ["tests", "packages/erk-dev/tests", "packages/dot-agent-kit/tests"]
+testpaths = ["tests", "packages/erk-dev/tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-
-[tool.dot-agent]
-dev_mode = true

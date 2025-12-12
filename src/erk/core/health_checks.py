@@ -429,8 +429,8 @@ def check_orphaned_artifacts(repo_root: Path) -> CheckResult:
     Returns:
         CheckResult with warning if orphaned artifacts found
     """
-    from dot_agent_kit.io.state import load_project_config
-    from dot_agent_kit.operations.orphan_detection import detect_orphaned_artifacts
+    from erk.kits.io.state import load_project_config
+    from erk.kits.operations.orphan_detection import detect_orphaned_artifacts
 
     claude_dir = repo_root / ".claude"
     if not claude_dir.exists():

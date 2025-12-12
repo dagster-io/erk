@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import frontmatter
+
 from erk_shared.git.abc import Git
 
 

@@ -1,12 +1,12 @@
 ## Purpose
 
-This directory contains the kit registry system for dot-agent-kit, which manages reusable agent components (agents, commands, skills) that extend AI assistant capabilities.
+This directory contains the kit registry system for erk-kits, which manages reusable agent components (agents, commands, skills) that extend AI assistant capabilities.
 
 The kit registry provides:
 
 - **Structured catalog** of installed kits and their capabilities
 - **Machine-readable format** for AI assistants to discover available functionality
-- **Auto-generated documentation** maintained by `dot-agent kit` commands
+- **Auto-generated documentation** maintained by `erk kit` commands
 
 ## For AI Assistants
 

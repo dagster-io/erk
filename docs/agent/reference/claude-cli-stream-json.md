@@ -148,7 +148,7 @@ Metadata and initialization events. These are typically filtered out in producti
 
 For parsing stream-json output, use the production implementation:
 
-**Source**: `dot_agent_kit/data/kits/command/kit_cli_commands/command/message_parsing.py`
+**Source**: `erk_kits/data/kits/command/kit_cli_commands/command/message_parsing.py`
 
 Functions available:
 

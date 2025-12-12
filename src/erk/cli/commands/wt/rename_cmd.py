@@ -1,6 +1,4 @@
 import click
-from erk_shared.naming import sanitize_worktree_name
-from erk_shared.output.output import user_output
 
 from erk.cli.commands.completions import complete_worktree_names
 from erk.cli.commands.wt.create_cmd import make_env_content
@@ -8,6 +6,8 @@ from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk_shared.naming import sanitize_worktree_name
+from erk_shared.output.output import user_output
 
 
 @click.command("rename")

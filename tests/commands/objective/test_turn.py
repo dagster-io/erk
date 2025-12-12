@@ -1,6 +1,8 @@
 """Tests for erk objective turn command."""
 
 from click.testing import CliRunner
+
+from erk.cli.commands.objective import objective_group
 from erk_shared.git.fake import FakeGit
 from erk_shared.objectives.storage import FakeObjectiveStore
 from erk_shared.objectives.types import (
@@ -8,8 +10,6 @@ from erk_shared.objectives.types import (
     ObjectiveNotes,
     ObjectiveType,
 )
-
-from erk.cli.commands.objective import objective_group
 from tests.fakes.claude_executor import FakeClaudeExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env

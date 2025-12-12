@@ -12,6 +12,7 @@ Two-layer architecture:
 import re
 
 import click
+
 from erk_shared.github.parsing import (
     parse_issue_number_from_url,
     parse_pr_number_from_url,

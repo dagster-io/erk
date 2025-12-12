@@ -4,6 +4,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import click
+
+from erk.cli.core import discover_repo_context
+from erk.cli.github_parsing import parse_issue_identifier
+from erk.core.context import ErkContext
+from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.metadata import (
     PlanHeaderSchema,
@@ -11,11 +16,6 @@ from erk_shared.github.metadata import (
     find_metadata_block,
 )
 from erk_shared.output.output import user_output
-
-from erk.cli.core import discover_repo_context
-from erk.cli.github_parsing import parse_issue_identifier
-from erk.core.context import ErkContext
-from erk.core.repo_discovery import ensure_erk_metadata_dir
 
 
 @dataclass(frozen=True)

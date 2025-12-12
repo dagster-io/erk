@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 import pytest
+
 from erk_shared.git.abc import Git
 from erk_shared.git.real import RealGit
 

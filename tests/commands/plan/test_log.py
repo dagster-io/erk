@@ -4,6 +4,8 @@ import json
 from datetime import UTC, datetime
 
 from click.testing import CliRunner
+
+from erk.cli.cli import cli
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.metadata import (
     create_implementation_status_block,
@@ -14,8 +16,6 @@ from erk_shared.github.metadata import (
 )
 from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
-
-from erk.cli.cli import cli
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 

@@ -37,16 +37,16 @@ packages/erk-shared/src/erk_shared/integrations/gt/
 
 - ✅ All actual code goes here
 - ❌ NO imports from `erk` package
-- ❌ NO imports from `dot-agent-kit` package
+- ❌ NO imports from `erk-kits` package
 
-### Layer 2: Kit Definition (dot-agent-kit)
+### Layer 2: Kit Definition (erk-kits)
 
-**Location**: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/[kit_name]/`
+**Location**: `packages/erk-kits/src/erk_kits/data/kits/[kit_name]/`
 
 **What goes here**: Kit metadata only (no code)
 
 ```
-packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/
+packages/erk-kits/src/erk_kits/data/kits/gt/
 ├── kit.yaml                         # Kit metadata
 ├── kit_cli_commands/
 │   └── gt/
@@ -61,7 +61,7 @@ packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/
 - ✅ Kit metadata (kit.yaml, agents/, commands/, skills/)
 - ✅ Kit CLI commands can be implemented directly (no need for shims)
 - ❌ NO re-export shims (all re-exports have been eliminated)
-- ❌ NO imports from `erk` package or `dot-agent-kit` package
+- ❌ NO imports from `erk` package or `erk-kits` package
 
 **Note**: Re-export shims (like `ops.py`, `real_ops.py`, `submit_branch.py`, `pr_update.py`, `prompts.py`) have been removed as part of the re-export elimination effort. All consumers now import directly from canonical sources in erk-shared.
 
@@ -69,7 +69,7 @@ packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/
 
 ```
 ┌───────────────────────────────────────┐
-│ dot-agent-kit/data/kits/gt/           │
+│ erk-kits/data/kits/gt/           │
 │   ├── kit.yaml                        │
 │   ├── agents/                         │
 │   ├── commands/                       │
@@ -100,7 +100,7 @@ from erk_shared.integrations.gt.operations.preflight import execute_preflight
 from erk_shared.integrations.gt.types import PreflightResult
 
 # ❌ WRONG - don't import from kit location (CLI wrappers)
-from dot_agent_kit.data.kits.gt.kit_cli_commands.gt.submit_branch import pr_submit
+from erk_kits.data.kits.gt.kit_cli_commands.gt.submit_branch import pr_submit
 ```
 
 ## Validation Test
@@ -113,12 +113,12 @@ def test_gt_kit_architecture() -> None:
     ops = Path("packages/erk-shared/src/erk_shared/integrations/gt/operations/preflight.py")
     assert ops.exists()
 
-    # Layer 2: CLI wrappers exist in dot-agent-kit
-    cli = Path("packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/kit_cli_commands/gt/submit_branch.py")
+    # Layer 2: CLI wrappers exist in erk-kits
+    cli = Path("packages/erk-kits/src/erk_kits/data/kits/gt/kit_cli_commands/gt/submit_branch.py")
     assert cli.exists()
 
-    # Layer 3: Kit metadata exists in dot-agent-kit
-    kit_yaml = Path("packages/dot-agent-kit/src/dot_agent_kit/data/kits/gt/kit.yaml")
+    # Layer 3: Kit metadata exists in erk-kits
+    kit_yaml = Path("packages/erk-kits/src/erk_kits/data/kits/gt/kit.yaml")
     assert kit_yaml.exists()
 ```
 
@@ -128,9 +128,9 @@ def test_gt_kit_architecture() -> None:
 A: `packages/erk-shared/src/erk_shared/integrations/[kit_name]/kit_cli_commands/`
 
 **Q: Where do I define the kit structure?**
-A: `packages/dot-agent-kit/src/dot_agent_kit/data/kits/[kit_name]/kit.yaml`
+A: `packages/erk-kits/src/erk_kits/data/kits/[kit_name]/kit.yaml`
 
-**Q: What goes in kit_cli_commands in dot-agent-kit?**
+**Q: What goes in kit_cli_commands in erk-kits?**
 A: Only kit CLI commands that don't belong in erk-shared (very rare). Most kit CLI commands live in erk-shared.
 
 **Q: How do I know if code belongs in erk-shared?**

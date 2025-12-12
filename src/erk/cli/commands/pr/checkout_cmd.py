@@ -4,8 +4,6 @@ This command fetches PR code and creates a worktree for local review/testing.
 """
 
 import click
-from erk_shared.github.types import PRNotFound
-from erk_shared.output.output import user_output
 
 from erk.cli.activation import render_activation_script
 from erk.cli.alias import alias
@@ -14,6 +12,8 @@ from erk.cli.core import worktree_path_for
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+from erk_shared.github.types import PRNotFound
+from erk_shared.output.output import user_output
 
 
 @alias("co")

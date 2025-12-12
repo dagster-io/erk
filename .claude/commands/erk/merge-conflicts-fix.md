@@ -1,1 +1,25 @@
-../../../packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/commands/erk/merge-conflicts-fix.md
+---
+description: Fix all merge conflicts and continue the git rebase
+---
+
+# Fix Merge Conflicts
+
+Fix all merge conflicts and continue the git rebase.
+
+## Steps
+
+1. **Check status** - Run `git status` to understand the state of the rebase and identify conflicted files
+
+2. **For each conflicted file:**
+
+<!-- prettier-ignore -->
+@../../docs/erk/includes/conflict-resolution.md
+
+3. **After resolving all conflicts:**
+   - If project memory includes a precommit check, run it and ensure no failures
+   - Stage the resolved files with `git add`
+   - Continue the rebase with `gt continue`
+
+4. **Loop** - If the rebase continues with more conflicts, repeat the process
+
+5. **Verify completion** - Check git status and recent commit history to confirm success

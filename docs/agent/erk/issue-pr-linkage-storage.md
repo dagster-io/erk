@@ -40,7 +40,7 @@ Slash commands that create PRs read the issue reference from local storage:
 2. If found, append `Closes #N` to PR body
 3. Uses `erk kit exec erk get-closing-text` to read the reference
 
-**Key implementation**: `packages/dot-agent-kit/.../get_closing_text.py`
+**Key implementation**: `packages/erk-kits/.../get_closing_text.py`
 
 ## Storage Locations
 
@@ -137,7 +137,7 @@ gh pr view --json body -q '.body'
 | ------------------------ | ---------------------------------------------------- |
 | Issue reference reading  | `packages/erk-shared/src/erk_shared/impl_folder.py`  |
 | PR creation with Closes  | `src/erk/cli/commands/submit.py`                     |
-| Get closing text command | `packages/dot-agent-kit/.../get_closing_text.py`     |
+| Get closing text command | `packages/erk-kits/.../get_closing_text.py`          |
 | Timeline event parsing   | `packages/erk-shared/src/erk_shared/github/real.py`  |
 | PullRequestInfo type     | `packages/erk-shared/src/erk_shared/github/types.py` |
 

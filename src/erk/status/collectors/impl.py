@@ -3,16 +3,16 @@
 from pathlib import Path
 
 import frontmatter
+
+from erk.core.context import ErkContext
+from erk.status.collectors.base import StatusCollector
+from erk.status.models.status_data import PlanStatus
 from erk_shared.impl_folder import (
     get_impl_path,
     get_progress_path,
     parse_progress_frontmatter,
     read_issue_reference,
 )
-
-from erk.core.context import ErkContext
-from erk.status.collectors.base import StatusCollector
-from erk.status.models.status_data import PlanStatus
 
 
 def detect_enriched_plan(repo_root: Path) -> tuple[Path | None, str | None]:

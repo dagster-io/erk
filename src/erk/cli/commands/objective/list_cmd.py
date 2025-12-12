@@ -1,10 +1,10 @@
 """Command to list all objectives in the repository."""
 
 import click
-from erk_shared.output.output import user_output
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
+from erk_shared.output.output import user_output
 
 
 @click.command("list")

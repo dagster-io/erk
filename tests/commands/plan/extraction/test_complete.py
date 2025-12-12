@@ -6,12 +6,12 @@ Layer 4 (Business Logic Tests): Tests extraction complete command using fakes.
 from datetime import UTC, datetime
 
 from click.testing import CliRunner
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata import format_plan_header_body
 
 from erk.cli.cli import cli
 from erk.cli.constants import DOCS_EXTRACTED_LABEL, ERK_EXTRACTION_LABEL, ERK_PLAN_LABEL
+from erk_shared.github.issues.fake import FakeGitHubIssues
+from erk_shared.github.issues.types import IssueInfo
+from erk_shared.github.metadata import format_plan_header_body
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 

@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 

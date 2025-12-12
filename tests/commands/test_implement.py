@@ -5,12 +5,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
+
+from erk.cli.commands.implement import _detect_target_type, implement
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
-
-from erk.cli.commands.implement import _detect_target_type, implement
 from tests.fakes.claude_executor import FakeClaudeExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env

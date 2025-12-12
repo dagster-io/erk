@@ -18,16 +18,16 @@ Flow:
 from pathlib import Path
 
 import click
-from erk_shared.github.types import PRNotFound
-from erk_shared.integrations.gt.events import CompletionEvent
-from erk_shared.integrations.gt.operations import execute_squash
-from erk_shared.integrations.gt.types import SquashError
-from erk_shared.output.output import user_output
 
 from erk.cli.ensure import Ensure
 from erk.cli.output import stream_auto_restack
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+from erk_shared.github.types import PRNotFound
+from erk_shared.integrations.gt.events import CompletionEvent
+from erk_shared.integrations.gt.operations import execute_squash
+from erk_shared.integrations.gt.types import SquashError
+from erk_shared.output.output import user_output
 
 
 def _squash_commits(ctx: ErkContext, repo_root: Path) -> None:

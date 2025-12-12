@@ -11,10 +11,9 @@ from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
 
+from erk.core.claude_executor import ClaudeExecutor
 from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.integrations.gt.prompts import COMMIT_MESSAGE_SYSTEM_PROMPT
-
-from erk.core.claude_executor import ClaudeExecutor
 
 
 @dataclass

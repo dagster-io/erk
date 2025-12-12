@@ -10,6 +10,17 @@ from pathlib import Path
 import click
 import tomlkit
 
+from erk.cli.config import load_config
+from erk.core.claude_executor import RealClaudeExecutor
+from erk.core.completion import RealCompletion
+from erk.core.config_store import RealConfigStore
+from erk.core.planner.registry_real import RealPlannerRegistry
+from erk.core.project_discovery import ProjectContext, discover_project
+from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
+from erk.core.script_writer import RealScriptWriter
+from erk.core.services.plan_list_service import RealPlanListService
+from erk.core.shell import RealShell
+
 # Re-export ErkContext from erk_shared for isinstance() compatibility
 # This ensures that both erk CLI and kit commands use the same class identity
 from erk_shared.context.context import ErkContext as ErkContext
@@ -56,17 +67,6 @@ from erk_shared.plan_store.store import PlanStore
 from erk_shared.prompt_executor import PromptExecutor
 from erk_shared.prompt_executor.real import RealPromptExecutor
 
-from erk.cli.config import load_config
-from erk.core.claude_executor import RealClaudeExecutor
-from erk.core.completion import RealCompletion
-from erk.core.config_store import RealConfigStore
-from erk.core.planner.registry_real import RealPlannerRegistry
-from erk.core.project_discovery import ProjectContext, discover_project
-from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
-from erk.core.script_writer import RealScriptWriter
-from erk.core.services.plan_list_service import RealPlanListService
-from erk.core.shell import RealShell
-
 
 def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     """Create minimal context with only git configured, rest are test defaults.
@@ -86,6 +86,11 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         For more complex test setup with custom configs or multiple integration classes,
         use context_for_test() instead.
     """
+    from tests.fakes.claude_executor import FakeClaudeExecutor
+    from tests.fakes.script_writer import FakeScriptWriter
+
+    from erk.core.config_store import FakeConfigStore
+    from erk.core.planner.registry_fake import FakePlannerRegistry
     from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues import FakeGitHubIssues
@@ -97,11 +102,6 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk_shared.objectives.storage import FakeObjectiveStore
     from erk_shared.plan_store.fake import FakePlanStore
     from erk_shared.prompt_executor.fake import FakePromptExecutor
-    from tests.fakes.claude_executor import FakeClaudeExecutor
-    from tests.fakes.script_writer import FakeScriptWriter
-
-    from erk.core.config_store import FakeConfigStore
-    from erk.core.planner.registry_fake import FakePlannerRegistry
 
     fake_github = FakeGitHub()
     fake_issues = FakeGitHubIssues()
@@ -196,6 +196,12 @@ def context_for_test(
     Returns:
         ErkContext configured with provided values and test defaults
     """
+    from tests.fakes.claude_executor import FakeClaudeExecutor
+    from tests.fakes.script_writer import FakeScriptWriter
+    from tests.test_utils.paths import sentinel_path
+
+    from erk.core.config_store import FakeConfigStore
+    from erk.core.planner.registry_fake import FakePlannerRegistry
     from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
@@ -209,12 +215,6 @@ def context_for_test(
     from erk_shared.objectives.storage import FakeObjectiveStore
     from erk_shared.plan_store.fake import FakePlanStore
     from erk_shared.prompt_executor.fake import FakePromptExecutor
-    from tests.fakes.claude_executor import FakeClaudeExecutor
-    from tests.fakes.script_writer import FakeScriptWriter
-    from tests.test_utils.paths import sentinel_path
-
-    from erk.core.config_store import FakeConfigStore
-    from erk.core.planner.registry_fake import FakePlannerRegistry
 
     if git is None:
         git = FakeGit()

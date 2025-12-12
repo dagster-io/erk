@@ -2,8 +2,6 @@
 
 from datetime import UTC, datetime
 
-from erk_shared.github.types import WorkflowRun
-
 from erk.core.display_utils import (
     format_relative_time,
     format_submission_time,
@@ -12,6 +10,7 @@ from erk.core.display_utils import (
     format_worktree_line,
     get_workflow_run_state,
 )
+from erk_shared.github.types import WorkflowRun
 
 
 def test_pr_title_uses_cyan() -> None:

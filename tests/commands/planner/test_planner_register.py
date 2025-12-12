@@ -4,12 +4,12 @@ from datetime import UTC, datetime
 from unittest.mock import patch
 
 from click.testing import CliRunner
-from erk_shared.integrations.time.fake import FakeTime
 
 from erk.cli.cli import cli
 from erk.core.context import context_for_test
 from erk.core.planner.registry_fake import FakePlannerRegistry
 from erk.core.planner.types import RegisteredPlanner
+from erk_shared.integrations.time.fake import FakeTime
 
 
 def _make_planner(

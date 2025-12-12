@@ -1,10 +1,10 @@
 """Project init command - initialize a project in the current directory."""
 
 import click
-from erk_shared.output.output import user_output
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
+from erk_shared.output.output import user_output
 
 # Template for project.toml
 PROJECT_TOML_TEMPLATE = """\

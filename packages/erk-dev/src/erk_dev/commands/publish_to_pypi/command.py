@@ -134,9 +134,9 @@ def get_workspace_packages(repo_root: Path) -> list[PackageInfo]:
     """Get all publishable packages in workspace."""
     packages = [
         PackageInfo(
-            name="dot-agent-kit",
-            path=repo_root / "packages" / "dot-agent-kit",
-            pyproject_path=repo_root / "packages" / "dot-agent-kit" / "pyproject.toml",
+            name="erk-kits",
+            path=repo_root / "packages" / "erk-kits",
+            pyproject_path=repo_root / "packages" / "erk-kits" / "pyproject.toml",
         ),
         PackageInfo(
             name="erk",
@@ -480,7 +480,7 @@ def publish_workflow(dry_run: bool) -> None:
         excluded_files = {
             "pyproject.toml",
             "uv.lock",
-            "packages/dot-agent-kit/pyproject.toml",
+            "packages/erk-kits/pyproject.toml",
         }
         lines = filter_git_status(status, excluded_files)
 

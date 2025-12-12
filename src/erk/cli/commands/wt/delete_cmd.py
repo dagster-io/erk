@@ -3,9 +3,6 @@ import subprocess
 from pathlib import Path
 
 import click
-from erk_shared.git.abc import Git
-from erk_shared.integrations.graphite.abc import Graphite
-from erk_shared.output.output import user_output
 
 from erk.cli.commands.completions import complete_worktree_names
 from erk.cli.commands.navigation_helpers import check_pending_extraction_marker
@@ -21,6 +18,9 @@ from erk.core.worktree_utils import (
     find_worktree_containing_path,
     get_worktree_branch,
 )
+from erk_shared.git.abc import Git
+from erk_shared.integrations.graphite.abc import Graphite
+from erk_shared.output.output import user_output
 
 
 def _try_git_worktree_delete(git_ops: Git, repo_root: Path, wt_path: Path) -> bool:

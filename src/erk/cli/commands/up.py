@@ -1,5 +1,4 @@
 import click
-from erk_shared.output.output import machine_output, user_output
 
 from erk.cli.activation import render_activation_script
 from erk.cli.commands.navigation_helpers import (
@@ -15,6 +14,7 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.worktree_utils import compute_relative_path_in_worktree
+from erk_shared.output.output import machine_output, user_output
 
 
 @click.command("up")

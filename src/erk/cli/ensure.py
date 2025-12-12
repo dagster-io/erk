@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import click
+
 from erk_shared.github.types import PRDetails
 from erk_shared.non_ideal_state import (
     BranchDetectionFailed,

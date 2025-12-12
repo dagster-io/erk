@@ -1,1 +1,1 @@
-../../../../../packages/dot-agent-kit/src/dot_agent_kit/data/kits/erk/docs/erk/includes/planning/validate-prerequisites.md
+../../../../../packages/erk-kits/src/erk_kits/data/kits/erk/docs/erk/includes/planning/validate-prerequisites.md

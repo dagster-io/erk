@@ -4,10 +4,9 @@ This module provides the RealScriptWriter implementation.
 ABC and types are imported from erk_shared.core.
 """
 
+from erk.cli.shell_utils import write_script_to_temp
 from erk_shared.core.script_writer import ScriptResult as ScriptResult
 from erk_shared.core.script_writer import ScriptWriter as ScriptWriter
-
-from erk.cli.shell_utils import write_script_to_temp
 
 
 class RealScriptWriter(ScriptWriter):

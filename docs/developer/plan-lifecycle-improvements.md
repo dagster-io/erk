@@ -693,8 +693,8 @@ Replaced custom `derive_branch_name_with_date()` with GitHub's native `gh issue 
 ### Files Deleted (Custom Code Removed)
 
 - `packages/erk-shared/src/erk_shared/naming.py` (partial - derive_branch_name_with_date)
-- `packages/dot-agent-kit/.../get_closing_text.py`
-- `packages/dot-agent-kit/.../get_pr_metadata.py`
+- `packages/erk-kits/.../get_closing_text.py`
+- `packages/erk-kits/.../get_pr_metadata.py`
 - `src/erk/cli/constants.py` - `USE_GITHUB_NATIVE_BRANCH_LINKING` flag
 
 ### New Abstractions Added (Subsequently Removed)

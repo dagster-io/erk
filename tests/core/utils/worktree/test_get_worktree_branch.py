@@ -2,9 +2,8 @@
 
 from pathlib import Path
 
-from erk_shared.git.abc import WorktreeInfo
-
 from erk.core.worktree_utils import get_worktree_branch
+from erk_shared.git.abc import WorktreeInfo
 
 
 def test_returns_branch_for_worktree() -> None:
