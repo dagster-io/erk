@@ -40,13 +40,13 @@ erk pr submit "Release vX.Y.Z"
 
 This creates a PR with the version bump and changelog updates. Merge it to master once CI passes.
 
-### 4. Create GitHub Release
+### 4. Publish to PyPI
 
 ```bash
-gh release create vX.Y.Z --title "vX.Y.Z" --notes-file /tmp/release-notes.md
+make publish
 ```
 
-Or create via GitHub UI at https://github.com/dagster-io/erk/releases/new
+This builds and publishes all packages to PyPI in dependency order.
 
 ## Version Numbering
 
