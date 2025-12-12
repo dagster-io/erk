@@ -29,13 +29,25 @@ class ReleaseEntry:
 
 
 @cache
-def _changelog_path() -> Path:
-    """Get the path to the bundled CHANGELOG.md.
+def _changelog_path() -> Path | None:
+    """Get the path to CHANGELOG.md.
+
+    In development, reads from repo root. In installed package, reads from bundled data dir.
 
     Returns:
-        Path to CHANGELOG.md bundled with the package
+        Path to CHANGELOG.md if found, None otherwise
     """
-    return Path(__file__).parent.parent / "data" / "CHANGELOG.md"
+    # Bundled location (installed package via force-include)
+    bundled = Path(__file__).parent.parent / "data" / "CHANGELOG.md"
+    if bundled.exists():
+        return bundled
+
+    # Development fallback: repo root (3 levels up from src/erk/core/)
+    dev_root = Path(__file__).parent.parent.parent.parent / "CHANGELOG.md"
+    if dev_root.exists():
+        return dev_root
+
+    return None
 
 
 @cache
@@ -170,13 +182,13 @@ def parse_changelog(content: str) -> list[ReleaseEntry]:
 
 
 def get_changelog_content() -> str | None:
-    """Read the bundled CHANGELOG.md content.
+    """Read the CHANGELOG.md content.
 
     Returns:
         Changelog content if file exists, None otherwise
     """
     path = _changelog_path()
-    if not path.exists():
+    if path is None:
         return None
     return path.read_text(encoding="utf-8")
 
