@@ -34,7 +34,7 @@ class FilesystemArtifactRepository(ArtifactRepository):
 
         Args:
             project_dir: Project root directory
-            config: Project configuration from dot-agent.toml
+            config: Project configuration from kits.toml
 
         Returns:
             List of all installed artifacts with metadata
@@ -304,7 +304,7 @@ class FilesystemArtifactRepository(ArtifactRepository):
         Args:
             user_path: User-level .claude directory (e.g., ~/.claude)
             project_path: Project-level .claude directory (e.g., ./.claude)
-            project_config: Project configuration from dot-agent.toml
+            project_config: Project configuration from kits.toml
 
         Returns:
             List of artifacts from both levels with level annotation
@@ -586,13 +586,13 @@ class FilesystemArtifactRepository(ArtifactRepository):
     ) -> dict[str, BundledKitInfo]:
         """Discover bundled kits that are installed in project config.
 
-        Only returns bundled kits that are listed in the project's dot-agent.toml
+        Only returns bundled kits that are listed in the project's kits.toml
         configuration file. Shows their CLI commands and available docs.
 
         Args:
             user_path: User-level .claude directory (e.g., ~/.claude)
             project_path: Project-level .claude directory (e.g., ./.claude)
-            project_config: Project configuration from dot-agent.toml
+            project_config: Project configuration from kits.toml
 
         Returns:
             Dict mapping kit_id to BundledKitInfo with CLI commands and available docs

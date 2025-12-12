@@ -126,7 +126,7 @@ def discover_all_artifacts(project_dir: Path, config: ProjectConfig) -> list[Ins
 
     Args:
         project_dir: Project root directory
-        config: Project configuration from dot-agent.toml
+        config: Project configuration from kits.toml
 
     Returns:
         List of all installed artifacts with metadata

@@ -9,7 +9,7 @@ from typing import Literal
 class ArtifactSource(Enum):
     """Source type of an installed artifact."""
 
-    MANAGED = "managed"  # Tracked in dot-agent.toml
+    MANAGED = "managed"  # Tracked in kits.toml
     LOCAL = "local"  # Created manually, no kit association
 
 

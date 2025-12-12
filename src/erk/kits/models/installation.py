@@ -17,7 +17,3 @@ class InstallationContext:
     def get_claude_dir(self) -> Path:
         """Get the .claude directory path for this installation."""
         return self.base_path / ".claude"
-
-    def get_config_path(self) -> Path:
-        """Get the dot-agent.toml path for this installation."""
-        return self.base_path / "dot-agent.toml"

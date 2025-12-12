@@ -265,7 +265,7 @@ def add_kit_to_registry(kit_id: str, project_dir: Path, version: str, source_typ
 
     # Check if this is old format (no BEGIN_ENTRIES marker)
     if "<!-- BEGIN_ENTRIES -->" not in content:
-        # Migrate to new format by rebuilding from dot-agent.toml
+        # Migrate to new format by rebuilding from kits.toml
         config = load_project_config(project_dir)
         entries = []
         if config is not None:
