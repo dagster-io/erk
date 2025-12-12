@@ -48,6 +48,11 @@ def execute_restack_preflight(
         if isinstance(event, CompletionEvent):
             result = event.result
             if isinstance(result, SquashError):
+                # Get conflicts if available (squash_conflict leaves rebase in progress)
+                conflicts: list[str] = []
+                if result.error == "squash_conflict":
+                    conflicts = ops.git.get_conflicted_files(cwd)
+
                 yield CompletionEvent(
                     RestackPreflightError(
                         success=False,
@@ -58,6 +63,7 @@ def execute_restack_preflight(
                         else "no_commits",
                         message=result.message,
                         details={"squash_error": result.error},
+                        conflicts=conflicts,
                     )
                 )
                 return

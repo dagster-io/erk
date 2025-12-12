@@ -78,6 +78,7 @@ class TestRestackPreflight:
         assert isinstance(result, RestackPreflightError)
         assert result.success is False
         assert result.error_type == "squash_failed"
+        assert result.conflicts == []  # Non-conflict errors have empty conflicts list
 
     def test_no_commits_returns_error(self, tmp_path: Path) -> None:
         """Test error when no commits to squash."""
@@ -94,9 +95,29 @@ class TestRestackPreflight:
         assert isinstance(result, RestackPreflightError)
         assert result.success is False
         assert result.error_type == "no_commits"
+        assert result.conflicts == []  # Non-conflict errors have empty conflicts list
 
     def test_squash_conflict_returns_error(self, tmp_path: Path) -> None:
         """Test error when squash has conflicts."""
+        ops = (
+            FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
+            .with_branch("feature-branch", parent="main")
+            .with_commits(3)
+            .with_squash_conflict()
+            .with_conflicts(["conflict1.py", "conflict2.py"])
+            .with_clean_working_tree()
+        )
+
+        result = render_events(execute_restack_preflight(ops, tmp_path))
+
+        assert isinstance(result, RestackPreflightError)
+        assert result.success is False
+        assert result.error_type == "squash_conflict"
+        assert result.conflicts == ["conflict1.py", "conflict2.py"]
+
+    def test_squash_conflict_with_no_conflict_files(self, tmp_path: Path) -> None:
+        """Test squash conflict error when no conflict files detected (edge case)."""
         ops = (
             FakeGtKitOps()
             .with_repo_root(str(tmp_path))
@@ -111,6 +132,7 @@ class TestRestackPreflight:
         assert isinstance(result, RestackPreflightError)
         assert result.success is False
         assert result.error_type == "squash_conflict"
+        assert result.conflicts == []  # No conflicts detected, defaults to empty list
 
     def test_dirty_working_tree_auto_commits(self, tmp_path: Path) -> None:
         """Test that uncommitted changes are auto-committed before restack."""
