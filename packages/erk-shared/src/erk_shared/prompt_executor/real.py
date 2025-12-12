@@ -34,11 +34,11 @@ class RealPromptExecutor(PromptExecutor):
             "--model",
             model,
             "--dangerously-skip-permissions",
-            prompt,
         ]
 
         result = subprocess.run(
             cmd,
+            input=prompt,
             capture_output=True,
             text=True,
             cwd=cwd,
