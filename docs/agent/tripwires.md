@@ -11,6 +11,8 @@ read_when:
 
 Action-triggered rules that fire when you're about to perform specific actions.
 
+**CRITICAL: Before passing prompt as command-line argument to Claude CLI** → Read [Claude CLI Integration from Python](architecture/claude-cli-integration.md) first. Use input= parameter for stdin to avoid OSError with large prompts.
+
 **CRITICAL: Before choosing between execute_interactive and execute_interactive_command** → Read [ClaudeExecutor Pattern Documentation](architecture/claude-executor-patterns.md) first. execute_interactive() NEVER returns (uses os.execvp). Use execute_interactive_command() if you need control to return.
 
 **CRITICAL: Before passing dry_run boolean flags through function parameters** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. Use dependency injection with DryRunGit/DryRunGitHub wrappers instead of boolean flags.
