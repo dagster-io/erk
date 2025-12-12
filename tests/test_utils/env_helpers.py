@@ -130,8 +130,8 @@ class ErkIsolatedFsEnv:
         self._repo = RepoContext(
             root=root_worktree,
             repo_name=root_worktree.name,
-            repo_dir=erk_root / root_worktree.name,
-            worktrees_dir=erk_root / root_worktree.name / "worktrees",
+            repo_dir=erk_root / "repos" / root_worktree.name,
+            worktrees_dir=erk_root / "repos" / root_worktree.name / "worktrees",
             github=GitHubRepoId(owner="owner", repo="repo"),
         )
 
