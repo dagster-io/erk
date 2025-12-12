@@ -3,10 +3,8 @@ version = "1"
 [kits.erk]
 kit_id = "erk"
 source_type = "bundled"
-version = "0.2.1"
+version = "0.2.4"
 artifacts = [
-    ".claude/skills/erk/SKILL.md",
-    ".claude/skills/erk/references/erk.md",
     ".claude/commands/erk/plan-implement.md",
     ".claude/commands/erk/merge-conflicts-fix.md",
     ".claude/commands/erk/submit-plan.md",
@@ -59,7 +57,7 @@ timeout = 30
 [kits.gt]
 kit_id = "gt"
 source_type = "bundled"
-version = "0.2.1"
+version = "0.2.3"
 artifacts = [
     ".claude/commands/gt/pr-submit.md",
     ".claude/skills/gt-graphite/SKILL.md",
@@ -69,7 +67,7 @@ artifacts = [
 [kits.git]
 kit_id = "git"
 source_type = "bundled"
-version = "0.1.0"
+version = "0.2.3"
 artifacts = [
     ".claude/commands/git/pr-push.md",
     ".claude/agents/git/git-branch-submitter.md",
@@ -78,7 +76,7 @@ artifacts = [
 [kits.devrun]
 kit_id = "devrun"
 source_type = "bundled"
-version = "0.2.1"
+version = "0.2.3"
 artifacts = [
     ".claude/agents/devrun/devrun.md",
     ".claude/docs/devrun/tools/gt.md",
@@ -100,7 +98,7 @@ timeout = 30
 [kits.dignified-python]
 kit_id = "dignified-python"
 source_type = "bundled"
-version = "0.2.1"
+version = "0.2.3"
 artifacts = [
     ".claude/skills/dignified-python-310/SKILL.md",
     ".claude/skills/dignified-python-311/SKILL.md",
@@ -129,7 +127,7 @@ timeout = 30
 [kits.fake-driven-testing]
 kit_id = "fake-driven-testing"
 source_type = "bundled"
-version = "0.2.1"
+version = "0.2.3"
 artifacts = [
     ".claude/skills/fake-driven-testing/SKILL.md",
 ]
