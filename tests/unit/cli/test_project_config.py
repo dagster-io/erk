@@ -5,6 +5,7 @@ from pathlib import Path
 from erk.cli.config import (
     LoadedConfig,
     ProjectConfig,
+    load_config,
     load_project_config,
     merge_configs,
 )
@@ -210,3 +211,64 @@ class TestProjectConfig:
 
         with pytest.raises(AttributeError):
             cfg.name = "new-name"  # type: ignore[misc]
+
+
+class TestLoadConfig:
+    """Tests for load_config function."""
+
+    def test_returns_defaults_when_no_config_exists(self, tmp_path: Path) -> None:
+        """Returns default config when no config.toml exists anywhere."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+
+        result = load_config(repo_root)
+
+        assert result.env == {}
+        assert result.post_create_commands == []
+        assert result.post_create_shell is None
+
+    def test_loads_from_primary_location(self, tmp_path: Path) -> None:
+        """Loads config from .erk/config.toml (primary location)."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            '[env]\nFOO = "bar"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.env == {"FOO": "bar"}
+
+    def test_ignores_legacy_repo_root_config(self, tmp_path: Path) -> None:
+        """Does not load config from legacy repo root location.
+
+        Legacy configs at repo root are detected by 'erk doctor', not loaded.
+        """
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        (repo_root / "config.toml").write_text(
+            '[env]\nLEGACY = "value"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        # Legacy location is NOT loaded - use 'erk doctor' to detect and migrate
+        assert result.env == {}
+
+    def test_loads_post_create_commands(self, tmp_path: Path) -> None:
+        """Loads post_create commands from config."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            '[post_create]\ncommands = ["cmd1", "cmd2"]\nshell = "bash"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.post_create_commands == ["cmd1", "cmd2"]
+        assert result.post_create_shell == "bash"

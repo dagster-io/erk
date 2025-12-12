@@ -141,52 +141,6 @@ def test_init_detects_graphite_not_installed() -> None:
         assert not loaded_config.use_graphite
 
 
-def test_init_skips_global_with_repo_flag() -> None:
-    """Test that --repo flag skips global config creation."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        erk_root = env.cwd / "erks"
-
-        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
-
-        global_config_ops = FakeConfigStore(config=global_config)
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            config_store=global_config_ops,
-            global_config=global_config,
-        )
-
-        result = runner.invoke(cli, ["init", "--repo"], obj=test_ctx)
-
-        assert result.exit_code == 0, result.output
-        assert "Global config not found" not in result.output
-        assert (env.cwd / "config.toml").exists()
-
-
-def test_init_fails_repo_flag_without_global_config() -> None:
-    """Test that --repo flag fails when global config doesn't exist."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        # Config doesn't exist - this is the error case being tested
-        global_config_ops = FakeConfigStore(config=None)
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            config_store=global_config_ops,
-            global_config=None,
-        )
-
-        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init", "--repo"], obj=test_ctx)
-
-        assert result.exit_code == 1
-        assert "Global config not found" in result.output
-        assert "Run 'erk init' without --repo" in result.output
-
-
 def test_init_auto_preset_detects_dagster() -> None:
     """Test that auto preset detects dagster repo and uses dagster preset."""
     runner = CliRunner()
@@ -211,9 +165,8 @@ def test_init_auto_preset_detects_dagster() -> None:
         result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        # Config should be created in erks_dir
-        repo_dir = erk_root / "repos" / env.cwd.name
-        config_path = repo_dir / "config.toml"
+        # Config should be created in .erk/ directory (consolidated location)
+        config_path = env.cwd / ".erk" / "config.toml"
         assert config_path.exists()
 
 
@@ -241,8 +194,8 @@ def test_init_auto_preset_uses_generic_fallback() -> None:
         result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        repo_dir = erk_root / "repos" / env.cwd.name
-        config_path = repo_dir / "config.toml"
+        # Config should be created in .erk/ directory (consolidated location)
+        config_path = env.cwd / ".erk" / "config.toml"
         assert config_path.exists()
 
 
@@ -266,8 +219,8 @@ def test_init_explicit_preset_dagster() -> None:
         result = runner.invoke(cli, ["init", "--preset", "dagster"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        repo_dir = erk_root / "repos" / env.cwd.name
-        config_path = repo_dir / "config.toml"
+        # Config should be created in .erk/ directory (consolidated location)
+        config_path = env.cwd / ".erk" / "config.toml"
         assert config_path.exists()
 
 
@@ -291,8 +244,8 @@ def test_init_explicit_preset_generic() -> None:
         result = runner.invoke(cli, ["init", "--preset", "generic"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        repo_dir = erk_root / "repos" / env.cwd.name
-        config_path = repo_dir / "config.toml"
+        # Config should be created in .erk/ directory (consolidated location)
+        config_path = env.cwd / ".erk" / "config.toml"
         assert config_path.exists()
 
 
@@ -344,8 +297,8 @@ def test_init_invalid_preset_fails() -> None:
         assert "Invalid preset 'nonexistent'" in result.output
 
 
-def test_init_creates_config_at_erks_dir() -> None:
-    """Test that init creates config.toml in erks_dir by default."""
+def test_init_creates_config_at_erk_dir() -> None:
+    """Test that init creates config.toml in .erk/ directory."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
@@ -364,36 +317,14 @@ def test_init_creates_config_at_erks_dir() -> None:
         result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        # Config should be in erks_dir, not repo root
-        repo_dir = erk_root / "repos" / env.cwd.name
-        config_path = repo_dir / "config.toml"
+        # Config should be in .erk/ directory (consolidated location)
+        config_path = env.cwd / ".erk" / "config.toml"
         assert config_path.exists()
+        # Not at repo root
         assert not (env.cwd / "config.toml").exists()
-
-
-def test_init_repo_flag_creates_config_at_root() -> None:
-    """Test that --repo creates config.toml at repo root."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        erk_root = env.cwd / "erks"
-
-        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
-
-        global_config_ops = FakeConfigStore(config=global_config)
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            config_store=global_config_ops,
-            global_config=global_config,
-        )
-
-        result = runner.invoke(cli, ["init", "--repo"], obj=test_ctx)
-
-        assert result.exit_code == 0, result.output
-        # Config should be at repo root
-        config_path = env.cwd / "config.toml"
-        assert config_path.exists()
+        # Not in erks_dir anymore (legacy location)
+        legacy_path = erk_root / "repos" / env.cwd.name / "config.toml"
+        assert not legacy_path.exists()
 
 
 def test_init_force_overwrites_existing_config() -> None:
@@ -401,11 +332,11 @@ def test_init_force_overwrites_existing_config() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
-        repo_dir = erk_root / "repos" / env.cwd.name
-        repo_dir.mkdir(parents=True)
 
-        # Create existing config
-        config_path = repo_dir / "config.toml"
+        # Create existing config in .erk/ directory
+        erk_dir = env.cwd / ".erk"
+        erk_dir.mkdir(parents=True)
+        config_path = erk_dir / "config.toml"
         config_path.write_text("# Old config\n", encoding="utf-8")
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -433,11 +364,11 @@ def test_init_fails_without_force_when_exists() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
-        repo_dir = erk_root / "repos" / env.cwd.name
-        repo_dir.mkdir(parents=True)
 
-        # Create existing config
-        config_path = repo_dir / "config.toml"
+        # Create existing config in .erk/ directory
+        erk_dir = env.cwd / ".erk"
+        erk_dir.mkdir(parents=True)
+        config_path = erk_dir / "config.toml"
         config_path.write_text("# Existing config\n", encoding="utf-8")
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -1368,16 +1299,16 @@ def test_init_force_overwrites_kits_toml() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
-        repo_dir = erk_root / "repos" / env.cwd.name
-        repo_dir.mkdir(parents=True)
 
-        # Pre-create config.toml so it doesn't block
-        config_path = repo_dir / "config.toml"
-        config_path.write_text("# Old config\n", encoding="utf-8")
-
-        # Pre-create .erk/kits.toml with old content
+        # Pre-create .erk/ directory with existing config.toml and kits.toml
         erk_dir = env.cwd / ".erk"
         erk_dir.mkdir(parents=True)
+
+        # Pre-create config.toml so it doesn't block
+        config_path = erk_dir / "config.toml"
+        config_path.write_text("# Old config\n", encoding="utf-8")
+
+        # Pre-create kits.toml with old content
         kits_toml_path = erk_dir / "kits.toml"
         kits_toml_path.write_text('# Old kits config\nversion = "0"\n', encoding="utf-8")
 

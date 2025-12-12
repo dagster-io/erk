@@ -90,7 +90,7 @@ def config_list(ctx: ErkContext) -> None:
             and not cfg.post_create_commands
         )
         if has_no_config:
-            user_output("  (no configuration - run 'erk init --repo' to create)")
+            user_output("  (no configuration - run 'erk init' to create)")
 
 
 @config_group.command("get")

@@ -45,10 +45,11 @@ def test_load_config_defaults(tmp_path: Path) -> None:
 
 
 def test_env_rendering(tmp_path: Path) -> None:
-    # Write a config
+    # Write a config to the primary location (.erk/config.toml)
     config_dir = tmp_path / "config_dir"
-    config_dir.mkdir()
-    (config_dir / "config.toml").write_text(
+    erk_dir = config_dir / ".erk"
+    erk_dir.mkdir(parents=True)
+    (erk_dir / "config.toml").write_text(
         """
         [env]
         DAGSTER_GIT_REPO_DIR = "{worktree_path}"
@@ -171,9 +172,11 @@ def test_discover_presets_missing_directory(tmp_path: Path) -> None:
 
 
 def test_load_config_with_post_create_commands(tmp_path: Path) -> None:
+    # Write config to primary location (.erk/config.toml)
     config_dir = tmp_path / "config_dir"
-    config_dir.mkdir()
-    (config_dir / "config.toml").write_text(
+    erk_dir = config_dir / ".erk"
+    erk_dir.mkdir(parents=True)
+    (erk_dir / "config.toml").write_text(
         """
         [env]
         FOO = "bar"
@@ -200,9 +203,11 @@ def test_load_config_with_post_create_commands(tmp_path: Path) -> None:
 
 
 def test_load_config_with_partial_post_create(tmp_path: Path) -> None:
+    # Write config to primary location (.erk/config.toml)
     config_dir = tmp_path / "config_dir"
-    config_dir.mkdir()
-    (config_dir / "config.toml").write_text(
+    erk_dir = config_dir / ".erk"
+    erk_dir.mkdir(parents=True)
+    (erk_dir / "config.toml").write_text(
         """
         [post_create]
         commands = ["echo 'hello'"]

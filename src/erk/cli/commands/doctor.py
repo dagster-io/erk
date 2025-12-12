@@ -61,6 +61,7 @@ def doctor_cmd(ctx: ErkContext) -> None:
         "gitignore",
         "claude erk permission",
         "claude hooks",
+        "legacy config",
     }
     github_check_names = {"github auth", "workflow permissions"}
     early_dogfooder_names = {"deprecated dot-agent config"}
