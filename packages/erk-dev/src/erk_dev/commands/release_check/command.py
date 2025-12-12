@@ -21,6 +21,16 @@ class ValidationIssue:
     line: int | None = None
 
 
+@dataclass
+class VersionInfo:
+    """Information about a version section in the changelog."""
+
+    version: str
+    date: str | None
+    category_count: int
+    bullet_count: int
+
+
 def validate_changelog(content: str) -> list[ValidationIssue]:
     """Validate CHANGELOG.md content and return list of issues.
 
@@ -118,6 +128,46 @@ def validate_changelog(content: str) -> list[ValidationIssue]:
     return issues
 
 
+def extract_version_info(content: str) -> list[VersionInfo]:
+    """Extract information about each version section.
+
+    Args:
+        content: Raw content of CHANGELOG.md
+
+    Returns:
+        List of VersionInfo objects for each version section
+    """
+    versions: list[VersionInfo] = []
+
+    # Match version headers
+    version_pattern = re.compile(r"^## \[([^\]]+)\](?:\s*-\s*(\d{4}-\d{2}-\d{2}))?", re.MULTILINE)
+    matches = list(version_pattern.finditer(content))
+
+    for i, match in enumerate(matches):
+        version = match.group(1)
+        date = match.group(2)
+
+        # Extract content between this header and the next
+        start = match.end()
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(content)
+        section_content = content[start:end]
+
+        # Count categories and bullets
+        category_count = len(re.findall(r"^### ", section_content, re.MULTILINE))
+        bullet_count = len(re.findall(r"^\s*- ", section_content, re.MULTILINE))
+
+        versions.append(
+            VersionInfo(
+                version=version,
+                date=date,
+                category_count=category_count,
+                bullet_count=bullet_count,
+            )
+        )
+
+    return versions
+
+
 @click.command("release-check")
 def release_check_command() -> None:
     """Validate CHANGELOG.md structure.
@@ -151,9 +201,28 @@ def release_check_command() -> None:
     content = changelog_path.read_text(encoding="utf-8")
     issues = validate_changelog(content)
 
-    # Count versions
-    version_count = len(re.findall(r"^## \[\d+\.\d+\.\d+\]", content, re.MULTILINE))
-    click.echo(click.style(f"  ✓ {version_count} version sections found", fg="green"))
+    # Extract and display version info
+    versions = extract_version_info(content)
+    versioned_count = sum(1 for v in versions if v.version != "Unreleased")
+    click.echo(click.style(f"  ✓ {versioned_count} version sections found", fg="green"))
+    click.echo()
+
+    # Display each version's details
+    for info in versions:
+        if info.version == "Unreleased":
+            version_str = click.style("[Unreleased]", bold=True)
+        else:
+            version_str = click.style(f"[{info.version}]", bold=True)
+            if info.date:
+                version_str += f" - {info.date}"
+
+        # Build details string
+        details: list[str] = []
+        if info.category_count > 0:
+            details.append(f"{info.category_count} categories")
+        details.append(f"{info.bullet_count} items")
+
+        click.echo(f"    {version_str}: {', '.join(details)}")
 
     # Report issues
     errors = [i for i in issues if i.level == "error"]
