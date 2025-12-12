@@ -7,32 +7,63 @@ entries on demand.
 import click
 
 from erk.core.release_notes import (
+    ReleaseEntry,
     get_current_version,
     get_release_for_version,
     get_releases,
 )
 
 
-def _format_release(
-    release_version: str, release_date: str | None, items: list[tuple[str, int]]
-) -> None:
+def _format_items(items: list[tuple[str, int]]) -> None:
+    """Format and display a list of release note items."""
+    for item_text, indent_level in items:
+        # Base indent (4 spaces) + extra indent per nesting level (2 spaces)
+        indent = "    " + ("  " * indent_level)
+        click.echo(f"{indent}- {item_text}")
+
+
+def _format_release(release: ReleaseEntry) -> None:
     """Format and display a single release entry."""
-    header = f"[{release_version}]"
-    if release_date:
-        header += f" - {release_date}"
+    header = f"[{release.version}]"
+    if release.date:
+        header += f" - {release.date}"
 
     click.echo(click.style(header, bold=True))
     click.echo()
 
-    if items:
-        for item_text, indent_level in items:
-            # Base indent (2 spaces) + extra indent per nesting level (2 spaces)
-            indent = "  " + ("  " * indent_level)
-            click.echo(f"{indent}- {item_text}")
-    else:
+    if not release.categories and not release.items:
         click.echo(click.style("  (no entries)", dim=True))
+        click.echo()
+        return
 
-    click.echo()
+    # If there are no categories but there are items, render them directly
+    # This handles releases with just "- Initial release" without category headers
+    if not release.categories and release.items:
+        _format_items(release.items)
+        click.echo()
+        return
+
+    # Render Major Changes first if present (with bold header)
+    if "Major Changes" in release.categories:
+        click.echo(click.style("  Major Changes", bold=True))
+        _format_items(release.categories["Major Changes"])
+        click.echo()
+
+    # Then render standard sections in order
+    standard_sections = ["Added", "Changed", "Fixed", "Removed"]
+    for category in standard_sections:
+        if category in release.categories:
+            click.echo(f"  {category}")
+            _format_items(release.categories[category])
+            click.echo()
+
+    # Render any remaining categories not in the standard list
+    rendered = {"Major Changes"} | set(standard_sections)
+    for category, items in release.categories.items():
+        if category not in rendered:
+            click.echo(f"  {category}")
+            _format_items(items)
+            click.echo()
 
 
 @click.command("release-notes")
@@ -72,7 +103,7 @@ def release_notes_cmd(show_all: bool, target_version: str | None) -> None:
         if release is None:
             click.echo(click.style(f"Version {target_version} not found in changelog.", fg="red"))
             return
-        _format_release(release.version, release.date, release.items)
+        _format_release(release)
         return
 
     if show_all:
@@ -80,7 +111,7 @@ def release_notes_cmd(show_all: bool, target_version: str | None) -> None:
         click.echo()
         for release in releases:
             if release.version != "Unreleased" or release.items:
-                _format_release(release.version, release.date, release.items)
+                _format_release(release)
         return
 
     # Default: show current version
@@ -94,4 +125,4 @@ def release_notes_cmd(show_all: bool, target_version: str | None) -> None:
 
     click.echo(click.style(f"Release notes for erk {current}", bold=True))
     click.echo()
-    _format_release(release.version, release.date, release.items)
+    _format_release(release)

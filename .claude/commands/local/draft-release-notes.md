@@ -93,6 +93,10 @@ Filter out:
 Generate release notes in Keep a Changelog format:
 
 ```markdown
+### Major Changes (optional, for significant user-facing features)
+
+- Brief description of major feature and user benefit
+
 ### Added
 
 - New feature description that explains the benefit to users
@@ -116,6 +120,7 @@ Guidelines:
 - Start with a verb (Added, Fixed, Improved)
 - Be concise but clear (1 sentence each)
 - Only include sections that have entries
+- Use "Major Changes" for significant user-facing features (PyPI publishing, major architecture changes, new systems)
 
 ### Phase 5: User Review
 

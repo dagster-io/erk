@@ -7,7 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.5] - 2025-12-12
+## [0.2.5] - 2025-12-12 14:30 PT
+
+### Major Changes
+
+- Publish `erk` and `erk-shared` packages to PyPI - install via `uv pip install erk` or run directly with `uvx erk`
+- Relocate all erk-managed documentation from `docs/agent/` and `.claude/docs/` to unified `.erk/docs/` structure
+- Add hook execution logging system with new "Hooks" section in `erk doctor` for health monitoring
+- Add integrated release notes system with version change detection and `erk info release-notes` command
+
+### Added
+
+- Add link indicator to PR display in plan dashboard for quick GitHub access
+- Add `--force` flag to bypass open PR checks with confirmation in navigation commands
+- Add `--dangerous` flag to `erk pr auto-restack` and `erk pr sync` commands for explicit opt-in to risky operations
+
+### Changed
+
+- Remove legacy `dot-agent.toml` configuration and migrate to `kits.toml`
+- Add `erk doctor` checks for legacy documentation locations
+
+### Fixed
+
+- Fix release notes banner incorrectly shown on version downgrade in multi-worktree setups
+- Fix nested bullet indentation in release notes parsing and display
+
+### Removed
+
+- Remove outdated erk skill documentation from `.claude/skills/erk/`
 
 ## [0.2.3] - 2025-12-12
 
