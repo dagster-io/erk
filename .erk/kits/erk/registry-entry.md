@@ -1,4 +1,4 @@
-### erk (v0.2.4)
+### erk (v0.2.3)
 
 **Purpose**: Erk implementation workflow commands for creating worktrees from plans (.PLAN.md) and executing implementation. Includes commands for plan creation, execution, and quick access.
 

@@ -3,7 +3,7 @@ version = "1"
 [kits.erk]
 kit_id = "erk"
 source_type = "bundled"
-version = "0.2.4"
+version = "0.2.3"
 artifacts = [
     ".claude/commands/erk/plan-implement.md",
     ".claude/commands/erk/merge-conflicts-fix.md",

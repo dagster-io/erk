@@ -596,13 +596,10 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None
         repo = discover_repo_context(ctx, ctx.cwd)
 
     # Save current state (needed for both default base and restoration)
-    original_branch = ctx.git.get_current_branch(repo.root)
-    if original_branch is None:
-        user_output(
-            click.style("Error: ", fg="red")
-            + "Not on a branch (detached HEAD state). Cannot submit from here."
-        )
-        raise SystemExit(1)
+    original_branch = Ensure.not_none(
+        ctx.git.get_current_branch(repo.root),
+        "Not on a branch (detached HEAD state). Cannot submit from here.",
+    )
 
     # Validate base branch if provided, otherwise default to current branch (LBYL)
     if base is not None:
