@@ -269,7 +269,9 @@ def test_dryrun_graphite_operations(tmp_path: Path) -> None:
     # Test read operations work (they delegate to wrapped implementation)
     url = ctx.graphite.get_graphite_url(GitHubRepoId("owner", "repo"), 123)
     assert isinstance(url, str)
-    assert "graphite.com" in url
+    assert url.startswith("https://app.graphite.dev/") or url.startswith(
+        "https://app.graphite.com/"
+    )
     from erk_shared.git.real import RealGit
 
     git_ops = RealGit()
