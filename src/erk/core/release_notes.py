@@ -15,13 +15,17 @@ from pathlib import Path
 
 @dataclass
 class ReleaseEntry:
-    """A single release entry from the changelog."""
+    """A single release entry from the changelog.
+
+    Items are stored as tuples of (text, indent_level) where indent_level
+    is 0 for top-level bullets, 1 for first nesting level, etc.
+    """
 
     version: str
     date: str | None
     content: str
-    items: list[str] = field(default_factory=list)
-    categories: dict[str, list[str]] = field(default_factory=dict)
+    items: list[tuple[str, int]] = field(default_factory=list)
+    categories: dict[str, list[tuple[str, int]]] = field(default_factory=dict)
 
 
 @cache
@@ -105,12 +109,16 @@ def parse_changelog(content: str) -> list[ReleaseEntry]:
         section_content = content[start:end].strip()
 
         # Extract bullet items grouped by category (### Added, ### Changed, etc.)
-        items: list[str] = []
-        categories: dict[str, list[str]] = {}
+        # Items are stored as (text, indent_level) tuples to preserve nesting
+        items: list[tuple[str, int]] = []
+        categories: dict[str, list[tuple[str, int]]] = {}
         current_category: str | None = None
 
         for line in section_content.split("\n"):
-            stripped = line.strip()
+            # Count leading spaces to detect nesting level
+            stripped = line.lstrip()
+            leading_spaces = len(line) - len(stripped)
+            indent_level = leading_spaces // 2  # 2 spaces = 1 nesting level
 
             # Check for category header (### Added, ### Changed, ### Fixed, etc.)
             if stripped.startswith("### "):
@@ -118,9 +126,10 @@ def parse_changelog(content: str) -> list[ReleaseEntry]:
                 categories[current_category] = []
             elif stripped.startswith("- "):
                 item_text = stripped[2:]
-                items.append(item_text)
+                item_tuple = (item_text, indent_level)
+                items.append(item_tuple)
                 if current_category is not None:
-                    categories[current_category].append(item_text)
+                    categories[current_category].append(item_tuple)
 
         entries.append(
             ReleaseEntry(

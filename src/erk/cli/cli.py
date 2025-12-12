@@ -81,12 +81,15 @@ def _show_version_change_banner() -> None:
                     if not category_items:
                         continue
                     click.echo(click.style(f"    {category}", dim=True), file=sys.stderr)
-                    for item in category_items:
-                        click.echo(f"      • {item}", file=sys.stderr)
+                    for item_text, indent_level in category_items:
+                        # Base indent (6 spaces) + extra indent per nesting level (2 spaces)
+                        indent = "      " + ("  " * indent_level)
+                        click.echo(f"{indent}• {item_text}", file=sys.stderr)
             else:
                 # Fallback to flat list for releases without categories
-                for item in release.items:
-                    click.echo(f"    • {item}", file=sys.stderr)
+                for item_text, indent_level in release.items:
+                    indent = "    " + ("  " * indent_level)
+                    click.echo(f"{indent}• {item_text}", file=sys.stderr)
             click.echo(file=sys.stderr)
 
         click.echo(click.style("  " + "─" * 50, dim=True), file=sys.stderr)
