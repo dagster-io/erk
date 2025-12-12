@@ -18,7 +18,7 @@ class ArtifactRepository(ABC):
 
         Args:
             project_dir: Project root directory
-            config: Project configuration from dot-agent.toml
+            config: Project configuration from kits.toml
 
         Returns:
             List of all installed artifacts with metadata
@@ -34,7 +34,7 @@ class ArtifactRepository(ABC):
         Args:
             user_path: User-level .claude directory (e.g., ~/.claude)
             project_path: Project-level .claude directory (e.g., ./.claude)
-            project_config: Project configuration from dot-agent.toml
+            project_config: Project configuration from kits.toml
 
         Returns:
             List of artifacts from both levels with level annotation

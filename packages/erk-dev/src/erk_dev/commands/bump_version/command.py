@@ -79,8 +79,8 @@ def update_yaml_version(path: Path, new_version: str, dry_run: bool) -> tuple[bo
     return True, old_version
 
 
-def update_dot_agent_toml(path: Path, new_version: str, dry_run: bool) -> int:
-    """Update all kit versions in dot-agent.toml. Returns count of updates."""
+def update_kits_toml(path: Path, new_version: str, dry_run: bool) -> int:
+    """Update all kit versions in kits.toml. Returns count of updates."""
     content = path.read_text(encoding="utf-8")
     # Match version = "X.Y.Z" lines (semver pattern in kit sections)
     pattern = r'(version\s*=\s*")([^"]+)(")'
@@ -241,13 +241,12 @@ def bump_version_command(version: str | None, dry_run: bool) -> None:
             status = f"{old} -> {version}" if ok else "not found"
             click.echo(f"  {kit_yaml.parent.name}: {status}")
 
-    # 3. dot-agent.toml files
+    # 3. kits.toml
     click.echo("\nInstalled kit registries:")
-    for rel_path in ["dot-agent.toml", ".erk/dot-agent.toml"]:
-        path = repo_root / rel_path
-        if path.exists():
-            count = update_dot_agent_toml(path, version, dry_run)
-            click.echo(f"  {rel_path}: {count} kits")
+    kits_toml = repo_root / ".erk" / "kits.toml"
+    if kits_toml.exists():
+        count = update_kits_toml(kits_toml, version, dry_run)
+        click.echo(f"  .erk/kits.toml: {count} kits")
 
     # 4. kit-registry.md
     click.echo("\nDocumentation registry:")

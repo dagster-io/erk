@@ -9,8 +9,8 @@ from erk_dev.commands.bump_version.command import (
     get_current_version,
     increment_patch,
     update_changelog_header,
-    update_dot_agent_toml,
     update_kit_registry_md,
+    update_kits_toml,
     update_toml_version,
     update_yaml_version,
 )
@@ -113,25 +113,25 @@ class TestUpdateYamlVersion:
         assert yaml_file.read_text(encoding="utf-8") == "version: 1.0.0\n"
 
 
-class TestUpdateDotAgentToml:
-    """Tests for update_dot_agent_toml function."""
+class TestUpdateKitsToml:
+    """Tests for update_kits_toml function."""
 
     def test_updates_multiple_versions(self, tmp_path: Path) -> None:
-        toml_file = tmp_path / "dot-agent.toml"
+        toml_file = tmp_path / "kits.toml"
         toml_file.write_text(
             '[kits.foo]\nversion = "1.0.0"\n\n[kits.bar]\nversion = "1.0.0"\n',
             encoding="utf-8",
         )
-        count = update_dot_agent_toml(toml_file, "2.0.0", dry_run=False)
+        count = update_kits_toml(toml_file, "2.0.0", dry_run=False)
         assert count == 2
         content = toml_file.read_text(encoding="utf-8")
         assert 'version = "2.0.0"' in content
         assert 'version = "1.0.0"' not in content
 
     def test_dry_run_does_not_modify(self, tmp_path: Path) -> None:
-        toml_file = tmp_path / "dot-agent.toml"
+        toml_file = tmp_path / "kits.toml"
         toml_file.write_text('version = "1.0.0"\n', encoding="utf-8")
-        count = update_dot_agent_toml(toml_file, "2.0.0", dry_run=True)
+        count = update_kits_toml(toml_file, "2.0.0", dry_run=True)
         assert count == 1
         assert toml_file.read_text(encoding="utf-8") == 'version = "1.0.0"\n'
 

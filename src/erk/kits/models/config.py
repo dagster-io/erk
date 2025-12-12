@@ -8,7 +8,7 @@ from erk.kits.models.types import SourceType
 
 @dataclass(frozen=True)
 class InstalledKit:
-    """Represents an installed kit in dot-agent.toml."""
+    """Represents an installed kit in kits.toml."""
 
     kit_id: str  # Globally unique kit identifier
     source_type: SourceType
@@ -19,7 +19,7 @@ class InstalledKit:
 
 @dataclass(frozen=True)
 class ProjectConfig:
-    """Project configuration from dot-agent.toml."""
+    """Project configuration from kits.toml."""
 
     version: str
     kits: dict[str, InstalledKit]
