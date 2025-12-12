@@ -169,11 +169,11 @@ def my_reminder_hook() -> None:
 
 **Behavior**:
 
-| Scenario                         | Behavior                        |
-| -------------------------------- | ------------------------------- |
+| Scenario                              | Behavior                        |
+| ------------------------------------- | ------------------------------- |
 | In repo with `.erk/installed.toml`    | Hook fires normally             |
 | In repo without `.erk/installed.toml` | Hook exits silently (no output) |
-| Not in git repo                  | Hook exits silently             |
+| Not in git repo                       | Hook exits silently             |
 
 ### Current Project-Scoped Hooks
 

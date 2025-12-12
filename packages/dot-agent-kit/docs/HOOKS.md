@@ -129,7 +129,7 @@ The following Claude Code hook capabilities are **not yet supported** by dot-age
 | **Organization**      | Kit-based: hooks bundled with related skills/commands/agents | Manual: edit `.claude/settings.json` directly              |
 | **Installation**      | Atomic: `erk kit install {kit}` installs all artifacts       | Manual: copy/paste hook configuration                      |
 | **Removal**           | Atomic: `erk kit remove {kit}` removes all artifacts         | Manual: delete hook entries from settings.json             |
-| **Metadata Tracking** | Tracked in `installed.toml` with source information               | No metadata tracking                                       |
+| **Metadata Tracking** | Tracked in `installed.toml` with source information          | No metadata tracking                                       |
 | **Version Control**   | Hooks are code artifacts in repository                       | Configuration-only (settings.json)                         |
 | **Portability**       | Project-portable: kits work across projects                  | Must manually replicate per project                        |
 | **Hook Types**        | Command-based only (currently)                               | Command-based AND prompt-based                             |
