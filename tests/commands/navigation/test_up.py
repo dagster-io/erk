@@ -631,6 +631,197 @@ def test_up_delete_current_pr_open() -> None:
         assert len(git_ops.deleted_branches) == 0
 
 
+def test_up_delete_current_force_with_open_pr_confirmed() -> None:
+    """Test --delete-current -f allows deletion with open PR after confirmation."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        # Set up stack: main -> feature-1 -> feature-2
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
+            }
+        )
+
+        # PR for feature-1 is OPEN
+        from erk_shared.github.fake import FakeGitHub
+        from erk_shared.github.types import PRDetails, PullRequestInfo
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                ),
+            },
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+
+        # Simulate user confirming with 'y'
+        result = runner.invoke(
+            cli,
+            ["up", "--delete-current", "-f", "--script"],
+            obj=test_ctx,
+            input="y\n",
+            catch_exceptions=False,
+        )
+
+        # Assert: Command succeeded
+        assert result.exit_code == 0
+
+        # Assert: Warning was shown about open PR
+        assert "Warning:" in result.output
+        assert "is still open" in result.output
+
+        # Assert: Navigated to feature-2
+        script_path = Path(result.stdout.strip().split("\n")[-1])
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert str(repo_dir / "worktrees" / "feature-2") in script_content
+
+        # Assert: feature-1 worktree was removed and branch deleted
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+        assert feature_1_path in git_ops.removed_worktrees
+        assert "feature-1" in git_ops.deleted_branches
+
+
+def test_up_delete_current_force_with_open_pr_declined() -> None:
+    """Test --delete-current -f aborts when user declines confirmation."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        # Set up stack: main -> feature-1 -> feature-2
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
+            }
+        )
+
+        # PR for feature-1 is OPEN
+        from erk_shared.github.fake import FakeGitHub
+        from erk_shared.github.types import PRDetails, PullRequestInfo
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                ),
+            },
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+
+        # Simulate user declining with 'n'
+        result = runner.invoke(
+            cli,
+            ["up", "--delete-current", "-f", "--script"],
+            obj=test_ctx,
+            input="n\n",
+            catch_exceptions=False,
+        )
+
+        # Assert: Command exited with code 1 (user declined)
+        assert result.exit_code == 1
+
+        # Assert: No worktrees or branches were deleted
+        assert len(git_ops.removed_worktrees) == 0
+        assert len(git_ops.deleted_branches) == 0
+
+
 def test_up_delete_current_pr_closed() -> None:
     """Test --delete-current allows deletion when PR is closed (abandoned/rejected)."""
     runner = CliRunner()

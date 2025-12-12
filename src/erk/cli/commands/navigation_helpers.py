@@ -74,11 +74,17 @@ def check_clean_working_tree(ctx: ErkContext) -> None:
     )
 
 
-def verify_pr_closed_or_merged(ctx: ErkContext, repo_root: Path, branch: str) -> None:
+def verify_pr_closed_or_merged(ctx: ErkContext, repo_root: Path, branch: str, force: bool) -> None:
     """Verify that the branch's PR is closed or merged on GitHub.
 
-    Warns if no PR exists, raises SystemExit if PR is still OPEN.
+    Warns if no PR exists, raises SystemExit if PR is still OPEN (unless force=True).
     Allows deletion for both MERGED and CLOSED PRs (abandoned/rejected work).
+
+    Args:
+        ctx: Erk context
+        repo_root: Path to the repository root
+        branch: Branch name to check
+        force: If True, prompt for confirmation instead of blocking on open PRs
     """
     pr_details = ctx.github.get_pr_for_branch(repo_root, branch)
 
@@ -92,6 +98,17 @@ def verify_pr_closed_or_merged(ctx: ErkContext, repo_root: Path, branch: str) ->
         return  # Allow deletion to proceed
 
     if pr_details.state == "OPEN":
+        if force:
+            # Show warning and prompt for confirmation
+            user_output(
+                click.style("Warning: ", fg="yellow")
+                + f"Pull request for branch '{branch}' is still open.\n"
+                + f"{pr_details.url}"
+            )
+            if not click.confirm("Delete branch anyway?"):
+                raise SystemExit(1)
+            return  # User confirmed, allow deletion
+
         # Block deletion for open PRs (active work in progress)
         user_output(
             click.style("Error: ", fg="red")
