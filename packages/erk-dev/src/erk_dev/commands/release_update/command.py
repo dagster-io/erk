@@ -3,6 +3,7 @@
 import re
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import click
 
@@ -76,7 +77,7 @@ def insert_release_notes(
     help="Path to file containing release notes",
 )
 @click.option("--notes", "notes_text", help="Release notes as text (alternative to --notes-file)")
-@click.option("--date", "date_str", help="Release date (YYYY-MM-DD). Defaults to today.")
+@click.option("--date", "date_str", help="Release date/time (YYYY-MM-DD HH:MM PT)")
 @click.option("--dry-run", is_flag=True, help="Show what would change without modifying files")
 def release_update_command(
     version: str,
@@ -103,12 +104,13 @@ def release_update_command(
     else:
         raise click.ClickException("Either --notes-file or --notes must be provided")
 
-    # Get date
-    date = date_str or datetime.now().strftime("%Y-%m-%d")
+    # Get date/time in Pacific Time
+    pacific = ZoneInfo("America/Los_Angeles")
+    date = date_str or datetime.now(pacific).strftime("%Y-%m-%d %H:%M PT")
 
     # Validate date format
-    if not re.match(r"^\d{4}-\d{2}-\d{2}$", date):
-        raise click.ClickException(f"Invalid date format: {date}. Expected YYYY-MM-DD")
+    if not re.match(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2} PT$", date):
+        raise click.ClickException(f"Invalid date format: {date}. Expected YYYY-MM-DD HH:MM PT")
 
     # Find repo root and changelog
     repo_root = find_repo_root(Path.cwd())

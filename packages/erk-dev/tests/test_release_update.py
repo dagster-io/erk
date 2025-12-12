@@ -149,16 +149,17 @@ members = []
     notes_file.write_text("### Added\n- Feature X\n", encoding="utf-8")
 
     runner = CliRunner()
+    date_arg = "2025-12-11 14:30 PT"
     with runner.isolated_filesystem(temp_dir=tmp_path):
         result = runner.invoke(
             release_update_command,
-            ["--version", "0.2.1", "--notes-file", str(notes_file), "--date", "2025-12-11"],
+            ["--version", "0.2.1", "--notes-file", str(notes_file), "--date", date_arg],
         )
 
     assert result.exit_code == 0
     assert "Updated CHANGELOG.md with version 0.2.1" in result.output
     content = changelog.read_text(encoding="utf-8")
-    assert "## [0.2.1] - 2025-12-11" in content
+    assert "## [0.2.1] - 2025-12-11 14:30 PT" in content
 
 
 def test_release_update_command_with_notes_text(tmp_path: Path) -> None:
@@ -187,15 +188,16 @@ members = []
     )
 
     runner = CliRunner()
+    date_arg = "2025-12-11 14:30 PT"
     with runner.isolated_filesystem(temp_dir=tmp_path):
         result = runner.invoke(
             release_update_command,
-            ["--version", "0.2.1", "--notes", "### Added\\n- Feature X", "--date", "2025-12-11"],
+            ["--version", "0.2.1", "--notes", "### Added\\n- Feature X", "--date", date_arg],
         )
 
     assert result.exit_code == 0
     content = changelog.read_text(encoding="utf-8")
-    assert "## [0.2.1] - 2025-12-11" in content
+    assert "## [0.2.1] - 2025-12-11 14:30 PT" in content
     assert "### Added" in content
     assert "- Feature X" in content
 
@@ -225,11 +227,12 @@ def test_release_update_command_validates_date_format(tmp_path: Path) -> None:
     with runner.isolated_filesystem(temp_dir=tmp_path):
         result = runner.invoke(
             release_update_command,
-            ["--version", "0.2.1", "--notes", "test", "--date", "12-11-2025"],
+            ["--version", "0.2.1", "--notes", "test", "--date", "2025-12-11"],
         )
 
     assert result.exit_code != 0
     assert "Invalid date format" in result.output
+    assert "Expected YYYY-MM-DD HH:MM PT" in result.output
 
 
 def test_release_update_command_requires_notes(tmp_path: Path) -> None:
