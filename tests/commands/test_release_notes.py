@@ -119,14 +119,12 @@ def test_release_notes_version_not_found(tmp_path: Path) -> None:
     assert "not found" in result.output
 
 
-def test_release_notes_no_changelog(tmp_path: Path) -> None:
+def test_release_notes_no_changelog() -> None:
     """Test handling when no changelog is found."""
-    # Point to non-existent file
-    changelog = tmp_path / "CHANGELOG.md"
-
     runner = CliRunner()
 
-    with patch("erk.core.release_notes._changelog_path", return_value=changelog):
+    # _changelog_path returns None when no changelog exists
+    with patch("erk.core.release_notes._changelog_path", return_value=None):
         from erk.core.release_notes import _changelog_path
 
         _changelog_path.cache_clear()
