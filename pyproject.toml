@@ -8,7 +8,7 @@ erk-shared = { workspace = true }
 
 [project]
 name = "erk"
-version = "0.2.1"
+version = "0.2.3"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -55,7 +55,7 @@ build-backend = "hatchling.build"
 packages = ["src/erk"]
 
 [tool.ruff]
-target-version = "py311"
+target-version = "0.2.3"
 line-length = 100
 src = ["src"]
 # exclude = [".claude/skills/"]
