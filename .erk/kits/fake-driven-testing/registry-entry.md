@@ -1,4 +1,4 @@
-### fake-driven-testing (v0.2.1)
+### fake-driven-testing (v0.2.3)
 
 **Purpose**: Defense-in-depth testing architecture for Python with fake implementations and automatic suggestion hook
 
