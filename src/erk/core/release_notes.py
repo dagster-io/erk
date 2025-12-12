@@ -87,8 +87,11 @@ def parse_changelog(content: str) -> list[ReleaseEntry]:
     """
     entries: list[ReleaseEntry] = []
 
-    # Match version headers like "## [0.2.1] - 2025-12-11" or "## [Unreleased]"
-    version_pattern = re.compile(r"^## \[([^\]]+)\](?:\s*-\s*(\d{4}-\d{2}-\d{2}))?", re.MULTILINE)
+    # Match "## [0.2.1] - 2025-12-11" or "## [0.2.1] - 2025-12-11 14:30 PT" or "## [Unreleased]"
+    version_pattern = re.compile(
+        r"^## \[([^\]]+)\](?:\s*-\s*(\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2} PT)?))?",
+        re.MULTILINE,
+    )
 
     matches = list(version_pattern.finditer(content))
 
