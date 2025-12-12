@@ -467,6 +467,72 @@ def check_orphaned_artifacts(repo_root: Path) -> CheckResult:
     )
 
 
+def check_skill_symlinks(repo_root: Path) -> CheckResult:
+    """Check symlink integrity between .erk/skills/ and .claude/skills/.
+
+    Validates that managed skills have proper symlink structure:
+    - .erk/skills/{name}/ contains the actual skill
+    - .claude/skills/{name}/ is a symlink to .erk/skills/{name}/
+
+    Args:
+        repo_root: Path to the repository root
+
+    Returns:
+        CheckResult with summary of symlink issues
+    """
+    from erk.kits.io.state import load_project_config
+    from erk.kits.operations.symlink_validation import validate_skill_symlinks
+
+    # Check if .erk/skills or .claude/skills exists
+    erk_skills = repo_root / ".erk" / "skills"
+    claude_skills = repo_root / ".claude" / "skills"
+
+    if not erk_skills.exists() and not claude_skills.exists():
+        return CheckResult(
+            name="skill symlinks",
+            passed=True,
+            message="No managed skills",
+        )
+
+    config = load_project_config(repo_root)
+    result = validate_skill_symlinks(repo_root, config)
+
+    if result.is_valid and len(result.issues) == 0:
+        return CheckResult(
+            name="skill symlinks",
+            passed=True,
+            message="All skill symlinks valid",
+        )
+
+    # Count issues by severity
+    error_count = sum(1 for i in result.issues if i.severity == "error")
+    warning_count = sum(1 for i in result.issues if i.severity == "warning")
+
+    # Build details
+    details_lines: list[str] = []
+    for issue in result.issues:
+        prefix = "ERROR" if issue.severity == "error" else "WARNING"
+        details_lines.append(f"   {prefix}: {issue.message}")
+    details_lines.append("")
+    details_lines.append("Run 'erk kit check' for details or 'erk kit sync --force' to repair")
+
+    if not result.is_valid:
+        return CheckResult(
+            name="skill symlinks",
+            passed=False,
+            message=f"{error_count} symlink error(s), {warning_count} warning(s)",
+            details="\n".join(details_lines),
+        )
+    else:
+        return CheckResult(
+            name="skill symlinks",
+            passed=True,
+            warning=True,
+            message=f"{warning_count} symlink warning(s)",
+            details="\n".join(details_lines),
+        )
+
+
 def check_docs_agent(repo_root: Path) -> CheckResult:
     """Check if docs/agent/ templates exist and are valid.
 
@@ -843,6 +909,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         results.append(check_gitignore_entries(repo_root))
         results.append(check_docs_agent(repo_root))
         results.append(check_orphaned_artifacts(repo_root))
+        results.append(check_skill_symlinks(repo_root))
         # Hook health check
         results.append(check_hook_health(repo_root))
         # GitHub workflow permissions check (requires repo context)

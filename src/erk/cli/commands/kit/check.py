@@ -114,7 +114,7 @@ def detect_unknown_kit_fields(kit_data: dict) -> list[str]:
     Returns:
         Sorted list of unknown field names
     """
-    expected_fields = {"kit_id", "source_type", "version", "artifacts", "hooks"}
+    expected_fields = {"kit_id", "source_type", "version", "artifacts", "hooks", "managed_skills"}
     actual_fields = set(kit_data.keys())
     unknown_fields = actual_fields - expected_fields
     return sorted(unknown_fields)
@@ -1007,6 +1007,67 @@ def check(verbose: bool) -> None:
                 help_msg = "Note: Unknown fields are warnings only and do not fail the check"
                 user_output(click.style(help_msg, fg="white", dim=True))
 
+    if verbose:
+        user_output()
+
+    # Part 6: Skill Symlink Validation
+    if verbose:
+        user_output(click.style("🔗 Skill Symlink Validation", fg="white", bold=True))
+
+    symlink_passed = True
+    if not config_exists:
+        if verbose:
+            user_output("No kits.toml found - skipping symlink validation")
+    else:
+        from erk.kits.operations.symlink_validation import validate_skill_symlinks
+
+        symlink_result = validate_skill_symlinks(project_dir, config)
+
+        if symlink_result.is_valid and len(symlink_result.issues) == 0:
+            if verbose:
+                success_msg = "✨ All skill symlinks are valid!"
+                user_output(click.style(success_msg, fg="green", bold=True))
+        else:
+            # Display issues
+            if verbose:
+                user_output()
+
+            error_count = sum(1 for i in symlink_result.issues if i.severity == "error")
+            warning_count = sum(1 for i in symlink_result.issues if i.severity == "warning")
+
+            for issue in symlink_result.issues:
+                if issue.severity == "error":
+                    status = click.style("✗", fg="red")
+                else:
+                    status = click.style("⚠", fg="yellow")
+
+                # Show relative path from project_dir
+                rel_path = issue.path
+                if issue.path.is_absolute():
+                    rel_path = issue.path.relative_to(project_dir)
+
+                user_output(f"  {status} {click.style(str(rel_path), fg='cyan')}")
+                user_output(f"      {issue.message}")
+
+            # Summary
+            if verbose:
+                user_output()
+                user_output("Skill symlink validation:")
+                if error_count > 0:
+                    error_check = click.style("✗", fg="red")
+                    error_num = click.style(str(error_count), fg="red")
+                    user_output(f"  {error_check} Errors: {error_num}")
+                if warning_count > 0:
+                    warn_check = click.style("⚠", fg="yellow")
+                    warn_num = click.style(str(warning_count), fg="yellow")
+                    user_output(f"  {warn_check} Warnings: {warn_num}")
+
+                user_output()
+                user_output("Run 'erk kit sync --force' to repair symlinks")
+
+            if not symlink_result.is_valid:
+                symlink_passed = False
+
     # Overall result
     if verbose:
         user_output()
@@ -1018,6 +1079,7 @@ def check(verbose: bool) -> None:
         and sync_passed
         and hook_passed
         and unknown_fields_passed
+        and symlink_passed
     )
     if all_passed:
         user_output(click.style("✅ All checks passed!", fg="green", bold=True))

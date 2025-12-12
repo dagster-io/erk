@@ -496,3 +496,55 @@ def test_save_config_uses_erk_location(tmp_project: Path) -> None:
     config_path = tmp_project / ".erk" / "kits.toml"
 
     assert config_path.exists()
+
+
+def test_managed_skills_round_trip(tmp_project: Path) -> None:
+    """Test that managed_skills field is persisted and loaded correctly."""
+    from erk.kits.models.config import ProjectConfig
+
+    # Create kit with managed_skills
+    kit = InstalledKit(
+        kit_id="test-kit",
+        source_type="bundled",
+        version="1.0.0",
+        artifacts=[".claude/skills/my-skill/"],
+        managed_skills=[".erk/skills/my-skill/"],
+    )
+
+    config = ProjectConfig(
+        version="1",
+        kits={"test-kit": kit},
+    )
+
+    # Save and reload
+    save_project_config(tmp_project, config)
+    loaded_config = load_project_config(tmp_project)
+
+    assert loaded_config is not None
+    assert "test-kit" in loaded_config.kits
+    assert loaded_config.kits["test-kit"].managed_skills == [".erk/skills/my-skill/"]
+
+
+def test_managed_skills_defaults_to_empty_list(tmp_project: Path) -> None:
+    """Test that managed_skills defaults to empty list when not in config."""
+    erk_dir = tmp_project / ".erk"
+    erk_dir.mkdir(exist_ok=True)
+    config_path = erk_dir / "kits.toml"
+    config_path.write_text(
+        """
+version = "1"
+
+[kits.test-kit]
+kit_id = "test-kit"
+source_type = "bundled"
+version = "1.0.0"
+artifacts = [".claude/skills/my-skill/"]
+""",
+        encoding="utf-8",
+    )
+
+    config = load_project_config(tmp_project)
+
+    assert config is not None
+    assert "test-kit" in config.kits
+    assert config.kits["test-kit"].managed_skills == []

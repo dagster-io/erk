@@ -1,5 +1,6 @@
 """Kit installation operations."""
 
+import os
 import shutil
 from pathlib import Path
 
@@ -8,9 +9,87 @@ from erk.kits.hooks.installer import install_hooks
 from erk.kits.io.manifest import load_kit_manifest
 from erk.kits.models.artifact import ARTIFACT_TARGET_DIRS, ArtifactType
 from erk.kits.models.config import InstalledKit
-from erk.kits.operations.artifact_operations import create_artifact_operations
+from erk.kits.operations.artifact_operations import ArtifactOperations, create_artifact_operations
 from erk.kits.sources.exceptions import ArtifactConflictError
 from erk.kits.sources.resolver import ResolvedKit
+
+
+def _install_skill_two_stage(
+    source: Path,
+    skill_name: str,
+    project_dir: Path,
+    operations: ArtifactOperations,
+    overwrite: bool,
+) -> tuple[str, str]:
+    """Install a skill using two-stage installation.
+
+    Stage 1: Install to .erk/skills/{skill-name}/ (copy or symlink depending on mode)
+    Stage 2: Create symlink from .claude/skills/{skill-name}/ → .erk/skills/{skill-name}/
+
+    Args:
+        source: Source skill directory path
+        skill_name: Name of the skill
+        project_dir: Project root directory
+        operations: Artifact operations strategy (ProdMode or DevMode)
+        overwrite: Whether to overwrite existing files
+
+    Returns:
+        Tuple of (installed_artifact_path, managed_skill_path) relative to project_dir
+    """
+    # Stage 1: Install to .erk/skills/{skill-name}/
+    erk_skills_dir = project_dir / ".erk" / "skills"
+    if not erk_skills_dir.exists():
+        erk_skills_dir.mkdir(parents=True)
+
+    erk_skill_path = erk_skills_dir / skill_name
+
+    # Handle conflicts for .erk/skills/{skill-name}
+    if erk_skill_path.exists() or erk_skill_path.is_symlink():
+        if not overwrite:
+            raise ArtifactConflictError(erk_skill_path)
+        if erk_skill_path.is_symlink() or erk_skill_path.is_file():
+            erk_skill_path.unlink()
+        else:
+            shutil.rmtree(erk_skill_path)
+        user_output(f"  Overwriting: .erk/skills/{skill_name}")
+
+    # Install using strategy (copy in prod mode, symlink in dev mode)
+    operations.install_artifact(source, erk_skill_path)
+
+    # Stage 2: Create symlink from .claude/skills/{skill-name}/ → .erk/skills/{skill-name}/
+    claude_skills_dir = project_dir / ".claude" / "skills"
+    if not claude_skills_dir.exists():
+        claude_skills_dir.mkdir(parents=True)
+
+    claude_skill_path = claude_skills_dir / skill_name
+
+    # Handle conflicts for .claude/skills/{skill-name}
+    if claude_skill_path.exists() or claude_skill_path.is_symlink():
+        if not overwrite:
+            raise ArtifactConflictError(claude_skill_path)
+        if claude_skill_path.is_symlink() or claude_skill_path.is_file():
+            claude_skill_path.unlink()
+        else:
+            shutil.rmtree(claude_skill_path)
+        user_output(f"  Overwriting: .claude/skills/{skill_name}")
+
+    # Always create symlink for stage 2 (relative path from .claude/skills/ to .erk/skills/)
+    # Calculate relative path: ../../.erk/skills/{skill-name}
+    erk_skill_abs = erk_skill_path.resolve()
+    claude_skill_abs = claude_skill_path.parent.resolve() / skill_name
+    relative_path = os.path.relpath(erk_skill_abs, claude_skill_abs.parent)
+    claude_skill_path.symlink_to(relative_path)
+
+    # Return paths relative to project_dir
+    installed_artifact = str(claude_skill_path.relative_to(project_dir))
+    managed_skill = str(erk_skill_path.relative_to(project_dir))
+
+    return installed_artifact, managed_skill
+
+
+def _is_skill_directory(source: Path) -> bool:
+    """Check if a source path is a skill directory (not a file)."""
+    return source.is_dir()
 
 
 def install_kit(
@@ -31,6 +110,7 @@ def install_kit(
     manifest = load_kit_manifest(resolved.manifest_path)
 
     installed_artifacts: list[str] = []
+    managed_skills: list[str] = []
 
     # Create appropriate installation strategy
     operations = create_artifact_operations(project_dir, resolved)
@@ -79,6 +159,21 @@ def install_kit(
                 # Fallback: use the whole path if prefix doesn't match
                 target = target_dir / artifact_rel_path
 
+            # Check if this is a skill directory - use two-stage installation
+            if artifact_type == "skill" and _is_skill_directory(source):
+                skill_name = source.name
+                installed_path, managed_path = _install_skill_two_stage(
+                    source=source,
+                    skill_name=skill_name,
+                    project_dir=project_dir,
+                    operations=operations,
+                    overwrite=overwrite,
+                )
+                installed_artifacts.append(installed_path)
+                managed_skills.append(managed_path)
+                user_output(f"  Installed skill: {skill_name} (managed)")
+                continue
+
             # Handle conflicts (check is_symlink too for broken symlinks)
             if target.exists() or target.is_symlink():
                 if not overwrite:
@@ -115,4 +210,5 @@ def install_kit(
         version=manifest.version,
         artifacts=installed_artifacts,
         hooks=manifest.hooks if manifest.hooks else [],
+        managed_skills=managed_skills,
     )

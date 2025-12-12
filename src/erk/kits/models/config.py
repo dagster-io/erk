@@ -15,6 +15,7 @@ class InstalledKit:
     version: str
     artifacts: list[str]
     hooks: list[HookDefinition] = field(default_factory=list)
+    managed_skills: list[str] = field(default_factory=list)  # Paths in .erk/skills/
 
 
 @dataclass(frozen=True)

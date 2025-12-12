@@ -53,8 +53,12 @@ class ProdOperations(ArtifactOperations):
         if not target.parent.exists():
             target.parent.mkdir(parents=True, exist_ok=True)
 
-        content = source.read_text(encoding="utf-8")
-        target.write_text(content, encoding="utf-8")
+        if source.is_dir():
+            # Copy entire directory tree
+            shutil.copytree(source, target, dirs_exist_ok=True)
+        else:
+            content = source.read_text(encoding="utf-8")
+            target.write_text(content, encoding="utf-8")
         return ""
 
     def remove_artifacts(self, artifact_paths: list[str], project_dir: Path) -> list[str]:

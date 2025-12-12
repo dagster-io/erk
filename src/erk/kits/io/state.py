@@ -189,6 +189,7 @@ def load_project_config(project_dir: Path) -> ProjectConfig | None:
                 version=kit_data["version"],
                 artifacts=kit_data["artifacts"],
                 hooks=hooks,
+                managed_skills=kit_data.get("managed_skills", []),
             )
 
     # Load dev_mode from pyproject.toml if available
@@ -249,6 +250,10 @@ def save_project_config(project_dir: Path, config: ProjectConfig) -> None:
         # Add hooks if present
         if kit.hooks:
             kit_data["hooks"] = [h.model_dump(mode="json", exclude_none=True) for h in kit.hooks]
+
+        # Add managed_skills if present
+        if kit.managed_skills:
+            kit_data["managed_skills"] = kit.managed_skills
 
         data["kits"][kit_id] = kit_data
 

@@ -622,3 +622,161 @@ def test_install_kit_workflow_creates_github_directory(tmp_project: Path) -> Non
     assert (tmp_project / ".github").exists()
     assert (tmp_project / ".github" / "workflows").exists()
     assert (tmp_project / ".github" / "workflows" / "test-kit" / "build.yml").exists()
+
+
+def test_install_skill_directory_two_stage(tmp_project: Path) -> None:
+    """Test that skill directories use two-stage installation.
+
+    Skills should be:
+    1. Installed to .erk/skills/{skill-name}/
+    2. Symlinked from .claude/skills/{skill-name}/ -> .erk/skills/{skill-name}/
+    """
+    # Create mock kit with a skill directory
+    kit_dir = tmp_project / "mock_kit"
+    kit_dir.mkdir()
+
+    manifest = kit_dir / "kit.yaml"
+    manifest.write_text(
+        "name: test-kit\n"
+        "version: 1.0.0\n"
+        "description: Test kit with skill directory\n"
+        "artifacts:\n"
+        "  skill:\n"
+        "    - skills/my-skill\n",
+        encoding="utf-8",
+    )
+
+    # Create skill directory (not a file)
+    skill_dir = kit_dir / "skills" / "my-skill"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("# My Skill\nContent here.", encoding="utf-8")
+    (skill_dir / "extra.md").write_text("# Extra content", encoding="utf-8")
+
+    resolved = ResolvedKit(
+        kit_id="test-kit",
+        version="1.0.0",
+        source_type="package",
+        manifest_path=manifest,
+        artifacts_base=kit_dir,
+    )
+
+    # Install
+    installed = install_kit(resolved, tmp_project)
+
+    # Verify the skill was installed using two-stage pattern
+    assert installed.kit_id == "test-kit"
+    assert len(installed.managed_skills) == 1
+    assert ".erk/skills/my-skill" in installed.managed_skills[0]
+
+    # Verify .erk/skills/{skill-name}/ exists (Stage 1)
+    erk_skill_path = tmp_project / ".erk" / "skills" / "my-skill"
+    assert erk_skill_path.exists()
+
+    # Verify .claude/skills/{skill-name}/ is a symlink (Stage 2)
+    claude_skill_path = tmp_project / ".claude" / "skills" / "my-skill"
+    assert claude_skill_path.exists()
+    assert claude_skill_path.is_symlink()
+
+    # Verify the symlink points to the correct location
+    symlink_target = claude_skill_path.resolve()
+    assert symlink_target == erk_skill_path.resolve()
+
+    # Verify content is accessible through the symlink
+    skill_content = (claude_skill_path / "SKILL.md").read_text(encoding="utf-8")
+    assert "# My Skill" in skill_content
+
+
+def test_install_skill_directory_managed_skills_tracking(tmp_project: Path) -> None:
+    """Test that managed_skills tracks the .erk/skills paths correctly."""
+    kit_dir = tmp_project / "mock_kit"
+    kit_dir.mkdir()
+
+    manifest = kit_dir / "kit.yaml"
+    manifest.write_text(
+        "name: multi-skill-kit\n"
+        "version: 1.0.0\n"
+        "description: Kit with multiple skills\n"
+        "artifacts:\n"
+        "  skill:\n"
+        "    - skills/skill-a\n"
+        "    - skills/skill-b\n",
+        encoding="utf-8",
+    )
+
+    # Create multiple skill directories
+    for skill_name in ["skill-a", "skill-b"]:
+        skill_dir = kit_dir / "skills" / skill_name
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(f"# {skill_name}", encoding="utf-8")
+
+    resolved = ResolvedKit(
+        kit_id="multi-skill-kit",
+        version="1.0.0",
+        source_type="package",
+        manifest_path=manifest,
+        artifacts_base=kit_dir,
+    )
+
+    installed = install_kit(resolved, tmp_project)
+
+    # Verify managed_skills tracking
+    assert len(installed.managed_skills) == 2
+    managed_paths = sorted(installed.managed_skills)
+    assert ".erk/skills/skill-a" in managed_paths[0]
+    assert ".erk/skills/skill-b" in managed_paths[1]
+
+    # Verify artifacts list has the .claude symlink paths
+    assert len(installed.artifacts) == 2
+    artifact_paths = sorted(installed.artifacts)
+    assert ".claude/skills/skill-a" in artifact_paths[0]
+    assert ".claude/skills/skill-b" in artifact_paths[1]
+
+
+def test_install_skill_directory_overwrite(tmp_project: Path) -> None:
+    """Test that overwrite=True correctly replaces existing skill installations."""
+    # Create existing skill installation
+    erk_skills = tmp_project / ".erk" / "skills" / "existing-skill"
+    erk_skills.mkdir(parents=True)
+    (erk_skills / "SKILL.md").write_text("# Old content", encoding="utf-8")
+
+    claude_skills = tmp_project / ".claude" / "skills"
+    claude_skills.mkdir(parents=True)
+    claude_skill_symlink = claude_skills / "existing-skill"
+    claude_skill_symlink.symlink_to("../../.erk/skills/existing-skill")
+
+    # Create kit with updated skill
+    kit_dir = tmp_project / "mock_kit"
+    kit_dir.mkdir()
+
+    manifest = kit_dir / "kit.yaml"
+    manifest.write_text(
+        "name: test-kit\n"
+        "version: 2.0.0\n"
+        "description: Updated kit\n"
+        "artifacts:\n"
+        "  skill:\n"
+        "    - skills/existing-skill\n",
+        encoding="utf-8",
+    )
+
+    skill_dir = kit_dir / "skills" / "existing-skill"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("# New content", encoding="utf-8")
+
+    resolved = ResolvedKit(
+        kit_id="test-kit",
+        version="2.0.0",
+        source_type="package",
+        manifest_path=manifest,
+        artifacts_base=kit_dir,
+    )
+
+    # Install with overwrite
+    installed = install_kit(resolved, tmp_project, overwrite=True)
+
+    # Verify content was updated
+    skill_content = (tmp_project / ".claude" / "skills" / "existing-skill" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    assert "# New content" in skill_content
+    assert installed.version == "2.0.0"

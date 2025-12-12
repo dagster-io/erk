@@ -1,5 +1,6 @@
 """Sync operations for kits."""
 
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
@@ -136,6 +137,9 @@ def sync_kit(
         for artifact_path in skipped:
             user_output(f"    {artifact_path}")
 
+    # Remove managed skills from .erk/skills/ (two-stage skill cleanup)
+    _remove_managed_skills(installed.managed_skills, project_dir)
+
     # Install new version with overwrite enabled
     new_installed = install_kit(
         resolved,
@@ -151,6 +155,29 @@ def sync_kit(
         artifacts_updated=len(new_installed.artifacts),
         updated_kit=new_installed,
     )
+
+
+def _remove_managed_skills(managed_skills: list[str], project_dir: Path) -> None:
+    """Remove managed skills from .erk/skills/ directory.
+
+    This is part of the two-stage skill cleanup:
+    1. Artifacts in .claude/skills/ are removed by operations.remove_artifacts
+    2. This function removes the corresponding .erk/skills/ entries
+
+    Args:
+        managed_skills: List of managed skill paths (e.g., [".erk/skills/my-skill"])
+        project_dir: Project root directory
+    """
+    for skill_path in managed_skills:
+        full_path = project_dir / skill_path
+        if not full_path.exists():
+            continue
+
+        if full_path.is_symlink() or full_path.is_file():
+            full_path.unlink()
+        else:
+            shutil.rmtree(full_path)
+        user_output(f"  Removed managed skill: {skill_path}")
 
 
 def sync_all_kits(
