@@ -187,77 +187,26 @@ def test_detect_multiple_orphaned_directories(tmp_project: Path) -> None:
     }
 
 
-# --- Skills with different directory names than kit ID ---
+# --- Skills directory is excluded from orphan detection ---
+#
+# Skills are intentionally excluded from orphan detection because Claude Code
+# resolves skills by direct folder name. There's no way to distinguish
+# "local skill I created" from "orphaned kit skill" in the flat namespace.
 
 
-def test_detect_skill_not_orphaned_when_declared(tmp_project: Path) -> None:
-    """Test that skill is not orphaned when declared in kit artifacts.
+def test_detect_skills_directory_excluded(tmp_project: Path) -> None:
+    """Test that skills/ directory is not checked for orphans.
 
-    This tests the key case where skill directory name differs from kit ID:
-    gt kit declares .claude/skills/gt-graphite/SKILL.md
+    Skills use a flat namespace where Claude Code resolves by folder name directly.
+    We can't distinguish local skills from orphaned kit skills, so we skip detection.
     """
     claude_dir = tmp_project / ".claude"
-    (claude_dir / "skills" / "gt-graphite").mkdir(parents=True)
-
-    config = ProjectConfig(
-        version="1",
-        kits={
-            "gt": InstalledKit(
-                kit_id="gt",
-                source_type="bundled",
-                version="1.0.0",
-                artifacts=[".claude/skills/gt-graphite/SKILL.md"],
-            ),
-        },
-    )
-
-    result = detect_orphaned_artifacts(tmp_project, config)
-
-    assert result.orphaned_directories == []
-
-
-def test_detect_skill_orphaned_when_not_declared(tmp_project: Path) -> None:
-    """Test that skill is orphaned when not declared by any kit."""
-    claude_dir = tmp_project / ".claude"
     (claude_dir / "skills" / "unknown-skill").mkdir(parents=True)
+    (claude_dir / "skills" / "another-skill").mkdir(parents=True)
 
-    config = ProjectConfig(
-        version="1",
-        kits={
-            "some-kit": InstalledKit(
-                kit_id="some-kit",
-                source_type="bundled",
-                version="1.0.0",
-                artifacts=[".claude/commands/some-kit/cmd.md"],
-            ),
-        },
-    )
+    result = detect_orphaned_artifacts(tmp_project, None)
 
-    result = detect_orphaned_artifacts(tmp_project, config)
-
-    assert len(result.orphaned_directories) == 1
-    assert result.orphaned_directories[0].path == Path(".claude/skills/unknown-skill")
-
-
-def test_detect_versioned_skill_not_orphaned(tmp_project: Path) -> None:
-    """Test versioned skill like dignified-python-313 when declared."""
-    claude_dir = tmp_project / ".claude"
-    (claude_dir / "skills" / "dignified-python-313").mkdir(parents=True)
-
-    config = ProjectConfig(
-        version="1",
-        kits={
-            "dignified-python": InstalledKit(
-                kit_id="dignified-python",
-                source_type="bundled",
-                version="1.0.0",
-                artifacts=[".claude/skills/dignified-python-313/SKILL.md"],
-            ),
-        },
-    )
-
-    result = detect_orphaned_artifacts(tmp_project, config)
-
+    # No orphans reported for skills/
     assert result.orphaned_directories == []
 
 
