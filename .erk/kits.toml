@@ -69,6 +69,7 @@ kit_id = "git"
 source_type = "bundled"
 version = "0.1.0"
 artifacts = [
+    ".claude/commands/git/pr-push.md",
     ".claude/agents/git/git-branch-submitter.md",
 ]
 
