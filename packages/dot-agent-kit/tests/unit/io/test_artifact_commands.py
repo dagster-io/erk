@@ -39,7 +39,7 @@ def setup_test_artifacts(tmp_path: Path) -> tuple[Path, Path]:
     project_dir = tmp_path / "project"
     erk_dir = project_dir / ".erk"
     erk_dir.mkdir(exist_ok=True)
-    config_file = erk_dir / "kits.toml"
+    config_file = erk_dir / "installed.toml"
     config_file.write_text("[kits]\n# Empty config", encoding="utf-8")
 
     return user_claude, project_claude
@@ -149,7 +149,7 @@ def test_artifact_list_managed_filter(tmp_path: Path, monkeypatch: pytest.Monkey
     project_dir = tmp_path / "project"
     erk_dir = project_dir / ".erk"
     erk_dir.mkdir(exist_ok=True)
-    config_file = erk_dir / "kits.toml"
+    config_file = erk_dir / "installed.toml"
     config_file.write_text(
         """
 [kits.test-kit]

@@ -69,8 +69,8 @@ def test_list_not_in_project_directory() -> None:
         result = runner.invoke(list_installed_kits)
 
         assert result.exit_code == 1
-        # Config is now expected at .erk/kits.toml
-        assert "Error: No .erk/kits.toml found" in result.output
+        # Config is now expected at .erk/installed.toml
+        assert "Error: No .erk/installed.toml found" in result.output
 
 
 def test_list_single_kit() -> None:

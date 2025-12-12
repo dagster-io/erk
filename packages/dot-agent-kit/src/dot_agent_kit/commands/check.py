@@ -91,7 +91,7 @@ class UnknownFieldsResult:
 
 
 def detect_unknown_top_level_fields(data: dict) -> list[str]:
-    """Detect unknown fields at the top level of kits.toml.
+    """Detect unknown fields at the top level of installed.toml.
 
     Args:
         data: Raw TOML data as dictionary
@@ -124,7 +124,7 @@ def validate_unknown_fields(
     project_dir: Path,
     config: ProjectConfig,
 ) -> list[UnknownFieldsResult]:
-    """Validate that no unknown fields exist in kits.toml.
+    """Validate that no unknown fields exist in installed.toml.
 
     Args:
         project_dir: Project root directory
@@ -136,7 +136,7 @@ def validate_unknown_fields(
     results = []
 
     # Reload raw TOML data
-    toml_path = project_dir / ".erk" / "kits.toml"
+    toml_path = project_dir / ".erk" / "installed.toml"
     if not toml_path.exists():
         return results
 
@@ -196,7 +196,7 @@ def validate_kit_fields(kit: InstalledKit) -> list[str]:
         errors.append("version is empty")
 
     # Validate artifacts list is non-empty (except for bundled kits which can
-    # define artifacts in their bundled kit.yaml instead of kits.toml)
+    # define artifacts in their bundled kit.yaml instead of installed.toml)
     if not kit.artifacts and kit.source_type != SOURCE_TYPE_BUNDLED:
         errors.append("artifacts list is empty")
 
@@ -716,7 +716,7 @@ def check(verbose: bool) -> None:
     sync_passed = True
     if not config_exists:
         if verbose:
-            user_output("No kits.toml found - skipping sync check")
+            user_output("No installed.toml found - skipping sync check")
     elif len(config.kits) == 0:
         if verbose:
             user_output("No kits installed - skipping sync check")
@@ -864,7 +864,7 @@ def check(verbose: bool) -> None:
     hook_passed = True
     if not config_exists:
         if verbose:
-            user_output("No kits.toml found - skipping hook validation")
+            user_output("No installed.toml found - skipping hook validation")
     elif len(config.kits) == 0:
         if verbose:
             user_output("No kits installed - skipping hook validation")
@@ -977,7 +977,7 @@ def check(verbose: bool) -> None:
     unknown_fields_passed = True
     if not config_exists:
         if verbose:
-            user_output("No kits.toml found - skipping unknown field detection")
+            user_output("No installed.toml found - skipping unknown field detection")
     else:
         unknown_field_results = validate_unknown_fields(project_dir, config)
 

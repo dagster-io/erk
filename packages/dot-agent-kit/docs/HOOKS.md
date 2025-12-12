@@ -25,7 +25,7 @@ Hooks are automated triggers that run commands at specific lifecycle events in C
 
 1. **Definition**: Hooks are defined in `kit.yaml` with two required sections
 2. **Installation**: `erk kit install` writes hook configuration to:
-   - `kits.toml` (kit metadata)
+   - `installed.toml` (kit metadata)
    - `.claude/settings.json` (Claude Code configuration)
 3. **Execution**: When lifecycle event fires, Claude Code:
    - Runs the invocation command
@@ -129,7 +129,7 @@ The following Claude Code hook capabilities are **not yet supported** by dot-age
 | **Organization**      | Kit-based: hooks bundled with related skills/commands/agents | Manual: edit `.claude/settings.json` directly              |
 | **Installation**      | Atomic: `erk kit install {kit}` installs all artifacts       | Manual: copy/paste hook configuration                      |
 | **Removal**           | Atomic: `erk kit remove {kit}` removes all artifacts         | Manual: delete hook entries from settings.json             |
-| **Metadata Tracking** | Tracked in `kits.toml` with source information               | No metadata tracking                                       |
+| **Metadata Tracking** | Tracked in `installed.toml` with source information               | No metadata tracking                                       |
 | **Version Control**   | Hooks are code artifacts in repository                       | Configuration-only (settings.json)                         |
 | **Portability**       | Project-portable: kits work across projects                  | Must manually replicate per project                        |
 | **Hook Types**        | Command-based only (currently)                               | Command-based AND prompt-based                             |
@@ -346,7 +346,7 @@ erk kit exec {kit-name} {hook-name}
 ### Verification Checklist
 
 - [ ] Hook appears in `erk kit show {kit-name}`
-- [ ] Hook ID in `kits.toml` matches kit.yaml
+- [ ] Hook ID in `installed.toml` matches kit.yaml
 - [ ] Hook configuration in `.claude/settings.json`
 - [ ] Direct execution produces expected output
 - [ ] Function name matches file name

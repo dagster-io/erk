@@ -1,4 +1,4 @@
-"""State file I/O for kits.toml."""
+"""State file I/O for installed.toml."""
 
 from pathlib import Path
 
@@ -74,7 +74,7 @@ def _build_hook_validation_error_message(
             "",
             "Suggested action:",
             f"  1. Run 'erk kit install {kit_name}' to reinstall with correct configuration",
-            "  2. Or manually edit kits.toml to add missing fields",
+            "  2. Or manually edit installed.toml to add missing fields",
             "  3. Check kit documentation for hook format",
         ]
     )
@@ -113,7 +113,7 @@ def _load_dev_mode_from_pyproject(project_dir: Path) -> bool:
 
 
 def _find_config_path(project_dir: Path) -> Path | None:
-    """Find kits.toml config file.
+    """Find installed.toml config file.
 
     Args:
         project_dir: Project root directory
@@ -121,16 +121,16 @@ def _find_config_path(project_dir: Path) -> Path | None:
     Returns:
         Path to config file if found, None otherwise
     """
-    config_path = project_dir / ".erk" / "kits.toml"
+    config_path = project_dir / ".erk" / "installed.toml"
     if config_path.exists():
         return config_path
     return None
 
 
 def load_project_config(project_dir: Path) -> ProjectConfig | None:
-    """Load kits.toml from project directory.
+    """Load installed.toml from project directory.
 
-    Checks .erk/kits.toml for kit configuration.
+    Checks .erk/installed.toml for kit configuration.
 
     Returns None if file doesn't exist.
     """
@@ -202,7 +202,7 @@ def load_project_config(project_dir: Path) -> ProjectConfig | None:
 
 
 def require_project_config(project_dir: Path) -> ProjectConfig:
-    """Load kits.toml and exit with error if not found.
+    """Load installed.toml and exit with error if not found.
 
     This is a convenience wrapper around load_project_config that enforces
     the config must exist, displaying a helpful error message if not.
@@ -211,26 +211,26 @@ def require_project_config(project_dir: Path) -> ProjectConfig:
         ProjectConfig if found
 
     Raises:
-        SystemExit: If kits.toml not found
+        SystemExit: If installed.toml not found
     """
     config = load_project_config(project_dir)
     if config is None:
-        msg = "Error: No .erk/kits.toml found. Run 'erk init' to create one."
+        msg = "Error: No .erk/installed.toml found. Run 'erk init' to create one."
         user_output(msg)
         raise SystemExit(1)
     return config
 
 
 def save_project_config(project_dir: Path, config: ProjectConfig) -> None:
-    """Save kits.toml to .erk/ directory.
+    """Save installed.toml to .erk/ directory.
 
-    Always saves to .erk/kits.toml.
+    Always saves to .erk/installed.toml.
     Creates .erk/ directory if it doesn't exist.
     """
     erk_dir = project_dir / ".erk"
     if not erk_dir.exists():
         erk_dir.mkdir(parents=True)
-    config_path = erk_dir / "kits.toml"
+    config_path = erk_dir / "installed.toml"
 
     # Convert ProjectConfig to dict
     data = {

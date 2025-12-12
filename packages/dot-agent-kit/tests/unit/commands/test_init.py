@@ -10,7 +10,7 @@ from dot_agent_kit.io.state import load_project_config
 
 
 def test_init_creates_config(tmp_project: Path, cli_runner: CliRunner) -> None:
-    """Test that init creates .erk/kits.toml with correct structure."""
+    """Test that init creates .erk/installed.toml with correct structure."""
     original_cwd = os.getcwd()
     try:
         os.chdir(tmp_project)
@@ -20,7 +20,7 @@ def test_init_creates_config(tmp_project: Path, cli_runner: CliRunner) -> None:
         assert "Created" in result.output
 
         # Config is now created in .erk/ directory
-        config_path = tmp_project / ".erk" / "kits.toml"
+        config_path = tmp_project / ".erk" / "installed.toml"
         assert config_path.exists()
 
         config = load_project_config(tmp_project)
@@ -81,7 +81,7 @@ def test_init_errors_when_config_exists(tmp_project: Path, cli_runner: CliRunner
         # Try to init again - should fail with helpful message
         result2 = cli_runner.invoke(init, [], catch_exceptions=False, obj={})
         assert result2.exit_code == 1
-        # Config is now at .erk/kits.toml
+        # Config is now at .erk/installed.toml
         assert "already exists" in result2.output
         assert "Use --force to overwrite" in result2.output
     finally:

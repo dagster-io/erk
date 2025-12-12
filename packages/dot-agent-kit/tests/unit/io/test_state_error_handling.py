@@ -84,7 +84,7 @@ def test_build_hook_validation_error_message_with_missing_fields() -> None:
     assert "description" in message
     # Should include remediation steps
     assert "erk kit install" in message
-    assert "manually edit kits.toml" in message
+    assert "manually edit installed.toml" in message
 
 
 def test_build_hook_validation_error_message_with_invalid_fields() -> None:

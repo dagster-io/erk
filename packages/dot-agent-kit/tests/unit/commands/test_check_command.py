@@ -405,7 +405,7 @@ def test_check_command_no_config(tmp_path: Path) -> None:
         result = runner.invoke(check, ["--verbose"])
 
         assert result.exit_code == 0
-        assert "No kits.toml found" in result.output
+        assert "No installed.toml found" in result.output
         assert "All checks passed" in result.output
 
 

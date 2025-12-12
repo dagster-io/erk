@@ -25,7 +25,7 @@ Before exploring the codebase or making changes, familiarize yourself with these
 
 - **Artifact**: A Claude Code extension file (skill, command, agent, hook, or doc)
 - **Kit**: A packaged collection of related artifacts
-- **MANAGED**: Artifact installed from a kit, tracked in `kits.toml`
+- **MANAGED**: Artifact installed from a kit, tracked in `installed.toml`
 - **LOCAL**: Artifact created manually, not associated with a kit
 - **Level**: USER (`~/.claude/`) or PROJECT (`./.claude/`)
 
@@ -36,6 +36,6 @@ Check [docs/GLOSSARY.md](docs/GLOSSARY.md) when you need to:
 - Understand the difference between MANAGED and LOCAL artifacts
 - Learn about the data models (InstalledArtifact, ArtifactSource, etc.)
 - See examples of common filtering and query patterns
-- Understand the structure of `kits.toml`
+- Understand the structure of `installed.toml`
 
 This prevents the need to explore the codebase just to understand basic terminology.

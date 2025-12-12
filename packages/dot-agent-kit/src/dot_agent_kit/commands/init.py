@@ -1,4 +1,4 @@
-"""Init command for creating .erk/kits.toml configuration."""
+"""Init command for creating .erk/installed.toml configuration."""
 
 from pathlib import Path
 
@@ -15,12 +15,12 @@ from dot_agent_kit.operations.agent_docs import init_docs_agent
     "--force",
     "-f",
     is_flag=True,
-    help="Overwrite existing .erk/kits.toml if present",
+    help="Overwrite existing .erk/installed.toml if present",
 )
 def init(force: bool) -> None:
-    """Initialize .erk/kits.toml configuration file.
+    """Initialize .erk/installed.toml configuration file.
 
-    Creates a new kits.toml configuration file in .erk/ directory
+    Creates a new installed.toml configuration file in .erk/ directory
     at the git repo root (or current directory if not in a git repo).
     Also creates .erk/ directory if it doesn't exist.
 
@@ -30,7 +30,7 @@ def init(force: bool) -> None:
     Use --force to overwrite an existing configuration.
     """
     project_dir = resolve_project_dir(Path.cwd())
-    config_path = project_dir / ".erk" / "kits.toml"
+    config_path = project_dir / ".erk" / "installed.toml"
     erk_dir = project_dir / ".erk"
 
     # Check if config already exists

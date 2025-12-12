@@ -346,14 +346,14 @@ def init_cmd(
     cfg_path.write_text(content, encoding="utf-8")
     user_output(f"Wrote {cfg_path}")
 
-    # Initialize .erk/kits.toml if it doesn't exist (or overwrite with --force)
-    kits_toml_path = repo_context.root / ".erk" / "kits.toml"
-    if kits_toml_path.exists() and not force:
-        user_output(f"Kit config already exists: {kits_toml_path}")
+    # Initialize .erk/installed.toml if it doesn't exist (or overwrite with --force)
+    installed_toml_path = repo_context.root / ".erk" / "installed.toml"
+    if installed_toml_path.exists() and not force:
+        user_output(f"Kit config already exists: {installed_toml_path}")
     else:
         kit_config = create_default_kit_config()
         save_kit_config(repo_context.root, kit_config)
-        user_output(f"Created {kits_toml_path}")
+        user_output(f"Created {installed_toml_path}")
 
     # Initialize docs/agent/ templates
     docs_result = init_docs_agent(repo_context.root, force=force)

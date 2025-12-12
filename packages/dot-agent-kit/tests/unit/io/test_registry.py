@@ -330,7 +330,7 @@ def test_old_format_migration() -> None:
             encoding="utf-8",
         )
 
-        # Create kits.toml with kit info
+        # Create installed.toml with kit info
         config = ProjectConfig(
             version="1",
             kits={

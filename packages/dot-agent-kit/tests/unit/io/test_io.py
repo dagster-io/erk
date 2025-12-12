@@ -143,7 +143,7 @@ def test_load_project_config_valid_bundled_kit(tmp_project: Path) -> None:
     # Write a config with bundled kit
     erk_dir = tmp_project / ".erk"
     erk_dir.mkdir(exist_ok=True)
-    config_path = erk_dir / "kits.toml"
+    config_path = erk_dir / "installed.toml"
     config_path.write_text(
         """
 version = "1"
@@ -172,7 +172,7 @@ def test_load_project_config_valid_package_kit(tmp_project: Path) -> None:
     # Write a config with package kit
     erk_dir = tmp_project / ".erk"
     erk_dir.mkdir(exist_ok=True)
-    config_path = erk_dir / "kits.toml"
+    config_path = erk_dir / "installed.toml"
     config_path.write_text(
         """
 version = "1"
@@ -201,7 +201,7 @@ def test_load_project_config_missing_kit_id(tmp_project: Path) -> None:
     # Write a config without kit_id
     erk_dir = tmp_project / ".erk"
     erk_dir.mkdir(exist_ok=True)
-    config_path = erk_dir / "kits.toml"
+    config_path = erk_dir / "installed.toml"
     config_path.write_text(
         """
 version = "1"
@@ -229,7 +229,7 @@ def test_load_project_config_missing_source_type(tmp_project: Path) -> None:
     # Write a config without source_type
     erk_dir = tmp_project / ".erk"
     erk_dir.mkdir(exist_ok=True)
-    config_path = erk_dir / "kits.toml"
+    config_path = erk_dir / "installed.toml"
     config_path.write_text(
         """
 version = "1"
@@ -257,7 +257,7 @@ def test_load_project_config_various_identifier_formats(tmp_project: Path) -> No
     # Write a config with identifiers using dashes, underscores, numbers
     erk_dir = tmp_project / ".erk"
     erk_dir.mkdir(exist_ok=True)
-    config_path = erk_dir / "kits.toml"
+    config_path = erk_dir / "installed.toml"
     config_path.write_text(
         """
 version = "1"
@@ -313,7 +313,7 @@ def test_dev_mode_disabled_by_default(tmp_project: Path) -> None:
     """Test that dev_mode is False by default when not specified."""
     erk_dir = tmp_project / ".erk"
     erk_dir.mkdir(exist_ok=True)
-    config_path = erk_dir / "kits.toml"
+    config_path = erk_dir / "installed.toml"
     config_path.write_text(
         """
 version = "1"
@@ -346,10 +346,10 @@ dev_mode = true
         encoding="utf-8",
     )
 
-    # Create kits.toml
+    # Create installed.toml
     erk_dir = tmp_project / ".erk"
     erk_dir.mkdir(exist_ok=True)
-    config_path = erk_dir / "kits.toml"
+    config_path = erk_dir / "installed.toml"
     config_path.write_text(
         """
 version = "1"
@@ -382,10 +382,10 @@ dev_mode = false
         encoding="utf-8",
     )
 
-    # Create kits.toml
+    # Create installed.toml
     erk_dir = tmp_project / ".erk"
     erk_dir.mkdir(exist_ok=True)
-    config_path = erk_dir / "kits.toml"
+    config_path = erk_dir / "installed.toml"
     config_path.write_text(
         """
 version = "1"
@@ -408,10 +408,10 @@ artifacts = ["agents/test.md"]
 
 def test_dev_mode_no_pyproject(tmp_project: Path) -> None:
     """Test that dev_mode defaults to False when pyproject.toml doesn't exist."""
-    # Only create kits.toml (no pyproject.toml)
+    # Only create installed.toml (no pyproject.toml)
     erk_dir = tmp_project / ".erk"
     erk_dir.mkdir(exist_ok=True)
-    config_path = erk_dir / "kits.toml"
+    config_path = erk_dir / "installed.toml"
     config_path.write_text(
         """
 version = "1"
@@ -445,10 +445,10 @@ version = "1.0.0"
         encoding="utf-8",
     )
 
-    # Create kits.toml
+    # Create installed.toml
     erk_dir = tmp_project / ".erk"
     erk_dir.mkdir(exist_ok=True)
-    config_path = erk_dir / "kits.toml"
+    config_path = erk_dir / "installed.toml"
     config_path.write_text(
         """
 version = "1"
@@ -482,17 +482,17 @@ def test_save_config_creates_erk_directory(tmp_project: Path) -> None:
 
     # .erk directory should now exist
     assert erk_dir.exists()
-    assert (erk_dir / "kits.toml").exists()
+    assert (erk_dir / "installed.toml").exists()
 
 
 def test_save_config_uses_erk_location(tmp_project: Path) -> None:
-    """Test that save_project_config saves to .erk/kits.toml."""
+    """Test that save_project_config saves to .erk/installed.toml."""
     config = create_default_config()
 
     # Save config
     save_project_config(tmp_project, config)
 
-    # Should be saved to .erk/kits.toml
-    config_path = tmp_project / ".erk" / "kits.toml"
+    # Should be saved to .erk/installed.toml
+    config_path = tmp_project / ".erk" / "installed.toml"
 
     assert config_path.exists()

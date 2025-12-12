@@ -14,7 +14,7 @@ A file that extends Claude Code functionality. Artifacts live in `.claude/` dire
 
 ### Kit
 
-A packaged collection of related artifacts that can be installed, updated, and removed as a unit. Kits are tracked in `kits.toml` and can include any combination of artifact types.
+A packaged collection of related artifacts that can be installed, updated, and removed as a unit. Kits are tracked in `installed.toml` and can include any combination of artifact types.
 
 ### Artifact Source
 
@@ -23,7 +23,7 @@ Artifacts have one of two sources:
 #### MANAGED
 
 - Installed from a kit
-- Tracked in `kits.toml` under `[kits.<kit-id>].artifacts`
+- Tracked in `installed.toml` under `[kits.<kit-id>].artifacts`
 - Has `kit_id` and `kit_version` metadata
 - Updated/removed via kit commands
 - Example: A skill installed via `erk kit install devrun`
@@ -32,7 +32,7 @@ Artifacts have one of two sources:
 
 - Created manually by the user
 - Not associated with any kit
-- Not tracked in `kits.toml`
+- Not tracked in `installed.toml`
 - Managed individually, not as part of a kit
 - Example: A custom command created via `erk artifact create command my-cmd`
 
@@ -54,7 +54,7 @@ Artifacts can be installed at two levels:
 
 ## Configuration
 
-### kits.toml
+### installed.toml
 
 Project configuration file that tracks installed kits and their artifacts. Structure:
 
@@ -71,7 +71,7 @@ artifacts = [
 
 ### InstalledKit
 
-Data model representing a kit entry in `kits.toml`:
+Data model representing a kit entry in `installed.toml`:
 
 - `kit_id`: Unique identifier for the kit
 - `source_type`: Where the kit came from (bundled, git, etc.)
@@ -101,7 +101,7 @@ class InstalledArtifact:
 
 ```python
 class ArtifactSource(Enum):
-    MANAGED = "managed"  # Tracked in kits.toml
+    MANAGED = "managed"  # Tracked in installed.toml
     LOCAL = "local"      # Created manually, no kit association
 ```
 

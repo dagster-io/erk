@@ -102,7 +102,7 @@ Claude Artifacts:
 
 #### Source Badges
 
-- `[kit-id@version]` - Managed by kit (cyan) - Tracked in `kits.toml`
+- `[kit-id@version]` - Managed by kit (cyan) - Tracked in `installed.toml`
 - `[local]` - Locally created (yellow) - Not tracked by kit system
 
 **When to show**: Always display both level and source badges in list views.

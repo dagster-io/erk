@@ -145,7 +145,7 @@ dot-agent.toml
 
 # After
 .erk/
-  kits.toml              # renamed from dot-agent.toml
+  installed.toml              # renamed from dot-agent.toml
   kits/
     kit-registry.md
     <kit-id>/registry-entry.md
@@ -157,8 +157,8 @@ dot-agent.toml
 
 **`packages/dot-agent-kit/src/dot_agent_kit/io/state.py`**
 
-- `_find_config_path()` → look for `.erk/kits.toml`
-- `save_project_config()` → write to `.erk/kits.toml`
+- `_find_config_path()` → look for `.erk/installed.toml`
+- `save_project_config()` → write to `.erk/installed.toml`
 
 **`packages/dot-agent-kit/src/dot_agent_kit/io/registry.py`**
 
@@ -166,7 +166,7 @@ dot-agent.toml
 
 **`packages/dot-agent-kit/src/dot_agent_kit/commands/init.py`**
 
-- Create `.erk/kits.toml` instead of `.agent/dot-agent.toml`
+- Create `.erk/installed.toml` instead of `.agent/dot-agent.toml`
 
 **`AGENTS.md`**
 
@@ -176,7 +176,7 @@ dot-agent.toml
 
 Add `erk kit migrate` command that:
 
-1. Moves `dot-agent.toml` to `.erk/kits.toml`
+1. Moves `dot-agent.toml` to `.erk/installed.toml`
 2. Moves `.agent/kits/` to `.erk/kits/`
 3. Updates @-include paths in `kit-registry.md`
 4. Removes empty `.agent/` directory

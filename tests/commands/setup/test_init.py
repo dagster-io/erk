@@ -1300,7 +1300,7 @@ def test_init_handles_declined_write_confirmation() -> None:
 
 
 def test_init_creates_kits_toml() -> None:
-    """Test that init creates .erk/kits.toml file."""
+    """Test that init creates .erk/installed.toml file."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
@@ -1319,26 +1319,26 @@ def test_init_creates_kits_toml() -> None:
         result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        # Verify kits.toml was created
-        kits_toml_path = env.cwd / ".erk" / "kits.toml"
+        # Verify installed.toml was created
+        kits_toml_path = env.cwd / ".erk" / "installed.toml"
         assert kits_toml_path.exists()
         assert f"Created {kits_toml_path}" in result.output
 
 
 def test_init_skips_kits_toml_if_exists_without_force() -> None:
-    """Test that init skips kits.toml creation if already exists (without --force).
+    """Test that init skips installed.toml creation if already exists (without --force).
 
-    When kits.toml already exists and --force is not used, the command should
+    When installed.toml already exists and --force is not used, the command should
     report that kit config already exists and not overwrite it.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
 
-        # Pre-create .erk/kits.toml
+        # Pre-create .erk/installed.toml
         erk_dir = env.cwd / ".erk"
         erk_dir.mkdir(parents=True)
-        kits_toml_path = erk_dir / "kits.toml"
+        kits_toml_path = erk_dir / "installed.toml"
         original_content = 'version = "1"\n'
         kits_toml_path.write_text(original_content, encoding="utf-8")
 
@@ -1353,18 +1353,18 @@ def test_init_skips_kits_toml_if_exists_without_force() -> None:
             global_config=global_config,
         )
 
-        # Run without --force - kits.toml should be skipped since it exists
+        # Run without --force - installed.toml should be skipped since it exists
         result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        # Verify kits.toml was reported as already existing (not overwritten)
+        # Verify installed.toml was reported as already existing (not overwritten)
         assert f"Kit config already exists: {kits_toml_path}" in result.output
         # Verify content was not changed
         assert kits_toml_path.read_text(encoding="utf-8") == original_content
 
 
 def test_init_force_overwrites_kits_toml() -> None:
-    """Test that --force overwrites existing kits.toml."""
+    """Test that --force overwrites existing installed.toml."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
@@ -1375,10 +1375,10 @@ def test_init_force_overwrites_kits_toml() -> None:
         config_path = repo_dir / "config.toml"
         config_path.write_text("# Old config\n", encoding="utf-8")
 
-        # Pre-create .erk/kits.toml with old content
+        # Pre-create .erk/installed.toml with old content
         erk_dir = env.cwd / ".erk"
         erk_dir.mkdir(parents=True)
-        kits_toml_path = erk_dir / "kits.toml"
+        kits_toml_path = erk_dir / "installed.toml"
         kits_toml_path.write_text('# Old kits config\nversion = "0"\n', encoding="utf-8")
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -1395,7 +1395,7 @@ def test_init_force_overwrites_kits_toml() -> None:
         result = runner.invoke(cli, ["init", "--force"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        # Verify kits.toml was overwritten
+        # Verify installed.toml was overwritten
         content = kits_toml_path.read_text(encoding="utf-8")
         assert "# Old kits config" not in content
         assert f"Created {kits_toml_path}" in result.output

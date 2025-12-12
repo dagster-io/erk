@@ -25,7 +25,7 @@ BUNDLED KIT SOURCE                    INSTALLED ARTIFACTS
 (packages/dot-agent-kit/              (project/.claude/)
  data/kits/<kit-name>/)
 
-kit.yaml (manifest)          -->      Listed in kits.toml
+kit.yaml (manifest)          -->      Listed in installed.toml
 skills/foo/SKILL.md          -->      .claude/skills/foo/SKILL.md (symlink to source)
 docs/bar/guide.md            -->      .claude/docs/bar/guide.md (symlink to source)
 ```

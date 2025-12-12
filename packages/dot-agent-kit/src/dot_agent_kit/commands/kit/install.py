@@ -32,10 +32,10 @@ def _is_dev_mode_up_to_date(
 
     Dev mode is up to date when:
     1. All tracked artifacts exist and are symlinks
-    2. The set of artifacts in kit.yaml matches what's tracked in kits.toml
+    2. The set of artifacts in kit.yaml matches what's tracked in installed.toml
 
     Args:
-        installed: Installed kit information from kits.toml
+        installed: Installed kit information from installed.toml
         resolved: Resolved kit from source (for manifest access)
         project_dir: Project root directory
 
@@ -53,7 +53,7 @@ def _is_dev_mode_up_to_date(
         if not full_path.is_symlink():
             return False
 
-    # Check if kit.yaml has artifacts not in kits.toml (or vice versa)
+    # Check if kit.yaml has artifacts not in installed.toml (or vice versa)
     # Uses compare_artifact_lists which handles path prefix conversion
     manifest = load_kit_manifest(resolved.manifest_path)
     missing, obsolete = compare_artifact_lists(manifest.artifacts, installed.artifacts)

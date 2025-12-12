@@ -22,7 +22,7 @@ This project uses **erk kit** commands to manage Claude Code hooks. This provide
 
 - **Kit-based organization**: Hooks bundled with related skills, commands, and agents
 - **Atomic installation**: Install/remove entire kit including hooks
-- **Metadata tracking**: Track hook sources in `kits.toml`
+- **Metadata tracking**: Track hook sources in `installed.toml`
 - **Version control**: Hooks are code artifacts in the repository
 
 **Architecture**:
@@ -41,7 +41,7 @@ packages/dot-agent-kit/src/dot_agent_kit/data/kits/{kit-name}/
 
 1. `erk kit install {kit-name}` reads `kit.yaml`
 2. Writes hook configuration to `.claude/settings.json`
-3. Tracks installation in `kits.toml` metadata
+3. Tracks installation in `installed.toml` metadata
 4. Claude Code reads `.claude/settings.json` at startup
 5. Hook fires when lifecycle event + matcher conditions met
 
@@ -146,7 +146,7 @@ Use AskUserQuestion to ask the user:
 
 ## Project-Scoped Hooks
 
-Hooks can be decorated with `@project_scoped` to silently skip execution when not in a managed project (one with `.erk/kits.toml`).
+Hooks can be decorated with `@project_scoped` to silently skip execution when not in a managed project (one with `.erk/installed.toml`).
 
 ### Why Use Project-Scoped Hooks?
 
@@ -171,8 +171,8 @@ def my_reminder_hook() -> None:
 
 | Scenario                         | Behavior                        |
 | -------------------------------- | ------------------------------- |
-| In repo with `.erk/kits.toml`    | Hook fires normally             |
-| In repo without `.erk/kits.toml` | Hook exits silently (no output) |
+| In repo with `.erk/installed.toml`    | Hook fires normally             |
+| In repo without `.erk/installed.toml` | Hook exits silently (no output) |
 | Not in git repo                  | Hook exits silently             |
 
 ### Current Project-Scoped Hooks
@@ -212,7 +212,7 @@ def is_in_managed_project() -> bool:
 
     Returns True if:
     1. Current directory is inside a git repository
-    2. Repository root contains .erk/kits.toml
+    2. Repository root contains .erk/installed.toml
 
     Returns False otherwise (fails silently, no exceptions).
     """
