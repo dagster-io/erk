@@ -85,13 +85,6 @@ Add these entries to your `.gitignore` to exclude erk's temporary and session-sp
 
 After completing the setup, commit the following files to git:
 
-```bash
-git add erk.toml .claude/ .gitignore
-git commit -m "Configure erk for project"
-```
-
-**What gets committed:**
-
 - **`erk.toml`** - Project configuration (created by `erk init`)
 - **`.claude/`** - Kit artifacts (commands, skills, hooks installed by kits)
 - **`.gitignore`** - Updated exclusions for erk temporary files
