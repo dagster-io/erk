@@ -70,6 +70,7 @@ class GlobalConfig:
     shell_setup_complete: bool
     show_pr_info: bool
     github_planning: bool
+    show_release_notes: bool
 
     @staticmethod
     def test(
@@ -79,6 +80,7 @@ class GlobalConfig:
         shell_setup_complete: bool = True,
         show_pr_info: bool = True,
         github_planning: bool = True,
+        show_release_notes: bool = True,
     ) -> "GlobalConfig":
         """Create a GlobalConfig with sensible test defaults."""
         return GlobalConfig(
@@ -87,6 +89,7 @@ class GlobalConfig:
             shell_setup_complete=shell_setup_complete,
             show_pr_info=show_pr_info,
             github_planning=github_planning,
+            show_release_notes=show_release_notes,
         )
 
 

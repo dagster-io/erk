@@ -597,3 +597,81 @@ def test_config_set_github_planning_invalid_value() -> None:
 
         assert result.exit_code == 1
         assert "Invalid boolean value" in result.output
+
+
+def test_config_list_displays_show_release_notes() -> None:
+    """Test that config list displays show_release_notes value."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo_dir = env.setup_repo_structure()
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(cli, ["config", "list"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "show_release_notes=true" in result.output
+
+
+def test_config_get_show_release_notes() -> None:
+    """Test getting show_release_notes config value."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        test_ctx = env.build_context(
+            git=git_ops,
+        )
+
+        result = runner.invoke(cli, ["config", "get", "show_release_notes"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "true" in result.output.strip()
+
+
+def test_config_set_show_release_notes() -> None:
+    """Test setting show_release_notes config value."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        test_ctx = env.build_context(
+            git=git_ops,
+        )
+
+        # Set to false
+        result = runner.invoke(cli, ["config", "set", "show_release_notes", "false"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "Set show_release_notes=false" in result.output
+
+        # Verify it was saved to the config store
+        saved_config = test_ctx.config_store.load()
+        assert saved_config.show_release_notes is False
+
+
+def test_config_set_show_release_notes_invalid_value() -> None:
+    """Test that setting show_release_notes with invalid value fails."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        test_ctx = env.build_context(
+            git=git_ops,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "show_release_notes", "invalid"], obj=test_ctx
+        )
+
+        assert result.exit_code == 1
+        assert "Invalid boolean value" in result.output

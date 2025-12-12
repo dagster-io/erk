@@ -46,7 +46,19 @@ def _show_version_change_banner() -> None:
     any exception is silently caught to ensure the CLI always works.
     """
     # Inline import to avoid import-time side effects
+    from erk.core.config_store import RealConfigStore
     from erk.core.release_notes import check_for_version_change, get_current_version
+
+    # Check config to see if release notes are disabled
+    config_store = RealConfigStore()
+    if config_store.exists():
+        try:
+            config = config_store.load()
+            if not config.show_release_notes:
+                return
+        except Exception:
+            # If config loading fails, default to showing banner
+            pass
 
     try:
         changed, releases = check_for_version_change()
