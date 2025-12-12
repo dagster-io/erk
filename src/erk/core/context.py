@@ -470,7 +470,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         local_config = LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
     else:
         # Ensure metadata directories exist (needed for worktrees)
-        repo_dir = ensure_erk_metadata_dir(repo)
+        ensure_erk_metadata_dir(repo)
         # Load config from primary location (.erk/config.toml)
         # Legacy locations are detected by 'erk doctor' only
         local_config = load_config(repo.root)
