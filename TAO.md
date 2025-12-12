@@ -84,7 +84,7 @@ You are only limited by your ability to generate plans and manage workflows.
 
 3. **Implement:** Execute the plan locally with `erk implement` or dispatch it remotely with `erk submit`. Local execution creates a worktree, activates the environment, and invokes `claude`. Remote execution triggers a `gh` action that creates a PR. All of this is tracked and managed by `erk`.
 
-4. **Review and Iterate:** Review the code. If the output is close but not complete, seamlessly check out the worktree locally and iterate. If more substantial work is needed, issue a follow-up plan.
+4. **Review and Iterate:** Review the code. If the output is close but not complete, comment on the PR use that to bootstrap a follow up coding session. You can seamlessly check out the worktree locally and iterate.
 
 5. **Ship:** Merge the PR. The plan closes automatically, leaving the issue and the PR as a permanent record of what was planned, what was done, and any discussion along the way. Clean up your mess and build up the engineering organization's memory over time.
 
