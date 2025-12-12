@@ -47,6 +47,16 @@ def detect_legacy_config_locations(
             )
         )
 
+    # Check for dot-agent.toml at repo root (legacy kit config location)
+    repo_root_dot_agent = repo_root / "dot-agent.toml"
+    if repo_root_dot_agent.exists():
+        legacy_locations.append(
+            LegacyConfigLocation(
+                path=repo_root_dot_agent,
+                description="repo root (legacy kit config)",
+            )
+        )
+
     # Check for config in ~/.erk/repos/<repo>/ (legacy location)
     if metadata_dir is not None:
         metadata_dir_config = metadata_dir / "config.toml"
