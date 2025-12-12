@@ -1,22 +1,11 @@
-## Objective
-
-Create documentation for Claude CLI integration patterns used in erk, capturing input methods and subprocess invocation best practices.
-
-## Source Information
-
-- Session ID: 16d0a8f3-535d-45d2-a348-ce54498be45d
-- Context: Bug fix for OSError when passing large prompts to Claude CLI
-
-## Documentation Items
-
-### Item 1: Claude CLI Integration Patterns
-
-**Type:** Category B (Teaching Gap) - Document what was built/discovered
-**Location:** docs/agent/architecture/claude-cli-patterns.md (new file)
-**Action:** Create
-**Priority:** Medium
-
-**Content:**
+---
+title: Claude CLI Integration Patterns
+read_when:
+  - Passing prompts to Claude CLI
+  - Subprocess invocation of Claude
+  - Handling large prompts in Claude CLI calls
+  - Avoiding OSError argument list too long
+---
 
 # Claude CLI Integration Patterns
 
