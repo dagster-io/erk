@@ -1,5 +1,5 @@
 name: devrun
-version: 0.2.3
+version: 0.2.5
 description:
   Consolidated development tool runner agent with integrated tool documentation
   for pytest, pyright, ruff, prettier, make, and gt

@@ -8,7 +8,7 @@ erk-shared = { workspace = true }
 
 [project]
 name = "erk"
-version = "0.2.4"
+version = "0.2.5"
 description = "Add your description here"
 readme = "README.md"
 authors = [

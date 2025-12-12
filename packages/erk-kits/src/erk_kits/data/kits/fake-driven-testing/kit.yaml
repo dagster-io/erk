@@ -1,5 +1,5 @@
 name: fake-driven-testing
-version: 0.2.3
+version: 0.2.5
 description: Defense-in-depth testing architecture for Python with fake implementations and automatic suggestion hook
 license: See LICENSE.md
 artifacts:

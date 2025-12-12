@@ -1,6 +1,6 @@
 [project]
 name = "erk-kits"
-version = "0.2.4"
+version = "0.2.5"
 description = "Bundled kit data for erk"
 readme = "README.md"
 requires-python = ">=3.11"
