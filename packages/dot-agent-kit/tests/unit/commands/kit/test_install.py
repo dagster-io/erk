@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import yaml
+
 from dot_agent_kit.commands.kit.install import _is_dev_mode_up_to_date
 from dot_agent_kit.models.config import InstalledKit
 from dot_agent_kit.sources.resolver import ResolvedKit
@@ -9,8 +11,6 @@ from dot_agent_kit.sources.resolver import ResolvedKit
 
 def _create_kit_manifest(kit_dir: Path, artifacts: dict[str, list[str]]) -> Path:
     """Create a kit.yaml manifest file with given artifacts."""
-    import yaml
-
     manifest_path = kit_dir / "kit.yaml"
     manifest_data = {
         "name": "test-kit",
