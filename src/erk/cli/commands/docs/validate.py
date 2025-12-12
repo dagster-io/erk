@@ -1,6 +1,6 @@
 """Validate agent documentation frontmatter.
 
-This command validates that all markdown files in docs/agent/ have valid
+This command validates that all markdown files in .erk/docs/agent/ have valid
 frontmatter with required fields: title and read_when.
 """
 
@@ -23,7 +23,7 @@ from erk.kits.operations.agent_docs import validate_agent_docs
 def validate_command(*, verbose: bool) -> None:
     """Validate agent documentation frontmatter.
 
-    Checks that all markdown files in docs/agent/ have valid frontmatter:
+    Checks that all markdown files in .erk/docs/agent/ have valid frontmatter:
     - title: Human-readable document title
     - read_when: List of conditions when agent should read this doc
 
@@ -46,9 +46,9 @@ def validate_command(*, verbose: bool) -> None:
         user_output(click.style("✗ Error: Repository root not found", fg="red"))
         raise SystemExit(1)
 
-    agent_docs_dir = project_root / "docs" / "agent"
+    agent_docs_dir = project_root / ".erk" / "docs" / "agent"
     if not agent_docs_dir.exists():
-        user_output(click.style("ℹ️  No docs/agent/ directory found", fg="cyan"))
+        user_output(click.style("ℹ️  No .erk/docs/agent/ directory found", fg="cyan"))
         raise SystemExit(0)
 
     # Validate all files

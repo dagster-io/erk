@@ -19,7 +19,7 @@
 
 **CRITICAL: NEVER push code to remote (git push, gt ss, gt submit) unless the user explicitly requests it.**
 
-@docs/agent/tripwires.md
+@.erk/docs/agent/tripwires.md
 
 **Load these skills FIRST:**
 
@@ -63,7 +63,7 @@ Use agents instead of direct Bash:
 
 For detailed reference, consult the documentation index which maps each document to specific "read when..." conditions:
 
-→ **[docs/agent/index.md](docs/agent/index.md)** - Complete document registry
+→ **[.erk/docs/agent/index.md](.erk/docs/agent/index.md)** - Complete document registry
 
 #### Including Documentation in Plans
 
@@ -76,20 +76,20 @@ This ensures implementing agents have access to documentation you discovered dur
 
 **Category quick reference:**
 
-- **[Architecture](docs/agent/architecture/)** — dry-run patterns, Protocol vs ABC, subprocess wrappers, GitHub URL parsing, shell integration patterns
-- **[CLI Development](docs/agent/cli/)** — command organization, output styling, script mode
-- **[Planning](docs/agent/planning/)** — plan lifecycle, .impl/ folders, agent delegation, scratch storage
-- **[Testing](docs/agent/testing/)** — erk fakes, rebase conflicts, import conflict resolution
-- **[Sessions](docs/agent/sessions/)** — session logs, parallel session patterns, context analysis
-- **[Hooks](docs/agent/hooks/)** — hook creation, erk-specific hooks
-- **[Kits](docs/agent/kits/)** — kit CLI commands, kit architecture
-- **[Commands](docs/agent/commands/)** — slash command optimization, @ references
-- **[Erk](docs/agent/erk/)** — erk workflows, Graphite branch setup
+- **[Architecture](.erk/docs/agent/architecture/)** — dry-run patterns, Protocol vs ABC, subprocess wrappers, GitHub URL parsing, shell integration patterns
+- **[CLI Development](.erk/docs/agent/cli/)** — command organization, output styling, script mode
+- **[Planning](.erk/docs/agent/planning/)** — plan lifecycle, .impl/ folders, agent delegation, scratch storage
+- **[Testing](.erk/docs/agent/testing/)** — erk fakes, rebase conflicts, import conflict resolution
+- **[Sessions](.erk/docs/agent/sessions/)** — session logs, parallel session patterns, context analysis
+- **[Hooks](.erk/docs/agent/hooks/)** — hook creation, erk-specific hooks
+- **[Kits](.erk/docs/agent/kits/)** — kit CLI commands, kit architecture
+- **[Commands](.erk/docs/agent/commands/)** — slash command optimization, @ references
+- **[Erk](.erk/docs/agent/erk/)** — erk workflows, Graphite branch setup
 
 **Root documents:**
 
-- **[glossary.md](docs/agent/glossary.md)** — terminology, definitions
-- **[conventions.md](docs/agent/conventions.md)** — naming standards
+- **[glossary.md](.erk/docs/agent/glossary.md)** — terminology, definitions
+- **[conventions.md](.erk/docs/agent/conventions.md)** — naming standards
 - **[kit-registry.md](.erk/kits/kit-registry.md)** — installed kits
 
 ## Worktree Stack Quick Reference
@@ -113,7 +113,7 @@ Core patterns for this codebase:
 - **Use ABC** when you want nominal typing with explicit inheritance. Ideal for implementation contracts like `Git`, `GitHub`, `Graphite` where you want to enforce that classes explicitly declare they implement the interface.
 - **Protocol with `@property`**: When a Protocol needs to accept frozen dataclasses (read-only attributes), use `@property` decorators instead of bare attributes. A read-only consumer accepts both read-only and read-write providers.
 
-**Full guide**: [Architecture](docs/agent/architecture/)
+**Full guide**: [Architecture](.erk/docs/agent/architecture/)
 
 ## Project Naming Conventions
 
@@ -128,7 +128,7 @@ Core patterns for this codebase:
 
 **Worktree Terminology:** Use "root worktree" (not "main worktree") to refer to the primary git worktree created with `git init`. This ensures "main" unambiguously refers to the branch name, since trunk branches can be named either "main" or "master". In code, use the `is_root` field to identify the root worktree.
 
-**CLI Command Organization:** Plan verbs are top-level (create, get, implement), worktree verbs are grouped under `erk wt`, stack verbs under `erk stack`. This follows the "plan is dominant noun" principle for ergonomic access to high-frequency operations. See [CLI Development](docs/agent/cli/) for complete decision framework.
+**CLI Command Organization:** Plan verbs are top-level (create, get, implement), worktree verbs are grouped under `erk wt`, stack verbs under `erk stack`. This follows the "plan is dominant noun" principle for ergonomic access to high-frequency operations. See [CLI Development](.erk/docs/agent/cli/) for complete decision framework.
 
 ## Project Constraints
 
@@ -146,5 +146,5 @@ Core patterns for this codebase:
 
 ## Documentation Hub
 
-- **Full navigation guide**: [docs/agent/guide.md](docs/agent/guide.md)
-- **Document index with "read when..." conditions**: [docs/agent/index.md](docs/agent/index.md)
+- **Full navigation guide**: [.erk/docs/agent/guide.md](.erk/docs/agent/guide.md)
+- **Document index with "read when..." conditions**: [.erk/docs/agent/index.md](.erk/docs/agent/index.md)

@@ -7,26 +7,26 @@ description: This skill should be used when editing Python code in the erk codeb
 
 ## Core Knowledge (ALWAYS Loaded)
 
-@.claude/docs/dignified-python/dignified-python-core.md
-@.claude/docs/dignified-python/version-specific/310/type-annotations.md
+@.erk/docs/kits/dignified-python/dignified-python-core.md
+@.erk/docs/kits/dignified-python/version-specific/310/type-annotations.md
 
 ## Version-Specific Checklist
 
-@.claude/docs/dignified-python/version-specific/310/checklist.md
+@.erk/docs/kits/dignified-python/version-specific/310/checklist.md
 
 ## Conditional Loading (Load Based on Task Patterns)
 
 Use the routing index in @routing-patterns.md to determine which additional files to load:
 
-- **CLI development** → @.claude/docs/dignified-python/cli-patterns.md
-- **Subprocess operations** → @.claude/docs/dignified-python/subprocess.md
+- **CLI development** → @.erk/docs/kits/dignified-python/cli-patterns.md
+- **Subprocess operations** → @.erk/docs/kits/dignified-python/subprocess.md
 
 ## Comprehensive Reference (If Needed)
 
 If unsure which specific file to load, or need full overview:
-.claude/docs/dignified-python/dignified-python-core.md
+.erk/docs/kits/dignified-python/dignified-python-core.md
 
-**For code reviews:** See `.claude/docs/code-review/` for code smell patterns and refactoring guidance (not auto-loaded).
+**For code reviews:** See `.erk/docs/kits/code-review/` for code smell patterns and refactoring guidance (not auto-loaded).
 
 ## How to Use This Skill
 

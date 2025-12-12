@@ -342,7 +342,7 @@ def init_cmd(ctx: ErkContext, force: bool, preset: str, list_presets: bool, shel
         save_kit_config(repo_context.root, kit_config)
         user_output(f"Created {kits_toml_path}")
 
-    # Initialize docs/agent/ templates
+    # Initialize .erk/docs/agent/ templates
     docs_result = init_docs_agent(repo_context.root, force=force)
     if docs_result.created:
         for path in docs_result.created:

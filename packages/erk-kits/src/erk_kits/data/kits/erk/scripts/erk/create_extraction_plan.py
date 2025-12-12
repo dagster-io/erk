@@ -93,7 +93,7 @@ def create_extraction_plan(
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
 
-    # Validate docs/agent is ready before creating extraction plans
+    # Validate .erk/docs/agent is ready before creating extraction plans
     is_ready, warning = check_docs_agent_ready(repo_root)
     if not is_ready:
         click.echo(

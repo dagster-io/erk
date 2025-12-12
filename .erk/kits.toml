@@ -3,7 +3,7 @@ version = "1"
 [kits.erk]
 kit_id = "erk"
 source_type = "bundled"
-version = "0.2.4"
+version = "0.2.3"
 artifacts = [
     ".claude/commands/erk/plan-implement.md",
     ".claude/commands/erk/merge-conflicts-fix.md",
@@ -15,19 +15,19 @@ artifacts = [
     ".claude/agents/erk/issue-wt-creator.md",
     ".claude/agents/erk/plan-extractor.md",
     ".github/workflows/erk/dispatch-erk-queue.yml",
-    ".claude/docs/erk/EXAMPLES.md",
-    ".claude/docs/erk/includes/conflict-resolution.md",
-    ".claude/docs/erk/includes/create-github-issue.md",
-    ".claude/docs/erk/includes/enrichment-process.md",
-    ".claude/docs/erk/includes/extract-docs-analysis-shared.md",
-    ".claude/docs/erk/includes/extract-plan-workflow-shared.md",
-    ".claude/docs/erk/includes/planning/extract-plan-from-session.md",
-    ".claude/docs/erk/includes/planning/next-steps-output.md",
-    ".claude/docs/erk/includes/session-file-location.md",
-    ".claude/docs/erk/includes/success-output-format.md",
-    ".claude/docs/erk/includes/validate-git-repository.md",
-    ".claude/docs/erk/includes/validate-github-cli.md",
-    ".claude/docs/erk/includes/validate-plan-structure.md",
+    ".erk/docs/kits/erk/EXAMPLES.md",
+    ".erk/docs/kits/erk/includes/conflict-resolution.md",
+    ".erk/docs/kits/erk/includes/create-github-issue.md",
+    ".erk/docs/kits/erk/includes/enrichment-process.md",
+    ".erk/docs/kits/erk/includes/extract-docs-analysis-shared.md",
+    ".erk/docs/kits/erk/includes/extract-plan-workflow-shared.md",
+    ".erk/docs/kits/erk/includes/planning/extract-plan-from-session.md",
+    ".erk/docs/kits/erk/includes/planning/next-steps-output.md",
+    ".erk/docs/kits/erk/includes/session-file-location.md",
+    ".erk/docs/kits/erk/includes/success-output-format.md",
+    ".erk/docs/kits/erk/includes/validate-git-repository.md",
+    ".erk/docs/kits/erk/includes/validate-github-cli.md",
+    ".erk/docs/kits/erk/includes/validate-plan-structure.md",
 ]
 
 [[kits.erk.hooks]]
@@ -79,12 +79,12 @@ source_type = "bundled"
 version = "0.2.3"
 artifacts = [
     ".claude/agents/devrun/devrun.md",
-    ".claude/docs/devrun/tools/gt.md",
-    ".claude/docs/devrun/tools/make.md",
-    ".claude/docs/devrun/tools/prettier.md",
-    ".claude/docs/devrun/tools/pyright.md",
-    ".claude/docs/devrun/tools/pytest.md",
-    ".claude/docs/devrun/tools/ruff.md",
+    ".erk/docs/kits/devrun/tools/gt.md",
+    ".erk/docs/kits/devrun/tools/make.md",
+    ".erk/docs/kits/devrun/tools/prettier.md",
+    ".erk/docs/kits/devrun/tools/pyright.md",
+    ".erk/docs/kits/devrun/tools/pytest.md",
+    ".erk/docs/kits/devrun/tools/ruff.md",
 ]
 
 [[kits.devrun.hooks]]
@@ -104,16 +104,16 @@ artifacts = [
     ".claude/skills/dignified-python-311/SKILL.md",
     ".claude/skills/dignified-python-312/SKILL.md",
     ".claude/skills/dignified-python-313/SKILL.md",
-    ".claude/docs/dignified-python/dignified-python-core.md",
-    ".claude/docs/dignified-python/type-annotations-common.md",
-    ".claude/docs/dignified-python/version-specific/310/type-annotations.md",
-    ".claude/docs/dignified-python/version-specific/310/checklist.md",
-    ".claude/docs/dignified-python/version-specific/311/type-annotations.md",
-    ".claude/docs/dignified-python/version-specific/311/checklist.md",
-    ".claude/docs/dignified-python/version-specific/312/type-annotations.md",
-    ".claude/docs/dignified-python/version-specific/312/checklist.md",
-    ".claude/docs/dignified-python/version-specific/313/type-annotations-delta.md",
-    ".claude/docs/dignified-python/version-specific/313/checklist.md",
+    ".erk/docs/kits/dignified-python/dignified-python-core.md",
+    ".erk/docs/kits/dignified-python/type-annotations-common.md",
+    ".erk/docs/kits/dignified-python/version-specific/310/type-annotations.md",
+    ".erk/docs/kits/dignified-python/version-specific/310/checklist.md",
+    ".erk/docs/kits/dignified-python/version-specific/311/type-annotations.md",
+    ".erk/docs/kits/dignified-python/version-specific/311/checklist.md",
+    ".erk/docs/kits/dignified-python/version-specific/312/type-annotations.md",
+    ".erk/docs/kits/dignified-python/version-specific/312/checklist.md",
+    ".erk/docs/kits/dignified-python/version-specific/313/type-annotations-delta.md",
+    ".erk/docs/kits/dignified-python/version-specific/313/checklist.md",
 ]
 
 [[kits.dignified-python.hooks]]

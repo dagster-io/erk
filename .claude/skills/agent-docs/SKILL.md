@@ -1,14 +1,14 @@
 ---
 name: agent-docs
 description: This skill should be used when writing, modifying, or reorganizing
-  documentation in docs/agent/. Use when creating new documents, updating frontmatter,
+  documentation in .erk/docs/agent/. Use when creating new documents, updating frontmatter,
   choosing categories, creating index files, updating routing tables, or moving
   files between categories. Essential for maintaining consistent documentation structure.
 ---
 
 # Agent Documentation Guide
 
-Overview: `docs/agent/` contains agent-focused documentation with:
+Overview: `.erk/docs/agent/` contains agent-focused documentation with:
 
 - YAML frontmatter for routing and discovery
 - Hierarchical category organization (10 categories)
@@ -63,7 +63,7 @@ read_when:
 
 **Read the master index for current categories and documents:**
 
-`docs/agent/index.md`
+`.erk/docs/agent/index.md`
 
 The index contains:
 
@@ -271,7 +271,7 @@ When moving files between categories:
 ### Step 1: Move Files with git mv
 
 ```bash
-cd docs/agent
+cd .erk/docs/agent
 git mv old-location/doc.md new-category/doc.md
 ```
 
@@ -280,7 +280,7 @@ git mv old-location/doc.md new-category/doc.md
 Find all references to moved files:
 
 ```bash
-grep -r "old-filename.md" docs/agent/
+grep -r "old-filename.md" .erk/docs/agent/
 ```
 
 Update relative links:
@@ -319,7 +319,7 @@ AGENTS.md contains the Quick Routing Table for agent navigation.
 
 Examples:
 
-- `| Understand project architecture | → [Architecture](docs/agent/architecture/) |`
+- `| Understand project architecture | → [Architecture](.erk/docs/agent/architecture/) |`
 - `| Write Python code | → Load \`dignified-python\` skill FIRST |`
 
 ## Validation
@@ -340,11 +340,11 @@ This validates:
 
 The following files are **auto-generated** from frontmatter metadata:
 
-| File                             | Source                     |
-| -------------------------------- | -------------------------- |
-| `docs/agent/index.md`            | Frontmatter from all docs  |
-| `docs/agent/<category>/index.md` | Frontmatter from category  |
-| `docs/agent/tripwires.md`        | `tripwires:` field in docs |
+| File                                  | Source                     |
+| ------------------------------------- | -------------------------- |
+| `.erk/docs/agent/index.md`            | Frontmatter from all docs  |
+| `.erk/docs/agent/<category>/index.md` | Frontmatter from category  |
+| `.erk/docs/agent/tripwires.md`        | `tripwires:` field in docs |
 
 **Never edit these files directly.** Changes will be overwritten.
 
@@ -369,7 +369,7 @@ To add a tripwire rule:
 
 ## Quick Reference
 
-- Full navigation: [docs/agent/guide.md](docs/agent/guide.md)
-- Category index: [docs/agent/index.md](docs/agent/index.md)
+- Full navigation: [.erk/docs/agent/guide.md](.erk/docs/agent/guide.md)
+- Category index: [.erk/docs/agent/index.md](.erk/docs/agent/index.md)
 - Regenerate indexes: `erk docs sync`
 - Run validation: `make fast-ci`

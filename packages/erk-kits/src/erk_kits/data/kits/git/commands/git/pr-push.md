@@ -84,7 +84,7 @@ repo_root=$(git rev-parse --show-toplevel)
 git diff --staged
 ```
 
-@.claude/docs/shared/diff-analysis-guide.md
+@../../docs/shared/diff-analysis-guide.md
 
 ### Step 4: Create Commit
 

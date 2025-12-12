@@ -264,7 +264,7 @@ def test_create_workspace_fails_with_duplicate() -> None:
 
 **Only split when:** A command has extensive test coverage (10+ tests) AND splitting creates files with 3+ tests each.
 
-**See [docs/agent/testing.md#test-organization-principles](../../docs/agent/testing.md#test-organization-principles) for detailed guidance.**
+**See [.erk/docs/agent/testing.md#test-organization-principles](../../.erk/docs/agent/testing.md#test-organization-principles) for detailed guidance.**
 
 ## See Also
 

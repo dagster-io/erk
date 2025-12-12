@@ -247,12 +247,30 @@ def compare_artifact_lists(
     for artifact_type, paths in manifest_artifacts.items():
         # Get base directory for this artifact type
         base_dir = ARTIFACT_TARGET_DIRS.get(artifact_type, ".claude")  # type: ignore[arg-type]
+
+        # Determine target subdirectory - mirrors logic in install.py
+        # Doc type skips plural suffix since target dir (.erk/docs/kits) is complete
+        if artifact_type == "doc":
+            target_dir = base_dir
+        else:
+            target_dir = f"{base_dir}/{artifact_type}s"
+
+        type_prefix = f"{artifact_type}s"
+
         for path in paths:
             # Transform manifest path to installed path
-            # Manifest: "commands/gt/land-branch.md"
+            # Must strip type prefix to match install.py behavior
+            # Manifest: "commands/gt/land-branch.md" or "docs/erk/includes/foo.md"
             # Installed: ".claude/commands/gt/land-branch.md" (for commands)
-            # or ".github/workflows/erk/deploy.yml" (for workflows)
-            full_path = f"{base_dir}/{path}"
+            # or ".erk/docs/kits/erk/includes/foo.md" (for docs)
+            path_parts = Path(path).parts
+            if path_parts and path_parts[0] == type_prefix:
+                # Strip the type prefix
+                stripped_path = "/".join(path_parts[1:])
+            else:
+                stripped_path = path
+
+            full_path = f"{target_dir}/{stripped_path}"
             manifest_paths.add(full_path)
 
     installed_paths = set(installed_artifacts)
@@ -270,13 +288,22 @@ def check_artifact_sync(
 ) -> SyncCheckResult:
     """Check if an artifact is in sync with bundled source."""
     # Normalize artifact path: remove base directory prefix if present
-    # Handles both .claude/ and .github/ prefixes
+    # Handles .claude/, .github/, and .erk/docs/kits/ prefixes
     normalized_path = artifact_rel_path
-    for base_dir in ARTIFACT_TARGET_DIRS.values():
+    artifact_type: str | None = None
+    for atype, base_dir in ARTIFACT_TARGET_DIRS.items():
         prefix = f"{base_dir}/"
         if normalized_path.startswith(prefix):
             normalized_path = normalized_path[len(prefix) :]
+            artifact_type = atype
             break
+
+    # For doc type artifacts, the bundled path has "docs/" prefix that was stripped
+    # during installation. We need to add it back for sync checking.
+    # Installed: .erk/docs/kits/erk/includes/foo.md -> erk/includes/foo.md
+    # Bundled: docs/erk/includes/foo.md
+    if artifact_type == "doc":
+        normalized_path = f"docs/{normalized_path}"
 
     # Local path is stored in artifact_rel_path (relative to project root)
     local_path = project_dir / artifact_rel_path

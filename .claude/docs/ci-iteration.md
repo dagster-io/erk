@@ -198,7 +198,7 @@ All CI checks passed after N iteration(s):
 
 The code is ready for commit/PR.
 
-Create insight extraction plan to improve docs/agent (optional):
+Create insight extraction plan to improve .erk/docs/agent (optional):
 /erk:create-extraction-plan
 ```
 

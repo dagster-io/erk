@@ -46,7 +46,7 @@ class AgentDocValidationResult:
     """Result of validating a single agent doc file.
 
     Attributes:
-        file_path: Relative path to the file from docs/agent/.
+        file_path: Relative path to the file from .erk/docs/agent/.
         frontmatter: Parsed frontmatter, or None if parsing failed.
         errors: List of validation errors.
     """

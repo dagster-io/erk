@@ -402,7 +402,8 @@ def test_install_kit_with_docs(tmp_project: Path) -> None:
     assert len(installed.artifacts) == 3
 
     # Verify doc files are installed in correct structure
-    docs_base = tmp_project / ".claude" / "docs"
+    # Kit docs are installed to .erk/docs/kits/ (not .claude/docs/)
+    docs_base = tmp_project / ".erk" / "docs" / "kits"
     assert docs_base.exists()
 
     # Check nested structure is preserved
@@ -468,8 +469,8 @@ def test_install_kit_with_docs_and_agents(tmp_project: Path) -> None:
     assert agent_path.exists()
     assert "# Devrun Agent" in agent_path.read_text(encoding="utf-8")
 
-    # Verify doc installed
-    doc_path = tmp_project / ".claude" / "docs" / "tools" / "make.md"
+    # Verify doc installed (kit docs go to .erk/docs/kits/)
+    doc_path = tmp_project / ".erk" / "docs" / "kits" / "tools" / "make.md"
     assert doc_path.exists()
     assert "# Make Documentation" in doc_path.read_text(encoding="utf-8")
 

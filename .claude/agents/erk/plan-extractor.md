@@ -435,7 +435,7 @@ Combine plan content, applied guidance, clarifications, and context into structu
 
 For complete enrichment guidance, reference:
 
-@.claude/docs/erk/includes/enrichment-process.md
+@.erk/docs/kits/erk/includes/enrichment-process.md
 
 This document contains the full enrichment workflow including:
 

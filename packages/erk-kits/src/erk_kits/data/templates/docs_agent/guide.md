@@ -2,7 +2,7 @@
 title: Agent Documentation Guide
 read_when:
   - "learning how to write agent documentation"
-  - "understanding the docs/agent structure"
+  - "understanding the .erk/docs/agent structure"
 ---
 
 # Agent Documentation Guide

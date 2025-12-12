@@ -2,7 +2,7 @@
 
 This module provides consistent formatting functions for all list commands
 in the erk.kits CLI, following the standards defined in
-docs/agent/cli-list-formatting.md.
+.erk/docs/agent/cli-list-formatting.md.
 """
 
 import re

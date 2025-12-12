@@ -19,12 +19,12 @@ from erk.kits.models.agent_doc import (
     Tripwire,
 )
 
-AGENT_DOCS_DIR = "docs/agent"
+AGENT_DOCS_DIR = ".erk/docs/agent"
 FRONTMATTER_PATTERN = re.compile(r"^---\s*\n(.*?)\n---", re.DOTALL)
 
 # Category descriptions for root index generation.
 # Format: "Explore when [doing X]. Add docs here for [type of content]."
-# To add a new category, add an entry here and run `dot-agent docs sync`.
+# To add a new category, add an entry here and run `erk docs sync`.
 CATEGORY_DESCRIPTIONS: dict[str, str] = {
     "architecture": (
         "Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). "
@@ -208,7 +208,7 @@ def validate_agent_doc_file(file_path: Path, agent_docs_root: Path) -> AgentDocV
 
     Args:
         file_path: Absolute path to the markdown file.
-        agent_docs_root: Path to the docs/agent directory.
+        agent_docs_root: Path to the .erk/docs/agent directory.
 
     Returns:
         Validation result with any errors found.
@@ -253,7 +253,7 @@ def discover_agent_docs(agent_docs_root: Path) -> list[Path]:
     """Discover all markdown files in the agent docs directory.
 
     Args:
-        agent_docs_root: Path to the docs/agent directory.
+        agent_docs_root: Path to the .erk/docs/agent directory.
 
     Returns:
         List of paths to markdown files, sorted alphabetically.
@@ -299,7 +299,7 @@ class DocInfo:
     """Information about a documentation file.
 
     Attributes:
-        rel_path: Relative path from docs/agent/.
+        rel_path: Relative path from .erk/docs/agent/.
         frontmatter: Parsed frontmatter.
     """
 
@@ -346,7 +346,7 @@ class CollectedTripwire:
     Attributes:
         action: The action pattern that triggers.
         warning: Brief explanation of why and what to do instead.
-        doc_path: Relative path from docs/agent/.
+        doc_path: Relative path from .erk/docs/agent/.
         doc_title: Human-readable document title.
     """
 
@@ -556,9 +556,9 @@ def generate_category_index(category: CategoryInfo) -> str:
 def sync_agent_docs(project_root: Path, *, dry_run: bool = False) -> SyncResult:
     """Sync agent documentation index files from frontmatter.
 
-    Generates index.md files for the root docs/agent/ directory and
+    Generates index.md files for the root .erk/docs/agent/ directory and
     each subdirectory (category) that contains 2+ docs. Also generates
-    the docs/agent/generated/tripwires.md file from tripwire definitions.
+    the .erk/docs/agent/tripwires.md file from tripwire definitions.
 
     Args:
         project_root: Path to the project root.
@@ -673,7 +673,7 @@ def _update_generated_file(
         updated: List to append if file was updated.
         unchanged: List to append if file was unchanged.
         dry_run: If True, don't actually write.
-        agent_docs_root: Path to docs/agent/ for relative path calculation.
+        agent_docs_root: Path to .erk/docs/agent/ for relative path calculation.
     """
     rel_path = str(file_path.relative_to(agent_docs_root.parent.parent))
 
@@ -695,7 +695,7 @@ def _update_generated_file(
 
 
 # =============================================================================
-# docs/agent Initialization
+# .erk/docs/agent Initialization
 # =============================================================================
 
 
@@ -743,9 +743,9 @@ def _load_docs_agent_templates() -> dict[str, str]:
 
 
 def init_docs_agent(project_root: Path, *, force: bool = False) -> InitResult:
-    """Initialize the docs/agent directory with template files.
+    """Initialize the .erk/docs/agent directory with template files.
 
-    Creates docs/agent/ directory if it doesn't exist and populates it with
+    Creates .erk/docs/agent/ directory if it doesn't exist and populates it with
     starter template files (glossary.md, conventions.md, guide.md).
 
     Args:
@@ -785,7 +785,7 @@ def init_docs_agent(project_root: Path, *, force: bool = False) -> InitResult:
 
 
 def check_docs_agent_ready(project_root: Path) -> tuple[bool, str | None]:
-    """Check if docs/agent directory is ready for use.
+    """Check if .erk/docs/agent directory is ready for use.
 
     A directory is considered ready if it exists and contains at least one
     markdown file (not counting index.md which is auto-generated).

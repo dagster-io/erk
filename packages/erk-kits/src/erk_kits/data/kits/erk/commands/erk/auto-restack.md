@@ -41,7 +41,7 @@ While there are conflicts:
 For each file in the `conflicts` list:
 
 <!-- prettier-ignore -->
-@../../docs/erk/includes/conflict-resolution.md
+@../../../.erk/docs/kits/erk/includes/conflict-resolution.md
 
 #### 2b: Continue Restack
 

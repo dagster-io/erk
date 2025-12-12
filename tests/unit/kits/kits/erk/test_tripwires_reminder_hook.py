@@ -18,7 +18,7 @@ def test_tripwires_reminder_hook_outputs_reminder() -> None:
 
     assert result.exit_code == 0
     assert "tripwires" in result.output
-    assert "docs/agent/tripwires.md" in result.output
+    assert ".erk/docs/agent/tripwires.md" in result.output
 
 
 def test_tripwires_reminder_hook_exits_successfully() -> None:

@@ -79,14 +79,14 @@ Identify which tool is being executed from the command:
 
 **CRITICAL**: Load tool-specific parsing patterns BEFORE executing the command.
 
-Use the Read tool to load the appropriate documentation file from the **project's** `.claude` directory (not user home):
+Use the Read tool to load the appropriate documentation file from the **project's** `.erk/docs/kits` directory (not user home):
 
-- **pytest**: `./.claude/docs/devrun/tools/pytest.md`
-- **pyright**: `./.claude/docs/devrun/tools/pyright.md`
-- **ruff**: `./.claude/docs/devrun/tools/ruff.md`
-- **prettier**: `./.claude/docs/devrun/tools/prettier.md`
-- **make**: `./.claude/docs/devrun/tools/make.md`
-- **gt**: `./.claude/docs/devrun/tools/gt.md`
+- **pytest**: `./.erk/docs/kits/devrun/tools/pytest.md`
+- **pyright**: `./.erk/docs/kits/devrun/tools/pyright.md`
+- **ruff**: `./.erk/docs/kits/devrun/tools/ruff.md`
+- **prettier**: `./.erk/docs/kits/devrun/tools/prettier.md`
+- **make**: `./.erk/docs/kits/devrun/tools/make.md`
+- **gt**: `./.erk/docs/kits/devrun/tools/gt.md`
 
 The documentation file contains:
 

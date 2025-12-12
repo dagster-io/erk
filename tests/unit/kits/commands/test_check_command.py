@@ -127,6 +127,47 @@ def test_compare_artifact_lists_both_empty() -> None:
     assert len(obsolete) == 0
 
 
+def test_compare_artifact_lists_doc_type() -> None:
+    """Test compare_artifact_lists handles doc type correctly.
+
+    Doc type artifacts:
+    - Use .erk/docs/kits as base directory (not .claude)
+    - Don't add plural suffix (unlike commands -> .claude/commands)
+    - Strip 'docs/' prefix from manifest paths
+    """
+    manifest_artifacts = {
+        "doc": ["docs/erk/includes/conflict-resolution.md", "docs/erk/EXAMPLES.md"],
+        "command": ["commands/erk/plan-implement.md"],
+    }
+    installed_artifacts = [
+        ".erk/docs/kits/erk/includes/conflict-resolution.md",
+        ".erk/docs/kits/erk/EXAMPLES.md",
+        ".claude/commands/erk/plan-implement.md",
+    ]
+
+    missing, obsolete = compare_artifact_lists(manifest_artifacts, installed_artifacts)
+
+    assert len(missing) == 0
+    assert len(obsolete) == 0
+
+
+def test_compare_artifact_lists_doc_type_missing() -> None:
+    """Test compare_artifact_lists detects missing doc artifacts."""
+    manifest_artifacts = {
+        "doc": ["docs/erk/includes/conflict-resolution.md", "docs/erk/EXAMPLES.md"],
+    }
+    installed_artifacts = [
+        ".erk/docs/kits/erk/includes/conflict-resolution.md",
+        # Missing: .erk/docs/kits/erk/EXAMPLES.md
+    ]
+
+    missing, obsolete = compare_artifact_lists(manifest_artifacts, installed_artifacts)
+
+    assert len(missing) == 1
+    assert ".erk/docs/kits/erk/EXAMPLES.md" in missing
+    assert len(obsolete) == 0
+
+
 def test_check_artifact_sync_both_files_identical(tmp_path: Path) -> None:
     """Test sync check when both files exist and are identical."""
     project_dir = tmp_path / "project"
@@ -589,9 +630,14 @@ def test_check_command_bundled_kit_sync_in_sync(tmp_path: Path) -> None:
         claude_dir = project_dir / ".claude"
         claude_dir.mkdir()
 
+        # Create .erk/docs/kits directory for doc artifacts
+        erk_docs_kits_dir = project_dir / ".erk" / "docs" / "kits"
+        erk_docs_kits_dir.mkdir(parents=True)
+
         # Create config with bundled kit
         # Note: We use "bundled:devrun" which is a real bundled kit in the package
         # Include all artifacts from the devrun kit
+        # Doc artifacts go to .erk/docs/kits/ (not .claude/docs/)
         config = ProjectConfig(
             version="1",
             kits={
@@ -601,12 +647,12 @@ def test_check_command_bundled_kit_sync_in_sync(tmp_path: Path) -> None:
                     source_type="bundled",
                     artifacts=[
                         ".claude/agents/devrun/devrun.md",
-                        ".claude/docs/devrun/tools/gt.md",
-                        ".claude/docs/devrun/tools/make.md",
-                        ".claude/docs/devrun/tools/prettier.md",
-                        ".claude/docs/devrun/tools/pyright.md",
-                        ".claude/docs/devrun/tools/pytest.md",
-                        ".claude/docs/devrun/tools/ruff.md",
+                        ".erk/docs/kits/devrun/tools/gt.md",
+                        ".erk/docs/kits/devrun/tools/make.md",
+                        ".erk/docs/kits/devrun/tools/prettier.md",
+                        ".erk/docs/kits/devrun/tools/pyright.md",
+                        ".erk/docs/kits/devrun/tools/pytest.md",
+                        ".erk/docs/kits/devrun/tools/ruff.md",
                     ],
                 ),
             },
@@ -620,9 +666,17 @@ def test_check_command_bundled_kit_sync_in_sync(tmp_path: Path) -> None:
         bundled_source = BundledKitSource()
         bundled_path = bundled_source._get_bundled_kit_path("devrun")
         if bundled_path is not None:
-            # Create all required artifacts
+            # Create agent artifacts (go to .claude/)
+            for artifact_rel in ["agents/devrun/devrun.md"]:
+                bundled_artifact = bundled_path / artifact_rel
+                if bundled_artifact.exists():
+                    bundled_content = bundled_artifact.read_text(encoding="utf-8")
+                    local_artifact = claude_dir / artifact_rel
+                    local_artifact.parent.mkdir(parents=True, exist_ok=True)
+                    local_artifact.write_text(bundled_content, encoding="utf-8")
+
+            # Create doc artifacts (go to .erk/docs/kits/)
             for artifact_rel in [
-                "agents/devrun/devrun.md",
                 "docs/devrun/tools/gt.md",
                 "docs/devrun/tools/make.md",
                 "docs/devrun/tools/prettier.md",
@@ -633,9 +687,9 @@ def test_check_command_bundled_kit_sync_in_sync(tmp_path: Path) -> None:
                 bundled_artifact = bundled_path / artifact_rel
                 if bundled_artifact.exists():
                     bundled_content = bundled_artifact.read_text(encoding="utf-8")
-
-                    # Create local artifact with same content
-                    local_artifact = claude_dir / artifact_rel
+                    # Strip "docs/" prefix for local path since target dir is .erk/docs/kits
+                    local_rel = artifact_rel.removeprefix("docs/")
+                    local_artifact = erk_docs_kits_dir / local_rel
                     local_artifact.parent.mkdir(parents=True, exist_ok=True)
                     local_artifact.write_text(bundled_content, encoding="utf-8")
 

@@ -170,11 +170,17 @@ def test_detect_installed_kit_not_orphaned(tmp_project: Path) -> None:
 
 
 def test_detect_multiple_orphaned_directories(tmp_project: Path) -> None:
-    """Test detection across commands, agents, and docs directories."""
+    """Test detection across commands, agents, and .erk/docs/kits directories.
+
+    Note: .claude/docs/ is not scanned for orphans (those are non-kit local docs).
+    Kit docs live in .erk/docs/kits/ which IS scanned for orphans.
+    """
     claude_dir = tmp_project / ".claude"
     (claude_dir / "commands" / "old-kit").mkdir(parents=True)
     (claude_dir / "agents" / "removed-kit").mkdir(parents=True)
-    (claude_dir / "docs" / "stale-kit").mkdir(parents=True)
+    # Kit docs are now in .erk/docs/kits/, not .claude/docs/
+    erk_docs_kits_dir = tmp_project / ".erk" / "docs" / "kits"
+    (erk_docs_kits_dir / "stale-kit").mkdir(parents=True)
 
     result = detect_orphaned_artifacts(tmp_project, None)
 
@@ -183,7 +189,7 @@ def test_detect_multiple_orphaned_directories(tmp_project: Path) -> None:
     assert paths == {
         ".claude/commands/old-kit",
         ".claude/agents/removed-kit",
-        ".claude/docs/stale-kit",
+        ".erk/docs/kits/stale-kit",
     }
 
 

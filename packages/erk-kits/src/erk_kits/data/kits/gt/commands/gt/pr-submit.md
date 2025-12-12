@@ -47,7 +47,7 @@ The command outputs:
 After completion, suggest:
 
 ```
-Create insight extraction plan to improve docs/agent (optional):
+Create insight extraction plan to improve .erk/docs/agent (optional):
     /erk:create-extraction-plan
 ```
 

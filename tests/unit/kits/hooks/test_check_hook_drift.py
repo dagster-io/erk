@@ -608,15 +608,21 @@ version: 1.0.0
 description: Test kit
 artifacts:
   command:
-  - kit.yaml
+  - commands/kit.yaml
 """
 
         manifest_path = mock_kit_dir / "kit.yaml"
         manifest_path.write_text(manifest_content, encoding="utf-8")
 
-        # Create kit.yaml artifact file (must match manifest for sync check to pass)
-        kit_yaml_path = claude_dir / "kit.yaml"
-        kit_yaml_path.write_text(manifest_content, encoding="utf-8")
+        # Create bundled artifact file
+        bundled_commands_dir = mock_kit_dir / "commands"
+        bundled_commands_dir.mkdir()
+        (bundled_commands_dir / "kit.yaml").write_text(manifest_content, encoding="utf-8")
+
+        # Create local artifact file (must match bundled for sync check to pass)
+        local_commands_dir = claude_dir / "commands"
+        local_commands_dir.mkdir()
+        (local_commands_dir / "kit.yaml").write_text(manifest_content, encoding="utf-8")
 
         # Create config
         config = ProjectConfig(
@@ -626,7 +632,7 @@ artifacts:
                     kit_id="test-kit",
                     version="1.0.0",
                     source_type="bundled",
-                    artifacts=[".claude/kit.yaml"],
+                    artifacts=[".claude/commands/kit.yaml"],
                 ),
             },
         )

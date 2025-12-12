@@ -15,7 +15,7 @@ from erk.kits.operations.agent_docs import (
 
 
 class TestDocsAgentTemplates:
-    """Tests for docs/agent template files."""
+    """Tests for .erk/docs/agent template files."""
 
     def test_templates_have_valid_frontmatter(self) -> None:
         """All templates must have valid frontmatter to pass validation."""
@@ -42,7 +42,7 @@ class TestInitDocsAgent:
     """Tests for init_docs_agent function."""
 
     def test_init_creates_directory_when_missing(self, tmp_path: Path) -> None:
-        """Create docs/agent directory if it doesn't exist."""
+        """Create .erk/docs/agent directory if it doesn't exist."""
         agent_docs = tmp_path / AGENT_DOCS_DIR
         assert not agent_docs.exists()
 
@@ -141,7 +141,7 @@ class TestCheckDocsAgentReady:
     """Tests for check_docs_agent_ready function."""
 
     def test_check_returns_false_when_directory_missing(self, tmp_path: Path) -> None:
-        """Return False when docs/agent directory doesn't exist."""
+        """Return False when .erk/docs/agent directory doesn't exist."""
         is_ready, warning = check_docs_agent_ready(tmp_path)
 
         assert is_ready is False
@@ -149,7 +149,7 @@ class TestCheckDocsAgentReady:
         assert "does not exist" in warning
 
     def test_check_returns_false_when_directory_empty(self, tmp_path: Path) -> None:
-        """Return False when docs/agent exists but has no .md files."""
+        """Return False when .erk/docs/agent exists but has no .md files."""
         agent_docs = tmp_path / AGENT_DOCS_DIR
         agent_docs.mkdir(parents=True)
 
@@ -172,7 +172,7 @@ class TestCheckDocsAgentReady:
         assert "no documentation files" in warning
 
     def test_check_returns_true_when_has_md_files(self, tmp_path: Path) -> None:
-        """Return True when docs/agent has at least one .md file."""
+        """Return True when .erk/docs/agent has at least one .md file."""
         agent_docs = tmp_path / AGENT_DOCS_DIR
         agent_docs.mkdir(parents=True)
         (agent_docs / "glossary.md").write_text("# Glossary", encoding="utf-8")

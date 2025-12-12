@@ -35,13 +35,13 @@ ARTIFACT_TYPE_PLURALS: dict[ArtifactType, ArtifactTypePlural] = {
 }
 
 # Target directories for artifact types (relative to project root)
-# Most artifacts go to .claude/, but workflows go to .github/
+# Most artifacts go to .claude/, but docs go to .erk/docs/kits and workflows go to .github/
 ARTIFACT_TARGET_DIRS: dict[ArtifactType, str] = {
     "skill": ".claude",
     "command": ".claude",
     "agent": ".claude",
     "hook": ".claude",
-    "doc": ".claude",
+    "doc": ".erk/docs/kits",
     "workflow": ".github",
 }
 

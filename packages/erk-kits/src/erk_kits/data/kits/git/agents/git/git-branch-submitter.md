@@ -77,7 +77,7 @@ git diff --staged
 git rev-parse --abbrev-ref --symbolic-full-name @{upstream} 2>/dev/null || echo "origin/main"
 ```
 
-@.claude/docs/shared/diff-analysis-guide.md
+@../../docs/shared/diff-analysis-guide.md
 
 ### Step 4: Create Commit
 

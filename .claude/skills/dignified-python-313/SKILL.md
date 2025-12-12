@@ -7,13 +7,13 @@ description: This skill should be used when editing Python code in the erk codeb
 
 ## Core Knowledge (ALWAYS Loaded)
 
-@.claude/docs/dignified-python/dignified-python-core.md
-@.claude/docs/dignified-python/type-annotations-common.md
-@.claude/docs/dignified-python/version-specific/313/type-annotations-delta.md
+@.erk/docs/kits/dignified-python/dignified-python-core.md
+@.erk/docs/kits/dignified-python/type-annotations-common.md
+@.erk/docs/kits/dignified-python/version-specific/313/type-annotations-delta.md
 
 ## Version-Specific Checklist
 
-@.claude/docs/dignified-python/version-specific/313/checklist.md
+@.erk/docs/kits/dignified-python/version-specific/313/checklist.md
 
 ## Conditional Loading (Load Based on Task Patterns)
 
@@ -31,4 +31,4 @@ Pattern detection examples:
 3. **Additional patterns** may require extra loading (CLI patterns, subprocess)
 4. **Each file is self-contained** with complete guidance for its domain
 
-**For code reviews:** See `.claude/docs/code-review/` for code smell patterns and refactoring guidance (not auto-loaded).
+**For code reviews:** See `.erk/docs/kits/code-review/` for code smell patterns and refactoring guidance (not auto-loaded).

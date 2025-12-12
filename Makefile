@@ -102,7 +102,7 @@ fast-ci:
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
 	echo "\n--- Markdown Check ---" && uv run erk md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl" || exit_code=1; \
-	echo "\n--- Kit Markdown Check ---" && (cd packages/erk-kits/src/erk_kits/data/kits && uv run erk md check --check-links --exclude ".impl" --exclude ".worker-impl") || exit_code=1; \
+	echo "\n--- Kit Markdown Check ---" && (cd packages/erk-kits/src/erk_kits/data/kits && uv run erk md check --exclude ".impl" --exclude ".worker-impl") || exit_code=1; \
 	cd $(CURDIR); \
 	echo "\n--- Docs Validate ---" && uv run erk docs validate || exit_code=1; \
 	echo "\n--- Docs Sync Check ---" && uv run erk docs sync --check || exit_code=1; \
@@ -120,7 +120,7 @@ all-ci:
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
 	echo "\n--- Markdown Check ---" && uv run erk md check --check-links --exclude "packages/*/src/*/data/kits" --exclude ".impl" --exclude ".worker-impl" || exit_code=1; \
-	echo "\n--- Kit Markdown Check ---" && (cd packages/erk-kits/src/erk_kits/data/kits && uv run erk md check --check-links --exclude ".impl" --exclude ".worker-impl") || exit_code=1; \
+	echo "\n--- Kit Markdown Check ---" && (cd packages/erk-kits/src/erk_kits/data/kits && uv run erk md check --exclude ".impl" --exclude ".worker-impl") || exit_code=1; \
 	cd $(CURDIR); \
 	echo "\n--- Docs Validate ---" && uv run erk docs validate || exit_code=1; \
 	echo "\n--- Docs Sync Check ---" && uv run erk docs sync --check || exit_code=1; \

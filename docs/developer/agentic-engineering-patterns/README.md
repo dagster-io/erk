@@ -11,12 +11,12 @@ This documentation serves two audiences:
 
 ## Relationship to Other Documentation
 
-This section complements the existing `docs/agent/` folder:
+This section complements the existing `.erk/docs/agent/` folder:
 
 | Section                                          | Purpose               | Focus                                                                   |
 | ------------------------------------------------ | --------------------- | ----------------------------------------------------------------------- |
 | **docs/developer/agentic-engineering-patterns/** | Pattern catalog       | WHAT patterns are (naming, concepts), WHY they exist (design rationale) |
-| **docs/agent/**                                  | Implementation guides | HOW to implement (step-by-step, technical details, code examples)       |
+| **.erk/docs/agent/**                             | Implementation guides | HOW to implement (step-by-step, technical details, code examples)       |
 
 Both sections serve complementary roles in the documentation architecture.
 
@@ -61,6 +61,6 @@ When adding new patterns to this catalog:
 
 1. Create a new markdown file in this directory
 2. Update this README with a brief entry
-3. Cross-link to relevant implementation guides in `docs/agent/`
+3. Cross-link to relevant implementation guides in `.erk/docs/agent/`
 4. Include examples from the actual codebase
 5. Explain WHAT and WHY, not just HOW

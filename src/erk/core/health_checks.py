@@ -468,22 +468,22 @@ def check_orphaned_artifacts(repo_root: Path) -> CheckResult:
 
 
 def check_docs_agent(repo_root: Path) -> CheckResult:
-    """Check if docs/agent/ templates exist and are valid.
+    """Check if .erk/docs/agent/ templates exist and are valid.
 
     Args:
         repo_root: Path to the repository root
 
     Returns:
-        CheckResult indicating whether docs/agent/ is properly configured
+        CheckResult indicating whether .erk/docs/agent/ is properly configured
     """
-    docs_agent_dir = repo_root / "docs" / "agent"
+    docs_agent_dir = repo_root / ".erk" / "docs" / "agent"
 
     # Check if directory exists
     if not docs_agent_dir.exists():
         return CheckResult(
-            name="docs/agent",
+            name=".erk/docs/agent",
             passed=True,  # Info level - not required
-            message="No docs/agent/ directory",
+            message="No .erk/docs/agent/ directory",
             details="Run 'erk init' to create agent documentation templates",
         )
 
@@ -497,14 +497,14 @@ def check_docs_agent(repo_root: Path) -> CheckResult:
 
     if missing_files:
         return CheckResult(
-            name="docs/agent",
+            name=".erk/docs/agent",
             passed=True,  # Info level - warn but don't fail
             message=f"Missing template files: {', '.join(missing_files)}",
             details="Run 'erk init --force' to recreate templates",
         )
 
     return CheckResult(
-        name="docs/agent",
+        name=".erk/docs/agent",
         passed=True,
         message="Agent documentation templates present",
     )

@@ -153,7 +153,7 @@ class TestValidateAgentDocFile:
 
     def test_validate_valid_file(self, tmp_path: Path) -> None:
         """Validate a properly formatted file."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
         doc_file = agent_docs / "test.md"
         doc_file.write_text(
@@ -177,7 +177,7 @@ read_when:
 
     def test_validate_file_missing(self, tmp_path: Path) -> None:
         """Return error for non-existent file."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
         doc_file = agent_docs / "missing.md"
 
@@ -187,7 +187,7 @@ read_when:
 
     def test_validate_file_no_frontmatter(self, tmp_path: Path) -> None:
         """Return error for file without frontmatter."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
         doc_file = agent_docs / "no-frontmatter.md"
         doc_file.write_text("# Just content\n", encoding="utf-8")
@@ -198,7 +198,7 @@ read_when:
 
     def test_validate_file_in_subdirectory(self, tmp_path: Path) -> None:
         """Validate file in a subdirectory."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         subdir = agent_docs / "planning"
         subdir.mkdir(parents=True)
         doc_file = subdir / "lifecycle.md"
@@ -224,13 +224,13 @@ class TestDiscoverAgentDocs:
 
     def test_discover_no_directory(self, tmp_path: Path) -> None:
         """Return empty list when directory doesn't exist."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         files = discover_agent_docs(agent_docs)
         assert files == []
 
     def test_discover_files(self, tmp_path: Path) -> None:
-        """Discover markdown files in docs/agent."""
-        agent_docs = tmp_path / "docs" / "agent"
+        """Discover markdown files in .erk/docs/agent."""
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
         (agent_docs / "one.md").write_text("content", encoding="utf-8")
         (agent_docs / "two.md").write_text("content", encoding="utf-8")
@@ -242,7 +242,7 @@ class TestDiscoverAgentDocs:
 
     def test_discover_skips_index_files(self, tmp_path: Path) -> None:
         """Skip index.md files (auto-generated)."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
         (agent_docs / "index.md").write_text("auto-generated", encoding="utf-8")
         (agent_docs / "real-doc.md").write_text("content", encoding="utf-8")
@@ -253,7 +253,7 @@ class TestDiscoverAgentDocs:
 
     def test_discover_includes_subdirectories(self, tmp_path: Path) -> None:
         """Include files in subdirectories."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         subdir = agent_docs / "cli"
         subdir.mkdir(parents=True)
         (subdir / "output-styling.md").write_text("content", encoding="utf-8")
@@ -267,13 +267,13 @@ class TestValidateAgentDocs:
     """Tests for validate_agent_docs function."""
 
     def test_validate_no_docs_directory(self, tmp_path: Path) -> None:
-        """Return empty list when docs/agent doesn't exist."""
+        """Return empty list when .erk/docs/agent doesn't exist."""
         results = validate_agent_docs(tmp_path)
         assert results == []
 
     def test_validate_multiple_files(self, tmp_path: Path) -> None:
         """Validate multiple files and return results."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
 
         # Valid file
@@ -357,7 +357,7 @@ class TestCollectValidDocs:
 
     def test_collect_uncategorized_docs(self, tmp_path: Path) -> None:
         """Collect docs at root level as uncategorized."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
         _create_valid_doc(agent_docs / "glossary.md", "Glossary", ["understanding terms"])
         _create_valid_doc(agent_docs / "guide.md", "Guide", ["getting started"])
@@ -369,7 +369,7 @@ class TestCollectValidDocs:
 
     def test_collect_categorized_docs(self, tmp_path: Path) -> None:
         """Collect docs in subdirectories as categorized."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         planning = agent_docs / "planning"
         planning.mkdir(parents=True)
         _create_valid_doc(planning / "lifecycle.md", "Lifecycle", ["creating plans"])
@@ -383,7 +383,7 @@ class TestCollectValidDocs:
 
     def test_collect_skips_invalid_docs(self, tmp_path: Path) -> None:
         """Skip docs with invalid frontmatter."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
         _create_valid_doc(agent_docs / "valid.md", "Valid", ["when valid"])
         (agent_docs / "invalid.md").write_text("# No frontmatter", encoding="utf-8")
@@ -509,7 +509,7 @@ class TestSyncAgentDocs:
 
     def test_sync_creates_root_index(self, tmp_path: Path) -> None:
         """Create root index.md when it doesn't exist."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
         _create_valid_doc(agent_docs / "glossary.md", "Glossary", ["terms"])
 
@@ -528,7 +528,7 @@ class TestSyncAgentDocs:
 
     def test_sync_creates_category_index(self, tmp_path: Path) -> None:
         """Create category index when 2+ docs in subdirectory."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         planning = agent_docs / "planning"
         planning.mkdir(parents=True)
         _create_valid_doc(planning / "lifecycle.md", "Lifecycle", ["creating"])
@@ -544,7 +544,7 @@ class TestSyncAgentDocs:
 
     def test_sync_skips_single_doc_category(self, tmp_path: Path) -> None:
         """Don't create category index for single doc."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         planning = agent_docs / "planning"
         planning.mkdir(parents=True)
         _create_valid_doc(planning / "lifecycle.md", "Lifecycle", ["creating"])
@@ -559,7 +559,7 @@ class TestSyncAgentDocs:
 
     def test_sync_dry_run(self, tmp_path: Path) -> None:
         """Dry run doesn't write files."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
         _create_valid_doc(agent_docs / "glossary.md", "Glossary", ["terms"])
 
@@ -572,7 +572,7 @@ class TestSyncAgentDocs:
 
     def test_sync_unchanged_index(self, tmp_path: Path) -> None:
         """Report unchanged when content matches."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
         _create_valid_doc(agent_docs / "glossary.md", "Glossary", ["terms"])
 
@@ -587,7 +587,7 @@ class TestSyncAgentDocs:
 
     def test_sync_updated_index(self, tmp_path: Path) -> None:
         """Report updated when content changes."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
         _create_valid_doc(agent_docs / "glossary.md", "Glossary", ["terms"])
 
@@ -604,7 +604,7 @@ class TestSyncAgentDocs:
 
     def test_sync_generates_tripwires_file(self, tmp_path: Path) -> None:
         """Sync generates tripwires.md when tripwires exist."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
         _create_doc_with_tripwires(
             agent_docs / "storage.md",
@@ -742,7 +742,7 @@ class TestCollectTripwires:
 
     def test_collect_tripwires_from_docs(self, tmp_path: Path) -> None:
         """Collect tripwires from multiple docs."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         planning = agent_docs / "planning"
         planning.mkdir(parents=True)
 
@@ -772,7 +772,7 @@ class TestCollectTripwires:
 
     def test_collect_tripwires_with_doc_info(self, tmp_path: Path) -> None:
         """Collected tripwires include source doc information."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
 
         _create_doc_with_tripwires(
@@ -897,7 +897,7 @@ class TestSyncAgentDocsCheckMode:
 
     def test_sync_check_passes_when_in_sync(self, tmp_path: Path) -> None:
         """Check mode returns no changes when files are in sync."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
         _create_valid_doc(agent_docs / "glossary.md", "Glossary", ["terms"])
 
@@ -912,7 +912,7 @@ class TestSyncAgentDocsCheckMode:
 
     def test_sync_check_detects_out_of_sync_index(self, tmp_path: Path) -> None:
         """Check mode detects when index.md needs updating."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
         _create_valid_doc(agent_docs / "glossary.md", "Glossary", ["terms"])
 
@@ -930,7 +930,7 @@ class TestSyncAgentDocsCheckMode:
 
     def test_sync_check_detects_out_of_sync_tripwires(self, tmp_path: Path) -> None:
         """Check mode detects when tripwires.md needs updating."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
         _create_doc_with_tripwires(
             agent_docs / "storage.md",
@@ -957,7 +957,7 @@ class TestSyncAgentDocsCheckMode:
 
     def test_sync_check_detects_missing_tripwire_in_generated_file(self, tmp_path: Path) -> None:
         """Check mode detects when tripwires.md is missing a tripwire from frontmatter."""
-        agent_docs = tmp_path / "docs" / "agent"
+        agent_docs = tmp_path / ".erk" / "docs" / "agent"
         agent_docs.mkdir(parents=True)
         _create_doc_with_tripwires(
             agent_docs / "storage.md",

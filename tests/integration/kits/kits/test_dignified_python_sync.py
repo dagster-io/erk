@@ -4,64 +4,73 @@ import pytest
 
 
 def test_shared_files_exist():
-    """Verify all universal files exist in .claude/docs/dignified-python/ directory."""
-    # Documentation now lives in .claude/docs/dignified-python/ (project-level)
+    """Verify all universal files exist in .erk/docs/kits/dignified-python/ directory."""
+    # Documentation now lives in .erk/docs/kits/dignified-python/ (project-level)
     # This test verifies the installed documentation structure
     # From tests/integration/kits/kits/ -> go up 5 levels to project root
     repo_root = Path(__file__).parent.parent.parent.parent.parent
-    docs_dir = repo_root / ".claude" / "docs" / "dignified-python"
+    docs_dir = repo_root / ".erk" / "docs" / "kits" / "dignified-python"
 
     # Check universal reference files at root level
     # Note: Core standards have been consolidated into dignified-python-core.md
-    # to reduce duplication and improve maintainability
+    # CLI patterns and subprocess guidance are now in the core file
     universal_files = [
         "dignified-python-core.md",
-        "cli-patterns.md",
-        "subprocess.md",
         "type-annotations-common.md",
     ]
 
     for filename in universal_files:
         file_path = docs_dir / filename
         if not file_path.exists():
-            pytest.fail(f"Documentation file missing: .claude/docs/dignified-python/{filename}")
+            pytest.fail(f"Documentation file missing: .erk/docs/kits/dignified-python/{filename}")
 
 
 def test_type_annotations_files_exist():
     """Verify all version-specific type annotation files exist."""
     # From tests/integration/kits/kits/ -> go up 5 levels to project root
     repo_root = Path(__file__).parent.parent.parent.parent.parent
-    docs_dir = repo_root / ".claude" / "docs" / "dignified-python"
+    docs_dir = repo_root / ".erk" / "docs" / "kits" / "dignified-python"
     version_specific_dir = docs_dir / "version-specific"
 
     if not version_specific_dir.exists():
         pytest.fail(
-            "Version-specific directory missing: .claude/docs/dignified-python/version-specific/"
+            "Version-specific directory missing: .erk/docs/kits/dignified-python/version-specific/"
         )
 
     # Check version-specific files for each version
     versions = ["310", "311", "312", "313"]
-    version_files = [
-        "type-annotations.md",
-        "pattern-table.md",
-        "checklist.md",
-    ]
+    # 310, 311, 312 have type-annotations.md, but 313 has type-annotations-delta.md
+    # All versions have checklist.md
 
     for version in versions:
         version_dir = version_specific_dir / version
         if not version_dir.exists():
             pytest.fail(
                 f"Version directory missing: "
-                f".claude/docs/dignified-python/version-specific/{version}/"
+                f".erk/docs/kits/dignified-python/version-specific/{version}/"
             )
 
-        for filename in version_files:
-            file_path = version_dir / filename
-            if not file_path.exists():
-                pytest.fail(
-                    f"Version-specific file missing: "
-                    f".claude/docs/dignified-python/version-specific/{version}/{filename}"
-                )
+        # Check checklist.md (required for all versions)
+        checklist_file = version_dir / "checklist.md"
+        if not checklist_file.exists():
+            pytest.fail(
+                f"Version-specific file missing: "
+                f".erk/docs/kits/dignified-python/version-specific/{version}/checklist.md"
+            )
+
+        # Check type annotations file (name varies by version)
+        if version == "313":
+            type_file = version_dir / "type-annotations-delta.md"
+            type_filename = "type-annotations-delta.md"
+        else:
+            type_file = version_dir / "type-annotations.md"
+            type_filename = "type-annotations.md"
+
+        if not type_file.exists():
+            pytest.fail(
+                f"Version-specific file missing: "
+                f".erk/docs/kits/dignified-python/version-specific/{version}/{type_filename}"
+            )
 
 
 def test_unified_kit_structure():
@@ -114,9 +123,9 @@ def test_skill_references_correct_types():
 
         content = skill_md.read_text(encoding="utf-8")
 
-        # Check that SKILL.md references .claude/docs/dignified-python/ paths
-        expected_docs_path = "@.claude/docs/dignified-python/"
-        expected_version_specific = f"@.claude/docs/dignified-python/version-specific/{version}/"
+        # Check that SKILL.md references .erk/docs/kits/dignified-python/ paths
+        expected_docs_path = "@.erk/docs/kits/dignified-python/"
+        expected_version_specific = f"@.erk/docs/kits/dignified-python/version-specific/{version}/"
 
         has_docs_reference = expected_docs_path in content
         has_version_specific_reference = expected_version_specific in content
@@ -134,14 +143,14 @@ def test_skill_components_exist():
     """Verify core documentation file exists (skill components consolidated)."""
     # From tests/integration/kits/kits/ -> go up 5 levels to project root
     repo_root = Path(__file__).parent.parent.parent.parent.parent
-    docs_dir = repo_root / ".claude" / "docs" / "dignified-python"
+    docs_dir = repo_root / ".erk" / "docs" / "kits" / "dignified-python"
 
     # Core components have been consolidated into dignified-python-core.md
     core_file = docs_dir / "dignified-python-core.md"
     if not core_file.exists():
         pytest.fail(
             "Core documentation file missing: "
-            ".claude/docs/dignified-python/dignified-python-core.md"
+            ".erk/docs/kits/dignified-python/dignified-python-core.md"
         )
 
 
@@ -149,7 +158,7 @@ def test_no_version_specific_language_in_universal():
     """Verify universal documentation files don't contain version-specific language."""
     # From tests/integration/kits/kits/ -> go up 5 levels to project root
     repo_root = Path(__file__).parent.parent.parent.parent.parent
-    docs_dir = repo_root / ".claude" / "docs" / "dignified-python"
+    docs_dir = repo_root / ".erk" / "docs" / "kits" / "dignified-python"
 
     # Patterns that should NOT appear in universal files
     prohibited_patterns = [

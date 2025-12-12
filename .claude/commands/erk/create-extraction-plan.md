@@ -8,19 +8,19 @@ Analyzes session context to identify documentation gaps and creates an extractio
 
 ## Prerequisites
 
-Before running this command, ensure `docs/agent/` exists and has at least one documentation file:
+Before running this command, ensure `.erk/docs/agent/` exists and has at least one documentation file:
 
 ```bash
-# Initialize docs/agent if it doesn't exist
+# Initialize .erk/docs/agent if it doesn't exist
 erk docs init
 
 # Verify it's ready
-ls docs/agent/*.md
+ls .erk/docs/agent/*.md
 ```
 
-If `docs/agent/` is missing or empty, the command will fail with a suggestion to run `erk docs init` first.
+If `.erk/docs/agent/` is missing or empty, the command will fail with a suggestion to run `erk docs init` first.
 
-**Note:** Running `erk init` for a new project automatically initializes `docs/agent/` with template files (glossary.md, conventions.md, guide.md).
+**Note:** Running `erk init` for a new project automatically initializes `.erk/docs/agent/` with template files (glossary.md, conventions.md, guide.md).
 
 ## Usage
 
@@ -189,7 +189,7 @@ Before analyzing gaps, scan the project for existing documentation:
 
 ```bash
 # Check for existing agent docs
-ls -la docs/agent/ 2>/dev/null || echo "No docs/agent/ directory"
+ls -la .erk/docs/agent/ 2>/dev/null || echo "No .erk/docs/agent/ directory"
 
 # Check for existing skills
 ls -la .claude/skills/ 2>/dev/null || echo "No .claude/skills/ directory"
@@ -246,7 +246,7 @@ This indicates:
 
 ### Steps 5-8: Analyze Session
 
-@../../docs/erk/includes/extract-docs-analysis-shared.md
+@../../../.erk/docs/kits/erk/includes/extract-docs-analysis-shared.md
 
 ### Step 9: Combine Session Sources
 

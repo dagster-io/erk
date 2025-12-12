@@ -57,4 +57,4 @@ Tests are organized by the domain being tested:
 ## References
 
 - [Parent test documentation](../AGENTS.md) - Overview and philosophy
-- [erk testing guide](https://github.com/anthropics/erk/blob/master/docs/agent/testing.md) - Comprehensive testing patterns
+- [erk testing guide](https://github.com/anthropics/erk/blob/master/.erk/docs/agent/testing.md) - Comprehensive testing patterns

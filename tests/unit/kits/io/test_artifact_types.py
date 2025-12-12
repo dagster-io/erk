@@ -8,12 +8,14 @@ from erk.kits.models.artifact import (
 
 def test_artifact_target_dirs_mapping() -> None:
     """Test ARTIFACT_TARGET_DIRS maps all artifact types to correct directories."""
-    # Verify all standard artifact types go to .claude
+    # Verify standard Claude artifacts go to .claude
     assert ARTIFACT_TARGET_DIRS["skill"] == ".claude"
     assert ARTIFACT_TARGET_DIRS["command"] == ".claude"
     assert ARTIFACT_TARGET_DIRS["agent"] == ".claude"
     assert ARTIFACT_TARGET_DIRS["hook"] == ".claude"
-    assert ARTIFACT_TARGET_DIRS["doc"] == ".claude"
+
+    # Verify doc goes to .erk/docs/kits (erk-managed location)
+    assert ARTIFACT_TARGET_DIRS["doc"] == ".erk/docs/kits"
 
     # Verify workflow goes to .github
     assert ARTIFACT_TARGET_DIRS["workflow"] == ".github"

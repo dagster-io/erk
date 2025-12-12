@@ -52,7 +52,11 @@ def install_kit(
             base_dir.mkdir(parents=True)
 
         # Map artifact type to subdirectory (e.g., agents, commands, skills, workflows)
-        target_dir = base_dir / f"{artifact_type}s"
+        # Doc type skips plural suffix since target dir (.erk/docs/kits) is complete
+        if artifact_type == "doc":
+            target_dir = base_dir
+        else:
+            target_dir = base_dir / f"{artifact_type}s"
         if not target_dir.exists():
             target_dir.mkdir(parents=True)
 

@@ -13,7 +13,7 @@ Fix all merge conflicts and continue the git rebase.
 2. **For each conflicted file:**
 
 <!-- prettier-ignore -->
-@../../docs/erk/includes/conflict-resolution.md
+@../../../.erk/docs/kits/erk/includes/conflict-resolution.md
 
 3. **After resolving all conflicts:**
    - If project memory includes a precommit check, run it and ensure no failures

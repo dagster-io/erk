@@ -1,6 +1,6 @@
-"""Initialize docs/agent directory with template files.
+"""Initialize .erk/docs/agent directory with template files.
 
-This command creates the docs/agent/ directory structure with starter templates
+This command creates the .erk/docs/agent/ directory structure with starter templates
 for agent documentation (glossary, conventions, guide).
 """
 
@@ -20,9 +20,9 @@ from erk_shared.context.helpers import require_project_root
 )
 @click.pass_context
 def init_command(ctx: click.Context, *, force: bool) -> None:
-    """Initialize docs/agent directory with template files.
+    """Initialize .erk/docs/agent directory with template files.
 
-    Creates docs/agent/ directory if it doesn't exist and adds starter
+    Creates .erk/docs/agent/ directory if it doesn't exist and adds starter
     template files:
 
     \b
@@ -37,7 +37,7 @@ def init_command(ctx: click.Context, *, force: bool) -> None:
     """
     project_root = require_project_root(ctx)
 
-    # Initialize docs/agent
+    # Initialize .erk/docs/agent
     init_result = init_docs_agent(project_root, force=force)
 
     # Report results
@@ -62,7 +62,7 @@ def init_command(ctx: click.Context, *, force: bool) -> None:
     # Summary and next steps
     total_written = len(init_result.created) + len(init_result.overwritten)
     if total_written > 0:
-        msg = f"✓ Initialized docs/agent with {total_written} file(s)"
+        msg = f"✓ Initialized .erk/docs/agent with {total_written} file(s)"
         user_output(click.style(msg, fg="green"))
         user_output()
         user_output("Next steps:")
@@ -70,7 +70,7 @@ def init_command(ctx: click.Context, *, force: bool) -> None:
         user_output("  2. Run 'erk docs sync' to generate index.md")
         user_output("  3. Run 'erk docs validate' to check frontmatter")
     elif init_result.skipped:
-        user_output(click.style("ℹ️  docs/agent already exists with content", fg="cyan"))
+        user_output(click.style("ℹ️  .erk/docs/agent already exists with content", fg="cyan"))
         user_output("Use --force to overwrite with fresh templates")
     else:
-        user_output(click.style("✓ docs/agent already up to date", fg="green"))
+        user_output(click.style("✓ .erk/docs/agent already up to date", fg="green"))

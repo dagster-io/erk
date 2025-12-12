@@ -56,7 +56,7 @@ For each net new implementation, consider:
 
 For each finding, determine the appropriate documentation type:
 
-**Agent Docs** (`docs/agent/`) are best for:
+**Agent Docs** (`.erk/docs/agent/`) are best for:
 
 - Architectural patterns and design decisions
 - Workflow guides and processes
@@ -105,7 +105,7 @@ For each finding, decide the appropriate action:
 The routing entry enables discoverability via the AGENTS.md routing table. Format:
 
 ```
-| [Trigger phrase] | → [docs/agent/[name].md](docs/agent/[name].md) |
+| [Trigger phrase] | → [.erk/docs/agent/[name].md](.erk/docs/agent/[name].md) |
 ```
 
 Good trigger phrases:
@@ -132,8 +132,8 @@ Documentation that would have made THIS session more efficient:
 ### A1. [Suggested Doc Title]
 
 **Type:** Agent Doc | Skill
-**Location:** `docs/agent/[name].md` | `.claude/skills/[name]/`
-**Routing:** `| [Trigger phrase] | → [docs/agent/[name].md](docs/agent/[name].md) |`
+**Location:** `.erk/docs/agent/[name].md` | `.claude/skills/[name]/`
+**Routing:** `| [Trigger phrase] | → [.erk/docs/agent/[name].md](.erk/docs/agent/[name].md) |`
 **Action:** New doc | Update existing `[path]` | Merge into `[path]`
 **Priority:** High | Medium | Low
 **Effort:** Quick | Medium | Substantial
@@ -245,7 +245,7 @@ This session ran smoothly with no significant documentation gaps identified.
 
 **Checked:**
 
-- `docs/agent/` - [X existing docs]
+- `.erk/docs/agent/` - [X existing docs]
 - `.claude/skills/` - [X existing skills]
 
 The existing documentation appears to cover the patterns and workflows used.

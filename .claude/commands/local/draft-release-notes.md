@@ -48,13 +48,13 @@ This returns JSON with:
 Using the `last_date` from above:
 
 ```bash
-git log --oneline --since="<last_date>" -- . ':!.claude' ':!docs/agent' ':!.impl'
+git log --oneline --since="<last_date>" -- . ':!.claude' ':!.erk/docs/agent' ':!.impl'
 ```
 
 If `last_date` is null (no previous releases), get all commits:
 
 ```bash
-git log --oneline -- . ':!.claude' ':!docs/agent' ':!.impl'
+git log --oneline -- . ':!.claude' ':!.erk/docs/agent' ':!.impl'
 ```
 
 ### Phase 3: Analyze and Categorize Commits

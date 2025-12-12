@@ -317,23 +317,23 @@ def test_check_uv_version_with_build_info() -> None:
     assert "Homebrew" not in result.message
 
 
-# --- docs/agent Tests ---
+# --- .erk/docs/agent Tests ---
 
 
 def test_check_docs_agent_no_directory(tmp_path: Path) -> None:
-    """Test docs/agent check when directory doesn't exist."""
+    """Test .erk/docs/agent check when directory doesn't exist."""
     result = check_docs_agent(tmp_path)
 
-    assert result.name == "docs/agent"
+    assert result.name == ".erk/docs/agent"
     assert result.passed is True
-    assert "No docs/agent/ directory" in result.message
+    assert "No .erk/docs/agent/ directory" in result.message
     assert result.details is not None
     assert "erk init" in result.details
 
 
 def test_check_docs_agent_all_templates_present(tmp_path: Path) -> None:
-    """Test docs/agent check when all template files exist."""
-    docs_agent = tmp_path / "docs" / "agent"
+    """Test .erk/docs/agent check when all template files exist."""
+    docs_agent = tmp_path / ".erk" / "docs" / "agent"
     docs_agent.mkdir(parents=True)
 
     # Create all expected template files
@@ -343,15 +343,15 @@ def test_check_docs_agent_all_templates_present(tmp_path: Path) -> None:
 
     result = check_docs_agent(tmp_path)
 
-    assert result.name == "docs/agent"
+    assert result.name == ".erk/docs/agent"
     assert result.passed is True
     assert "Agent documentation templates present" in result.message
     assert result.details is None
 
 
 def test_check_docs_agent_missing_glossary(tmp_path: Path) -> None:
-    """Test docs/agent check when glossary.md is missing."""
-    docs_agent = tmp_path / "docs" / "agent"
+    """Test .erk/docs/agent check when glossary.md is missing."""
+    docs_agent = tmp_path / ".erk" / "docs" / "agent"
     docs_agent.mkdir(parents=True)
 
     # Create only some template files
@@ -360,7 +360,7 @@ def test_check_docs_agent_missing_glossary(tmp_path: Path) -> None:
 
     result = check_docs_agent(tmp_path)
 
-    assert result.name == "docs/agent"
+    assert result.name == ".erk/docs/agent"
     assert result.passed is True  # Info level, not failure
     assert "glossary.md" in result.message
     assert result.details is not None
@@ -368,8 +368,8 @@ def test_check_docs_agent_missing_glossary(tmp_path: Path) -> None:
 
 
 def test_check_docs_agent_missing_multiple(tmp_path: Path) -> None:
-    """Test docs/agent check when multiple template files are missing."""
-    docs_agent = tmp_path / "docs" / "agent"
+    """Test .erk/docs/agent check when multiple template files are missing."""
+    docs_agent = tmp_path / ".erk" / "docs" / "agent"
     docs_agent.mkdir(parents=True)
 
     # Create only guide.md
@@ -377,7 +377,7 @@ def test_check_docs_agent_missing_multiple(tmp_path: Path) -> None:
 
     result = check_docs_agent(tmp_path)
 
-    assert result.name == "docs/agent"
+    assert result.name == ".erk/docs/agent"
     assert result.passed is True  # Info level, not failure
     assert "glossary.md" in result.message
     assert "conventions.md" in result.message
@@ -386,13 +386,13 @@ def test_check_docs_agent_missing_multiple(tmp_path: Path) -> None:
 
 
 def test_check_docs_agent_empty_directory(tmp_path: Path) -> None:
-    """Test docs/agent check when directory exists but is empty."""
-    docs_agent = tmp_path / "docs" / "agent"
+    """Test .erk/docs/agent check when directory exists but is empty."""
+    docs_agent = tmp_path / ".erk" / "docs" / "agent"
     docs_agent.mkdir(parents=True)
 
     result = check_docs_agent(tmp_path)
 
-    assert result.name == "docs/agent"
+    assert result.name == ".erk/docs/agent"
     assert result.passed is True  # Info level
     # All three files should be mentioned as missing
     assert "glossary.md" in result.message

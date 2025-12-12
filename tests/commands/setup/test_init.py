@@ -1333,7 +1333,7 @@ def test_init_force_overwrites_kits_toml() -> None:
 
 
 def test_init_creates_docs_agent_templates() -> None:
-    """Test that init creates docs/agent/ template files."""
+    """Test that init creates .erk/docs/agent/ template files."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
@@ -1352,24 +1352,24 @@ def test_init_creates_docs_agent_templates() -> None:
         result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        # Verify docs/agent/ templates were created
-        docs_agent_dir = env.cwd / "docs" / "agent"
+        # Verify .erk/docs/agent/ templates were created
+        docs_agent_dir = env.cwd / ".erk" / "docs" / "agent"
         assert docs_agent_dir.exists()
         assert (docs_agent_dir / "glossary.md").exists()
         assert (docs_agent_dir / "conventions.md").exists()
         assert (docs_agent_dir / "guide.md").exists()
         # Verify output mentions creation
-        assert "docs/agent/glossary.md" in result.output
+        assert ".erk/docs/agent/glossary.md" in result.output
 
 
 def test_init_skips_docs_agent_if_exists() -> None:
-    """Test that init skips docs/agent/ files if they already exist."""
+    """Test that init skips .erk/docs/agent/ files if they already exist."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
 
-        # Pre-create docs/agent/ files
-        docs_agent_dir = env.cwd / "docs" / "agent"
+        # Pre-create .erk/docs/agent/ files
+        docs_agent_dir = env.cwd / ".erk" / "docs" / "agent"
         docs_agent_dir.mkdir(parents=True)
         (docs_agent_dir / "glossary.md").write_text("# Existing glossary\n", encoding="utf-8")
 
@@ -1388,7 +1388,7 @@ def test_init_skips_docs_agent_if_exists() -> None:
 
         assert result.exit_code == 0, result.output
         # Verify existing file was skipped
-        assert "Skipped docs/agent/glossary.md (already exists)" in result.output
+        assert "Skipped .erk/docs/agent/glossary.md (already exists)" in result.output
         # Verify content was not overwritten
         content = (docs_agent_dir / "glossary.md").read_text(encoding="utf-8")
         assert "# Existing glossary" in content
