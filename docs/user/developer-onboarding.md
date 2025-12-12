@@ -2,22 +2,18 @@
 
 > **Audience**: This guide is for developers joining a repository that already has erk configured. If you're a project maintainer setting up erk for the first time, see [Project Setup](project-setup.md) instead.
 
+## Overview
+
+The main goal of developer onboarding is to set up **shell integration**, which is a per-developer configuration. Shell integration enables critical erk workflow features like seamless worktree navigation.
+
 ## Prerequisites
 
 Before you begin, ensure you have:
 
+- **Git repository cloned** - You should already have the repo on your machine
 - **erk CLI installed** - Follow the [erk installation guide](../../README.md) if needed
 - **Claude Code** - The AI-powered CLI that erk extends
 - **Graphite CLI** (if your team uses stacked PRs) - Run `gt auth` after installing to authenticate
-
-## Step 1: Clone the Repository
-
-Clone the repository as usual:
-
-```bash
-git clone <repo-url>
-cd <repo-name>
-```
 
 Since erk is already configured by the project maintainer, you'll find:
 
@@ -26,19 +22,9 @@ Since erk is already configured by the project maintainer, you'll find:
 
 These are committed to git and ready to use.
 
-## Step 2: Run Erk Doctor
+## Shell Integration
 
-Run the doctor command to check your setup and identify any issues:
-
-```bash
-erk doctor
-```
-
-This will verify your environment and report any problems that need attention.
-
-### Shell Integration (Important)
-
-For the best experience, set up shell integration so you can navigate between worktrees seamlessly. This is the most important setup step and needs to be done once per developer.
+Set up shell integration so you can navigate between worktrees seamlessly. This is the most important setup step and needs to be done once per developer.
 
 **Option A: Append directly to your shell config**
 
@@ -52,47 +38,15 @@ Run `erk shell-init` to see the shell integration code, then copy and paste it i
 
 After adding shell integration, restart your shell or run `source ~/.zshrc`.
 
-Run `erk doctor` again to confirm all checks pass.
+## Verify Your Setup
 
-## Quick Start: Common Erk Commands
-
-Once set up, here are the commands you'll use most:
-
-### Working with Worktrees
+Run the doctor command to verify everything is configured correctly:
 
 ```bash
-# Create a new worktree for a feature
-erk wt create my-feature
-
-# List all worktrees
-erk wt list
-
-# Switch to a worktree
-erk wt go my-feature
-
-# Delete a worktree when done
-erk wt delete my-feature
+erk doctor
 ```
 
-### Working with Plans
-
-```bash
-# Create a plan from a GitHub issue
-erk plan create --issue 123
-
-# Implement a plan (run inside Claude Code)
-/erk:plan-implement
-```
-
-### Checking Status
-
-```bash
-# See overall erk status
-erk status
-
-# Check stack status (if using Graphite)
-erk stack status
-```
+All checks should pass. If any issues are reported, follow the guidance to resolve them.
 
 ## Troubleshooting
 
