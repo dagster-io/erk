@@ -17,6 +17,8 @@
 
 **CRITICAL: NEVER commit directly to `master`. Always create a feature branch first.**
 
+**CRITICAL: NEVER push code to remote (git push, gt ss, gt submit) unless the user explicitly requests it.**
+
 @docs/agent/tripwires.md
 
 **Load these skills FIRST:**
