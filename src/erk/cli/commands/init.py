@@ -217,19 +217,12 @@ def offer_claude_permission_setup(repo_root: Path) -> None:
     help="List available presets and exit.",
 )
 @click.option(
-    "--repo",
-    is_flag=True,
-    help="Initialize repository-level config only (skip global config setup).",
-)
-@click.option(
     "--shell",
     is_flag=True,
     help="Show shell integration setup instructions (completion + auto-activation wrapper).",
 )
 @click.pass_obj
-def init_cmd(
-    ctx: ErkContext, force: bool, preset: str, list_presets: bool, repo: bool, shell: bool
-) -> None:
+def init_cmd(ctx: ErkContext, force: bool, preset: str, list_presets: bool, shell: bool) -> None:
     """Initialize erk for this repo and scaffold config.toml."""
 
     # Handle --shell flag: only do shell setup
@@ -291,8 +284,8 @@ def init_cmd(
     # Track if this is the first time init is run
     first_time_init = False
 
-    # Check for global config first (unless --repo flag is set)
-    if not repo and not ctx.config_store.exists():
+    # Check for global config first
+    if not ctx.config_store.exists():
         first_time_init = True
         config_path = ctx.config_store.path()
         user_output(f"Global config not found at {config_path}")
@@ -312,13 +305,6 @@ def init_cmd(
         else:
             user_output("Graphite (gt) not detected - will use 'git' for branch creation")
 
-    # When --repo is set, verify that global config exists
-    if repo and not ctx.config_store.exists():
-        config_path = ctx.config_store.path()
-        user_output(f"Global config not found at {config_path}")
-        user_output("Run 'erk init' without --repo to create global config first.")
-        raise SystemExit(1)
-
     # Now proceed with repo-specific setup
     repo_context = discover_repo_context(ctx, ctx.cwd)
 
@@ -327,7 +313,6 @@ def init_cmd(
     erk_dir.mkdir(parents=True, exist_ok=True)
 
     # All repo config now goes to .erk/config.toml (consolidated location)
-    # The --repo flag is kept for backwards compatibility but behaves the same
     cfg_path = erk_dir / "config.toml"
 
     # Also ensure metadata directory exists (needed for worktrees dir)

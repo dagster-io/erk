@@ -141,57 +141,6 @@ def test_init_detects_graphite_not_installed() -> None:
         assert not loaded_config.use_graphite
 
 
-def test_init_skips_global_with_repo_flag() -> None:
-    """Test that --repo flag skips global config creation.
-
-    Note: The --repo flag is kept for backwards compatibility but now
-    behaves the same as regular init - config is created at .erk/config.toml.
-    """
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        erk_root = env.cwd / "erks"
-
-        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
-
-        global_config_ops = FakeConfigStore(config=global_config)
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            config_store=global_config_ops,
-            global_config=global_config,
-        )
-
-        result = runner.invoke(cli, ["init", "--repo"], obj=test_ctx)
-
-        assert result.exit_code == 0, result.output
-        assert "Global config not found" not in result.output
-        # Config now goes to .erk/config.toml (consolidated location)
-        assert (env.cwd / ".erk" / "config.toml").exists()
-
-
-def test_init_fails_repo_flag_without_global_config() -> None:
-    """Test that --repo flag fails when global config doesn't exist."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        # Config doesn't exist - this is the error case being tested
-        global_config_ops = FakeConfigStore(config=None)
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            config_store=global_config_ops,
-            global_config=None,
-        )
-
-        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init", "--repo"], obj=test_ctx)
-
-        assert result.exit_code == 1
-        assert "Global config not found" in result.output
-        assert "Run 'erk init' without --repo" in result.output
-
-
 def test_init_auto_preset_detects_dagster() -> None:
     """Test that auto preset detects dagster repo and uses dagster preset."""
     runner = CliRunner()
@@ -376,35 +325,6 @@ def test_init_creates_config_at_erk_dir() -> None:
         # Not in erks_dir anymore (legacy location)
         legacy_path = erk_root / "repos" / env.cwd.name / "config.toml"
         assert not legacy_path.exists()
-
-
-def test_init_repo_flag_creates_config_at_erk_dir() -> None:
-    """Test that --repo creates config.toml in .erk/ directory.
-
-    Note: The --repo flag is kept for backwards compatibility but now
-    behaves the same as regular init - config is created at .erk/config.toml.
-    """
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        erk_root = env.cwd / "erks"
-
-        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
-
-        global_config_ops = FakeConfigStore(config=global_config)
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            config_store=global_config_ops,
-            global_config=global_config,
-        )
-
-        result = runner.invoke(cli, ["init", "--repo"], obj=test_ctx)
-
-        assert result.exit_code == 0, result.output
-        # Config now goes to .erk/config.toml (consolidated location)
-        config_path = env.cwd / ".erk" / "config.toml"
-        assert config_path.exists()
 
 
 def test_init_force_overwrites_existing_config() -> None:
