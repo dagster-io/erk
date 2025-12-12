@@ -1,10 +1,20 @@
 # Setting Up Your Project for Erk
 
+> **Audience**: This guide is for **project maintainers** setting up erk in a repository for the first time. If you're a developer joining a repo that already has erk configured, see [Developer Onboarding](developer-onboarding.md) instead.
+
 This guide covers how to configure your repository to work with erk's planning and implementation workflows.
 
-## Prerequisites
+## Step 1: Initialize Erk
 
-### Install Kits
+First, initialize erk in your repository:
+
+```bash
+erk init
+```
+
+This creates the `erk.toml` configuration file in your repository root.
+
+## Step 2: Install Kits
 
 Install the kits that provide erk's slash commands and agents:
 
@@ -22,7 +32,7 @@ The erk kit includes:
 - **Agents**: `issue-wt-creator`, `plan-extractor`
 - **Workflows**: GitHub Actions templates for erk queue processing
 
-### Optional: Install Related Kits
+### Step 3: Install Related Kits (Optional)
 
 For the full erk experience, consider installing these complementary kits:
 
@@ -56,7 +66,7 @@ your-repo/
 └── ...
 ```
 
-## .gitignore Configuration
+## Step 4: Configure .gitignore
 
 Add these entries to your `.gitignore` to exclude erk's temporary and session-specific files:
 
@@ -70,6 +80,23 @@ Add these entries to your `.gitignore` to exclude erk's temporary and session-sp
 
 - **`.erk/scratch/`**: Session-specific scratch storage. Each Claude session creates temporary files here scoped by session ID. These are ephemeral and should not be committed.
 - **`.impl/`**: Implementation plan files created per-worktree. These track in-progress work and are deleted after successful PR submission.
+
+## Step 5: Commit Your Setup
+
+After completing the setup, commit the following files to git:
+
+```bash
+git add erk.toml .claude/ .gitignore
+git commit -m "Configure erk for project"
+```
+
+**What gets committed:**
+
+- **`erk.toml`** - Project configuration (created by `erk init`)
+- **`.claude/`** - Kit artifacts (commands, skills, hooks installed by kits)
+- **`.gitignore`** - Updated exclusions for erk temporary files
+
+This makes the erk configuration available to all team members who clone the repository.
 
 ## Post-Implementation CI Configuration
 
