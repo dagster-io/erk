@@ -10,6 +10,8 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+import tomli
+
 from erk.core.claude_settings import (
     ERK_PERMISSION,
     get_repo_claude_settings_path,
@@ -735,8 +737,6 @@ def check_deprecated_dot_agent_config(repo_root: Path) -> CheckResult:
     Returns:
         CheckResult indicating whether deprecated config was found
     """
-    import tomli
-
     pyproject_path = repo_root / "pyproject.toml"
     if not pyproject_path.exists():
         return CheckResult(
