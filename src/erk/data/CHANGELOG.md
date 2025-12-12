@@ -9,8 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.3] - 2025-12-12
 
-## [0.2.3] - 2025-12-12
-
 ### Added
 
 - Add orphaned artifact detection for `.claude/` directory

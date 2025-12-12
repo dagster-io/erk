@@ -21,6 +21,7 @@ class ReleaseEntry:
     date: str | None
     content: str
     items: list[str] = field(default_factory=list)
+    categories: dict[str, list[str]] = field(default_factory=dict)
 
 
 @cache
@@ -100,12 +101,23 @@ def parse_changelog(content: str) -> list[ReleaseEntry]:
         end = matches[i + 1].start() if i + 1 < len(matches) else len(content)
         section_content = content[start:end].strip()
 
-        # Extract bullet items from content
+        # Extract bullet items grouped by category (### Added, ### Changed, etc.)
         items: list[str] = []
+        categories: dict[str, list[str]] = {}
+        current_category: str | None = None
+
         for line in section_content.split("\n"):
-            line = line.strip()
-            if line.startswith("- "):
-                items.append(line[2:])
+            stripped = line.strip()
+
+            # Check for category header (### Added, ### Changed, ### Fixed, etc.)
+            if stripped.startswith("### "):
+                current_category = stripped[4:]
+                categories[current_category] = []
+            elif stripped.startswith("- "):
+                item_text = stripped[2:]
+                items.append(item_text)
+                if current_category is not None:
+                    categories[current_category].append(item_text)
 
         entries.append(
             ReleaseEntry(
@@ -113,6 +125,7 @@ def parse_changelog(content: str) -> list[ReleaseEntry]:
                 date=date,
                 content=section_content,
                 items=items,
+                categories=categories,
             )
         )
 
