@@ -58,8 +58,14 @@ def _update_commit_message_from_pr(ctx: ErkContext, repo_root: Path, pr_number: 
 
 
 @click.command("sync")
+@click.option(
+    "--dangerous",
+    is_flag=True,
+    required=True,
+    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+)
 @click.pass_obj
-def pr_sync(ctx: ErkContext) -> None:
+def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
     """Synchronize current PR branch with Graphite.
 
     Registers the current PR branch with Graphite for stack management.
@@ -72,7 +78,7 @@ def pr_sync(ctx: ErkContext) -> None:
 
         # Checkout and sync a PR
         erk pr checkout 1973
-        erk pr sync
+        erk pr sync --dangerous
 
         # Now you can use Graphite commands
         gt pr
@@ -83,6 +89,8 @@ def pr_sync(ctx: ErkContext) -> None:
     - PR exists and is OPEN
     - PR is not from a fork (cross-repo PRs cannot be tracked)
     """
+    # dangerous flag is required to indicate acknowledgment
+    _ = dangerous
     # Step 1: Validate preconditions
     Ensure.gh_authenticated(ctx)
     Ensure.gt_authenticated(ctx)

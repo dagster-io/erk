@@ -75,7 +75,7 @@ class TestBuildPRBodyFooter:
 
     The function builds a footer section for PR bodies containing:
     - Separator (---) at start
-    - Checkout command with && erk pr sync
+    - Checkout command with && erk pr sync --dangerous
     """
 
     def test_build_footer_with_pr_number(self) -> None:
@@ -83,7 +83,7 @@ class TestBuildPRBodyFooter:
         result = build_pr_body_footer(456)
 
         assert "---" in result
-        assert "erk pr checkout 456 && erk pr sync" in result
+        assert "erk pr checkout 456 && erk pr sync --dangerous" in result
 
 
 class TestPreAnalysisExecution:
@@ -583,7 +583,7 @@ class TestExecuteFinalize:
         assert final_pr_body.startswith("Description")
         # Footer contains separator, issue closing reference, and checkout command
         assert "---" in final_pr_body
-        assert "erk pr checkout 123 && erk pr sync" in final_pr_body
+        assert "erk pr checkout 123 && erk pr sync --dangerous" in final_pr_body
         # Closes #N is included when issue reference exists
         assert "Closes #456" in final_pr_body
 

@@ -11,7 +11,7 @@ def test_build_pr_body_footer_without_issue_number() -> None:
     result = build_pr_body_footer(pr_number=1895)
 
     assert "---" in result
-    assert "erk pr checkout 1895 && erk pr sync" in result
+    assert "erk pr checkout 1895 && erk pr sync --dangerous" in result
     assert "Closes #" not in result
 
 
@@ -21,7 +21,7 @@ def test_build_pr_body_footer_with_issue_number() -> None:
 
     assert "---" in result
     assert "Closes #123" in result
-    assert "erk pr checkout 1895 && erk pr sync" in result
+    assert "erk pr checkout 1895 && erk pr sync --dangerous" in result
 
 
 def test_build_pr_body_footer_issue_number_before_checkout() -> None:
@@ -37,11 +37,11 @@ def test_build_pr_body_footer_issue_number_before_checkout() -> None:
 
 
 def test_build_pr_body_footer_includes_sync_command() -> None:
-    """Test that footer includes '&& erk pr sync' in checkout command."""
+    """Test that footer includes '&& erk pr sync --dangerous' in checkout command."""
     result = build_pr_body_footer(pr_number=100)
 
-    assert "&& erk pr sync" in result
-    assert "erk pr checkout 100 && erk pr sync" in result
+    assert "&& erk pr sync --dangerous" in result
+    assert "erk pr checkout 100 && erk pr sync --dangerous" in result
 
 
 # ============================================================================

@@ -100,7 +100,7 @@ def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
             env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Base branch: main" in result.output
@@ -174,7 +174,7 @@ def test_pr_sync_succeeds_silently_when_already_tracked(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
-        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
         assert "already tracked by Graphite" in result.output
@@ -185,6 +185,25 @@ def test_pr_sync_succeeds_silently_when_already_tracked(tmp_path: Path) -> None:
         assert len(graphite.squash_branch_calls) == 0
         assert len(graphite.restack_calls) == 0
         assert len(graphite.submit_stack_calls) == 0
+
+
+def test_pr_sync_requires_dangerous_flag(tmp_path: Path) -> None:
+    """Test that sync fails when --dangerous flag is not provided."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git)
+
+        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+
+        assert result.exit_code != 0
+        assert "Missing option '--dangerous'" in result.output
 
 
 def test_pr_sync_fails_when_not_on_branch(tmp_path: Path) -> None:
@@ -201,7 +220,7 @@ def test_pr_sync_fails_when_not_on_branch(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git)
 
-        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Not on a branch" in result.output
@@ -223,7 +242,7 @@ def test_pr_sync_fails_when_no_pr_exists(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 1
         assert "No pull request found for branch 'no-pr-branch'" in result.output
@@ -255,7 +274,7 @@ def test_pr_sync_fails_when_pr_is_closed(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Cannot sync CLOSED PR" in result.output
@@ -287,7 +306,7 @@ def test_pr_sync_fails_when_pr_is_merged(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Cannot sync MERGED PR" in result.output
@@ -322,7 +341,7 @@ def test_pr_sync_fails_when_cross_repo_fork(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Cannot sync fork PRs" in result.output
@@ -373,7 +392,7 @@ def test_pr_sync_handles_squash_single_commit(tmp_path: Path) -> None:
             env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         # Should succeed - squash_branch_idempotent handles "nothing to squash" gracefully
         assert result.exit_code == 0
@@ -420,7 +439,7 @@ def test_pr_sync_handles_submit_failure_gracefully(tmp_path: Path) -> None:
             env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         # Submit failure should fail the command
         assert result.exit_code == 1
@@ -464,7 +483,7 @@ def test_pr_sync_squash_raises_unexpected_error(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
-        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         # Should fail with error message from execute_squash
         assert result.exit_code == 1
@@ -505,7 +524,7 @@ def test_pr_sync_uses_correct_base_branch(tmp_path: Path) -> None:
             env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Base branch: release/v1.0" in result.output
@@ -549,7 +568,7 @@ def test_pr_sync_updates_commit_with_title_only(tmp_path: Path) -> None:
             env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Commit message updated" in result.output
@@ -593,7 +612,7 @@ def test_pr_sync_skips_commit_update_when_no_title(tmp_path: Path) -> None:
             env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
         # Should NOT update commit message
@@ -638,7 +657,7 @@ def test_pr_sync_fails_when_claude_not_available(tmp_path: Path) -> None:
             env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Claude CLI not found" in result.output
@@ -682,7 +701,7 @@ def test_pr_sync_fails_when_auto_restack_requires_interactive(tmp_path: Path) ->
             env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Semantic conflict requires interactive resolution" in result.output
@@ -722,7 +741,7 @@ def test_pr_sync_fails_when_auto_restack_fails(tmp_path: Path) -> None:
             env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 1
         assert "/erk:auto-restack failed" in result.output

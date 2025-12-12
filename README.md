@@ -129,7 +129,7 @@ Commits all changes and submits with Graphite.
 When your stack needs rebasing:
 
 ```bash
-erk pr auto-restack
+erk pr auto-restack --dangerous
 ```
 
 Or from Claude Code: `/erk:auto-restack`
@@ -156,7 +156,7 @@ When working with stacked PRs, rebasing is a frequent operation. `erk pr auto-re
 **Basic usage:**
 
 ```bash
-erk pr auto-restack
+erk pr auto-restack --dangerous
 ```
 
 **From within Claude Code:**
@@ -164,6 +164,8 @@ erk pr auto-restack
 ```
 /erk:auto-restack
 ```
+
+> Note: The `--dangerous` flag acknowledges that auto-restack invokes Claude with `--dangerously-skip-permissions`.
 
 **When to use it:**
 
@@ -187,7 +189,7 @@ When conflicts are detected, erk spawns a Claude Code session that:
 trunk ← feature-a ← feature-b ← feature-c (you are here)
 ```
 
-If `feature-a` merges into trunk, running `erk pr auto-restack` will:
+If `feature-a` merges into trunk, running `erk pr auto-restack --dangerous` will:
 
 1. Rebase `feature-b` onto the new trunk
 2. Resolve any conflicts (with Claude's help if needed)
@@ -217,10 +219,12 @@ This creates a local worktree for the PR branch and changes your shell to that d
 After checkout, sync with Graphite to enable stack management:
 
 ```bash
-erk pr sync
+erk pr sync --dangerous
 ```
 
 This registers the branch with Graphite so you can use standard `gt` commands (`gt pr`, `gt land`, etc.).
+
+> Note: The `--dangerous` flag acknowledges that sync invokes Claude with `--dangerously-skip-permissions`.
 
 **Complete workflow:**
 
@@ -229,7 +233,7 @@ This registers the branch with Graphite so you can use standard `gt` commands (`
 erk pr checkout https://github.com/myorg/myrepo/pull/456
 
 # 2. Sync with Graphite
-erk pr sync
+erk pr sync --dangerous
 
 # 3. Now iterate normally
 claude
@@ -282,7 +286,7 @@ When a remote implementation needs local iteration:
 
 ```bash
 erk pr checkout <pr-number>
-erk pr sync
+erk pr sync --dangerous
 ```
 
 This checks out the PR into a local worktree for debugging and iteration.

@@ -17,7 +17,7 @@ def test_get_pr_body_footer_outputs_combined_checkout_and_sync() -> None:
     result = runner.invoke(get_pr_body_footer, ["--pr-number", "1895"])
 
     assert result.exit_code == 0
-    assert "erk pr checkout 1895 && erk pr sync" in result.output
+    assert "erk pr checkout 1895 && erk pr sync --dangerous" in result.output
     assert "---" in result.output
     assert "To checkout this PR" in result.output
 
@@ -39,7 +39,7 @@ def test_get_pr_body_footer_different_pr_numbers() -> None:
     result = runner.invoke(get_pr_body_footer, ["--pr-number", "42"])
 
     assert result.exit_code == 0
-    assert "erk pr checkout 42 && erk pr sync" in result.output
+    assert "erk pr checkout 42 && erk pr sync --dangerous" in result.output
     assert "1895" not in result.output
 
 

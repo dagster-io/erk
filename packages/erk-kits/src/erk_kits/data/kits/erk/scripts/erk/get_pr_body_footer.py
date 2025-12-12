@@ -23,7 +23,7 @@ Examples:
     To checkout this PR in a fresh worktree and environment locally, run:
 
     ```
-    erk pr checkout 1895 && erk pr sync
+    erk pr checkout 1895 && erk pr sync --dangerous
     ```
 
     $ erk kit exec erk get-pr-body-footer --pr-number 1895 --issue-number 123
@@ -35,7 +35,7 @@ Examples:
     To checkout this PR in a fresh worktree and environment locally, run:
 
     ```
-    erk pr checkout 1895 && erk pr sync
+    erk pr checkout 1895 && erk pr sync --dangerous
     ```
 """
 

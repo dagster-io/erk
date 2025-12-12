@@ -34,12 +34,14 @@ Use `erk pr sync` after checking out a PR that was created elsewhere:
 ```bash
 # Checkout and sync a PR
 erk pr checkout 1973
-erk pr sync
+erk pr sync --dangerous
 
 # Now use Graphite commands
 gt pr
 gt land
 ```
+
+> Note: The `--dangerous` flag acknowledges that sync invokes Claude with `--dangerously-skip-permissions`.
 
 ## Limitations
 

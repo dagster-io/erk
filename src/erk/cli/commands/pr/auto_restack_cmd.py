@@ -19,8 +19,14 @@ from erk_shared.integrations.gt.types import (
 
 
 @click.command("auto-restack")
+@click.option(
+    "--dangerous",
+    is_flag=True,
+    required=True,
+    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+)
 @click.pass_obj
-def pr_auto_restack(ctx: ErkContext) -> None:
+def pr_auto_restack(ctx: ErkContext, *, dangerous: bool) -> None:
     """Restack with AI-powered conflict resolution.
 
     Runs `gt restack` and automatically handles any merge conflicts that arise,
@@ -34,8 +40,10 @@ def pr_auto_restack(ctx: ErkContext) -> None:
 
     \b
       # Auto-restack with conflict resolution
-      erk pr auto-restack
+      erk pr auto-restack --dangerous
     """
+    # dangerous flag is required to indicate acknowledgment
+    _ = dangerous
     cwd = ctx.cwd
 
     # Phase 1: Try fast path (preflight: squash + attempt restack)

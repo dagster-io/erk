@@ -31,7 +31,7 @@ def test_pr_auto_restack_success() -> None:
             env, git=git, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+        result = runner.invoke(pr_group, ["auto-restack", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Restack complete!" in result.output
@@ -41,6 +41,31 @@ def test_pr_auto_restack_success() -> None:
 
         # Graphite restack should have been called
         assert len(graphite.restack_calls) == 1
+
+
+def test_pr_auto_restack_requires_dangerous_flag() -> None:
+    """Test that command fails when --dangerous flag is not provided."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        graphite = FakeGraphite()
+        claude_executor = FakeClaudeExecutor(claude_available=True)
+
+        ctx = build_workspace_test_context(
+            env, git=git, graphite=graphite, claude_executor=claude_executor
+        )
+
+        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+
+        assert result.exit_code != 0
+        assert "Missing option '--dangerous'" in result.output
 
 
 def test_pr_auto_restack_fails_when_claude_not_available() -> None:
@@ -65,7 +90,7 @@ def test_pr_auto_restack_fails_when_claude_not_available() -> None:
             env, git=git, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+        result = runner.invoke(pr_group, ["auto-restack", "--dangerous"], obj=ctx)
 
         assert result.exit_code != 0
         assert "Conflicts require Claude" in result.output
@@ -100,7 +125,7 @@ def test_pr_auto_restack_fails_on_command_error() -> None:
             env, git=git, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+        result = runner.invoke(pr_group, ["auto-restack", "--dangerous"], obj=ctx)
 
         assert result.exit_code != 0
         # Error message from FakeClaudeExecutor
@@ -133,7 +158,7 @@ def test_pr_auto_restack_aborts_on_semantic_conflict() -> None:
             env, git=git, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+        result = runner.invoke(pr_group, ["auto-restack", "--dangerous"], obj=ctx)
 
         # Should fail with semantic conflict message
         assert result.exit_code != 0
@@ -164,7 +189,7 @@ def test_pr_auto_restack_fallback_on_conflicts() -> None:
             env, git=git, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+        result = runner.invoke(pr_group, ["auto-restack", "--dangerous"], obj=ctx)
 
         # Claude handles it, so should succeed
         assert result.exit_code == 0
@@ -172,9 +197,9 @@ def test_pr_auto_restack_fallback_on_conflicts() -> None:
 
         # Fallback path: Claude SHOULD be invoked
         assert len(claude_executor.executed_commands) == 1
-        command, _, dangerous, _ = claude_executor.executed_commands[0]
+        command, _, dangerous_flag, _ = claude_executor.executed_commands[0]
         assert command == "/erk:auto-restack"
-        assert dangerous is True
+        assert dangerous_flag is True
 
 
 def test_pr_auto_restack_fast_path_with_rebase_in_progress_but_no_conflicts() -> None:
@@ -200,7 +225,7 @@ def test_pr_auto_restack_fast_path_with_rebase_in_progress_but_no_conflicts() ->
             env, git=git, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+        result = runner.invoke(pr_group, ["auto-restack", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Restack complete!" in result.output
@@ -232,7 +257,7 @@ def test_pr_auto_restack_preflight_error() -> None:
             env, git=git, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+        result = runner.invoke(pr_group, ["auto-restack", "--dangerous"], obj=ctx)
 
         # Preflight error
         assert result.exit_code != 0
@@ -264,7 +289,7 @@ def test_pr_auto_restack_auto_commits_dirty_working_tree() -> None:
             env, git=git, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+        result = runner.invoke(pr_group, ["auto-restack", "--dangerous"], obj=ctx)
 
         # Should succeed after auto-committing
         assert result.exit_code == 0
@@ -305,7 +330,7 @@ def test_pr_auto_restack_fails_when_no_work_events() -> None:
             env, git=git, graphite=graphite, claude_executor=claude_executor
         )
 
-        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+        result = runner.invoke(pr_group, ["auto-restack", "--dangerous"], obj=ctx)
 
         # Should fail due to no work events
         assert result.exit_code != 0

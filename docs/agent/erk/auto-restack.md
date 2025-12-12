@@ -51,8 +51,10 @@ The command uses two execution paths for efficiency:
 
 ```bash
 # Run from any branch in your stack
-erk pr auto-restack
+erk pr auto-restack --dangerous
 ```
+
+> Note: The `--dangerous` flag acknowledges that this command invokes Claude with `--dangerously-skip-permissions`.
 
 The command will:
 
@@ -135,7 +137,7 @@ The finalize verifies:
 ## Example: Fast Path (No Conflicts)
 
 ```
-$ erk pr auto-restack
+$ erk pr auto-restack --dangerous
   Squashing commits...
   Running gt restack...
 Restack complete!
@@ -146,7 +148,7 @@ This is the fast path - no conflicts were detected, so the command completed wit
 ## Example: Slow Path (Conflicts Detected)
 
 ```
-$ erk pr auto-restack
+$ erk pr auto-restack --dangerous
   Squashing commits...
   Running gt restack...
 Conflicts detected in 3 file(s). Falling back to Claude...
@@ -209,7 +211,7 @@ gt continue
 
 # Option 2: Abort and start fresh
 gt rebase --abort
-erk pr auto-restack
+erk pr auto-restack --dangerous
 ```
 
 ### Pre-commit Hook Failures
