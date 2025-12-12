@@ -1,5 +1,5 @@
 name: git
-version: 0.1.0
+version: 0.2.3
 description: Git-only branch submission workflow using standard git + GitHub CLI
 license: See LICENSE.md
 artifacts:
