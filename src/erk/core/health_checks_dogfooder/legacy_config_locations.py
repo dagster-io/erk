@@ -4,10 +4,61 @@ This is a temporary check for early dogfooders. Delete this file once
 all users have migrated their config to .erk/config.toml.
 """
 
+from dataclasses import dataclass
 from pathlib import Path
 
-from erk.cli.config import detect_legacy_config_locations
 from erk.core.health_checks import CheckResult
+
+
+@dataclass(frozen=True)
+class LegacyConfigLocation:
+    """Information about a legacy config.toml location."""
+
+    path: Path
+    description: str
+
+
+def detect_legacy_config_locations(
+    repo_root: Path,
+    metadata_dir: Path | None,
+) -> list[LegacyConfigLocation]:
+    """Detect legacy config.toml files at old locations.
+
+    Checks for config files at:
+    - repo_root/config.toml (legacy location)
+    - metadata_dir/config.toml (legacy location)
+
+    Args:
+        repo_root: Path to the repository root
+        metadata_dir: Path to ~/.erk/repos/<repo>/ metadata directory, if known
+
+    Returns:
+        List of LegacyConfigLocation objects for any legacy configs found
+    """
+    legacy_locations: list[LegacyConfigLocation] = []
+
+    # Check for config at repo root (legacy location)
+    repo_root_config = repo_root / "config.toml"
+    if repo_root_config.exists():
+        legacy_locations.append(
+            LegacyConfigLocation(
+                path=repo_root_config,
+                description="repo root (legacy location)",
+            )
+        )
+
+    # Check for config in ~/.erk/repos/<repo>/ (legacy location)
+    if metadata_dir is not None:
+        metadata_dir_config = metadata_dir / "config.toml"
+        if metadata_dir_config.exists():
+            legacy_locations.append(
+                LegacyConfigLocation(
+                    path=metadata_dir_config,
+                    description="~/.erk/repos/ metadata dir (legacy location)",
+                )
+            )
+
+    return legacy_locations
 
 
 def check_legacy_config_locations(
