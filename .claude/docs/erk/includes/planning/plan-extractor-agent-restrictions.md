@@ -1,1 +1,0 @@
-../../../../../packages/erk-kits/src/erk_kits/data/kits/erk/docs/erk/includes/planning/plan-extractor-agent-restrictions.md

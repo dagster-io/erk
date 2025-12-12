@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from erk.core.health_checks import CheckResult
+from erk.kits.io.state import load_project_config
 
 
 @dataclass(frozen=True)
@@ -24,7 +25,11 @@ def detect_legacy_doc_locations(repo_root: Path) -> list[LegacyDocLocation]:
 
     Checks for:
     - docs/agent/ (should be at .erk/docs/agent/)
-    - .claude/docs/<kit>/ directories (should be at .erk/docs/kits/<kit>/)
+    - .claude/docs/<kit>/ directories that match installed kit names
+      (should be at .erk/docs/kits/<kit>/)
+
+    Only flags directories in .claude/docs/ that match installed kit IDs from
+    kits.toml. Non-kit directories (e.g., manually maintained docs) are ignored.
 
     Args:
         repo_root: Path to the repository root
@@ -45,11 +50,18 @@ def detect_legacy_doc_locations(repo_root: Path) -> list[LegacyDocLocation]:
             )
         )
 
+    # Get installed kit IDs from kits.toml
+    config = load_project_config(repo_root)
+    installed_kit_ids: set[str] = set()
+    if config is not None:
+        installed_kit_ids = set(config.kits.keys())
+
     # Check for .claude/docs/<kit>/ directories (legacy kit docs location)
+    # Only flag directories that match installed kit names
     claude_docs_dir = repo_root / ".claude" / "docs"
     if claude_docs_dir.exists() and claude_docs_dir.is_dir():
         for kit_dir in claude_docs_dir.iterdir():
-            if kit_dir.is_dir():
+            if kit_dir.is_dir() and kit_dir.name in installed_kit_ids:
                 legacy_locations.append(
                     LegacyDocLocation(
                         path=kit_dir,

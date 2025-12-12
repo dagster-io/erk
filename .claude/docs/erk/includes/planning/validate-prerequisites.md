@@ -1,1 +1,0 @@
-../../../../../packages/erk-kits/src/erk_kits/data/kits/erk/docs/erk/includes/planning/validate-prerequisites.md
