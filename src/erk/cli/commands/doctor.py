@@ -8,6 +8,7 @@ import click
 
 from erk.core.context import ErkContext
 from erk.core.health_checks import CheckResult, run_all_checks
+from erk.core.health_checks_dogfooder import EARLY_DOGFOODER_CHECK_NAMES
 
 
 def _format_check_result(result: CheckResult) -> None:
@@ -63,13 +64,12 @@ def doctor_cmd(ctx: ErkContext) -> None:
         "claude hooks",
     }
     github_check_names = {"github auth", "workflow permissions"}
-    early_dogfooder_names = {"deprecated dot-agent config"}
 
     cli_checks = [r for r in results if r.name in cli_tool_names]
     health_checks = [r for r in results if r.name in health_check_names]
     repo_checks = [r for r in results if r.name in repo_check_names]
     github_checks = [r for r in results if r.name in github_check_names]
-    early_dogfooder_checks = [r for r in results if r.name in early_dogfooder_names]
+    early_dogfooder_checks = [r for r in results if r.name in EARLY_DOGFOODER_CHECK_NAMES]
 
     # Track displayed check names to catch any uncategorized checks
     displayed_names = (
@@ -77,7 +77,7 @@ def doctor_cmd(ctx: ErkContext) -> None:
         | health_check_names
         | repo_check_names
         | github_check_names
-        | early_dogfooder_names
+        | EARLY_DOGFOODER_CHECK_NAMES
     )
 
     # Display CLI availability

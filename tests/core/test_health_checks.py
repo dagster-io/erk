@@ -16,6 +16,7 @@ from erk.core.health_checks import (
     check_repository,
     check_uv_version,
 )
+from erk.core.health_checks_dogfooder import check_legacy_config_locations
 from erk_shared.git.fake import FakeGit
 from tests.fakes.context import create_test_context
 

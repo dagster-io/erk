@@ -5,7 +5,8 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.doctor import doctor_cmd
-from erk.core.health_checks import check_deprecated_dot_agent_config, check_workflow_permissions
+from erk.core.health_checks import check_workflow_permissions
+from erk.core.health_checks_dogfooder import check_deprecated_dot_agent_config
 from erk_shared.git.fake import FakeGit
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env

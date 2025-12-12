@@ -10,8 +10,6 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-import tomli
-
 from erk.core.claude_settings import (
     ERK_PERMISSION,
     get_repo_claude_settings_path,
@@ -725,67 +723,6 @@ def _kit_command_exists(command: str) -> bool:
         return True  # Assume it exists if we can't check
 
 
-def check_deprecated_dot_agent_config(repo_root: Path) -> CheckResult:
-    """Check for deprecated [tool.dot-agent] config in pyproject.toml.
-
-    This check detects the old configuration format and suggests migration
-    to [tool.erk].
-
-    Args:
-        repo_root: Path to the repository root
-
-    Returns:
-        CheckResult indicating whether deprecated config was found
-    """
-    pyproject_path = repo_root / "pyproject.toml"
-    if not pyproject_path.exists():
-        return CheckResult(
-            name="deprecated dot-agent config",
-            passed=True,
-            message="No deprecated [tool.dot-agent] config found",
-        )
-
-    with open(pyproject_path, "rb") as f:
-        data = tomli.load(f)
-
-    # Check for [tool.dot-agent] section with dev_mode
-    if "tool" not in data:
-        return CheckResult(
-            name="deprecated dot-agent config",
-            passed=True,
-            message="No deprecated [tool.dot-agent] config found",
-        )
-    if "dot-agent" not in data["tool"]:
-        return CheckResult(
-            name="deprecated dot-agent config",
-            passed=True,
-            message="No deprecated [tool.dot-agent] config found",
-        )
-
-    tool_config = data["tool"]["dot-agent"]
-    if "dev_mode" not in tool_config:
-        return CheckResult(
-            name="deprecated dot-agent config",
-            passed=True,
-            message="No deprecated [tool.dot-agent] config found",
-        )
-
-    # Found deprecated config - return failure with remediation
-    return CheckResult(
-        name="deprecated dot-agent config",
-        passed=False,
-        message="Deprecated [tool.dot-agent] config in pyproject.toml",
-        details=(
-            "dev_mode should now be configured under [tool.erk]\n"
-            "\n"
-            "Remediation:\n"
-            "  1. Edit pyproject.toml\n"
-            "  2. Replace [tool.dot-agent] with [tool.erk]\n"
-            "  3. Keep dev_mode = true under [tool.erk]"
-        ),
-    )
-
-
 def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
     """Run all health checks and return results.
 
@@ -821,7 +758,8 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         # GitHub workflow permissions check (requires repo context)
         results.append(check_workflow_permissions(ctx, repo_root))
 
-        # Early dogfooder checks
-        results.append(check_deprecated_dot_agent_config(repo_root))
+        from erk.core.health_checks_dogfooder import run_early_dogfooder_checks
+
+        results.extend(run_early_dogfooder_checks(repo_root, metadata_dir))
 
     return results
