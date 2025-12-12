@@ -134,6 +134,11 @@ def get_workspace_packages(repo_root: Path) -> list[PackageInfo]:
     """Get all publishable packages in workspace."""
     packages = [
         PackageInfo(
+            name="erk-shared",
+            path=repo_root / "packages" / "erk-shared",
+            pyproject_path=repo_root / "packages" / "erk-shared" / "pyproject.toml",
+        ),
+        PackageInfo(
             name="erk-kits",
             path=repo_root / "packages" / "erk-kits",
             pyproject_path=repo_root / "packages" / "erk-kits" / "pyproject.toml",
@@ -481,6 +486,7 @@ def publish_workflow(dry_run: bool) -> None:
             "pyproject.toml",
             "uv.lock",
             "packages/erk-kits/pyproject.toml",
+            "packages/erk-shared/pyproject.toml",
         }
         lines = filter_git_status(status, excluded_files)
 

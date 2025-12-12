@@ -37,6 +37,7 @@ from erk.core.context import create_context
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])  # terse help flags
 
+
 def _show_version_change_banner() -> None:
     """Show upgrade banner with full release notes if version has changed.
 
