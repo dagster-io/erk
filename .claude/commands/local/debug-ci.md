@@ -107,5 +107,4 @@ Present the failure information clearly:
 
 - This command only fetches and analyzes logs - it does NOT automatically fix issues
 - Use `/fast-ci` or `/all-ci` to run CI locally and fix issues iteratively
-- After fixing issues, inform the user that the fix is complete and they can push when ready
-- IMPORTANT: Do NOT push code automatically. The user will push when they choose to.
+- IMPORTANT: Do NOT push code after making fixes. Wait for user to explicitly run a submit command.
