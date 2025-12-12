@@ -65,11 +65,13 @@ def doctor_cmd(ctx: ErkContext) -> None:
         "legacy config",
     }
     github_check_names = {"github auth", "workflow permissions"}
+    hooks_check_names = {"hooks"}
 
     cli_checks = [r for r in results if r.name in cli_tool_names]
     health_checks = [r for r in results if r.name in health_check_names]
     repo_checks = [r for r in results if r.name in repo_check_names]
     github_checks = [r for r in results if r.name in github_check_names]
+    hooks_checks = [r for r in results if r.name in hooks_check_names]
     early_dogfooder_checks = [r for r in results if r.name in EARLY_DOGFOODER_CHECK_NAMES]
 
     # Track displayed check names to catch any uncategorized checks
@@ -78,6 +80,7 @@ def doctor_cmd(ctx: ErkContext) -> None:
         | health_check_names
         | repo_check_names
         | github_check_names
+        | hooks_check_names
         | EARLY_DOGFOODER_CHECK_NAMES
     )
 
@@ -104,6 +107,13 @@ def doctor_cmd(ctx: ErkContext) -> None:
     if github_checks:
         click.echo(click.style("GitHub", bold=True))
         for result in github_checks:
+            _format_check_result(result)
+        click.echo("")
+
+    # Display Hooks checks
+    if hooks_checks:
+        click.echo(click.style("Hooks", bold=True))
+        for result in hooks_checks:
             _format_check_result(result)
         click.echo("")
 

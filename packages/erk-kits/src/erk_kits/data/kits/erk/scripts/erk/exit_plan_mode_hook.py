@@ -24,7 +24,7 @@ from pathlib import Path
 
 import click
 
-from erk.kits.hooks.decorators import project_scoped
+from erk.kits.hooks.decorators import logged_hook, project_scoped
 from erk_kits.data.kits.erk.session_plan_extractor import extract_slugs_from_session
 
 # ============================================================================
@@ -346,6 +346,7 @@ def _execute_result(result: HookOutput, session_id: str | None) -> None:
 
 
 @click.command(name="exit-plan-mode-hook")
+@logged_hook
 @project_scoped
 def exit_plan_mode_hook() -> None:
     """Prompt user about plan saving when ExitPlanMode is called.

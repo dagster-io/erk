@@ -3,10 +3,11 @@
 
 import click
 
-from erk.kits.hooks.decorators import project_scoped
+from erk.kits.hooks.decorators import logged_hook, project_scoped
 
 
 @click.command()
+@logged_hook
 @project_scoped
 def tripwires_reminder_hook() -> None:
     """Output tripwires reminder for UserPromptSubmit hook."""

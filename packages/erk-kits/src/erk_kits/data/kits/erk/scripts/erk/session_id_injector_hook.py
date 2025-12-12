@@ -14,7 +14,7 @@ from pathlib import Path
 
 import click
 
-from erk.kits.hooks.decorators import project_scoped
+from erk.kits.hooks.decorators import logged_hook, project_scoped
 
 
 def _get_repo_root() -> Path:
@@ -49,6 +49,7 @@ def _is_github_planning_enabled() -> bool:
 
 
 @click.command(name="session-id-injector-hook")
+@logged_hook
 @project_scoped
 def session_id_injector_hook() -> None:
     """Inject session ID into conversation context when relevant."""
