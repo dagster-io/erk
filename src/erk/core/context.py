@@ -60,6 +60,7 @@ from erk_shared.integrations.graphite.real import RealGraphite
 from erk_shared.integrations.shell import Shell
 from erk_shared.integrations.time.abc import Time
 from erk_shared.integrations.time.real import RealTime
+from erk_shared.integrations.wt_stack.wt_stack import WtStack
 from erk_shared.objectives.storage import FileObjectiveStore, ObjectiveStore
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.github import GitHubPlanStore
@@ -105,12 +106,14 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
 
     fake_github = FakeGitHub()
     fake_issues = FakeGitHubIssues()
+    fake_graphite = FakeGraphite()
     return ErkContext(
         git=git,
         github=fake_github,
         issues=fake_issues,
         plan_store=FakePlanStore(),
-        graphite=FakeGraphite(),
+        graphite=fake_graphite,
+        wt_stack=WtStack(git, cwd, fake_graphite),
         shell=FakeShell(),
         claude_executor=FakeClaudeExecutor(),
         completion=FakeCompletion(),
@@ -140,6 +143,7 @@ def context_for_test(
     issues: GitHubIssues | None = None,
     plan_store: PlanStore | None = None,
     graphite: Graphite | None = None,
+    wt_stack: WtStack | None = None,
     shell: Shell | None = None,
     claude_executor: ClaudeExecutor | None = None,
     completion: Completion | None = None,
@@ -231,6 +235,9 @@ def context_for_test(
     if graphite is None:
         graphite = FakeGraphite()
 
+    # wt_stack needs git, repo_root, and graphite - resolved after those are set
+    # repo_root is determined after repo is resolved, so wt_stack is created later
+
     if shell is None:
         shell = FakeShell()
 
@@ -284,6 +291,11 @@ def context_for_test(
     if repo is None:
         repo = NoRepoSentinel()
 
+    # Resolve wt_stack now that we have git, graphite, and repo
+    if wt_stack is None:
+        repo_root = repo.root if not isinstance(repo, NoRepoSentinel) else (cwd or sentinel_path())
+        wt_stack = WtStack(git, repo_root, graphite)
+
     # Apply dry-run wrappers if needed (matching production behavior)
     if dry_run:
         git = DryRunGit(git)
@@ -297,6 +309,7 @@ def context_for_test(
         issues=issues,
         plan_store=plan_store,
         graphite=graphite,
+        wt_stack=wt_stack,
         shell=shell,
         claude_executor=claude_executor,
         completion=completion,
@@ -489,19 +502,24 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         github = DryRunGitHub(github)
         issues = DryRunGitHubIssues(issues)
 
-    # 10. Create session store and prompt executor
+    # 10. Create WtStack (after dry-run wrapping so it uses wrapped git/graphite)
+    repo_root = repo.root if not isinstance(repo, NoRepoSentinel) else cwd
+    wt_stack = WtStack(git, repo_root, graphite)
+
+    # 11. Create session store and prompt executor
     from erk_shared.extraction.claude_code_session_store import RealClaudeCodeSessionStore
 
     session_store: ClaudeCodeSessionStore = RealClaudeCodeSessionStore()
     prompt_executor: PromptExecutor = RealPromptExecutor()
 
-    # 11. Create context with all values
+    # 12. Create context with all values
     return ErkContext(
         git=git,
         github=github,
         issues=issues,
         plan_store=plan_store,
         graphite=graphite,
+        wt_stack=wt_stack,
         shell=RealShell(),
         claude_executor=RealClaudeExecutor(),
         completion=RealCompletion(),
