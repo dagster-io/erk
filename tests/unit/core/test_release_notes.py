@@ -127,7 +127,6 @@ def test_release_entry_default_items() -> None:
     assert entry.items == []
 
 
-<<<<<<< HEAD
 NESTED_CHANGELOG = """\
 # Changelog
 
@@ -161,7 +160,8 @@ def test_parse_changelog_categories_preserve_nesting() -> None:
     assert changed_items[1] == ("First nested item", 1)
     assert changed_items[2] == ("Second nested item", 1)
     assert changed_items[3] == ("Another top-level item", 0)
-=======
+
+
 def test_parse_version_simple() -> None:
     """Test parsing a simple semantic version."""
     assert _parse_version("0.2.4") == (0, 2, 4)
@@ -255,4 +255,3 @@ def test_check_for_version_change_upgrade_shows_banner(
     assert len(releases) == 1
     assert releases[0].version == "0.2.4"
     mock_update.assert_called_once_with("0.2.4")
->>>>>>> dfacd418f (Fix release notes banner shown on version downgrade in multi-worktree setups)
