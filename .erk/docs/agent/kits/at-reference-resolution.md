@@ -32,7 +32,7 @@ This path is:
 
 1. **`erk md check --check-links` cannot validate @ references in kit source directories** - The paths only make sense post-installation
 2. **The Makefile's `kit-md-check` target excludes `--check-links`** for this reason
-3. **@ reference validation only works after installation** via `erk kit sync`
+3. **@ reference validation only works after installation** via `erk kit install`
 
 ## Example
 
@@ -52,14 +52,14 @@ Path resolution:
 ## Best Practices
 
 1. **Write @ references for installed location** - Always write paths as if the file is already in `.claude/` or `.erk/docs/kits/`
-2. **Test after installation** - Run `erk kit sync --force` then `erk md check --check-links` on the project
+2. **Test after installation** - Run `erk kit install --force <kit>` then `erk md check --check-links` on the project
 3. **Use absolute paths when possible** - `@.erk/docs/kits/foo/bar.md` is clearer than relative paths
 
 ## Validation Workflow
 
 ```bash
 # After modifying kit source files:
-erk kit sync --force           # Install/update kit artifacts
+erk kit install --force <kit>  # Install/update kit artifacts
 erk md check --check-links     # Now validate @ references
 ```
 

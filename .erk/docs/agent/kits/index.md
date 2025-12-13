@@ -11,7 +11,7 @@
 - **[code-architecture.md](code-architecture.md)** — understanding kit code structure, creating kit CLI commands, organizing kit Python code
 - **[creating-kit-scripts.md](creating-kit-scripts.md)** — creating kit scripts, adding Python CLI commands to kits, testing kit script commands
 - **[dependency-injection.md](dependency-injection.md)** — writing kit CLI commands, testing kit CLI commands, using DotAgentContext
-- **[artifact-management.md](artifact-management.md)** — adding artifacts to kits, fixing kit-check errors, troubleshooting kit sync, kit sync says up to date but artifacts missing
+- **[artifact-management.md](artifact-management.md)** — adding artifacts to kits, fixing kit-check errors, troubleshooting kit install, kit install says up to date but artifacts missing
 - **[kit-check.md](kit-check.md)** — validating kit configuration, debugging missing artifacts, kit-check errors
 - **[doc-installation.md](doc-installation.md)** — understanding where kit documentation gets installed, adding documentation to a kit, wondering why docs are in .erk instead of .claude, creating @ references to kit documentation
 - **[push-down-pattern.md](push-down-pattern.md)** — deciding what belongs in kit CLI vs agent markdown, moving bash logic from agent prompts to Python, reducing token usage in agent prompts, designing kit CLI commands for agents

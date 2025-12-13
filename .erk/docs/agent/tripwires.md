@@ -51,7 +51,7 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before creating symlinks in bundled kit source directories** → Read [Kit Artifact and Symlink Management](kits/dev/artifact-management.md) first. Bundled kits should contain real files, NOT symlinks. The installation process creates symlinks FROM .claude/ TO kit sources.
 
-**CRITICAL: Before running `kit sync` after adding artifacts to kit.yaml** → Read [Kit Artifact and Symlink Management](kits/dev/artifact-management.md) first. Must use `--force` flag if version wasn't bumped.
+**CRITICAL: Before running `kit install` after adding artifacts to kit.yaml** → Read [Kit Artifact and Symlink Management](kits/dev/artifact-management.md) first. Must use `--force` flag if version wasn't bumped.
 
 **CRITICAL: Before editing files in .claude/ that are symlinks to kit sources** → Read [Kit Artifact and Symlink Management](kits/dev/artifact-management.md) first. Kit artifacts in .claude/ are symlinks. Edit the SOURCE file in the kit package (use `readlink -f` to find it), or the symlink will be replaced with a regular file.
 
