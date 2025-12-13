@@ -23,15 +23,17 @@ Examples:
 """
 
 import json
-from pathlib import Path
 
 import click
 
+from erk_shared.context.helpers import require_cwd
+
 
 @click.command(name="impl-verify")
-def impl_verify() -> None:
+@click.pass_context
+def impl_verify(ctx: click.Context) -> None:
     """Verify .impl/ folder still exists after implementation."""
-    cwd = Path.cwd()
+    cwd = require_cwd(ctx)
     impl_dir = cwd / ".impl"
 
     if not impl_dir.exists():
