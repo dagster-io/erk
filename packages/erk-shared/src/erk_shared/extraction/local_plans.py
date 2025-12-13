@@ -46,22 +46,16 @@ def _check_session_in_project(project_dir: Path, session_id: str) -> bool:
         if jsonl_file.name.startswith("agent-"):
             continue
 
-        try:
-            with open(jsonl_file, encoding="utf-8") as f:
-                for i, line in enumerate(f):
-                    if i >= 10:
-                        break
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        entry = json.loads(line)
-                        if entry.get("sessionId") == session_id:
-                            return True
-                    except json.JSONDecodeError:
-                        continue
-        except OSError:
-            continue
+        with open(jsonl_file, encoding="utf-8") as f:
+            for i, line in enumerate(f):
+                if i >= 10:
+                    break
+                line = line.strip()
+                if not line:
+                    continue
+                entry = json.loads(line)
+                if entry.get("sessionId") == session_id:
+                    return True
 
     return False
 

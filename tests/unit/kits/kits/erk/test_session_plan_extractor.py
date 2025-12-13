@@ -12,8 +12,8 @@ from erk_kits.data.kits.erk.session_plan_extractor import (
     extract_slugs_from_session,
     find_project_dir_for_session,
     get_latest_plan,
-    get_plans_dir,
 )
+from erk_shared.extraction.local_plans import get_plans_dir
 from tests.unit.kits.kits.erk.fixtures import (
     SAMPLE_PLAN_CONTENT,
     create_session_entry,

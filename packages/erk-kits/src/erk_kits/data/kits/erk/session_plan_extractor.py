@@ -14,7 +14,7 @@ This module re-exports those functions and adds kit-specific helpers.
 
 import os
 
-# Re-export from canonical location in erk-shared
+# Import from canonical location in erk-shared
 from erk_shared.extraction.local_plans import (
     extract_slugs_from_session as extract_slugs_from_session,
 )
@@ -23,9 +23,6 @@ from erk_shared.extraction.local_plans import (
 )
 from erk_shared.extraction.local_plans import (
     get_latest_plan_content,
-)
-from erk_shared.extraction.local_plans import (
-    get_plans_dir as get_plans_dir,
 )
 
 
