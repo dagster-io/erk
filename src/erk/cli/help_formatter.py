@@ -62,7 +62,16 @@ class ErkCommandGroup(click.Group):
 
         # Grouped output mode - organize into sections
         # Define command organization (aliases now derived from decorator, not hardcoded)
-        top_level_commands = ["dash", "implement", "submit", "checkout", "down", "up", "doctor"]
+        top_level_commands = [
+            "checkout",
+            "dash",
+            "delete",
+            "doctor",
+            "down",
+            "implement",
+            "list",
+            "up",
+        ]
         command_groups = [
             "admin",
             "artifact",
