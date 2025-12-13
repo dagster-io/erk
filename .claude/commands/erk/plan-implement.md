@@ -48,10 +48,6 @@ erk kit exec erk impl-signal started 2>/dev/null || true
 
 ### Step 5: Execute Each Phase Sequentially
 
-**MANDATORY: Tests Required With All Changes**
-
-Every implementation phase that modifies code MUST include corresponding tests.
-
 For each phase:
 
 1. **Mark phase as in_progress**
@@ -65,7 +61,7 @@ For each phase:
    erk kit exec erk mark-step <step_number>
    ```
    **NEVER** run multiple `mark-step` commands in parallel - use batching: `mark-step 1 2 3`
-5. **Report progress**: changes made, tests added, what's next
+5. **Report progress**: changes made, what's next
 
 **Progress Tracking:**
 
@@ -74,35 +70,39 @@ For each phase:
 
 ### Step 6: Report Progress
 
-After each phase: report changes made, tests added, what's next.
-
-**IMPORTANT**: If you cannot list tests in your progress report, the phase is NOT complete.
+After each phase: report changes made and what's next.
 
 ### Step 7: Final Verification
 
 Confirm all tasks executed, success criteria met, note deviations, summarize changes.
 
-### Step 8: Run Project CI
-
-Check CLAUDE.md/AGENTS.md for CI commands. Run linting, type checking, tests. Address failures.
-
-### Step 9: Signal GitHub Ended
+### Step 8: Signal GitHub Ended
 
 ```bash
 erk kit exec erk impl-signal ended 2>/dev/null || true
 ```
 
-### Step 10: Run CI Iteratively
+### Step 8.5: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk kit exec erk impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
+### Step 9: Run CI Iteratively
 
 1. If `.erk/post-implement.md` exists: follow its instructions
-2. Otherwise: warn "No .erk/post-implement.md found. Run CI manually."
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
 
 After CI passes:
 
 - `.worker-impl/`: delete folder, commit cleanup, push
-- `.impl/`: leave for user review (no auto-commit)
+- `.impl/`: **NEVER DELETE** - leave for user review (no auto-commit)
 
-### Step 11: Create/Update PR (if .worker-impl/ present)
+### Step 10: Create/Update PR (if .worker-impl/ present)
 
 **Only if .worker-impl/ was present:**
 
@@ -118,7 +118,7 @@ erk pr check
 
 If checks fail, display output and warn user.
 
-### Step 12: Output Format
+### Step 11: Output Format
 
 - **Start**: "Executing implementation plan from .impl/plan.md"
 - **Each phase**: "Phase X: [brief description]" with code changes
