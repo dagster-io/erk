@@ -776,11 +776,7 @@ def create_wt(
         )
 
         # Determine preferred branch to checkout (prioritize Graphite parent)
-        parent_branch = (
-            ctx.graphite.get_parent_branch(ctx.git, repo.root, current_branch)
-            if current_branch
-            else None
-        )
+        parent_branch = ctx.wt_stack.get_parent(current_branch) if current_branch else None
 
         if parent_branch:
             # Prefer Graphite parent branch

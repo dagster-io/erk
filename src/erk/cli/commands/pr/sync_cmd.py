@@ -129,7 +129,7 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
     )
 
     # Step 3: Check if already tracked by Graphite (idempotent)
-    parent_branch = ctx.graphite.get_parent_branch(ctx.git, repo.root, current_branch)
+    parent_branch = ctx.wt_stack.get_parent(current_branch)
     if parent_branch is not None:
         user_output(
             click.style("✓", fg="green")
