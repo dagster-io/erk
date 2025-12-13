@@ -261,16 +261,16 @@ class RealPlanDataProvider(PlanDataProvider):
     def submit_to_queue(self, issue_number: int, issue_url: str) -> None:
         """Submit a plan to the implementation queue.
 
-        Runs 'erk submit' as a subprocess to handle the complex workflow
+        Runs 'erk plan submit' as a subprocess to handle the complex workflow
         of creating branches, PRs, and triggering GitHub Actions.
 
         Args:
             issue_number: The issue number to submit
             issue_url: The issue URL (unused, kept for interface consistency)
         """
-        # Run erk submit command from the repository root
+        # Run erk plan submit command from the repository root
         subprocess.run(
-            ["erk", "submit", str(issue_number)],
+            ["erk", "plan", "submit", str(issue_number)],
             cwd=self._location.root,
             check=True,
             capture_output=True,

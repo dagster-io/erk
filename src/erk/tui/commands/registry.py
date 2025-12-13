@@ -101,7 +101,7 @@ def get_all_commands() -> list[CommandDefinition]:
         ),
         CommandDefinition(
             id="copy_submit",
-            name="Copy: erk submit",
+            name="Copy: erk plan submit",
             description="Copy submit command",
             shortcut="4",
             is_available=lambda _: True,
