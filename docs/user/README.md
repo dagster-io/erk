@@ -4,6 +4,7 @@ Documentation for end users of the erk tool.
 
 ## Contents
 
+- [Configuration Reference](config.md) - All config options and their usage
 - [Project Setup](project-setup.md) - Configure erk for your repository (for maintainers)
 - [Developer Onboarding](developer-onboarding.md) - Join a repo that has erk configured
 - [Planner Setup](planner-setup.md) - Set up planner commands
