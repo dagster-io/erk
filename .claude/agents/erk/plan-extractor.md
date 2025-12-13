@@ -1,8 +1,6 @@
 ---
 name: plan-extractor
-description:
-  Extract and enrich implementation plans. Structurally prevented from
-  implementing code.
+description: Extract and enrich implementation plans. Structurally prevented from implementing code.
 model: opus
 color: green
 tools: Read, Bash, AskUserQuestion

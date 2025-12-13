@@ -1,8 +1,6 @@
 ---
 name: devrun
-description:
-  Execute development CLI tools (pytest, pyright, ruff, prettier, make,
-  gt) and parse results. Automatically loads tool-specific patterns on-demand.
+description: Execute development CLI tools (pytest, pyright, ruff, prettier, make, gt) and parse results. Automatically loads tool-specific patterns on-demand.
 model: haiku
 color: green
 tools: Read, Bash, Grep, Glob, Task
