@@ -10,9 +10,11 @@ from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
+    PRAuthorFilter,
     PRDetails,
     PRNotFound,
     PRReviewThread,
+    PRStatusFilter,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
@@ -702,26 +704,42 @@ class FakeGitHub(GitHub):
         """
         return self._thread_replies
 
-    def list_my_open_prs(self, repo_root: Path) -> list[PullRequestInfo]:
-        """List open PRs authored by current user from pre-configured state.
+    def list_prs(
+        self,
+        repo_root: Path,
+        status: PRStatusFilter,
+        author: PRAuthorFilter,
+    ) -> list[PullRequestInfo]:
+        """List PRs from pre-configured state with filtering.
 
-        Filters pre-configured PR details to return only OPEN PRs.
+        Filters pre-configured PR details based on status filter.
+        Note: Author filter is ignored in fake since all configured PRs
+        are assumed to be from the test author.
 
         Returns:
-            List of PullRequestInfo for open PRs
+            List of PullRequestInfo matching the filters
         """
         result: list[PullRequestInfo] = []
         for pr_details in self._pr_details.values():
-            if pr_details.state == "OPEN":
-                pr_info = PullRequestInfo(
-                    number=pr_details.number,
-                    state=pr_details.state,
-                    url=pr_details.url,
-                    is_draft=pr_details.is_draft,
-                    title=pr_details.title,
-                    checks_passing=None,
-                    owner=pr_details.owner,
-                    repo=pr_details.repo,
-                )
-                result.append(pr_info)
+            # Apply status filter
+            if status == "all":
+                pass  # Include all
+            elif status == "open" and pr_details.state != "OPEN":
+                continue
+            elif status == "closed" and pr_details.state != "CLOSED":
+                continue
+            elif status == "merged" and pr_details.state != "MERGED":
+                continue
+
+            pr_info = PullRequestInfo(
+                number=pr_details.number,
+                state=pr_details.state,
+                url=pr_details.url,
+                is_draft=pr_details.is_draft,
+                title=pr_details.title,
+                checks_passing=None,
+                owner=pr_details.owner,
+                repo=pr_details.repo,
+            )
+            result.append(pr_info)
         return result

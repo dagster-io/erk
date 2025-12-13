@@ -1,4 +1,6 @@
-"""List open pull requests authored by the current user."""
+"""List pull requests with optional filtering."""
+
+from typing import cast
 
 import click
 from rich.console import Console
@@ -9,6 +11,7 @@ from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.display_utils import get_pr_status_emoji
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+from erk_shared.github.types import PRAuthorFilter, PRStatusFilter
 
 
 def _format_pr_cell(title: str | None, url: str) -> str:
@@ -41,18 +44,38 @@ def _format_pr_number_cell(pr_number: int, url: str, emoji: str) -> str:
 
 @alias("ls")
 @click.command("list")
+@click.option(
+    "--status",
+    type=click.Choice(["open", "closed", "merged", "all"]),
+    default="open",
+    help="Filter by PR status (default: open)",
+)
+@click.option(
+    "--author",
+    type=click.Choice(["@me", "any"]),
+    default="@me",
+    help="Filter by author (default: @me)",
+)
 @click.pass_obj
-def pr_list(ctx: ErkContext) -> None:
-    """List your open pull requests in the current repository.
+def pr_list(ctx: ErkContext, status: str, author: str) -> None:
+    """List pull requests in the current repository.
 
-    Shows a table with PR number, title, and branch name for all open PRs
-    authored by the current GitHub user (@me).
+    Shows a table with PR number and title. By default, shows your open PRs.
 
     Examples:
 
-        # List all your open PRs
+        # List your open PRs (default)
         erk pr list
         erk pr ls
+
+        # List all open PRs in the repo
+        erk pr list --author any
+
+        # List your closed PRs
+        erk pr list --status closed
+
+        # List all PRs (any status, any author)
+        erk pr list --status all --author any
     """
     # Validate preconditions upfront (LBYL)
     Ensure.gh_authenticated(ctx)
@@ -62,11 +85,15 @@ def pr_list(ctx: ErkContext) -> None:
         raise SystemExit(1)
     repo: RepoContext = ctx.repo
 
-    # Fetch open PRs for current user
-    prs = ctx.github.list_my_open_prs(repo.root)
+    # Cast string options to typed literals
+    status_filter = cast(PRStatusFilter, status)
+    author_filter = cast(PRAuthorFilter, author)
+
+    # Fetch PRs with filters
+    prs = ctx.github.list_prs(repo.root, status_filter, author_filter)
 
     if not prs:
-        ctx.feedback.info("No open pull requests found.")
+        ctx.feedback.info(f"No {status} pull requests found.")
         return
 
     # Create Rich table

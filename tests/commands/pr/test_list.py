@@ -12,8 +12,8 @@ from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
-def test_pr_list_shows_open_prs(tmp_path: Path) -> None:
-    """Test that pr list shows open PRs authored by the user."""
+def test_pr_list_shows_open_prs_by_default(tmp_path: Path) -> None:
+    """Test that pr list shows open PRs by default."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
@@ -71,7 +71,7 @@ def test_pr_list_shows_open_prs(tmp_path: Path) -> None:
 
 
 def test_pr_list_shows_empty_message_when_no_prs(tmp_path: Path) -> None:
-    """Test that pr list shows informative message when no open PRs exist."""
+    """Test that pr list shows informative message when no PRs match filters."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
@@ -129,8 +129,8 @@ def test_pr_list_alias_ls_works(tmp_path: Path) -> None:
         assert "#123" in result.output
 
 
-def test_pr_list_excludes_closed_prs(tmp_path: Path) -> None:
-    """Test that pr list only shows open PRs, not closed or merged ones."""
+def test_pr_list_excludes_closed_prs_by_default(tmp_path: Path) -> None:
+    """Test that pr list only shows open PRs by default, not closed or merged ones."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
@@ -151,7 +151,7 @@ def test_pr_list_excludes_closed_prs(tmp_path: Path) -> None:
             owner="owner",
             repo="repo",
         )
-        # Closed PR should NOT be shown
+        # Closed PR should NOT be shown by default
         pr_closed = PRDetails(
             number=456,
             url="https://github.com/owner/repo/pull/456",
@@ -167,7 +167,7 @@ def test_pr_list_excludes_closed_prs(tmp_path: Path) -> None:
             owner="owner",
             repo="repo",
         )
-        # Merged PR should NOT be shown
+        # Merged PR should NOT be shown by default
         pr_merged = PRDetails(
             number=789,
             url="https://github.com/owner/repo/pull/789",
@@ -245,3 +245,119 @@ def test_pr_list_shows_draft_indicator(tmp_path: Path) -> None:
         assert "#123" in result.output
         # Draft PRs show the construction emoji
         assert "🚧" in result.output
+
+
+def test_pr_list_status_filter_all(tmp_path: Path) -> None:
+    """Test that --status all shows all PRs regardless of state."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        pr_open = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Open PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="open-branch",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
+        pr_closed = PRDetails(
+            number=456,
+            url="https://github.com/owner/repo/pull/456",
+            title="Closed PR",
+            body="",
+            state="CLOSED",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="closed-branch",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
+
+        github = FakeGitHub(
+            pr_details={123: pr_open, 456: pr_closed},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "main"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(pr_group, ["list", "--status", "all"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "#123" in result.output
+        assert "Open PR" in result.output
+        assert "#456" in result.output
+        assert "Closed PR" in result.output
+
+
+def test_pr_list_status_filter_closed(tmp_path: Path) -> None:
+    """Test that --status closed shows only closed PRs."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        pr_open = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Open PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="open-branch",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
+        pr_closed = PRDetails(
+            number=456,
+            url="https://github.com/owner/repo/pull/456",
+            title="Closed PR",
+            body="",
+            state="CLOSED",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="closed-branch",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
+
+        github = FakeGitHub(
+            pr_details={123: pr_open, 456: pr_closed},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "main"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(pr_group, ["list", "--status", "closed"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Open PR should not appear
+        assert "#123" not in result.output
+        assert "Open PR" not in result.output
+        # Closed PR should appear
+        assert "#456" in result.output
+        assert "Closed PR" in result.output

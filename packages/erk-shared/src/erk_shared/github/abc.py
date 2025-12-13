@@ -6,9 +6,11 @@ from pathlib import Path
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
+    PRAuthorFilter,
     PRDetails,
     PRNotFound,
     PRReviewThread,
+    PRStatusFilter,
     PullRequestInfo,
     WorkflowRun,
 )
@@ -550,13 +552,20 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
-    def list_my_open_prs(self, repo_root: Path) -> list[PullRequestInfo]:
-        """List open pull requests authored by the current user.
+    def list_prs(
+        self,
+        repo_root: Path,
+        status: PRStatusFilter,
+        author: PRAuthorFilter,
+    ) -> list[PullRequestInfo]:
+        """List pull requests with filtering.
 
         Args:
             repo_root: Repository root directory
+            status: Filter by PR status ('open', 'closed', 'merged', 'all')
+            author: Filter by author ('@me' for current user, 'any' for all authors)
 
         Returns:
-            List of PullRequestInfo for open PRs authored by @me
+            List of PullRequestInfo matching the filters
         """
         ...

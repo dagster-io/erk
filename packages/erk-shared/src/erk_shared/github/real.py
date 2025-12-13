@@ -38,10 +38,12 @@ from erk_shared.github.types import (
     DISPLAY_TITLE_NOT_AVAILABLE,
     GitHubRepoId,
     GitHubRepoLocation,
+    PRAuthorFilter,
     PRDetails,
     PRNotFound,
     PRReviewComment,
     PRReviewThread,
+    PRStatusFilter,
     PullRequestInfo,
     RepoInfo,
     WorkflowRun,
@@ -1628,30 +1630,45 @@ query {{
         )
         return comment_data is not None
 
-    def list_my_open_prs(self, repo_root: Path) -> list[PullRequestInfo]:
-        """List open pull requests authored by the current user.
+    def list_prs(
+        self,
+        repo_root: Path,
+        status: PRStatusFilter,
+        author: PRAuthorFilter,
+    ) -> list[PullRequestInfo]:
+        """List pull requests with filtering.
 
-        Uses gh pr list with --author @me to get PRs for the current user.
+        Uses gh pr list (REST API) with optional filters for status and author.
 
         Args:
             repo_root: Repository root directory
+            status: Filter by PR status ('open', 'closed', 'merged', 'all')
+            author: Filter by author ('@me' for current user, 'any' for all authors)
 
         Returns:
-            List of PullRequestInfo for open PRs authored by @me
+            List of PullRequestInfo matching the filters
         """
-        assert self._repo_info is not None, "repo_info required for list_my_open_prs"
+        assert self._repo_info is not None, "repo_info required for list_prs"
 
         cmd = [
             "gh",
             "pr",
             "list",
-            "--author",
-            "@me",
-            "--state",
-            "open",
             "--json",
             "number,title,headRefName,url,isDraft,state",
         ]
+
+        # Add status filter
+        if status != "all":
+            cmd.extend(["--state", status])
+        else:
+            cmd.extend(["--state", "all"])
+
+        # Add author filter
+        if author == "@me":
+            cmd.extend(["--author", "@me"])
+        # 'any' means no author filter - don't add --author flag
+
         stdout = execute_gh_command(cmd, repo_root)
 
         prs_data = json.loads(stdout) if stdout.strip() else []

@@ -6,9 +6,11 @@ from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
+    PRAuthorFilter,
     PRDetails,
     PRNotFound,
     PRReviewThread,
+    PRStatusFilter,
     PullRequestInfo,
     WorkflowRun,
 )
@@ -244,6 +246,11 @@ class DryRunGitHub(GitHub):
         """
         return True
 
-    def list_my_open_prs(self, repo_root: Path) -> list[PullRequestInfo]:
+    def list_prs(
+        self,
+        repo_root: Path,
+        status: PRStatusFilter,
+        author: PRAuthorFilter,
+    ) -> list[PullRequestInfo]:
         """Delegate read operation to wrapped implementation."""
-        return self._wrapped.list_my_open_prs(repo_root)
+        return self._wrapped.list_prs(repo_root, status, author)

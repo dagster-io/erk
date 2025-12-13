@@ -7,6 +7,10 @@ from typing import Literal
 
 PRState = Literal["OPEN", "MERGED", "CLOSED"]
 
+# Filter types for list_prs
+PRStatusFilter = Literal["open", "closed", "merged", "all"]
+PRAuthorFilter = Literal["@me", "any"]
+
 
 @dataclass(frozen=True)
 class PRReviewComment:
