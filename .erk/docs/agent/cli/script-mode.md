@@ -7,6 +7,7 @@ read_when:
   - "debugging shell integration"
   - "global flag handling in shell integration"
   - "shell integration handler not recognizing commands"
+  - "adding a command with --script flag"
 ---
 
 # CLI Script Mode
@@ -416,6 +417,36 @@ Error: This command requires shell integration
 ```
 
 **Solution:** Ensure `GLOBAL_FLAGS` includes the flag and `handle_shell_request()` strips it before matching.
+
+## Adding New Shell-Integrated Commands
+
+When creating a command that uses shell integration (`--script` flag for directory switching), you MUST register it in `SHELL_INTEGRATION_COMMANDS` in `src/erk/cli/shell_integration/handler.py`.
+
+### Checklist
+
+1. Add `--script` flag to your command
+2. Register in `SHELL_INTEGRATION_COMMANDS` dict with **all alias variants**:
+   - Group aliases (e.g., `br` for `branch`)
+   - Command aliases (e.g., `co` for `checkout`)
+   - All combinations (e.g., `br co`, `br checkout`, `branch co`, `branch checkout`)
+
+### Example
+
+For `branch checkout` with aliases `br` (group) and `co` (command):
+
+```python
+SHELL_INTEGRATION_COMMANDS = {
+    # ... existing entries ...
+    "branch checkout": ["branch", "checkout"],
+    "branch co": ["branch", "checkout"],
+    "br checkout": ["branch", "checkout"],
+    "br co": ["branch", "checkout"],
+}
+```
+
+### Symptom if Missed
+
+Users see "Shell integration not detected" even with shell wrapper installed.
 
 ## Related Files
 
