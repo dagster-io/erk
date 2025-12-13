@@ -34,12 +34,14 @@ def auto_select_sessions(
     Returns:
         List of sessions to include in extraction
     """
+    # Find current session by ID (not by is_current flag, which depends on env var)
+    current_session = next(
+        (s for s in sessions if s.session_id == current_session_id), None
+    )
+
     # If on trunk, only use current session (if found)
     if branch_context.is_on_trunk:
-        return [s for s in sessions if s.is_current]
-
-    # Find current session in the list
-    current_session = next((s for s in sessions if s.is_current), None)
+        return [current_session] if current_session else []
 
     # If no current session found, return all substantial sessions
     if current_session is None:
