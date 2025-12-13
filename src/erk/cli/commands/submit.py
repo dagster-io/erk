@@ -378,72 +378,84 @@ def _submit_single_issue(
         # Create and checkout new branch from base
         ctx.git.create_branch(repo.root, branch_name, f"origin/{base_branch}")
         user_output(f"Created branch: {click.style(branch_name, fg='cyan')}")
-        ctx.git.checkout_branch(repo.root, branch_name)
 
-        # Get plan content and create .worker-impl/ folder
-        user_output("Fetching plan content...")
-        plan = ctx.plan_store.get_plan(repo.root, str(issue_number))
+        # Wrap mutation sequence in try/except to restore original branch on failure
+        try:
+            ctx.git.checkout_branch(repo.root, branch_name)
 
-        user_output("Creating .worker-impl/ folder...")
-        create_worker_impl_folder(
-            plan_content=plan.body,
-            issue_number=issue_number,
-            issue_url=issue.url,
-            repo_root=repo.root,
-        )
+            # Get plan content and create .worker-impl/ folder
+            user_output("Fetching plan content...")
+            plan = ctx.plan_store.get_plan(repo.root, str(issue_number))
 
-        # Stage, commit, and push
-        ctx.git.stage_files(repo.root, [".worker-impl"])
-        ctx.git.commit(repo.root, f"Add plan for issue #{issue_number}")
-        ctx.git.push_to_remote(repo.root, "origin", branch_name, set_upstream=True)
-        user_output(click.style("✓", fg="green") + " Branch pushed to remote")
-
-        # Create draft PR
-        # IMPORTANT: "Closes #N" MUST be in the initial body passed to create_pr(),
-        # NOT added via update. GitHub's willCloseTarget API field is set at PR
-        # creation time and is NOT updated when the body is edited afterward.
-        user_output("Creating draft PR...")
-        pr_body = (
-            f"**Author:** @{submitted_by}\n"
-            f"**Plan:** #{issue_number}\n\n"
-            f"**Status:** Queued for implementation\n\n"
-            f"This PR will be marked ready for review after implementation completes.\n\n"
-            f"---\n\n"
-            f"Closes #{issue_number}"
-        )
-        pr_title = _strip_plan_markers(issue.title)
-        pr_number = ctx.github.create_pr(
-            repo_root=repo.root,
-            branch=branch_name,
-            title=pr_title,
-            body=pr_body,
-            base=base_branch,
-            draft=True,
-        )
-        user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
-
-        # Update PR body with checkout command footer
-        footer = build_pr_body_footer(pr_number=pr_number, issue_number=issue_number)
-        ctx.github.update_pr_body(repo.root, pr_number, pr_body + footer)
-
-        # Add extraction skip label if this is an extraction plan
-        if validated.is_extraction_origin:
-            ctx.github.add_label_to_pr(repo.root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
-
-        # Close any orphaned draft PRs for this issue
-        closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)
-        if closed_prs:
-            user_output(
-                click.style("✓", fg="green")
-                + f" Closed {len(closed_prs)} orphaned draft PR(s): "
-                + ", ".join(f"#{n}" for n in closed_prs)
+            user_output("Creating .worker-impl/ folder...")
+            create_worker_impl_folder(
+                plan_content=plan.body,
+                issue_number=issue_number,
+                issue_url=issue.url,
+                repo_root=repo.root,
             )
 
-        # Restore local state
-        user_output("Restoring local state...")
-        ctx.git.checkout_branch(repo.root, original_branch)
-        ctx.git.delete_branch(repo.root, branch_name, force=True)
-        user_output(click.style("✓", fg="green") + " Local branch cleaned up")
+            # Stage, commit, and push
+            ctx.git.stage_files(repo.root, [".worker-impl"])
+            ctx.git.commit(repo.root, f"Add plan for issue #{issue_number}")
+            ctx.git.push_to_remote(repo.root, "origin", branch_name, set_upstream=True)
+            user_output(click.style("✓", fg="green") + " Branch pushed to remote")
+
+            # Create draft PR
+            # IMPORTANT: "Closes #N" MUST be in the initial body passed to create_pr(),
+            # NOT added via update. GitHub's willCloseTarget API field is set at PR
+            # creation time and is NOT updated when the body is edited afterward.
+            user_output("Creating draft PR...")
+            pr_body = (
+                f"**Author:** @{submitted_by}\n"
+                f"**Plan:** #{issue_number}\n\n"
+                f"**Status:** Queued for implementation\n\n"
+                f"This PR will be marked ready for review after implementation completes.\n\n"
+                f"---\n\n"
+                f"Closes #{issue_number}"
+            )
+            pr_title = _strip_plan_markers(issue.title)
+            pr_number = ctx.github.create_pr(
+                repo_root=repo.root,
+                branch=branch_name,
+                title=pr_title,
+                body=pr_body,
+                base=base_branch,
+                draft=True,
+            )
+            user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
+
+            # Update PR body with checkout command footer
+            footer = build_pr_body_footer(pr_number=pr_number, issue_number=issue_number)
+            ctx.github.update_pr_body(repo.root, pr_number, pr_body + footer)
+
+            # Add extraction skip label if this is an extraction plan
+            if validated.is_extraction_origin:
+                ctx.github.add_label_to_pr(repo.root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
+
+            # Close any orphaned draft PRs for this issue
+            closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)
+            if closed_prs:
+                user_output(
+                    click.style("✓", fg="green")
+                    + f" Closed {len(closed_prs)} orphaned draft PR(s): "
+                    + ", ".join(f"#{n}" for n in closed_prs)
+                )
+
+            # Restore local state
+            user_output("Restoring local state...")
+            ctx.git.checkout_branch(repo.root, original_branch)
+            ctx.git.delete_branch(repo.root, branch_name, force=True)
+            user_output(click.style("✓", fg="green") + " Local branch cleaned up")
+        except Exception:
+            # Rollback: restore original branch on any failure
+            # Leave failed branch for manual inspection
+            user_output(
+                click.style("Error: ", fg="red")
+                + "Operation failed, restoring original branch..."
+            )
+            ctx.git.checkout_branch(repo.root, original_branch)
+            raise
 
     # Gather submission metadata
     queued_at = datetime.now(UTC).isoformat()
