@@ -298,3 +298,15 @@ class DryRunGit(Git):
     ) -> list[dict[str, str]]:
         """Get branch commits with authors (read-only, delegates to wrapped)."""
         return self._wrapped.get_branch_commits_with_authors(repo_root, branch, trunk, limit=limit)
+
+    def tag_exists(self, repo_root: Path, tag_name: str) -> bool:
+        """Check if tag exists (read-only, delegates to wrapped)."""
+        return self._wrapped.tag_exists(repo_root, tag_name)
+
+    def create_tag(self, repo_root: Path, tag_name: str, message: str) -> None:
+        """Print dry-run message instead of creating tag."""
+        user_output(f"[DRY RUN] Would run: git tag -a {tag_name} -m '{message}'")
+
+    def push_tag(self, repo_root: Path, remote: str, tag_name: str) -> None:
+        """Print dry-run message instead of pushing tag."""
+        user_output(f"[DRY RUN] Would run: git push {remote} {tag_name}")

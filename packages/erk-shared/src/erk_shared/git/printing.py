@@ -292,3 +292,17 @@ class PrintingGit(PrintingBase, Git):
     ) -> list[dict[str, str]]:
         """Get branch commits with authors (read-only, no printing)."""
         return self._wrapped.get_branch_commits_with_authors(repo_root, branch, trunk, limit=limit)
+
+    def tag_exists(self, repo_root: Path, tag_name: str) -> bool:
+        """Check if tag exists (read-only, no printing)."""
+        return self._wrapped.tag_exists(repo_root, tag_name)
+
+    def create_tag(self, repo_root: Path, tag_name: str, message: str) -> None:
+        """Create tag with printed output."""
+        self._emit(self._format_command(f"git tag -a {tag_name} -m '{message}'"))
+        self._wrapped.create_tag(repo_root, tag_name, message)
+
+    def push_tag(self, repo_root: Path, remote: str, tag_name: str) -> None:
+        """Push tag with printed output."""
+        self._emit(self._format_command(f"git push {remote} {tag_name}"))
+        self._wrapped.push_tag(repo_root, remote, tag_name)

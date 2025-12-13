@@ -101,7 +101,11 @@ class FakeGit(Git):
         head_commit_messages_full: dict[Path, str] | None = None,
         git_user_name: str | None = None,
         branch_commits_with_authors: dict[str, list[dict[str, str]]] | None = None,
+<<<<<<< HEAD
         push_to_remote_raises: Exception | None = None,
+=======
+        existing_tags: set[str] | None = None,
+>>>>>>> 3d70958d8 (WIP: Prepare for PR submission)
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -145,7 +149,11 @@ class FakeGit(Git):
             git_user_name: Configured git user.name to return from get_git_user_name()
             branch_commits_with_authors: Mapping of branch name -> list of commit dicts
                 with keys: sha, author, timestamp
+<<<<<<< HEAD
             push_to_remote_raises: Exception to raise when push_to_remote() is called
+=======
+            existing_tags: Set of tag names that exist in the repository
+>>>>>>> 3d70958d8 (WIP: Prepare for PR submission)
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -183,7 +191,11 @@ class FakeGit(Git):
         self._head_commit_messages_full = head_commit_messages_full or {}
         self._git_user_name = git_user_name
         self._branch_commits_with_authors = branch_commits_with_authors or {}
+<<<<<<< HEAD
         self._push_to_remote_raises = push_to_remote_raises
+=======
+        self._existing_tags: set[str] = existing_tags or set()
+>>>>>>> 3d70958d8 (WIP: Prepare for PR submission)
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -201,6 +213,8 @@ class FakeGit(Git):
         self._created_branches: list[tuple[Path, str, str]] = []  # (cwd, branch_name, start_point)
         self._rebase_continue_calls: list[Path] = []
         self._config_settings: list[tuple[str, str, str]] = []  # (key, value, scope)
+        self._created_tags: list[tuple[str, str]] = []  # (tag_name, message)
+        self._pushed_tags: list[tuple[str, str]] = []  # (remote, tag_name)
 
     def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
         """List all worktrees in the repository.
@@ -960,3 +974,34 @@ class FakeGit(Git):
         """Get commits on branch not on trunk, with author and timestamp."""
         commits = self._branch_commits_with_authors.get(branch, [])
         return commits[:limit]
+
+    def tag_exists(self, repo_root: Path, tag_name: str) -> bool:
+        """Check if a git tag exists in the fake state."""
+        return tag_name in self._existing_tags
+
+    def create_tag(self, repo_root: Path, tag_name: str, message: str) -> None:
+        """Create an annotated git tag (mutates internal state)."""
+        self._existing_tags.add(tag_name)
+        self._created_tags.append((tag_name, message))
+
+    def push_tag(self, repo_root: Path, remote: str, tag_name: str) -> None:
+        """Push a tag to a remote (tracks mutation)."""
+        self._pushed_tags.append((remote, tag_name))
+
+    @property
+    def created_tags(self) -> list[tuple[str, str]]:
+        """Get list of tags created during test.
+
+        Returns list of (tag_name, message) tuples.
+        This property is for test assertions only.
+        """
+        return self._created_tags.copy()
+
+    @property
+    def pushed_tags(self) -> list[tuple[str, str]]:
+        """Get list of tags pushed during test.
+
+        Returns list of (remote, tag_name) tuples.
+        This property is for test assertions only.
+        """
+        return self._pushed_tags.copy()

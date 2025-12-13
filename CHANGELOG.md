@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+As of b5e949b45
+
+### Changed
+
+- Improve devrun hook message to increase agent adherence to devrun pattern (b5e949b45)
+- Move CHANGELOG.md to repository root for PyPI distribution (1fe3629bf)
+
 ## [0.2.5] - 2025-12-12 14:30 PT
 
 ### Major Changes
