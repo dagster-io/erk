@@ -31,7 +31,7 @@ class IssueNextSteps:
 
 
 # Slash command (static, doesn't need issue number)
-SUBMIT_SLASH_COMMAND = "/erk:submit-plan"
+SUBMIT_SLASH_COMMAND = "/erk:plan-submit"
 
 
 def format_next_steps_plain(issue_number: int) -> str:

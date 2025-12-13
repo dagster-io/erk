@@ -74,7 +74,7 @@ version = "0.2.3"
 artifacts = [
     ".claude/commands/erk/plan-implement.md",
     ".claude/commands/erk/merge-conflicts-fix.md",
-    ".claude/commands/erk/submit-plan.md",
+    ".claude/commands/erk/plan-submit.md",
     ".claude/commands/erk/auto-restack.md",
     ".claude/commands/erk/create-extraction-plan.md",
     ".claude/commands/erk/save-plan.md",

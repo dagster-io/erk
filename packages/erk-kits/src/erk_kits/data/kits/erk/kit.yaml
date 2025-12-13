@@ -6,7 +6,7 @@ artifacts:
   command:
     - commands/erk/plan-implement.md
     - commands/erk/merge-conflicts-fix.md
-    - commands/erk/submit-plan.md
+    - commands/erk/plan-submit.md
     - commands/erk/auto-restack.md
     - commands/erk/create-extraction-plan.md
     - commands/erk/save-plan.md

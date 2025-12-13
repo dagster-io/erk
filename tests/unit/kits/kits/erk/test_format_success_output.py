@@ -37,7 +37,7 @@ def test_format_success_output_contains_next_steps() -> None:
     assert "erk implement 42 --dangerous" in result.output
     assert "erk implement 42 --yolo" in result.output
     assert "erk submit 42" in result.output
-    assert "/erk:submit-plan" in result.output
+    assert "/erk:plan-submit" in result.output
 
 
 def test_format_success_output_contains_json_metadata() -> None:

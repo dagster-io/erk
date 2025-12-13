@@ -26,7 +26,7 @@ Examples:
     Dangerous Interactive: erk implement 123 --dangerous
     Dangerous, Non-Interactive, Auto-Submit: erk implement 123 --yolo
     Submit to Queue: erk submit 123
-      # Or use: /erk:submit-plan
+      # Or use: /erk:plan-submit
 
     ---
 
