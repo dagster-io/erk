@@ -1,4 +1,4 @@
-### git (v0.2.3)
+### git (v0.2.5)
 
 **Purpose**: Git-only branch submission workflow using standard git + GitHub CLI
 

@@ -95,8 +95,9 @@ def _show_version_change_banner() -> None:
         click.echo(click.style("  " + "─" * 50, dim=True), file=sys.stderr)
         click.echo(file=sys.stderr)
 
-        # Prompt user to continue
-        click.pause(info=click.style("  Press Enter to continue...", dim=True), err=True)
+        # Prompt user to continue (only if stdin is a TTY)
+        if sys.stdin.isatty():
+            click.pause(info=click.style("  Press Enter to continue...", dim=True), err=True)
     except click.Abort:
         # User pressed Ctrl+C or declined - exit gracefully
         raise SystemExit(0) from None
