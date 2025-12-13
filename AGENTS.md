@@ -113,6 +113,7 @@ Core patterns for this codebase:
 **CLI Command Organization:** Plan verbs are top-level (create, get, implement), worktree verbs are grouped under `erk wt`, stack verbs under `erk stack`. This follows the "plan is dominant noun" principle for ergonomic access to high-frequency operations. See [CLI Development](.erk/docs/agent/cli/) for complete decision framework.
 
 **Documentation Structure:** The `docs/` folder uses subfolders named for the intended audience:
+
 - `docs/user/` - End-user documentation (how to use erk)
 - `docs/developer/` - Developer documentation (contributing to erk)
 - `.erk/docs/agent/` - Agent documentation (AI/Claude instructions)

@@ -23,6 +23,7 @@ Global configuration is stored in `~/.erk/config.toml` and affects all erk repos
 This is set automatically when you run `erk init` and typically should not be changed manually.
 
 **Example**:
+
 ```toml
 erk_root = "/home/user/erk-worktrees"
 ```
@@ -38,6 +39,7 @@ When enabled, erk will use Graphite commands (`gt`) for branch management and PR
 **When to change**: Set to `true` if you use Graphite but erk doesn't auto-detect it, or set to `false` to force standard git workflows even if Graphite is installed.
 
 **Example**:
+
 ```toml
 use_graphite = true
 ```
@@ -53,6 +55,7 @@ When enabled, commands like `erk wt ls` will display PR status, PR numbers, and 
 **When to change**: Set to `false` if you don't use GitHub PRs or want faster worktree listings (showing PR info requires API calls).
 
 **Example**:
+
 ```toml
 show_pr_info = false
 ```
@@ -68,6 +71,7 @@ When enabled, erk plan commands will interact with GitHub issues for tracking im
 **When to change**: Set to `false` if you don't want plan commands to interact with GitHub, or if you're working in a repository without GitHub issues enabled.
 
 **Example**:
+
 ```toml
 github_planning = false
 ```
@@ -83,6 +87,7 @@ When `true`, auto-restack commands will be more conservative and skip operations
 **When to change**: Set to `true` if you want safer (but potentially less effective) auto-restack behavior.
 
 **Example**:
+
 ```toml
 auto_restack_skip_dangerous = true
 ```
@@ -96,6 +101,7 @@ auto_restack_skip_dangerous = true
 This is set automatically by `erk shell-setup` and typically should not be changed manually. It tracks whether your shell has been configured with erk's completion and helper functions.
 
 **Example**:
+
 ```toml
 shell_setup_complete = true
 ```
@@ -115,6 +121,7 @@ This is typically detected automatically during `erk init`. Change this if your 
 **When to change**: If your repository uses a trunk branch other than `main` or `master` (e.g., `develop`, `trunk`).
 
 **Example**:
+
 ```toml
 trunk-branch = "develop"
 ```
@@ -132,6 +139,7 @@ Project configuration is stored in `.erk/project.toml` and is used for monorepo 
 These environment variables will be available to post-create commands and can be used to configure project-specific tools.
 
 **Example**:
+
 ```toml
 [env]
 NODE_ENV = "development"
@@ -147,6 +155,7 @@ DATABASE_URL = "postgresql://localhost/myapp"
 **When to change**: Specify if your post-create commands require a specific shell (e.g., `bash` for bash-specific syntax).
 
 **Example**:
+
 ```toml
 [post_create]
 shell = "bash"
@@ -163,6 +172,7 @@ These commands run in the new worktree directory after it's created. Useful for 
 **When to change**: Add commands that should run whenever you create a new worktree for this project.
 
 **Example**:
+
 ```toml
 [post_create]
 commands = [
