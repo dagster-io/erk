@@ -199,7 +199,9 @@ def _handle_update_workflow(
 
     # Update the kit
     user_output(f"Updating {kit_id} to v{check_result.resolved.version}...")
-    result = update_installed_kit(kit_id, installed, check_result.resolved, project_dir, force=force)
+    result = update_installed_kit(
+        kit_id, installed, check_result.resolved, project_dir, force=force
+    )
 
     if not result.was_updated:
         user_output(f"Kit '{kit_id}' was already up to date")
