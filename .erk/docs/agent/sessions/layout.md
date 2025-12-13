@@ -74,7 +74,7 @@ Project directories use **deterministic path encoding**:
 **Implementation:**
 
 - Primary: `encode_path_to_project_folder()` in `packages/erk-kits/src/erk_kits/data/kits/erk/kit_cli_commands/erk/find_project_dir.py:87-108`
-- Session extraction: `_encode_path_to_project_folder()` in `packages/erk-kits/src/erk_kits/data/kits/erk/session_plan_extractor.py:17-28` (uses cwd_hint optimization)
+- Session extraction: `_encode_path_to_project_folder()` in `packages/erk-shared/src/erk_shared/extraction/local_plans.py`
 
 ### Complete Directory Tree
 
@@ -257,7 +257,7 @@ The slug field enables session-scoped plan extraction:
 2. Find assistant entries with a `slug` field
 3. Use the most recent slug to locate the plan file
 
-**Implementation:** See `extract_slugs_from_session()` in `packages/erk-kits/src/erk_kits/data/kits/erk/session_plan_extractor.py:101-148`
+**Implementation:** See `extract_slugs_from_session()` in `packages/erk-shared/src/erk_shared/extraction/local_plans.py`
 
 ## Session and Agent IDs
 
@@ -406,7 +406,7 @@ See `erk_shared/scratch/scratch.py:get_scratch_dir()` for the canonical implemen
 4. Parse JSON and check if `sessionId` field matches
 5. Return project directory when match found
 
-**Implementation:** See `find_project_dir_for_session()` in `packages/erk-kits/src/erk_kits/data/kits/erk/session_plan_extractor.py`
+**Implementation:** See `find_project_dir_for_session()` in `packages/erk-shared/src/erk_shared/extraction/local_plans.py`
 
 ### cwd_hint Optimization Pattern
 
@@ -436,7 +436,7 @@ See `erk_shared/scratch/scratch.py:get_scratch_dir()` for the canonical implemen
 - Kit commands: Working directory from context
 - Agent subprocesses: `cwd` field in session log entries
 
-**Implementation:** See `find_project_dir_for_session()` in `packages/erk-kits/src/erk_kits/data/kits/erk/session_plan_extractor.py:65-98`
+**Implementation:** See `find_project_dir_for_session()` in `packages/erk-shared/src/erk_shared/extraction/local_plans.py`
 
 ### Discovering Latest Session
 
