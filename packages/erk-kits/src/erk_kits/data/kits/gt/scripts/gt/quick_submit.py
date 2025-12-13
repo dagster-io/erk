@@ -16,6 +16,7 @@ class QuickSubmitSuccess:
     staged_changes: bool
     committed: bool
     message: str
+    pr_url: str | None
 
 
 @dataclass(frozen=True)
@@ -105,6 +106,19 @@ def quick_submit() -> None:
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(1)
 
+    # Get PR URL after successful submit
+    pr_url: str | None = None
+    pr_view_result = subprocess.run(
+        ["gh", "pr", "view", "--json", "url"],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if pr_view_result.returncode == 0:
+        pr_data = json.loads(pr_view_result.stdout)
+        pr_url = pr_data.get("url")
+
     # Success
     msg = (
         "Changes submitted successfully"
@@ -116,5 +130,6 @@ def quick_submit() -> None:
         staged_changes=has_changes,
         committed=committed,
         message=msg,
+        pr_url=pr_url,
     )
     click.echo(json.dumps(asdict(result_obj), indent=2))
