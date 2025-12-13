@@ -101,11 +101,8 @@ class FakeGit(Git):
         head_commit_messages_full: dict[Path, str] | None = None,
         git_user_name: str | None = None,
         branch_commits_with_authors: dict[str, list[dict[str, str]]] | None = None,
-<<<<<<< HEAD
         push_to_remote_raises: Exception | None = None,
-=======
         existing_tags: set[str] | None = None,
->>>>>>> 3d70958d8 (WIP: Prepare for PR submission)
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -149,11 +146,8 @@ class FakeGit(Git):
             git_user_name: Configured git user.name to return from get_git_user_name()
             branch_commits_with_authors: Mapping of branch name -> list of commit dicts
                 with keys: sha, author, timestamp
-<<<<<<< HEAD
             push_to_remote_raises: Exception to raise when push_to_remote() is called
-=======
             existing_tags: Set of tag names that exist in the repository
->>>>>>> 3d70958d8 (WIP: Prepare for PR submission)
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -191,11 +185,8 @@ class FakeGit(Git):
         self._head_commit_messages_full = head_commit_messages_full or {}
         self._git_user_name = git_user_name
         self._branch_commits_with_authors = branch_commits_with_authors or {}
-<<<<<<< HEAD
         self._push_to_remote_raises = push_to_remote_raises
-=======
         self._existing_tags: set[str] = existing_tags or set()
->>>>>>> 3d70958d8 (WIP: Prepare for PR submission)
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
