@@ -140,6 +140,30 @@ Benefits:
 - Reusable across multiple methods
 - Easier to test query structure
 
+## Query Organization Best Practices
+
+**Strong preference: All GraphQL queries should be stored as string constants in `graphql_queries.py`.**
+
+### Why Standalone Constants
+
+1. **Readability**: Multi-line GraphQL strings are easier to read without f-string interpolation
+2. **Maintainability**: All queries in one place for easy auditing
+3. **Reusability**: Constants can be imported and reused across methods
+4. **Testing**: Query structure can be tested independently
+
+### Naming Conventions
+
+- Queries: `GET_<RESOURCE>_QUERY` (e.g., `GET_PR_REVIEW_THREADS_QUERY`)
+- Mutations: `<ACTION>_<RESOURCE>_MUTATION` (e.g., `RESOLVE_REVIEW_THREAD_MUTATION`)
+- Fragments: `<RESOURCE>_FRAGMENT` (e.g., `ISSUE_PR_LINKAGE_FRAGMENT`)
+
+### When Dynamic Query Building is Acceptable
+
+Only use dynamic query construction when GraphQL limitations require it:
+
+- **Aliased field names**: `issue_123: issue(number: 123)` cannot use variables for aliases
+- In these cases, extract reusable fragments to constants and compose them dynamically
+
 ## Implementation Pattern
 
 ```python
@@ -238,6 +262,63 @@ Some GitHub features are only available via GraphQL:
 | Resolve/unresolve review threads   | Mutation only available in GraphQL |
 | PR timeline events                 | Richer data than REST              |
 | Minimized comments                 | Status not exposed in REST         |
+
+## Fragment Patterns
+
+Use fragments for reusable field selections across queries.
+
+### Defining Fragments
+
+Store fragments as constants alongside queries:
+
+```python
+ISSUE_PR_LINKAGE_FRAGMENT = """fragment IssuePRLinkageFields on CrossReferencedEvent {
+  willCloseTarget
+  source {
+    ... on PullRequest {
+      number
+      state
+      url
+    }
+  }
+}"""
+```
+
+### Using Fragments in Queries
+
+Include fragment definition before the query and use spread syntax:
+
+```python
+query = f"""{ISSUE_PR_LINKAGE_FRAGMENT}
+
+query {{
+  repository(owner: "owner", name: "repo") {{
+    issue(number: 123) {{
+      timelineItems(first: 20) {{
+        nodes {{
+          ... on CrossReferencedEvent {{
+            ...IssuePRLinkageFields
+          }}
+        }}
+      }}
+    }}
+  }}
+}}"""
+```
+
+### Inline Fragments for Type Narrowing
+
+Use `... on TypeName` to access type-specific fields:
+
+```graphql
+nodes {
+  ... on WorkflowRun {
+    id
+    databaseId
+    checkSuite { status conclusion }
+  }
+}
+```
 
 ## Related Topics
 

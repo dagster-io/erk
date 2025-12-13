@@ -248,7 +248,7 @@ This indicates:
 
 ### Steps 5-8: Analyze Session
 
-@../../../.erk/docs/kits/erk/includes/extract-docs-analysis-shared.md
+Analyze the session content to identify documentation gaps, improvements, and learnings. Categorize findings based on whether they represent new knowledge (Category A) or confirm existing documentation (Category B).
 
 ### Step 9: Combine Session Sources
 
