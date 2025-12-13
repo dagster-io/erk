@@ -59,12 +59,15 @@ Work Item 10: Deprecate direct ctx.graphite usage
 """
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from erk_shared.git.abc import Git, WorktreeInfo
 from erk_shared.github.types import PullRequestInfo
 from erk_shared.integrations.graphite.abc import Graphite
 from erk_shared.integrations.graphite.types import BranchMetadata
-from erk_shared.integrations.gt.types import SquashError, SquashSuccess
+
+if TYPE_CHECKING:
+    from erk_shared.integrations.gt.types import SquashError, SquashSuccess
 
 
 class GraphiteUnavailableError(Exception):
@@ -131,7 +134,9 @@ class WtStack:
 
     def get_parent(self, branch: str) -> str | None:
         """Get parent branch name. Returns None if unavailable or not tracked."""
-        raise NotImplementedError("WtStack.get_parent - migrate Work Item 1")
+        if self._graphite is None:
+            return None
+        return self._graphite.get_parent_branch(self._git, self._repo_root, branch)
 
     def get_children(self, branch: str) -> list[str]:
         """Get child branches. Returns [] if unavailable or not tracked."""
@@ -180,7 +185,7 @@ class WtStack:
         """Submit specific branch. Raises if unavailable."""
         raise NotImplementedError("WtStack.submit_branch - migrate Work Item 8")
 
-    def squash(self, *, quiet: bool = True) -> SquashSuccess | SquashError:
+    def squash(self, *, quiet: bool = True) -> "SquashSuccess | SquashError":
         """Squash commits idempotently. Raises if unavailable."""
         raise NotImplementedError("WtStack.squash - migrate Work Item 8")
 

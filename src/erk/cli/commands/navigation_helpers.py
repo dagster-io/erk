@@ -335,7 +335,7 @@ def resolve_down_navigation(
         SystemExit: If navigation fails (at bottom of stack)
     """
     # Navigate down to parent branch
-    parent_branch = ctx.graphite.get_parent_branch(ctx.git, repo.root, current_branch)
+    parent_branch = ctx.wt_stack.get_parent(current_branch)
     if parent_branch is None:
         # Check if we're already on trunk
         detected_trunk = ctx.git.detect_trunk_branch(repo.root)
