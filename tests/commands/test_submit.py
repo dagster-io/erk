@@ -1697,3 +1697,91 @@ def test_submit_uses_workflow_config(tmp_path: Path) -> None:
     # Config-based inputs from .erk/workflows/erk-impl.toml
     assert inputs["kit_names"] == "erk,gt,devrun"
     assert inputs["model_name"] == "claude-sonnet-4-5-20250929"
+
+
+def test_submit_rollback_on_push_failure(tmp_path: Path) -> None:
+    """Test submit restores original branch when push fails.
+
+    When push_to_remote fails (e.g., network error), the user should be
+    restored to their original branch instead of being stranded on an
+    unpushed local branch.
+    """
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    now = datetime.now(UTC)
+    issue = IssueInfo(
+        number=123,
+        title="Implement feature X",
+        body=_make_plan_body(),
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="test-user",
+    )
+
+    plan = Plan(
+        plan_identifier="123",
+        title="Implement feature X",
+        body=_make_plan_body(),
+        state=PlanState.OPEN,
+        url="https://github.com/test-owner/test-repo/issues/123",
+        labels=[ERK_PLAN_LABEL],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        metadata={},
+    )
+
+    fake_github_issues = FakeGitHubIssues(issues={123: issue})
+    fake_plan_store = FakePlanStore(plans={"123": plan})
+
+    # Configure FakeGit to raise an exception on push_to_remote
+    push_error = RuntimeError("Network error: Connection refused")
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+        push_to_remote_raises=push_error,
+    )
+    fake_github = FakeGitHub()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+    )
+    ctx = context_for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        plan_store=fake_plan_store,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
+
+    # Command should fail with the push error
+    assert result.exit_code != 0
+    assert "Operation failed, restoring original branch" in result.output
+
+    # Verify rollback: user should be restored to original branch "main"
+    # Check that checkout_branch was called with "main" after the failed push
+    # The sequence should be: checkout feature branch, then checkout main (rollback)
+    assert len(fake_git.checked_out_branches) >= 2
+
+    # Last checkout should be the rollback to original branch
+    last_checkout = fake_git.checked_out_branches[-1]
+    assert last_checkout == (repo_root, "main")
+
+    # Verify workflow was NOT triggered (failure happened before workflow dispatch)
+    assert len(fake_github.triggered_workflows) == 0
+
+    # Verify no PR was created
+    assert len(fake_github.created_prs) == 0
