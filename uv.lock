@@ -352,10 +352,14 @@ version = "0.2.5"
 source = { editable = "packages/erk-dev" }
 dependencies = [
     { name = "click" },
+    { name = "erk-shared" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "click", specifier = ">=8.1.7" }]
+requires-dist = [
+    { name = "click", specifier = ">=8.1.7" },
+    { name = "erk-shared", editable = "packages/erk-shared" },
+]
 
 [[package]]
 name = "erk-kits"

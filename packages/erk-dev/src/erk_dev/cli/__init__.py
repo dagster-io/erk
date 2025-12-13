@@ -20,19 +20,24 @@ from erk_dev.commands.create_agents_symlinks.command import (
 from erk_dev.commands.publish_to_pypi.command import publish_to_pypi_command
 from erk_dev.commands.release_check.command import release_check_command
 from erk_dev.commands.release_info.command import release_info_command
+from erk_dev.commands.release_tag.command import release_tag_command
 from erk_dev.commands.release_update.command import release_update_command
 from erk_dev.commands.reserve_pypi_name.command import (
     reserve_pypi_name_command,
 )
 from erk_dev.commands.slash_command.command import slash_command_command
+from erk_dev.context import create_context
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.group(name="erk-dev", context_settings=CONTEXT_SETTINGS)
-def cli() -> None:
+@click.pass_context
+def cli(ctx: click.Context) -> None:
     """Development tools for erk."""
-    pass
+    # Only create context if not already provided (e.g., by tests)
+    if ctx.obj is None:
+        ctx.obj = create_context()
 
 
 # Register all commands
@@ -45,6 +50,7 @@ cli.add_command(create_agents_symlinks_command)
 cli.add_command(publish_to_pypi_command)
 cli.add_command(release_check_command)
 cli.add_command(release_info_command)
+cli.add_command(release_tag_command)
 cli.add_command(release_update_command)
 cli.add_command(reserve_pypi_name_command)
 cli.add_command(slash_command_command)

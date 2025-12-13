@@ -5,10 +5,10 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from erk_dev.commands.release_info.command import (
-    parse_last_release,
-    release_info_command,
-)
+from erk_dev.cli import cli
+from erk_dev.commands.release_info.command import parse_last_release
+from erk_dev.context import ErkDevContext
+from erk_shared.git.fake import FakeGit
 
 
 def test_parse_last_release_extracts_version_and_date(tmp_path: Path) -> None:
@@ -120,9 +120,12 @@ version = "0.2.1"
         encoding="utf-8",
     )
 
+    fake_git = FakeGit()
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        result = runner.invoke(release_info_command, ["--json-output"])
+        result = runner.invoke(
+            cli, ["release-info", "--json-output"], obj=ErkDevContext(git=fake_git)
+        )
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -160,9 +163,10 @@ version = "1.0.0"
         encoding="utf-8",
     )
 
+    fake_git = FakeGit()
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        result = runner.invoke(release_info_command, [])
+        result = runner.invoke(cli, ["release-info"], obj=ErkDevContext(git=fake_git))
 
     assert result.exit_code == 0
     assert "Current version: 1.0.0" in result.output
