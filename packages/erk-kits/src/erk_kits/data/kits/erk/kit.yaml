@@ -14,8 +14,6 @@ artifacts:
   agent:
     - agents/erk/issue-wt-creator.md
     - agents/erk/plan-extractor.md
-  workflow:
-    - workflows/erk/dispatch-erk-queue.yml
   doc:
     - docs/erk/EXAMPLES.md
     - docs/erk/includes/conflict-resolution.md
