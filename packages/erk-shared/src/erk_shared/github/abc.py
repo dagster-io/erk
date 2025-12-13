@@ -548,3 +548,15 @@ class GitHub(ABC):
             True if comment added successfully
         """
         ...
+
+    @abstractmethod
+    def list_my_open_prs(self, repo_root: Path) -> list[PullRequestInfo]:
+        """List open pull requests authored by the current user.
+
+        Args:
+            repo_root: Repository root directory
+
+        Returns:
+            List of PullRequestInfo for open PRs authored by @me
+        """
+        ...

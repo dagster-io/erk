@@ -1627,3 +1627,47 @@ query {{
             response.get("data", {}).get("addPullRequestReviewThreadReply", {}).get("comment")
         )
         return comment_data is not None
+
+    def list_my_open_prs(self, repo_root: Path) -> list[PullRequestInfo]:
+        """List open pull requests authored by the current user.
+
+        Uses gh pr list with --author @me to get PRs for the current user.
+
+        Args:
+            repo_root: Repository root directory
+
+        Returns:
+            List of PullRequestInfo for open PRs authored by @me
+        """
+        assert self._repo_info is not None, "repo_info required for list_my_open_prs"
+
+        cmd = [
+            "gh",
+            "pr",
+            "list",
+            "--author",
+            "@me",
+            "--state",
+            "open",
+            "--json",
+            "number,title,headRefName,url,isDraft,state",
+        ]
+        stdout = execute_gh_command(cmd, repo_root)
+
+        prs_data = json.loads(stdout) if stdout.strip() else []
+        result: list[PullRequestInfo] = []
+
+        for pr_data in prs_data:
+            pr_info = PullRequestInfo(
+                number=pr_data["number"],
+                state=pr_data.get("state", "OPEN").upper(),
+                url=pr_data["url"],
+                is_draft=pr_data.get("isDraft", False),
+                title=pr_data.get("title"),
+                checks_passing=None,  # Not fetched for efficiency
+                owner=self._repo_info.owner,
+                repo=self._repo_info.name,
+            )
+            result.append(pr_info)
+
+        return result

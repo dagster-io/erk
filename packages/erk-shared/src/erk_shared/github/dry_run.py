@@ -243,3 +243,7 @@ class DryRunGitHub(GitHub):
         Returns True to indicate success without actually adding comment.
         """
         return True
+
+    def list_my_open_prs(self, repo_root: Path) -> list[PullRequestInfo]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.list_my_open_prs(repo_root)

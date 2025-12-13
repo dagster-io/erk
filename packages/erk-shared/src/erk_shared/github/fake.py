@@ -701,3 +701,27 @@ class FakeGitHub(GitHub):
         Returns list of (thread_id, body) tuples.
         """
         return self._thread_replies
+
+    def list_my_open_prs(self, repo_root: Path) -> list[PullRequestInfo]:
+        """List open PRs authored by current user from pre-configured state.
+
+        Filters pre-configured PR details to return only OPEN PRs.
+
+        Returns:
+            List of PullRequestInfo for open PRs
+        """
+        result: list[PullRequestInfo] = []
+        for pr_details in self._pr_details.values():
+            if pr_details.state == "OPEN":
+                pr_info = PullRequestInfo(
+                    number=pr_details.number,
+                    state=pr_details.state,
+                    url=pr_details.url,
+                    is_draft=pr_details.is_draft,
+                    title=pr_details.title,
+                    checks_passing=None,
+                    owner=pr_details.owner,
+                    repo=pr_details.repo,
+                )
+                result.append(pr_info)
+        return result

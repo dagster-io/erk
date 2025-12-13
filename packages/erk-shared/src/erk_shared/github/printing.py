@@ -256,3 +256,7 @@ class PrintingGitHub(PrintingBase, GitHub):
         """Add a reply to a PR review thread with printed output."""
         self._emit(self._format_command(f"gh api graphql (add reply to thread {thread_id})"))
         return self._wrapped.add_review_thread_reply(repo_root, thread_id, body)
+
+    def list_my_open_prs(self, repo_root: Path) -> list[PullRequestInfo]:
+        """List open PRs authored by current user (read-only, no printing)."""
+        return self._wrapped.list_my_open_prs(repo_root)
