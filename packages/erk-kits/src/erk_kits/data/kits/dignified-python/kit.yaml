@@ -5,9 +5,13 @@ license: See LICENSE.md
 artifacts:
   skill:
     - skills/dignified-python-310/SKILL.md
+    - skills/dignified-python-310/VERSION-CONTEXT.md
     - skills/dignified-python-311/SKILL.md
+    - skills/dignified-python-311/VERSION-CONTEXT.md
     - skills/dignified-python-312/SKILL.md
+    - skills/dignified-python-312/VERSION-CONTEXT.md
     - skills/dignified-python-313/SKILL.md
+    - skills/dignified-python-313/VERSION-CONTEXT.md
   doc:
     - docs/dignified-python/dignified-python-core.md
     - docs/dignified-python/type-annotations-common.md

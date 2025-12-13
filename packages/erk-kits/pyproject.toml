@@ -12,6 +12,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/erk_kits"]
+# Disable VCS/gitignore filtering so that kit-build generated files are included
+# The .gitignore excludes .md files for git tracking, but we need them in the wheel
+ignore-vcs = true
 
 [tool.pyright]
 include = ["src"]

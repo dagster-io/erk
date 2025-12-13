@@ -1,5 +1,7 @@
 ---
 description: Fix all merge conflicts and continue the git rebase
+erk:
+  kit: erk
 ---
 
 # Fix Merge Conflicts

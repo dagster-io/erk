@@ -1,3 +1,8 @@
+---
+erk:
+  kit: dignified-python
+---
+
 # Type Annotations - Python 3.13 Delta
 
 This document contains type annotation features specific to Python 3.13.

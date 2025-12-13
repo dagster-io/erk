@@ -1,3 +1,8 @@
+---
+erk:
+  kit: erk
+---
+
 # Success Output Format
 
 After creating the issue, output this exact format:

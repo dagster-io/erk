@@ -1,3 +1,8 @@
+---
+erk:
+  kit: erk
+---
+
 # Plan Validation Pattern
 
 This document provides reusable guidance for validating plan content structure using kit CLI commands.

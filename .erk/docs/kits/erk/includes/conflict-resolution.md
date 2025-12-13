@@ -1,3 +1,8 @@
+---
+erk:
+  kit: erk
+---
+
 ## Conflict Resolution Process
 
 ### Build Context

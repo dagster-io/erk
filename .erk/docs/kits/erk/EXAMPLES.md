@@ -1,3 +1,8 @@
+---
+erk:
+  kit: erk
+---
+
 # Context Preservation Examples
 
 This document demonstrates the difference between poor and excellent context preservation in implementation plans. Good context helps implementing agents avoid costly re-discovery and prevents subtle bugs.

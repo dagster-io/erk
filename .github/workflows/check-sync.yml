@@ -36,5 +36,9 @@ jobs:
         run: pip install uv
       - name: Install dependencies
         run: uv sync
+      - name: Build kit artifacts
+        run: make kit-build
+      - name: Check kit build is up to date
+        run: make kit-build-check
       - name: Check artifacts and bundled kit sync status
         run: uv run --package erk erk kit check

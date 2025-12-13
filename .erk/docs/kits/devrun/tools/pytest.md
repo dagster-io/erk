@@ -1,3 +1,8 @@
+---
+erk:
+  kit: devrun
+---
+
 # pytest Execution and Parsing Guide
 
 Comprehensive guide for executing pytest commands and parsing test results.

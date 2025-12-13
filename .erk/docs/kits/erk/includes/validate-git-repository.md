@@ -1,3 +1,8 @@
+---
+erk:
+  kit: erk
+---
+
 # Git Repository Validation
 
 Execute: `git rev-parse --show-toplevel`

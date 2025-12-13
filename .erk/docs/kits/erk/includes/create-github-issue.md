@@ -1,3 +1,8 @@
+---
+erk:
+  kit: erk
+---
+
 # Create GitHub Issue
 
 Create the issue using the kit CLI command:

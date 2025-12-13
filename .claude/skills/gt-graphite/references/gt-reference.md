@@ -1,11 +1,9 @@
 ---
-description: "Graphite CLI for stacked pull requests"
-url: "https://graphite.com/"
-__dot_agent:
-  kit_id: gt
-  kit_version: 0.1.0
-  artifact_type: skill
-  artifact_path: skills/gt-graphite/references/gt-reference.md
+name: gt-graphite-reference
+description: Graphite CLI for stacked pull requests
+url: https://graphite.com/
+erk:
+  kit: gt
 ---
 
 # Graphite (gt) Mental Model

@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
 
-from erk.kits.cli.output import user_output
 from erk.kits.io.manifest import load_kit_manifest
 from erk.kits.models.config import InstalledKit, ProjectConfig
 from erk.kits.operations.artifact_operations import create_artifact_operations
@@ -126,15 +125,9 @@ def sync_kit(
             updated_kit=None,
         )
 
-    # Remove old artifacts using appropriate strategy
-    operations = create_artifact_operations(project_dir, resolved)
-    skipped = operations.remove_artifacts(installed.artifacts, project_dir)
-
-    # Report skipped artifacts
-    if skipped:
-        user_output("  Skipping symlinked artifacts in dev mode:")
-        for artifact_path in skipped:
-            user_output(f"    {artifact_path}")
+    # Remove old artifacts
+    operations = create_artifact_operations()
+    operations.remove_artifacts(installed.artifacts, project_dir)
 
     # Install new version with overwrite enabled
     new_installed = install_kit(

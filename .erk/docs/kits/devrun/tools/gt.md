@@ -1,3 +1,8 @@
+---
+erk:
+  kit: devrun
+---
+
 # gt (Graphite) Execution and Parsing Guide
 
 Comprehensive guide for executing Graphite (gt) commands and parsing output.

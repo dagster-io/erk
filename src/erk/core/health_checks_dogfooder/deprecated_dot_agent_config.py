@@ -34,7 +34,7 @@ def check_deprecated_dot_agent_config(repo_root: Path) -> CheckResult:
     with open(pyproject_path, "rb") as f:
         data = tomli.load(f)
 
-    # Check for [tool.dot-agent] section with dev_mode
+    # Check for [tool.dot-agent] section
     if "tool" not in data:
         return CheckResult(
             name="deprecated dot-agent config",
@@ -48,25 +48,17 @@ def check_deprecated_dot_agent_config(repo_root: Path) -> CheckResult:
             message="No deprecated [tool.dot-agent] config found",
         )
 
-    tool_config = data["tool"]["dot-agent"]
-    if "dev_mode" not in tool_config:
-        return CheckResult(
-            name="deprecated dot-agent config",
-            passed=True,
-            message="No deprecated [tool.dot-agent] config found",
-        )
-
     # Found deprecated config - return failure with remediation
     return CheckResult(
         name="deprecated dot-agent config",
         passed=False,
         message="Deprecated [tool.dot-agent] config in pyproject.toml",
         details=(
-            "dev_mode should now be configured under [tool.erk]\n"
+            "The [tool.dot-agent] section is deprecated.\n"
             "\n"
             "Remediation:\n"
             "  1. Edit pyproject.toml\n"
-            "  2. Replace [tool.dot-agent] with [tool.erk]\n"
-            "  3. Keep dev_mode = true under [tool.erk]"
+            "  2. Remove the [tool.dot-agent] section\n"
+            "  3. Use [tool.erk] for any erk configuration"
         ),
     )

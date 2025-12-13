@@ -1,3 +1,8 @@
+---
+erk:
+  kit: dignified-python
+---
+
 # Type Annotations - Python 3.12
 
 This document provides complete, canonical type annotation guidance for Python 3.12.

@@ -32,8 +32,8 @@ def install_kit(
 
     installed_artifacts: list[str] = []
 
-    # Create appropriate installation strategy
-    operations = create_artifact_operations(project_dir, resolved)
+    # Create installation strategy
+    operations = create_artifact_operations()
 
     # Use filtered artifacts if provided, otherwise use all from manifest
     artifacts_to_install = (

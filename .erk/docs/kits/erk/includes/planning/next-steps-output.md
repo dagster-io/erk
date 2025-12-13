@@ -1,3 +1,8 @@
+---
+erk:
+  kit: erk
+---
+
 **Next steps:**
 
 View the plan:

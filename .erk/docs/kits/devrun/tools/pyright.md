@@ -1,3 +1,8 @@
+---
+erk:
+  kit: devrun
+---
+
 # pyright Execution and Parsing Guide
 
 Comprehensive guide for executing pyright commands and parsing type checking results.

@@ -1,3 +1,7 @@
+---
+erk:
+  kit: erk
+---
 # REQUIRED REPOSITORY SETTING:
 # Settings > Actions > General > Workflow permissions
 # ✓ Enable "Allow GitHub Actions to create and approve pull requests"

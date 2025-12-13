@@ -1,3 +1,8 @@
+---
+erk:
+  kit: erk
+---
+
 # Extract Agent Docs - Plan Workflow
 
 Shared extraction plan workflow for `/erk:extract-agent-docs` and `/erk:extract-agent-docs-from-log` commands.

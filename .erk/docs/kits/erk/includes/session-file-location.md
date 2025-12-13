@@ -1,3 +1,8 @@
+---
+erk:
+  kit: erk
+---
+
 # Plan Storage Location
 
 **Plan file location:**

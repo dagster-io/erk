@@ -1,3 +1,8 @@
+---
+erk:
+  kit: dignified-python
+---
+
 # Type Annotations - Common
 
 This document contains type annotation guidance shared across all supported Python versions.

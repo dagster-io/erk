@@ -1,3 +1,8 @@
+---
+erk:
+  kit: devrun
+---
+
 # prettier Execution and Parsing Guide
 
 Comprehensive guide for executing prettier commands and parsing formatting results.
