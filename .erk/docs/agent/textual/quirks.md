@@ -81,6 +81,39 @@ def on_row_selected(self, event: DataTable.RowSelected) -> None:
     self.action_open_issue()
 ```
 
+### Click Handlers Need Both `prevent_default()` and `stop()`
+
+**Problem**: When overriding `on_click` in a DataTable subclass to handle clicks on specific columns (e.g., copying text to clipboard), using only `event.stop()` doesn't prevent the base DataTable from handling the click. The click still triggers row selection and emits `RowSelected`, which may open a modal or trigger other unwanted behavior.
+
+**Why this happens**: `event.stop()` only prevents the event from bubbling up to parent widgets. Textual still calls handlers on base classes unless you use `prevent_default()`.
+
+**Solution**: Use both `event.prevent_default()` and `event.stop()`:
+
+```python
+def on_click(self, event: Click) -> None:
+    coord = self.hover_coordinate
+    if coord is None:
+        return
+
+    row_index = coord.row
+    col_index = coord.column
+
+    # Handle click on specific column
+    if col_index == self._my_column_index:
+        if row_index < len(self._rows):
+            self.post_message(self.MyColumnClicked(row_index))
+            event.prevent_default()  # Stop base class from handling
+            event.stop()  # Stop bubbling to parent widgets
+            return
+```
+
+**Key insight**:
+
+- `event.stop()` → prevents bubbling to parent widgets in the DOM
+- `event.prevent_default()` → prevents Textual from calling base class handlers
+
+Without `prevent_default()`, DataTable's internal click handling still fires, moving the cursor and potentially triggering `RowSelected`.
+
 ## App Quirks
 
 ### Don't Override `action_quit` Synchronously

@@ -63,7 +63,7 @@ Use agents instead of direct Bash:
 
 For detailed reference, consult the documentation index which maps each document to specific "read when..." conditions:
 
-→ **[.erk/docs/agent/index.md](.erk/docs/agent/index.md)** - Complete document registry
+→ **[.erk/docs/agent/index.md](.erk/docs/agent/index.md)** - Complete document registry (auto-generated, always current)
 
 #### Including Documentation in Plans
 
@@ -73,24 +73,6 @@ When creating implementation plans, include a "Related Documentation" section li
 - Docs relevant to the implementation approach
 
 This ensures implementing agents have access to documentation you discovered during planning.
-
-**Category quick reference:**
-
-- **[Architecture](.erk/docs/agent/architecture/)** — dry-run patterns, Protocol vs ABC, subprocess wrappers, GitHub URL parsing, shell integration patterns
-- **[CLI Development](.erk/docs/agent/cli/)** — command organization, output styling, script mode
-- **[Planning](.erk/docs/agent/planning/)** — plan lifecycle, .impl/ folders, agent delegation, scratch storage
-- **[Testing](.erk/docs/agent/testing/)** — erk fakes, rebase conflicts, import conflict resolution
-- **[Sessions](.erk/docs/agent/sessions/)** — session logs, parallel session patterns, context analysis
-- **[Hooks](.erk/docs/agent/hooks/)** — hook creation, erk-specific hooks
-- **[Kits](.erk/docs/agent/kits/)** — kit CLI commands, kit architecture
-- **[Commands](.erk/docs/agent/commands/)** — slash command optimization, @ references
-- **[Erk](.erk/docs/agent/erk/)** — erk workflows, Graphite branch setup
-
-**Root documents:**
-
-- **[glossary.md](.erk/docs/agent/glossary.md)** — terminology, definitions
-- **[conventions.md](.erk/docs/agent/conventions.md)** — naming standards
-- **[kit-registry.md](.erk/kits/kit-registry.md)** — installed kits
 
 ## Worktree Stack Quick Reference
 

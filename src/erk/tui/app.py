@@ -1372,11 +1372,10 @@ class ErkDashApp(App):
             row = self._rows[event.row_index]
             if row.worktree_name:
                 success = self._provider.clipboard.copy(row.worktree_name)
-                if self._status_bar is not None:
-                    if success:
-                        self._status_bar.set_message(f"Copied: {row.worktree_name}")
-                    else:
-                        self._status_bar.set_message("Clipboard unavailable")
+                if success:
+                    self.notify(f"Copied: {row.worktree_name}", timeout=2)
+                else:
+                    self.notify("Clipboard unavailable", severity="error", timeout=2)
 
     @on(PlanDataTable.RunIdClicked)
     def on_run_id_clicked(self, event: PlanDataTable.RunIdClicked) -> None:

@@ -232,6 +232,7 @@ class PlanDataTable(DataTable):
         if col_index == self._plan_column_index:
             if row_index < len(self._rows) and self._rows[row_index].issue_url:
                 self.post_message(self.PlanClicked(row_index))
+                event.prevent_default()
                 event.stop()
                 return
 
@@ -239,6 +240,7 @@ class PlanDataTable(DataTable):
         if self._pr_column_index is not None and col_index == self._pr_column_index:
             if row_index < len(self._rows) and self._rows[row_index].pr_url:
                 self.post_message(self.PrClicked(row_index))
+                event.prevent_default()
                 event.stop()
                 return
 
@@ -246,6 +248,7 @@ class PlanDataTable(DataTable):
         if self._local_wt_column_index is not None and col_index == self._local_wt_column_index:
             if row_index < len(self._rows) and self._rows[row_index].exists_locally:
                 self.post_message(self.LocalWtClicked(row_index))
+                event.prevent_default()
                 event.stop()
                 return
 
@@ -253,6 +256,7 @@ class PlanDataTable(DataTable):
         if self._run_id_column_index is not None and col_index == self._run_id_column_index:
             if row_index < len(self._rows) and self._rows[row_index].run_url:
                 self.post_message(self.RunIdClicked(row_index))
+                event.prevent_default()
                 event.stop()
                 return
 
