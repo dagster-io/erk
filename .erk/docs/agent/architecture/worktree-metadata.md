@@ -51,19 +51,19 @@ remove_worktree_metadata(repo_dir, worktree_name)
 ## Usage
 
 - **`erk wt create`**: Records project association if created from project context
-- **`erk wt goto`**: Looks up project path and navigates to project subdirectory
+- **`erk wt co`**: Looks up project path and navigates to project subdirectory
 - **`erk wt rm`**: Removes metadata when worktree is deleted
 
 ## Subdirectory Navigation Patterns
 
 Navigation commands can determine where to navigate within a target worktree. There are two patterns:
 
-### Project Path Pattern (wt goto)
+### Project Path Pattern (wt co)
 
-The `wt goto` command uses stored project metadata to navigate to a project subdirectory:
+The `wt co` command uses stored project metadata to navigate to a project subdirectory:
 
 ```python
-# From wt/goto_cmd.py
+# From wt/checkout_cmd.py
 project_path = get_worktree_project(repo.repo_dir, worktree_name, ctx.git)
 if project_path is not None:
     target_path = worktree_path / project_path

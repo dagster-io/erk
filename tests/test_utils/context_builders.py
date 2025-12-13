@@ -103,7 +103,7 @@ def build_graphite_test_context(
 def build_navigation_test_context(
     env: ErkInMemEnv | ErkIsolatedFsEnv, *, current_branch: str | None = None, **kwargs
 ) -> ErkContext:
-    """Build ErkContext for navigation command tests (up, down, goto).
+    """Build ErkContext for navigation command tests (up, down, wt co).
 
     Convenience wrapper around build_workspace_test_context() for navigation
     commands that typically need to specify the current branch.

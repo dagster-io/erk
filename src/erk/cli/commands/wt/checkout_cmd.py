@@ -1,7 +1,8 @@
-"""Goto command - navigate directly to a worktree by name."""
+"""Checkout command - navigate directly to a worktree by name."""
 
 import click
 
+from erk.cli.alias import alias
 from erk.cli.commands.completions import complete_worktree_names
 from erk.cli.commands.navigation_helpers import activate_root_repo, activate_worktree
 from erk.cli.core import discover_repo_context
@@ -11,31 +12,32 @@ from erk.core.worktree_metadata import get_worktree_project
 from erk_shared.output.output import user_output
 
 
-@click.command("goto")
+@alias("co", "goto")  # co is short form, goto for backwards compat
+@click.command("checkout")
 @click.argument("worktree_name", shell_complete=complete_worktree_names)
 @click.option(
     "--script", is_flag=True, help="Print only the activation script without usage instructions."
 )
 @click.pass_obj
-def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
-    """Switch directly to a worktree by name.
+def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
+    """Checkout a worktree by name.
 
     With shell integration (recommended):
-      erk goto WORKTREE_NAME
+      erk wt co WORKTREE_NAME
 
     The shell wrapper function automatically activates the worktree.
     Run 'erk init --shell' to set up shell integration.
 
     Without shell integration:
-      source <(erk goto WORKTREE_NAME --script)
+      source <(erk wt co WORKTREE_NAME --script)
 
     This will cd to the worktree, create/activate .venv, and load .env variables.
 
     Special keyword:
-      erk goto root    # Switch to the root repository
+      erk wt co root    # Switch to the root repository
 
     Example:
-      erk goto feature-work    # Switch to worktree named "feature-work"
+      erk wt co feature-work    # Switch to worktree named "feature-work"
     """
     # Validate preconditions upfront (LBYL)
     Ensure.gh_authenticated(ctx)
@@ -44,7 +46,7 @@ def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
 
     # Special case: "root" navigates to root repository
     if worktree_name == "root":
-        activate_root_repo(ctx, repo, script, "goto")
+        activate_root_repo(ctx, repo, script, "co")
         return  # activate_root_repo raises SystemExit, but explicit return for clarity
 
     # Get all worktrees for error messages and lookup
@@ -113,5 +115,5 @@ def goto_wt(ctx: ErkContext, worktree_name: str, script: bool) -> None:
 
     # Activate the worktree (at project path if applicable)
     activate_worktree(
-        ctx, repo, target_path, script, "goto", preserve_relative_path=preserve_relative
+        ctx, repo, target_path, script, "co", preserve_relative_path=preserve_relative
     )

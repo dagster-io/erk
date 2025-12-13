@@ -654,7 +654,7 @@ if wt.is_root:
     # Root worktree navigation
     activate_root_repo(ctx, repo, script, command_name="checkout")
 
-# From goto_cmd.py - filtering worktrees
+# From checkout_cmd.py - filtering worktrees
 if not wt.is_root:
     # Only show non-root worktrees in picker
     worktree_options.append(wt)

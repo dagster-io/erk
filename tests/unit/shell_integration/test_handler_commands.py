@@ -81,7 +81,9 @@ def test_compound_commands_have_all_expected_entries() -> None:
     """
     expected_compound_commands = [
         "wt create",
-        "wt goto",
+        "wt checkout",
+        "wt co",  # alias for wt checkout
+        "wt goto",  # legacy alias for wt checkout
         "stack consolidate",
         "pr land",
         "pr checkout",
