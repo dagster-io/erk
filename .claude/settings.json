@@ -9,18 +9,6 @@
     "ask": []
   },
   "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "erk wt current | xargs -I {} printf '\\033]0;erk-wt: {}\\007'",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
     "UserPromptSubmit": [
       {
         "matcher": "*",
