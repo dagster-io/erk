@@ -62,30 +62,26 @@ class ErkCommandGroup(click.Group):
 
         # Grouped output mode - organize into sections
         # Define command organization (aliases now derived from decorator, not hardcoded)
-        top_level_commands = ["dash", "implement", "submit", "checkout", "down", "up", "doctor"]
+        core_navigation = ["checkout", "up", "down", "list", "delete"]
         command_groups = [
             "admin",
             "artifact",
             "completion",
-            "config",
-            "docs",
-            "hook",
             "info",
             "kit",
-            "md",
-            "objective",
             "plan",
-            "planner",
             "pr",
             "project",
             "run",
             "stack",
             "wt",
         ]
+        top_level_plans = ["dash", "implement"]
         initialization = ["init"]
 
         # Categorize commands
-        top_level_cmds = []
+        nav_cmds = []
+        plan_cmds = []
         group_cmds = []
         init_cmds = []
         other_cmds = []
@@ -95,8 +91,10 @@ class ErkCommandGroup(click.Group):
             if name in alias_map:
                 continue
 
-            if name in top_level_commands:
-                top_level_cmds.append((name, cmd))
+            if name in core_navigation:
+                nav_cmds.append((name, cmd))
+            elif name in top_level_plans:
+                plan_cmds.append((name, cmd))
             elif name in command_groups:
                 group_cmds.append((name, cmd))
             elif name in initialization:
@@ -106,9 +104,13 @@ class ErkCommandGroup(click.Group):
                 other_cmds.append((name, cmd))
 
         # Format sections
-        if top_level_cmds:
-            with formatter.section("Top-Level Commands"):
-                self._format_command_list(ctx, formatter, top_level_cmds)
+        if nav_cmds:
+            with formatter.section("Core Navigation"):
+                self._format_command_list(ctx, formatter, nav_cmds)
+
+        if plan_cmds:
+            with formatter.section("Plans"):
+                self._format_command_list(ctx, formatter, plan_cmds)
 
         if group_cmds:
             with formatter.section("Command Groups"):
