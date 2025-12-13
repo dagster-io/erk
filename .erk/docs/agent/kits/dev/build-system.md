@@ -100,6 +100,28 @@ In check mode, the build system:
 
 Used in CI to enforce "source + built output" commit discipline.
 
+## When kit-build Runs
+
+Understanding when `kit-build` is and isn't invoked:
+
+| Context              | kit-build invoked? | Notes                                |
+| -------------------- | ------------------ | ------------------------------------ |
+| Developer workflow   | **Manual**         | Run after editing source files       |
+| `make fast-ci`       | ✅ Yes             | Runs build, then `--check` to verify |
+| `make all-ci`        | ✅ Yes             | Runs build, then `--check` to verify |
+| `make publish`       | ❌ No              | Assumes artifacts already in sync    |
+| `make build`         | ❌ No              | Only runs `uv build` for packages    |
+| Git pre-commit hooks | ❌ No              | Not currently integrated             |
+
+**Key insight**: The publish process does NOT automatically run `kit-build`. It assumes developers have already run the build and committed both source and built output. CI catches drift but doesn't auto-fix.
+
+### Recommended Workflow
+
+1. Edit source files in `.claude/`, `.erk/docs/kits/`, etc.
+2. Run `erk dev kit-build`
+3. Commit both source AND built output together
+4. CI validates sync via `kit-build --check`
+
 ## Command Options
 
 ```bash
