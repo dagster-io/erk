@@ -35,7 +35,7 @@ This command:
 
 `erk init` will display shell integration instructions to add to your `.zshrc` or `.bashrc`. Copy these instructions manually - erk doesn't modify your shell config automatically.
 
-**Why manual setup?** Shell integration is essential for the core workflow: it enables `erk br co` to change your terminal's directory and activate the correct Python environment. Without it, these commands run in a subprocess and have no effect on your shell. We ask you to add it manually so you stay in control of your shell configuration.
+**Why manual setup?** Shell integration is essential for the core workflow: it enables commands such as `erk br co` and `erk wt co` to change your terminal's directory and activate the correct Python environment. Without it, these commands run in a subprocess and have no effect on your shell. We ask you to add it manually so you stay in control of your shell configuration.
 
 To view the instructions again later: `erk init --shell`
 
