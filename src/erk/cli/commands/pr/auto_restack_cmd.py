@@ -22,7 +22,7 @@ from erk_shared.integrations.gt.types import (
 @click.option(
     "--dangerous",
     is_flag=True,
-    required=True,
+    required=False,
     help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
 )
 @click.pass_obj
@@ -41,9 +41,22 @@ def pr_auto_restack(ctx: ErkContext, *, dangerous: bool) -> None:
     \b
       # Auto-restack with conflict resolution
       erk pr auto-restack --dangerous
+
+    To disable the --dangerous flag requirement:
+
+    \b
+      erk config set auto_restack_skip_dangerous true
     """
-    # dangerous flag is required to indicate acknowledgment
-    _ = dangerous
+    # Runtime validation: require --dangerous unless config allows skipping
+    if not dangerous:
+        skip_allowed = (
+            ctx.global_config is not None and ctx.global_config.auto_restack_skip_dangerous
+        )
+        if not skip_allowed:
+            raise click.UsageError(
+                "Missing option '--dangerous'.\n"
+                "To disable this requirement: erk config set auto_restack_skip_dangerous true"
+            )
     cwd = ctx.cwd
 
     # Phase 1: Try fast path (preflight: squash + attempt restack)

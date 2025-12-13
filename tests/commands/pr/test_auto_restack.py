@@ -44,7 +44,7 @@ def test_pr_auto_restack_success() -> None:
 
 
 def test_pr_auto_restack_requires_dangerous_flag() -> None:
-    """Test that command fails when --dangerous flag is not provided."""
+    """Test that command fails when --dangerous flag is not provided (default config)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
@@ -66,6 +66,49 @@ def test_pr_auto_restack_requires_dangerous_flag() -> None:
 
         assert result.exit_code != 0
         assert "Missing option '--dangerous'" in result.output
+        # Verify error message includes config hint
+        assert "erk config set auto_restack_skip_dangerous true" in result.output
+
+
+def test_pr_auto_restack_skip_dangerous_with_config() -> None:
+    """Test that --dangerous flag is not required when config allows skipping."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            commits_ahead={(env.cwd, "main"): 1},  # Has commits to restack
+            rebase_in_progress=False,  # No conflicts
+        )
+
+        graphite = FakeGraphite()
+        claude_executor = FakeClaudeExecutor(claude_available=True)
+
+        # Create GlobalConfig with auto_restack_skip_dangerous=True
+        from erk_shared.context.types import GlobalConfig
+
+        global_config = GlobalConfig.test(
+            env.erk_root,
+            auto_restack_skip_dangerous=True,  # Skip --dangerous requirement
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            claude_executor=claude_executor,
+            global_config=global_config,
+        )
+
+        # Invoke WITHOUT --dangerous flag
+        result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
+
+        # Should succeed without --dangerous when config allows
+        assert result.exit_code == 0
+        assert "Restack complete!" in result.output
 
 
 def test_pr_auto_restack_fails_when_claude_not_available() -> None:

@@ -46,6 +46,7 @@ class RealConfigStore(ConfigStore):
             shell_setup_complete=bool(data.get("shell_setup_complete", False)),
             show_pr_info=bool(data.get("show_pr_info", True)),
             github_planning=bool(data.get("github_planning", True)),
+            auto_restack_skip_dangerous=bool(data.get("auto_restack_skip_dangerous", False)),
         )
 
     def save(self, config: GlobalConfig) -> None:
@@ -101,6 +102,7 @@ use_graphite = {str(config.use_graphite).lower()}
 shell_setup_complete = {str(config.shell_setup_complete).lower()}
 show_pr_info = {str(config.show_pr_info).lower()}
 github_planning = {str(config.github_planning).lower()}
+auto_restack_skip_dangerous = {str(config.auto_restack_skip_dangerous).lower()}
 """
 
         try:

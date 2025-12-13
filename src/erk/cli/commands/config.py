@@ -61,6 +61,10 @@ def config_list(ctx: ErkContext) -> None:
         user_output(f"  use_graphite={str(ctx.global_config.use_graphite).lower()}")
         user_output(f"  show_pr_info={str(ctx.global_config.show_pr_info).lower()}")
         user_output(f"  github_planning={str(ctx.global_config.github_planning).lower()}")
+        user_output(
+            f"  auto_restack_skip_dangerous="
+            f"{str(ctx.global_config.auto_restack_skip_dangerous).lower()}"
+        )
     else:
         user_output("  (not configured - run 'erk init' to create)")
 
@@ -101,7 +105,14 @@ def config_get(ctx: ErkContext, key: str) -> None:
     parts = key.split(".")
 
     # Handle global config keys
-    if parts[0] in ("erk_root", "use_graphite", "show_pr_info", "github_planning"):
+    global_config_keys = (
+        "erk_root",
+        "use_graphite",
+        "show_pr_info",
+        "github_planning",
+        "auto_restack_skip_dangerous",
+    )
+    if parts[0] in global_config_keys:
         global_config = Ensure.not_none(
             ctx.global_config, f"Global config not found at {ctx.config_store.path()}"
         )
@@ -114,6 +125,8 @@ def config_get(ctx: ErkContext, key: str) -> None:
             machine_output(str(global_config.show_pr_info).lower())
         elif parts[0] == "github_planning":
             machine_output(str(global_config.github_planning).lower())
+        elif parts[0] == "auto_restack_skip_dangerous":
+            machine_output(str(global_config.auto_restack_skip_dangerous).lower())
         return
 
     # Handle repo config keys
@@ -155,7 +168,14 @@ def config_set(ctx: ErkContext, key: str, value: str) -> None:
     parts = key.split(".")
 
     # Handle global config keys
-    if parts[0] in ("erk_root", "use_graphite", "show_pr_info", "github_planning"):
+    global_config_keys = (
+        "erk_root",
+        "use_graphite",
+        "show_pr_info",
+        "github_planning",
+        "auto_restack_skip_dangerous",
+    )
+    if parts[0] in global_config_keys:
         global_config = Ensure.not_none(
             ctx.global_config,
             f"Global config not found at {ctx.config_store.path()}. Run 'erk init' to create it.",
@@ -169,6 +189,7 @@ def config_set(ctx: ErkContext, key: str, value: str) -> None:
                 shell_setup_complete=global_config.shell_setup_complete,
                 show_pr_info=global_config.show_pr_info,
                 github_planning=global_config.github_planning,
+                auto_restack_skip_dangerous=global_config.auto_restack_skip_dangerous,
             )
         elif parts[0] == "use_graphite":
             if value.lower() not in ("true", "false"):
@@ -180,6 +201,7 @@ def config_set(ctx: ErkContext, key: str, value: str) -> None:
                 shell_setup_complete=global_config.shell_setup_complete,
                 show_pr_info=global_config.show_pr_info,
                 github_planning=global_config.github_planning,
+                auto_restack_skip_dangerous=global_config.auto_restack_skip_dangerous,
             )
         elif parts[0] == "show_pr_info":
             if value.lower() not in ("true", "false"):
@@ -191,6 +213,7 @@ def config_set(ctx: ErkContext, key: str, value: str) -> None:
                 shell_setup_complete=global_config.shell_setup_complete,
                 show_pr_info=value.lower() == "true",
                 github_planning=global_config.github_planning,
+                auto_restack_skip_dangerous=global_config.auto_restack_skip_dangerous,
             )
         elif parts[0] == "github_planning":
             if value.lower() not in ("true", "false"):
@@ -202,6 +225,19 @@ def config_set(ctx: ErkContext, key: str, value: str) -> None:
                 shell_setup_complete=global_config.shell_setup_complete,
                 show_pr_info=global_config.show_pr_info,
                 github_planning=value.lower() == "true",
+                auto_restack_skip_dangerous=global_config.auto_restack_skip_dangerous,
+            )
+        elif parts[0] == "auto_restack_skip_dangerous":
+            if value.lower() not in ("true", "false"):
+                user_output(f"Invalid boolean value: {value}")
+                raise SystemExit(1)
+            new_config = GlobalConfig(
+                erk_root=global_config.erk_root,
+                use_graphite=global_config.use_graphite,
+                shell_setup_complete=global_config.shell_setup_complete,
+                show_pr_info=global_config.show_pr_info,
+                github_planning=global_config.github_planning,
+                auto_restack_skip_dangerous=value.lower() == "true",
             )
         else:
             user_output(f"Invalid key: {key}")
