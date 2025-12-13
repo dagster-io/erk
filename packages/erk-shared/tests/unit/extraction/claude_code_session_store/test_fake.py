@@ -14,16 +14,6 @@ from erk_shared.extraction.claude_code_session_store import (
 class TestFakeClaudeCodeSessionStore:
     """Tests for FakeClaudeCodeSessionStore - Layer 1: Fake Infrastructure Tests."""
 
-    def test_get_current_session_id_returns_configured_value(self) -> None:
-        """Test that get_current_session_id returns the configured value."""
-        store = FakeClaudeCodeSessionStore(current_session_id="abc-123")
-        assert store.get_current_session_id() == "abc-123"
-
-    def test_get_current_session_id_returns_none_when_not_configured(self) -> None:
-        """Test that get_current_session_id returns None by default."""
-        store = FakeClaudeCodeSessionStore()
-        assert store.get_current_session_id() is None
-
     def test_has_project_returns_true_for_existing_project(self) -> None:
         """Test has_project returns True for configured project."""
         project_path = Path("/my/project")
@@ -82,7 +72,6 @@ class TestFakeClaudeCodeSessionStore:
         """Test sessions are sorted newest first."""
         project_path = Path("/my/project")
         store = FakeClaudeCodeSessionStore(
-            current_session_id="session-2",
             projects={
                 project_path: FakeProject(
                     sessions={
@@ -101,7 +90,7 @@ class TestFakeClaudeCodeSessionStore:
             },
         )
 
-        sessions = store.find_sessions(project_path)
+        sessions = store.find_sessions(project_path, current_session_id="session-2")
 
         assert len(sessions) == 2
         assert sessions[0].session_id == "session-2"  # Newer first
@@ -166,7 +155,6 @@ class TestFakeClaudeCodeSessionStore:
         """Test is_current is set correctly based on current_session_id."""
         project_path = Path("/my/project")
         store = FakeClaudeCodeSessionStore(
-            current_session_id="current-one",
             projects={
                 project_path: FakeProject(
                     sessions={
@@ -185,7 +173,7 @@ class TestFakeClaudeCodeSessionStore:
             },
         )
 
-        sessions = store.find_sessions(project_path)
+        sessions = store.find_sessions(project_path, current_session_id="current-one")
 
         current_sessions = [s for s in sessions if s.is_current]
         assert len(current_sessions) == 1

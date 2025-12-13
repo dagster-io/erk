@@ -141,17 +141,13 @@ def create_raw_extraction_plan(
         session_store: SessionStore for session operations
         repo_root: Path to repository root
         cwd: Current working directory (for project directory lookup)
-        current_session_id: Current session ID (None to auto-detect from store)
+        current_session_id: Current session ID (passed explicitly from CLI)
         min_size: Minimum session size in bytes for selection
 
     Returns:
         RawExtractionResult with success status and created issue info
     """
-    # Get current session ID if not provided
-    if current_session_id is None:
-        current_session_id = session_store.get_current_session_id()
-
-    # Generate fallback session ID if still None (e.g., running outside Claude session)
+    # Generate fallback session ID if not provided (e.g., running outside Claude session)
     if current_session_id is None:
         current_session_id = f"extraction-{uuid.uuid4().hex[:8]}"
 

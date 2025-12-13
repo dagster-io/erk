@@ -42,15 +42,6 @@ class ClaudeCodeSessionStore(ABC):
     """
 
     @abstractmethod
-    def get_current_session_id(self) -> str | None:
-        """Get the current active session ID from environment.
-
-        Returns:
-            Session ID string or None if not available
-        """
-        ...
-
-    @abstractmethod
     def has_project(self, project_cwd: Path) -> bool:
         """Check if a Claude Code project exists for the given working directory.
 
@@ -67,6 +58,7 @@ class ClaudeCodeSessionStore(ABC):
         self,
         project_cwd: Path,
         *,
+        current_session_id: str | None = None,
         min_size: int = 0,
         limit: int = 10,
     ) -> list[Session]:
@@ -74,6 +66,7 @@ class ClaudeCodeSessionStore(ABC):
 
         Args:
             project_cwd: Project working directory (used as lookup key)
+            current_session_id: Current session ID (for marking is_current)
             min_size: Minimum session size in bytes
             limit: Maximum sessions to return
 

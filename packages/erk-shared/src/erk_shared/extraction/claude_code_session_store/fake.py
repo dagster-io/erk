@@ -37,24 +37,17 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
     def __init__(
         self,
         *,
-        current_session_id: str | None = None,
         projects: dict[Path, FakeProject] | None = None,
         plans: dict[str, str] | None = None,
     ) -> None:
         """Initialize fake store with test data.
 
         Args:
-            current_session_id: Simulated current session ID
             projects: Map of project_cwd -> FakeProject with session data
             plans: Map of slug -> plan content for fake plan data
         """
-        self._current_session_id = current_session_id
         self._projects = projects or {}
         self._plans = plans or {}
-
-    def get_current_session_id(self) -> str | None:
-        """Return the configured current session ID."""
-        return self._current_session_id
 
     def _find_project_for_path(self, project_cwd: Path) -> Path | None:
         """Find project at or above the given path.
@@ -82,6 +75,7 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
         self,
         project_cwd: Path,
         *,
+        current_session_id: str | None = None,
         min_size: int = 0,
         limit: int = 10,
     ) -> list[Session]:
@@ -113,7 +107,7 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
                     session_id=session_id,
                     size_bytes=data.size_bytes,
                     modified_at=data.modified_at,
-                    is_current=(session_id == self._current_session_id),
+                    is_current=(session_id == current_session_id),
                 )
             )
 

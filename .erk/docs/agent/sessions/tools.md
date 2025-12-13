@@ -69,7 +69,7 @@ erk kit exec erk list-sessions [--limit N] [--min-size BYTES]
 **Fields:**
 
 - `branch_context`: Current branch info and trunk detection
-- `current_session_id`: ID from SESSION_CONTEXT environment variable
+- `current_session_id`: ID passed via `--session-id` CLI option
 - `sessions`: List with `session_id`, `mtime_display`, `size_bytes`, `summary`
 - `project_dir`: Path to session log files
 - `filtered_count`: Number of tiny sessions filtered out (below `--min-size`)

@@ -18,8 +18,14 @@ from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, delete_marker
     type=int,
     help="Minimum session size in bytes for selection (default: 1024)",
 )
+@click.option(
+    "--session-id",
+    default=None,
+    type=str,
+    help="Current session ID (for extraction)",
+)
 @click.pass_obj
-def create_raw(ctx: ErkContext, min_size: int) -> None:
+def create_raw(ctx: ErkContext, min_size: int, session_id: str | None) -> None:
     """Create extraction plan with raw session context.
 
     This command:
@@ -35,9 +41,6 @@ def create_raw(ctx: ErkContext, min_size: int) -> None:
     repo = discover_repo_context(ctx, ctx.cwd)
     repo_root = repo.root
 
-    # Get current session ID from session store
-    current_session_id = ctx.session_store.get_current_session_id()
-
     # Call the orchestrator
     result = create_raw_extraction_plan(
         github_issues=ctx.issues,
@@ -45,7 +48,7 @@ def create_raw(ctx: ErkContext, min_size: int) -> None:
         session_store=ctx.session_store,
         repo_root=repo_root,
         cwd=ctx.cwd,
-        current_session_id=current_session_id,
+        current_session_id=session_id,
         min_size=min_size,
     )
 

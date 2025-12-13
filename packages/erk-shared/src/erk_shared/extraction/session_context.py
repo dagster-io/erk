@@ -35,7 +35,7 @@ def collect_session_context(
     git: Git,
     cwd: Path,
     session_store: ClaudeCodeSessionStore,
-    current_session_id: str | None = None,
+    current_session_id: str | None,
     min_size: int = 1024,
     limit: int = 20,
 ) -> SessionContextResult | None:
@@ -54,7 +54,7 @@ def collect_session_context(
         git: Git interface for branch operations
         cwd: Current working directory (for project directory lookup)
         session_store: SessionStore for session operations
-        current_session_id: Current session ID (None to auto-detect from store)
+        current_session_id: Current session ID (required for session context)
         min_size: Minimum session size in bytes for selection
         limit: Maximum number of sessions to discover
 
@@ -62,14 +62,10 @@ def collect_session_context(
         SessionContextResult with combined XML and metadata,
         or None if:
         - No project exists
-        - No current session ID available
+        - No current session ID provided
         - No sessions discovered
         - All sessions empty after preprocessing
     """
-    # Get current session ID if not provided
-    if current_session_id is None:
-        current_session_id = session_store.get_current_session_id()
-
     if current_session_id is None:
         return None
 
@@ -83,6 +79,7 @@ def collect_session_context(
     # Discover sessions
     sessions = session_store.find_sessions(
         cwd,
+        current_session_id=current_session_id,
         min_size=min_size,
         limit=limit,
     )

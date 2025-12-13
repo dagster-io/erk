@@ -95,7 +95,6 @@ def test_plan_save_to_issue_format() -> None:
     fake_git = FakeGit()
     plan_content = "# Test Plan\n\n- Step 1"
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id=None,
         plans={"format-test": plan_content},
     )
     runner = CliRunner()
@@ -200,7 +199,6 @@ def test_plan_save_to_issue_session_context_captured(tmp_path: Path) -> None:
     )
     plan_content = "# Feature Plan\n\n- Step 1"
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id="test-session-id",
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -219,7 +217,7 @@ def test_plan_save_to_issue_session_context_captured(tmp_path: Path) -> None:
 
     result = runner.invoke(
         plan_save_to_issue,
-        ["--format", "json"],
+        ["--format", "json", "--session-id", "test-session-id"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
@@ -247,13 +245,12 @@ def test_plan_save_to_issue_session_context_captured(tmp_path: Path) -> None:
 
 
 def test_plan_save_to_issue_session_context_skipped_when_none() -> None:
-    """Test session context is skipped when no sessions available."""
+    """Test session context is skipped when no session ID provided."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
     plan_content = "# Feature Plan\n\n- Step 1"
     # Session store with no sessions but has a plan
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id=None,
         plans={"no-session-test": plan_content},
     )
 
@@ -285,7 +282,6 @@ def test_plan_save_to_issue_json_output_includes_session_metadata() -> None:
     fake_git = FakeGit()
     plan_content = "# Feature\n\n- Step 1"
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id=None,
         plans={"metadata-test": plan_content},
     )
 
@@ -325,7 +321,6 @@ def test_plan_save_to_issue_passes_session_id_to_session_store(tmp_path: Path) -
 
     # Session store with the specific session ID and plan
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id=test_session_id,
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -372,7 +367,6 @@ def test_plan_save_to_issue_display_format_shows_session_context(tmp_path: Path)
     session_content = '{"type": "user", "message": {"content": "Hello"}}\n'
     plan_content = "# Feature Plan\n\n- Step 1"
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id="test-session-id",
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -391,7 +385,7 @@ def test_plan_save_to_issue_display_format_shows_session_context(tmp_path: Path)
 
     result = runner.invoke(
         plan_save_to_issue,
-        ["--format", "display"],
+        ["--format", "display", "--session-id", "test-session-id"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
@@ -406,25 +400,23 @@ def test_plan_save_to_issue_display_format_shows_session_context(tmp_path: Path)
     assert "chunks" in result.output
 
 
-def test_plan_save_to_issue_uses_session_store_for_current_session_id(tmp_path: Path) -> None:
-    """Test that session ID is retrieved from session store when not provided via flag."""
+def test_plan_save_to_issue_no_session_context_without_session_id(tmp_path: Path) -> None:
+    """Test that no session context is captured when --session-id is not provided."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
         current_branches={tmp_path: "feature"},
         trunk_branches={tmp_path: "main"},
     )
 
-    store_session_id = "store-based-session-id"
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
     plan_content = "# Feature Plan\n\n- Step 1"
 
-    # Session store configured with current_session_id and plan
+    # Session store has sessions but no session ID is passed via CLI
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id=store_session_id,
         projects={
             tmp_path: FakeProject(
                 sessions={
-                    store_session_id: FakeSessionData(
+                    "some-session-id": FakeSessionData(
                         content=session_content,
                         size_bytes=2000,
                         modified_at=1234567890.0,
@@ -452,16 +444,16 @@ def test_plan_save_to_issue_uses_session_store_for_current_session_id(tmp_path: 
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    # The session from store should be captured
-    assert store_session_id in output["session_ids"]
+    # Without --session-id, no session context is captured
+    assert output["session_ids"] == []
+    assert output["session_context_chunks"] == 0
 
 
-def test_plan_save_to_issue_flag_overrides_session_store(tmp_path: Path) -> None:
-    """Test --session-id flag takes priority over session store's current_session_id.
+def test_plan_save_to_issue_session_id_flag_enables_context_capture(tmp_path: Path) -> None:
+    """Test --session-id flag enables session context capture.
 
-    When --session-id is provided, it should be used as effective_session_id,
-    overriding session_store.get_current_session_id(). This test verifies that
-    the flag session is captured even when the store has a different current session.
+    When --session-id is provided, it should be used to find and capture
+    session context from the session store.
     """
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
@@ -469,20 +461,15 @@ def test_plan_save_to_issue_flag_overrides_session_store(tmp_path: Path) -> None
         trunk_branches={tmp_path: "main"},
     )
 
-    store_session_id = "store-based-session-id"
     flag_session_id = "flag-based-session-id"
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
     plan_content = "# Feature Plan\n\n- Step 1"
 
-    # Session store has current_session_id set to store_session_id,
-    # but ONLY the flag_session_id session exists in the project.
-    # This tests that the flag is used to look up sessions.
+    # Session store has the session that matches the flag
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id=store_session_id,  # Store points to different session
         projects={
             tmp_path: FakeProject(
                 sessions={
-                    # Only flag session exists - if store session was used, no sessions found
                     flag_session_id: FakeSessionData(
                         content=session_content,
                         size_bytes=2000,
@@ -491,7 +478,7 @@ def test_plan_save_to_issue_flag_overrides_session_store(tmp_path: Path) -> None
                 }
             )
         },
-        plans={"override-session-test": plan_content},
+        plans={"session-flag-test": plan_content},
     )
 
     runner = CliRunner()
@@ -522,7 +509,6 @@ def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
     test_session_id = "marker-test-session-id"
     plan_content = "# Feature Plan\n\n- Step 1"
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id=test_session_id,
         plans={"marker-test": plan_content},
     )
     runner = CliRunner()
@@ -546,13 +532,12 @@ def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
 
 
 def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None:
-    """Test marker file is not created when no session ID is available."""
+    """Test marker file is not created when no session ID is provided."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
     plan_content = "# Feature Plan\n\n- Step 1"
-    # Session store with no current session ID but has plan
+    # Session store has plan but no session ID will be passed
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id=None,
         plans={"no-marker-test": plan_content},
     )
     runner = CliRunner()

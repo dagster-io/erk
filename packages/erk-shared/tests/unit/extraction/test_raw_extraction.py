@@ -24,7 +24,7 @@ class TestCreateRawExtractionPlan:
         )
         github_issues = FakeGitHubIssues()
         # Session store with no projects
-        session_store = FakeClaudeCodeSessionStore(current_session_id="abc123")
+        session_store = FakeClaudeCodeSessionStore()
 
         result = create_raw_extraction_plan(
             github_issues=github_issues,
@@ -47,7 +47,6 @@ class TestCreateRawExtractionPlan:
         github_issues = FakeGitHubIssues()
         # Project exists but has no sessions
         session_store = FakeClaudeCodeSessionStore(
-            current_session_id="abc123",
             projects={tmp_path: FakeProject(sessions={})},
         )
 
@@ -73,7 +72,6 @@ class TestCreateRawExtractionPlan:
 
         # Session exists but won't be selected (different session ID, on trunk)
         session_store = FakeClaudeCodeSessionStore(
-            current_session_id="abc123",  # Current session ID
             projects={
                 tmp_path: FakeProject(
                     sessions={
@@ -114,7 +112,6 @@ class TestCreateRawExtractionPlan:
             {"type": "user", "message": {"content": "Thanks"}},
         ]
         session_store = FakeClaudeCodeSessionStore(
-            current_session_id="abc123",
             projects={
                 tmp_path: FakeProject(
                     sessions={
@@ -155,7 +152,6 @@ class TestCreateRawExtractionPlan:
             {"type": "user", "message": {"content": "Thank you"}},
         ]
         session_store = FakeClaudeCodeSessionStore(
-            current_session_id="abc123",
             projects={
                 tmp_path: FakeProject(
                     sessions={
@@ -210,7 +206,6 @@ class TestCreateRawExtractionPlan:
             {"type": "user", "message": {"content": "Thanks"}},
         ]
         session_store = FakeClaudeCodeSessionStore(
-            current_session_id="abc123",
             projects={
                 tmp_path: FakeProject(
                     sessions={
@@ -256,7 +251,6 @@ class TestCreateRawExtractionPlan:
             {"type": "user", "message": {"content": "Thanks"}},
         ]
         session_store = FakeClaudeCodeSessionStore(
-            current_session_id="abc123",
             projects={
                 tmp_path: FakeProject(
                     sessions={
@@ -301,7 +295,6 @@ class TestCreateRawExtractionPlan:
             {"type": "user", "message": {"content": "Thanks"}},
         ]
         session_store = FakeClaudeCodeSessionStore(
-            current_session_id="abc123",
             projects={
                 tmp_path: FakeProject(
                     sessions={

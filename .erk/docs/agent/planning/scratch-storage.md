@@ -63,11 +63,7 @@ file_path = write_scratch_file(
 
 ## Session ID
 
-Extract from the `SESSION_CONTEXT` hook reminder:
-
-```
-SESSION_CONTEXT: session_id=26eff64a-9edb-44cb-a5af-b8e0f1c7aab5
-```
+Session IDs are passed explicitly to CLI commands via `--session-id` options. The agent extracts the session ID from hook reminders (e.g., `📌 session: <id>`) and passes it to CLI commands.
 
 ## Path Construction
 

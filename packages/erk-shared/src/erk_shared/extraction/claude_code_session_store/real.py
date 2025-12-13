@@ -1,6 +1,5 @@
 """Production implementation of SessionStore using local filesystem."""
 
-import os
 from pathlib import Path
 
 from erk_shared.extraction.claude_code_session_store.abc import (
@@ -15,19 +14,6 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
 
     Reads sessions from ~/.claude/projects/ directory structure.
     """
-
-    def get_current_session_id(self) -> str | None:
-        """Extract current session ID from SESSION_CONTEXT environment variable.
-
-        The SESSION_CONTEXT env var contains: session_id=<uuid>
-
-        Returns:
-            Session ID string or None if not found
-        """
-        ctx = os.environ.get("SESSION_CONTEXT", "")
-        if "session_id=" in ctx:
-            return ctx.split("session_id=")[1].strip()
-        return None
 
     def _get_project_dir(self, project_cwd: Path) -> Path | None:
         """Internal: Map cwd to Claude Code project directory.
@@ -70,6 +56,7 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
         self,
         project_cwd: Path,
         *,
+        current_session_id: str | None = None,
         min_size: int = 0,
         limit: int = 10,
     ) -> list[Session]:
@@ -80,8 +67,6 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
         project_dir = self._get_project_dir(project_cwd)
         if project_dir is None:
             return []
-
-        current_session_id = self.get_current_session_id()
 
         # Collect session files (exclude agent logs)
         session_files: list[tuple[str, float, int]] = []

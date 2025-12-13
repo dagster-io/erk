@@ -72,8 +72,16 @@ def is_extraction_origin_pr(ctx: ErkContext, repo_root: Path, pr_number: int) ->
     is_flag=True,
     help="Navigate to child branch instead of trunk after landing",
 )
+@click.option(
+    "--session-id",
+    default=None,
+    type=str,
+    help="Current session ID (for extraction)",
+)
 @click.pass_obj
-def pr_land(ctx: ErkContext, script: bool, insights: bool, up_flag: bool) -> None:
+def pr_land(
+    ctx: ErkContext, script: bool, insights: bool, up_flag: bool, session_id: str | None
+) -> None:
     """Merge PR, run extraction, and delete worktree.
 
     Merges the current PR (must be one level from trunk), automatically runs
@@ -176,13 +184,10 @@ def pr_land(ctx: ErkContext, script: bool, insights: bool, up_flag: bool) -> Non
     # Step 2: Run extraction (only if --insights and not extraction origin)
     extraction_issue_url: str | None = None
     if insights and not is_extraction_origin:
-        # Get current session ID from session store
-        current_session_id = ctx.session_store.get_current_session_id()
-
         # Show status line before extraction
         user_output(
             f"  Running: create_raw_extraction_plan("
-            f"repo_root={repo.root}, session_id={current_session_id})"
+            f"repo_root={repo.root}, session_id={session_id})"
         )
 
         # Run extraction
@@ -192,7 +197,7 @@ def pr_land(ctx: ErkContext, script: bool, insights: bool, up_flag: bool) -> Non
             session_store=ctx.session_store,
             repo_root=repo.root,
             cwd=ctx.cwd,
-            current_session_id=current_session_id,
+            current_session_id=session_id,
         )
 
         if extraction_result.success and extraction_result.issue_number is not None:

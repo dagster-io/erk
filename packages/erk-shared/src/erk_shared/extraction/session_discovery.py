@@ -4,25 +4,10 @@ This module provides functions to discover Claude Code sessions
 in a project directory.
 """
 
-import os
 from pathlib import Path
 
 from erk_shared.extraction.types import BranchContext, SessionInfo
 from erk_shared.git.abc import Git
-
-
-def get_current_session_id() -> str | None:
-    """Extract current session ID from SESSION_CONTEXT environment variable.
-
-    The SESSION_CONTEXT env var contains: session_id=<uuid>
-
-    Returns:
-        Session ID string or None if not found
-    """
-    ctx = os.environ.get("SESSION_CONTEXT", "")
-    if "session_id=" in ctx:
-        return ctx.split("session_id=")[1].strip()
-    return None
 
 
 def get_branch_context(git: Git, cwd: Path) -> BranchContext:

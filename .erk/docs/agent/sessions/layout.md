@@ -268,17 +268,22 @@ The slug field enables session-scoped plan extraction:
 - UUID-like strings (format not strictly enforced)
 - Examples: `abc123-def456`, `2024-11-23-session`
 - Used as filename (without `.jsonl` extension)
-- Injected into agent context via `SESSION_CONTEXT` environment variable
 
-**Environment Variable Format:**
+**How Session ID is Obtained:**
+
+Session IDs are passed explicitly to CLI commands via `--session-id` options. The typical flow:
+
+1. Hook receives session context via stdin JSON from Claude Code
+2. Hook outputs `📌 session: <id>` reminder to conversation
+3. Agent extracts session ID from reminder text
+4. Agent passes session ID as explicit CLI parameter
+
+**CLI Examples:**
 
 ```bash
-SESSION_CONTEXT="session_id=abc123-def456"
+erk kit exec erk list-sessions --session-id abc123-def456
+erk plan create-raw --session-id abc123-def456
 ```
-
-**Extraction:** The session ID appears after `session_id=` in the environment variable value. Parse by splitting on this prefix.
-
-See `erk_shared/extraction/session_discovery.py:get_current_session_id()` for the canonical implementation.
 
 ### Agent ID Format
 
@@ -601,11 +606,9 @@ Session IDs are the filenames (stems) of `.jsonl` files that don't start with `a
 
 **CLI:** Use `erk kit exec erk list-sessions` to list sessions for the current project.
 
-### Get Session ID from Environment
+### Get Session ID
 
-The session ID is available in the `SESSION_CONTEXT` environment variable, formatted as `session_id=<uuid>`.
-
-**Implementation:** See `get_current_session_id()` in `erk_shared/extraction/session_discovery.py`
+Session IDs are passed explicitly to CLI commands via `--session-id` options. The agent extracts the session ID from hook reminders (e.g., `📌 session: <id>`) and passes it to CLI commands.
 
 ### Parse Session Log
 

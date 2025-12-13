@@ -84,8 +84,8 @@ def plan_save_to_issue(
     cwd = require_cwd(ctx)
     session_store = require_session_store(ctx)
 
-    # Resolve session ID: --session-id flag > session store > None
-    effective_session_id = session_id or session_store.get_current_session_id()
+    # session_id comes from --session-id CLI option (or None if not provided)
+    effective_session_id = session_id
 
     # Step 1: Extract plan (priority: plan_file > session_id > most recent)
     if plan_file:

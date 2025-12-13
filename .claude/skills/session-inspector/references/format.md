@@ -193,26 +193,19 @@ UUID-like strings (format not strictly enforced):
 
 - Examples: `abc123-def456`, `2024-11-23-session`
 
-### Environment Variable
+### How Session ID is Obtained
+
+Session IDs are passed explicitly to CLI commands via `--session-id` options. The typical flow:
+
+1. Hook receives session context via stdin JSON from Claude Code
+2. Hook outputs `📌 session: <id>` reminder to conversation
+3. Agent extracts session ID from reminder text
+4. Agent passes session ID as explicit CLI parameter
+
+**Example:**
 
 ```bash
-SESSION_CONTEXT="session_id=abc123-def456"
-```
-
-### Extraction
-
-```python
-import os
-
-def get_current_session_id() -> str | None:
-    session_context = os.environ.get("SESSION_CONTEXT")
-    if not session_context:
-        return None
-    if "session_id=" in session_context:
-        parts = session_context.split("session_id=")
-        if len(parts) == 2:
-            return parts[1].strip()
-    return None
+erk kit exec erk list-sessions --session-id abc123-def456
 ```
 
 ## Agent ID

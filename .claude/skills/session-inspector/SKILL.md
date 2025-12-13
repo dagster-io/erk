@@ -147,18 +147,17 @@ Example: `/Users/foo/code/myapp` → `-Users-foo-code-myapp`
 
 ## Session ID
 
-**Environment variable:** `SESSION_CONTEXT="session_id=<uuid>"`
+Session IDs are passed explicitly to CLI commands via `--session-id` options. The typical flow:
 
-```python
-import os
+1. Hook receives session context via stdin JSON from Claude Code
+2. Hook outputs `📌 session: <id>` reminder to conversation
+3. Agent extracts session ID from reminder text
+4. Agent passes session ID as explicit CLI parameter
 
-def get_current_session_id() -> str | None:
-    session_context = os.environ.get("SESSION_CONTEXT", "")
-    if "session_id=" in session_context:
-        parts = session_context.split("session_id=")
-        if len(parts) == 2:
-            return parts[1].strip()
-    return None
+**Example:**
+
+```bash
+erk kit exec erk list-sessions --session-id abc123-def456
 ```
 
 ## Two-Stage Extraction Pipeline

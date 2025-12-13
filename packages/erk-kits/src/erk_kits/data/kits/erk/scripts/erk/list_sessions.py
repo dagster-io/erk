@@ -31,7 +31,6 @@ Examples:
 """
 
 import json
-import os
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -104,20 +103,6 @@ def get_branch_context(git: Git, cwd: Path) -> BranchContext:
         trunk_branch=trunk_branch,
         is_on_trunk=current_branch == trunk_branch,
     )
-
-
-def get_current_session_id() -> str | None:
-    """Extract current session ID from SESSION_CONTEXT environment variable.
-
-    The SESSION_CONTEXT env var contains: session_id=<uuid>
-
-    Returns:
-        Session ID string or None if not found
-    """
-    ctx = os.environ.get("SESSION_CONTEXT", "")
-    if "session_id=" in ctx:
-        return ctx.split("session_id=")[1].strip()
-    return None
 
 
 def format_relative_time(mtime: float) -> str:
@@ -252,7 +237,9 @@ def _list_sessions_from_store(
         return [], 0
 
     # Get all sessions first to count filtered
-    all_sessions = session_store.find_sessions(cwd, min_size=0, limit=1000)
+    all_sessions = session_store.find_sessions(
+        cwd, current_session_id=current_session_id, min_size=0, limit=1000
+    )
 
     # Filter by size
     filtered_sessions: list[Session]
@@ -306,8 +293,16 @@ def _list_sessions_from_store(
     type=int,
     help="Minimum session size in bytes (filters out tiny sessions)",
 )
+@click.option(
+    "--session-id",
+    default=None,
+    type=str,
+    help="Current session ID (for marking the current session)",
+)
 @click.pass_context
-def list_sessions(ctx: click.Context, limit: int, min_size: int) -> None:
+def list_sessions(
+    ctx: click.Context, limit: int, min_size: int, session_id: str | None
+) -> None:
     """List Claude Code sessions with metadata for the current project.
 
     Discovers sessions in the project directory, extracts metadata
@@ -330,12 +325,9 @@ def list_sessions(ctx: click.Context, limit: int, min_size: int) -> None:
     # Get branch context
     branch_context = get_branch_context(git, cwd)
 
-    # Get current session ID from environment
-    current_session_id = get_current_session_id()
-
     # List sessions from store
     sessions, filtered_count = _list_sessions_from_store(
-        session_store, cwd, current_session_id, limit=limit, min_size=min_size
+        session_store, cwd, session_id, limit=limit, min_size=min_size
     )
 
     # Build result
@@ -346,7 +338,7 @@ def list_sessions(ctx: click.Context, limit: int, min_size: int) -> None:
             "trunk_branch": branch_context.trunk_branch,
             "is_on_trunk": branch_context.is_on_trunk,
         },
-        current_session_id=current_session_id,
+        current_session_id=session_id,
         sessions=[asdict(s) for s in sessions],
         project_dir="claude-code-project",  # Abstract - don't expose filesystem paths
         filtered_count=filtered_count,

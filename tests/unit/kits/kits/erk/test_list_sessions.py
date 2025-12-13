@@ -5,10 +5,8 @@ and summary extraction using FakeClaudeCodeSessionStore.
 """
 
 import json
-import os
 import time
 from pathlib import Path
-from unittest.mock import patch
 
 from click.testing import CliRunner
 
@@ -18,7 +16,6 @@ from erk_kits.data.kits.erk.scripts.erk.list_sessions import (
     format_display_time,
     format_relative_time,
     get_branch_context,
-    get_current_session_id,
     list_sessions,
 )
 from erk_shared.context import ErkContext
@@ -119,40 +116,7 @@ def test_format_display_time_format() -> None:
 
 
 # ============================================================================
-# 2. Session ID Extraction Tests (4 tests)
-# ============================================================================
-
-
-def test_get_current_session_id_from_env() -> None:
-    """Test extraction of session ID from SESSION_CONTEXT env var."""
-    with patch.dict(os.environ, {"SESSION_CONTEXT": "session_id=abc123-def456"}):
-        assert get_current_session_id() == "abc123-def456"
-
-
-def test_get_current_session_id_no_env() -> None:
-    """Test that None is returned when env var not set."""
-    with patch.dict(os.environ, {}, clear=True):
-        # Remove SESSION_CONTEXT if it exists
-        env_copy = dict(os.environ)
-        env_copy.pop("SESSION_CONTEXT", None)
-        with patch.dict(os.environ, env_copy, clear=True):
-            assert get_current_session_id() is None
-
-
-def test_get_current_session_id_empty_env() -> None:
-    """Test that None is returned when env var is empty."""
-    with patch.dict(os.environ, {"SESSION_CONTEXT": ""}):
-        assert get_current_session_id() is None
-
-
-def test_get_current_session_id_invalid_format() -> None:
-    """Test that None is returned when format is invalid."""
-    with patch.dict(os.environ, {"SESSION_CONTEXT": "not_a_session_id"}):
-        assert get_current_session_id() is None
-
-
-# ============================================================================
-# 3. Summary Extraction Tests (8 tests)
+# 2. Summary Extraction Tests (8 tests)
 # ============================================================================
 
 
@@ -310,7 +274,6 @@ def test_list_sessions_respects_limit(tmp_path: Path) -> None:
 def test_list_sessions_marks_current(tmp_path: Path) -> None:
     """Test that current session is marked correctly."""
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id="current123",
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -587,13 +550,12 @@ def test_cli_limit_option(tmp_path: Path) -> None:
 
 
 def test_cli_marks_current_session(tmp_path: Path) -> None:
-    """Test that CLI marks current session from SESSION_CONTEXT env."""
+    """Test that CLI marks current session from --session-id option."""
     git = FakeGit(
         current_branches={tmp_path: "feature-branch"},
         trunk_branches={tmp_path: "main"},
     )
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id="current-session",
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -613,8 +575,10 @@ def test_cli_marks_current_session(tmp_path: Path) -> None:
     )
     context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
 
-    runner = CliRunner(env={"SESSION_CONTEXT": "session_id=current-session"})
-    result = runner.invoke(list_sessions, [], obj=context)
+    runner = CliRunner()
+    result = runner.invoke(
+        list_sessions, ["--session-id", "current-session"], obj=context
+    )
 
     assert result.exit_code == 0
     output = json.loads(result.output)

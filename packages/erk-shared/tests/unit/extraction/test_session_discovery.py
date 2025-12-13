@@ -1,6 +1,5 @@
 """Tests for session discovery module."""
 
-import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -9,33 +8,8 @@ from erk_shared.extraction.session_discovery import (
     encode_path_to_project_folder,
     find_project_dir,
     get_branch_context,
-    get_current_session_id,
 )
 from erk_shared.git.fake import FakeGit
-
-
-class TestGetCurrentSessionId:
-    """Tests for get_current_session_id function."""
-
-    def test_extracts_session_id_from_env(self) -> None:
-        """Session ID is extracted from SESSION_CONTEXT env var."""
-        with patch.dict(os.environ, {"SESSION_CONTEXT": "session_id=abc123-def456"}):
-            result = get_current_session_id()
-            assert result == "abc123-def456"
-
-    def test_returns_none_when_not_set(self) -> None:
-        """Returns None when SESSION_CONTEXT is not set."""
-        with patch.dict(os.environ, {}, clear=True):
-            # Ensure SESSION_CONTEXT is not set
-            os.environ.pop("SESSION_CONTEXT", None)
-            result = get_current_session_id()
-            assert result is None
-
-    def test_returns_none_when_invalid_format(self) -> None:
-        """Returns None when SESSION_CONTEXT has invalid format."""
-        with patch.dict(os.environ, {"SESSION_CONTEXT": "invalid_format"}):
-            result = get_current_session_id()
-            assert result is None
 
 
 class TestGetBranchContext:

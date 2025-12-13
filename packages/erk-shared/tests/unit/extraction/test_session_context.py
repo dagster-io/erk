@@ -27,7 +27,6 @@ def test_collect_session_context_success(tmp_path: Path) -> None:
         '{"type": "assistant", "message": {"content": [{"type": "text", "text": "World"}]}}\n'
     )
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id="test-session-id",
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -45,6 +44,7 @@ def test_collect_session_context_success(tmp_path: Path) -> None:
         git=fake_git,
         cwd=tmp_path,
         session_store=fake_store,
+        current_session_id="test-session-id",
     )
 
     assert result is not None
@@ -55,14 +55,15 @@ def test_collect_session_context_success(tmp_path: Path) -> None:
 
 
 def test_collect_session_context_no_session_id() -> None:
-    """Test returns None when no session ID available."""
+    """Test returns None when no session ID provided."""
     fake_git = FakeGit()
-    fake_store = FakeClaudeCodeSessionStore(current_session_id=None)
+    fake_store = FakeClaudeCodeSessionStore()
 
     result = collect_session_context(
         git=fake_git,
         cwd=Path("/fake"),
         session_store=fake_store,
+        current_session_id=None,
     )
 
     assert result is None
@@ -72,12 +73,13 @@ def test_collect_session_context_no_project(tmp_path: Path) -> None:
     """Test returns None when no project exists for cwd."""
     fake_git = FakeGit()
     # Session store has no projects
-    fake_store = FakeClaudeCodeSessionStore(current_session_id="test-session-id")
+    fake_store = FakeClaudeCodeSessionStore()
 
     result = collect_session_context(
         git=fake_git,
         cwd=tmp_path,
         session_store=fake_store,
+        current_session_id="test-session-id",
     )
 
     assert result is None
@@ -88,7 +90,6 @@ def test_collect_session_context_no_sessions(tmp_path: Path) -> None:
     fake_git = FakeGit()
     # Project exists but has no sessions
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id="test-session-id",
         projects={tmp_path: FakeProject(sessions={})},
     )
 
@@ -96,6 +97,7 @@ def test_collect_session_context_no_sessions(tmp_path: Path) -> None:
         git=fake_git,
         cwd=tmp_path,
         session_store=fake_store,
+        current_session_id="test-session-id",
     )
 
     assert result is None
@@ -106,7 +108,6 @@ def test_collect_session_context_empty_after_preprocessing(tmp_path: Path) -> No
     fake_git = FakeGit()
     # Empty session content will result in None after preprocessing
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id="empty-session",
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -124,6 +125,7 @@ def test_collect_session_context_empty_after_preprocessing(tmp_path: Path) -> No
         git=fake_git,
         cwd=tmp_path,
         session_store=fake_store,
+        current_session_id="empty-session",
         min_size=0,  # Don't filter by size
     )
 
@@ -141,7 +143,6 @@ def test_collect_session_context_multiple_sessions(tmp_path: Path) -> None:
     session2_content = '{"type": "user", "message": {"content": "Second"}}\n'
 
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id="session-2",
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -164,6 +165,7 @@ def test_collect_session_context_multiple_sessions(tmp_path: Path) -> None:
         git=fake_git,
         cwd=tmp_path,
         session_store=fake_store,
+        current_session_id="session-2",
         min_size=0,  # Don't filter by size
     )
 
@@ -176,15 +178,12 @@ def test_collect_session_context_multiple_sessions(tmp_path: Path) -> None:
 
 
 def test_collect_session_context_uses_provided_session_id(tmp_path: Path) -> None:
-    """Test that provided session_id overrides get_current_session_id() for early return.
+    """Test that provided session_id is required for session context collection.
 
-    Note: The current_session_id parameter is used for:
-    1. Early return when no session ID available (bypasses store's get_current_session_id())
+    The current_session_id parameter is used for:
+    1. Early return when not provided (None)
     2. Passing to auto_select_sessions
-
-    The is_current flag on sessions is still determined by the store's
-    get_current_session_id() during find_sessions(). This test verifies
-    the early return bypass behavior.
+    3. Marking is_current on sessions in find_sessions()
     """
     fake_git = FakeGit(
         current_branches={tmp_path: "feature"},
@@ -192,9 +191,7 @@ def test_collect_session_context_uses_provided_session_id(tmp_path: Path) -> Non
     )
 
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
-    # Store returns None for current_session_id - would normally cause early return
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id=None,  # No current session ID from store
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -208,16 +205,17 @@ def test_collect_session_context_uses_provided_session_id(tmp_path: Path) -> Non
         },
     )
 
-    # Without provided session_id, would return None due to missing current_session_id
+    # Without provided session_id, returns None
     result_without = collect_session_context(
         git=fake_git,
         cwd=tmp_path,
         session_store=fake_store,
+        current_session_id=None,
         min_size=0,
     )
     assert result_without is None  # Early return when no session ID
 
-    # With provided session_id, should proceed despite store returning None
+    # With provided session_id, should proceed
     result_with = collect_session_context(
         git=fake_git,
         cwd=tmp_path,
@@ -227,7 +225,7 @@ def test_collect_session_context_uses_provided_session_id(tmp_path: Path) -> Non
     )
 
     assert result_with is not None
-    # Session should be found (selection uses all substantial sessions when no current)
+    # Session should be found
     assert "provided-session" in result_with.session_ids
 
 
@@ -242,7 +240,6 @@ def test_collect_session_context_with_agent_logs(tmp_path: Path) -> None:
     agent_content = '{"type": "user", "message": {"content": "Agent task"}}\n'
 
     fake_store = FakeClaudeCodeSessionStore(
-        current_session_id="test-session",
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -261,6 +258,7 @@ def test_collect_session_context_with_agent_logs(tmp_path: Path) -> None:
         git=fake_git,
         cwd=tmp_path,
         session_store=fake_store,
+        current_session_id="test-session",
         min_size=0,
     )
 

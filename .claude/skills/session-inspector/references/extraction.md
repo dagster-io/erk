@@ -86,19 +86,6 @@ class RawExtractionResult:
 
 ## Session Discovery
 
-### get_current_session_id
-
-```python
-from erk_shared.extraction.session_discovery import get_current_session_id
-
-def get_current_session_id() -> str | None:
-    """Extract current session ID from SESSION_CONTEXT environment variable.
-
-    Returns:
-        Session ID string or None if not found.
-    """
-```
-
 ### get_branch_context
 
 ```python
@@ -365,15 +352,16 @@ from erk_shared.extraction.session_context import collect_session_context
 def collect_session_context(
     git: Git,
     cwd: Path,
-    current_session_id: str | None = None,
+    session_store: ClaudeCodeSessionStore,
+    current_session_id: str | None,
     min_size: int = 1024,
     limit: int = 20
 ) -> SessionContextResult | None:
     """Main orchestrator - combines discovery, selection, and preprocessing.
 
     Workflow:
-    1. Get current session ID (auto-detect if not provided)
-    2. Find project directory
+    1. Check current_session_id is provided (returns None if not)
+    2. Find project directory via session_store
     3. Get branch context
     4. Discover available sessions
     5. Auto-select based on branch context
@@ -383,15 +371,16 @@ def collect_session_context(
     Args:
         git: Git interface (from ErkContext)
         cwd: Current working directory
-        current_session_id: Override auto-detection
+        session_store: Session store for project lookup
+        current_session_id: Required session ID (passed explicitly via CLI)
         min_size: Minimum session size for discovery
         limit: Maximum sessions to discover
 
     Returns:
         SessionContextResult with combined_xml, session_ids, branch_context.
         Returns None if:
+        - No current_session_id provided
         - No project directory found
-        - No current session ID available
         - No sessions discovered
         - All sessions empty after preprocessing
     """
@@ -595,13 +584,12 @@ def cleanup_stale_scratch(
 ```python
 from pathlib import Path
 from erk_shared.extraction.session_discovery import (
-    get_current_session_id,
     find_project_dir,
     discover_sessions,
 )
 
-# Get current session
-session_id = get_current_session_id()
+# Session ID is passed explicitly via CLI --session-id option
+session_id = "abc123-def456"  # From CLI argument
 
 # Find project directory
 project_dir = find_project_dir(Path.cwd())
@@ -629,10 +617,15 @@ from pathlib import Path
 from erk_shared.extraction.session_context import collect_session_context
 from erk_shared.github.metadata import render_session_content_blocks
 
+# Session ID is passed explicitly via CLI --session-id option
+session_id = "abc123-def456"  # From CLI argument
+
 # Assumes ctx is an ErkContext
 result = collect_session_context(
     git=ctx.git,
     cwd=ctx.cwd,
+    session_store=ctx.session_store,
+    current_session_id=session_id,
     min_size=1024
 )
 

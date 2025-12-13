@@ -67,7 +67,7 @@ Scratch files should always be scoped to session ID at `.erk/scratch/sessions/<s
 
 Key implementation details:
 
-- Get session ID from `SESSION_CONTEXT` environment variable
+- Session ID is passed explicitly via CLI `--session-id` options
 - Create directory at `repo_root / ".erk" / "scratch" / "sessions" / session_id`
 - Files stored here are automatically session-scoped
 
