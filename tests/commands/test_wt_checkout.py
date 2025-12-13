@@ -1,4 +1,4 @@
-"""Tests for erk goto command."""
+"""Tests for erk wt checkout command (and co alias)."""
 
 from pathlib import Path
 
@@ -10,8 +10,8 @@ from erk_shared.git.fake import FakeGit
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
-def test_goto_named_worktree() -> None:
-    """Test navigating to an existing worktree by name."""
+def test_checkout_named_worktree() -> None:
+    """Test navigating to an existing worktree by name using 'co' alias."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         # Set up worktrees: root on main, feature-work on feature-1
@@ -31,10 +31,10 @@ def test_goto_named_worktree() -> None:
 
         test_ctx = env.build_context(git=git_ops)
 
-        # Act: Navigate to feature-work worktree
+        # Act: Navigate to feature-work worktree using 'co' alias
         result = runner.invoke(
             cli,
-            ["wt", "goto", "feature-work", "--script"],
+            ["wt", "co", "feature-work", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -51,7 +51,7 @@ def test_goto_named_worktree() -> None:
         assert str(worktree_path) in script_content
 
 
-def test_goto_root() -> None:
+def test_checkout_root() -> None:
     """Test navigating to root worktree using 'root' keyword."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -75,7 +75,7 @@ def test_goto_root() -> None:
         # Act: Navigate to root using special keyword
         result = runner.invoke(
             cli,
-            ["wt", "goto", "root", "--script"],
+            ["wt", "co", "root", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -92,7 +92,7 @@ def test_goto_root() -> None:
         assert str(env.cwd) in script_content
 
 
-def test_goto_nonexistent_worktree() -> None:
+def test_checkout_nonexistent_worktree() -> None:
     """Test error when worktree doesn't exist."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -113,7 +113,7 @@ def test_goto_nonexistent_worktree() -> None:
         # Act: Try to navigate to non-existent worktree
         result = runner.invoke(
             cli,
-            ["wt", "goto", "nonexistent"],
+            ["wt", "co", "nonexistent"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -128,7 +128,7 @@ def test_goto_nonexistent_worktree() -> None:
         assert "'root'" in result.output
 
 
-def test_goto_shows_branch_info() -> None:
+def test_checkout_shows_branch_info() -> None:
     """Test that output includes branch name in non-script mode."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -153,7 +153,7 @@ def test_goto_shows_branch_info() -> None:
         # (but shell integration not detected, so will show manual instructions)
         result = runner.invoke(
             cli,
-            ["wt", "goto", "feature-work"],
+            ["wt", "co", "feature-work"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -166,7 +166,7 @@ def test_goto_shows_branch_info() -> None:
         assert "feature-1" in result.output
 
 
-def test_goto_script_mode() -> None:
+def test_checkout_script_mode() -> None:
     """Test that --script flag generates activation script."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -190,7 +190,7 @@ def test_goto_script_mode() -> None:
         # Act: Navigate with --script flag
         result = runner.invoke(
             cli,
-            ["wt", "goto", "my-feature", "--script"],
+            ["wt", "checkout", "my-feature", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -209,7 +209,7 @@ def test_goto_script_mode() -> None:
         assert str(worktree_path) in script_content
 
 
-def test_goto_branch_name_hint() -> None:
+def test_checkout_branch_name_hint() -> None:
     """Test that providing a branch-like name shows helpful hint."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -230,7 +230,7 @@ def test_goto_branch_name_hint() -> None:
         # Act: Try to navigate using a branch-like name (contains '/')
         result = runner.invoke(
             cli,
-            ["wt", "goto", "feature/branch-name"],
+            ["wt", "co", "feature/branch-name"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -242,3 +242,5 @@ def test_goto_branch_name_hint() -> None:
         assert "Error:" in result.output
         assert "Hint:" in result.output
         assert "erk br co" in result.output
+
+

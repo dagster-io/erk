@@ -40,7 +40,7 @@ def init_project(ctx: ErkContext) -> None:
     project context, erk will:
 
     - Record the project path in worktrees.toml
-    - Navigate to the project subdirectory on `erk goto`
+    - Navigate to the project subdirectory on `erk wt co`
     - Merge project-level config with repo-level config
     - Run project-specific post_create commands
 

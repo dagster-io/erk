@@ -81,7 +81,8 @@ def test_compound_commands_have_all_expected_entries() -> None:
     """
     expected_compound_commands = [
         "wt create",
-        "wt goto",
+        "wt checkout",
+        "wt co",  # alias for wt checkout
         "stack consolidate",
         "pr land",
         "pr checkout",
@@ -110,7 +111,6 @@ def test_legacy_aliases_registered() -> None:
     """Verify legacy top-level aliases for backward compatibility."""
     expected_aliases = [
         "create",
-        "goto",
         "consolidate",
     ]
 

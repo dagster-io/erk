@@ -37,11 +37,11 @@ SHELL_INTEGRATION_COMMANDS: Final[dict[str, list[str]]] = {
     "pr co": ["pr", "checkout"],  # Alias for pr checkout
     # Legacy top-level aliases (map to actual CLI paths)
     "create": ["wt", "create"],
-    "goto": ["wt", "goto"],
     "consolidate": ["stack", "consolidate"],
     # Subcommands under wt
     "wt create": ["wt", "create"],
-    "wt goto": ["wt", "goto"],
+    "wt checkout": ["wt", "checkout"],
+    "wt co": ["wt", "checkout"],  # Alias for wt checkout
     # Subcommands under stack
     "stack consolidate": ["stack", "consolidate"],
     # Subcommands under branch
