@@ -4,6 +4,7 @@ import click
 
 from erk.cli.alias import alias, register_with_aliases
 from erk.cli.commands.branch.checkout_cmd import branch_checkout
+from erk.cli.commands.branch.list_cmd import branch_list
 from erk.cli.help_formatter import ErkCommandGroup
 
 
@@ -14,4 +15,6 @@ def branch_group() -> None:
     pass
 
 
+# Register subcommands
 register_with_aliases(branch_group, branch_checkout)
+register_with_aliases(branch_group, branch_list)

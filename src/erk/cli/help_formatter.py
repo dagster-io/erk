@@ -75,6 +75,7 @@ class ErkCommandGroup(click.Group):
         command_groups = [
             "admin",
             "artifact",
+            "branch",
             "completion",
             "config",
             "docs",
