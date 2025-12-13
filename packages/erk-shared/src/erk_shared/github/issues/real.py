@@ -107,29 +107,32 @@ class RealGitHubIssues(GitHubIssues):
         state: str | None = None,
         limit: int | None = None,
     ) -> list[IssueInfo]:
-        """Query issues using gh CLI.
+        """Query issues using gh CLI REST API.
+
+        Uses REST API instead of GraphQL to avoid hitting GraphQL rate limits.
+        The {owner}/{repo} placeholders are auto-substituted by gh CLI.
 
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated).
         """
-        cmd = [
-            "gh",
-            "issue",
-            "list",
-            "--json",
-            "number,title,body,state,url,labels,assignees,createdAt,updatedAt,author",
-        ]
+        # Build REST API endpoint with query parameters
+        endpoint = "repos/{owner}/{repo}/issues"
+        params: list[str] = []
 
         if labels:
-            for label in labels:
-                cmd.extend(["--label", label])
+            # REST API accepts comma-separated labels
+            params.append(f"labels={','.join(labels)}")
 
         if state:
-            cmd.extend(["--state", state])
+            params.append(f"state={state}")
 
         if limit is not None:
-            cmd.extend(["--limit", str(limit)])
+            params.append(f"per_page={limit}")
 
+        if params:
+            endpoint += "?" + "&".join(params)
+
+        cmd = ["gh", "api", endpoint]
         stdout = execute_gh_command(cmd, repo_root)
         data = json.loads(stdout)
 
@@ -137,14 +140,14 @@ class RealGitHubIssues(GitHubIssues):
             IssueInfo(
                 number=issue["number"],
                 title=issue["title"],
-                body=issue["body"],
-                state=issue["state"],
-                url=issue["url"],
+                body=issue["body"] or "",  # REST can return null
+                state=issue["state"].upper(),  # Convert "open" -> "OPEN"
+                url=issue["html_url"],  # Different field name in REST
                 labels=[label["name"] for label in issue.get("labels", [])],
                 assignees=[assignee["login"] for assignee in issue.get("assignees", [])],
-                created_at=datetime.fromisoformat(issue["createdAt"].replace("Z", "+00:00")),
-                updated_at=datetime.fromisoformat(issue["updatedAt"].replace("Z", "+00:00")),
-                author=issue.get("author", {}).get("login", ""),
+                created_at=datetime.fromisoformat(issue["created_at"].replace("Z", "+00:00")),
+                updated_at=datetime.fromisoformat(issue["updated_at"].replace("Z", "+00:00")),
+                author=issue.get("user", {}).get("login", ""),  # user.login not author.login
             )
             for issue in data
         ]
