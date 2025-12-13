@@ -127,13 +127,40 @@ config_store = FakeConfigStore(
 ### FakeGitHub
 
 ```python
-from tests.fakes.github import FakeGitHub
-from erk_shared.github.types import PullRequestInfo
+from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.types import PRDetails, PullRequestInfo
 
 github = FakeGitHub(
-    prs: dict[str, PullRequestInfo] = {},
+    prs: dict[str, PullRequestInfo] = {},  # Branch -> PR info
+    pr_details: dict[int, PRDetails] = {},  # PR number -> full details
 )
 ```
+
+**Important: Dual-mapping for branch lookups**
+
+`get_pr_for_branch()` requires BOTH `prs` AND `pr_details` to be configured:
+
+```python
+# For get_pr_for_branch() to work, configure both mappings:
+pr_info = PullRequestInfo(
+    number=123, state="OPEN", url="https://github.com/...",
+    is_draft=False, title="My PR", checks_passing=True,
+    owner="owner", repo="repo",
+)
+pr_details = PRDetails(
+    number=123, state="OPEN", branch="feature-branch",
+    base_branch="main", title="My PR", body="Description",
+    url="https://github.com/...", is_draft=False,
+    owner="owner", repo="repo",
+)
+
+github = FakeGitHub(
+    prs={"feature-branch": pr_info},      # Step 1: branch -> PR number
+    pr_details={123: pr_details},          # Step 2: PR number -> details
+)
+```
+
+If only `prs` is configured, `get_pr_for_branch()` returns `PRNotFound` because the second lookup fails.
 
 ### FakeGraphite
 
