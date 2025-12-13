@@ -8,6 +8,22 @@ Run the specified CI target and automatically fix any failures. Keep iterating u
 
 **IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
 
+## Sub-Agent Policy
+
+🔴 **CRITICAL**: When spawning sub-agents to run CI commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  ← MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+❌ **FORBIDDEN**: Spawning general-purpose or other sub-agents for CI execution
+❌ **FORBIDDEN**: Giving sub-agents prompts like "fix issues" or "iterate until passing"
+✅ **REQUIRED**: Sub-agents run ONE command and report results
+✅ **REQUIRED**: Parent agent decides what to fix based on reports
+
 ## Iteration Process
 
 ### 1. Initial Run
