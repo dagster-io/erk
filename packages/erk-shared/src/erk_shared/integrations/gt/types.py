@@ -315,3 +315,30 @@ class RestackFinalizeError:
     error_type: RestackFinalizeErrorType
     message: str
     details: dict[str, str]
+
+
+# =============================================================================
+# Quick Submit Operation Types
+# =============================================================================
+
+QuickSubmitErrorType = Literal["stage_failed", "commit_failed", "submit_failed"]
+
+
+@dataclass(frozen=True)
+class QuickSubmitSuccess:
+    """Success result from quick-submit operation."""
+
+    success: Literal[True]
+    staged_changes: bool
+    committed: bool
+    message: str
+    pr_url: str | None
+
+
+@dataclass(frozen=True)
+class QuickSubmitError:
+    """Error result from quick-submit operation."""
+
+    success: Literal[False]
+    error_type: QuickSubmitErrorType
+    message: str

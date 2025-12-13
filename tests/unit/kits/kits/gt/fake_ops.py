@@ -36,6 +36,7 @@ class GitBuilderState:
     rebase_continue_raises: Exception | None = None
     existing_paths: set[Path] = field(default_factory=set)
     dirty_worktrees: set[Path] = field(default_factory=set)
+    staged_repos: set[Path] = field(default_factory=set)
 
 
 @dataclass
@@ -178,6 +179,7 @@ class FakeGtKitOps:
             rebase_continue_raises=self._git_builder_state.rebase_continue_raises,
             existing_paths=self._git_builder_state.existing_paths or None,
             dirty_worktrees=self._git_builder_state.dirty_worktrees or None,
+            staged_repos=self._git_builder_state.staged_repos or None,
         )
 
     @property
@@ -773,6 +775,19 @@ class FakeGtKitOps:
         self._git_file_statuses[repo_root] = ([], [], [])  # All empty
         # Add to existing_paths so is_worktree_clean returns True
         self._git_builder_state.existing_paths.add(repo_root)
+        self._git_instance = None
+        return self
+
+    def with_staged_changes(self) -> "FakeGtKitOps":
+        """Configure repository to have staged changes.
+
+        This makes has_staged_changes() return True.
+
+        Returns:
+            Self for chaining
+        """
+        repo_root = Path(self._repo_root)
+        self._git_builder_state.staged_repos.add(repo_root)
         self._git_instance = None
         return self
 
