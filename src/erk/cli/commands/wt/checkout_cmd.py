@@ -12,7 +12,7 @@ from erk.core.worktree_metadata import get_worktree_project
 from erk_shared.output.output import user_output
 
 
-@alias("co", "goto")  # co is short form, goto for backwards compat
+@alias("co")
 @click.command("checkout")
 @click.argument("worktree_name", shell_complete=complete_worktree_names)
 @click.option(

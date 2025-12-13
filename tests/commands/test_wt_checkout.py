@@ -1,4 +1,4 @@
-"""Tests for erk wt checkout command (and co/goto aliases)."""
+"""Tests for erk wt checkout command (and co alias)."""
 
 from pathlib import Path
 
@@ -244,42 +244,3 @@ def test_checkout_branch_name_hint() -> None:
         assert "erk br co" in result.output
 
 
-def test_goto_alias_works() -> None:
-    """Test that 'goto' works as a backwards-compatible alias."""
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        # Set up worktrees
-        worktree_path = env.repo.worktrees_dir / "feature-work"
-
-        git_ops = FakeGit(
-            worktrees={
-                env.cwd: [
-                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
-                    WorktreeInfo(path=worktree_path, branch="feature-1", is_root=False),
-                ]
-            },
-            current_branches={env.cwd: "main", worktree_path: "feature-1"},
-            default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
-        )
-
-        test_ctx = env.build_context(git=git_ops)
-
-        # Act: Navigate using 'goto' alias (backwards compatibility)
-        result = runner.invoke(
-            cli,
-            ["wt", "goto", "feature-work", "--script"],
-            obj=test_ctx,
-            catch_exceptions=False,
-        )
-
-        # Assert: Command succeeded
-        assert result.exit_code == 0
-
-        # Assert: Script path is in stdout
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
-
-        # Assert: Script contains cd to worktree
-        assert str(worktree_path) in script_content
