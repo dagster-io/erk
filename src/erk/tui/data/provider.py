@@ -25,9 +25,9 @@ from erk_shared.github.metadata import (
 )
 from erk_shared.github.parsing import github_repo_location_from_url
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
-from erk_shared.impl_folder import read_issue_reference
 from erk_shared.integrations.browser.abc import BrowserLauncher
 from erk_shared.integrations.clipboard.abc import Clipboard
+from erk_shared.naming import extract_leading_issue_number
 from erk_shared.plan_store.types import Plan, PlanState
 
 
@@ -319,6 +319,9 @@ class RealPlanDataProvider(PlanDataProvider):
     def _build_worktree_mapping(self) -> dict[int, tuple[str, str | None]]:
         """Build mapping of issue number to (worktree name, branch).
 
+        Uses PXXXX prefix matching on worktree names to associate worktrees
+        with issues. Branch names follow pattern: P{issue_number}-{slug}-{timestamp}
+
         Returns:
             Mapping of issue number to tuple of (worktree_name, branch_name)
         """
@@ -326,15 +329,13 @@ class RealPlanDataProvider(PlanDataProvider):
         worktree_by_issue: dict[int, tuple[str, str | None]] = {}
         worktrees = self._ctx.git.list_worktrees(self._location.root)
         for worktree in worktrees:
-            impl_folder = worktree.path / ".impl"
-            if impl_folder.exists() and impl_folder.is_dir():
-                issue_ref = read_issue_reference(impl_folder)
-                if issue_ref is not None:
-                    if issue_ref.issue_number not in worktree_by_issue:
-                        worktree_by_issue[issue_ref.issue_number] = (
-                            worktree.path.name,
-                            worktree.branch,
-                        )
+            issue_number = extract_leading_issue_number(worktree.path.name)
+            if issue_number is not None:
+                if issue_number not in worktree_by_issue:
+                    worktree_by_issue[issue_number] = (
+                        worktree.path.name,
+                        worktree.branch,
+                    )
         return worktree_by_issue
 
     def _build_row_data(

@@ -4,6 +4,7 @@ from pathlib import Path
 
 from erk.tui.data.provider import PlanDataProvider
 from erk.tui.data.types import PlanFilters, PlanRowData
+from erk.tui.sorting.types import BranchActivity
 from erk_shared.integrations.browser.abc import BrowserLauncher
 from erk_shared.integrations.browser.fake import FakeBrowserLauncher
 from erk_shared.integrations.clipboard.abc import Clipboard
@@ -103,6 +104,19 @@ class FakePlanDataProvider(PlanDataProvider):
         """
         # Just track the call - actual submit is complex and not needed for UI tests
         pass
+
+    def fetch_branch_activity(self, rows: list[PlanRowData]) -> dict[int, BranchActivity]:
+        """Fake branch activity implementation.
+
+        Returns empty activity for all plans.
+
+        Args:
+            rows: List of plan rows (unused in fake)
+
+        Returns:
+            Empty dict - no activity in fake implementation
+        """
+        return {}
 
 
 def make_plan_row(
