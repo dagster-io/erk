@@ -245,7 +245,7 @@ def _perform_checkout(
 
         # Show manual instructions
         user_output("\nShell integration not detected. Run 'erk init --shell' to set up.")
-        user_output(f"Or use: source <(erk checkout {branch} --script)")
+        user_output(f"Or use: source <(erk br co {branch} --script)")
 
 
 @alias("co")
@@ -255,7 +255,7 @@ def _perform_checkout(
     "--script", is_flag=True, help="Print only the activation script without usage instructions."
 )
 @click.pass_obj
-def checkout_cmd(ctx: ErkContext, branch: str, script: bool) -> None:
+def branch_checkout(ctx: ErkContext, branch: str, script: bool) -> None:
     """Checkout BRANCH by finding and switching to its worktree.
 
     This command finds which worktree has the specified branch checked out
@@ -265,11 +265,11 @@ def checkout_cmd(ctx: ErkContext, branch: str, script: bool) -> None:
 
     Examples:
 
-        erk checkout feature/user-auth      # Checkout existing worktree
+        erk br co feature/user-auth      # Checkout existing worktree
 
-        erk checkout unchecked-branch       # Auto-create worktree
+        erk br co unchecked-branch       # Auto-create worktree
 
-        erk checkout origin-only-branch     # Create tracking branch + worktree
+        erk br co origin-only-branch     # Create tracking branch + worktree
 
     If multiple worktrees contain the branch, all options are shown.
     """

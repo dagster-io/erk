@@ -701,7 +701,7 @@ def test_add_worktree_creation_comment_success(tmp_path: Path) -> None:
     # Verify comment details
     assert issue_number == 42
     assert "✅ Worktree created: **feature-name**" in comment_body
-    assert "erk checkout feature-branch" in comment_body
+    assert "erk br co feature-branch" in comment_body
     assert "/erk:plan-implement" in comment_body
 
     # Round-trip verification: Parse metadata block back out
