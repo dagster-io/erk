@@ -24,7 +24,7 @@ erk get           # View a plan
 erk dash          # Display plan dashboard
 erk close         # Close a plan
 erk implement     # Implement a plan
-erk submit        # Submit a plan for remote execution
+erk plan submit   # Submit a plan for remote execution
 erk log           # View plan execution logs
 ```
 
@@ -294,7 +294,7 @@ erk get 42                # View specific plan
 erk implement 42          # Create worktree and start work
 
 # Submit for execution
-erk submit 42             # Queue for remote execution
+erk plan submit 42        # Queue for remote execution
 
 # Track progress
 erk log 42                # View execution history

@@ -96,5 +96,5 @@ Implement the extraction:
     erk implement [issue_number]
 
 Submit for remote implementation:
-    erk submit [issue_number]
+    erk plan submit [issue_number]
 ```

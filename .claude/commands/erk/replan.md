@@ -160,7 +160,7 @@ Display final summary:
 
 Next steps:
 - Review the new plan: gh issue view <new_number>
-- Submit for implementation: erk submit <new_number>
+- Submit for implementation: erk plan submit <new_number>
 ```
 
 ---

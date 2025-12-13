@@ -82,7 +82,7 @@ You are only limited by your ability to generate plans and manage workflows.
 
 2. **Save:** The plan is saved to the system of record. In `erk`, this is a slash command within `claude` that creates a tool-managed GitHub issue. The plan is now trackable, queryable, and attached to your engineering workflow.
 
-3. **Implement:** Execute the plan locally with `erk implement` or dispatch it remotely with `erk submit`. Local execution creates a worktree, activates the environment, and invokes `claude`. Remote execution triggers a `gh` action that creates a PR. All of this is tracked and managed by `erk`.
+3. **Implement:** Execute the plan locally with `erk implement` or dispatch it remotely with `erk plan submit`. Local execution creates a worktree, activates the environment, and invokes `claude`. Remote execution triggers a `gh` action that creates a PR. All of this is tracked and managed by `erk`.
 
 4. **Review and Iterate:** Review the code. If the output is close but not complete, comment on the PR use that to bootstrap a follow up coding session. You can seamlessly check out the worktree locally and iterate.
 

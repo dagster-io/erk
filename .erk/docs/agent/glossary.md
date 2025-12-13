@@ -564,7 +564,7 @@ A boolean field on `PullRequestInfo` indicating whether a PR will automatically 
 
 **Display**: In `erk plan list`, PRs with `will_close_target: true` show a 🔗 indicator.
 
-**Critical Timing**: This field is determined at PR creation time. Editing the PR body afterward to add "Closes #N" does **not** update `willCloseTarget`. This is why `erk submit` must include the closing keyword in the initial `create_pr()` call.
+**Critical Timing**: This field is determined at PR creation time. Editing the PR body afterward to add "Closes #N" does **not** update `willCloseTarget`. This is why `erk plan submit` must include the closing keyword in the initial `create_pr()` call.
 
 **Related**: [GitHub Issue-PR Linkage API Patterns](architecture/github-pr-linkage-api.md), [Issue-PR Linkage Storage](erk/issue-pr-linkage-storage.md)
 
@@ -954,7 +954,7 @@ A GitHub label added to PRs that originate from extraction plans. When `erk pr l
 
 **Applied by**:
 
-- `erk submit` when the source issue has `plan_type: extraction`
+- `erk plan submit` when the source issue has `plan_type: extraction`
 - `gt finalize` when the `.impl/plan.md` has `plan_type: extraction`
 
 **Checked by**:

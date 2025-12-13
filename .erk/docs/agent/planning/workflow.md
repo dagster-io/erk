@@ -252,10 +252,10 @@ During planning, examined the authentication flow:
 
 ## Remote Implementation via GitHub Actions
 
-For automated implementation via GitHub Actions, use `erk submit`:
+For automated implementation via GitHub Actions, use `erk plan submit`:
 
 ```bash
-erk submit <issue-number>
+erk plan submit <issue-number>
 ```
 
 This command:

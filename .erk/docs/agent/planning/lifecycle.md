@@ -154,9 +154,9 @@ The `erk-plan` label marks issues as implementation plans:
 
 ## Phase 2: Plan Submission
 
-Submission prepares the plan for remote execution via `erk submit <issue_number>`.
+Submission prepares the plan for remote execution via `erk plan submit <issue_number>`.
 
-**Key responsibility**: `erk submit` is the **source of truth** for branch and PR creation. The workflow dispatch (Phase 3) expects these to already exist.
+**Key responsibility**: `erk plan submit` is the **source of truth** for branch and PR creation. The workflow dispatch (Phase 3) expects these to already exist.
 
 ### Pre-Submission Validation
 
@@ -276,7 +276,7 @@ This ensures only one implementation runs per issue at a time.
 
 #### Phase 3: Use Existing PR
 
-- Use existing PR (created by `erk submit`)
+- Use existing PR (created by `erk plan submit`)
 - Post `workflow-started` comment to issue
 - Update issue body with `last_dispatched_run_id`
 

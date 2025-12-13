@@ -41,7 +41,7 @@ Two folders serve nearly identical purposes:
 
 **Current workflow:**
 
-1. `erk submit` creates `.worker-impl/` and commits it
+1. `erk plan submit` creates `.worker-impl/` and commits it
 2. Workflow checks out branch with `.worker-impl/`
 3. Workflow copies `.worker-impl/` → `.impl/`
 4. Claude reads from `.impl/`
@@ -77,7 +77,7 @@ This command would:
 - Eliminates `.worker-impl/` entirely
 - No committed artifacts to clean up
 - Issue becomes the single source of truth
-- `erk submit` becomes simpler (just dispatch, no file creation)
+- `erk plan submit` becomes simpler (just dispatch, no file creation)
 - Local workflow unchanged (`.impl/` stays gitignored)
 
 ### Implementation Notes
@@ -132,7 +132,7 @@ def generate_distinct_id() -> str:
 
 **Current workflow:**
 
-1. `erk submit` generates `distinct_id` (e.g., `abc123`)
+1. `erk plan submit` generates `distinct_id` (e.g., `abc123`)
 2. Passes `distinct_id` to workflow dispatch as input
 3. Workflow sets `run-name: "${{ inputs.issue_number }}:${{ inputs.distinct_id }}"`
 4. Submitter polls `gh run list` looking for `displayTitle` containing `:abc123`
@@ -197,7 +197,7 @@ def wait_for_workflow_run(issue_number: int, timeout: int = 300) -> str:
 
 ### Implementation Notes
 
-**Changes to `erk submit`:**
+**Changes to `erk plan submit`:**
 
 ```python
 # Before
@@ -365,7 +365,7 @@ gh issue develop 123 --checkout
 
 ### Implementation Notes
 
-**Changes to `erk submit`:**
+**Changes to `erk plan submit`:**
 
 ```python
 # Before
@@ -504,9 +504,9 @@ def create_plan_issue(title: str, plan_content: str) -> Issue:
 
 ### Current State
 
-`erk submit` creates a draft PR locally for "correct commit attribution":
+`erk plan submit` creates a draft PR locally for "correct commit attribution":
 
-1. User runs `erk submit 123`
+1. User runs `erk plan submit 123`
 2. Creates branch, commits `.worker-impl/`, pushes
 3. Creates draft PR via `gh pr create`
 4. Dispatches workflow
@@ -523,7 +523,7 @@ def create_plan_issue(title: str, plan_content: str) -> Issue:
 
 Let the workflow create the PR after implementation:
 
-1. User runs `erk submit 123`
+1. User runs `erk plan submit 123`
 2. Dispatches workflow (no branch/PR creation)
 3. Workflow creates branch from issue (`gh issue develop`)
 4. Workflow reconstructs `.impl/` from issue
@@ -554,13 +554,13 @@ Let the workflow create the PR after implementation:
 
 - Cleaner git history (no empty setup commits)
 - PR contains actual implementation from the start
-- Simpler `erk submit` (just dispatch, nothing else)
+- Simpler `erk plan submit` (just dispatch, nothing else)
 - No "find existing PR" logic in workflow
 - PR and implementation are atomic
 
 ### Implementation Notes
 
-**Simplified `erk submit`:**
+**Simplified `erk plan submit`:**
 
 ```python
 def submit(issue_number: int) -> None:
