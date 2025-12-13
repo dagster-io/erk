@@ -52,6 +52,7 @@ def create_and_save_global_config(
         shell_setup_complete=shell_setup_complete,
         show_pr_info=True,
         github_planning=True,
+        show_release_notes=True,
     )
     ctx.config_store.save(config)
     return config
@@ -252,6 +253,7 @@ def init_cmd(ctx: ErkContext, force: bool, preset: str, list_presets: bool, shel
                 shell_setup_complete=True,
                 show_pr_info=ctx.global_config.show_pr_info,
                 github_planning=ctx.global_config.github_planning,
+                show_release_notes=ctx.global_config.show_release_notes,
             )
             try:
                 ctx.config_store.save(new_config)
@@ -411,6 +413,7 @@ def init_cmd(ctx: ErkContext, force: bool, preset: str, list_presets: bool, shel
                         shell_setup_complete=True,
                         show_pr_info=fresh_config.show_pr_info,
                         github_planning=fresh_config.github_planning,
+                        show_release_notes=fresh_config.show_release_notes,
                     )
                     try:
                         ctx.config_store.save(new_config)
