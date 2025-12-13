@@ -72,6 +72,8 @@ class RealGitHub(GitHub):
     def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
         """Get current base branch of a PR from GitHub.
 
+        Uses REST API (separate quota from GraphQL) via gh api command.
+
         Note: Uses try/except as an acceptable error boundary for handling gh CLI
         availability and authentication. We cannot reliably check gh installation
         and authentication status a priori without duplicating gh's logic.
@@ -79,13 +81,10 @@ class RealGitHub(GitHub):
         try:
             cmd = [
                 "gh",
-                "pr",
-                "view",
-                str(pr_number),
-                "--json",
-                "baseRefName",
+                "api",
+                f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
                 "--jq",
-                ".baseRefName",
+                ".base.ref",
             ]
             stdout = execute_gh_command(cmd, repo_root)
             return stdout.strip()
@@ -1322,6 +1321,8 @@ query {{
     def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
         """Get PR title by number using gh CLI.
 
+        Uses REST API (separate quota from GraphQL) via gh api command.
+
         Returns:
             PR title string, or None if empty.
 
@@ -1330,12 +1331,9 @@ query {{
         """
         cmd = [
             "gh",
-            "pr",
-            "view",
-            str(pr_number),
-            "--json",
-            "title",
-            "-q",
+            "api",
+            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+            "--jq",
             ".title",
         ]
         stdout = execute_gh_command(cmd, repo_root)
@@ -1345,6 +1343,8 @@ query {{
     def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
         """Get PR body by number using gh CLI.
 
+        Uses REST API (separate quota from GraphQL) via gh api command.
+
         Returns:
             PR body string, or None if empty.
 
@@ -1353,12 +1353,9 @@ query {{
         """
         cmd = [
             "gh",
-            "pr",
-            "view",
-            str(pr_number),
-            "--json",
-            "body",
-            "-q",
+            "api",
+            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+            "--jq",
             ".body",
         ]
         stdout = execute_gh_command(cmd, repo_root)
@@ -1447,17 +1444,16 @@ query {{
     def has_pr_label(self, repo_root: Path, pr_number: int, label: str) -> bool:
         """Check if a PR has a specific label using gh CLI.
 
+        Uses REST API (separate quota from GraphQL) via gh api command.
+
         Returns:
             True if the PR has the label, False otherwise.
         """
         cmd = [
             "gh",
-            "pr",
-            "view",
-            str(pr_number),
-            "--json",
-            "labels",
-            "-q",
+            "api",
+            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+            "--jq",
             ".labels[].name",
         ]
         stdout = execute_gh_command(cmd, repo_root)
