@@ -1,5 +1,7 @@
 ---
 description: Save the current session's plan to GitHub as an issue
+erk:
+  kit: erk
 ---
 
 # /erk:save-plan

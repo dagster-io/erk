@@ -1,3 +1,8 @@
+---
+erk:
+  kit: devrun
+---
+
 # make Execution and Parsing Guide
 
 Comprehensive guide for executing make commands and parsing build automation results.

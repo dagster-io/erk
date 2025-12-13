@@ -1,3 +1,8 @@
+---
+erk:
+  kit: erk
+---
+
 # Extract Agent Docs - Analysis Logic
 
 Shared analysis logic for `/erk:extract-agent-docs` and `/erk:extract-agent-docs-from-log` commands.

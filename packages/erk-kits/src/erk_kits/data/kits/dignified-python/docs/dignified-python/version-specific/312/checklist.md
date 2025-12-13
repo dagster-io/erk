@@ -1,4 +1,0 @@
-- **Use** modern type syntax: `list[str]`, `str | None`
-- **Use** PEP 695 type parameter syntax: `def func[T](x: T) -> T`
-- **Use** `Self` type from `typing` for self-returning methods
-- **Use** `from __future__ import annotations` when needed (forward refs, circular imports)

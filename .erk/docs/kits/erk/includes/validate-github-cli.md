@@ -1,3 +1,8 @@
+---
+erk:
+  kit: erk
+---
+
 # GitHub CLI Validation
 
 **Check GitHub CLI authentication:**

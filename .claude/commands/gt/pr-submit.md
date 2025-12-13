@@ -1,6 +1,10 @@
 ---
-description: Create git commit and submit current branch with Graphite (squashes commits and rebases stack)
+description:
+  Create git commit and submit current branch with Graphite (squashes commits
+  and rebases stack)
 argument-hint: <description>
+erk:
+  kit: gt
 ---
 
 # Submit PR

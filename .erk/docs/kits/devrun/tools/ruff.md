@@ -1,3 +1,8 @@
+---
+erk:
+  kit: devrun
+---
+
 # ruff Execution and Parsing Guide
 
 Comprehensive guide for executing ruff commands and parsing linting/formatting results.

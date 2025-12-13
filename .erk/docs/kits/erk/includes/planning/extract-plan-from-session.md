@@ -1,3 +1,8 @@
+---
+erk:
+  kit: erk
+---
+
 # Extract Plan from Plans Directory
 
 Use the kit CLI to extract the latest plan from `~/.claude/plans/`:

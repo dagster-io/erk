@@ -1,3 +1,8 @@
+---
+erk:
+  kit: erk
+---
+
 # Plan Enrichment Process
 
 This document contains the shared enrichment process used by erk commands that enhance implementation plans for autonomous execution. Commands that reference this document apply a comprehensive enrichment workflow to transform basic plans into detailed, context-rich specifications.

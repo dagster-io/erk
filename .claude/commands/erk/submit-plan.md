@@ -1,5 +1,7 @@
 ---
 description: Submit the last created issue for remote implementation
+erk:
+  kit: erk
 ---
 
 # /erk:submit-plan

@@ -101,9 +101,13 @@ source_type = "bundled"
 version = "0.2.5"
 artifacts = [
     ".claude/skills/dignified-python-310/SKILL.md",
+    ".claude/skills/dignified-python-310/VERSION-CONTEXT.md",
     ".claude/skills/dignified-python-311/SKILL.md",
+    ".claude/skills/dignified-python-311/VERSION-CONTEXT.md",
     ".claude/skills/dignified-python-312/SKILL.md",
+    ".claude/skills/dignified-python-312/VERSION-CONTEXT.md",
     ".claude/skills/dignified-python-313/SKILL.md",
+    ".claude/skills/dignified-python-313/VERSION-CONTEXT.md",
     ".erk/docs/kits/dignified-python/dignified-python-core.md",
     ".erk/docs/kits/dignified-python/type-annotations-common.md",
     ".erk/docs/kits/dignified-python/version-specific/310/type-annotations.md",
@@ -130,6 +134,13 @@ source_type = "bundled"
 version = "0.2.5"
 artifacts = [
     ".claude/skills/fake-driven-testing/SKILL.md",
+    ".claude/skills/fake-driven-testing/references/anti-patterns.md",
+    ".claude/skills/fake-driven-testing/references/gateway-architecture.md",
+    ".claude/skills/fake-driven-testing/references/patterns.md",
+    ".claude/skills/fake-driven-testing/references/python-specific.md",
+    ".claude/skills/fake-driven-testing/references/quick-reference.md",
+    ".claude/skills/fake-driven-testing/references/testing-strategy.md",
+    ".claude/skills/fake-driven-testing/references/workflows.md",
 ]
 
 [[kits.fake-driven-testing.hooks]]

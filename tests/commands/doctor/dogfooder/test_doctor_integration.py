@@ -17,7 +17,7 @@ def test_doctor_shows_early_dogfooder_section_on_deprecated_config() -> None:
         pyproject_path.write_text(
             """
 [tool.dot-agent]
-dev_mode = true
+some_setting = true
 """,
             encoding="utf-8",
         )
