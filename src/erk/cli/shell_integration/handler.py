@@ -44,6 +44,11 @@ SHELL_INTEGRATION_COMMANDS: Final[dict[str, list[str]]] = {
     "wt goto": ["wt", "goto"],
     # Subcommands under stack
     "stack consolidate": ["stack", "consolidate"],
+    # Subcommands under branch
+    "branch checkout": ["branch", "checkout"],
+    "branch co": ["branch", "checkout"],
+    "br checkout": ["branch", "checkout"],
+    "br co": ["branch", "checkout"],
 }
 
 
