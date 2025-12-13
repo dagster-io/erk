@@ -79,18 +79,6 @@ Example:
 
 Manual registry management is available via CLI commands:
 
-### `erk kit sync`
-
-Sync all installed kits and rebuild the registry. Useful if:
-
-- Registry gets out of sync
-- Migrating from older erk version
-- Recovering from manual edits
-
-```bash
-erk kit sync
-```
-
 ### `erk kit registry show`
 
 Display the current registry contents:
@@ -119,23 +107,19 @@ Checks:
 
 **Symptom**: Validation fails or registry doesn't match installed kits
 
-**Solution**: Run sync command to rebuild registry
+**Solution**: Reinstall the affected kit(s) with force flag
 
 ```bash
-erk kit sync
+erk kit install <kit-id> --force
 ```
 
 ### Missing registry entry
 
 **Symptom**: Kit installed but no registry entry exists
 
-**Solution**: Sync to rebuild registry or reinstall kit
+**Solution**: Reinstall the specific kit
 
 ```bash
-# Option 1: Sync all kits and rebuild registry
-erk kit sync
-
-# Option 2: Reinstall specific kit
 erk kit install <kit-id> --force
 ```
 
@@ -143,10 +127,10 @@ erk kit install <kit-id> --force
 
 **Symptom**: `.agent/kits/kit-registry.md` doesn't exist
 
-**Solution**: Run sync command - it will create the file
+**Solution**: Install a kit to create the registry file
 
 ```bash
-erk kit sync
+erk kit install <kit-id>
 ```
 
 ## Design Rationale

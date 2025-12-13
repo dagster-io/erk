@@ -7,7 +7,6 @@ import subprocess
 from pathlib import Path
 
 from erk_shared.integrations.shell.abc import Shell, detect_shell_from_env
-from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
 class RealShell(Shell):
@@ -27,25 +26,6 @@ class RealShell(Shell):
     def get_installed_tool_path(self, tool_name: str) -> str | None:
         """Check if tool is in PATH using shutil.which."""
         return shutil.which(tool_name)
-
-    def run_erk_sync(self, repo_root: Path, *, force: bool, verbose: bool) -> None:
-        """Run erk kit sync command as subprocess.
-
-        Executes erk kit sync in the specified repository directory.
-        Output is shown in verbose mode, captured otherwise.
-        """
-        cmd = ["erk", "kit", "sync"]
-        if force:
-            cmd.append("-f")
-        if verbose:
-            cmd.append("--verbose")
-
-        run_subprocess_with_context(
-            cmd,
-            operation_context="execute erk kit sync subprocess",
-            cwd=repo_root,
-            capture_output=not verbose,
-        )
 
     def run_claude_extraction_plan(self, cwd: Path) -> str | None:
         """Run Claude CLI to create an extraction plan from session logs.

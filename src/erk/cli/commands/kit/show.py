@@ -163,6 +163,6 @@ def _display_installation_status(manifest, installed_kit) -> None:
                 f"\n⚠️  Version mismatch: installed={installed_kit.version}, "
                 f"available={manifest.version}"
             )
-            user_output("   Run 'erk kit sync' to update")
+            user_output("   Run 'erk kit install' to update")
 
     user_output()

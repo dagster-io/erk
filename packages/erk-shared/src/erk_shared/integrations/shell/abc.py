@@ -78,20 +78,3 @@ class Shell(ABC):
             ...     print(f"Graphite found at {gt_path}")
         """
         ...
-
-    @abstractmethod
-    def run_erk_sync(self, repo_root: Path, *, force: bool, verbose: bool) -> None:
-        """Run erk kit sync command as subprocess.
-
-        This is used by commands that need to invoke erk kit sync
-        to clean up worktrees and branches (e.g., land-stack cleanup phase).
-
-        Args:
-            repo_root: Repository root directory to run command in
-            force: If True, pass -f flag for force sync
-            verbose: If True, pass --verbose flag for detailed output
-
-        Raises:
-            RuntimeError: If erk kit sync command fails (with enriched error context)
-        """
-        ...

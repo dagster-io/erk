@@ -23,9 +23,8 @@ The registry will expand to show all installed kits with references to their ind
 Manage kits using `erk kit` commands:
 
 - `erk kit list` - Show installed kits
-- `erk kit install <kit-id>` - Install a kit
-- `erk kit sync` - Regenerate registry from installed kits
+- `erk kit install <kit-id>` - Install or update a kit
 
 ## Maintenance
 
-The `kit-registry.md` file and individual `registry-entry.md` files are auto-generated. Do not edit them manually - changes will be overwritten by `erk kit sync`.
+The `kit-registry.md` file and individual `registry-entry.md` files are auto-generated. Do not edit them manually - changes will be overwritten by `erk kit install`.

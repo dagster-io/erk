@@ -3,12 +3,12 @@ title: Kit Artifact and Symlink Management
 read_when:
   - "adding artifacts to kits"
   - "fixing kit-check errors"
-  - "troubleshooting kit sync"
-  - "kit sync says up to date but artifacts missing"
+  - "troubleshooting kit install"
+  - "kit install says up to date but artifacts missing"
 tripwires:
   - action: "creating symlinks in bundled kit source directories"
     warning: "Bundled kits should contain real files, NOT symlinks. The installation process creates symlinks FROM .claude/ TO kit sources."
-  - action: "running `kit sync` after adding artifacts to kit.yaml"
+  - action: "running `kit install` after adding artifacts to kit.yaml"
     warning: "Must use `--force` flag if version wasn't bumped."
   - action: "editing files in .claude/ that are symlinks to kit sources"
     warning: "Kit artifacts in .claude/ are symlinks. Edit the SOURCE file in the kit package (use `readlink -f` to find it), or the symlink will be replaced with a regular file."
@@ -59,7 +59,7 @@ The installation process creates symlinks FROM `.claude/` TO the bundled kit. If
 1. Copy files from `.claude/docs/<name>/` to `packages/.../kits/<kit>/docs/<name>/`
 2. Add paths to `kit.yaml` under `artifacts: doc:`
 3. Delete the original files from `.claude/docs/`
-4. Run `erk kit sync --force` to recreate symlinks
+4. Run `erk kit install --force <kit>` to recreate symlinks
 
 **Option 2: Reference External Docs**
 If the docs are shared across multiple kits or shouldn't be bundled:
@@ -72,11 +72,11 @@ If the docs are shared across multiple kits or shouldn't be bundled:
 
 1. Create the file directly in `packages/.../kits/<kit>/docs/<path>/`
 2. Add the path to `kit.yaml` under `artifacts: doc:`
-3. Run `erk kit sync --force` to install
+3. Run `erk kit install --force <kit>` to install
 
-## Why "kit sync" Says "Up to Date" But Artifacts Are Missing
+## Why "kit install" Says "Up to Date" But Artifacts Are Missing
 
-`kit sync` uses version comparison. It only syncs if:
+`kit install` uses version comparison. It only reinstalls if:
 
 - Kit version in manifest > installed version
 - OR `--force` flag is used
@@ -84,7 +84,7 @@ If the docs are shared across multiple kits or shouldn't be bundled:
 **If you added new artifacts without bumping version:**
 
 ```bash
-erk kit sync --force  # Required to pick up new artifacts
+erk kit install --force <kit>  # Required to pick up new artifacts
 ```
 
 ## Troubleshooting
