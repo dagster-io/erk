@@ -24,7 +24,7 @@ Examples:
 
     **Next step:**
 
-    `erk checkout issue-776-25-11-22 && claude --permission-mode acceptEdits "/erk:plan-implement"`
+    `erk br co issue-776-25-11-22 && claude --permission-mode acceptEdits "/erk:plan-implement"`
 
     $ erk kit exec erk create-wt-from-issue https://github.com/owner/repo/issues/776
     (same as above)
@@ -204,6 +204,6 @@ def create_wt_from_issue(ctx: click.Context, issue_reference: str) -> None:
     click.echo("**Next step:**")
     click.echo("")
     click.echo(
-        f"`erk checkout {result.branch_name} && "
+        f"`erk br co {result.branch_name} && "
         f'claude --permission-mode acceptEdits "/erk:plan-implement"`'
     )

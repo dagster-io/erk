@@ -288,7 +288,7 @@ def test_create_rejects_main_as_worktree_name() -> None:
         # Should fail with error suggesting to use root
         assert result.exit_code != 0
         assert "main" in result.output.lower()
-        assert "erk checkout root" in result.output
+        assert "erk br co root" in result.output
 
         # Verify worktree was not created
         worktree_path = env.erk_root / "repos" / "repo" / "worktrees" / "main"
@@ -334,7 +334,7 @@ def test_create_rejects_master_as_worktree_name() -> None:
         # Should fail with error suggesting to use root
         assert result.exit_code != 0
         assert "master" in result.output.lower()
-        assert "erk checkout root" in result.output
+        assert "erk br co root" in result.output
 
         # Verify worktree was not created
         worktree_path = env.erk_root / "repos" / "repo" / "worktrees" / "master"

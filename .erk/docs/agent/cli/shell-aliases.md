@@ -107,7 +107,7 @@ These commands MUST go through the `erk()` wrapper function:
 | `erk down --delete-current` | Deletes current worktree, moves down |
 | `erk up --delete-current`   | Deletes current worktree, moves up   |
 | `erk rm`                    | May delete current worktree          |
-| `erk checkout`              | Changes directory to worktree        |
+| `erk br co`                 | Changes directory to worktree        |
 | `erk implement`             | Creates and switches to worktree     |
 
 ## Debugging Shell Integration Issues
@@ -178,7 +178,7 @@ echo $ERK_SHELL_INTEGRATION
 # Expected: 1 (or similar indicator)
 
 # 3. Test with a safe command
-erk checkout some-worktree
+erk br co some-worktree
 # Should change directory AND update pwd
 ```
 

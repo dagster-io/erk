@@ -1,4 +1,4 @@
-"""Tests for erk checkout command."""
+"""Tests for erk branch checkout command."""
 
 from pathlib import Path
 
@@ -51,7 +51,10 @@ def test_checkout_to_branch_in_single_worktree() -> None:
 
         # Checkout feature-2 which is checked out in feature_wt
         result = runner.invoke(
-            cli, ["checkout", "feature-2", "--script"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["branch", "checkout", "feature-2", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         if result.exit_code != 0:
@@ -99,7 +102,7 @@ def test_checkout_to_branch_not_found() -> None:
 
         # Checkout a branch that doesn't exist
         result = runner.invoke(
-            cli, ["checkout", "nonexistent-branch"], obj=test_ctx, catch_exceptions=False
+            cli, ["branch", "checkout", "nonexistent-branch"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
@@ -138,7 +141,10 @@ def test_checkout_creates_worktree_for_unchecked_branch() -> None:
 
         # Checkout branch that exists but is not checked out
         result = runner.invoke(
-            cli, ["checkout", "existing-branch", "--script"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["branch", "checkout", "existing-branch", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         if result.exit_code != 0:
@@ -204,7 +210,10 @@ def test_checkout_to_branch_in_stack_but_not_checked_out() -> None:
 
         # Checkout feature-base which exists in repo but is not checked out
         result = runner.invoke(
-            cli, ["checkout", "feature-base", "--script"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["branch", "checkout", "feature-base", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         if result.exit_code != 0:
@@ -249,7 +258,10 @@ def test_checkout_works_without_graphite() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["checkout", "feature-1", "--script"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["branch", "checkout", "feature-1", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         # Should succeed - checkout does not require Graphite
@@ -296,7 +308,10 @@ def test_checkout_already_on_target_branch() -> None:
 
         # Checkout feature-1 while already in feature_wt
         result = runner.invoke(
-            cli, ["checkout", "feature-1", "--script"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["branch", "checkout", "feature-1", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         if result.exit_code != 0:
@@ -353,7 +368,10 @@ def test_checkout_succeeds_when_branch_exactly_checked_out() -> None:
 
         # Checkout feature-2 which is checked out in feature_wt
         result = runner.invoke(
-            cli, ["checkout", "feature-2", "--script"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["branch", "checkout", "feature-2", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
@@ -402,7 +420,10 @@ def test_checkout_with_multiple_worktrees_same_branch() -> None:
 
         # Checkout feature-2 which is checked out in multiple worktrees
         result = runner.invoke(
-            cli, ["checkout", "feature-2", "--script"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["branch", "checkout", "feature-2", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         # Should show error about multiple worktrees
@@ -442,7 +463,10 @@ def test_checkout_creates_worktree_for_remote_only_branch() -> None:
 
         # Checkout remote branch
         result = runner.invoke(
-            cli, ["checkout", "feature-remote", "--script"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["branch", "checkout", "feature-remote", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         if result.exit_code != 0:
@@ -504,7 +528,7 @@ def test_checkout_fails_when_branch_not_on_origin() -> None:
         # Checkout nonexistent branch
         result = runner.invoke(
             cli,
-            ["checkout", "nonexistent-branch", "--script"],
+            ["branch", "checkout", "nonexistent-branch", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -554,7 +578,10 @@ def test_checkout_message_when_switching_worktrees() -> None:
 
         # Checkout feature-branch from root worktree
         result = runner.invoke(
-            cli, ["checkout", "feature-branch", "--script"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["branch", "checkout", "feature-branch", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         if result.exit_code != 0:
@@ -620,7 +647,9 @@ def test_checkout_trunk_with_dirty_root_errors() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         # Try to checkout trunk branch (main) - should error
-        result = runner.invoke(cli, ["checkout", "main"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["branch", "checkout", "main"], obj=test_ctx, catch_exceptions=False
+        )
 
         # Should fail with error
         assert result.exit_code == 1
@@ -628,7 +657,7 @@ def test_checkout_trunk_with_dirty_root_errors() -> None:
         # Error message should indicate trunk branch cannot have worktree
         assert "Cannot create worktree for trunk branch" in result.stderr
         assert "main" in result.stderr
-        assert "erk checkout root" in result.stderr
+        assert "erk br co root" in result.stderr
         assert "root worktree" in result.stderr
 
 
@@ -670,7 +699,7 @@ def test_checkout_tracks_untracked_branch_with_graphite() -> None:
         # Checkout the untracked branch (non-script mode, confirm with 'y')
         result = runner.invoke(
             cli,
-            ["checkout", "feature-untracked"],
+            ["branch", "checkout", "feature-untracked"],
             obj=test_ctx,
             input="y\n",
             catch_exceptions=False,
@@ -728,7 +757,7 @@ def test_checkout_skips_tracking_when_user_declines() -> None:
         # Checkout the untracked branch (non-script mode, decline with 'n')
         result = runner.invoke(
             cli,
-            ["checkout", "feature-untracked"],
+            ["branch", "checkout", "feature-untracked"],
             obj=test_ctx,
             input="n\n",
             catch_exceptions=False,
@@ -781,7 +810,10 @@ def test_checkout_skips_tracking_in_script_mode() -> None:
 
         # Checkout with --script flag (no interactive prompt)
         result = runner.invoke(
-            cli, ["checkout", "feature-untracked", "--script"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["branch", "checkout", "feature-untracked", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         if result.exit_code != 0:
@@ -841,7 +873,10 @@ def test_checkout_does_not_track_already_tracked_branch() -> None:
 
         # Checkout the already tracked branch
         result = runner.invoke(
-            cli, ["checkout", "feature-tracked", "--script"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["branch", "checkout", "feature-tracked", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         if result.exit_code != 0:
@@ -893,7 +928,7 @@ def test_checkout_does_not_track_trunk_branch() -> None:
 
         # Checkout trunk (main) from feature worktree
         result = runner.invoke(
-            cli, ["checkout", "main", "--script"], obj=test_ctx, catch_exceptions=False
+            cli, ["branch", "checkout", "main", "--script"], obj=test_ctx, catch_exceptions=False
         )
 
         if result.exit_code != 0:

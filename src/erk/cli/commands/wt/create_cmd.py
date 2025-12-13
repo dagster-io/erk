@@ -106,7 +106,7 @@ def ensure_worktree_for_branch(
         f'Cannot create worktree for trunk branch "{trunk_branch}".\n'
         f"The trunk branch should be checked out in the root worktree.\n"
         f"To switch to {trunk_branch}, use:\n"
-        f"  erk checkout root",
+        f"  erk br co root",
     )
 
     # Branch not checked out - need to create worktree
@@ -257,7 +257,7 @@ def add_worktree(
                 f"Options:\n"
                 f"  • Use a different branch name\n"
                 f"  • Create a new branch instead: erk create {path.name}\n"
-                f"  • Switch to that worktree: erk checkout {branch}",
+                f"  • Switch to that worktree: erk br co {branch}",
             )
             raise SystemExit(1)
 
@@ -740,7 +740,7 @@ def create_wt(
         user_output(
             f'Error: "{name}" cannot be used as a worktree name.\n'
             f"To switch to the {name} branch in the root repository, use:\n"
-            f"  erk checkout root",
+            f"  erk br co root",
         )
         raise SystemExit(1)
 
@@ -830,7 +830,7 @@ def create_wt(
                 f'Error: Cannot create worktree for trunk branch "{trunk_branch}".\n'
                 f"The trunk branch should be checked out in the root worktree.\n"
                 f"To switch to {trunk_branch}, use:\n"
-                f"  erk checkout root"
+                f"  erk br co root"
             )
             raise SystemExit(1)
 

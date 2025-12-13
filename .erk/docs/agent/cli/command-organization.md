@@ -92,7 +92,7 @@ erk stack restack          # Rebase stack on trunk
 Branch/worktree navigation commands are top-level because they're fundamental movement operations:
 
 ```bash
-erk checkout <branch>      # Switch to worktree for branch (alias: co)
+erk br co <branch>         # Switch to worktree for branch (alias for erk branch checkout)
 erk up                     # Navigate to parent branch
 erk down                   # Navigate to child branch
 ```
@@ -101,7 +101,7 @@ erk down                   # Navigate to child branch
 
 - Very high frequency: Navigation is constant during development
 - Movement primitive: Like `cd` in shell, should be minimal keystrokes
-- Natural workflow: "Switch to that branch" → `erk co feature-branch`
+- Natural workflow: "Switch to that branch" → `erk br co feature-branch`
 
 ### Setup and Configuration
 
@@ -222,8 +222,7 @@ erk restack               # Restack what?
 
 ```bash
 # GOOD: Minimal, like shell commands (cd, ls)
-erk checkout feature-branch
-erk co feature-branch      # Alias
+erk br co feature-branch
 erk up
 erk down
 
@@ -322,8 +321,7 @@ erk wt prune              # Remove stale worktrees
 
 ```bash
 # Switch between branches
-erk checkout feature-branch
-erk co fb                 # Alias with fuzzy match
+erk br co feature-branch
 
 # Navigate stack
 erk up                    # Move to parent branch

@@ -38,7 +38,7 @@ Creating worktree 'add-authentication-feature'...
 ✓ Saved issue reference for PR linking
 
 Next steps:
-  1. Change to worktree:  erk checkout add-authentication-feature
+  1. Change to worktree:  erk br co add-authentication-feature
   2. Run implementation:  claude --permission-mode acceptEdits "/erk:plan-implement"
 ```
 
@@ -133,7 +133,7 @@ if script:
 else:
     # Provide manual instructions
     user_output("\n" + click.style("Next steps:", fg="cyan", bold=True))
-    user_output(f"  1. Change to worktree:  erk checkout {branch}")
+    user_output(f"  1. Change to worktree:  erk br co {branch}")
     user_output(f"  2. Run implementation:  claude ...")
 ```
 
@@ -162,12 +162,12 @@ $ erk implement 123
 Fetching issue from GitHub...
 Issue: Add Authentication Feature
 Creating worktree 'add-authentication-feature'...
-Running erk checkout...
+Running erk br co...
 ✓ Created worktree: add-authentication-feature
 ✓ Saved issue reference for PR linking
 
 Next steps:
-  1. Change to worktree:  erk checkout add-authentication-feature
+  1. Change to worktree:  erk br co add-authentication-feature
   2. Run implementation:  claude --permission-mode acceptEdits "/erk:plan-implement"
 
 Shell integration not detected.
@@ -249,7 +249,7 @@ Script mode is **required** (not optional) for commands that delete the current 
 
 ### Optional Script Mode
 
-For most commands, script mode is a convenience - it enables automatic directory switching. Without it, users can manually run `cd` or `erk checkout`:
+For most commands, script mode is a convenience - it enables automatic directory switching. Without it, users can manually run `cd` or `erk br co`:
 
 ```bash
 # Without shell integration - still works, just requires manual cd

@@ -5,7 +5,7 @@ the full CLI command pipeline. These tests directly verify the message
 generation business logic.
 """
 
-from erk.cli.commands.checkout import _perform_checkout
+from erk.cli.commands.branch.checkout_cmd import _perform_checkout
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.integrations.graphite.fake import FakeGraphite

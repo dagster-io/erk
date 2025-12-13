@@ -52,7 +52,7 @@ You should see your branch in the stack output with its parent relationship.
 2. **Navigate to worktree:**
 
    ```bash
-   erk checkout feature-branch
+   erk br co feature-branch
    ```
 
 3. **Make changes and commit:**
