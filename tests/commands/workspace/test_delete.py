@@ -88,7 +88,7 @@ def test_delete_force_removes_directory() -> None:
         result = runner.invoke(cli, ["wt", "delete", "foo", "-f"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        assert result.output.strip().endswith(str(wt))
+        assert f"Deleted worktree: {wt}" in result.output
 
 
 def test_delete_prompts_and_aborts_on_no() -> None:
