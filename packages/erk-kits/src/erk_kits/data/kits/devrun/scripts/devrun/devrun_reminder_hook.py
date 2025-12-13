@@ -16,7 +16,10 @@ from erk.kits.hooks.decorators import logged_hook, project_scoped
 @project_scoped
 def devrun_reminder_hook() -> None:
     """Output devrun agent reminder for UserPromptSubmit hook."""
-    click.echo("📋 devrun: pytest/pyright/ruff/prettier/make/gt → Task(subagent_type=devrun)")
+    click.echo(
+        "🚫 No direct Bash for: pytest/pyright/ruff/prettier/make/gt; "
+        "✅ Use Task(subagent_type='devrun') instead."
+    )
 
 
 if __name__ == "__main__":
