@@ -1,7 +1,7 @@
 """Integration test to verify all symlinks in .claude/ directory are valid.
 
-This test ensures that symlinks in .claude/commands/, .claude/skills/, etc. point to
-files that actually exist. This prevents broken symlinks after file renames or removals.
+This test validates project-level symlinks (e.g., cross-directory references within
+the repo). It does NOT test kit artifact installations, which use file copies.
 """
 
 from pathlib import Path
@@ -43,7 +43,6 @@ def test_no_broken_symlinks_in_claude_directory():
     Broken symlinks can occur when:
     - Source files are renamed but symlinks aren't updated
     - Source files are deleted but symlinks remain
-    - Kit reinstallation doesn't clean up old symlinks
     """
     project_root = get_project_root()
     claude_dir = project_root / ".claude"
@@ -72,8 +71,7 @@ def test_no_broken_symlinks_in_claude_directory():
 def test_no_broken_symlinks_in_commands():
     """Verify all symlinks in .claude/commands/ are valid.
 
-    This is a more specific test that focuses on command symlinks,
-    which are commonly created when installing kits.
+    This is a more specific test that focuses on command symlinks.
     """
     project_root = get_project_root()
     commands_dir = project_root / ".claude" / "commands"

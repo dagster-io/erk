@@ -13,7 +13,7 @@ read_when:
 
 ## The Problem
 
-Kit source files live in `packages/erk-kits/src/erk_kits/data/kits/<kit>/`. When these files use @ references, they're written for the **installed** location (`.claude/` or `.erk/`), not the source location.
+Source files live in `.claude/`, `.erk/docs/kits/`, etc. (source of truth). When kit artifacts are built to `packages/erk-kits/data/kits/<kit>/`, the @ references in those files are preserved as-is, written for the **installed** location.
 
 ## Why This Matters
 
@@ -51,16 +51,16 @@ Path resolution:
 
 ## Best Practices
 
-1. **Write @ references for installed location** - Always write paths as if the file is already in `.claude/` or `.erk/docs/kits/`
-2. **Test after installation** - Run `erk kit sync --force` then `erk md check --check-links` on the project
+1. **Write @ references for the source location** - Since source files are now in `.claude/` and `.erk/docs/kits/`, paths work directly
+2. **Test after building** - Run `erk dev kit-build` then `erk md check --check-links` on the project
 3. **Use absolute paths when possible** - `@.erk/docs/kits/foo/bar.md` is clearer than relative paths
 
 ## Validation Workflow
 
 ```bash
-# After modifying kit source files:
-erk kit sync --force           # Install/update kit artifacts
-erk md check --check-links     # Now validate @ references
+# After modifying source files:
+erk dev kit-build              # Build artifacts to kit packages
+erk md check --check-links     # Validate @ references
 ```
 
 ## Related Documentation

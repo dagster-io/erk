@@ -49,11 +49,9 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before using Path.cwd() in kit CLI commands** → Read [Kit CLI Dependency Injection Patterns](kits/dependency-injection.md) first. Use require_cwd(ctx) instead. Path.cwd() bypasses dependency injection and makes tests require monkeypatching.
 
-**CRITICAL: Before creating symlinks in bundled kit source directories** → Read [Kit Artifact and Symlink Management](kits/dev/artifact-management.md) first. Bundled kits should contain real files, NOT symlinks. The installation process creates symlinks FROM .claude/ TO kit sources.
+**CRITICAL: Before editing artifacts without running kit-build** → Read [Kit Artifact Build System](kits/dev/artifact-management.md) first. After editing source files (.claude/, .erk/docs/kits/, .github/), run `erk dev kit-build` to sync changes to kit packages.
 
-**CRITICAL: Before running `kit sync` after adding artifacts to kit.yaml** → Read [Kit Artifact and Symlink Management](kits/dev/artifact-management.md) first. Must use `--force` flag if version wasn't bumped.
-
-**CRITICAL: Before editing files in .claude/ that are symlinks to kit sources** → Read [Kit Artifact and Symlink Management](kits/dev/artifact-management.md) first. Kit artifacts in .claude/ are symlinks. Edit the SOURCE file in the kit package (use `readlink -f` to find it), or the symlink will be replaced with a regular file.
+**CRITICAL: Before editing artifact files in kit packages instead of source locations** → Read [Kit Artifact Build System](kits/dev/artifact-management.md) first. Kit packages are BUILD OUTPUTS. Edit source files in .claude/, .erk/docs/kits/, or .github/workflows/, then run `erk dev kit-build`.
 
 **CRITICAL: Before writing to /tmp/** → Read [Scratch Storage](planning/scratch-storage.md) first. AI workflow files belong in .erk/scratch/<session-id>/, NOT /tmp/.
 
