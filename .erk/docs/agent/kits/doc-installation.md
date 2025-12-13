@@ -53,8 +53,8 @@ For relative references from within a skill to its kit's docs:
 ## Installation Flow
 
 1. Kit manifest (`kit.yaml`) declares docs under `artifacts: doc:`
-2. Source files live in `packages/erk-kits/data/kits/<kit>/docs/`
-3. Installation creates symlinks from `.erk/docs/kits/<kit>/` to source
+2. Source files live in `.erk/docs/kits/<kit>/` (source of truth)
+3. Installation copies files from kit packages to `.erk/docs/kits/<kit>/`
 4. Skills/commands use @ references that resolve at runtime
 
 ## Key Distinction from `.claude/docs/`
@@ -68,4 +68,4 @@ If a project has its own documentation in `.claude/docs/`, these are:
 ## Related Documentation
 
 - [Artifact Path Transformation](artifact-path-transformation.md) - How paths are transformed during installation
-- [Kit Artifact and Symlink Management](dev/artifact-management.md) - Symlink handling during installation
+- [Kit Artifact Build System](dev/artifact-management.md) - Kit artifact architecture and build workflow

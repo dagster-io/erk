@@ -22,29 +22,6 @@ from erk.kits.sources.resolver import KitResolver, ResolvedKit
 from erk.kits.sources.standalone import StandalonePackageSource
 
 
-def _all_artifacts_are_symlinks(installed: InstalledKit, project_dir: Path) -> bool:
-    """Check if all installed artifacts are symlinks.
-
-    Args:
-        installed: Installed kit information
-        project_dir: Project root directory
-
-    Returns:
-        True if all artifacts exist and are symlinks, False otherwise
-    """
-    if not installed.artifacts:
-        return False
-
-    for artifact_path in installed.artifacts:
-        full_path = project_dir / artifact_path
-        if not full_path.exists():
-            return False
-        if not full_path.is_symlink():
-            return False
-
-    return True
-
-
 def _handle_update_workflow(
     kit_id: str,
     installed: InstalledKit,
@@ -66,14 +43,6 @@ def _handle_update_workflow(
     Raises:
         SystemExit: If resolution fails or kit not found
     """
-    # Skip reinstall if artifacts are already symlinks (dev_mode)
-    if _all_artifacts_are_symlinks(installed, project_dir):
-        user_output(
-            f"ℹ Kit '{kit_id}' already installed as symlinks (dev_mode)",
-        )
-        user_output("  No action needed - edits to .claude/ already affect source")
-        return
-
     check_result = check_for_updates(installed, resolver, force=force)
 
     # Handle resolution errors - fail loudly rather than assuming up-to-date

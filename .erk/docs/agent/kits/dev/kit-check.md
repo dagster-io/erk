@@ -68,7 +68,7 @@ Summary: 1 error, 0 warnings
 - **After modifying kit configuration** - Catch broken references before committing
 - **Before committing kit changes** - Ensure all artifacts are properly linked
 - **During CI** - Automated validation of kit integrity
-- **After running `kit sync`** - Verify symlinks were created correctly
+- **After running `kit-build`** - Verify artifacts were copied correctly
 
 ## Common Issues
 
