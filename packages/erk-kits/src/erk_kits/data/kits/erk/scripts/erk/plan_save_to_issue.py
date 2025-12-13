@@ -135,7 +135,7 @@ def plan_save_to_issue(
                 click.echo(json.dumps({"success": False, "error": result.error}))
         raise SystemExit(1)
 
-    # Step 8: Capture and embed session context (non-blocking)
+    # Capture and embed session context (non-blocking)
     session_context_chunks = 0
     session_ids: list[str] = []
 
