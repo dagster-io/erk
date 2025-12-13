@@ -22,7 +22,7 @@ Install a kit or update it if already installed.
 # Install or update a kit
 erk kit install devrun
 
-# Force reinstall (even if up to date)
+# Force reinstall even if version numbers do not indicate a reinstall is necessary
 erk kit install devrun --force
 ```
 
@@ -30,7 +30,7 @@ erk kit install devrun --force
 
 **Options**:
 
-- `-f, --force`: Force reinstall even if already up to date
+- `-f, --force`: Force reinstall even if version numbers do not indicate a reinstall is necessary
 
 ### erk kit list
 

@@ -24,44 +24,6 @@ The install command is fully idempotent:
 
 This eliminates the need for separate `install` vs `update` vs `sync` commands.
 
-## Data Structures
-
-### UpdateCheckResult
-
-```python
-class UpdateCheckResult(NamedTuple):
-    has_update: bool           # True if update available (or force=True)
-    resolved: ResolvedKit | None  # Resolved kit info, None on error
-    error_message: str | None  # Error description if resolution failed
-```
-
-Resolution errors are captured in `error_message` rather than returning "up to date" to prevent silent failures.
-
-### SyncResult
-
-```python
-@dataclass(frozen=True)
-class SyncResult:
-    kit_id: str
-    old_version: str
-    new_version: str
-    was_updated: bool
-    artifacts_updated: int
-    updated_kit: InstalledKit | None
-```
-
-### ResolvedKit
-
-```python
-@dataclass(frozen=True)
-class ResolvedKit:
-    kit_id: str           # Globally unique identifier
-    source_type: SourceType
-    version: str
-    manifest_path: Path
-    artifacts_base: Path
-```
-
 ## Workflow Routing
 
 ```
@@ -83,58 +45,33 @@ install(kit_id)
 
 ## Multi-Source Resolution
 
-The `KitResolver` chains multiple sources:
+The resolver chains multiple kit sources (bundled kits, standalone packages) and iterates them in order, returning the first match. See `src/erk/kits/sources/resolver.py` for implementation.
 
-```python
-resolver = KitResolver(sources=[
-    BundledKitSource(),      # Built-in kits
-    StandalonePackageSource(), # External packages
-])
-```
+## Hook Installation
 
-Resolution iterates sources in order, returning the first match.
+Hooks are installed by **directly editing `.claude/settings.json`** in place. This is somewhat counterintuitive and carries risk, but is the only way to register hooks with Claude Code since there's no API for dynamic hook registration.
 
-## Atomic Hook Updates
+**How it works:**
 
-Hook installation uses atomic operations with rollback:
+1. Kit manifest declares hooks with trigger events and script paths
+2. During installation, hook entries are added to the `hooks` section in `settings.json`
+3. Hook scripts are copied to `.claude/hooks/<kit-id>/`
+4. Settings file is updated to reference these scripts
 
-```
-_perform_atomic_hook_update()
-    │
-    ├── Backup current settings.json
-    ├── Backup current hooks directory
-    │
-    ├── Try:
-    │   ├── remove_hooks()
-    │   └── install_hooks()
-    │
-    └── On failure:
-        ├── Restore settings.json
-        └── Restore hooks directory
-```
+**Atomic updates with rollback:**
 
-This prevents partial state where old hooks are removed but new hooks fail to install.
+Because editing `settings.json` is risky, the install command implements atomic updates:
 
-## Exception Hierarchy
+- Backs up current `settings.json` and hooks directory before changes
+- On failure, restores the backup to prevent partial state
 
-```
-DotAgentNonIdealStateException
-    │
-    ├── KitResolutionError
-    │   ├── KitNotFoundError        # Kit doesn't exist in any source
-    │   ├── ResolverNotConfiguredError  # No source can handle the request
-    │   ├── SourceAccessError       # Network/filesystem access failed
-    │   ├── KitManifestError        # Manifest parsing failed
-    │   ├── KitVersionError         # Version mismatch/invalid
-    │   ├── SourceFormatError       # Invalid source specification
-    │   ├── KitConfigurationError   # General config issues
-    │   └── InvalidKitIdError       # ID format violation
-    │
-    ├── HookConfigurationError      # Hook config issues
-    └── ArtifactConflictError       # File already exists
-```
+**Debugging features:**
 
-All exceptions inherit from `DotAgentNonIdealStateException` for clean CLI error display.
+Many kits include hooks that provide debugging and development conveniences (e.g., session ID injection, tripwire reminders). These hooks may be referenced in other documentation. Use `erk kit show <kit-id>` to see what hooks a kit provides.
+
+## Exception Handling
+
+Kit resolution errors inherit from `DotAgentNonIdealStateException` for clean CLI error display without stack traces. See `src/erk/kits/sources/exceptions.py` for the complete exception hierarchy.
 
 ## Key Implementation Details
 
