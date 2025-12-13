@@ -4,7 +4,7 @@ erk:
   kit: erk
 ---
 
-# /erk:submit-plan
+# /erk:plan-submit
 
 ## Goal
 
