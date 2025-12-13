@@ -244,7 +244,8 @@ def check_for_version_change() -> tuple[bool, list[ReleaseEntry]]:
     # This prevents repeated banners when switching between worktrees
     # with different erk versions installed
     if not _is_upgrade(current, last_seen):
-        update_last_seen_version(current)
+        # Don't update tracking on downgrade - keep tracking the max version seen
+        # This prevents repeated banners when switching between worktrees
         return (False, [])
 
     # Upgrade detected - find all releases between last_seen and current

@@ -195,12 +195,12 @@ def test_is_upgrade_returns_false_for_downgrade() -> None:
 @patch("erk.core.release_notes.update_last_seen_version")
 @patch("erk.core.release_notes.get_last_seen_version")
 @patch("erk.core.release_notes.get_current_version")
-def test_check_for_version_change_downgrade_silent(
+def test_check_for_version_change_downgrade_preserves_max_version(
     mock_current: patch,
     mock_last_seen: patch,
     mock_update: patch,
 ) -> None:
-    """Test that downgrades silently update tracking without showing banner."""
+    """Test that downgrades don't update tracking (preserves max version seen)."""
     mock_current.return_value = "0.2.3"
     mock_last_seen.return_value = "0.2.4"
 
@@ -208,7 +208,7 @@ def test_check_for_version_change_downgrade_silent(
 
     assert changed is False
     assert releases == []
-    mock_update.assert_called_once_with("0.2.3")
+    mock_update.assert_not_called()
 
 
 @patch("erk.core.release_notes.update_last_seen_version")
