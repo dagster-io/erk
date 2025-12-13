@@ -57,6 +57,7 @@ class CommandOutputPanel(Static):
         self._title = title
         self._completed = False
         self._success = False
+        self._lines: list[str] = []
 
     @property
     def is_completed(self) -> bool:
@@ -82,11 +83,16 @@ class CommandOutputPanel(Static):
             line: The line of output to append
             is_stderr: If True, style as error output (red)
         """
+        self._lines.append(line)
         log = self.query_one("#output-log", RichLog)
         if is_stderr:
             log.write(f"[red]{line}[/red]")
         else:
             log.write(line)
+
+    def get_output_text(self) -> str:
+        """Return all output lines joined with newlines."""
+        return "\n".join(self._lines)
 
     def set_completed(self, success: bool) -> None:
         """Mark command as complete and show dismiss hint.
@@ -99,8 +105,8 @@ class CommandOutputPanel(Static):
 
         status = self.query_one("#output-status", Static)
         if success:
-            status.update("✓ Complete - Press Esc to close")
+            status.update("✓ Complete - Press Esc to close, y to copy logs")
             status.add_class("success")
         else:
-            status.update("✗ Failed - Press Esc to close")
+            status.update("✗ Failed - Press Esc to close, y to copy logs")
             status.add_class("failure")

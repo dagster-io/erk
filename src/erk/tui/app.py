@@ -218,6 +218,7 @@ class PlanDetailScreen(ModalScreen):
         # Copy section
         Binding("c", "copy_checkout", "Checkout"),
         Binding("e", "copy_pr_checkout", "PR Checkout"),
+        Binding("y", "copy_output_logs", "Copy Logs"),
         Binding("1", "copy_implement", "Implement"),
         Binding("2", "copy_implement_dangerous", "Dangerous"),
         Binding("3", "copy_implement_yolo", "Yolo"),
@@ -512,6 +513,14 @@ class PlanDetailScreen(ModalScreen):
         """Copy submit command to clipboard."""
         cmd = f"erk plan submit {self._row.issue_number}"
         self._copy_and_notify(cmd)
+
+    def action_copy_output_logs(self) -> None:
+        """Copy command output logs to clipboard."""
+        if self._output_panel is None:
+            return
+        if not self._output_panel.is_completed:
+            return
+        self._copy_and_notify(self._output_panel.get_output_text())
 
     async def action_dismiss(self, result: object = None) -> None:
         """Dismiss the modal, blocking while command is running.
