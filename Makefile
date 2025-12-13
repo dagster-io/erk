@@ -1,4 +1,4 @@
-.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test fast-ci all-ci check kit-build kit-build-check md-check kit-md-check docs-validate docs-sync-check clean publish fix reinstall-erk-tools
+.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test fast-ci all-ci check kit-build kit-build-autofix kit-build-check md-check kit-md-check docs-validate docs-sync-check clean publish fix reinstall-erk-tools
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -79,6 +79,15 @@ check:
 kit-build:
 	uv run erk dev kit-build
 
+# Auto-fix kit build: build and commit if changed
+kit-build-autofix:
+	@uv run erk dev kit-build && \
+	git add packages/erk-kits/src/erk_kits/data/kits/ && \
+	if [ -n "$$(git diff --cached --name-only)" ]; then \
+		echo "Kit artifacts changed, auto-committing..."; \
+		git commit -m "Auto-fix: Sync kit artifacts with sources"; \
+	fi
+
 # Validate kits: Check that artifacts match source locations
 kit-build-check:
 	uv run erk dev kit-build --check
@@ -115,7 +124,7 @@ fast-ci:
 	echo "\n--- Docs Validate ---" && uv run erk docs validate || exit_code=1; \
 	echo "\n--- Docs Sync Check ---" && uv run erk docs sync --check || exit_code=1; \
 	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
-	echo "\n--- Kit Build ---" && uv run erk dev kit-build || exit_code=1; \
+	echo "\n--- Kit Build ---" && $(MAKE) kit-build-autofix || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
 	echo "\n--- Kit Check ---" && uv run erk kit check || exit_code=1; \
@@ -135,7 +144,7 @@ all-ci:
 	echo "\n--- Docs Validate ---" && uv run erk docs validate || exit_code=1; \
 	echo "\n--- Docs Sync Check ---" && uv run erk docs sync --check || exit_code=1; \
 	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
-	echo "\n--- Kit Build ---" && uv run erk dev kit-build || exit_code=1; \
+	echo "\n--- Kit Build ---" && $(MAKE) kit-build-autofix || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
 	echo "\n--- Integration Tests (erk) ---" && uv run pytest tests/integration/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
