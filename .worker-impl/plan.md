@@ -3,6 +3,7 @@
 ## Objective
 
 Update `docs/agent/architecture/github-graphql.md` to document:
+
 1. Strong preference for queries as string constants in standalone files
 2. Patterns for passing JSON arrays/objects via `-f` flag
 3. Fragment patterns for reusability
@@ -38,6 +39,7 @@ Add after the existing "Query Organization" section to strengthen the guidance:
 ### When Dynamic Query Building is Acceptable
 
 Only use dynamic query construction when GraphQL limitations require it:
+
 - **Aliased field names**: `issue_123: issue(number: 123)` cannot use variables for aliases
 - In these cases, extract reusable fragments to constants and compose them dynamically
 ```
@@ -46,7 +48,7 @@ Only use dynamic query construction when GraphQL limitations require it:
 
 Add after the "Variable Passing Syntax" section:
 
-```markdown
+````markdown
 ## Passing Arrays and Objects
 
 For array and object variables, use `json.dumps()` with the `-f` flag:
@@ -66,6 +68,7 @@ cmd = [
     "-f", f"nodeIds={json.dumps(node_ids)}",  # ["id1", "id2", "id3"]
 ]
 ```
+````
 
 ### Objects
 
@@ -86,12 +89,13 @@ if creator is not None:
 
 The `-f` flag passes strings, but `gh` automatically parses JSON syntax when the GraphQL variable type expects it. The key is that `json.dumps()` produces valid JSON that `gh` can parse.
 
-| Variable Type | Python Value | Command |
-|--------------|--------------|---------|
-| `[String!]!` | `["a", "b"]` | `-f 'labels=["a", "b"]'` |
-| `[ID!]!` | `["id1", "id2"]` | `-f 'nodeIds=["id1", "id2"]'` |
+| Variable Type  | Python Value            | Command                               |
+| -------------- | ----------------------- | ------------------------------------- |
+| `[String!]!`   | `["a", "b"]`            | `-f 'labels=["a", "b"]'`              |
+| `[ID!]!`       | `["id1", "id2"]`        | `-f 'nodeIds=["id1", "id2"]'`         |
 | `IssueFilters` | `{"createdBy": "user"}` | `-f 'filterBy={"createdBy": "user"}'` |
-```
+
+````
 
 ### 3. Add "Fragment Patterns" Section
 
@@ -117,7 +121,7 @@ ISSUE_PR_LINKAGE_FRAGMENT = """fragment IssuePRLinkageFields on CrossReferencedE
     }
   }
 }"""
-```
+````
 
 ### Using Fragments in Queries
 
@@ -154,6 +158,7 @@ nodes {
   }
 }
 ```
+
 ```
 
 ## Success Criteria
@@ -162,3 +167,4 @@ nodes {
 - Array/object variable passing patterns are clearly documented with examples
 - Fragment patterns are documented for reusability
 - All examples are derived from actual working code in the codebase
+```
