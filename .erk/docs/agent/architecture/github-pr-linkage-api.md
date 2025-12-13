@@ -80,7 +80,7 @@ query {
 
 ### Implications for Erk
 
-The `erk submit` command must include "Closes #N" in the **initial** PR body passed to `create_pr()`, not added via a subsequent body update. See `src/erk/cli/commands/submit.py` for the implementation.
+The `erk plan submit` command must include "Closes #N" in the **initial** PR body passed to `create_pr()`, not added via a subsequent body update. See `src/erk/cli/commands/submit.py` for the implementation.
 
 ## When to Use Each Approach
 

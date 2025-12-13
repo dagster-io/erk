@@ -8,13 +8,13 @@ erk:
 
 ## Goal
 
-Find the most recent GitHub issue created in this conversation and submit it for remote AI implementation via `erk submit`.
+Find the most recent GitHub issue created in this conversation and submit it for remote AI implementation via `erk plan submit`.
 
 ## What This Command Does
 
 1. Search conversation for the last GitHub issue reference
 2. Extract the issue number
-3. Run `erk submit <issue_number>` to trigger remote implementation
+3. Run `erk plan submit <issue_number>` to trigger remote implementation
 
 ## Finding the Issue
 
@@ -30,12 +30,12 @@ Extract the issue number from the most recent match.
 Once you have the issue number, run:
 
 ```bash
-erk submit <issue_number>
+erk plan submit <issue_number>
 ```
 
-Display the command output to the user. The `erk submit` command handles all validation (issue existence, labels, state).
+Display the command output to the user. The `erk plan submit` command handles all validation (issue existence, labels, state).
 
 ## Error Cases
 
 - **No issue found in conversation**: Report "No GitHub issue found in conversation. Run /erk:save-plan first to create an issue."
-- **erk submit fails**: Display the error output from the command (erk submit validates the issue)
+- **erk plan submit fails**: Display the error output from the command (erk plan submit validates the issue)

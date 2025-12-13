@@ -275,7 +275,7 @@ For sandboxed, parallel execution via GitHub Actions:
 
 2. Submit for remote execution:
    ```bash
-   erk submit <issue-number>
+   erk plan submit <issue-number>
    ```
 
 The agent runs in GitHub Actions and creates a PR automatically.

@@ -49,7 +49,7 @@ if is_extraction_plan(plan_metadata) or is_issue_extraction_plan(issue_metadata)
 
 The label is applied by:
 
-- `erk submit` - Checks issue's `plan_type` field in plan-header metadata
+- `erk plan submit` - Checks issue's `plan_type` field in plan-header metadata
 - `gt finalize` - Checks `.impl/plan.md` for `plan_type: extraction`
 
 ### 2. PR Landing (`land_cmd.py`)
