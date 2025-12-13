@@ -10,7 +10,7 @@ Run the specified CI target and automatically fix any failures. Keep iterating u
 
 ## Sub-Agent Policy
 
-🔴 **CRITICAL**: When spawning sub-agents to run CI commands, you MUST use `devrun`:
+🔴 **CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `pyright`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
 
 ```
 Task tool with:
@@ -19,7 +19,7 @@ Task tool with:
 
 **Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
 
-❌ **FORBIDDEN**: Spawning general-purpose or other sub-agents for CI execution
+❌ **FORBIDDEN**: Spawning general-purpose or other sub-agents for make/pytest/pyright/ruff/prettier/gt
 ❌ **FORBIDDEN**: Giving sub-agents prompts like "fix issues" or "iterate until passing"
 ✅ **REQUIRED**: Sub-agents run ONE command and report results
 ✅ **REQUIRED**: Parent agent decides what to fix based on reports
