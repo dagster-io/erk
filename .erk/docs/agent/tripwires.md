@@ -53,6 +53,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before editing artifact files in kit packages instead of source locations** → Read [Kit Artifact Build System](kits/dev/artifact-management.md) first. Kit packages are BUILD OUTPUTS. Edit source files in .claude/, .erk/docs/kits/, or .github/workflows/, then run `erk dev kit-build`.
 
+**CRITICAL: Before modifying kit install/update logic** → Read [Kit Install Architecture](kits/install-architecture.md) first. Understand the idempotent design and atomic hook updates. The install command handles both fresh installs and updates with rollback on failure.
+
 **CRITICAL: Before writing to /tmp/** → Read [Scratch Storage](planning/scratch-storage.md) first. AI workflow files belong in .erk/scratch/<session-id>/, NOT /tmp/.
 
 **CRITICAL: Before creating temp files for AI workflows** → Read [Scratch Storage](planning/scratch-storage.md) first. Use worktree-scoped scratch storage for session-specific data.
