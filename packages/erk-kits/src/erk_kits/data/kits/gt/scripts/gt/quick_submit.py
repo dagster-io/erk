@@ -21,8 +21,8 @@ def quick_submit() -> None:
 
     For proper commit messages, use the pr-submit command instead.
     """
-    ops = RealGtKit()
     cwd = Path.cwd()
+    ops = RealGtKit(cwd)
     result = render_events(execute_quick_submit(ops, cwd))
 
     # Output JSON result

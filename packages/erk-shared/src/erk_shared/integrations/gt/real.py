@@ -12,6 +12,9 @@ Design:
 - Satisfies GtKit Protocol through structural typing
 """
 
+from pathlib import Path
+
+from erk_shared.context.factories import get_repo_info
 from erk_shared.git.abc import Git
 from erk_shared.git.real import RealGit
 from erk_shared.github.abc import GitHub
@@ -37,9 +40,19 @@ class RealGtKit:
     graphite: Graphite
     time: Time
 
-    def __init__(self) -> None:
-        """Initialize real operations instances."""
+    def __init__(self, cwd: Path) -> None:
+        """Initialize real operations instances.
+
+        Args:
+            cwd: Working directory for determining repo info. Required for
+                 GitHub operations that need repo_info (like get_pr_for_branch).
+        """
         self.time = RealTime()
         self.git = RealGit()
-        self.github = RealGitHub(time=self.time)
+
+        # Compute repo_info from cwd
+        repo_root = self.git.get_repository_root(cwd)
+        repo_info = get_repo_info(self.git, repo_root)
+
+        self.github = RealGitHub(time=self.time, repo_info=repo_info)
         self.graphite = RealGraphite()

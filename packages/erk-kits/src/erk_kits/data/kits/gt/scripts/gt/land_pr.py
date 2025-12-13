@@ -16,8 +16,8 @@ from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
 def land_pr() -> None:
     """Land a single PR from worktree stack without affecting upstack branches."""
     try:
-        ops = RealGtKit()
         cwd = Path.cwd()
+        ops = RealGtKit(cwd)
         result = render_events(execute_land_pr(ops, cwd))
         # Single line summary instead of formatted JSON
         if isinstance(result, LandPrSuccess):

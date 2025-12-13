@@ -18,8 +18,8 @@ from erk_shared.integrations.gt.types import RestackPreflightError
 @click.command(name="restack-preflight")
 def restack_preflight() -> None:
     """Squash and restack branch, detecting conflicts for manual resolution."""
-    ops = RealGtKit()
     cwd = Path.cwd()
+    ops = RealGtKit(cwd)
     result = render_events(execute_restack_preflight(ops, cwd))
     click.echo(json.dumps(asdict(result), indent=2))
     if isinstance(result, RestackPreflightError):

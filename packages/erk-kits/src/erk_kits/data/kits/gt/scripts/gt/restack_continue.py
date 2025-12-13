@@ -22,8 +22,8 @@ def restack_continue(resolved_files: tuple[str, ...]) -> None:
 
     RESOLVED_FILES: Space-separated list of file paths that were resolved.
     """
-    ops = RealGtKit()
     cwd = Path.cwd()
+    ops = RealGtKit(cwd)
     result = render_events(execute_restack_continue(ops, cwd, list(resolved_files)))
     click.echo(json.dumps(asdict(result), indent=2))
     if isinstance(result, RestackContinueError):

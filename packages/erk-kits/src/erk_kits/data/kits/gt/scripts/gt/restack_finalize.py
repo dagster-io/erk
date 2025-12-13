@@ -18,8 +18,8 @@ from erk_shared.integrations.gt.types import RestackFinalizeError
 @click.command(name="restack-finalize")
 def restack_finalize() -> None:
     """Verify restack completed cleanly."""
-    ops = RealGtKit()
     cwd = Path.cwd()
+    ops = RealGtKit(cwd)
     result = render_events(execute_restack_finalize(ops, cwd))
     click.echo(json.dumps(asdict(result), indent=2))
     if isinstance(result, RestackFinalizeError):
