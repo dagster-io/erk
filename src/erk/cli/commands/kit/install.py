@@ -39,8 +39,8 @@ class UpdateCheckResult(NamedTuple):
 
 
 @dataclass(frozen=True)
-class SyncResult:
-    """Result of syncing a kit."""
+class UpdateResult:
+    """Result of updating an installed kit."""
 
     kit_id: str
     old_version: str
@@ -108,14 +108,14 @@ def check_for_updates(
     return UpdateCheckResult(has_update=has_update, resolved=resolved, error_message=None)
 
 
-def sync_kit(
+def update_installed_kit(
     kit_id: str,
     installed: InstalledKit,
     resolved: ResolvedKit,
     project_dir: Path,
     force: bool = False,
-) -> SyncResult:
-    """Sync an installed kit with its source.
+) -> UpdateResult:
+    """Update an installed kit to a new version.
 
     Args:
         kit_id: The kit identifier
@@ -129,7 +129,7 @@ def sync_kit(
     new_version = manifest.version
 
     if old_version == new_version and not force:
-        return SyncResult(
+        return UpdateResult(
             kit_id=kit_id,
             old_version=old_version,
             new_version=new_version,
@@ -149,7 +149,7 @@ def sync_kit(
         overwrite=True,
     )
 
-    return SyncResult(
+    return UpdateResult(
         kit_id=kit_id,
         old_version=old_version,
         new_version=new_version,
@@ -197,9 +197,11 @@ def _handle_update_workflow(
         user_output("Error: Internal error - resolved kit is None")
         raise SystemExit(1)
 
-    # Update the kit using sync
+    # Update the kit
     user_output(f"Updating {kit_id} to v{check_result.resolved.version}...")
-    result = sync_kit(kit_id, installed, check_result.resolved, project_dir, force=force)
+    result = update_installed_kit(
+        kit_id, installed, check_result.resolved, project_dir, force=force
+    )
 
     if not result.was_updated:
         user_output(f"Kit '{kit_id}' was already up to date")
@@ -211,7 +213,7 @@ def _handle_update_workflow(
 
 def _process_update_result(
     kit_id: str,
-    result: SyncResult,
+    result: UpdateResult,
     resolved: ResolvedKit,
     config: ProjectConfig,
     project_dir: Path,
