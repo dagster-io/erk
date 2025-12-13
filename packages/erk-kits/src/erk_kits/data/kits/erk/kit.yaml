@@ -142,6 +142,9 @@ scripts:
   - name: impl-signal
     path: scripts/erk/impl_signal.py
     description: Signal implementation events (started/ended) to GitHub
+  - name: impl-verify
+    path: scripts/erk/impl_verify.py
+    description: Verify .impl/ folder exists after implementation (guardrail)
   - name: get-pr-review-comments
     path: scripts/erk/get_pr_review_comments.py
     description: Fetch PR review comments for agent context injection

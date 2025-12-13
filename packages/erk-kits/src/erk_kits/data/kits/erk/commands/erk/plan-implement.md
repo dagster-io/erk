@@ -92,6 +92,16 @@ Check CLAUDE.md/AGENTS.md for CI commands. Run linting, type checking, tests. Ad
 erk kit exec erk impl-signal ended 2>/dev/null || true
 ```
 
+### Step 9.5: Verify .impl/ Preserved
+
+**CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
+
+```bash
+erk kit exec erk impl-verify
+```
+
+If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
+
 ### Step 10: Run CI Iteratively
 
 1. If `.erk/post-implement.md` exists: follow its instructions
@@ -100,7 +110,7 @@ erk kit exec erk impl-signal ended 2>/dev/null || true
 After CI passes:
 
 - `.worker-impl/`: delete folder, commit cleanup, push
-- `.impl/`: leave for user review (no auto-commit)
+- `.impl/`: **NEVER DELETE** - leave for user review (no auto-commit)
 
 ### Step 11: Create/Update PR (if .worker-impl/ present)
 
