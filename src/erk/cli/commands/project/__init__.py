@@ -8,7 +8,7 @@ from erk.cli.help_formatter import ErkCommandGroup
 
 @click.group("project", cls=ErkCommandGroup, grouped=False)
 def project_group() -> None:
-    """Manage projects within a git repository."""
+    """Manage project or projects (within a monorepo)."""
     pass
 
 
