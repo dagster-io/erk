@@ -32,6 +32,39 @@ def _encode_path_to_project_folder(path: str) -> str:
     return "-" + path.replace("/", "-").replace(".", "-").lstrip("-")
 
 
+def _iter_session_entries(
+    project_dir: Path, session_id: str, *, max_lines: int | None = None
+) -> list[dict]:
+    """Iterate over JSONL entries matching a session ID in a project directory.
+
+    Args:
+        project_dir: Path to project directory
+        session_id: Session ID to filter entries by
+        max_lines: Optional max lines to read per file (for existence checks)
+
+    Returns:
+        List of JSON entries matching the session ID
+    """
+    entries: list[dict] = []
+
+    for jsonl_file in project_dir.glob("*.jsonl"):
+        if jsonl_file.name.startswith("agent-"):
+            continue
+
+        with open(jsonl_file, encoding="utf-8") as f:
+            for i, line in enumerate(f):
+                if max_lines is not None and i >= max_lines:
+                    break
+                line = line.strip()
+                if not line:
+                    continue
+                entry = json.loads(line)
+                if entry.get("sessionId") == session_id:
+                    entries.append(entry)
+
+    return entries
+
+
 def _check_session_in_project(project_dir: Path, session_id: str) -> bool:
     """Check if a session ID exists in a project directory.
 
@@ -42,22 +75,9 @@ def _check_session_in_project(project_dir: Path, session_id: str) -> bool:
     Returns:
         True if session found, False otherwise
     """
-    for jsonl_file in project_dir.glob("*.jsonl"):
-        if jsonl_file.name.startswith("agent-"):
-            continue
-
-        with open(jsonl_file, encoding="utf-8") as f:
-            for i, line in enumerate(f):
-                if i >= 10:
-                    break
-                line = line.strip()
-                if not line:
-                    continue
-                entry = json.loads(line)
-                if entry.get("sessionId") == session_id:
-                    return True
-
-    return False
+    # Only need to check first 10 lines per file for existence
+    entries = _iter_session_entries(project_dir, session_id, max_lines=10)
+    return len(entries) > 0
 
 
 def find_project_dir_for_session(session_id: str, cwd_hint: str | None = None) -> Path | None:
@@ -114,34 +134,17 @@ def extract_slugs_from_session(session_id: str, cwd_hint: str | None = None) -> 
     if not project_dir:
         return []
 
+    # Read all entries (no line limit) and extract unique slugs
+    entries = _iter_session_entries(project_dir, session_id)
+
     slugs: list[str] = []
     seen_slugs: set[str] = set()
 
-    for jsonl_file in project_dir.glob("*.jsonl"):
-        # Skip agent session files
-        if jsonl_file.name.startswith("agent-"):
-            continue
-
-        try:
-            with open(jsonl_file, encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        entry = json.loads(line)
-                        # Only collect slugs from entries matching our session
-                        if entry.get("sessionId") != session_id:
-                            continue
-                        slug = entry.get("slug")
-                        if slug and slug not in seen_slugs:
-                            slugs.append(slug)
-                            seen_slugs.add(slug)
-                    except json.JSONDecodeError:
-                        continue
-        except OSError:
-            # Skip files we can't read
-            continue
+    for entry in entries:
+        slug = entry.get("slug")
+        if slug and slug not in seen_slugs:
+            slugs.append(slug)
+            seen_slugs.add(slug)
 
     return slugs
 
