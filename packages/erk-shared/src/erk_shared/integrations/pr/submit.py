@@ -133,18 +133,24 @@ def execute_core_submit(
 
     # Step 4: Verify there are commits to push
     trunk_branch = ctx.git.detect_trunk_branch(repo_root)
-    commit_count = ctx.git.count_commits_ahead(cwd, trunk_branch)
+
+    # Get parent branch (Graphite-aware, falls back to trunk)
+    parent_branch = (
+        ctx.graphite.get_parent_branch(ctx.git, Path(repo_root), branch_name) or trunk_branch
+    )
+
+    commit_count = ctx.git.count_commits_ahead(cwd, parent_branch)
     if commit_count == 0:
         yield CompletionEvent(
             CoreSubmitError(
                 success=False,
                 error_type="no_commits",
-                message=f"No commits ahead of {trunk_branch}. Nothing to submit.",
-                details={"trunk_branch": trunk_branch, "branch": branch_name},
+                message=f"No commits ahead of {parent_branch}. Nothing to submit.",
+                details={"parent_branch": parent_branch, "branch": branch_name},
             )
         )
         return
-    yield ProgressEvent(f"{commit_count} commit(s) ahead of {trunk_branch}")
+    yield ProgressEvent(f"{commit_count} commit(s) ahead of {parent_branch}")
 
     # Step 5: Get issue reference for PR footer
     impl_dir = cwd / ".impl"
@@ -200,7 +206,7 @@ def execute_core_submit(
             branch=branch_name,
             title=pr_title,
             body=full_body,
-            base=trunk_branch,
+            base=parent_branch,
         )
 
         # Get PR URL

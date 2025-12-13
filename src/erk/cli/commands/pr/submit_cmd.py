@@ -120,8 +120,13 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool) -> None
     current_branch = ctx.git.get_current_branch(cwd) or core_result.branch_name
     trunk_branch = ctx.git.detect_trunk_branch(repo_root)
 
-    # Get commit messages for AI context
-    commit_messages = ctx.git.get_commit_messages_since(cwd, trunk_branch)
+    # Get parent branch (Graphite-aware, falls back to trunk)
+    parent_branch = (
+        ctx.graphite.get_parent_branch(ctx.git, Path(repo_root), current_branch) or trunk_branch
+    )
+
+    # Get commit messages for AI context (only from current branch)
+    commit_messages = ctx.git.get_commit_messages_since(cwd, parent_branch)
 
     # Phase 3: Generate commit message
     click.echo(click.style("Phase 3: Generating PR description", bold=True))
@@ -131,7 +136,7 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool) -> None
         diff_file=diff_file,
         repo_root=Path(repo_root),
         current_branch=current_branch,
-        parent_branch=trunk_branch,
+        parent_branch=parent_branch,
         commit_messages=commit_messages,
         debug=debug,
     )
