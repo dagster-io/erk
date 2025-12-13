@@ -7,12 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-As of b5e949b45
+As of b201e6e8b
+
+### Major Changes
+
+- Reorganize CLI commands: move `submit` to `erk plan submit`, elevate `list` and `delete` to top-level (49c41562d)
+
+### Added
+
+- Add `.impl/` preservation guardrail to plan-implement workflow to prevent agents from deleting implementation plans - note: this may cause hard failures, please report if encountered (635642e33)
 
 ### Changed
 
+- Clean up CLI help string organization and improve command grouping (00f03268f)
 - Improve devrun hook message to increase agent adherence to devrun pattern (b5e949b45)
 - Move CHANGELOG.md to repository root for PyPI distribution (1fe3629bf)
+
+### Fixed
+
+- Fix release notes banner showing repeatedly when switching between worktrees with different erk versions (3c6ef9c62)
+- Fix branch divergence error handling in PR submission with actionable remediation message (2907ca360)
+
+### Removed
+
+- Remove SESSION_CONTEXT environment variable for session ID passing (5f6dd1214)
 
 ## [0.2.5] - 2025-12-12 14:30 PT
 
