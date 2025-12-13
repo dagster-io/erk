@@ -1,0 +1,11 @@
+topic: ARR velocity analysis methodology
+incorrect_understanding:
+  When analyzing ARR velocity by quarter, I should show total
+  ARR velocity as one of the key metrics
+correct_understanding:
+  Total ARR velocity is a meaningless metric when analyzing quarterly
+  trends. The meaningful metrics are average and median ARR velocity, as these show
+  the actual velocity performance per deal rather than just aggregating velocity values.
+search_keywords:
+  ARR velocity, quarterly analysis, average velocity, median velocity,
+  deal performance, meaningless metrics, aggregated values, per-deal metrics

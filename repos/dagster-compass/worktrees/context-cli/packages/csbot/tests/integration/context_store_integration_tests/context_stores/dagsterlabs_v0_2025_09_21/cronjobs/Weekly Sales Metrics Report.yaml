@@ -1,0 +1,12 @@
+cron: 0 9 * * 1
+question:
+  "Generate a weekly sales report covering:\n\u2022 How many SALs (Sales Accepted\
+  \ Leads) were created the prior week and week-over-week performance comparison\n\
+  \u2022 How many meetings were booked the prior week and week-over-week performance\
+  \ comparison  \n\u2022 How many meetings were held the prior week and week-over-week\
+  \ performance comparison\n\nFor each metric, show the current week's count, the\
+  \ previous week's count, the absolute change, and percentage change. Present the\
+  \ data in a clear format with visualizations if helpful."
+thread:
+  "weekly sales metrics report is here! \U0001F4CA covering sals created, meetings\
+  \ booked, and meetings held with week-over-week performance comparisons \U0001F9F5"

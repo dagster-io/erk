@@ -1,0 +1,13 @@
+topic: risk weighted forecast calculation
+incorrect_understanding:
+  When calculating realistic forecast, I should only include
+  closed deals plus commit stage deals, excluding best case weighted values
+correct_understanding:
+  When calculating risk-weighted forecast, I should include ALL
+  pipeline stages multiplied by their respective probabilities - closed (100%) + commit
+  (80%) + best case (mix of 80%/50%/20%) + pipeline (5%). The realistic forecast should
+  be the sum of all risk-weighted values across all active pipeline stages.
+search_keywords:
+  risk-weighted forecast, pipeline stages, probability weighting, closed
+  deals, commit stage, best case, pipeline probability, sales forecasting, forecast
+  calculation, deal probability

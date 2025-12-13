@@ -1,0 +1,34 @@
+cron: 0 17 * * 3
+question:
+  "Create a comprehensive weekly competitive intelligence analysis for executive
+  leadership including:
+
+
+  1. Win/loss analysis with competitor mentions from opportunities, showing competitive
+  win rates and deal size patterns
+
+  2. Market positioning analysis from sales call transcripts identifying how customers
+  perceive vs competitors
+
+  3. Product differentiation themes from won opportunities showing key value propositions
+  that resonate
+
+  4. Competitive deal landscape showing average deal sizes against specific competitors
+
+  5. Emerging competitive threats or new market entrants mentioned in sales conversations
+
+  6. Customer technology stack analysis from call transcripts showing integration
+  opportunities and competitive displacements
+
+  7. Create strategic visualizations showing competitive position and market trends
+
+  8. Identify strategic opportunities to strengthen competitive positioning and win
+  rate improvements
+
+
+  Focus on strategic market intelligence to inform product strategy, positioning,
+  and competitive response planning."
+thread:
+  "\U0001F3AF Weekly CEO Competitive Intelligence Report - analyzing win/loss\
+  \ patterns, competitor mentions, market positioning, and differentiation themes\
+  \ \U0001F9F5"

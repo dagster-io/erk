@@ -1,0 +1,15 @@
+topic: lead source field usage
+incorrect_understanding:
+  I should use LEAD_SOURCE field for lead source analysis,
+  and "Waitlist" is a meaningful lead source representing current signups for our
+  cloud platform
+correct_understanding:
+  I should always use RECENT_SOURCE field instead of LEAD_SOURCE
+  for lead source analysis. "Waitlist" in LEAD_SOURCE is a legacy/useless signal from
+  pre-release signups in 2022 or earlier that pollutes attribution due to first-touch
+  attribution with no expiration. RECENT_SOURCE provides the actual meaningful lead
+  source attribution.
+search_keywords:
+  RECENT_SOURCE, LEAD_SOURCE, lead source analysis, Waitlist, legacy
+  data, attribution, first-touch attribution, cloud platform, data pollution,
+  meaningful attribution

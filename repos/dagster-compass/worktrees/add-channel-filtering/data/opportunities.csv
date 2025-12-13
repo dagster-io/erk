@@ -1,0 +1,652 @@
+account_id,account_name,opportunity_type,stage,owner_name,amount_dollars,seats,partner_name,source,created_date,discovery_date,evaluation_date,negotiation_date,closed_date,is_won
+ACCT-0,Quick Group,new business,2. Discovery,Brian Chen,126882,97,,inbound,2024-12-11 00:00:00,2024-12-14 00:00:00,,,,False
+ACCT-1,Quick Co,new business,2. Discovery,Carlos Rivera,97813,35,,outbound,2025-04-29 00:00:00,2025-05-02 00:00:00,,,,False
+ACCT-2,Worldwide Inc,new business,2. Discovery,Carlos Rivera,74966,5,Medford Consulting Group,outbound,2024-11-12 00:00:00,2024-11-14 00:00:00,,,,False
+ACCT-3,East Group,new business,5. Closed Won,Carlos Rivera,78147,23,,inbound,2025-06-21 00:00:00,2025-06-22 00:00:00,2025-06-29 00:00:00,2025-07-12 00:00:00,2025-07-17 00:00:00,True
+ACCT-3,East Group,renewal,5. Closed Won,Sarah Brown,91525,10,,,2026-05-13 00:00:00,2026-05-14 00:00:00,2026-06-04 00:00:00,2026-06-04 00:00:00,2026-06-11 00:00:00,True
+ACCT-4,Red Technologies,new business,2. Discovery,Carlos Rivera,90798,44,,inbound,2025-01-12 00:00:00,2025-01-15 00:00:00,,,,False
+ACCT-5,Blue Partners,new business,4. Negotiation,Carlos Rivera,89782,10,,inbound,2025-01-16 00:00:00,2025-01-18 00:00:00,2025-02-16 00:00:00,2025-02-25 00:00:00,,False
+ACCT-6,Continental Corp,new business,2. Discovery,Brian Chen,164459,136,Medford Consulting Group,outbound,2025-04-24 00:00:00,2025-04-27 00:00:00,,,,False
+ACCT-7,Dynamic Group,new business,5. Closed Lost,Brian Chen,199797,165,,inbound,2024-12-21 00:00:00,2024-12-22 00:00:00,2025-03-11 00:00:00,2025-04-07 00:00:00,,False
+ACCT-8,International Inc,new business,2. Discovery,Tina Patel,58082,45,,inbound,2025-05-15 00:00:00,2025-05-18 00:00:00,,,,False
+ACCT-9,Worldwide LLC,new business,5. Closed Lost,Samantha Lee,40154,5,,inbound,2024-12-19 00:00:00,2024-12-22 00:00:00,2024-12-24 00:00:00,2024-12-29 00:00:00,,False
+ACCT-10,Worldwide LLC,new business,2. Discovery,Donna Moriarty,52301,19,,inbound,2025-02-03 00:00:00,2025-02-05 00:00:00,,,,False
+ACCT-11,Green Co,new business,3. Evaluation,Brian Chen,79642,136,Medford Consulting Group,inbound,2025-01-29 00:00:00,2025-01-31 00:00:00,2025-03-06 00:00:00,,,False
+ACCT-12,North Co,new business,4. Negotiation,Brian Chen,168772,63,,inbound,2025-07-08 00:00:00,2025-07-10 00:00:00,2025-07-21 00:00:00,2025-08-01 00:00:00,,False
+ACCT-13,Tech Ltd,new business,2. Discovery,Carlos Rivera,83075,42,,inbound,2024-11-26 00:00:00,2024-11-28 00:00:00,,,,False
+ACCT-14,Tech Group,new business,4. Negotiation,Tina Patel,82874,32,Medford Consulting Group,outbound,2025-06-16 00:00:00,2025-06-18 00:00:00,2025-07-12 00:00:00,2025-07-26 00:00:00,,False
+ACCT-15,Red Corp,new business,2. Discovery,Carlos Rivera,98894,22,,inbound,2024-08-21 00:00:00,2024-08-22 00:00:00,,,,False
+ACCT-16,Red LLC,new business,2. Discovery,Jake Morgan,14392,1,,inbound,2024-12-08 00:00:00,2024-12-10 00:00:00,,,,False
+ACCT-17,Fast LLC,new business,2. Discovery,Brian Chen,72080,88,,inbound,2025-01-01 00:00:00,2025-01-03 00:00:00,,,,False
+ACCT-18,Fast Systems,new business,3. Evaluation,Tina Patel,63549,44,Medford Consulting Group,outbound,2025-06-18 00:00:00,2025-06-21 00:00:00,2025-07-07 00:00:00,,,False
+ACCT-19,Silver Group,new business,4. Negotiation,Carlos Rivera,99089,17,,inbound,2025-05-07 00:00:00,2025-05-09 00:00:00,2025-05-31 00:00:00,2025-06-02 00:00:00,,False
+ACCT-20,Fast Partners,new business,3. Evaluation,Brian Chen,61845,62,,outbound,2025-05-18 00:00:00,2025-05-19 00:00:00,2025-07-24 00:00:00,,,False
+ACCT-21,International Co,new business,3. Evaluation,Tina Patel,71662,41,,inbound,2025-04-10 00:00:00,2025-04-13 00:00:00,2025-05-07 00:00:00,,,False
+ACCT-22,North Inc,new business,4. Negotiation,Donna Moriarty,136683,150,,inbound,2024-10-10 00:00:00,2024-10-11 00:00:00,2024-11-29 00:00:00,2024-12-22 00:00:00,,False
+ACCT-23,Innovative Systems,new business,3. Evaluation,Brian Chen,128484,62,,inbound,2024-08-25 00:00:00,2024-08-26 00:00:00,2024-10-05 00:00:00,,,False
+ACCT-24,Worldwide Group,new business,5. Closed Lost,Carlos Rivera,87183,22,,inbound,2024-11-29 00:00:00,2024-11-30 00:00:00,2024-12-12 00:00:00,2024-12-18 00:00:00,,False
+ACCT-25,South LLC,new business,5. Closed Won,Brian Chen,67703,13,,inbound,2024-09-20 00:00:00,2024-09-22 00:00:00,2024-10-13 00:00:00,2024-10-30 00:00:00,2024-11-26 00:00:00,True
+ACCT-25,South LLC,renewal,3. Evaluation,Sarah Brown,193710,120,,,2025-09-22 00:00:00,2025-09-23 00:00:00,2025-12-21 00:00:00,,,False
+ACCT-26,Data Inc,new business,5. Closed Lost,Tina Patel,99890,5,,outbound,2024-12-05 00:00:00,2024-12-06 00:00:00,2024-12-30 00:00:00,2024-12-31 00:00:00,,False
+ACCT-27,East Solutions,new business,5. Closed Lost,Brian Chen,121443,22,,outbound,2024-09-16 00:00:00,2024-09-19 00:00:00,2024-12-14 00:00:00,2025-01-08 00:00:00,,False
+ACCT-28,Strategic Corp,new business,2. Discovery,Tina Patel,57565,25,,outbound,2025-05-31 00:00:00,2025-06-03 00:00:00,,,,False
+ACCT-29,Red Partners,new business,5. Closed Lost,Carlos Rivera,56804,23,,outbound,2025-04-21 00:00:00,2025-04-24 00:00:00,2025-05-12 00:00:00,2025-05-13 00:00:00,,False
+ACCT-30,East Solutions,new business,5. Closed Lost,Carlos Rivera,93596,10,,inbound,2024-09-19 00:00:00,2024-09-21 00:00:00,2024-10-18 00:00:00,2024-10-23 00:00:00,,False
+ACCT-31,Digital Systems,new business,2. Discovery,Donna Moriarty,92348,163,,outbound,2024-12-28 00:00:00,2024-12-30 00:00:00,,,,False
+ACCT-32,Digital Inc,new business,2. Discovery,Carlos Rivera,66689,9,Medford Consulting Group,inbound,2024-09-02 00:00:00,2024-09-04 00:00:00,,,,False
+ACCT-33,Clear Co,new business,5. Closed Won,Carlos Rivera,69871,33,,inbound,2025-04-22 00:00:00,2025-04-25 00:00:00,2025-05-10 00:00:00,2025-05-13 00:00:00,2025-05-22 00:00:00,True
+ACCT-33,Clear Co,renewal,5. Closed Won,Sarah Brown,78136,22,,,2026-03-18 00:00:00,2026-03-20 00:00:00,2026-03-27 00:00:00,2026-03-27 00:00:00,2026-04-09 00:00:00,True
+ACCT-34,Clear Corp,new business,5. Closed Won,Carlos Rivera,83474,28,,inbound,2025-04-26 00:00:00,2025-04-28 00:00:00,2025-05-25 00:00:00,2025-06-05 00:00:00,2025-06-12 00:00:00,True
+ACCT-34,Clear Corp,renewal,3. Evaluation,David Lee,98483,16,,,2026-04-08 00:00:00,2026-04-09 00:00:00,2026-05-05 00:00:00,,,False
+ACCT-35,Continental Partners,new business,2. Discovery,Carlos Rivera,97441,30,,inbound,2024-11-16 00:00:00,2024-11-18 00:00:00,,,,False
+ACCT-36,West Technologies,new business,2. Discovery,Jake Morgan,11714,9,McDougal and Associates,inbound,2025-05-21 00:00:00,2025-05-24 00:00:00,,,,False
+ACCT-37,Green Solutions,new business,2. Discovery,Samantha Lee,28117,3,,inbound,2024-11-18 00:00:00,2024-11-21 00:00:00,,,,False
+ACCT-38,West Solutions,new business,2. Discovery,Jake Morgan,36225,9,,outbound,2025-04-13 00:00:00,2025-04-14 00:00:00,,,,False
+ACCT-39,Atlantic Corp,new business,5. Closed Won,Brian Chen,108506,142,,outbound,2024-09-29 00:00:00,2024-09-30 00:00:00,2024-11-28 00:00:00,2024-12-20 00:00:00,2025-01-03 00:00:00,True
+ACCT-39,Atlantic Corp,renewal,2. Discovery,David Lee,163379,138,Medford Consulting Group,,2025-10-30 00:00:00,2025-10-31 00:00:00,,,,False
+ACCT-40,Red Corp,new business,3. Evaluation,Brian Chen,199000,35,,inbound,2025-02-19 00:00:00,2025-02-20 00:00:00,2025-03-18 00:00:00,,,False
+ACCT-41,Golden Inc,new business,2. Discovery,Brian Chen,130389,108,,outbound,2025-06-19 00:00:00,2025-06-20 00:00:00,,,,False
+ACCT-42,Golden Group,new business,2. Discovery,Carlos Rivera,85186,7,,inbound,2024-09-17 00:00:00,2024-09-18 00:00:00,,,,False
+ACCT-43,Central Ltd,new business,2. Discovery,Carlos Rivera,50524,43,,inbound,2025-02-25 00:00:00,2025-02-28 00:00:00,,,,False
+ACCT-44,Blue Inc,new business,3. Evaluation,Tina Patel,51003,43,,inbound,2024-08-31 00:00:00,2024-09-01 00:00:00,2024-09-29 00:00:00,,,False
+ACCT-45,Advanced Technologies,new business,4. Negotiation,Brian Chen,133402,169,,inbound,2024-08-18 00:00:00,2024-08-21 00:00:00,2024-09-24 00:00:00,2024-10-08 00:00:00,,False
+ACCT-46,Cloud Inc,new business,5. Closed Lost,Carlos Rivera,57687,33,,inbound,2024-09-09 00:00:00,2024-09-11 00:00:00,2024-09-24 00:00:00,2024-09-28 00:00:00,,False
+ACCT-47,West Corp,new business,3. Evaluation,Brian Chen,180772,163,,inbound,2025-03-29 00:00:00,2025-03-30 00:00:00,2025-05-15 00:00:00,,,False
+ACCT-48,Quick Partners,new business,3. Evaluation,Donna Moriarty,111779,129,,outbound,2024-10-16 00:00:00,2024-10-19 00:00:00,2024-12-23 00:00:00,,,False
+ACCT-49,Continental Group,new business,2. Discovery,Brian Chen,97204,104,,inbound,2025-03-13 00:00:00,2025-03-14 00:00:00,,,,False
+ACCT-50,Innovative Corp,new business,4. Negotiation,Brian Chen,59300,185,,inbound,2025-05-04 00:00:00,2025-05-05 00:00:00,2025-05-15 00:00:00,2025-05-22 00:00:00,,False
+ACCT-51,Golden Systems,new business,5. Closed Lost,Carlos Rivera,63087,16,,inbound,2024-11-12 00:00:00,2024-11-14 00:00:00,2024-11-29 00:00:00,2024-12-07 00:00:00,,False
+ACCT-52,Strategic Systems,new business,2. Discovery,Carlos Rivera,66477,9,,outbound,2024-12-31 00:00:00,2025-01-01 00:00:00,,,,False
+ACCT-53,Advanced Group,new business,2. Discovery,Carlos Rivera,56579,27,,inbound,2025-04-21 00:00:00,2025-04-22 00:00:00,,,,False
+ACCT-54,Data Co,new business,2. Discovery,Brian Chen,126199,148,,inbound,2024-10-27 00:00:00,2024-10-28 00:00:00,,,,False
+ACCT-55,Sharp Technologies,new business,2. Discovery,Samantha Lee,19241,7,,inbound,2025-02-15 00:00:00,2025-02-17 00:00:00,,,,False
+ACCT-56,Tech Inc,new business,2. Discovery,Brian Chen,129333,64,,outbound,2025-05-24 00:00:00,2025-05-27 00:00:00,,,,False
+ACCT-57,North Corp,new business,4. Negotiation,Samantha Lee,11923,4,,inbound,2025-05-09 00:00:00,2025-05-11 00:00:00,2025-05-23 00:00:00,2025-05-28 00:00:00,,False
+ACCT-58,Advanced Systems,new business,2. Discovery,Brian Chen,80801,73,,outbound,2024-12-31 00:00:00,2025-01-03 00:00:00,,,,False
+ACCT-59,Golden Inc,new business,3. Evaluation,Tina Patel,72453,17,Medford Consulting Group,outbound,2024-12-24 00:00:00,2024-12-26 00:00:00,2025-01-17 00:00:00,,,False
+ACCT-60,Tech Solutions,new business,3. Evaluation,Donna Moriarty,73057,63,,inbound,2024-07-28 00:00:00,2024-07-31 00:00:00,2024-09-01 00:00:00,,,False
+ACCT-61,Dynamic Systems,new business,4. Negotiation,Donna Moriarty,136166,31,,inbound,2024-08-30 00:00:00,2024-08-31 00:00:00,2024-09-30 00:00:00,2024-10-23 00:00:00,,False
+ACCT-62,Silver Technologies,new business,5. Closed Lost,Carlos Rivera,99470,45,,inbound,2025-01-18 00:00:00,2025-01-20 00:00:00,2025-02-17 00:00:00,2025-02-21 00:00:00,,False
+ACCT-63,North Technologies,new business,3. Evaluation,Brian Chen,130948,140,,outbound,2024-10-12 00:00:00,2024-10-15 00:00:00,2025-01-06 00:00:00,,,False
+ACCT-64,Pacific Group,new business,3. Evaluation,Carlos Rivera,79285,44,,outbound,2025-06-23 00:00:00,2025-06-26 00:00:00,2025-07-16 00:00:00,,,False
+ACCT-65,Red Co,new business,2. Discovery,Brian Chen,143136,122,,inbound,2025-06-28 00:00:00,2025-07-01 00:00:00,,,,False
+ACCT-66,Pacific Systems,new business,5. Closed Lost,Brian Chen,107987,98,,inbound,2024-09-16 00:00:00,2024-09-18 00:00:00,2024-09-25 00:00:00,2024-10-23 00:00:00,,False
+ACCT-67,Innovative Ltd,new business,5. Closed Won,Carlos Rivera,87728,29,,inbound,2024-11-08 00:00:00,2024-11-10 00:00:00,2024-12-02 00:00:00,2024-12-11 00:00:00,2024-12-16 00:00:00,True
+ACCT-67,Innovative Ltd,renewal,5. Closed Lost,Sarah Brown,50427,32,,,2025-10-12 00:00:00,2025-10-13 00:00:00,2025-10-26 00:00:00,2025-10-26 00:00:00,,False
+ACCT-68,Atlantic LLC,new business,5. Closed Lost,Brian Chen,70000,92,,inbound,2025-02-25 00:00:00,2025-02-27 00:00:00,2025-05-03 00:00:00,2025-05-26 00:00:00,,False
+ACCT-69,Tech Group,new business,4. Negotiation,Jake Morgan,23393,1,Medford Consulting Group,inbound,2024-09-28 00:00:00,2024-09-30 00:00:00,2024-10-01 00:00:00,2024-10-02 00:00:00,,False
+ACCT-70,Sharp Co,new business,5. Closed Won,Tina Patel,84501,35,,inbound,2025-05-02 00:00:00,2025-05-03 00:00:00,2025-05-27 00:00:00,2025-05-30 00:00:00,2025-06-11 00:00:00,True
+ACCT-70,Sharp Co,upsell,3. Evaluation,Sarah Brown,59289,36,,,2025-11-24 00:00:00,2025-11-25 00:00:00,2025-12-22 00:00:00,,,False
+ACCT-70,Sharp Co,renewal,4. Negotiation,Sarah Brown,67651,41,,,2026-04-07 00:00:00,2026-04-08 00:00:00,2026-04-15 00:00:00,2026-04-15 00:00:00,,False
+ACCT-71,Worldwide Partners,new business,5. Closed Lost,Carlos Rivera,94286,27,,outbound,2025-01-26 00:00:00,2025-01-29 00:00:00,2025-02-17 00:00:00,2025-02-21 00:00:00,,False
+ACCT-72,Tech LLC,new business,2. Discovery,Donna Moriarty,158373,86,,outbound,2025-01-23 00:00:00,2025-01-26 00:00:00,,,,False
+ACCT-73,Cloud Group,new business,5. Closed Lost,Carlos Rivera,54858,16,Medford Consulting Group,inbound,2025-05-06 00:00:00,2025-05-08 00:00:00,2025-06-05 00:00:00,2025-06-11 00:00:00,,False
+ACCT-74,Blue LLC,new business,5. Closed Lost,Tina Patel,68671,17,,inbound,2024-10-11 00:00:00,2024-10-14 00:00:00,2024-11-05 00:00:00,2024-11-15 00:00:00,,False
+ACCT-75,Global Technologies,new business,5. Closed Lost,Carlos Rivera,78409,35,,inbound,2024-10-22 00:00:00,2024-10-25 00:00:00,2024-11-06 00:00:00,2024-11-13 00:00:00,,False
+ACCT-76,Atlantic LLC,new business,5. Closed Lost,Samantha Lee,49050,9,,inbound,2025-01-10 00:00:00,2025-01-11 00:00:00,2025-01-23 00:00:00,2025-01-25 00:00:00,,False
+ACCT-77,Tech Partners,new business,2. Discovery,Tina Patel,63508,19,,inbound,2024-11-28 00:00:00,2024-12-01 00:00:00,,,,False
+ACCT-78,Fast Group,new business,5. Closed Lost,Brian Chen,194218,44,Medford Consulting Group,outbound,2024-08-12 00:00:00,2024-08-13 00:00:00,2024-09-10 00:00:00,2024-10-07 00:00:00,,False
+ACCT-79,Blue Corp,new business,2. Discovery,Tina Patel,77330,47,Medford Consulting Group,inbound,2025-03-16 00:00:00,2025-03-19 00:00:00,,,,False
+ACCT-80,Golden Inc,new business,1. Preopp,Donna Moriarty,150874,28,,inbound,2024-11-15 00:00:00,,,,,False
+ACCT-81,West Inc,new business,5. Closed Lost,Carlos Rivera,90834,11,Medford Consulting Group,inbound,2024-08-28 00:00:00,2024-08-30 00:00:00,2024-09-29 00:00:00,2024-10-07 00:00:00,,False
+ACCT-82,Bright Solutions,new business,4. Negotiation,Tina Patel,73244,32,McDougal and Associates,outbound,2025-02-13 00:00:00,2025-02-16 00:00:00,2025-02-24 00:00:00,2025-03-09 00:00:00,,False
+ACCT-83,Golden Corp,new business,2. Discovery,Brian Chen,104751,149,,outbound,2024-08-07 00:00:00,2024-08-10 00:00:00,,,,False
+ACCT-84,Cloud Group,new business,2. Discovery,Brian Chen,89382,111,,inbound,2024-12-06 00:00:00,2024-12-07 00:00:00,,,,False
+ACCT-85,Blue Partners,new business,3. Evaluation,Carlos Rivera,60334,37,,inbound,2024-12-31 00:00:00,2025-01-02 00:00:00,2025-01-11 00:00:00,,,False
+ACCT-86,Global Inc,new business,2. Discovery,Brian Chen,130438,31,,inbound,2025-05-15 00:00:00,2025-05-17 00:00:00,,,,False
+ACCT-87,Dynamic Co,new business,5. Closed Lost,Jake Morgan,35069,2,,inbound,2025-04-16 00:00:00,2025-04-17 00:00:00,2025-04-27 00:00:00,2025-04-29 00:00:00,,False
+ACCT-88,Smart Inc,new business,2. Discovery,Tina Patel,60356,26,McDougal and Associates,inbound,2025-07-02 00:00:00,2025-07-05 00:00:00,,,,False
+ACCT-89,Digital Inc,new business,4. Negotiation,Tina Patel,53012,40,,outbound,2025-01-09 00:00:00,2025-01-10 00:00:00,2025-01-30 00:00:00,2025-02-09 00:00:00,,False
+ACCT-90,Strategic Solutions,new business,3. Evaluation,Brian Chen,53914,58,,outbound,2024-12-24 00:00:00,2024-12-25 00:00:00,2025-02-06 00:00:00,,,False
+ACCT-91,Red LLC,new business,2. Discovery,Brian Chen,176520,198,Medford Consulting Group,outbound,2025-07-15 00:00:00,2025-07-18 00:00:00,,,,False
+ACCT-92,Golden Systems,new business,4. Negotiation,Carlos Rivera,54665,10,,inbound,2025-02-03 00:00:00,2025-02-04 00:00:00,2025-02-11 00:00:00,2025-02-25 00:00:00,,False
+ACCT-93,Cloud Group,new business,3. Evaluation,Brian Chen,86431,69,Medford Consulting Group,inbound,2024-12-25 00:00:00,2024-12-27 00:00:00,2025-03-25 00:00:00,,,False
+ACCT-94,Atlantic Technologies,new business,3. Evaluation,Brian Chen,136653,189,Medford Consulting Group,inbound,2024-11-08 00:00:00,2024-11-11 00:00:00,2024-12-05 00:00:00,,,False
+ACCT-95,International Ltd,new business,3. Evaluation,Tina Patel,88832,45,,outbound,2025-03-19 00:00:00,2025-03-21 00:00:00,2025-04-01 00:00:00,,,False
+ACCT-96,Quick Technologies,new business,4. Negotiation,Brian Chen,88579,60,,inbound,2024-10-18 00:00:00,2024-10-20 00:00:00,2025-01-05 00:00:00,2025-01-16 00:00:00,,False
+ACCT-97,Global Ltd,new business,2. Discovery,Tina Patel,64587,19,,inbound,2025-06-06 00:00:00,2025-06-08 00:00:00,,,,False
+ACCT-98,Atlantic LLC,new business,2. Discovery,Donna Moriarty,67725,37,,outbound,2025-07-03 00:00:00,2025-07-06 00:00:00,,,,False
+ACCT-99,Red Technologies,new business,2. Discovery,Brian Chen,180318,199,,outbound,2024-08-16 00:00:00,2024-08-19 00:00:00,,,,False
+ACCT-100,Pacific Partners,new business,3. Evaluation,Tina Patel,93345,34,,inbound,2024-08-30 00:00:00,2024-09-01 00:00:00,2024-09-20 00:00:00,,,False
+ACCT-101,Quick Partners,new business,3. Evaluation,Brian Chen,164717,146,Medford Consulting Group,inbound,2025-07-15 00:00:00,2025-07-16 00:00:00,2025-10-12 00:00:00,,,False
+ACCT-102,Central Corp,new business,1. Preopp,Carlos Rivera,86133,50,,inbound,2025-07-11 00:00:00,,,,,False
+ACCT-103,Red Systems,new business,5. Closed Lost,Donna Moriarty,150451,114,,inbound,2024-09-16 00:00:00,2024-09-19 00:00:00,2024-10-29 00:00:00,2024-11-21 00:00:00,,False
+ACCT-104,Fast Partners,new business,3. Evaluation,Tina Patel,74694,26,,inbound,2025-07-15 00:00:00,2025-07-17 00:00:00,2025-07-28 00:00:00,,,False
+ACCT-105,Data Systems,new business,3. Evaluation,Jake Morgan,11521,7,,inbound,2024-09-24 00:00:00,2024-09-27 00:00:00,2024-10-11 00:00:00,,,False
+ACCT-106,Dynamic Systems,new business,4. Negotiation,Brian Chen,196037,172,,inbound,2025-05-06 00:00:00,2025-05-09 00:00:00,2025-05-31 00:00:00,2025-06-25 00:00:00,,False
+ACCT-107,Central Group,new business,5. Closed Lost,Donna Moriarty,182576,189,,inbound,2025-06-02 00:00:00,2025-06-05 00:00:00,2025-08-16 00:00:00,2025-08-25 00:00:00,,False
+ACCT-108,Advanced Solutions,new business,3. Evaluation,Brian Chen,66502,63,,inbound,2025-04-30 00:00:00,2025-05-02 00:00:00,2025-06-08 00:00:00,,,False
+ACCT-109,Pacific LLC,new business,2. Discovery,Tina Patel,92393,18,,outbound,2025-03-11 00:00:00,2025-03-12 00:00:00,,,,False
+ACCT-110,Tech LLC,new business,3. Evaluation,Tina Patel,87958,50,,outbound,2025-04-16 00:00:00,2025-04-17 00:00:00,2025-05-16 00:00:00,,,False
+ACCT-111,Golden Inc,new business,2. Discovery,Carlos Rivera,91482,33,,inbound,2025-07-24 00:00:00,2025-07-25 00:00:00,,,,False
+ACCT-112,North Corp,new business,2. Discovery,Carlos Rivera,51385,45,,inbound,2025-04-26 00:00:00,2025-04-28 00:00:00,,,,False
+ACCT-113,Continental Systems,new business,5. Closed Won,Carlos Rivera,68682,6,,inbound,2024-10-10 00:00:00,2024-10-11 00:00:00,2024-10-31 00:00:00,2024-11-08 00:00:00,2024-11-17 00:00:00,True
+ACCT-113,Continental Systems,renewal,2. Discovery,Sarah Brown,68321,41,McDougal and Associates,,2025-09-13 00:00:00,2025-09-14 00:00:00,,,,False
+ACCT-114,Global Partners,new business,5. Closed Lost,Tina Patel,68499,23,,outbound,2025-05-19 00:00:00,2025-05-21 00:00:00,2025-05-31 00:00:00,2025-06-14 00:00:00,,False
+ACCT-115,Dynamic Solutions,new business,3. Evaluation,Samantha Lee,48705,3,,outbound,2025-05-14 00:00:00,2025-05-15 00:00:00,2025-05-18 00:00:00,,,False
+ACCT-116,Bright LLC,new business,5. Closed Lost,Jake Morgan,44084,5,McDougal and Associates,inbound,2025-02-08 00:00:00,2025-02-09 00:00:00,2025-02-22 00:00:00,2025-03-01 00:00:00,,False
+ACCT-117,Pacific Co,new business,5. Closed Lost,Brian Chen,157310,32,,inbound,2025-04-29 00:00:00,2025-05-02 00:00:00,2025-06-30 00:00:00,2025-07-12 00:00:00,,False
+ACCT-118,Golden Co,new business,3. Evaluation,Brian Chen,121567,24,,inbound,2024-12-10 00:00:00,2024-12-12 00:00:00,2025-01-02 00:00:00,,,False
+ACCT-119,Quick Corp,new business,5. Closed Lost,Jake Morgan,38039,4,,inbound,2025-07-06 00:00:00,2025-07-07 00:00:00,2025-07-15 00:00:00,2025-07-16 00:00:00,,False
+ACCT-120,Sharp Partners,new business,5. Closed Lost,Donna Moriarty,133921,133,,inbound,2024-09-27 00:00:00,2024-09-28 00:00:00,2024-11-05 00:00:00,2024-11-27 00:00:00,,False
+ACCT-121,Dynamic Group,new business,4. Negotiation,Tina Patel,76930,15,,outbound,2025-05-23 00:00:00,2025-05-25 00:00:00,2025-06-20 00:00:00,2025-06-25 00:00:00,,False
+ACCT-122,Smart Technologies,new business,5. Closed Lost,Samantha Lee,18006,6,,outbound,2024-10-01 00:00:00,2024-10-04 00:00:00,2024-10-08 00:00:00,2024-10-13 00:00:00,,False
+ACCT-123,Red Group,new business,2. Discovery,Carlos Rivera,72932,10,Medford Consulting Group,inbound,2025-01-07 00:00:00,2025-01-09 00:00:00,,,,False
+ACCT-124,Worldwide Solutions,new business,2. Discovery,Tina Patel,83883,9,McDougal and Associates,inbound,2025-02-03 00:00:00,2025-02-05 00:00:00,,,,False
+ACCT-125,West Ltd,new business,3. Evaluation,Brian Chen,122886,192,,outbound,2024-09-03 00:00:00,2024-09-05 00:00:00,2024-11-12 00:00:00,,,False
+ACCT-126,Strategic LLC,new business,2. Discovery,Brian Chen,77889,58,,outbound,2025-01-19 00:00:00,2025-01-20 00:00:00,,,,False
+ACCT-127,West Technologies,new business,5. Closed Won,Samantha Lee,15852,4,,inbound,2024-08-13 00:00:00,2024-08-14 00:00:00,2024-08-17 00:00:00,2024-08-22 00:00:00,2024-08-23 00:00:00,True
+ACCT-127,West Technologies,upsell,3. Evaluation,David Lee,16584,1,Medford Consulting Group,,2024-11-07 00:00:00,2024-11-10 00:00:00,2024-11-21 00:00:00,,,False
+ACCT-127,West Technologies,renewal,2. Discovery,David Lee,16619,6,,,2025-06-19 00:00:00,2025-06-22 00:00:00,,,,False
+ACCT-128,West Co,new business,5. Closed Lost,Brian Chen,139375,185,,inbound,2024-12-02 00:00:00,2024-12-04 00:00:00,2025-02-16 00:00:00,2025-02-25 00:00:00,,False
+ACCT-129,Golden Corp,new business,5. Closed Lost,Tina Patel,57912,8,,inbound,2024-09-20 00:00:00,2024-09-21 00:00:00,2024-10-04 00:00:00,2024-10-17 00:00:00,,False
+ACCT-130,International Ltd,new business,1. Preopp,Carlos Rivera,98859,28,,inbound,2025-05-16 00:00:00,,,,,False
+ACCT-131,Data LLC,new business,3. Evaluation,Tina Patel,88800,30,,inbound,2025-02-01 00:00:00,2025-02-02 00:00:00,2025-02-12 00:00:00,,,False
+ACCT-132,Blue LLC,new business,5. Closed Lost,Brian Chen,120957,22,,outbound,2025-07-12 00:00:00,2025-07-15 00:00:00,2025-08-22 00:00:00,2025-09-08 00:00:00,,False
+ACCT-133,North Inc,new business,5. Closed Lost,Tina Patel,78101,19,Medford Consulting Group,inbound,2024-12-25 00:00:00,2024-12-27 00:00:00,2025-01-15 00:00:00,2025-01-16 00:00:00,,False
+ACCT-134,Central LLC,new business,5. Closed Lost,Carlos Rivera,59362,33,,inbound,2025-05-09 00:00:00,2025-05-10 00:00:00,2025-05-31 00:00:00,2025-06-09 00:00:00,,False
+ACCT-135,Red Solutions,new business,2. Discovery,Carlos Rivera,91477,40,,outbound,2025-01-29 00:00:00,2025-02-01 00:00:00,,,,False
+ACCT-136,International Group,new business,5. Closed Lost,Brian Chen,170554,32,,outbound,2025-02-24 00:00:00,2025-02-25 00:00:00,2025-05-11 00:00:00,2025-05-25 00:00:00,,False
+ACCT-137,West Ltd,new business,5. Closed Lost,Samantha Lee,30130,8,,inbound,2025-06-14 00:00:00,2025-06-15 00:00:00,2025-06-21 00:00:00,2025-06-22 00:00:00,,False
+ACCT-138,Clear Partners,new business,5. Closed Won,Carlos Rivera,97699,38,,inbound,2024-10-22 00:00:00,2024-10-24 00:00:00,2024-11-15 00:00:00,2024-11-24 00:00:00,2024-12-07 00:00:00,True
+ACCT-138,Clear Partners,renewal,3. Evaluation,David Lee,99994,50,,,2025-10-03 00:00:00,2025-10-04 00:00:00,2025-10-11 00:00:00,,,False
+ACCT-139,Blue Solutions,new business,5. Closed Lost,Brian Chen,195424,17,,inbound,2024-11-26 00:00:00,2024-11-27 00:00:00,2024-12-31 00:00:00,2025-01-10 00:00:00,,False
+ACCT-140,Global Solutions,new business,5. Closed Won,Samantha Lee,11436,10,,inbound,2024-11-25 00:00:00,2024-11-27 00:00:00,2024-12-05 00:00:00,2024-12-06 00:00:00,2024-12-09 00:00:00,True
+ACCT-140,Global Solutions,renewal,2. Discovery,Sarah Brown,29534,9,,,2025-10-05 00:00:00,2025-10-08 00:00:00,,,,False
+ACCT-141,Digital Group,new business,2. Discovery,Tina Patel,56052,24,,inbound,2025-01-14 00:00:00,2025-01-16 00:00:00,,,,False
+ACCT-142,Fast Inc,new business,1. Preopp,Tina Patel,70259,29,,inbound,2025-05-04 00:00:00,,,,,False
+ACCT-143,East Corp,new business,3. Evaluation,Brian Chen,127770,47,,inbound,2025-02-17 00:00:00,2025-02-18 00:00:00,2025-04-04 00:00:00,,,False
+ACCT-144,Advanced Inc,new business,5. Closed Won,Brian Chen,85956,117,,outbound,2025-06-19 00:00:00,2025-06-22 00:00:00,2025-08-19 00:00:00,2025-09-02 00:00:00,2025-09-18 00:00:00,True
+ACCT-144,Advanced Inc,upsell,2. Discovery,Sarah Brown,54115,15,Medford Consulting Group,,2025-12-18 00:00:00,2025-12-21 00:00:00,,,,False
+ACCT-144,Advanced Inc,renewal,4. Negotiation,Sarah Brown,168382,117,,,2026-07-15 00:00:00,2026-07-18 00:00:00,2026-10-10 00:00:00,2026-10-10 00:00:00,,False
+ACCT-145,Digital Technologies,new business,5. Closed Lost,Carlos Rivera,64816,20,,inbound,2025-02-26 00:00:00,2025-02-28 00:00:00,2025-03-10 00:00:00,2025-03-20 00:00:00,,False
+ACCT-146,Advanced Partners,new business,2. Discovery,Carlos Rivera,73857,10,,inbound,2025-03-13 00:00:00,2025-03-14 00:00:00,,,,False
+ACCT-147,East Solutions,new business,2. Discovery,Carlos Rivera,64055,6,,inbound,2024-10-30 00:00:00,2024-11-01 00:00:00,,,,False
+ACCT-148,Blue Ltd,new business,2. Discovery,Donna Moriarty,68490,132,,outbound,2025-07-12 00:00:00,2025-07-13 00:00:00,,,,False
+ACCT-149,Bright LLC,new business,5. Closed Lost,Carlos Rivera,75411,48,,inbound,2025-05-21 00:00:00,2025-05-23 00:00:00,2025-06-12 00:00:00,2025-06-17 00:00:00,,False
+ACCT-150,Golden Co,new business,5. Closed Lost,Carlos Rivera,95227,39,,inbound,2024-09-13 00:00:00,2024-09-16 00:00:00,2024-09-23 00:00:00,2024-10-03 00:00:00,,False
+ACCT-151,Green Group,new business,1. Preopp,Carlos Rivera,84223,36,,inbound,2024-12-25 00:00:00,,,,,False
+ACCT-152,Continental LLC,new business,4. Negotiation,Carlos Rivera,84292,9,,inbound,2024-08-20 00:00:00,2024-08-23 00:00:00,2024-09-11 00:00:00,2024-09-21 00:00:00,,False
+ACCT-153,International Corp,new business,2. Discovery,Brian Chen,86618,67,,inbound,2025-04-01 00:00:00,2025-04-03 00:00:00,,,,False
+ACCT-154,Dynamic Solutions,new business,3. Evaluation,Jake Morgan,13653,6,,inbound,2025-03-26 00:00:00,2025-03-28 00:00:00,2025-04-05 00:00:00,,,False
+ACCT-155,Digital LLC,new business,2. Discovery,Carlos Rivera,99547,34,,outbound,2025-03-25 00:00:00,2025-03-28 00:00:00,,,,False
+ACCT-156,Silver Partners,new business,4. Negotiation,Jake Morgan,36864,4,,inbound,2025-05-15 00:00:00,2025-05-16 00:00:00,2025-05-28 00:00:00,2025-06-02 00:00:00,,False
+ACCT-157,Central Group,new business,5. Closed Lost,Jake Morgan,14874,7,,inbound,2025-05-08 00:00:00,2025-05-10 00:00:00,2025-05-20 00:00:00,2025-05-26 00:00:00,,False
+ACCT-158,Bright Systems,new business,5. Closed Won,Jake Morgan,30593,1,Medford Consulting Group,outbound,2025-05-05 00:00:00,2025-05-07 00:00:00,2025-05-16 00:00:00,2025-05-23 00:00:00,2025-05-25 00:00:00,True
+ACCT-158,Bright Systems,renewal,3. Evaluation,David Lee,17177,8,,,2026-03-21 00:00:00,2026-03-22 00:00:00,2026-04-05 00:00:00,,,False
+ACCT-159,South Technologies,new business,2. Discovery,Tina Patel,62695,9,Medford Consulting Group,inbound,2025-02-28 00:00:00,2025-03-02 00:00:00,,,,False
+ACCT-160,Clear Partners,new business,5. Closed Lost,Tina Patel,53663,49,Medford Consulting Group,inbound,2024-09-12 00:00:00,2024-09-15 00:00:00,2024-10-04 00:00:00,2024-10-08 00:00:00,,False
+ACCT-161,Smart Technologies,new business,2. Discovery,Carlos Rivera,78696,13,,inbound,2025-06-27 00:00:00,2025-06-29 00:00:00,,,,False
+ACCT-162,Continental Systems,new business,1. Preopp,Carlos Rivera,86357,41,,inbound,2024-10-12 00:00:00,,,,,False
+ACCT-163,Clear Ltd,new business,1. Preopp,Carlos Rivera,66396,46,,outbound,2024-12-20 00:00:00,,,,,False
+ACCT-164,Golden Partners,new business,2. Discovery,Carlos Rivera,81550,7,,outbound,2025-03-13 00:00:00,2025-03-16 00:00:00,,,,False
+ACCT-165,West Inc,new business,4. Negotiation,Carlos Rivera,79923,10,Medford Consulting Group,outbound,2025-06-09 00:00:00,2025-06-11 00:00:00,2025-06-28 00:00:00,2025-07-05 00:00:00,,False
+ACCT-166,Pacific Partners,new business,4. Negotiation,Brian Chen,140822,108,Medford Consulting Group,inbound,2024-09-20 00:00:00,2024-09-21 00:00:00,2024-11-21 00:00:00,2024-12-08 00:00:00,,False
+ACCT-167,Golden Group,new business,2. Discovery,Donna Moriarty,153557,109,,inbound,2024-10-04 00:00:00,2024-10-06 00:00:00,,,,False
+ACCT-168,Sharp Partners,new business,5. Closed Lost,Carlos Rivera,57348,10,Medford Consulting Group,inbound,2025-05-11 00:00:00,2025-05-13 00:00:00,2025-05-20 00:00:00,2025-05-22 00:00:00,,False
+ACCT-169,Digital Ltd,new business,4. Negotiation,Carlos Rivera,84230,49,,inbound,2024-12-26 00:00:00,2024-12-29 00:00:00,2025-01-21 00:00:00,2025-02-03 00:00:00,,False
+ACCT-170,Clear Group,new business,3. Evaluation,Brian Chen,198561,59,,inbound,2025-04-02 00:00:00,2025-04-04 00:00:00,2025-06-30 00:00:00,,,False
+ACCT-171,Digital Co,new business,4. Negotiation,Tina Patel,88645,16,Medford Consulting Group,outbound,2025-01-05 00:00:00,2025-01-06 00:00:00,2025-01-24 00:00:00,2025-02-05 00:00:00,,False
+ACCT-172,Golden Ltd,new business,5. Closed Lost,Jake Morgan,32221,3,,inbound,2025-07-04 00:00:00,2025-07-06 00:00:00,2025-07-07 00:00:00,2025-07-13 00:00:00,,False
+ACCT-173,Quick Corp,new business,5. Closed Lost,Tina Patel,96685,20,,outbound,2025-07-03 00:00:00,2025-07-06 00:00:00,2025-08-02 00:00:00,2025-08-11 00:00:00,,False
+ACCT-174,Bright Inc,new business,3. Evaluation,Tina Patel,92310,21,,outbound,2024-10-21 00:00:00,2024-10-23 00:00:00,2024-11-01 00:00:00,,,False
+ACCT-175,Central LLC,new business,5. Closed Lost,Donna Moriarty,182115,120,,inbound,2024-10-24 00:00:00,2024-10-27 00:00:00,2025-01-08 00:00:00,2025-02-07 00:00:00,,False
+ACCT-176,South Partners,new business,3. Evaluation,Tina Patel,62529,5,Medford Consulting Group,inbound,2024-09-08 00:00:00,2024-09-09 00:00:00,2024-09-21 00:00:00,,,False
+ACCT-177,Dynamic Solutions,new business,5. Closed Lost,Carlos Rivera,88841,43,Medford Consulting Group,outbound,2024-09-15 00:00:00,2024-09-18 00:00:00,2024-10-06 00:00:00,2024-10-10 00:00:00,,False
+ACCT-178,Strategic Technologies,new business,4. Negotiation,Tina Patel,58570,12,,inbound,2024-12-18 00:00:00,2024-12-21 00:00:00,2025-01-04 00:00:00,2025-01-08 00:00:00,,False
+ACCT-179,Fast Co,new business,3. Evaluation,Tina Patel,88203,39,,inbound,2024-08-11 00:00:00,2024-08-14 00:00:00,2024-08-21 00:00:00,,,False
+ACCT-180,Sharp Group,new business,5. Closed Lost,Carlos Rivera,68387,5,,inbound,2025-02-15 00:00:00,2025-02-17 00:00:00,2025-03-07 00:00:00,2025-03-16 00:00:00,,False
+ACCT-181,Strategic Solutions,new business,3. Evaluation,Brian Chen,131075,198,Medford Consulting Group,inbound,2025-04-27 00:00:00,2025-04-30 00:00:00,2025-05-09 00:00:00,,,False
+ACCT-182,Advanced Co,new business,5. Closed Won,Jake Morgan,16949,5,,inbound,2025-06-07 00:00:00,2025-06-08 00:00:00,2025-06-17 00:00:00,2025-06-20 00:00:00,2025-06-22 00:00:00,True
+ACCT-182,Advanced Co,renewal,5. Closed Won,David Lee,29342,4,,,2026-04-18 00:00:00,2026-04-21 00:00:00,2026-04-22 00:00:00,2026-04-22 00:00:00,2026-04-29 00:00:00,True
+ACCT-183,Central Technologies,new business,1. Preopp,Tina Patel,50026,14,Medford Consulting Group,inbound,2024-09-24 00:00:00,,,,,False
+ACCT-184,Red Ltd,new business,2. Discovery,Donna Moriarty,178042,19,,outbound,2025-07-22 00:00:00,2025-07-25 00:00:00,,,,False
+ACCT-185,Worldwide Solutions,new business,2. Discovery,Carlos Rivera,53043,44,,inbound,2024-09-09 00:00:00,2024-09-12 00:00:00,,,,False
+ACCT-186,Data Inc,new business,4. Negotiation,Brian Chen,170835,198,,inbound,2024-09-22 00:00:00,2024-09-24 00:00:00,2024-10-25 00:00:00,2024-11-13 00:00:00,,False
+ACCT-187,Worldwide Group,new business,3. Evaluation,Tina Patel,89625,9,,outbound,2024-12-20 00:00:00,2024-12-21 00:00:00,2025-01-13 00:00:00,,,False
+ACCT-188,Golden LLC,new business,2. Discovery,Tina Patel,62642,38,,inbound,2025-03-22 00:00:00,2025-03-25 00:00:00,,,,False
+ACCT-189,Data Solutions,new business,3. Evaluation,Carlos Rivera,62300,29,,inbound,2025-05-26 00:00:00,2025-05-28 00:00:00,2025-06-06 00:00:00,,,False
+ACCT-190,Blue Systems,new business,5. Closed Won,Donna Moriarty,158269,189,,outbound,2024-12-12 00:00:00,2024-12-14 00:00:00,2024-12-21 00:00:00,2025-01-05 00:00:00,2025-01-28 00:00:00,True
+ACCT-190,Blue Systems,renewal,5. Closed Won,David Lee,128945,135,,,2025-11-24 00:00:00,2025-11-27 00:00:00,2026-02-22 00:00:00,2026-02-22 00:00:00,2026-03-02 00:00:00,True
+ACCT-191,Pacific Partners,new business,3. Evaluation,Brian Chen,174522,27,,outbound,2025-06-26 00:00:00,2025-06-28 00:00:00,2025-07-28 00:00:00,,,False
+ACCT-192,Global Technologies,new business,2. Discovery,Carlos Rivera,89172,31,,inbound,2025-01-16 00:00:00,2025-01-19 00:00:00,,,,False
+ACCT-193,Green Ltd,new business,5. Closed Lost,Brian Chen,128420,182,,inbound,2025-01-04 00:00:00,2025-01-07 00:00:00,2025-01-26 00:00:00,2025-02-13 00:00:00,,False
+ACCT-194,Bright Technologies,new business,2. Discovery,Brian Chen,121319,191,,inbound,2025-02-05 00:00:00,2025-02-08 00:00:00,,,,False
+ACCT-195,International Partners,new business,5. Closed Won,Brian Chen,192656,196,,inbound,2025-03-23 00:00:00,2025-03-25 00:00:00,2025-04-20 00:00:00,2025-05-17 00:00:00,2025-06-14 00:00:00,True
+ACCT-195,International Partners,renewal,5. Closed Won,David Lee,124141,16,,,2026-04-10 00:00:00,2026-04-13 00:00:00,2026-05-22 00:00:00,2026-05-22 00:00:00,2026-06-10 00:00:00,True
+ACCT-196,Worldwide Technologies,new business,5. Closed Lost,Tina Patel,59060,21,,inbound,2025-01-09 00:00:00,2025-01-11 00:00:00,2025-02-02 00:00:00,2025-02-03 00:00:00,,False
+ACCT-197,International Ltd,new business,5. Closed Lost,Brian Chen,144795,19,,outbound,2025-04-19 00:00:00,2025-04-21 00:00:00,2025-06-10 00:00:00,2025-06-27 00:00:00,,False
+ACCT-198,Tech Corp,new business,5. Closed Lost,Jake Morgan,12683,6,,inbound,2025-06-24 00:00:00,2025-06-27 00:00:00,2025-06-29 00:00:00,2025-07-04 00:00:00,,False
+ACCT-199,Atlantic Corp,new business,2. Discovery,Samantha Lee,45170,9,,outbound,2024-12-06 00:00:00,2024-12-08 00:00:00,,,,False
+ACCT-200,Silver Corp,new business,5. Closed Lost,Brian Chen,185422,161,,outbound,2025-01-08 00:00:00,2025-01-09 00:00:00,2025-02-13 00:00:00,2025-03-10 00:00:00,,False
+ACCT-201,Cloud Corp,new business,4. Negotiation,Brian Chen,79595,157,,inbound,2025-01-02 00:00:00,2025-01-04 00:00:00,2025-02-15 00:00:00,2025-03-16 00:00:00,,False
+ACCT-202,Worldwide Co,new business,2. Discovery,Brian Chen,71153,86,Medford Consulting Group,inbound,2025-04-27 00:00:00,2025-04-28 00:00:00,,,,False
+ACCT-203,Red Corp,new business,5. Closed Lost,Samantha Lee,28119,10,Medford Consulting Group,outbound,2024-12-18 00:00:00,2024-12-20 00:00:00,2024-12-24 00:00:00,2024-12-29 00:00:00,,False
+ACCT-204,Quick Inc,new business,5. Closed Lost,Brian Chen,95728,149,,outbound,2024-09-12 00:00:00,2024-09-14 00:00:00,2024-09-23 00:00:00,2024-10-09 00:00:00,,False
+ACCT-205,Pacific Co,new business,5. Closed Won,Brian Chen,58079,131,,inbound,2024-10-17 00:00:00,2024-10-19 00:00:00,2024-12-10 00:00:00,2024-12-26 00:00:00,2025-01-03 00:00:00,True
+ACCT-205,Pacific Co,upsell,2. Discovery,David Lee,131778,131,,,2025-04-28 00:00:00,2025-05-01 00:00:00,,,,False
+ACCT-205,Pacific Co,renewal,3. Evaluation,David Lee,101385,101,Medford Consulting Group,,2025-10-30 00:00:00,2025-10-31 00:00:00,2025-12-04 00:00:00,,,False
+ACCT-206,Innovative LLC,new business,2. Discovery,Tina Patel,76905,47,,outbound,2024-10-19 00:00:00,2024-10-20 00:00:00,,,,False
+ACCT-207,Strategic Group,new business,2. Discovery,Carlos Rivera,53107,37,,inbound,2025-07-08 00:00:00,2025-07-10 00:00:00,,,,False
+ACCT-208,Quick Partners,new business,4. Negotiation,Brian Chen,133494,85,,inbound,2025-03-17 00:00:00,2025-03-19 00:00:00,2025-04-26 00:00:00,2025-05-08 00:00:00,,False
+ACCT-209,Advanced Solutions,new business,5. Closed Lost,Tina Patel,54118,7,Medford Consulting Group,inbound,2025-03-19 00:00:00,2025-03-21 00:00:00,2025-04-16 00:00:00,2025-04-23 00:00:00,,False
+ACCT-210,Digital LLC,new business,5. Closed Lost,Brian Chen,197358,117,,inbound,2025-03-07 00:00:00,2025-03-10 00:00:00,2025-04-10 00:00:00,2025-04-18 00:00:00,,False
+ACCT-211,North Technologies,new business,5. Closed Won,Brian Chen,177714,94,,inbound,2025-02-26 00:00:00,2025-02-27 00:00:00,2025-03-19 00:00:00,2025-04-10 00:00:00,2025-04-29 00:00:00,True
+ACCT-211,North Technologies,renewal,3. Evaluation,Sarah Brown,173798,154,Medford Consulting Group,,2026-02-23 00:00:00,2026-02-26 00:00:00,2026-05-23 00:00:00,,,False
+ACCT-212,South Ltd,new business,2. Discovery,Carlos Rivera,54979,49,Medford Consulting Group,inbound,2025-07-17 00:00:00,2025-07-20 00:00:00,,,,False
+ACCT-213,Golden Group,new business,1. Preopp,Brian Chen,181323,81,,inbound,2024-12-11 00:00:00,,,,,False
+ACCT-214,Green Group,new business,5. Closed Lost,Donna Moriarty,171994,14,,inbound,2024-08-18 00:00:00,2024-08-19 00:00:00,2024-08-31 00:00:00,2024-09-13 00:00:00,,False
+ACCT-215,Dynamic Group,new business,5. Closed Lost,Donna Moriarty,142037,113,,inbound,2024-12-17 00:00:00,2024-12-19 00:00:00,2025-02-14 00:00:00,2025-02-25 00:00:00,,False
+ACCT-216,Green Co,new business,4. Negotiation,Tina Patel,54519,8,McDougal and Associates,outbound,2024-11-13 00:00:00,2024-11-16 00:00:00,2024-11-24 00:00:00,2024-11-27 00:00:00,,False
+ACCT-217,Continental LLC,new business,4. Negotiation,Tina Patel,84516,6,,outbound,2025-06-26 00:00:00,2025-06-29 00:00:00,2025-07-28 00:00:00,2025-08-03 00:00:00,,False
+ACCT-218,Continental Technologies,new business,4. Negotiation,Carlos Rivera,74485,6,,inbound,2025-06-10 00:00:00,2025-06-12 00:00:00,2025-06-28 00:00:00,2025-07-03 00:00:00,,False
+ACCT-219,Sharp Co,new business,2. Discovery,Carlos Rivera,54829,27,,outbound,2025-05-16 00:00:00,2025-05-18 00:00:00,,,,False
+ACCT-220,Red Ltd,new business,5. Closed Won,Tina Patel,55934,30,,inbound,2025-01-07 00:00:00,2025-01-10 00:00:00,2025-02-02 00:00:00,2025-02-08 00:00:00,2025-02-17 00:00:00,True
+ACCT-220,Red Ltd,upsell,2. Discovery,Sarah Brown,52704,28,,,2025-08-12 00:00:00,2025-08-13 00:00:00,,,,False
+ACCT-220,Red Ltd,renewal,2. Discovery,Sarah Brown,82563,28,,,2025-12-14 00:00:00,2025-12-15 00:00:00,,,,False
+ACCT-221,Tech Ltd,new business,5. Closed Won,Donna Moriarty,166974,50,,inbound,2024-12-22 00:00:00,2024-12-25 00:00:00,2025-01-29 00:00:00,2025-02-09 00:00:00,2025-02-18 00:00:00,True
+ACCT-221,Tech Ltd,upsell,4. Negotiation,Sarah Brown,79783,125,,,2025-07-20 00:00:00,2025-07-23 00:00:00,2025-08-21 00:00:00,2025-08-21 00:00:00,,False
+ACCT-221,Tech Ltd,renewal,3. Evaluation,Sarah Brown,197157,64,,,2025-12-15 00:00:00,2025-12-16 00:00:00,2026-02-02 00:00:00,,,False
+ACCT-222,Quick LLC,new business,5. Closed Lost,Brian Chen,100825,127,,outbound,2024-09-08 00:00:00,2024-09-11 00:00:00,2024-11-18 00:00:00,2024-12-17 00:00:00,,False
+ACCT-223,Innovative Corp,new business,3. Evaluation,Jake Morgan,35717,1,McDougal and Associates,inbound,2025-03-13 00:00:00,2025-03-14 00:00:00,2025-03-15 00:00:00,,,False
+ACCT-224,Red Systems,new business,5. Closed Lost,Brian Chen,106764,49,Medford Consulting Group,inbound,2025-02-04 00:00:00,2025-02-07 00:00:00,2025-03-10 00:00:00,2025-03-21 00:00:00,,False
+ACCT-225,North Co,new business,3. Evaluation,Brian Chen,109618,175,,outbound,2024-11-20 00:00:00,2024-11-22 00:00:00,2025-01-21 00:00:00,,,False
+ACCT-226,Green Partners,new business,5. Closed Lost,Tina Patel,82213,35,,inbound,2025-01-07 00:00:00,2025-01-09 00:00:00,2025-01-28 00:00:00,2025-02-11 00:00:00,,False
+ACCT-227,Clear Solutions,new business,5. Closed Lost,Carlos Rivera,85736,25,,inbound,2025-03-18 00:00:00,2025-03-19 00:00:00,2025-04-04 00:00:00,2025-04-13 00:00:00,,False
+ACCT-228,Clear LLC,new business,2. Discovery,Carlos Rivera,68541,14,,outbound,2024-10-03 00:00:00,2024-10-06 00:00:00,,,,False
+ACCT-229,Smart LLC,new business,2. Discovery,Samantha Lee,43311,9,,outbound,2024-09-21 00:00:00,2024-09-23 00:00:00,,,,False
+ACCT-230,Silver Group,new business,3. Evaluation,Brian Chen,144110,131,Medford Consulting Group,outbound,2025-03-13 00:00:00,2025-03-15 00:00:00,2025-05-05 00:00:00,,,False
+ACCT-231,Global Solutions,new business,3. Evaluation,Brian Chen,188846,96,,inbound,2025-04-26 00:00:00,2025-04-28 00:00:00,2025-06-24 00:00:00,,,False
+ACCT-232,North Technologies,new business,4. Negotiation,Brian Chen,128459,103,,inbound,2025-02-21 00:00:00,2025-02-22 00:00:00,2025-04-05 00:00:00,2025-04-16 00:00:00,,False
+ACCT-233,Clear Solutions,new business,2. Discovery,Brian Chen,167556,155,,inbound,2024-12-14 00:00:00,2024-12-17 00:00:00,,,,False
+ACCT-234,Cloud Ltd,new business,5. Closed Lost,Carlos Rivera,58351,46,,inbound,2024-11-21 00:00:00,2024-11-23 00:00:00,2024-12-02 00:00:00,2024-12-09 00:00:00,,False
+ACCT-235,Atlantic Solutions,new business,5. Closed Lost,Samantha Lee,32667,3,,inbound,2025-04-28 00:00:00,2025-04-29 00:00:00,2025-05-05 00:00:00,2025-05-06 00:00:00,,False
+ACCT-236,South Technologies,new business,2. Discovery,Brian Chen,72671,150,,inbound,2024-12-12 00:00:00,2024-12-13 00:00:00,,,,False
+ACCT-237,Quick Corp,new business,2. Discovery,Samantha Lee,27012,2,,inbound,2025-03-13 00:00:00,2025-03-15 00:00:00,,,,False
+ACCT-238,Continental Technologies,new business,2. Discovery,Tina Patel,93590,36,,inbound,2024-08-03 00:00:00,2024-08-05 00:00:00,,,,False
+ACCT-239,International Partners,new business,2. Discovery,Tina Patel,62899,42,,outbound,2025-05-09 00:00:00,2025-05-10 00:00:00,,,,False
+ACCT-240,Bright LLC,new business,2. Discovery,Brian Chen,100663,27,,inbound,2025-05-20 00:00:00,2025-05-21 00:00:00,,,,False
+ACCT-241,Clear Solutions,new business,5. Closed Lost,Brian Chen,180365,134,Medford Consulting Group,outbound,2024-10-07 00:00:00,2024-10-08 00:00:00,2024-12-06 00:00:00,2025-01-03 00:00:00,,False
+ACCT-242,Pacific Solutions,new business,5. Closed Lost,Carlos Rivera,85347,37,,inbound,2024-10-06 00:00:00,2024-10-08 00:00:00,2024-11-05 00:00:00,2024-11-17 00:00:00,,False
+ACCT-243,Smart Co,new business,4. Negotiation,Tina Patel,68528,16,McDougal and Associates,inbound,2024-09-18 00:00:00,2024-09-21 00:00:00,2024-09-28 00:00:00,2024-10-09 00:00:00,,False
+ACCT-244,Silver Co,new business,4. Negotiation,Jake Morgan,31260,8,,inbound,2024-11-22 00:00:00,2024-11-23 00:00:00,2024-11-26 00:00:00,2024-12-03 00:00:00,,False
+ACCT-245,Digital Technologies,new business,5. Closed Won,Jake Morgan,33741,2,,inbound,2024-09-26 00:00:00,2024-09-28 00:00:00,2024-10-11 00:00:00,2024-10-15 00:00:00,2024-10-19 00:00:00,True
+ACCT-245,Digital Technologies,renewal,3. Evaluation,Sarah Brown,23712,5,,,2025-08-15 00:00:00,2025-08-17 00:00:00,2025-08-19 00:00:00,,,False
+ACCT-246,North Partners,new business,2. Discovery,Jake Morgan,44817,7,Medford Consulting Group,outbound,2025-06-03 00:00:00,2025-06-05 00:00:00,,,,False
+ACCT-247,Dynamic Solutions,new business,2. Discovery,Donna Moriarty,111005,31,,inbound,2025-04-16 00:00:00,2025-04-17 00:00:00,,,,False
+ACCT-248,Green Technologies,new business,5. Closed Lost,Brian Chen,111195,192,,inbound,2025-03-26 00:00:00,2025-03-29 00:00:00,2025-06-26 00:00:00,2025-07-18 00:00:00,,False
+ACCT-249,West LLC,new business,5. Closed Lost,Carlos Rivera,90863,8,,outbound,2025-07-23 00:00:00,2025-07-25 00:00:00,2025-08-22 00:00:00,2025-08-31 00:00:00,,False
+ACCT-250,Advanced Technologies,new business,2. Discovery,Jake Morgan,37997,6,,outbound,2025-05-31 00:00:00,2025-06-02 00:00:00,,,,False
+ACCT-251,East Inc,new business,4. Negotiation,Tina Patel,78619,31,Medford Consulting Group,outbound,2025-05-19 00:00:00,2025-05-20 00:00:00,2025-06-11 00:00:00,2025-06-12 00:00:00,,False
+ACCT-252,Bright Partners,new business,2. Discovery,Tina Patel,98363,27,,inbound,2025-04-21 00:00:00,2025-04-23 00:00:00,,,,False
+ACCT-253,West Solutions,new business,2. Discovery,Carlos Rivera,52424,11,McDougal and Associates,outbound,2025-07-18 00:00:00,2025-07-20 00:00:00,,,,False
+ACCT-254,North Systems,new business,5. Closed Won,Donna Moriarty,101051,18,,outbound,2025-05-02 00:00:00,2025-05-04 00:00:00,2025-06-23 00:00:00,2025-07-13 00:00:00,2025-07-27 00:00:00,True
+ACCT-254,North Systems,renewal,3. Evaluation,Sarah Brown,93243,57,,,2026-05-23 00:00:00,2026-05-24 00:00:00,2026-06-17 00:00:00,,,False
+ACCT-255,Clear Technologies,new business,4. Negotiation,Brian Chen,118934,108,McDougal and Associates,inbound,2024-12-31 00:00:00,2025-01-01 00:00:00,2025-03-25 00:00:00,2025-04-12 00:00:00,,False
+ACCT-256,North Inc,new business,2. Discovery,Carlos Rivera,97072,36,,outbound,2025-03-23 00:00:00,2025-03-24 00:00:00,,,,False
+ACCT-257,Quick Ltd,new business,5. Closed Lost,Brian Chen,133143,39,,inbound,2024-09-11 00:00:00,2024-09-12 00:00:00,2024-10-12 00:00:00,2024-10-24 00:00:00,,False
+ACCT-258,Strategic Technologies,new business,4. Negotiation,Carlos Rivera,80351,50,,inbound,2024-08-23 00:00:00,2024-08-24 00:00:00,2024-09-16 00:00:00,2024-09-17 00:00:00,,False
+ACCT-259,Worldwide Solutions,new business,3. Evaluation,Carlos Rivera,53923,14,,inbound,2024-09-24 00:00:00,2024-09-27 00:00:00,2024-10-05 00:00:00,,,False
+ACCT-260,Cloud Technologies,new business,5. Closed Lost,Donna Moriarty,58355,194,,inbound,2025-02-25 00:00:00,2025-02-27 00:00:00,2025-04-15 00:00:00,2025-05-02 00:00:00,,False
+ACCT-261,Atlantic Partners,new business,2. Discovery,Donna Moriarty,144348,124,,inbound,2025-05-27 00:00:00,2025-05-30 00:00:00,,,,False
+ACCT-262,Central Group,new business,4. Negotiation,Jake Morgan,24194,3,,inbound,2024-10-11 00:00:00,2024-10-14 00:00:00,2024-10-16 00:00:00,2024-10-18 00:00:00,,False
+ACCT-263,Digital Co,new business,3. Evaluation,Carlos Rivera,58348,47,,inbound,2025-05-04 00:00:00,2025-05-07 00:00:00,2025-05-21 00:00:00,,,False
+ACCT-264,Silver Group,new business,5. Closed Lost,Brian Chen,159023,109,,outbound,2025-02-28 00:00:00,2025-03-02 00:00:00,2025-05-27 00:00:00,2025-06-19 00:00:00,,False
+ACCT-265,Cloud Solutions,new business,4. Negotiation,Donna Moriarty,115264,101,,inbound,2025-06-03 00:00:00,2025-06-06 00:00:00,2025-07-17 00:00:00,2025-08-05 00:00:00,,False
+ACCT-266,Blue Group,new business,5. Closed Lost,Tina Patel,89349,38,Medford Consulting Group,inbound,2025-06-25 00:00:00,2025-06-26 00:00:00,2025-07-21 00:00:00,2025-08-03 00:00:00,,False
+ACCT-267,West Ltd,new business,5. Closed Won,Carlos Rivera,66364,44,,inbound,2025-07-18 00:00:00,2025-07-21 00:00:00,2025-08-01 00:00:00,2025-08-15 00:00:00,2025-08-18 00:00:00,True
+ACCT-267,West Ltd,renewal,4. Negotiation,David Lee,70685,37,,,2026-06-14 00:00:00,2026-06-16 00:00:00,2026-07-06 00:00:00,2026-07-06 00:00:00,,False
+ACCT-268,Central Corp,new business,2. Discovery,Samantha Lee,19284,8,,inbound,2024-08-08 00:00:00,2024-08-10 00:00:00,,,,False
+ACCT-269,Tech Technologies,new business,2. Discovery,Carlos Rivera,53495,45,,outbound,2025-03-13 00:00:00,2025-03-15 00:00:00,,,,False
+ACCT-270,Global Technologies,new business,4. Negotiation,Tina Patel,89986,38,,inbound,2025-05-10 00:00:00,2025-05-13 00:00:00,2025-06-12 00:00:00,2025-06-13 00:00:00,,False
+ACCT-271,Pacific Solutions,new business,2. Discovery,Brian Chen,66065,107,,outbound,2025-06-05 00:00:00,2025-06-08 00:00:00,,,,False
+ACCT-272,Central LLC,new business,3. Evaluation,Jake Morgan,29458,8,,outbound,2025-02-26 00:00:00,2025-02-28 00:00:00,2025-03-03 00:00:00,,,False
+ACCT-273,Tech Inc,new business,2. Discovery,Carlos Rivera,77897,23,,outbound,2025-04-12 00:00:00,2025-04-15 00:00:00,,,,False
+ACCT-274,Global Technologies,new business,4. Negotiation,Carlos Rivera,84859,41,,inbound,2025-07-06 00:00:00,2025-07-08 00:00:00,2025-07-23 00:00:00,2025-08-05 00:00:00,,False
+ACCT-275,Global Systems,new business,3. Evaluation,Carlos Rivera,69695,29,Medford Consulting Group,outbound,2024-11-13 00:00:00,2024-11-14 00:00:00,2024-11-25 00:00:00,,,False
+ACCT-276,Dynamic Systems,new business,5. Closed Lost,Carlos Rivera,97701,38,,outbound,2024-12-25 00:00:00,2024-12-28 00:00:00,2025-01-05 00:00:00,2025-01-15 00:00:00,,False
+ACCT-277,West Co,new business,2. Discovery,Donna Moriarty,95287,127,,inbound,2024-12-19 00:00:00,2024-12-22 00:00:00,,,,False
+ACCT-278,Pacific Inc,new business,2. Discovery,Samantha Lee,12902,10,,inbound,2024-10-21 00:00:00,2024-10-22 00:00:00,,,,False
+ACCT-279,Clear Technologies,new business,5. Closed Lost,Carlos Rivera,59069,7,,outbound,2025-05-06 00:00:00,2025-05-08 00:00:00,2025-06-04 00:00:00,2025-06-06 00:00:00,,False
+ACCT-280,Digital LLC,new business,3. Evaluation,Brian Chen,86302,175,,inbound,2024-08-14 00:00:00,2024-08-15 00:00:00,2024-10-10 00:00:00,,,False
+ACCT-281,Golden Group,new business,4. Negotiation,Carlos Rivera,83398,22,,inbound,2024-12-31 00:00:00,2025-01-01 00:00:00,2025-01-30 00:00:00,2025-02-06 00:00:00,,False
+ACCT-282,Tech Solutions,new business,2. Discovery,Tina Patel,93857,26,,inbound,2025-02-22 00:00:00,2025-02-23 00:00:00,,,,False
+ACCT-283,Quick Technologies,new business,5. Closed Lost,Tina Patel,50080,39,Medford Consulting Group,inbound,2024-10-19 00:00:00,2024-10-21 00:00:00,2024-11-08 00:00:00,2024-11-10 00:00:00,,False
+ACCT-284,Central Systems,new business,2. Discovery,Tina Patel,90271,8,,inbound,2025-01-25 00:00:00,2025-01-26 00:00:00,,,,False
+ACCT-285,North Group,new business,3. Evaluation,Brian Chen,162960,16,,inbound,2025-05-21 00:00:00,2025-05-23 00:00:00,2025-08-03 00:00:00,,,False
+ACCT-286,Global Group,new business,2. Discovery,Samantha Lee,28804,4,,inbound,2025-01-13 00:00:00,2025-01-15 00:00:00,,,,False
+ACCT-287,North Solutions,new business,2. Discovery,Brian Chen,189444,89,,outbound,2025-06-13 00:00:00,2025-06-14 00:00:00,,,,False
+ACCT-288,Clear Systems,new business,2. Discovery,Tina Patel,55087,8,Medford Consulting Group,outbound,2025-01-18 00:00:00,2025-01-19 00:00:00,,,,False
+ACCT-289,West Corp,new business,2. Discovery,Brian Chen,107218,69,,inbound,2024-10-07 00:00:00,2024-10-09 00:00:00,,,,False
+ACCT-290,Data Inc,new business,2. Discovery,Carlos Rivera,66878,20,,inbound,2025-05-28 00:00:00,2025-05-30 00:00:00,,,,False
+ACCT-291,Fast LLC,new business,3. Evaluation,Brian Chen,111897,24,,inbound,2025-06-10 00:00:00,2025-06-13 00:00:00,2025-07-12 00:00:00,,,False
+ACCT-292,West Co,new business,5. Closed Won,Donna Moriarty,59215,179,,inbound,2025-03-10 00:00:00,2025-03-12 00:00:00,2025-06-07 00:00:00,2025-06-24 00:00:00,2025-07-20 00:00:00,True
+ACCT-292,West Co,renewal,2. Discovery,David Lee,160841,200,,,2026-05-16 00:00:00,2026-05-18 00:00:00,,,,False
+ACCT-293,Worldwide Group,new business,5. Closed Lost,Jake Morgan,49486,10,,inbound,2024-12-26 00:00:00,2024-12-28 00:00:00,2025-01-01 00:00:00,2025-01-02 00:00:00,,False
+ACCT-294,Smart Technologies,new business,2. Discovery,Carlos Rivera,58925,48,,inbound,2024-08-30 00:00:00,2024-09-01 00:00:00,,,,False
+ACCT-295,North Technologies,new business,2. Discovery,Carlos Rivera,73965,37,,inbound,2024-12-17 00:00:00,2024-12-20 00:00:00,,,,False
+ACCT-296,Strategic Group,new business,4. Negotiation,Donna Moriarty,94145,186,,inbound,2025-06-03 00:00:00,2025-06-04 00:00:00,2025-07-15 00:00:00,2025-07-25 00:00:00,,False
+ACCT-297,Green Co,new business,3. Evaluation,Carlos Rivera,58362,26,,inbound,2024-08-14 00:00:00,2024-08-16 00:00:00,2024-08-24 00:00:00,,,False
+ACCT-298,Tech Solutions,new business,4. Negotiation,Brian Chen,169869,137,Medford Consulting Group,outbound,2025-01-04 00:00:00,2025-01-07 00:00:00,2025-04-07 00:00:00,2025-05-04 00:00:00,,False
+ACCT-299,Advanced Solutions,new business,2. Discovery,Tina Patel,62219,24,,outbound,2025-03-11 00:00:00,2025-03-13 00:00:00,,,,False
+ACCT-300,Innovative Co,new business,2. Discovery,Brian Chen,128759,198,Medford Consulting Group,inbound,2025-07-24 00:00:00,2025-07-27 00:00:00,,,,False
+ACCT-301,Dynamic Co,new business,3. Evaluation,Brian Chen,164847,27,,outbound,2025-07-21 00:00:00,2025-07-23 00:00:00,2025-09-21 00:00:00,,,False
+ACCT-302,Global LLC,new business,2. Discovery,Carlos Rivera,84499,36,,inbound,2024-10-13 00:00:00,2024-10-14 00:00:00,,,,False
+ACCT-303,Advanced Group,new business,5. Closed Won,Brian Chen,123954,78,,inbound,2025-01-13 00:00:00,2025-01-14 00:00:00,2025-03-04 00:00:00,2025-03-13 00:00:00,2025-03-30 00:00:00,True
+ACCT-303,Advanced Group,renewal,4. Negotiation,Sarah Brown,151503,85,,,2026-01-24 00:00:00,2026-01-27 00:00:00,2026-03-29 00:00:00,2026-03-29 00:00:00,,False
+ACCT-304,Golden Inc,new business,5. Closed Lost,Carlos Rivera,65127,41,Medford Consulting Group,outbound,2025-06-25 00:00:00,2025-06-28 00:00:00,2025-07-14 00:00:00,2025-07-20 00:00:00,,False
+ACCT-305,Strategic Systems,new business,4. Negotiation,Carlos Rivera,83655,18,,outbound,2024-09-03 00:00:00,2024-09-06 00:00:00,2024-09-13 00:00:00,2024-09-17 00:00:00,,False
+ACCT-306,Dynamic Solutions,new business,4. Negotiation,Carlos Rivera,72688,40,,inbound,2025-06-24 00:00:00,2025-06-26 00:00:00,2025-07-07 00:00:00,2025-07-14 00:00:00,,False
+ACCT-307,Atlantic Inc,new business,2. Discovery,Carlos Rivera,62478,48,,outbound,2024-09-05 00:00:00,2024-09-07 00:00:00,,,,False
+ACCT-308,West Inc,new business,4. Negotiation,Tina Patel,52258,16,,inbound,2024-09-27 00:00:00,2024-09-28 00:00:00,2024-10-17 00:00:00,2024-10-22 00:00:00,,False
+ACCT-309,Red Co,new business,5. Closed Lost,Brian Chen,98302,38,,inbound,2025-07-09 00:00:00,2025-07-12 00:00:00,2025-09-13 00:00:00,2025-09-25 00:00:00,,False
+ACCT-310,Digital Co,new business,3. Evaluation,Samantha Lee,43835,9,,inbound,2025-04-10 00:00:00,2025-04-12 00:00:00,2025-04-24 00:00:00,,,False
+ACCT-311,Advanced Corp,new business,2. Discovery,Carlos Rivera,96796,45,,outbound,2024-11-10 00:00:00,2024-11-11 00:00:00,,,,False
+ACCT-312,Digital Solutions,new business,2. Discovery,Brian Chen,149289,176,,inbound,2024-10-02 00:00:00,2024-10-05 00:00:00,,,,False
+ACCT-313,Smart Group,new business,5. Closed Lost,Tina Patel,90664,5,,inbound,2025-04-09 00:00:00,2025-04-10 00:00:00,2025-05-05 00:00:00,2025-05-19 00:00:00,,False
+ACCT-314,Data Group,new business,4. Negotiation,Donna Moriarty,156087,179,,inbound,2024-08-12 00:00:00,2024-08-15 00:00:00,2024-09-21 00:00:00,2024-10-09 00:00:00,,False
+ACCT-315,Innovative Group,new business,3. Evaluation,Brian Chen,158540,46,,inbound,2025-05-25 00:00:00,2025-05-26 00:00:00,2025-06-24 00:00:00,,,False
+ACCT-316,Tech Solutions,new business,5. Closed Lost,Tina Patel,54793,9,Medford Consulting Group,outbound,2025-06-08 00:00:00,2025-06-11 00:00:00,2025-07-03 00:00:00,2025-07-04 00:00:00,,False
+ACCT-317,Sharp Co,new business,2. Discovery,Carlos Rivera,94988,7,McDougal and Associates,inbound,2025-02-19 00:00:00,2025-02-20 00:00:00,,,,False
+ACCT-318,West Systems,new business,2. Discovery,Donna Moriarty,96866,42,McDougal and Associates,inbound,2025-06-01 00:00:00,2025-06-02 00:00:00,,,,False
+ACCT-319,Cloud Technologies,new business,2. Discovery,Brian Chen,93728,20,,inbound,2025-04-23 00:00:00,2025-04-26 00:00:00,,,,False
+ACCT-320,Tech Technologies,new business,3. Evaluation,Donna Moriarty,144204,108,McDougal and Associates,inbound,2024-10-31 00:00:00,2024-11-03 00:00:00,2025-01-16 00:00:00,,,False
+ACCT-321,Innovative Group,new business,5. Closed Won,Donna Moriarty,187381,184,,inbound,2025-03-17 00:00:00,2025-03-20 00:00:00,2025-04-21 00:00:00,2025-05-03 00:00:00,2025-05-23 00:00:00,True
+ACCT-321,Innovative Group,renewal,2. Discovery,David Lee,161324,108,,,2026-03-19 00:00:00,2026-03-21 00:00:00,,,,False
+ACCT-322,Sharp LLC,new business,4. Negotiation,Tina Patel,57637,5,Medford Consulting Group,inbound,2025-01-30 00:00:00,2025-02-02 00:00:00,2025-02-14 00:00:00,2025-02-19 00:00:00,,False
+ACCT-323,Clear Corp,new business,2. Discovery,Samantha Lee,40525,6,Medford Consulting Group,inbound,2024-09-25 00:00:00,2024-09-26 00:00:00,,,,False
+ACCT-324,Digital Systems,new business,2. Discovery,Brian Chen,81922,134,,inbound,2025-04-12 00:00:00,2025-04-14 00:00:00,,,,False
+ACCT-325,Bright Technologies,new business,5. Closed Lost,Tina Patel,77440,25,,inbound,2024-11-14 00:00:00,2024-11-17 00:00:00,2024-12-14 00:00:00,2024-12-26 00:00:00,,False
+ACCT-326,Tech Ltd,new business,2. Discovery,Donna Moriarty,181768,103,,inbound,2025-02-21 00:00:00,2025-02-22 00:00:00,,,,False
+ACCT-327,Data Group,new business,3. Evaluation,Carlos Rivera,61980,34,Medford Consulting Group,inbound,2024-09-03 00:00:00,2024-09-05 00:00:00,2024-09-12 00:00:00,,,False
+ACCT-328,Atlantic Partners,new business,4. Negotiation,Samantha Lee,25638,6,,inbound,2025-07-24 00:00:00,2025-07-26 00:00:00,2025-07-27 00:00:00,2025-07-31 00:00:00,,False
+ACCT-329,Advanced Technologies,new business,5. Closed Lost,Brian Chen,102230,42,,outbound,2024-12-17 00:00:00,2024-12-18 00:00:00,2025-02-07 00:00:00,2025-02-18 00:00:00,,False
+ACCT-330,Clear Ltd,new business,3. Evaluation,Tina Patel,68047,10,,outbound,2025-07-20 00:00:00,2025-07-23 00:00:00,2025-08-07 00:00:00,,,False
+ACCT-331,Central Partners,new business,2. Discovery,Tina Patel,91661,25,,inbound,2024-08-02 00:00:00,2024-08-05 00:00:00,,,,False
+ACCT-332,Pacific LLC,new business,4. Negotiation,Brian Chen,158968,106,,outbound,2025-05-31 00:00:00,2025-06-03 00:00:00,2025-07-12 00:00:00,2025-08-01 00:00:00,,False
+ACCT-333,Golden Group,new business,2. Discovery,Jake Morgan,17871,5,,inbound,2024-12-25 00:00:00,2024-12-26 00:00:00,,,,False
+ACCT-334,North Solutions,new business,3. Evaluation,Tina Patel,51136,5,Medford Consulting Group,outbound,2025-06-07 00:00:00,2025-06-10 00:00:00,2025-06-20 00:00:00,,,False
+ACCT-335,Worldwide Co,new business,4. Negotiation,Samantha Lee,23875,8,,inbound,2025-05-25 00:00:00,2025-05-27 00:00:00,2025-06-04 00:00:00,2025-06-10 00:00:00,,False
+ACCT-336,Data Co,new business,2. Discovery,Brian Chen,75590,14,,inbound,2024-10-05 00:00:00,2024-10-06 00:00:00,,,,False
+ACCT-337,Strategic Ltd,new business,3. Evaluation,Jake Morgan,22483,3,,outbound,2025-05-12 00:00:00,2025-05-15 00:00:00,2025-05-26 00:00:00,,,False
+ACCT-338,Worldwide Technologies,new business,2. Discovery,Brian Chen,192131,186,,inbound,2025-01-24 00:00:00,2025-01-25 00:00:00,,,,False
+ACCT-339,Golden Group,new business,4. Negotiation,Carlos Rivera,92087,14,Medford Consulting Group,inbound,2025-04-09 00:00:00,2025-04-10 00:00:00,2025-04-25 00:00:00,2025-05-01 00:00:00,,False
+ACCT-340,Dynamic Co,new business,3. Evaluation,Carlos Rivera,52910,12,,inbound,2025-06-14 00:00:00,2025-06-16 00:00:00,2025-07-05 00:00:00,,,False
+ACCT-341,Pacific Systems,new business,5. Closed Lost,Tina Patel,74187,34,,inbound,2025-01-22 00:00:00,2025-01-24 00:00:00,2025-02-02 00:00:00,2025-02-03 00:00:00,,False
+ACCT-342,North Co,new business,2. Discovery,Tina Patel,95764,46,,inbound,2025-06-10 00:00:00,2025-06-12 00:00:00,,,,False
+ACCT-343,Green Solutions,new business,2. Discovery,Tina Patel,89220,10,Medford Consulting Group,inbound,2024-09-30 00:00:00,2024-10-02 00:00:00,,,,False
+ACCT-344,North Solutions,new business,5. Closed Lost,Tina Patel,60661,46,,inbound,2024-10-21 00:00:00,2024-10-22 00:00:00,2024-11-17 00:00:00,2024-11-21 00:00:00,,False
+ACCT-345,Clear Ltd,new business,4. Negotiation,Donna Moriarty,104031,87,,inbound,2025-03-26 00:00:00,2025-03-28 00:00:00,2025-04-11 00:00:00,2025-04-22 00:00:00,,False
+ACCT-346,Quick Technologies,new business,2. Discovery,Brian Chen,153484,160,,inbound,2025-03-15 00:00:00,2025-03-16 00:00:00,,,,False
+ACCT-347,Blue Corp,new business,2. Discovery,Tina Patel,55648,25,McDougal and Associates,inbound,2024-08-14 00:00:00,2024-08-16 00:00:00,,,,False
+ACCT-348,Red Technologies,new business,3. Evaluation,Carlos Rivera,94307,38,,inbound,2025-04-28 00:00:00,2025-04-30 00:00:00,2025-05-18 00:00:00,,,False
+ACCT-349,Advanced Systems,new business,3. Evaluation,Samantha Lee,42655,6,,inbound,2024-12-17 00:00:00,2024-12-20 00:00:00,2024-12-24 00:00:00,,,False
+ACCT-350,Innovative Ltd,new business,2. Discovery,Donna Moriarty,78743,140,Medford Consulting Group,inbound,2025-01-09 00:00:00,2025-01-12 00:00:00,,,,False
+ACCT-351,Digital Solutions,new business,5. Closed Lost,Brian Chen,194589,44,Medford Consulting Group,inbound,2025-02-13 00:00:00,2025-02-16 00:00:00,2025-05-02 00:00:00,2025-05-17 00:00:00,,False
+ACCT-352,Tech Co,new business,3. Evaluation,Brian Chen,121988,75,,outbound,2024-10-27 00:00:00,2024-10-29 00:00:00,2024-11-07 00:00:00,,,False
+ACCT-353,Smart Systems,new business,2. Discovery,Tina Patel,56907,47,,inbound,2025-04-15 00:00:00,2025-04-16 00:00:00,,,,False
+ACCT-354,Central Corp,new business,4. Negotiation,Jake Morgan,43197,6,,outbound,2025-03-01 00:00:00,2025-03-03 00:00:00,2025-03-17 00:00:00,2025-03-18 00:00:00,,False
+ACCT-355,Tech Group,new business,2. Discovery,Brian Chen,193958,89,,inbound,2025-01-04 00:00:00,2025-01-06 00:00:00,,,,False
+ACCT-356,Advanced Technologies,new business,4. Negotiation,Carlos Rivera,98487,22,McDougal and Associates,inbound,2025-03-09 00:00:00,2025-03-10 00:00:00,2025-04-01 00:00:00,2025-04-15 00:00:00,,False
+ACCT-357,East Inc,new business,3. Evaluation,Tina Patel,79412,20,,outbound,2025-01-19 00:00:00,2025-01-22 00:00:00,2025-01-30 00:00:00,,,False
+ACCT-358,Data Co,new business,5. Closed Lost,Donna Moriarty,67505,22,,inbound,2025-06-03 00:00:00,2025-06-04 00:00:00,2025-07-25 00:00:00,2025-08-10 00:00:00,,False
+ACCT-359,Tech Corp,new business,2. Discovery,Tina Patel,97466,41,,inbound,2024-08-22 00:00:00,2024-08-25 00:00:00,,,,False
+ACCT-360,Tech Co,new business,2. Discovery,Brian Chen,111067,30,,inbound,2025-07-06 00:00:00,2025-07-08 00:00:00,,,,False
+ACCT-361,Bright Partners,new business,5. Closed Lost,Samantha Lee,20815,8,,inbound,2025-07-06 00:00:00,2025-07-09 00:00:00,2025-07-19 00:00:00,2025-07-24 00:00:00,,False
+ACCT-362,Worldwide Inc,new business,3. Evaluation,Jake Morgan,10017,7,,inbound,2025-06-19 00:00:00,2025-06-22 00:00:00,2025-06-29 00:00:00,,,False
+ACCT-363,West LLC,new business,2. Discovery,Carlos Rivera,90385,29,,outbound,2025-05-29 00:00:00,2025-05-31 00:00:00,,,,False
+ACCT-364,Clear Co,new business,5. Closed Won,Carlos Rivera,68362,19,,inbound,2025-03-08 00:00:00,2025-03-10 00:00:00,2025-04-06 00:00:00,2025-04-12 00:00:00,2025-04-19 00:00:00,True
+ACCT-364,Clear Co,renewal,2. Discovery,Sarah Brown,56575,10,Medford Consulting Group,,2026-02-13 00:00:00,2026-02-16 00:00:00,,,,False
+ACCT-365,International Solutions,new business,4. Negotiation,Samantha Lee,22246,9,,outbound,2025-04-05 00:00:00,2025-04-08 00:00:00,2025-04-09 00:00:00,2025-04-13 00:00:00,,False
+ACCT-366,Continental Ltd,new business,5. Closed Won,Brian Chen,136320,124,,inbound,2024-12-04 00:00:00,2024-12-05 00:00:00,2025-01-06 00:00:00,2025-01-28 00:00:00,2025-02-26 00:00:00,True
+ACCT-366,Continental Ltd,renewal,2. Discovery,Sarah Brown,162924,87,,,2025-12-23 00:00:00,2025-12-26 00:00:00,,,,False
+ACCT-367,Advanced LLC,new business,3. Evaluation,Jake Morgan,25561,1,,inbound,2025-07-24 00:00:00,2025-07-25 00:00:00,2025-08-06 00:00:00,,,False
+ACCT-368,East Technologies,new business,4. Negotiation,Samantha Lee,34734,4,,inbound,2025-01-03 00:00:00,2025-01-04 00:00:00,2025-01-13 00:00:00,2025-01-19 00:00:00,,False
+ACCT-369,Worldwide LLC,new business,5. Closed Lost,Brian Chen,156971,158,,inbound,2024-12-19 00:00:00,2024-12-20 00:00:00,2025-02-25 00:00:00,2025-03-14 00:00:00,,False
+ACCT-370,Blue LLC,new business,4. Negotiation,Brian Chen,153466,149,,inbound,2025-07-17 00:00:00,2025-07-19 00:00:00,2025-08-30 00:00:00,2025-09-24 00:00:00,,False
+ACCT-371,Strategic Systems,new business,5. Closed Lost,Brian Chen,150151,81,,inbound,2024-09-24 00:00:00,2024-09-25 00:00:00,2024-11-24 00:00:00,2024-12-19 00:00:00,,False
+ACCT-372,Central Ltd,new business,1. Preopp,Brian Chen,90152,96,,inbound,2025-04-02 00:00:00,,,,,False
+ACCT-373,Dynamic Partners,new business,2. Discovery,Carlos Rivera,65768,8,,outbound,2025-05-02 00:00:00,2025-05-04 00:00:00,,,,False
+ACCT-374,Cloud Systems,new business,5. Closed Lost,Brian Chen,190168,25,,outbound,2025-02-12 00:00:00,2025-02-14 00:00:00,2025-04-09 00:00:00,2025-04-28 00:00:00,,False
+ACCT-375,Global Solutions,new business,5. Closed Lost,Brian Chen,114385,75,,inbound,2025-02-18 00:00:00,2025-02-21 00:00:00,2025-03-05 00:00:00,2025-03-28 00:00:00,,False
+ACCT-376,Central Inc,new business,2. Discovery,Samantha Lee,43930,6,Medford Consulting Group,inbound,2025-06-17 00:00:00,2025-06-20 00:00:00,,,,False
+ACCT-377,Advanced Corp,new business,5. Closed Lost,Carlos Rivera,85804,20,Medford Consulting Group,outbound,2024-09-27 00:00:00,2024-09-28 00:00:00,2024-10-19 00:00:00,2024-10-31 00:00:00,,False
+ACCT-378,Continental Systems,new business,5. Closed Lost,Brian Chen,92882,125,Medford Consulting Group,outbound,2024-10-25 00:00:00,2024-10-27 00:00:00,2025-01-06 00:00:00,2025-01-19 00:00:00,,False
+ACCT-379,Red Partners,new business,5. Closed Lost,Carlos Rivera,68910,8,,outbound,2024-08-21 00:00:00,2024-08-24 00:00:00,2024-09-06 00:00:00,2024-09-09 00:00:00,,False
+ACCT-380,Digital Systems,new business,2. Discovery,Carlos Rivera,82895,10,Medford Consulting Group,inbound,2024-10-14 00:00:00,2024-10-17 00:00:00,,,,False
+ACCT-381,Sharp Solutions,new business,5. Closed Lost,Brian Chen,174211,32,Medford Consulting Group,inbound,2025-04-15 00:00:00,2025-04-18 00:00:00,2025-05-07 00:00:00,2025-05-17 00:00:00,,False
+ACCT-382,Strategic Systems,new business,5. Closed Lost,Brian Chen,51773,67,,inbound,2025-06-14 00:00:00,2025-06-16 00:00:00,2025-07-21 00:00:00,2025-08-10 00:00:00,,False
+ACCT-383,Silver Co,new business,4. Negotiation,Tina Patel,54328,36,,inbound,2025-06-03 00:00:00,2025-06-05 00:00:00,2025-06-15 00:00:00,2025-06-23 00:00:00,,False
+ACCT-384,Atlantic Systems,new business,2. Discovery,Carlos Rivera,91066,44,,inbound,2025-05-17 00:00:00,2025-05-20 00:00:00,,,,False
+ACCT-385,Silver Group,new business,2. Discovery,Brian Chen,51511,14,,inbound,2025-05-29 00:00:00,2025-05-30 00:00:00,,,,False
+ACCT-386,Cloud Co,new business,2. Discovery,Brian Chen,73652,68,,outbound,2024-08-07 00:00:00,2024-08-10 00:00:00,,,,False
+ACCT-387,Cloud Corp,new business,4. Negotiation,Donna Moriarty,94174,194,,outbound,2024-12-06 00:00:00,2024-12-09 00:00:00,2024-12-18 00:00:00,2025-01-02 00:00:00,,False
+ACCT-388,Fast LLC,new business,1. Preopp,Brian Chen,52104,30,,outbound,2025-06-16 00:00:00,,,,,False
+ACCT-389,Continental LLC,new business,5. Closed Lost,Brian Chen,114811,174,,inbound,2025-06-17 00:00:00,2025-06-20 00:00:00,2025-09-16 00:00:00,2025-10-10 00:00:00,,False
+ACCT-390,Strategic Co,new business,3. Evaluation,Tina Patel,97615,9,,inbound,2025-07-09 00:00:00,2025-07-11 00:00:00,2025-07-22 00:00:00,,,False
+ACCT-391,International LLC,new business,3. Evaluation,Tina Patel,67469,23,,inbound,2024-10-12 00:00:00,2024-10-14 00:00:00,2024-10-30 00:00:00,,,False
+ACCT-392,Sharp Inc,new business,2. Discovery,Carlos Rivera,71122,29,,outbound,2025-05-30 00:00:00,2025-06-02 00:00:00,,,,False
+ACCT-393,Silver Systems,new business,5. Closed Lost,Brian Chen,131330,119,,outbound,2025-01-16 00:00:00,2025-01-18 00:00:00,2025-04-16 00:00:00,2025-05-10 00:00:00,,False
+ACCT-394,Fast Technologies,new business,2. Discovery,Carlos Rivera,98781,17,,inbound,2025-05-07 00:00:00,2025-05-09 00:00:00,,,,False
+ACCT-395,Smart Inc,new business,2. Discovery,Carlos Rivera,90700,33,,outbound,2025-03-11 00:00:00,2025-03-14 00:00:00,,,,False
+ACCT-396,Digital Solutions,new business,5. Closed Lost,Jake Morgan,48702,2,,inbound,2025-02-05 00:00:00,2025-02-08 00:00:00,2025-02-10 00:00:00,2025-02-15 00:00:00,,False
+ACCT-397,Quick Technologies,new business,5. Closed Lost,Tina Patel,62132,49,,outbound,2024-10-13 00:00:00,2024-10-16 00:00:00,2024-10-30 00:00:00,2024-11-03 00:00:00,,False
+ACCT-398,Central Co,new business,5. Closed Lost,Brian Chen,186884,43,Medford Consulting Group,inbound,2024-10-29 00:00:00,2024-10-31 00:00:00,2024-11-22 00:00:00,2024-12-17 00:00:00,,False
+ACCT-399,Cloud Co,new business,5. Closed Lost,Carlos Rivera,80808,39,,outbound,2025-04-05 00:00:00,2025-04-07 00:00:00,2025-05-01 00:00:00,2025-05-03 00:00:00,,False
+ACCT-400,Silver Technologies,new business,3. Evaluation,Carlos Rivera,58887,29,,inbound,2025-02-10 00:00:00,2025-02-13 00:00:00,2025-02-23 00:00:00,,,False
+ACCT-401,Bright Partners,new business,2. Discovery,Brian Chen,150934,196,Medford Consulting Group,outbound,2025-01-20 00:00:00,2025-01-21 00:00:00,,,,False
+ACCT-402,Clear Partners,new business,4. Negotiation,Carlos Rivera,97756,50,McDougal and Associates,outbound,2025-06-23 00:00:00,2025-06-26 00:00:00,2025-07-03 00:00:00,2025-07-14 00:00:00,,False
+ACCT-403,Bright LLC,new business,3. Evaluation,Carlos Rivera,82922,45,,outbound,2024-09-17 00:00:00,2024-09-19 00:00:00,2024-10-10 00:00:00,,,False
+ACCT-404,Golden Corp,new business,3. Evaluation,Brian Chen,127711,147,,inbound,2025-02-15 00:00:00,2025-02-18 00:00:00,2025-04-23 00:00:00,,,False
+ACCT-405,Data Group,new business,2. Discovery,Carlos Rivera,78987,47,McDougal and Associates,inbound,2024-10-31 00:00:00,2024-11-02 00:00:00,,,,False
+ACCT-406,Dynamic Corp,new business,5. Closed Won,Carlos Rivera,94946,26,,inbound,2025-03-11 00:00:00,2025-03-12 00:00:00,2025-03-22 00:00:00,2025-04-01 00:00:00,2025-04-12 00:00:00,True
+ACCT-406,Dynamic Corp,renewal,5. Closed Lost,Sarah Brown,81614,18,,,2026-02-06 00:00:00,2026-02-09 00:00:00,2026-03-04 00:00:00,2026-03-04 00:00:00,,False
+ACCT-407,West Partners,new business,4. Negotiation,Tina Patel,51027,7,Medford Consulting Group,inbound,2025-01-13 00:00:00,2025-01-16 00:00:00,2025-02-05 00:00:00,2025-02-14 00:00:00,,False
+ACCT-408,Worldwide Systems,new business,3. Evaluation,Carlos Rivera,58723,17,,inbound,2025-05-28 00:00:00,2025-05-30 00:00:00,2025-06-13 00:00:00,,,False
+ACCT-409,International Group,new business,5. Closed Won,Carlos Rivera,69617,41,Medford Consulting Group,outbound,2024-10-02 00:00:00,2024-10-03 00:00:00,2024-10-26 00:00:00,2024-11-05 00:00:00,2024-11-08 00:00:00,True
+ACCT-409,International Group,renewal,2. Discovery,David Lee,64678,41,,,2025-09-04 00:00:00,2025-09-06 00:00:00,,,,False
+ACCT-410,Blue Technologies,new business,5. Closed Won,Carlos Rivera,68515,49,,inbound,2025-06-04 00:00:00,2025-06-06 00:00:00,2025-06-30 00:00:00,2025-07-09 00:00:00,2025-07-23 00:00:00,True
+ACCT-410,Blue Technologies,renewal,5. Closed Won,Sarah Brown,72226,29,,,2026-05-19 00:00:00,2026-05-20 00:00:00,2026-06-04 00:00:00,2026-06-04 00:00:00,2026-06-07 00:00:00,True
+ACCT-411,North Technologies,new business,2. Discovery,Tina Patel,82686,40,,outbound,2025-01-28 00:00:00,2025-01-30 00:00:00,,,,False
+ACCT-412,East Inc,new business,5. Closed Lost,Jake Morgan,13420,8,,outbound,2024-12-28 00:00:00,2024-12-30 00:00:00,2025-01-04 00:00:00,2025-01-11 00:00:00,,False
+ACCT-413,Atlantic Co,new business,4. Negotiation,Brian Chen,155549,10,,outbound,2024-08-06 00:00:00,2024-08-07 00:00:00,2024-08-24 00:00:00,2024-09-14 00:00:00,,False
+ACCT-414,Worldwide Corp,new business,4. Negotiation,Tina Patel,63769,13,,inbound,2025-05-16 00:00:00,2025-05-19 00:00:00,2025-06-05 00:00:00,2025-06-14 00:00:00,,False
+ACCT-415,Advanced Group,new business,4. Negotiation,Brian Chen,165032,184,,inbound,2024-10-19 00:00:00,2024-10-22 00:00:00,2025-01-02 00:00:00,2025-01-25 00:00:00,,False
+ACCT-416,Atlantic Technologies,new business,2. Discovery,Donna Moriarty,53946,52,McDougal and Associates,outbound,2025-02-03 00:00:00,2025-02-04 00:00:00,,,,False
+ACCT-417,East Technologies,new business,2. Discovery,Brian Chen,140837,95,,outbound,2025-07-17 00:00:00,2025-07-19 00:00:00,,,,False
+ACCT-418,Blue Systems,new business,3. Evaluation,Jake Morgan,36106,10,,inbound,2024-10-09 00:00:00,2024-10-12 00:00:00,2024-10-21 00:00:00,,,False
+ACCT-419,Central Co,new business,5. Closed Lost,Carlos Rivera,64109,36,Medford Consulting Group,inbound,2025-06-02 00:00:00,2025-06-05 00:00:00,2025-07-05 00:00:00,2025-07-15 00:00:00,,False
+ACCT-420,Sharp Group,new business,5. Closed Won,Brian Chen,80005,13,,outbound,2024-08-24 00:00:00,2024-08-26 00:00:00,2024-11-08 00:00:00,2024-11-30 00:00:00,2024-12-28 00:00:00,True
+ACCT-420,Sharp Group,renewal,2. Discovery,Sarah Brown,52661,116,,,2025-10-24 00:00:00,2025-10-27 00:00:00,,,,False
+ACCT-421,Sharp Technologies,new business,4. Negotiation,Tina Patel,93400,46,,outbound,2025-01-15 00:00:00,2025-01-16 00:00:00,2025-02-01 00:00:00,2025-02-06 00:00:00,,False
+ACCT-422,East Co,new business,4. Negotiation,Donna Moriarty,70640,154,Medford Consulting Group,inbound,2025-07-07 00:00:00,2025-07-09 00:00:00,2025-07-16 00:00:00,2025-08-12 00:00:00,,False
+ACCT-423,Golden Inc,new business,5. Closed Lost,Brian Chen,193118,83,,inbound,2024-10-30 00:00:00,2024-10-31 00:00:00,2024-11-21 00:00:00,2024-12-20 00:00:00,,False
+ACCT-424,Data Corp,new business,5. Closed Lost,Carlos Rivera,78825,15,,inbound,2024-12-23 00:00:00,2024-12-25 00:00:00,2025-01-19 00:00:00,2025-01-26 00:00:00,,False
+ACCT-425,Strategic Group,new business,2. Discovery,Brian Chen,112811,75,,inbound,2025-03-31 00:00:00,2025-04-03 00:00:00,,,,False
+ACCT-426,Smart Corp,new business,2. Discovery,Tina Patel,53081,44,,inbound,2024-12-11 00:00:00,2024-12-12 00:00:00,,,,False
+ACCT-427,Innovative Ltd,new business,5. Closed Lost,Carlos Rivera,91362,49,,outbound,2025-02-11 00:00:00,2025-02-13 00:00:00,2025-02-25 00:00:00,2025-03-02 00:00:00,,False
+ACCT-428,Global Group,new business,2. Discovery,Donna Moriarty,52840,139,,inbound,2024-12-19 00:00:00,2024-12-22 00:00:00,,,,False
+ACCT-429,Bright Corp,new business,4. Negotiation,Brian Chen,179101,24,,outbound,2025-03-07 00:00:00,2025-03-08 00:00:00,2025-03-27 00:00:00,2025-04-14 00:00:00,,False
+ACCT-430,Quick LLC,new business,2. Discovery,Brian Chen,154368,118,,inbound,2025-04-25 00:00:00,2025-04-28 00:00:00,,,,False
+ACCT-431,Sharp Corp,new business,4. Negotiation,Carlos Rivera,55021,37,,inbound,2024-09-17 00:00:00,2024-09-18 00:00:00,2024-10-03 00:00:00,2024-10-16 00:00:00,,False
+ACCT-432,Fast Ltd,new business,5. Closed Lost,Carlos Rivera,71863,50,,outbound,2025-07-01 00:00:00,2025-07-02 00:00:00,2025-07-31 00:00:00,2025-08-01 00:00:00,,False
+ACCT-433,Atlantic Partners,new business,3. Evaluation,Carlos Rivera,81216,10,Medford Consulting Group,outbound,2024-09-13 00:00:00,2024-09-16 00:00:00,2024-10-14 00:00:00,,,False
+ACCT-434,East Ltd,new business,1. Preopp,Brian Chen,55859,48,,inbound,2024-10-02 00:00:00,,,,,False
+ACCT-435,Digital Partners,new business,4. Negotiation,Tina Patel,86389,42,,inbound,2025-02-17 00:00:00,2025-02-18 00:00:00,2025-03-03 00:00:00,2025-03-08 00:00:00,,False
+ACCT-436,Strategic Solutions,new business,2. Discovery,Brian Chen,150870,37,Medford Consulting Group,inbound,2025-06-22 00:00:00,2025-06-24 00:00:00,,,,False
+ACCT-437,Bright Inc,new business,2. Discovery,Brian Chen,112369,85,,outbound,2025-06-19 00:00:00,2025-06-22 00:00:00,,,,False
+ACCT-438,Central LLC,new business,4. Negotiation,Brian Chen,117308,32,,outbound,2024-11-19 00:00:00,2024-11-21 00:00:00,2025-01-13 00:00:00,2025-01-29 00:00:00,,False
+ACCT-439,Golden Ltd,new business,3. Evaluation,Donna Moriarty,135894,31,Medford Consulting Group,inbound,2024-10-21 00:00:00,2024-10-22 00:00:00,2024-11-24 00:00:00,,,False
+ACCT-440,East Group,new business,5. Closed Lost,Donna Moriarty,139198,103,,inbound,2024-08-11 00:00:00,2024-08-13 00:00:00,2024-11-07 00:00:00,2024-11-16 00:00:00,,False
+ACCT-441,Data Group,new business,5. Closed Lost,Carlos Rivera,72868,46,,inbound,2024-12-19 00:00:00,2024-12-22 00:00:00,2025-01-04 00:00:00,2025-01-11 00:00:00,,False
+ACCT-442,Continental Co,new business,5. Closed Lost,Jake Morgan,23094,4,,outbound,2024-09-16 00:00:00,2024-09-19 00:00:00,2024-09-26 00:00:00,2024-09-29 00:00:00,,False
+ACCT-443,Red Solutions,new business,4. Negotiation,Carlos Rivera,51250,8,,inbound,2025-06-17 00:00:00,2025-06-18 00:00:00,2025-07-05 00:00:00,2025-07-08 00:00:00,,False
+ACCT-444,Advanced Technologies,new business,3. Evaluation,Tina Patel,70779,46,,outbound,2025-04-08 00:00:00,2025-04-09 00:00:00,2025-04-29 00:00:00,,,False
+ACCT-445,Continental LLC,new business,5. Closed Won,Carlos Rivera,58898,10,,inbound,2024-10-15 00:00:00,2024-10-17 00:00:00,2024-11-03 00:00:00,2024-11-15 00:00:00,2024-11-16 00:00:00,True
+ACCT-445,Continental LLC,renewal,4. Negotiation,David Lee,76058,21,,,2025-09-12 00:00:00,2025-09-14 00:00:00,2025-10-11 00:00:00,2025-10-11 00:00:00,,False
+ACCT-446,Pacific Solutions,new business,5. Closed Lost,Brian Chen,164074,167,,outbound,2025-06-16 00:00:00,2025-06-19 00:00:00,2025-08-26 00:00:00,2025-09-17 00:00:00,,False
+ACCT-447,Golden Technologies,new business,3. Evaluation,Brian Chen,182978,170,,outbound,2024-09-06 00:00:00,2024-09-08 00:00:00,2024-09-23 00:00:00,,,False
+ACCT-448,Silver Partners,new business,2. Discovery,Samantha Lee,30246,6,,outbound,2025-03-25 00:00:00,2025-03-27 00:00:00,,,,False
+ACCT-449,Dynamic Solutions,new business,3. Evaluation,Carlos Rivera,85884,32,,inbound,2024-11-21 00:00:00,2024-11-24 00:00:00,2024-12-11 00:00:00,,,False
+ACCT-450,Digital Partners,new business,5. Closed Won,Carlos Rivera,80470,38,,inbound,2025-05-18 00:00:00,2025-05-21 00:00:00,2025-05-29 00:00:00,2025-06-02 00:00:00,2025-06-14 00:00:00,True
+ACCT-450,Digital Partners,renewal,2. Discovery,Sarah Brown,51606,41,,,2026-04-10 00:00:00,2026-04-12 00:00:00,,,,False
+ACCT-451,International Partners,new business,5. Closed Lost,Carlos Rivera,62867,27,,inbound,2025-04-07 00:00:00,2025-04-10 00:00:00,2025-04-25 00:00:00,2025-04-26 00:00:00,,False
+ACCT-452,Pacific Partners,new business,2. Discovery,Donna Moriarty,149252,63,,inbound,2025-07-12 00:00:00,2025-07-14 00:00:00,,,,False
+ACCT-453,Golden Technologies,new business,2. Discovery,Brian Chen,155913,103,,outbound,2025-06-03 00:00:00,2025-06-04 00:00:00,,,,False
+ACCT-454,Global Inc,new business,5. Closed Lost,Brian Chen,169475,31,,inbound,2025-03-13 00:00:00,2025-03-16 00:00:00,2025-06-05 00:00:00,2025-06-15 00:00:00,,False
+ACCT-455,Data Systems,new business,5. Closed Lost,Carlos Rivera,61335,32,,outbound,2025-05-01 00:00:00,2025-05-03 00:00:00,2025-05-17 00:00:00,2025-05-26 00:00:00,,False
+ACCT-456,Strategic Systems,new business,5. Closed Won,Donna Moriarty,119541,130,,outbound,2024-11-12 00:00:00,2024-11-15 00:00:00,2025-01-18 00:00:00,2025-02-10 00:00:00,2025-02-19 00:00:00,True
+ACCT-456,Strategic Systems,renewal,5. Closed Won,David Lee,122146,75,,,2025-12-16 00:00:00,2025-12-18 00:00:00,2026-03-13 00:00:00,2026-03-13 00:00:00,2026-03-24 00:00:00,True
+ACCT-457,Tech Corp,new business,5. Closed Lost,Jake Morgan,47739,3,,inbound,2024-08-24 00:00:00,2024-08-27 00:00:00,2024-08-29 00:00:00,2024-09-02 00:00:00,,False
+ACCT-458,Green LLC,new business,2. Discovery,Brian Chen,105383,71,,outbound,2025-04-24 00:00:00,2025-04-25 00:00:00,,,,False
+ACCT-459,Blue Corp,new business,4. Negotiation,Carlos Rivera,93176,20,Medford Consulting Group,outbound,2024-09-21 00:00:00,2024-09-22 00:00:00,2024-10-09 00:00:00,2024-10-19 00:00:00,,False
+ACCT-460,Innovative Systems,new business,3. Evaluation,Brian Chen,107679,44,Medford Consulting Group,inbound,2025-04-11 00:00:00,2025-04-13 00:00:00,2025-05-05 00:00:00,,,False
+ACCT-461,North Co,new business,3. Evaluation,Jake Morgan,17282,10,,inbound,2025-02-21 00:00:00,2025-02-24 00:00:00,2025-03-08 00:00:00,,,False
+ACCT-462,Strategic Systems,new business,5. Closed Won,Jake Morgan,35563,8,,inbound,2024-12-28 00:00:00,2024-12-29 00:00:00,2025-01-08 00:00:00,2025-01-10 00:00:00,2025-01-16 00:00:00,True
+ACCT-462,Strategic Systems,renewal,2. Discovery,Sarah Brown,43479,4,,,2025-11-12 00:00:00,2025-11-13 00:00:00,,,,False
+ACCT-463,Clear Solutions,new business,5. Closed Lost,Carlos Rivera,78023,16,Medford Consulting Group,outbound,2024-08-23 00:00:00,2024-08-24 00:00:00,2024-09-16 00:00:00,2024-09-20 00:00:00,,False
+ACCT-464,South Inc,new business,2. Discovery,Samantha Lee,21138,5,,inbound,2024-08-09 00:00:00,2024-08-12 00:00:00,,,,False
+ACCT-465,Fast Co,new business,5. Closed Lost,Carlos Rivera,55851,36,,inbound,2025-06-17 00:00:00,2025-06-20 00:00:00,2025-07-15 00:00:00,2025-07-22 00:00:00,,False
+ACCT-466,Central Ltd,new business,3. Evaluation,Brian Chen,52063,135,,inbound,2025-02-04 00:00:00,2025-02-06 00:00:00,2025-03-03 00:00:00,,,False
+ACCT-467,East LLC,new business,5. Closed Won,Brian Chen,157806,35,,inbound,2024-09-03 00:00:00,2024-09-04 00:00:00,2024-09-26 00:00:00,2024-10-14 00:00:00,2024-11-10 00:00:00,True
+ACCT-467,East LLC,renewal,5. Closed Lost,David Lee,89147,70,,,2025-09-06 00:00:00,2025-09-09 00:00:00,2025-10-27 00:00:00,2025-10-27 00:00:00,,False
+ACCT-468,South Systems,new business,5. Closed Lost,Carlos Rivera,87027,12,,inbound,2024-11-15 00:00:00,2024-11-16 00:00:00,2024-11-25 00:00:00,2024-12-01 00:00:00,,False
+ACCT-469,Fast Corp,new business,4. Negotiation,Donna Moriarty,114811,100,,outbound,2025-03-18 00:00:00,2025-03-21 00:00:00,2025-05-25 00:00:00,2025-06-24 00:00:00,,False
+ACCT-470,North Corp,new business,2. Discovery,Carlos Rivera,58997,50,,inbound,2024-11-18 00:00:00,2024-11-21 00:00:00,,,,False
+ACCT-471,South Partners,new business,1. Preopp,Carlos Rivera,51440,22,,outbound,2024-09-19 00:00:00,,,,,False
+ACCT-472,South Corp,new business,2. Discovery,Brian Chen,57351,157,,inbound,2024-08-01 00:00:00,2024-08-03 00:00:00,,,,False
+ACCT-473,Central Group,new business,4. Negotiation,Jake Morgan,42533,2,,inbound,2025-03-09 00:00:00,2025-03-10 00:00:00,2025-03-19 00:00:00,2025-03-25 00:00:00,,False
+ACCT-474,Red Group,new business,3. Evaluation,Brian Chen,191101,54,,inbound,2024-08-15 00:00:00,2024-08-17 00:00:00,2024-09-29 00:00:00,,,False
+ACCT-475,Worldwide Ltd,new business,2. Discovery,Carlos Rivera,75307,40,,outbound,2024-08-21 00:00:00,2024-08-23 00:00:00,,,,False
+ACCT-476,Central Solutions,new business,2. Discovery,Brian Chen,101010,106,,inbound,2025-05-14 00:00:00,2025-05-15 00:00:00,,,,False
+ACCT-477,Data Corp,new business,2. Discovery,Tina Patel,84287,32,Medford Consulting Group,inbound,2025-01-04 00:00:00,2025-01-07 00:00:00,,,,False
+ACCT-478,Smart Inc,new business,2. Discovery,Donna Moriarty,165135,69,,outbound,2025-04-16 00:00:00,2025-04-17 00:00:00,,,,False
+ACCT-479,Tech Technologies,new business,5. Closed Lost,Carlos Rivera,59113,13,,outbound,2025-05-22 00:00:00,2025-05-23 00:00:00,2025-06-13 00:00:00,2025-06-27 00:00:00,,False
+ACCT-480,Sharp Ltd,new business,4. Negotiation,Brian Chen,195807,195,,inbound,2025-02-27 00:00:00,2025-02-28 00:00:00,2025-03-27 00:00:00,2025-04-13 00:00:00,,False
+ACCT-481,Quick Technologies,new business,4. Negotiation,Jake Morgan,26474,2,,outbound,2025-06-18 00:00:00,2025-06-21 00:00:00,2025-07-04 00:00:00,2025-07-08 00:00:00,,False
+ACCT-482,Cloud Group,new business,3. Evaluation,Brian Chen,191950,81,,inbound,2025-02-22 00:00:00,2025-02-24 00:00:00,2025-04-05 00:00:00,,,False
+ACCT-483,North Ltd,new business,3. Evaluation,Carlos Rivera,80513,23,,inbound,2025-04-25 00:00:00,2025-04-27 00:00:00,2025-05-10 00:00:00,,,False
+ACCT-484,East Solutions,new business,2. Discovery,Brian Chen,121588,78,,inbound,2025-07-21 00:00:00,2025-07-24 00:00:00,,,,False
+ACCT-485,West Ltd,new business,5. Closed Lost,Carlos Rivera,69631,47,,inbound,2025-02-20 00:00:00,2025-02-22 00:00:00,2025-03-06 00:00:00,2025-03-19 00:00:00,,False
+ACCT-486,Red Corp,new business,2. Discovery,Carlos Rivera,72924,18,,inbound,2024-11-25 00:00:00,2024-11-26 00:00:00,,,,False
+ACCT-487,Data Group,new business,5. Closed Lost,Carlos Rivera,67569,24,Medford Consulting Group,inbound,2025-03-11 00:00:00,2025-03-12 00:00:00,2025-03-27 00:00:00,2025-04-08 00:00:00,,False
+ACCT-488,Pacific Technologies,new business,2. Discovery,Samantha Lee,34524,2,,inbound,2024-10-29 00:00:00,2024-10-31 00:00:00,,,,False
+ACCT-489,Quick Ltd,new business,5. Closed Lost,Tina Patel,50338,40,,inbound,2024-08-13 00:00:00,2024-08-15 00:00:00,2024-09-01 00:00:00,2024-09-14 00:00:00,,False
+ACCT-490,Innovative LLC,new business,4. Negotiation,Tina Patel,67290,36,,inbound,2025-07-02 00:00:00,2025-07-03 00:00:00,2025-08-02 00:00:00,2025-08-08 00:00:00,,False
+ACCT-491,Fast LLC,new business,2. Discovery,Tina Patel,93830,33,,inbound,2025-01-10 00:00:00,2025-01-11 00:00:00,,,,False
+ACCT-492,Pacific Ltd,new business,5. Closed Lost,Brian Chen,140774,192,,outbound,2024-10-29 00:00:00,2024-10-30 00:00:00,2024-11-29 00:00:00,2024-12-06 00:00:00,,False
+ACCT-493,Digital Partners,new business,5. Closed Lost,Samantha Lee,29710,4,,inbound,2025-03-26 00:00:00,2025-03-27 00:00:00,2025-04-01 00:00:00,2025-04-06 00:00:00,,False
+ACCT-494,Data Partners,new business,5. Closed Lost,Brian Chen,124778,150,Medford Consulting Group,inbound,2025-02-12 00:00:00,2025-02-15 00:00:00,2025-03-26 00:00:00,2025-04-20 00:00:00,,False
+ACCT-495,East Group,new business,3. Evaluation,Tina Patel,58474,32,,inbound,2025-02-03 00:00:00,2025-02-06 00:00:00,2025-03-06 00:00:00,,,False
+ACCT-496,Digital Partners,new business,3. Evaluation,Brian Chen,112304,11,,inbound,2025-01-24 00:00:00,2025-01-25 00:00:00,2025-02-07 00:00:00,,,False
+ACCT-497,Tech LLC,new business,5. Closed Won,Carlos Rivera,86678,8,,inbound,2025-03-21 00:00:00,2025-03-24 00:00:00,2025-04-01 00:00:00,2025-04-08 00:00:00,2025-04-14 00:00:00,True
+ACCT-497,Tech LLC,renewal,5. Closed Won,Sarah Brown,67756,38,,,2026-02-08 00:00:00,2026-02-11 00:00:00,2026-02-22 00:00:00,2026-02-22 00:00:00,2026-02-26 00:00:00,True
+ACCT-498,Golden Solutions,new business,5. Closed Lost,Brian Chen,181656,11,,inbound,2025-05-03 00:00:00,2025-05-04 00:00:00,2025-06-01 00:00:00,2025-06-09 00:00:00,,False
+ACCT-499,East Systems,new business,2. Discovery,Carlos Rivera,88028,13,,inbound,2024-10-10 00:00:00,2024-10-11 00:00:00,,,,False
+ACCT-500,Silver Inc,new business,3. Evaluation,Carlos Rivera,92384,50,Medford Consulting Group,inbound,2024-11-26 00:00:00,2024-11-27 00:00:00,2024-12-10 00:00:00,,,False
+ACCT-501,Continental Technologies,new business,5. Closed Lost,Brian Chen,140571,183,,inbound,2024-12-02 00:00:00,2024-12-03 00:00:00,2024-12-16 00:00:00,2025-01-15 00:00:00,,False
+ACCT-502,Data Ltd,new business,3. Evaluation,Tina Patel,60277,36,Medford Consulting Group,inbound,2025-04-01 00:00:00,2025-04-04 00:00:00,2025-04-29 00:00:00,,,False
+ACCT-503,Global LLC,new business,5. Closed Won,Brian Chen,163946,74,,inbound,2024-10-03 00:00:00,2024-10-06 00:00:00,2024-10-20 00:00:00,2024-11-16 00:00:00,2024-12-10 00:00:00,True
+ACCT-503,Global LLC,renewal,2. Discovery,Sarah Brown,132614,32,,,2025-10-06 00:00:00,2025-10-09 00:00:00,,,,False
+ACCT-504,Pacific Systems,new business,2. Discovery,Donna Moriarty,93994,53,,inbound,2025-07-01 00:00:00,2025-07-02 00:00:00,,,,False
+ACCT-505,Pacific Inc,new business,2. Discovery,Jake Morgan,33666,8,,outbound,2025-06-11 00:00:00,2025-06-14 00:00:00,,,,False
+ACCT-506,Quick Partners,new business,3. Evaluation,Brian Chen,187738,73,,inbound,2025-04-08 00:00:00,2025-04-11 00:00:00,2025-05-20 00:00:00,,,False
+ACCT-507,Central Corp,new business,5. Closed Lost,Samantha Lee,23872,3,,inbound,2025-06-04 00:00:00,2025-06-05 00:00:00,2025-06-19 00:00:00,2025-06-21 00:00:00,,False
+ACCT-508,International Ltd,new business,4. Negotiation,Brian Chen,128551,22,,outbound,2025-04-22 00:00:00,2025-04-24 00:00:00,2025-06-30 00:00:00,2025-07-27 00:00:00,,False
+ACCT-509,Advanced Partners,new business,4. Negotiation,Jake Morgan,12104,1,,outbound,2024-12-11 00:00:00,2024-12-12 00:00:00,2024-12-20 00:00:00,2024-12-21 00:00:00,,False
+ACCT-510,North Group,new business,4. Negotiation,Carlos Rivera,72751,8,Medford Consulting Group,inbound,2025-07-16 00:00:00,2025-07-17 00:00:00,2025-08-02 00:00:00,2025-08-09 00:00:00,,False
+ACCT-511,Smart Corp,new business,5. Closed Lost,Donna Moriarty,53539,139,,outbound,2024-09-16 00:00:00,2024-09-19 00:00:00,2024-11-12 00:00:00,2024-12-07 00:00:00,,False
+ACCT-512,Global Partners,new business,3. Evaluation,Carlos Rivera,60593,48,,inbound,2025-06-06 00:00:00,2025-06-08 00:00:00,2025-06-17 00:00:00,,,False
+ACCT-513,Bright Ltd,new business,2. Discovery,Brian Chen,98965,45,,inbound,2025-02-12 00:00:00,2025-02-14 00:00:00,,,,False
+ACCT-514,Innovative Group,new business,5. Closed Lost,Brian Chen,61910,15,McDougal and Associates,inbound,2024-11-25 00:00:00,2024-11-28 00:00:00,2025-02-01 00:00:00,2025-03-02 00:00:00,,False
+ACCT-515,International Inc,new business,4. Negotiation,Tina Patel,68989,41,,inbound,2024-09-03 00:00:00,2024-09-05 00:00:00,2024-09-15 00:00:00,2024-09-21 00:00:00,,False
+ACCT-516,Silver Technologies,new business,3. Evaluation,Donna Moriarty,66369,70,,outbound,2024-09-09 00:00:00,2024-09-12 00:00:00,2024-11-20 00:00:00,,,False
+ACCT-517,Bright Ltd,new business,1. Preopp,Carlos Rivera,66259,35,,inbound,2025-06-15 00:00:00,,,,,False
+ACCT-518,Smart Group,new business,4. Negotiation,Carlos Rivera,94116,47,,outbound,2025-03-03 00:00:00,2025-03-04 00:00:00,2025-03-21 00:00:00,2025-03-31 00:00:00,,False
+ACCT-519,Global Systems,new business,5. Closed Lost,Tina Patel,87736,32,,inbound,2024-09-10 00:00:00,2024-09-11 00:00:00,2024-09-26 00:00:00,2024-10-09 00:00:00,,False
+ACCT-520,Global Group,new business,5. Closed Lost,Brian Chen,110098,188,,inbound,2025-07-13 00:00:00,2025-07-16 00:00:00,2025-09-17 00:00:00,2025-10-11 00:00:00,,False
+ACCT-521,Red Group,new business,4. Negotiation,Carlos Rivera,93277,32,,inbound,2024-08-31 00:00:00,2024-09-02 00:00:00,2024-09-30 00:00:00,2024-10-14 00:00:00,,False
+ACCT-522,Fast Group,new business,1. Preopp,Carlos Rivera,62067,41,,outbound,2025-06-25 00:00:00,,,,,False
+ACCT-523,Digital Solutions,new business,4. Negotiation,Brian Chen,134940,134,,inbound,2024-11-07 00:00:00,2024-11-09 00:00:00,2025-02-07 00:00:00,2025-03-01 00:00:00,,False
+ACCT-524,Sharp Corp,new business,5. Closed Lost,Brian Chen,63530,21,,inbound,2025-02-12 00:00:00,2025-02-13 00:00:00,2025-05-13 00:00:00,2025-06-11 00:00:00,,False
+ACCT-525,Sharp Corp,new business,5. Closed Lost,Carlos Rivera,98796,8,,inbound,2025-05-10 00:00:00,2025-05-12 00:00:00,2025-05-26 00:00:00,2025-06-01 00:00:00,,False
+ACCT-526,Blue Group,new business,3. Evaluation,Tina Patel,90899,14,,outbound,2025-01-09 00:00:00,2025-01-10 00:00:00,2025-01-23 00:00:00,,,False
+ACCT-527,Golden Systems,new business,5. Closed Won,Donna Moriarty,119653,12,McDougal and Associates,outbound,2025-07-11 00:00:00,2025-07-12 00:00:00,2025-09-12 00:00:00,2025-09-22 00:00:00,2025-09-30 00:00:00,True
+ACCT-527,Golden Systems,renewal,5. Closed Won,Sarah Brown,146507,182,,,2026-07-27 00:00:00,2026-07-29 00:00:00,2026-09-11 00:00:00,2026-09-11 00:00:00,2026-10-05 00:00:00,True
+ACCT-528,East Corp,new business,3. Evaluation,Tina Patel,71006,39,McDougal and Associates,outbound,2025-05-24 00:00:00,2025-05-27 00:00:00,2025-06-16 00:00:00,,,False
+ACCT-529,Strategic Corp,new business,5. Closed Lost,Brian Chen,160222,73,Medford Consulting Group,inbound,2024-12-10 00:00:00,2024-12-13 00:00:00,2025-03-13 00:00:00,2025-03-28 00:00:00,,False
+ACCT-530,Continental Ltd,new business,5. Closed Lost,Carlos Rivera,93693,19,,inbound,2025-05-03 00:00:00,2025-05-04 00:00:00,2025-05-13 00:00:00,2025-05-19 00:00:00,,False
+ACCT-531,Green Solutions,new business,3. Evaluation,Tina Patel,69916,14,Medford Consulting Group,outbound,2025-06-27 00:00:00,2025-06-28 00:00:00,2025-07-27 00:00:00,,,False
+ACCT-532,Continental Ltd,new business,5. Closed Won,Brian Chen,135539,134,,inbound,2024-11-27 00:00:00,2024-11-30 00:00:00,2024-12-26 00:00:00,2025-01-22 00:00:00,2025-02-20 00:00:00,True
+ACCT-532,Continental Ltd,upsell,2. Discovery,Sarah Brown,181130,168,Medford Consulting Group,,2025-06-09 00:00:00,2025-06-12 00:00:00,,,,False
+ACCT-532,Continental Ltd,renewal,2. Discovery,Sarah Brown,117315,162,,,2025-12-17 00:00:00,2025-12-18 00:00:00,,,,False
+ACCT-533,East Technologies,new business,5. Closed Won,Jake Morgan,21254,5,,inbound,2025-01-24 00:00:00,2025-01-27 00:00:00,2025-02-05 00:00:00,2025-02-09 00:00:00,2025-02-13 00:00:00,True
+ACCT-533,East Technologies,upsell,3. Evaluation,Sarah Brown,35323,6,,,2025-06-18 00:00:00,2025-06-20 00:00:00,2025-06-22 00:00:00,,,False
+ACCT-533,East Technologies,renewal,1. Preopp,Sarah Brown,41186,4,,,2025-12-10 00:00:00,,,,,False
+ACCT-534,Green Co,new business,5. Closed Lost,Carlos Rivera,92872,29,,inbound,2025-05-26 00:00:00,2025-05-28 00:00:00,2025-06-11 00:00:00,2025-06-13 00:00:00,,False
+ACCT-535,Fast LLC,new business,3. Evaluation,Brian Chen,107148,125,Medford Consulting Group,inbound,2025-02-20 00:00:00,2025-02-23 00:00:00,2025-03-02 00:00:00,,,False
+ACCT-536,Global Ltd,new business,4. Negotiation,Samantha Lee,16084,10,,outbound,2024-11-25 00:00:00,2024-11-26 00:00:00,2024-11-27 00:00:00,2024-12-01 00:00:00,,False
+ACCT-537,Green LLC,new business,2. Discovery,Carlos Rivera,66254,40,,inbound,2024-10-03 00:00:00,2024-10-05 00:00:00,,,,False
+ACCT-538,Green Systems,new business,3. Evaluation,Carlos Rivera,65414,15,,outbound,2024-10-17 00:00:00,2024-10-20 00:00:00,2024-11-19 00:00:00,,,False
+ACCT-539,Worldwide Systems,new business,2. Discovery,Carlos Rivera,70593,10,,inbound,2024-09-01 00:00:00,2024-09-04 00:00:00,,,,False
+ACCT-540,West Technologies,new business,4. Negotiation,Brian Chen,181358,40,,inbound,2025-04-03 00:00:00,2025-04-06 00:00:00,2025-05-25 00:00:00,2025-06-11 00:00:00,,False
+ACCT-541,South LLC,new business,1. Preopp,Carlos Rivera,54263,33,,inbound,2024-12-26 00:00:00,,,,,False
+ACCT-542,West Systems,new business,5. Closed Lost,Tina Patel,65626,30,,outbound,2025-02-03 00:00:00,2025-02-04 00:00:00,2025-03-03 00:00:00,2025-03-07 00:00:00,,False
+ACCT-543,Golden Group,new business,5. Closed Lost,Carlos Rivera,67676,28,,inbound,2025-06-22 00:00:00,2025-06-25 00:00:00,2025-07-08 00:00:00,2025-07-09 00:00:00,,False
+ACCT-544,Pacific Co,new business,2. Discovery,Carlos Rivera,68587,44,,inbound,2025-07-14 00:00:00,2025-07-17 00:00:00,,,,False
+ACCT-545,Red Ltd,new business,2. Discovery,Tina Patel,54552,7,McDougal and Associates,inbound,2025-01-03 00:00:00,2025-01-05 00:00:00,,,,False
+ACCT-546,Red LLC,new business,5. Closed Lost,Brian Chen,155048,166,,inbound,2025-05-14 00:00:00,2025-05-17 00:00:00,2025-06-20 00:00:00,2025-07-03 00:00:00,,False
+ACCT-547,Green Group,new business,2. Discovery,Carlos Rivera,62495,10,,inbound,2025-02-10 00:00:00,2025-02-11 00:00:00,,,,False
+ACCT-548,West Solutions,new business,2. Discovery,Brian Chen,152067,108,,outbound,2025-04-29 00:00:00,2025-05-02 00:00:00,,,,False
+ACCT-549,Smart Partners,new business,5. Closed Lost,Brian Chen,112299,191,,inbound,2025-03-17 00:00:00,2025-03-19 00:00:00,2025-06-06 00:00:00,2025-07-01 00:00:00,,False
+ACCT-550,Cloud Partners,new business,2. Discovery,Tina Patel,87151,6,,inbound,2025-07-13 00:00:00,2025-07-14 00:00:00,,,,False
+ACCT-551,Global Technologies,new business,3. Evaluation,Donna Moriarty,185238,39,,inbound,2025-07-03 00:00:00,2025-07-04 00:00:00,2025-09-22 00:00:00,,,False
+ACCT-552,Atlantic Solutions,new business,2. Discovery,Brian Chen,77409,123,,inbound,2025-06-26 00:00:00,2025-06-27 00:00:00,,,,False
+ACCT-553,Strategic Systems,new business,5. Closed Lost,Carlos Rivera,71367,43,,outbound,2025-03-10 00:00:00,2025-03-13 00:00:00,2025-04-01 00:00:00,2025-04-07 00:00:00,,False
+ACCT-554,Dynamic Co,new business,5. Closed Lost,Carlos Rivera,64099,36,,inbound,2025-04-09 00:00:00,2025-04-12 00:00:00,2025-04-30 00:00:00,2025-05-12 00:00:00,,False
+ACCT-555,Global Systems,new business,5. Closed Lost,Brian Chen,189718,60,,inbound,2024-08-11 00:00:00,2024-08-13 00:00:00,2024-10-14 00:00:00,2024-11-02 00:00:00,,False
+ACCT-556,Fast Group,new business,4. Negotiation,Tina Patel,98032,50,,outbound,2025-04-24 00:00:00,2025-04-25 00:00:00,2025-05-10 00:00:00,2025-05-18 00:00:00,,False
+ACCT-557,Green Technologies,new business,4. Negotiation,Brian Chen,183704,37,,outbound,2024-11-28 00:00:00,2024-11-30 00:00:00,2025-02-11 00:00:00,2025-03-07 00:00:00,,False
+ACCT-558,Smart Group,new business,4. Negotiation,Tina Patel,83683,12,,inbound,2024-08-15 00:00:00,2024-08-18 00:00:00,2024-09-17 00:00:00,2024-09-26 00:00:00,,False
+ACCT-559,Green Solutions,new business,5. Closed Lost,Brian Chen,148538,190,,inbound,2025-01-09 00:00:00,2025-01-10 00:00:00,2025-01-27 00:00:00,2025-02-22 00:00:00,,False
+ACCT-560,North Corp,new business,2. Discovery,Carlos Rivera,80431,7,,inbound,2024-12-03 00:00:00,2024-12-05 00:00:00,,,,False
+ACCT-561,Sharp Group,new business,4. Negotiation,Brian Chen,187688,40,,inbound,2025-07-11 00:00:00,2025-07-12 00:00:00,2025-08-10 00:00:00,2025-08-27 00:00:00,,False
+ACCT-562,Sharp Partners,new business,4. Negotiation,Carlos Rivera,71981,38,,inbound,2025-07-06 00:00:00,2025-07-09 00:00:00,2025-08-07 00:00:00,2025-08-21 00:00:00,,False
+ACCT-563,Central Systems,new business,3. Evaluation,Carlos Rivera,90763,46,,outbound,2024-08-05 00:00:00,2024-08-07 00:00:00,2024-08-27 00:00:00,,,False
+ACCT-564,Clear Ltd,new business,2. Discovery,Tina Patel,56455,28,Medford Consulting Group,inbound,2024-09-05 00:00:00,2024-09-07 00:00:00,,,,False
+ACCT-565,East Technologies,new business,2. Discovery,Brian Chen,181823,78,,inbound,2024-12-30 00:00:00,2025-01-01 00:00:00,,,,False
+ACCT-566,Atlantic LLC,new business,3. Evaluation,Brian Chen,163963,189,,inbound,2025-01-18 00:00:00,2025-01-20 00:00:00,2025-02-13 00:00:00,,,False
+ACCT-567,Clear Group,new business,2. Discovery,Tina Patel,72623,43,,inbound,2025-01-03 00:00:00,2025-01-05 00:00:00,,,,False
+ACCT-568,Smart LLC,new business,5. Closed Lost,Samantha Lee,16059,3,,inbound,2024-08-04 00:00:00,2024-08-06 00:00:00,2024-08-15 00:00:00,2024-08-18 00:00:00,,False
+ACCT-569,East Corp,new business,5. Closed Lost,Brian Chen,165459,155,,outbound,2024-10-16 00:00:00,2024-10-17 00:00:00,2025-01-08 00:00:00,2025-01-27 00:00:00,,False
+ACCT-570,Digital Inc,new business,2. Discovery,Brian Chen,66715,75,,outbound,2025-05-02 00:00:00,2025-05-03 00:00:00,,,,False
+ACCT-571,Data Corp,new business,5. Closed Lost,Tina Patel,54372,47,,inbound,2024-11-19 00:00:00,2024-11-22 00:00:00,2024-11-29 00:00:00,2024-12-05 00:00:00,,False
+ACCT-572,Quick Ltd,new business,3. Evaluation,Brian Chen,129566,175,,outbound,2025-06-25 00:00:00,2025-06-27 00:00:00,2025-07-25 00:00:00,,,False
+ACCT-573,Green Group,new business,3. Evaluation,Samantha Lee,34519,3,Medford Consulting Group,inbound,2024-11-02 00:00:00,2024-11-03 00:00:00,2024-11-12 00:00:00,,,False
+ACCT-574,Quick Corp,new business,2. Discovery,Carlos Rivera,90305,34,Medford Consulting Group,outbound,2024-11-10 00:00:00,2024-11-13 00:00:00,,,,False
+ACCT-575,Strategic LLC,new business,4. Negotiation,Donna Moriarty,106909,159,McDougal and Associates,outbound,2024-08-25 00:00:00,2024-08-28 00:00:00,2024-09-10 00:00:00,2024-10-01 00:00:00,,False
+ACCT-576,Continental Systems,new business,2. Discovery,Brian Chen,155827,109,,inbound,2025-01-27 00:00:00,2025-01-30 00:00:00,,,,False
+ACCT-577,Atlantic Group,new business,3. Evaluation,Carlos Rivera,59944,21,,inbound,2025-03-31 00:00:00,2025-04-01 00:00:00,2025-04-11 00:00:00,,,False
+ACCT-578,Golden Corp,new business,3. Evaluation,Brian Chen,134086,133,,inbound,2025-06-01 00:00:00,2025-06-03 00:00:00,2025-07-24 00:00:00,,,False
+ACCT-579,West Inc,new business,4. Negotiation,Jake Morgan,46530,2,,inbound,2025-03-15 00:00:00,2025-03-17 00:00:00,2025-03-30 00:00:00,2025-03-31 00:00:00,,False
+ACCT-580,West Co,new business,5. Closed Lost,Brian Chen,173941,122,,inbound,2024-12-23 00:00:00,2024-12-25 00:00:00,2025-01-06 00:00:00,2025-02-03 00:00:00,,False
+ACCT-581,Continental Solutions,new business,2. Discovery,Tina Patel,90890,31,,inbound,2024-12-31 00:00:00,2025-01-01 00:00:00,,,,False
+ACCT-582,Global Inc,new business,2. Discovery,Carlos Rivera,87278,13,McDougal and Associates,inbound,2025-07-14 00:00:00,2025-07-16 00:00:00,,,,False
+ACCT-583,Smart Solutions,new business,3. Evaluation,Carlos Rivera,77205,15,,outbound,2025-05-14 00:00:00,2025-05-17 00:00:00,2025-05-31 00:00:00,,,False
+ACCT-584,Green Ltd,new business,5. Closed Lost,Tina Patel,73470,16,Medford Consulting Group,inbound,2025-07-14 00:00:00,2025-07-16 00:00:00,2025-08-12 00:00:00,2025-08-20 00:00:00,,False
+ACCT-585,Atlantic Solutions,new business,3. Evaluation,Brian Chen,95455,116,,inbound,2024-10-17 00:00:00,2024-10-18 00:00:00,2024-11-10 00:00:00,,,False
+ACCT-586,Dynamic Solutions,new business,4. Negotiation,Carlos Rivera,78482,11,,inbound,2025-03-11 00:00:00,2025-03-13 00:00:00,2025-03-24 00:00:00,2025-04-07 00:00:00,,False
+ACCT-587,Dynamic LLC,new business,2. Discovery,Donna Moriarty,168592,11,,outbound,2025-03-29 00:00:00,2025-04-01 00:00:00,,,,False
+ACCT-588,North LLC,new business,4. Negotiation,Donna Moriarty,83557,64,,outbound,2025-04-08 00:00:00,2025-04-09 00:00:00,2025-07-07 00:00:00,2025-08-03 00:00:00,,False
+ACCT-589,Tech LLC,new business,5. Closed Lost,Carlos Rivera,53765,8,,outbound,2025-07-22 00:00:00,2025-07-25 00:00:00,2025-08-08 00:00:00,2025-08-09 00:00:00,,False
+ACCT-590,South Technologies,new business,5. Closed Lost,Carlos Rivera,68049,30,,inbound,2024-08-08 00:00:00,2024-08-10 00:00:00,2024-08-20 00:00:00,2024-08-29 00:00:00,,False
+ACCT-591,Clear Co,new business,4. Negotiation,Carlos Rivera,97082,28,,inbound,2024-11-16 00:00:00,2024-11-17 00:00:00,2024-12-04 00:00:00,2024-12-11 00:00:00,,False
+ACCT-592,Silver Corp,new business,4. Negotiation,Carlos Rivera,69334,49,,inbound,2025-04-03 00:00:00,2025-04-05 00:00:00,2025-04-17 00:00:00,2025-05-01 00:00:00,,False
+ACCT-593,Data LLC,new business,5. Closed Lost,Jake Morgan,46408,8,,inbound,2025-04-28 00:00:00,2025-05-01 00:00:00,2025-05-06 00:00:00,2025-05-11 00:00:00,,False
+ACCT-594,Bright Solutions,new business,5. Closed Won,Tina Patel,65518,20,,inbound,2024-08-14 00:00:00,2024-08-17 00:00:00,2024-09-16 00:00:00,2024-09-18 00:00:00,2024-09-25 00:00:00,True
+ACCT-594,Bright Solutions,renewal,5. Closed Won,Sarah Brown,86292,48,,,2025-07-22 00:00:00,2025-07-25 00:00:00,2025-08-16 00:00:00,2025-08-16 00:00:00,2025-08-27 00:00:00,True
+ACCT-595,Sharp Partners,new business,2. Discovery,Tina Patel,59837,50,Medford Consulting Group,inbound,2025-03-11 00:00:00,2025-03-13 00:00:00,,,,False
+ACCT-596,Dynamic Systems,new business,5. Closed Lost,Brian Chen,145379,143,,inbound,2024-09-22 00:00:00,2024-09-24 00:00:00,2024-10-25 00:00:00,2024-11-21 00:00:00,,False
+ACCT-597,Data Inc,new business,4. Negotiation,Tina Patel,90076,18,,inbound,2025-05-21 00:00:00,2025-05-22 00:00:00,2025-06-03 00:00:00,2025-06-05 00:00:00,,False
+ACCT-598,Red Corp,new business,2. Discovery,Brian Chen,163781,151,,inbound,2025-02-28 00:00:00,2025-03-02 00:00:00,,,,False
+ACCT-599,Innovative Ltd,new business,5. Closed Lost,Carlos Rivera,50204,11,,outbound,2024-11-06 00:00:00,2024-11-07 00:00:00,2024-12-06 00:00:00,2024-12-20 00:00:00,,False

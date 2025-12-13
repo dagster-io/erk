@@ -1,0 +1,12 @@
+topic: ARR field reference in opportunities table
+incorrect_understanding:
+  When someone asks about ARR on the opportunities table, I
+  should use the AMOUNT field or ask which ARR field they want
+correct_understanding:
+  When someone asks about ARR on the opportunities table, I should
+  default to using the NEW_ARR field unless they specifically clarify they want a
+  different field. The AMOUNT field is not used very often for opportunities analysis
+  - NEW_ARR is the standard metric.
+search_keywords:
+  ARR, opportunities table, NEW_ARR field, AMOUNT field, default metric,
+  opportunities analysis, standard metric, field reference

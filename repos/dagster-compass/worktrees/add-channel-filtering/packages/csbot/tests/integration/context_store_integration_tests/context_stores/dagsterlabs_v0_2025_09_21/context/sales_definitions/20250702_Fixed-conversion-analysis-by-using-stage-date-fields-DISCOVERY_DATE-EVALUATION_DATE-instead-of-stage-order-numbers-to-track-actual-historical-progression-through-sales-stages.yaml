@@ -1,0 +1,14 @@
+topic: discovery to evaluation conversion analysis
+incorrect_understanding:
+  I incorrectly used STAGE_ORDER_NUMBER >= 4 and >= 5 to determine
+  if opportunities reached discovery and evaluation stages, which only shows current
+  stage position, not historical stage progression
+correct_understanding:
+  To properly analyze discovery to evaluation conversion, I need
+  to use the specific stage date fields (DISCOVERY_DATE and EVALUATION_DATE) to determine
+  which opportunities actually moved through these stages during their lifecycle,
+  regardless of final outcome
+search_keywords:
+  discovery to evaluation conversion, stage progression analysis, DISCOVERY_DATE,
+  EVALUATION_DATE, STAGE_ORDER_NUMBER, sales funnel tracking, opportunity lifecycle,
+  historical stage movement, conversion metrics, sales analytics

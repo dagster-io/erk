@@ -1,0 +1,13 @@
+topic: SAL definition and inbound/outbound categorization
+incorrect_understanding:
+  SAL means "sale" (closed won opportunities) and inbound/outbound
+  categorization should be based on LEAD_SOURCE field with various categories
+correct_understanding:
+  SAL means opportunities with a SAL_DATE (Sales Accepted Lead
+  date), not closed won deals. For inbound/outbound categorization, use RECENT_SOURCE
+  field where 'Enterprise Contact Us' and 'Website Signup' are inbound, everything
+  else is outbound
+search_keywords:
+  SAL, Sales Accepted Lead, SAL_DATE, RECENT_SOURCE, LEAD_SOURCE, inbound,
+  outbound, Enterprise Contact Us, Website Signup, opportunity categorization, lead
+  classification

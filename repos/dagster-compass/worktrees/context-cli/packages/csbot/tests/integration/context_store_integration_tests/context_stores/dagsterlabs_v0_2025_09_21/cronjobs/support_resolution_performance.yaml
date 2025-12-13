@@ -1,0 +1,30 @@
+cron: 0 7 * * 1
+question: "Create a comprehensive weekly support performance analysis including:
+
+
+  1. New support issues this week vs last week by tier level (highest to unknown)
+  and source (slack, email, form, etc.)
+
+  2. Average resolution times by support team and issue complexity, with trend analysis
+
+  3. SLA breach rates and escalation trends, identifying systemic issues
+
+  4. Customer satisfaction patterns by account type (VIP vs standard) and resolution
+  outcome
+
+  5. Support team workload distribution and individual performance metrics
+
+  6. First response time analysis and correlation with customer satisfaction
+
+  7. Create visualizations for support metrics and highlight performance improvements
+  or concerns
+
+  8. Identify support process optimization opportunities
+
+
+  Focus on actionable insights to improve support efficiency, customer satisfaction,
+  and team performance management."
+thread:
+  "\U0001F6E0\uFE0F Weekly Support Ticket Volume & Resolution Performance -\
+  \ tracking new issues, resolution times, SLA compliance, and customer satisfaction\
+  \ patterns \U0001F9F5"

@@ -1,0 +1,83 @@
+[project]
+name = "compass-admin-panel"
+version = "0.1.0"
+description = "Web administration interface for the Compass bot system"
+authors = [
+    {name = "Elementl", email = "info@elementl.com"}
+]
+requires-python = ">=3.13"
+dependencies = [
+    "aiohttp>=3.12.13",
+    "csbot",
+    "jinja2>=3.1.0",
+    "pyyaml>=6.0.0",
+    "pydantic>=2.0.0",
+]
+
+[project.scripts]
+compass-admin = "compass_admin_panel.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/compass_admin_panel"]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-aiohttp>=1.0.4",
+]
+
+[tool.ruff]
+# Target Python 3.13+
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+# Enable rules that enforce modern Python idioms
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "UP",     # pyupgrade (enforces modern Python syntax)
+    "FA",     # flake8-future-annotations
+    "TCH",    # flake8-type-checking
+]
+
+# Force specific modern typing patterns
+ignore = [
+    # Disable E501 (line too long) - temporarily disabled to focus on other issues
+    "E501",
+    # Disable W291 (trailing whitespace) - temporarily disabled to focus on other issues
+    "W291",
+    # Disable W293 (blank line contains whitespace) - temporarily disabled to focus on other issues
+    "W293",
+]
+
+# Enable specific pyupgrade rules for modern typing
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.pyupgrade]
+# Force PEP 585 (built-in generics like list[str] instead of List[str])
+# Force PEP 604 (X | Y instead of Union[X, Y])
+keep-runtime-typing = false
+
+[tool.ruff.lint.flake8-type-checking]
+# Enforce that type-only imports are in TYPE_CHECKING blocks
+runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+strict = true
+
+[tool.ruff.format]
+# Use double quotes
+quote-style = "double"
+
+# Keep trailing commas for better git diffs
+skip-magic-trailing-comma = false

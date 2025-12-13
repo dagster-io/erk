@@ -1,0 +1,13 @@
+topic: self serve paying customers definition
+incorrect_understanding:
+  When counting self-serve paying customers, I should look
+  at customers who have had any invoices in the last 2+ months to capture active customers
+correct_understanding:
+  When counting current self-serve paying customers, I should
+  look at customers who had paying invoices (invoice_total > 0) in the most recent
+  month based on invoice_created_at. This gives the accurate current count (e.g.,
+  636 customers in August 2025) rather than including potentially churned customers
+  from a broader time window
+search_keywords:
+  self-serve paying customers, invoice_total, invoice_created_at, current
+  month, customer count, churned customers, active customers, billing metrics

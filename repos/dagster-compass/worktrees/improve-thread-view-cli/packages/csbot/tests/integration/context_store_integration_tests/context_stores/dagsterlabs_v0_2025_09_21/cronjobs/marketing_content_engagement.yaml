@@ -1,0 +1,39 @@
+cron: 0 14 * * 3
+question:
+  "Create a comprehensive weekly content performance and engagement analysis
+  including:
+
+
+  1. Most visited documentation pages and common user navigation paths, showing engagement
+  depth
+
+  2. Company University course enrollments vs completion rates, identify high-performing
+  courses
+
+  3. Blog traffic analysis from marketing site including top posts, referral sources,
+  and reader engagement
+
+  4. Intent score trends for engaged accounts, correlating content consumption with
+  sales outcomes
+
+  5. Website visit patterns showing time spent and content consumption by account
+  type (prospects vs customers)
+
+  6. Create visualizations showing content performance trends and user journey analysis
+
+  7. Identify content gaps or opportunities based on high-traffic but low-conversion
+  pages
+
+
+  Focus on actionable insights for optimizing content strategy and improving educational
+  resources that drive pipeline.
+
+
+  Additional context: IMPORTANT: For all future reports, include a prominent disclaimer
+  at the top stating that this report is for testing purposes only and has not been
+  validated. The data and analysis should not be used for business decisions without
+  proper validation."
+thread:
+  "\U0001F4DA Weekly Marketing Content Performance & Engagement Analysis - tracking\
+  \ documentation usage, Company University engagement, blog performance, and account\
+  \ intent signals \U0001F9F5"

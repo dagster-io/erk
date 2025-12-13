@@ -1,0 +1,12 @@
+topic: pull request merge vs close filtering
+incorrect_understanding:
+  when filtering for merged pull requests, using "merge_commit_sha
+  IS NOT NULL" is sufficient to identify truly merged PRs vs those that were just
+  closed
+correct_understanding:
+  merge_commit_sha IS NOT NULL can include PRs that were closed
+  without merging. need to use a different field or combination of fields to properly
+  identify only PRs that were actually merged into the target branch
+search_keywords:
+  pull request filtering, merge commit sha, merged vs closed, PR status,
+  git merge detection, branch merging, repository queries, PR state validation

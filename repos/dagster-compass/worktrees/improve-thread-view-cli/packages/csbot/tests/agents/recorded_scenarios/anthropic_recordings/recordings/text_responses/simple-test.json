@@ -1,0 +1,219 @@
+{
+  "metadata": {
+    "recorded_at": "2025-08-25T11:58:33.996351+00:00",
+    "scenario": "simple-test",
+    "model": "claude-sonnet-4-20250514",
+    "agent_type": "AnthropicAgent",
+    "anthropic_client_version": "0.25.1",
+    "recorder_version": "1.0",
+    "raw_event_count": 10,
+    "agent_block_event_count": 7,
+    "agent_message_count": 1,
+    "duration_seconds": 2.2341761589050293
+  },
+  "request_params": {
+    "system": "You are a helpful assistant.",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hello, how are you today?"
+      }
+    ],
+    "tools": [],
+    "model": "claude-sonnet-4-20250514",
+    "max_tokens": 50000
+  },
+  "raw_anthropic_events": [
+    {
+      "type": "message_start",
+      "timestamp": "2025-08-25T11:58:33.419609+00:00",
+      "message": {
+        "id": "msg_01MEoi3ZEib7oJ3LmLE5jYWu",
+        "content": [],
+        "model": "claude-sonnet-4-20250514",
+        "role": "assistant",
+        "stop_reason": null,
+        "stop_sequence": null,
+        "type": "message",
+        "usage": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 20,
+          "output_tokens": 8,
+          "server_tool_use": null,
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "content_block_start",
+      "timestamp": "2025-08-25T11:58:33.422443+00:00",
+      "content_block": {
+        "citations": null,
+        "text": "",
+        "type": "text"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T11:58:33.424260+00:00",
+      "delta": {
+        "text": "Hello! I'm doing well, thank",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T11:58:33.549228+00:00",
+      "delta": {
+        "text": " you for asking. I'm here and ready to help with whatever you might",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T11:58:33.715126+00:00",
+      "delta": {
+        "text": " need - whether that's answering questions, having a conversation, helping",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T11:58:33.880872+00:00",
+      "delta": {
+        "text": " with tasks, or anything else I can assist with. How are",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T11:58:33.969385+00:00",
+      "delta": {
+        "text": " you doing today?",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_stop",
+      "timestamp": "2025-08-25T11:58:33.969669+00:00",
+      "index": 0
+    },
+    {
+      "type": "message_delta",
+      "timestamp": "2025-08-25T11:58:33.994228+00:00",
+      "delta": {
+        "stop_reason": "end_turn",
+        "stop_sequence": null
+      },
+      "usage": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "input_tokens": 20,
+        "output_tokens": 57,
+        "server_tool_use": null
+      }
+    },
+    {
+      "type": "message_stop",
+      "timestamp": "2025-08-25T11:58:33.995588+00:00"
+    }
+  ],
+  "agent_block_events": [
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "start",
+        "index": 0,
+        "content_block": {
+          "type": "output_text"
+        }
+      },
+      "timestamp": "2025-08-25T11:58:33.424206+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "Hello! I'm doing well, thank"
+        }
+      },
+      "timestamp": "2025-08-25T11:58:33.425351+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " you for asking. I'm here and ready to help with whatever you might"
+        }
+      },
+      "timestamp": "2025-08-25T11:58:33.549299+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " need - whether that's answering questions, having a conversation, helping"
+        }
+      },
+      "timestamp": "2025-08-25T11:58:33.715307+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " with tasks, or anything else I can assist with. How are"
+        }
+      },
+      "timestamp": "2025-08-25T11:58:33.881053+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " you doing today?"
+        }
+      },
+      "timestamp": "2025-08-25T11:58:33.969483+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "stop",
+        "index": 0
+      },
+      "timestamp": "2025-08-25T11:58:33.970195+00:00"
+    }
+  ],
+  "agent_messages": [
+    {
+      "role": "assistant",
+      "content": "Hello! I'm doing well, thank you for asking. I'm here and ready to help with whatever you might need - whether that's answering questions, having a conversation, helping with tasks, or anything else I can assist with. How are you doing today?"
+    }
+  ]
+}

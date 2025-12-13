@@ -1,0 +1,9 @@
+cron: 0 9 * * MON
+question:
+  analyze touch points per week for closed won vs closed lost opportunities,
+  including breakdown by revenue segment, deal size categories, and quarterly trends.
+  provide insights on engagement patterns and recommendations for improving sales
+  effectiveness.
+thread:
+  "weekly touch point engagement analysis - comparing closed won vs closed lost\
+  \ opportunities across segments and deal sizes \U0001F4CA"

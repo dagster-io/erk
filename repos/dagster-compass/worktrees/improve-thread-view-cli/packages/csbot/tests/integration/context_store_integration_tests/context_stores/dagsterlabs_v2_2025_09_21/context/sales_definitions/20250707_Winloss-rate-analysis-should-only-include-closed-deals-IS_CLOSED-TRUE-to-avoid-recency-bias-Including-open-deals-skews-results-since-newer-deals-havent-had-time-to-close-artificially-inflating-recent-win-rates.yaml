@@ -1,0 +1,16 @@
+topic: win rate and loss rate analysis methodology
+incorrect_understanding:
+  When analyzing win rates and loss rates, I should include
+  all deals (open, closed won, and closed lost) which can create recency bias where
+  newer deals haven't had time to close yet, artificially inflating win rates for
+  recent periods
+correct_understanding:
+  When analyzing win rates and loss rates, I should only include
+  closed deals (IS_CLOSED = TRUE) to avoid recency bias. Open deals haven't reached
+  their final outcome yet and including them skews the analysis, particularly for
+  recent time periods. This provides a true historical picture of actual win/loss
+  performance.
+search_keywords:
+  win rate analysis, loss rate analysis, recency bias, closed deals,
+  IS_CLOSED, open deals, sales analytics, deal outcomes, historical performance, data
+  methodology

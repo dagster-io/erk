@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Compass{% endblock %}</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+
+    {% if env_name %}
+    <!-- Datadog RUM - Must be first script for accurate performance monitoring -->
+    <script
+      src="https://www.datadoghq-browser-agent.com/us1/v6/datadog-rum.js"
+      type="text/javascript"
+    ></script>
+    <script>
+      window.DD_RUM &&
+        window.DD_RUM.init({
+          clientToken: "pub7b184da1a8bb26c8b885ffc1c76aaec0",
+          applicationId: "728bba04-efa3-42a8-a142-36ab521910a5",
+          site: "datadoghq.com",
+          service: "compass",
+          env: "{{ env_name }}",
+          sessionSampleRate: 100,
+          sessionReplaySampleRate: 20,
+          trackBfcacheViews: true,
+          defaultPrivacyLevel: "mask-user-input",
+        });
+    </script>
+    <!-- End Datadog RUM -->
+    {% endif %}
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/main.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+      integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <!-- Google Tag Manager -->
+    <script>
+      (function (w, d, s, l, i) {
+        w[l] = w[l] || [];
+        w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != "dataLayer" ? "&l=" + l : "";
+        j.async = true;
+        j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+        f.parentNode.insertBefore(j, f);
+      })(window, document, "script", "dataLayer", "GTM-TWC48XJ6");
+    </script>
+    <!-- End Google Tag Manager -->
+    {% block extra_head %}{% endblock %}
+  </head>
+  <body class="antialiased">
+    {% block body %} {% if use_marketing_layout %} {# Two-column layout with
+    marketing content (opt-in) #}
+    <div class="min-h-screen flex">
+      <!-- Left Column: Content -->
+      <div
+        class="w-full lg:w-1/2 bg-gray-50 flex flex-col items-center overflow-y-auto"
+      >
+        <div class="mt-24 w-full max-w-md flex flex-col items-center">
+          {% else %} {# Standard single-column centered layout (default) #}
+          <div
+            class="min-h-screen bg-gray-50 flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8"
+          >
+            <div class="mt-16 w-full max-w-4xl flex flex-col items-center">
+              {% endif %} {% if progress_stepper %}{% include
+              "templates/progress_stepper.html" %}{% endif %} {% block header %}
+              {% if header_text or subheader_text or logo or header_icon_html %}
+              <div class="text-center mb-8">
+                {% if logo %}
+                <div class="mb-6 flex justify-center">
+                  <img
+                    src="/static/compass-logo-mark.svg"
+                    alt="Compass Logo"
+                    class="h-32 w-auto"
+                  />
+                </div>
+                {% endif %} {% if header_icon_html %} {{ header_icon_html | safe
+                }} {% endif %} {% if header_text %}
+                <h2
+                  class="header-text {{ 'text-4xl' if header_size == 'large' else 'text-3xl' }}"
+                >
+                  {{ header_text }}
+                </h2>
+                {% endif %} {% if subheader_text %}
+                <p
+                  class="mt-4 text-lg text-gray-600 subheader-text {% if use_marketing_layout %}max-w-sm mx-auto{% endif %}"
+                >
+                  {{ subheader_text }}
+                </p>
+                {% endif %} {% if subheader_info_note %}
+                <div
+                  class="text-sm text-gray-500 {% if use_marketing_layout %}mx-auto{% else %}max-w-md mx-auto{% endif %} mt-2 flex items-center {% if use_marketing_layout %}justify-center{% endif %} gap-1"
+                >
+                  <i class="ph-bold ph-info text-gray-500 text-sm"></i>
+                  <span>{{ subheader_info_note | safe }}</span>
+                </div>
+                {% endif %}
+              </div>
+              {% endif %} {% endblock %} {% block progress_stepper %}{% endblock
+              %} {% block content_wrapper %}
+              <div
+                class="w-full {{ 'max-w-lg' if container_size == 'medium' else ('max-w-4xl' if container_size == 'large' else ('max-w-6xl' if container_size == 'xl' else 'max-w-md')) }} mx-auto bg-white gradient-overlay rounded-2xl border border-gray-200 shadow-xl p-8 sm:p-6 transition-all duration-300 hover:shadow-2xl {% block modal_classes %}{% endblock %}"
+              >
+                {% block content %}{% endblock %}
+              </div>
+              {% endblock %} {% block footer %}{% endblock %} {% if
+              use_marketing_layout %}
+            </div>
+          </div>
+
+          <!-- Right Column: Dark Blue Background with Subtle Gradient -->
+          <div class="hidden lg:block lg:w-1/2 bg-dark-blue-gradient relative">
+            {% block right_column %}
+            <!-- Compass Feature Content -->
+            <div
+              class="absolute inset-0 flex flex-col items-center justify-center"
+            >
+              <img
+                src="/static/compass-feature.png"
+                alt="Compass Feature"
+                class="w-1/5 lg:w-3/5 object-contain"
+              />
+              <h1
+                class="text-white/90 lg:text-4xl xl:text-5xl mt-12 text-center max-w-lg leading-tight font-serif"
+              >
+                Finally, data in everyone's hands.
+              </h1>
+              <img
+                src="/static/compass-logo-white.svg"
+                alt="Compass Logo"
+                class="mt-8 h-9"
+              />
+            </div>
+            {% endblock %}
+          </div>
+        </div>
+        {% else %}
+      </div>
+    </div>
+    {% endif %} {% endblock %} {% block scripts %}{% endblock %}
+    <!-- Google Tag Manager (noscript) -->
+    <noscript
+      ><iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-TWC48XJ6"
+        height="0"
+        width="0"
+        style="display: none; visibility: hidden"
+      ></iframe
+    ></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+  </body>
+</html>

@@ -1,0 +1,161 @@
+{% extends "layout.html" %}
+
+{% set header_text = title %}
+{% set subheader_text = message %}
+{% set container_size = "medium" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block header %}
+<div class="text-center mb-8">
+    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-4
+        {% if error_type == 'configuration' %}bg-orange-100{% elif error_type == 'onboarding' %}bg-red-100{% elif error_type == 'slack_api' %}bg-blue-100{% elif error_type == 'system' %}bg-purple-100{% else %}bg-gray-100{% endif %}">
+        <span class="text-2xl
+            {% if error_type == 'configuration' %}text-orange-600{% elif error_type == 'onboarding' %}text-red-600{% elif error_type == 'slack_api' %}text-blue-600{% elif error_type == 'system' %}text-purple-600{% else %}text-gray-600{% endif %}">
+            {% if error_type == 'configuration' %}⚙️{% elif error_type == 'onboarding' %}❌{% elif error_type == 'slack_api' %}🔗{% elif error_type == 'system' %}💥{% else %}⚠️{% endif %}
+        </span>
+    </div>
+    <h1 class="header-text text-3xl">{{ title }}</h1>
+    <p class="mt-2 text-lg text-gray-600 subheader-text">{{ message }}</p>
+</div>
+{% endblock %}
+
+{% block content %}
+            {% if details %}
+            <div class="mb-6 text-left">
+                <p class="text-xs text-gray-500 mb-2">Technical details:</p>
+                <div class="bg-gray-100 rounded-lg p-3 text-xs text-gray-700 font-mono">
+                    {{ details }}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if suggested_actions %}
+            <div class="rounded-lg p-4 mb-6" style="background-color: #e5f0ff;">
+                <h3 class="text-sm font-medium mb-2" style="color: #001633;">Suggested Actions:</h3>
+                <div class="text-sm" style="color: #001633;">
+                    {% for action in suggested_actions %}
+                    <p class="mb-2">• {{ action }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if support_info %}
+            <div class="bg-gray-100 rounded-lg p-4 mb-6">
+                <h3 class="text-sm font-medium text-gray-900 mb-2">Error Information:</h3>
+                <div class="text-xs text-gray-700 font-mono bg-white p-3 rounded border">
+                    {% for key, value in support_info.items() %}
+                    <div><strong>{{ key|title|replace('_', ' ') }}:</strong> {{ value }}</div>
+                    {% endfor %}
+                    {% if organization %}<div><strong>Organization:</strong> {{ organization }}</div>{% endif %}
+                    {% if team_id %}<div><strong>Team ID:</strong> {{ team_id }}</div>{% endif %}
+                    {% if step %}<div><strong>Failed Step:</strong> {{ step }}</div>{% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="space-y-3">
+                <button 
+                    onclick="openCopyModal()"
+                    class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2"
+                    style="background-color: #c22d20; border-color: #c22d20;"
+                    onmouseover="this.style.backgroundColor='#a02419'"
+                    onmouseout="this.style.backgroundColor='#c22d20'"
+                >
+                    Copy Error Details
+                </button>
+                <a 
+                    href="mailto:compass-support@dagsterlabs.com?subject={{ title|urlencode }}&body={{ get_support_email_body()|urlencode }}"
+                    class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-brand hover:bg-blue-brand-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-brand"
+                >
+                    Contact Support
+                </a>
+                <button 
+                    onclick="window.history.back()"
+                    class="group relative w-full flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-brand"
+                >
+                    Go Back
+                </button>
+            </div>
+{% endblock %}
+
+{% block body %}
+{{ super() }}
+
+<!-- Copy Modal -->
+<div id="copyModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Error Details for Support</h3>
+            <button onclick="closeCopyModal()" class="text-gray-400 hover:text-gray-600">
+                <span class="text-2xl">&times;</span>
+            </button>
+        </div>
+        <div class="mb-4">
+            <p class="text-sm text-gray-600 mb-3">Copy these details to share with support:</p>
+            <textarea 
+                id="errorDetails" 
+                readonly 
+                class="w-full h-48 p-3 border border-gray-300 rounded text-xs font-mono bg-gray-50"
+            >{{ get_support_details() }}</textarea>
+        </div>
+        <div class="flex space-x-3">
+            <button 
+                onclick="copyToClipboard()"
+                class="flex-1 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors duration-200"
+            >
+                📋 Copy to Clipboard
+            </button>
+            <button 
+                onclick="closeCopyModal()"
+                class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200"
+            >
+                Close
+            </button>
+        </div>
+        <div id="copySuccess" class="hidden mt-3 p-2 bg-green-100 text-green-800 rounded text-sm text-center">
+            ✅ Copied to clipboard!
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openCopyModal() {
+        document.getElementById('copyModal').classList.remove('hidden');
+        document.getElementById('copyModal').classList.add('flex');
+    }
+    
+    function closeCopyModal() {
+        document.getElementById('copyModal').classList.add('hidden');
+        document.getElementById('copyModal').classList.remove('flex');
+        document.getElementById('copySuccess').classList.add('hidden');
+    }
+    
+    function copyToClipboard() {
+        const textarea = document.getElementById('errorDetails');
+        textarea.select();
+        textarea.setSelectionRange(0, 99999);
+        
+        try {
+            document.execCommand('copy');
+            document.getElementById('copySuccess').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('copySuccess').classList.add('hidden');
+            }, 3000);
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+            alert('Please manually copy the text from the textarea above.');
+        }
+    }
+    
+    // Close modal when clicking outside of it
+    document.getElementById('copyModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeCopyModal();
+        }
+    });
+</script>
+{% endblock %}

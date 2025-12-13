@@ -1,0 +1,17 @@
+topic: discovery stage conversion analysis methodology
+incorrect_understanding:
+  When analyzing discovery stage conversion rates, I should
+  include all opportunities (open and closed) which creates recency bias where newer
+  opportunities haven't had time to progress through the sales funnel yet, artificially
+  lowering conversion rates for recent periods
+correct_understanding:
+  When analyzing discovery stage conversion rates, I should only
+  include closed opportunities (IS_CLOSED = TRUE) to avoid recency bias. Open opportunities
+  haven't reached their final outcome yet and including them severely skews the analysis,
+  particularly for recent time periods where a high percentage of opportunities are
+  still in progress. This provides a true historical picture of actual conversion
+  performance.
+search_keywords:
+  discovery stage, conversion rates, recency bias, closed opportunities,
+  IS_CLOSED, sales funnel, conversion analysis, opportunity analysis, sales metrics,
+  funnel analysis, historical performance, sales data analysis

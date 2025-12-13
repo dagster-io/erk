@@ -1,0 +1,16 @@
+topic: closed won reasons analysis
+incorrect_understanding:
+  When asked about primary closed won reasons for enterprise
+  opportunities, I analyzed the win_loss_competitor field which shows what competitors
+  they beat, not why customers actually chose our platform
+correct_understanding:
+  For primary closed won reasons, I should analyze sales meeting
+  transcripts using AI_AGG to extract actual customer motivations and pain points
+  that drove the purchase decision. The win_loss_competitor field shows competitive
+  displacement but not purchase drivers. Key themes include observability needs, orchestration
+  challenges, migration from legacy tools, data quality requirements, and integration
+  capabilities.
+search_keywords:
+  closed won reasons, sales transcripts, AI_AGG, customer motivations,
+  purchase drivers, win_loss_competitor, competitive displacement, observability,
+  orchestration, data quality, integration, legacy migration

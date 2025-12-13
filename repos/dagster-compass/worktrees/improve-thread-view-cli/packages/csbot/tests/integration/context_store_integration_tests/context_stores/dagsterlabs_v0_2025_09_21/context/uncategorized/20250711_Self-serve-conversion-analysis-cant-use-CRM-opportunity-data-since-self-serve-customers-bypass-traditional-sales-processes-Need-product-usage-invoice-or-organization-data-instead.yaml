@@ -1,0 +1,14 @@
+topic: self-serve conversion analysis methodology
+incorrect_understanding:
+  Self-serve conversion rates can be analyzed using opportunity
+  data from the CRM system, comparing self-serve vs enterprise opportunities
+correct_understanding:
+  Self-serve data is not represented in opportunity data. Self-serve
+  customers typically bypass the traditional sales process and convert directly through
+  the product, so analyzing self-serve conversion rates requires different data sources
+  (like organizations, invoices, or product usage data) rather than CRM opportunity
+  data
+search_keywords:
+  self-serve conversion, CRM data, opportunity analysis, product usage
+  data, sales process, conversion rates, invoice data, organization data, enterprise
+  vs self-serve, direct conversion

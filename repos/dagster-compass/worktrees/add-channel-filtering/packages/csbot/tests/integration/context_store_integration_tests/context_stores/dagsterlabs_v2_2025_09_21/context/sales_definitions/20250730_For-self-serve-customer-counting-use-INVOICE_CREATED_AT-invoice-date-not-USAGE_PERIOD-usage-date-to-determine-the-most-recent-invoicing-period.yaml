@@ -1,0 +1,11 @@
+topic: self-serve customer counting methodology
+incorrect_understanding:
+  When counting self-serve customers, I should use USAGE_PERIOD
+  from the self-serve invoices table to determine the most recent month
+correct_understanding:
+  When counting self-serve customers, I should use INVOICE_CREATED_AT
+  (invoice date) rather than USAGE_PERIOD (usage date) to determine the most recent
+  invoicing period
+search_keywords:
+  self-serve customers, customer counting, INVOICE_CREATED_AT, USAGE_PERIOD,
+  invoice date, usage date, invoicing period, billing methodology, database fields
