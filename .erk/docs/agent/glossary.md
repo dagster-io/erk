@@ -282,6 +282,17 @@ type erk
 
 **For comprehensive gt documentation**: See [tools/gt.md](tools/gt.md)
 
+### GitHub API Rate Limits
+
+GitHub has two separate rate limit pools:
+
+- **REST API**: 5,000 requests/hour per authenticated user
+- **GraphQL API**: 5,000 points/hour (queries cost 1+ points based on complexity)
+
+**Key insight**: `gh issue list --json` uses GraphQL internally, not REST. When hitting GraphQL rate limits, convert to `gh api repos/{owner}/{repo}/issues` which uses REST.
+
+See [GitHub GraphQL API Patterns](architecture/github-graphql.md) for details.
+
 ### Force-Push After Squash
 
 When squashing commits on a branch that already has a PR:
