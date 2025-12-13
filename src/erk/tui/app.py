@@ -510,7 +510,7 @@ class PlanDetailScreen(ModalScreen):
 
     def action_copy_submit(self) -> None:
         """Copy submit command to clipboard."""
-        cmd = f"erk submit {self._row.issue_number}"
+        cmd = f"erk plan submit {self._row.issue_number}"
         self._copy_and_notify(cmd)
 
     async def action_dismiss(self, result: object = None) -> None:
@@ -652,7 +652,7 @@ class PlanDetailScreen(ModalScreen):
             executor.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_submit":
-            cmd = f"erk submit {row.issue_number}"
+            cmd = f"erk plan submit {row.issue_number}"
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}")
 
@@ -673,7 +673,7 @@ class PlanDetailScreen(ModalScreen):
             if row.issue_url and self._repo_root is not None:
                 # Use streaming output for submit command
                 self.run_streaming_command(
-                    ["erk", "submit", str(row.issue_number)],
+                    ["erk", "plan", "submit", str(row.issue_number)],
                     cwd=self._repo_root,
                     title=f"Submitting Plan #{row.issue_number}",
                 )
@@ -776,7 +776,7 @@ class PlanDetailScreen(ModalScreen):
                 yield CopyableLabel(yolo_cmd, yolo_cmd)
 
             # Submit command
-            submit_cmd = f"erk submit {self._row.issue_number}"
+            submit_cmd = f"erk plan submit {self._row.issue_number}"
             with Container(classes="command-row"):
                 yield Label("[4]", classes="command-key")
                 yield CopyableLabel(submit_cmd, submit_cmd)
@@ -1286,7 +1286,7 @@ class ErkDashApp(App):
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_submit":
-            cmd = f"erk submit {row.issue_number}"
+            cmd = f"erk plan submit {row.issue_number}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
@@ -1322,7 +1322,7 @@ class ErkDashApp(App):
                 # Trigger the streaming command after screen is mounted
                 detail_screen.call_after_refresh(
                     lambda: detail_screen.run_streaming_command(
-                        ["erk", "submit", str(row.issue_number)],
+                        ["erk", "plan", "submit", str(row.issue_number)],
                         cwd=self._provider.repo_root,
                         title=f"Submitting Plan #{row.issue_number}",
                     )
