@@ -12,17 +12,41 @@ Note: Git operations are now tested via the core Git interface in erk_shared.git
 GitHub operations are now tested via the main GitHub interface in erk_shared.github.
 """
 
+import subprocess
+from pathlib import Path
+
+import pytest
+
 from erk_shared.integrations.gt import (
     RealGtKit,
 )
 
 
+@pytest.fixture
+def git_repo(tmp_path: Path) -> Path:
+    """Create a minimal git repository for testing."""
+    subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@test.com"],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test"],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+    )
+    return tmp_path
+
+
 class TestRealGtKitOps:
     """Unit tests for RealGtKit composite operations."""
 
-    def test_git(self) -> None:
+    def test_git(self, git_repo: Path) -> None:
         """Test git attribute returns RealGit instance."""
-        ops = RealGtKit()
+        ops = RealGtKit(git_repo)
 
         # Get git operations interface
         git_ops = ops.git
@@ -32,11 +56,11 @@ class TestRealGtKitOps:
 
         assert isinstance(git_ops, RealGit)
 
-    def test_github(self) -> None:
+    def test_github(self, git_repo: Path) -> None:
         """Test github attribute returns a GitHub implementation."""
         from erk_shared.github.abc import GitHub
 
-        ops = RealGtKit()
+        ops = RealGtKit(git_repo)
 
         # Get github operations interface
         github_ops = ops.github

@@ -9,7 +9,7 @@ import click
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.operations.quick_submit import execute_quick_submit
 from erk_shared.integrations.gt.real import RealGtKit
-from erk_shared.integrations.gt.types import QuickSubmitError, QuickSubmitSuccess
+from erk_shared.integrations.gt.types import QuickSubmitError
 
 
 @click.command("quick-submit")
