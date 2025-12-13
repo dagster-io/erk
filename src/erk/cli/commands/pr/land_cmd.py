@@ -186,8 +186,7 @@ def pr_land(
     if insights and not is_extraction_origin:
         # Show status line before extraction
         user_output(
-            f"  Running: create_raw_extraction_plan("
-            f"repo_root={repo.root}, session_id={session_id})"
+            f"  Running: create_raw_extraction_plan(repo_root={repo.root}, session_id={session_id})"
         )
 
         # Run extraction

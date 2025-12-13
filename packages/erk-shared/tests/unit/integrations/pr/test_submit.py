@@ -6,6 +6,8 @@ without requiring Graphite.
 
 from pathlib import Path
 
+import pytest
+
 from erk_shared.context.testing import context_for_test
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
@@ -259,3 +261,76 @@ class TestExecuteCoreSubmit:
         messages = [e.message for e in progress_events]
         assert any("authentication" in m.lower() for m in messages)
         assert any("branch" in m.lower() for m in messages)
+
+    def test_returns_error_when_push_rejected_non_fast_forward(self, tmp_path: Path) -> None:
+        """Test that non-fast-forward push rejection returns user-friendly error."""
+        git = FakeGit(
+            current_branches={tmp_path: "feature-branch"},
+            repository_roots={tmp_path: tmp_path},
+            trunk_branches={tmp_path: "main"},
+            commits_ahead={(tmp_path, "main"): 2},
+            push_to_remote_raises=RuntimeError(
+                "Failed to push branch 'feature-branch' to remote 'origin'\n"
+                "stderr: error: failed to push some refs to 'origin'\n"
+                "hint: Updates were rejected because the tip of your current branch is behind\n"
+                "hint: its remote counterpart. If you want to integrate the remote changes,\n"
+                "hint: use 'git pull' before pushing again.\n"
+                "hint: See the 'Note about fast-forwards' in 'git push --help' for details.\n"
+                "To github.com:owner/repo.git\n"
+                " ! [rejected]        feature-branch -> feature-branch (non-fast-forward)"
+            ),
+        )
+        github = FakeGitHub(authenticated=True)
+        graphite = FakeGraphite()
+        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
+
+        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body"))
+
+        completion = [e for e in events if isinstance(e, CompletionEvent)]
+        assert len(completion) == 1
+        result = completion[0].result
+        assert isinstance(result, CoreSubmitError)
+        assert result.error_type == "branch_diverged"
+        assert "git pull --rebase" in result.message
+        assert "feature-branch" in result.message
+
+    def test_returns_error_when_push_rejected_generic(self, tmp_path: Path) -> None:
+        """Test that generic rejected push returns user-friendly error."""
+        git = FakeGit(
+            current_branches={tmp_path: "feature-branch"},
+            repository_roots={tmp_path: tmp_path},
+            trunk_branches={tmp_path: "main"},
+            commits_ahead={(tmp_path, "main"): 2},
+            push_to_remote_raises=RuntimeError(
+                "Failed to push branch 'feature-branch'\n"
+                "stderr: ! [rejected] feature-branch -> feature-branch (fetch first)"
+            ),
+        )
+        github = FakeGitHub(authenticated=True)
+        graphite = FakeGraphite()
+        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
+
+        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body"))
+
+        completion = [e for e in events if isinstance(e, CompletionEvent)]
+        assert len(completion) == 1
+        result = completion[0].result
+        assert isinstance(result, CoreSubmitError)
+        assert result.error_type == "branch_diverged"
+        assert "diverged from remote" in result.message
+
+    def test_reraises_non_push_rejection_errors(self, tmp_path: Path) -> None:
+        """Test that non-rejection errors are re-raised."""
+        git = FakeGit(
+            current_branches={tmp_path: "feature-branch"},
+            repository_roots={tmp_path: tmp_path},
+            trunk_branches={tmp_path: "main"},
+            commits_ahead={(tmp_path, "main"): 2},
+            push_to_remote_raises=RuntimeError("Network connection failed"),
+        )
+        github = FakeGitHub(authenticated=True)
+        graphite = FakeGraphite()
+        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
+
+        with pytest.raises(RuntimeError, match="Network connection failed"):
+            list(execute_core_submit(ctx, tmp_path, "Title", "Body"))

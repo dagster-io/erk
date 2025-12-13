@@ -300,9 +300,7 @@ def _list_sessions_from_store(
     help="Current session ID (for marking the current session)",
 )
 @click.pass_context
-def list_sessions(
-    ctx: click.Context, limit: int, min_size: int, session_id: str | None
-) -> None:
+def list_sessions(ctx: click.Context, limit: int, min_size: int, session_id: str | None) -> None:
     """List Claude Code sessions with metadata for the current project.
 
     Discovers sessions in the project directory, extracts metadata

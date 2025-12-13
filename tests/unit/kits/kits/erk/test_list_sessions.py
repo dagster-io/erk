@@ -576,9 +576,7 @@ def test_cli_marks_current_session(tmp_path: Path) -> None:
     context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
-    result = runner.invoke(
-        list_sessions, ["--session-id", "current-session"], obj=context
-    )
+    result = runner.invoke(list_sessions, ["--session-id", "current-session"], obj=context)
 
     assert result.exit_code == 0
     output = json.loads(result.output)

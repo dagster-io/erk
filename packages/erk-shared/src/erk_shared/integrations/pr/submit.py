@@ -157,7 +157,27 @@ def execute_core_submit(
 
     # Step 6: Push branch to remote
     yield ProgressEvent("Pushing branch to origin...")
-    ctx.git.push_to_remote(cwd, "origin", branch_name, set_upstream=True)
+    try:
+        ctx.git.push_to_remote(cwd, "origin", branch_name, set_upstream=True)
+    except RuntimeError as e:
+        error_str = str(e)
+        if "non-fast-forward" in error_str or "rejected" in error_str.lower():
+            yield CompletionEvent(
+                CoreSubmitError(
+                    success=False,
+                    error_type="branch_diverged",
+                    message=(
+                        f"Branch '{branch_name}' has diverged from remote.\n"
+                        f"Your local branch is behind origin/{branch_name}.\n\n"
+                        f"To fix: git pull --rebase origin {branch_name}\n"
+                        f"Then retry: erk pr submit"
+                    ),
+                    details={"branch": branch_name},
+                )
+            )
+            return
+        # Re-raise if it's a different error
+        raise
     yield ProgressEvent("Branch pushed to origin", style="success")
 
     # Step 7: Check for existing PR

@@ -101,6 +101,7 @@ class FakeGit(Git):
         head_commit_messages_full: dict[Path, str] | None = None,
         git_user_name: str | None = None,
         branch_commits_with_authors: dict[str, list[dict[str, str]]] | None = None,
+        push_to_remote_raises: Exception | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -144,6 +145,7 @@ class FakeGit(Git):
             git_user_name: Configured git user.name to return from get_git_user_name()
             branch_commits_with_authors: Mapping of branch name -> list of commit dicts
                 with keys: sha, author, timestamp
+            push_to_remote_raises: Exception to raise when push_to_remote() is called
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -181,6 +183,7 @@ class FakeGit(Git):
         self._head_commit_messages_full = head_commit_messages_full or {}
         self._git_user_name = git_user_name
         self._branch_commits_with_authors = branch_commits_with_authors or {}
+        self._push_to_remote_raises = push_to_remote_raises
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -773,7 +776,9 @@ class FakeGit(Git):
     def push_to_remote(
         self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False
     ) -> None:
-        """Record push to remote."""
+        """Record push to remote, or raise if failure configured."""
+        if self._push_to_remote_raises is not None:
+            raise self._push_to_remote_raises
         self._pushed_branches.append((remote, branch, set_upstream))
 
     @property
