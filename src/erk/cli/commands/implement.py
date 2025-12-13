@@ -17,6 +17,7 @@ from typing import NamedTuple
 import click
 
 from erk.cli.activation import render_activation_script
+from erk.cli.alias import alias
 from erk.cli.commands.completions import complete_plan_files
 from erk.cli.commands.wt.create_cmd import add_worktree, run_post_worktree_setup
 from erk.cli.config import LoadedConfig
@@ -1081,6 +1082,7 @@ def _implement_from_file(
         _execute_interactive_mode(ctx, repo.root, wt_path, dangerous, executor)
 
 
+@alias("impl")
 @click.command("implement")
 @click.argument("target", shell_complete=complete_plan_files)
 @click.option(
