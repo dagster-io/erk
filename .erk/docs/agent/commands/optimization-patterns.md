@@ -169,7 +169,7 @@ artifacts:
     - docs/erk/plan-implement/execution-guide.md
 ```
 
-Then run `erk kit sync` to install.
+Then run `erk kit install <kit-id>` to install.
 
 ## Size Targets
 

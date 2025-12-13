@@ -2,8 +2,9 @@
 
 import shutil
 import tempfile
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import NamedTuple
 
 import click
 
@@ -15,11 +16,147 @@ from erk.kits.io.manifest import load_kit_manifest
 from erk.kits.io.state import create_default_config, load_project_config, save_project_config
 from erk.kits.models.config import InstalledKit, ProjectConfig
 from erk.kits.models.installation import InstallationContext
-from erk.kits.operations.sync import SyncResult, check_for_updates, sync_kit
+from erk.kits.operations.artifact_operations import create_artifact_operations
+from erk.kits.operations.install import install_kit
 from erk.kits.operations.user_install import get_installation_context, install_kit_to_project
 from erk.kits.sources.bundled import BundledKitSource
+from erk.kits.sources.exceptions import (
+    KitNotFoundError,
+    KitResolutionError,
+    ResolverNotConfiguredError,
+    SourceAccessError,
+)
 from erk.kits.sources.resolver import KitResolver, ResolvedKit
 from erk.kits.sources.standalone import StandalonePackageSource
+
+
+class UpdateCheckResult(NamedTuple):
+    """Result of checking for kit updates."""
+
+    has_update: bool
+    resolved: ResolvedKit | None
+    error_message: str | None
+
+
+@dataclass(frozen=True)
+class SyncResult:
+    """Result of syncing a kit."""
+
+    kit_id: str
+    old_version: str
+    new_version: str
+    was_updated: bool
+    artifacts_updated: int
+    updated_kit: InstalledKit | None = None
+
+
+def check_for_updates(
+    installed: InstalledKit,
+    resolver: KitResolver,
+    force: bool = False,
+) -> UpdateCheckResult:
+    """Check if an installed kit has updates available.
+
+    Args:
+        installed: The currently installed kit
+        resolver: Kit resolver to find the source
+        force: If True, always return True (forces reinstall regardless of version)
+
+    Returns:
+        UpdateCheckResult with has_update, resolved kit, and error message
+    """
+    try:
+        resolved = resolver.resolve(installed.kit_id)
+    except KitNotFoundError as e:
+        # Kit was removed from all sources
+        return UpdateCheckResult(
+            has_update=False,
+            resolved=None,
+            error_message=f"Kit no longer available: {e}",
+        )
+    except ResolverNotConfiguredError as e:
+        # Resolver configuration changed (e.g., BundledKitSource removed)
+        return UpdateCheckResult(
+            has_update=False,
+            resolved=None,
+            error_message=f"Resolver configuration changed: {e}",
+        )
+    except SourceAccessError as e:
+        # Network or filesystem access failed
+        return UpdateCheckResult(
+            has_update=False,
+            resolved=None,
+            error_message=f"Source access failed: {e}",
+        )
+    except KitResolutionError as e:
+        # Other resolution errors
+        return UpdateCheckResult(
+            has_update=False,
+            resolved=None,
+            error_message=f"Resolution error: {e}",
+        )
+
+    if force:
+        # Force mode: always consider as having an update
+        return UpdateCheckResult(has_update=True, resolved=resolved, error_message=None)
+
+    manifest = load_kit_manifest(resolved.manifest_path)
+
+    # Simple version comparison (should use semver in production)
+    has_update = manifest.version != installed.version
+
+    return UpdateCheckResult(has_update=has_update, resolved=resolved, error_message=None)
+
+
+def sync_kit(
+    kit_id: str,
+    installed: InstalledKit,
+    resolved: ResolvedKit,
+    project_dir: Path,
+    force: bool = False,
+) -> SyncResult:
+    """Sync an installed kit with its source.
+
+    Args:
+        kit_id: The kit identifier
+        installed: The currently installed kit
+        resolved: The resolved kit from the source
+        project_dir: Project directory path
+        force: If True, reinstall even if versions match
+    """
+    old_version = installed.version
+    manifest = load_kit_manifest(resolved.manifest_path)
+    new_version = manifest.version
+
+    if old_version == new_version and not force:
+        return SyncResult(
+            kit_id=kit_id,
+            old_version=old_version,
+            new_version=new_version,
+            was_updated=False,
+            artifacts_updated=0,
+            updated_kit=None,
+        )
+
+    # Remove old artifacts
+    operations = create_artifact_operations()
+    operations.remove_artifacts(installed.artifacts, project_dir)
+
+    # Install new version with overwrite enabled
+    new_installed = install_kit(
+        resolved,
+        project_dir,
+        overwrite=True,
+    )
+
+    return SyncResult(
+        kit_id=kit_id,
+        old_version=old_version,
+        new_version=new_version,
+        was_updated=True,
+        artifacts_updated=len(new_installed.artifacts),
+        updated_kit=new_installed,
+    )
 
 
 def _handle_update_workflow(

@@ -8,8 +8,6 @@ via the detect_shell_from_env() function.
 """
 
 import os
-from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 from erk.core.shell import RealShell
 
@@ -60,96 +58,3 @@ def test_real_shell_ops_get_installed_tool_path_python():
         result = ops.get_installed_tool_path("python")
 
     assert result is not None  # Some form of Python should be found
-
-
-def test_real_shell_ops_run_erk_sync_calls_subprocess():
-    """Test that run_erk_sync calls run_subprocess_with_context with correct parameters.
-
-    This integration test verifies RealShell correctly constructs and
-    executes the subprocess command with appropriate parameters.
-    """
-    ops = RealShell()
-    repo_root = Path("/test/repo")
-
-    # Mock run_subprocess_with_context to verify the call without actually running erk
-    with patch("erk_shared.integrations.shell.real.run_subprocess_with_context") as mock_run:
-        mock_run.return_value = MagicMock(returncode=0)
-
-        # Call with force=True, verbose=False
-        ops.run_erk_sync(repo_root, force=True, verbose=False)
-
-        # Verify run_subprocess_with_context was called once
-        assert mock_run.call_count == 1
-
-        # Verify command structure and parameters
-        call_args = mock_run.call_args
-        cmd = call_args[0][0]
-        assert cmd == ["erk", "kit", "sync", "-f"]
-
-        # Verify kwargs
-        kwargs = call_args[1]
-        assert kwargs["cwd"] == repo_root
-        assert kwargs["operation_context"] == "execute erk kit sync subprocess"
-        assert kwargs["capture_output"] is True
-
-
-def test_real_shell_ops_run_erk_sync_verbose_mode():
-    """Test that run_erk_sync handles verbose mode correctly."""
-    ops = RealShell()
-    repo_root = Path("/test/repo")
-
-    with patch("erk_shared.integrations.shell.real.run_subprocess_with_context") as mock_run:
-        mock_run.return_value = MagicMock(returncode=0)
-
-        # Call with force=True, verbose=True
-        ops.run_erk_sync(repo_root, force=True, verbose=True)
-
-        # Verify command includes --verbose
-        call_args = mock_run.call_args
-        cmd = call_args[0][0]
-        assert cmd == ["erk", "kit", "sync", "-f", "--verbose"]
-
-        # Verify capture_output is False in verbose mode
-        kwargs = call_args[1]
-        assert kwargs["capture_output"] is False
-
-
-def test_real_shell_ops_run_erk_sync_without_force():
-    """Test that run_erk_sync works without force flag."""
-    ops = RealShell()
-    repo_root = Path("/test/repo")
-
-    with patch("erk_shared.integrations.shell.real.run_subprocess_with_context") as mock_run:
-        mock_run.return_value = MagicMock(returncode=0)
-
-        # Call with force=False
-        ops.run_erk_sync(repo_root, force=False, verbose=False)
-
-        # Verify command does not include -f
-        call_args = mock_run.call_args
-        cmd = call_args[0][0]
-        assert cmd == ["erk", "kit", "sync"]
-        assert "-f" not in cmd
-
-
-def test_real_shell_ops_run_erk_sync_propagates_error():
-    """Test that RuntimeError is propagated from run_subprocess_with_context."""
-    ops = RealShell()
-    repo_root = Path("/test/repo")
-
-    with patch("erk_shared.integrations.shell.real.run_subprocess_with_context") as mock_run:
-        # Simulate subprocess failure (run_subprocess_with_context raises RuntimeError)
-        mock_run.side_effect = RuntimeError(
-            "Failed to execute erk kit sync subprocess\n"
-            "Command: erk kit sync -f\n"
-            "Exit code: 1\n"
-            "stderr: sync failed"
-        )
-
-        # Verify RuntimeError is propagated
-        try:
-            ops.run_erk_sync(repo_root, force=True, verbose=False)
-            raise AssertionError("Expected RuntimeError to be raised")
-        except RuntimeError as e:
-            assert "Failed to execute erk kit sync subprocess" in str(e)
-            assert "sync failed" in str(e)

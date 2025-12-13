@@ -99,7 +99,7 @@ def generate_doc_registry_content(entries: list[DocRegistryEntry]) -> str:
         "# Kit Documentation Registry",
         "",
         "<!-- AUTO-GENERATED: This file is managed by erk kit commands -->",
-        "<!-- DO NOT EDIT: Changes will be overwritten. Use 'erk kit sync' -->",
+        "<!-- DO NOT EDIT: Changes will be overwritten. Use 'erk kit install' -->",
         "",
         "<!-- REGISTRY_VERSION: 1 -->",
         "",

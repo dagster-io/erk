@@ -101,7 +101,7 @@ def check_legacy_doc_locations(repo_root: Path) -> CheckResult:
         details_lines.append(f"  - {loc.path} ({loc.description})")
         details_lines.append(f"    → Move to: {loc.new_location}")
     details_lines.append("")
-    details_lines.append("Run 'erk kit sync --force' after moving files.")
+    details_lines.append("Run 'erk kit install <kit-id> --force' after moving files.")
 
     return CheckResult(
         name="legacy docs",

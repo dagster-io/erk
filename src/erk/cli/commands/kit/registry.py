@@ -15,8 +15,7 @@ def registry() -> None:
     Commands for inspecting the kit documentation registry that provides
     agent-facing documentation for installed kits.
 
-    Note: The registry is automatically maintained by 'kit sync' and
-    'kit install' commands.
+    Note: The registry is automatically maintained by 'kit install'.
     """
 
 
@@ -32,7 +31,7 @@ def show() -> None:
 
     if not registry_path.exists():
         user_output("No registry found")
-        user_output("Run 'erk kit sync' to create the registry")
+        user_output("Run 'erk kit install <kit-id>' to create the registry")
         raise SystemExit(1)
 
     content = registry_path.read_text(encoding="utf-8")
@@ -55,7 +54,7 @@ def validate() -> None:
     # Check registry file exists
     if not registry_path.exists():
         user_output("❌ Registry file not found: .erk/kits/kit-registry.md")
-        user_output("Run 'erk kit sync' to create it")
+        user_output("Run 'erk kit install <kit-id>' to create it")
         raise SystemExit(1)
 
     # Read registry content
@@ -121,7 +120,7 @@ def validate() -> None:
         user_output("❌ Registry validation failed:")
         for issue in issues:
             user_output(f"  - {issue}")
-        user_output("\nRun 'erk kit sync' to fix these issues")
+        user_output("\nRun 'erk kit install <kit-id> --force' to fix these issues")
         raise SystemExit(1)
 
     user_output(f"✓ Registry valid: {len(installed_kits)} kit(s) properly registered")

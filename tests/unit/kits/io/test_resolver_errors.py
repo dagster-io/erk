@@ -6,9 +6,9 @@ from typing import cast
 
 import pytest
 
+from erk.cli.commands.kit.install import check_for_updates
 from erk.kits.models.config import InstalledKit
 from erk.kits.models.types import SourceType
-from erk.kits.operations.sync import check_for_updates
 from erk.kits.sources.exceptions import (
     KitManifestError,
     KitNotFoundError,

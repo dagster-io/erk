@@ -59,10 +59,10 @@ You're not in a directory with erk configured. Either:
 
 ### Kits not loading
 
-Try syncing kits:
+Try reinstalling kits:
 
 ```bash
-erk kit sync --force
+erk kit install <kit-id> --force
 ```
 
 ### Claude Code doesn't recognize erk commands

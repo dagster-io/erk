@@ -32,7 +32,7 @@ This path is:
 
 1. **`erk md check --check-links` cannot validate @ references in kit source directories** - The paths only make sense post-installation
 2. **The Makefile's `kit-md-check` target excludes `--check-links`** for this reason
-3. **@ reference validation only works after installation** via `erk kit sync`
+3. **@ reference validation only works after installation** via `erk kit install`
 
 ## Example
 

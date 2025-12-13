@@ -872,7 +872,7 @@ def check(verbose: bool) -> None:
             if out_of_sync_count > 0 or missing_count > 0 or obsolete_count > 0:
                 if verbose:
                     user_output()
-                    user_output("Run 'erk kit sync --force' to update artifacts")
+                    user_output("Run 'erk kit install <kit-id> --force' to update artifacts")
                 sync_passed = False
             else:
                 if verbose:
@@ -990,7 +990,7 @@ def check(verbose: bool) -> None:
                     user_output(f"  {warn_check} Warnings: {warn_num}")
 
                 user_output()
-                sync_msg = "Run 'erk kit sync --force' to update hook configuration"
+                sync_msg = "Run 'erk kit install <kit-id> --force' to update hook configuration"
                 user_output(sync_msg)
             hook_passed = False
 
