@@ -73,9 +73,7 @@ def test_all_agents_have_single_line_descriptions() -> None:
             multiline_descriptions.append((str(relative_path), preview))
 
     if multiline_descriptions:
-        error_lines = [
-            f"  - {path}: '{preview}...'" for path, preview in multiline_descriptions
-        ]
+        error_lines = [f"  - {path}: '{preview}...'" for path, preview in multiline_descriptions]
         error_msg = (
             "Agent descriptions must be single-line. "
             f"Found {len(multiline_descriptions)} agent(s) with multi-line descriptions:\n"

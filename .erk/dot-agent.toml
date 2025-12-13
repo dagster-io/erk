@@ -81,7 +81,6 @@ artifacts = [
     ".claude/commands/erk/pr-address.md",
     ".claude/agents/erk/issue-wt-creator.md",
     ".claude/agents/erk/plan-extractor.md",
-    ".github/workflows/erk/dispatch-erk-queue.yml",
     ".claude/docs/erk/EXAMPLES.md",
     ".claude/docs/erk/includes/conflict-resolution.md",
     ".claude/docs/erk/includes/create-github-issue.md",
