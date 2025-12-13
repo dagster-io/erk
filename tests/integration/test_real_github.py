@@ -762,3 +762,135 @@ def test_trigger_workflow_skips_cancelled_runs(monkeypatch: MonkeyPatch) -> None
         # Should find the non-skipped/cancelled run
         assert run_id == "333"
         assert call_count >= 3  # trigger + 2 polls
+
+
+# ============================================================================
+# REST API Command Format Tests
+# ============================================================================
+# These tests verify that PR query methods use the REST API (gh api) instead of
+# GraphQL (gh pr view --json), ensuring we use the separate REST quota.
+
+
+def test_get_pr_base_branch_uses_rest_api(monkeypatch: MonkeyPatch) -> None:
+    """Test that get_pr_base_branch uses REST API endpoint."""
+    called_with: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="main\n",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub(FakeTime())
+        ops.get_pr_base_branch(Path("/repo"), 123)
+
+        assert len(called_with) == 1
+        cmd = called_with[0]
+        # Verify REST API format: gh api repos/{owner}/{repo}/pulls/123 --jq .base.ref
+        assert cmd[0:2] == ["gh", "api"]
+        assert "repos/{owner}/{repo}/pulls/123" in cmd[2]
+        assert "--jq" in cmd
+        assert ".base.ref" in cmd
+
+
+def test_get_pr_title_uses_rest_api(monkeypatch: MonkeyPatch) -> None:
+    """Test that get_pr_title uses REST API endpoint."""
+    called_with: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="Fix bug in parser\n",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub(FakeTime())
+        result = ops.get_pr_title(Path("/repo"), 456)
+
+        assert result == "Fix bug in parser"
+        assert len(called_with) == 1
+        cmd = called_with[0]
+        # Verify REST API format: gh api repos/{owner}/{repo}/pulls/456 --jq .title
+        assert cmd[0:2] == ["gh", "api"]
+        assert "repos/{owner}/{repo}/pulls/456" in cmd[2]
+        assert "--jq" in cmd
+        assert ".title" in cmd
+
+
+def test_get_pr_body_uses_rest_api(monkeypatch: MonkeyPatch) -> None:
+    """Test that get_pr_body uses REST API endpoint."""
+    called_with: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="This PR fixes a critical bug.\n",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub(FakeTime())
+        result = ops.get_pr_body(Path("/repo"), 789)
+
+        assert result == "This PR fixes a critical bug."
+        assert len(called_with) == 1
+        cmd = called_with[0]
+        # Verify REST API format: gh api repos/{owner}/{repo}/pulls/789 --jq .body
+        assert cmd[0:2] == ["gh", "api"]
+        assert "repos/{owner}/{repo}/pulls/789" in cmd[2]
+        assert "--jq" in cmd
+        assert ".body" in cmd
+
+
+def test_has_pr_label_uses_rest_api(monkeypatch: MonkeyPatch) -> None:
+    """Test that has_pr_label uses REST API endpoint."""
+    called_with: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="bug\nenhancement\n",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub(FakeTime())
+        result = ops.has_pr_label(Path("/repo"), 101, "bug")
+
+        assert result is True
+        assert len(called_with) == 1
+        cmd = called_with[0]
+        # Verify REST API format: gh api repos/{owner}/{repo}/pulls/101 --jq .labels[].name
+        assert cmd[0:2] == ["gh", "api"]
+        assert "repos/{owner}/{repo}/pulls/101" in cmd[2]
+        assert "--jq" in cmd
+        assert ".labels[].name" in cmd
+
+
+def test_has_pr_label_returns_false_when_label_not_present(monkeypatch: MonkeyPatch) -> None:
+    """Test that has_pr_label returns False when label is not in the list."""
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="bug\nenhancement\n",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub(FakeTime())
+        result = ops.has_pr_label(Path("/repo"), 101, "urgent")
+
+        assert result is False
