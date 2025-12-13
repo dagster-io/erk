@@ -45,9 +45,7 @@ logger = logging.getLogger(__name__)
 
 
 @contextmanager
-def branch_rollback(
-    ctx: "ErkContext", repo_root: Path, original_branch: str
-) -> Iterator[None]:
+def branch_rollback(ctx: "ErkContext", repo_root: Path, original_branch: str) -> Iterator[None]:
     """Context manager that restores original branch on exception.
 
     On success, does nothing (caller handles cleanup).
@@ -57,8 +55,7 @@ def branch_rollback(
         yield
     except Exception:
         user_output(
-            click.style("Error: ", fg="red")
-            + "Operation failed, restoring original branch..."
+            click.style("Error: ", fg="red") + "Operation failed, restoring original branch..."
         )
         ctx.git.checkout_branch(repo_root, original_branch)
         raise
