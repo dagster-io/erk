@@ -12,7 +12,9 @@ from click.testing import CliRunner
 
 from erk_kits.data.kits.erk.scripts.erk.list_sessions import (
     _list_sessions_from_store,
+    discover_agent_metadata,
     extract_summary,
+    format_agent_breakdown,
     format_display_time,
     format_relative_time,
     get_branch_context,
@@ -714,3 +716,183 @@ def test_cli_min_size_option(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert len(output["sessions"]) == 1
     assert output["filtered_count"] == 1
+
+
+# ============================================================================
+# 8. Agent Metadata Discovery Tests
+# ============================================================================
+
+
+def _task_tool_use(tool_use_id: str, subagent_type: str, description: str) -> dict:
+    """Create a Task tool_use block for testing."""
+    return {
+        "type": "tool_use",
+        "id": tool_use_id,
+        "name": "Task",
+        "input": {"subagent_type": subagent_type, "description": description},
+    }
+
+
+def _tool_result(tool_use_id: str, content: str) -> dict:
+    """Create a tool_result block for testing."""
+    return {"type": "tool_result", "tool_use_id": tool_use_id, "content": content}
+
+
+def _assistant_msg_with_task(tool_use_id: str, subagent_type: str, description: str) -> str:
+    """Create assistant message JSON with a Task tool use."""
+    return json.dumps(
+        {
+            "type": "assistant",
+            "message": {"content": [_task_tool_use(tool_use_id, subagent_type, description)]},
+        }
+    )
+
+
+def _user_msg_with_result(tool_use_id: str, agent_id: str) -> str:
+    """Create user message JSON with a tool_result containing agent ID."""
+    return json.dumps(
+        {
+            "type": "user",
+            "message": {"content": [_tool_result(tool_use_id, f"agentId: {agent_id}")]},
+        }
+    )
+
+
+def test_discover_agent_metadata_finds_plan_agents() -> None:
+    """Test that Plan subagents are correctly identified via agent ID extraction."""
+    main_content = "\n".join(
+        [
+            _assistant_msg_with_task("tu-001", "Plan", "Plan implementation"),
+            _user_msg_with_result("tu-001", "abc12345-plan-123"),
+        ]
+    )
+    agent_logs: list[tuple[str, str]] = [("abc12345-plan-123", "agent log content")]
+
+    result = discover_agent_metadata(main_content, agent_logs)
+
+    assert result.agent_count == 1
+    assert len(result.agents) == 1
+    assert result.agents[0].agent_id == "abc12345-plan-123"
+    assert result.agents[0].agent_type == "Plan"
+    assert result.agents[0].task_input == "Plan implementation"
+
+
+def test_discover_agent_metadata_finds_explore_agents() -> None:
+    """Test that Explore subagents are correctly identified."""
+    main_content = "\n".join(
+        [
+            _assistant_msg_with_task("tu-002", "Explore", "Search codebase"),
+            _user_msg_with_result("tu-002", "abc12345-explore-456"),
+        ]
+    )
+    agent_logs: list[tuple[str, str]] = [("abc12345-explore-456", "agent log content")]
+
+    result = discover_agent_metadata(main_content, agent_logs)
+
+    assert result.agent_count == 1
+    assert result.agents[0].agent_type == "Explore"
+    assert result.agents[0].task_input == "Search codebase"
+
+
+def test_discover_agent_metadata_mixed_types() -> None:
+    """Test counting multiple agent types."""
+    main_content = "\n".join(
+        [
+            _assistant_msg_with_task("tu-001", "Plan", "Plan task 1"),
+            _user_msg_with_result("tu-001", "abc12345-plan-1"),
+            _assistant_msg_with_task("tu-002", "Explore", "Explore task"),
+            _user_msg_with_result("tu-002", "abc12345-explore-1"),
+            _assistant_msg_with_task("tu-003", "Explore", "Another explore"),
+            _user_msg_with_result("tu-003", "abc12345-explore-2"),
+        ]
+    )
+    agent_logs: list[tuple[str, str]] = [
+        ("abc12345-plan-1", ""),
+        ("abc12345-explore-1", ""),
+        ("abc12345-explore-2", ""),
+    ]
+
+    result = discover_agent_metadata(main_content, agent_logs)
+
+    assert result.agent_count == 3
+    assert result.agent_types == {"Plan": 1, "Explore": 2}
+
+
+def test_discover_agent_metadata_no_agents() -> None:
+    """Test handling sessions with no subagents."""
+    main_content = json.dumps({"type": "user", "message": {"content": "Hello"}})
+    agent_logs: list[tuple[str, str]] = []
+
+    result = discover_agent_metadata(main_content, agent_logs)
+
+    assert result.agent_count == 0
+    assert result.agents == []
+    assert result.agent_types == {}
+
+
+def test_discover_agent_metadata_unknown_type_agents() -> None:
+    """Test handling agents without matching tool_result (labeled 'unknown')."""
+    # Agent in logs but no corresponding tool_result with agentId
+    main_content = json.dumps({"type": "user", "message": {"content": "Hello"}})
+    agent_logs: list[tuple[str, str]] = [("abc12345-orphan-id", "some content")]
+
+    result = discover_agent_metadata(main_content, agent_logs)
+
+    assert result.agent_count == 1
+    assert result.agents[0].agent_id == "abc12345-orphan-id"
+    assert result.agents[0].agent_type == "unknown"
+    assert result.agents[0].task_input == ""
+
+
+def test_format_agent_breakdown_empty() -> None:
+    """Test format_agent_breakdown with no agents."""
+    result = format_agent_breakdown({})
+    assert result == "0"
+
+
+def test_format_agent_breakdown_single_type() -> None:
+    """Test format_agent_breakdown with single agent type."""
+    result = format_agent_breakdown({"Plan": 2})
+    assert result == "2 (Plan×2)"
+
+
+def test_format_agent_breakdown_multiple_types() -> None:
+    """Test format_agent_breakdown with multiple agent types sorted by count."""
+    result = format_agent_breakdown({"Plan": 1, "Explore": 3, "unknown": 2})
+    # Should be sorted by count descending, then alphabetically
+    assert result == "6 (Explore×3, unknown×2, Plan×1)"
+
+
+def test_session_info_includes_agent_fields(tmp_path: Path) -> None:
+    """Test that SessionInfo always includes agent_count, agent_ids, agent_types."""
+    # Create session with Task tool use and result
+    main_content = "\n".join(
+        [
+            json.dumps({"type": "user", "message": {"content": "Hello"}}),
+            _assistant_msg_with_task("tu-001", "Plan", "Plan task"),
+            _user_msg_with_result("tu-001", "abc12345-agent-abc123"),
+        ]
+    )
+
+    fake_store = FakeClaudeCodeSessionStore(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "session-with-agent": FakeSessionData(
+                        content=main_content,
+                        size_bytes=len(main_content),
+                        modified_at=1000.0,
+                        agent_logs={"abc12345-agent-abc123": "agent content"},
+                    )
+                }
+            )
+        }
+    )
+
+    sessions, _ = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
+
+    assert len(sessions) == 1
+    session = sessions[0]
+    assert session.agents is not None
+    assert session.agents.agent_count == 1
+    assert session.agents.agent_types == {"Plan": 1}
