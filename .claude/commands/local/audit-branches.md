@@ -98,8 +98,8 @@ Analyze each branch/PR for these staleness indicators:
    - Look for similar features implemented differently
 
 6. **Massively diverged** - Branch far behind master but may contain valuable ideas
-   - Run `git diff master --stat | tail -1` to check divergence
-   - If 500+ files changed (often due to directory reorganizations):
+   - Assess rebase difficulty: `git rebase master --dry-run` or attempt rebase to see conflicts
+   - If merge conflicts would be extensive or complex to resolve:
      - The _code_ is stale and impractical to rebase
      - But the _thesis_ (feature idea, approach) may still be valuable
    - **Recommendation**: Extract the core idea and reimplement on current master
