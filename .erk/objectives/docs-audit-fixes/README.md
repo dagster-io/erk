@@ -103,14 +103,13 @@ Report:
 
 Plans should:
 
-1. **Be bounded to 1-2 hours** - Fix 3-5 files per plan
-2. **Group related files** - All testing docs together, all kit docs together
-3. **Verify changes** - Include grep commands to confirm patterns are fixed
-4. **Be independently mergeable** - Each plan improves docs without dependencies
+1. **Group related files** - All testing docs together, all kit docs together
+2. **Verify changes** - Include grep commands to confirm patterns are fixed
+3. **Be independently mergeable** - Each plan improves docs without dependencies
 
 Suggested batches:
 
-- **Batch A**: User docs (2 files) - shell-init, config path
-- **Batch B**: Kit docs (5 files) - DotAgentContext, kit_cli_commands, Path.cwd()
-- **Batch C**: Testing docs (4 files) - DotAgentContext patterns
-- **Batch D**: CLI/Architecture docs (2 files) - command org, Protocol vs ABC
+- **Batch A**: User docs - shell-init, config path
+- **Batch B**: Kit docs - DotAgentContext, kit_cli_commands, Path.cwd()
+- **Batch C**: Testing docs - DotAgentContext patterns
+- **Batch D**: CLI/Architecture docs - command org, Protocol vs ABC
