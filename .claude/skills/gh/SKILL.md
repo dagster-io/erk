@@ -364,4 +364,10 @@ When users ask "what can gh do?":
   - Complete mapping of all gh commands to their API backends
   - Batch operation alternatives and caching strategies
 
+- `rest-vs-graphql-mapping.md` - Practical field mapping guide (~250 lines)
+  - Load when building wrappers that need to convert between API backends
+  - Field name differences (e.g., `isDraft` vs `draft`, `url` vs `html_url`)
+  - State enum mapping (GraphQL uppercase vs REST lowercase + merged_at)
+  - Common pitfalls and recommended patterns
+
 These references should be loaded as needed to ensure accurate, detailed information. Use progressive disclosure: start with the main reference, then load specialized GraphQL docs when needed.
