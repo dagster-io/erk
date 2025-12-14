@@ -144,6 +144,8 @@ class PullRequestInfo:
     checks_counts: tuple[int, int] | None = None  # (passing, total) or None if no checks
     # True if PR will close the linked issue when merged (via "Closes #N" keywords)
     will_close_target: bool = False
+    # ISO 8601 timestamp when PR was created (e.g., "2024-01-15T10:30:00Z")
+    created_at: str | None = None
 
 
 class _NotAvailable:

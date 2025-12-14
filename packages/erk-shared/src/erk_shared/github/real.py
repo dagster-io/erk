@@ -1714,6 +1714,7 @@ query {{
                 checks_passing=None,  # Not fetched for efficiency
                 owner=self._repo_info.owner,
                 repo=self._repo_info.name,
+                created_at=pr_data.get("created_at"),
             )
             result.append(pr_info)
 

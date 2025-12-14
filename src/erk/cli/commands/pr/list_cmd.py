@@ -1,5 +1,6 @@
 """List pull requests with optional filtering."""
 
+from datetime import datetime
 from typing import cast
 
 import click
@@ -40,6 +41,21 @@ def _format_pr_number_cell(pr_number: int, url: str, emoji: str) -> str:
         Formatted string for table cell with Rich link markup
     """
     return f"{emoji} [link={url}]#{pr_number}[/link]"
+
+
+def _format_created_at(created_at: str | None) -> str:
+    """Format ISO 8601 timestamp to human-readable date.
+
+    Args:
+        created_at: ISO 8601 timestamp (e.g., "2024-01-15T10:30:00Z")
+
+    Returns:
+        Formatted date string (e.g., "Jan 15") or empty string if None
+    """
+    if created_at is None:
+        return ""
+    parsed = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+    return parsed.strftime("%b %d")
 
 
 @alias("ls")
@@ -102,14 +118,16 @@ def pr_list(ctx: ErkContext, status: str, author: str) -> None:
     # Create Rich table
     table = Table(show_header=True, header_style="bold", box=None)
     table.add_column("pr", no_wrap=True)
+    table.add_column("created", no_wrap=True)
     table.add_column("title", no_wrap=False)
 
     # Add rows for each PR
     for pr in prs:
         emoji = get_pr_status_emoji(pr)
         pr_cell = _format_pr_number_cell(pr.number, pr.url, emoji)
+        created_cell = _format_created_at(pr.created_at)
         title_cell = _format_pr_cell(pr.title, pr.url)
-        table.add_row(pr_cell, title_cell)
+        table.add_row(pr_cell, created_cell, title_cell)
 
     # Output table to stderr (consistent with user_output convention)
     console = Console(stderr=True, force_terminal=True)

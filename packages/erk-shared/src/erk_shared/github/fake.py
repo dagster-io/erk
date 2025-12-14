@@ -740,6 +740,7 @@ class FakeGitHub(GitHub):
                 checks_passing=None,
                 owner=pr_details.owner,
                 repo=pr_details.repo,
+                created_at=None,  # PRDetails doesn't have created_at
             )
             result.append(pr_info)
         return result
