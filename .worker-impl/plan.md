@@ -22,7 +22,7 @@ The implementation revealed critical field mapping differences between GitHub's 
 
 **Draft Content**:
 
-```markdown
+````markdown
 ---
 title: GitHub REST API Patterns
 read_when:
@@ -44,14 +44,14 @@ This document covers patterns for using GitHub's REST API via `gh api`.
 
 When converting from `gh issue list --json` (GraphQL) to `gh api repos/.../issues` (REST), these field differences apply:
 
-| Field | GraphQL (`gh ... --json`) | REST (`gh api`) |
-|-------|---------------------------|-----------------|
-| Author | `author.login` | `user.login` |
-| URL | `url` | `html_url` |
-| Created | `createdAt` (camelCase) | `created_at` (snake_case) |
-| Updated | `updatedAt` (camelCase) | `updated_at` (snake_case) |
-| State | `OPEN`/`CLOSED` (uppercase) | `open`/`closed` (lowercase) |
-| Body | Always string | Can be `null` |
+| Field   | GraphQL (`gh ... --json`)   | REST (`gh api`)             |
+| ------- | --------------------------- | --------------------------- |
+| Author  | `author.login`              | `user.login`                |
+| URL     | `url`                       | `html_url`                  |
+| Created | `createdAt` (camelCase)     | `created_at` (snake_case)   |
+| Updated | `updatedAt` (camelCase)     | `updated_at` (snake_case)   |
+| State   | `OPEN`/`CLOSED` (uppercase) | `open`/`closed` (lowercase) |
+| Body    | Always string               | Can be `null`               |
 
 ## Normalization Pattern
 
@@ -69,25 +69,28 @@ def _normalize_issue(self, data: dict[str, Any]) -> IssueInfo:
         updated_at=data.get("updated_at", ""),  # snake_case
     )
 ```
+````
 
 ## Query Parameter Syntax
 
 REST API uses query parameters instead of GraphQL arguments:
 
-| Filter | GraphQL Flag | REST Query Param |
-|--------|-------------|------------------|
-| State | `--state open` | `?state=open` |
+| Filter | GraphQL Flag               | REST Query Param                     |
+| ------ | -------------------------- | ------------------------------------ |
+| State  | `--state open`             | `?state=open`                        |
 | Labels | `--label bug --label feat` | `?labels=bug,feat` (comma-separated) |
-| Limit | `--limit 10` | `?per_page=10` |
+| Limit  | `--limit 10`               | `?per_page=10`                       |
 
 ## Example Conversion
 
 **Before (GraphQL-backed):**
+
 ```python
 cmd = ["gh", "issue", "list", "--json", "number,title,state", "--state", "open"]
 ```
 
 **After (REST):**
+
 ```python
 cmd = ["gh", "api", "repos/{owner}/{repo}/issues?state=open"]
 ```
@@ -95,7 +98,8 @@ cmd = ["gh", "api", "repos/{owner}/{repo}/issues?state=open"]
 ## Related Topics
 
 - [GitHub GraphQL API Patterns](github-graphql.md) - When GraphQL is required
-```
+
+````
 
 ---
 
@@ -130,8 +134,10 @@ Commands that use **REST**:
 ### Rate Limit Error Pattern
 
 When you see this error:
-```
+````
+
 GraphQL: API rate limit already exceeded for user ID 12345678
+
 ```
 
 The solution is often to convert from `gh <resource> list --json` to `gh api repos/{owner}/{repo}/<resource>`.

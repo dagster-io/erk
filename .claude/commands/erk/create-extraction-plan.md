@@ -248,7 +248,7 @@ This indicates:
 
 ### Steps 5-8: Analyze Session
 
-@../../../.erk/docs/kits/erk/includes/extract-docs-analysis-shared.md
+Analyze the session for documentation gaps and learnings. Look for patterns, decisions, and discoveries that should be documented.
 
 ### Step 9: Combine Session Sources
 

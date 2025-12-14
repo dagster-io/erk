@@ -1,3 +1,8 @@
+---
+erk:
+  kit: erk
+---
+
 # Launch Plan-Extractor Agent (Enriched Mode)
 
 Use the Task tool to launch the specialized agent with the plan content:
