@@ -30,6 +30,48 @@ This document describes patterns for using GitHub's GraphQL API via `gh api grap
 - Simple CRUD operations
 - You need pagination that's easier with REST
 
+## Rate Limit Considerations
+
+### gh Commands That Use GraphQL Internally
+
+**CRITICAL**: Some `gh` commands appear to use REST but internally delegate to GraphQL, which has stricter rate limits (5,000 points/hour vs 5,000 requests/hour for REST).
+
+Commands that use **GraphQL internally**:
+
+- `gh issue list --json ...` - Uses GraphQL for JSON output
+- `gh pr list --json ...` - Uses GraphQL for JSON output
+- `gh repo view --json ...` - Uses GraphQL for JSON output
+
+Commands that use **REST**:
+
+- `gh api repos/{owner}/{repo}/issues` - Direct REST endpoint
+- `gh api repos/{owner}/{repo}/pulls` - Direct REST endpoint
+- `gh issue view <number>` (without --json) - Uses REST
+
+### Rate Limit Error Pattern
+
+When you see this error:
+
+```
+GraphQL: API rate limit already exceeded for user ID 12345678
+```
+
+The solution is often to convert from `gh <resource> list --json` to `gh api repos/{owner}/{repo}/<resource>`.
+
+### When to Prefer REST
+
+Use REST (`gh api`) when:
+
+- Listing resources with simple filters (state, labels)
+- Rate limits are a concern (high-frequency operations)
+- You don't need GraphQL-only fields (like `isResolved` on PR threads)
+
+Use GraphQL (`gh api graphql` or `gh ... --json`) when:
+
+- You need fields only available in GraphQL (see table below)
+- You need to traverse relationships in a single query
+- You need mutations (resolve threads, etc.)
+
 ## Variable Passing Syntax
 
 **CRITICAL**: The `gh api graphql` command does NOT support passing variables as a JSON blob. Variables must be passed individually.
@@ -241,7 +283,7 @@ Some GitHub features are only available via GraphQL:
 
 ## Related Topics
 
-- [GitHub Interface Patterns](github-interface-patterns.md) - REST API patterns
+- [GitHub REST API Patterns](github-rest-api.md) - REST API field mapping and conversion patterns
 - [Subprocess Wrappers](subprocess-wrappers.md) - Running `gh` commands safely
 
 ## Additional Resources

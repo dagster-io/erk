@@ -1,6 +1,8 @@
 ---
 description: Replan an existing erk-plan issue against current codebase state
 argument-hint: <issue-number-or-url>
+erk:
+  kit: erk
 ---
 
 # /erk:replan

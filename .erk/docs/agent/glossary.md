@@ -327,6 +327,17 @@ main (trunk)
 
 See: [Trunk Branch](#trunk-branch)
 
+### GitHub API Rate Limits
+
+GitHub has two separate rate limit pools:
+
+- **REST API**: 5,000 requests/hour per authenticated user
+- **GraphQL API**: 5,000 points/hour (queries cost 1+ points based on complexity)
+
+**Key insight**: `gh issue list --json` uses GraphQL internally, not REST. When hitting GraphQL rate limits, convert to `gh api repos/{owner}/{repo}/issues` which uses REST.
+
+See [GitHub GraphQL API Patterns](architecture/github-graphql.md) and [GitHub REST API Patterns](architecture/github-rest-api.md) for details.
+
 ---
 
 ## Configuration Terms

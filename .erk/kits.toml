@@ -5,28 +5,15 @@ kit_id = "erk"
 source_type = "bundled"
 version = "0.2.5"
 artifacts = [
-    ".claude/commands/erk/plan-implement.md",
-    ".claude/commands/erk/merge-conflicts-fix.md",
-    ".claude/commands/erk/plan-submit.md",
-    ".claude/commands/erk/auto-restack.md",
+    ".claude/commands/erk/analyze-context.md",
     ".claude/commands/erk/create-extraction-plan.md",
-    ".claude/commands/erk/save-plan.md",
-    ".claude/commands/erk/pr-address.md",
-    ".claude/agents/erk/issue-wt-creator.md",
-    ".claude/agents/erk/plan-extractor.md",
-    ".erk/docs/kits/erk/EXAMPLES.md",
-    ".erk/docs/kits/erk/includes/conflict-resolution.md",
-    ".erk/docs/kits/erk/includes/create-github-issue.md",
-    ".erk/docs/kits/erk/includes/enrichment-process.md",
-    ".erk/docs/kits/erk/includes/extract-docs-analysis-shared.md",
+    ".claude/commands/erk/plan-implement.md",
+    ".claude/commands/erk/plan-submit.md",
+    ".claude/commands/erk/replan.md",
+    ".claude/commands/erk/sessions-list.md",
     ".erk/docs/kits/erk/includes/extract-plan-workflow-shared.md",
-    ".erk/docs/kits/erk/includes/planning/extract-plan-from-session.md",
-    ".erk/docs/kits/erk/includes/planning/next-steps-output.md",
-    ".erk/docs/kits/erk/includes/session-file-location.md",
-    ".erk/docs/kits/erk/includes/success-output-format.md",
-    ".erk/docs/kits/erk/includes/validate-git-repository.md",
-    ".erk/docs/kits/erk/includes/validate-github-cli.md",
-    ".erk/docs/kits/erk/includes/validate-plan-structure.md",
+    ".erk/docs/kits/erk/includes/planning/display-enriched-plan.md",
+    ".erk/docs/kits/erk/includes/planning/launch-plan-extractor-agent.md",
 ]
 
 [[kits.erk.hooks]]

@@ -1,5 +1,7 @@
 ---
 description: List recent sessions for the current worktree
+erk:
+  kit: erk
 ---
 
 # /erk:sessions-list

@@ -1,5 +1,7 @@
 ---
 description: Analyze context window usage for all sessions in the current worktree
+erk:
+  kit: erk
 ---
 
 # /erk:analyze-context
