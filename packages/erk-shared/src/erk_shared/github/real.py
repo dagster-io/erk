@@ -1638,7 +1638,7 @@ query {{
     ) -> list[PullRequestInfo]:
         """List pull requests with filtering.
 
-        Uses gh pr list (REST API) with optional filters for status and author.
+        Uses GitHub REST API directly via gh api to avoid GraphQL rate limits.
 
         Args:
             repo_root: Repository root directory
@@ -1650,36 +1650,66 @@ query {{
         """
         assert self._repo_info is not None, "repo_info required for list_prs"
 
-        cmd = [
-            "gh",
-            "pr",
-            "list",
-            "--json",
-            "number,title,headRefName,url,isDraft,state",
-        ]
-
-        # Add status filter
-        if status != "all":
-            cmd.extend(["--state", status])
-        else:
-            cmd.extend(["--state", "all"])
-
-        # Add author filter
+        # Resolve @me to actual username for client-side filtering
+        filter_username: str | None = None
         if author == "@me":
-            cmd.extend(["--author", "@me"])
-        # 'any' means no author filter - don't add --author flag
+            filter_username = self._get_current_username(repo_root)
 
+        # REST API state parameter: open, closed, all (lowercase)
+        # Note: merged is not a REST API state - we must fetch closed and filter
+        if status == "MERGED":
+            api_state = "closed"
+        elif status == "OPEN":
+            api_state = "open"
+        elif status == "CLOSED":
+            api_state = "closed"
+        elif status == "ALL":
+            api_state = "all"
+        else:
+            api_state = "all"
+
+        # Build REST API endpoint
+        endpoint = (
+            f"/repos/{self._repo_info.owner}/{self._repo_info.name}/pulls"
+            f"?state={api_state}&per_page=100"
+        )
+        cmd = ["gh", "api", endpoint]
         stdout = execute_gh_command(cmd, repo_root)
 
         prs_data = json.loads(stdout) if stdout.strip() else []
         result: list[PullRequestInfo] = []
 
         for pr_data in prs_data:
+            # REST API uses lowercase state and merged_at field
+            is_merged = pr_data.get("merged_at") is not None
+            raw_state = pr_data.get("state", "open").lower()
+
+            # Derive state using GraphQL enum values (OPEN, CLOSED, MERGED)
+            if is_merged:
+                pr_state = "MERGED"
+            elif raw_state == "closed":
+                pr_state = "CLOSED"
+            else:
+                pr_state = "OPEN"
+
+            # Apply status filter (merged needs special handling)
+            if status == "MERGED" and not is_merged:
+                continue
+            if status == "CLOSED" and is_merged:
+                # When user asks for closed PRs, exclude merged ones
+                continue
+
+            # Apply author filter client-side
+            if filter_username is not None:
+                pr_author = pr_data.get("user", {}).get("login")
+                if pr_author != filter_username:
+                    continue
+
             pr_info = PullRequestInfo(
                 number=pr_data["number"],
-                state=pr_data.get("state", "OPEN").upper(),
-                url=pr_data["url"],
-                is_draft=pr_data.get("isDraft", False),
+                state=pr_state,
+                url=pr_data["html_url"],
+                is_draft=pr_data.get("draft", False),
                 title=pr_data.get("title"),
                 checks_passing=None,  # Not fetched for efficiency
                 owner=self._repo_info.owner,
@@ -1688,3 +1718,16 @@ query {{
             result.append(pr_info)
 
         return result
+
+    def _get_current_username(self, repo_root: Path) -> str | None:
+        """Get current GitHub username via REST API.
+
+        Returns:
+            GitHub username if authenticated, None otherwise
+        """
+        cmd = ["gh", "api", "user", "--jq", ".login"]
+        try:
+            stdout = execute_gh_command(cmd, repo_root)
+            return stdout.strip() if stdout else None
+        except RuntimeError:
+            return None

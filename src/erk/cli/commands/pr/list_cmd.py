@@ -85,8 +85,11 @@ def pr_list(ctx: ErkContext, status: str, author: str) -> None:
         raise SystemExit(1)
     repo: RepoContext = ctx.repo
 
-    # Cast string options to typed literals
-    status_filter = cast(PRStatusFilter, status)
+    # Map CLI lowercase values to uppercase PRStatusFilter enum values
+    # The gateway uses GraphQL-style uppercase enum values internally
+    status_upper = status.upper()
+    assert status_upper in ("OPEN", "CLOSED", "MERGED", "ALL"), f"Invalid status: {status}"
+    status_filter = cast(PRStatusFilter, status_upper)
     author_filter = cast(PRAuthorFilter, author)
 
     # Fetch PRs with filters

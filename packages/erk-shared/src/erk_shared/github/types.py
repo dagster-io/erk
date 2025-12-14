@@ -5,10 +5,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
+# PR state values use GraphQL enum naming (uppercase).
+# REST API and CLI use lowercase - mapping is handled at gateway boundaries.
+# This convention ensures consistent internal representation across all gateways.
 PRState = Literal["OPEN", "MERGED", "CLOSED"]
 
-# Filter types for list_prs
-PRStatusFilter = Literal["open", "closed", "merged", "all"]
+# Filter types for list_prs - use GraphQL-style uppercase values
+# ALL is a filter-only value (not a valid PRState)
+PRStatusFilter = Literal["OPEN", "CLOSED", "MERGED", "ALL"]
 PRAuthorFilter = Literal["@me", "any"]
 
 

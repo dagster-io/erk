@@ -721,14 +721,14 @@ class FakeGitHub(GitHub):
         """
         result: list[PullRequestInfo] = []
         for pr_details in self._pr_details.values():
-            # Apply status filter
-            if status == "all":
+            # Apply status filter (uses uppercase GraphQL-style enum values)
+            if status == "ALL":
                 pass  # Include all
-            elif status == "open" and pr_details.state != "OPEN":
+            elif status == "OPEN" and pr_details.state != "OPEN":
                 continue
-            elif status == "closed" and pr_details.state != "CLOSED":
+            elif status == "CLOSED" and pr_details.state != "CLOSED":
                 continue
-            elif status == "merged" and pr_details.state != "MERGED":
+            elif status == "MERGED" and pr_details.state != "MERGED":
                 continue
 
             pr_info = PullRequestInfo(
