@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-As of 627a3d4b5
+As of 89657c6b9
 
 ### Major Changes
 
@@ -15,6 +15,7 @@ As of 627a3d4b5
   - Move `submit` to `erk plan submit` (49c41562d)
   - Add `erk branch` command group with `checkout` (`co`) and `list` (`ls`) subcommands (4b890f053, 2771e6d37)
   - Rename `erk wt goto` to `erk wt checkout` with `co` alias (50567a91d)
+  - Remove top-level `list` and `delete` commands, now `erk wt list` and `erk wt delete` (50a45cbb4)
 - Remove standalone `erk kit sync` command, consolidated into `erk kit install --force` (87ae27f3e)
 
 ### Added
