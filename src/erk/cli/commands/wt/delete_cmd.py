@@ -104,9 +104,7 @@ def _close_plan_for_worktree(
     plan_number = _find_plan_for_worktree(ctx, repo_root, worktree_name)
 
     if plan_number is None:
-        user_output(
-            click.style("ℹ️  ", fg="blue", bold=True) + "No associated plan found"
-        )
+        user_output(click.style("ℹ️  ", fg="blue", bold=True) + "No associated plan found")
         return None
 
     ctx.plan_store.close_plan(repo_root, str(plan_number))

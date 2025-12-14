@@ -242,5 +242,3 @@ def test_checkout_branch_name_hint() -> None:
         assert "Error:" in result.output
         assert "Hint:" in result.output
         assert "erk br co" in result.output
-
-
