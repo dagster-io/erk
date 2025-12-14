@@ -7,6 +7,8 @@ available at import time for inspection.
 
 import click
 
+from ccsesh.commands.project import project
+
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
@@ -16,6 +18,4 @@ def cli() -> None:
     pass
 
 
-# Register commands here as they are added:
-# from ccsesh.commands.example.command import example_command
-# cli.add_command(example_command)
+cli.add_command(project)
