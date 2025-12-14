@@ -1723,11 +1723,11 @@ query {{
         """Get current GitHub username via REST API.
 
         Returns:
-            GitHub username if authenticated, None otherwise
+            GitHub username if authenticated, None if empty response
+
+        Raises:
+            RuntimeError: If gh CLI fails (not authenticated, network error, etc.)
         """
         cmd = ["gh", "api", "user", "--jq", ".login"]
-        try:
-            stdout = execute_gh_command(cmd, repo_root)
-            return stdout.strip() if stdout else None
-        except RuntimeError:
-            return None
+        stdout = execute_gh_command(cmd, repo_root)
+        return stdout.strip() if stdout else None
