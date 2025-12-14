@@ -31,8 +31,6 @@ from erk.cli.commands.shell_integration import hidden_shell_cmd
 from erk.cli.commands.stack import stack_group
 from erk.cli.commands.up import up_cmd
 from erk.cli.commands.wt import wt_group
-from erk.cli.commands.wt.delete_cmd import delete_wt
-from erk.cli.commands.wt.list_cmd import list_wt
 from erk.cli.help_formatter import ErkCommandGroup
 from erk.core.context import create_context
 
@@ -146,8 +144,6 @@ cli.add_command(run_group)
 cli.add_command(stack_group)
 cli.add_command(up_cmd)
 cli.add_command(wt_group)
-register_with_aliases(cli, list_wt, name="list")  # Has @alias("ls")
-cli.add_command(delete_wt, name="delete")
 cli.add_command(hidden_shell_cmd)
 cli.add_command(prepare_cwd_recovery_cmd)
 
