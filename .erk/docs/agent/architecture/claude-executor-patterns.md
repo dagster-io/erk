@@ -4,9 +4,6 @@ read_when:
   - "launching Claude from CLI commands"
   - "deciding which ClaudeExecutor method to use"
   - "testing code that executes Claude CLI"
-tripwires:
-  - action: "choosing between execute_interactive and execute_interactive_command"
-    warning: "execute_interactive() NEVER returns (uses os.execvp). Use execute_interactive_command() if you need control to return."
 ---
 
 # ClaudeExecutor Pattern Documentation
@@ -15,13 +12,12 @@ The `ClaudeExecutor` abstraction provides multiple methods for launching Claude 
 
 ## Method Comparison
 
-| Method                          | Mechanism                         | Returns?                 | Use Case                           |
-| ------------------------------- | --------------------------------- | ------------------------ | ---------------------------------- |
-| `execute_interactive()`         | `os.execvp()`                     | Never (replaces process) | Final action in a workflow         |
-| `execute_interactive_command()` | `subprocess.run()`                | Exit code                | When control must return           |
-| `execute_prompt()`              | `subprocess.run()` with `--print` | `PromptResult`           | Non-interactive prompt execution   |
-| `execute_command()`             | `subprocess.run()`                | `CommandResult`          | Programmatic command with metadata |
-| `execute_command_streaming()`   | `subprocess.Popen()`              | `Iterator[ClaudeEvent]`  | Real-time progress tracking        |
+| Method                        | Mechanism                         | Returns?                 | Use Case                           |
+| ----------------------------- | --------------------------------- | ------------------------ | ---------------------------------- |
+| `execute_interactive()`       | `os.execvp()`                     | Never (replaces process) | Final action in a workflow         |
+| `execute_prompt()`            | `subprocess.run()` with `--print` | `PromptResult`           | Non-interactive prompt execution   |
+| `execute_command()`           | `subprocess.run()`                | `CommandResult`          | Programmatic command with metadata |
+| `execute_command_streaming()` | `subprocess.Popen()`              | `Iterator[ClaudeEvent]`  | Real-time progress tracking        |
 
 ## When to Use Each
 
@@ -38,22 +34,6 @@ executor.execute_interactive(
     target_subpath=None,
 )
 # This line NEVER runs - process is replaced
-```
-
-### `execute_interactive_command()` - Subprocess with Return
-
-Use when you need control to return after Claude exits. Uses `subprocess.run()` internally, returns exit code. The user can interact with Claude during execution.
-
-```python
-# Good: Continue processing after Claude finishes
-exit_code = executor.execute_interactive_command(
-    command="/erk:create-extraction-plan",
-    worktree_path=Path("/repos/my-project"),
-    dangerous=True,
-)
-if exit_code == 0:
-    print("Plan created successfully")
-    # Continue with more work...
 ```
 
 ### `execute_prompt()` - Non-Interactive
@@ -110,12 +90,11 @@ The fake tracks all calls for assertion via read-only properties.
 
 ### Assertion Properties
 
-| Property                    | Tracks                                                      |
-| --------------------------- | ----------------------------------------------------------- |
-| `executed_commands`         | `execute_command()` and `execute_command_streaming()` calls |
-| `interactive_calls`         | `execute_interactive()` calls                               |
-| `interactive_command_calls` | `execute_interactive_command()` calls                       |
-| `prompt_calls`              | `execute_prompt()` calls                                    |
+| Property            | Tracks                                                      |
+| ------------------- | ----------------------------------------------------------- |
+| `executed_commands` | `execute_command()` and `execute_command_streaming()` calls |
+| `interactive_calls` | `execute_interactive()` calls                               |
+| `prompt_calls`      | `execute_prompt()` calls                                    |
 
 ### Simulating Scenarios
 
@@ -134,9 +113,6 @@ executor = FakeClaudeExecutor(
     simulated_pr_url="https://github.com/org/repo/pull/123",
     simulated_pr_number=123,
 )
-
-# Interactive command with specific exit code
-executor = FakeClaudeExecutor(interactive_command_exit_code=1)
 
 # Hook blocking (zero turns)
 executor = FakeClaudeExecutor(simulated_zero_turns=True)

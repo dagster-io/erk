@@ -324,42 +324,6 @@ class ClaudeExecutor(ABC):
         ...
 
     @abstractmethod
-    def execute_interactive_command(
-        self,
-        command: str,
-        worktree_path: Path,
-        dangerous: bool = False,
-    ) -> int:
-        """Execute Claude CLI interactively with a command, returning exit code.
-
-        Unlike execute_interactive(), this method runs Claude in a subprocess
-        and returns control to the caller after completion. The user can
-        interact with Claude during execution.
-
-        Args:
-            command: The slash command to execute (e.g., "/erk:create-extraction-plan")
-            worktree_path: Path to worktree directory to run in
-            dangerous: Whether to skip permission prompts
-
-        Returns:
-            Exit code from the Claude CLI process (0 = success)
-
-        Raises:
-            RuntimeError: If Claude CLI is not available
-
-        Example:
-            >>> executor = RealClaudeExecutor()
-            >>> exit_code = executor.execute_interactive_command(
-            ...     "/erk:create-extraction-plan",
-            ...     Path("/repos/my-project"),
-            ...     dangerous=True,
-            ... )
-            >>> if exit_code == 0:
-            ...     print("Extraction plan created successfully")
-        """
-        ...
-
-    @abstractmethod
     def execute_prompt(
         self,
         prompt: str,

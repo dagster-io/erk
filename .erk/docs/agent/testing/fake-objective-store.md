@@ -144,10 +144,7 @@ objectives_store = FakeObjectiveStore(
     notes={"test-objective": ObjectiveNotes(entries=[])},
 )
 
-claude_executor = FakeClaudeExecutor(
-    claude_available=True,
-    interactive_command_exit_code=0,
-)
+claude_executor = FakeClaudeExecutor(claude_available=True)
 
 ctx = build_workspace_test_context(
     env,
@@ -156,8 +153,9 @@ ctx = build_workspace_test_context(
     claude_executor=claude_executor,
 )
 
-# After test
-assert len(claude_executor.interactive_command_calls) == 1
+# After test - check execute_interactive was called
+assert len(claude_executor.interactive_calls) == 1
+worktree_path, dangerous, command, target_subpath = claude_executor.interactive_calls[0]
 ```
 
 ## Related Documentation

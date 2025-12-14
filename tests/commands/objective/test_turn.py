@@ -65,7 +65,7 @@ def test_turn_prompt_only_outputs_prompt() -> None:
         assert "User Prompt" in result.output
         assert "Copy the above prompt to Claude" in result.output
         # Should NOT have launched Claude
-        assert len(claude_executor.interactive_command_calls) == 0
+        assert len(claude_executor.interactive_calls) == 0
 
 
 def test_turn_default_launches_claude_interactively() -> None:
@@ -84,10 +84,7 @@ def test_turn_default_launches_claude_interactively() -> None:
             notes={"test-objective": ObjectiveNotes(entries=[])},
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
-            interactive_command_exit_code=0,
-        )
+        claude_executor = FakeClaudeExecutor(claude_available=True)
 
         ctx = build_workspace_test_context(
             env,
@@ -98,16 +95,18 @@ def test_turn_default_launches_claude_interactively() -> None:
 
         result = runner.invoke(objective_group, ["turn", "test-objective"], obj=ctx)
 
+        # execute_interactive doesn't return exit codes in tests (simulated)
         assert result.exit_code == 0
-        # Should have launched Claude
-        assert len(claude_executor.interactive_command_calls) == 1
-        command, worktree_path, dangerous = claude_executor.interactive_command_calls[0]
+        # Should have launched Claude via execute_interactive
+        assert len(claude_executor.interactive_calls) == 1
+        worktree_path, dangerous, command, target_subpath = claude_executor.interactive_calls[0]
 
         # Verify the prompt contains expected content
         assert "test-objective" in command
         assert "All tests pass" in command
         assert "Check test coverage" in command
         assert dangerous is False
+        assert target_subpath is None
 
 
 def test_turn_with_dangerous_flag() -> None:
@@ -126,10 +125,7 @@ def test_turn_with_dangerous_flag() -> None:
             notes={"test-objective": ObjectiveNotes(entries=[])},
         )
 
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
-            interactive_command_exit_code=0,
-        )
+        claude_executor = FakeClaudeExecutor(claude_available=True)
 
         ctx = build_workspace_test_context(
             env,
@@ -141,42 +137,9 @@ def test_turn_with_dangerous_flag() -> None:
         result = runner.invoke(objective_group, ["turn", "test-objective", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
-        assert len(claude_executor.interactive_command_calls) == 1
-        command, worktree_path, dangerous = claude_executor.interactive_command_calls[0]
+        assert len(claude_executor.interactive_calls) == 1
+        worktree_path, dangerous, command, target_subpath = claude_executor.interactive_calls[0]
         assert dangerous is True
-
-
-def test_turn_propagates_nonzero_exit_code() -> None:
-    """Test that Claude's exit code is propagated."""
-    runner = CliRunner()
-
-    with erk_isolated_fs_env(runner) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
-        )
-
-        objective = _create_test_objective()
-        objectives_store = FakeObjectiveStore(
-            objectives={"test-objective": objective},
-            notes={"test-objective": ObjectiveNotes(entries=[])},
-        )
-
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
-            interactive_command_exit_code=1,  # Claude exits with error
-        )
-
-        ctx = build_workspace_test_context(
-            env,
-            git=git,
-            objectives=objectives_store,
-            claude_executor=claude_executor,
-        )
-
-        result = runner.invoke(objective_group, ["turn", "test-objective"], obj=ctx)
-
-        assert result.exit_code == 1
 
 
 def test_turn_fails_for_nonexistent_objective() -> None:
