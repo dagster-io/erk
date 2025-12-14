@@ -8,6 +8,7 @@ available at import time for inspection.
 import click
 
 from ccsesh.commands.project import project
+from ccsesh.commands.session import session
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -19,3 +20,4 @@ def cli() -> None:
 
 
 cli.add_command(project)
+cli.add_command(session)
