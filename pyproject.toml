@@ -2,6 +2,7 @@
 members = ["packages/*"]
 
 [tool.uv.sources]
+ccsesh = { workspace = true }
 erk-dev = { workspace = true }
 erk-kits = { workspace = true }
 erk-shared = { workspace = true }
@@ -37,6 +38,7 @@ erk = "erk.cli.cli:main"
 
 [dependency-groups]
 dev = [
+    "ccsesh",
     "erk-dev",
     "ruff>=0.5.0",
     "pytest>=8.0.0",
@@ -73,12 +75,12 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["erk", "erk_dev", "erk_kits", "erk_shared"]
+known-first-party = ["ccsesh", "erk", "erk_dev", "erk_kits", "erk_shared"]
 
 [tool.pyright]
 pythonVersion = "3.11"
 typeCheckingMode = "standard"
-include = ["src", "packages/erk-dev/src", "packages/erk-kits/src", "packages/erk-shared/src"]
+include = ["src", "packages/ccsesh/src", "packages/erk-dev/src", "packages/erk-kits/src", "packages/erk-shared/src"]
 exclude = [".claude/skills/"]
 venvPath = "."
 venv = ".venv"

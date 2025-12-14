@@ -9,6 +9,7 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "ccsesh",
     "erk",
     "erk-dev",
     "erk-kits",
@@ -171,6 +172,17 @@ wheels = [
 ]
 
 [[package]]
+name = "ccsesh"
+version = "0.1.0"
+source = { editable = "packages/ccsesh" }
+dependencies = [
+    { name = "click" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "click", specifier = ">=8.1.7" }]
+
+[[package]]
 name = "click"
 version = "8.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -306,6 +318,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "ccsesh" },
     { name = "erk-dev" },
     { name = "libcst" },
     { name = "pyright" },
@@ -336,6 +349,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "ccsesh", editable = "packages/ccsesh" },
     { name = "erk-dev", editable = "packages/erk-dev" },
     { name = "libcst", specifier = ">=1.8.6" },
     { name = "pyright", specifier = ">=1.1.407" },
