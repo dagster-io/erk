@@ -3,6 +3,8 @@
 This file tests the delete command which removes a worktree workspace.
 """
 
+from datetime import UTC, datetime
+
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -10,13 +12,69 @@ from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.metadata import MetadataBlock, render_metadata_block
+from erk_shared.github.types import PRDetails, PullRequestInfo
 from erk_shared.integrations.graphite.fake import FakeGraphite
 from erk_shared.integrations.graphite.types import BranchMetadata
+from erk_shared.plan_store.fake import FakePlanStore
+from erk_shared.plan_store.types import Plan, PlanState
 from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, create_marker
 from tests.fakes.shell import FakeShell
 from tests.test_utils.cli_helpers import assert_cli_error, assert_cli_success
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
+
+
+def _make_plan_body_with_worktree(worktree_name: str) -> str:
+    """Create a valid plan body with worktree_name in plan-header metadata block."""
+    plan_header_data = {
+        "schema_version": "2",
+        "created_at": "2024-01-01T00:00:00Z",
+        "created_by": "test-user",
+        "worktree_name": worktree_name,
+    }
+    header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
+    return f"{header_block}\n\n# Plan\n\nImplementation details..."
+
+
+def _make_pr_details(
+    number: int,
+    head_ref_name: str,
+    state: str = "OPEN",
+) -> PRDetails:
+    """Create a PRDetails for testing."""
+    return PRDetails(
+        number=number,
+        url=f"https://github.com/owner/repo/pull/{number}",
+        title=f"PR #{number}",
+        body="",
+        state=state,
+        is_draft=False,
+        base_ref_name="main",
+        head_ref_name=head_ref_name,
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="owner",
+        repo="repo",
+    )
+
+
+def _make_pr_info(
+    number: int,
+    state: str = "OPEN",
+) -> PullRequestInfo:
+    """Create a PullRequestInfo for testing."""
+    return PullRequestInfo(
+        number=number,
+        state=state,
+        url=f"https://github.com/owner/repo/pull/{number}",
+        is_draft=False,
+        title=f"PR #{number}",
+        checks_passing=True,
+        owner="owner",
+        repo="repo",
+    )
 
 
 def test_delete_force_removes_directory() -> None:
@@ -30,7 +88,7 @@ def test_delete_force_removes_directory() -> None:
         result = runner.invoke(cli, ["wt", "delete", "foo", "-f"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        assert result.output.strip().endswith(str(wt))
+        assert f"Deleted worktree: {wt}" in result.output
 
 
 def test_delete_prompts_and_aborts_on_no() -> None:
@@ -333,3 +391,186 @@ def test_delete_force_bypasses_pending_extraction_marker() -> None:
 
         # Verify worktree was deleted
         assert not test_ctx.git.path_exists(wt)
+
+
+def test_delete_all_closes_pr_and_plan() -> None:
+    """Test that --all closes associated PR and plan."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_name = env.cwd.name
+        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-feature"
+
+        # Create plan with worktree_name in metadata
+        now = datetime.now(UTC)
+        plan = Plan(
+            plan_identifier="123",
+            title="Implement feature",
+            body=_make_plan_body_with_worktree("test-feature"),
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/123",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            metadata={},
+        )
+        fake_plan_store = FakePlanStore(plans={"123": plan})
+
+        # Create PR for the branch - need both prs (branch -> PullRequestInfo) and pr_details
+        pr_info = _make_pr_info(456, state="OPEN")
+        pr_details = _make_pr_details(456, "feature-branch", state="OPEN")
+        fake_github = FakeGitHub(
+            prs={"feature-branch": pr_info},
+            pr_details={456: pr_details},
+        )
+
+        # Build fake git ops with worktree info
+        fake_git = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature-branch")]},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        test_ctx = env.build_context(
+            git=fake_git,
+            github=fake_github,
+            plan_store=fake_plan_store,
+            shell=FakeShell(),
+            existing_paths={wt},
+        )
+
+        result = runner.invoke(cli, ["wt", "delete", "test-feature", "-a", "-f"], obj=test_ctx)
+
+        assert_cli_success(result)
+        # Verify PR was closed
+        assert 456 in fake_github.closed_prs
+        # Verify plan was closed
+        assert "123" in fake_plan_store.closed_plans
+        # Verify branch was deleted (--all implies --branch)
+        assert "feature-branch" in fake_git.deleted_branches
+
+
+def test_delete_all_implies_branch() -> None:
+    """Test that --all implies --branch for deleting the branch."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_name = env.cwd.name
+        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-feature"
+
+        # Build fake git ops with worktree info
+        fake_git = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature-branch")]},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        # No PR or plan - just verify branch is deleted
+        test_ctx = env.build_context(
+            git=fake_git,
+            github=FakeGitHub(),
+            shell=FakeShell(),
+            existing_paths={wt},
+        )
+
+        result = runner.invoke(cli, ["wt", "delete", "test-feature", "-a", "-f"], obj=test_ctx)
+
+        assert_cli_success(result)
+        # Verify branch was deleted (--all implies --branch)
+        assert "feature-branch" in fake_git.deleted_branches
+
+
+def test_delete_all_skips_already_closed_pr() -> None:
+    """Test that --all doesn't fail when PR is already merged/closed."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_name = env.cwd.name
+        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-feature"
+
+        # Create PR that's already merged - need both prs and pr_details
+        pr_info = _make_pr_info(456, state="MERGED")
+        pr_details = _make_pr_details(456, "feature-branch", state="MERGED")
+        fake_github = FakeGitHub(
+            prs={"feature-branch": pr_info},
+            pr_details={456: pr_details},
+        )
+
+        # Build fake git ops with worktree info
+        fake_git = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature-branch")]},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        test_ctx = env.build_context(
+            git=fake_git,
+            github=fake_github,
+            shell=FakeShell(),
+            existing_paths={wt},
+        )
+
+        result = runner.invoke(cli, ["wt", "delete", "test-feature", "-a", "-f"], obj=test_ctx)
+
+        assert_cli_success(result)
+        # PR should NOT be in closed_prs (it was already merged)
+        assert 456 not in fake_github.closed_prs
+        # Should show the merged status in output
+        assert "merged" in result.output.lower()
+
+
+def test_delete_all_skips_when_no_pr_exists() -> None:
+    """Test that --all doesn't fail when no PR exists for the branch."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_name = env.cwd.name
+        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-feature"
+
+        # No PR configured in FakeGitHub
+        fake_github = FakeGitHub()
+
+        # Build fake git ops with worktree info
+        fake_git = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature-branch")]},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        test_ctx = env.build_context(
+            git=fake_git,
+            github=fake_github,
+            shell=FakeShell(),
+            existing_paths={wt},
+        )
+
+        result = runner.invoke(cli, ["wt", "delete", "test-feature", "-a", "-f"], obj=test_ctx)
+
+        # Should succeed even without a PR
+        assert_cli_success(result)
+        # Branch should still be deleted
+        assert "feature-branch" in fake_git.deleted_branches
+
+
+def test_delete_all_shows_plan_steps_in_confirmation() -> None:
+    """Test that --all shows plan steps (close PR, close plan) in confirmation."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_name = env.cwd.name
+        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-feature"
+
+        # Build fake git ops with worktree info
+        fake_git = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature-branch")]},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        test_ctx = env.build_context(
+            git=fake_git,
+            shell=FakeShell(),
+            existing_paths={wt},
+        )
+
+        # Don't force, abort at confirmation to see the plan
+        result = runner.invoke(
+            cli, ["wt", "delete", "test-feature", "-a"], input="n\n", obj=test_ctx
+        )
+
+        assert_cli_success(result)
+        # Should show PR and plan closing steps
+        assert "Close associated PR" in result.output
+        assert "Close associated plan" in result.output
+        assert "Delete branch" in result.output
