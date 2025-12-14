@@ -64,6 +64,11 @@ git log -1 --format="%h %s (%cr)" origin/<branch> 2>/dev/null || echo "no remote
 **1.6 Identify local-only branches:**
 Branches that exist locally but have no remote tracking branch.
 
+**1.7 Detect worktree anomalies:**
+
+- **Duplicate worktrees**: Multiple worktrees at same commit
+- **Branch mismatches**: Worktree directory name doesn't match checked-out branch
+
 ### Phase 2: Analysis
 
 **IMPORTANT: Staleness is context-based, NOT age-based.**
@@ -91,6 +96,48 @@ Analyze each branch/PR for these staleness indicators:
 
 5. **Feature pivoted** - Implementation took a different approach
    - Look for similar features implemented differently
+
+6. **Massively diverged** - Branch far behind master but may contain valuable ideas
+   - Run `git diff master --stat | tail -1` to check divergence
+   - If 500+ files changed (often due to directory reorganizations):
+     - The _code_ is stale and impractical to rebase
+     - But the _thesis_ (feature idea, approach) may still be valuable
+   - **Recommendation**: Extract the core idea and reimplement on current master
+     - Summarize what the branch was trying to accomplish
+     - Create a new issue/branch to implement the same feature cleanly
+     - Close the stale PR with a note about the reimplementation plan
+
+7. **Feature merged differently** - Work exists in master via different PR
+   - For branches with substantive commits, search master: `git log --grep="<feature keyword>" master`
+   - If similar feature exists, branch is superseded even if PR wasn't merged
+
+### Phase 2.5: No-PR Worktree Analysis
+
+For worktrees without associated PRs:
+
+**2.5.1 Get unique commits:**
+
+```bash
+git log master..HEAD --oneline  # from worktree directory
+```
+
+**2.5.2 Analyze actual code content:**
+
+- **Empty** (0 unique commits) → Safe to delete
+- **Has commits** → Examine the actual code changes:
+  - `git diff master --stat` to see scope
+  - `git log master..HEAD -p -- '*.py'` to see implementation
+  - Determine: What feature/fix does this implement?
+  - Check if that feature exists in master via different implementation
+
+### Phase 2.7: Deep Content Analysis (for uncertain branches)
+
+For branches that aren't clearly stale or clearly valuable:
+
+1. **View actual code changes**: `git log master..HEAD -p -- '*.py'`
+2. **Identify the thesis**: What feature/improvement was this trying to implement?
+3. **Check if feature exists in master**: Search for key function/class names
+4. **Assess value**: Is the idea worth reimplementing even if code is stale?
 
 ### Phase 3: Categorization
 
