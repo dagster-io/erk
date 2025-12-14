@@ -76,11 +76,10 @@ def turn_objective(ctx: ErkContext, name: str, prompt_only: bool, dangerous: boo
 
     # Default: Launch Claude interactively
     claude_prompt = build_claude_prompt(prompt)
-    exit_code = ctx.claude_executor.execute_interactive_command(
-        claude_prompt,
-        ctx.cwd,
-        dangerous,
+    ctx.claude_executor.execute_interactive(
+        worktree_path=ctx.cwd,
+        dangerous=dangerous,
+        command=claude_prompt,
+        target_subpath=None,
     )
-
-    if exit_code != 0:
-        raise SystemExit(exit_code)
+    # Never returns - process is replaced by Claude
