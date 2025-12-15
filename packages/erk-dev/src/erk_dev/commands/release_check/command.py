@@ -11,6 +11,12 @@ from erk_dev.commands.bump_version.command import find_repo_root
 # Standard Keep a Changelog categories
 STANDARD_CATEGORIES = frozenset({"Added", "Changed", "Deprecated", "Removed", "Fixed", "Security"})
 
+# Commit hash pattern: 7-9 hex chars in parentheses at end of line
+COMMIT_HASH_PATTERN = re.compile(r"\([a-f0-9]{7,9}\)\s*$")
+
+# "As of" marker pattern
+AS_OF_PATTERN = re.compile(r"^\s*As of [a-f0-9]+\s*$", re.MULTILINE)
+
 
 @dataclass
 class ValidationIssue:
@@ -31,11 +37,16 @@ class VersionInfo:
     bullet_count: int
 
 
-def validate_changelog(content: str) -> list[ValidationIssue]:
+def validate_changelog(
+    content: str,
+    for_version: str | None = None,
+) -> list[ValidationIssue]:
     """Validate CHANGELOG.md content and return list of issues.
 
     Args:
         content: Raw content of CHANGELOG.md
+        for_version: If specified, validates release-readiness for this version.
+            Checks: version header exists, no commit hashes, no "As of" marker.
 
     Returns:
         List of ValidationIssue objects (errors and warnings)
@@ -46,6 +57,38 @@ def validate_changelog(content: str) -> list[ValidationIssue]:
     # Check for Unreleased section
     if "## [Unreleased]" not in content:
         issues.append(ValidationIssue("error", "Missing [Unreleased] section"))
+
+    # Release-readiness checks (when for_version is specified)
+    if for_version is not None:
+        # Check version header exists
+        version_header = f"## [{for_version}]"
+        if version_header not in content:
+            issues.append(
+                ValidationIssue(
+                    "error",
+                    f"Version header '{version_header}' not found in changelog",
+                )
+            )
+
+        # Check for "As of" marker (should be removed for release)
+        if AS_OF_PATTERN.search(content):
+            issues.append(
+                ValidationIssue(
+                    "error",
+                    "Found 'As of' marker - remove before release",
+                )
+            )
+
+        # Check for commit hashes in entries (should be stripped for release)
+        for line_num, line in enumerate(lines, start=1):
+            if line.strip().startswith("-") and COMMIT_HASH_PATTERN.search(line):
+                issues.append(
+                    ValidationIssue(
+                        "error",
+                        "Commit hash found - strip hashes before release",
+                        line_num,
+                    )
+                )
 
     # Track version headers and categories
     version_pattern = re.compile(r"^## \[([^\]]+)\](?:\s*-\s*(\d{4}-\d{2}-\d{2}))?$")
@@ -169,7 +212,13 @@ def extract_version_info(content: str) -> list[VersionInfo]:
 
 
 @click.command("release-check")
-def release_check_command() -> None:
+@click.option(
+    "--version",
+    "for_version",
+    default=None,
+    help="Validate release-readiness for specific version (checks header exists, no commit hashes, no 'As of' marker)",
+)
+def release_check_command(for_version: str | None) -> None:
     """Validate CHANGELOG.md structure.
 
     Checks for:
@@ -177,6 +226,11 @@ def release_check_command() -> None:
     - Version headers have valid format (X.Y.Z - YYYY-MM-DD)
     - Categories are standard (Added, Changed, Deprecated, Removed, Fixed, Security)
     - Bullet indentation uses 2-space increments without jumps
+
+    With --version X.Y.Z, also checks:
+    - Version header ## [X.Y.Z] exists
+    - No commit hashes in entries (must be stripped)
+    - No "As of" marker (must be removed)
 
     Exit codes:
     - 0: All checks passed (warnings are OK)
@@ -190,7 +244,10 @@ def release_check_command() -> None:
     changelog_path = repo_root / "CHANGELOG.md"
 
     # Check file exists
-    click.echo("Checking CHANGELOG.md...")
+    if for_version:
+        click.echo(f"Checking CHANGELOG.md for release {for_version}...")
+    else:
+        click.echo("Checking CHANGELOG.md...")
 
     if not changelog_path.exists():
         click.echo(click.style("  ✗ File not found", fg="red"))
@@ -199,7 +256,7 @@ def release_check_command() -> None:
 
     # Validate content
     content = changelog_path.read_text(encoding="utf-8")
-    issues = validate_changelog(content)
+    issues = validate_changelog(content, for_version=for_version)
 
     # Extract and display version info
     versions = extract_version_info(content)
