@@ -6,7 +6,8 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from ccsesh.api.projects import encode_path_to_project_id
-from ccsesh.api.sessions import list_sessions, resolve_project_dir
+from ccsesh.api.sessions import get_project_dir_by_id, get_project_dir_by_path, list_sessions
+from ccsesh.cli import CcseshContext
 from ccsesh.commands.session import session
 
 
@@ -17,8 +18,8 @@ def test_encode_path_to_project_id() -> None:
     assert result == "-Users-alice-code-myapp"
 
 
-def test_resolve_project_dir_with_project_id(tmp_path: Path) -> None:
-    """Test resolving project directory using --project-id."""
+def test_get_project_dir_by_id(tmp_path: Path) -> None:
+    """Test resolving project directory by project ID."""
     # Arrange: Create a project directory
     projects_dir = tmp_path / ".claude" / "projects"
     project_id = "-Users-alice-code-myapp"
@@ -26,14 +27,23 @@ def test_resolve_project_dir_with_project_id(tmp_path: Path) -> None:
     project_dir.mkdir(parents=True)
 
     # Act
-    result = resolve_project_dir(project_id, None, tmp_path, projects_dir=projects_dir)
+    result = get_project_dir_by_id(project_id, projects_dir=projects_dir)
 
     # Assert
     assert result == project_dir
 
 
-def test_resolve_project_dir_with_project_path(tmp_path: Path) -> None:
-    """Test resolving project directory using --project-path."""
+def test_get_project_dir_by_id_returns_none_when_not_found(tmp_path: Path) -> None:
+    """Test that get_project_dir_by_id returns None when project doesn't exist."""
+    projects_dir = tmp_path / ".claude" / "projects"
+    projects_dir.mkdir(parents=True)
+
+    result = get_project_dir_by_id("nonexistent-project", projects_dir=projects_dir)
+    assert result is None
+
+
+def test_get_project_dir_by_path(tmp_path: Path) -> None:
+    """Test resolving project directory by filesystem path."""
     # Arrange: Create a project directory with encoded path
     projects_dir = tmp_path / ".claude" / "projects"
     project_path = tmp_path / "myproject"
@@ -43,35 +53,19 @@ def test_resolve_project_dir_with_project_path(tmp_path: Path) -> None:
     project_dir.mkdir(parents=True)
 
     # Act
-    result = resolve_project_dir(None, str(project_path), tmp_path, projects_dir=projects_dir)
+    result = get_project_dir_by_path(project_path, projects_dir=projects_dir)
 
     # Assert
     assert result == project_dir
 
 
-def test_resolve_project_dir_from_cwd(tmp_path: Path) -> None:
-    """Test resolving project directory from current working directory."""
-    # Arrange: Create a project directory from cwd
-    projects_dir = tmp_path / ".claude" / "projects"
-    cwd = tmp_path / "workspace"
-    cwd.mkdir(parents=True)
-    encoded = str(cwd.resolve()).replace("/", "-")
-    project_dir = projects_dir / encoded
-    project_dir.mkdir(parents=True)
-
-    # Act
-    result = resolve_project_dir(None, None, cwd, projects_dir=projects_dir)
-
-    # Assert
-    assert result == project_dir
-
-
-def test_resolve_project_dir_returns_none_when_not_found(tmp_path: Path) -> None:
-    """Test that resolve_project_dir returns None when project doesn't exist."""
+def test_get_project_dir_by_path_returns_none_when_not_found(tmp_path: Path) -> None:
+    """Test that get_project_dir_by_path returns None when project doesn't exist."""
     projects_dir = tmp_path / ".claude" / "projects"
     projects_dir.mkdir(parents=True)
+    project_path = tmp_path / "nonexistent"
 
-    result = resolve_project_dir("nonexistent-project", None, tmp_path, projects_dir=projects_dir)
+    result = get_project_dir_by_path(project_path, projects_dir=projects_dir)
     assert result is None
 
 
@@ -176,13 +170,13 @@ def test_session_list_cli_shows_sessions(tmp_path: Path) -> None:
     session2.write_text("{}", encoding="utf-8")
 
     runner = CliRunner()
-    # Use monkeypatch via env variable approach or invoke with full path
-    # Since we refactored to use projects_dir parameter, we need to patch get_projects_dir
     from unittest.mock import patch
 
     with patch("ccsesh.api.sessions.get_projects_dir", return_value=projects_dir):
-        # Act
-        result = runner.invoke(session, ["list", "--project-id", project_id])
+        # Act: Invoke with context object set
+        result = runner.invoke(
+            session, ["list", "--project-id", project_id], obj=CcseshContext(cwd=tmp_path)
+        )
 
         # Assert
         assert result.exit_code == 0
@@ -205,7 +199,9 @@ def test_session_list_cli_shows_no_sessions_message(tmp_path: Path) -> None:
 
     with patch("ccsesh.api.sessions.get_projects_dir", return_value=projects_dir):
         # Act
-        result = runner.invoke(session, ["list", "--project-id", project_id])
+        result = runner.invoke(
+            session, ["list", "--project-id", project_id], obj=CcseshContext(cwd=tmp_path)
+        )
 
         # Assert
         assert result.exit_code == 0
@@ -222,8 +218,80 @@ def test_session_list_cli_error_when_project_not_found(tmp_path: Path) -> None:
 
     with patch("ccsesh.api.sessions.get_projects_dir", return_value=projects_dir):
         # Act
-        result = runner.invoke(session, ["list", "--project-id", "nonexistent"])
+        result = runner.invoke(
+            session, ["list", "--project-id", "nonexistent"], obj=CcseshContext(cwd=tmp_path)
+        )
 
         # Assert
         assert result.exit_code == 1
         assert "Project not found: nonexistent" in result.output
+
+
+def test_session_list_cli_mutual_exclusivity(tmp_path: Path) -> None:
+    """Test that --project-id and --project-path are mutually exclusive."""
+    runner = CliRunner()
+
+    # Act
+    result = runner.invoke(
+        session,
+        ["list", "--project-id", "some-id", "--project-path", "/some/path"],
+        obj=CcseshContext(cwd=tmp_path),
+    )
+
+    # Assert
+    assert result.exit_code == 1
+    assert "mutually exclusive" in result.output
+
+
+def test_session_list_cli_uses_cwd_from_context(tmp_path: Path) -> None:
+    """Test that CLI uses cwd from context when no options provided."""
+    # Arrange: Create project matching cwd
+    projects_dir = tmp_path / ".claude" / "projects"
+    cwd = tmp_path / "myproject"
+    cwd.mkdir(parents=True)
+    encoded = str(cwd.resolve()).replace("/", "-")
+    project_dir = projects_dir / encoded
+    project_dir.mkdir(parents=True)
+
+    session_file = project_dir / "session-abc.jsonl"
+    session_file.write_text("{}", encoding="utf-8")
+
+    runner = CliRunner()
+    from unittest.mock import patch
+
+    with patch("ccsesh.api.sessions.get_projects_dir", return_value=projects_dir):
+        # Act: Invoke with cwd set to myproject
+        result = runner.invoke(session, ["list"], obj=CcseshContext(cwd=cwd))
+
+        # Assert
+        assert result.exit_code == 0
+        assert "session-abc" in result.output
+
+
+def test_session_list_cli_relative_project_path(tmp_path: Path) -> None:
+    """Test that --project-path supports relative paths resolved against ctx.cwd."""
+    # Arrange: Create project for a subdirectory
+    projects_dir = tmp_path / ".claude" / "projects"
+    cwd = tmp_path / "workspace"
+    cwd.mkdir(parents=True)
+    subdir = cwd / "myproject"
+    subdir.mkdir(parents=True)
+    encoded = str(subdir.resolve()).replace("/", "-")
+    project_dir = projects_dir / encoded
+    project_dir.mkdir(parents=True)
+
+    session_file = project_dir / "session-xyz.jsonl"
+    session_file.write_text("{}", encoding="utf-8")
+
+    runner = CliRunner()
+    from unittest.mock import patch
+
+    with patch("ccsesh.api.sessions.get_projects_dir", return_value=projects_dir):
+        # Act: Use relative path from cwd
+        result = runner.invoke(
+            session, ["list", "--project-path", "myproject"], obj=CcseshContext(cwd=cwd)
+        )
+
+        # Assert
+        assert result.exit_code == 0
+        assert "session-xyz" in result.output

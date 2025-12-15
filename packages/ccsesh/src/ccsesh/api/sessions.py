@@ -5,23 +5,14 @@ from pathlib import Path
 from ccsesh.api.projects import encode_path_to_project_id, get_projects_dir
 
 
-def resolve_project_dir(
-    project_id: str | None,
-    project_path: str | None,
-    cwd: Path,
+def get_project_dir_by_id(
+    project_id: str,
     projects_dir: Path | None = None,
 ) -> Path | None:
-    """Resolve project directory from options or current directory.
-
-    Priority:
-    1. --project-id: Use directly as folder name
-    2. --project-path: Encode path to folder name
-    3. Neither: Infer from current working directory
+    """Get project directory by encoded project ID.
 
     Args:
         project_id: Direct project folder name (encoded).
-        project_path: Filesystem path to project root.
-        cwd: Current working directory (fallback).
         projects_dir: Override the projects directory (for testing).
                       If None, uses get_projects_dir().
 
@@ -31,13 +22,32 @@ def resolve_project_dir(
     if projects_dir is None:
         projects_dir = get_projects_dir()
 
-    if project_id:
-        project_dir = projects_dir / project_id
-    elif project_path:
-        project_dir = projects_dir / encode_path_to_project_id(Path(project_path))
-    else:
-        project_dir = projects_dir / encode_path_to_project_id(cwd)
+    project_dir = projects_dir / project_id
+    if project_dir.exists():
+        return project_dir
+    return None
 
+
+def get_project_dir_by_path(
+    project_path: Path,
+    projects_dir: Path | None = None,
+) -> Path | None:
+    """Get project directory by filesystem path.
+
+    The path is encoded to a project ID and looked up.
+
+    Args:
+        project_path: Absolute filesystem path to project root.
+        projects_dir: Override the projects directory (for testing).
+                      If None, uses get_projects_dir().
+
+    Returns:
+        Path to project directory, or None if it doesn't exist.
+    """
+    if projects_dir is None:
+        projects_dir = get_projects_dir()
+
+    project_dir = projects_dir / encode_path_to_project_id(project_path)
     if project_dir.exists():
         return project_dir
     return None
