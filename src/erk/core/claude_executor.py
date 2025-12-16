@@ -5,6 +5,7 @@ ABC and types from erk_shared.core for backward compatibility.
 """
 
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -33,6 +34,8 @@ from erk_shared.core.claude_executor import ToolEvent as ToolEvent
 # Constants for process execution
 PROCESS_TIMEOUT_SECONDS = 600  # 10 minutes
 STDERR_JOIN_TIMEOUT = 5.0  # 5 seconds (increased from 1.0)
+
+logger = logging.getLogger(__name__)
 
 
 class RealClaudeExecutor(ClaudeExecutor):
@@ -429,17 +432,23 @@ class RealClaudeExecutor(ClaudeExecutor):
             cmd_args.append("--dangerously-skip-permissions")
         cmd_args.append(command)
 
-        # Redirect stdin/stdout/stderr to /dev/tty before exec.
-        # This ensures Claude gets terminal access even when running
-        # as subprocess with captured stdout (e.g., shell integration).
-        try:
-            tty_fd = os.open("/dev/tty", os.O_RDWR)
-            os.dup2(tty_fd, 0)  # stdin
-            os.dup2(tty_fd, 1)  # stdout
-            os.dup2(tty_fd, 2)  # stderr
-            os.close(tty_fd)
-        except OSError:
-            pass  # Fallback to inherited descriptors if /dev/tty unavailable
+        # Redirect stdin/stdout/stderr to /dev/tty only if they are not already TTYs.
+        # This ensures Claude gets terminal access when running as subprocess with
+        # captured stdout (e.g., shell integration), while avoiding unnecessary
+        # redirection when already running in a terminal (which can break tools
+        # like Bun that expect specific TTY capabilities).
+        if not (os.isatty(1) and os.isatty(2)):
+            try:
+                tty_fd = os.open("/dev/tty", os.O_RDWR)
+                os.dup2(tty_fd, 0)  # stdin
+                os.dup2(tty_fd, 1)  # stdout
+                os.dup2(tty_fd, 2)  # stderr
+                os.close(tty_fd)
+            except OSError:
+                logger.debug(
+                    "Unable to redirect stdin/stdout/stderr to /dev/tty; "
+                    "falling back to inherited descriptors"
+                )
 
         # Replace current process with Claude
         os.execvp("claude", cmd_args)
