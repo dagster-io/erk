@@ -28,7 +28,8 @@ def version_aware_reminder_hook() -> None:
     # Version-specific message
     version_code = f"3{minor}"
     skill_name = f"dignified-python-{version_code}"
-    click.echo(f"📌 {skill_name}: If not loaded, load now. Always abide by its rules.")
+    msg = f"📌 {skill_name}: If writing Python code, load now. Always abide by its rules."
+    click.echo(msg)
 
 
 if __name__ == "__main__":
