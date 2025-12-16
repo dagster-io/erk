@@ -5,6 +5,7 @@ ABC and types from erk_shared.core for backward compatibility.
 """
 
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -33,6 +34,8 @@ from erk_shared.core.claude_executor import ToolEvent as ToolEvent
 # Constants for process execution
 PROCESS_TIMEOUT_SECONDS = 600  # 10 minutes
 STDERR_JOIN_TIMEOUT = 5.0  # 5 seconds (increased from 1.0)
+
+logger = logging.getLogger(__name__)
 
 
 class RealClaudeExecutor(ClaudeExecutor):
@@ -442,7 +445,7 @@ class RealClaudeExecutor(ClaudeExecutor):
                 os.dup2(tty_fd, 2)  # stderr
                 os.close(tty_fd)
             except OSError:
-                pass  # Fallback to inherited descriptors if /dev/tty unavailable
+                logger.debug("Unable to redirect stdin/stdout/stderr to /dev/tty; falling back to inherited descriptors")
 
         # Replace current process with Claude
         os.execvp("claude", cmd_args)
