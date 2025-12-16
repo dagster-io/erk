@@ -445,7 +445,9 @@ class RealClaudeExecutor(ClaudeExecutor):
                 os.dup2(tty_fd, 2)  # stderr
                 os.close(tty_fd)
             except OSError:
-                logger.debug("Unable to redirect stdin/stdout/stderr to /dev/tty; falling back to inherited descriptors")
+                logger.debug(
+                    "Unable to redirect stdin/stdout/stderr to /dev/tty; falling back to inherited descriptors"
+                )
 
         # Replace current process with Claude
         os.execvp("claude", cmd_args)
