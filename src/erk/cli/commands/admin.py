@@ -5,6 +5,7 @@ from typing import Literal
 import click
 
 from erk.cli.core import discover_repo_context
+from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.implementation_queue.github.real import RealGitHubAdmin
 from erk_shared.github.types import GitHubRepoLocation
@@ -47,15 +48,18 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
     repo = discover_repo_context(ctx, ctx.cwd)
 
     # Check for GitHub identity
-    if repo.github is None:
-        user_output(click.style("Error: ", fg="red") + "Not a GitHub repository")
-        user_output("This command requires the repository to have a GitHub remote configured.")
-        raise SystemExit(1)
+    github_id = Ensure.not_none(
+        repo.github,
+        (
+            "Not a GitHub repository. This command requires the repository "
+            "to have a GitHub remote configured."
+        ),
+    )
 
     # Create admin interface
     # TODO: Use injected admin from context when dry-run support is added
     admin = RealGitHubAdmin()
-    location = GitHubRepoLocation(root=repo.root, repo_id=repo.github)
+    location = GitHubRepoLocation(root=repo.root, repo_id=github_id)
 
     if action is None:
         # Display current setting
