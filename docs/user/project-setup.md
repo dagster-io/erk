@@ -4,6 +4,16 @@
 
 This guide covers how to configure your repository to work with erk's planning and implementation workflows.
 
+## Prerequisites
+
+Before setting up erk, ensure you have these tools installed:
+
+- **Python** (3.10+)
+- **uv** - Fast Python environment management
+- **Claude Code** - AI-powered CLI that erk extends
+- **gh** - GitHub CLI
+- **gt** - Graphite CLI (optional, for stacked PRs)
+
 ## Step 1: Initialize Erk
 
 First, initialize erk in your repository:
