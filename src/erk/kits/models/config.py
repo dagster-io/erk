@@ -8,12 +8,16 @@ from erk.kits.models.types import SourceType
 
 @dataclass(frozen=True)
 class InstalledKit:
-    """Represents an installed kit in kits.toml."""
+    """Represents an installed kit in kits.toml.
+
+    The artifacts dict maps relative file paths to content hashes (sha256:...).
+    This enables detecting local modifications before overwriting.
+    """
 
     kit_id: str  # Globally unique kit identifier
     source_type: SourceType
     version: str
-    artifacts: list[str]
+    artifacts: dict[str, str]  # path → "sha256:<hash>"
     hooks: list[HookDefinition] = field(default_factory=list)
 
 

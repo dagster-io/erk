@@ -119,7 +119,7 @@ def test_detects_managed_artifacts(tmp_path: Path) -> None:
                 kit_id="test-kit",
                 source_type="package",
                 version="1.0.0",
-                artifacts=["skills/test-skill/SKILL.md"],  # Without .claude prefix
+                artifacts={"skills/test-skill/SKILL.md": "sha256:abc123"},  # Without .claude prefix
             )
         },
     )
@@ -248,7 +248,9 @@ def test_handles_paths_with_claude_prefix_in_config(tmp_path: Path) -> None:
                 kit_id="test-kit",
                 source_type="package",
                 version="1.0.0",
-                artifacts=[".claude/skills/test-skill/SKILL.md"],  # WITH .claude prefix
+                artifacts={
+                    ".claude/skills/test-skill/SKILL.md": "sha256:abc123"
+                },  # WITH .claude prefix
             )
         },
     )
@@ -358,7 +360,7 @@ def test_detects_managed_doc_artifacts(tmp_path: Path) -> None:
                 kit_id="test-kit",
                 source_type="package",
                 version="1.0.0",
-                artifacts=["docs/test-kit/guide.md"],
+                artifacts={"docs/test-kit/guide.md": "sha256:abc123"},
             )
         },
     )

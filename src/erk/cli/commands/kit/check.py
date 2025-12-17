@@ -195,10 +195,10 @@ def validate_kit_fields(kit: InstalledKit) -> list[str]:
     if not kit.version:
         errors.append("version is empty")
 
-    # Validate artifacts list is non-empty (except for bundled kits which can
+    # Validate artifacts dict is non-empty (except for bundled kits which can
     # define artifacts in their bundled kit.yaml instead of kits.toml)
     if not kit.artifacts and kit.source_type != SOURCE_TYPE_BUNDLED:
-        errors.append("artifacts list is empty")
+        errors.append("artifacts dict is empty")
 
     return errors
 
@@ -231,13 +231,13 @@ def validate_configuration(
 
 def compare_artifact_lists(
     manifest_artifacts: dict[str, list[str]],
-    installed_artifacts: list[str],
+    installed_artifacts: dict[str, str],
 ) -> tuple[list[str], list[str]]:
     """Compare manifest artifacts against installed artifacts.
 
     Args:
         manifest_artifacts: Dict of artifact type to list of relative paths from manifest
-        installed_artifacts: List of installed artifact paths (relative to project root)
+        installed_artifacts: Dict of installed artifact paths to hashes (relative to project root)
 
     Returns:
         Tuple of (missing, obsolete) artifact lists
@@ -273,7 +273,7 @@ def compare_artifact_lists(
             full_path = f"{target_dir}/{stripped_path}"
             manifest_paths.add(full_path)
 
-    installed_paths = set(installed_artifacts)
+    installed_paths = set(installed_artifacts.keys())
 
     missing = sorted(manifest_paths - installed_paths)
     obsolete = sorted(installed_paths - manifest_paths)
@@ -764,7 +764,7 @@ def check(verbose: bool) -> None:
 
             # Check each artifact
             kit_results = []
-            for artifact_path in installed.artifacts:
+            for artifact_path in installed.artifacts.keys():
                 result = check_artifact_sync(project_dir, artifact_path, bundled_path)
                 kit_results.append(result)
 

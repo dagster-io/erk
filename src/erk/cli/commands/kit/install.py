@@ -28,6 +28,28 @@ from erk.kits.sources.exceptions import (
 )
 from erk.kits.sources.resolver import KitResolver, ResolvedKit
 from erk.kits.sources.standalone import StandalonePackageSource
+from erk.kits.utils.content_hash import is_file_modified
+
+
+def check_for_local_modifications(
+    installed: InstalledKit,
+    project_dir: Path,
+) -> list[str]:
+    """Check which installed artifacts have been locally modified.
+
+    Args:
+        installed: The installed kit with artifact hashes
+        project_dir: Project root directory
+
+    Returns:
+        List of paths to files that have been locally modified
+    """
+    modified: list[str] = []
+    for artifact_path, stored_hash in installed.artifacts.items():
+        full_path = project_dir / artifact_path
+        if is_file_modified(full_path, stored_hash):
+            modified.append(artifact_path)
+    return modified
 
 
 class UpdateCheckResult(NamedTuple):
@@ -166,7 +188,7 @@ def _handle_update_workflow(
     config: ProjectConfig,
     project_dir: Path,
     force: bool,
-) -> None:
+) -> bool:
     """Handle the update workflow for an already installed kit.
 
     Args:
@@ -176,6 +198,9 @@ def _handle_update_workflow(
         config: Project configuration
         project_dir: Project root directory
         force: Whether to force reinstall
+
+    Returns:
+        True if kit was updated, False if already up to date
 
     Raises:
         SystemExit: If resolution fails or kit not found
@@ -190,12 +215,25 @@ def _handle_update_workflow(
     # No update available and not forcing - report and exit
     if not check_result.has_update:
         user_output(f"Kit '{kit_id}' is already up to date (v{installed.version})")
-        return
+        return False
 
     # resolved must be non-None at this point (error_message would be set otherwise)
     if check_result.resolved is None:
         user_output("Error: Internal error - resolved kit is None")
         raise SystemExit(1)
+
+    # Check for locally modified files before overwriting
+    if not force:
+        modified_files = check_for_local_modifications(installed, project_dir)
+        if modified_files:
+            user_output(f"Warning: {len(modified_files)} file(s) have been locally modified:")
+            for path in modified_files[:5]:  # Show first 5
+                user_output(f"  - {path}")
+            if len(modified_files) > 5:
+                user_output(f"  ... and {len(modified_files) - 5} more")
+            user_output("")
+            user_output("Use --force to overwrite local modifications.")
+            raise SystemExit(1)
 
     # Update the kit
     user_output(f"Updating {kit_id} to v{check_result.resolved.version}...")
@@ -205,10 +243,11 @@ def _handle_update_workflow(
 
     if not result.was_updated:
         user_output(f"Kit '{kit_id}' was already up to date")
-        return
+        return False
 
     # Process successful update
     _process_update_result(kit_id, result, check_result.resolved, config, project_dir)
+    return True
 
 
 def _process_update_result(
@@ -435,15 +474,109 @@ def _perform_atomic_hook_update(
             raise
 
 
+def _handle_install_all(
+    *,
+    resolver: KitResolver,
+    config: ProjectConfig,
+    context: InstallationContext,
+    project_dir: Path,
+    force: bool,
+) -> None:
+    """Install or update all bundled kits.
+
+    Args:
+        resolver: Kit resolver to find kit sources
+        config: Project configuration
+        context: Installation context
+        project_dir: Project root directory
+        force: If True, force reinstall even if up to date
+    """
+    # Get list of all bundled kits
+    bundled_source = BundledKitSource()
+    kit_ids = bundled_source.list_available()
+
+    if not kit_ids:
+        user_output("No bundled kits found")
+        return
+
+    user_output(f"Installing {len(kit_ids)} bundled kits...")
+
+    installed_count = 0
+    updated_count = 0
+    skipped_count = 0
+    errors: list[tuple[str, str]] = []
+
+    for kit_id in sorted(kit_ids):
+        try:
+            if kit_id in config.kits:
+                # Kit already installed - update workflow
+                result = _handle_update_workflow(
+                    kit_id=kit_id,
+                    installed=config.kits[kit_id],
+                    resolver=resolver,
+                    config=config,
+                    project_dir=project_dir,
+                    force=force,
+                )
+                # Reload config after update
+                loaded_config = load_project_config(project_dir)
+                if loaded_config is not None:
+                    config = loaded_config
+                if result:
+                    updated_count += 1
+                else:
+                    skipped_count += 1
+            else:
+                # Fresh install
+                _handle_fresh_install(
+                    kit_id=kit_id,
+                    resolver=resolver,
+                    config=config,
+                    context=context,
+                    project_dir=project_dir,
+                    force=force,
+                )
+                # Reload config after install
+                loaded_config = load_project_config(project_dir)
+                if loaded_config is not None:
+                    config = loaded_config
+                installed_count += 1
+        except Exception as e:
+            errors.append((kit_id, str(e)))
+
+    # Summary
+    user_output("")
+    user_output("Summary:")
+    if installed_count > 0:
+        user_output(f"  {installed_count} kits installed")
+    if updated_count > 0:
+        user_output(f"  {updated_count} kits updated")
+    if skipped_count > 0:
+        user_output(f"  {skipped_count} kits already up to date")
+    if errors:
+        user_output(f"  {len(errors)} errors:")
+        for kit_id, error in errors:
+            user_output(f"    {kit_id}: {error}")
+        raise SystemExit(1)
+
+    user_output("Done")
+
+
 @click.command()
-@click.argument("kit-id")
+@click.argument("kit-id", required=False)
 @click.option(
     "--force",
     "-f",
     is_flag=True,
     help="Force reinstall even if already up to date",
 )
-def install(kit_id: str, force: bool) -> None:
+@click.option(
+    "--all",
+    "install_all",
+    is_flag=True,
+    help="Install or update all bundled kits",
+)
+def install(kit_id: str | None, force: bool, install_all: bool) -> None:
     """Install a kit or update it if already installed.
 
     This command is idempotent - it will install the kit if not present,
@@ -456,7 +589,18 @@ def install(kit_id: str, force: bool) -> None:
 
         # Force reinstall a kit
         erk kit install devrun --force
+
+        # Install or update all bundled kits
+        erk kit install --all
     """
+    # Validate arguments
+    if install_all and kit_id:
+        user_output("Error: Cannot specify both kit-id and --all")
+        raise SystemExit(1)
+    if not install_all and not kit_id:
+        user_output("Error: Must specify kit-id or use --all")
+        raise SystemExit(1)
+
     # Get installation context
     project_dir = resolve_project_dir(Path.cwd())
     context = get_installation_context(project_dir)
@@ -468,24 +612,35 @@ def install(kit_id: str, force: bool) -> None:
     # Resolve kit source (use both bundled and package sources)
     resolver = KitResolver(sources=[BundledKitSource(), StandalonePackageSource()])
 
-    # Route to appropriate workflow
-    if kit_id in config.kits:
-        # Kit already installed - update workflow
-        _handle_update_workflow(
-            kit_id=kit_id,
-            installed=config.kits[kit_id],
-            resolver=resolver,
-            config=config,
-            project_dir=project_dir,
-            force=force,
-        )
-    else:
-        # Kit not installed - fresh install workflow
-        _handle_fresh_install(
-            kit_id=kit_id,
+    if install_all:
+        # Install all bundled kits
+        _handle_install_all(
             resolver=resolver,
             config=config,
             context=context,
             project_dir=project_dir,
             force=force,
         )
+    else:
+        # Single kit install (kit_id is guaranteed non-None by validation above)
+        assert kit_id is not None  # Guaranteed by validation at function start
+        if kit_id in config.kits:
+            # Kit already installed - update workflow
+            _handle_update_workflow(
+                kit_id=kit_id,
+                installed=config.kits[kit_id],
+                resolver=resolver,
+                config=config,
+                project_dir=project_dir,
+                force=force,
+            )
+        else:
+            # Kit not installed - fresh install workflow
+            _handle_fresh_install(
+                kit_id=kit_id,
+                resolver=resolver,
+                config=config,
+                context=context,
+                project_dir=project_dir,
+                force=force,
+            )

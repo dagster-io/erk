@@ -4,30 +4,30 @@ version = "1"
 kit_id = "erk"
 source_type = "bundled"
 version = "0.2.7"
-artifacts = [
-    ".claude/commands/erk/plan-implement.md",
-    ".claude/commands/erk/merge-conflicts-fix.md",
-    ".claude/commands/erk/plan-submit.md",
-    ".claude/commands/erk/auto-restack.md",
-    ".claude/commands/erk/create-extraction-plan.md",
-    ".claude/commands/erk/save-plan.md",
-    ".claude/commands/erk/pr-address.md",
-    ".claude/agents/erk/issue-wt-creator.md",
-    ".claude/agents/erk/plan-extractor.md",
-    ".erk/docs/kits/erk/EXAMPLES.md",
-    ".erk/docs/kits/erk/includes/conflict-resolution.md",
-    ".erk/docs/kits/erk/includes/create-github-issue.md",
-    ".erk/docs/kits/erk/includes/enrichment-process.md",
-    ".erk/docs/kits/erk/includes/extract-docs-analysis-shared.md",
-    ".erk/docs/kits/erk/includes/extract-plan-workflow-shared.md",
-    ".erk/docs/kits/erk/includes/planning/extract-plan-from-session.md",
-    ".erk/docs/kits/erk/includes/planning/next-steps-output.md",
-    ".erk/docs/kits/erk/includes/session-file-location.md",
-    ".erk/docs/kits/erk/includes/success-output-format.md",
-    ".erk/docs/kits/erk/includes/validate-git-repository.md",
-    ".erk/docs/kits/erk/includes/validate-github-cli.md",
-    ".erk/docs/kits/erk/includes/validate-plan-structure.md",
-]
+
+[kits.erk.artifacts]
+".claude/commands/erk/plan-implement.md" = "sha256:b213f8faa27e4803f5b87bf59d6a3a65eb274dffa7489fa0a50f031b907fd22f"
+".claude/commands/erk/merge-conflicts-fix.md" = "sha256:bc4040defacd08941771486f9e0a347e84ed3e2b344208383af613ae410608c2"
+".claude/commands/erk/plan-submit.md" = "sha256:713d65f4bb00e3d9465c321c3a74a93e3d9f60e713d74fe7d05b6d2b56973161"
+".claude/commands/erk/auto-restack.md" = "sha256:e6a8f29c4b3966fd1d2279505e1ce6f01fd14170340dd5e415c2ae13ec48e3e9"
+".claude/commands/erk/create-extraction-plan.md" = "sha256:3dd40eecb6582645048d9d74777ff690f358700c8daacbdea41f101b75a897bb"
+".claude/commands/erk/save-plan.md" = "sha256:ef8a6c40e7788822116ae1aa95b5d2f6d583e9ab41ea7f5585bf1d30c40035a0"
+".claude/commands/erk/pr-address.md" = "sha256:608287bfd5022b7ead3e34b5a99950f7154c21993940cb6e2c36c400008aba49"
+".claude/agents/erk/issue-wt-creator.md" = "sha256:c426ee4a9916f1eae7a1082dc4e509b297b4d6482883dec9cc717918cc69fd49"
+".claude/agents/erk/plan-extractor.md" = "sha256:3378352672e4f8d870336f1085a995a756d52f3b4c87443b164e15ac53cbc18e"
+".erk/docs/kits/erk/EXAMPLES.md" = "sha256:db4b628192df00df49884e85b2b4040e739fb29ffda494b1d35f7a4964df2f4b"
+".erk/docs/kits/erk/includes/conflict-resolution.md" = "sha256:d910e72c954bceff5f298cbc33eb031db19af3456e3e1e01b7af705d486672ec"
+".erk/docs/kits/erk/includes/create-github-issue.md" = "sha256:895c5e7e0746eb95243a567a2e0aee315801917eac5f23e74593c0556eeab6e3"
+".erk/docs/kits/erk/includes/enrichment-process.md" = "sha256:fa552ff351df311a34d9ef3172ad94906a3011bb4072fa9bd99b92945f7837d9"
+".erk/docs/kits/erk/includes/extract-docs-analysis-shared.md" = "sha256:2bd793e4fb04a4b04466476882b60fdf80d1e744def1e2c50f4756fee119f88f"
+".erk/docs/kits/erk/includes/extract-plan-workflow-shared.md" = "sha256:fe9736e4c0523b7f2a0798fa01b0772b7a9ef025bd747b878e18b67e1f8b3224"
+".erk/docs/kits/erk/includes/planning/extract-plan-from-session.md" = "sha256:c0caf5c44bae036c2299e2d314d077797069caf06a531d17cd3b8269e5046e6b"
+".erk/docs/kits/erk/includes/planning/next-steps-output.md" = "sha256:808a91a600c1bafbfa8d04c4e8e6e287b9e04e436b3bf25f5c573bf2c4f0e7c7"
+".erk/docs/kits/erk/includes/session-file-location.md" = "sha256:227953b11ba02000dba644d7bc6fc202f4d523c09119e7c7002c8ffd2c0ec0b5"
+".erk/docs/kits/erk/includes/success-output-format.md" = "sha256:3bf35baa8b3baf8cb248c3bfd74298c4c52a9be2461df0469ec9017fe4eb7a41"
+".erk/docs/kits/erk/includes/validate-git-repository.md" = "sha256:86a1ebbc1b0597ee27162404658ac0b459f1b1bb37e0342d14d5fc968042901f"
+".erk/docs/kits/erk/includes/validate-github-cli.md" = "sha256:a56f43de959dc3d3086ac97fc8b89eb90eb3f2229e1bc1224c607bb975ed583a"
+".erk/docs/kits/erk/includes/validate-plan-structure.md" = "sha256:2a57d95e62651c94adc6284827d021c789a22e2b16fca00d018969f448b205b2"
 
 [[kits.erk.hooks]]
 id = "session-id-injector-hook"
@@ -57,34 +57,34 @@ timeout = 30
 kit_id = "gt"
 source_type = "bundled"
 version = "0.2.7"
-artifacts = [
-    ".claude/commands/gt/pr-submit.md",
-    ".claude/skills/gt-graphite/SKILL.md",
-    ".claude/skills/gt-graphite/references/gt-reference.md",
-]
+
+[kits.gt.artifacts]
+".claude/commands/gt/pr-submit.md" = "sha256:859ef903fc28ba833f738ad05388587969a016a7a58b5f9c3a60a98ce603974c"
+".claude/skills/gt-graphite/SKILL.md" = "sha256:f32df8a7f190a20f8e9113b8641db89793b14cd1a3044789c4515dd347f61151"
+".claude/skills/gt-graphite/references/gt-reference.md" = "sha256:f8ae330fa861c0ca0f5aa32cfabcd8c2ca0b0dcfb1824e133ed417600c15ac35"
 
 [kits.git]
 kit_id = "git"
 source_type = "bundled"
 version = "0.2.7"
-artifacts = [
-    ".claude/commands/git/pr-push.md",
-    ".claude/agents/git/git-branch-submitter.md",
-]
+
+[kits.git.artifacts]
+".claude/commands/git/pr-push.md" = "sha256:cf8fa73c9ce49945e741e52640d034a817f494ae06dd60b770c385f2ea6bec1d"
+".claude/agents/git/git-branch-submitter.md" = "sha256:e4027d362d3715b70c1dfef97b78a3bd002c1cb2283ae71bd9ad0e1462e40731"
 
 [kits.devrun]
 kit_id = "devrun"
 source_type = "bundled"
 version = "0.2.7"
-artifacts = [
-    ".claude/agents/devrun/devrun.md",
-    ".erk/docs/kits/devrun/tools/gt.md",
-    ".erk/docs/kits/devrun/tools/make.md",
-    ".erk/docs/kits/devrun/tools/prettier.md",
-    ".erk/docs/kits/devrun/tools/pyright.md",
-    ".erk/docs/kits/devrun/tools/pytest.md",
-    ".erk/docs/kits/devrun/tools/ruff.md",
-]
+
+[kits.devrun.artifacts]
+".claude/agents/devrun/devrun.md" = "sha256:7e1beae5a65bd80865a8c66b158a8f9190583507d636bee289e7380ae2259f08"
+".erk/docs/kits/devrun/tools/gt.md" = "sha256:c47abd5b69bf0304d4b50a4ece81d867730d9bd9c6a2d73f2f1cec097eaaf02a"
+".erk/docs/kits/devrun/tools/make.md" = "sha256:7e06086d461a818d7024f22b1913f0d7693ceac165019352e3a6fa32036b6cb9"
+".erk/docs/kits/devrun/tools/prettier.md" = "sha256:eaf6235969024b70b91cfb9e6373fd0ed1b7a6cba2b0d9e03bf2794e9f9c56b0"
+".erk/docs/kits/devrun/tools/pyright.md" = "sha256:929d7d541b23f77f3472b5d964977bf1a64289db872aeb545e1bb1576f761585"
+".erk/docs/kits/devrun/tools/pytest.md" = "sha256:3cf2ba447a895d309d7d96ce17d349aadd23c98089771f96cba8da63fffd9389"
+".erk/docs/kits/devrun/tools/ruff.md" = "sha256:78bae6b9c6f02b8720d365ba51a2e3669c9f9a2677200dc1c3abf8decfaa3782"
 
 [[kits.devrun.hooks]]
 id = "devrun-reminder-hook"
@@ -98,26 +98,26 @@ timeout = 30
 kit_id = "dignified-python"
 source_type = "bundled"
 version = "0.2.7"
-artifacts = [
-    ".claude/skills/dignified-python-310/SKILL.md",
-    ".claude/skills/dignified-python-310/VERSION-CONTEXT.md",
-    ".claude/skills/dignified-python-311/SKILL.md",
-    ".claude/skills/dignified-python-311/VERSION-CONTEXT.md",
-    ".claude/skills/dignified-python-312/SKILL.md",
-    ".claude/skills/dignified-python-312/VERSION-CONTEXT.md",
-    ".claude/skills/dignified-python-313/SKILL.md",
-    ".claude/skills/dignified-python-313/VERSION-CONTEXT.md",
-    ".erk/docs/kits/dignified-python/dignified-python-core.md",
-    ".erk/docs/kits/dignified-python/type-annotations-common.md",
-    ".erk/docs/kits/dignified-python/version-specific/310/type-annotations.md",
-    ".erk/docs/kits/dignified-python/version-specific/310/checklist.md",
-    ".erk/docs/kits/dignified-python/version-specific/311/type-annotations.md",
-    ".erk/docs/kits/dignified-python/version-specific/311/checklist.md",
-    ".erk/docs/kits/dignified-python/version-specific/312/type-annotations.md",
-    ".erk/docs/kits/dignified-python/version-specific/312/checklist.md",
-    ".erk/docs/kits/dignified-python/version-specific/313/type-annotations-delta.md",
-    ".erk/docs/kits/dignified-python/version-specific/313/checklist.md",
-]
+
+[kits.dignified-python.artifacts]
+".claude/skills/dignified-python-310/SKILL.md" = "sha256:84862a3332d217f5c5599298ceb05c8b942cb20baa6930882a892cf73edb19d9"
+".claude/skills/dignified-python-310/VERSION-CONTEXT.md" = "sha256:746b98c842584a7d1f59f28fdb496ecda1e6cab5c276028e0e9bef6e47853696"
+".claude/skills/dignified-python-311/SKILL.md" = "sha256:e7f6dbb13d031ba9e20de0671b4521a82b640a7e8ecca0db5a720d8ba6de6eae"
+".claude/skills/dignified-python-311/VERSION-CONTEXT.md" = "sha256:c7ecb95ab027c52360ee18a85e504998b14dddd80a1aa9312091825d539643df"
+".claude/skills/dignified-python-312/SKILL.md" = "sha256:56bc9caa361e718066e78634e3c0d89824ec302968735e323dc16f9e6f8ec9ec"
+".claude/skills/dignified-python-312/VERSION-CONTEXT.md" = "sha256:5bd8195ca15325755f191431f49eed09cc415f24f5cef7b99c2a40a6bb2fad99"
+".claude/skills/dignified-python-313/SKILL.md" = "sha256:6017c439a2b75602905ef2b24c667e99ff9782dd6c4e8ea809f804c615f58404"
+".claude/skills/dignified-python-313/VERSION-CONTEXT.md" = "sha256:5830a3af08b3687a28d48c384c1f10cab2c37b8d12a72c4c0b85631832633dd4"
+".erk/docs/kits/dignified-python/dignified-python-core.md" = "sha256:a998cb134807db64936010bce35ee90d6386f993676694c772eae51db21856e4"
+".erk/docs/kits/dignified-python/type-annotations-common.md" = "sha256:6c55d4260cb7af8e4473d82a819d8392c9c57af7f418a11466ee4eab982d26f7"
+".erk/docs/kits/dignified-python/version-specific/310/type-annotations.md" = "sha256:f5d355c4a788dbcdac5f0afef0192e5c9a049cf6a5e84f18fae361b82d1af5c4"
+".erk/docs/kits/dignified-python/version-specific/310/checklist.md" = "sha256:ea138d69c48c7a4511b75e626d87d67345ae76d8111847daa55ec95e2003f944"
+".erk/docs/kits/dignified-python/version-specific/311/type-annotations.md" = "sha256:692b0ac0f6b2701dd6634ef2266d2d7d134e6d7971fb57e61705added02cee3d"
+".erk/docs/kits/dignified-python/version-specific/311/checklist.md" = "sha256:85783f5be163d1158b40d594787d24e311619f788f62037d7005e9b5345a47a9"
+".erk/docs/kits/dignified-python/version-specific/312/type-annotations.md" = "sha256:94887620f5449f06e5e3e35d14f4711e6cef7e3bcf7f210b2af51d6506cc973e"
+".erk/docs/kits/dignified-python/version-specific/312/checklist.md" = "sha256:a482fe3ac8cbad2775ced24d0f6938484d7807908f46840877945e63b5fef26a"
+".erk/docs/kits/dignified-python/version-specific/313/type-annotations-delta.md" = "sha256:989bae4d116d2fea6e072ffde77ec534c06878376b5e5e5585a4a0ffe0fb754f"
+".erk/docs/kits/dignified-python/version-specific/313/checklist.md" = "sha256:c11d3a853355142be3bffcbffc12d9fa082e1581195135078643b2e2d716fed7"
 
 [[kits.dignified-python.hooks]]
 id = "version-aware-reminder-hook"
@@ -131,16 +131,16 @@ timeout = 30
 kit_id = "fake-driven-testing"
 source_type = "bundled"
 version = "0.2.7"
-artifacts = [
-    ".claude/skills/fake-driven-testing/SKILL.md",
-    ".claude/skills/fake-driven-testing/references/anti-patterns.md",
-    ".claude/skills/fake-driven-testing/references/gateway-architecture.md",
-    ".claude/skills/fake-driven-testing/references/patterns.md",
-    ".claude/skills/fake-driven-testing/references/python-specific.md",
-    ".claude/skills/fake-driven-testing/references/quick-reference.md",
-    ".claude/skills/fake-driven-testing/references/testing-strategy.md",
-    ".claude/skills/fake-driven-testing/references/workflows.md",
-]
+
+[kits.fake-driven-testing.artifacts]
+".claude/skills/fake-driven-testing/SKILL.md" = "sha256:7f10fda46e71b8ee6281bdf5b906f0724d21226d885730bbe5fe4b6ab7049baa"
+".claude/skills/fake-driven-testing/references/anti-patterns.md" = "sha256:e7aad73d6e84e4bcf53163fe182ada2c4391e25adb50b3340dd7ee5addffb034"
+".claude/skills/fake-driven-testing/references/gateway-architecture.md" = "sha256:bb6dd41b6b3134789c617da6a3f6e7c28dfdb8577ad88a8fe2d86b9e185ff431"
+".claude/skills/fake-driven-testing/references/patterns.md" = "sha256:0fdb994f9edb7d8d9d8d3cf0ee4d302d14c5ffa30351df768771162a68879b87"
+".claude/skills/fake-driven-testing/references/python-specific.md" = "sha256:f2423720a43656fdfb8f55fe5f286949f7ece797c83e77264e04a0c11fcfadf3"
+".claude/skills/fake-driven-testing/references/quick-reference.md" = "sha256:dbdb60f4e73e177af28a1b69ba193fe9940c81d8fb93e131337355d8a7a215c6"
+".claude/skills/fake-driven-testing/references/testing-strategy.md" = "sha256:4666267bb1aa2f48c9c377f517e661c00d0e5a61c5e567a69e1b9c48736ebd04"
+".claude/skills/fake-driven-testing/references/workflows.md" = "sha256:2bc120151a269e4fdbdcfe8e3a9b71db13727b63c43d6c7cdf82131bbe369420"
 
 [[kits.fake-driven-testing.hooks]]
 id = "fake-driven-testing-reminder-hook"
@@ -149,3 +149,10 @@ matcher = "*.py"
 invocation = "erk kit exec fake-driven-testing fake-driven-testing-reminder-hook"
 description = "Output fake-driven-testing reminder when Python files are in context"
 timeout = 30
+
+[kits.command]
+kit_id = "command"
+source_type = "bundled"
+version = "0.2.7"
+
+[kits.command.artifacts]

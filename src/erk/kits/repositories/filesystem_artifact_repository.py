@@ -48,7 +48,7 @@ class FilesystemArtifactRepository(ArtifactRepository):
         # Map of artifact paths to installed kits for tracking managed status
         managed_artifacts: dict[str, InstalledKit] = {}
         for kit in config.kits.values():
-            for artifact_path in kit.artifacts:
+            for artifact_path in kit.artifacts.keys():
                 managed_artifacts[artifact_path] = kit
 
         # Scan skills directory
@@ -346,7 +346,7 @@ class FilesystemArtifactRepository(ArtifactRepository):
         # Map of artifact paths to installed kits for tracking managed status
         managed_artifacts: dict[str, InstalledKit] = {}
         for kit in config.kits.values():
-            for artifact_path in kit.artifacts:
+            for artifact_path in kit.artifacts.keys():
                 managed_artifacts[artifact_path] = kit
 
         # Scan skills directory

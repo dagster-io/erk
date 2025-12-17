@@ -39,7 +39,7 @@ def _remove_kit_impl(kit_id: str) -> None:
     removed_count = 0
     failed_count = 0
 
-    for artifact_path in installed.artifacts:
+    for artifact_path in installed.artifacts.keys():
         artifact_file = project_dir / artifact_path
         if artifact_file.exists():
             artifact_file.unlink()

@@ -2,7 +2,6 @@
 
 import click
 
-from erk.cli.commands.dev.kit_build import kit_build
 from erk.cli.commands.dev.kit_check import kit_check
 
 
@@ -16,5 +15,4 @@ def dev_group() -> None:
 
 
 # Register dev commands
-dev_group.add_command(kit_build)
 dev_group.add_command(kit_check)

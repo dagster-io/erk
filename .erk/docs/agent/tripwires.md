@@ -47,10 +47,6 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before using Path.cwd() in kit CLI commands** → Read [Kit CLI Dependency Injection Patterns](kits/dependency-injection.md) first. Use require_cwd(ctx) instead. Path.cwd() bypasses dependency injection and makes tests require monkeypatching.
 
-**CRITICAL: Before editing artifacts without running kit-build** → Read [Kit Artifact Build System](kits/dev/artifact-management.md) first. After editing source files (.claude/, .erk/docs/kits/, .github/), run `erk dev kit-build` to sync changes to kit packages.
-
-**CRITICAL: Before editing artifact files in kit packages instead of source locations** → Read [Kit Artifact Build System](kits/dev/artifact-management.md) first. Kit packages are BUILD OUTPUTS. Edit source files in .claude/, .erk/docs/kits/, or .github/workflows/, then run `erk dev kit-build`.
-
 **CRITICAL: Before modifying kit install/update logic** → Read [Kit Install Architecture](kits/install-architecture.md) first. Understand the idempotent design and atomic hook updates. The install command handles both fresh installs and updates with rollback on failure.
 
 **CRITICAL: Before writing to /tmp/** → Read [Scratch Storage](planning/scratch-storage.md) first. AI workflow files belong in .erk/scratch/<session-id>/, NOT /tmp/.

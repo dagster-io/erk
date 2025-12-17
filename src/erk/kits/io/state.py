@@ -153,11 +153,21 @@ def load_project_config(project_dir: Path) -> ProjectConfig | None:
                 raise KeyError(msg)
             source_type = kit_data["source_type"]
 
+            # Handle artifacts - support both legacy list format and new dict format
+            raw_artifacts = kit_data["artifacts"]
+            if isinstance(raw_artifacts, list):
+                # Legacy format: list of paths without hashes
+                # Convert to dict with empty hashes (triggers reinstall)
+                artifacts_dict = {path: "" for path in raw_artifacts}
+            else:
+                # New format: dict of path → hash
+                artifacts_dict = raw_artifacts
+
             kits[kit_name] = InstalledKit(
                 kit_id=kit_id,
                 source_type=source_type,
                 version=kit_data["version"],
-                artifacts=kit_data["artifacts"],
+                artifacts=artifacts_dict,
                 hooks=hooks,
             )
 
@@ -205,11 +215,11 @@ def save_project_config(project_dir: Path, config: ProjectConfig) -> None:
     }
 
     for kit_id, kit in config.kits.items():
-        kit_data = {
+        kit_data: dict[str, object] = {
             "kit_id": kit.kit_id,
             "source_type": kit.source_type,
             "version": kit.version,
-            "artifacts": kit.artifacts,
+            "artifacts": kit.artifacts,  # dict[str, str] - TOML nested table
         }
 
         # Add hooks if present
