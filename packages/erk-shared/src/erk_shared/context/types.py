@@ -71,6 +71,7 @@ class GlobalConfig:
     show_pr_info: bool
     github_planning: bool
     auto_restack_skip_dangerous: bool = False
+    show_release_notes: bool = True
 
     @staticmethod
     def test(
@@ -81,6 +82,7 @@ class GlobalConfig:
         show_pr_info: bool = True,
         github_planning: bool = True,
         auto_restack_skip_dangerous: bool = False,
+        show_release_notes: bool = True,
     ) -> "GlobalConfig":
         """Create a GlobalConfig with sensible test defaults."""
         return GlobalConfig(
@@ -90,6 +92,7 @@ class GlobalConfig:
             show_pr_info=show_pr_info,
             github_planning=github_planning,
             auto_restack_skip_dangerous=auto_restack_skip_dangerous,
+            show_release_notes=show_release_notes,
         )
 
 

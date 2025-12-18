@@ -280,6 +280,7 @@ def context_for_test(
             shell_setup_complete=False,
             show_pr_info=True,
             github_planning=True,
+            show_release_notes=True,
         )
 
     if config_store is None:
