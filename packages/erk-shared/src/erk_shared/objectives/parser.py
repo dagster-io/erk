@@ -43,6 +43,35 @@ from erk_shared.objectives.types import (
 )
 
 
+def _mask_code_blocks(content: str) -> tuple[str, dict[str, str]]:
+    """Replace fenced code blocks with placeholders to prevent # comments matching as headings.
+
+    Code blocks can contain lines starting with # (like bash comments) that would
+    otherwise be incorrectly matched as markdown headings by the section extraction
+    regex.
+
+    Returns:
+        Tuple of (masked content, placeholder->original mapping)
+    """
+    placeholders: dict[str, str] = {}
+
+    def replace(match: re.Match[str]) -> str:
+        key = f"__CODE_BLOCK_{len(placeholders)}__"
+        placeholders[key] = match.group(0)
+        return key
+
+    masked = re.sub(r"```.*?```", replace, content, flags=re.DOTALL)
+    return masked, placeholders
+
+
+def _unmask_code_blocks(content: str, placeholders: dict[str, str]) -> str:
+    """Restore code blocks from placeholders."""
+    result = content
+    for key, code in placeholders.items():
+        result = result.replace(key, code)
+    return result
+
+
 def _extract_section(content: str, heading: str, level: int = 2) -> str | None:
     """Extract content under a markdown heading.
 
@@ -54,13 +83,19 @@ def _extract_section(content: str, heading: str, level: int = 2) -> str | None:
     Returns:
         Section content (trimmed), or None if not found
     """
+    # Mask code blocks to prevent # comments from matching as headings
+    masked, placeholders = _mask_code_blocks(content)
+
     prefix = "#" * level
     # Pattern: heading followed by content until next heading of same or higher level
     pattern = rf"^{prefix}\s+{re.escape(heading)}\s*\n(.*?)(?=^#{{{1},{level}}}\s|\Z)"
-    match = re.search(pattern, content, re.MULTILINE | re.DOTALL)
+    match = re.search(pattern, masked, re.MULTILINE | re.DOTALL)
     if match is None:
         return None
-    return match.group(1).strip()
+
+    # Restore code blocks in the extracted section
+    section = match.group(1).strip()
+    return _unmask_code_blocks(section, placeholders)
 
 
 def _extract_subsection(content: str, heading: str) -> str | None:
