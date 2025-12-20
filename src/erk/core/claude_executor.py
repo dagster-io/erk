@@ -17,6 +17,7 @@ from pathlib import Path
 # Re-export ABC and types from erk_shared.core for backward compatibility
 from erk_shared.core.claude_executor import ClaudeEvent as ClaudeEvent
 from erk_shared.core.claude_executor import ClaudeExecutor as ClaudeExecutor
+from erk_shared.core.claude_executor import InteractiveMode as InteractiveMode
 from erk_shared.core.claude_executor import CommandResult as CommandResult
 from erk_shared.core.claude_executor import ErrorEvent as ErrorEvent
 from erk_shared.core.claude_executor import IssueNumberEvent as IssueNumberEvent
@@ -393,7 +394,7 @@ class RealClaudeExecutor(ClaudeExecutor):
     def execute_interactive(
         self,
         worktree_path: Path,
-        dangerous: bool,
+        mode: InteractiveMode,
         command: str,
         target_subpath: Path | None,
     ) -> None:
@@ -426,10 +427,14 @@ class RealClaudeExecutor(ClaudeExecutor):
         else:
             os.chdir(worktree_path)
 
-        # Build command arguments
-        cmd_args = ["claude", "--permission-mode", "acceptEdits"]
-        if dangerous:
-            cmd_args.append("--dangerously-skip-permissions")
+        # Build command arguments based on mode
+        if mode == "plan":
+            cmd_args = ["claude", "--permission-mode", "plan"]
+        elif mode == "dangerous":
+            cmd_args = ["claude", "--permission-mode", "acceptEdits", "--dangerously-skip-permissions"]
+        else:
+            # mode == "default"
+            cmd_args = ["claude", "--permission-mode", "acceptEdits"]
         cmd_args.append(command)
 
         # Redirect stdin/stdout/stderr to /dev/tty only if they are not already TTYs.

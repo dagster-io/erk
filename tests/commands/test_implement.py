@@ -1033,10 +1033,10 @@ def test_interactive_mode_calls_executor() -> None:
         assert len(executor.interactive_calls) == 1
         assert len(executor.executed_commands) == 0
 
-        worktree_path, dangerous, command, target_subpath = executor.interactive_calls[0]
+        worktree_path, mode, command, target_subpath = executor.interactive_calls[0]
         # Branch name: sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
         assert "42-add-authentication-feature-01-15-1430" in str(worktree_path)
-        assert dangerous is False
+        assert mode == "default"
         assert command == "/erk:plan-implement"
         # No relative path preservation when running from worktree root
         assert target_subpath is None
@@ -1063,8 +1063,8 @@ def test_interactive_mode_with_dangerous_flag() -> None:
 
         # Verify dangerous flag was passed to execute_interactive
         assert len(executor.interactive_calls) == 1
-        worktree_path, dangerous, command, target_subpath = executor.interactive_calls[0]
-        assert dangerous is True
+        worktree_path, mode, command, target_subpath = executor.interactive_calls[0]
+        assert mode == "dangerous"
         assert command == "/erk:plan-implement"
 
 
@@ -1091,9 +1091,9 @@ def test_interactive_mode_from_plan_file() -> None:
 
         # Verify execute_interactive was called
         assert len(executor.interactive_calls) == 1
-        worktree_path, dangerous, command, target_subpath = executor.interactive_calls[0]
+        worktree_path, mode, command, target_subpath = executor.interactive_calls[0]
         assert "my-feature" in str(worktree_path)
-        assert dangerous is False
+        assert mode == "default"
         assert command == "/erk:plan-implement"
 
         # Verify plan file was deleted (moved to worktree)
@@ -1516,8 +1516,8 @@ def test_interactive_mode_preserves_relative_path_from_subdirectory() -> None:
 
         # Verify execute_interactive was called with relative path
         assert len(executor.interactive_calls) == 1
-        worktree_path, dangerous, command, target_subpath = executor.interactive_calls[0]
-        assert dangerous is False
+        worktree_path, mode, command, target_subpath = executor.interactive_calls[0]
+        assert mode == "default"
         assert command == "/erk:plan-implement"
         # The relative path from worktree root to src/lib should be passed
         assert target_subpath == Path("src/lib")
@@ -1550,7 +1550,7 @@ def test_interactive_mode_no_relative_path_from_worktree_root() -> None:
 
         # Verify target_subpath is None when at worktree root
         assert len(executor.interactive_calls) == 1
-        worktree_path, dangerous, command, target_subpath = executor.interactive_calls[0]
+        worktree_path, mode, command, target_subpath = executor.interactive_calls[0]
         assert target_subpath is None
 
 
@@ -1589,7 +1589,7 @@ def test_interactive_mode_preserves_relative_path_from_plan_file() -> None:
 
         # Verify execute_interactive was called with relative path
         assert len(executor.interactive_calls) == 1
-        worktree_path, dangerous, command, target_subpath = executor.interactive_calls[0]
+        worktree_path, mode, command, target_subpath = executor.interactive_calls[0]
         assert target_subpath == Path("docs")
 
 
