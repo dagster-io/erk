@@ -58,7 +58,9 @@ class FakeClaudeExecutor(ClaudeExecutor):
 
         # Test interactive execution
         >>> executor = FakeClaudeExecutor(claude_available=True)
-        >>> executor.execute_interactive(Path("/repo"), mode="default", command="/cmd", target_subpath=None)
+        >>> executor.execute_interactive(
+        ...     Path("/repo"), mode="default", command="/cmd", target_subpath=None
+        ... )
         >>> assert len(executor.interactive_calls) == 1
     """
 

@@ -17,9 +17,9 @@ from pathlib import Path
 # Re-export ABC and types from erk_shared.core for backward compatibility
 from erk_shared.core.claude_executor import ClaudeEvent as ClaudeEvent
 from erk_shared.core.claude_executor import ClaudeExecutor as ClaudeExecutor
-from erk_shared.core.claude_executor import InteractiveMode as InteractiveMode
 from erk_shared.core.claude_executor import CommandResult as CommandResult
 from erk_shared.core.claude_executor import ErrorEvent as ErrorEvent
+from erk_shared.core.claude_executor import InteractiveMode as InteractiveMode
 from erk_shared.core.claude_executor import IssueNumberEvent as IssueNumberEvent
 from erk_shared.core.claude_executor import NoOutputEvent as NoOutputEvent
 from erk_shared.core.claude_executor import NoTurnsEvent as NoTurnsEvent
@@ -431,7 +431,12 @@ class RealClaudeExecutor(ClaudeExecutor):
         if mode == "plan":
             cmd_args = ["claude", "--permission-mode", "plan"]
         elif mode == "dangerous":
-            cmd_args = ["claude", "--permission-mode", "acceptEdits", "--dangerously-skip-permissions"]
+            cmd_args = [
+                "claude",
+                "--permission-mode",
+                "acceptEdits",
+                "--dangerously-skip-permissions",
+            ]
         else:
             # mode == "default"
             cmd_args = ["claude", "--permission-mode", "acceptEdits"]
