@@ -295,7 +295,7 @@ class TestGenerateCompressedXml:
         assert "<assistant>Here is my answer</assistant>" in result
 
     def test_includes_usage_metadata(self) -> None:
-        """Usage metadata is included in output."""
+        """Usage metadata is included in output - all fields passed through."""
         entries = [
             {
                 "type": "assistant",
@@ -310,9 +310,30 @@ class TestGenerateCompressedXml:
             },
         ]
         result = generate_compressed_xml(entries)
-        assert 'input="100"' in result
-        assert 'output="50"' in result
-        assert 'cache_read="25"' in result
+        # Fields passed through with original names (blacklist approach)
+        assert 'input_tokens="100"' in result
+        assert 'output_tokens="50"' in result
+        assert 'cache_read_input_tokens="25"' in result
+
+    def test_usage_passes_through_unknown_fields(self) -> None:
+        """New usage fields are passed through (blacklist approach)."""
+        entries = [
+            {
+                "type": "assistant",
+                "message": {
+                    "content": [{"type": "text", "text": "Hi"}],
+                    "usage": {
+                        "input_tokens": 100,
+                        "future_field": 999,
+                        "service_tier": "standard",
+                    },
+                },
+            },
+        ]
+        result = generate_compressed_xml(entries)
+        assert 'input_tokens="100"' in result
+        assert 'future_field="999"' in result
+        assert 'service_tier="standard"' in result
 
     def test_includes_timestamp_on_user(self) -> None:
         """User entries include timestamp attribute."""
@@ -367,6 +388,29 @@ class TestGenerateCompressedXml:
         ]
         result = generate_compressed_xml(entries)
         assert 'duration_ms="1500"' in result
+
+    def test_tool_result_passes_through_all_metadata(self) -> None:
+        """All toolUseResult fields are passed through (blacklist approach)."""
+        entries = [
+            {
+                "type": "tool_result",
+                "message": {
+                    "tool_use_id": "tool123",
+                    "content": [{"type": "text", "text": "Success"}],
+                },
+                "toolUseResult": {
+                    "durationMs": 1500,
+                    "stdout": "output text",
+                    "exitCode": 0,
+                    "futureField": "new value",
+                },
+            },
+        ]
+        result = generate_compressed_xml(entries)
+        assert 'duration_ms="1500"' in result
+        assert 'stdout="output text"' in result
+        assert 'exit_code="0"' in result
+        assert 'future_field="new value"' in result
 
 
 class TestProcessLogFile:

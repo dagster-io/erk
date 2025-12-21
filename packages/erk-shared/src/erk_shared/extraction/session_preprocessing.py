@@ -122,19 +122,17 @@ class SessionXmlWriter:
         """Write a thinking element containing assistant's reasoning."""
         self._lines.append(f"  <thinking>{self._escape(text)}</thinking>")
 
-    def usage(
-        self,
-        input_tokens: int | None = None,
-        output_tokens: int | None = None,
-        cache_read: int | None = None,
-        cache_creation: int | None = None,
-    ) -> None:
-        """Write a usage metadata element."""
+    def usage(self, usage_data: dict) -> None:
+        """Write a usage metadata element with all fields from the usage dict.
+
+        Uses blacklist approach - passes through all fields except known nested objects.
+        """
+        if not usage_data:
+            return
+        # Exclude nested objects that don't serialize well to attributes
+        excluded = {"cache_creation"}  # Nested object with ephemeral token breakdowns
         attrs = self._format_attrs(
-            input=input_tokens,
-            output=output_tokens,
-            cache_read=cache_read,
-            cache_creation=cache_creation,
+            **{k: v for k, v in usage_data.items() if k not in excluded and v is not None}
         )
         if attrs:
             self._lines.append(f"  <usage {attrs} />")
@@ -153,14 +151,26 @@ class SessionXmlWriter:
         tool_id: str,
         content: str,
         is_error: bool = False,
-        duration_ms: int | None = None,
+        tool_use_result: dict | None = None,
     ) -> None:
-        """Write a tool_result element with optional error flag and duration."""
+        """Write a tool_result element with all metadata from toolUseResult.
+
+        Uses blacklist approach - passes through all fields from toolUseResult.
+        """
         attrs = [f'tool="{self._escape(tool_id)}"']
         if is_error:
             attrs.append('is_error="true"')
-        if duration_ms is not None:
-            attrs.append(f'duration_ms="{duration_ms}"')
+
+        # Pass through all toolUseResult metadata
+        if tool_use_result:
+            for key, value in tool_use_result.items():
+                if value is not None:
+                    # Convert camelCase to snake_case for XML consistency
+                    xml_key = "".join(f"_{c.lower()}" if c.isupper() else c for c in key).lstrip(
+                        "_"
+                    )
+                    attrs.append(f'{xml_key}="{self._escape(str(value))}"')
+
         attr_str = " ".join(attrs)
         self._lines.append(f"  <tool_result {attr_str}>")
         self._lines.append(self._escape(content))
@@ -278,29 +288,23 @@ def generate_compressed_xml(entries: list[dict], source_label: str | None = None
                         params={k: str(v) for k, v in block.get("input", {}).items()},
                     )
 
-            # Output usage metadata if present
+            # Output usage metadata if present (blacklist approach - pass all fields)
             usage = message.get("usage", {})
             if usage:
-                writer.usage(
-                    input_tokens=usage.get("input_tokens"),
-                    output_tokens=usage.get("output_tokens"),
-                    cache_read=usage.get("cache_read_input_tokens"),
-                    cache_creation=usage.get("cache_creation_input_tokens"),
-                )
+                writer.usage(usage)
 
         elif entry_type == "tool_result":
             content = _extract_tool_result_content(message)
             is_error = _extract_is_error_from_tool_result(message)
 
-            # Extract duration from toolUseResult if available
-            tool_use_result = entry.get("toolUseResult", {})
-            duration_ms = tool_use_result.get("durationMs") if tool_use_result else None
+            # Pass through entire toolUseResult (blacklist approach)
+            tool_use_result = entry.get("toolUseResult")
 
             writer.tool_result(
                 tool_id=message.get("tool_use_id", ""),
                 content=compact_whitespace(content),
                 is_error=is_error,
-                duration_ms=duration_ms,
+                tool_use_result=tool_use_result,
             )
 
     return writer.finish()
