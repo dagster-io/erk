@@ -24,7 +24,7 @@ def get_global_config_keys() -> dict[str, str]:
         "use_graphite": "Enable Graphite integration for stack management",
         "show_pr_info": "Show PR status in branch listings",
         "github_planning": "Enable GitHub issues integration for planning",
-        "auto_restack_require_dangerous_flag": "Require --dangerous flag for auto-restack (default: true)",
+        "auto_restack_require_dangerous_flag": "Require --dangerous flag for auto-restack",
         "show_hidden_commands": "Show deprecated/hidden commands in help output",
     }
 

@@ -55,7 +55,7 @@ def pr_auto_restack(ctx: ErkContext, *, dangerous: bool) -> None:
         if require_flag:
             raise click.UsageError(
                 "Missing option '--dangerous'.\n"
-                "To disable this requirement: erk config set auto_restack_require_dangerous_flag false"
+                "To disable: erk config set auto_restack_require_dangerous_flag false"
             )
     cwd = ctx.cwd
 

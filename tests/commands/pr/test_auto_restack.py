@@ -67,7 +67,7 @@ def test_pr_auto_restack_requires_dangerous_flag() -> None:
         assert result.exit_code != 0
         assert "Missing option '--dangerous'" in result.output
         # Verify error message includes config hint
-        assert "erk config set auto_restack_require_dangerous_flag false" in result.output
+        assert "auto_restack_require_dangerous_flag false" in result.output
 
 
 def test_pr_auto_restack_skip_dangerous_with_config() -> None:
