@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+As of c8c0246eb
+
+### Changed
+
+- Move `/erk:pr-submit` command from gt kit to erk kit for unified workflow control (c8c0246eb)
+
+### Fixed
+
+- Fix Bun crash when launching Claude Code CLI by conditionally redirecting to /dev/tty only when needed (b37e59b2b)
+
 ## [0.2.7] - 2025-12-15 06:59 PT
 
 ### Major Changes
