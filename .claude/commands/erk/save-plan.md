@@ -33,7 +33,7 @@ erk kit exec erk plan-save-to-issue --format display --session-id="<session-id-f
 
 ### Step 3: Display Results
 
-On success, display the URL to the user along with the suggested next steps from the output.
+On success, display the command output verbatim. Do not summarize, reorder, or rewrite the next steps.
 
 On failure, display the error message and suggest:
 
