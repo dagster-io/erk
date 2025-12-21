@@ -216,6 +216,10 @@ class TestHookIntegration:
         with (
             patch("erk.kits.hooks.decorators.is_in_managed_project", return_value=True),
             patch("subprocess.run", return_value=mock_git_result),
+            patch(
+                "erk_kits.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
+                return_value=[],
+            ),
         ):
             stdin_data = json.dumps({"session_id": session_id})
             result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
@@ -242,6 +246,10 @@ class TestHookIntegration:
         with (
             patch("erk.kits.hooks.decorators.is_in_managed_project", return_value=True),
             patch("subprocess.run", return_value=mock_git_result),
+            patch(
+                "erk_kits.data.kits.erk.scripts.erk.exit_plan_mode_hook.extract_slugs_from_session",
+                return_value=[],
+            ),
         ):
             stdin_data = json.dumps({"session_id": session_id})
             result = runner.invoke(exit_plan_mode_hook, input=stdin_data)

@@ -1,6 +1,6 @@
-import os
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
@@ -426,16 +426,15 @@ def test_hidden_shell_cmd_checkout_error_no_passthrough(tmp_path: Path) -> None:
     Note: The 'create' top-level alias was removed. Now testing the 'checkout'
     command error behavior instead, which is still active in shell integration.
     """
-    # Set up isolated environment without erk config
-    # This ensures create_context() won't find a real repo
-    env_vars = os.environ.copy()
-    env_vars["HOME"] = str(tmp_path)
+    runner = CliRunner()
 
-    runner = CliRunner(env=env_vars)
+    # Mock subprocess.run to simulate command failure without spawning real subprocess
+    mock_result = MagicMock()
+    mock_result.returncode = 1
+    mock_result.stdout = ""
 
-    # Create isolated filesystem without git repo or config
-    with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Try to checkout without any setup - should error
+    with patch("erk.cli.shell_integration.handler.subprocess.run", return_value=mock_result):
+        # Try to checkout - subprocess mock returns failure
         result = runner.invoke(hidden_shell_cmd, ["checkout", "test-branch"])
 
         # Should fail with non-zero exit code but NOT passthrough

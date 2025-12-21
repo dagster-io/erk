@@ -2,8 +2,10 @@
 
 import os
 from pathlib import Path
+from unittest.mock import patch
 
-from erk.core.context import create_context, regenerate_context
+from erk.core.context import context_for_test, create_context, regenerate_context
+from erk_shared.git.fake import FakeGit
 
 
 def test_regenerate_context_updates_cwd(tmp_path: Path) -> None:
@@ -31,10 +33,15 @@ def test_regenerate_context_updates_cwd(tmp_path: Path) -> None:
 
 def test_regenerate_context_preserves_dry_run(tmp_path: Path) -> None:
     """Test that regenerate_context preserves dry_run flag."""
-    ctx1 = create_context(dry_run=True)
+    # Use context_for_test to create a fast test context with dry_run=True
+    ctx1 = context_for_test(git=FakeGit(), cwd=tmp_path, dry_run=True)
     assert ctx1.dry_run is True
 
-    ctx2 = regenerate_context(ctx1)
+    # Mock create_context to return another test context instead of real one
+    ctx2_mock = context_for_test(git=FakeGit(), cwd=tmp_path, dry_run=True)
+    with patch("erk.core.context.create_context", return_value=ctx2_mock):
+        ctx2 = regenerate_context(ctx1)
+
     assert ctx2.dry_run is True  # Preserved
 
 
