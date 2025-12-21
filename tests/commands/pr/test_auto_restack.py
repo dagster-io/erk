@@ -67,11 +67,11 @@ def test_pr_auto_restack_requires_dangerous_flag() -> None:
         assert result.exit_code != 0
         assert "Missing option '--dangerous'" in result.output
         # Verify error message includes config hint
-        assert "erk config set auto_restack_skip_dangerous true" in result.output
+        assert "erk config set auto_restack_require_dangerous_flag false" in result.output
 
 
 def test_pr_auto_restack_skip_dangerous_with_config() -> None:
-    """Test that --dangerous flag is not required when config allows skipping."""
+    """Test that --dangerous flag is not required when config disables requirement."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
@@ -87,12 +87,12 @@ def test_pr_auto_restack_skip_dangerous_with_config() -> None:
         graphite = FakeGraphite()
         claude_executor = FakeClaudeExecutor(claude_available=True)
 
-        # Create GlobalConfig with auto_restack_skip_dangerous=True
+        # Create GlobalConfig with auto_restack_require_dangerous_flag=False
         from erk_shared.context.types import GlobalConfig
 
         global_config = GlobalConfig.test(
             env.erk_root,
-            auto_restack_skip_dangerous=True,  # Skip --dangerous requirement
+            auto_restack_require_dangerous_flag=False,  # Disable --dangerous requirement
         )
 
         ctx = build_workspace_test_context(
@@ -106,7 +106,7 @@ def test_pr_auto_restack_skip_dangerous_with_config() -> None:
         # Invoke WITHOUT --dangerous flag
         result = runner.invoke(pr_group, ["auto-restack"], obj=ctx)
 
-        # Should succeed without --dangerous when config allows
+        # Should succeed without --dangerous when config disables requirement
         assert result.exit_code == 0
         assert "Restack complete!" in result.output
 

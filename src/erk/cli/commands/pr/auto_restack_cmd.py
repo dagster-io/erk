@@ -45,17 +45,17 @@ def pr_auto_restack(ctx: ErkContext, *, dangerous: bool) -> None:
     To disable the --dangerous flag requirement:
 
     \b
-      erk config set auto_restack_skip_dangerous true
+      erk config set auto_restack_require_dangerous_flag false
     """
-    # Runtime validation: require --dangerous unless config allows skipping
+    # Runtime validation: require --dangerous unless config disables requirement
     if not dangerous:
-        skip_allowed = (
-            ctx.global_config is not None and ctx.global_config.auto_restack_skip_dangerous
+        require_flag = (
+            ctx.global_config is None or ctx.global_config.auto_restack_require_dangerous_flag
         )
-        if not skip_allowed:
+        if require_flag:
             raise click.UsageError(
                 "Missing option '--dangerous'.\n"
-                "To disable this requirement: erk config set auto_restack_skip_dangerous true"
+                "To disable this requirement: erk config set auto_restack_require_dangerous_flag false"
             )
     cwd = ctx.cwd
 
