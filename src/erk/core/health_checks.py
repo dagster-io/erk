@@ -15,8 +15,8 @@ from erk.core.claude_settings import (
     read_claude_settings,
 )
 from erk.core.context import ErkContext
-from erk.core.implementation_queue.github.abc import GitHubAdmin
 from erk.core.repo_discovery import RepoContext
+from erk_shared.github_admin.abc import GitHubAdmin
 from erk_shared.integrations.shell.abc import Shell
 
 
@@ -746,27 +746,17 @@ def _kit_command_exists(command: str) -> bool:
         return True  # Assume it exists if we can't check
 
 
-def run_all_checks(
-    ctx: ErkContext,
-    admin: GitHubAdmin | None = None,
-) -> list[CheckResult]:
+def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
     """Run all health checks and return results.
 
     Args:
-        ctx: ErkContext for repository checks
-        admin: GitHubAdmin implementation for GitHub API calls.
-               Defaults to RealGitHubAdmin if not provided.
+        ctx: ErkContext for repository checks (includes github_admin)
 
     Returns:
         List of CheckResult objects
     """
-    # Use RealGitHubAdmin if no admin provided
-    if admin is None:
-        from erk.core.implementation_queue.github.real import RealGitHubAdmin
-
-        admin = RealGitHubAdmin()
-
     shell = ctx.shell
+    admin = ctx.github_admin
 
     results = [
         check_erk_version(),

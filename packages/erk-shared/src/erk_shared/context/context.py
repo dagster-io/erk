@@ -27,6 +27,7 @@ from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues
 from erk_shared.github.types import RepoInfo
+from erk_shared.github_admin.abc import GitHubAdmin
 from erk_shared.integrations.completion import Completion
 from erk_shared.integrations.feedback import UserFeedback
 from erk_shared.integrations.graphite.abc import Graphite
@@ -62,6 +63,7 @@ class ErkContext:
     # Gateway integrations (from erk_shared)
     git: Git
     github: GitHub
+    github_admin: GitHubAdmin  # GitHub Actions admin operations
     issues: GitHubIssues  # Note: ErkContext naming (was github_issues in DotAgentContext)
     graphite: Graphite
     wt_stack: WtStack  # Unified worktree+stack operations (Graphite optional)

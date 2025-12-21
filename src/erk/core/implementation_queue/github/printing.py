@@ -2,8 +2,8 @@
 
 from typing import Any
 
-from erk.core.implementation_queue.github.abc import AuthStatus, GitHubAdmin
 from erk_shared.github.types import GitHubRepoLocation
+from erk_shared.github_admin.abc import AuthStatus, GitHubAdmin
 from erk_shared.printing.base import PrintingBase
 
 

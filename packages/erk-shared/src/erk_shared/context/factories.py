@@ -74,6 +74,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkConte
     from erk_shared.git.real import RealGit
     from erk_shared.github.issues import RealGitHubIssues
     from erk_shared.github.real import RealGitHub
+    from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.integrations.completion import FakeCompletion
     from erk_shared.integrations.feedback import SuppressedFeedback
     from erk_shared.integrations.graphite.fake import FakeGraphite
@@ -118,6 +119,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkConte
     return ErkContext(
         git=git,
         github=RealGitHub(time=RealTime(), repo_info=repo_info),
+        github_admin=FakeGitHubAdmin(),
         issues=RealGitHubIssues(),
         session_store=RealClaudeCodeSessionStore(),
         prompt_executor=RealPromptExecutor(),

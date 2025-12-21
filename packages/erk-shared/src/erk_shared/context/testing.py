@@ -70,6 +70,7 @@ def context_for_test(
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues import FakeGitHubIssues
+    from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.integrations.completion import FakeCompletion
     from erk_shared.integrations.feedback import FakeUserFeedback
     from erk_shared.integrations.graphite.fake import FakeGraphite
@@ -111,6 +112,7 @@ def context_for_test(
     return ErkContext(
         git=resolved_git,
         github=resolved_github,
+        github_admin=FakeGitHubAdmin(),
         issues=resolved_issues,
         session_store=resolved_session_store,
         prompt_executor=resolved_prompt_executor,

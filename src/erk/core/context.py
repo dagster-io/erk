@@ -14,6 +14,7 @@ from erk.cli.config import load_config
 from erk.core.claude_executor import RealClaudeExecutor
 from erk.core.completion import RealCompletion
 from erk.core.config_store import RealConfigStore
+from erk.core.implementation_queue.github.real import RealGitHubAdmin
 from erk.core.planner.registry_real import RealPlannerRegistry
 from erk.core.project_discovery import ProjectContext, discover_project
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
@@ -50,6 +51,7 @@ from erk_shared.github.issues import DryRunGitHubIssues, GitHubIssues, RealGitHu
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.real import RealGitHub
 from erk_shared.github.types import RepoInfo
+from erk_shared.github_admin.abc import GitHubAdmin
 
 # Import erk-specific integrations
 from erk_shared.integrations.completion import Completion
@@ -95,6 +97,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues import FakeGitHubIssues
+    from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.integrations.completion import FakeCompletion
     from erk_shared.integrations.feedback import FakeUserFeedback
     from erk_shared.integrations.graphite.fake import FakeGraphite
@@ -110,6 +113,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     return ErkContext(
         git=git,
         github=fake_github,
+        github_admin=FakeGitHubAdmin(),
         issues=fake_issues,
         plan_store=FakePlanStore(),
         graphite=fake_graphite,
@@ -140,6 +144,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
 def context_for_test(
     git: Git | None = None,
     github: GitHub | None = None,
+    github_admin: GitHubAdmin | None = None,
     issues: GitHubIssues | None = None,
     plan_store: PlanStore | None = None,
     graphite: Graphite | None = None,
@@ -210,6 +215,7 @@ def context_for_test(
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues import FakeGitHubIssues
+    from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.integrations.completion import FakeCompletion
     from erk_shared.integrations.feedback import FakeUserFeedback
     from erk_shared.integrations.graphite.dry_run import DryRunGraphite
@@ -225,6 +231,9 @@ def context_for_test(
 
     if github is None:
         github = FakeGitHub()
+
+    if github_admin is None:
+        github_admin = FakeGitHubAdmin()
 
     if issues is None:
         issues = FakeGitHubIssues()
@@ -306,6 +315,7 @@ def context_for_test(
     return ErkContext(
         git=git,
         github=github,
+        github_admin=github_admin,
         issues=issues,
         plan_store=plan_store,
         graphite=graphite,
@@ -516,6 +526,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     return ErkContext(
         git=git,
         github=github,
+        github_admin=RealGitHubAdmin(),
         issues=issues,
         plan_store=plan_store,
         graphite=graphite,
