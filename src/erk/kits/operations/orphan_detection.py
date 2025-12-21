@@ -50,7 +50,7 @@ _RESERVED_DIRS = {"local"}
 def _build_declared_directories(config: ProjectConfig | None) -> set[Path]:
     """Build set of directories declared by installed kits.
 
-    Each artifact path like ".claude/agents/erk/plan-extractor.md" contributes
+    Each artifact path like ".claude/agents/erk/issue-wt-creator.md" contributes
     all its parent directories under .claude/<type>/ to the set:
     - ".claude/agents/erk"
 

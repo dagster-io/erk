@@ -29,7 +29,7 @@ erk kit list
 The erk kit includes:
 
 - **Commands**: `/erk:plan-implement`, `/erk:save-plan`, `/erk:replan`, etc.
-- **Agents**: `issue-wt-creator`, `plan-extractor`
+- **Agents**: `issue-wt-creator`
 - **Workflows**: GitHub Actions templates for erk queue processing
 
 ### Step 3: Install Related Kits (Optional)

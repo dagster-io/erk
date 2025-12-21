@@ -3,9 +3,6 @@
 Layer 4: Business logic tests using realistic file fixtures.
 Tests the workflow of reading the most recent plan file and session-scoped
 plan extraction using realistic JSONL session logs.
-
-Note: The plan-extractor agent (not this module) is responsible for
-semantic validation that the plan matches conversation context.
 """
 
 import shutil
