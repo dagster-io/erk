@@ -63,6 +63,13 @@ def create_impl_folder(worktree_path: Path, plan_content: str, *, overwrite: boo
     progress_file = impl_folder / "progress.md"
     progress_file.write_text(progress_content, encoding="utf-8")
 
+    # Verify file integrity after creation
+    errors = validate_progress_schema(progress_file)
+    if errors:
+        # This should never happen if generate_progress_content is correct
+        msg = f"Generated invalid progress.md: {'; '.join(errors)}"
+        raise ValueError(msg)
+
     return impl_folder
 
 
@@ -193,6 +200,79 @@ def parse_progress_frontmatter(content: str) -> dict[str, Any] | None:
     return metadata
 
 
+def validate_progress_schema(progress_file: Path) -> list[str]:
+    """Validate progress.md schema and structure.
+
+    Validates that progress.md has valid YAML frontmatter with required fields
+    and internal consistency.
+
+    Args:
+        progress_file: Path to progress.md file
+
+    Returns:
+        List of error messages (empty if valid)
+    """
+    errors: list[str] = []
+
+    if not progress_file.exists():
+        return ["progress.md file not found"]
+
+    content = progress_file.read_text(encoding="utf-8")
+
+    try:
+        post = frontmatter.loads(content)
+    except yaml.YAMLError as e:
+        return [f"Invalid YAML: {e}"]
+
+    metadata = post.metadata
+
+    # Required fields
+    if "steps" not in metadata:
+        errors.append("Missing 'steps' field")
+    elif not isinstance(metadata["steps"], list):
+        errors.append("'steps' must be a list")
+    else:
+        # Validate step structure
+        for i, step in enumerate(metadata["steps"]):
+            if not isinstance(step, dict):
+                errors.append(f"Step {i + 1} must be an object")
+            elif "text" not in step:
+                errors.append(f"Step {i + 1} missing 'text' field")
+            elif "completed" not in step:
+                errors.append(f"Step {i + 1} missing 'completed' field")
+
+    if "total_steps" not in metadata:
+        errors.append("Missing 'total_steps' field")
+
+    if "completed_steps" not in metadata:
+        errors.append("Missing 'completed_steps' field")
+
+    # Consistency checks (only if no structural errors)
+    if not errors and "steps" in metadata:
+        steps = metadata["steps"]
+        total_steps = metadata["total_steps"]
+        completed_steps = metadata["completed_steps"]
+
+        # Type assertions for pyright (narrows types after YAML loading)
+        assert isinstance(steps, list)
+        assert isinstance(total_steps, int)
+        assert isinstance(completed_steps, int)
+
+        if total_steps != len(steps):
+            errors.append(
+                f"total_steps ({total_steps}) != len(steps) ({len(steps)})"
+            )
+
+        actual_completed = sum(1 for s in steps if s.get("completed"))
+        if completed_steps != actual_completed:
+            errors.append(
+                f"completed_steps ({completed_steps}) != "
+                f"actual count ({actual_completed})"
+            )
+
+    return errors
+
+
 def generate_progress_content(steps: list[str]) -> str:
     """Generate progress.md content with YAML front matter and checkboxes.
 
@@ -205,29 +285,24 @@ def generate_progress_content(steps: list[str]) -> str:
     Returns:
         Formatted progress markdown with front matter (including steps array) and checkboxes
     """
-    if not steps:
-        return "# Progress Tracking\n\nNo steps detected in plan.\n"
+    # Build steps array for YAML (even if empty)
+    steps_yaml = [{"text": step, "completed": False} for step in steps]
 
-    # Build steps array for YAML
-    steps_yaml = []
-    for step in steps:
-        steps_yaml.append({"text": step, "completed": False})
-
-    # Generate YAML front matter using frontmatter library
-    total_steps = len(steps)
     metadata = {
         "completed_steps": 0,
-        "total_steps": total_steps,
+        "total_steps": len(steps),
         "steps": steps_yaml,
     }
 
-    # Build markdown body with checkboxes (rendered from YAML)
-    body_lines = ["# Progress Tracking\n"]
-    for step in steps:
-        body_lines.append(f"- [ ] {step}")
-    body_lines.append("")  # Trailing newline
-
-    body = "\n".join(body_lines)
+    # Build markdown body
+    if not steps:
+        body = "# Progress Tracking\n\nNo steps detected in plan.\n"
+    else:
+        body_lines = ["# Progress Tracking\n"]
+        for step in steps:
+            body_lines.append(f"- [ ] {step}")
+        body_lines.append("")  # Trailing newline
+        body = "\n".join(body_lines)
 
     # Use frontmatter.dumps to create the full content
     post = frontmatter.Post(body, **metadata)

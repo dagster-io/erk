@@ -69,6 +69,9 @@ scripts:
   - name: check-impl
     path: scripts/erk/check_impl.py
     description: Check .impl/ folder structure and validate prerequisites
+  - name: check-progress
+    path: scripts/erk/check_progress.py
+    description: Validate progress.md YAML frontmatter schema and structure
   - name: validate-plan-content
     path: scripts/erk/validate_plan_content.py
     description: Validate plan content structure and quality from stdin

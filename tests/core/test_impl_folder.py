@@ -21,6 +21,7 @@ from erk_shared.impl_folder import (
     read_last_dispatched_run_id,
     read_plan_author,
     save_issue_reference,
+    validate_progress_schema,
 )
 
 
@@ -141,7 +142,13 @@ def test_create_impl_folder_with_nested_steps(tmp_path: Path) -> None:
 
 
 def test_create_impl_folder_empty_plan(tmp_path: Path) -> None:
-    """Test creating plan folder with empty or no-steps plan."""
+    """Test creating plan folder with empty or no-steps plan.
+
+    This is the fix for GitHub issue #3274: Empty plans must still generate
+    valid YAML frontmatter with steps: [], total_steps: 0, completed_steps: 0.
+    Previously, empty plans returned plain markdown without frontmatter,
+    causing mark_step to fail with "Progress file missing 'steps' array".
+    """
     plan_content = """# Empty Plan
 
 This plan has no numbered steps.
@@ -155,6 +162,18 @@ Just some text.
     # Should create progress.md with message about no steps
     assert progress_file.exists()
     assert "No steps detected" in progress_content
+
+    # Critical: Must still have valid YAML frontmatter
+    assert progress_content.startswith("---\n")
+    metadata = parse_progress_frontmatter(progress_content)
+    assert metadata is not None
+    assert metadata["steps"] == []
+    assert metadata["total_steps"] == 0
+    assert metadata["completed_steps"] == 0
+
+    # Schema validation should pass
+    errors = validate_progress_schema(progress_file)
+    assert errors == []
 
 
 def test_get_impl_path_exists(tmp_path: Path) -> None:
@@ -988,3 +1007,291 @@ worktree_name: test-worktree
     run_id = read_last_dispatched_run_id(impl_dir)
 
     assert run_id is None
+
+
+# ============================================================================
+# Progress Schema Validation Tests
+# ============================================================================
+
+
+def test_validate_progress_schema_valid_file(tmp_path: Path) -> None:
+    """Test validation passes for valid progress.md."""
+    progress_file = tmp_path / "progress.md"
+    progress_file.write_text(
+        """---
+completed_steps: 1
+total_steps: 3
+steps:
+  - text: '1. First step'
+    completed: true
+  - text: '2. Second step'
+    completed: false
+  - text: '3. Third step'
+    completed: false
+---
+
+# Progress Tracking
+""",
+        encoding="utf-8",
+    )
+
+    errors = validate_progress_schema(progress_file)
+
+    assert errors == []
+
+
+def test_validate_progress_schema_empty_steps(tmp_path: Path) -> None:
+    """Test validation passes for progress.md with empty steps array."""
+    progress_file = tmp_path / "progress.md"
+    progress_file.write_text(
+        """---
+completed_steps: 0
+total_steps: 0
+steps: []
+---
+
+# Progress Tracking
+
+No steps detected in plan.
+""",
+        encoding="utf-8",
+    )
+
+    errors = validate_progress_schema(progress_file)
+
+    assert errors == []
+
+
+def test_validate_progress_schema_file_not_found(tmp_path: Path) -> None:
+    """Test validation fails for missing file."""
+    progress_file = tmp_path / "progress.md"
+
+    errors = validate_progress_schema(progress_file)
+
+    assert errors == ["progress.md file not found"]
+
+
+def test_validate_progress_schema_invalid_yaml(tmp_path: Path) -> None:
+    """Test validation fails for invalid YAML."""
+    progress_file = tmp_path / "progress.md"
+    progress_file.write_text(
+        """---
+steps: [invalid yaml
+---
+
+# Progress
+""",
+        encoding="utf-8",
+    )
+
+    errors = validate_progress_schema(progress_file)
+
+    assert len(errors) == 1
+    assert "Invalid YAML" in errors[0]
+
+
+def test_validate_progress_schema_missing_steps_field(tmp_path: Path) -> None:
+    """Test validation fails when steps field is missing."""
+    progress_file = tmp_path / "progress.md"
+    progress_file.write_text(
+        """---
+completed_steps: 0
+total_steps: 0
+---
+
+# Progress
+""",
+        encoding="utf-8",
+    )
+
+    errors = validate_progress_schema(progress_file)
+
+    assert "Missing 'steps' field" in errors
+
+
+def test_validate_progress_schema_steps_not_list(tmp_path: Path) -> None:
+    """Test validation fails when steps is not a list."""
+    progress_file = tmp_path / "progress.md"
+    progress_file.write_text(
+        """---
+completed_steps: 0
+total_steps: 0
+steps: "not a list"
+---
+
+# Progress
+""",
+        encoding="utf-8",
+    )
+
+    errors = validate_progress_schema(progress_file)
+
+    assert "'steps' must be a list" in errors
+
+
+def test_validate_progress_schema_step_missing_text(tmp_path: Path) -> None:
+    """Test validation fails when step is missing text field."""
+    progress_file = tmp_path / "progress.md"
+    progress_file.write_text(
+        """---
+completed_steps: 0
+total_steps: 1
+steps:
+  - completed: false
+---
+
+# Progress
+""",
+        encoding="utf-8",
+    )
+
+    errors = validate_progress_schema(progress_file)
+
+    assert "Step 1 missing 'text' field" in errors
+
+
+def test_validate_progress_schema_step_missing_completed(tmp_path: Path) -> None:
+    """Test validation fails when step is missing completed field."""
+    progress_file = tmp_path / "progress.md"
+    progress_file.write_text(
+        """---
+completed_steps: 0
+total_steps: 1
+steps:
+  - text: '1. Step'
+---
+
+# Progress
+""",
+        encoding="utf-8",
+    )
+
+    errors = validate_progress_schema(progress_file)
+
+    assert "Step 1 missing 'completed' field" in errors
+
+
+def test_validate_progress_schema_missing_total_steps(tmp_path: Path) -> None:
+    """Test validation fails when total_steps is missing."""
+    progress_file = tmp_path / "progress.md"
+    progress_file.write_text(
+        """---
+completed_steps: 0
+steps: []
+---
+
+# Progress
+""",
+        encoding="utf-8",
+    )
+
+    errors = validate_progress_schema(progress_file)
+
+    assert "Missing 'total_steps' field" in errors
+
+
+def test_validate_progress_schema_missing_completed_steps(tmp_path: Path) -> None:
+    """Test validation fails when completed_steps is missing."""
+    progress_file = tmp_path / "progress.md"
+    progress_file.write_text(
+        """---
+total_steps: 0
+steps: []
+---
+
+# Progress
+""",
+        encoding="utf-8",
+    )
+
+    errors = validate_progress_schema(progress_file)
+
+    assert "Missing 'completed_steps' field" in errors
+
+
+def test_validate_progress_schema_total_steps_mismatch(tmp_path: Path) -> None:
+    """Test validation fails when total_steps doesn't match len(steps)."""
+    progress_file = tmp_path / "progress.md"
+    progress_file.write_text(
+        """---
+completed_steps: 0
+total_steps: 5
+steps:
+  - text: '1. Step'
+    completed: false
+---
+
+# Progress
+""",
+        encoding="utf-8",
+    )
+
+    errors = validate_progress_schema(progress_file)
+
+    assert len(errors) == 1
+    assert "total_steps (5) != len(steps) (1)" in errors[0]
+
+
+def test_validate_progress_schema_completed_steps_mismatch(tmp_path: Path) -> None:
+    """Test validation fails when completed_steps doesn't match actual count."""
+    progress_file = tmp_path / "progress.md"
+    progress_file.write_text(
+        """---
+completed_steps: 2
+total_steps: 2
+steps:
+  - text: '1. Step'
+    completed: true
+  - text: '2. Step'
+    completed: false
+---
+
+# Progress
+""",
+        encoding="utf-8",
+    )
+
+    errors = validate_progress_schema(progress_file)
+
+    assert len(errors) == 1
+    assert "completed_steps (2) != actual count (1)" in errors[0]
+
+
+def test_validate_progress_schema_step_not_object(tmp_path: Path) -> None:
+    """Test validation fails when step is not an object."""
+    progress_file = tmp_path / "progress.md"
+    progress_file.write_text(
+        """---
+completed_steps: 0
+total_steps: 1
+steps:
+  - "just a string"
+---
+
+# Progress
+""",
+        encoding="utf-8",
+    )
+
+    errors = validate_progress_schema(progress_file)
+
+    assert "Step 1 must be an object" in errors
+
+
+def test_validate_progress_schema_no_frontmatter(tmp_path: Path) -> None:
+    """Test validation fails when file has no YAML frontmatter."""
+    progress_file = tmp_path / "progress.md"
+    progress_file.write_text(
+        """# Progress Tracking
+
+No steps detected in plan.
+""",
+        encoding="utf-8",
+    )
+
+    errors = validate_progress_schema(progress_file)
+
+    # Without frontmatter, frontmatter.loads returns empty metadata
+    assert "Missing 'steps' field" in errors
+    assert "Missing 'total_steps' field" in errors
+    assert "Missing 'completed_steps' field" in errors

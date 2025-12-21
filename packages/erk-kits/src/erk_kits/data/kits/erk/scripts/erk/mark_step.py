@@ -46,6 +46,8 @@ from typing import Any, NoReturn
 import click
 import frontmatter
 
+from erk_shared.impl_folder import validate_progress_schema
+
 
 def _error(msg: str) -> NoReturn:
     """Output error message and exit with code 1."""
@@ -229,6 +231,11 @@ def mark_step(step_nums: tuple[int, ...], completed: bool, output_json: bool) ->
     _recalculate_completed_steps(metadata)
 
     _write_progress_file(progress_file, metadata)
+
+    # Verify file integrity after write - fail hard on validation error
+    errors = validate_progress_schema(progress_file)
+    if errors:
+        _error(f"Post-write validation failed: {'; '.join(errors)}")
 
     # Output result
     if output_json:
