@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+As of a92830194
+
 ### Changed
 
 - Move `/gt:pr-submit` to `/erk:pr-submit`, from the gt kit to the erk kit
