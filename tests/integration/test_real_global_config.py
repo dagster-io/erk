@@ -20,6 +20,7 @@ def test_global_config_test_factory_method(tmp_path: Path) -> None:
     assert config.shell_setup_complete is True
     assert config.show_pr_info is True
     assert config.github_planning is True
+    assert config.show_hidden_commands is False
 
 
 def test_global_config_test_factory_with_overrides(tmp_path: Path) -> None:
@@ -28,6 +29,7 @@ def test_global_config_test_factory_with_overrides(tmp_path: Path) -> None:
         tmp_path / "erks",
         use_graphite=False,
         shell_setup_complete=False,
+        show_hidden_commands=True,
     )
 
     assert config.erk_root == tmp_path / "erks"
@@ -35,6 +37,7 @@ def test_global_config_test_factory_with_overrides(tmp_path: Path) -> None:
     assert config.shell_setup_complete is False
     assert config.show_pr_info is True  # Still default
     assert config.github_planning is True  # Still default
+    assert config.show_hidden_commands is True
 
 
 def test_load_config_defaults(tmp_path: Path) -> None:
@@ -107,11 +110,67 @@ def test_load_global_config_missing_erk_root(
         ops.load()
 
 
-# def test_load_global_config_use_graphite_defaults_false(tmp_path: Path) -> None:
-#     ... (removed - was testing FakeConfigStore)
+def test_real_config_store_roundtrip_show_hidden_commands(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that RealConfigStore correctly saves and loads show_hidden_commands."""
+    from erk.core.config_store import RealConfigStore
 
-# def test_create_global_config_creates_file(tmp_path: Path) -> None:
-#     ... (removed - was testing FakeConfigStore)
+    # Patch Path.home to use tmp_path
+    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+
+    # Create .erk dir
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+
+    store = RealConfigStore()
+
+    # Create and save config with show_hidden_commands=True
+    config = GlobalConfig(
+        erk_root=tmp_path / "erks",
+        use_graphite=True,
+        shell_setup_complete=True,
+        show_pr_info=True,
+        github_planning=True,
+        show_hidden_commands=True,
+    )
+    store.save(config)
+
+    # Load and verify
+    loaded = store.load()
+    assert loaded.show_hidden_commands is True
+
+    # Verify the field is in the saved file
+    content = (erk_dir / "config.toml").read_text(encoding="utf-8")
+    assert "show_hidden_commands = true" in content
+
+
+def test_real_config_store_loads_show_hidden_commands_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that RealConfigStore defaults show_hidden_commands to False if missing."""
+    from erk.core.config_store import RealConfigStore
+
+    # Patch Path.home to use tmp_path
+    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+
+    # Create .erk dir with config that doesn't have show_hidden_commands
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+    (erk_dir / "config.toml").write_text(
+        f"""
+erk_root = "{tmp_path / "erks"}"
+use_graphite = true
+shell_setup_complete = true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    store = RealConfigStore()
+    loaded = store.load()
+
+    # Should default to False
+    assert loaded.show_hidden_commands is False
 
 
 def test_create_global_config_creates_parent_directory(tmp_path: Path) -> None:

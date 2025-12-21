@@ -21,6 +21,44 @@ class ErkCommandGroup(click.Group):
         super().__init__(**kwargs)  # type: ignore[arg-type]
         self.grouped = grouped
 
+    def format_help(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
+        """Format help output, setting show_hidden based on config first.
+
+        This hook runs after context creation but before format_commands,
+        allowing us to set ctx.show_hidden based on the global config.
+        """
+        # Set show_hidden based on config before formatting help
+        self._set_show_hidden_from_context(ctx)
+
+        # Call parent to format help (which will call format_commands)
+        super().format_help(ctx, formatter)
+
+    def _set_show_hidden_from_context(self, ctx: click.Context) -> None:
+        """Set ctx.show_hidden based on config.
+
+        Checks ctx.obj.global_config if available (tests),
+        otherwise loads config from disk (direct CLI invocation).
+
+        Note: Click's Context allows dynamic attributes at runtime.
+        We use type: ignore since show_hidden isn't in Context's type stubs.
+        """
+        # If ctx.obj is provided (tests or already-created context), use its config
+        if ctx.obj is not None:
+            config = getattr(ctx.obj, "global_config", None)
+            if config is not None and getattr(config, "show_hidden_commands", False):
+                ctx.show_hidden = True  # type: ignore[attr-defined]
+            return
+
+        # Otherwise try to load config directly from disk
+        # Inline import to avoid circular dependency
+        from erk.core.config_store import RealConfigStore
+
+        store = RealConfigStore()
+        if store.exists():
+            config = store.load()
+            if config.show_hidden_commands:
+                ctx.show_hidden = True  # type: ignore[attr-defined]
+
     def format_commands(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
         """Format commands into organized sections or flat list."""
         show_hidden = getattr(ctx, "show_hidden", False)

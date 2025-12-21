@@ -1,4 +1,5 @@
 import subprocess
+from dataclasses import replace
 from pathlib import Path
 
 import click
@@ -6,9 +7,19 @@ import click
 from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
-from erk.core.config_store import GlobalConfig
 from erk.core.context import ErkContext, write_trunk_to_pyproject
 from erk_shared.output.output import machine_output, user_output
+
+# User-exposed global config keys with descriptions (shell_setup_complete is internal)
+# Order determines display order in 'erk config list'
+GLOBAL_CONFIG_KEYS: dict[str, str] = {
+    "erk_root": "Root directory for erk data (~/.erk by default)",
+    "use_graphite": "Enable Graphite integration for stack management",
+    "show_pr_info": "Show PR status in branch listings",
+    "github_planning": "Enable GitHub issues integration for planning",
+    "auto_restack_skip_dangerous": "Skip --dangerous flag requirement for auto-restack",
+    "show_hidden_commands": "Show deprecated/hidden commands in help output",
+}
 
 
 def _get_env_value(cfg: LoadedConfig, parts: list[str], key: str) -> None:
@@ -50,6 +61,39 @@ def config_group() -> None:
     """Manage erk configuration."""
 
 
+@config_group.command("keys")
+def config_keys() -> None:
+    """List all available configuration keys with descriptions."""
+    formatter = click.HelpFormatter()
+
+    # Global config section
+    user_output(click.style("Global configuration keys:", bold=True))
+    rows = list(GLOBAL_CONFIG_KEYS.items())
+    formatter.write_dl(rows)
+    user_output(formatter.getvalue().rstrip())
+
+    user_output("")
+
+    # Repository config section
+    user_output(click.style("Repository configuration keys:", bold=True))
+    formatter = click.HelpFormatter()
+    repo_keys = [
+        ("trunk-branch", "The main/master branch name for the repository"),
+        ("env.<name>", "Environment variables to set in worktrees"),
+        ("post_create.shell", "Shell to use for post-create commands"),
+        ("post_create.commands", "Commands to run after creating a worktree"),
+    ]
+    formatter.write_dl(repo_keys)
+    user_output(formatter.getvalue().rstrip())
+
+
+def _format_config_value(value: object) -> str:
+    """Format a config value for display."""
+    if isinstance(value, bool):
+        return str(value).lower()
+    return str(value)
+
+
 @config_group.command("list")
 @click.pass_obj
 def config_list(ctx: ErkContext) -> None:
@@ -57,14 +101,9 @@ def config_list(ctx: ErkContext) -> None:
     # Display global config
     user_output(click.style("Global configuration:", bold=True))
     if ctx.global_config:
-        user_output(f"  erk_root={ctx.global_config.erk_root}")
-        user_output(f"  use_graphite={str(ctx.global_config.use_graphite).lower()}")
-        user_output(f"  show_pr_info={str(ctx.global_config.show_pr_info).lower()}")
-        user_output(f"  github_planning={str(ctx.global_config.github_planning).lower()}")
-        user_output(
-            f"  auto_restack_skip_dangerous="
-            f"{str(ctx.global_config.auto_restack_skip_dangerous).lower()}"
-        )
+        for key in GLOBAL_CONFIG_KEYS:
+            value = getattr(ctx.global_config, key)
+            user_output(f"  {key}={_format_config_value(value)}")
     else:
         user_output("  (not configured - run 'erk init' to create)")
 
@@ -105,28 +144,12 @@ def config_get(ctx: ErkContext, key: str) -> None:
     parts = key.split(".")
 
     # Handle global config keys
-    global_config_keys = (
-        "erk_root",
-        "use_graphite",
-        "show_pr_info",
-        "github_planning",
-        "auto_restack_skip_dangerous",
-    )
-    if parts[0] in global_config_keys:
+    if parts[0] in GLOBAL_CONFIG_KEYS:
         global_config = Ensure.not_none(
             ctx.global_config, f"Global config not found at {ctx.config_store.path()}"
         )
-
-        if parts[0] == "erk_root":
-            machine_output(str(global_config.erk_root))
-        elif parts[0] == "use_graphite":
-            machine_output(str(global_config.use_graphite).lower())
-        elif parts[0] == "show_pr_info":
-            machine_output(str(global_config.show_pr_info).lower())
-        elif parts[0] == "github_planning":
-            machine_output(str(global_config.github_planning).lower())
-        elif parts[0] == "auto_restack_skip_dangerous":
-            machine_output(str(global_config.auto_restack_skip_dangerous).lower())
+        value = getattr(global_config, parts[0])
+        machine_output(_format_config_value(value))
         return
 
     # Handle repo config keys
@@ -158,6 +181,18 @@ def config_get(ctx: ErkContext, key: str) -> None:
     raise SystemExit(1)
 
 
+def _parse_config_value(key: str, value: str, current_type: type) -> object:
+    """Parse a string value to the appropriate type for a config key."""
+    if current_type is bool:
+        if value.lower() not in ("true", "false"):
+            user_output(f"Invalid boolean value: {value}")
+            raise SystemExit(1)
+        return value.lower() == "true"
+    if current_type is Path or key == "erk_root":
+        return Path(value).expanduser().resolve()
+    return value
+
+
 @config_group.command("set")
 @click.argument("key", metavar="KEY")
 @click.argument("value", metavar="VALUE")
@@ -168,80 +203,18 @@ def config_set(ctx: ErkContext, key: str, value: str) -> None:
     parts = key.split(".")
 
     # Handle global config keys
-    global_config_keys = (
-        "erk_root",
-        "use_graphite",
-        "show_pr_info",
-        "github_planning",
-        "auto_restack_skip_dangerous",
-    )
-    if parts[0] in global_config_keys:
+    if parts[0] in GLOBAL_CONFIG_KEYS:
         global_config = Ensure.not_none(
             ctx.global_config,
             f"Global config not found at {ctx.config_store.path()}. Run 'erk init' to create it.",
         )
 
-        # Create new config with updated value
-        if parts[0] == "erk_root":
-            new_config = GlobalConfig(
-                erk_root=Path(value).expanduser().resolve(),
-                use_graphite=global_config.use_graphite,
-                shell_setup_complete=global_config.shell_setup_complete,
-                show_pr_info=global_config.show_pr_info,
-                github_planning=global_config.github_planning,
-                auto_restack_skip_dangerous=global_config.auto_restack_skip_dangerous,
-            )
-        elif parts[0] == "use_graphite":
-            if value.lower() not in ("true", "false"):
-                user_output(f"Invalid boolean value: {value}")
-                raise SystemExit(1)
-            new_config = GlobalConfig(
-                erk_root=global_config.erk_root,
-                use_graphite=value.lower() == "true",
-                shell_setup_complete=global_config.shell_setup_complete,
-                show_pr_info=global_config.show_pr_info,
-                github_planning=global_config.github_planning,
-                auto_restack_skip_dangerous=global_config.auto_restack_skip_dangerous,
-            )
-        elif parts[0] == "show_pr_info":
-            if value.lower() not in ("true", "false"):
-                user_output(f"Invalid boolean value: {value}")
-                raise SystemExit(1)
-            new_config = GlobalConfig(
-                erk_root=global_config.erk_root,
-                use_graphite=global_config.use_graphite,
-                shell_setup_complete=global_config.shell_setup_complete,
-                show_pr_info=value.lower() == "true",
-                github_planning=global_config.github_planning,
-                auto_restack_skip_dangerous=global_config.auto_restack_skip_dangerous,
-            )
-        elif parts[0] == "github_planning":
-            if value.lower() not in ("true", "false"):
-                user_output(f"Invalid boolean value: {value}")
-                raise SystemExit(1)
-            new_config = GlobalConfig(
-                erk_root=global_config.erk_root,
-                use_graphite=global_config.use_graphite,
-                shell_setup_complete=global_config.shell_setup_complete,
-                show_pr_info=global_config.show_pr_info,
-                github_planning=value.lower() == "true",
-                auto_restack_skip_dangerous=global_config.auto_restack_skip_dangerous,
-            )
-        elif parts[0] == "auto_restack_skip_dangerous":
-            if value.lower() not in ("true", "false"):
-                user_output(f"Invalid boolean value: {value}")
-                raise SystemExit(1)
-            new_config = GlobalConfig(
-                erk_root=global_config.erk_root,
-                use_graphite=global_config.use_graphite,
-                shell_setup_complete=global_config.shell_setup_complete,
-                show_pr_info=global_config.show_pr_info,
-                github_planning=global_config.github_planning,
-                auto_restack_skip_dangerous=value.lower() == "true",
-            )
-        else:
-            user_output(f"Invalid key: {key}")
-            raise SystemExit(1)
+        # Get current value's type and parse new value
+        current_value = getattr(global_config, parts[0])
+        parsed_value = _parse_config_value(parts[0], value, type(current_value))
+
+        # Create new config with updated value using dataclasses.replace
+        new_config = replace(global_config, **{parts[0]: parsed_value})
 
         ctx.config_store.save(new_config)
         user_output(f"Set {key}={value}")

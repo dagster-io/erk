@@ -1,8 +1,12 @@
 """Tests for CLI help formatter with alias display."""
 
+from pathlib import Path
+
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
+from erk.core.context import context_for_test
+from erk_shared.context.types import GlobalConfig
 
 
 def test_help_shows_branch_with_alias() -> None:
@@ -53,3 +57,54 @@ def test_br_alias_still_works_as_command() -> None:
     br_result = runner.invoke(cli, ["br", "--help"])
     assert br_result.exit_code == 0
     assert "branch" in br_result.output.lower() or "manage" in br_result.output.lower()
+
+
+def test_help_shows_hidden_commands_when_config_enabled() -> None:
+    """Help output shows hidden commands when show_hidden_commands is True in config."""
+    runner = CliRunner()
+
+    # Create context with show_hidden_commands=True
+    ctx = context_for_test(
+        global_config=GlobalConfig(
+            erk_root=Path("/tmp/erks"),
+            use_graphite=False,
+            shell_setup_complete=True,
+            show_pr_info=True,
+            github_planning=True,
+            show_hidden_commands=True,
+        ),
+    )
+
+    # Invoke CLI with pre-configured context
+    result = runner.invoke(cli, ["--help"], obj=ctx)
+
+    assert result.exit_code == 0
+    # When show_hidden is True, there should be a "Deprecated (Hidden)" section
+    # or the hidden shell-integration command should be visible
+    # The exact assertion depends on whether there are hidden commands defined
+    # The hidden_shell_cmd is registered in cli.py, let's check for that
+    assert "Deprecated (Hidden)" in result.output or "shell-integration" in result.output
+
+
+def test_help_hides_hidden_commands_when_config_disabled() -> None:
+    """Help output hides hidden commands when show_hidden_commands is False in config."""
+    runner = CliRunner()
+
+    # Create context with show_hidden_commands=False (default)
+    ctx = context_for_test(
+        global_config=GlobalConfig(
+            erk_root=Path("/tmp/erks"),
+            use_graphite=False,
+            shell_setup_complete=True,
+            show_pr_info=True,
+            github_planning=True,
+            show_hidden_commands=False,
+        ),
+    )
+
+    # Invoke CLI with pre-configured context
+    result = runner.invoke(cli, ["--help"], obj=ctx)
+
+    assert result.exit_code == 0
+    # When show_hidden is False, there should NOT be a "Deprecated (Hidden)" section
+    assert "Deprecated (Hidden)" not in result.output
