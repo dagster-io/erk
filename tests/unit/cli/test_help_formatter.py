@@ -79,11 +79,11 @@ def test_help_shows_hidden_commands_when_config_enabled() -> None:
     result = runner.invoke(cli, ["--help"], obj=ctx)
 
     assert result.exit_code == 0
-    # When show_hidden is True, there should be a "Deprecated (Hidden)" section
+    # When show_hidden is True, there should be a "Hidden" section
     # or the hidden shell-integration command should be visible
     # The exact assertion depends on whether there are hidden commands defined
     # The hidden_shell_cmd is registered in cli.py, let's check for that
-    assert "Deprecated (Hidden)" in result.output or "shell-integration" in result.output
+    assert "Hidden:" in result.output or "shell-integration" in result.output
 
 
 def test_help_hides_hidden_commands_when_config_disabled() -> None:
@@ -106,5 +106,5 @@ def test_help_hides_hidden_commands_when_config_disabled() -> None:
     result = runner.invoke(cli, ["--help"], obj=ctx)
 
     assert result.exit_code == 0
-    # When show_hidden is False, there should NOT be a "Deprecated (Hidden)" section
-    assert "Deprecated (Hidden)" not in result.output
+    # When show_hidden is False, there should NOT be a "Hidden:" section
+    assert "Hidden:" not in result.output

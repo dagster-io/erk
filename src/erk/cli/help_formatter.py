@@ -92,7 +92,7 @@ class ErkCommandGroup(click.Group):
                 self._format_command_list(ctx, formatter, primary_commands)
 
             if hidden_commands:
-                with formatter.section("Deprecated (Hidden)"):
+                with formatter.section("Hidden"):
                     self._format_command_list(ctx, formatter, hidden_commands)
             return
 
@@ -169,7 +169,7 @@ class ErkCommandGroup(click.Group):
                 self._format_command_list(ctx, formatter, other_cmds)
 
         if hidden_commands:
-            with formatter.section("Deprecated (Hidden)"):
+            with formatter.section("Hidden"):
                 self._format_command_list(ctx, formatter, hidden_commands)
 
     def _format_command_list(
