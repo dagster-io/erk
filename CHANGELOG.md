@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<<<<<<< HEAD
 As of c8c0246eb
 
 ### Changed
@@ -16,6 +17,13 @@ As of c8c0246eb
 ### Fixed
 
 - Fix Bun crash when launching Claude Code CLI by conditionally redirecting to /dev/tty only when needed (b37e59b2b)
+=======
+## [0.2.8] - 2025-12-18 06:51 PT
+
+### Fixed
+
+- Fix Bun crash when launching Claude Code CLI from tmux by conditionally redirecting TTY only when needed
+>>>>>>> fb0f32abe (Bump version to 0.2.8 and finalize CHANGELOG for release)
 
 ## [0.2.7] - 2025-12-15 06:59 PT
 
