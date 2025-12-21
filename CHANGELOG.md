@@ -7,11 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.8] - 2025-12-18 06:51 PT
-
 ### Changed
 
-- Move `/erk:pr-submit` command from gt kit to erk kit for unified workflow control
+- Move `/gt:pr-submit` to `/erk:pr-submit`, from the gt kit to the erk kit
+
+## [0.2.8] - 2025-12-18 06:51 PT
 
 ### Fixed
 
