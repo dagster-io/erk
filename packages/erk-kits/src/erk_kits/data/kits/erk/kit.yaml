@@ -14,12 +14,10 @@ artifacts:
     - commands/erk/pr-submit.md
   agent:
     - agents/erk/issue-wt-creator.md
-    - agents/erk/plan-extractor.md
   doc:
     - docs/erk/EXAMPLES.md
     - docs/erk/includes/conflict-resolution.md
     - docs/erk/includes/create-github-issue.md
-    - docs/erk/includes/enrichment-process.md
     - docs/erk/includes/extract-docs-analysis-shared.md
     - docs/erk/includes/extract-plan-workflow-shared.md
     - docs/erk/includes/planning/extract-plan-from-session.md
