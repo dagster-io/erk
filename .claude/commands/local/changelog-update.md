@@ -100,6 +100,7 @@ git show --stat --format="%s%n%n%b" <commit_hash> | head -40
 
 #### Filter Out (do not include)
 
+- **Release housekeeping** - version bumps ("Bump version to X"), CHANGELOG finalization, lock file updates for releases
 - CI/CD-only changes (unless they affect users)
 - Documentation-only changes (docs/, .md files in .erk/)
 - Test-only changes
