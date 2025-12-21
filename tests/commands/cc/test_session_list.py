@@ -65,48 +65,6 @@ def test_list_sessions_shows_sessions() -> None:
         assert "1h ago" in result.output
 
 
-def test_list_sessions_marks_current_session() -> None:
-    """Test that current session is marked with indicator."""
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        now = time.time()
-        current_session_id = "current-session-id-1234-5678-9abc"
-        session_store = FakeClaudeCodeSessionStore(
-            projects={
-                env.cwd: FakeProject(
-                    sessions={
-                        current_session_id: FakeSessionData(
-                            content=_make_session_jsonl("Current session"),
-                            size_bytes=512,
-                            modified_at=now,
-                        ),
-                        "other-session-id-abcd-efgh-ijkl": FakeSessionData(
-                            content=_make_session_jsonl("Other session"),
-                            size_bytes=256,
-                            modified_at=now - 100,
-                        ),
-                    }
-                )
-            }
-        )
-
-        ctx = build_workspace_test_context(env, session_store=session_store)
-
-        # Simulate CLAUDE_CODE_SESSION_ID environment variable
-        result = runner.invoke(
-            list_sessions,
-            [],
-            obj=ctx,
-            env={"CLAUDE_CODE_SESSION_ID": current_session_id},
-        )
-
-        assert result.exit_code == 0
-        # Current session should have the indicator
-        assert "← (current)" in result.output
-        # Only one current marker
-        assert result.output.count("← (current)") == 1
-
-
 def test_list_sessions_respects_limit() -> None:
     """Test that --limit option limits the number of sessions shown."""
     runner = CliRunner()

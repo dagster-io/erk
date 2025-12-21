@@ -2,7 +2,6 @@
 
 import datetime
 import json
-import os
 import time
 from pathlib import Path
 
@@ -93,10 +92,11 @@ def extract_summary(content: str, max_length: int = 50) -> str:
     for line in content.split("\n"):
         if not line.strip():
             continue
-        try:
-            entry = json.loads(line)
-        except json.JSONDecodeError:
+        # Skip lines that don't look like JSON objects
+        stripped = line.strip()
+        if not stripped.startswith("{"):
             continue
+        entry = json.loads(stripped)
 
         if entry.get("type") != "user":
             continue
@@ -131,7 +131,6 @@ def extract_summary(content: str, max_length: int = 50) -> str:
 def _list_sessions_impl(
     session_store: ClaudeCodeSessionStore,
     cwd: Path,
-    current_session_id: str | None,
     limit: int,
 ) -> None:
     """Implementation of session listing logic.
@@ -139,7 +138,6 @@ def _list_sessions_impl(
     Args:
         session_store: Session store to query
         cwd: Current working directory (project identifier)
-        current_session_id: Current session ID (for marking)
         limit: Maximum number of sessions to show
     """
     # Check if project exists
@@ -148,9 +146,7 @@ def _list_sessions_impl(
         raise SystemExit(1)
 
     # Get sessions
-    sessions = session_store.find_sessions(
-        cwd, current_session_id=current_session_id, min_size=0, limit=limit
-    )
+    sessions = session_store.find_sessions(cwd, min_size=0, limit=limit)
 
     if not sessions:
         click.echo("No sessions found.", err=True)
@@ -170,14 +166,11 @@ def _list_sessions_impl(
         if content is not None:
             summary = extract_summary(content.main_content)
 
-        # Format current session indicator
-        current_indicator = " ← (current)" if session.is_current else ""
-
         table.add_row(
             session.session_id,
             format_relative_time(session.modified_at),
             format_size(session.size_bytes),
-            f"{summary}{current_indicator}",
+            summary,
         )
 
     # Output table to stderr (consistent with user_output convention)
@@ -198,12 +191,8 @@ def list_sessions(ctx: ErkContext, limit: int) -> None:
 
     Shows a table with session ID, time, size, and summary (first user message).
     """
-    # Get current session ID from environment if available
-    current_session_id = os.environ.get("CLAUDE_CODE_SESSION_ID")
-
     _list_sessions_impl(
         ctx.session_store,
         ctx.cwd,
-        current_session_id,
         limit,
     )
