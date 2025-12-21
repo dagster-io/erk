@@ -1,4 +1,4 @@
-.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test fast-ci all-ci check kit-build kit-build-autofix kit-build-check md-check kit-md-check docs-validate docs-sync-check clean publish fix reinstall-erk-tools
+.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test fast-ci all-ci check kit-build kit-build-autofix kit-build-check md-check kit-md-check docs-validate docs-sync-check clean publish fix reinstall-erk-tools ccsesh-ci
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -127,6 +127,7 @@ fast-ci:
 	echo "\n--- Kit Build ---" && $(MAKE) kit-build-autofix || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
+	echo "\n--- ccsesh CI ---" && $(MAKE) ccsesh-ci || exit_code=1; \
 	echo "\n--- Kit Check ---" && uv run erk kit check || exit_code=1; \
 	echo "\n--- Kit Build Check ---" && uv run erk dev kit-build --check || exit_code=1; \
 	exit $$exit_code
@@ -150,6 +151,17 @@ all-ci:
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
 	echo "\n--- Kit Check ---" && uv run erk kit check || exit_code=1; \
 	echo "\n--- Kit Build Check ---" && uv run erk dev kit-build --check || exit_code=1; \
+	exit $$exit_code
+
+# ccsesh-only CI: Fast validation for ccsesh package development
+ccsesh-ci:
+	@echo "=== ccsesh CI ===" && \
+	exit_code=0; \
+	echo "\n--- Lint (ccsesh) ---" && uv run ruff check packages/ccsesh || exit_code=1; \
+	echo "\n--- Format Check (ccsesh) ---" && uv run ruff format --check packages/ccsesh || exit_code=1; \
+	echo "\n--- Prettier Check (ccsesh) ---" && prettier --check 'packages/ccsesh/**/*.md' || exit_code=1; \
+	echo "\n--- Pyright (ccsesh) ---" && uv run pyright packages/ccsesh || exit_code=1; \
+	echo "\n--- Tests (ccsesh) ---" && uv run pytest packages/ccsesh -n auto || exit_code=1; \
 	exit $$exit_code
 
 # Clean build artifacts
