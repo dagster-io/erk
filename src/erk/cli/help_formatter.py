@@ -112,6 +112,7 @@ class ErkCommandGroup(click.Group):
             "admin",
             "artifact",
             "branch",
+            "cc",
             "completion",
             "config",
             "docs",
