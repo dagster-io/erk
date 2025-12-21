@@ -1,5 +1,6 @@
 """List Claude Code sessions for the current worktree."""
 
+import datetime
 import json
 import os
 import time
@@ -49,8 +50,6 @@ def format_display_time(mtime: float) -> str:
     Returns:
         Formatted date string like "Dec 3, 11:38 AM"
     """
-    import datetime
-
     dt = datetime.datetime.fromtimestamp(mtime)
     return dt.strftime("%b %-d, %-I:%M %p")
 
