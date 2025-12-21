@@ -351,14 +351,12 @@ def reduce_session_mechanically(entries: list[dict]) -> list[dict]:
         # Copy entry, excluding blacklisted fields
         reduced_entry = {k: v for k, v in entry.items() if k not in _ENTRY_FIELDS_TO_EXCLUDE}
 
-        # Deep copy message to avoid mutating original
+        # Deep copy message and remove empty text blocks
         if "message" in reduced_entry:
             reduced_entry["message"] = reduced_entry["message"].copy()
-
-        # Remove empty text blocks from content
-        message_content = reduced_entry.get("message", {}).get("content", [])
-        if isinstance(message_content, list):
-            reduced_entry["message"]["content"] = remove_empty_text_blocks(message_content)
+            message_content = reduced_entry["message"].get("content", [])
+            if isinstance(message_content, list):
+                reduced_entry["message"]["content"] = remove_empty_text_blocks(message_content)
 
         reduced.append(reduced_entry)
 

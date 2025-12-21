@@ -198,6 +198,19 @@ class TestReduceSessionMechanically:
         result = reduce_session_mechanically(entries)
         assert result[0]["gitBranch"] == "feature/test"
 
+    def test_handles_entries_without_message(self) -> None:
+        """Entries without message field are handled gracefully."""
+        entries = [
+            {"type": "user", "message": {"content": "Hello"}},
+            {"type": "summary", "summary": "Session summary text"},
+            {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi"}]}},
+        ]
+        result = reduce_session_mechanically(entries)
+        assert len(result) == 3
+        assert result[1]["type"] == "summary"
+        assert result[1]["summary"] == "Session summary text"
+        assert "message" not in result[1]
+
 
 class TestGenerateCompressedXml:
     """Tests for generate_compressed_xml function."""
