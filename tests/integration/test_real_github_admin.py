@@ -6,11 +6,9 @@ responses. We use pytest monkeypatch to mock subprocess calls.
 
 import subprocess
 
-import pytest
 from pytest import MonkeyPatch
 
 from erk.core.implementation_queue.github.real import RealGitHubAdmin
-from erk_shared.github_admin.abc import AuthStatus
 from tests.integration.test_helpers import mock_subprocess_run
 
 # ============================================================================
@@ -46,7 +44,9 @@ def test_check_auth_status_authenticated_with_parens(monkeypatch: MonkeyPatch) -
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="github.com\n  ✓ Logged in to github.com account schrockn (github.com/schrockn)\n",
+            stdout=(
+                "github.com\n  ✓ Logged in to github.com account schrockn (github.com/schrockn)\n"
+            ),
             stderr="",
         )
 
