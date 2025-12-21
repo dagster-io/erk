@@ -210,13 +210,8 @@ def test_complete_branch_names_handles_uninitialized_context(tmp_path: Path) -> 
         git_common_dirs={repo_root: git_dir},
     )
 
-    global_config = GlobalConfig.test(
-        erk_root,
-        use_graphite=False,
-        shell_setup_complete=False,
-        show_pr_info=False,
-    )
-
+    # GlobalConfig needs a valid erk_root for repo discovery to work
+    global_config = GlobalConfig.test(erk_root)
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
     # Create mock Click context with None obj (uninitialized)
@@ -399,13 +394,8 @@ def test_complete_plan_files_handles_uninitialized_context(tmp_path: Path) -> No
         git_common_dirs={repo_root: git_dir},
     )
 
-    global_config = GlobalConfig.test(
-        erk_root,
-        use_graphite=False,
-        shell_setup_complete=False,
-        show_pr_info=False,
-    )
-
+    # GlobalConfig needs a valid erk_root for repo discovery to work
+    global_config = GlobalConfig.test(erk_root)
     ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
 
     # Create mock Click context with None obj (uninitialized)
