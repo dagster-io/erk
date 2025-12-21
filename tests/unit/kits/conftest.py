@@ -30,3 +30,21 @@ def cli_runner() -> CliRunner:
         A CliRunner instance for invoking commands
     """
     return CliRunner()
+
+
+@pytest.fixture
+def erk_test_context(tmp_path: Path):
+    """Create an ErkContext for testing kit CLI commands.
+    
+    Provides a context with the given tmp_path as the cwd, allowing
+    kit CLI commands to use require_cwd(ctx) properly.
+    
+    Args:
+        tmp_path: pytest's built-in tmp_path fixture
+        
+    Returns:
+        ErkContext configured for testing with the given cwd
+    """
+    from erk_shared.context.context import ErkContext
+    
+    return ErkContext.for_test(cwd=tmp_path)

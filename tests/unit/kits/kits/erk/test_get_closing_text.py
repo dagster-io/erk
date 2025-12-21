@@ -9,6 +9,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk_kits.data.kits.erk.scripts.erk.get_closing_text import get_closing_text
+from erk_shared.context.context import ErkContext
 
 
 def test_get_closing_text_with_issue_reference(tmp_path: Path, monkeypatch) -> None:
@@ -32,7 +33,8 @@ def test_get_closing_text_with_issue_reference(tmp_path: Path, monkeypatch) -> N
     monkeypatch.chdir(tmp_path)
 
     runner = CliRunner()
-    result = runner.invoke(get_closing_text)
+    ctx = ErkContext.for_test(cwd=tmp_path)
+    result = runner.invoke(get_closing_text, obj=ctx)
 
     assert result.exit_code == 0
     assert result.output.strip() == "Closes #776"
@@ -43,7 +45,8 @@ def test_get_closing_text_no_impl_folder(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
 
     runner = CliRunner()
-    result = runner.invoke(get_closing_text)
+    ctx = ErkContext.for_test(cwd=tmp_path)
+    result = runner.invoke(get_closing_text, obj=ctx)
 
     assert result.exit_code == 0
     assert result.output == ""
@@ -57,7 +60,8 @@ def test_get_closing_text_no_issue_json(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
 
     runner = CliRunner()
-    result = runner.invoke(get_closing_text)
+    ctx = ErkContext.for_test(cwd=tmp_path)
+    result = runner.invoke(get_closing_text, obj=ctx)
 
     assert result.exit_code == 0
     assert result.output == ""
@@ -84,7 +88,8 @@ def test_get_closing_text_with_worker_impl(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
 
     runner = CliRunner()
-    result = runner.invoke(get_closing_text)
+    ctx = ErkContext.for_test(cwd=tmp_path)
+    result = runner.invoke(get_closing_text, obj=ctx)
 
     assert result.exit_code == 0
     assert result.output.strip() == "Closes #2935"
@@ -124,7 +129,8 @@ def test_get_closing_text_prefers_impl_over_worker_impl(tmp_path: Path, monkeypa
     monkeypatch.chdir(tmp_path)
 
     runner = CliRunner()
-    result = runner.invoke(get_closing_text)
+    ctx = ErkContext.for_test(cwd=tmp_path)
+    result = runner.invoke(get_closing_text, obj=ctx)
 
     assert result.exit_code == 0
     assert result.output.strip() == "Closes #100"
@@ -141,7 +147,8 @@ def test_get_closing_text_invalid_json(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
 
     runner = CliRunner()
-    result = runner.invoke(get_closing_text)
+    ctx = ErkContext.for_test(cwd=tmp_path)
+    result = runner.invoke(get_closing_text, obj=ctx)
 
     # Should exit successfully but output nothing (graceful degradation)
     assert result.exit_code == 0

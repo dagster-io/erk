@@ -13,6 +13,7 @@ from click.testing import CliRunner
 from erk_kits.data.kits.erk.scripts.erk.create_worker_impl_from_issue import (
     create_worker_impl_from_issue,
 )
+from erk_shared.context.context import ErkContext
 from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -51,9 +52,11 @@ def test_create_worker_impl_from_issue_success(
 
     # Act: Run command
     runner = CliRunner()
+    ctx = ErkContext.for_test(cwd=tmp_path)
     result = runner.invoke(
         create_worker_impl_from_issue,
         ["1028", "--repo-root", str(tmp_path)],
+        obj=ctx,
     )
 
     # Assert: Command succeeded
@@ -97,9 +100,11 @@ def test_create_worker_impl_from_issue_plan_not_found(
 
     # Act: Run command with non-existent issue
     runner = CliRunner()
+    ctx = ErkContext.for_test(cwd=tmp_path)
     result = runner.invoke(
         create_worker_impl_from_issue,
         ["999", "--repo-root", str(tmp_path)],
+        obj=ctx,
     )
 
     # Assert: Command failed with exit code 1
@@ -148,14 +153,13 @@ def test_create_worker_impl_from_issue_uses_cwd_when_no_repo_root(
         lambda: None,
     )
 
-    # Mock Path.cwd() to return tmp_path
-    monkeypatch.setattr(Path, "cwd", lambda: tmp_path)
-
     # Act: Run command WITHOUT --repo-root
     runner = CliRunner()
+    ctx = ErkContext.for_test(cwd=tmp_path)
     result = runner.invoke(
         create_worker_impl_from_issue,
         ["100"],
+        obj=ctx,
     )
 
     # Assert: Command succeeded

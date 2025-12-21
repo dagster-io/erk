@@ -14,6 +14,7 @@ from erk_kits.data.kits.erk.scripts.erk.impl_init import (
     _extract_related_docs,
     impl_init,
 )
+from erk_shared.context.context import ErkContext
 
 
 @pytest.fixture
@@ -77,7 +78,7 @@ def test_impl_init_returns_valid_json(impl_folder: Path, monkeypatch) -> None:
     monkeypatch.chdir(impl_folder.parent)
 
     runner = CliRunner()
-    result = runner.invoke(impl_init, ["--json"])
+    result = runner.invoke(impl_init, ["--json"], obj=ErkContext.for_test(cwd=impl_folder.parent))
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -91,7 +92,7 @@ def test_impl_init_extracts_phases(impl_folder: Path, monkeypatch) -> None:
     monkeypatch.chdir(impl_folder.parent)
 
     runner = CliRunner()
-    result = runner.invoke(impl_init, ["--json"])
+    result = runner.invoke(impl_init, ["--json"], obj=ErkContext.for_test(cwd=impl_folder.parent))
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -108,7 +109,7 @@ def test_impl_init_extracts_related_docs(impl_folder: Path, monkeypatch) -> None
     monkeypatch.chdir(impl_folder.parent)
 
     runner = CliRunner()
-    result = runner.invoke(impl_init, ["--json"])
+    result = runner.invoke(impl_init, ["--json"], obj=ErkContext.for_test(cwd=impl_folder.parent))
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -138,7 +139,7 @@ def test_impl_init_with_issue_tracking(impl_folder: Path, monkeypatch) -> None:
     monkeypatch.chdir(impl_folder.parent)
 
     runner = CliRunner()
-    result = runner.invoke(impl_init, ["--json"])
+    result = runner.invoke(impl_init, ["--json"], obj=ErkContext.for_test(cwd=impl_folder.parent))
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -173,7 +174,7 @@ steps:
     monkeypatch.chdir(tmp_path)
 
     runner = CliRunner()
-    result = runner.invoke(impl_init, ["--json"])
+    result = runner.invoke(impl_init, ["--json"], obj=ErkContext.for_test(cwd=tmp_path))
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -186,7 +187,7 @@ def test_impl_init_errors_missing_impl_folder(tmp_path: Path, monkeypatch) -> No
     monkeypatch.chdir(tmp_path)
 
     runner = CliRunner()
-    result = runner.invoke(impl_init, ["--json"])
+    result = runner.invoke(impl_init, ["--json"], obj=ErkContext.for_test(cwd=tmp_path))
 
     assert result.exit_code == 1
     data = json.loads(result.output)
@@ -205,7 +206,7 @@ def test_impl_init_errors_missing_plan(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
 
     runner = CliRunner()
-    result = runner.invoke(impl_init, ["--json"])
+    result = runner.invoke(impl_init, ["--json"], obj=ErkContext.for_test(cwd=tmp_path))
 
     assert result.exit_code == 1
     data = json.loads(result.output)
@@ -224,7 +225,7 @@ def test_impl_init_errors_missing_progress(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
 
     runner = CliRunner()
-    result = runner.invoke(impl_init, ["--json"])
+    result = runner.invoke(impl_init, ["--json"], obj=ErkContext.for_test(cwd=tmp_path))
 
     assert result.exit_code == 1
     data = json.loads(result.output)

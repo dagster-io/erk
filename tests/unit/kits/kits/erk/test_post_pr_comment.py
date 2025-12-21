@@ -90,6 +90,7 @@ def test_post_pr_comment_success(tmp_path: Path) -> None:
     # Act
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
+        cwd = Path.cwd()
         # Update fake_git to use the isolated filesystem cwd
         fake_git = FakeGit(current_branches={cwd: "feature/test-branch"})
         # Create .impl folder in isolated filesystem
@@ -98,7 +99,7 @@ def test_post_pr_comment_success(tmp_path: Path) -> None:
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, cwd=cwd),
         )
 
     # Assert
@@ -124,12 +125,13 @@ def test_post_pr_comment_no_issue_reference(tmp_path: Path) -> None:
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
         # Don't create .impl/issue.json
 
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, cwd=cwd),
         )
 
     assert result.exit_code == 0  # Always exits 0 for || true pattern
@@ -146,6 +148,7 @@ def test_post_pr_comment_invalid_issue_json(tmp_path: Path) -> None:
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
         # Create invalid issue.json
         impl_dir = Path.cwd() / ".impl"
         impl_dir.mkdir(parents=True)
@@ -154,7 +157,7 @@ def test_post_pr_comment_invalid_issue_json(tmp_path: Path) -> None:
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, cwd=cwd),
         )
 
     assert result.exit_code == 0
@@ -170,6 +173,7 @@ def test_post_pr_comment_branch_detection_failed(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
+        cwd = Path.cwd()
         # FakeGit with no current_branches configured returns None
         fake_git = FakeGit(current_branches={})
         create_issue_json(cwd / ".impl", issue_number=456)
@@ -177,7 +181,7 @@ def test_post_pr_comment_branch_detection_failed(tmp_path: Path) -> None:
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, cwd=cwd),
         )
 
     assert result.exit_code == 0
@@ -198,13 +202,14 @@ def test_post_pr_comment_github_api_failure(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
+        cwd = Path.cwd()
         fake_git = FakeGit(current_branches={cwd: "feature/test-branch"})
         create_issue_json(cwd / ".impl", issue_number=456)
 
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, cwd=cwd),
         )
 
     assert result.exit_code == 0
@@ -226,13 +231,14 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
+        cwd = Path.cwd()
         fake_git = FakeGit(current_branches={cwd: "feature/test-branch"})
         create_issue_json(cwd / ".impl", issue_number=789)
 
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/456", "--pr-number", "456"],
-            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, cwd=cwd),
         )
 
     assert result.exit_code == 0
@@ -261,12 +267,13 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
         # No .impl/issue.json - will cause error
 
         result = runner.invoke(
             post_pr_comment,
             ["--pr-url", "https://github.com/org/repo/pull/123", "--pr-number", "123"],
-            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, cwd=cwd),
         )
 
     assert result.exit_code == 0
@@ -298,6 +305,7 @@ def test_comment_contains_pr_metadata(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
+        cwd = Path.cwd()
         fake_git = FakeGit(current_branches={cwd: "feature/awesome-feature"})
         create_issue_json(cwd / ".impl", issue_number=100)
 
@@ -309,7 +317,7 @@ def test_comment_contains_pr_metadata(tmp_path: Path) -> None:
                 "--pr-number",
                 "999",
             ],
-            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=tmp_path),
+            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, cwd=cwd),
         )
 
     assert result.exit_code == 0

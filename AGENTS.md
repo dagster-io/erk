@@ -112,6 +112,45 @@ Core patterns for this codebase:
 
 **CLI Command Organization:** Plan verbs are top-level (create, get, implement), worktree verbs are grouped under `erk wt`, stack verbs under `erk stack`. This follows the "plan is dominant noun" principle for ergonomic access to high-frequency operations. See [CLI Development](.erk/docs/agent/cli/) for complete decision framework.
 
+## Kit CLI Command Standards
+
+**Kit CLI commands** (in `packages/erk-kits/src/erk_kits/data/kits/erk/scripts/`) MUST follow these standards:
+
+### Required for All Commands That Access Filesystem/Context
+
+1. **MUST use `@click.pass_context` decorator**
+2. **MUST use `require_cwd(ctx)` instead of `Path.cwd()`**
+
+```python
+import click
+from erk_shared.context.helpers import require_cwd
+
+@click.command(name="my-command")
+@click.pass_context
+def my_command(ctx: click.Context) -> None:
+    """Example command following kit CLI standards."""
+    cwd = require_cwd(ctx)  # ✅ CORRECT
+    impl_dir = cwd / ".impl"
+    # ... rest of command
+```
+
+### Exceptions to the Rule
+
+**Hook scripts** with special decorators do NOT need `@click.pass_context`:
+
+- Scripts using `@logged_hook` decorator
+- Scripts using `@project_scoped` decorator
+
+These decorators provide their own context management for Claude Code hook execution.
+
+**Pure utility commands** that only process stdin/stdout do NOT need context:
+
+- Commands that read from stdin and write to stdout only
+- Commands that perform pure computation with no filesystem access
+- Examples: formatters, validators, parsers
+
+**See also**: [Kit CLI Dependency Injection Patterns](.erk/docs/agent/kits/dependency-injection.md)
+
 ## Project Constraints
 
 **No time estimates in plans:**
