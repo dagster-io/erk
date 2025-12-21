@@ -89,18 +89,55 @@ class SessionXmlWriter:
         """Escape XML special characters."""
         return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
+    def _format_attrs(self, **attrs: str | int | bool | None) -> str:
+        """Format attributes for XML element, skipping None values."""
+        parts = []
+        for k, v in attrs.items():
+            if v is not None:
+                parts.append(f'{k}="{self._escape(str(v))}"')
+        return " ".join(parts)
+
     def meta(self, **attrs: str) -> None:
         """Write a meta element."""
         attr_str = " ".join(f'{k}="{self._escape(v)}"' for k, v in attrs.items())
         self._lines.append(f"  <meta {attr_str} />")
 
-    def user(self, content: str) -> None:
-        """Write a user element."""
-        self._lines.append(f"  <user>{self._escape(content)}</user>")
+    def user(self, content: str, timestamp: str | None = None) -> None:
+        """Write a user element with optional timestamp."""
+        if timestamp:
+            ts_attr = f'timestamp="{self._escape(timestamp)}"'
+            self._lines.append(f"  <user {ts_attr}>{self._escape(content)}</user>")
+        else:
+            self._lines.append(f"  <user>{self._escape(content)}</user>")
 
-    def assistant(self, text: str) -> None:
-        """Write an assistant text element."""
-        self._lines.append(f"  <assistant>{self._escape(text)}</assistant>")
+    def assistant(self, text: str, timestamp: str | None = None) -> None:
+        """Write an assistant text element with optional timestamp."""
+        if timestamp:
+            ts_attr = f'timestamp="{self._escape(timestamp)}"'
+            self._lines.append(f"  <assistant {ts_attr}>{self._escape(text)}</assistant>")
+        else:
+            self._lines.append(f"  <assistant>{self._escape(text)}</assistant>")
+
+    def thinking(self, text: str) -> None:
+        """Write a thinking element containing assistant's reasoning."""
+        self._lines.append(f"  <thinking>{self._escape(text)}</thinking>")
+
+    def usage(
+        self,
+        input_tokens: int | None = None,
+        output_tokens: int | None = None,
+        cache_read: int | None = None,
+        cache_creation: int | None = None,
+    ) -> None:
+        """Write a usage metadata element."""
+        attrs = self._format_attrs(
+            input=input_tokens,
+            output=output_tokens,
+            cache_read=cache_read,
+            cache_creation=cache_creation,
+        )
+        if attrs:
+            self._lines.append(f"  <usage {attrs} />")
 
     def tool_use(self, name: str, tool_id: str, params: dict[str, str]) -> None:
         """Write a tool_use element with params."""
@@ -111,9 +148,21 @@ class SessionXmlWriter:
             )
         self._lines.append("  </tool_use>")
 
-    def tool_result(self, tool_id: str, content: str) -> None:
-        """Write a tool_result element."""
-        self._lines.append(f'  <tool_result tool="{self._escape(tool_id)}">')
+    def tool_result(
+        self,
+        tool_id: str,
+        content: str,
+        is_error: bool = False,
+        duration_ms: int | None = None,
+    ) -> None:
+        """Write a tool_result element with optional error flag and duration."""
+        attrs = [f'tool="{self._escape(tool_id)}"']
+        if is_error:
+            attrs.append('is_error="true"')
+        if duration_ms is not None:
+            attrs.append(f'duration_ms="{duration_ms}"')
+        attr_str = " ".join(attrs)
+        self._lines.append(f"  <tool_result {attr_str}>")
         self._lines.append(self._escape(content))
         self._lines.append("  </tool_result>")
 
@@ -152,11 +201,27 @@ def _extract_tool_result_content(message: dict) -> str:
     return "\n".join(result_parts)
 
 
+def _extract_is_error_from_tool_result(message: dict) -> bool:
+    """Check if tool result has is_error flag set."""
+    content_blocks = message.get("content", [])
+    if isinstance(content_blocks, list):
+        for block in content_blocks:
+            if isinstance(block, dict) and block.get("is_error"):
+                return True
+    return False
+
+
 def generate_compressed_xml(entries: list[dict], source_label: str | None = None) -> str:
     """Generate coarse-grained XML from mechanically reduced entries.
 
     This is Stage 1 output - deterministic structure conversion.
     No semantic judgment is applied here.
+
+    Preserves important metadata:
+    - thinking blocks (assistant reasoning)
+    - usage metadata (token counts)
+    - timestamps (chronological context)
+    - is_error flags and duration_ms (execution details)
 
     Args:
         entries: List of session entries to convert to XML
@@ -180,17 +245,32 @@ def generate_compressed_xml(entries: list[dict], source_label: str | None = None
     for entry in entries:
         entry_type = entry["type"]
         message = entry.get("message", {})
+        timestamp = entry.get("timestamp")
 
         if entry_type == "user":
             content = _extract_user_content(message)
-            writer.user(compact_whitespace(content))
+            writer.user(compact_whitespace(content), timestamp=timestamp)
 
         elif entry_type == "assistant":
+            # First output thinking blocks (assistant's reasoning)
+            for block in message.get("content", []):
+                if block.get("type") == "thinking":
+                    thinking_text = block.get("thinking", "")
+                    if thinking_text.strip():
+                        writer.thinking(compact_whitespace(thinking_text))
+
+            # Then output text and tool_use blocks
+            first_text = True
             for block in message.get("content", []):
                 if block.get("type") == "text":
                     text = block.get("text", "")
                     if text.strip():
-                        writer.assistant(compact_whitespace(text))
+                        # Only include timestamp on first text block
+                        writer.assistant(
+                            compact_whitespace(text),
+                            timestamp=timestamp if first_text else None,
+                        )
+                        first_text = False
                 elif block.get("type") == "tool_use":
                     writer.tool_use(
                         name=block.get("name", ""),
@@ -198,11 +278,29 @@ def generate_compressed_xml(entries: list[dict], source_label: str | None = None
                         params={k: str(v) for k, v in block.get("input", {}).items()},
                     )
 
+            # Output usage metadata if present
+            usage = message.get("usage", {})
+            if usage:
+                writer.usage(
+                    input_tokens=usage.get("input_tokens"),
+                    output_tokens=usage.get("output_tokens"),
+                    cache_read=usage.get("cache_read_input_tokens"),
+                    cache_creation=usage.get("cache_creation_input_tokens"),
+                )
+
         elif entry_type == "tool_result":
             content = _extract_tool_result_content(message)
+            is_error = _extract_is_error_from_tool_result(message)
+
+            # Extract duration from toolUseResult if available
+            tool_use_result = entry.get("toolUseResult", {})
+            duration_ms = tool_use_result.get("durationMs") if tool_use_result else None
+
             writer.tool_result(
                 tool_id=message.get("tool_use_id", ""),
                 content=compact_whitespace(content),
+                is_error=is_error,
+                duration_ms=duration_ms,
             )
 
     return writer.finish()
@@ -213,10 +311,13 @@ def reduce_session_mechanically(entries: list[dict]) -> list[dict]:
 
     Simple, predictable operations that are always correct:
     - Drop file-history-snapshot entries
-    - Strip usage metadata
     - Remove empty text blocks
-    - Drop sessionId field
     - Compact whitespace (handled in XML generation)
+
+    Preserves for analysis:
+    - thinking blocks (assistant reasoning)
+    - usage metadata (token counts)
+    - timestamp, toolUseResult (execution details)
 
     Args:
         entries: Raw session entries from JSONL
@@ -231,7 +332,7 @@ def reduce_session_mechanically(entries: list[dict]) -> list[dict]:
         if entry.get("type") == "file-history-snapshot":
             continue
 
-        # Build reduced entry with minimal fields
+        # Build reduced entry preserving important fields
         reduced_entry = {
             "type": entry["type"],
             "message": entry.get("message", {}).copy(),
@@ -241,9 +342,13 @@ def reduce_session_mechanically(entries: list[dict]) -> list[dict]:
         if "gitBranch" in entry:
             reduced_entry["gitBranch"] = entry["gitBranch"]
 
-        # Drop usage metadata from assistant messages
-        if "usage" in reduced_entry["message"]:
-            del reduced_entry["message"]["usage"]
+        # Preserve timestamp for chronological context
+        if "timestamp" in entry:
+            reduced_entry["timestamp"] = entry["timestamp"]
+
+        # Preserve toolUseResult for execution details (duration, errors)
+        if "toolUseResult" in entry:
+            reduced_entry["toolUseResult"] = entry["toolUseResult"]
 
         # Remove empty text blocks from content
         message_content = reduced_entry["message"].get("content", [])
@@ -330,10 +435,15 @@ def preprocess_session_content(
 
     This performs deterministic mechanical reduction only:
     - Drops file-history-snapshot entries
-    - Strips usage metadata
     - Removes empty text blocks
     - Compacts whitespace
     - Deduplicates repeated assistant text
+
+    Preserves for analysis:
+    - thinking blocks (assistant reasoning)
+    - usage metadata (token counts)
+    - timestamps (chronological context)
+    - is_error flags and duration_ms (execution details)
 
     Args:
         main_content: Raw JSONL content string for main session
@@ -377,10 +487,15 @@ def preprocess_session(
 
     This performs deterministic mechanical reduction only:
     - Drops file-history-snapshot entries
-    - Strips usage metadata
     - Removes empty text blocks
     - Compacts whitespace
     - Deduplicates repeated assistant text
+
+    Preserves for analysis:
+    - thinking blocks (assistant reasoning)
+    - usage metadata (token counts)
+    - timestamps (chronological context)
+    - is_error flags and duration_ms (execution details)
 
     All semantic judgment calls (noise detection, deduplication, truncation)
     are delegated to Stage 2 Haiku distillation.

@@ -130,8 +130,8 @@ class TestReduceSessionMechanically:
         assert len(result) == 2
         assert all(e["type"] != "file-history-snapshot" for e in result)
 
-    def test_strips_usage_metadata(self) -> None:
-        """usage metadata is stripped from assistant messages."""
+    def test_preserves_usage_metadata(self) -> None:
+        """usage metadata is preserved in assistant messages."""
         entries = [
             {
                 "type": "assistant",
@@ -142,7 +142,32 @@ class TestReduceSessionMechanically:
             },
         ]
         result = reduce_session_mechanically(entries)
-        assert "usage" not in result[0]["message"]
+        assert "usage" in result[0]["message"]
+        assert result[0]["message"]["usage"]["input_tokens"] == 100
+
+    def test_preserves_timestamp(self) -> None:
+        """timestamp is preserved from entry."""
+        entries = [
+            {
+                "type": "assistant",
+                "message": {"content": [{"type": "text", "text": "Hi"}]},
+                "timestamp": "2025-01-01T12:00:00.000Z",
+            },
+        ]
+        result = reduce_session_mechanically(entries)
+        assert result[0]["timestamp"] == "2025-01-01T12:00:00.000Z"
+
+    def test_preserves_tool_use_result(self) -> None:
+        """toolUseResult is preserved from entry."""
+        entries = [
+            {
+                "type": "user",
+                "message": {"content": "result"},
+                "toolUseResult": {"durationMs": 500, "stdout": "output"},
+            },
+        ]
+        result = reduce_session_mechanically(entries)
+        assert result[0]["toolUseResult"]["durationMs"] == 500
 
     def test_removes_empty_text_blocks(self) -> None:
         """Empty text blocks are removed from content."""
@@ -238,6 +263,97 @@ class TestGenerateCompressedXml:
         result = generate_compressed_xml(entries)
         assert "Hello\n\nWorld" in result
         assert "Hello\n\n\n\nWorld" not in result
+
+    def test_includes_thinking_blocks(self) -> None:
+        """Thinking blocks are included in output."""
+        entries = [
+            {
+                "type": "assistant",
+                "message": {
+                    "content": [
+                        {"type": "thinking", "thinking": "Let me analyze this problem"},
+                        {"type": "text", "text": "Here is my answer"},
+                    ]
+                },
+            },
+        ]
+        result = generate_compressed_xml(entries)
+        assert "<thinking>Let me analyze this problem</thinking>" in result
+        assert "<assistant>Here is my answer</assistant>" in result
+
+    def test_includes_usage_metadata(self) -> None:
+        """Usage metadata is included in output."""
+        entries = [
+            {
+                "type": "assistant",
+                "message": {
+                    "content": [{"type": "text", "text": "Hi"}],
+                    "usage": {
+                        "input_tokens": 100,
+                        "output_tokens": 50,
+                        "cache_read_input_tokens": 25,
+                    },
+                },
+            },
+        ]
+        result = generate_compressed_xml(entries)
+        assert 'input="100"' in result
+        assert 'output="50"' in result
+        assert 'cache_read="25"' in result
+
+    def test_includes_timestamp_on_user(self) -> None:
+        """User entries include timestamp attribute."""
+        entries = [
+            {
+                "type": "user",
+                "message": {"content": "Hello"},
+                "timestamp": "2025-01-01T12:00:00.000Z",
+            },
+        ]
+        result = generate_compressed_xml(entries)
+        assert 'timestamp="2025-01-01T12:00:00.000Z"' in result
+        assert "<user" in result
+
+    def test_includes_timestamp_on_assistant(self) -> None:
+        """Assistant text includes timestamp attribute."""
+        entries = [
+            {
+                "type": "assistant",
+                "message": {"content": [{"type": "text", "text": "Hi"}]},
+                "timestamp": "2025-01-01T12:00:00.000Z",
+            },
+        ]
+        result = generate_compressed_xml(entries)
+        assert 'timestamp="2025-01-01T12:00:00.000Z"' in result
+
+    def test_includes_is_error_on_tool_result(self) -> None:
+        """Tool result includes is_error attribute when true."""
+        entries = [
+            {
+                "type": "tool_result",
+                "message": {
+                    "tool_use_id": "tool123",
+                    "content": [{"type": "text", "text": "Error occurred", "is_error": True}],
+                },
+            },
+        ]
+        result = generate_compressed_xml(entries)
+        assert 'is_error="true"' in result
+
+    def test_includes_duration_ms_on_tool_result(self) -> None:
+        """Tool result includes duration_ms from toolUseResult."""
+        entries = [
+            {
+                "type": "tool_result",
+                "message": {
+                    "tool_use_id": "tool123",
+                    "content": [{"type": "text", "text": "Success"}],
+                },
+                "toolUseResult": {"durationMs": 1500},
+            },
+        ]
+        result = generate_compressed_xml(entries)
+        assert 'duration_ms="1500"' in result
 
 
 class TestProcessLogFile:
