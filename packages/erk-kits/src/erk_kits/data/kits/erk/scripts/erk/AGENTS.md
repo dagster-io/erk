@@ -29,12 +29,12 @@ def my_command(ctx: click.Context) -> None:
 
 From `erk_shared.context.helpers`:
 
-| Helper                  | Returns | Usage                    |
-| ----------------------- | ------- | ------------------------ |
-| `require_cwd(ctx)`      | `Path`  | Current working directory |
-| `require_repo_root(ctx)` | `Path` | Repository root path      |
-| `require_git(ctx)`      | `Git`   | Git operations            |
-| `require_github(ctx)`   | `GitHub`| GitHub operations         |
+| Helper                   | Returns  | Usage                     |
+| ------------------------ | -------- | ------------------------- |
+| `require_cwd(ctx)`       | `Path`   | Current working directory |
+| `require_repo_root(ctx)` | `Path`   | Repository root path      |
+| `require_git(ctx)`       | `Git`    | Git operations            |
+| `require_github(ctx)`    | `GitHub` | GitHub operations         |
 
 ### Anti-Patterns
 
