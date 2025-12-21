@@ -11,6 +11,7 @@ artifacts:
     - commands/erk/create-extraction-plan.md
     - commands/erk/save-plan.md
     - commands/erk/pr-address.md
+    - commands/erk/pr-submit.md
   agent:
     - agents/erk/issue-wt-creator.md
     - agents/erk/plan-extractor.md

@@ -24,4 +24,4 @@ erk kit exec gt quick-submit
 
 - This is a shortcut for rapid iteration
 - Uses generic "update" commit message
-- For proper commit messages, use `/gt:pr-submit` instead
+- For proper commit messages, use `/erk:pr-submit` instead

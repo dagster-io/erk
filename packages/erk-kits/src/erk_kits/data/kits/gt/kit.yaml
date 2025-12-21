@@ -22,8 +22,6 @@ scripts:
     path: scripts/gt/quick_submit.py
     description: Quick commit all changes and submit with Graphite
 artifacts:
-  command:
-    - commands/gt/pr-submit.md
   skill:
     - skills/gt-graphite/SKILL.md
     - skills/gt-graphite/references/gt-reference.md

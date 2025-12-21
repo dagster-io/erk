@@ -4,7 +4,7 @@ description:
   and rebases stack)
 argument-hint: <description>
 erk:
-  kit: gt
+  kit: erk
 ---
 
 # Submit PR
@@ -17,10 +17,10 @@ Automatically create a git commit with a helpful summary message and submit the 
 
 ```bash
 # Invoke the command (description argument is optional but recommended)
-/gt:pr-submit "Add user authentication feature"
+/erk:pr-submit "Add user authentication feature"
 
 # Without argument (will analyze changes automatically)
-/gt:pr-submit
+/erk:pr-submit
 ```
 
 ## Implementation

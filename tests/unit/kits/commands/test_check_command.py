@@ -931,6 +931,7 @@ def test_check_command_perfect_sync_no_missing_no_obsolete(tmp_path: Path) -> No
         claude_dir.mkdir()
 
         # Use real bundled kit (gt) and install all artifacts
+        # Note: gt kit only has skill artifacts (pr-submit was moved to erk kit)
         config = ProjectConfig(
             version="1",
             kits={
@@ -939,7 +940,6 @@ def test_check_command_perfect_sync_no_missing_no_obsolete(tmp_path: Path) -> No
                     version="0.1.0",
                     source_type="bundled",
                     artifacts=[
-                        ".claude/commands/gt/pr-submit.md",
                         ".claude/skills/gt-graphite/SKILL.md",
                         ".claude/skills/gt-graphite/references/gt-reference.md",
                     ],
@@ -955,7 +955,6 @@ def test_check_command_perfect_sync_no_missing_no_obsolete(tmp_path: Path) -> No
         bundled_path = bundled_source._get_bundled_kit_path("gt")
         if bundled_path is not None:
             for artifact_rel in [
-                "commands/gt/pr-submit.md",
                 "skills/gt-graphite/SKILL.md",
                 "skills/gt-graphite/references/gt-reference.md",
             ]:

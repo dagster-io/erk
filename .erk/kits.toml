@@ -12,6 +12,7 @@ artifacts = [
     ".claude/commands/erk/create-extraction-plan.md",
     ".claude/commands/erk/save-plan.md",
     ".claude/commands/erk/pr-address.md",
+    ".claude/commands/erk/pr-submit.md",
     ".claude/agents/erk/issue-wt-creator.md",
     ".claude/agents/erk/plan-extractor.md",
     ".erk/docs/kits/erk/EXAMPLES.md",
@@ -58,7 +59,6 @@ kit_id = "gt"
 source_type = "bundled"
 version = "0.2.7"
 artifacts = [
-    ".claude/commands/gt/pr-submit.md",
     ".claude/skills/gt-graphite/SKILL.md",
     ".claude/skills/gt-graphite/references/gt-reference.md",
 ]
