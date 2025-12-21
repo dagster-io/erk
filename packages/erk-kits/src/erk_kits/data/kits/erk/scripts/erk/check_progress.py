@@ -27,23 +27,17 @@ Examples:
 """
 
 import json
-from pathlib import Path
-from typing import NoReturn
 
 import click
 
+from erk_shared.context.helpers import require_cwd
 from erk_shared.impl_folder import validate_progress_schema
-
-
-def _error(msg: str) -> NoReturn:
-    """Output error message and exit with code 1."""
-    click.echo(f"Error: {msg}", err=True)
-    raise SystemExit(1)
 
 
 @click.command(name="check-progress")
 @click.option("--json", "output_json", is_flag=True, help="Output JSON result")
-def check_progress(output_json: bool) -> None:
+@click.pass_context
+def check_progress(ctx: click.Context, output_json: bool) -> None:
     """Validate progress.md has valid YAML frontmatter with required fields.
 
     Checks that progress.md exists in .impl/ directory and validates:
@@ -52,7 +46,8 @@ def check_progress(output_json: bool) -> None:
     - Each step has text and completed fields
     - Consistency: total_steps matches len(steps), completed_steps matches actual count
     """
-    progress_file = Path.cwd() / ".impl" / "progress.md"
+    cwd = require_cwd(ctx)
+    progress_file = cwd / ".impl" / "progress.md"
 
     errors = validate_progress_schema(progress_file)
 

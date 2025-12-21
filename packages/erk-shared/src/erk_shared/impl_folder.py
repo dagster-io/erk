@@ -219,6 +219,8 @@ def validate_progress_schema(progress_file: Path) -> list[str]:
 
     content = progress_file.read_text(encoding="utf-8")
 
+    # Gracefully handle YAML parsing errors - return as validation error, not exception.
+    # Invalid YAML is a validation failure, not a crash condition.
     try:
         post = frontmatter.loads(content)
     except yaml.YAMLError as e:

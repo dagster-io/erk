@@ -1,6 +1,7 @@
 """Integration tests for check-progress kit CLI command.
 
 Tests the complete schema validation workflow for progress.md files.
+Uses context injection via ErkContext.for_test() instead of monkeypatch.chdir().
 """
 
 import json
@@ -10,6 +11,7 @@ import pytest
 from click.testing import CliRunner
 
 from erk_kits.data.kits.erk.scripts.erk.check_progress import check_progress
+from erk_shared.context import ErkContext
 
 
 @pytest.fixture
@@ -44,14 +46,16 @@ steps:
     return progress_md
 
 
-def test_check_progress_valid_file(
-    valid_progress_file: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_progress_valid_file(valid_progress_file: Path) -> None:
     """Test that check-progress validates a correct progress.md."""
-    monkeypatch.chdir(valid_progress_file.parent.parent)
+    cwd = valid_progress_file.parent.parent
 
     runner = CliRunner()
-    result = runner.invoke(check_progress, ["--json"])
+    result = runner.invoke(
+        check_progress,
+        ["--json"],
+        obj=ErkContext.for_test(cwd=cwd),
+    )
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -59,20 +63,22 @@ def test_check_progress_valid_file(
     assert data["errors"] == []
 
 
-def test_check_progress_valid_file_normal_mode(
-    valid_progress_file: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_progress_valid_file_normal_mode(valid_progress_file: Path) -> None:
     """Test human-readable output for valid progress.md."""
-    monkeypatch.chdir(valid_progress_file.parent.parent)
+    cwd = valid_progress_file.parent.parent
 
     runner = CliRunner()
-    result = runner.invoke(check_progress, [])
+    result = runner.invoke(
+        check_progress,
+        [],
+        obj=ErkContext.for_test(cwd=cwd),
+    )
 
     assert result.exit_code == 0
     assert "progress.md schema is valid" in result.output
 
 
-def test_check_progress_empty_steps(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_check_progress_empty_steps(tmp_path: Path) -> None:
     """Test that empty steps array is valid."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
@@ -92,10 +98,12 @@ No steps detected in plan.
         encoding="utf-8",
     )
 
-    monkeypatch.chdir(tmp_path)
-
     runner = CliRunner()
-    result = runner.invoke(check_progress, ["--json"])
+    result = runner.invoke(
+        check_progress,
+        ["--json"],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -103,16 +111,18 @@ No steps detected in plan.
     assert data["errors"] == []
 
 
-def test_check_progress_missing_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_check_progress_missing_file(tmp_path: Path) -> None:
     """Test error when progress.md doesn't exist."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
     # No progress.md created
 
-    monkeypatch.chdir(tmp_path)
-
     runner = CliRunner()
-    result = runner.invoke(check_progress, ["--json"])
+    result = runner.invoke(
+        check_progress,
+        ["--json"],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
     assert result.exit_code == 1
     data = json.loads(result.output)
@@ -120,7 +130,7 @@ def test_check_progress_missing_file(tmp_path: Path, monkeypatch: pytest.MonkeyP
     assert "progress.md file not found" in data["errors"]
 
 
-def test_check_progress_no_frontmatter(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_check_progress_no_frontmatter(tmp_path: Path) -> None:
     """Test error when progress.md has no YAML frontmatter."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
@@ -134,10 +144,12 @@ No steps detected in plan.
         encoding="utf-8",
     )
 
-    monkeypatch.chdir(tmp_path)
-
     runner = CliRunner()
-    result = runner.invoke(check_progress, ["--json"])
+    result = runner.invoke(
+        check_progress,
+        ["--json"],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
     assert result.exit_code == 1
     data = json.loads(result.output)
@@ -145,9 +157,7 @@ No steps detected in plan.
     assert "Missing 'steps' field" in data["errors"]
 
 
-def test_check_progress_missing_steps_field(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_progress_missing_steps_field(tmp_path: Path) -> None:
     """Test error when steps field is missing."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
@@ -164,10 +174,12 @@ total_steps: 0
         encoding="utf-8",
     )
 
-    monkeypatch.chdir(tmp_path)
-
     runner = CliRunner()
-    result = runner.invoke(check_progress, ["--json"])
+    result = runner.invoke(
+        check_progress,
+        ["--json"],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
     assert result.exit_code == 1
     data = json.loads(result.output)
@@ -175,9 +187,7 @@ total_steps: 0
     assert "Missing 'steps' field" in data["errors"]
 
 
-def test_check_progress_inconsistent_counts(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_progress_inconsistent_counts(tmp_path: Path) -> None:
     """Test error when completed_steps doesn't match actual count."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
@@ -199,10 +209,12 @@ steps:
         encoding="utf-8",
     )
 
-    monkeypatch.chdir(tmp_path)
-
     runner = CliRunner()
-    result = runner.invoke(check_progress, ["--json"])
+    result = runner.invoke(
+        check_progress,
+        ["--json"],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
     assert result.exit_code == 1
     data = json.loads(result.output)
@@ -211,7 +223,7 @@ steps:
     assert any("completed_steps" in e and "actual count" in e for e in data["errors"])
 
 
-def test_check_progress_normal_mode_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_check_progress_normal_mode_errors(tmp_path: Path) -> None:
     """Test normal mode outputs errors to stderr."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
@@ -227,16 +239,18 @@ completed_steps: 0
         encoding="utf-8",
     )
 
-    monkeypatch.chdir(tmp_path)
-
     runner = CliRunner()
-    result = runner.invoke(check_progress, [])
+    result = runner.invoke(
+        check_progress,
+        [],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
     assert result.exit_code == 1
     assert "Error:" in result.output
 
 
-def test_check_progress_step_missing_text(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_check_progress_step_missing_text(tmp_path: Path) -> None:
     """Test error when step is missing text field."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
@@ -255,10 +269,12 @@ steps:
         encoding="utf-8",
     )
 
-    monkeypatch.chdir(tmp_path)
-
     runner = CliRunner()
-    result = runner.invoke(check_progress, ["--json"])
+    result = runner.invoke(
+        check_progress,
+        ["--json"],
+        obj=ErkContext.for_test(cwd=tmp_path),
+    )
 
     assert result.exit_code == 1
     data = json.loads(result.output)
