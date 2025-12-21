@@ -5,28 +5,6 @@ license: See LICENSE.md
 artifacts:
   command:
     - commands/erk/plan-implement.md
-    - commands/erk/merge-conflicts-fix.md
-    - commands/erk/plan-submit.md
-    - commands/erk/auto-restack.md
-    - commands/erk/create-extraction-plan.md
-    - commands/erk/save-plan.md
-    - commands/erk/pr-address.md
-    - commands/erk/pr-submit.md
-  agent:
-    - agents/erk/issue-wt-creator.md
-  doc:
-    - docs/erk/EXAMPLES.md
-    - docs/erk/includes/conflict-resolution.md
-    - docs/erk/includes/create-github-issue.md
-    - docs/erk/includes/extract-docs-analysis-shared.md
-    - docs/erk/includes/extract-plan-workflow-shared.md
-    - docs/erk/includes/planning/extract-plan-from-session.md
-    - docs/erk/includes/planning/next-steps-output.md
-    - docs/erk/includes/session-file-location.md
-    - docs/erk/includes/success-output-format.md
-    - docs/erk/includes/validate-git-repository.md
-    - docs/erk/includes/validate-github-cli.md
-    - docs/erk/includes/validate-plan-structure.md
 scripts:
   - name: find-project-dir
     path: scripts/erk/find_project_dir.py
@@ -99,107 +77,82 @@ scripts:
     description: Extract the latest plan from Claude session files
   - name: create-issue-from-session
     path: scripts/erk/create_issue_from_session.py
-    description: Extract plan from Claude session and create GitHub issue
-  - name: mark-impl-started
-    path: scripts/erk/mark_impl_started.py
-    description: Update last_local_impl_at in GitHub issue plan-header metadata
+    description: Create GitHub issue from Claude Code session with plan extraction
   - name: get-pr-body-footer
     path: scripts/erk/get_pr_body_footer.py
-    description: Generate PR body footer with checkout command for remote implementations
-  - name: get-closing-text
-    path: scripts/erk/get_closing_text.py
-    description: Get closing text for PR body based on .impl/issue.json reference
-  - name: add-remote-execution-note
-    path: scripts/erk/add_remote_execution_note.py
-    description: Add remote execution tracking note to PR body for workflow runs
-  - name: create-extraction-plan
-    path: scripts/erk/create_extraction_plan.py
-    description: Create extraction plan issue from stdin with erk-plan and erk-extraction labels
-  - name: list-sessions
-    path: scripts/erk/list_sessions.py
-    description: List Claude Code sessions with metadata for the current project
-  - name: exit-plan-mode-hook
-    path: scripts/erk/exit_plan_mode_hook.py
-    description: Save plan to GitHub when ExitPlanMode is called
-  - name: add-issue-label
-    path: scripts/erk/add_issue_label.py
-    description: Add a label to a GitHub issue
-  - name: create-extraction-branch
-    path: scripts/erk/create_extraction_branch.py
-    description: Create branch for extraction workflow
-  - name: extract-session-from-issue
-    path: scripts/erk/extract_session_from_issue.py
-    description: Extract session data from GitHub issue comments
-  - name: mark-impl-ended
-    path: scripts/erk/mark_impl_ended.py
-    description: Update implementation ended event in GitHub issue and local state file
+    description: Get footer text for pull request body with metadata and next steps
   - name: post-extraction-comment
     path: scripts/erk/post_extraction_comment.py
-    description: Post extraction workflow status comments to GitHub issues
+    description: Post GitHub comment with plan extraction summary and next steps
+  - name: generate-pr-summary
+    path: scripts/erk/generate_pr_summary.py
+    description: Generate PR summary from plan and implementation
+  - name: update-pr-body
+    path: scripts/erk/update_pr_body.py
+    description: Update PR body with plan sections, next steps, and metadata
+  - name: list-sessions
+    path: scripts/erk/list_sessions.py
+    description: List available Claude Code sessions for a given date range
+  - name: get-closing-text
+    path: scripts/erk/get_closing_text.py
+    description: Get closing text for pull request body based on .impl/issue.json
   - name: impl-init
     path: scripts/erk/impl_init.py
-    description: Initialize implementation by validating .impl/ folder and extracting phases
+    description: Initialize and validate .impl/ folder for implementation
   - name: impl-signal
     path: scripts/erk/impl_signal.py
     description: Signal implementation events (started/ended) to GitHub
   - name: impl-verify
     path: scripts/erk/impl_verify.py
-    description: Verify .impl/ folder exists after implementation (guardrail)
-  - name: get-pr-review-comments
-    path: scripts/erk/get_pr_review_comments.py
-    description: Fetch PR review comments for agent context injection
-  - name: resolve-review-thread
-    path: scripts/erk/resolve_review_thread.py
-    description: Resolve a PR review thread via GraphQL mutation
-  - name: get-pr-discussion-comments
-    path: scripts/erk/get_pr_discussion_comments.py
-    description: Fetch PR discussion comments (main conversation) for agent context injection
-  - name: add-reaction-to-comment
-    path: scripts/erk/add_reaction_to_comment.py
-    description: Add a reaction to a PR/issue comment to mark it as addressed
-  - name: tripwires-reminder-hook
-    path: scripts/erk/tripwires_reminder_hook.py
-    description: Remind to check tripwires before common dangerous operations
-  - name: get-pr-review-comments
-    path: scripts/erk/get_pr_review_comments.py
-    description: Fetch PR review comments for agent context injection
+    description: Verify implementation folder structure and content
   - name: detect-trunk-branch
     path: scripts/erk/detect_trunk_branch.py
-    description: Detect whether repo uses main or master as trunk branch
-  - name: post-workflow-started-comment
-    path: scripts/erk/post_workflow_started_comment.py
-    description: Post workflow started comment to GitHub issue with YAML metadata
-  - name: generate-pr-summary
-    path: scripts/erk/generate_pr_summary.py
-    description: Generate PR summary from PR diff using Claude (no commit messages)
-  - name: update-pr-summary
-    path: scripts/erk/update_pr_summary.py
-    description: Update PR body with implementation summary from commit message
+    description: Detect trunk branch in GitHub repository
+  - name: tripwires-reminder-hook
+    path: scripts/erk/tripwires_reminder_hook.py
+    description: Remind Claude to check tripwires before common operations
+  - name: exit-plan-mode-hook
+    path: scripts/erk/exit_plan_mode_hook.py
+    description: Auto-save plan to GitHub when exiting plan mode
+  - name: session-plan-extractor
+    path: scripts/erk/session_plan_extractor.py
+    description: Extract plan from Claude Code session with context-aware analysis
+  - name: extract-session-from-issue
+    path: scripts/erk/extract_session_from_issue.py
+    description: Extract Claude Code session from GitHub issue plan-header metadata
+  - name: pr-review-comments
+    path: scripts/erk/pr_review_comments.py
+    description: Fetch and format pull request review comments
+  - name: pr-discussion-comments
+    path: scripts/erk/pr_discussion_comments.py
+    description: Fetch and format pull request discussion comments
+  - name: add-issue-label
+    path: scripts/erk/add_issue_label.py
+    description: Add labels to a GitHub issue
+  - name: add-remote-execution-note
+    path: scripts/erk/add_remote_execution_note.py
+    description: Add remote execution context to GitHub issue comment
   - name: configure-git-user
     path: scripts/erk/configure_git_user.py
-    description: Configure git user identity from GitHub username for CI environments
+    description: Configure git user identity for commit operations
   - name: create-impl-run-info
     path: scripts/erk/create_impl_run_info.py
-    description: Create .impl/run-info.json with workflow run metadata
-  - name: update-pr-body
-    path: scripts/erk/update_pr_body.py
-    description: Update PR body with AI-generated summary and standardized footer
-hooks:
-  - id: session-id-injector-hook
-    lifecycle: UserPromptSubmit
-    matcher: "*"
-    invocation: erk kit exec erk session-id-injector-hook
-    description: Injects session ID into conversation context for plan-related commands
-    timeout: 30
-  - id: exit-plan-mode-hook
-    lifecycle: PreToolUse
-    matcher: ExitPlanMode
-    invocation: erk kit exec erk exit-plan-mode-hook
-    description: Auto-save plan to GitHub on Plan Mode exit
-    timeout: 30
-  - id: tripwires-reminder-hook
-    lifecycle: UserPromptSubmit
-    matcher: "*"
-    invocation: erk kit exec erk tripwires-reminder-hook
-    description: Reminds Claude to check tripwires before common operations
-    timeout: 30
+    description: Create implementation run information from plan metadata
+  - name: get-pr-review-comments
+    path: scripts/erk/get_pr_review_comments.py
+    description: Get pull request review comments for context window fitting
+  - name: post-workflow-started-comment
+    path: scripts/erk/post_workflow_started_comment.py
+    description: Post comment to GitHub issue when workflow starts
+  - name: update-pr-summary
+    path: scripts/erk/update_pr_summary.py
+    description: Update PR summary with implementation results
+  - name: format-error-cli
+    path: scripts/erk/format_error_cli.py
+    description: Format error messages for CLI output with consistent structure
+  - name: create-extraction-branch
+    path: scripts/erk/create_extraction_branch.py
+    description: Create git branch for extraction with naming conventions
+  - name: plan-utils
+    path: scripts/erk/plan_utils.py
+    description: Utility functions for plan manipulation and validation

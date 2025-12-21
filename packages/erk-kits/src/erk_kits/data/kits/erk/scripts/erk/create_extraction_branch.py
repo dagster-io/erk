@@ -16,11 +16,10 @@ Output:
 """
 
 import json
-from pathlib import Path
 
 import click
 
-from erk_shared.context.helpers import require_git, require_repo_root
+from erk_shared.context.helpers import require_cwd, require_git, require_repo_root
 
 
 @click.command(name="create-extraction-branch")
@@ -49,7 +48,7 @@ def create_extraction_branch(
     """
     git = require_git(ctx)
     repo_root = require_repo_root(ctx)
-    cwd = Path.cwd()
+    cwd = require_cwd(ctx)
 
     branch_name = f"extraction-docs-P{issue_number}"
 

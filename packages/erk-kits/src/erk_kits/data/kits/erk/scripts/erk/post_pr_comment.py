@@ -23,12 +23,11 @@ Examples:
 
 import json
 from dataclasses import asdict, dataclass
-from pathlib import Path
 
 import click
 
 from erk.kits.context_helpers import require_github_issues
-from erk_shared.context.helpers import require_git, require_repo_root
+from erk_shared.context.helpers import require_cwd, require_git, require_repo_root
 from erk_shared.github.metadata import (
     MetadataBlock,
     create_metadata_block,
@@ -103,9 +102,10 @@ def post_pr_comment(ctx: click.Context, pr_url: str, pr_number: int) -> None:
     # Get dependencies from context
     repo_root = require_repo_root(ctx)
     git = require_git(ctx)
+    cwd = require_cwd(ctx)
 
     # Read issue reference
-    impl_dir = Path.cwd() / ".impl"
+    impl_dir = cwd / ".impl"
 
     if not has_issue_reference(impl_dir):
         result = PrCommentError(
@@ -127,7 +127,7 @@ def post_pr_comment(ctx: click.Context, pr_url: str, pr_number: int) -> None:
         raise SystemExit(0)
 
     # Get branch name using Git abstraction
-    branch_name = git.get_current_branch(Path.cwd())
+    branch_name = git.get_current_branch(cwd)
     if branch_name is None:
         result = PrCommentError(
             success=False,

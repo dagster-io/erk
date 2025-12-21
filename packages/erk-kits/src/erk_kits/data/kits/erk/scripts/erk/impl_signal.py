@@ -37,7 +37,7 @@ from pathlib import Path
 import click
 
 from erk.kits.context_helpers import require_github_issues
-from erk_shared.context.helpers import require_repo_root
+from erk_shared.context.helpers import require_cwd, require_repo_root
 from erk_shared.env import in_github_actions
 from erk_shared.github.metadata import (
     create_start_status_block,
@@ -83,8 +83,12 @@ def _output_error(event: str, error_type: str, message: str) -> None:
     raise SystemExit(0)
 
 
-def _get_worktree_name() -> str | None:
-    """Get current worktree name from git worktree list."""
+def _get_worktree_name(cwd: Path) -> str | None:
+    """Get current worktree name from git worktree list.
+
+    Args:
+        cwd: Current working directory
+    """
     try:
         result = subprocess.run(
             ["git", "worktree", "list", "--porcelain"],
@@ -93,7 +97,7 @@ def _get_worktree_name() -> str | None:
             check=True,
         )
 
-        current_dir = Path.cwd().resolve()
+        current_dir = cwd.resolve()
         lines = result.stdout.strip().split("\n")
 
         for line in lines:
@@ -124,14 +128,19 @@ def _get_branch_name() -> str | None:
         return None
 
 
-def _signal_started(ctx: click.Context) -> None:
-    """Handle 'started' event - post comment and update metadata."""
+def _signal_started(ctx: click.Context, cwd: Path) -> None:
+    """Handle 'started' event - post comment and update metadata.
+
+    Args:
+        ctx: Click context with dependencies
+        cwd: Current working directory
+    """
     event = "started"
 
     # Find impl directory (.impl/ or .worker-impl/) - check BEFORE context access
-    impl_dir = Path.cwd() / ".impl"
+    impl_dir = cwd / ".impl"
     if not impl_dir.exists():
-        impl_dir = Path.cwd() / ".worker-impl"
+        impl_dir = cwd / ".worker-impl"
 
     # Read issue reference FIRST (doesn't require context)
     issue_ref = read_issue_reference(impl_dir)
@@ -147,7 +156,7 @@ def _signal_started(ctx: click.Context) -> None:
         return
 
     # Get worktree and branch names
-    worktree_name = _get_worktree_name()
+    worktree_name = _get_worktree_name(cwd)
     if worktree_name is None:
         _output_error(event, "worktree_detection_failed", "Could not determine worktree name")
         return
@@ -251,14 +260,19 @@ def _signal_started(ctx: click.Context) -> None:
     raise SystemExit(0)
 
 
-def _signal_ended(ctx: click.Context) -> None:
-    """Handle 'ended' event - update metadata."""
+def _signal_ended(ctx: click.Context, cwd: Path) -> None:
+    """Handle 'ended' event - update metadata.
+
+    Args:
+        ctx: Click context with dependencies
+        cwd: Current working directory
+    """
     event = "ended"
 
     # Find impl directory - check BEFORE context access
-    impl_dir = Path.cwd() / ".impl"
+    impl_dir = cwd / ".impl"
     if not impl_dir.exists():
-        impl_dir = Path.cwd() / ".worker-impl"
+        impl_dir = cwd / ".worker-impl"
 
     # Read issue reference FIRST (doesn't require context)
     issue_ref = read_issue_reference(impl_dir)
@@ -343,7 +357,8 @@ def impl_signal(ctx: click.Context, event: str) -> None:
 
     Always exits with code 0 for graceful degradation (|| true pattern).
     """
+    cwd = require_cwd(ctx)
     if event == "started":
-        _signal_started(ctx)
+        _signal_started(ctx, cwd)
     else:
-        _signal_ended(ctx)
+        _signal_ended(ctx, cwd)

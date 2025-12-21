@@ -29,7 +29,7 @@ from pathlib import Path
 import click
 
 from erk.kits.context_helpers import require_github_issues
-from erk_shared.context.helpers import require_repo_root
+from erk_shared.context.helpers import require_cwd, require_repo_root
 from erk_shared.github.metadata import (
     create_start_status_block,
     render_erk_issue_event,
@@ -58,8 +58,11 @@ class StartError:
     message: str
 
 
-def get_worktree_name() -> str | None:
+def get_worktree_name(cwd: Path) -> str | None:
     """Get current worktree name from git worktree list.
+
+    Args:
+        cwd: Current working directory
 
     Returns:
         Worktree name (directory name) or None if not in a worktree
@@ -74,7 +77,7 @@ def get_worktree_name() -> str | None:
 
         # Parse worktree list output (multi-line format)
         # Looking for: "worktree /path/to/worktree"
-        current_dir = Path.cwd().resolve()
+        current_dir = cwd.resolve()
         lines = result.stdout.strip().split("\n")
 
         for line in lines:
@@ -120,9 +123,10 @@ def post_start_comment(ctx: click.Context) -> None:
     """
     # Get dependencies from context
     repo_root = require_repo_root(ctx)
+    cwd = require_cwd(ctx)
 
     # Read issue reference
-    impl_dir = Path.cwd() / ".impl"
+    impl_dir = cwd / ".impl"
     issue_ref = read_issue_reference(impl_dir)
     if issue_ref is None:
         result = StartError(
@@ -134,7 +138,7 @@ def post_start_comment(ctx: click.Context) -> None:
         raise SystemExit(0)
 
     # Get worktree name
-    worktree_name = get_worktree_name()
+    worktree_name = get_worktree_name(cwd)
     if worktree_name is None:
         result = StartError(
             success=False,

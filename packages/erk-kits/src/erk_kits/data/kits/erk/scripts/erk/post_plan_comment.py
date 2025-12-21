@@ -10,10 +10,10 @@ Usage:
 
 import json
 from datetime import UTC, datetime
-from pathlib import Path
 
 import click
 
+from erk_shared.context.helpers import require_cwd
 from erk_shared.github.issues import RealGitHubIssues
 from erk_shared.github.metadata import (
     create_plan_issue_block,
@@ -27,7 +27,9 @@ from erk_shared.naming import sanitize_worktree_name
 @click.option("--plan-content", required=True, help="Plan markdown content")
 @click.option("--plan-title", required=True, help="Plan title for worktree name generation")
 @click.option("--plan-file", required=False, help="Optional path to plan file")
+@click.pass_context
 def post_plan_comment(
+    ctx: click.Context,
     issue_number: int,
     plan_content: str,
     plan_title: str,
@@ -93,7 +95,7 @@ Or step-by-step:
 
     # Post comment
     github = RealGitHubIssues()
-    repo_root = Path.cwd()
+    repo_root = require_cwd(ctx)
     github.add_comment(repo_root, issue_number, comment_body)
 
     # Output success
