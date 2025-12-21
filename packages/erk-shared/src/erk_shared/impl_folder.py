@@ -261,15 +261,12 @@ def validate_progress_schema(progress_file: Path) -> list[str]:
         assert isinstance(completed_steps, int)
 
         if total_steps != len(steps):
-            errors.append(
-                f"total_steps ({total_steps}) != len(steps) ({len(steps)})"
-            )
+            errors.append(f"total_steps ({total_steps}) != len(steps) ({len(steps)})")
 
         actual_completed = sum(1 for s in steps if s.get("completed"))
         if completed_steps != actual_completed:
             errors.append(
-                f"completed_steps ({completed_steps}) != "
-                f"actual count ({actual_completed})"
+                f"completed_steps ({completed_steps}) != actual count ({actual_completed})"
             )
 
     return errors
