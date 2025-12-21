@@ -79,10 +79,10 @@ def build_blocking_message(session_id: str, current_branch: str | None) -> str:
         "Use AskUserQuestion to ask the user:",
         '  "Would you like to save this plan, or implement now?"',
         "",
-        "Options:",
-        '  - "Save the plan" (Recommended): Save plan as a GitHub issue and stop. '
+        "IMPORTANT: Present options in this exact order:",
+        '  1. "Save the plan" (Recommended) - Save plan as a GitHub issue and stop. '
         "Does NOT proceed to implementation.",
-        '  - "Implement now": Skip saving, proceed directly to implementation '
+        '  2. "Implement now" - Skip saving, proceed directly to implementation '
         "(edits code in the current worktree).",
     ]
 
