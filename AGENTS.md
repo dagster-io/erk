@@ -126,6 +126,12 @@ Core patterns for this codebase:
 - ✅ **ALLOWED**: TDD workflow (write test → implement feature → refactor)
 - 🔴 **MUST**: Only test actively implemented code
 
+**CHANGELOG discipline:**
+
+- 🔴 **FORBIDDEN**: Modifying CHANGELOG.md directly
+- ✅ **ALLOWED**: Use `/local:changelog-update` to sync after merges to master
+- CHANGELOG updates happen post-merge, not during PR development
+
 ## Documentation Hub
 
 - **Full navigation guide**: [.erk/docs/agent/guide.md](.erk/docs/agent/guide.md)

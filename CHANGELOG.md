@@ -35,7 +35,7 @@ As of a92830194
 - Add `.impl/` preservation guardrail to plan-implement workflow to prevent agents from deleting implementation plans - note: this may cause hard failures, please report if encountered
 - Add `--all` flag to `erk wt delete` to close associated PR and plan
 - Add copy logs button (`y` key) to plan detail screen
-- Rename config option `auto_restack_skip_dangerous` to `auto_restack_require_dangerous_flag` with flipped default (now requires flag by default)
+- Add config option `auto_restack_skip_dangerous` to skip `--dangerous` flag requirement
 - Add `impl` alias for `erk implement` command
 - Add prefix matching (PXXXX) for worktree-to-issue association
 - Add PR URL display in quick-submit output
