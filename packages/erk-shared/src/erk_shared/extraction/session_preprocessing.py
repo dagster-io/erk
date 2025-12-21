@@ -306,6 +306,24 @@ def generate_compressed_xml(entries: list[dict], source_label: str | None = None
     return writer.finish()
 
 
+# Fields to exclude from entries during mechanical reduction.
+# Using a blacklist ensures new fields are preserved by default.
+_ENTRY_FIELDS_TO_EXCLUDE = frozenset(
+    {
+        "parentUuid",  # Internal graph structure
+        "isSidechain",  # Internal routing (handled via agent log discovery)
+        "userType",  # Typically always "external"
+        "cwd",  # Redundant with gitBranch
+        "version",  # Claude Code version, not relevant for analysis
+        "sessionId",  # Already used for filtering
+        "agentId",  # Already captured in source label
+        "uuid",  # Internal identifier
+        "requestId",  # Internal identifier
+        "slug",  # Internal identifier
+    }
+)
+
+
 def reduce_session_mechanically(entries: list[dict]) -> list[dict]:
     """Stage 1: Deterministic token reduction.
 
@@ -314,10 +332,8 @@ def reduce_session_mechanically(entries: list[dict]) -> list[dict]:
     - Remove empty text blocks
     - Compact whitespace (handled in XML generation)
 
-    Preserves for analysis:
-    - thinking blocks (assistant reasoning)
-    - usage metadata (token counts)
-    - timestamp, toolUseResult (execution details)
+    Uses a blacklist approach to preserve unknown fields by default,
+    ensuring resilience against future session log format changes.
 
     Args:
         entries: Raw session entries from JSONL
@@ -332,26 +348,15 @@ def reduce_session_mechanically(entries: list[dict]) -> list[dict]:
         if entry.get("type") == "file-history-snapshot":
             continue
 
-        # Build reduced entry preserving important fields
-        reduced_entry = {
-            "type": entry["type"],
-            "message": entry.get("message", {}).copy(),
-        }
+        # Copy entry, excluding blacklisted fields
+        reduced_entry = {k: v for k, v in entry.items() if k not in _ENTRY_FIELDS_TO_EXCLUDE}
 
-        # Preserve gitBranch for metadata (will be extracted in XML generation)
-        if "gitBranch" in entry:
-            reduced_entry["gitBranch"] = entry["gitBranch"]
-
-        # Preserve timestamp for chronological context
-        if "timestamp" in entry:
-            reduced_entry["timestamp"] = entry["timestamp"]
-
-        # Preserve toolUseResult for execution details (duration, errors)
-        if "toolUseResult" in entry:
-            reduced_entry["toolUseResult"] = entry["toolUseResult"]
+        # Deep copy message to avoid mutating original
+        if "message" in reduced_entry:
+            reduced_entry["message"] = reduced_entry["message"].copy()
 
         # Remove empty text blocks from content
-        message_content = reduced_entry["message"].get("content", [])
+        message_content = reduced_entry.get("message", {}).get("content", [])
         if isinstance(message_content, list):
             reduced_entry["message"]["content"] = remove_empty_text_blocks(message_content)
 
