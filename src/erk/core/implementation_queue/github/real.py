@@ -1,9 +1,10 @@
 """Production implementation of GitHub Actions admin operations."""
 
 import json
+import subprocess
 from typing import Any
 
-from erk.core.implementation_queue.github.abc import GitHubAdmin
+from erk.core.implementation_queue.github.abc import AuthStatus, GitHubAdmin
 from erk_shared.github.types import GitHubRepoLocation
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
@@ -82,3 +83,34 @@ class RealGitHubAdmin(GitHubAdmin):
             operation_context=f"set workflow PR permissions for {repo_id.owner}/{repo_id.repo}",
             cwd=location.root,
         )
+
+    def check_auth_status(self) -> AuthStatus:
+        """Check GitHub CLI authentication status using gh auth status."""
+        try:
+            result = subprocess.run(
+                ["gh", "auth", "status"],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=10,
+            )
+            if result.returncode == 0:
+                # Parse output to find username
+                # Format: "✓ Logged in to github.com account username (keyring)"
+                output = result.stdout.strip() or result.stderr.strip()
+                username = None
+                for line in output.split("\n"):
+                    if "Logged in to" in line and "account" in line:
+                        # Extract username from "... account username (...)"
+                        parts = line.split("account")
+                        if len(parts) > 1:
+                            username_part = parts[1].strip()
+                            username = username_part.split()[0] if username_part else None
+                        break
+                return AuthStatus(authenticated=True, username=username, error=None)
+            else:
+                return AuthStatus(authenticated=False, username=None, error=None)
+        except subprocess.TimeoutExpired:
+            return AuthStatus(authenticated=False, username=None, error="Auth check timed out")
+        except OSError as e:
+            return AuthStatus(authenticated=False, username=None, error=str(e))

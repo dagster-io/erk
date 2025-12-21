@@ -101,3 +101,56 @@ def test_fake_shell_ops_different_shells() -> None:
     # Fish
     ops_fish = FakeShell(detected_shell=("fish", Path.home() / ".config/fish/config.fish"))
     assert ops_fish.detect_shell() == ("fish", Path.home() / ".config/fish/config.fish")
+
+
+def test_fake_shell_get_tool_version() -> None:
+    """Test get_tool_version returns configured version string."""
+    ops = FakeShell(
+        installed_tools={"gt": "/usr/local/bin/gt"},
+        tool_versions={"gt": "0.29.17"},
+    )
+
+    result = ops.get_tool_version("gt")
+
+    assert result == "0.29.17"
+
+
+def test_fake_shell_get_tool_version_missing() -> None:
+    """Test get_tool_version returns None for missing tool."""
+    ops = FakeShell(
+        installed_tools={"gt": "/usr/local/bin/gt"},
+        tool_versions={"gt": "0.29.17"},
+    )
+
+    result = ops.get_tool_version("nonexistent")
+
+    assert result is None
+
+
+def test_fake_shell_get_tool_version_no_versions_configured() -> None:
+    """Test get_tool_version returns None when no versions configured."""
+    ops = FakeShell(installed_tools={"gt": "/usr/local/bin/gt"})
+
+    result = ops.get_tool_version("gt")
+
+    assert result is None
+
+
+def test_fake_shell_get_tool_version_multiple_tools() -> None:
+    """Test get_tool_version with multiple tools configured."""
+    ops = FakeShell(
+        installed_tools={
+            "gt": "/usr/local/bin/gt",
+            "gh": "/usr/local/bin/gh",
+            "claude": "/usr/local/bin/claude",
+        },
+        tool_versions={
+            "gt": "0.29.17",
+            "gh": "gh version 2.66.1 (2025-01-15)",
+            "claude": "claude 1.0.41",
+        },
+    )
+
+    assert ops.get_tool_version("gt") == "0.29.17"
+    assert ops.get_tool_version("gh") == "gh version 2.66.1 (2025-01-15)"
+    assert ops.get_tool_version("claude") == "claude 1.0.41"

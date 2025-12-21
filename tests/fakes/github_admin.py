@@ -7,7 +7,7 @@ in its constructor. Construct instances directly with keyword arguments.
 from pathlib import Path
 from typing import Any
 
-from erk.core.implementation_queue.github.abc import GitHubAdmin
+from erk.core.implementation_queue.github.abc import AuthStatus, GitHubAdmin
 from erk_shared.github.types import GitHubRepoLocation
 
 
@@ -27,6 +27,7 @@ class FakeGitHubAdmin(GitHubAdmin):
         self,
         *,
         workflow_permissions: dict[str, Any] | None = None,
+        auth_status: AuthStatus | None = None,
     ) -> None:
         """Create FakeGitHubAdmin with pre-configured state.
 
@@ -34,12 +35,19 @@ class FakeGitHubAdmin(GitHubAdmin):
             workflow_permissions: Dict to return from get_workflow_permissions.
                                  Defaults to {"default_workflow_permissions": "read",
                                              "can_approve_pull_request_reviews": False}
+            auth_status: AuthStatus to return from check_auth_status.
+                        Defaults to authenticated with username "testuser".
         """
         # Default permissions state (PR creation disabled)
         self._workflow_permissions = workflow_permissions or {
             "default_workflow_permissions": "read",
             "can_approve_pull_request_reviews": False,
         }
+
+        # Default auth status (authenticated)
+        self._auth_status = auth_status or AuthStatus(
+            authenticated=True, username="testuser", error=None
+        )
 
         # Mutation tracking
         self._set_permission_calls: list[tuple[Path, bool]] = []
@@ -61,3 +69,7 @@ class FakeGitHubAdmin(GitHubAdmin):
     def set_permission_calls(self) -> list[tuple[Path, bool]]:
         """Read-only access to tracked permission changes for test assertions."""
         return self._set_permission_calls
+
+    def check_auth_status(self) -> AuthStatus:
+        """Return pre-configured auth status."""
+        return self._auth_status

@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from erk.core.implementation_queue.github.abc import GitHubAdmin
+from erk.core.implementation_queue.github.abc import AuthStatus, GitHubAdmin
 from erk_shared.github.types import GitHubRepoLocation
 from erk_shared.printing.base import PrintingBase
 
@@ -37,3 +37,7 @@ class PrintingGitHubAdmin(PrintingBase, GitHubAdmin):
             )
         )
         self._wrapped.set_workflow_pr_permissions(location, enabled)
+
+    def check_auth_status(self) -> AuthStatus:
+        """Check auth status (read-only, no printing)."""
+        return self._wrapped.check_auth_status()

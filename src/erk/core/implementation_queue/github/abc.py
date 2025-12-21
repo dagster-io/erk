@@ -1,9 +1,25 @@
 """Abstract base class for GitHub Actions admin operations."""
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
 from erk_shared.github.types import GitHubRepoLocation
+
+
+@dataclass(frozen=True)
+class AuthStatus:
+    """Result of GitHub CLI authentication status check.
+
+    Attributes:
+        authenticated: True if user is logged in to GitHub
+        username: GitHub username if authenticated, None otherwise
+        error: Error message if check failed, None otherwise
+    """
+
+    authenticated: bool
+    username: str | None
+    error: str | None
 
 
 class GitHubAdmin(ABC):
@@ -40,5 +56,17 @@ class GitHubAdmin(ABC):
 
         Raises:
             RuntimeError: If gh CLI command fails
+        """
+        ...
+
+    @abstractmethod
+    def check_auth_status(self) -> AuthStatus:
+        """Check GitHub CLI authentication status.
+
+        Returns:
+            AuthStatus with authentication details:
+            - authenticated: True if logged in
+            - username: GitHub username if authenticated
+            - error: Error message if check failed
         """
         ...

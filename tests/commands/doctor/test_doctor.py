@@ -3,9 +3,41 @@
 from click.testing import CliRunner
 
 from erk.cli.commands.doctor import doctor_cmd
+from erk.core.implementation_queue.github.abc import AuthStatus
 from erk_shared.git.fake import FakeGit
+from tests.fakes.github_admin import FakeGitHubAdmin
+from tests.fakes.shell import FakeShell
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
+
+
+def _make_test_shell() -> FakeShell:
+    """Create a FakeShell configured with all tools installed for tests."""
+    return FakeShell(
+        installed_tools={
+            "claude": "/usr/local/bin/claude",
+            "gt": "/usr/local/bin/gt",
+            "gh": "/usr/local/bin/gh",
+            "uv": "/usr/local/bin/uv",
+        },
+        tool_versions={
+            "claude": "claude 1.0.41",
+            "gt": "0.29.17",
+            "gh": "gh version 2.66.1 (2025-01-15)\nhttps://github.com/cli/cli/releases/tag/v2.66.1",
+            "uv": "uv 0.5.20",
+        },
+    )
+
+
+def _make_test_admin() -> FakeGitHubAdmin:
+    """Create a FakeGitHubAdmin configured for tests."""
+    return FakeGitHubAdmin(
+        auth_status=AuthStatus(authenticated=True, username="testuser", error=None),
+        workflow_permissions={
+            "default_workflow_permissions": "read",
+            "can_approve_pull_request_reviews": True,
+        },
+    )
 
 
 def test_doctor_runs_checks() -> None:
@@ -18,7 +50,7 @@ def test_doctor_runs_checks() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        ctx = build_workspace_test_context(env, git=git)
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
 
         result = runner.invoke(doctor_cmd, [], obj=ctx)
 
@@ -44,16 +76,15 @@ def test_doctor_shows_cli_availability() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        ctx = build_workspace_test_context(env, git=git)
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
 
         result = runner.invoke(doctor_cmd, [], obj=ctx)
 
         assert result.exit_code == 0
 
-        # Should check for common tools (they may or may not be installed)
-        # The output should mention each tool name
+        # Should check for common tools - now all should show as available with versions
         output_lower = result.output.lower()
-        assert "claude" in output_lower or "claude" in result.output
+        assert "claude" in output_lower
         assert "graphite" in output_lower or "gt" in output_lower
         assert "github" in output_lower or "gh" in output_lower
 
@@ -68,7 +99,7 @@ def test_doctor_shows_repository_status() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        ctx = build_workspace_test_context(env, git=git)
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
 
         result = runner.invoke(doctor_cmd, [], obj=ctx)
 
@@ -87,7 +118,7 @@ def test_doctor_shows_summary() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        ctx = build_workspace_test_context(env, git=git)
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
 
         result = runner.invoke(doctor_cmd, [], obj=ctx)
 
@@ -106,7 +137,7 @@ def test_doctor_shows_github_section() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        ctx = build_workspace_test_context(env, git=git)
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
 
         result = runner.invoke(doctor_cmd, [], obj=ctx)
 

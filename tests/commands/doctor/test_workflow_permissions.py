@@ -4,6 +4,7 @@ from click.testing import CliRunner
 
 from erk.core.health_checks import check_workflow_permissions
 from erk_shared.git.fake import FakeGit
+from tests.fakes.github_admin import FakeGitHubAdmin
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
@@ -22,8 +23,9 @@ def test_check_workflow_permissions_no_origin_remote() -> None:
         )
 
         ctx = env.build_context(git=git)
+        admin = FakeGitHubAdmin()
 
-        result = check_workflow_permissions(ctx, env.cwd)
+        result = check_workflow_permissions(ctx, env.cwd, admin)
 
         # Should pass (info level) with appropriate message
         assert result.passed is True
@@ -46,8 +48,9 @@ def test_check_workflow_permissions_non_github_remote() -> None:
         )
 
         ctx = env.build_context(git=git)
+        admin = FakeGitHubAdmin()
 
-        result = check_workflow_permissions(ctx, env.cwd)
+        result = check_workflow_permissions(ctx, env.cwd, admin)
 
         # Should pass (info level) with appropriate message
         assert result.passed is True

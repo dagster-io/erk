@@ -48,6 +48,7 @@ class FakeShell(Shell):
         *,
         detected_shell: tuple[str, Path] | None = None,
         installed_tools: dict[str, str] | None = None,
+        tool_versions: dict[str, str] | None = None,
         claude_extraction_raises: bool = False,
         extraction_plan_url: str | None = None,
     ) -> None:
@@ -58,12 +59,15 @@ class FakeShell(Shell):
                 should be detected. Format: (shell_name, rc_file_path)
             installed_tools: Mapping of tool name to executable path. Tools not in
                 this mapping will return None from get_installed_tool_path()
+            tool_versions: Mapping of tool name to version string. Tools not in
+                this mapping will return None from get_tool_version()
             claude_extraction_raises: If True, run_claude_extraction_plan will raise
                 CalledProcessError
             extraction_plan_url: URL to return from run_claude_extraction_plan on success
         """
         self._detected_shell = detected_shell
         self._installed_tools = installed_tools or {}
+        self._tool_versions = tool_versions or {}
         self._extraction_calls: list[Path] = []
         self._claude_extraction_raises = claude_extraction_raises
         self._extraction_plan_url = extraction_plan_url
@@ -75,6 +79,10 @@ class FakeShell(Shell):
     def get_installed_tool_path(self, tool_name: str) -> str | None:
         """Return the tool path if configured, None otherwise."""
         return self._installed_tools.get(tool_name)
+
+    def get_tool_version(self, tool_name: str) -> str | None:
+        """Return the tool version if configured, None otherwise."""
+        return self._tool_versions.get(tool_name)
 
     def run_claude_extraction_plan(self, cwd: Path) -> str | None:
         """Track call to run_claude_extraction_plan without executing anything.

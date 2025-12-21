@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from erk.core.implementation_queue.github.abc import GitHubAdmin
+from erk.core.implementation_queue.github.abc import AuthStatus, GitHubAdmin
 from erk_shared.github.types import GitHubRepoLocation
 
 
@@ -32,3 +32,7 @@ class NoopGitHubAdmin(GitHubAdmin):
         """No-op for setting workflow permissions in dry-run mode."""
         # Do nothing - prevents actual permission changes
         pass
+
+    def check_auth_status(self) -> AuthStatus:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.check_auth_status()

@@ -2,7 +2,6 @@
 
 import json
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -21,6 +20,7 @@ from erk.core.health_checks_dogfooder.legacy_config_locations import (
 )
 from erk_shared.git.fake import FakeGit
 from tests.fakes.context import create_test_context
+from tests.fakes.shell import FakeShell
 
 
 def test_check_result_dataclass() -> None:
@@ -271,8 +271,9 @@ def test_check_gitignore_entries_missing_both(tmp_path: Path) -> None:
 
 def test_check_uv_version_not_found() -> None:
     """Test check_uv_version when uv is not installed."""
-    with patch("erk.core.health_checks.shutil.which", return_value=None):
-        result = check_uv_version()
+    shell = FakeShell(installed_tools={})
+
+    result = check_uv_version(shell)
 
     assert result.name == "uv"
     assert result.passed is False
@@ -283,14 +284,12 @@ def test_check_uv_version_not_found() -> None:
 
 def test_check_uv_version_available() -> None:
     """Test check_uv_version when uv is installed."""
-    with (
-        patch("erk.core.health_checks.shutil.which", return_value="/usr/bin/uv"),
-        patch("erk.core.health_checks.subprocess.run") as mock_run,
-    ):
-        mock_run.return_value.stdout = "uv 0.9.2"
-        mock_run.return_value.stderr = ""
+    shell = FakeShell(
+        installed_tools={"uv": "/usr/bin/uv"},
+        tool_versions={"uv": "uv 0.9.2"},
+    )
 
-        result = check_uv_version()
+    result = check_uv_version(shell)
 
     assert result.name == "uv"
     assert result.passed is True
@@ -301,14 +300,12 @@ def test_check_uv_version_available() -> None:
 
 def test_check_uv_version_with_build_info() -> None:
     """Test check_uv_version parses version with build info."""
-    with (
-        patch("erk.core.health_checks.shutil.which", return_value="/usr/bin/uv"),
-        patch("erk.core.health_checks.subprocess.run") as mock_run,
-    ):
-        mock_run.return_value.stdout = "uv 0.9.2 (Homebrew 2025-10-10)"
-        mock_run.return_value.stderr = ""
+    shell = FakeShell(
+        installed_tools={"uv": "/usr/bin/uv"},
+        tool_versions={"uv": "uv 0.9.2 (Homebrew 2025-10-10)"},
+    )
 
-        result = check_uv_version()
+    result = check_uv_version(shell)
 
     assert result.name == "uv"
     assert result.passed is True

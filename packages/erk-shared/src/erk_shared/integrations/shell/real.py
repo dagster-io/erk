@@ -27,6 +27,25 @@ class RealShell(Shell):
         """Check if tool is in PATH using shutil.which."""
         return shutil.which(tool_name)
 
+    def get_tool_version(self, tool_name: str) -> str | None:
+        """Get version string by running tool with --version flag."""
+        tool_path = shutil.which(tool_name)
+        if tool_path is None:
+            return None
+
+        try:
+            result = subprocess.run(
+                [tool_name, "--version"],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=5,
+            )
+            version_output = result.stdout.strip() or result.stderr.strip()
+            return version_output if version_output else None
+        except (subprocess.TimeoutExpired, OSError):
+            return None
+
     def run_claude_extraction_plan(self, cwd: Path) -> str | None:
         """Run Claude CLI to create an extraction plan from session logs.
 

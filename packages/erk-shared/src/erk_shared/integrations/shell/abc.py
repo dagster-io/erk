@@ -78,3 +78,24 @@ class Shell(ABC):
             ...     print(f"Graphite found at {gt_path}")
         """
         ...
+
+    @abstractmethod
+    def get_tool_version(self, tool_name: str) -> str | None:
+        """Get the version string of an installed CLI tool.
+
+        Runs the tool with --version flag and returns the output.
+
+        Args:
+            tool_name: Name of the tool to check (e.g., "gt", "gh", "claude")
+
+        Returns:
+            Version output string if successful, None if tool not found or version
+            check fails.
+
+        Example:
+            >>> shell_ops = RealShell()
+            >>> version = shell_ops.get_tool_version("gt")
+            >>> if version:
+            ...     print(f"Graphite version: {version}")
+        """
+        ...

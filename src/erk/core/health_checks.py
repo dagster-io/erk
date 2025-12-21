@@ -5,8 +5,6 @@ CLI availability, repository configuration, and Claude settings.
 """
 
 import json
-import shutil
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -17,7 +15,9 @@ from erk.core.claude_settings import (
     read_claude_settings,
 )
 from erk.core.context import ErkContext
+from erk.core.implementation_queue.github.abc import GitHubAdmin
 from erk.core.repo_discovery import RepoContext
+from erk_shared.integrations.shell.abc import Shell
 
 
 @dataclass
@@ -59,9 +59,13 @@ def check_erk_version() -> CheckResult:
         )
 
 
-def check_claude_cli() -> CheckResult:
-    """Check if Claude CLI is installed and available in PATH."""
-    claude_path = shutil.which("claude")
+def check_claude_cli(shell: Shell) -> CheckResult:
+    """Check if Claude CLI is installed and available in PATH.
+
+    Args:
+        shell: Shell implementation for tool detection
+    """
+    claude_path = shell.get_installed_tool_path("claude")
     if claude_path is None:
         return CheckResult(
             name="claude",
@@ -71,31 +75,8 @@ def check_claude_cli() -> CheckResult:
         )
 
     # Try to get version
-    try:
-        result = subprocess.run(
-            ["claude", "--version"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=5,
-        )
-        version_output = result.stdout.strip() or result.stderr.strip()
-        # Parse version from output (format: "claude X.Y.Z")
-        version_str = version_output.split()[-1] if version_output else "unknown"
-        return CheckResult(
-            name="claude",
-            passed=True,
-            message=f"Claude CLI available: {version_str}",
-            details=version_str,
-        )
-    except subprocess.TimeoutExpired:
-        return CheckResult(
-            name="claude",
-            passed=True,
-            message="Claude CLI found (version check timed out)",
-            details="timeout",
-        )
-    except Exception:
+    version_output = shell.get_tool_version("claude")
+    if version_output is None:
         return CheckResult(
             name="claude",
             passed=True,
@@ -103,10 +84,23 @@ def check_claude_cli() -> CheckResult:
             details="unknown",
         )
 
+    # Parse version from output (format: "claude X.Y.Z")
+    version_str = version_output.split()[-1] if version_output else "unknown"
+    return CheckResult(
+        name="claude",
+        passed=True,
+        message=f"Claude CLI available: {version_str}",
+        details=version_str,
+    )
 
-def check_graphite_cli() -> CheckResult:
-    """Check if Graphite CLI (gt) is installed and available in PATH."""
-    gt_path = shutil.which("gt")
+
+def check_graphite_cli(shell: Shell) -> CheckResult:
+    """Check if Graphite CLI (gt) is installed and available in PATH.
+
+    Args:
+        shell: Shell implementation for tool detection
+    """
+    gt_path = shell.get_installed_tool_path("gt")
     if gt_path is None:
         return CheckResult(
             name="graphite",
@@ -116,29 +110,8 @@ def check_graphite_cli() -> CheckResult:
         )
 
     # Try to get version
-    try:
-        result = subprocess.run(
-            ["gt", "--version"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=5,
-        )
-        version_output = result.stdout.strip() or result.stderr.strip()
-        return CheckResult(
-            name="graphite",
-            passed=True,
-            message=f"Graphite CLI available: {version_output}",
-            details=version_output,
-        )
-    except subprocess.TimeoutExpired:
-        return CheckResult(
-            name="graphite",
-            passed=True,
-            message="Graphite CLI found (version check timed out)",
-            details="timeout",
-        )
-    except Exception:
+    version_output = shell.get_tool_version("gt")
+    if version_output is None:
         return CheckResult(
             name="graphite",
             passed=True,
@@ -146,10 +119,21 @@ def check_graphite_cli() -> CheckResult:
             details="unknown",
         )
 
+    return CheckResult(
+        name="graphite",
+        passed=True,
+        message=f"Graphite CLI available: {version_output}",
+        details=version_output,
+    )
 
-def check_github_cli() -> CheckResult:
-    """Check if GitHub CLI (gh) is installed and available in PATH."""
-    gh_path = shutil.which("gh")
+
+def check_github_cli(shell: Shell) -> CheckResult:
+    """Check if GitHub CLI (gh) is installed and available in PATH.
+
+    Args:
+        shell: Shell implementation for tool detection
+    """
+    gh_path = shell.get_installed_tool_path("gh")
     if gh_path is None:
         return CheckResult(
             name="github",
@@ -159,29 +143,8 @@ def check_github_cli() -> CheckResult:
         )
 
     # Try to get version
-    try:
-        result = subprocess.run(
-            ["gh", "--version"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=5,
-        )
-        version_output = result.stdout.strip().split("\n")[0] if result.stdout else "unknown"
-        return CheckResult(
-            name="github",
-            passed=True,
-            message=f"GitHub CLI available: {version_output}",
-            details=version_output,
-        )
-    except subprocess.TimeoutExpired:
-        return CheckResult(
-            name="github",
-            passed=True,
-            message="GitHub CLI found (version check timed out)",
-            details="timeout",
-        )
-    except Exception:
+    version_output = shell.get_tool_version("gh")
+    if version_output is None:
         return CheckResult(
             name="github",
             passed=True,
@@ -189,10 +152,24 @@ def check_github_cli() -> CheckResult:
             details="unknown",
         )
 
+    # Take first line only (gh version has multi-line output)
+    version_first_line = version_output.split("\n")[0] if version_output else "unknown"
+    return CheckResult(
+        name="github",
+        passed=True,
+        message=f"GitHub CLI available: {version_first_line}",
+        details=version_first_line,
+    )
 
-def check_github_auth() -> CheckResult:
-    """Check if GitHub CLI is authenticated."""
-    gh_path = shutil.which("gh")
+
+def check_github_auth(shell: Shell, admin: GitHubAdmin) -> CheckResult:
+    """Check if GitHub CLI is authenticated.
+
+    Args:
+        shell: Shell implementation for tool detection
+        admin: GitHubAdmin implementation for auth status check
+    """
+    gh_path = shell.get_installed_tool_path("gh")
     if gh_path is None:
         return CheckResult(
             name="github auth",
@@ -200,60 +177,37 @@ def check_github_auth() -> CheckResult:
             message="Cannot check auth: gh not installed",
         )
 
-    try:
-        result = subprocess.run(
-            ["gh", "auth", "status"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=10,
+    auth_status = admin.check_auth_status()
+
+    if auth_status.error is not None:
+        return CheckResult(
+            name="github auth",
+            passed=False,
+            message=f"Auth check failed: {auth_status.error}",
         )
-        if result.returncode == 0:
-            # Parse output to find username
-            # Format: "✓ Logged in to github.com account username (keyring)"
-            output = result.stdout.strip() or result.stderr.strip()
-            username = None
-            for line in output.split("\n"):
-                if "Logged in to" in line and "account" in line:
-                    # Extract username from "... account username (...)"
-                    parts = line.split("account")
-                    if len(parts) > 1:
-                        username_part = parts[1].strip()
-                        username = username_part.split()[0] if username_part else None
-                    break
-            if username:
-                return CheckResult(
-                    name="github auth",
-                    passed=True,
-                    message=f"GitHub authenticated as {username}",
-                )
+
+    if auth_status.authenticated:
+        if auth_status.username:
             return CheckResult(
                 name="github auth",
                 passed=True,
-                message="Authenticated to GitHub",
+                message=f"GitHub authenticated as {auth_status.username}",
             )
-        else:
-            return CheckResult(
-                name="github auth",
-                passed=False,
-                message="Not authenticated to GitHub",
-                details="Run: gh auth login",
-            )
-    except subprocess.TimeoutExpired:
+        return CheckResult(
+            name="github auth",
+            passed=True,
+            message="Authenticated to GitHub",
+        )
+    else:
         return CheckResult(
             name="github auth",
             passed=False,
-            message="Auth check timed out",
-        )
-    except Exception as e:
-        return CheckResult(
-            name="github auth",
-            passed=False,
-            message=f"Auth check failed: {e}",
+            message="Not authenticated to GitHub",
+            details="Run: gh auth login",
         )
 
 
-def check_workflow_permissions(ctx: ErkContext, repo_root: Path) -> CheckResult:
+def check_workflow_permissions(ctx: ErkContext, repo_root: Path, admin: GitHubAdmin) -> CheckResult:
     """Check if GitHub Actions workflows can create PRs.
 
     This is an info-level check - it always passes, but shows whether
@@ -263,6 +217,7 @@ def check_workflow_permissions(ctx: ErkContext, repo_root: Path) -> CheckResult:
     Args:
         ctx: ErkContext for repository access
         repo_root: Path to the repository root
+        admin: GitHubAdmin implementation for API calls
 
     Returns:
         CheckResult with info about workflow permission status
@@ -293,11 +248,6 @@ def check_workflow_permissions(ctx: ErkContext, repo_root: Path) -> CheckResult:
     repo_id = GitHubRepoId(owner=owner_repo[0], repo=owner_repo[1])
     location = GitHubRepoLocation(root=repo_root, repo_id=repo_id)
 
-    # Check workflow permissions via API
-    from erk.core.implementation_queue.github.real import RealGitHubAdmin
-
-    admin = RealGitHubAdmin()
-
     try:
         perms = admin.get_workflow_permissions(location)
         enabled = perms.get("can_approve_pull_request_reviews", False)
@@ -323,12 +273,15 @@ def check_workflow_permissions(ctx: ErkContext, repo_root: Path) -> CheckResult:
         )
 
 
-def check_uv_version() -> CheckResult:
+def check_uv_version(shell: Shell) -> CheckResult:
     """Check if uv is installed.
 
     Shows version and upgrade instructions. erk works best with recent uv versions.
+
+    Args:
+        shell: Shell implementation for tool detection
     """
-    uv_path = shutil.which("uv")
+    uv_path = shell.get_installed_tool_path("uv")
     if uv_path is None:
         return CheckResult(
             name="uv",
@@ -338,34 +291,18 @@ def check_uv_version() -> CheckResult:
         )
 
     # Get installed version
-    try:
-        result = subprocess.run(
-            ["uv", "--version"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=5,
-        )
-        version_output = result.stdout.strip() or result.stderr.strip()
-
-        # Parse version (format: "uv 0.9.2" or "uv 0.9.2 (Homebrew 2025-10-10)")
-        parts = version_output.split()
-        version = parts[1] if len(parts) >= 2 else version_output
-
-    except subprocess.TimeoutExpired:
-        return CheckResult(
-            name="uv",
-            passed=True,
-            message="uv found (version check timed out)",
-            details="Upgrade: uv self update",
-        )
-    except Exception:
+    version_output = shell.get_tool_version("uv")
+    if version_output is None:
         return CheckResult(
             name="uv",
             passed=True,
             message="uv found (version check failed)",
             details="Upgrade: uv self update",
         )
+
+    # Parse version (format: "uv 0.9.2" or "uv 0.9.2 (Homebrew 2025-10-10)")
+    parts = version_output.split()
+    version = parts[1] if len(parts) >= 2 else version_output
 
     return CheckResult(
         name="uv",
@@ -809,22 +746,35 @@ def _kit_command_exists(command: str) -> bool:
         return True  # Assume it exists if we can't check
 
 
-def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
+def run_all_checks(
+    ctx: ErkContext,
+    admin: GitHubAdmin | None = None,
+) -> list[CheckResult]:
     """Run all health checks and return results.
 
     Args:
         ctx: ErkContext for repository checks
+        admin: GitHubAdmin implementation for GitHub API calls.
+               Defaults to RealGitHubAdmin if not provided.
 
     Returns:
         List of CheckResult objects
     """
+    # Use RealGitHubAdmin if no admin provided
+    if admin is None:
+        from erk.core.implementation_queue.github.real import RealGitHubAdmin
+
+        admin = RealGitHubAdmin()
+
+    shell = ctx.shell
+
     results = [
         check_erk_version(),
-        check_claude_cli(),
-        check_graphite_cli(),
-        check_github_cli(),
-        check_github_auth(),
-        check_uv_version(),
+        check_claude_cli(shell),
+        check_graphite_cli(shell),
+        check_github_cli(shell),
+        check_github_auth(shell, admin),
+        check_uv_version(shell),
         check_hooks_disabled(),
     ]
 
@@ -846,7 +796,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         # Hook health check
         results.append(check_hook_health(repo_root))
         # GitHub workflow permissions check (requires repo context)
-        results.append(check_workflow_permissions(ctx, repo_root))
+        results.append(check_workflow_permissions(ctx, repo_root, admin))
 
         from erk.core.health_checks_dogfooder import run_early_dogfooder_checks
 
