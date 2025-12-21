@@ -74,7 +74,7 @@ def _build_declared_directories(config: ProjectConfig | None) -> set[Path]:
     claude_artifact_types = {"commands", "agents", "skills"}
 
     for kit in config.kits.values():
-        for artifact_path_str in kit.artifacts:
+        for artifact_path_str in kit.artifacts.keys():
             artifact_path = Path(artifact_path_str)
 
             # Handle .erk/docs/kits/ paths

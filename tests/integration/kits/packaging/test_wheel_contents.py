@@ -28,16 +28,8 @@ def build_wheel(tmp_path_factory: pytest.TempPathFactory) -> Path:
     dist_dir = tmp_path / "dist"
     dist_dir.mkdir()
 
-    # Run kit-build first to ensure artifacts are copied from source locations
-    # This is required because artifact .md files are gitignored and only
-    # populated by the build step
-    subprocess.run(
-        ["uv", "run", "erk", "dev", "kit-build"],
-        cwd=project_root,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
+    # Kit artifacts (.md, .yml files) are now committed directly to the package
+    # so no build step is required before packaging
 
     # Build the wheel
     subprocess.run(

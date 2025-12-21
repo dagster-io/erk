@@ -7,6 +7,12 @@
 
 <!-- BEGIN_ENTRIES -->
 
+<!-- ENTRY_START kit_id="command" version="0.2.7" source="bundled" -->
+
+@.erk/kits/command/registry-entry.md
+
+<!-- ENTRY_END -->
+
 <!-- ENTRY_START kit_id="devrun" version="0.2.7" source="bundled" -->
 
 @.erk/kits/devrun/registry-entry.md

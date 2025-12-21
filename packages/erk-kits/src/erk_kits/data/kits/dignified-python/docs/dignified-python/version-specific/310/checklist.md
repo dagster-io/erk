@@ -1,0 +1,7 @@
+---
+erk:
+  kit: dignified-python
+---
+
+- **Use** modern type syntax: `list[str]`, `str | None`
+- **Use** `from __future__ import annotations` when needed (forward refs, circular imports)

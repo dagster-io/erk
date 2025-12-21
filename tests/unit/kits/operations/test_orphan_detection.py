@@ -35,7 +35,7 @@ def test_build_declared_directories_single_artifact() -> None:
                 kit_id="my-kit",
                 source_type="bundled",
                 version="1.0.0",
-                artifacts=[".claude/commands/my-kit/cmd.md"],
+                artifacts={".claude/commands/my-kit/cmd.md": "sha256:abc123"},
             ),
         },
     )
@@ -52,11 +52,11 @@ def test_build_declared_directories_multiple_artifacts() -> None:
                 kit_id="my-kit",
                 source_type="bundled",
                 version="1.0.0",
-                artifacts=[
-                    ".claude/commands/my-kit/cmd1.md",
-                    ".claude/commands/my-kit/cmd2.md",
-                    ".claude/agents/my-kit/agent.md",
-                ],
+                artifacts={
+                    ".claude/commands/my-kit/cmd1.md": "sha256:abc123",
+                    ".claude/commands/my-kit/cmd2.md": "sha256:def456",
+                    ".claude/agents/my-kit/agent.md": "sha256:ghi789",
+                },
             ),
         },
     )
@@ -80,7 +80,7 @@ def test_build_declared_directories_skill_with_different_name() -> None:
                 kit_id="gt",
                 source_type="bundled",
                 version="1.0.0",
-                artifacts=[".claude/skills/gt-graphite/SKILL.md"],
+                artifacts={".claude/skills/gt-graphite/SKILL.md": "sha256:abc123"},
             ),
         },
     )
@@ -156,7 +156,7 @@ def test_detect_installed_kit_not_orphaned(tmp_project: Path) -> None:
                 kit_id="my-kit",
                 source_type="bundled",
                 version="1.0.0",
-                artifacts=[".claude/commands/my-kit/cmd.md"],
+                artifacts={".claude/commands/my-kit/cmd.md": "sha256:abc123"},
             ),
         },
     )
@@ -233,10 +233,10 @@ def test_detect_mixed_orphaned_and_valid(tmp_project: Path) -> None:
                 kit_id="installed-kit",
                 source_type="bundled",
                 version="1.0.0",
-                artifacts=[
-                    ".claude/commands/installed-kit/cmd.md",
-                    ".claude/agents/installed-kit/agent.md",
-                ],
+                artifacts={
+                    ".claude/commands/installed-kit/cmd.md": "sha256:abc123",
+                    ".claude/agents/installed-kit/agent.md": "sha256:def456",
+                },
             ),
         },
     )
@@ -312,10 +312,10 @@ def test_detect_nested_artifact_paths(tmp_project: Path) -> None:
                 kit_id="erk",
                 source_type="bundled",
                 version="1.0.0",
-                artifacts=[
-                    ".claude/docs/erk/README.md",
-                    ".claude/docs/erk/includes/file.md",
-                ],
+                artifacts={
+                    ".claude/docs/erk/README.md": "sha256:abc123",
+                    ".claude/docs/erk/includes/file.md": "sha256:def456",
+                },
             ),
         },
     )

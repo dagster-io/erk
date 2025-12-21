@@ -8,12 +8,14 @@ import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from erk.kits.utils.content_hash import compute_content_hash
+
 
 class ArtifactOperations(ABC):
     """Strategy for installing and cleaning up artifacts."""
 
     @abstractmethod
-    def install_artifact(self, source: Path, target: Path) -> str:
+    def install_artifact(self, source: Path, target: Path) -> tuple[str, str]:
         """Install artifact from source to target.
 
         Args:
@@ -21,16 +23,20 @@ class ArtifactOperations(ABC):
             target: Target file path
 
         Returns:
-            Status message suffix for logging (e.g., "")
+            Tuple of (status_suffix, content_hash) where:
+            - status_suffix: Message suffix for logging (e.g., "")
+            - content_hash: Hash of installed content (e.g., "sha256:abc...")
         """
         pass
 
     @abstractmethod
-    def remove_artifacts(self, artifact_paths: list[str], project_dir: Path) -> list[str]:
+    def remove_artifacts(
+        self, artifacts: dict[str, str] | list[str], project_dir: Path
+    ) -> list[str]:
         """Remove old artifacts.
 
         Args:
-            artifact_paths: List of artifact paths relative to project_dir
+            artifacts: Dict of path → hash, or legacy list of paths
             project_dir: Project root directory
 
         Returns:
@@ -42,18 +48,27 @@ class ArtifactOperations(ABC):
 class ProdOperations(ArtifactOperations):
     """Production strategy: copy artifacts and delete all on cleanup."""
 
-    def install_artifact(self, source: Path, target: Path) -> str:
-        """Copy artifact from source to target."""
+    def install_artifact(self, source: Path, target: Path) -> tuple[str, str]:
+        """Copy artifact from source to target, returning content hash."""
         # Ensure parent directories exist
         if not target.parent.exists():
             target.parent.mkdir(parents=True, exist_ok=True)
 
         content = source.read_text(encoding="utf-8")
         target.write_text(content, encoding="utf-8")
-        return ""
+        content_hash = compute_content_hash(content)
+        return ("", content_hash)
 
-    def remove_artifacts(self, artifact_paths: list[str], project_dir: Path) -> list[str]:
-        """Remove all artifacts unconditionally."""
+    def remove_artifacts(
+        self, artifacts: dict[str, str] | list[str], project_dir: Path
+    ) -> list[str]:
+        """Remove all artifacts unconditionally.
+
+        Accepts either dict (new format) or list (legacy format).
+        """
+        # Extract paths from dict or use list directly
+        artifact_paths = list(artifacts.keys()) if isinstance(artifacts, dict) else artifacts
+
         for artifact_path in artifact_paths:
             full_path = project_dir / artifact_path
             if not full_path.exists():

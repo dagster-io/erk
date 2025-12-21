@@ -30,7 +30,8 @@ def install_kit(
     """
     manifest = load_kit_manifest(resolved.manifest_path)
 
-    installed_artifacts: list[str] = []
+    # Map of relative path → content hash
+    installed_artifacts: dict[str, str] = {}
 
     # Create installation strategy
     operations = create_artifact_operations()
@@ -95,15 +96,16 @@ def install_kit(
                     shutil.rmtree(target)
                 user_output(f"  Overwriting: {target.name}")
 
-            # Install artifact using strategy
-            mode_indicator = operations.install_artifact(source, target)
+            # Install artifact using strategy - returns (mode_indicator, content_hash)
+            mode_indicator, content_hash = operations.install_artifact(source, target)
 
             # Log installation with namespace visibility
             relative_path = target.relative_to(base_dir)
             user_output(f"  Installed {artifact_type}: {relative_path}{mode_indicator}")
 
-            # Track installation
-            installed_artifacts.append(str(target.relative_to(project_dir)))
+            # Track installation with hash
+            artifact_rel = str(target.relative_to(project_dir))
+            installed_artifacts[artifact_rel] = content_hash
 
     # Install hooks if manifest has them
     if manifest.hooks:

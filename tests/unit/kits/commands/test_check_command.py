@@ -22,10 +22,10 @@ def test_compare_artifact_lists_no_differences() -> None:
         "command": ["commands/test/foo.md"],
         "skill": ["skills/test/bar.md"],
     }
-    installed_artifacts = [
-        ".claude/commands/test/foo.md",
-        ".claude/skills/test/bar.md",
-    ]
+    installed_artifacts = {
+        ".claude/commands/test/foo.md": "sha256:abc123",
+        ".claude/skills/test/bar.md": "sha256:def456",
+    }
 
     missing, obsolete = compare_artifact_lists(manifest_artifacts, installed_artifacts)
 
@@ -39,9 +39,9 @@ def test_compare_artifact_lists_missing_artifacts() -> None:
         "command": ["commands/test/foo.md", "commands/test/bar.md"],
         "skill": ["skills/test/baz.md"],
     }
-    installed_artifacts = [
-        ".claude/commands/test/foo.md",
-    ]
+    installed_artifacts = {
+        ".claude/commands/test/foo.md": "sha256:abc123",
+    }
 
     missing, obsolete = compare_artifact_lists(manifest_artifacts, installed_artifacts)
 
@@ -56,11 +56,11 @@ def test_compare_artifact_lists_obsolete_artifacts() -> None:
     manifest_artifacts = {
         "command": ["commands/test/foo.md"],
     }
-    installed_artifacts = [
-        ".claude/commands/test/foo.md",
-        ".claude/commands/test/old.md",
-        ".claude/skills/test/deprecated.md",
-    ]
+    installed_artifacts = {
+        ".claude/commands/test/foo.md": "sha256:abc123",
+        ".claude/commands/test/old.md": "sha256:def456",
+        ".claude/skills/test/deprecated.md": "sha256:ghi789",
+    }
 
     missing, obsolete = compare_artifact_lists(manifest_artifacts, installed_artifacts)
 
@@ -75,10 +75,10 @@ def test_compare_artifact_lists_both_missing_and_obsolete() -> None:
     manifest_artifacts = {
         "command": ["commands/test/foo.md", "commands/test/new.md"],
     }
-    installed_artifacts = [
-        ".claude/commands/test/foo.md",
-        ".claude/commands/test/old.md",
-    ]
+    installed_artifacts = {
+        ".claude/commands/test/foo.md": "sha256:abc123",
+        ".claude/commands/test/old.md": "sha256:def456",
+    }
 
     missing, obsolete = compare_artifact_lists(manifest_artifacts, installed_artifacts)
 
@@ -91,9 +91,9 @@ def test_compare_artifact_lists_both_missing_and_obsolete() -> None:
 def test_compare_artifact_lists_empty_manifest() -> None:
     """Test compare_artifact_lists with empty manifest."""
     manifest_artifacts: dict[str, list[str]] = {}
-    installed_artifacts = [
-        ".claude/commands/test/foo.md",
-    ]
+    installed_artifacts = {
+        ".claude/commands/test/foo.md": "sha256:abc123",
+    }
 
     missing, obsolete = compare_artifact_lists(manifest_artifacts, installed_artifacts)
 
@@ -107,7 +107,7 @@ def test_compare_artifact_lists_empty_installed() -> None:
     manifest_artifacts = {
         "command": ["commands/test/foo.md"],
     }
-    installed_artifacts: list[str] = []
+    installed_artifacts: dict[str, str] = {}
 
     missing, obsolete = compare_artifact_lists(manifest_artifacts, installed_artifacts)
 
@@ -119,7 +119,7 @@ def test_compare_artifact_lists_empty_installed() -> None:
 def test_compare_artifact_lists_both_empty() -> None:
     """Test compare_artifact_lists with both empty."""
     manifest_artifacts: dict[str, list[str]] = {}
-    installed_artifacts: list[str] = []
+    installed_artifacts: dict[str, str] = {}
 
     missing, obsolete = compare_artifact_lists(manifest_artifacts, installed_artifacts)
 
@@ -139,11 +139,11 @@ def test_compare_artifact_lists_doc_type() -> None:
         "doc": ["docs/erk/includes/conflict-resolution.md", "docs/erk/EXAMPLES.md"],
         "command": ["commands/erk/plan-implement.md"],
     }
-    installed_artifacts = [
-        ".erk/docs/kits/erk/includes/conflict-resolution.md",
-        ".erk/docs/kits/erk/EXAMPLES.md",
-        ".claude/commands/erk/plan-implement.md",
-    ]
+    installed_artifacts = {
+        ".erk/docs/kits/erk/includes/conflict-resolution.md": "sha256:abc123",
+        ".erk/docs/kits/erk/EXAMPLES.md": "sha256:def456",
+        ".claude/commands/erk/plan-implement.md": "sha256:ghi789",
+    }
 
     missing, obsolete = compare_artifact_lists(manifest_artifacts, installed_artifacts)
 
@@ -156,10 +156,10 @@ def test_compare_artifact_lists_doc_type_missing() -> None:
     manifest_artifacts = {
         "doc": ["docs/erk/includes/conflict-resolution.md", "docs/erk/EXAMPLES.md"],
     }
-    installed_artifacts = [
-        ".erk/docs/kits/erk/includes/conflict-resolution.md",
+    installed_artifacts = {
+        ".erk/docs/kits/erk/includes/conflict-resolution.md": "sha256:abc123",
         # Missing: .erk/docs/kits/erk/EXAMPLES.md
-    ]
+    }
 
     missing, obsolete = compare_artifact_lists(manifest_artifacts, installed_artifacts)
 
@@ -328,7 +328,7 @@ def test_check_command_valid_artifacts(tmp_path: Path) -> None:
                     kit_id="test-kit",
                     version="1.0.0",
                     source_type="package",
-                    artifacts=["skills/test/SKILL.md"],
+                    artifacts={".claude/skills/test/SKILL.md": "sha256:abc123"},
                 ),
             },
         )
@@ -358,7 +358,7 @@ def test_check_command_invalid_artifacts(tmp_path: Path) -> None:
                     kit_id="test-kit",
                     version="1.0.0",
                     source_type="package",
-                    artifacts=["skills/missing/SKILL.md"],
+                    artifacts={".claude/skills/missing/SKILL.md": "sha256:abc123"},
                 ),
             },
         )
@@ -392,7 +392,7 @@ def test_check_command_no_bundled_kits(tmp_path: Path) -> None:
                     kit_id="test-kit",
                     version="1.0.0",
                     source_type="package",
-                    artifacts=["skills/test/SKILL.md"],
+                    artifacts={".claude/skills/test/SKILL.md": "sha256:abc123"},
                 ),
             },
         )
@@ -427,7 +427,7 @@ def test_check_command_verbose_flag(tmp_path: Path) -> None:
                     kit_id="test-kit",
                     version="1.0.0",
                     source_type="package",
-                    artifacts=["skills/test/SKILL.md"],
+                    artifacts={".claude/skills/test/SKILL.md": "sha256:abc123"},
                 ),
             },
         )
@@ -456,7 +456,7 @@ def test_validate_kit_fields_all_valid() -> None:
         kit_id="test-kit",
         source_type="bundled",
         version="1.0.0",
-        artifacts=[".claude/skills/test/SKILL.md"],
+        artifacts={".claude/skills/test/SKILL.md": "sha256:abc123"},
     )
     errors = validate_kit_fields(kit)
     assert len(errors) == 0
@@ -468,7 +468,7 @@ def test_validate_kit_fields_empty_kit_id() -> None:
         kit_id="",
         source_type="bundled",
         version="1.0.0",
-        artifacts=[".claude/skills/test/SKILL.md"],
+        artifacts={".claude/skills/test/SKILL.md": "sha256:abc123"},
     )
     errors = validate_kit_fields(kit)
     assert len(errors) == 1
@@ -481,7 +481,7 @@ def test_validate_kit_fields_empty_version() -> None:
         kit_id="test-kit",
         source_type="bundled",
         version="",
-        artifacts=[".claude/skills/test/SKILL.md"],
+        artifacts={".claude/skills/test/SKILL.md": "sha256:abc123"},
     )
     errors = validate_kit_fields(kit)
     assert len(errors) == 1
@@ -494,7 +494,7 @@ def test_validate_kit_fields_invalid_source_type() -> None:
         kit_id="test-kit",
         source_type=cast(SourceType, "invalid"),
         version="1.0.0",
-        artifacts=[".claude/skills/test/SKILL.md"],
+        artifacts={".claude/skills/test/SKILL.md": "sha256:abc123"},
     )
     errors = validate_kit_fields(kit)
     assert len(errors) == 1
@@ -507,7 +507,7 @@ def test_validate_kit_fields_source_type_empty_string() -> None:
         kit_id="test-kit",
         source_type=cast(SourceType, ""),
         version="1.0.0",
-        artifacts=[".claude/skills/test/SKILL.md"],
+        artifacts={".claude/skills/test/SKILL.md": "sha256:abc123"},
     )
     errors = validate_kit_fields(kit)
     assert len(errors) == 1
@@ -520,7 +520,7 @@ def test_validate_kit_fields_source_type_whitespace() -> None:
         kit_id="test-kit",
         source_type=cast(SourceType, "   "),
         version="1.0.0",
-        artifacts=[".claude/skills/test/SKILL.md"],
+        artifacts={".claude/skills/test/SKILL.md": "sha256:abc123"},
     )
     errors = validate_kit_fields(kit)
     assert len(errors) == 1
@@ -534,7 +534,7 @@ def test_validate_kit_fields_source_type_wrong_case() -> None:
         kit_id="test-kit",
         source_type=cast(SourceType, "BUNDLED"),
         version="1.0.0",
-        artifacts=[".claude/skills/test/SKILL.md"],
+        artifacts={".claude/skills/test/SKILL.md": "sha256:abc123"},
     )
     errors_upper = validate_kit_fields(kit_upper)
     assert len(errors_upper) == 1
@@ -545,7 +545,7 @@ def test_validate_kit_fields_source_type_wrong_case() -> None:
         kit_id="test-kit",
         source_type=cast(SourceType, "Bundled"),
         version="1.0.0",
-        artifacts=[".claude/skills/test/SKILL.md"],
+        artifacts={".claude/skills/test/SKILL.md": "sha256:abc123"},
     )
     errors_cap = validate_kit_fields(kit_cap)
     assert len(errors_cap) == 1
@@ -561,7 +561,7 @@ def test_validate_kit_fields_source_type_common_typos() -> None:
             kit_id="test-kit",
             source_type=cast(SourceType, typo),
             version="1.0.0",
-            artifacts=[".claude/skills/test/SKILL.md"],
+            artifacts={".claude/skills/test/SKILL.md": "sha256:abc123"},
         )
         errors = validate_kit_fields(kit)
         assert len(errors) == 1, f"Expected error for typo: {typo}"
@@ -576,7 +576,7 @@ def test_validate_kit_fields_source_type_with_surrounding_whitespace() -> None:
         kit_id="test-kit",
         source_type=cast(SourceType, " bundled "),
         version="1.0.0",
-        artifacts=[".claude/skills/test/SKILL.md"],
+        artifacts={".claude/skills/test/SKILL.md": "sha256:abc123"},
     )
     errors = validate_kit_fields(kit)
     assert len(errors) == 1
@@ -584,7 +584,7 @@ def test_validate_kit_fields_source_type_with_surrounding_whitespace() -> None:
 
 
 def test_validate_kit_fields_empty_artifacts() -> None:
-    """Test validate_kit_fields with empty artifacts list.
+    """Test validate_kit_fields with empty artifacts dict.
 
     Bundled kits can have empty artifacts in dot-agent.toml since their
     artifacts are defined in the bundled kit.yaml instead.
@@ -593,7 +593,7 @@ def test_validate_kit_fields_empty_artifacts() -> None:
         kit_id="test-kit",
         source_type="bundled",
         version="1.0.0",
-        artifacts=[],
+        artifacts={},
     )
     errors = validate_kit_fields(kit)
     # Bundled kits are allowed to have empty artifacts in dot-agent.toml
@@ -610,14 +610,14 @@ def test_validate_kit_fields_multiple_errors() -> None:
         kit_id="",
         source_type=cast(SourceType, "invalid"),
         version="",
-        artifacts=[],
+        artifacts={},
     )
     errors = validate_kit_fields(kit)
     assert len(errors) == 4
     assert any("kit_id is empty" in e for e in errors)
     assert any("version is empty" in e for e in errors)
     assert any("Invalid source_type" in e for e in errors)
-    assert any("artifacts list is empty" in e for e in errors)
+    assert any("artifacts dict is empty" in e for e in errors)
 
 
 def test_check_command_bundled_kit_sync_in_sync(tmp_path: Path) -> None:
@@ -634,70 +634,80 @@ def test_check_command_bundled_kit_sync_in_sync(tmp_path: Path) -> None:
         erk_docs_kits_dir = project_dir / ".erk" / "docs" / "kits"
         erk_docs_kits_dir.mkdir(parents=True)
 
+        # Create a mock bundled kit with manifest
+        mock_kit_dir = tmp_path / "mock_bundled_kit"
+        mock_kit_dir.mkdir()
+
+        # Create manifest with agent and doc artifacts
+        manifest_path = mock_kit_dir / "kit.yaml"
+        manifest_path.write_text(
+            """name: mock-kit
+version: 1.0.0
+description: Mock kit for testing
+artifacts:
+  agent:
+    - agents/mock-kit/agent.md
+  doc:
+    - docs/mock-kit/reference.md
+""",
+            encoding="utf-8",
+        )
+
+        # Create bundled artifacts
+        bundled_agent = mock_kit_dir / "agents" / "mock-kit" / "agent.md"
+        bundled_agent.parent.mkdir(parents=True)
+        bundled_agent.write_text("agent content", encoding="utf-8")
+
+        bundled_doc = mock_kit_dir / "docs" / "mock-kit" / "reference.md"
+        bundled_doc.parent.mkdir(parents=True)
+        bundled_doc.write_text("doc content", encoding="utf-8")
+
         # Create config with bundled kit
-        # Note: We use "bundled:devrun" which is a real bundled kit in the package
-        # Include all artifacts from the devrun kit
-        # Doc artifacts go to .erk/docs/kits/ (not .claude/docs/)
         config = ProjectConfig(
             version="1",
             kits={
-                "devrun": InstalledKit(
-                    kit_id="devrun",
-                    version="0.1.0",
+                "mock-kit": InstalledKit(
+                    kit_id="mock-kit",
+                    version="1.0.0",
                     source_type="bundled",
-                    artifacts=[
-                        ".claude/agents/devrun/devrun.md",
-                        ".erk/docs/kits/devrun/tools/gt.md",
-                        ".erk/docs/kits/devrun/tools/make.md",
-                        ".erk/docs/kits/devrun/tools/prettier.md",
-                        ".erk/docs/kits/devrun/tools/pyright.md",
-                        ".erk/docs/kits/devrun/tools/pytest.md",
-                        ".erk/docs/kits/devrun/tools/ruff.md",
-                    ],
+                    artifacts={
+                        ".claude/agents/mock-kit/agent.md": "sha256:abc123",
+                        ".erk/docs/kits/mock-kit/reference.md": "sha256:def456",
+                    },
                 ),
             },
         )
         save_project_config(project_dir, config)
 
         # Create local artifacts that match bundled version
-        # Read bundled artifact content
+        local_agent = claude_dir / "agents" / "mock-kit" / "agent.md"
+        local_agent.parent.mkdir(parents=True)
+        local_agent.write_text("agent content", encoding="utf-8")
+
+        local_doc = erk_docs_kits_dir / "mock-kit" / "reference.md"
+        local_doc.parent.mkdir(parents=True)
+        local_doc.write_text("doc content", encoding="utf-8")
+
+        # Monkey patch BundledKitSource to return our mock kit
         from erk.kits.sources.bundled import BundledKitSource
 
-        bundled_source = BundledKitSource()
-        bundled_path = bundled_source._get_bundled_kit_path("devrun")
-        if bundled_path is not None:
-            # Create agent artifacts (go to .claude/)
-            for artifact_rel in ["agents/devrun/devrun.md"]:
-                bundled_artifact = bundled_path / artifact_rel
-                if bundled_artifact.exists():
-                    bundled_content = bundled_artifact.read_text(encoding="utf-8")
-                    local_artifact = claude_dir / artifact_rel
-                    local_artifact.parent.mkdir(parents=True, exist_ok=True)
-                    local_artifact.write_text(bundled_content, encoding="utf-8")
+        original_get_path = BundledKitSource._get_bundled_kit_path
 
-            # Create doc artifacts (go to .erk/docs/kits/)
-            for artifact_rel in [
-                "docs/devrun/tools/gt.md",
-                "docs/devrun/tools/make.md",
-                "docs/devrun/tools/prettier.md",
-                "docs/devrun/tools/pyright.md",
-                "docs/devrun/tools/pytest.md",
-                "docs/devrun/tools/ruff.md",
-            ]:
-                bundled_artifact = bundled_path / artifact_rel
-                if bundled_artifact.exists():
-                    bundled_content = bundled_artifact.read_text(encoding="utf-8")
-                    # Strip "docs/" prefix for local path since target dir is .erk/docs/kits
-                    local_rel = artifact_rel.removeprefix("docs/")
-                    local_artifact = erk_docs_kits_dir / local_rel
-                    local_artifact.parent.mkdir(parents=True, exist_ok=True)
-                    local_artifact.write_text(bundled_content, encoding="utf-8")
+        def mock_get_path(self: BundledKitSource, source: str) -> Path | None:
+            if source == "mock-kit":
+                return mock_kit_dir
+            return original_get_path(self, source)
 
-            result = runner.invoke(check)
+        BundledKitSource._get_bundled_kit_path = mock_get_path
 
-            assert result.exit_code == 0
-            assert "All checks passed" in result.output
-            assert "Warning: Could not find bundled kit" not in result.output
+        result = runner.invoke(check)
+
+        # Restore original method
+        BundledKitSource._get_bundled_kit_path = original_get_path
+
+        assert result.exit_code == 0
+        assert "All checks passed" in result.output
+        assert "Warning: Could not find bundled kit" not in result.output
 
 
 def test_check_command_detects_missing_artifacts(tmp_path: Path) -> None:
@@ -710,43 +720,75 @@ def test_check_command_detects_missing_artifacts(tmp_path: Path) -> None:
         claude_dir = project_dir / ".claude"
         claude_dir.mkdir()
 
-        # Create config with bundled kit that only has one artifact installed
-        # but the bundled kit has more
+        # Create a mock bundled kit with manifest
+        mock_kit_dir = tmp_path / "mock_bundled_kit"
+        mock_kit_dir.mkdir()
+
+        # Create a manifest with two artifacts
+        manifest_path = mock_kit_dir / "kit.yaml"
+        manifest_path.write_text(
+            """name: test-kit
+version: 1.0.0
+description: Test kit
+artifacts:
+  command:
+    - commands/test/foo.md
+  skill:
+    - skills/test-skill/SKILL.md
+""",
+            encoding="utf-8",
+        )
+
+        # Create bundled artifacts
+        bundled_cmd = mock_kit_dir / "commands" / "test" / "foo.md"
+        bundled_cmd.parent.mkdir(parents=True)
+        bundled_cmd.write_text("command content", encoding="utf-8")
+
+        bundled_skill = mock_kit_dir / "skills" / "test-skill" / "SKILL.md"
+        bundled_skill.parent.mkdir(parents=True)
+        bundled_skill.write_text("skill content", encoding="utf-8")
+
+        # Create config with only ONE artifact installed (missing skill)
         config = ProjectConfig(
             version="1",
             kits={
-                "gt": InstalledKit(
-                    kit_id="gt",
-                    version="0.1.0",
+                "test-kit": InstalledKit(
+                    kit_id="test-kit",
+                    version="1.0.0",
                     source_type="bundled",
-                    artifacts=[".claude/commands/gt/submit-branch.md"],
+                    artifacts={".claude/commands/test/foo.md": "sha256:abc123"},
                 ),
             },
         )
         save_project_config(project_dir, config)
 
-        # Create local artifact that matches bundled version
+        # Create only one local artifact (skill is missing)
+        local_cmd = claude_dir / "commands" / "test" / "foo.md"
+        local_cmd.parent.mkdir(parents=True)
+        local_cmd.write_text("command content", encoding="utf-8")
+
+        # Monkey patch BundledKitSource to return our mock kit
         from erk.kits.sources.bundled import BundledKitSource
 
-        bundled_source = BundledKitSource()
-        bundled_path = bundled_source._get_bundled_kit_path("gt")
-        if bundled_path is not None:
-            # Copy only one artifact
-            bundled_artifact = bundled_path / "commands" / "gt" / "submit-branch.md"
-            if bundled_artifact.exists():
-                bundled_content = bundled_artifact.read_text(encoding="utf-8")
-                local_artifact = claude_dir / "commands" / "gt" / "submit-branch.md"
-                local_artifact.parent.mkdir(parents=True)
-                local_artifact.write_text(bundled_content, encoding="utf-8")
+        original_get_path = BundledKitSource._get_bundled_kit_path
 
-                result = runner.invoke(check)
+        def mock_get_path(self: BundledKitSource, source: str) -> Path | None:
+            if source == "test-kit":
+                return mock_kit_dir
+            return original_get_path(self, source)
 
-                # Should fail because missing artifacts
-                assert result.exit_code == 1
-                assert "Missing artifacts (in manifest but not installed)" in result.output
-                assert ".claude/commands/gt/submit-branch.md" in result.output
-                assert ".claude/skills/gt-graphite/SKILL.md" in result.output
-                assert "Some checks failed" in result.output
+        BundledKitSource._get_bundled_kit_path = mock_get_path
+
+        result = runner.invoke(check)
+
+        # Restore original method
+        BundledKitSource._get_bundled_kit_path = original_get_path
+
+        # Should fail because missing artifacts
+        assert result.exit_code == 1
+        assert "Missing artifacts (in manifest but not installed)" in result.output
+        assert ".claude/skills/test-skill/SKILL.md" in result.output
+        assert "Some checks failed" in result.output
 
 
 def test_check_command_detects_obsolete_artifacts(tmp_path: Path) -> None:
@@ -789,10 +831,10 @@ artifacts:
                     kit_id="test-kit",
                     version="1.0.0",
                     source_type="bundled",
-                    artifacts=[
-                        ".claude/commands/test/foo.md",
-                        ".claude/commands/test/old-artifact.md",
-                    ],
+                    artifacts={
+                        ".claude/commands/test/foo.md": "sha256:abc123",
+                        ".claude/commands/test/old-artifact.md": "sha256:def456",
+                    },
                 ),
             },
         )
@@ -875,10 +917,10 @@ artifacts:
                     kit_id="test-kit",
                     version="1.0.0",
                     source_type="bundled",
-                    artifacts=[
-                        ".claude/commands/test/foo.md",
-                        ".claude/commands/test/obsolete.md",
-                    ],
+                    artifacts={
+                        ".claude/commands/test/foo.md": "sha256:abc123",
+                        ".claude/commands/test/obsolete.md": "sha256:def456",
+                    },
                 ),
             },
         )
@@ -930,49 +972,92 @@ def test_check_command_perfect_sync_no_missing_no_obsolete(tmp_path: Path) -> No
         claude_dir = project_dir / ".claude"
         claude_dir.mkdir()
 
-        # Use real bundled kit (gt) and install all artifacts
+        # Create a mock bundled kit with manifest
+        mock_kit_dir = tmp_path / "mock_bundled_kit"
+        mock_kit_dir.mkdir()
+
+        # Create manifest with command and skill artifacts
+        manifest_path = mock_kit_dir / "kit.yaml"
+        manifest_path.write_text(
+            """name: mock-kit
+version: 1.0.0
+description: Mock kit for testing
+artifacts:
+  command:
+    - commands/mock-kit/submit.md
+  skill:
+    - skills/mock-skill/SKILL.md
+    - skills/mock-skill/references/reference.md
+""",
+            encoding="utf-8",
+        )
+
+        # Create bundled artifacts
+        bundled_cmd = mock_kit_dir / "commands" / "mock-kit" / "submit.md"
+        bundled_cmd.parent.mkdir(parents=True)
+        bundled_cmd.write_text("command content", encoding="utf-8")
+
+        bundled_skill = mock_kit_dir / "skills" / "mock-skill" / "SKILL.md"
+        bundled_skill.parent.mkdir(parents=True)
+        bundled_skill.write_text("skill content", encoding="utf-8")
+
+        bundled_ref = mock_kit_dir / "skills" / "mock-skill" / "references" / "reference.md"
+        bundled_ref.parent.mkdir(parents=True)
+        bundled_ref.write_text("reference content", encoding="utf-8")
+
+        # Create config with all artifacts from manifest
         config = ProjectConfig(
             version="1",
             kits={
-                "gt": InstalledKit(
-                    kit_id="gt",
-                    version="0.1.0",
+                "mock-kit": InstalledKit(
+                    kit_id="mock-kit",
+                    version="1.0.0",
                     source_type="bundled",
-                    artifacts=[
-                        ".claude/commands/gt/pr-submit.md",
-                        ".claude/skills/gt-graphite/SKILL.md",
-                        ".claude/skills/gt-graphite/references/gt-reference.md",
-                    ],
+                    artifacts={
+                        ".claude/commands/mock-kit/submit.md": "sha256:abc123",
+                        ".claude/skills/mock-skill/SKILL.md": "sha256:def456",
+                        ".claude/skills/mock-skill/references/reference.md": "sha256:ghi789",
+                    },
                 ),
             },
         )
         save_project_config(project_dir, config)
 
-        # Copy all artifacts from bundled kit
+        # Create local artifacts matching manifest exactly
+        local_cmd = claude_dir / "commands" / "mock-kit" / "submit.md"
+        local_cmd.parent.mkdir(parents=True)
+        local_cmd.write_text("command content", encoding="utf-8")
+
+        local_skill = claude_dir / "skills" / "mock-skill" / "SKILL.md"
+        local_skill.parent.mkdir(parents=True)
+        local_skill.write_text("skill content", encoding="utf-8")
+
+        local_ref = claude_dir / "skills" / "mock-skill" / "references" / "reference.md"
+        local_ref.parent.mkdir(parents=True)
+        local_ref.write_text("reference content", encoding="utf-8")
+
+        # Monkey patch BundledKitSource to return our mock kit
         from erk.kits.sources.bundled import BundledKitSource
 
-        bundled_source = BundledKitSource()
-        bundled_path = bundled_source._get_bundled_kit_path("gt")
-        if bundled_path is not None:
-            for artifact_rel in [
-                "commands/gt/pr-submit.md",
-                "skills/gt-graphite/SKILL.md",
-                "skills/gt-graphite/references/gt-reference.md",
-            ]:
-                bundled_artifact = bundled_path / artifact_rel
-                if bundled_artifact.exists():
-                    bundled_content = bundled_artifact.read_text(encoding="utf-8")
-                    local_artifact = claude_dir / artifact_rel
-                    local_artifact.parent.mkdir(parents=True, exist_ok=True)
-                    local_artifact.write_text(bundled_content, encoding="utf-8")
+        original_get_path = BundledKitSource._get_bundled_kit_path
 
-            result = runner.invoke(check)
+        def mock_get_path(self: BundledKitSource, source: str) -> Path | None:
+            if source == "mock-kit":
+                return mock_kit_dir
+            return original_get_path(self, source)
 
-            # Debug: print output if test fails
-            if result.exit_code != 0:
-                print(f"\n=== Check command output ===\n{result.output}\n=== End output ===")
+        BundledKitSource._get_bundled_kit_path = mock_get_path
 
-            assert result.exit_code == 0
-            assert "All checks passed" in result.output
-            assert "Missing artifacts" not in result.output
-            assert "Obsolete artifacts" not in result.output
+        result = runner.invoke(check)
+
+        # Restore original method
+        BundledKitSource._get_bundled_kit_path = original_get_path
+
+        # Debug: print output if test fails
+        if result.exit_code != 0:
+            print(f"\n=== Check command output ===\n{result.output}\n=== End output ===")
+
+        assert result.exit_code == 0
+        assert "All checks passed" in result.output
+        assert "Missing artifacts" not in result.output
+        assert "Obsolete artifacts" not in result.output

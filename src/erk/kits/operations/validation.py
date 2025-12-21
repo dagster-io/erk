@@ -55,7 +55,7 @@ def validate_project(project_dir: Path) -> list[ValidationResult]:
     # or just the relative path within the base directory (e.g., "commands/...")
     managed_paths: set[str] = set()
     for kit in config.kits.values():
-        for artifact_path in kit.artifacts:
+        for artifact_path in kit.artifacts.keys():
             managed_paths.add(artifact_path)
 
     # Validate all managed artifacts

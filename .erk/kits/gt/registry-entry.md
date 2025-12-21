@@ -1,4 +1,4 @@
-### gt (v0.2.5)
+### gt (v0.2.7)
 
 **Purpose**: Graphite stack management with landing and submission commands
 
