@@ -3,6 +3,7 @@
 import click
 
 from erk.cli.alias import get_aliases
+from erk.core.config_store import RealConfigStore
 
 
 class ErkCommandGroup(click.Group):
@@ -50,9 +51,6 @@ class ErkCommandGroup(click.Group):
             return
 
         # Otherwise try to load config directly from disk
-        # Inline import to avoid circular dependency
-        from erk.core.config_store import RealConfigStore
-
         store = RealConfigStore()
         if store.exists():
             config = store.load()

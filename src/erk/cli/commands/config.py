@@ -1,5 +1,6 @@
 import subprocess
 from dataclasses import replace
+from functools import cache
 from pathlib import Path
 
 import click
@@ -10,16 +11,22 @@ from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext, write_trunk_to_pyproject
 from erk_shared.output.output import machine_output, user_output
 
-# User-exposed global config keys with descriptions (shell_setup_complete is internal)
-# Order determines display order in 'erk config list'
-GLOBAL_CONFIG_KEYS: dict[str, str] = {
-    "erk_root": "Root directory for erk data (~/.erk by default)",
-    "use_graphite": "Enable Graphite integration for stack management",
-    "show_pr_info": "Show PR status in branch listings",
-    "github_planning": "Enable GitHub issues integration for planning",
-    "auto_restack_skip_dangerous": "Skip --dangerous flag requirement for auto-restack",
-    "show_hidden_commands": "Show deprecated/hidden commands in help output",
-}
+
+@cache
+def get_global_config_keys() -> dict[str, str]:
+    """Get user-exposed global config keys with descriptions.
+
+    Order determines display order in 'erk config list'.
+    shell_setup_complete is internal and not exposed.
+    """
+    return {
+        "erk_root": "Root directory for erk data (~/.erk by default)",
+        "use_graphite": "Enable Graphite integration for stack management",
+        "show_pr_info": "Show PR status in branch listings",
+        "github_planning": "Enable GitHub issues integration for planning",
+        "auto_restack_skip_dangerous": "Skip --dangerous flag requirement for auto-restack",
+        "show_hidden_commands": "Show deprecated/hidden commands in help output",
+    }
 
 
 def _get_env_value(cfg: LoadedConfig, parts: list[str], key: str) -> None:
@@ -68,7 +75,7 @@ def config_keys() -> None:
 
     # Global config section
     user_output(click.style("Global configuration keys:", bold=True))
-    rows = list(GLOBAL_CONFIG_KEYS.items())
+    rows = list(get_global_config_keys().items())
     formatter.write_dl(rows)
     user_output(formatter.getvalue().rstrip())
 
@@ -101,7 +108,7 @@ def config_list(ctx: ErkContext) -> None:
     # Display global config
     user_output(click.style("Global configuration:", bold=True))
     if ctx.global_config:
-        for key in GLOBAL_CONFIG_KEYS:
+        for key in get_global_config_keys():
             value = getattr(ctx.global_config, key)
             user_output(f"  {key}={_format_config_value(value)}")
     else:
@@ -144,7 +151,7 @@ def config_get(ctx: ErkContext, key: str) -> None:
     parts = key.split(".")
 
     # Handle global config keys
-    if parts[0] in GLOBAL_CONFIG_KEYS:
+    if parts[0] in get_global_config_keys():
         global_config = Ensure.not_none(
             ctx.global_config, f"Global config not found at {ctx.config_store.path()}"
         )
@@ -203,7 +210,7 @@ def config_set(ctx: ErkContext, key: str, value: str) -> None:
     parts = key.split(".")
 
     # Handle global config keys
-    if parts[0] in GLOBAL_CONFIG_KEYS:
+    if parts[0] in get_global_config_keys():
         global_config = Ensure.not_none(
             ctx.global_config,
             f"Global config not found at {ctx.config_store.path()}. Run 'erk init' to create it.",

@@ -6,7 +6,8 @@ import pytest
 from erk.cli.commands.init import create_and_save_global_config
 from erk.cli.commands.wt.create_cmd import make_env_content
 from erk.cli.config import load_config
-from erk.core.config_store import GlobalConfig
+from erk.core.config_store import FakeConfigStore, GlobalConfig, RealConfigStore
+from erk.core.context import context_for_test
 from erk.core.init_utils import discover_presets
 from tests.fakes.shell import FakeShell
 
@@ -92,8 +93,6 @@ def test_load_global_config_missing_erk_root(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     # Test that RealConfigStore validates required fields
-    from erk.core.config_store import RealConfigStore
-
     config_file = tmp_path / "config.toml"
     config_file.write_text("use_graphite = true\n", encoding="utf-8")
 
@@ -114,8 +113,6 @@ def test_real_config_store_roundtrip_show_hidden_commands(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test that RealConfigStore correctly saves and loads show_hidden_commands."""
-    from erk.core.config_store import RealConfigStore
-
     # Patch Path.home to use tmp_path
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
 
@@ -149,8 +146,6 @@ def test_real_config_store_loads_show_hidden_commands_default(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test that RealConfigStore defaults show_hidden_commands to False if missing."""
-    from erk.core.config_store import RealConfigStore
-
     # Patch Path.home to use tmp_path
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
 
@@ -175,9 +170,6 @@ shell_setup_complete = true
 
 def test_create_global_config_creates_parent_directory(tmp_path: Path) -> None:
     # Test that create_and_save_global_config creates parent directory
-    from erk.core.config_store import FakeConfigStore
-    from erk.core.context import context_for_test
-
     config_file = tmp_path / ".erk" / "config.toml"
     assert not config_file.parent.exists()
 
