@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import click
 import pytest
@@ -194,43 +194,6 @@ def test_complete_branch_names_filters_by_prefix(tmp_path: Path) -> None:
     assert sorted(result) == ["feature-a", "feature-b"]
 
 
-def test_complete_branch_names_handles_uninitialized_context(tmp_path: Path) -> None:
-    """Test completion handles ctx.find_root().obj being None gracefully."""
-    # Arrange
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    git_dir = repo_root / ".git"
-    git_dir.mkdir()
-    erk_root = tmp_path / "erks"
-    erk_root.mkdir()
-
-    git = FakeGit(
-        local_branches={repo_root: ["main", "test-branch"]},
-        remote_branches={repo_root: []},
-        git_common_dirs={repo_root: git_dir},
-    )
-
-    # GlobalConfig needs a valid erk_root for repo discovery to work
-    global_config = GlobalConfig.test(erk_root)
-    ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
-
-    # Create mock Click context with None obj (uninitialized)
-    mock_ctx = Mock(spec=click.Context)
-    mock_root_ctx = Mock()
-    mock_root_ctx.obj = None
-    mock_ctx.find_root.return_value = mock_root_ctx
-
-    # Act
-    # Mock create_context to return our test context instead of creating real one
-    with patch("erk.cli.commands.completions.create_context", return_value=ctx_obj):
-        result = complete_branch_names(mock_ctx, None, "")
-
-    # Assert
-    # Result should contain branches from our fake git
-    assert isinstance(result, list)
-    assert sorted(result) == ["main", "test-branch"]
-
-
 def test_complete_branch_names_error_handling_returns_empty_list(tmp_path: Path) -> None:
     """Test completion returns empty list on error for graceful degradation."""
     # Arrange
@@ -372,47 +335,6 @@ def test_complete_plan_files_filters_by_prefix(tmp_path: Path) -> None:
 
     # Assert
     assert result == ["feature-plan.md"]
-
-
-def test_complete_plan_files_handles_uninitialized_context(tmp_path: Path) -> None:
-    """Test completion handles ctx.find_root().obj being None gracefully."""
-    # Arrange
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    git_dir = repo_root / ".git"
-    git_dir.mkdir()
-    erk_root = tmp_path / "erks"
-    erk_root.mkdir()
-
-    # Create test .md files
-    (repo_root / "plan.md").touch()
-    (repo_root / "notes.md").touch()
-
-    git = FakeGit(
-        local_branches={repo_root: ["main"]},
-        remote_branches={repo_root: []},
-        git_common_dirs={repo_root: git_dir},
-    )
-
-    # GlobalConfig needs a valid erk_root for repo discovery to work
-    global_config = GlobalConfig.test(erk_root)
-    ctx_obj = context_for_test(git=git, cwd=repo_root, global_config=global_config)
-
-    # Create mock Click context with None obj (uninitialized)
-    mock_ctx = Mock(spec=click.Context)
-    mock_root_ctx = Mock()
-    mock_root_ctx.obj = None
-    mock_ctx.find_root.return_value = mock_root_ctx
-
-    # Act
-    # Mock create_context to return our test context instead of creating real one
-    with patch("erk.cli.commands.completions.create_context", return_value=ctx_obj):
-        result = complete_plan_files(mock_ctx, None, "")
-
-    # Assert
-    # Result should contain .md files from repo_root
-    assert isinstance(result, list)
-    assert sorted(result) == ["notes.md", "plan.md"]
 
 
 def test_complete_plan_files_error_handling_returns_empty_list(tmp_path: Path) -> None:

@@ -9,7 +9,6 @@ from contextlib import contextmanager
 import click
 
 from erk.cli.core import discover_repo_context
-from erk.core.context import create_context
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 
 
@@ -58,11 +57,9 @@ def complete_worktree_names(
         incomplete: Partial input string to complete
     """
     with shell_completion_error_boundary():
-        # During shell completion, ctx.obj may be None if the CLI group callback
-        # hasn't run yet. Create a default context in this case.
         erk_ctx = ctx.find_root().obj
         if erk_ctx is None:
-            erk_ctx = create_context(dry_run=False)
+            raise RuntimeError("ErkContext not set - CLI group callback must run first")
 
         repo = discover_repo_context(erk_ctx, erk_ctx.cwd)
         ensure_erk_metadata_dir(repo)
@@ -99,11 +96,9 @@ def complete_branch_names(
         incomplete: Partial input string to complete
     """
     with shell_completion_error_boundary():
-        # During shell completion, ctx.obj may be None if the CLI group callback
-        # hasn't run yet. Create a default context in this case.
         erk_ctx = ctx.find_root().obj
         if erk_ctx is None:
-            erk_ctx = create_context(dry_run=False)
+            raise RuntimeError("ErkContext not set - CLI group callback must run first")
 
         repo = discover_repo_context(erk_ctx, erk_ctx.cwd)
         ensure_erk_metadata_dir(repo)
@@ -148,11 +143,9 @@ def complete_plan_files(
         List of completion candidates (filenames matching incomplete text)
     """
     with shell_completion_error_boundary():
-        # During shell completion, ctx.obj may be None if the CLI group callback
-        # hasn't run yet. Create a default context in this case.
         erk_ctx = ctx.find_root().obj
         if erk_ctx is None:
-            erk_ctx = create_context(dry_run=False)
+            raise RuntimeError("ErkContext not set - CLI group callback must run first")
 
         # Get current working directory from erk context
         cwd = erk_ctx.cwd
@@ -184,11 +177,9 @@ def complete_objective_names(
         List of completion candidates (objective names matching incomplete text)
     """
     with shell_completion_error_boundary():
-        # During shell completion, ctx.obj may be None if the CLI group callback
-        # hasn't run yet. Create a default context in this case.
         erk_ctx = ctx.find_root().obj
         if erk_ctx is None:
-            erk_ctx = create_context(dry_run=False)
+            raise RuntimeError("ErkContext not set - CLI group callback must run first")
 
         repo = discover_repo_context(erk_ctx, erk_ctx.cwd)
 
