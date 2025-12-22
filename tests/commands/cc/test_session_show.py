@@ -319,9 +319,7 @@ def test_show_session_infer_no_sessions_error() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         # Project exists but has no sessions
-        session_store = FakeClaudeCodeSessionStore(
-            projects={env.cwd: FakeProject(sessions={})}
-        )
+        session_store = FakeClaudeCodeSessionStore(projects={env.cwd: FakeProject(sessions={})})
 
         ctx = build_workspace_test_context(env, session_store=session_store)
 

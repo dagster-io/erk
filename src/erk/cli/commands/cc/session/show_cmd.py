@@ -166,14 +166,10 @@ def _show_session_impl(
         console.print(f"[bold]Path:[/bold] {session_path}")
 
     # Find and display child agent sessions
-    all_sessions = session_store.find_sessions(
-        cwd, include_agents=True, limit=1000
-    )
+    all_sessions = session_store.find_sessions(cwd, include_agents=True, limit=1000)
 
     # Filter to only agent sessions with this parent
-    child_agents = [
-        s for s in all_sessions if s.parent_session_id == session_id
-    ]
+    child_agents = [s for s in all_sessions if s.parent_session_id == session_id]
 
     if child_agents:
         console.print()
@@ -196,8 +192,7 @@ def _show_session_impl(
             else:
                 console.print(f"  [cyan]{agent.session_id}[/cyan]")
             console.print(
-                f"    {format_display_time(agent.modified_at)}  "
-                f"{format_size(agent.size_bytes)}"
+                f"    {format_display_time(agent.modified_at)}  {format_size(agent.size_bytes)}"
             )
             if agent_path:
                 console.print(f"    {agent_path}")
