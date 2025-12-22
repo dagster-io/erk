@@ -5,6 +5,7 @@ from pathlib import Path
 from erk.tui.jsonl_viewer.models import (
     JsonlEntry,
     extract_tool_name,
+    format_entry_detail,
     format_summary,
     parse_jsonl_file,
 )
@@ -55,6 +56,111 @@ class TestExtractToolName:
             }
         }
         assert extract_tool_name(entry) == "Read"
+
+
+class TestFormatEntryDetail:
+    """Tests for format_entry_detail function."""
+
+    def test_raw_mode_preserves_escape_sequences(self) -> None:
+        """Raw mode shows escape sequences as literal characters."""
+        # In the parsed dict, the string contains literal backslash-n (2 chars)
+        # This simulates what you'd get from JSON like: {"text": "line1\\nline2"}
+        entry = JsonlEntry(
+            line_number=1,
+            entry_type="user",
+            role="user",
+            tool_name=None,
+            raw_json="{}",
+            parsed={"text": r"line1\nline2"},  # raw string: literal \n
+        )
+        result = format_entry_detail(entry, formatted=False)
+        # Raw mode uses json.dumps which escapes backslash, showing \\n
+        assert r"line1\nline2" in result or "line1\\\\nline2" in result
+
+    def test_formatted_mode_interprets_newlines(self) -> None:
+        """Formatted mode interprets \\n as actual newlines."""
+        # In the parsed dict, the string contains literal backslash-n (2 chars)
+        entry = JsonlEntry(
+            line_number=1,
+            entry_type="user",
+            role="user",
+            tool_name=None,
+            raw_json="{}",
+            parsed={"text": r"line1\nline2"},  # raw string: literal \n
+        )
+        result = format_entry_detail(entry, formatted=True)
+        # Formatted mode interprets \n as actual newline
+        assert "line1\nline2" in result
+
+    def test_formatted_mode_interprets_tabs(self) -> None:
+        """Formatted mode interprets \\t as actual tabs."""
+        # In the parsed dict, the string contains literal backslash-t (2 chars)
+        entry = JsonlEntry(
+            line_number=1,
+            entry_type="user",
+            role="user",
+            tool_name=None,
+            raw_json="{}",
+            parsed={"text": r"col1\tcol2"},  # raw string: literal \t
+        )
+        result = format_entry_detail(entry, formatted=True)
+        # Formatted mode interprets \t as actual tab
+        assert "col1\tcol2" in result
+
+    def test_handles_nested_structures(self) -> None:
+        """Handles nested dicts and lists correctly."""
+        entry = JsonlEntry(
+            line_number=1,
+            entry_type="user",
+            role="user",
+            tool_name=None,
+            raw_json="{}",
+            parsed={"outer": {"inner": r"value\nwith newline"}},  # raw string
+        )
+        result = format_entry_detail(entry, formatted=True)
+        # Should contain the interpreted newline
+        assert "value\nwith newline" in result
+
+    def test_handles_lists(self) -> None:
+        """Handles lists correctly."""
+        entry = JsonlEntry(
+            line_number=1,
+            entry_type="user",
+            role="user",
+            tool_name=None,
+            raw_json="{}",
+            parsed={"items": [r"first\nsecond", "third"]},  # raw string
+        )
+        result = format_entry_detail(entry, formatted=True)
+        assert "first\nsecond" in result
+
+    def test_handles_empty_dict(self) -> None:
+        """Handles empty dict."""
+        entry = JsonlEntry(
+            line_number=1,
+            entry_type="user",
+            role="user",
+            tool_name=None,
+            raw_json="{}",
+            parsed={},
+        )
+        result = format_entry_detail(entry, formatted=True)
+        assert result == "{}"
+
+    def test_handles_numbers_and_booleans(self) -> None:
+        """Handles non-string primitives correctly."""
+        entry = JsonlEntry(
+            line_number=1,
+            entry_type="user",
+            role="user",
+            tool_name=None,
+            raw_json="{}",
+            parsed={"count": 42, "enabled": True, "nothing": None},
+        )
+        result = format_entry_detail(entry, formatted=True)
+        assert "42" in result
+        assert "true" in result
+        assert "null" in result
 
 
 class TestFormatSummary:
@@ -181,9 +287,7 @@ class TestParseJsonlFile:
         """Handles malformed JSON gracefully by skipping."""
         jsonl_file = tmp_path / "bad.jsonl"
         jsonl_file.write_text(
-            '{"type": "user"}\n'
-            'not valid json\n'
-            '{"type": "assistant"}\n',
+            '{"type": "user"}\nnot valid json\n{"type": "assistant"}\n',
             encoding="utf-8",
         )
 

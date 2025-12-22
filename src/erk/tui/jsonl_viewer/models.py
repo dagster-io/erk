@@ -44,6 +44,90 @@ def extract_tool_name(entry: dict) -> str | None:
     return None
 
 
+def format_entry_detail(entry: JsonlEntry, formatted: bool) -> str:
+    """Format entry for display in raw or formatted mode.
+
+    Args:
+        entry: JSONL entry to format
+        formatted: If True, interpret escape sequences; if False, show raw JSON
+
+    Returns:
+        Formatted string for display
+    """
+    if not formatted:
+        return json.dumps(entry.parsed, indent=2)
+
+    # Formatted mode: render escape sequences in string values
+    return _format_value(entry.parsed, indent=0)
+
+
+def _format_value(value: object, indent: int) -> str:
+    """Recursively format a value as readable YAML-like output.
+
+    Args:
+        value: Value to format (dict, list, string, etc.)
+        indent: Current indentation level
+
+    Returns:
+        Human-readable string representation (no JSON syntax)
+    """
+    indent_str = "  " * indent
+
+    if isinstance(value, dict):
+        if not value:
+            return "{}"
+        lines: list[str] = []
+        for k, v in value.items():
+            formatted_v = _format_value(v, indent + 1)
+            if isinstance(v, (dict, list)) and v:
+                # Complex value on next line
+                lines.append(f"{indent_str}{k}:")
+                lines.append(formatted_v)
+            else:
+                # Simple value on same line
+                lines.append(f"{indent_str}{k}: {formatted_v}")
+        return "\n".join(lines)
+
+    if isinstance(value, list):
+        if not value:
+            return "[]"
+        lines = []
+        for item in value:
+            formatted_item = _format_value(item, indent + 1)
+            if isinstance(item, (dict, list)) and item:
+                lines.append(f"{indent_str}-")
+                lines.append(formatted_item)
+            else:
+                lines.append(f"{indent_str}- {formatted_item}")
+        return "\n".join(lines)
+
+    if isinstance(value, str):
+        # Interpret escape sequences and return unquoted
+        return _interpret_escape_sequences(value)
+
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
+
+
+def _interpret_escape_sequences(text: str) -> str:
+    """Interpret common escape sequences in a string.
+
+    Args:
+        text: String potentially containing escape sequences
+
+    Returns:
+        String with escape sequences rendered as actual characters
+    """
+    # Replace common escape sequences
+    result = text.replace("\\n", "\n")
+    result = result.replace("\\t", "\t")
+    result = result.replace("\\r", "\r")
+    return result
+
+
 def format_summary(entry: JsonlEntry) -> str:
     """Format entry summary for display.
 

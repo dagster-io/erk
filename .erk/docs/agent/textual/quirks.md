@@ -114,6 +114,82 @@ def on_click(self, event: Click) -> None:
 
 Without `prevent_default()`, DataTable's internal click handling still fires, moving the cursor and potentially triggering `RowSelected`.
 
+## ListView Quirks
+
+### `--highlight` Pseudo-Class Is Unreliable
+
+**Problem**: ListView is supposed to apply `--highlight` pseudo-class to the highlighted item, but it doesn't work reliably for custom styling, especially when mouse hover is involved.
+
+**Solution**: Manually manage a custom "selected" class in `watch_index`:
+
+```python
+class CustomListView(ListView):
+    def watch_index(self, old_index: int | None, new_index: int | None) -> None:
+        # Remove selection from old item
+        if old_index is not None and old_index < len(self.children):
+            old_item = self.children[old_index]
+            old_item.remove_class("selected")
+
+        # Add selection to new item
+        if new_index is not None:
+            highlighted = self.highlighted_child
+            if highlighted:
+                highlighted.add_class("selected")
+```
+
+Then style with `.selected` instead of `.--highlight`:
+
+```css
+MyListItem.selected > .summary {
+    background: $secondary;
+}
+```
+
+### Disabling Mouse Interaction for Keyboard-Only Navigation
+
+**Problem**: ListView has built-in mouse hover and click behavior that interferes with keyboard-only UIs. Mouse hover causes highlight to follow the cursor, and clicks change selection.
+
+**Solution**: Override click handler and disable hover styling:
+
+```python
+class CustomListView(ListView):
+    DEFAULT_CSS = """
+    CustomListView > MyListItem:hover {
+        background: transparent;
+    }
+    """
+
+    def _on_list_item__child_clicked(self, event: ListItem._ChildClicked) -> None:
+        """Disable mouse click selection - keyboard only."""
+        event.prevent_default()
+        event.stop()
+```
+
+### Sticky Toggle State Across Navigation
+
+**Problem**: When implementing a feature like "expand on navigation" that can be toggled, the state needs to persist as the user navigates.
+
+**Solution**: Use an instance variable to track the mode, and update it in the toggle action:
+
+```python
+def __init__(self) -> None:
+    super().__init__()
+    self._expand_mode = False  # Sticky state
+
+def action_toggle_expand(self) -> None:
+    if item.is_expanded():
+        item.collapse()
+        self._expand_mode = False  # Collapsing turns off expand mode
+    else:
+        item.expand()
+        self._expand_mode = True  # Expanding turns on expand mode
+
+def watch_index(self, old_index: int | None, new_index: int | None) -> None:
+    # Only expand on navigation if in expand mode
+    if self._expand_mode:
+        self.highlighted_child.expand()
+```
+
 ## App Quirks
 
 ### Don't Override `action_quit` Synchronously
@@ -243,6 +319,24 @@ This applies to any `Label(..., markup=True)` or other widget accepting Rich mar
 1. Use `escape_markup()` on display text to prevent `[brackets]` from being parsed
 2. Quote URLs and escape any `"` characters that might appear in them
 3. Set `markup=False` on Labels that show user content without links
+
+### Static Widget with Dynamic Content
+
+**Problem**: When using `Static` widgets with content that may contain `[` characters (like JSON, code, or user input), `Static.update()` can crash with `MarkupError` even if you call `escape_markup()` on the content.
+
+**Solution**: Create the `Static` widget with `markup=False`:
+
+```python
+# In compose():
+self._detail_widget = Static(content, markup=False)
+yield self._detail_widget
+
+# In update method - no need to escape:
+def update_content(self, new_content: str) -> None:
+    self._detail_widget.update(new_content)  # No escape_markup needed
+```
+
+This is more reliable than `escape_markup()` because it completely disables Rich markup parsing, avoiding any edge cases with complex content.
 
 ## General Recommendations
 
