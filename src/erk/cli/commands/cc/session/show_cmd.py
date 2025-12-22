@@ -70,7 +70,8 @@ def _show_session_impl(
 
     # Print inferred message if applicable
     if inferred:
-        console.print(f"[dim]Using most recent session for this worktree: {session.session_id}[/dim]")
+        msg = f"Using most recent session for this worktree: {session.session_id}"
+        console.print(f"[dim]{msg}[/dim]")
         console.print()
 
     # Display metadata as key-value pairs
