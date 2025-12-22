@@ -3,23 +3,30 @@
 Separated from navigation_helpers to avoid circular imports.
 """
 
+from __future__ import annotations
+
+import logging
 from collections.abc import Generator
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 
 import click
 
 from erk.cli.core import discover_repo_context
-from erk.core.context import create_context
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+
+logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from erk.core.context import ErkContext
 
 
 @contextmanager
-def shell_completion_error_boundary() -> Generator[None]:
-    """Context manager for shell completion error boundaries.
+def shell_completion_context(ctx: click.Context) -> Generator[ErkContext]:
+    """Context manager for shell completion that provides ErkContext with error handling.
 
-    Shell completion functions are acceptable error boundaries per Click's protocol.
-    This context manager provides graceful error handling for shell completion by
-    suppressing all exceptions and allowing completion to return an empty list.
+    Combines context extraction with graceful error handling for shell completion.
+    Suppresses all exceptions for graceful degradation.
 
     Why this is needed:
     - Shell completion runs in the user's interactive shell session
@@ -28,21 +35,21 @@ def shell_completion_error_boundary() -> Generator[None]:
     - This allows tab-completion to fail gracefully without disrupting the user
 
     Usage:
-        with shell_completion_error_boundary():
-            # Shell completion logic here
-            # Any exception will be suppressed
+        with shell_completion_context(ctx) as erk_ctx:
+            # ... completion logic
             return completion_candidates
+        return []  # Fallback if exception
 
     Reference:
         Click's shell completion protocol:
         https://click.palletsprojects.com/en/stable/shell-completion/
     """
     try:
-        yield
+        yield ctx.find_root().obj
     except Exception:
-        # Suppress all exceptions for graceful degradation
+        # Suppress exceptions for graceful degradation, but log for debugging
         # Shell completion should never break the user's shell experience
-        pass
+        logger.debug("Shell completion error", exc_info=True)
 
 
 def complete_worktree_names(
@@ -50,20 +57,12 @@ def complete_worktree_names(
 ) -> list[str]:
     """Shell completion for worktree names. Includes 'root' for the repository root.
 
-    Uses shell_completion_error_boundary for graceful error handling.
-
     Args:
         ctx: Click context
         param: Click parameter (unused, but required by Click's completion protocol)
         incomplete: Partial input string to complete
     """
-    with shell_completion_error_boundary():
-        # During shell completion, ctx.obj may be None if the CLI group callback
-        # hasn't run yet. Create a default context in this case.
-        erk_ctx = ctx.find_root().obj
-        if erk_ctx is None:
-            erk_ctx = create_context(dry_run=False)
-
+    with shell_completion_context(ctx) as erk_ctx:
         repo = discover_repo_context(erk_ctx, erk_ctx.cwd)
         ensure_erk_metadata_dir(repo)
 
@@ -91,20 +90,12 @@ def complete_branch_names(
     (e.g., 'origin/feature' becomes 'feature').
     Duplicates are removed if a branch exists both locally and remotely.
 
-    Uses shell_completion_error_boundary for graceful error handling.
-
     Args:
         ctx: Click context
         param: Click parameter (unused, but required by Click's completion protocol)
         incomplete: Partial input string to complete
     """
-    with shell_completion_error_boundary():
-        # During shell completion, ctx.obj may be None if the CLI group callback
-        # hasn't run yet. Create a default context in this case.
-        erk_ctx = ctx.find_root().obj
-        if erk_ctx is None:
-            erk_ctx = create_context(dry_run=False)
-
+    with shell_completion_context(ctx) as erk_ctx:
         repo = discover_repo_context(erk_ctx, erk_ctx.cwd)
         ensure_erk_metadata_dir(repo)
 
@@ -137,8 +128,6 @@ def complete_plan_files(
 ) -> list[str]:
     """Shell completion for plan files (markdown files in current directory).
 
-    Uses shell_completion_error_boundary for graceful error handling.
-
     Args:
         ctx: Click context
         param: Click parameter (unused, but required by Click's completion protocol)
@@ -147,13 +136,7 @@ def complete_plan_files(
     Returns:
         List of completion candidates (filenames matching incomplete text)
     """
-    with shell_completion_error_boundary():
-        # During shell completion, ctx.obj may be None if the CLI group callback
-        # hasn't run yet. Create a default context in this case.
-        erk_ctx = ctx.find_root().obj
-        if erk_ctx is None:
-            erk_ctx = create_context(dry_run=False)
-
+    with shell_completion_context(ctx) as erk_ctx:
         # Get current working directory from erk context
         cwd = erk_ctx.cwd
 
@@ -173,8 +156,6 @@ def complete_objective_names(
 ) -> list[str]:
     """Shell completion for objective names.
 
-    Uses shell_completion_error_boundary for graceful error handling.
-
     Args:
         ctx: Click context
         param: Click parameter (unused, but required by Click's completion protocol)
@@ -183,13 +164,7 @@ def complete_objective_names(
     Returns:
         List of completion candidates (objective names matching incomplete text)
     """
-    with shell_completion_error_boundary():
-        # During shell completion, ctx.obj may be None if the CLI group callback
-        # hasn't run yet. Create a default context in this case.
-        erk_ctx = ctx.find_root().obj
-        if erk_ctx is None:
-            erk_ctx = create_context(dry_run=False)
-
+    with shell_completion_context(ctx) as erk_ctx:
         repo = discover_repo_context(erk_ctx, erk_ctx.cwd)
 
         # Get objective names from store

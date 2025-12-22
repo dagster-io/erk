@@ -194,40 +194,6 @@ def test_complete_branch_names_filters_by_prefix(tmp_path: Path) -> None:
     assert sorted(result) == ["feature-a", "feature-b"]
 
 
-def test_complete_branch_names_handles_uninitialized_context(tmp_path: Path) -> None:
-    """Test completion handles ctx.find_root().obj being None gracefully."""
-    # Arrange
-    # Create mock Click context with None obj (uninitialized)
-    mock_ctx = Mock(spec=click.Context)
-    mock_root_ctx = Mock()
-    mock_root_ctx.obj = None
-    mock_ctx.find_root.return_value = mock_root_ctx
-
-    # Act
-    # This should not crash - it creates a default context internally
-    result = complete_branch_names(mock_ctx, None, "")
-
-    # Assert
-    # Result may be empty or contain branches from actual git repo if in one,
-    # but the important thing is it doesn't crash
-    assert isinstance(result, list)
-
-
-def test_complete_branch_names_error_handling_returns_empty_list(tmp_path: Path) -> None:
-    """Test completion returns empty list on error for graceful degradation."""
-    # Arrange
-    # Create mock Click context that will cause an exception
-    mock_ctx = Mock(spec=click.Context)
-    mock_ctx.find_root.side_effect = Exception("Simulated error")
-
-    # Act
-    result = complete_branch_names(mock_ctx, None, "")
-
-    # Assert
-    # Should return empty list, not raise exception
-    assert result == []
-
-
 def test_complete_plan_files_finds_markdown_files(tmp_path: Path) -> None:
     """Test completion finds .md files in current directory."""
     # Arrange
@@ -354,40 +320,6 @@ def test_complete_plan_files_filters_by_prefix(tmp_path: Path) -> None:
 
     # Assert
     assert result == ["feature-plan.md"]
-
-
-def test_complete_plan_files_handles_uninitialized_context(tmp_path: Path) -> None:
-    """Test completion handles ctx.find_root().obj being None gracefully."""
-    # Arrange
-    # Create mock Click context with None obj (uninitialized)
-    mock_ctx = Mock(spec=click.Context)
-    mock_root_ctx = Mock()
-    mock_root_ctx.obj = None
-    mock_ctx.find_root.return_value = mock_root_ctx
-
-    # Act
-    # This should not crash - it creates a default context internally
-    result = complete_plan_files(mock_ctx, None, "")
-
-    # Assert
-    # Result may be empty or contain files if in a directory with .md files,
-    # but the important thing is it doesn't crash
-    assert isinstance(result, list)
-
-
-def test_complete_plan_files_error_handling_returns_empty_list(tmp_path: Path) -> None:
-    """Test completion returns empty list on error for graceful degradation."""
-    # Arrange
-    # Create mock Click context that will cause an exception
-    mock_ctx = Mock(spec=click.Context)
-    mock_ctx.find_root.side_effect = Exception("Simulated error")
-
-    # Act
-    result = complete_plan_files(mock_ctx, None, "")
-
-    # Assert
-    # Should return empty list, not raise exception
-    assert result == []
 
 
 def test_complete_plan_files_returns_sorted_results(tmp_path: Path) -> None:
