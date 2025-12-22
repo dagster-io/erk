@@ -21,6 +21,7 @@ class Session:
     size_bytes: int
     modified_at: float  # Unix timestamp
     is_current: bool
+    parent_session_id: str | None = None  # For agent sessions
 
 
 @dataclass(frozen=True)
@@ -61,6 +62,7 @@ class ClaudeCodeSessionStore(ABC):
         current_session_id: str | None = None,
         min_size: int = 0,
         limit: int = 10,
+        include_agents: bool = False,
     ) -> list[Session]:
         """Find sessions for a project.
 
@@ -69,6 +71,7 @@ class ClaudeCodeSessionStore(ABC):
             current_session_id: Current session ID (for marking is_current)
             min_size: Minimum session size in bytes
             limit: Maximum sessions to return
+            include_agents: Whether to include agent sessions in the listing
 
         Returns:
             Sessions sorted by modified_at descending (newest first).

@@ -18,6 +18,7 @@ class FakeSessionData:
     size_bytes: int
     modified_at: float
     agent_logs: dict[str, str] | None = None  # agent_id -> JSONL content
+    parent_session_id: str | None = None  # For agent sessions
 
 
 @dataclass
@@ -78,6 +79,7 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
         current_session_id: str | None = None,
         min_size: int = 0,
         limit: int = 10,
+        include_agents: bool = False,
     ) -> list[Session]:
         """Find sessions from fake project data.
 
@@ -92,6 +94,13 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
         # Filter and collect sessions
         session_list: list[tuple[str, FakeSessionData]] = []
         for session_id, data in project.sessions.items():
+            # Check if this is an agent session (has parent_session_id)
+            is_agent = data.parent_session_id is not None
+
+            # Skip agent sessions unless include_agents is True
+            if is_agent and not include_agents:
+                continue
+
             if min_size > 0 and data.size_bytes < min_size:
                 continue
             session_list.append((session_id, data))
@@ -108,6 +117,7 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
                     size_bytes=data.size_bytes,
                     modified_at=data.modified_at,
                     is_current=(session_id == current_session_id),
+                    parent_session_id=data.parent_session_id,
                 )
             )
 
