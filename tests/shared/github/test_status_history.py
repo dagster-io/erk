@@ -197,7 +197,7 @@ trigger_mechanism: label-based-webhook
         assert len(history) == 2
         assert history[0]["status"] == "queued"
         assert history[0]["timestamp"] == "2024-01-15T10:00:00Z"
-        assert history[0]["reason"] == "erk submit executed"
+        assert history[0]["reason"] == "erk plan submit executed"
         assert history[1]["status"] == "completed"
 
     def test_workflow_started_event(self) -> None:

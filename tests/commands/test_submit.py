@@ -1,4 +1,4 @@
-"""Tests for erk submit command."""
+"""Tests for erk plan submit command."""
 
 from datetime import UTC, datetime
 from pathlib import Path
@@ -311,7 +311,7 @@ def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
     now = datetime.now(UTC)
     issue = IssueInfo(
         number=123,
-        title="Add workflow run URL to erk submit output",
+        title="Add workflow run URL to erk plan submit output",
         body=_make_plan_body(),
         state="OPEN",
         url="https://github.com/test-owner/test-repo/issues/123",
@@ -325,7 +325,7 @@ def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
     # Create plan for the issue
     plan = Plan(
         plan_identifier="123",
-        title="Add workflow run URL to erk submit output",
+        title="Add workflow run URL to erk plan submit output",
         body=_make_plan_body(),
         state=PlanState.OPEN,
         url="https://github.com/test-owner/test-repo/issues/123",

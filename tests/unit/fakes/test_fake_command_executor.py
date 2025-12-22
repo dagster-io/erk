@@ -15,8 +15,8 @@ def test_tracks_copied_texts() -> None:
     """Fake executor tracks texts that were copied to clipboard."""
     executor = FakeCommandExecutor()
     executor.copy_to_clipboard("erk implement 123")
-    executor.copy_to_clipboard("erk submit 456")
-    assert executor.copied_texts == ["erk implement 123", "erk submit 456"]
+    executor.copy_to_clipboard("erk plan submit 456")
+    assert executor.copied_texts == ["erk implement 123", "erk plan submit 456"]
 
 
 def test_tracks_closed_plans() -> None:
