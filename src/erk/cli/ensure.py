@@ -26,6 +26,7 @@ from erk_shared.non_ideal_state import (
     NonIdealState,
     NoPRForBranch,
     PRNotFoundError,
+    SessionNotFound,
 )
 from erk_shared.output.output import user_output
 
@@ -583,6 +584,24 @@ class Ensure:
             SystemExit: If API call failed (with exit code 1)
         """
         if isinstance(result, GitHubAPIFailed):
+            user_output(click.style("Error: ", fg="red") + result.message)
+            raise SystemExit(1)
+        return result
+
+    @staticmethod
+    def session(result: T | SessionNotFound) -> T:
+        """Ensure session lookup succeeded.
+
+        Args:
+            result: Session or SessionNotFound sentinel
+
+        Returns:
+            The Session
+
+        Raises:
+            SystemExit: If session not found (with exit code 1)
+        """
+        if isinstance(result, SessionNotFound):
             user_output(click.style("Error: ", fg="red") + result.message)
             raise SystemExit(1)
         return result

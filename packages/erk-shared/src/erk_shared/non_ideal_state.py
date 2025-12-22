@@ -92,3 +92,18 @@ class GitHubAPIFailed:
     @property
     def message(self) -> str:
         return self._message
+
+
+@dataclass(frozen=True)
+class SessionNotFound:
+    """Session with specified ID does not exist."""
+
+    session_id: str
+
+    @property
+    def error_type(self) -> str:
+        return "session_not_found"
+
+    @property
+    def message(self) -> str:
+        return f"Session not found: {self.session_id}"

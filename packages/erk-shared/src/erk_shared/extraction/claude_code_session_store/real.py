@@ -7,6 +7,7 @@ from erk_shared.extraction.claude_code_session_store.abc import (
     ClaudeCodeSessionStore,
     Session,
     SessionContent,
+    SessionNotFound,
 )
 
 
@@ -201,14 +202,14 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
         self,
         project_cwd: Path,
         session_id: str,
-    ) -> Session | None:
+    ) -> Session | SessionNotFound:
         """Get a specific session by ID.
 
         Searches through all sessions (including agents) to find the matching ID.
         """
         project_dir = self._get_project_dir(project_cwd)
         if project_dir is None:
-            return None
+            return SessionNotFound(session_id)
 
         # Check if it's an agent session
         is_agent = session_id.startswith("agent-")
@@ -216,7 +217,7 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
         # Build the expected path
         session_file = project_dir / f"{session_id}.jsonl"
         if not session_file.exists():
-            return None
+            return SessionNotFound(session_id)
 
         stat = session_file.stat()
 

@@ -7,6 +7,7 @@ from erk_shared.extraction.claude_code_session_store.abc import (
     ClaudeCodeSessionStore,
     Session,
     SessionContent,
+    SessionNotFound,
 )
 
 
@@ -186,15 +187,15 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
         self,
         project_cwd: Path,
         session_id: str,
-    ) -> Session | None:
+    ) -> Session | SessionNotFound:
         """Get a specific session by ID from fake data."""
         project_path = self._find_project_for_path(project_cwd)
         if project_path is None:
-            return None
+            return SessionNotFound(session_id)
 
         project = self._projects[project_path]
         if session_id not in project.sessions:
-            return None
+            return SessionNotFound(session_id)
 
         data = project.sessions[session_id]
         return Session(

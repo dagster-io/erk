@@ -11,6 +11,7 @@ from erk.cli.commands.cc.session.list_cmd import (
     format_display_time,
     format_size,
 )
+from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
 
@@ -30,34 +31,28 @@ def _show_session_impl(
     console = Console(stderr=True, force_terminal=True)
 
     # Check if project exists
-    if not session_store.has_project(cwd):
-        click.echo(f"No Claude Code sessions found for: {cwd}", err=True)
-        raise SystemExit(1)
+    Ensure.invariant(
+        session_store.has_project(cwd),
+        f"No Claude Code sessions found for: {cwd}",
+    )
 
     # If no session_id provided, use the most recent session
     inferred = False
     if session_id is None:
         sessions = session_store.find_sessions(cwd, include_agents=False, limit=1)
-        if not sessions:
-            click.echo("No sessions found.", err=True)
-            raise SystemExit(1)
+        Ensure.invariant(len(sessions) > 0, "No sessions found.")
         session_id = sessions[0].session_id
         inferred = True
 
     # Get the session
-    session = session_store.get_session(cwd, session_id)
-    if session is None:
-        click.echo(f"Session not found: {session_id}", err=True)
-        raise SystemExit(1)
+    session = Ensure.session(session_store.get_session(cwd, session_id))
 
     # Check if this is an agent session - provide helpful error
-    if session.parent_session_id is not None:
-        parent_id = session.parent_session_id
-        click.echo(
-            f"Cannot show agent session directly. Use parent session instead: {parent_id}",
-            err=True,
-        )
-        raise SystemExit(1)
+    parent_id = session.parent_session_id
+    Ensure.invariant(
+        parent_id is None,
+        f"Cannot show agent session directly. Use parent session instead: {parent_id}",
+    )
 
     # Get the session path
     session_path = session_store.get_session_path(cwd, session_id)

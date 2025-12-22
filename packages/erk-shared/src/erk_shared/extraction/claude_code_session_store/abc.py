@@ -8,6 +8,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 
+from erk_shared.non_ideal_state import SessionNotFound
+
 
 @dataclass(frozen=True)
 class Session:
@@ -122,7 +124,7 @@ class ClaudeCodeSessionStore(ABC):
         self,
         project_cwd: Path,
         session_id: str,
-    ) -> Session | None:
+    ) -> Session | SessionNotFound:
         """Get a specific session by ID.
 
         Args:
@@ -130,7 +132,7 @@ class ClaudeCodeSessionStore(ABC):
             session_id: Session ID to retrieve
 
         Returns:
-            Session if found, None otherwise
+            Session if found, SessionNotFound sentinel otherwise
         """
         ...
 
