@@ -7,6 +7,7 @@ from erk_shared.extraction.claude_code_session_store.abc import (
     ClaudeCodeSessionStore,
     Session,
     SessionContent,
+    SessionNotFound,
 )
 
 
@@ -181,3 +182,46 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
             return next(iter(self._plans.values()))
 
         return None
+
+    def get_session(
+        self,
+        project_cwd: Path,
+        session_id: str,
+    ) -> Session | SessionNotFound:
+        """Get a specific session by ID from fake data."""
+        project_path = self._find_project_for_path(project_cwd)
+        if project_path is None:
+            return SessionNotFound(session_id)
+
+        project = self._projects[project_path]
+        if session_id not in project.sessions:
+            return SessionNotFound(session_id)
+
+        data = project.sessions[session_id]
+        return Session(
+            session_id=session_id,
+            size_bytes=data.size_bytes,
+            modified_at=data.modified_at,
+            is_current=False,  # show command doesn't track current
+            parent_session_id=data.parent_session_id,
+        )
+
+    def get_session_path(
+        self,
+        project_cwd: Path,
+        session_id: str,
+    ) -> Path | None:
+        """Get the file path for a session from fake data.
+
+        Returns a synthetic path for testing purposes.
+        """
+        project_path = self._find_project_for_path(project_cwd)
+        if project_path is None:
+            return None
+
+        project = self._projects[project_path]
+        if session_id not in project.sessions:
+            return None
+
+        # Return synthetic path for testing
+        return project_path / f"{session_id}.jsonl"

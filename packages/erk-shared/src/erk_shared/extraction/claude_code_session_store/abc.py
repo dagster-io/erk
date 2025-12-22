@@ -8,6 +8,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 
+from erk_shared.non_ideal_state import SessionNotFound
+
 
 @dataclass(frozen=True)
 class Session:
@@ -114,5 +116,39 @@ class ClaudeCodeSessionStore(ABC):
 
         Returns:
             Plan content as markdown string, or None if no plan found
+        """
+        ...
+
+    @abstractmethod
+    def get_session(
+        self,
+        project_cwd: Path,
+        session_id: str,
+    ) -> Session | SessionNotFound:
+        """Get a specific session by ID.
+
+        Args:
+            project_cwd: Project working directory (used as lookup key)
+            session_id: Session ID to retrieve
+
+        Returns:
+            Session if found, SessionNotFound sentinel otherwise
+        """
+        ...
+
+    @abstractmethod
+    def get_session_path(
+        self,
+        project_cwd: Path,
+        session_id: str,
+    ) -> Path | None:
+        """Get the file path for a session.
+
+        Args:
+            project_cwd: Project working directory (used as lookup key)
+            session_id: Session ID to get path for
+
+        Returns:
+            Path to the session file if found, None otherwise
         """
         ...
