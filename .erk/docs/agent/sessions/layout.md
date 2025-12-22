@@ -534,6 +534,54 @@ See `preprocess_session.py` for the canonical implementation.
 
 **Implementation:** See `is_empty_session()` in `packages/erk-kits/src/erk_kits/data/kits/erk/kit_cli_commands/erk/preprocess_session.py`
 
+### Warmup Agents (Deep Dive)
+
+Warmup agents are internal initialization subprocesses spawned by Claude Code for prompt cache pre-warming.
+
+**What they are:**
+
+When Claude Code spawns subagents via the Task tool, it may first spawn minimal "warmup" tasks to pre-populate the prompt cache. This is part of Claude Code's prompt caching optimization that saves model state after processing.
+
+**Characteristics:**
+
+| Property           | Warmup Agent          | Real Work Agent         |
+| ------------------ | --------------------- | ----------------------- |
+| File size          | 444B - 2KB            | 15KB - 50KB+            |
+| First user message | "Warmup"              | Actual task description |
+| Useful content     | None                  | Tool calls, results     |
+| Parent linkage     | Has `sessionId` field | Has `sessionId` field   |
+
+**Why they exist:**
+
+Prompt caching in Claude Code works by saving model state after processing common prefixes. Warmup agents pre-populate this cache so subsequent real subagent calls experience lower latency. The warmup probe sends a minimal request to "warm" the cache before the real work begins.
+
+**Example warmup agent file (`agent-a04efe5.jsonl`):**
+
+```jsonl
+{"sessionId":"de690909-7997-48fd-a84f-488586b74e30","type":"user","message":{"content":"Warmup"}}
+{"sessionId":"de690909-7997-48fd-a84f-488586b74e30","type":"assistant","message":{"content":[]}}
+```
+
+**Identifying warmup agents:**
+
+1. File starts with `agent-` prefix
+2. First user message contains "Warmup"
+3. Very small file size (< 3KB)
+4. No meaningful tool calls or outputs
+
+**VSCode Extension Quirks:**
+
+The Claude Code VSCode extension has known issues with warmup sessions:
+
+- Bug: Warmup conversations appearing in history sidebar
+- Bug: Reopening past conversations shows only warmup message instead of original content
+- Fixed in v2.0.27: "Bug fixes for unrelated 'Warmup' conversations"
+
+**References:**
+
+- [GitHub CHANGELOG](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) - v2.0.27 warmup bug fixes
+- [Prompt Caching on Bedrock](https://aws.amazon.com/blogs/machine-learning/supercharge-your-development-with-claude-code-and-amazon-bedrock-prompt-caching/) - Explains cache mechanism
+
 ### Malformed JSONL Entries
 
 **Issue:** Invalid JSON lines in `.jsonl` files
