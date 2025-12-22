@@ -196,3 +196,55 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
         # Note: project_cwd could be used for session correlation in future
         _ = project_cwd
         return get_latest_plan_content(session_id=session_id)
+
+    def get_session(
+        self,
+        project_cwd: Path,
+        session_id: str,
+    ) -> Session | None:
+        """Get a specific session by ID.
+
+        Searches through all sessions (including agents) to find the matching ID.
+        """
+        project_dir = self._get_project_dir(project_cwd)
+        if project_dir is None:
+            return None
+
+        # Check if it's an agent session
+        is_agent = session_id.startswith("agent-")
+
+        # Build the expected path
+        session_file = project_dir / f"{session_id}.jsonl"
+        if not session_file.exists():
+            return None
+
+        stat = session_file.stat()
+
+        # For agent sessions, extract parent_session_id
+        parent_session_id: str | None = None
+        if is_agent:
+            parent_session_id = _extract_parent_session_id(session_file)
+
+        return Session(
+            session_id=session_id,
+            size_bytes=stat.st_size,
+            modified_at=stat.st_mtime,
+            is_current=False,  # show command doesn't track current
+            parent_session_id=parent_session_id,
+        )
+
+    def get_session_path(
+        self,
+        project_cwd: Path,
+        session_id: str,
+    ) -> Path | None:
+        """Get the file path for a session."""
+        project_dir = self._get_project_dir(project_cwd)
+        if project_dir is None:
+            return None
+
+        session_file = project_dir / f"{session_id}.jsonl"
+        if not session_file.exists():
+            return None
+
+        return session_file

@@ -116,3 +116,37 @@ class ClaudeCodeSessionStore(ABC):
             Plan content as markdown string, or None if no plan found
         """
         ...
+
+    @abstractmethod
+    def get_session(
+        self,
+        project_cwd: Path,
+        session_id: str,
+    ) -> Session | None:
+        """Get a specific session by ID.
+
+        Args:
+            project_cwd: Project working directory (used as lookup key)
+            session_id: Session ID to retrieve
+
+        Returns:
+            Session if found, None otherwise
+        """
+        ...
+
+    @abstractmethod
+    def get_session_path(
+        self,
+        project_cwd: Path,
+        session_id: str,
+    ) -> Path | None:
+        """Get the file path for a session.
+
+        Args:
+            project_cwd: Project working directory (used as lookup key)
+            session_id: Session ID to get path for
+
+        Returns:
+            Path to the session file if found, None otherwise
+        """
+        ...
