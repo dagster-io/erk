@@ -15,7 +15,7 @@ Claude Code sessions have a parent-child hierarchy where main sessions spawn age
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    Parent Session                        │
+│                      Parent Session                     │
 │  (main conversation with user)                          │
 │                                                         │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │

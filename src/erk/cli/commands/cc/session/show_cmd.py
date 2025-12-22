@@ -17,14 +17,14 @@ from erk.core.context import ErkContext
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
 
 
-class AgentInfo(NamedTuple):
+class AgentInvocation(NamedTuple):
     """Information about an agent session extracted from Task invocation."""
 
     agent_type: str
     prompt: str
 
 
-def extract_agent_info(parent_content: str) -> dict[str, AgentInfo]:
+def extract_agent_info(parent_content: str) -> dict[str, AgentInvocation]:
     """Extract agent info from Task tool invocations and their results.
 
     Uses explicit metadata linking:
@@ -50,10 +50,7 @@ def extract_agent_info(parent_content: str) -> dict[str, AgentInfo]:
         if not stripped.startswith("{"):
             continue
 
-        try:
-            entry = json.loads(stripped)
-        except json.JSONDecodeError:
-            continue
+        entry = json.loads(stripped)
 
         entry_type = entry.get("type")
         message = entry.get("message", {})
@@ -90,13 +87,13 @@ def extract_agent_info(parent_content: str) -> dict[str, AgentInfo]:
                     if tool_use_id:
                         tool_to_agent[tool_use_id] = agent_id
 
-    # Step 3: Build final mapping: agent-<id> -> AgentInfo
-    agent_infos: dict[str, AgentInfo] = {}
+    # Step 3: Build final mapping: agent-<id> -> AgentInvocation
+    agent_infos: dict[str, AgentInvocation] = {}
     for tool_use_id, agent_id in tool_to_agent.items():
         info = task_info.get(tool_use_id)
         if info:
             session_id = f"agent-{agent_id}"
-            agent_infos[session_id] = AgentInfo(agent_type=info[0], prompt=info[1])
+            agent_infos[session_id] = AgentInvocation(agent_type=info[0], prompt=info[1])
 
     return agent_infos
 
@@ -145,7 +142,7 @@ def _show_session_impl(
     # Read session content for summary and agent info extraction
     content = session_store.read_session(cwd, session_id, include_agents=False)
     summary = ""
-    agent_infos: dict[str, AgentInfo] = {}
+    agent_infos: dict[str, AgentInvocation] = {}
     if content is not None:
         summary = extract_summary(content.main_content, max_length=100)
         agent_infos = extract_agent_info(content.main_content)
