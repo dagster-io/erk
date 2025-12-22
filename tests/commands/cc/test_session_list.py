@@ -116,9 +116,7 @@ def test_list_sessions_empty_project() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         # Project exists but has no sessions
-        session_store = FakeClaudeCodeSessionStore(
-            projects={env.cwd: FakeProject(sessions={})}
-        )
+        session_store = FakeClaudeCodeSessionStore(projects={env.cwd: FakeProject(sessions={})})
 
         ctx = build_workspace_test_context(env, session_store=session_store)
 
@@ -161,3 +159,82 @@ def test_list_sessions_sorted_by_time() -> None:
         new_pos = result.output.find("New session")
         old_pos = result.output.find("Old session")
         assert new_pos < old_pos, "New session should appear before old session"
+
+
+def test_list_sessions_excludes_agents_by_default() -> None:
+    """Test that agent sessions are excluded by default."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        now = time.time()
+        parent_session_id = "parent12-3456-7890-abcd-ef1234567890"
+        session_store = FakeClaudeCodeSessionStore(
+            projects={
+                env.cwd: FakeProject(
+                    sessions={
+                        parent_session_id: FakeSessionData(
+                            content=_make_session_jsonl("Main session"),
+                            size_bytes=1024,
+                            modified_at=now - 60,
+                        ),
+                        "agent-abc12345": FakeSessionData(
+                            content=_make_session_jsonl("Agent task"),
+                            size_bytes=512,
+                            modified_at=now - 30,
+                            parent_session_id=parent_session_id,
+                        ),
+                    }
+                )
+            }
+        )
+
+        ctx = build_workspace_test_context(env, session_store=session_store)
+
+        result = runner.invoke(list_sessions, [], obj=ctx)
+
+        assert result.exit_code == 0
+        # Main session should be shown
+        assert "Main session" in result.output
+        # Agent session should NOT be shown
+        assert "agent-abc12345" not in result.output
+        assert "Agent task" not in result.output
+
+
+def test_list_sessions_include_agents_flag() -> None:
+    """Test that --include-agents flag includes agent sessions with parent column."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        now = time.time()
+        parent_session_id = "parent12-3456-7890-abcd-ef1234567890"
+        session_store = FakeClaudeCodeSessionStore(
+            projects={
+                env.cwd: FakeProject(
+                    sessions={
+                        parent_session_id: FakeSessionData(
+                            content=_make_session_jsonl("Main session"),
+                            size_bytes=1024,
+                            modified_at=now - 60,
+                        ),
+                        "agent-abc12345": FakeSessionData(
+                            content=_make_session_jsonl("Agent task"),
+                            size_bytes=512,
+                            modified_at=now - 30,
+                            parent_session_id=parent_session_id,
+                        ),
+                    }
+                )
+            }
+        )
+
+        ctx = build_workspace_test_context(env, session_store=session_store)
+
+        result = runner.invoke(list_sessions, ["--include-agents"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Both sessions should be shown
+        assert "Main session" in result.output
+        assert "agent-abc12345" in result.output
+        assert "Agent task" in result.output
+        # Parent column header should be shown
+        assert "parent" in result.output
+        # First 8 chars of parent session ID should be shown for agent
+        assert "parent12" in result.output

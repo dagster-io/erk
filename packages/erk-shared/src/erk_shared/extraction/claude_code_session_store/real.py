@@ -1,5 +1,6 @@
 """Production implementation of SessionStore using local filesystem."""
 
+import json
 from pathlib import Path
 
 from erk_shared.extraction.claude_code_session_store.abc import (
@@ -7,6 +8,29 @@ from erk_shared.extraction.claude_code_session_store.abc import (
     Session,
     SessionContent,
 )
+
+
+def _extract_parent_session_id(agent_log_path: Path) -> str | None:
+    """Extract the parent sessionId from an agent log file.
+
+    Reads the first few lines of the agent log to find a JSON object
+    with a sessionId field.
+
+    Args:
+        agent_log_path: Path to the agent log file
+
+    Returns:
+        Parent session ID if found, None otherwise
+    """
+    content = agent_log_path.read_text(encoding="utf-8")
+    for line in content.split("\n")[:10]:  # Check first 10 lines
+        stripped = line.strip()
+        if not stripped.startswith("{"):
+            continue
+        entry = json.loads(stripped)
+        if "sessionId" in entry:
+            return entry["sessionId"]
+    return None
 
 
 class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
@@ -59,6 +83,7 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
         current_session_id: str | None = None,
         min_size: int = 0,
         limit: int = 10,
+        include_agents: bool = False,
     ) -> list[Session]:
         """Find sessions for a project.
 
@@ -68,14 +93,18 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
         if project_dir is None:
             return []
 
-        # Collect session files (exclude agent logs)
-        session_files: list[tuple[str, float, int]] = []
+        # Collect session files (session_id, mtime, size, parent_session_id)
+        session_files: list[tuple[str, float, int, str | None]] = []
         for log_file in project_dir.iterdir():
             if not log_file.is_file():
                 continue
             if log_file.suffix != ".jsonl":
                 continue
-            if log_file.name.startswith("agent-"):
+
+            is_agent = log_file.name.startswith("agent-")
+
+            # Skip agent files unless include_agents is True
+            if is_agent and not include_agents:
                 continue
 
             stat = log_file.stat()
@@ -87,20 +116,26 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
                 continue
 
             session_id = log_file.stem
-            session_files.append((session_id, mtime, size))
+            parent_session_id: str | None = None
+
+            if is_agent:
+                parent_session_id = _extract_parent_session_id(log_file)
+
+            session_files.append((session_id, mtime, size, parent_session_id))
 
         # Sort by mtime descending (newest first)
         session_files.sort(key=lambda x: x[1], reverse=True)
 
         # Build Session objects
         sessions: list[Session] = []
-        for session_id, mtime, size in session_files[:limit]:
+        for session_id, mtime, size, parent_session_id in session_files[:limit]:
             sessions.append(
                 Session(
                     session_id=session_id,
                     size_bytes=size,
                     modified_at=mtime,
                     is_current=(session_id == current_session_id),
+                    parent_session_id=parent_session_id,
                 )
             )
 

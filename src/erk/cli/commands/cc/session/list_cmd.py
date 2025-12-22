@@ -132,6 +132,7 @@ def _list_sessions_impl(
     session_store: ClaudeCodeSessionStore,
     cwd: Path,
     limit: int,
+    include_agents: bool,
 ) -> None:
     """Implementation of session listing logic.
 
@@ -139,6 +140,7 @@ def _list_sessions_impl(
         session_store: Session store to query
         cwd: Current working directory (project identifier)
         limit: Maximum number of sessions to show
+        include_agents: Whether to include agent sessions in the listing
     """
     # Check if project exists
     if not session_store.has_project(cwd):
@@ -146,7 +148,9 @@ def _list_sessions_impl(
         raise SystemExit(1)
 
     # Get sessions
-    sessions = session_store.find_sessions(cwd, min_size=0, limit=limit)
+    sessions = session_store.find_sessions(
+        cwd, min_size=0, limit=limit, include_agents=include_agents
+    )
 
     if not sessions:
         click.echo("No sessions found.", err=True)
@@ -155,6 +159,8 @@ def _list_sessions_impl(
     # Create Rich table
     table = Table(show_header=True, header_style="bold", box=None)
     table.add_column("id", style="cyan", no_wrap=True)
+    if include_agents:
+        table.add_column("parent", no_wrap=True)
     table.add_column("time", no_wrap=True)
     table.add_column("size", no_wrap=True, justify="right")
     table.add_column("summary", no_wrap=False)
@@ -166,12 +172,23 @@ def _list_sessions_impl(
         if content is not None:
             summary = extract_summary(content.main_content)
 
-        table.add_row(
-            session.session_id,
-            format_relative_time(session.modified_at),
-            format_size(session.size_bytes),
-            summary,
-        )
+        if include_agents:
+            # Show first 8 chars of parent_session_id for agents, empty for main sessions
+            parent_short = session.parent_session_id[:8] if session.parent_session_id else ""
+            table.add_row(
+                session.session_id,
+                parent_short,
+                format_relative_time(session.modified_at),
+                format_size(session.size_bytes),
+                summary,
+            )
+        else:
+            table.add_row(
+                session.session_id,
+                format_relative_time(session.modified_at),
+                format_size(session.size_bytes),
+                summary,
+            )
 
     # Output table to stderr (consistent with user_output convention)
     console = Console(stderr=True, force_terminal=True)
@@ -185,8 +202,14 @@ def _list_sessions_impl(
     type=int,
     help="Maximum number of sessions to list",
 )
+@click.option(
+    "--include-agents",
+    is_flag=True,
+    default=False,
+    help="Include agent sessions in the listing",
+)
 @click.pass_obj
-def list_sessions(ctx: ErkContext, limit: int) -> None:
+def list_sessions(ctx: ErkContext, limit: int, include_agents: bool) -> None:
     """List Claude Code sessions for the current worktree.
 
     Shows a table with session ID, time, size, and summary (first user message).
@@ -195,4 +218,5 @@ def list_sessions(ctx: ErkContext, limit: int) -> None:
         ctx.session_store,
         ctx.cwd,
         limit,
+        include_agents,
     )
