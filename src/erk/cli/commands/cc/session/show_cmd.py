@@ -1,6 +1,7 @@
 """Show details for a specific Claude Code session."""
 
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import NamedTuple
 
@@ -17,11 +18,64 @@ from erk.core.context import ErkContext
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
 
 
+def _parse_timestamp(value: str | float | int | None) -> float | None:
+    """Parse a timestamp value to Unix float.
+
+    Handles:
+    - None -> None
+    - float/int -> returned as-is
+    - ISO 8601 string (e.g., "2024-12-22T13:20:00.000Z") -> Unix timestamp
+
+    Args:
+        value: Timestamp as float, int, ISO string, or None
+
+    Returns:
+        Unix timestamp as float, or None if value is None
+
+    Raises:
+        ValueError: If string timestamp is not valid ISO 8601 format
+    """
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        # Handle "Z" suffix (UTC)
+        if value.endswith("Z"):
+            value = value[:-1] + "+00:00"
+        dt = datetime.fromisoformat(value)
+        return dt.timestamp()
+    msg = f"Unexpected timestamp type: {type(value)}"
+    raise TypeError(msg)
+
+
 class AgentInvocation(NamedTuple):
     """Information about an agent session extracted from Task invocation."""
 
     agent_type: str
     prompt: str
+    duration_secs: float | None
+
+
+def format_duration(seconds: float) -> str:
+    """Format a duration in seconds to a human-readable string.
+
+    Args:
+        seconds: Duration in seconds
+
+    Returns:
+        Formatted string like "42s", "1m 30s", or "1h 15m"
+    """
+    if seconds < 60:
+        return f"{int(seconds)}s"
+    elif seconds < 3600:
+        minutes = int(seconds // 60)
+        secs = int(seconds % 60)
+        return f"{minutes}m {secs}s"
+    else:
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        return f"{hours}h {minutes}m"
 
 
 def extract_agent_info(parent_content: str) -> dict[str, AgentInvocation]:
@@ -31,19 +85,23 @@ def extract_agent_info(parent_content: str) -> dict[str, AgentInvocation]:
     1. Task tool_use entries contain: tool_use.id -> (subagent_type, description)
     2. tool_result entries contain: tool_use_id + toolUseResult.agentId
 
+    Duration is calculated from entry-level timestamps:
+    - tool_use timestamp (when Task was invoked)
+    - tool_result timestamp (when Task completed)
+
     This provides deterministic matching without timestamp correlation.
 
     Args:
         parent_content: JSONL content of parent session
 
     Returns:
-        Dict mapping "agent-<id>" session IDs to AgentInfo
+        Dict mapping "agent-<id>" session IDs to AgentInvocation
     """
-    # Step 1: Collect Task tool_use entries: tool_use_id -> (type, description)
-    task_info: dict[str, tuple[str, str]] = {}
+    # Step 1: Collect Task tool_use entries: tool_use_id -> (type, prompt, timestamp)
+    task_info: dict[str, tuple[str, str, float | None]] = {}
 
-    # Step 2: Collect tool_result entries: tool_use_id -> agentId
-    tool_to_agent: dict[str, str] = {}
+    # Step 2: Collect tool_result entries: tool_use_id -> (agentId, timestamp)
+    tool_to_agent: dict[str, tuple[str, float | None]] = {}
 
     for line in parent_content.split("\n"):
         stripped = line.strip()
@@ -54,6 +112,8 @@ def extract_agent_info(parent_content: str) -> dict[str, AgentInvocation]:
 
         entry_type = entry.get("type")
         message = entry.get("message", {})
+        # Timestamp is at root level of entry (may be Unix float or ISO string)
+        timestamp = _parse_timestamp(entry.get("timestamp"))
 
         if entry_type == "assistant":
             # Look for Task tool_use blocks
@@ -69,7 +129,7 @@ def extract_agent_info(parent_content: str) -> dict[str, AgentInvocation]:
                 prompt = tool_input.get("prompt", "")
 
                 if tool_use_id:
-                    task_info[tool_use_id] = (subagent_type, prompt)
+                    task_info[tool_use_id] = (subagent_type, prompt, timestamp)
 
         elif entry_type == "user":
             # Look for tool_result with toolUseResult.agentId
@@ -85,15 +145,24 @@ def extract_agent_info(parent_content: str) -> dict[str, AgentInvocation]:
                         continue
                     tool_use_id = block.get("tool_use_id")
                     if tool_use_id:
-                        tool_to_agent[tool_use_id] = agent_id
+                        tool_to_agent[tool_use_id] = (agent_id, timestamp)
 
     # Step 3: Build final mapping: agent-<id> -> AgentInvocation
     agent_infos: dict[str, AgentInvocation] = {}
-    for tool_use_id, agent_id in tool_to_agent.items():
+    for tool_use_id, (agent_id, result_timestamp) in tool_to_agent.items():
         info = task_info.get(tool_use_id)
         if info:
+            subagent_type, prompt, use_timestamp = info
+            # Calculate duration if both timestamps available
+            duration_secs: float | None = None
+            if use_timestamp is not None and result_timestamp is not None:
+                duration_secs = result_timestamp - use_timestamp
             session_id = f"agent-{agent_id}"
-            agent_infos[session_id] = AgentInvocation(agent_type=info[0], prompt=info[1])
+            agent_infos[session_id] = AgentInvocation(
+                agent_type=subagent_type,
+                prompt=prompt,
+                duration_secs=duration_secs,
+            )
 
     return agent_infos
 
@@ -188,9 +257,14 @@ def _show_session_impl(
                 console.print(f'  [cyan]{info.agent_type}[/cyan]("{prompt_preview}")')
             else:
                 console.print(f"  [cyan]{agent.session_id}[/cyan]")
-            console.print(
-                f"    {format_display_time(agent.modified_at)}  {format_size(agent.size_bytes)}"
-            )
+            # Build metadata line: time, size, and optional duration
+            metadata_parts = [
+                format_display_time(agent.modified_at),
+                format_size(agent.size_bytes),
+            ]
+            if info and info.duration_secs is not None:
+                metadata_parts.append(format_duration(info.duration_secs))
+            console.print(f"    {'  '.join(metadata_parts)}")
             if agent_path:
                 console.print(f"    {agent_path}")
     else:

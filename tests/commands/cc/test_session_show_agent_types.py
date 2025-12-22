@@ -21,6 +21,8 @@ from tests.test_utils.output_helpers import strip_ansi
 
 def _make_session_with_tasks_and_results(
     tasks: list[tuple[str, str, str]],
+    include_timestamps: bool = False,
+    base_timestamp: float | None = None,
 ) -> str:
     """Create session content with multiple Task invocations and results.
 
@@ -30,49 +32,54 @@ def _make_session_with_tasks_and_results(
 
     Args:
         tasks: List of (tool_use_id, subagent_type, agent_id) tuples
+        include_timestamps: Whether to include timestamps in entries
+        base_timestamp: Base timestamp to use (tasks will be offset from this)
     """
     entries: list[dict] = [{"type": "user", "message": {"content": "Run tasks"}}]
 
-    for tool_use_id, subagent_type, agent_id in tasks:
+    for i, (tool_use_id, subagent_type, agent_id) in enumerate(tasks):
         # Task tool_use
-        entries.append(
-            {
-                "type": "assistant",
-                "message": {
-                    "content": [
-                        {
-                            "type": "tool_use",
-                            "id": tool_use_id,
-                            "name": "Task",
-                            "input": {
-                                "subagent_type": subagent_type,
-                                "description": f"Run {subagent_type}",
-                                "prompt": "...",
-                            },
-                        }
-                    ],
-                },
-            }
-        )
+        task_entry: dict = {
+            "type": "assistant",
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": tool_use_id,
+                        "name": "Task",
+                        "input": {
+                            "subagent_type": subagent_type,
+                            "description": f"Run {subagent_type}",
+                            "prompt": "...",
+                        },
+                    }
+                ],
+            },
+        }
+        if include_timestamps and base_timestamp is not None:
+            task_entry["timestamp"] = base_timestamp + (i * 100)
+        entries.append(task_entry)
+
         # tool_result with agentId in toolUseResult
-        entries.append(
-            {
-                "type": "user",
-                "message": {
-                    "content": [
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": tool_use_id,
-                            "content": "Completed",
-                        }
-                    ],
-                },
-                "toolUseResult": {
-                    "agentId": agent_id,
-                    "status": "completed",
-                },
-            }
-        )
+        result_entry: dict = {
+            "type": "user",
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": tool_use_id,
+                        "content": "Completed",
+                    }
+                ],
+            },
+            "toolUseResult": {
+                "agentId": agent_id,
+                "status": "completed",
+            },
+        }
+        if include_timestamps and base_timestamp is not None:
+            result_entry["timestamp"] = base_timestamp + (i * 100) + 30  # 30s duration
+        entries.append(result_entry)
 
     return "\n".join(json.dumps(e) for e in entries)
 
@@ -192,3 +199,56 @@ def test_agent_type_no_match_without_tool_result() -> None:
         assert "agent-orphan" in result.output
         # devrun should NOT appear since no tool_result links to this agent
         assert "devrun" not in result.output
+
+
+def test_agent_duration_with_timestamps() -> None:
+    """Test that agent duration is displayed when timestamps are present."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        now = time.time()
+        parent_session_id = "test-session-with-duration"
+
+        # Include timestamps - each task gets 30s duration
+        parent_content = _make_session_with_tasks_and_results(
+            [
+                ("toolu_01Mzn", "devrun", "a65aee7"),
+                ("toolu_01Jr4", "Explore", "a3ea803"),
+            ],
+            include_timestamps=True,
+            base_timestamp=now - 200,
+        )
+
+        session_store = FakeClaudeCodeSessionStore(
+            projects={
+                env.cwd: FakeProject(
+                    sessions={
+                        parent_session_id: FakeSessionData(
+                            content=parent_content,
+                            size_bytes=1024,
+                            modified_at=now - 60,
+                        ),
+                        "agent-a65aee7": FakeSessionData(
+                            content='{"type": "user", "message": {"content": "..."}}',
+                            size_bytes=512,
+                            modified_at=now - 50,
+                            parent_session_id=parent_session_id,
+                        ),
+                        "agent-a3ea803": FakeSessionData(
+                            content='{"type": "user", "message": {"content": "..."}}',
+                            size_bytes=256,
+                            modified_at=now - 40,
+                            parent_session_id=parent_session_id,
+                        ),
+                    }
+                )
+            }
+        )
+
+        ctx = build_workspace_test_context(env, session_store=session_store)
+
+        result = runner.invoke(show_session, [parent_session_id], obj=ctx)
+
+        assert result.exit_code == 0
+        output = strip_ansi(result.output)
+        # Both agents should show 30s duration
+        assert output.count("30s") == 2

@@ -30,6 +30,8 @@ def _make_session_with_task_and_result(
     tool_use_id: str,
     subagent_type: str,
     agent_id: str,
+    start_timestamp: float | None = None,
+    end_timestamp: float | None = None,
 ) -> str:
     """Create session content with Task invocation and tool_result with agentId.
 
@@ -42,45 +44,55 @@ def _make_session_with_task_and_result(
         tool_use_id: Unique tool use ID (links tool_use to tool_result)
         subagent_type: Agent type like "devrun", "Explore", etc.
         agent_id: The agent ID (without "agent-" prefix)
+        start_timestamp: Optional timestamp for tool_use entry
+        end_timestamp: Optional timestamp for tool_result entry
     """
-    entries = [
+    entries: list[dict] = [
         {"type": "user", "message": {"content": user_message}},
-        # Task tool_use
-        {
-            "type": "assistant",
-            "message": {
-                "content": [
-                    {
-                        "type": "tool_use",
-                        "id": tool_use_id,
-                        "name": "Task",
-                        "input": {
-                            "subagent_type": subagent_type,
-                            "description": "Run tests",
-                            "prompt": "Run the test suite",
-                        },
-                    }
-                ],
-            },
-        },
-        # tool_result with agentId in toolUseResult
-        {
-            "type": "user",
-            "message": {
-                "content": [
-                    {
-                        "type": "tool_result",
-                        "tool_use_id": tool_use_id,
-                        "content": "Task completed",
-                    }
-                ],
-            },
-            "toolUseResult": {
-                "agentId": agent_id,
-                "status": "completed",
-            },
-        },
     ]
+    # Task tool_use
+    task_entry: dict = {
+        "type": "assistant",
+        "message": {
+            "content": [
+                {
+                    "type": "tool_use",
+                    "id": tool_use_id,
+                    "name": "Task",
+                    "input": {
+                        "subagent_type": subagent_type,
+                        "description": "Run tests",
+                        "prompt": "Run the test suite",
+                    },
+                }
+            ],
+        },
+    }
+    if start_timestamp is not None:
+        task_entry["timestamp"] = start_timestamp
+    entries.append(task_entry)
+
+    # tool_result with agentId in toolUseResult
+    result_entry: dict = {
+        "type": "user",
+        "message": {
+            "content": [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": tool_use_id,
+                    "content": "Task completed",
+                }
+            ],
+        },
+        "toolUseResult": {
+            "agentId": agent_id,
+            "status": "completed",
+        },
+    }
+    if end_timestamp is not None:
+        result_entry["timestamp"] = end_timestamp
+    entries.append(result_entry)
+
     return "\n".join(json.dumps(e) for e in entries)
 
 
@@ -374,3 +386,218 @@ def test_show_session_displays_agent_type_and_prompt() -> None:
         # Check format: type("prompt") - strip ANSI codes for matching
         output = strip_ansi(result.output)
         assert 'devrun("Run the test suite")' in output
+
+
+def test_show_session_handles_string_timestamps() -> None:
+    """Test that show_session handles ISO format string timestamps.
+
+    Real session data may have timestamps as ISO strings like "2024-12-22T13:20:00.000Z"
+    instead of Unix floats. This test reproduces the TypeError that occurs when
+    attempting arithmetic on string timestamps.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        now = time.time()
+        parent_session_id = "parent12-3456-7890-abcd-ef1234567890"
+
+        # Create content with string timestamps (ISO format)
+        parent_content = _make_session_with_task_and_result(
+            user_message="Main session",
+            tool_use_id="toolu_abc123",
+            subagent_type="devrun",
+            agent_id="abc12345",
+            start_timestamp="2024-12-22T13:20:00.000Z",  # type: ignore[arg-type]
+            end_timestamp="2024-12-22T13:20:42.000Z",  # type: ignore[arg-type]
+        )
+
+        session_store = FakeClaudeCodeSessionStore(
+            projects={
+                env.cwd: FakeProject(
+                    sessions={
+                        parent_session_id: FakeSessionData(
+                            content=parent_content,
+                            size_bytes=1024,
+                            modified_at=now - 60,
+                        ),
+                        "agent-abc12345": FakeSessionData(
+                            content=_make_session_jsonl("Agent task"),
+                            size_bytes=512,
+                            modified_at=now - 30,
+                            parent_session_id=parent_session_id,
+                        ),
+                    }
+                )
+            }
+        )
+
+        ctx = build_workspace_test_context(env, session_store=session_store)
+
+        result = runner.invoke(show_session, [parent_session_id], obj=ctx)
+
+        # Should not crash - gracefully handle string timestamps
+        assert result.exit_code == 0
+        output = strip_ansi(result.output)
+        # Agent should appear with type
+        assert 'devrun("Run the test suite")' in output
+        # Duration should be shown (42s from the ISO timestamps)
+        assert "42s" in output
+
+
+def test_show_session_displays_agent_duration() -> None:
+    """Test that show_session displays agent task duration."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        now = time.time()
+        parent_session_id = "parent12-3456-7890-abcd-ef1234567890"
+
+        # Parent session with Task invocation and tool_result including timestamps
+        # Duration: 42 seconds
+        start_time = now - 102  # Task started 102 seconds ago
+        end_time = now - 60  # Task ended 60 seconds ago (42s duration)
+        parent_content = _make_session_with_task_and_result(
+            user_message="Main session",
+            tool_use_id="toolu_abc123",
+            subagent_type="devrun",
+            agent_id="abc12345",
+            start_timestamp=start_time,
+            end_timestamp=end_time,
+        )
+
+        session_store = FakeClaudeCodeSessionStore(
+            projects={
+                env.cwd: FakeProject(
+                    sessions={
+                        parent_session_id: FakeSessionData(
+                            content=parent_content,
+                            size_bytes=1024,
+                            modified_at=now - 60,
+                        ),
+                        "agent-abc12345": FakeSessionData(
+                            content=_make_session_jsonl("Agent task"),
+                            size_bytes=512,
+                            modified_at=now - 30,
+                            parent_session_id=parent_session_id,
+                        ),
+                    }
+                )
+            }
+        )
+
+        ctx = build_workspace_test_context(env, session_store=session_store)
+
+        result = runner.invoke(show_session, [parent_session_id], obj=ctx)
+
+        assert result.exit_code == 0
+        output = strip_ansi(result.output)
+        # Check that duration is displayed (42s)
+        assert "42s" in output
+
+
+def test_show_session_duration_formats_minutes() -> None:
+    """Test that duration is formatted correctly for minutes."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        now = time.time()
+        parent_session_id = "parent12-3456-7890-abcd-ef1234567890"
+
+        # Duration: 90 seconds = 1m 30s
+        start_time = now - 150
+        end_time = now - 60  # 90s duration
+        parent_content = _make_session_with_task_and_result(
+            user_message="Main session",
+            tool_use_id="toolu_abc123",
+            subagent_type="devrun",
+            agent_id="abc12345",
+            start_timestamp=start_time,
+            end_timestamp=end_time,
+        )
+
+        session_store = FakeClaudeCodeSessionStore(
+            projects={
+                env.cwd: FakeProject(
+                    sessions={
+                        parent_session_id: FakeSessionData(
+                            content=parent_content,
+                            size_bytes=1024,
+                            modified_at=now - 60,
+                        ),
+                        "agent-abc12345": FakeSessionData(
+                            content=_make_session_jsonl("Agent task"),
+                            size_bytes=512,
+                            modified_at=now - 30,
+                            parent_session_id=parent_session_id,
+                        ),
+                    }
+                )
+            }
+        )
+
+        ctx = build_workspace_test_context(env, session_store=session_store)
+
+        result = runner.invoke(show_session, [parent_session_id], obj=ctx)
+
+        assert result.exit_code == 0
+        output = strip_ansi(result.output)
+        # Check that duration is formatted as minutes
+        assert "1m 30s" in output
+
+
+def test_show_session_no_duration_without_timestamps() -> None:
+    """Test that no duration is shown when timestamps are missing."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        now = time.time()
+        parent_session_id = "parent12-3456-7890-abcd-ef1234567890"
+
+        # No timestamps provided
+        parent_content = _make_session_with_task_and_result(
+            user_message="Main session",
+            tool_use_id="toolu_abc123",
+            subagent_type="devrun",
+            agent_id="abc12345",
+        )
+
+        session_store = FakeClaudeCodeSessionStore(
+            projects={
+                env.cwd: FakeProject(
+                    sessions={
+                        parent_session_id: FakeSessionData(
+                            content=parent_content,
+                            size_bytes=1024,
+                            modified_at=now - 60,
+                        ),
+                        "agent-abc12345": FakeSessionData(
+                            content=_make_session_jsonl("Agent task"),
+                            size_bytes=512,
+                            modified_at=now - 30,
+                            parent_session_id=parent_session_id,
+                        ),
+                    }
+                )
+            }
+        )
+
+        ctx = build_workspace_test_context(env, session_store=session_store)
+
+        result = runner.invoke(show_session, [parent_session_id], obj=ctx)
+
+        assert result.exit_code == 0
+        output = strip_ansi(result.output)
+        # Duration should not appear (no "s" suffix after a number in the agent line)
+        # The metadata line should just have time and size, not duration
+        lines = output.split("\n")
+        agent_metadata_line = None
+        for i, line in enumerate(lines):
+            if 'devrun("Run the test suite")' in line:
+                # Next line should be the metadata line
+                if i + 1 < len(lines):
+                    agent_metadata_line = lines[i + 1]
+                break
+        assert agent_metadata_line is not None
+        # Should have size (512B) but NOT a duration like "42s"
+        assert "512B" in agent_metadata_line
+        # The line should end with the size, not a duration
+        # Count number of segments separated by double-spaces
+        segments = [s for s in agent_metadata_line.strip().split("  ") if s]
+        # Should be 2 segments: time and size (no duration)
+        assert len(segments) == 2
