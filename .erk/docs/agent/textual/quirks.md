@@ -141,7 +141,7 @@ Then style with `.selected` instead of `.--highlight`:
 
 ```css
 MyListItem.selected > .summary {
-    background: $secondary;
+  background: $secondary;
 }
 ```
 
