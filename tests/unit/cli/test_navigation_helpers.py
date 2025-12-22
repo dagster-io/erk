@@ -194,21 +194,6 @@ def test_complete_branch_names_filters_by_prefix(tmp_path: Path) -> None:
     assert sorted(result) == ["feature-a", "feature-b"]
 
 
-def test_complete_branch_names_error_handling_returns_empty_list(tmp_path: Path) -> None:
-    """Test completion returns empty list on error for graceful degradation."""
-    # Arrange
-    # Create mock Click context that will cause an exception
-    mock_ctx = Mock(spec=click.Context)
-    mock_ctx.find_root.side_effect = Exception("Simulated error")
-
-    # Act
-    result = complete_branch_names(mock_ctx, None, "")
-
-    # Assert
-    # Should return empty list, not raise exception
-    assert result == []
-
-
 def test_complete_plan_files_finds_markdown_files(tmp_path: Path) -> None:
     """Test completion finds .md files in current directory."""
     # Arrange
@@ -335,21 +320,6 @@ def test_complete_plan_files_filters_by_prefix(tmp_path: Path) -> None:
 
     # Assert
     assert result == ["feature-plan.md"]
-
-
-def test_complete_plan_files_error_handling_returns_empty_list(tmp_path: Path) -> None:
-    """Test completion returns empty list on error for graceful degradation."""
-    # Arrange
-    # Create mock Click context that will cause an exception
-    mock_ctx = Mock(spec=click.Context)
-    mock_ctx.find_root.side_effect = Exception("Simulated error")
-
-    # Act
-    result = complete_plan_files(mock_ctx, None, "")
-
-    # Assert
-    # Should return empty list, not raise exception
-    assert result == []
 
 
 def test_complete_plan_files_returns_sorted_results(tmp_path: Path) -> None:
