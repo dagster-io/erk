@@ -122,6 +122,18 @@ class SessionXmlWriter:
         """Write a thinking element containing assistant's reasoning."""
         self._lines.append(f"  <thinking>{self._escape(text)}</thinking>")
 
+    def unknown_block(self, block: dict) -> None:
+        """Write an unknown content block with its raw JSON.
+
+        Ensures new block types are preserved rather than silently dropped.
+        """
+        block_type = block.get("type", "unknown")
+        # Output as JSON to preserve all data
+        block_json = json.dumps(block, ensure_ascii=False)
+        self._lines.append(f'  <content_block type="{self._escape(block_type)}">')
+        self._lines.append(f"    {self._escape(block_json)}")
+        self._lines.append("  </content_block>")
+
     def usage(self, usage_data: dict) -> None:
         """Write a usage metadata element with all fields from the usage dict.
 
@@ -137,12 +149,29 @@ class SessionXmlWriter:
         if attrs:
             self._lines.append(f"  <usage {attrs} />")
 
-    def tool_use(self, name: str, tool_id: str, params: dict[str, str]) -> None:
-        """Write a tool_use element with params."""
-        self._lines.append(f'  <tool_use name="{self._escape(name)}" id="{self._escape(tool_id)}">')
+    def tool_use(self, block: dict) -> None:
+        """Write a tool_use element with all fields from the block.
+
+        Uses blacklist approach - passes through all fields.
+        """
+        name = block.get("name", "")
+        tool_id = block.get("id", "")
+        params = block.get("input", {})
+
+        # Core attributes
+        attrs = [f'name="{self._escape(name)}"', f'id="{self._escape(tool_id)}"']
+
+        # Pass through any additional fields (blacklist approach)
+        excluded = {"type", "name", "id", "input"}  # Already handled
+        for key, value in block.items():
+            if key not in excluded and value is not None:
+                attrs.append(f'{key}="{self._escape(str(value))}"')
+
+        attr_str = " ".join(attrs)
+        self._lines.append(f"  <tool_use {attr_str}>")
         for key, value in params.items():
             self._lines.append(
-                f'    <param name="{self._escape(key)}">{self._escape(value)}</param>'
+                f'    <param name="{self._escape(key)}">{self._escape(str(value))}</param>'
             )
         self._lines.append("  </tool_use>")
 
@@ -246,10 +275,19 @@ def generate_compressed_xml(entries: list[dict], source_label: str | None = None
     if source_label:
         writer.meta(source=source_label)
 
-    for entry in entries:
-        if "gitBranch" in entry:
-            writer.meta(branch=entry["gitBranch"])
-            break
+    # Pass through session-level metadata from first entry (blacklist approach)
+    # These are fields that describe the session context, not individual entries
+    _meta_fields_to_skip = {"type", "message", "timestamp", "toolUseResult"}
+    if entries:
+        first_entry = entries[0]
+        meta_attrs = {}
+        for key, value in first_entry.items():
+            if key not in _meta_fields_to_skip and value is not None:
+                # Convert camelCase to snake_case for consistency
+                xml_key = "".join(f"_{c.lower()}" if c.isupper() else c for c in key).lstrip("_")
+                meta_attrs[xml_key] = str(value)
+        if meta_attrs:
+            writer.meta(**meta_attrs)
 
     # Stream entries
     for entry in entries:
@@ -262,6 +300,9 @@ def generate_compressed_xml(entries: list[dict], source_label: str | None = None
             writer.user(compact_whitespace(content), timestamp=timestamp)
 
         elif entry_type == "assistant":
+            # Known content block types
+            known_block_types = {"thinking", "text", "tool_use"}
+
             # First output thinking blocks (assistant's reasoning)
             for block in message.get("content", []):
                 if block.get("type") == "thinking":
@@ -269,10 +310,11 @@ def generate_compressed_xml(entries: list[dict], source_label: str | None = None
                     if thinking_text.strip():
                         writer.thinking(compact_whitespace(thinking_text))
 
-            # Then output text and tool_use blocks
+            # Then output text, tool_use, and unknown blocks
             first_text = True
             for block in message.get("content", []):
-                if block.get("type") == "text":
+                block_type = block.get("type")
+                if block_type == "text":
                     text = block.get("text", "")
                     if text.strip():
                         # Only include timestamp on first text block
@@ -281,12 +323,11 @@ def generate_compressed_xml(entries: list[dict], source_label: str | None = None
                             timestamp=timestamp if first_text else None,
                         )
                         first_text = False
-                elif block.get("type") == "tool_use":
-                    writer.tool_use(
-                        name=block.get("name", ""),
-                        tool_id=block.get("id", ""),
-                        params={k: str(v) for k, v in block.get("input", {}).items()},
-                    )
+                elif block_type == "tool_use":
+                    writer.tool_use(block)
+                elif block_type not in known_block_types:
+                    # Pass through unknown block types (blacklist approach)
+                    writer.unknown_block(block)
 
             # Output usage metadata if present (blacklist approach - pass all fields)
             usage = message.get("usage", {})

@@ -412,6 +412,63 @@ class TestGenerateCompressedXml:
         assert 'exit_code="0"' in result
         assert 'future_field="new value"' in result
 
+    def test_unknown_content_blocks_preserved(self) -> None:
+        """Unknown content block types are preserved as JSON (blacklist approach)."""
+        entries = [
+            {
+                "type": "assistant",
+                "message": {
+                    "content": [
+                        {"type": "text", "text": "Here is an image"},
+                        {"type": "image", "source": {"type": "base64", "data": "abc123"}},
+                    ]
+                },
+            },
+        ]
+        result = generate_compressed_xml(entries)
+        assert "<assistant>Here is an image</assistant>" in result
+        assert '<content_block type="image">' in result
+        assert '"source":' in result  # JSON preserved
+
+    def test_tool_use_passes_through_additional_fields(self) -> None:
+        """Tool use blocks pass through additional fields (blacklist approach)."""
+        entries = [
+            {
+                "type": "assistant",
+                "message": {
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "name": "Read",
+                            "id": "tool123",
+                            "input": {"file_path": "/test.py"},
+                            "cache_control": {"type": "ephemeral"},
+                            "future_field": "new value",
+                        }
+                    ]
+                },
+            },
+        ]
+        result = generate_compressed_xml(entries)
+        assert 'name="Read"' in result
+        assert 'id="tool123"' in result
+        assert "cache_control=" in result
+        assert 'future_field="new value"' in result
+
+    def test_entry_metadata_passed_through(self) -> None:
+        """Entry-level metadata is passed through to meta element."""
+        entries = [
+            {
+                "type": "user",
+                "message": {"content": "Hello"},
+                "gitBranch": "feature/test",
+                "customField": "custom value",
+            },
+        ]
+        result = generate_compressed_xml(entries)
+        assert 'git_branch="feature/test"' in result
+        assert 'custom_field="custom value"' in result
+
 
 class TestProcessLogFile:
     """Tests for process_log_file function."""
