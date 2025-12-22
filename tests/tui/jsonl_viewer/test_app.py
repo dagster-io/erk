@@ -6,7 +6,7 @@ import pytest
 from textual.widgets import ListView
 
 from erk.tui.jsonl_viewer.app import JsonlViewerApp
-from erk.tui.jsonl_viewer.widgets import JsonlEntryItem
+from erk.tui.jsonl_viewer.widgets import CustomListView, JsonlEntryItem
 
 
 @pytest.fixture
@@ -107,44 +107,169 @@ class TestJsonlViewerAppExpandCollapse:
     """Tests for expand/collapse functionality."""
 
     @pytest.mark.asyncio
-    async def test_enter_expands_entry(self, sample_jsonl_file: Path) -> None:
-        """Pressing Enter expands selected entry."""
+    async def test_highlighted_entry_starts_collapsed(self, sample_jsonl_file: Path) -> None:
+        """Highlighted entry starts collapsed (not auto-expanded)."""
         app = JsonlViewerApp(sample_jsonl_file)
 
         async with app.run_test() as pilot:
             await pilot.pause()
-            list_view = app.query_one(ListView)
+            list_view = app.query_one(CustomListView)
             first_item = list_view.highlighted_child
             assert isinstance(first_item, JsonlEntryItem)
 
-            # Initially not expanded
+            # First item is highlighted but NOT expanded
+            assert not first_item.has_class("expanded")
+
+    @pytest.mark.asyncio
+    async def test_enter_expands_then_collapses(self, sample_jsonl_file: Path) -> None:
+        """Pressing Enter toggles expand/collapse."""
+        app = JsonlViewerApp(sample_jsonl_file)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            list_view = app.query_one(CustomListView)
+            first_item = list_view.highlighted_child
+            assert isinstance(first_item, JsonlEntryItem)
+
+            # Initially collapsed
             assert not first_item.has_class("expanded")
 
             # Press Enter to expand
             await pilot.press("enter")
             await pilot.pause()
-
             assert first_item.has_class("expanded")
 
+            # Press Enter to collapse
+            await pilot.press("enter")
+            await pilot.pause()
+            assert not first_item.has_class("expanded")
+
     @pytest.mark.asyncio
-    async def test_enter_collapses_expanded_entry(self, sample_jsonl_file: Path) -> None:
-        """Pressing Enter on expanded entry collapses it."""
+    async def test_expand_mode_is_sticky(self, sample_jsonl_file: Path) -> None:
+        """Expand mode persists across navigation."""
         app = JsonlViewerApp(sample_jsonl_file)
 
         async with app.run_test() as pilot:
             await pilot.pause()
-            list_view = app.query_one(ListView)
+            list_view = app.query_one(CustomListView)
             first_item = list_view.highlighted_child
             assert isinstance(first_item, JsonlEntryItem)
 
-            # Expand then collapse
+            # Expand first item
             await pilot.press("enter")
             await pilot.pause()
             assert first_item.has_class("expanded")
 
-            await pilot.press("enter")
+            # Navigate to second item - should also be expanded
+            await pilot.press("j")
             await pilot.pause()
+
+            second_item = list_view.highlighted_child
+            assert isinstance(second_item, JsonlEntryItem)
+
+            # First collapsed, second expanded (expand mode is sticky)
             assert not first_item.has_class("expanded")
+            assert second_item.has_class("expanded")
+
+    @pytest.mark.asyncio
+    async def test_collapse_mode_is_sticky(self, sample_jsonl_file: Path) -> None:
+        """Collapse mode persists across navigation."""
+        app = JsonlViewerApp(sample_jsonl_file)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            list_view = app.query_one(CustomListView)
+            first_item = list_view.highlighted_child
+            assert isinstance(first_item, JsonlEntryItem)
+
+            # Initially collapsed, navigate without expanding
+            await pilot.press("j")
+            await pilot.pause()
+
+            second_item = list_view.highlighted_child
+            assert isinstance(second_item, JsonlEntryItem)
+
+            # Both should be collapsed (collapse mode is sticky)
+            assert not first_item.has_class("expanded")
+            assert not second_item.has_class("expanded")
+
+
+class TestJsonlViewerAppFormatToggle:
+    """Tests for format toggle functionality."""
+
+    @pytest.mark.asyncio
+    async def test_f_toggles_global_format_mode(self, tmp_path: Path) -> None:
+        """Pressing f toggles global format mode."""
+        jsonl_file = tmp_path / "session.jsonl"
+        jsonl_file.write_text(
+            '{"type": "user", "message": {"text": "line1\\\\nline2"}}\n',
+            encoding="utf-8",
+        )
+
+        app = JsonlViewerApp(jsonl_file)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            list_view = app.query_one(CustomListView)
+
+            # Initially in raw mode
+            assert list_view._formatted_mode is False
+
+            # Press f to toggle format mode
+            await pilot.press("f")
+            await pilot.pause()
+
+            # Global format mode should be toggled
+            assert list_view._formatted_mode is True
+
+    @pytest.mark.asyncio
+    async def test_f_toggles_format_mode_back(self, tmp_path: Path) -> None:
+        """Pressing f twice returns to raw mode."""
+        jsonl_file = tmp_path / "session.jsonl"
+        jsonl_file.write_text(
+            '{"type": "user", "message": {"text": "test"}}\n',
+            encoding="utf-8",
+        )
+
+        app = JsonlViewerApp(jsonl_file)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            list_view = app.query_one(CustomListView)
+
+            # Initially in raw mode
+            assert list_view._formatted_mode is False
+
+            # Press f to toggle to formatted mode
+            await pilot.press("f")
+            await pilot.pause()
+            assert list_view._formatted_mode is True
+
+            # Press f again to toggle back to raw mode
+            await pilot.press("f")
+            await pilot.pause()
+            assert list_view._formatted_mode is False
+
+    @pytest.mark.asyncio
+    async def test_format_mode_persists_across_navigation(self, sample_jsonl_file: Path) -> None:
+        """Format mode persists when navigating between entries."""
+        app = JsonlViewerApp(sample_jsonl_file)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            list_view = app.query_one(CustomListView)
+
+            # Toggle to formatted mode
+            await pilot.press("f")
+            await pilot.pause()
+            assert list_view._formatted_mode is True
+
+            # Navigate to next entry
+            await pilot.press("j")
+            await pilot.pause()
+
+            # Format mode should still be on
+            assert list_view._formatted_mode is True
 
 
 class TestJsonlViewerAppEmptyFile:
