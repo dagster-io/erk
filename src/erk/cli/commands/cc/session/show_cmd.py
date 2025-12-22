@@ -1,10 +1,11 @@
 """Show details for a specific Claude Code session."""
 
+import json
 from pathlib import Path
+from typing import NamedTuple
 
 import click
 from rich.console import Console
-from rich.table import Table
 
 from erk.cli.commands.cc.session.list_cmd import (
     extract_summary,
@@ -14,6 +15,90 @@ from erk.cli.commands.cc.session.list_cmd import (
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
+
+
+class AgentInfo(NamedTuple):
+    """Information about an agent session extracted from Task invocation."""
+
+    agent_type: str
+    prompt: str
+
+
+def extract_agent_info(parent_content: str) -> dict[str, AgentInfo]:
+    """Extract agent info from Task tool invocations and their results.
+
+    Uses explicit metadata linking:
+    1. Task tool_use entries contain: tool_use.id -> (subagent_type, description)
+    2. tool_result entries contain: tool_use_id + toolUseResult.agentId
+
+    This provides deterministic matching without timestamp correlation.
+
+    Args:
+        parent_content: JSONL content of parent session
+
+    Returns:
+        Dict mapping "agent-<id>" session IDs to AgentInfo
+    """
+    # Step 1: Collect Task tool_use entries: tool_use_id -> (type, description)
+    task_info: dict[str, tuple[str, str]] = {}
+
+    # Step 2: Collect tool_result entries: tool_use_id -> agentId
+    tool_to_agent: dict[str, str] = {}
+
+    for line in parent_content.split("\n"):
+        stripped = line.strip()
+        if not stripped.startswith("{"):
+            continue
+
+        try:
+            entry = json.loads(stripped)
+        except json.JSONDecodeError:
+            continue
+
+        entry_type = entry.get("type")
+        message = entry.get("message", {})
+
+        if entry_type == "assistant":
+            # Look for Task tool_use blocks
+            for block in message.get("content", []):
+                if block.get("type") != "tool_use":
+                    continue
+                if block.get("name") != "Task":
+                    continue
+
+                tool_use_id = block.get("id")
+                tool_input = block.get("input", {})
+                subagent_type = tool_input.get("subagent_type", "")
+                prompt = tool_input.get("prompt", "")
+
+                if tool_use_id:
+                    task_info[tool_use_id] = (subagent_type, prompt)
+
+        elif entry_type == "user":
+            # Look for tool_result with toolUseResult.agentId
+            tool_use_result = entry.get("toolUseResult")
+            if not isinstance(tool_use_result, dict):
+                continue
+            agent_id = tool_use_result.get("agentId")
+
+            if agent_id:
+                # Find the tool_use_id from message content
+                for block in message.get("content", []):
+                    if block.get("type") != "tool_result":
+                        continue
+                    tool_use_id = block.get("tool_use_id")
+                    if tool_use_id:
+                        tool_to_agent[tool_use_id] = agent_id
+
+    # Step 3: Build final mapping: agent-<id> -> AgentInfo
+    agent_infos: dict[str, AgentInfo] = {}
+    for tool_use_id, agent_id in tool_to_agent.items():
+        info = task_info.get(tool_use_id)
+        if info:
+            session_id = f"agent-{agent_id}"
+            agent_infos[session_id] = AgentInfo(agent_type=info[0], prompt=info[1])
+
+    return agent_infos
 
 
 def _show_session_impl(
@@ -57,11 +142,13 @@ def _show_session_impl(
     # Get the session path
     session_path = session_store.get_session_path(cwd, session_id)
 
-    # Read session content for summary
+    # Read session content for summary and agent info extraction
     content = session_store.read_session(cwd, session_id, include_agents=False)
     summary = ""
+    agent_infos: dict[str, AgentInfo] = {}
     if content is not None:
         summary = extract_summary(content.main_content, max_length=100)
+        agent_infos = extract_agent_info(content.main_content)
 
     # Print inferred message if applicable
     if inferred:
@@ -92,29 +179,28 @@ def _show_session_impl(
         console.print()
         console.print("[bold]Agent Sessions:[/bold]")
 
-        table = Table(show_header=True, header_style="bold", box=None)
-        table.add_column("id", style="cyan", no_wrap=True)
-        table.add_column("time", no_wrap=True)
-        table.add_column("size", no_wrap=True, justify="right")
-        table.add_column("summary", no_wrap=False)
-
         for agent in child_agents:
-            # Read agent content for summary
-            agent_content = session_store.read_session(
-                cwd, agent.session_id, include_agents=False
-            )
-            agent_summary = ""
-            if agent_content is not None:
-                agent_summary = extract_summary(agent_content.main_content)
+            info = agent_infos.get(agent.session_id)
+            agent_path = session_store.get_session_path(cwd, agent.session_id)
 
-            table.add_row(
-                agent.session_id,
-                format_display_time(agent.modified_at),
-                format_size(agent.size_bytes),
-                agent_summary,
+            console.print()
+            # Format: type("prompt") or just session_id if no info
+            if info and info.agent_type:
+                # Clean up prompt: collapse whitespace, truncate
+                prompt_clean = " ".join(info.prompt.split())
+                if len(prompt_clean) > 80:
+                    prompt_preview = prompt_clean[:80] + "..."
+                else:
+                    prompt_preview = prompt_clean
+                console.print(f'  [cyan]{info.agent_type}[/cyan]("{prompt_preview}")')
+            else:
+                console.print(f"  [cyan]{agent.session_id}[/cyan]")
+            console.print(
+                f"    {format_display_time(agent.modified_at)}  "
+                f"{format_size(agent.size_bytes)}"
             )
-
-        console.print(table)
+            if agent_path:
+                console.print(f"    {agent_path}")
     else:
         console.print()
         console.print("[dim]No agent sessions[/dim]")
