@@ -8,7 +8,7 @@ read_when:
 
 # uvx Hook Invocation Pattern
 
-> **Note:** This documentation was produced in December 2023 based on Claude Code's plugin system at that time. The plugin system is actively evolving; verify against [official Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code) for current behavior.
+> **Note:** This documentation was produced in December 2025 based on Claude Code's plugin system at that time. The plugin system is actively evolving; verify against [official Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code) for current behavior.
 
 ERK hooks use `uvx erk@{version} kit exec` for reproducible, version-pinned script execution.
 

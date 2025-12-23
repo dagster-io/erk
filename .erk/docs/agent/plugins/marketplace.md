@@ -8,7 +8,7 @@ read_when:
 
 # Marketplace Configuration
 
-> **Note:** This documentation was produced in December 2023 based on Claude Code's plugin system at that time. The plugin system is actively evolving; verify against [official Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code) for current behavior.
+> **Note:** This documentation was produced in December 2025 based on Claude Code's plugin system at that time. The plugin system is actively evolving; verify against [official Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code) for current behavior.
 
 A marketplace is a git repository containing plugins and a `marketplace.json` registry.
 
@@ -35,10 +35,6 @@ plugins/
   "name": "erk-plugins",
   "version": "1.0.0",
   "description": "Erk plan-oriented engineering plugins",
-  "owner": {
-    "name": "Dagster",
-    "email": "erk@dagster.io"
-  },
   "plugins": [
     {
       "name": "erk",
@@ -61,8 +57,6 @@ plugins/
 | `name`        | Marketplace identifier (kebab-case) |
 | `version`     | Semantic version (x.y.z)            |
 | `description` | Human-readable description          |
-| `owner.name`  | Organization or individual name     |
-| `owner.email` | Contact email                       |
 | `plugins`     | Array of plugin entries             |
 
 ### Plugin Entry Fields
