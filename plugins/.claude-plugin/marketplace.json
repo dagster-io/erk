@@ -22,11 +22,6 @@
       "name": "dignified-python",
       "source": "./dignified-python",
       "description": "Python coding standards with version-aware type annotations"
-    },
-    {
-      "name": "fake-driven-testing",
-      "source": "./fake-driven-testing",
-      "description": "5-layer testing architecture with gateway fakes"
     }
   ]
 }
