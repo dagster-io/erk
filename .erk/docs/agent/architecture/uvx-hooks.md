@@ -22,53 +22,6 @@ ERK hooks use `uvx erk@{version} kit exec` for reproducible, version-pinned scri
 }
 ```
 
-## Why uvx?
-
-### Alternative 1: Bundle Scripts in Plugins
-
-```json
-{
-  "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/hook.py"
-}
-```
-
-**Problems:**
-
-- Scripts lose access to `erk_shared` (context, git/github ABCs)
-- No Click decorators (`@logged_hook`, `@project_scoped`)
-- Must vendor dependencies or require separate install
-- No type safety from erk's pyright config
-
-### Alternative 2: Require erk Installation
-
-```json
-{
-  "command": "erk kit exec erk session-id-injector-hook"
-}
-```
-
-**Problems:**
-
-- Requires erk to be installed globally
-- Version drift: user's erk version may differ from plugin expectation
-- No reproducibility guarantee
-
-### Alternative 3: uvx with Version Pinning (Chosen)
-
-```json
-{
-  "command": "uvx erk@1.2.3 kit exec erk session-id-injector-hook"
-}
-```
-
-**Benefits:**
-
-- **Version pinning**: Exact erk version, reproducible behavior
-- **No install required**: uvx resolves and caches automatically
-- **Full erk access**: Scripts use erk_shared, Click, type checking
-- **Fast**: ~50ms warm start, ~200ms cold start
-- **Ubiquitous**: uv is increasingly standard in Python ecosystem
-
 ## How It Works
 
 1. Hook fires in Claude Code
@@ -91,6 +44,14 @@ src/erk/
 
 Plugins contain only: commands, agents, skills, docs, hooks.json
 
+## Benefits
+
+- **Version pinning**: Exact erk version, reproducible behavior
+- **No install required**: uvx resolves and caches automatically
+- **Full erk access**: Scripts use erk_shared, Click, type checking
+- **Fast**: ~50ms warm start, ~200ms cold start
+- **Ubiquitous**: uv is increasingly standard in Python ecosystem
+
 ## Version Management
 
 When releasing erk, update hook versions in plugins:
@@ -109,6 +70,37 @@ Consider automating this in the release process.
 - **uv**: Must be installed on user's system
 - **Network**: First run requires download (cached after)
 - **PyPI**: erk must be published to PyPI
+
+## Why Not Other Approaches?
+
+### Bundle Scripts in Plugins
+
+```json
+{
+  "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/hook.py"
+}
+```
+
+**Problems:**
+
+- Scripts lose access to `erk_shared` (context, git/github ABCs)
+- No Click decorators (`@logged_hook`, `@project_scoped`)
+- Must vendor dependencies or require separate install
+- No type safety from erk's pyright config
+
+### Require erk Installation
+
+```json
+{
+  "command": "erk kit exec erk session-id-injector-hook"
+}
+```
+
+**Problems:**
+
+- Requires erk to be installed globally
+- Version drift: user's erk version may differ from plugin expectation
+- No reproducibility guarantee
 
 ## Tradeoffs
 
