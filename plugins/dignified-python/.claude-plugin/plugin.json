@@ -1,0 +1,5 @@
+{
+  "name": "dignified-python",
+  "version": "0.2.8",
+  "description": "Python coding standards with version-aware type annotations"
+}

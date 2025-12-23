@@ -1,0 +1,5 @@
+{
+  "name": "devrun",
+  "version": "0.2.8",
+  "description": "Development tool execution agent (pytest, pyright, ruff, make, gt)"
+}
