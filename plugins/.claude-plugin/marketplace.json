@@ -3,10 +3,6 @@
   "name": "erk-plugins",
   "version": "0.2.8",
   "description": "Erk plan-oriented engineering plugins",
-  "owner": {
-    "name": "Dagster",
-    "email": "erk@dagster.io"
-  },
   "plugins": [
     {
       "name": "erk",
