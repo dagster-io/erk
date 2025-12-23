@@ -1,11 +1,5 @@
 {
   "name": "erk",
   "version": "0.2.8",
-  "description": "Erk workflow commands, git integration, and Graphite stack management",
-  "author": {
-    "name": "Dagster",
-    "email": "erk@dagster.io"
-  },
-  "license": "Apache-2.0",
-  "keywords": ["erk", "planning", "github", "graphite", "git"]
+  "description": "Erk workflow commands, git integration, and Graphite stack management"
 }

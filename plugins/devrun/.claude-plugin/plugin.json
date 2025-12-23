@@ -1,11 +1,5 @@
 {
   "name": "devrun",
   "version": "0.2.8",
-  "description": "Development tool execution agent (pytest, pyright, ruff, make, gt)",
-  "author": {
-    "name": "Dagster",
-    "email": "erk@dagster.io"
-  },
-  "license": "Apache-2.0",
-  "keywords": ["devrun", "pytest", "pyright", "development"]
+  "description": "Development tool execution agent (pytest, pyright, ruff, make, gt)"
 }
