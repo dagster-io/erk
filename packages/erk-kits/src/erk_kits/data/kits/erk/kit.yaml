@@ -55,6 +55,9 @@ scripts:
   - name: plan-save-to-issue
     path: scripts/erk/plan_save_to_issue.py
     description: Extract plan from ~/.claude/plans/ and create GitHub issue with schema v2 format
+  - name: plan-update-issue
+    path: scripts/erk/plan_update_issue.py
+    description: Update plan content in existing GitHub issue
   - name: wrap-plan-in-metadata-block
     path: scripts/erk/wrap_plan_in_metadata_block.py
     description: Wrap plan content in collapsible GitHub metadata block

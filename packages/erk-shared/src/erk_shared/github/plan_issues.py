@@ -52,6 +52,23 @@ class CreatePlanIssueResult:
     error: str | None
 
 
+@dataclass(frozen=True)
+class UpdatePlanIssueResult:
+    """Result of updating a Schema v2 plan issue's content.
+
+    Attributes:
+        success: Whether the update completed successfully
+        issue_number: The issue number that was updated
+        issue_url: The issue URL (for display purposes)
+        error: Error message if failed, None if success
+    """
+
+    success: bool
+    issue_number: int
+    issue_url: str | None
+    error: str | None
+
+
 def create_plan_issue(
     github_issues: GitHubIssues,
     repo_root: Path,
@@ -225,3 +242,82 @@ def _ensure_labels_exist(
         return f"Failed to ensure labels exist: {e}"
 
     return None
+
+
+def update_plan_issue(
+    github_issues: GitHubIssues,
+    repo_root: Path,
+    issue_number: int,
+    plan_content: str,
+) -> UpdatePlanIssueResult:
+    """Update the plan content in an existing issue's first comment.
+
+    Schema v2 plan issues store the plan content in the first comment,
+    not in the issue body. This function:
+    1. Gets the issue comments
+    2. Finds the first comment (plan content per Schema v2)
+    3. Updates that comment with new content
+
+    Args:
+        github_issues: GitHubIssues interface (real, fake, or dry-run)
+        repo_root: Repository root directory
+        issue_number: Issue number to update
+        plan_content: The new plan markdown content
+
+    Returns:
+        UpdatePlanIssueResult with success status and details
+
+    Note:
+        Does NOT raise exceptions. All errors returned in result.
+    """
+    # Step 1: Get the issue to verify it exists and get the URL
+    try:
+        issue = github_issues.get_issue(repo_root, issue_number)
+    except RuntimeError as e:
+        return UpdatePlanIssueResult(
+            success=False,
+            issue_number=issue_number,
+            issue_url=None,
+            error=f"Failed to get issue #{issue_number}: {e}",
+        )
+
+    # Step 2: Get issue comments
+    try:
+        comments = github_issues.get_issue_comments_with_urls(repo_root, issue_number)
+    except RuntimeError as e:
+        return UpdatePlanIssueResult(
+            success=False,
+            issue_number=issue_number,
+            issue_url=issue.url,
+            error=f"Failed to get comments for issue #{issue_number}: {e}",
+        )
+
+    # Step 3: Find first comment (plan content per Schema v2)
+    if not comments:
+        return UpdatePlanIssueResult(
+            success=False,
+            issue_number=issue_number,
+            issue_url=issue.url,
+            error=f"Issue #{issue_number} has no comments (expected Schema v2 plan comment)",
+        )
+
+    first_comment = comments[0]
+
+    # Step 4: Update the comment with new plan content
+    plan_comment = format_plan_content_comment(plan_content.strip())
+    try:
+        github_issues.update_comment(repo_root, first_comment.id, plan_comment)
+    except RuntimeError as e:
+        return UpdatePlanIssueResult(
+            success=False,
+            issue_number=issue_number,
+            issue_url=issue.url,
+            error=f"Failed to update comment on issue #{issue_number}: {e}",
+        )
+
+    return UpdatePlanIssueResult(
+        success=True,
+        issue_number=issue_number,
+        issue_url=issue.url,
+        error=None,
+    )

@@ -256,3 +256,17 @@ class GitHubIssues(ABC):
                 comment not found, or invalid reaction)
         """
         ...
+
+    @abstractmethod
+    def update_comment(self, repo_root: Path, comment_id: int, body: str) -> None:
+        """Update an existing comment on an issue.
+
+        Args:
+            repo_root: Repository root directory
+            comment_id: Numeric comment ID (from IssueComment.id)
+            body: New comment body markdown
+
+        Raises:
+            RuntimeError: If gh CLI fails or comment not found
+        """
+        ...
