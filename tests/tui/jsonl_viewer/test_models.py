@@ -181,9 +181,7 @@ class TestParseJsonlFile:
         """Handles malformed JSON gracefully by skipping."""
         jsonl_file = tmp_path / "bad.jsonl"
         jsonl_file.write_text(
-            '{"type": "user"}\n'
-            'not valid json\n'
-            '{"type": "assistant"}\n',
+            '{"type": "user"}\nnot valid json\n{"type": "assistant"}\n',
             encoding="utf-8",
         )
 

@@ -1,0 +1,11 @@
+{
+  "name": "fake-driven-testing",
+  "version": "0.2.8",
+  "description": "5-layer testing architecture with gateway fakes",
+  "author": {
+    "name": "Dagster",
+    "email": "erk@dagster.io"
+  },
+  "license": "Apache-2.0",
+  "keywords": ["testing", "fakes", "architecture"]
+}

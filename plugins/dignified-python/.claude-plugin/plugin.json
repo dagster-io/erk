@@ -1,0 +1,11 @@
+{
+  "name": "dignified-python",
+  "version": "0.2.8",
+  "description": "Python coding standards with version-aware type annotations",
+  "author": {
+    "name": "Dagster",
+    "email": "erk@dagster.io"
+  },
+  "license": "Apache-2.0",
+  "keywords": ["python", "coding-standards", "type-annotations"]
+}
