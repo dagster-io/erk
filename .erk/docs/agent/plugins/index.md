@@ -6,4 +6,5 @@
 - **[hooks.md](hooks.md)** — configuring plugin hooks, writing hooks.json, understanding hook lifecycle events
 - **[marketplace.md](marketplace.md)** — creating a plugin marketplace, configuring marketplace.json, publishing erk plugins
 - **[overview.md](overview.md)** — understanding plugin architecture, installing erk plugins, configuring Claude Code plugins
+- **[plugin-hook-output-bug.md](plugin-hook-output-bug.md)** — plugin hooks show "Callback hook succeeded: Success" but no output, debugging plugin hooks that run but don't display output, troubleshooting UserPromptSubmit hooks in plugins
 - **[plugin-structure.md](plugin-structure.md)** — creating a new Claude Code plugin, configuring plugin.json, organizing plugin artifacts
