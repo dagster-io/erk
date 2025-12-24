@@ -11,7 +11,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from erk_shared.github.issues import GitHubIssues, IssueInfo
-from erk_shared.github.metadata import extract_plan_from_comment
+from erk_shared.github.metadata import extract_plan_from_comment, extract_plan_header_comment_id
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.plan_store.types import Plan, PlanQuery, PlanState
 
@@ -39,9 +39,11 @@ class GitHubPlanStore(PlanStore):
 
         Schema Version 2:
         1. Fetch issue (body contains metadata)
-        2. Fetch first comment (contains plan content) - always fresh
-        3. Extract plan from comment using extract_plan_from_comment()
-        4. Return Plan with extracted plan content as body
+        2. Check for plan_comment_id in metadata for direct lookup
+        3. If plan_comment_id exists, fetch that specific comment
+        4. Otherwise, fall back to fetching first comment
+        5. Extract plan from comment using extract_plan_from_comment()
+        6. Return Plan with extracted plan content as body
 
         Backward Compatibility:
         - If no first comment with plan markers found, falls back to issue body
@@ -60,14 +62,23 @@ class GitHubPlanStore(PlanStore):
         issue_number = int(plan_identifier)
         issue_info = self._github_issues.get_issue(repo_root, issue_number)
 
-        # Fetch first comment (always fresh - no caching)
-        comments = self._github_issues.get_issue_comments(repo_root, issue_number)
-
-        # Try to extract plan content from first comment (schema version 2)
+        # Try to get plan content from stored comment ID (direct lookup - O(1))
         plan_body = None
-        if comments:
-            first_comment = comments[0]
-            plan_body = extract_plan_from_comment(first_comment)
+        plan_comment_id = extract_plan_header_comment_id(issue_info.body)
+        if plan_comment_id is not None:
+            try:
+                comment_body = self._github_issues.get_comment_by_id(repo_root, plan_comment_id)
+                plan_body = extract_plan_from_comment(comment_body)
+            except RuntimeError:
+                # Comment may have been deleted - fall back to first comment
+                pass
+
+        # Fall back to first comment (schema version 2 without comment ID)
+        if plan_body is None:
+            comments = self._github_issues.get_issue_comments(repo_root, issue_number)
+            if comments:
+                first_comment = comments[0]
+                plan_body = extract_plan_from_comment(first_comment)
 
         # Fallback to issue body for backward compatibility (old format)
         if plan_body is None:

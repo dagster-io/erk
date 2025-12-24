@@ -58,10 +58,11 @@ class FakeGitHubIssues(GitHubIssues):
         self._add_reaction_error = add_reaction_error
         self._get_comments_error = get_comments_error
         self._created_issues: list[tuple[str, str, list[str]]] = []
-        self._added_comments: list[tuple[int, str]] = []
+        self._added_comments: list[tuple[int, str, int]] = []  # (issue_number, body, comment_id)
         self._created_labels: list[tuple[str, str, str]] = []
         self._closed_issues: list[int] = []
         self._added_reactions: list[tuple[int, str]] = []
+        self._next_comment_id = 1000  # Start at 1000 to distinguish from issue numbers
 
     @property
     def created_issues(self) -> list[tuple[str, str, list[str]]]:
@@ -72,10 +73,10 @@ class FakeGitHubIssues(GitHubIssues):
         return self._created_issues
 
     @property
-    def added_comments(self) -> list[tuple[int, str]]:
+    def added_comments(self) -> list[tuple[int, str, int]]:
         """Read-only access to added comments for test assertions.
 
-        Returns list of (issue_number, body) tuples.
+        Returns list of (issue_number, body, comment_id) tuples.
         """
         return self._added_comments
 
@@ -151,8 +152,8 @@ class FakeGitHubIssues(GitHubIssues):
             raise RuntimeError(msg)
         return self._issues[number]
 
-    def add_comment(self, repo_root: Path, number: int, body: str) -> None:
-        """Record comment in mutation tracking.
+    def add_comment(self, repo_root: Path, number: int, body: str) -> int:
+        """Record comment in mutation tracking and return generated comment ID.
 
         Raises:
             RuntimeError: If issue number not found (simulates gh CLI error)
@@ -160,7 +161,10 @@ class FakeGitHubIssues(GitHubIssues):
         if number not in self._issues:
             msg = f"Issue #{number} not found"
             raise RuntimeError(msg)
-        self._added_comments.append((number, body))
+        comment_id = self._next_comment_id
+        self._next_comment_id += 1
+        self._added_comments.append((number, body, comment_id))
+        return comment_id
 
     def update_issue_body(self, repo_root: Path, number: int, body: str) -> None:
         """Update issue body in fake storage.
@@ -222,6 +226,29 @@ class FakeGitHubIssues(GitHubIssues):
             List of comment bodies, or empty list if no comments exist
         """
         return self._comments.get(number, [])
+
+    def get_comment_by_id(self, repo_root: Path, comment_id: int) -> str:
+        """Get a single comment body by ID from fake storage.
+
+        Searches both pre-configured comments (from constructor) and
+        dynamically added comments (from add_comment).
+
+        Raises:
+            RuntimeError: If comment ID not found (simulates gh CLI error)
+        """
+        # First check pre-configured comments in _comments_with_urls
+        for comments_list in self._comments_with_urls.values():
+            for comment in comments_list:
+                if comment.id == comment_id:
+                    return comment.body
+
+        # Then check dynamically added comments
+        for _, body, cid in self._added_comments:
+            if cid == comment_id:
+                return body
+
+        msg = f"Comment #{comment_id} not found"
+        raise RuntimeError(msg)
 
     def get_issue_comments_with_urls(self, repo_root: Path, number: int) -> list[IssueComment]:
         """Get comments with URLs for issue from fake storage.

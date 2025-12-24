@@ -120,7 +120,7 @@ def test_plan_save_to_issue_format() -> None:
 
     # Verify: plan in first comment
     assert len(fake_gh.added_comments) == 1
-    _issue_num, comment = fake_gh.added_comments[0]
+    _issue_num, comment, _comment_id = fake_gh.added_comments[0]
     assert "Step 1" in comment
 
 
@@ -236,11 +236,11 @@ def test_plan_save_to_issue_session_context_captured(tmp_path: Path) -> None:
     # Verify: plan comment + at least one session context comment
     assert len(fake_gh.added_comments) >= 2
     # First comment is the plan
-    _issue_num1, plan_comment = fake_gh.added_comments[0]
+    _issue_num1, plan_comment, _comment_id1 = fake_gh.added_comments[0]
     assert "Step 1" in plan_comment
 
     # Second comment is session context
-    _issue_num2, session_comment = fake_gh.added_comments[1]
+    _issue_num2, session_comment, _comment_id2 = fake_gh.added_comments[1]
     assert "session-content" in session_comment
 
 

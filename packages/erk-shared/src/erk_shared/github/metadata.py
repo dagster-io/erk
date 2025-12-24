@@ -1120,6 +1120,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         created_at: ISO 8601 timestamp of plan creation
         created_by: GitHub username of plan creator
         worktree_name: Set when worktree is created (nullable)
+        plan_comment_id: GitHub comment ID containing the plan content (nullable)
         last_dispatched_run_id: Updated by workflow, enables direct run lookup (nullable)
         last_dispatched_at: Updated by workflow (nullable)
         last_local_impl_at: Updated by local implementation, tracks last event timestamp (nullable)
@@ -1144,6 +1145,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         }
         optional_fields = {
             "worktree_name",
+            "plan_comment_id",
             "last_dispatched_run_id",
             "last_dispatched_node_id",
             "last_dispatched_at",
@@ -1183,6 +1185,13 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 raise ValueError("worktree_name must be a string or null")
             if len(data["worktree_name"]) == 0:
                 raise ValueError("worktree_name must not be empty when provided")
+
+        # Validate optional plan_comment_id field
+        if "plan_comment_id" in data and data["plan_comment_id"] is not None:
+            if not isinstance(data["plan_comment_id"], int):
+                raise ValueError("plan_comment_id must be an integer or null")
+            if data["plan_comment_id"] <= 0:
+                raise ValueError("plan_comment_id must be positive when provided")
 
         # Validate optional fields if present
         if "last_dispatched_run_id" in data:
@@ -1327,6 +1336,7 @@ def create_plan_header_block(
     created_at: str,
     created_by: str,
     worktree_name: str | None = None,
+    plan_comment_id: int | None = None,
     last_dispatched_run_id: str | None = None,
     last_dispatched_node_id: str | None = None,
     last_dispatched_at: str | None = None,
@@ -1349,6 +1359,7 @@ def create_plan_header_block(
         created_at: ISO 8601 timestamp of plan creation
         created_by: GitHub username of plan creator
         worktree_name: Optional worktree name (set when worktree is created)
+        plan_comment_id: Optional GitHub comment ID containing plan content
         last_dispatched_run_id: Optional workflow run ID (set by workflow)
         last_dispatched_node_id: Optional GraphQL node ID (set by workflow, for batch queries)
         last_dispatched_at: Optional dispatch timestamp (set by workflow)
@@ -1372,6 +1383,7 @@ def create_plan_header_block(
         "schema_version": "2",
         "created_at": created_at,
         "created_by": created_by,
+        "plan_comment_id": plan_comment_id,
         "last_dispatched_run_id": last_dispatched_run_id,
         "last_dispatched_node_id": last_dispatched_node_id,
         "last_dispatched_at": last_dispatched_at,
@@ -1415,6 +1427,7 @@ def format_plan_header_body(
     created_at: str,
     created_by: str,
     worktree_name: str | None = None,
+    plan_comment_id: int | None = None,
     last_dispatched_run_id: str | None = None,
     last_dispatched_node_id: str | None = None,
     last_dispatched_at: str | None = None,
@@ -1440,6 +1453,7 @@ def format_plan_header_body(
         created_at: ISO 8601 timestamp of plan creation
         created_by: GitHub username of plan creator
         worktree_name: Optional worktree name (set when worktree is created)
+        plan_comment_id: Optional GitHub comment ID containing plan content
         last_dispatched_run_id: Optional workflow run ID
         last_dispatched_node_id: Optional GraphQL node ID (for batch queries)
         last_dispatched_at: Optional dispatch timestamp
@@ -1462,6 +1476,7 @@ def format_plan_header_body(
         created_at=created_at,
         created_by=created_by,
         worktree_name=worktree_name,
+        plan_comment_id=plan_comment_id,
         last_dispatched_run_id=last_dispatched_run_id,
         last_dispatched_node_id=last_dispatched_node_id,
         last_dispatched_at=last_dispatched_at,
@@ -1652,6 +1667,63 @@ def extract_plan_header_worktree_name(issue_body: str) -> str | None:
         return None
 
     return block.data.get("worktree_name")
+
+
+def extract_plan_header_comment_id(issue_body: str) -> int | None:
+    """Extract plan_comment_id from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        plan_comment_id if found, None if block is missing or field is unset
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get("plan_comment_id")
+
+
+def update_plan_header_comment_id(
+    issue_body: str,
+    comment_id: int,
+) -> str:
+    """Update plan_comment_id field in plan-header metadata block.
+
+    Uses Python YAML parsing for robustness (not regex).
+    This function reads the existing plan-header block, updates the
+    plan_comment_id field, and re-renders the entire body.
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        comment_id: GitHub comment ID containing the plan content
+
+    Returns:
+        Updated issue body with new plan_comment_id field
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """
+    # Extract existing plan-header block
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    # Update plan_comment_id field
+    updated_data = dict(block.data)
+    updated_data["plan_comment_id"] = comment_id
+
+    # Validate updated data
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    # Create new block and render
+    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    # Replace block in full body
+    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
 
 
 def update_plan_header_local_impl(

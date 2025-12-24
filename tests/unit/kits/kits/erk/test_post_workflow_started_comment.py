@@ -179,7 +179,7 @@ def test_cli_success(tmp_path: Path) -> None:
 
     # Verify comment was added via mutation tracking
     assert len(fake_github.added_comments) == 1
-    issue_num, comment_body = fake_github.added_comments[0]
+    issue_num, comment_body, _comment_id = fake_github.added_comments[0]
     assert issue_num == 123
     assert "my-branch" in comment_body
 
@@ -258,7 +258,7 @@ def test_cli_passes_correct_args_to_github(tmp_path: Path) -> None:
 
     # Verify add_comment was called with correct issue number
     assert len(fake_github.added_comments) == 1
-    issue_num, comment_body = fake_github.added_comments[0]
+    issue_num, comment_body, _comment_id = fake_github.added_comments[0]
     assert issue_num == 789
     # Comment body should contain the branch name
     assert "test-branch" in comment_body

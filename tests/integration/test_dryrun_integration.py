@@ -322,8 +322,9 @@ def test_noop_github_issues_add_comment_noop() -> None:
     fake = FakeGitHubIssues(issues=pre_configured)
     noop = DryRunGitHubIssues(fake)
 
-    # Should not raise error
-    noop.add_comment(sentinel_path(), 42, "Comment body")
+    # Should return fake comment ID and not raise error
+    comment_id = noop.add_comment(sentinel_path(), 42, "Comment body")
+    assert comment_id == 0  # Dry-run returns fake ID
 
     # Wrapped fake should not track the comment
     assert len(fake.added_comments) == 0

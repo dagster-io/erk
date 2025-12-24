@@ -142,7 +142,7 @@ def test_post_started_comment_success(tmp_path: Path) -> None:
 
     # Verify comment was posted
     assert len(fake_gh.added_comments) == 1
-    issue_number, comment_body = fake_gh.added_comments[0]
+    issue_number, comment_body, _comment_id = fake_gh.added_comments[0]
     assert issue_number == 100
     assert "Documentation extraction started" in comment_body
 
@@ -170,7 +170,7 @@ def test_post_started_comment_with_workflow_url(tmp_path: Path) -> None:
         )
 
     assert result.exit_code == 0
-    _, comment_body = fake_gh.added_comments[0]
+    _, comment_body, _comment_id = fake_gh.added_comments[0]
     assert "https://github.com/owner/repo/actions/runs/12345" in comment_body
 
 
@@ -200,7 +200,7 @@ def test_post_failed_comment_success(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["status"] == "failed"
 
-    _, comment_body = fake_gh.added_comments[0]
+    _, comment_body, _comment_id = fake_gh.added_comments[0]
     assert "Documentation extraction failed" in comment_body
     assert "Session content was malformed" in comment_body
 
@@ -231,7 +231,7 @@ def test_post_complete_comment_success(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["status"] == "complete"
 
-    _, comment_body = fake_gh.added_comments[0]
+    _, comment_body, _comment_id = fake_gh.added_comments[0]
     assert "Documentation extraction complete" in comment_body
     assert "https://github.com/owner/repo/pull/456" in comment_body
 
@@ -255,7 +255,7 @@ def test_post_no_changes_comment_success(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["status"] == "no-changes"
 
-    _, comment_body = fake_gh.added_comments[0]
+    _, comment_body, _comment_id = fake_gh.added_comments[0]
     assert "No documentation changes needed" in comment_body
 
 
@@ -386,7 +386,7 @@ def test_started_comment_contains_metadata(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
 
-    _, comment_body = fake_gh.added_comments[0]
+    _, comment_body, _comment_id = fake_gh.added_comments[0]
     # Check for key structural elements
     assert "<details>" in comment_body
     assert "<summary>" in comment_body
@@ -412,7 +412,7 @@ def test_failed_comment_contains_retry_instructions(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
 
-    _, comment_body = fake_gh.added_comments[0]
+    _, comment_body, _comment_id = fake_gh.added_comments[0]
     assert "/erk:create-extraction-plan" in comment_body
     assert "retry" in comment_body.lower()
 
@@ -441,5 +441,5 @@ def test_complete_comment_contains_review_prompt(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
 
-    _, comment_body = fake_gh.added_comments[0]
+    _, comment_body, _comment_id = fake_gh.added_comments[0]
     assert "Please review the PR" in comment_body

@@ -123,13 +123,14 @@ def test_fake_github_issues_get_issue_created() -> None:
 
 
 def test_fake_github_issues_add_comment_existing_issue() -> None:
-    """Test add_comment tracks mutation for existing issue."""
+    """Test add_comment tracks mutation for existing issue and returns comment ID."""
     pre_configured = {42: create_test_issue(42, "Test", "Body")}
     issues = FakeGitHubIssues(issues=pre_configured)
 
-    issues.add_comment(sentinel_path(), 42, "This is a comment")
+    comment_id = issues.add_comment(sentinel_path(), 42, "This is a comment")
 
-    assert issues.added_comments == [(42, "This is a comment")]
+    assert comment_id == 1000  # First comment ID starts at 1000
+    assert issues.added_comments == [(42, "This is a comment", 1000)]
 
 
 def test_fake_github_issues_add_comment_missing_issue() -> None:
@@ -141,21 +142,24 @@ def test_fake_github_issues_add_comment_missing_issue() -> None:
 
 
 def test_fake_github_issues_add_comment_multiple() -> None:
-    """Test add_comment tracks multiple comments in order."""
+    """Test add_comment tracks multiple comments in order with incrementing IDs."""
     pre_configured = {
         10: create_test_issue(10, "Issue 10", "Body", url="http://url/10"),
         20: create_test_issue(20, "Issue 20", "Body", url="http://url/20"),
     }
     issues = FakeGitHubIssues(issues=pre_configured)
 
-    issues.add_comment(sentinel_path(), 10, "First comment")
-    issues.add_comment(sentinel_path(), 20, "Second comment")
-    issues.add_comment(sentinel_path(), 10, "Third comment on issue 10")
+    id1 = issues.add_comment(sentinel_path(), 10, "First comment")
+    id2 = issues.add_comment(sentinel_path(), 20, "Second comment")
+    id3 = issues.add_comment(sentinel_path(), 10, "Third comment on issue 10")
 
+    assert id1 == 1000
+    assert id2 == 1001
+    assert id3 == 1002
     assert issues.added_comments == [
-        (10, "First comment"),
-        (20, "Second comment"),
-        (10, "Third comment on issue 10"),
+        (10, "First comment", 1000),
+        (20, "Second comment", 1001),
+        (10, "Third comment on issue 10", 1002),
     ]
 
 
@@ -211,12 +215,12 @@ def test_fake_github_issues_added_comments_read_only() -> None:
     """Test added_comments property returns list that can be read."""
     pre_configured = {42: create_test_issue(42, "Test", "Body", url="http://url")}
     issues = FakeGitHubIssues(issues=pre_configured)
-    issues.add_comment(sentinel_path(), 42, "Comment")
+    comment_id = issues.add_comment(sentinel_path(), 42, "Comment")
 
     # Should be able to read the list
     comments = issues.added_comments
     assert len(comments) == 1
-    assert comments[0] == (42, "Comment")
+    assert comments[0] == (42, "Comment", comment_id)
 
 
 def test_fake_github_issues_list_issues_empty() -> None:
@@ -338,9 +342,10 @@ def test_fake_github_issues_full_workflow() -> None:
 
     # Verify mutation tracking
     assert issues.created_issues == [("New Issue", "New body", ["plan", "erk"])]
+    # Note: comment IDs start at 1000
     assert issues.added_comments == [
-        (100, "Comment on existing"),
-        (200, "Comment on new"),
+        (100, "Comment on existing", 1000),
+        (200, "Comment on new", 1001),
     ]
 
 
@@ -411,8 +416,8 @@ def test_fake_github_issues_mutation_tracking_independent() -> None:
     result2 = issues.create_issue(sentinel_path(), "Issue 2", "Body 2", ["label2"])
 
     # Add comments
-    issues.add_comment(sentinel_path(), result1.number, "Comment 1")
-    issues.add_comment(sentinel_path(), result2.number, "Comment 2")
+    comment_id1 = issues.add_comment(sentinel_path(), result1.number, "Comment 1")
+    comment_id2 = issues.add_comment(sentinel_path(), result2.number, "Comment 2")
 
     # Verify both tracking lists are independent
     assert len(issues.created_issues) == 2
@@ -421,8 +426,8 @@ def test_fake_github_issues_mutation_tracking_independent() -> None:
     # Verify correct values
     assert issues.created_issues[0][0] == "Issue 1"
     assert issues.created_issues[1][0] == "Issue 2"
-    assert issues.added_comments[0] == (1, "Comment 1")
-    assert issues.added_comments[1] == (2, "Comment 2")
+    assert issues.added_comments[0] == (1, "Comment 1", comment_id1)
+    assert issues.added_comments[1] == (2, "Comment 2", comment_id2)
 
 
 def test_fake_github_issues_pre_configured_and_created_coexist() -> None:
@@ -468,20 +473,60 @@ def test_fake_github_issues_created_state_always_open() -> None:
 
 
 def test_fake_github_issues_multiple_comments_same_issue() -> None:
-    """Test adding multiple comments to the same issue."""
+    """Test adding multiple comments to the same issue returns incrementing IDs."""
     pre_configured = {42: create_test_issue(42, "Test", "Body", url="http://url/42")}
     issues = FakeGitHubIssues(issues=pre_configured)
 
-    issues.add_comment(sentinel_path(), 42, "Comment 1")
-    issues.add_comment(sentinel_path(), 42, "Comment 2")
-    issues.add_comment(sentinel_path(), 42, "Comment 3")
+    id1 = issues.add_comment(sentinel_path(), 42, "Comment 1")
+    id2 = issues.add_comment(sentinel_path(), 42, "Comment 2")
+    id3 = issues.add_comment(sentinel_path(), 42, "Comment 3")
 
-    # All comments should be tracked
+    # All comments should be tracked with incrementing IDs
+    assert id1 == 1000
+    assert id2 == 1001
+    assert id3 == 1002
     assert issues.added_comments == [
-        (42, "Comment 1"),
-        (42, "Comment 2"),
-        (42, "Comment 3"),
+        (42, "Comment 1", 1000),
+        (42, "Comment 2", 1001),
+        (42, "Comment 3", 1002),
     ]
+
+
+def test_fake_github_issues_get_comment_by_id_from_added_comments() -> None:
+    """Test get_comment_by_id retrieves comments added via add_comment."""
+    pre_configured = {42: create_test_issue(42, "Test", "Body", url="http://url/42")}
+    issues = FakeGitHubIssues(issues=pre_configured)
+
+    # Add some comments
+    comment_id = issues.add_comment(sentinel_path(), 42, "Comment body here")
+
+    # Retrieve by ID
+    body = issues.get_comment_by_id(sentinel_path(), comment_id)
+    assert body == "Comment body here"
+
+
+def test_fake_github_issues_get_comment_by_id_from_preconfigured() -> None:
+    """Test get_comment_by_id retrieves comments from pre-configured _comments_with_urls."""
+    from erk_shared.github.issues.types import IssueComment
+
+    pre_configured = {42: create_test_issue(42, "Test", "Body", url="http://url/42")}
+    comments_with_urls = {
+        42: [IssueComment(body="Pre-configured comment", url="http://url", id=999, author="user")]
+    }
+    issues = FakeGitHubIssues(issues=pre_configured, comments_with_urls=comments_with_urls)
+
+    # Retrieve pre-configured comment by ID
+    body = issues.get_comment_by_id(sentinel_path(), 999)
+    assert body == "Pre-configured comment"
+
+
+def test_fake_github_issues_get_comment_by_id_not_found() -> None:
+    """Test get_comment_by_id raises RuntimeError for unknown ID."""
+    pre_configured = {42: create_test_issue(42, "Test", "Body", url="http://url/42")}
+    issues = FakeGitHubIssues(issues=pre_configured)
+
+    with pytest.raises(RuntimeError, match="Comment #99999 not found"):
+        issues.get_comment_by_id(sentinel_path(), 99999)
 
 
 def test_fake_github_issues_ensure_label_exists_creates_new() -> None:

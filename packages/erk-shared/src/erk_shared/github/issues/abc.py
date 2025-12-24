@@ -54,13 +54,16 @@ class GitHubIssues(ABC):
         ...
 
     @abstractmethod
-    def add_comment(self, repo_root: Path, number: int, body: str) -> None:
+    def add_comment(self, repo_root: Path, number: int, body: str) -> int:
         """Add a comment to an existing issue.
 
         Args:
             repo_root: Repository root directory
             number: Issue number to comment on
             body: Comment body markdown
+
+        Returns:
+            The comment ID of the newly created comment
 
         Raises:
             RuntimeError: If gh CLI fails or issue not found
@@ -118,6 +121,22 @@ class GitHubIssues(ABC):
 
         Raises:
             RuntimeError: If gh CLI fails or issue not found
+        """
+        ...
+
+    @abstractmethod
+    def get_comment_by_id(self, repo_root: Path, comment_id: int) -> str:
+        """Fetch a single comment body by its ID.
+
+        Args:
+            repo_root: Path to repository root
+            comment_id: Comment ID from GitHub
+
+        Returns:
+            Comment body as markdown string
+
+        Raises:
+            RuntimeError: If gh CLI fails or comment not found
         """
         ...
 

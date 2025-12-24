@@ -665,6 +665,64 @@ class TestPlanHeaderSchema:
         with pytest.raises(ValueError, match="Unknown fields: unknown_field"):
             schema.validate(data)
 
+    def test_valid_with_plan_comment_id(self) -> None:
+        """Valid plan-header with plan_comment_id field."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "plan_comment_id": 12345678,
+        }
+        schema.validate(data)  # Should not raise
+
+    def test_null_plan_comment_id_is_valid(self) -> None:
+        """Null plan_comment_id is valid (not set yet)."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "plan_comment_id": None,
+        }
+        schema.validate(data)  # Should not raise
+
+    def test_non_integer_plan_comment_id_raises(self) -> None:
+        """Non-integer plan_comment_id raises ValueError."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "plan_comment_id": "12345678",
+        }
+        with pytest.raises(ValueError, match="plan_comment_id must be an integer or null"):
+            schema.validate(data)
+
+    def test_zero_plan_comment_id_raises(self) -> None:
+        """Zero plan_comment_id raises ValueError."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "plan_comment_id": 0,
+        }
+        with pytest.raises(ValueError, match="plan_comment_id must be positive when provided"):
+            schema.validate(data)
+
+    def test_negative_plan_comment_id_raises(self) -> None:
+        """Negative plan_comment_id raises ValueError."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "plan_comment_id": -1,
+        }
+        with pytest.raises(ValueError, match="plan_comment_id must be positive when provided"):
+            schema.validate(data)
+
     def test_get_key(self) -> None:
         """get_key returns correct key."""
         schema = PlanHeaderSchema()

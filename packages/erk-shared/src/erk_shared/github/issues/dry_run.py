@@ -42,8 +42,12 @@ class DryRunGitHubIssues(GitHubIssues):
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_issue(repo_root, number)
 
-    def add_comment(self, repo_root: Path, number: int, body: str) -> None:
-        """No-op for adding comment in dry-run mode."""
+    def add_comment(self, repo_root: Path, number: int, body: str) -> int:
+        """No-op for adding comment in dry-run mode.
+
+        Returns a fake comment ID to allow dry-run workflows to continue.
+        """
+        return 0  # Fake comment ID for dry-run mode
 
     def update_issue_body(self, repo_root: Path, number: int, body: str) -> None:
         """No-op for updating issue body in dry-run mode."""
@@ -65,6 +69,10 @@ class DryRunGitHubIssues(GitHubIssues):
     def get_issue_comments_with_urls(self, repo_root: Path, number: int) -> list[IssueComment]:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_issue_comments_with_urls(repo_root, number)
+
+    def get_comment_by_id(self, repo_root: Path, comment_id: int) -> str:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_comment_by_id(repo_root, comment_id)
 
     def ensure_label_exists(
         self,

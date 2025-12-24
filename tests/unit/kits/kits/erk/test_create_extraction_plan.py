@@ -306,7 +306,7 @@ def test_create_extraction_plan_issue_format(tmp_path: Path) -> None:
 
     # Verify: plan in first comment
     assert len(fake_gh.added_comments) == 1
-    _issue_num, comment = fake_gh.added_comments[0]
+    _issue_num, comment, _comment_id = fake_gh.added_comments[0]
     assert "Step 1" in comment
 
     # Verify labels

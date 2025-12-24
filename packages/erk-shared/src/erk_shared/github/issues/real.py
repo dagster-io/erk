@@ -82,14 +82,28 @@ class RealGitHubIssues(GitHubIssues):
             author=author,
         )
 
-    def add_comment(self, repo_root: Path, number: int, body: str) -> None:
+    def add_comment(self, repo_root: Path, number: int, body: str) -> int:
         """Add comment to issue using gh CLI.
+
+        Returns the comment ID from the created comment.
 
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
         """
-        cmd = ["gh", "issue", "comment", str(number), "--body", body]
-        execute_gh_command(cmd, repo_root)
+        # Use REST API to get back the comment ID
+        cmd = [
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/issues/{number}/comments",
+            "-X",
+            "POST",
+            "-f",
+            f"body={body}",
+            "--jq",
+            ".id",
+        ]
+        stdout = execute_gh_command(cmd, repo_root)
+        return int(stdout.strip())
 
     def update_issue_body(self, repo_root: Path, number: int, body: str) -> None:
         """Update issue body using gh CLI.
@@ -176,6 +190,24 @@ class RealGitHubIssues(GitHubIssues):
             return []
 
         return json.loads(stdout)
+
+    def get_comment_by_id(self, repo_root: Path, comment_id: int) -> str:
+        """Fetch a single comment body by its ID using gh CLI.
+
+        Uses the REST API endpoint to get a specific comment.
+
+        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+        on failures (not installed, not authenticated, comment not found).
+        """
+        cmd = [
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/issues/comments/{comment_id}",
+            "--jq",
+            ".body",
+        ]
+        stdout = execute_gh_command(cmd, repo_root)
+        return stdout
 
     def get_issue_comments_with_urls(self, repo_root: Path, number: int) -> list[IssueComment]:
         """Fetch all comments with their URLs for an issue using gh CLI.

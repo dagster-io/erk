@@ -110,7 +110,7 @@ def test_post_pr_comment_success(tmp_path: Path) -> None:
 
     # Verify comment was posted using added_comments property
     assert len(fake_gh.added_comments) == 1
-    issue_number, comment_body = fake_gh.added_comments[0]
+    issue_number, comment_body, _comment_id = fake_gh.added_comments[0]
     assert issue_number == 456
     assert "PR Published" in comment_body
     assert "#123" in comment_body
@@ -316,7 +316,7 @@ def test_comment_contains_pr_metadata(tmp_path: Path) -> None:
 
     # Verify comment content using added_comments property
     assert len(fake_gh.added_comments) == 1
-    issue_number, comment_body = fake_gh.added_comments[0]
+    issue_number, comment_body, _comment_id = fake_gh.added_comments[0]
     assert issue_number == 100
 
     # Should contain PR link

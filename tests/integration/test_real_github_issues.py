@@ -243,30 +243,37 @@ def test_get_issue_null_body(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_add_comment_success(monkeypatch: MonkeyPatch) -> None:
-    """Test add_comment calls gh CLI with correct arguments."""
+    """Test add_comment calls gh REST API and returns comment ID."""
     created_commands = []
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         created_commands.append(cmd)
+        # REST API returns comment ID via --jq ".id"
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="",
+            stdout="12345678\n",
             stderr="",
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues()
-        issues.add_comment(Path("/repo"), 42, "This is my comment body")
+        comment_id = issues.add_comment(Path("/repo"), 42, "This is my comment body")
 
-        # Verify command structure
+        # Verify return value
+        assert comment_id == 12345678
+
+        # Verify command structure (REST API)
         cmd = created_commands[0]
         assert cmd[0] == "gh"
-        assert cmd[1] == "issue"
-        assert cmd[2] == "comment"
-        assert cmd[3] == "42"
-        assert "--body" in cmd
-        assert "This is my comment body" in cmd
+        assert cmd[1] == "api"
+        assert "repos/{owner}/{repo}/issues/42/comments" in cmd[2]
+        assert "-X" in cmd
+        assert "POST" in cmd
+        assert "-f" in cmd
+        assert "body=This is my comment body" in cmd
+        assert "--jq" in cmd
+        assert ".id" in cmd
 
 
 def test_add_comment_multiline_body(monkeypatch: MonkeyPatch) -> None:
@@ -278,7 +285,7 @@ def test_add_comment_multiline_body(monkeypatch: MonkeyPatch) -> None:
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="",
+            stdout="99999\n",
             stderr="",
         )
 
@@ -289,10 +296,12 @@ def test_add_comment_multiline_body(monkeypatch: MonkeyPatch) -> None:
 Second line after blank line
 
 Third line"""
-        issues.add_comment(Path("/repo"), 10, multiline_body)
+        comment_id = issues.add_comment(Path("/repo"), 10, multiline_body)
 
+        assert comment_id == 99999
         cmd = created_commands[0]
-        assert multiline_body in cmd
+        # Body is passed as -f parameter
+        assert f"body={multiline_body}" in cmd
 
 
 def test_add_comment_command_failure(monkeypatch: MonkeyPatch) -> None:
@@ -306,6 +315,34 @@ def test_add_comment_command_failure(monkeypatch: MonkeyPatch) -> None:
 
         with pytest.raises(RuntimeError, match="Issue not found"):
             issues.add_comment(Path("/repo"), 999, "Comment body")
+
+
+def test_get_comment_by_id_success(monkeypatch: MonkeyPatch) -> None:
+    """Test get_comment_by_id calls gh REST API correctly."""
+    created_commands = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        created_commands.append(cmd)
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="This is the comment body",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        issues = RealGitHubIssues()
+        body = issues.get_comment_by_id(Path("/repo"), 12345678)
+
+        assert body == "This is the comment body"
+
+        # Verify command structure
+        cmd = created_commands[0]
+        assert cmd[0] == "gh"
+        assert cmd[1] == "api"
+        assert "repos/{owner}/{repo}/issues/comments/12345678" in cmd[2]
+        assert "--jq" in cmd
+        assert ".body" in cmd
 
 
 def test_list_issues_all(monkeypatch: MonkeyPatch) -> None:

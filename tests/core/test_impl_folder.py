@@ -715,7 +715,7 @@ def test_add_worktree_creation_comment_success(tmp_path: Path) -> None:
 
     # Verify comment was added
     assert len(issues.added_comments) == 1
-    issue_number, comment_body = issues.added_comments[0]
+    issue_number, comment_body, _comment_id = issues.added_comments[0]
 
     # Verify comment details
     assert issue_number == 42

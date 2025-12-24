@@ -357,7 +357,9 @@ def test_close_plan_with_issue_number() -> None:
     assert 42 in fake_github.closed_issues
     # Verify comment was added
     assert len(fake_github.added_comments) == 1
-    assert fake_github.added_comments[0] == (42, "Plan completed via erk plan close")
+    issue_num, comment_body, _comment_id = fake_github.added_comments[0]
+    assert issue_num == 42
+    assert comment_body == "Plan completed via erk plan close"
 
 
 def test_close_plan_with_github_url() -> None:
@@ -376,7 +378,9 @@ def test_close_plan_with_github_url() -> None:
     assert 123 in fake_github.closed_issues
     # Verify comment was added
     assert len(fake_github.added_comments) == 1
-    assert fake_github.added_comments[0] == (123, "Plan completed via erk plan close")
+    issue_num, comment_body, _comment_id = fake_github.added_comments[0]
+    assert issue_num == 123
+    assert comment_body == "Plan completed via erk plan close"
 
 
 def test_close_plan_with_trailing_slash() -> None:

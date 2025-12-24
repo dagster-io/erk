@@ -44,7 +44,7 @@ def test_create_from_file(tmp_path) -> None:
 
         # Verify plan content was added as first comment
         assert len(issues.added_comments) == 1
-        comment_number, comment_body = issues.added_comments[0]
+        comment_number, comment_body, _comment_id = issues.added_comments[0]
         assert comment_number == 1
         assert plan_content in comment_body
         assert "plan-body" in comment_body
@@ -243,7 +243,7 @@ def test_create_uses_current_schema(tmp_path) -> None:
         # Note: worktree_name is set later when worktree is actually created
 
         # First comment should contain plan-body metadata block
-        comment_number, comment_body = issues.added_comments[0]
+        comment_number, comment_body, _comment_id = issues.added_comments[0]
         assert comment_number == 1
         assert "plan-body" in comment_body
         assert plan_content in comment_body

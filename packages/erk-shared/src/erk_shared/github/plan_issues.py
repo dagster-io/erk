@@ -19,6 +19,7 @@ from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.metadata import (
     format_plan_content_comment,
     format_plan_header_body,
+    update_plan_header_comment_id,
 )
 from erk_shared.plan_utils import extract_title_from_plan
 
@@ -167,7 +168,7 @@ def create_plan_issue(
     # Step 5: Add first comment with plan content
     plan_comment = format_plan_content_comment(plan_content.strip())
     try:
-        github_issues.add_comment(repo_root, result.number, plan_comment)
+        comment_id = github_issues.add_comment(repo_root, result.number, plan_comment)
     except RuntimeError as e:
         # Partial success - issue created but comment failed
         return CreatePlanIssueResult(
@@ -177,6 +178,18 @@ def create_plan_issue(
             title=title,
             error=f"Issue #{result.number} created but failed to add plan comment: {e}",
         )
+
+    # Step 6: Update issue body with plan_comment_id for direct lookup
+    try:
+        updated_body = update_plan_header_comment_id(issue_body, comment_id)
+        github_issues.update_issue_body(repo_root, result.number, updated_body)
+    except RuntimeError:
+        # Comment was added but body update failed - still considered success
+        # since the plan is accessible via first comment lookup
+        pass
+    except ValueError:
+        # metadata block parse error - shouldn't happen but ignore
+        pass
 
     return CreatePlanIssueResult(
         success=True,
