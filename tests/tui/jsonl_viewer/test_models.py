@@ -412,8 +412,6 @@ class TestFormatAsYamlLike:
     def test_nested_dict_increases_indentation(self) -> None:
         """Nested structures increase indentation."""
         result = _format_as_yaml_like({"outer": {"inner": "value"}})
-        # Inner dict should be indented relative to outer
-        lines = result.split("\n") if "\n" in result else [result]
         # The format produces "outer: inner: value" on one line for simple nesting
         assert "inner: value" in result
 
@@ -421,6 +419,7 @@ class TestFormatAsYamlLike:
 
     def test_formats_unknown_type_with_str(self) -> None:
         """Falls back to str() for unknown types."""
+
         # Using a custom object that isn't dict/list/str/int/float/bool/None
         class CustomObject:
             def __str__(self) -> str:
