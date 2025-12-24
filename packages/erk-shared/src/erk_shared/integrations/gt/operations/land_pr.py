@@ -114,7 +114,24 @@ def execute_land_pr(
     # GitHub PR base may diverge from local Graphite metadata (e.g., after landing parent)
     yield ProgressEvent("Validating PR base branch...")
     pr_base = ops.github.get_pr_base_branch(repo_root, pr_number)
-    if pr_base is not None and pr_base != trunk:
+    if pr_base is None:
+        # gh CLI failed unexpectedly (we just successfully queried the PR above)
+        yield CompletionEvent(
+            LandPrError(
+                success=False,
+                error_type="github_api_error",
+                message=(
+                    f"Failed to get base branch for PR #{pr_number}.\n\n"
+                    f"Check: gh auth status"
+                ),
+                details={
+                    "current_branch": branch_name,
+                    "pr_number": pr_number,
+                },
+            )
+        )
+        return
+    if pr_base != trunk:
         yield CompletionEvent(
             LandPrError(
                 success=False,

@@ -339,22 +339,30 @@ class TestLandPrBaseBranchValidation:
         assert isinstance(result, LandPrSuccess)
         assert result.success is True
 
-    def test_land_pr_handles_none_base_gracefully(self, tmp_path: Path) -> None:
-        """Test that landing continues when get_pr_base_branch returns None."""
+    def test_land_pr_errors_when_base_branch_query_fails(self, tmp_path: Path) -> None:
+        """Test that landing errors when get_pr_base_branch returns None.
+
+        Since we already successfully queried the PR (to check it exists and is open),
+        a failure to get the base branch indicates an unexpected API error that should
+        be surfaced to the user rather than silently skipped.
+        """
         # Setup: B is on main, but GitHub API fails to return base (returns None)
         ops = (
             FakeGtKitOps()
             .with_repo_root(str(tmp_path))
             .with_branch("branch-B", parent="main")
             .with_pr(456, state="OPEN")
-            # No with_pr_base() call - get_pr_base_branch will return None
+            .with_pr_base_unavailable(456)  # Simulate API failure
         )
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
-        # Should succeed without error (fail-safe behavior)
-        assert isinstance(result, LandPrSuccess)
-        assert result.success is True
+        # Should error - we just queried the PR, so base branch should be available
+        assert isinstance(result, LandPrError)
+        assert result.success is False
+        assert result.error_type == "github_api_error"
+        assert "Failed to get base branch" in result.message
+        assert "gh auth status" in result.message
 
 
 class TestLandPrBody:

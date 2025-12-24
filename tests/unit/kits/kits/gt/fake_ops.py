@@ -401,6 +401,12 @@ class FakeGtKitOps:
 
         Returns:
             Self for chaining
+
+        Note:
+            Automatically sets the PR base branch to match the parent branch
+            from Graphite tracking (set via with_branch()). This matches real
+            GitHub behavior where PRs target their parent branch by default.
+            Use with_pr_base() AFTER with_pr() to override if testing divergence.
         """
         branch = self._github_builder_state.current_branch
 
@@ -414,6 +420,13 @@ class FakeGtKitOps:
             self._github_builder_state.pr_titles[number] = title
         if body is not None:
             self._github_builder_state.pr_bodies[number] = body
+
+        # Auto-set PR base to match parent from Graphite tracking
+        # This simulates real GitHub behavior where PRs target parent by default
+        repo_root = Path(self._repo_root)
+        parent = self._git_parent_branches.get(repo_root)
+        if parent is not None:
+            self._github_builder_state.pr_bases[number] = parent
 
         # Reset cached instance since state changed
         self._github_instance = None
@@ -433,6 +446,23 @@ class FakeGtKitOps:
             Self for chaining
         """
         self._github_builder_state.pr_bases[pr_number] = base_branch
+        self._github_instance = None
+        return self
+
+    def with_pr_base_unavailable(self, pr_number: int) -> "FakeGtKitOps":
+        """Configure get_pr_base_branch to return None for a PR.
+
+        This simulates a GitHub API failure when querying the PR base branch,
+        even though the PR exists. Useful for testing error handling.
+
+        Args:
+            pr_number: PR number for which base branch query should fail
+
+        Returns:
+            Self for chaining
+        """
+        # Remove any auto-set base to force None return
+        self._github_builder_state.pr_bases.pop(pr_number, None)
         self._github_instance = None
         return self
 
