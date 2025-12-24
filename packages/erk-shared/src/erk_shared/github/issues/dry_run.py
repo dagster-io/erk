@@ -47,7 +47,7 @@ class DryRunGitHubIssues(GitHubIssues):
 
         Returns a fake comment ID to allow dry-run workflows to continue.
         """
-        return 0  # Fake comment ID for dry-run mode
+        return 1234567890  # Fake comment ID for dry-run mode
 
     def update_issue_body(self, repo_root: Path, number: int, body: str) -> None:
         """No-op for updating issue body in dry-run mode."""

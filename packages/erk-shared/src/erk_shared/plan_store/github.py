@@ -66,12 +66,8 @@ class GitHubPlanStore(PlanStore):
         plan_body = None
         plan_comment_id = extract_plan_header_comment_id(issue_info.body)
         if plan_comment_id is not None:
-            try:
-                comment_body = self._github_issues.get_comment_by_id(repo_root, plan_comment_id)
-                plan_body = extract_plan_from_comment(comment_body)
-            except RuntimeError:
-                # Comment may have been deleted - fall back to first comment
-                pass
+            comment_body = self._github_issues.get_comment_by_id(repo_root, plan_comment_id)
+            plan_body = extract_plan_from_comment(comment_body)
 
         # Fall back to first comment (schema version 2 without comment ID)
         if plan_body is None:

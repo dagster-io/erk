@@ -180,16 +180,8 @@ def create_plan_issue(
         )
 
     # Step 6: Update issue body with plan_comment_id for direct lookup
-    try:
-        updated_body = update_plan_header_comment_id(issue_body, comment_id)
-        github_issues.update_issue_body(repo_root, result.number, updated_body)
-    except RuntimeError:
-        # Comment was added but body update failed - still considered success
-        # since the plan is accessible via first comment lookup
-        pass
-    except ValueError:
-        # metadata block parse error - shouldn't happen but ignore
-        pass
+    updated_body = update_plan_header_comment_id(issue_body, comment_id)
+    github_issues.update_issue_body(repo_root, result.number, updated_body)
 
     return CreatePlanIssueResult(
         success=True,
