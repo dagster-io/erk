@@ -103,3 +103,6 @@ class DryRunGitHubIssues(GitHubIssues):
         reaction: str,
     ) -> None:
         """No-op for adding reaction in dry-run mode."""
+
+    def update_comment(self, repo_root: Path, comment_id: int, body: str) -> None:
+        """No-op for updating comment in dry-run mode."""

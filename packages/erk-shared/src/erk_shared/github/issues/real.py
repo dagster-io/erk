@@ -362,3 +362,22 @@ class RealGitHubIssues(GitHubIssues):
             f"content={reaction}",
         ]
         execute_gh_command(cmd, repo_root)
+
+    def update_comment(self, repo_root: Path, comment_id: int, body: str) -> None:
+        """Update an existing comment using gh API.
+
+        Uses the REST API PATCH endpoint to update comment body.
+
+        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+        on failures (not installed, not authenticated, comment not found).
+        """
+        cmd = [
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/issues/comments/{comment_id}",
+            "-X",
+            "PATCH",
+            "-f",
+            f"body={body}",
+        ]
+        execute_gh_command(cmd, repo_root)

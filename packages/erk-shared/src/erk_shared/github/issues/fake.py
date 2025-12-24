@@ -62,6 +62,7 @@ class FakeGitHubIssues(GitHubIssues):
         self._created_labels: list[tuple[str, str, str]] = []
         self._closed_issues: list[int] = []
         self._added_reactions: list[tuple[int, str]] = []
+        self._updated_comments: list[tuple[int, str]] = []
 
     @property
     def created_issues(self) -> list[tuple[str, str, list[str]]]:
@@ -110,6 +111,14 @@ class FakeGitHubIssues(GitHubIssues):
         Returns list of (comment_id, reaction) tuples.
         """
         return self._added_reactions
+
+    @property
+    def updated_comments(self) -> list[tuple[int, str]]:
+        """Read-only access to updated comments for test assertions.
+
+        Returns list of (comment_id, body) tuples.
+        """
+        return self._updated_comments
 
     def create_issue(
         self, repo_root: Path, title: str, body: str, labels: list[str]
@@ -366,3 +375,23 @@ class FakeGitHubIssues(GitHubIssues):
         if self._add_reaction_error is not None:
             raise RuntimeError(self._add_reaction_error)
         self._added_reactions.append((comment_id, reaction))
+
+    def update_comment(self, repo_root: Path, comment_id: int, body: str) -> None:
+        """Record comment update in mutation tracking.
+
+        Also updates the in-memory comments_with_urls if the comment exists.
+        """
+        self._updated_comments.append((comment_id, body))
+
+        # Update comments_with_urls in-place if the comment exists
+        for issue_number, comments in self._comments_with_urls.items():
+            for i, comment in enumerate(comments):
+                if comment.id == comment_id:
+                    # Replace with updated comment
+                    self._comments_with_urls[issue_number][i] = IssueComment(
+                        body=body,
+                        url=comment.url,
+                        id=comment.id,
+                        author=comment.author,
+                    )
+                    return
