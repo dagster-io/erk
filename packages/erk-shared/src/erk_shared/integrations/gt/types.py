@@ -57,6 +57,7 @@ LandPrErrorType = Literal[
     "parent_not_trunk",
     "no_pr_found",
     "pr_not_open",
+    "pr_base_mismatch",
     "merge_failed",
 ]
 

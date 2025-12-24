@@ -110,13 +110,30 @@ def execute_land_pr(
         )
         return
 
-    # Step 4.5: Validate and fix PR base branch
+    # Step 4.5: Validate PR base branch matches trunk
     # GitHub PR base may diverge from local Graphite metadata (e.g., after landing parent)
     yield ProgressEvent("Validating PR base branch...")
     pr_base = ops.github.get_pr_base_branch(repo_root, pr_number)
     if pr_base is not None and pr_base != trunk:
-        yield ProgressEvent(f"Retargeting PR from {pr_base} to {trunk}...")
-        ops.github.update_pr_base_branch(repo_root, pr_number, trunk)
+        yield CompletionEvent(
+            LandPrError(
+                success=False,
+                error_type="pr_base_mismatch",
+                message=(
+                    f"PR #{pr_number} targets '{pr_base}' but should target '{trunk}'.\n\n"
+                    f"The GitHub PR's base branch has diverged from your local stack.\n"
+                    f"Run: gt restack\n"
+                    f"Then retry: erk pr land"
+                ),
+                details={
+                    "current_branch": branch_name,
+                    "pr_number": pr_number,
+                    "pr_base": pr_base,
+                    "expected_base": trunk,
+                },
+            )
+        )
+        return
 
     # Step 5: Get children branches
     yield ProgressEvent("Getting child branches...")

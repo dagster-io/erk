@@ -256,6 +256,11 @@ def pr_land(
             target_path, _ = ensure_worktree_for_branch(
                 ctx, post_deletion_repo, target_child_branch
             )
+        # Suggest running gt restack to update child branch's PR base
+        user_output(
+            click.style("💡", fg="cyan")
+            + f" Run 'gt restack' in {target_child_branch} to update PR base branch"
+        )
         activate_worktree(ctx, post_deletion_repo, target_path, script, command_name="pr-land")
         # activate_worktree raises SystemExit(0)
     else:

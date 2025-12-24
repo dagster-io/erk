@@ -6,7 +6,6 @@ import pytest
 from click.testing import CliRunner
 
 from erk_shared.git.fake import FakeGit
-from erk_shared.github.fake import FakeGitHub
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
 from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
@@ -291,17 +290,17 @@ class TestLandPrTitle:
 
 
 class TestLandPrBaseBranchValidation:
-    """Tests for PR base branch validation and retargeting."""
+    """Tests for PR base branch validation."""
 
-    def test_land_pr_retargets_mismatched_github_base(self, tmp_path: Path) -> None:
-        """Test that landing retargets PR when GitHub base differs from trunk.
+    def test_land_pr_errors_on_mismatched_github_base(self, tmp_path: Path) -> None:
+        """Test that landing errors when GitHub base differs from trunk.
 
         Scenario:
         - Stack: A (branched from main) -> B (branched from A)
         - Land A with --up, which merges A's PR and navigates to B
         - Local Graphite metadata updates B's parent to main
         - But GitHub PR for B still has base = A (never updated!)
-        - Landing B should detect this mismatch and retarget to main
+        - Landing B should detect this mismatch and error with remediation steps
         """
         # Setup: B is on main (local), but GitHub PR still targets branch-A
         ops = (
@@ -314,18 +313,17 @@ class TestLandPrBaseBranchValidation:
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
-        # Should succeed after retargeting
-        assert isinstance(result, LandPrSuccess)
-        assert result.success is True
-        assert result.pr_number == 456
+        # Should error with remediation instructions
+        assert isinstance(result, LandPrError)
+        assert result.success is False
+        assert result.error_type == "pr_base_mismatch"
+        assert "targets 'branch-A' but should target 'main'" in result.message
+        assert "gt restack" in result.message
+        assert result.details["pr_base"] == "branch-A"
+        assert result.details["expected_base"] == "main"
 
-        # Verify the PR base was updated
-        github = ops.github
-        assert isinstance(github, FakeGitHub)
-        assert github.updated_pr_bases == [(456, "main")]
-
-    def test_land_pr_skips_retarget_when_base_matches(self, tmp_path: Path) -> None:
-        """Test that landing does not retarget when GitHub base already matches trunk."""
+    def test_land_pr_succeeds_when_base_matches(self, tmp_path: Path) -> None:
+        """Test that landing succeeds when GitHub base already matches trunk."""
         # Setup: B is on main and GitHub PR also targets main
         ops = (
             FakeGtKitOps()
@@ -337,14 +335,9 @@ class TestLandPrBaseBranchValidation:
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
-        # Should succeed without retargeting
+        # Should succeed
         assert isinstance(result, LandPrSuccess)
         assert result.success is True
-
-        # Verify the PR base was NOT updated
-        github = ops.github
-        assert isinstance(github, FakeGitHub)
-        assert github.updated_pr_bases == []
 
     def test_land_pr_handles_none_base_gracefully(self, tmp_path: Path) -> None:
         """Test that landing continues when get_pr_base_branch returns None."""
@@ -359,14 +352,9 @@ class TestLandPrBaseBranchValidation:
 
         result = render_events(execute_land_pr(ops, tmp_path))
 
-        # Should succeed without retargeting (fail-safe behavior)
+        # Should succeed without error (fail-safe behavior)
         assert isinstance(result, LandPrSuccess)
         assert result.success is True
-
-        # Verify no retargeting was attempted
-        github = ops.github
-        assert isinstance(github, FakeGitHub)
-        assert github.updated_pr_bases == []
 
 
 class TestLandPrBody:
