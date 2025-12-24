@@ -35,7 +35,7 @@ class TestDetermineExitAction:
                 github_planning_enabled=False,
                 skip_marker_exists=True,  # Even with markers
                 saved_marker_exists=True,
-                plan_file_exists=True,
+                plan_file_path=Path("/some/plan.md"),
                 current_branch="main",
             )
         )
@@ -50,7 +50,7 @@ class TestDetermineExitAction:
                 github_planning_enabled=True,
                 skip_marker_exists=False,
                 saved_marker_exists=False,
-                plan_file_exists=False,
+                plan_file_path=None,
                 current_branch=None,
             )
         )
@@ -65,7 +65,7 @@ class TestDetermineExitAction:
                 github_planning_enabled=True,
                 skip_marker_exists=True,
                 saved_marker_exists=False,
-                plan_file_exists=True,  # Even if plan exists
+                plan_file_path=Path("/some/plan.md"),  # Even if plan exists
                 current_branch="main",
             )
         )
@@ -82,7 +82,7 @@ class TestDetermineExitAction:
                 github_planning_enabled=True,
                 skip_marker_exists=True,  # Both exist
                 saved_marker_exists=True,
-                plan_file_exists=True,
+                plan_file_path=Path("/some/plan.md"),
                 current_branch="main",
             )
         )
@@ -98,7 +98,7 @@ class TestDetermineExitAction:
                 github_planning_enabled=True,
                 skip_marker_exists=False,
                 saved_marker_exists=True,
-                plan_file_exists=True,
+                plan_file_path=Path("/some/plan.md"),
                 current_branch="main",
             )
         )
@@ -115,7 +115,7 @@ class TestDetermineExitAction:
                 github_planning_enabled=True,
                 skip_marker_exists=False,
                 saved_marker_exists=False,
-                plan_file_exists=False,
+                plan_file_path=None,
                 current_branch="feature-branch",
             )
         )
@@ -130,7 +130,7 @@ class TestDetermineExitAction:
                 github_planning_enabled=True,
                 skip_marker_exists=False,
                 saved_marker_exists=False,
-                plan_file_exists=True,
+                plan_file_path=Path("/home/user/.claude/plans/my-plan.md"),
                 current_branch="feature-branch",
             )
         )
@@ -151,7 +151,8 @@ class TestBuildBlockingMessage:
 
     def test_contains_required_elements(self) -> None:
         """Message contains all required elements."""
-        message = build_blocking_message("session-123", "feature-branch")
+        plan_path = Path("/home/user/.claude/plans/session-123.md")
+        message = build_blocking_message("session-123", "feature-branch", plan_path)
         assert "PLAN SAVE PROMPT" in message
         assert "AskUserQuestion" in message
         assert "Save the plan" in message
@@ -164,7 +165,8 @@ class TestBuildBlockingMessage:
 
     def test_trunk_branch_main_shows_warning(self) -> None:
         """Warning shown when on main branch."""
-        message = build_blocking_message("session-123", "main")
+        plan_path = Path("/home/user/.claude/plans/session-123.md")
+        message = build_blocking_message("session-123", "main", plan_path)
         assert "WARNING" in message
         assert "main" in message
         assert "trunk branch" in message
@@ -172,22 +174,48 @@ class TestBuildBlockingMessage:
 
     def test_trunk_branch_master_shows_warning(self) -> None:
         """Warning shown when on master branch."""
-        message = build_blocking_message("session-123", "master")
+        plan_path = Path("/home/user/.claude/plans/session-123.md")
+        message = build_blocking_message("session-123", "master", plan_path)
         assert "WARNING" in message
         assert "master" in message
         assert "trunk branch" in message
 
     def test_feature_branch_no_warning(self) -> None:
         """No warning when on feature branch."""
-        message = build_blocking_message("session-123", "feature-branch")
+        plan_path = Path("/home/user/.claude/plans/session-123.md")
+        message = build_blocking_message("session-123", "feature-branch", plan_path)
         assert "WARNING" not in message
         assert "trunk branch" not in message
 
     def test_none_branch_no_warning(self) -> None:
         """No warning when branch is None."""
-        message = build_blocking_message("session-123", None)
+        plan_path = Path("/home/user/.claude/plans/session-123.md")
+        message = build_blocking_message("session-123", None, plan_path)
         assert "WARNING" not in message
         assert "trunk branch" not in message
+
+    def test_edit_plan_option_included(self) -> None:
+        """Third option 'Edit the plan' is included in message."""
+        plan_path = Path("/home/user/.claude/plans/session-123.md")
+        message = build_blocking_message("session-123", "feature-branch", plan_path)
+        assert "Edit the plan" in message
+        assert "Open plan in editor" in message
+
+    def test_edit_plan_instructions_include_path(self) -> None:
+        """Edit plan instructions include the plan file path."""
+        plan_path = Path("/home/user/.claude/plans/my-plan.md")
+        message = build_blocking_message("session-123", "feature-branch", plan_path)
+        assert "If user chooses 'Edit the plan':" in message
+        assert f"code {plan_path}" in message
+        assert "After user confirms they're done editing" in message
+        assert "loop until user chooses Save or Implement" in message
+
+    def test_edit_plan_instructions_omitted_when_no_path(self) -> None:
+        """Edit plan instructions omitted when plan_file_path is None."""
+        message = build_blocking_message("session-123", "feature-branch", None)
+        # The option is still listed (as it's hardcoded), but no instructions
+        assert "Edit the plan" in message
+        assert "If user chooses 'Edit the plan':" not in message
 
 
 # ============================================================================

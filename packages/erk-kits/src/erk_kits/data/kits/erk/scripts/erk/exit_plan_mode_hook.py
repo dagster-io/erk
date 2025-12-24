@@ -47,7 +47,7 @@ class HookInput:
     github_planning_enabled: bool
     skip_marker_exists: bool
     saved_marker_exists: bool
-    plan_file_exists: bool
+    plan_file_path: Path | None  # Path to plan file if exists, None otherwise
     current_branch: str | None
 
 
@@ -66,7 +66,11 @@ class HookOutput:
 # ============================================================================
 
 
-def build_blocking_message(session_id: str, current_branch: str | None) -> str:
+def build_blocking_message(
+    session_id: str,
+    current_branch: str | None,
+    plan_file_path: Path | None,
+) -> str:
     """Build the blocking message with AskUserQuestion instructions.
 
     Pure function - string building only. Testable without mocking.
@@ -84,6 +88,7 @@ def build_blocking_message(session_id: str, current_branch: str | None) -> str:
         "Does NOT proceed to implementation.",
         '  2. "Implement now" - Skip saving, proceed directly to implementation '
         "(edits code in the current worktree).",
+        '  3. "Edit the plan" - Open plan in editor to review or modify before deciding.',
     ]
 
     if current_branch in ("master", "main"):
@@ -111,6 +116,17 @@ def build_blocking_message(session_id: str, current_branch: str | None) -> str:
             "  2. Call ExitPlanMode",
         ]
     )
+
+    if plan_file_path is not None:
+        lines.extend(
+            [
+                "",
+                "If user chooses 'Edit the plan':",
+                f"  1. Run: code {plan_file_path}",
+                "  2. After user confirms they're done editing, ask the same question again",
+                "     (loop until user chooses Save or Implement)",
+            ]
+        )
 
     return "\n".join(lines)
 
@@ -145,7 +161,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
         )
 
     # No plan file
-    if not hook_input.plan_file_exists:
+    if hook_input.plan_file_path is None:
         return HookOutput(
             ExitAction.ALLOW,
             "No plan file found for this session, allowing exit",
@@ -154,7 +170,11 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
     # Plan exists, no skip marker - block and instruct
     return HookOutput(
         ExitAction.BLOCK,
-        build_blocking_message(hook_input.session_id, hook_input.current_branch),
+        build_blocking_message(
+            hook_input.session_id,
+            hook_input.current_branch,
+            hook_input.plan_file_path,
+        ),
     )
 
 
@@ -306,15 +326,19 @@ def _gather_inputs() -> HookInput:
         saved_marker = _get_saved_marker_path(session_id)
         saved_marker_exists = saved_marker is not None and saved_marker.exists()
 
-    # Determine plan existence
-    plan_file_exists = False
+    # Find plan file path (None if doesn't exist)
+    plan_file_path: Path | None = None
     if session_id:
-        plan_file = _find_session_plan(session_id)
-        plan_file_exists = plan_file is not None
+        plan_file_path = _find_session_plan(session_id)
 
     # Get current branch (only if we need to show the blocking message)
     current_branch = None
-    if session_id and plan_file_exists and not skip_marker_exists and not saved_marker_exists:
+    if (
+        session_id
+        and plan_file_path is not None
+        and not skip_marker_exists
+        and not saved_marker_exists
+    ):
         current_branch = _get_current_branch_within_hook()
 
     return HookInput(
@@ -322,7 +346,7 @@ def _gather_inputs() -> HookInput:
         github_planning_enabled=_is_github_planning_enabled(),
         skip_marker_exists=skip_marker_exists,
         saved_marker_exists=saved_marker_exists,
-        plan_file_exists=plan_file_exists,
+        plan_file_path=plan_file_path,
         current_branch=current_branch,
     )
 
