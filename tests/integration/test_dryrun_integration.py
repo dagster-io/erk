@@ -324,7 +324,7 @@ def test_noop_github_issues_add_comment_noop() -> None:
 
     # Should return fake comment ID and not raise error
     comment_id = noop.add_comment(sentinel_path(), 42, "Comment body")
-    assert comment_id == 0  # Dry-run returns fake ID
+    assert comment_id == 1234567890  # Dry-run returns realistic fake ID
 
     # Wrapped fake should not track the comment
     assert len(fake.added_comments) == 0
