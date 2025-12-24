@@ -121,8 +121,7 @@ def execute_land_pr(
                 success=False,
                 error_type="github_api_error",
                 message=(
-                    f"Failed to get base branch for PR #{pr_number}.\n\n"
-                    f"Check: gh auth status"
+                    f"Failed to get base branch for PR #{pr_number}.\n\nCheck: gh auth status"
                 ),
                 details={
                     "current_branch": branch_name,

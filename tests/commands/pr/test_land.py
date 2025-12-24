@@ -87,6 +87,7 @@ def test_pr_land_default_skips_extraction_and_deletes_worktree() -> None:
                     repo="repo",
                 )
             },
+            pr_bases={123: "main"},
             merge_should_succeed=True,
         )
 
@@ -189,6 +190,7 @@ def test_pr_land_with_insights_extraction_failure_continues() -> None:
                     repo="repo",
                 )
             },
+            pr_bases={123: "main"},
             merge_should_succeed=True,
         )
 
@@ -604,6 +606,7 @@ def test_pr_land_does_not_call_safe_chdir() -> None:
                     repo="repo",
                 )
             },
+            pr_bases={123: "main"},
             merge_should_succeed=True,
         )
 
@@ -685,6 +688,7 @@ def test_pr_land_with_insights_runs_extraction() -> None:
                     repo="repo",
                 )
             },
+            pr_bases={123: "main"},
             merge_should_succeed=True,
         )
 
@@ -790,6 +794,7 @@ def test_pr_land_extraction_origin_skips_extraction_even_with_insights_flag() ->
                     repo="repo",
                 )
             },
+            pr_bases={123: "main"},
             merge_should_succeed=True,
         )
         # PR has erk-skip-extraction label
@@ -954,6 +959,7 @@ def test_pr_land_with_up_navigates_to_child_branch() -> None:
                     repo="repo",
                 )
             },
+            pr_bases={123: "main"},
             merge_should_succeed=True,
         )
 
@@ -1148,6 +1154,7 @@ def test_pr_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
                     repo="repo",
                 )
             },
+            pr_bases={123: "main"},
             merge_should_succeed=True,
         )
 

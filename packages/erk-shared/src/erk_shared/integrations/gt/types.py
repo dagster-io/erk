@@ -58,6 +58,7 @@ LandPrErrorType = Literal[
     "no_pr_found",
     "pr_not_open",
     "pr_base_mismatch",
+    "github_api_error",
     "merge_failed",
 ]
 
