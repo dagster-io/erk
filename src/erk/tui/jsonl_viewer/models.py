@@ -64,6 +64,95 @@ def format_summary(entry: JsonlEntry) -> str:
     return " | ".join(parts)
 
 
+def _interpret_escape_sequences(text: str) -> str:
+    """Convert literal escape sequences to actual characters.
+
+    Converts \\n, \\t, \\r to their actual character equivalents.
+
+    Args:
+        text: Text with literal escape sequences
+
+    Returns:
+        Text with actual newlines, tabs, carriage returns
+    """
+    return text.replace("\\n", "\n").replace("\\t", "\t").replace("\\r", "\r")
+
+
+def _format_value(value: object, indent: int = 0) -> str:
+    """Format a value in YAML-like style for readability.
+
+    Args:
+        value: Value to format (dict, list, str, int, float, bool, None)
+        indent: Current indentation level
+
+    Returns:
+        Formatted string representation
+    """
+    prefix = "  " * indent
+
+    if value is None:
+        return "null"
+
+    if isinstance(value, bool):
+        return "true" if value else "false"
+
+    if isinstance(value, (int, float)):
+        return str(value)
+
+    if isinstance(value, str):
+        # Interpret escape sequences - no additional formatting for strings
+        return _interpret_escape_sequences(value)
+
+    if isinstance(value, list):
+        if not value:
+            return "[]"
+        lines = []
+        for item in value:
+            formatted_item = _format_value(item, indent + 1)
+            if "\n" in formatted_item:
+                # Multi-line item
+                first_line, *rest = formatted_item.split("\n")
+                lines.append(f"{prefix}- {first_line}")
+                lines.extend(rest)
+            else:
+                lines.append(f"{prefix}- {formatted_item}")
+        return "\n".join(lines)
+
+    if isinstance(value, dict):
+        if not value:
+            return "{}"
+        lines = []
+        for k, v in value.items():
+            formatted_v = _format_value(v, indent + 1)
+            if "\n" in formatted_v:
+                # Multi-line value
+                first_line, *rest = formatted_v.split("\n")
+                lines.append(f"{prefix}{k}: {first_line}")
+                lines.extend(rest)
+            else:
+                lines.append(f"{prefix}{k}: {formatted_v}")
+        return "\n".join(lines)
+
+    # Fallback for unknown types
+    return str(value)
+
+
+def format_entry_detail(entry: JsonlEntry, formatted: bool = True) -> str:
+    """Format entry detail for display.
+
+    Args:
+        entry: JSONL entry to format
+        formatted: If True, use YAML-like formatting. If False, use raw JSON.
+
+    Returns:
+        Formatted string representation
+    """
+    if not formatted:
+        return entry.raw_json
+
+    return _format_value(entry.parsed)
+
+
 def parse_jsonl_file(path: Path) -> list[JsonlEntry]:
     """Parse JSONL file into list of entries.
 

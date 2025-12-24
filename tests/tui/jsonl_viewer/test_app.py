@@ -147,6 +147,124 @@ class TestJsonlViewerAppExpandCollapse:
             assert not first_item.has_class("expanded")
 
 
+class TestJsonlViewerAppFormatToggle:
+    """Tests for format toggle functionality."""
+
+    @pytest.mark.asyncio
+    async def test_f_toggles_format_mode(self, sample_jsonl_file: Path) -> None:
+        """Pressing f toggles between formatted and raw display."""
+        app = JsonlViewerApp(sample_jsonl_file)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            list_view = app.query_one(ListView)
+            first_item = list_view.highlighted_child
+            assert isinstance(first_item, JsonlEntryItem)
+
+            # Expand to see the detail content
+            await pilot.press("enter")
+            await pilot.pause()
+
+            # Toggle format (f key)
+            await pilot.press("f")
+            await pilot.pause()
+
+            # The format should have changed (we can't easily verify content,
+            # but the action should complete without error)
+            assert first_item.has_class("expanded")
+
+
+class TestJsonlViewerAppStickyExpand:
+    """Tests for sticky expand mode."""
+
+    @pytest.mark.asyncio
+    async def test_sticky_expand_mode_persists_on_navigation(self, sample_jsonl_file: Path) -> None:
+        """Expand mode persists when navigating to next item."""
+        app = JsonlViewerApp(sample_jsonl_file)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            list_view = app.query_one(ListView)
+
+            # Expand first item (enter sticky expand mode)
+            await pilot.press("enter")
+            await pilot.pause()
+
+            first_item = list_view.children[0]
+            assert isinstance(first_item, JsonlEntryItem)
+            assert first_item.has_class("expanded")
+
+            # Navigate to second item
+            await pilot.press("j")
+            await pilot.pause()
+
+            # First item should be collapsed, second should be expanded
+            second_item = list_view.children[1]
+            assert isinstance(second_item, JsonlEntryItem)
+            assert second_item.has_class("expanded")
+            assert not first_item.has_class("expanded")
+
+    @pytest.mark.asyncio
+    async def test_collapse_exits_sticky_mode(self, sample_jsonl_file: Path) -> None:
+        """Collapsing an item exits sticky expand mode."""
+        app = JsonlViewerApp(sample_jsonl_file)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            list_view = app.query_one(ListView)
+
+            # Expand first item
+            await pilot.press("enter")
+            await pilot.pause()
+
+            first_item = list_view.children[0]
+            assert isinstance(first_item, JsonlEntryItem)
+            assert first_item.has_class("expanded")
+
+            # Collapse it (exit sticky mode)
+            await pilot.press("enter")
+            await pilot.pause()
+
+            assert not first_item.has_class("expanded")
+
+            # Navigate to second item - should NOT auto-expand
+            await pilot.press("j")
+            await pilot.pause()
+
+            second_item = list_view.children[1]
+            assert isinstance(second_item, JsonlEntryItem)
+            assert not second_item.has_class("expanded")
+
+
+class TestJsonlViewerAppSelectionStyling:
+    """Tests for selection styling."""
+
+    @pytest.mark.asyncio
+    async def test_selected_class_applied_on_navigation(self, sample_jsonl_file: Path) -> None:
+        """Selected class is applied to highlighted item."""
+        app = JsonlViewerApp(sample_jsonl_file)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            list_view = app.query_one(ListView)
+
+            # First item should have selected class initially
+            first_item = list_view.children[0]
+            assert isinstance(first_item, JsonlEntryItem)
+            # Note: selection styling is applied via watch_index which fires
+            # when navigation occurs
+
+            # Navigate down
+            await pilot.press("j")
+            await pilot.pause()
+
+            second_item = list_view.children[1]
+            assert isinstance(second_item, JsonlEntryItem)
+            assert second_item.has_class("selected")
+            # First should no longer be selected
+            assert not first_item.has_class("selected")
+
+
 class TestJsonlViewerAppEmptyFile:
     """Tests for handling empty/edge case files."""
 

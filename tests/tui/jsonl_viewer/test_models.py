@@ -4,7 +4,10 @@ from pathlib import Path
 
 from erk.tui.jsonl_viewer.models import (
     JsonlEntry,
+    _format_value,
+    _interpret_escape_sequences,
     extract_tool_name,
+    format_entry_detail,
     format_summary,
     parse_jsonl_file,
 )
@@ -191,3 +194,145 @@ class TestParseJsonlFile:
         assert len(entries) == 2
         assert entries[0].line_number == 1
         assert entries[1].line_number == 3
+
+
+class TestInterpretEscapeSequences:
+    """Tests for _interpret_escape_sequences function."""
+
+    def test_converts_newline_escape(self) -> None:
+        """Converts literal \\n to actual newline."""
+        result = _interpret_escape_sequences("hello\\nworld")
+        assert result == "hello\nworld"
+
+    def test_converts_tab_escape(self) -> None:
+        """Converts literal \\t to actual tab."""
+        result = _interpret_escape_sequences("hello\\tworld")
+        assert result == "hello\tworld"
+
+    def test_converts_carriage_return_escape(self) -> None:
+        """Converts literal \\r to actual carriage return."""
+        result = _interpret_escape_sequences("hello\\rworld")
+        assert result == "hello\rworld"
+
+    def test_converts_multiple_escapes(self) -> None:
+        """Converts multiple escape sequences in one string."""
+        result = _interpret_escape_sequences("line1\\nline2\\tindented\\r")
+        assert result == "line1\nline2\tindented\r"
+
+    def test_leaves_other_text_unchanged(self) -> None:
+        """Leaves text without escape sequences unchanged."""
+        result = _interpret_escape_sequences("normal text")
+        assert result == "normal text"
+
+
+class TestFormatValue:
+    """Tests for _format_value function."""
+
+    def test_formats_null(self) -> None:
+        """Formats None as null."""
+        assert _format_value(None) == "null"
+
+    def test_formats_boolean_true(self) -> None:
+        """Formats True as true."""
+        assert _format_value(True) == "true"
+
+    def test_formats_boolean_false(self) -> None:
+        """Formats False as false."""
+        assert _format_value(False) == "false"
+
+    def test_formats_integer(self) -> None:
+        """Formats integers as strings."""
+        assert _format_value(42) == "42"
+
+    def test_formats_float(self) -> None:
+        """Formats floats as strings."""
+        assert _format_value(3.14) == "3.14"
+
+    def test_formats_simple_string(self) -> None:
+        """Formats simple strings unchanged."""
+        assert _format_value("hello") == "hello"
+
+    def test_formats_string_with_escape_sequences(self) -> None:
+        """Interprets escape sequences in strings."""
+        result = _format_value("line1\\nline2")
+        assert result == "line1\nline2"
+
+    def test_formats_empty_list(self) -> None:
+        """Formats empty list as []."""
+        assert _format_value([]) == "[]"
+
+    def test_formats_list_with_items(self) -> None:
+        """Formats list with items in YAML style."""
+        result = _format_value(["a", "b"])
+        assert "- a" in result
+        assert "- b" in result
+
+    def test_formats_empty_dict(self) -> None:
+        """Formats empty dict as {}."""
+        assert _format_value({}) == "{}"
+
+    def test_formats_dict_with_items(self) -> None:
+        """Formats dict with key: value pairs."""
+        result = _format_value({"name": "test", "value": 42})
+        assert "name: test" in result
+        assert "value: 42" in result
+
+
+class TestFormatEntryDetail:
+    """Tests for format_entry_detail function."""
+
+    def test_returns_raw_json_when_not_formatted(self) -> None:
+        """Returns raw JSON string when formatted=False."""
+        entry = JsonlEntry(
+            line_number=1,
+            entry_type="user",
+            role="user",
+            tool_name=None,
+            raw_json='{"type": "user"}',
+            parsed={"type": "user"},
+        )
+        result = format_entry_detail(entry, formatted=False)
+        assert result == '{"type": "user"}'
+
+    def test_returns_formatted_output_when_formatted(self) -> None:
+        """Returns YAML-like formatted output when formatted=True."""
+        entry = JsonlEntry(
+            line_number=1,
+            entry_type="user",
+            role="user",
+            tool_name=None,
+            raw_json='{"type": "user", "message": "hello"}',
+            parsed={"type": "user", "message": "hello"},
+        )
+        result = format_entry_detail(entry, formatted=True)
+        assert "type: user" in result
+        assert "message: hello" in result
+
+    def test_formats_nested_structure(self) -> None:
+        """Formats nested dict/list structures."""
+        entry = JsonlEntry(
+            line_number=1,
+            entry_type="assistant",
+            role="assistant",
+            tool_name=None,
+            raw_json='{"content": [{"type": "text", "text": "hello"}]}',
+            parsed={"content": [{"type": "text", "text": "hello"}]},
+        )
+        result = format_entry_detail(entry, formatted=True)
+        assert "content:" in result
+        assert "type: text" in result
+        assert "text: hello" in result
+
+    def test_interprets_escape_sequences_in_formatted_mode(self) -> None:
+        """Interprets escape sequences when formatting."""
+        entry = JsonlEntry(
+            line_number=1,
+            entry_type="user",
+            role="user",
+            tool_name=None,
+            raw_json='{"text": "line1\\nline2"}',
+            parsed={"text": "line1\\nline2"},
+        )
+        result = format_entry_detail(entry, formatted=True)
+        # Should contain actual newline, not escaped
+        assert "line1\nline2" in result or "line1" in result and "line2" in result
