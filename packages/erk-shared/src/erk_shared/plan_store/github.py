@@ -61,34 +61,47 @@ class GitHubPlanStore(PlanStore):
         """
         issue_number = int(plan_identifier)
         issue_info = self._github_issues.get_issue(repo_root, issue_number)
+        plan_body = self._get_plan_body(repo_root, issue_info)
+        return self._convert_to_plan(issue_info, plan_body)
 
-        # Try to get plan content from stored comment ID (direct lookup - O(1))
+    def _get_plan_body(self, repo_root: Path, issue_info: IssueInfo) -> str:
+        """Get the plan body from the issue.
+
+        Args:
+            repo_root: Repository root directory
+            issue_info: IssueInfo from GitHubIssues interface
+
+        Returns:
+            Plan body as string
+        """
         plan_body = None
         plan_comment_id = extract_plan_header_comment_id(issue_info.body)
         if plan_comment_id is not None:
             comment_body = self._github_issues.get_comment_by_id(repo_root, plan_comment_id)
             plan_body = extract_plan_from_comment(comment_body)
 
-        # Fall back to first comment (schema version 2 without comment ID)
-        if plan_body is None:
-            comments = self._github_issues.get_issue_comments(repo_root, issue_number)
-            if comments:
-                first_comment = comments[0]
-                plan_body = extract_plan_from_comment(first_comment)
+        if plan_body:
+            return plan_body
 
-        # Fallback to issue body for backward compatibility (old format)
-        if plan_body is None:
-            plan_body = issue_info.body
+        comments = self._github_issues.get_issue_comments(repo_root, issue_info.number)
+        if comments:
+            first_comment = comments[0]
+            plan_body = extract_plan_from_comment(first_comment)
+
+        if plan_body:
+            return plan_body
+
+        plan_body = issue_info.body
 
         # Validate plan has meaningful content
         if not plan_body or not plan_body.strip():
             msg = (
-                f"Plan content is empty for issue {plan_identifier}. "
+                f"Plan content is empty for issue {issue_info.number}. "
                 "Ensure the issue body or first comment contains plan content."
             )
             raise RuntimeError(msg)
 
-        return self._convert_to_plan(issue_info, plan_body)
+        return plan_body
 
     def list_plans(self, repo_root: Path, query: PlanQuery) -> list[Plan]:
         """Query plans from GitHub.
