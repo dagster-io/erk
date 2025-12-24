@@ -110,6 +110,14 @@ def execute_land_pr(
         )
         return
 
+    # Step 4.5: Validate and fix PR base branch
+    # GitHub PR base may diverge from local Graphite metadata (e.g., after landing parent)
+    yield ProgressEvent("Validating PR base branch...")
+    pr_base = ops.github.get_pr_base_branch(repo_root, pr_number)
+    if pr_base is not None and pr_base != trunk:
+        yield ProgressEvent(f"Retargeting PR from {pr_base} to {trunk}...")
+        ops.github.update_pr_base_branch(repo_root, pr_number, trunk)
+
     # Step 5: Get children branches
     yield ProgressEvent("Getting child branches...")
     children = ops.graphite.get_child_branches(ops.git, repo_root, branch_name)

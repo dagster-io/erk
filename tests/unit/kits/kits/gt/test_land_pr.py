@@ -6,6 +6,7 @@ import pytest
 from click.testing import CliRunner
 
 from erk_shared.git.fake import FakeGit
+from erk_shared.github.fake import FakeGitHub
 from erk_shared.integrations.gt.cli import render_events
 from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
 from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
@@ -287,6 +288,85 @@ class TestLandPrTitle:
         # No PR configured
 
         assert ops.github.get_pr_title(Path("."), 999) is None
+
+
+class TestLandPrBaseBranchValidation:
+    """Tests for PR base branch validation and retargeting."""
+
+    def test_land_pr_retargets_mismatched_github_base(self, tmp_path: Path) -> None:
+        """Test that landing retargets PR when GitHub base differs from trunk.
+
+        Scenario:
+        - Stack: A (branched from main) -> B (branched from A)
+        - Land A with --up, which merges A's PR and navigates to B
+        - Local Graphite metadata updates B's parent to main
+        - But GitHub PR for B still has base = A (never updated!)
+        - Landing B should detect this mismatch and retarget to main
+        """
+        # Setup: B is on main (local), but GitHub PR still targets branch-A
+        ops = (
+            FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
+            .with_branch("branch-B", parent="main")  # Local Graphite says parent=main
+            .with_pr(456, state="OPEN")
+            .with_pr_base(456, "branch-A")  # GitHub PR still targets branch-A
+        )
+
+        result = render_events(execute_land_pr(ops, tmp_path))
+
+        # Should succeed after retargeting
+        assert isinstance(result, LandPrSuccess)
+        assert result.success is True
+        assert result.pr_number == 456
+
+        # Verify the PR base was updated
+        github = ops.github
+        assert isinstance(github, FakeGitHub)
+        assert github.updated_pr_bases == [(456, "main")]
+
+    def test_land_pr_skips_retarget_when_base_matches(self, tmp_path: Path) -> None:
+        """Test that landing does not retarget when GitHub base already matches trunk."""
+        # Setup: B is on main and GitHub PR also targets main
+        ops = (
+            FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
+            .with_branch("branch-B", parent="main")
+            .with_pr(456, state="OPEN")
+            .with_pr_base(456, "main")  # GitHub PR correctly targets main
+        )
+
+        result = render_events(execute_land_pr(ops, tmp_path))
+
+        # Should succeed without retargeting
+        assert isinstance(result, LandPrSuccess)
+        assert result.success is True
+
+        # Verify the PR base was NOT updated
+        github = ops.github
+        assert isinstance(github, FakeGitHub)
+        assert github.updated_pr_bases == []
+
+    def test_land_pr_handles_none_base_gracefully(self, tmp_path: Path) -> None:
+        """Test that landing continues when get_pr_base_branch returns None."""
+        # Setup: B is on main, but GitHub API fails to return base (returns None)
+        ops = (
+            FakeGtKitOps()
+            .with_repo_root(str(tmp_path))
+            .with_branch("branch-B", parent="main")
+            .with_pr(456, state="OPEN")
+            # No with_pr_base() call - get_pr_base_branch will return None
+        )
+
+        result = render_events(execute_land_pr(ops, tmp_path))
+
+        # Should succeed without retargeting (fail-safe behavior)
+        assert isinstance(result, LandPrSuccess)
+        assert result.success is True
+
+        # Verify no retargeting was attempted
+        github = ops.github
+        assert isinstance(github, FakeGitHub)
+        assert github.updated_pr_bases == []
 
 
 class TestLandPrBody:
