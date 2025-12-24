@@ -10,6 +10,8 @@ read_when:
 
 > **Note:** This documentation was produced in December 2025 based on Claude Code's plugin system at that time. The plugin system is actively evolving; verify against [official Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code) for current behavior.
 
+> **Warning:** Plugin hooks have a known bug where stdout/stderr is not captured. See [Plugin Hook Output Bug](plugin-hook-output-bug.md) for details and workarounds.
+
 Hooks execute at specific points in Claude Code's lifecycle.
 
 ## hooks.json Location
