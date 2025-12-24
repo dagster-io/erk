@@ -4,6 +4,9 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from rich.console import RenderableType
+from rich.syntax import Syntax
+
 
 @dataclass(frozen=True)
 class JsonlEntry:
@@ -137,7 +140,7 @@ def _format_as_yaml_like(value: object, indent: int = 0) -> str:
     return str(value)
 
 
-def format_entry_detail(entry: JsonlEntry, formatted: bool = True) -> str:
+def format_entry_detail(entry: JsonlEntry, formatted: bool = True) -> RenderableType:
     """Format entry detail for display.
 
     Args:
@@ -145,11 +148,18 @@ def format_entry_detail(entry: JsonlEntry, formatted: bool = True) -> str:
         formatted: If True, use YAML-like formatting. If False, use raw JSON.
 
     Returns:
-        Formatted string representation
+        Rich renderable object (Syntax for JSON mode, str for formatted mode)
     """
     if not formatted:
-        return entry.raw_json
+        # Use Rich Syntax for JSON syntax highlighting
+        return Syntax(
+            json.dumps(entry.parsed, indent=2),
+            "json",
+            theme="monokai",
+            background_color="default",
+        )
 
+    # Formatted mode returns plain string (markdown rendering handled separately)
     return _format_as_yaml_like(entry.parsed)
 
 

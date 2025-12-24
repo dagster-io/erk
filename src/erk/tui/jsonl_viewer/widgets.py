@@ -1,7 +1,5 @@
 """Widgets for JSONL viewer."""
 
-import json
-
 from rich.markup import escape as escape_markup
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -87,11 +85,11 @@ class JsonlEntryItem(ListItem):
 
         yield Label(escape_markup(summary), classes=style_class)
 
-        # Pretty-printed JSON detail (hidden by default)
-        # Use markup=False to avoid Rich interpreting brackets as markup tags
-        pretty_json = json.dumps(self._entry.parsed, indent=2)
+        # JSON detail (hidden by default)
+        # markup=False prevents string content from being parsed as Rich markup
+        initial_content = format_entry_detail(self._entry, formatted=True)
         with Vertical(classes="json-detail"):
-            yield Static(pretty_json, markup=False)
+            yield Static(initial_content, markup=False)
 
     def toggle_expand(self) -> None:
         """Toggle expand/collapse state."""
@@ -129,7 +127,7 @@ class JsonlEntryItem(ListItem):
         detail_container = self.query_one(".json-detail", Vertical)
         static = detail_container.query_one(Static)
         content = format_entry_detail(self._entry, formatted=formatted)
-        # No escape_markup needed - Static widget has markup=False
+        # Static.update() accepts RenderableType
         static.update(content)
 
 

@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+from rich.syntax import Syntax
+
 from erk.tui.jsonl_viewer.models import (
     JsonlEntry,
     _format_as_yaml_like,
@@ -412,8 +414,6 @@ class TestFormatAsYamlLike:
     def test_nested_dict_increases_indentation(self) -> None:
         """Nested structures increase indentation."""
         result = _format_as_yaml_like({"outer": {"inner": "value"}})
-        # Inner dict should be indented relative to outer
-        lines = result.split("\n") if "\n" in result else [result]
         # The format produces "outer: inner: value" on one line for simple nesting
         assert "inner: value" in result
 
@@ -443,8 +443,8 @@ class TestFormatAsYamlLike:
 class TestFormatEntryDetail:
     """Tests for format_entry_detail function."""
 
-    def test_returns_raw_json_when_not_formatted(self) -> None:
-        """Returns raw JSON string when formatted=False."""
+    def test_returns_syntax_object_when_not_formatted(self) -> None:
+        """Returns Syntax object for JSON highlighting when formatted=False."""
         entry = JsonlEntry(
             line_number=1,
             entry_type="user",
@@ -454,10 +454,13 @@ class TestFormatEntryDetail:
             parsed={"type": "user"},
         )
         result = format_entry_detail(entry, formatted=False)
-        assert result == '{"type": "user"}'
+        assert isinstance(result, Syntax)
+        # Verify it's configured as JSON
+        assert result.lexer is not None
+        assert result.lexer.name == "JSON"
 
-    def test_returns_formatted_output_when_formatted(self) -> None:
-        """Returns YAML-like formatted output when formatted=True."""
+    def test_returns_string_when_formatted(self) -> None:
+        """Returns plain string when formatted=True."""
         entry = JsonlEntry(
             line_number=1,
             entry_type="user",
@@ -467,6 +470,7 @@ class TestFormatEntryDetail:
             parsed={"type": "user", "message": "hello"},
         )
         result = format_entry_detail(entry, formatted=True)
+        assert isinstance(result, str)
         assert "type: user" in result
         assert "message: hello" in result
 
@@ -481,6 +485,7 @@ class TestFormatEntryDetail:
             parsed={"content": [{"type": "text", "text": "hello"}]},
         )
         result = format_entry_detail(entry, formatted=True)
+        assert isinstance(result, str)
         assert "content:" in result
         assert "type: text" in result
         assert "text: hello" in result
@@ -496,5 +501,6 @@ class TestFormatEntryDetail:
             parsed={"text": "line1\\nline2"},
         )
         result = format_entry_detail(entry, formatted=True)
+        assert isinstance(result, str)
         # Should contain actual newline, not escaped
-        assert "line1\nline2" in result or "line1" in result and "line2" in result
+        assert "line1\nline2" in result or ("line1" in result and "line2" in result)
