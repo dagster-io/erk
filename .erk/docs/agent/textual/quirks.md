@@ -244,6 +244,31 @@ This applies to any `Label(..., markup=True)` or other widget accepting Rich mar
 2. Quote URLs and escape any `"` characters that might appear in them
 3. Set `markup=False` on Labels that show user content without links
 
+### Static Widgets with Code/JSON Content
+
+**Problem**: When displaying raw JSON, code, or file contents in a Static widget, `escape_markup()` may not fully prevent `MarkupError`. Content with Python type annotations like `list[str]` or complex nested escape sequences can still cause parsing failures.
+
+**Error signature:**
+
+```
+MarkupError: Expected markup value (found '\\"number\\"],\\n ...')
+```
+
+**Solution**: Use `markup=False` on the Static widget instead of trying to escape content:
+
+```python
+# WRONG - escape_markup may not handle all edge cases
+yield Static(escape_markup(json_content))
+
+# CORRECT - disable markup parsing entirely for raw content
+yield Static(json_content, markup=False)
+```
+
+**When to use which:**
+
+- `escape_markup()` + `markup=True` (default): When you want Rich styling but need to escape user text (e.g., links with display text)
+- `markup=False`: When displaying raw code, JSON, file contents, or any structured data that may contain brackets
+
 ## General Recommendations
 
 1. **Use type annotations** - Textual uses Reactives heavily; proper types catch issues early

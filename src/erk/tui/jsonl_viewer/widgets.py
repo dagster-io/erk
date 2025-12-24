@@ -88,9 +88,10 @@ class JsonlEntryItem(ListItem):
         yield Label(escape_markup(summary), classes=style_class)
 
         # Pretty-printed JSON detail (hidden by default)
+        # Use markup=False to avoid Rich interpreting brackets as markup tags
         pretty_json = json.dumps(self._entry.parsed, indent=2)
         with Vertical(classes="json-detail"):
-            yield Static(escape_markup(pretty_json))
+            yield Static(pretty_json, markup=False)
 
     def toggle_expand(self) -> None:
         """Toggle expand/collapse state."""
@@ -128,7 +129,8 @@ class JsonlEntryItem(ListItem):
         detail_container = self.query_one(".json-detail", Vertical)
         static = detail_container.query_one(Static)
         content = format_entry_detail(self._entry, formatted=formatted)
-        static.update(escape_markup(content))
+        # No escape_markup needed - Static widget has markup=False
+        static.update(content)
 
 
 class CustomListView(ListView):
