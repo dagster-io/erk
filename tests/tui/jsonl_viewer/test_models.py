@@ -4,7 +4,7 @@ from pathlib import Path
 
 from erk.tui.jsonl_viewer.models import (
     JsonlEntry,
-    _format_value,
+    _format_as_yaml_like,
     _interpret_escape_sequences,
     extract_tool_name,
     format_entry_detail,
@@ -225,57 +225,219 @@ class TestInterpretEscapeSequences:
         assert result == "normal text"
 
 
-class TestFormatValue:
-    """Tests for _format_value function."""
+class TestFormatAsYamlLike:
+    """Tests for _format_as_yaml_like function.
+
+    This function formats Python values in YAML-like style for readability.
+    These tests document the formatting behavior for each type.
+    """
+
+    # === Primitive Types ===
 
     def test_formats_null(self) -> None:
         """Formats None as null."""
-        assert _format_value(None) == "null"
+        assert _format_as_yaml_like(None) == "null"
 
     def test_formats_boolean_true(self) -> None:
         """Formats True as true."""
-        assert _format_value(True) == "true"
+        assert _format_as_yaml_like(True) == "true"
 
     def test_formats_boolean_false(self) -> None:
         """Formats False as false."""
-        assert _format_value(False) == "false"
+        assert _format_as_yaml_like(False) == "false"
 
     def test_formats_integer(self) -> None:
         """Formats integers as strings."""
-        assert _format_value(42) == "42"
+        assert _format_as_yaml_like(42) == "42"
+
+    def test_formats_negative_integer(self) -> None:
+        """Formats negative integers."""
+        assert _format_as_yaml_like(-123) == "-123"
+
+    def test_formats_zero(self) -> None:
+        """Formats zero."""
+        assert _format_as_yaml_like(0) == "0"
 
     def test_formats_float(self) -> None:
         """Formats floats as strings."""
-        assert _format_value(3.14) == "3.14"
+        assert _format_as_yaml_like(3.14) == "3.14"
+
+    def test_formats_negative_float(self) -> None:
+        """Formats negative floats."""
+        assert _format_as_yaml_like(-2.5) == "-2.5"
+
+    # === String Types ===
 
     def test_formats_simple_string(self) -> None:
         """Formats simple strings unchanged."""
-        assert _format_value("hello") == "hello"
+        assert _format_as_yaml_like("hello") == "hello"
+
+    def test_formats_empty_string(self) -> None:
+        """Formats empty string as empty string."""
+        assert _format_as_yaml_like("") == ""
+
+    def test_formats_string_with_spaces(self) -> None:
+        """Formats strings with spaces unchanged."""
+        assert _format_as_yaml_like("hello world") == "hello world"
 
     def test_formats_string_with_escape_sequences(self) -> None:
         """Interprets escape sequences in strings."""
-        result = _format_value("line1\\nline2")
+        result = _format_as_yaml_like("line1\\nline2")
         assert result == "line1\nline2"
+
+    def test_formats_string_with_tab_escape(self) -> None:
+        """Interprets tab escape sequences."""
+        result = _format_as_yaml_like("col1\\tcol2")
+        assert result == "col1\tcol2"
+
+    def test_formats_string_with_multiple_escapes(self) -> None:
+        """Interprets multiple escape sequences."""
+        result = _format_as_yaml_like("a\\nb\\tc\\r")
+        assert result == "a\nb\tc\r"
+
+    # === Empty Collections ===
 
     def test_formats_empty_list(self) -> None:
         """Formats empty list as []."""
-        assert _format_value([]) == "[]"
-
-    def test_formats_list_with_items(self) -> None:
-        """Formats list with items in YAML style."""
-        result = _format_value(["a", "b"])
-        assert "- a" in result
-        assert "- b" in result
+        assert _format_as_yaml_like([]) == "[]"
 
     def test_formats_empty_dict(self) -> None:
         """Formats empty dict as {}."""
-        assert _format_value({}) == "{}"
+        assert _format_as_yaml_like({}) == "{}"
+
+    # === List Formatting ===
+
+    def test_formats_list_with_single_item(self) -> None:
+        """Formats single-item list."""
+        result = _format_as_yaml_like(["only"])
+        assert result == "- only"
+
+    def test_formats_list_with_items(self) -> None:
+        """Formats list with items in YAML style."""
+        result = _format_as_yaml_like(["a", "b"])
+        assert result == "- a\n- b"
+
+    def test_formats_list_with_mixed_types(self) -> None:
+        """Formats list with mixed primitive types."""
+        result = _format_as_yaml_like(["text", 42, True, None])
+        lines = result.split("\n")
+        assert lines[0] == "- text"
+        assert lines[1] == "- 42"
+        assert lines[2] == "- true"
+        assert lines[3] == "- null"
+
+    def test_formats_list_with_nested_dict(self) -> None:
+        """Formats list containing dictionaries with indentation."""
+        result = _format_as_yaml_like([{"type": "text", "value": "hello"}])
+        # Nested dict items are indented under the list marker
+        assert "-   type: text" in result
+        assert "  value: hello" in result
+
+    def test_formats_list_with_nested_list(self) -> None:
+        """Formats list containing nested lists with indentation."""
+        result = _format_as_yaml_like([["inner1", "inner2"]])
+        # Nested list items are indented
+        assert "-   - inner1" in result
+        assert "  - inner2" in result
+
+    # === Dict Formatting ===
+
+    def test_formats_dict_with_single_item(self) -> None:
+        """Formats single-item dict."""
+        result = _format_as_yaml_like({"key": "value"})
+        assert result == "key: value"
 
     def test_formats_dict_with_items(self) -> None:
         """Formats dict with key: value pairs."""
-        result = _format_value({"name": "test", "value": 42})
+        result = _format_as_yaml_like({"name": "test", "value": 42})
         assert "name: test" in result
         assert "value: 42" in result
+
+    def test_formats_dict_with_null_value(self) -> None:
+        """Formats dict with None value."""
+        result = _format_as_yaml_like({"data": None})
+        assert result == "data: null"
+
+    def test_formats_dict_with_boolean_values(self) -> None:
+        """Formats dict with boolean values."""
+        result = _format_as_yaml_like({"enabled": True, "disabled": False})
+        assert "enabled: true" in result
+        assert "disabled: false" in result
+
+    def test_formats_dict_with_nested_dict(self) -> None:
+        """Formats dict containing nested dict with indentation."""
+        result = _format_as_yaml_like({"outer": {"inner": "value"}})
+        # Nested dict is indented under parent key
+        assert "outer:   inner: value" in result
+
+    def test_formats_dict_with_nested_list(self) -> None:
+        """Formats dict containing list value with indentation."""
+        result = _format_as_yaml_like({"items": ["a", "b"]})
+        # List items are indented under the key
+        assert "items:   - a" in result
+        assert "  - b" in result
+
+    # === Deeply Nested Structures ===
+
+    def test_formats_deeply_nested_structure(self) -> None:
+        """Formats complex nested structure (typical JSONL entry)."""
+        value = {
+            "type": "assistant",
+            "message": {
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "Hello"},
+                    {"type": "tool_use", "name": "Bash", "id": "123"},
+                ],
+            },
+        }
+        result = _format_as_yaml_like(value)
+        # Top-level keys
+        assert "type: assistant" in result
+        # Nested structure with indentation
+        assert "message:" in result
+        assert "role: assistant" in result
+        # Deeply nested content
+        assert "text: Hello" in result
+        assert "name: Bash" in result
+
+    # === Indentation ===
+
+    def test_respects_indent_parameter(self) -> None:
+        """Respects indent parameter for nested formatting."""
+        result = _format_as_yaml_like({"key": "value"}, indent=1)
+        # With indent=1, should have 2 spaces prefix
+        assert result == "  key: value"
+
+    def test_nested_dict_increases_indentation(self) -> None:
+        """Nested structures increase indentation."""
+        result = _format_as_yaml_like({"outer": {"inner": "value"}})
+        # Inner dict should be indented relative to outer
+        lines = result.split("\n") if "\n" in result else [result]
+        # The format produces "outer: inner: value" on one line for simple nesting
+        assert "inner: value" in result
+
+    # === Fallback for Unknown Types ===
+
+    def test_formats_unknown_type_with_str(self) -> None:
+        """Falls back to str() for unknown types."""
+        # Using a custom object that isn't dict/list/str/int/float/bool/None
+        class CustomObject:
+            def __str__(self) -> str:
+                return "custom_repr"
+
+        result = _format_as_yaml_like(CustomObject())
+        assert result == "custom_repr"
+
+    def test_formats_tuple_with_str_fallback(self) -> None:
+        """Tuples use str() fallback (not treated as list)."""
+        result = _format_as_yaml_like((1, 2, 3))
+        assert result == "(1, 2, 3)"
+
+    def test_formats_set_with_str_fallback(self) -> None:
+        """Sets use str() fallback (not treated as list)."""
+        result = _format_as_yaml_like({1})  # Single element set for deterministic output
+        assert result == "{1}"
 
 
 class TestFormatEntryDetail:

@@ -78,7 +78,7 @@ def _interpret_escape_sequences(text: str) -> str:
     return text.replace("\\n", "\n").replace("\\t", "\t").replace("\\r", "\r")
 
 
-def _format_value(value: object, indent: int = 0) -> str:
+def _format_as_yaml_like(value: object, indent: int = 0) -> str:
     """Format a value in YAML-like style for readability.
 
     Args:
@@ -108,7 +108,7 @@ def _format_value(value: object, indent: int = 0) -> str:
             return "[]"
         lines = []
         for item in value:
-            formatted_item = _format_value(item, indent + 1)
+            formatted_item = _format_as_yaml_like(item, indent + 1)
             if "\n" in formatted_item:
                 # Multi-line item
                 first_line, *rest = formatted_item.split("\n")
@@ -123,7 +123,7 @@ def _format_value(value: object, indent: int = 0) -> str:
             return "{}"
         lines = []
         for k, v in value.items():
-            formatted_v = _format_value(v, indent + 1)
+            formatted_v = _format_as_yaml_like(v, indent + 1)
             if "\n" in formatted_v:
                 # Multi-line value
                 first_line, *rest = formatted_v.split("\n")
@@ -150,7 +150,7 @@ def format_entry_detail(entry: JsonlEntry, formatted: bool = True) -> str:
     if not formatted:
         return entry.raw_json
 
-    return _format_value(entry.parsed)
+    return _format_as_yaml_like(entry.parsed)
 
 
 def parse_jsonl_file(path: Path) -> list[JsonlEntry]:
