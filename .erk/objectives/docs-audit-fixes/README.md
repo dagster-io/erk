@@ -82,34 +82,52 @@ packages/erk-kits/.../scripts/erk/
 
 ## Turn Configuration
 
+### Execution Model
+
+**One chunk per turn.** Each turn fixes one logical grouping of issues.
+
+### Chunks
+
+Process these chunks in priority order. Each chunk is independently mergeable.
+
+1. **User-facing docs**: `erk shell-init` → `erk init --shell`, `erk.toml` → `.erk/config.toml`
+2. **Context class migration**: `DotAgentContext` → `ErkContext`
+3. **Kit path migration**: `kit_cli_commands/` → `scripts/`
+4. **Dependency injection patterns**: `Path.cwd()` → `require_cwd(ctx)`
+5. **CLI command organization**: `erk create` → `erk plan create`
+
 ### Evaluation Prompt
 
-Search documentation for outdated patterns:
+Search for each pattern across all documentation. Find the **first chunk with remaining matches**:
 
-1. `DotAgentContext` - Should be `ErkContext`
-2. `erk shell-init` - Should be `erk init --shell`
-3. `erk.toml` - Should be `.erk/config.toml`
-4. `kit_cli_commands/` - Should be `scripts/`
-5. `Path.cwd()` in examples - Should be `require_cwd(ctx)`
-6. Top-level plan commands (`erk create`) - Should be `erk plan create`
+```bash
+# Chunk 1: User-facing
+grep -r "erk shell-init" .erk/docs/ docs/
+grep -r "erk\.toml" .erk/docs/ docs/
+
+# Chunk 2: Context class
+grep -r "DotAgentContext" .erk/docs/ docs/
+
+# Chunk 3: Kit paths
+grep -r "kit_cli_commands" .erk/docs/ docs/
+
+# Chunk 4: Dependency injection
+grep -r "Path\.cwd()" .erk/docs/ docs/
+
+# Chunk 5: CLI commands
+grep -rE "erk (create|get|implement)[^-]" .erk/docs/ docs/
+```
 
 Report:
 
-- Count of each pattern found
-- Files affected
-- Recommended batch for next plan (group by related patterns)
+- **Next chunk**: First chunk (1-5) with matches
+- **Files affected**: List files for that chunk only
+- **If no matches**: Objective complete
 
 ### Plan Sizing
 
-Plans should:
+Each plan fixes **exactly one chunk**:
 
-1. **Group related files** - All testing docs together, all kit docs together
-2. **Verify changes** - Include grep commands to confirm patterns are fixed
-3. **Be independently mergeable** - Each plan improves docs without dependencies
-
-Suggested batches:
-
-- **Batch A**: User docs - shell-init, config path
-- **Batch B**: Kit docs - DotAgentContext, kit_cli_commands, Path.cwd()
-- **Batch C**: Testing docs - DotAgentContext patterns
-- **Batch D**: CLI/Architecture docs - command org, Protocol vs ABC
+1. Fix all instances of the chunk's patterns across all affected files
+2. Run verification grep to confirm zero remaining matches
+3. Each plan is independently mergeable

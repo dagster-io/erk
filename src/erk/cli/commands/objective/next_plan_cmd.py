@@ -1,4 +1,4 @@
-"""Command to run a turn for an objective."""
+"""Command to create the next plan for an objective."""
 
 import click
 
@@ -13,32 +13,27 @@ from erk_shared.objectives.turn import (
 from erk_shared.output.output import user_output
 
 
-@click.command("turn")
+@click.command("next-plan")
 @click.argument("name", type=str, shell_complete=complete_objective_names)
 @click.option(
     "--prompt-only",
     is_flag=True,
     help="Output prompt without launching Claude",
 )
-@click.option(
-    "--dangerous",
-    is_flag=True,
-    help="Skip permission prompts when launching Claude",
-)
 @click.pass_obj
-def turn_objective(ctx: ErkContext, name: str, prompt_only: bool, dangerous: bool) -> None:
-    """Run a turn for an objective, launching Claude to evaluate and create a plan.
+def next_plan(ctx: ErkContext, name: str, prompt_only: bool) -> None:
+    """Create the next plan for an objective, launching Claude in plan mode.
 
-    A turn evaluates the current codebase against the objective's desired
-    state and generates a bounded plan if gaps are found.
+    Evaluates the current codebase against the objective's desired state
+    and generates a bounded plan if gaps are found. Claude is launched
+    in plan mode to analyze and propose changes before implementation.
 
-    By default, launches Claude interactively with the evaluation prompt.
+    By default, launches Claude interactively in plan mode with the evaluation prompt.
     Use --prompt-only to output the prompt for manual use.
 
     Example:
-        erk objective turn cli-ensure-error-handling
-        erk objective turn cli-ensure-error-handling --prompt-only
-        erk objective turn cli-ensure-error-handling --dangerous
+        erk objective next-plan cli-ensure-error-handling
+        erk objective next-plan cli-ensure-error-handling --prompt-only
     """
     repo = discover_repo_context(ctx, ctx.cwd)
     repo_root = repo.root
@@ -74,11 +69,11 @@ def turn_objective(ctx: ErkContext, name: str, prompt_only: bool, dangerous: boo
         user_output("  STATUS: GAPS_FOUND  - with a proposed plan")
         return
 
-    # Default: Launch Claude interactively
+    # Default: Launch Claude interactively in plan mode
     claude_prompt = build_claude_prompt(prompt)
     ctx.claude_executor.execute_interactive(
         worktree_path=ctx.cwd,
-        dangerous=dangerous,
+        mode="plan",
         command=claude_prompt,
         target_subpath=None,
     )

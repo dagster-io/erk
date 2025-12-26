@@ -1085,9 +1085,9 @@ A long-running goal that produces bounded plans when evaluated against the codeb
 
 **Storage**: `.erk/objectives/<name>/`
 
-### Turn
+### Turn (Next-Plan)
 
-A single evaluation cycle where Claude assesses current state against the objective's desired state.
+A single evaluation cycle where Claude assesses current state against the objective's desired state and creates the next plan if work remains.
 
 **Output**: Either `STATUS: COMPLETE` (objective fully achieved) or `STATUS: GAPS_FOUND` (work remaining).
 
@@ -1098,7 +1098,9 @@ A single evaluation cycle where Claude assesses current state against the object
 3. Reports status with optional gap description
 4. If gaps found, creates bounded implementation plan
 
-**CLI**: `erk objective turn <objective-name>`
+**CLI**: `erk objective next-plan <objective-name>`
+
+**Note**: Claude is launched in plan mode, which means it will analyze and propose changes before implementing.
 
 ### ObjectiveType
 

@@ -13,6 +13,7 @@ from erk_shared.context.types import GlobalConfig
 from erk_shared.core.claude_executor import (
     ClaudeEvent,
     ClaudeExecutor,
+    InteractiveMode,
     PromptResult,
 )
 from erk_shared.core.config_store import ConfigStore
@@ -27,7 +28,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
 
     Attributes:
         is_available: Whether Claude CLI should appear available
-        interactive_calls: List of (worktree_path, dangerous, command, target_subpath) tuples
+        interactive_calls: List of (worktree_path, mode, command, target_subpath) tuples
         prompt_calls: List of (prompt, model, tools, cwd) tuples
         prompt_results: Queue of PromptResult to return from execute_prompt
         streaming_events: Events to yield from execute_command_streaming
@@ -41,7 +42,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         streaming_events: list[ClaudeEvent] | None = None,
     ) -> None:
         self.is_available_value = is_available
-        self.interactive_calls: list[tuple[Path, bool, str, Path | None]] = []
+        self.interactive_calls: list[tuple[Path, InteractiveMode, str, Path | None]] = []
         self.prompt_calls: list[tuple[str, str, list[str] | None, Path | None]] = []
         self.prompt_results = list(prompt_results) if prompt_results else []
         self.streaming_events = list(streaming_events) if streaming_events else []
@@ -63,11 +64,11 @@ class FakeClaudeExecutor(ClaudeExecutor):
     def execute_interactive(
         self,
         worktree_path: Path,
-        dangerous: bool,
+        mode: InteractiveMode,
         command: str,
         target_subpath: Path | None,
     ) -> None:
-        self.interactive_calls.append((worktree_path, dangerous, command, target_subpath))
+        self.interactive_calls.append((worktree_path, mode, command, target_subpath))
 
     def execute_prompt(
         self,

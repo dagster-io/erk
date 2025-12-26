@@ -9,6 +9,13 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Literal
+
+# Interactive mode for execute_interactive:
+# - "default": --permission-mode acceptEdits
+# - "dangerous": --permission-mode acceptEdits --dangerously-skip-permissions
+# - "plan": --permission-mode plan
+InteractiveMode = Literal["default", "dangerous", "plan"]
 
 # =============================================================================
 # Typed Claude CLI Events
@@ -289,7 +296,7 @@ class ClaudeExecutor(ABC):
     def execute_interactive(
         self,
         worktree_path: Path,
-        dangerous: bool,
+        mode: InteractiveMode,
         command: str,
         target_subpath: Path | None,
     ) -> None:
@@ -297,7 +304,10 @@ class ClaudeExecutor(ABC):
 
         Args:
             worktree_path: Path to worktree directory to run in
-            dangerous: Whether to skip permission prompts
+            mode: Interactive mode controlling permissions and behavior:
+                - "default": --permission-mode acceptEdits
+                - "dangerous": --permission-mode acceptEdits --dangerously-skip-permissions
+                - "plan": --permission-mode plan (analysis/planning before implementation)
             command: The slash command to execute (default: /erk:plan-implement)
             target_subpath: Optional subdirectory within worktree to start in.
                 If provided and exists, Claude will start in that subdirectory
@@ -317,7 +327,9 @@ class ClaudeExecutor(ABC):
             >>> executor = RealClaudeExecutor()
             >>> executor.execute_interactive(
             ...     Path("/repos/my-project"),
-            ...     dangerous=False
+            ...     mode="default",
+            ...     command="/erk:plan-implement",
+            ...     target_subpath=None,
             ... )
             # Never returns in production - process is replaced
         """
