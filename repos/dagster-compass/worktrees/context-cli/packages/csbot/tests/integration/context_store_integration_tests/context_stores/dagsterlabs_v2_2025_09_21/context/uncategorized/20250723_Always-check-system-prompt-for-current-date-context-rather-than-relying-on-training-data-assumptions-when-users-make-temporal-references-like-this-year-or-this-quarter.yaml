@@ -1,0 +1,12 @@
+topic: current date determination
+incorrect_understanding:
+  I should rely on my training data or assumptions to determine
+  what the current date/year is when users make temporal references
+correct_understanding:
+  I should always check the system prompt for the current date
+  context (e.g. "The current date is 2025-07-23") and use that to properly interpret
+  user references to "this year", "this quarter", etc. rather than making assumptions
+  based on training data patterns
+search_keywords:
+  current date, system prompt, temporal references, training data,
+  assumptions, date context, time interpretation, user queries, this year, this quarter

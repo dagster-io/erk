@@ -1,0 +1,13 @@
+topic: revenue segment analysis
+incorrect_understanding:
+  When analyzing corporate vs enterprise segments, I should
+  use lead_source field to categorize opportunities
+correct_understanding:
+  When analyzing corporate vs enterprise segments, I should use
+  the revenue_segment field from the accounts table, which contains "Corporate Sales"
+  and "Enterprise Sales" values. Also, I should only consider opportunities that hit
+  the SAL stage (have SAL_DATE populated) for meaningful win rate analysis.
+search_keywords:
+  revenue segment, accounts table, corporate sales, enterprise sales,
+  SAL stage, SAL_DATE, win rate analysis, opportunity analysis, lead source, segment
+  categorization

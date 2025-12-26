@@ -1,0 +1,89 @@
+# Scenario definitions for agent-record functionality
+scenarios:
+  # Original text scenarios
+  simple-test:
+    messages:
+      - role: user
+        content: "Hello, how are you today?"
+    description: "Simple greeting with text response"
+
+  long-explanation:
+    messages:
+      - role: user
+        content: "Please explain how neural networks work in detail, covering backpropagation, gradient descent, and common architectures."
+    description: "Request for detailed technical explanation"
+
+  code-generation:
+    messages:
+      - role: user
+        content: "Write a Python function that implements binary search on a sorted list."
+    description: "Code generation request"
+
+  multilingual:
+    messages:
+      - role: user
+        content: "Respond in multiple languages: English, French, Spanish, and Japanese."
+    description: "Multilingual response test"
+
+  # Tool scenarios with custom prompts
+  weather-tool:
+    messages:
+      - role: user
+        content: "What's the weather like in Paris today? Please be specific about temperature, conditions, and humidity."
+    tools:
+      - weather
+    description: "Weather tool calling scenario"
+
+  calculator-tool:
+    messages:
+      - role: user
+        content: "Calculate the result of 15 * 7 + 23 - 8, and then find the square root of that result."
+    tools:
+      - calculator
+    description: "Calculator tool scenario"
+
+  search-tool:
+    messages:
+      - role: user
+        content: "Search for information about Python async/await patterns and show me the top 3 most relevant results."
+    tools:
+      - search
+    description: "Search tool scenario"
+
+  # Legacy tool scenarios (for backward compatibility)
+  tool-calculator:
+    messages:
+      - role: user
+        content: "Calculate the result of 15 * 7 + 23 - 8, and then find the square root of that result."
+    tools:
+      - calculator
+    description: "Calculator tool usage test (legacy name)"
+
+  tool-weather:
+    messages:
+      - role: user
+        content: "What's the weather like in Paris today?"
+    tools:
+      - weather
+    description: "Weather tool usage test (legacy name)"
+
+  tool-search:
+    messages:
+      - role: user
+        content: "Search for information about Python async/await patterns and show me the top 3 most relevant results."
+    tools:
+      - search
+    description: "Search tool usage test (legacy name)"
+
+  # Edge case scenarios
+  error-case:
+    messages:
+      - role: user
+        content: "This is a test prompt that might trigger edge case handling or unusual responses."
+    description: "Error case scenario"
+
+  unicode-test:
+    messages:
+      - role: user
+        content: "Please respond with text that includes emojis 🚀, special characters αβγ, and unicode: 你好世界 مرحبا"
+    description: "Unicode test scenario"

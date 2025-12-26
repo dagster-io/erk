@@ -1,0 +1,11 @@
+topic: geographic data for bug bounty requests
+incorrect_understanding:
+  I should open data request tickets when geographic/country
+  information isn't available for bug bounty or support requests
+correct_understanding:
+  Geographic/country data for bug bounty requests is not available
+  and should not be requested via tickets. This information is not captured in our
+  systems and is not something we plan to track.
+search_keywords:
+  bug bounty, geographic data, country information, data request, tickets,
+  system limitations, tracking, support requests, unavailable data

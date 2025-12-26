@@ -1,0 +1,12 @@
+topic: organization status lifecycle
+incorrect_understanding:
+  Assumed that READ_ONLY status meant inactive/trial users
+  and that high active percentage in June represented improved conversion
+correct_understanding:
+  Organizations have a 14-day free trial period, so newer organizations
+  (like those created in June) haven't had time to transition to READ-only status
+  yet, while older organizations have completed their trials
+search_keywords:
+  organization lifecycle, READ_ONLY status, 14-day free trial, trial
+  period, conversion rates, organization age, status transition, active percentage,
+  trial completion, newer organizations

@@ -1,0 +1,31 @@
+cron: 0 15 * * 5
+question:
+  "Create a comprehensive weekly product feedback and feature request analysis
+  including:
+
+
+  1. Common themes from support ticket analysis using AI_AGG to summarize issue patterns
+  and pain points
+
+  2. GitHub issue creation trends compared to support volume, identifying product
+  stability patterns
+
+  3. Feature requests from VIP accounts and high-value customers with priority scoring
+
+  4. Correlation analysis between support volume and customer churn risk indicators
+
+  5. Product area analysis showing which features/components generate most support
+  burden
+
+  6. Customer feedback sentiment analysis from support interactions and meeting transcripts
+
+  7. Create visualizations for product health metrics and customer satisfaction trends
+
+  8. Identify urgent product improvements and customer success risks
+
+
+  Focus on actionable insights to guide product development priorities and proactive
+  customer success interventions."
+thread:
+  "\U0001F4A1 Weekly Support Product Feedback & Feature Request Analysis - analyzing\
+  \ support themes, GitHub issues, customer requests, and churn risk indicators \U0001F9F5"

@@ -1,0 +1,45 @@
+[tool.uv.workspace]
+members = ["packages/csbot", "packages/compass-admin-panel", "packages/csadmin"]
+
+[project]
+name = "dagster-compass-workspace"
+version = "0.1.0"
+description = "Workspace configuration for Dagster Compass monorepo"
+authors = [
+    {name = "Elementl", email = "info@elementl.com"}
+]
+requires-python = ">=3.13"
+dependencies = [
+    "csbot",
+    "compass-admin-panel",
+    "csadmin",
+]
+
+[tool.uv.sources]
+csbot = { workspace = true }
+compass-admin-panel = { workspace = true }
+csadmin = { workspace = true }
+erk = { git = "https://github.com/dagster-io/erk.git", rev = "master" }
+dot-agent-kit = { git = "https://github.com/dagster-io/erk.git", subdirectory = "packages/dot-agent-kit", rev = "master" }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+bypass-selection = true
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+    "pytest-asyncio>=0.23.0",
+    "testcontainers>=4.9.0",
+    "pyright>=1.1.389",
+    "fakeredis>=2.25.0",
+    "pytest-xdist>=3.8.0",
+    "playwright>=1.40.0",
+    "pytest-playwright>=0.4.0",
+    "ruff>=0.12.7",
+    "erk",
+    "dot-agent-kit",
+]

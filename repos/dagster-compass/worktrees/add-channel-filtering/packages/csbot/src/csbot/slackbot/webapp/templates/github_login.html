@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+
+{% block title %}Connect GitHub Account - Compass{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <div class="mb-6">
+        <i class="fab fa-github text-6xl text-gray-700 mb-4"></i>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Connect Your GitHub Account</h1>
+        <p class="text-gray-600 mb-6">
+            Link your GitHub account to enable enhanced features and integrations
+        </p>
+    </div>
+
+    <div class="space-y-4">
+        <a
+            href="https://github.com/login/oauth/authorize?client_id={{ github_client_id }}&redirect_uri={{ redirect_uri | urlencode }}&scope=user:email&state={{ state }}"
+            class="w-full bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 px-6 rounded-lg border border-gray-600 flex items-center justify-center transition-colors duration-200"
+        >
+            <i class="fab fa-github mr-3 text-xl"></i>
+            Continue with GitHub
+        </a>
+
+        <div class="text-sm text-gray-500 mt-4">
+            <p>By connecting your GitHub account, you agree to allow Compass to:</p>
+            <ul class="mt-2 text-left list-disc list-inside space-y-1 max-w-md mx-auto">
+                <li>Access your basic profile information</li>
+                <li>Read your email address</li>
+            </ul>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-gray-200">
+            <p class="text-xs text-gray-400">
+                This connection is secured with OAuth 2.0 and GitHub's authentication system.
+                You can revoke access at any time in your GitHub account settings.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

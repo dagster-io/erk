@@ -1,0 +1,14 @@
+topic: weekly active organization rate calculation
+incorrect_understanding:
+  When calculating weekly active organization rates, I should
+  include all active organizations regardless of payment status, which artificially
+  deflates the metric due to free trial accounts
+correct_understanding:
+  When calculating weekly active organization rates, I should
+  only include paying customers to get an accurate engagement metric. Free trial accounts
+  artificially deflate this metric and should be excluded from the weekly active rate
+  calculation.
+search_keywords:
+  weekly active organization, paying customers, free trial exclusion,
+  engagement metrics, active rate calculation, organization metrics, customer engagement,
+  paid subscribers

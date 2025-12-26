@@ -1,0 +1,13 @@
+topic: Year 1 ARR by account analysis
+incorrect_understanding:
+  When analyzing top accounts by year 1 ARR, I should sum all
+  opportunities for each account to get their total year 1 ARR value
+correct_understanding:
+  When analyzing top accounts by year 1 ARR, I should look at
+  individual opportunities rather than summing multiple deals per account, as this
+  can artificially inflate values by including renewals and upsells that don't represent
+  true year 1 ARR
+search_keywords:
+  Year 1 ARR, account analysis, individual opportunities, renewals,
+  upsells, deal aggregation, ARR inflation, top accounts, opportunity analysis, revenue
+  metrics

@@ -1,0 +1,17 @@
+cron: 0 9 * * 1
+question:
+  "Generate a weekly sales calls report for the following team members: rep1,\
+  \ rep2, rep3, rep4, rep5, rep6,\
+  \ rep7, rep8, rep9, rep10, rep11, rep12,\
+  \ and rep13. \n\nFor each rep, show:\n- Total number of calls for the\
+  \ week\n- Breakdown by call type (opportunity meeting, first account meeting, first\
+  \ opportunity meeting, follow-up/other)\n- List of accounts/companies they met with\n\
+  - Industries covered\n- Opportunity stages for meetings tied to opportunities\n\
+  - Key attendee titles from customer contacts\n\nInclude a summary visualization\
+  \ showing calls by rep and call type. Focus on the current week (Monday-Sunday)\
+  \ and exclude canceled meetings."
+thread:
+  "Weekly Sales Team Activity Report \U0001F4CA\n\nThis report tracks sales\
+  \ call activity across the sales team for the past week, including call counts by\
+  \ type, industries covered, opportunity stages, and attendee details. Perfect for\
+  \ Monday morning team standup prep!"

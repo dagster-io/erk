@@ -1,0 +1,4 @@
+channel_name,bot_email,contextstore_github_repo,governance_alerts_channel,slack_team_id,organization_id
+"dagster-compass-dev","compassbot@dagster.io","dagster-compass/dev","dagster-compass-dev-governance","TCC8P0589",1
+"dagster-compass-dev-multi1","compassbot@dagster.io","dagster-compass/dev","dagster-compass-dev-governance","TCC8P0589",1
+"dagster-compass-dev-multi2","compassbot@dagster.io","dagster-compass/dev","dagster-compass-dev-governance","TCC8P0589",1

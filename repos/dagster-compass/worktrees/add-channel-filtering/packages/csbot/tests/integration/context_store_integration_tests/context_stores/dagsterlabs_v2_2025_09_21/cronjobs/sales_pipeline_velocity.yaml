@@ -1,0 +1,16 @@
+cron: 0 8 * * 1
+question:
+  "Create a comprehensive weekly sales pipeline health and velocity analysis\
+  \ including:\n\n1. New opportunities created this week vs last week by stage, source,\
+  \ and revenue segment (corporate vs enterprise)\n2. Stage progression rates from\
+  \ discovery \u2192 evaluation \u2192 proposal, identifying bottlenecks\n3. Sales\
+  \ cycle length trends by segment, showing average days to close and velocity changes\n\
+  4. Forecast accuracy analysis comparing predicted close dates vs actual outcomes\n\
+  5. Pipeline coverage ratios and deal velocity metrics by sales rep and team\n6.\
+  \ Win rate analysis by opportunity source and account type\n7. Create visualizations\
+  \ for pipeline flow and identify coaching opportunities\n8. Flag deals at risk based\
+  \ on stage duration and progression patterns\n\nFocus on actionable insights to\
+  \ help sales leadership optimize pipeline management and rep performance."
+thread:
+  "\u26A1 Weekly Sales Pipeline Health & Velocity Report - tracking new opportunities,\
+  \ stage progression rates, sales cycle trends, and forecast accuracy \U0001F9F5"

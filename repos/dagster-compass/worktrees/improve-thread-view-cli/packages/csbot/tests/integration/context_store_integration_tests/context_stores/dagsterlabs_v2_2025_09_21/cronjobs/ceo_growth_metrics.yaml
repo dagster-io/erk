@@ -1,0 +1,32 @@
+cron: 0 18 * * 0
+question:
+  "Create a comprehensive weekly growth metrics dashboard for executive leadership\
+  \ including:\n\n1. New ARR by segment (corporate vs enterprise) with month-over-month\
+  \ and quarter-over-quarter growth trends\n2. Customer acquisition cost (CAC) trends\
+  \ by marketing channel and sales segment with payback period analysis  \n3. Trial-to-paid\
+  \ conversion rates and average time-to-convert with cohort analysis\n4. Active organization\
+  \ growth, seat expansion rates, and customer retention metrics\n5. Revenue per customer\
+  \ trends and expansion revenue analysis\n6. Key growth lever performance (marketing\
+  \ efficiency, sales productivity, product adoption)\n7. Create executive-level visualizations\
+  \ with clear growth trajectory indicators\n8. Highlight key growth opportunities\
+  \ and potential risks requiring leadership attention\n\nFocus on strategic insights\
+  \ for executive decision-making around growth investments and resource allocation.\n\
+  \nAdditional context: \nIMPORTANT FISCAL CALENDAR CONTEXT:\n- Company operates on\
+  \ a fiscal year calendar where quarters are:\n  * FQ1: Feb-Apr  \n  * FQ2: May-Jul\n\
+  \  * FQ3: Aug-Oct\n  * FQ4: Nov-Jan\n\nWhen analyzing quarterly performance and\
+  \ growth trends, always use this fiscal calendar rather than calendar quarters.\
+  \ This is critical for accurate QoQ comparisons and pacing analysis.\n\nFor Q3 analysis\
+  \ specifically:\n- Q3 runs August 1 - October 31 (91 days)\n- Calculate percentage\
+  \ completion based on current date vs August 1 start\n- Project full quarter performance\
+  \ based on actual completion percentage\n- Compare to FQ2 performance (May-July)\
+  \ for accurate QoQ trends\n- Historical quarters should be analyzed using this fiscal\
+  \ calendar for consistency\n\nThis fiscal calendar context should be applied to\
+  \ all quarterly ARR analysis, pipeline projections, and growth trend calculations\
+  \ in future reports.\n\nAdditional context: CRITICAL UPDATE FOR WEEKLY ACTIVE RATE\
+  \ CALCULATION: Weekly active organization rates should ONLY include paying customers,\
+  \ not all active organizations. Free trial accounts artificially deflate this metric.\
+  \ Filter the weekly active rate calculation to paying customers only to get accurate\
+  \ engagement metrics. This is in addition to the previous update to remove all forecasting/projections."
+thread:
+  "\U0001F680 Weekly CEO Growth Metrics Dashboard - tracking new ARR growth,\
+  \ customer acquisition costs, conversion rates, and organizational expansion \U0001F9F5"

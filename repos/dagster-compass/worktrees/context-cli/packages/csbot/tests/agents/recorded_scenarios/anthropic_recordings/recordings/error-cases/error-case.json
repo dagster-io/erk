@@ -1,0 +1,324 @@
+{
+  "metadata": {
+    "recorded_at": "2025-08-25T00:07:47.975311+00:00",
+    "scenario": "error-case",
+    "model": "claude-sonnet-4-20250514",
+    "agent_type": "AnthropicAgent",
+    "anthropic_client_version": "0.25.1",
+    "recorder_version": "1.0",
+    "raw_event_count": 15,
+    "agent_block_event_count": 12,
+    "agent_message_count": 1,
+    "duration_seconds": 4.574594974517822
+  },
+  "request_params": {
+    "system": "You are a helpful assistant.",
+    "messages": [
+      {
+        "role": "user",
+        "content": "This is a test prompt that might trigger edge case handling or unusual responses."
+      }
+    ],
+    "tools": [],
+    "model": "claude-sonnet-4-20250514",
+    "max_tokens": 50000
+  },
+  "raw_anthropic_events": [
+    {
+      "type": "message_start",
+      "timestamp": "2025-08-25T00:07:44.900504+00:00",
+      "message": {
+        "id": "msg_013txMtqoD4MwVdi845hKZRB",
+        "content": [],
+        "model": "claude-sonnet-4-20250514",
+        "role": "assistant",
+        "stop_reason": null,
+        "stop_sequence": null,
+        "type": "message",
+        "usage": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 28,
+          "output_tokens": 5,
+          "server_tool_use": null,
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "content_block_start",
+      "timestamp": "2025-08-25T00:07:44.900638+00:00",
+      "content_block": {
+        "citations": null,
+        "text": "",
+        "type": "text"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:44.900836+00:00",
+      "delta": {
+        "text": "I understand you're testing",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:45.368207+00:00",
+      "delta": {
+        "text": " how I respond to potentially unusual prompts. I",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:45.571262+00:00",
+      "delta": {
+        "text": "'m designed to be helpful, harmless, and honest in",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:45.735073+00:00",
+      "delta": {
+        "text": " my interactions. \n\nIf you have",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:46.105937+00:00",
+      "delta": {
+        "text": " a specific question or task you'd like help with, I'm happy",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:46.533158+00:00",
+      "delta": {
+        "text": " to assist! Or if you're curious about how I handle",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:46.934078+00:00",
+      "delta": {
+        "text": " certain types of requests or edge cases, feel",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:47.135676+00:00",
+      "delta": {
+        "text": " free to ask directly - I can",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:47.559767+00:00",
+      "delta": {
+        "text": " explain my approach to various scenarios.\n\nIs there something particular you",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:47.973774+00:00",
+      "delta": {
+        "text": "'d like to explore or test?",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_stop",
+      "timestamp": "2025-08-25T00:07:47.974199+00:00",
+      "index": 0
+    },
+    {
+      "type": "message_delta",
+      "timestamp": "2025-08-25T00:07:47.974377+00:00",
+      "delta": {
+        "stop_reason": "end_turn",
+        "stop_sequence": null
+      },
+      "usage": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "input_tokens": 28,
+        "output_tokens": 100,
+        "server_tool_use": null
+      }
+    },
+    {
+      "type": "message_stop",
+      "timestamp": "2025-08-25T00:07:47.974478+00:00"
+    }
+  ],
+  "agent_block_events": [
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "start",
+        "index": 0,
+        "content_block": {
+          "type": "output_text"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:44.900687+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "I understand you're testing"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:44.900871+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " how I respond to potentially unusual prompts. I"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:45.368304+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "'m designed to be helpful, harmless, and honest in"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:45.571605+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " my interactions. \n\nIf you have"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:45.735216+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " a specific question or task you'd like help with, I'm happy"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:46.106135+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " to assist! Or if you're curious about how I handle"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:46.533298+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " certain types of requests or edge cases, feel"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:46.934207+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " free to ask directly - I can"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:47.135810+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " explain my approach to various scenarios.\n\nIs there something particular you"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:47.559898+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "'d like to explore or test?"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:47.974003+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "stop",
+        "index": 0
+      },
+      "timestamp": "2025-08-25T00:07:47.974248+00:00"
+    }
+  ],
+  "agent_messages": [
+    {
+      "role": "assistant",
+      "content": "I understand you're testing how I respond to potentially unusual prompts. I'm designed to be helpful, harmless, and honest in my interactions. \n\nIf you have a specific question or task you'd like help with, I'm happy to assist! Or if you're curious about how I handle certain types of requests or edge cases, feel free to ask directly - I can explain my approach to various scenarios.\n\nIs there something particular you'd like to explore or test?"
+    }
+  ]
+}

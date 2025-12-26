@@ -1,0 +1,13 @@
+topic: SALS_INFLUENCED fractional values in campaigns
+incorrect_understanding:
+  SALS_INFLUENCED represents whole number counts of Sales Accepted
+  Leads
+correct_understanding:
+  SALS_INFLUENCED uses fractional attribution modeling where
+  campaigns receive partial credit for SALs based on multi-touch attribution. A single
+  actual SAL can be split across multiple campaigns that influenced it, resulting
+  in fractional values like 1.92 or 2.09 SALs per campaign.
+search_keywords:
+  SALS_INFLUENCED, fractional attribution, multi-touch attribution,
+  Sales Accepted Leads, campaign attribution, partial credit, attribution modeling,
+  SAL distribution

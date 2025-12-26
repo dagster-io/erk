@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run pyright:*)",
+      "Bash(uv run prettier:*)",
+      "Bash(uv run ruff:*)",
+      "Bash(make all-ci:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

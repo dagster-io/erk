@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="flex">
+    <div class="flex-shrink-0">
+        <i class="fas fa-exclamation-triangle text-2xl"></i>
+    </div>
+    <div class="ml-4">
+        <h1 class="text-xl font-semibold mb-2">Unauthorized</h1>
+        <div class="text-sm ">
+            {{ error_message | safe }}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,471 @@
+{
+  "metadata": {
+    "recorded_at": "2025-08-25T00:07:53.347997+00:00",
+    "scenario": "unicode-test",
+    "model": "claude-sonnet-4-20250514",
+    "agent_type": "AnthropicAgent",
+    "anthropic_client_version": "0.25.1",
+    "recorder_version": "1.0",
+    "raw_event_count": 22,
+    "agent_block_event_count": 19,
+    "agent_message_count": 1,
+    "duration_seconds": 5.369492053985596
+  },
+  "request_params": {
+    "system": "You are a helpful assistant.",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Please respond with text that includes emojis 🚀, special characters αβγ, and unicode: 你好世界 مرحبا"
+      }
+    ],
+    "tools": [],
+    "model": "claude-sonnet-4-20250514",
+    "max_tokens": 50000
+  },
+  "raw_anthropic_events": [
+    {
+      "type": "message_start",
+      "timestamp": "2025-08-25T00:07:49.661676+00:00",
+      "message": {
+        "id": "msg_01AeyXPer7vwLUr8y2axx4rJ",
+        "content": [],
+        "model": "claude-sonnet-4-20250514",
+        "role": "assistant",
+        "stop_reason": null,
+        "stop_sequence": null,
+        "type": "message",
+        "usage": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 48,
+          "output_tokens": 1,
+          "server_tool_use": null,
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "content_block_start",
+      "timestamp": "2025-08-25T00:07:49.661840+00:00",
+      "content_block": {
+        "citations": null,
+        "text": "",
+        "type": "text"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:49.661980+00:00",
+      "delta": {
+        "text": "Hello",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:49.915222+00:00",
+      "delta": {
+        "text": "! 🚀 I'm excite",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:50.227165+00:00",
+      "delta": {
+        "text": "d to help you today! \n\nHere's a mix",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:50.445976+00:00",
+      "delta": {
+        "text": " of different text elements as requested:",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:50.734796+00:00",
+      "delta": {
+        "text": "\n- Emojis: 🚀 ",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:50.812243+00:00",
+      "delta": {
+        "text": "🌟 ✨ 🎯",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:50.864427+00:00",
+      "delta": {
+        "text": "\n- Special characters: αβγ",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:51.248135+00:00",
+      "delta": {
+        "text": " δεζ ηθι\n- Unicode text",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:51.333602+00:00",
+      "delta": {
+        "text": ": 你好世界 (Hello World in",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:51.537862+00:00",
+      "delta": {
+        "text": " Chinese) and مرحبا (Hello",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:52.065307+00:00",
+      "delta": {
+        "text": " in Arabic)\n\nThis combination shows how modern text can beau",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:52.332817+00:00",
+      "delta": {
+        "text": "tifully blend emojis 😊, Greek",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:52.449632+00:00",
+      "delta": {
+        "text": " letters like α (alpha), β (beta), γ",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:52.782975+00:00",
+      "delta": {
+        "text": " (gamma), and multilingual unicode characters from",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:52.929902+00:00",
+      "delta": {
+        "text": " various writing systems! 🌍\n\nIs",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:53.040313+00:00",
+      "delta": {
+        "text": " there anything specific you'd like me to help you with using",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_delta",
+      "timestamp": "2025-08-25T00:07:53.325858+00:00",
+      "delta": {
+        "text": " these different character sets? 🤔",
+        "type": "text_delta"
+      },
+      "index": 0
+    },
+    {
+      "type": "content_block_stop",
+      "timestamp": "2025-08-25T00:07:53.326340+00:00",
+      "index": 0
+    },
+    {
+      "type": "message_delta",
+      "timestamp": "2025-08-25T00:07:53.344003+00:00",
+      "delta": {
+        "stop_reason": "end_turn",
+        "stop_sequence": null
+      },
+      "usage": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "input_tokens": 48,
+        "output_tokens": 172,
+        "server_tool_use": null
+      }
+    },
+    {
+      "type": "message_stop",
+      "timestamp": "2025-08-25T00:07:53.344280+00:00"
+    }
+  ],
+  "agent_block_events": [
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "start",
+        "index": 0,
+        "content_block": {
+          "type": "output_text"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:49.661894+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "Hello"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:49.662063+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "! 🚀 I'm excite"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:49.915389+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "d to help you today! \n\nHere's a mix"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:50.227374+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " of different text elements as requested:"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:50.446189+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "\n- Emojis: 🚀 "
+        }
+      },
+      "timestamp": "2025-08-25T00:07:50.735058+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "🌟 ✨ 🎯"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:50.812484+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "\n- Special characters: αβγ"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:50.864636+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " δεζ ηθι\n- Unicode text"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:51.248521+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": ": 你好世界 (Hello World in"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:51.333728+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " Chinese) and مرحبا (Hello"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:51.538068+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " in Arabic)\n\nThis combination shows how modern text can beau"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:52.065496+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "tifully blend emojis 😊, Greek"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:52.332999+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " letters like α (alpha), β (beta), γ"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:52.449839+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " (gamma), and multilingual unicode characters from"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:52.783219+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " various writing systems! 🌍\n\nIs"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:52.929975+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " there anything specific you'd like me to help you with using"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:53.040471+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " these different character sets? 🤔"
+        }
+      },
+      "timestamp": "2025-08-25T00:07:53.326062+00:00"
+    },
+    {
+      "type": "agent_block_event",
+      "event": {
+        "type": "stop",
+        "index": 0
+      },
+      "timestamp": "2025-08-25T00:07:53.326446+00:00"
+    }
+  ],
+  "agent_messages": [
+    {
+      "role": "assistant",
+      "content": "Hello! 🚀 I'm excited to help you today! \n\nHere's a mix of different text elements as requested:\n- Emojis: 🚀 🌟 ✨ 🎯\n- Special characters: αβγ δεζ ηθι\n- Unicode text: 你好世界 (Hello World in Chinese) and مرحبا (Hello in Arabic)\n\nThis combination shows how modern text can beautifully blend emojis 😊, Greek letters like α (alpha), β (beta), γ (gamma), and multilingual unicode characters from various writing systems! 🌍\n\nIs there anything specific you'd like me to help you with using these different character sets? 🤔"
+    }
+  ]
+}

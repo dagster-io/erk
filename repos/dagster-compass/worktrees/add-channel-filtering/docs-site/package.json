@@ -1,0 +1,40 @@
+{
+  "name": "docs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dagster-compass/docs.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/dagster-compass/docs/issues"
+  },
+  "homepage": "https://github.com/dagster-compass/docs#readme",
+  "dependencies": {
+    "next": "^15.5.3",
+    "nextra": "^2.13.4",
+    "nextra-theme-docs": "^2.13.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.5.1",
+    "@types/react": "^18.3.24",
+    "@types/react-dom": "^18.3.7",
+    "typescript": "5.9.2"
+  },
+  "overrides": {
+    "cross-spawn": "^7.0.5",
+    "dompurify": "^3.2.4"
+  }
+}

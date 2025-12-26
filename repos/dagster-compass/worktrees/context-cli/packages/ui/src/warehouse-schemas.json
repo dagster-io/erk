@@ -1,0 +1,728 @@
+{
+  "version": "1.0",
+  "generated_from": "csbot.slackbot.webapp.add_connections.models",
+  "warehouses": {
+    "snowflake": {
+      "type": "snowflake",
+      "fields": {
+        "account_id": {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "title": "Account Locator",
+          "description": "Your Snowflake account locator",
+          "examples": [
+            "abc12345"
+          ]
+        },
+        "username": {
+          "name": "username",
+          "type": "string",
+          "required": true,
+          "title": "Username",
+          "description": "Database username",
+          "examples": [
+            "admin"
+          ]
+        },
+        "credential_type": {
+          "name": "credential_type",
+          "type": "string",
+          "required": true,
+          "title": "Authentication Method",
+          "description": "Choose how to authenticate",
+          "widget": "radio",
+          "options": [
+            "password",
+            "private_key"
+          ],
+          "default": "password"
+        },
+        "password": {
+          "name": "password",
+          "type": "string",
+          "required": true,
+          "conditional": {
+            "field": "credential_type",
+            "value": "password"
+          },
+          "title": "Password",
+          "description": "Database password",
+          "examples": [
+            "Your password"
+          ],
+          "widget": "password"
+        },
+        "private_key_file": {
+          "name": "private_key_file",
+          "type": "string",
+          "required": true,
+          "conditional": {
+            "field": "credential_type",
+            "value": "private_key"
+          },
+          "title": "Private Key",
+          "description": "RSA private key in PEM format",
+          "examples": [
+            "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+          ],
+          "widget": "textarea",
+          "rows": 8,
+          "validator": "snowflake_private_key"
+        },
+        "key_password": {
+          "name": "key_password",
+          "type": "string",
+          "required": false,
+          "conditional": {
+            "field": "credential_type",
+            "value": "private_key"
+          },
+          "title": "Private Key Password",
+          "description": "Password for encrypted private key (if applicable)",
+          "examples": [
+            "Your key password"
+          ],
+          "widget": "password"
+        },
+        "warehouse": {
+          "name": "warehouse",
+          "type": "string",
+          "required": true,
+          "title": "Warehouse",
+          "description": "The compute warehouse to use for queries",
+          "examples": [
+            "COMPUTE_WH"
+          ]
+        },
+        "role": {
+          "name": "role",
+          "type": "string",
+          "required": true,
+          "title": "Role",
+          "description": "A role with access to the tables you want to analyze",
+          "examples": [
+            "ANALYST"
+          ]
+        },
+        "region": {
+          "name": "region",
+          "type": "string",
+          "required": false,
+          "title": "Region",
+          "description": "AWS region where your Snowflake account is located (optional)",
+          "examples": [
+            "us-east-1"
+          ],
+          "default": ""
+        }
+      },
+      "help_info": {
+        "setup_instructions": [
+          "Contact your Snowflake administrator to create an account",
+          "Get your account locator from the Snowflake console URL",
+          "Set up password or private key authentication",
+          "Request the required Snowflake Privileges (see below)"
+        ],
+        "network_info": {
+          "connection_method": "HTTPS over port 443",
+          "ip_addresses": [
+            "100.20.92.101",
+            "44.225.181.72",
+            "44.227.217.144",
+            "74.220.48.0/24",
+            "74.220.56.0/24",
+            "52.25.53.27",
+            "44.242.128.111",
+            "52.35.195.86"
+          ],
+          "additional_info": "Connects to <account>.snowflakecomputing.com - may require firewall allowlisting"
+        },
+        "connection_permissions": {
+          "header": "Required Snowflake Privileges",
+          "permissions": [
+            "USAGE on warehouse",
+            "USAGE on schema - Access schema objects",
+            "SELECT on tables - Query table data for analysis",
+            "SHOW privilege - View table metadata and structure"
+          ]
+        },
+        "schema_permissions": {
+          "header": "Schema Discovery Privileges",
+          "permissions": [
+            "USAGE on schema - Access schema objects",
+            "SELECT on tables - Query table data for analysis",
+            "SHOW privilege - View table metadata and structure"
+          ]
+        }
+      },
+      "groups": [
+        {
+          "label": "Connection Details",
+          "fields": [
+            "account_id",
+            "username",
+            "warehouse",
+            "role",
+            "region"
+          ]
+        },
+        {
+          "label": "Authentication",
+          "fields": [
+            "credential_type",
+            "password",
+            "private_key_file",
+            "key_password"
+          ]
+        }
+      ]
+    },
+    "bigquery": {
+      "type": "bigquery",
+      "fields": {
+        "location": {
+          "name": "location",
+          "type": "string",
+          "required": true,
+          "title": "Location",
+          "description": "Examples: us, eu, us-east1, us-west2",
+          "examples": [
+            "us"
+          ]
+        },
+        "service_account_json_string": {
+          "name": "service_account_json_string",
+          "type": "string",
+          "required": true,
+          "title": "Service Account JSON",
+          "description": "Paste your Google Cloud service account JSON key",
+          "widget": "textarea",
+          "validator": "bigquery_json",
+          "rows": 10,
+          "examples": [
+            "{\n  \"type\": \"service_account\",\n  \"project_id\": \"your-project-id\",\n  \"private_key_id\": \"...\",\n  \"private_key\": \"...\",\n  ...\n}"
+          ]
+        }
+      },
+      "help_info": {
+        "setup_instructions": [
+          "Sign in to Google Cloud Console",
+          "Create a service account with BigQuery permissions",
+          "Download the service account JSON key",
+          "Copy and paste the JSON content above"
+        ],
+        "network_info": {
+          "connection_method": "HTTPS over port 443",
+          "ip_addresses": [
+            "100.20.92.101",
+            "44.225.181.72",
+            "44.227.217.144",
+            "74.220.48.0/24",
+            "74.220.56.0/24",
+            "52.25.53.27",
+            "44.242.128.111",
+            "52.35.195.86"
+          ]
+        },
+        "connection_permissions": {
+          "header": "Required BigQuery IAM Roles",
+          "permissions": [
+            "BigQuery Job User",
+            "BigQuery Metadata Viewer",
+            "BigQuery Data Viewer"
+          ]
+        },
+        "schema_permissions": {
+          "header": "Dataset Discovery Permissions",
+          "permissions": [
+            "BigQuery Job User",
+            "BigQuery Metadata Viewer",
+            "BigQuery Data Viewer"
+          ]
+        }
+      }
+    },
+    "athena": {
+      "type": "athena",
+      "fields": {
+        "aws_access_key_id": {
+          "name": "aws_access_key_id",
+          "type": "string",
+          "required": true,
+          "title": "AWS Access Key ID",
+          "description": "AWS Access Key ID",
+          "examples": [
+            "AKIA..."
+          ]
+        },
+        "aws_secret_access_key": {
+          "name": "aws_secret_access_key",
+          "type": "string",
+          "required": true,
+          "title": "AWS Secret Access Key",
+          "description": "AWS Secret Access Key",
+          "widget": "password",
+          "examples": [
+            "..."
+          ]
+        },
+        "region": {
+          "name": "region",
+          "type": "string",
+          "required": true,
+          "title": "Region",
+          "description": "AWS region where your data is located",
+          "examples": [
+            "us-east-1"
+          ]
+        },
+        "s3_staging_dir": {
+          "name": "s3_staging_dir",
+          "type": "string",
+          "required": true,
+          "title": "S3 Staging Directory",
+          "description": "S3 location where query results will be stored",
+          "examples": [
+            "s3://your-bucket/athena-results/"
+          ]
+        },
+        "query_engine": {
+          "name": "query_engine",
+          "type": "string",
+          "required": true,
+          "title": "Query Engine",
+          "description": "Choose the SQL engine for query execution",
+          "options": [
+            "aws_athena_trino_sql",
+            "aws_athena_spark_sql"
+          ],
+          "widget": "radio"
+        }
+      },
+      "help_info": {
+        "setup_instructions": [
+          "Create an IAM user in AWS Console",
+          "Attach appropriate Athena and Glue policies",
+          "Generate access keys for the IAM user",
+          "Create an S3 bucket for query results"
+        ],
+        "network_info": {
+          "connection_method": "HTTPS over port 443",
+          "additional_info": "Connects to AWS API endpoints - no specific firewall rules needed"
+        },
+        "connection_permissions": {
+          "header": "Required AWS IAM Permissions",
+          "permissions": [
+            "athena:StartQueryExecution - Run SQL queries",
+            "athena:GetQueryExecution - Monitor query status",
+            "athena:GetQueryResults - Retrieve query results",
+            "s3:ListBucket - Browse data locations",
+            "s3:PutObject - Write query results to S3",
+            "s3:GetObject - Read query results from S3",
+            "glue:GetDatabases - List available databases",
+            "glue:GetDatabase - Read database metadata",
+            "glue:GetTables - List tables in databases",
+            "glue:GetTable - Read table schema and metadata"
+          ]
+        },
+        "schema_permissions": {
+          "header": "Database Discovery Permissions",
+          "permissions": [
+            "athena:StartQueryExecution - Run SQL queries",
+            "athena:GetQueryExecution - Monitor query status",
+            "athena:GetQueryResults - Retrieve query results",
+            "s3:ListBucket - Browse data locations",
+            "s3:PutObject - Write query results to S3",
+            "s3:GetObject - Read query results from S3",
+            "glue:GetDatabases - List available databases",
+            "glue:GetDatabase - Read database metadata",
+            "glue:GetTables - List tables in databases",
+            "glue:GetTable - Read table schema and metadata"
+          ]
+        }
+      }
+    },
+    "redshift": {
+      "type": "redshift",
+      "fields": {
+        "host": {
+          "name": "host",
+          "type": "string",
+          "required": true,
+          "title": "Host",
+          "description": "Your Redshift cluster endpoint",
+          "examples": [
+            "my-cluster.abcd1234.us-west-2.redshift.amazonaws.com"
+          ]
+        },
+        "port": {
+          "name": "port",
+          "type": "integer",
+          "required": false,
+          "title": "Port",
+          "description": "Redshift port (default: 5439)",
+          "examples": [
+            5439
+          ],
+          "default": 5439
+        },
+        "username": {
+          "name": "username",
+          "type": "string",
+          "required": true,
+          "title": "Username",
+          "description": "Database username",
+          "examples": [
+            "admin"
+          ]
+        },
+        "password": {
+          "name": "password",
+          "type": "string",
+          "required": true,
+          "title": "Password",
+          "description": "Database password",
+          "widget": "password",
+          "examples": [
+            "Your password"
+          ]
+        },
+        "database": {
+          "name": "database",
+          "type": "string",
+          "required": true,
+          "title": "Database",
+          "description": "Database name",
+          "examples": [
+            "dev"
+          ]
+        }
+      },
+      "help_info": {
+        "setup_instructions": [
+          "Contact your AWS administrator for cluster endpoint",
+          "Request a database user account with appropriate permissions",
+          "Ensure your network can reach the Redshift cluster",
+          "Test connection using standard PostgreSQL tools"
+        ],
+        "network_info": {
+          "connection_method": "PostgreSQL protocol over port 5439",
+          "port": "5439",
+          "ip_addresses": [
+            "100.20.92.101",
+            "44.225.181.72",
+            "44.227.217.144",
+            "74.220.48.0/24",
+            "74.220.56.0/24",
+            "52.25.53.27",
+            "44.242.128.111",
+            "52.35.195.86"
+          ],
+          "additional_info": "May require VPN access or IP allowlisting depending on cluster configuration"
+        },
+        "connection_permissions": {
+          "header": "Required Redshift Permissions",
+          "permissions": [
+            "CONNECT privilege on database - Establish connections",
+            "Valid username and password - Authentication credentials",
+            "USAGE on schema - Access schema objects",
+            "SELECT on information_schema.schemata - List available schemas",
+            "SELECT on pg_tables - List tables in schemas",
+            "SELECT on information_schema.tables - Access table metadata",
+            "SELECT privilege on tables - Query table data for analysis",
+            "SELECT on pg_class and pg_namespace - Access table descriptions"
+          ]
+        },
+        "schema_permissions": {
+          "header": "Schema Discovery Permissions",
+          "permissions": [
+            "CONNECT privilege on database - Establish connections",
+            "Valid username and password - Authentication credentials",
+            "USAGE on schema - Access schema objects",
+            "SELECT on information_schema.schemata - List available schemas",
+            "SELECT on pg_tables - List tables in schemas",
+            "SELECT on information_schema.tables - Access table metadata",
+            "SELECT privilege on tables - Query table data for analysis",
+            "SELECT on pg_class and pg_namespace - Access table descriptions"
+          ]
+        }
+      }
+    },
+    "motherduck": {
+      "type": "motherduck",
+      "fields": {
+        "database_name": {
+          "name": "database_name",
+          "type": "string",
+          "required": true,
+          "title": "Database Name",
+          "description": "MotherDuck database name",
+          "examples": [
+            "my_database"
+          ]
+        },
+        "access_token": {
+          "name": "access_token",
+          "type": "string",
+          "required": true,
+          "title": "Access Token",
+          "description": "MotherDuck access token",
+          "widget": "password",
+          "examples": [
+            "your_token_here"
+          ]
+        }
+      },
+      "help_info": {
+        "setup_instructions": [
+          "Sign in to MotherDuck",
+          "Create or select a database",
+          "Get your access token from MotherDuck settings",
+          "Enter your database name and access token above"
+        ]
+      }
+    },
+    "postgres": {
+      "type": "postgres",
+      "fields": {
+        "host": {
+          "name": "host",
+          "type": "string",
+          "required": true,
+          "title": "Host",
+          "description": "Your PostgreSQL server hostname or IP address",
+          "examples": [
+            "localhost",
+            "db.example.com",
+            "192.168.1.100"
+          ]
+        },
+        "port": {
+          "name": "port",
+          "type": "integer",
+          "required": false,
+          "title": "Port",
+          "description": "PostgreSQL port (default: 5432)",
+          "examples": [
+            5432
+          ],
+          "default": 5432
+        },
+        "username": {
+          "name": "username",
+          "type": "string",
+          "required": true,
+          "title": "Username",
+          "description": "Database username",
+          "examples": [
+            "postgres",
+            "admin"
+          ]
+        },
+        "password": {
+          "name": "password",
+          "type": "string",
+          "required": true,
+          "title": "Password",
+          "description": "Database password",
+          "widget": "password",
+          "examples": [
+            "Your password"
+          ]
+        },
+        "database": {
+          "name": "database",
+          "type": "string",
+          "required": true,
+          "title": "Database",
+          "description": "Database name",
+          "examples": [
+            "postgres",
+            "analytics"
+          ]
+        }
+      },
+      "help_info": {
+        "setup_instructions": [
+          "Ensure PostgreSQL server is running and accessible",
+          "Create a database user with appropriate permissions",
+          "Grant necessary privileges for data access",
+          "Test connection using standard PostgreSQL tools"
+        ],
+        "network_info": {
+          "connection_method": "PostgreSQL protocol over port 5432",
+          "port": "5432",
+          "ip_addresses": [
+            "100.20.92.101",
+            "44.225.181.72",
+            "44.227.217.144",
+            "74.220.48.0/24",
+            "74.220.56.0/24",
+            "52.25.53.27",
+            "44.242.128.111",
+            "52.35.195.86"
+          ],
+          "additional_info": "May require VPN access or IP allowlisting depending on server configuration"
+        },
+        "connection_permissions": {
+          "header": "Required PostgreSQL Permissions",
+          "permissions": [
+            "CONNECT privilege on database - Establish connections",
+            "Valid username and password - Authentication credentials",
+            "USAGE on schema - Access schema objects",
+            "SELECT on information_schema.schemata - List available schemas",
+            "SELECT on information_schema.tables - List tables in schemas",
+            "SELECT on pg_class and pg_namespace - Access table descriptions",
+            "SELECT privilege on tables - Query table data for analysis"
+          ]
+        },
+        "schema_permissions": {
+          "header": "Schema Discovery Permissions",
+          "permissions": [
+            "CONNECT privilege on database - Establish connections",
+            "Valid username and password - Authentication credentials",
+            "USAGE on schema - Access schema objects",
+            "SELECT on information_schema.schemata - List available schemas",
+            "SELECT on information_schema.tables - List tables in schemas",
+            "SELECT on pg_class and pg_namespace - Access table descriptions",
+            "SELECT privilege on tables - Query table data for analysis"
+          ]
+        }
+      }
+    },
+    "databricks": {
+      "type": "databricks",
+      "fields": {
+        "server_hostname": {
+          "name": "server_hostname",
+          "type": "string",
+          "required": true,
+          "title": "Server Hostname",
+          "description": "Databricks workspace URL (e.g., your-workspace.cloud.databricks.com)",
+          "examples": [
+            "your-workspace.cloud.databricks.com"
+          ]
+        },
+        "http_path": {
+          "name": "http_path",
+          "type": "string",
+          "required": true,
+          "title": "HTTP Path",
+          "description": "SQL warehouse HTTP path (e.g., /sql/1.0/warehouses/abc123)",
+          "examples": [
+            "/sql/1.0/warehouses/abc123"
+          ]
+        },
+        "credential_type": {
+          "name": "credential_type",
+          "type": "string",
+          "required": true,
+          "title": "Authentication Method",
+          "description": "Choose how to authenticate",
+          "widget": "radio",
+          "options": [
+            "personal_access_token",
+            "oauth"
+          ],
+          "default": "personal_access_token"
+        },
+        "personal_access_token": {
+          "name": "personal_access_token",
+          "type": "string",
+          "required": true,
+          "conditional": {
+            "field": "credential_type",
+            "value": "personal_access_token"
+          },
+          "title": "Personal Access Token",
+          "description": "Databricks personal access token",
+          "examples": [
+            "dapi..."
+          ],
+          "widget": "password"
+        },
+        "client_id": {
+          "name": "client_id",
+          "type": "string",
+          "required": true,
+          "conditional": {
+            "field": "credential_type",
+            "value": "oauth"
+          },
+          "title": "OAuth Client ID",
+          "description": "Databricks OAuth M2M client ID",
+          "examples": [
+            "..."
+          ]
+        },
+        "client_secret": {
+          "name": "client_secret",
+          "type": "string",
+          "required": true,
+          "conditional": {
+            "field": "credential_type",
+            "value": "oauth"
+          },
+          "title": "OAuth Client Secret",
+          "description": "Databricks OAuth M2M client secret",
+          "examples": [
+            "..."
+          ],
+          "widget": "password"
+        }
+      },
+      "help_info": {
+        "setup_instructions": [
+          "Sign in to Databricks workspace",
+          "Navigate to SQL Warehouses in the workspace",
+          "Copy the server hostname and HTTP path from your SQL warehouse",
+          "Create either a Personal Access Token or OAuth M2M application for authentication"
+        ],
+        "network_info": {
+          "connection_method": "HTTPS over port 443",
+          "ip_addresses": [
+            "100.20.92.101",
+            "44.225.181.72",
+            "44.227.217.144",
+            "74.220.48.0/24",
+            "74.220.56.0/24",
+            "52.25.53.27",
+            "44.242.128.111",
+            "52.35.195.86"
+          ],
+          "additional_info": "Connects to Databricks workspace - may require firewall allowlisting"
+        },
+        "schema_permissions": {
+          "header": "Schema Discovery Permissions",
+          "permissions": [
+            "USE CATALOG - Access to catalogs",
+            "USE SCHEMA - Access to schemas",
+            "SELECT - Query table data for analysis",
+            "READ VOLUME - Access to data volumes",
+            "EXECUTE - Run SQL queries",
+            "BROWSE - Browse data volumes"
+          ]
+        }
+      },
+      "groups": [
+        {
+          "label": "Connection Details",
+          "fields": [
+            "server_hostname",
+            "http_path"
+          ]
+        },
+        {
+          "label": "Authentication",
+          "fields": [
+            "credential_type",
+            "personal_access_token",
+            "client_id",
+            "client_secret"
+          ]
+        }
+      ]
+    }
+  }
+}

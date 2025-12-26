@@ -1,0 +1,93 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    # Only run on Python files and tests to reduce noise
+    paths:
+      - "packages/**/src/**/*.py"
+      - "packages/**/tests/**/*.py"
+      - "scripts/**/*.py"
+
+jobs:
+  claude-review:
+    # Skip review for WIP PRs, draft PRs, or PRs tagged with [skip-review]
+    if: |
+      !github.event.pull_request.draft &&
+      !contains(github.event.pull_request.title, '[skip-review]') &&
+      !contains(github.event.pull_request.title, '[WIP]') &&
+      !contains(github.event.pull_request.title, 'WIP:')
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code Review
+        id: claude-review
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+          # Optional: Specify model (defaults to Claude Sonnet 4, uncomment for Claude Opus 4)
+          # model: "claude-opus-4-20250514"
+
+          # Direct prompt for automated review (no @claude mention needed)
+          direct_prompt: |
+            **IMPORTANT: First read CLAUDE.md in the repository root for complete project guidance.**
+
+            Review this pull request focusing ONLY on critical issues that are NOT caught by automated tooling:
+
+            **FOCUS ON:**
+            - Logic errors and potential bugs
+            - Security vulnerabilities
+            - Performance issues or anti-patterns
+            - Missing test coverage for critical paths
+            - Architectural inconsistencies with existing codebase
+            - Business logic correctness
+
+            **DO NOT COMMENT ON:**
+            - Type annotation style (enforced by pyright)
+            - Code formatting (enforced by ruff/prettier)
+            - Python 3.13+ compliance (enforced by pyright)
+            - Import organization (enforced by ruff)
+            - Docstring formatting (enforced by tooling)
+            - Any style issues caught by automated checks
+
+            **OUTPUT STYLE:**
+            - Be extremely concise - maximum 2-3 bullet points total
+            - For positive feedback, simply state what was checked (e.g., "✓ Reviewed error handling, security patterns, test coverage")
+            - No praise or encouragement - focus on informational status
+            - Only elaborate on actual issues found
+
+            Only provide feedback if you identify genuine issues that could cause bugs, security problems, or architectural concerns.
+
+          # Use sticky comments to reduce duplicate review comments
+          use_sticky_comment: true
+
+          # Optional: Customize review based on file types
+          # direct_prompt: |
+          #   Review this PR focusing on:
+          #   - For TypeScript files: Type safety and proper interface usage
+          #   - For API endpoints: Security, input validation, and error handling
+          #   - For React components: Performance, accessibility, and best practices
+          #   - For tests: Coverage, edge cases, and test quality
+
+          # Optional: Different prompts for different authors
+          # direct_prompt: |
+          #   ${{ github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR' &&
+          #   'Welcome! Please review this PR from a first-time contributor. Be encouraging and provide detailed explanations for any suggestions.' ||
+          #   'Please provide a thorough code review focusing on our coding standards and best practices.' }}
+
+          # Optional: Add specific tools for running tests or linting
+          # allowed_tools: "Bash(npm run test),Bash(npm run lint),Bash(npm run typecheck)"
+
+          # Note: Skip conditions are handled at the job level above

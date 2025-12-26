@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: generate-render-yaml
+        name: Generate render.yaml from template
+        entry: uv run scripts/generate_render_yaml.py
+        language: system
+        files: ^render\.yaml\.jinja$
+        pass_filenames: false
