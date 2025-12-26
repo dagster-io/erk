@@ -7,7 +7,7 @@ Note: build_pr_body_footer tests are in tests/unit/github/test_pr_footer.py
 
 from pathlib import Path
 
-from erk_shared.integrations.gt.operations.finalize import is_extraction_plan
+from erk_shared.gateway.gt.operations.finalize import is_extraction_plan
 
 
 class TestIsExtractionPlan:

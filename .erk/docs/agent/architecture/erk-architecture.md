@@ -142,7 +142,7 @@ def retry_operation(context: ErkContext, attempt: int) -> None:
 **Production (RealTime)**:
 
 ```python
-from erk_shared.integrations.time.real import RealTime
+from erk_shared.gateway.time.real import RealTime
 
 time = RealTime()
 time.sleep(2.0)  # Actually sleeps for 2 seconds
@@ -151,7 +151,7 @@ time.sleep(2.0)  # Actually sleeps for 2 seconds
 **Testing (FakeTime)**:
 
 ```python
-from erk_shared.integrations.time.fake import FakeTime
+from erk_shared.gateway.time.fake import FakeTime
 
 fake_time = FakeTime()
 fake_time.sleep(2.0)  # Returns immediately, tracks call
@@ -445,7 +445,7 @@ __all__ = [
 # Import from top-level package (uses __init__.py re-exports)
 from erk_shared.git import Git, RealGit, FakeGit
 from erk_shared.github import GitHub, RealGitHub, FakeGitHub
-from erk_shared.integrations.erk_wt import ErkWtKit, RealErkWtKit, FakeErkWtKit
+from erk_shared.gateway.erk_wt import ErkWtKit, RealErkWtKit, FakeErkWtKit
 ```
 
 **Not this:**

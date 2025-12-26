@@ -34,7 +34,7 @@ def mock_subprocess_run(
 
             with mock_subprocess_run(monkeypatch, mock_run):
                 # Test code that calls subprocess.run
-                from erk_shared.integrations.time.fake import FakeTime
+                from erk_shared.gateway.time.fake import FakeTime
                 ops = RealGitHub(FakeTime())
                 result = ops.some_method()
     """

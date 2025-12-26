@@ -8,10 +8,10 @@ import click
 
 from erk.cli.output import stream_auto_restack
 from erk.core.context import ErkContext
-from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
-from erk_shared.integrations.gt.operations.restack_finalize import execute_restack_finalize
-from erk_shared.integrations.gt.operations.restack_preflight import execute_restack_preflight
-from erk_shared.integrations.gt.types import (
+from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.gateway.gt.operations.restack_finalize import execute_restack_finalize
+from erk_shared.gateway.gt.operations.restack_preflight import execute_restack_preflight
+from erk_shared.gateway.gt.types import (
     RestackFinalizeError,
     RestackPreflightError,
     RestackPreflightSuccess,

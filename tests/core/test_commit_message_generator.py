@@ -7,7 +7,7 @@ from erk.core.commit_message_generator import (
     CommitMessageRequest,
     CommitMessageResult,
 )
-from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from tests.fakes.claude_executor import FakeClaudeExecutor
 
 

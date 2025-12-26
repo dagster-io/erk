@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.integrations.gt import (
+from erk_shared.gateway.gt import (
     RealGtKit,
 )
 

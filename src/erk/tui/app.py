@@ -31,8 +31,8 @@ from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
 
 if TYPE_CHECKING:
-    from erk_shared.integrations.browser.abc import BrowserLauncher
-    from erk_shared.integrations.clipboard.abc import Clipboard
+    from erk_shared.gateway.browser.abc import BrowserLauncher
+    from erk_shared.gateway.clipboard.abc import Clipboard
 
 
 class ClickableLink(Static):

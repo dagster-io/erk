@@ -4,11 +4,11 @@ from pathlib import Path
 
 import pytest
 
+from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.gateway.gt.cli import render_events
+from erk_shared.gateway.gt.operations.quick_submit import execute_quick_submit
+from erk_shared.gateway.gt.types import QuickSubmitError, QuickSubmitSuccess
 from erk_shared.git.fake import FakeGit
-from erk_shared.integrations.graphite.fake import FakeGraphite
-from erk_shared.integrations.gt.cli import render_events
-from erk_shared.integrations.gt.operations.quick_submit import execute_quick_submit
-from erk_shared.integrations.gt.types import QuickSubmitError, QuickSubmitSuccess
 from tests.unit.kits.kits.gt.fake_ops import FakeGtKitOps
 
 

@@ -9,7 +9,7 @@ from erk.cli.cli import cli
 from erk.core.context import context_for_test
 from erk.core.planner.registry_fake import FakePlannerRegistry
 from erk.core.planner.types import RegisteredPlanner
-from erk_shared.integrations.time.fake import FakeTime
+from erk_shared.gateway.time.fake import FakeTime
 
 
 def _make_planner(

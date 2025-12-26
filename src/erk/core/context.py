@@ -42,6 +42,17 @@ from erk_shared.core import (
     ScriptWriter,
 )
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
+
+# Import erk-specific integrations
+from erk_shared.gateway.completion import Completion
+from erk_shared.gateway.feedback import InteractiveFeedback, SuppressedFeedback, UserFeedback
+from erk_shared.gateway.graphite.abc import Graphite
+from erk_shared.gateway.graphite.dry_run import DryRunGraphite
+from erk_shared.gateway.graphite.real import RealGraphite
+from erk_shared.gateway.shell import Shell
+from erk_shared.gateway.time.abc import Time
+from erk_shared.gateway.time.real import RealTime
+from erk_shared.gateway.wt_stack.wt_stack import WtStack
 from erk_shared.git.abc import Git
 from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.real import RealGit
@@ -52,17 +63,6 @@ from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.real import RealGitHub
 from erk_shared.github.types import RepoInfo
 from erk_shared.github_admin.abc import GitHubAdmin
-
-# Import erk-specific integrations
-from erk_shared.integrations.completion import Completion
-from erk_shared.integrations.feedback import InteractiveFeedback, SuppressedFeedback, UserFeedback
-from erk_shared.integrations.graphite.abc import Graphite
-from erk_shared.integrations.graphite.dry_run import DryRunGraphite
-from erk_shared.integrations.graphite.real import RealGraphite
-from erk_shared.integrations.shell import Shell
-from erk_shared.integrations.time.abc import Time
-from erk_shared.integrations.time.real import RealTime
-from erk_shared.integrations.wt_stack.wt_stack import WtStack
 from erk_shared.objectives.storage import FileObjectiveStore, ObjectiveStore
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.github import GitHubPlanStore
@@ -95,14 +95,14 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk.core.config_store import FakeConfigStore
     from erk.core.planner.registry_fake import FakePlannerRegistry
     from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
+    from erk_shared.gateway.completion import FakeCompletion
+    from erk_shared.gateway.feedback import FakeUserFeedback
+    from erk_shared.gateway.graphite.fake import FakeGraphite
+    from erk_shared.gateway.shell import FakeShell
+    from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
-    from erk_shared.integrations.completion import FakeCompletion
-    from erk_shared.integrations.feedback import FakeUserFeedback
-    from erk_shared.integrations.graphite.fake import FakeGraphite
-    from erk_shared.integrations.shell import FakeShell
-    from erk_shared.integrations.time.fake import FakeTime
     from erk_shared.objectives.storage import FakeObjectiveStore
     from erk_shared.plan_store.fake import FakePlanStore
     from erk_shared.prompt_executor.fake import FakePromptExecutor
@@ -212,16 +212,16 @@ def context_for_test(
     from erk.core.config_store import FakeConfigStore
     from erk.core.planner.registry_fake import FakePlannerRegistry
     from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
+    from erk_shared.gateway.completion import FakeCompletion
+    from erk_shared.gateway.feedback import FakeUserFeedback
+    from erk_shared.gateway.graphite.dry_run import DryRunGraphite
+    from erk_shared.gateway.graphite.fake import FakeGraphite
+    from erk_shared.gateway.shell import FakeShell
+    from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
-    from erk_shared.integrations.completion import FakeCompletion
-    from erk_shared.integrations.feedback import FakeUserFeedback
-    from erk_shared.integrations.graphite.dry_run import DryRunGraphite
-    from erk_shared.integrations.graphite.fake import FakeGraphite
-    from erk_shared.integrations.shell import FakeShell
-    from erk_shared.integrations.time.fake import FakeTime
     from erk_shared.objectives.storage import FakeObjectiveStore
     from erk_shared.plan_store.fake import FakePlanStore
     from erk_shared.prompt_executor.fake import FakePromptExecutor

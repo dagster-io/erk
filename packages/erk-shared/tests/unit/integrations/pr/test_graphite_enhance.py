@@ -7,23 +7,23 @@ to an existing PR created via git + gh.
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk_shared.git.abc import Git
-from erk_shared.git.fake import FakeGit
-from erk_shared.github.abc import GitHub
-from erk_shared.github.fake import FakeGitHub
-from erk_shared.integrations.graphite.abc import Graphite
-from erk_shared.integrations.graphite.fake import FakeGraphite
-from erk_shared.integrations.graphite.types import BranchMetadata
-from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
-from erk_shared.integrations.pr.graphite_enhance import (
+from erk_shared.gateway.graphite.abc import Graphite
+from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.gateway.pr.graphite_enhance import (
     execute_graphite_enhance,
     should_enhance_with_graphite,
 )
-from erk_shared.integrations.pr.types import (
+from erk_shared.gateway.pr.types import (
     GraphiteEnhanceError,
     GraphiteEnhanceResult,
     GraphiteSkipped,
 )
+from erk_shared.git.abc import Git
+from erk_shared.git.fake import FakeGit
+from erk_shared.github.abc import GitHub
+from erk_shared.github.fake import FakeGitHub
 
 
 # Helper to create BranchMetadata for tests

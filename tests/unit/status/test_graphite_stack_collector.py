@@ -7,9 +7,9 @@ import pytest
 
 from erk.core.config_store import GlobalConfig
 from erk.status.collectors.graphite import GraphiteStackCollector
+from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.fake import FakeGit
-from erk_shared.integrations.graphite.fake import FakeGraphite
-from erk_shared.integrations.graphite.types import BranchMetadata
 from tests.fakes.context import create_test_context
 
 
