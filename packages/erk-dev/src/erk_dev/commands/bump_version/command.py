@@ -1,7 +1,6 @@
 """Bump all package and kit versions to a specified version."""
 
 import re
-from datetime import datetime
 from pathlib import Path
 
 import click
@@ -118,76 +117,19 @@ def update_kit_registry_md(path: Path, new_version: str, dry_run: bool) -> int:
     return count
 
 
-def update_changelog_header(path: Path, new_version: str, dry_run: bool) -> bool:
-    """Update CHANGELOG.md to move [Unreleased] content to new version section.
+def validate_changelog_for_release(repo_root: Path, version: str) -> list[str]:
+    """Validate changelog is ready for release. Returns list of error messages."""
+    # Import here to avoid circular dependency
+    from erk_dev.commands.release_check.command import validate_changelog
 
-    Transforms:
-        ## [Unreleased]
-        <content>
-        ## [X.Y.Z] - YYYY-MM-DD
+    changelog_path = repo_root / "CHANGELOG.md"
+    if not changelog_path.exists():
+        return ["CHANGELOG.md not found"]
 
-    Into:
-        ## [Unreleased]
-        ## [NEW_VERSION] - YYYY-MM-DD
-        <content>
-        ## [X.Y.Z] - YYYY-MM-DD
+    content = changelog_path.read_text(encoding="utf-8")
+    issues = validate_changelog(content, for_version=version)
 
-    Returns True if updated, False if changelog not found or no unreleased section.
-    """
-    if not path.exists():
-        return False
-
-    content = path.read_text(encoding="utf-8")
-
-    # Check if [Unreleased] section exists
-    if "## [Unreleased]" not in content:
-        return False
-
-    # Get today's date in YYYY-MM-DD format
-    today = datetime.now().strftime("%Y-%m-%d")
-
-    # Pattern to match [Unreleased] section followed by content until next ## section
-    # This regex captures:
-    # 1. The [Unreleased] header
-    # 2. The content between [Unreleased] and the next version header
-    pattern = r"(## \[Unreleased\])\n(.*?)(## \[\d)"
-
-    match = re.search(pattern, content, re.DOTALL)
-    if match is None:
-        # No version section after [Unreleased], handle edge case
-        # Look for [Unreleased] at end of file
-        simple_pattern = r"(## \[Unreleased\])\n(.*?)$"
-        match = re.search(simple_pattern, content, re.DOTALL)
-        if match is None:
-            return False
-
-        unreleased_content = match.group(2).strip()
-        if not unreleased_content:
-            # No content in unreleased section
-            return False
-
-        # Replace [Unreleased]\n<content> with [Unreleased]\n\n## [VERSION] - DATE\n<content>
-        new_section = f"## [Unreleased]\n\n## [{new_version}] - {today}\n\n{unreleased_content}\n"
-        new_content = re.sub(simple_pattern, new_section, content, flags=re.DOTALL)
-    else:
-        unreleased_content = match.group(2).strip()
-        next_version_start = match.group(3)
-
-        if not unreleased_content:
-            # Empty unreleased section - just add the new version header
-            new_section = f"## [Unreleased]\n\n## [{new_version}] - {today}\n\n{next_version_start}"
-        else:
-            # Move unreleased content under new version header
-            new_section = (
-                f"## [Unreleased]\n\n## [{new_version}] - {today}\n\n"
-                f"{unreleased_content}\n\n{next_version_start}"
-            )
-
-        new_content = re.sub(pattern, new_section, content, flags=re.DOTALL)
-
-    if not dry_run:
-        path.write_text(new_content, encoding="utf-8")
-    return True
+    return [issue.message for issue in issues if issue.level == "error"]
 
 
 @click.command("bump-version")
@@ -212,6 +154,15 @@ def bump_version_command(version: str | None, dry_run: bool) -> None:
         click.echo(f"Auto-bumping: {current} -> {version}")
     elif not re.match(r"^\d+\.\d+\.\d+$", version):
         raise click.ClickException(f"Invalid version format: {version}. Expected X.Y.Z")
+
+    # Validate changelog is ready for this release (fail fast before any changes)
+    changelog_errors = validate_changelog_for_release(repo_root, version)
+    if changelog_errors:
+        click.echo(click.style("Changelog not ready for release:", fg="red"))
+        for error in changelog_errors:
+            click.echo(click.style(f"  ✗ {error}", fg="red"))
+        click.echo(f"\nRun 'erk-dev release-check --version {version}' for details.")
+        raise SystemExit(1)
 
     if dry_run:
         click.echo("[DRY RUN] Would update:")
@@ -255,17 +206,8 @@ def bump_version_command(version: str | None, dry_run: bool) -> None:
         count = update_kit_registry_md(registry, version, dry_run)
         click.echo(f"  .erk/kits/kit-registry.md: {count} entries")
 
-    # 5. CHANGELOG.md
-    click.echo("\nChangelog:")
-    changelog = repo_root / "CHANGELOG.md"
-    if changelog.exists():
-        updated = update_changelog_header(changelog, version, dry_run)
-        if updated:
-            click.echo(f"  CHANGELOG.md: [Unreleased] -> [{version}]")
-        else:
-            click.echo("  CHANGELOG.md: no unreleased content")
-    else:
-        click.echo("  CHANGELOG.md: not found")
+    # Changelog was already validated at the start - just confirm it's ready
+    click.echo(click.style(f"\nChangelog: ✓ validated for {version}", fg="green"))
 
     if dry_run:
         click.echo("\n[DRY RUN] No files modified")

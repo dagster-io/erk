@@ -2,7 +2,7 @@
 description: Finalize changelog and create a new release version
 ---
 
-# /local:changelog-release
+# /local:push-release
 
 Finalizes the Unreleased section and creates a new versioned release.
 
@@ -11,7 +11,7 @@ Finalizes the Unreleased section and creates a new versioned release.
 ## Usage
 
 ```bash
-/local:changelog-release
+/local:push-release
 ```
 
 ## What It Does
@@ -20,7 +20,8 @@ Finalizes the Unreleased section and creates a new versioned release.
 2. Determines the next version number
 3. Moves Unreleased content to a new versioned section
 4. Removes commit hashes from entries
-5. Creates a git tag for the release
+5. Bumps version in pyproject.toml (with validation)
+6. Creates a git tag for the release
 
 ---
 
@@ -54,9 +55,9 @@ Always increment the **patch** version (X.Y.Z+1). Do not prompt the user - just 
 
 For example: if current version is 0.2.6, the next version is 0.2.7.
 
-### Phase 4: Move Unreleased to Versioned Section
+### Phase 4: Edit Changelog for Release
 
-Transform the CHANGELOG.md:
+Transform the CHANGELOG.md. **This must be done BEFORE running bump-version**, which validates the changelog format.
 
 **Before:**
 
@@ -96,17 +97,23 @@ Steps:
 3. **Remove commit hashes** from all entries (strip ` (abc1234)` suffixes)
 4. **Keep Unreleased section** empty (just the header)
 
-### Phase 5: Update Version in pyproject.toml
+### Phase 5: Bump Version (with Validation)
 
-Use the CLI to bump the version:
+Run the version bump command. This validates the changelog is properly formatted before bumping:
 
 ```bash
-erk-dev bump-version --version {new_version}
+erk-dev bump-version {new_version}
 ```
+
+**Important:** If bump-version fails with changelog errors, fix the changelog and retry. The validation checks:
+
+- Version header `## [{version}]` exists
+- No commit hashes remain in entries
+- No "As of" marker remains
 
 ### Phase 6: Create Git Tag
 
-After the changes are made, create the version tag:
+After bump-version succeeds, create the version tag:
 
 ```bash
 erk-dev release-tag
@@ -133,8 +140,6 @@ Next steps:
 ### Output Format
 
 **Start**: "Preparing release..."
-
-**Version prompt**: Ask user to confirm version
 
 **Progress**: Report each step as it completes
 

@@ -22,15 +22,15 @@ This syncs the Unreleased section with commits since the last update, adding ent
 ### 1. Finalize Changelog and Version
 
 ```bash
-/local:changelog-release
+/local:push-release
 ```
 
 This command:
 
 - Ensures changelog is current (runs changelog-update if needed)
-- Prompts for version number
-- Moves Unreleased content to a versioned section
-- Strips commit hashes from entries
+- Determines next patch version automatically
+- Edits changelog: moves Unreleased content to versioned section, strips commit hashes
+- Validates changelog format via `erk-dev bump-version` (fails fast if not ready)
 - Bumps version in pyproject.toml
 - Creates git tag `vX.Y.Z`
 
@@ -72,11 +72,13 @@ erk info release-notes
 
 ## Tooling Reference
 
-| Command                    | Purpose                                     |
-| -------------------------- | ------------------------------------------- |
-| `/local:changelog-update`  | Sync Unreleased section with latest commits |
-| `/local:changelog-release` | Finalize release (version, tag, cleanup)    |
-| `erk-dev release-info`     | Get current/last version info               |
-| `erk-dev release-tag`      | Create git tag for current version          |
-| `erk-dev release-update`   | Update CHANGELOG.md programmatically        |
-| `erk info release-notes`   | View changelog entries                      |
+| Command                     | Purpose                                        |
+| --------------------------- | ---------------------------------------------- |
+| `/local:changelog-update`   | Sync Unreleased section with latest commits    |
+| `/local:push-release`       | Finalize release (version, tag, cleanup)       |
+| `erk-dev release-info`      | Get current/last version info                  |
+| `erk-dev release-check`     | Validate changelog format                      |
+| `erk-dev release-check --version X.Y.Z` | Validate changelog is ready for release |
+| `erk-dev bump-version`      | Bump versions (validates changelog first)      |
+| `erk-dev release-tag`       | Create git tag for current version             |
+| `erk info release-notes`    | View changelog entries                         |

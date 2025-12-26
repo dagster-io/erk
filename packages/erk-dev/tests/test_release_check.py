@@ -268,3 +268,149 @@ members = []
     assert result.exit_code == 0
     assert "Passed with" in result.output
     assert "warning" in result.output
+
+
+# Release-readiness tests (--version flag)
+
+RELEASE_READY_CHANGELOG = """\
+# Changelog
+
+## [Unreleased]
+
+## [0.2.7] - 2025-12-15
+
+### Added
+- New feature X
+- New feature Y
+
+## [0.2.6] - 2025-12-12
+
+- Previous release
+"""
+
+CHANGELOG_WITH_COMMIT_HASHES = """\
+# Changelog
+
+## [Unreleased]
+
+## [0.2.7] - 2025-12-15
+
+### Added
+- New feature X (abc1234)
+- New feature Y (def5678a)
+
+## [0.2.6] - 2025-12-12
+
+- Previous release
+"""
+
+CHANGELOG_WITH_AS_OF_MARKER = """\
+# Changelog
+
+## [Unreleased]
+
+As of abc1234
+
+## [0.2.7] - 2025-12-15
+
+### Added
+- New feature X
+- New feature Y
+
+## [0.2.6] - 2025-12-12
+
+- Previous release
+"""
+
+CHANGELOG_MISSING_VERSION_HEADER = """\
+# Changelog
+
+## [Unreleased]
+
+### Added
+- New feature X
+
+## [0.2.6] - 2025-12-12
+
+- Previous release
+"""
+
+
+def test_validate_changelog_release_ready() -> None:
+    """Release-ready changelog passes version validation."""
+    issues = validate_changelog(RELEASE_READY_CHANGELOG, for_version="0.2.7")
+
+    errors = [i for i in issues if i.level == "error"]
+    assert errors == []
+
+
+def test_validate_changelog_commit_hashes_error() -> None:
+    """Changelog with commit hashes fails version validation."""
+    issues = validate_changelog(CHANGELOG_WITH_COMMIT_HASHES, for_version="0.2.7")
+
+    errors = [i for i in issues if i.level == "error"]
+    assert len(errors) == 2  # Two entries with hashes
+    assert all("Commit hash" in e.message for e in errors)
+
+
+def test_validate_changelog_as_of_marker_error() -> None:
+    """Changelog with 'As of' marker fails version validation."""
+    issues = validate_changelog(CHANGELOG_WITH_AS_OF_MARKER, for_version="0.2.7")
+
+    errors = [i for i in issues if i.level == "error"]
+    assert len(errors) == 1
+    assert "As of" in errors[0].message
+
+
+def test_validate_changelog_missing_version_header_error() -> None:
+    """Changelog missing version header fails version validation."""
+    issues = validate_changelog(CHANGELOG_MISSING_VERSION_HEADER, for_version="0.2.7")
+
+    errors = [i for i in issues if i.level == "error"]
+    assert len(errors) == 1
+    assert "0.2.7" in errors[0].message
+    assert "not found" in errors[0].message
+
+
+def test_release_check_command_with_version_valid(tmp_path: Path) -> None:
+    """Release-ready changelog passes --version check."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        """\
+[tool.uv.workspace]
+members = []
+""",
+        encoding="utf-8",
+    )
+
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text(RELEASE_READY_CHANGELOG, encoding="utf-8")
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        result = runner.invoke(release_check_command, ["--version", "0.2.7"])
+
+    assert result.exit_code == 0
+    assert "All checks passed" in result.output
+
+
+def test_release_check_command_with_version_fails(tmp_path: Path) -> None:
+    """Changelog with commit hashes fails --version check."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        """\
+[tool.uv.workspace]
+members = []
+""",
+        encoding="utf-8",
+    )
+
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text(CHANGELOG_WITH_COMMIT_HASHES, encoding="utf-8")
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        result = runner.invoke(release_check_command, ["--version", "0.2.7"])
+
+    assert result.exit_code == 1
+    assert "Failed" in result.output
