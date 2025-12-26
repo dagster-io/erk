@@ -151,6 +151,31 @@ Use current session only despite being tiny. Inform user:
 
 > "No meaningful sessions found (all sessions were < 1KB). Analyzing current conversation anyway."
 
+### Step 1b: Output Transparency Summary
+
+After session discovery (whether auto-selected or user-selected), output a transparency summary showing what sessions will be analyzed:
+
+```markdown
+## Session Sources Summary
+
+**Selection Context:**
+
+- Branch: `[branch_name]` ([feature branch / trunk])
+- Selection reason: [e.g., "Current session trivial, auto-selected 2 substantial sessions"]
+
+### On-Disk Sessions
+
+| Session     | Size  | Age     | Subagents             | Status     |
+| ----------- | ----- | ------- | --------------------- | ---------- |
+| `abc123...` | 45 KB | 12m ago | 3 (Explore×2, Plan×1) | ✓ selected |
+| `def456...` | 12 KB | 1h ago  | 1 (Plan×1)            | ✓ selected |
+| `ghi789...` | 8 KB  | 2h ago  | 0                     | skipped    |
+```
+
+**Subagent information**: The `list-sessions` output now includes agent metadata for each session. Use the `agents.agent_count` and `agents.agent_types` fields to show the breakdown (e.g., "3 (Explore×2, Plan×1)").
+
+This transparency summary helps the user understand what content is being analyzed and why.
+
 **If explicit session IDs found in context:**
 
 Load and preprocess the session logs. Session logs are stored in `project_dir` as flat files:
@@ -184,6 +209,28 @@ cat .impl/issue.json 2>/dev/null
 4. Note the session IDs from the stderr JSON output
 
 **If issue.json doesn't exist OR extraction fails:** Continue with session log analysis only (this is normal for branches not created via `erk implement`).
+
+### Step 2b: Include Plan Issue Session in Summary
+
+If a plan issue session was found in Step 2, update the transparency summary from Step 1b to include it:
+
+```markdown
+### Plan Issue Session (GitHub issue #N)
+
+- Status: ✓ Found
+- Session IDs: [from extraction metadata]
+- Subagents: [count and types if parseable from session content]
+```
+
+If the plan issue session was NOT found or extraction failed:
+
+```markdown
+### Plan Issue Session
+
+- Status: ✗ Not found (branch not created via `erk implement`)
+```
+
+This ensures the user can see the complete picture of all session sources being analyzed.
 
 ### Step 3: Verify Existing Documentation
 
@@ -335,13 +382,20 @@ Run verification to ensure the issue was created with proper Schema v2 complianc
 erk plan check <issue_number>
 ```
 
-Display next steps:
+Display next steps with a coverage confidence summary:
 
 ```
 ✅ Extraction plan saved to GitHub
 
 **Issue:** [title from result]
            [url from result]
+
+### Coverage Confidence
+✓ N Plan agents included (design decisions, trade-offs)
+✓ N Explore agents included (codebase discoveries)
+[If any agents with "unknown" type: "N agents with unknown type (could not determine role)"]
+
+**Total:** X sessions, Y subagents analyzed
 
 **Next steps:**
 
@@ -354,6 +408,8 @@ Implement the plan:
 Submit for remote implementation:
     erk plan submit [issue_number]
 ```
+
+The coverage confidence summary helps the user understand how thoroughly the extraction analyzed the available context, particularly whether the valuable Plan and Explore agent outputs were included in the analysis.
 
 ---
 

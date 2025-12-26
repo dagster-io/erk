@@ -52,6 +52,33 @@ class BranchContext:
 
 
 @dataclass
+class AgentDetail:
+    """Details about a single subagent."""
+
+    agent_id: str
+    agent_type: str  # "Plan", "Explore", "unknown"
+    task_input: str  # from Task tool input description field
+
+
+@dataclass
+class AgentInfo:
+    """Metadata about a session's subagents."""
+
+    agents: list[AgentDetail]
+
+    @property
+    def agent_count(self) -> int:
+        return len(self.agents)
+
+    @property
+    def agent_types(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for agent in self.agents:
+            counts[agent.agent_type] = counts.get(agent.agent_type, 0) + 1
+        return counts
+
+
+@dataclass
 class SessionInfo:
     """Metadata for a session log file."""
 
@@ -62,6 +89,7 @@ class SessionInfo:
     size_bytes: int
     summary: str
     is_current: bool
+    agents: AgentInfo
 
 
 @dataclass
@@ -153,6 +181,119 @@ def format_display_time(mtime: float) -> str:
 
     dt = datetime.datetime.fromtimestamp(mtime)
     return dt.strftime("%b %-d, %-I:%M %p")
+
+
+def format_agent_breakdown(agent_types: dict[str, int]) -> str:
+    """Format agent types as '3 (Explore×2, Plan×1)' or '0'.
+
+    Args:
+        agent_types: Dict mapping agent type to count
+
+    Returns:
+        Formatted string with total count and breakdown
+    """
+    total = sum(agent_types.values())
+    if total == 0:
+        return "0"
+
+    # Sort by count descending for consistent output
+    sorted_types = sorted(agent_types.items(), key=lambda x: (-x[1], x[0]))
+    parts = [f"{agent_type}×{count}" for agent_type, count in sorted_types]
+    return f"{total} ({', '.join(parts)})"
+
+
+def discover_agent_metadata(
+    main_content: str,
+    agent_logs: list[tuple[str, str]],
+) -> AgentInfo:
+    """Discover agent types by extracting agent IDs from Task tool results.
+
+    Algorithm:
+    1. Parse main session JSONL for Task tool_use blocks, recording
+       tool_use_id, subagent_type, and description (task_input)
+    2. Find matching tool_result blocks by tool_use_id
+    3. Parse tool_result content for 'agentId: xxx' pattern
+    4. Build list of AgentDetail(agent_id, subagent_type, task_input)
+    5. Match against agent_logs list - agents without matching tool_result
+       get type "unknown" and empty task_input
+
+    Args:
+        main_content: Raw JSONL content from main session log
+        agent_logs: List of (agent_id, content) tuples for agent sessions
+
+    Returns:
+        AgentInfo containing details about discovered agents
+    """
+    import re
+
+    # Track Task tool_use blocks: tool_use_id -> (subagent_type, task_input)
+    task_tool_uses: dict[str, tuple[str, str]] = {}
+
+    # Track tool_result -> agent_id: tool_use_id -> agent_id
+    tool_result_agent_ids: dict[str, str] = {}
+
+    # Parse each line of the JSONL
+    for line in main_content.split("\n"):
+        if not line.strip():
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+
+        # Look for assistant messages with tool_use blocks
+        if entry.get("type") == "assistant":
+            message = entry.get("message", {})
+            content = message.get("content", [])
+            if isinstance(content, list):
+                for block in content:
+                    if isinstance(block, dict) and block.get("type") == "tool_use":
+                        if block.get("name") == "Task":
+                            tool_use_id = block.get("id", "")
+                            input_data = block.get("input", {})
+                            subagent_type = input_data.get("subagent_type", "unknown")
+                            task_input = input_data.get("description", "")
+                            if tool_use_id:
+                                task_tool_uses[tool_use_id] = (subagent_type, task_input)
+
+        # Look for tool_result blocks containing agent ID
+        elif entry.get("type") == "user":
+            message = entry.get("message", {})
+            content = message.get("content", [])
+            if isinstance(content, list):
+                for block in content:
+                    if isinstance(block, dict) and block.get("type") == "tool_result":
+                        tool_use_id = block.get("tool_use_id", "")
+                        result_content = block.get("content", "")
+                        if isinstance(result_content, str):
+                            # Look for agentId pattern in result
+                            # Agent IDs are alphanumeric with hyphens, at least 8 chars
+                            match = re.search(r"agentId:\s*([a-zA-Z0-9-]{8,})", result_content)
+                            if match and tool_use_id:
+                                tool_result_agent_ids[tool_use_id] = match.group(1)
+
+    # Build agent details from Task tool uses that have agent IDs
+    discovered_agents: dict[str, AgentDetail] = {}
+    for tool_use_id, (subagent_type, task_input) in task_tool_uses.items():
+        if tool_use_id in tool_result_agent_ids:
+            agent_id = tool_result_agent_ids[tool_use_id]
+            discovered_agents[agent_id] = AgentDetail(
+                agent_id=agent_id,
+                agent_type=subagent_type,
+                task_input=task_input,
+            )
+
+    # Add any agents from logs that weren't discovered (mark as unknown)
+    agent_log_ids = {agent_id for agent_id, _ in agent_logs}
+    for agent_id in agent_log_ids:
+        if agent_id not in discovered_agents:
+            discovered_agents[agent_id] = AgentDetail(
+                agent_id=agent_id,
+                agent_type="unknown",
+                task_input="",
+            )
+
+    return AgentInfo(agents=list(discovered_agents.values()))
 
 
 def extract_text_from_blocks(blocks: list[dict | str]) -> str:
@@ -253,14 +394,17 @@ def _list_sessions_from_store(
     # Apply limit
     limited_sessions = filtered_sessions[:limit]
 
-    # Convert to SessionInfo with summaries
+    # Convert to SessionInfo with summaries and agent metadata
     session_infos: list[SessionInfo] = []
     for session in limited_sessions:
-        # Read session content for summary extraction
-        content = session_store.read_session(cwd, session.session_id, include_agents=False)
+        # Read session content for summary and agent extraction
+        content = session_store.read_session(cwd, session.session_id, include_agents=True)
         summary = ""
+        agents = AgentInfo(agents=[])
         if content is not None:
             summary = extract_summary(content.main_content)
+            # Discover agent metadata from session content
+            agents = discover_agent_metadata(content.main_content, content.agent_logs)
 
         # Determine if this is the current session
         is_current = session.session_id == current_session_id
@@ -274,6 +418,7 @@ def _list_sessions_from_store(
                 size_bytes=session.size_bytes,
                 summary=summary,
                 is_current=is_current,
+                agents=agents,
             )
         )
 
