@@ -445,7 +445,6 @@ __all__ = [
 # Import from top-level package (uses __init__.py re-exports)
 from erk_shared.git import Git, RealGit, FakeGit
 from erk_shared.github import GitHub, RealGitHub, FakeGitHub
-from erk_shared.gateway.erk_wt import ErkWtKit, RealErkWtKit, FakeErkWtKit
 ```
 
 **Not this:**

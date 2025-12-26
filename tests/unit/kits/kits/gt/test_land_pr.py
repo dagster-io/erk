@@ -433,18 +433,18 @@ class TestLandPrBody:
             .with_pr(
                 123,
                 state="OPEN",
-                title="Extract subprocess calls into reusable interface",
+                title="Refactor subprocess calls into reusable interface",
                 body=(
-                    "Refactors `create_wt_from_issue` command to use dependency injection.\n\n"
+                    "Refactors command to use dependency injection.\n\n"
                     "## Changes\n"
-                    "- Added ErkWtKit ABC interface\n"
+                    "- Added ABC interface\n"
                     "- Implemented real and fake versions"
                 ),
             )
         )
 
         # Verify both can be fetched
-        expected_title = "Extract subprocess calls into reusable interface"
+        expected_title = "Refactor subprocess calls into reusable interface"
         assert ops.github.get_pr_title(Path("."), 123) == expected_title
         assert "Refactors" in ops.github.get_pr_body(Path("."), 123)  # type: ignore[operator]
 
