@@ -11,9 +11,9 @@ The main goal of developer onboarding is to set up **shell integration**, which 
 Before you begin, ensure you have:
 
 - **Git repository cloned** - You should already have the repo on your machine
-- **erk CLI installed** - Follow the [erk installation guide](../../README.md) if needed
+- **erk CLI installed** - See prerequisites in [Project Setup](project-setup.md)
 - **Claude Code** - The AI-powered CLI that erk extends
-- **Graphite CLI** (if your team uses stacked PRs) - Run `gt auth` after installing to authenticate
+- **Graphite CLI** (if your team uses stacked PRs) - Run `gt auth` after installing
 
 Since erk is already configured by the project maintainer, you'll find:
 

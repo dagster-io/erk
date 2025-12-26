@@ -4,56 +4,12 @@
 
 For the philosophy and design principles behind erk, see [The TAO of erk](TAO.md).
 
-## User Setup
+## Getting Started
 
-### Prerequisites
+Choose your path:
 
-Ensure you have these tools installed:
-
-- `python` (3.10+)
-- `claude` - Claude Code CLI
-- `uv` - Fast Python environment management
-- `gt` - Graphite for stacked PRs
-- `gh` - GitHub CLI
-
-### Initialize Erk
-
-```bash
-erk init
-```
-
-This command:
-
-- Prompts for worktrees root directory (where all worktrees are stored)
-- Creates global config at `~/.erk/config.toml`
-- Detects Graphite (`gt`) availability for branch creation
-- Creates repo-specific `config.toml` with preset selection (`auto`, `generic`, `dagster`)
-- Offers to add `.env`, `.erk/scratch/`, and `.impl/` to `.gitignore`
-- Shows shell integration setup instructions (completion + auto-activation)
-
-### Shell Integration
-
-`erk init` will display shell integration instructions to add to your `.zshrc` or `.bashrc`. Copy these instructions manually - erk doesn't modify your shell config automatically.
-
-**Why manual setup?** Shell integration is essential for the core workflow: it enables commands such as `erk br co` and `erk wt co` to change your terminal's directory and activate the correct Python environment. Without it, these commands run in a subprocess and have no effect on your shell. We ask you to add it manually so you stay in control of your shell configuration.
-
-To view the instructions again later: `erk init --shell`
-
-Or append directly:
-
-```bash
-erk init --shell >> ~/.zshrc  # or ~/.bashrc
-```
-
-### Verify Setup
-
-Run the doctor command to verify your environment:
-
-```bash
-erk doctor
-```
-
-This checks that all prerequisites are installed and configured correctly.
+- **Project maintainers** setting up erk for the first time → [Project Setup](docs/user/project-setup.md)
+- **Developers** joining a repo with erk configured → [Developer Onboarding](docs/user/developer-onboarding.md)
 
 ## Local Plan-Driven Workflow
 
