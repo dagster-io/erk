@@ -195,17 +195,17 @@ class TestBuildBlockingMessage:
         assert "trunk branch" not in message
 
     def test_edit_plan_option_included(self) -> None:
-        """Third option 'Edit the plan' is included in message."""
+        """Third option 'View/Edit the plan' is included in message."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message("session-123", "feature-branch", plan_path)
-        assert "Edit the plan" in message
+        assert "View/Edit the plan" in message
         assert "Open plan in editor" in message
 
     def test_edit_plan_instructions_include_path(self) -> None:
         """Edit plan instructions include the plan file path."""
         plan_path = Path("/home/user/.claude/plans/my-plan.md")
         message = build_blocking_message("session-123", "feature-branch", plan_path)
-        assert "If user chooses 'Edit the plan':" in message
+        assert "If user chooses 'View/Edit the plan':" in message
         assert f"code {plan_path}" in message
         assert "After user confirms they're done editing" in message
         assert "loop until user chooses Save or Implement" in message
@@ -214,8 +214,8 @@ class TestBuildBlockingMessage:
         """Edit plan instructions omitted when plan_file_path is None."""
         message = build_blocking_message("session-123", "feature-branch", None)
         # The option is still listed (as it's hardcoded), but no instructions
-        assert "Edit the plan" in message
-        assert "If user chooses 'Edit the plan':" not in message
+        assert "View/Edit the plan" in message
+        assert "If user chooses 'View/Edit the plan':" not in message
 
 
 # ============================================================================

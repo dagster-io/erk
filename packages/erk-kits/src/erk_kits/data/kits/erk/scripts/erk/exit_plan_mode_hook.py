@@ -88,7 +88,7 @@ def build_blocking_message(
         "Does NOT proceed to implementation.",
         '  2. "Implement now" - Skip saving, proceed directly to implementation '
         "(edits code in the current worktree).",
-        '  3. "Edit the plan" - Open plan in editor to review or modify before deciding.',
+        '  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.',
     ]
 
     if current_branch in ("master", "main"):
@@ -121,7 +121,7 @@ def build_blocking_message(
         lines.extend(
             [
                 "",
-                "If user chooses 'Edit the plan':",
+                "If user chooses 'View/Edit the plan':",
                 f"  1. Run: code {plan_file_path}",
                 "  2. After user confirms they're done editing, ask the same question again",
                 "     (loop until user chooses Save or Implement)",
