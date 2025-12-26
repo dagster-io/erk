@@ -604,5 +604,6 @@ gh api /repos/{owner}/{repo} --cache 1h
 - `gh.md` - Command reference and workflows
 - `graphql.md` - GraphQL API patterns
 - `graphql-schema-core.md` - GraphQL schema reference
+- `rest-vs-graphql-mapping.md` - Practical field mapping between REST and GraphQL responses
 - [GitHub REST API docs](https://docs.github.com/en/rest)
 - [GitHub GraphQL API docs](https://docs.github.com/en/graphql)

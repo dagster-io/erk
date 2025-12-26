@@ -5,7 +5,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
+# PR state values use GraphQL enum naming (uppercase).
+# REST API and CLI use lowercase - mapping is handled at gateway boundaries.
+# This convention ensures consistent internal representation across all gateways.
 PRState = Literal["OPEN", "MERGED", "CLOSED"]
+
+# Filter types for list_prs - use GraphQL-style uppercase values
+# ALL is a filter-only value (not a valid PRState)
+PRStatusFilter = Literal["OPEN", "CLOSED", "MERGED", "ALL"]
+PRAuthorFilter = Literal["@me", "any"]
 
 
 @dataclass(frozen=True)
@@ -136,6 +144,8 @@ class PullRequestInfo:
     checks_counts: tuple[int, int] | None = None  # (passing, total) or None if no checks
     # True if PR will close the linked issue when merged (via "Closes #N" keywords)
     will_close_target: bool = False
+    # ISO 8601 timestamp when PR was created (e.g., "2024-01-15T10:30:00Z")
+    created_at: str | None = None
 
 
 class _NotAvailable:

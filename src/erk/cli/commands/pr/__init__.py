@@ -7,6 +7,7 @@ from erk.cli.commands.pr.auto_restack_cmd import pr_auto_restack
 from erk.cli.commands.pr.check_cmd import pr_check
 from erk.cli.commands.pr.checkout_cmd import pr_checkout
 from erk.cli.commands.pr.land_cmd import pr_land
+from erk.cli.commands.pr.list_cmd import pr_list
 from erk.cli.commands.pr.submit_cmd import pr_submit
 from erk.cli.commands.pr.sync_cmd import pr_sync
 
@@ -21,5 +22,6 @@ pr_group.add_command(pr_auto_restack, name="auto-restack")
 pr_group.add_command(pr_check, name="check")
 register_with_aliases(pr_group, pr_checkout)
 pr_group.add_command(pr_land, name="land")
+register_with_aliases(pr_group, pr_list)
 pr_group.add_command(pr_submit, name="submit")
 pr_group.add_command(pr_sync, name="sync")
