@@ -12,8 +12,6 @@ artifacts:
     - commands/erk/save-plan.md
     - commands/erk/pr-address.md
     - commands/erk/pr-submit.md
-  agent:
-    - agents/erk/issue-wt-creator.md
   doc:
     - docs/erk/EXAMPLES.md
     - docs/erk/includes/conflict-resolution.md
@@ -37,12 +35,6 @@ scripts:
   - name: preprocess-session
     path: scripts/erk/preprocess_session.py
     description: Compress JSONL session logs to XML format, auto-discovering agent logs for comprehensive preprocessing
-  - name: comment-worktree-creation
-    path: scripts/erk/comment_worktree_creation.py
-    description: Post GitHub comment documenting worktree creation
-  - name: parse-issue-reference
-    path: scripts/erk/parse_issue_reference.py
-    description: Parse GitHub issue number from URL or plain number
   - name: issue-title-to-filename
     path: scripts/erk/issue_title_to_filename.py
     description: Convert GitHub issue title to plan filename
@@ -58,9 +50,6 @@ scripts:
   - name: wrap-plan-in-metadata-block
     path: scripts/erk/wrap_plan_in_metadata_block.py
     description: Wrap plan content in collapsible GitHub metadata block
-  - name: create-wt-from-issue
-    path: scripts/erk/create_wt_from_issue.py
-    description: Create worktree from GitHub issue with erk-plan label
   - name: create-plan-from-context
     path: scripts/erk/create_plan_from_context.py
     description: Create GitHub issue from plan content (stdin) with erk-plan label
