@@ -8,6 +8,34 @@ import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+# Protected source directories that should never be deleted by kit operations.
+# These contain SOURCE files that are the source of truth for kit artifacts.
+PROTECTED_SOURCE_DIRS: frozenset[str] = frozenset(
+    [
+        ".claude",
+        ".erk/docs",
+        ".github/workflows",
+    ]
+)
+
+
+def _is_protected_source_path(artifact_path: str) -> bool:
+    """Check if path is in a protected source directory.
+
+    Protected directories contain SOURCE files that are the source of truth.
+    Kit operations should never delete these files.
+
+    Args:
+        artifact_path: Relative path to check (e.g., ".claude/commands/foo.md")
+
+    Returns:
+        True if path is protected and should not be deleted
+    """
+    for protected_dir in PROTECTED_SOURCE_DIRS:
+        if artifact_path.startswith(protected_dir + "/") or artifact_path == protected_dir:
+            return True
+    return False
+
 
 class ArtifactOperations(ABC):
     """Strategy for installing and cleaning up artifacts."""
@@ -53,10 +81,26 @@ class ProdOperations(ArtifactOperations):
         return ""
 
     def remove_artifacts(self, artifact_paths: list[str], project_dir: Path) -> list[str]:
-        """Remove all artifacts unconditionally."""
+        """Remove artifacts, protecting source directories.
+
+        Protected source directories (.claude/, .erk/docs/, .github/workflows/)
+        are never deleted, even if listed in artifact_paths. This prevents
+        accidental deletion of source files during kit reinstallation.
+
+        Returns:
+            List of paths that were skipped (protected or non-existent)
+        """
+        skipped: list[str] = []
+
         for artifact_path in artifact_paths:
+            # Skip protected source directories
+            if _is_protected_source_path(artifact_path):
+                skipped.append(artifact_path)
+                continue
+
             full_path = project_dir / artifact_path
             if not full_path.exists():
+                skipped.append(artifact_path)
                 continue
 
             if full_path.is_file() or full_path.is_symlink():
@@ -64,7 +108,7 @@ class ProdOperations(ArtifactOperations):
             else:
                 shutil.rmtree(full_path)
 
-        return []
+        return skipped
 
 
 def create_artifact_operations() -> ArtifactOperations:
