@@ -15,7 +15,7 @@ This document covers the dependency injection patterns for kit CLI commands in e
 
 ## Overview
 
-Kit CLI commands receive dependencies via Click's context system (`@click.pass_context`). The `DotAgentContext` dataclass holds all dependencies (git, github, graphite integrations) and is:
+Kit CLI commands receive dependencies via Click's context system (`@click.pass_context`). The `DotAgentContext` dataclass holds all dependencies (git, github, graphite gateways) and is:
 
 1. **Created once** at CLI entry point via `create_context()`
 2. **Threaded through** the application via `ctx.obj`

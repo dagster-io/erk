@@ -12,9 +12,9 @@ Import from submodules:
 - naming: sanitize_worktree_name, generate_filename_from_title
 - output.output: user_output, machine_output, format_duration
 - subprocess_utils: run_subprocess_with_context
-- integrations.graphite.*: Graphite, RealGraphite, FakeGraphite, etc.
-- integrations.time.*: Time, RealTime
-- integrations.parallel.*: ParallelTaskRunner, RealParallelTaskRunner
+- gateway.graphite.*: Graphite, RealGraphite, FakeGraphite, etc.
+- gateway.time.*: Time, RealTime
+- gateway.parallel.*: ParallelTaskRunner, RealParallelTaskRunner
 """
 
 __version__ = "0.1.0"

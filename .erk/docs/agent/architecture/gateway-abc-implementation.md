@@ -30,7 +30,7 @@ All gateway ABCs (Git, GitHub, Graphite) follow the same 5-file pattern. When ad
 | -------- | ----------------------------------------------------------- |
 | Git      | `packages/erk-shared/src/erk_shared/git/`                   |
 | GitHub   | `packages/erk-shared/src/erk_shared/github/`                |
-| Graphite | `packages/erk-shared/src/erk_shared/integrations/graphite/` |
+| Graphite | `packages/erk-shared/src/erk_shared/gateway/graphite/`      |
 
 ## Checklist for New Gateway Methods
 

@@ -37,7 +37,7 @@ src/erk/tui/
 
 ### PlanDataProvider (ABC)
 
-Abstract interface for fetching plan data. Follows the same ABC/Fake pattern as integrations.
+Abstract interface for fetching plan data. Follows the same ABC/Fake pattern as gateways.
 
 ```python
 class PlanDataProvider(ABC):

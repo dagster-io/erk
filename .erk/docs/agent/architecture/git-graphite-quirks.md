@@ -40,7 +40,7 @@ unmerged_files = [
 ]
 ```
 
-**Location in Codebase**: `packages/erk-shared/src/erk_shared/integrations/gt/operations/restack_finalize.py`
+**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/gt/operations/restack_finalize.py`
 
 ## Transient Dirty State After Rebase
 
@@ -60,7 +60,7 @@ if not ops.git.is_worktree_clean(cwd):
         yield CompletionEvent(RestackFinalizeError(...))
 ```
 
-**Location in Codebase**: `packages/erk-shared/src/erk_shared/integrations/gt/operations/restack_finalize.py`
+**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/gt/operations/restack_finalize.py`
 
 ## Unmerged File Status Codes
 

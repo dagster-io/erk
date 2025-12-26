@@ -222,7 +222,7 @@ for event in executor.execute_command_streaming(...):
 
 ## Related Files
 
-- `packages/erk-shared/src/erk_shared/integrations/gt/events.py` - ProgressEvent/CompletionEvent definitions
+- `packages/erk-shared/src/erk_shared/gateway/gt/events.py` - ProgressEvent/CompletionEvent definitions
 - `src/erk/core/claude_executor.py` - ClaudeEvent definitions
-- `packages/erk-shared/src/erk_shared/integrations/gt/operations/` - Example operations
+- `packages/erk-shared/src/erk_shared/gateway/gt/operations/` - Example operations
 - `src/erk/cli/commands/pr/submit_cmd.py` - CLI consumption example

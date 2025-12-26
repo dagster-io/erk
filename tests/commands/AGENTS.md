@@ -114,7 +114,7 @@ test_ctx = env.build_context(
     show_pr_checks=True,
 )
 
-# Combine custom integrations with config flags
+# Combine custom gateways with config flags
 test_ctx = env.build_context(
     git=git,
     graphite=graphite,

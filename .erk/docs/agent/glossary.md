@@ -576,7 +576,7 @@ A boolean field on `PullRequestInfo` indicating whether a PR will automatically 
 
 A frozen dataclass for emitting progress notifications during long-running operations.
 
-**Location**: `packages/erk-shared/src/erk_shared/integrations/gt/events.py`
+**Location**: `packages/erk-shared/src/erk_shared/gateway/gt/events.py`
 
 **Purpose**: Decouple progress reporting from rendering. Operations yield events; CLI layer renders them.
 
@@ -598,7 +598,7 @@ yield ProgressEvent("Complete", style="success")
 
 A generic frozen dataclass wrapping the final result of a generator-based operation.
 
-**Location**: `packages/erk-shared/src/erk_shared/integrations/gt/events.py`
+**Location**: `packages/erk-shared/src/erk_shared/gateway/gt/events.py`
 
 **Purpose**: Signal operation completion and provide the result to the consumer.
 

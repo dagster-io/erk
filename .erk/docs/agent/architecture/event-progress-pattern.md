@@ -17,7 +17,7 @@ Operations yield events instead of using `click.echo()` directly. This enables:
 
 ## Source Files
 
-Event types are defined in `packages/erk-shared/src/erk_shared/integrations/gt/events.py`.
+Event types are defined in `packages/erk-shared/src/erk_shared/gateway/gt/events.py`.
 
 For implementation examples, see operations in `packages/erk/src/erk/operations/`.
 

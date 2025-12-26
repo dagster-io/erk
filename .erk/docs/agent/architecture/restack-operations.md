@@ -43,7 +43,7 @@ The restack operation is split into three phases to enable automated conflict re
 
 **Purpose:** Prepare branch and detect initial conflicts.
 
-**Location:** `packages/erk-shared/src/erk_shared/integrations/gt/operations/restack_preflight.py`
+**Location:** `packages/erk-shared/src/erk_shared/gateway/gt/operations/restack_preflight.py`
 
 **Steps:**
 
@@ -84,7 +84,7 @@ class RestackPreflightError:
 
 **Purpose:** Resolve conflicts and continue restack until completion.
 
-**Location:** `packages/erk-shared/src/erk_shared/integrations/gt/operations/restack_continue.py`
+**Location:** `packages/erk-shared/src/erk_shared/gateway/gt/operations/restack_continue.py`
 
 **Steps:**
 
@@ -129,7 +129,7 @@ While not complete:
 
 **Purpose:** Verify restack completed cleanly.
 
-**Location:** `packages/erk-shared/src/erk_shared/integrations/gt/operations/restack_finalize.py`
+**Location:** `packages/erk-shared/src/erk_shared/gateway/gt/operations/restack_finalize.py`
 
 **Steps:**
 
@@ -157,7 +157,7 @@ class RestackFinalizeError:
 
 ## Error Types
 
-All error types are defined in `packages/erk-shared/src/erk_shared/integrations/gt/types.py`:
+All error types are defined in `packages/erk-shared/src/erk_shared/gateway/gt/types.py`:
 
 **Preflight Errors:**
 

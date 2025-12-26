@@ -204,7 +204,7 @@ The `Time` ABC defines abstract methods for time operations including `sleep()` 
 - **RealTime**: Uses actual `time.sleep()` and `datetime.now()`
 - **FakeTime**: Returns immediately, tracks calls for test assertions
 
-See `erk_shared/integrations/time/abc.py` for the canonical interface definition.
+See `erk_shared/gateway/time/abc.py` for the canonical interface definition.
 
 ### When to Use
 
@@ -308,7 +308,7 @@ packages/erk-shared/src/erk_shared/
 │   ├── abc.py
 │   ├── real.py
 │   └── fake.py
-└── integrations/                  # Domain-specific gateways
+└── gateway/                       # Domain-specific gateways
     ├── erk_wt/                    # Erk worktree operations
     │   ├── __init__.py
     │   ├── abc.py
@@ -420,7 +420,7 @@ __all__ = [
 
 **Domain gateways** (specific domains):
 
-- `packages/erk-shared/src/erk_shared/integrations/<name>/` - Domain-specific operations
+- `packages/erk-shared/src/erk_shared/gateway/<name>/` - Domain-specific operations
 
 ### When to Create a New Gateway
 

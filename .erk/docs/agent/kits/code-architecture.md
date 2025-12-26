@@ -14,12 +14,12 @@ Kit code lives in exactly TWO places:
 
 ### Layer 1: Canonical Implementation (erk-shared)
 
-**Location**: `packages/erk-shared/src/erk_shared/integrations/[kit_name]/`
+**Location**: `packages/erk-shared/src/erk_shared/gateway/[kit_name]/`
 
 **What goes here**: All actual implementation code
 
 ```
-packages/erk-shared/src/erk_shared/integrations/gt/
+packages/erk-shared/src/erk_shared/gateway/gt/
 ├── __init__.py                      # Public exports
 ├── abc.py                           # ABC interfaces
 ├── real.py                          # Real implementations
@@ -77,7 +77,7 @@ packages/erk-kits/src/erk_kits/data/kits/gt/
 └───────────────────────────────────────┘
 
 ┌───────────────────────────────────────┐
-│ erk-shared/integrations/gt/           │
+│ erk-shared/gateway/gt/                │
 │   ├── abc.py                          │
 │   ├── real.py                         │
 │   ├── fake.py                         │
@@ -110,7 +110,7 @@ def test_gt_kit_architecture() -> None:
     """Verify correct two-layer architecture."""
 
     # Layer 1: Operations exist in erk-shared
-    ops = Path("packages/erk-shared/src/erk_shared/integrations/gt/operations/preflight.py")
+    ops = Path("packages/erk-shared/src/erk_shared/gateway/gt/operations/preflight.py")
     assert ops.exists()
 
     # Layer 2: CLI wrappers exist in erk-kits
@@ -125,7 +125,7 @@ def test_gt_kit_architecture() -> None:
 ## Quick Reference
 
 **Q: Where do I put new kit command code?**
-A: `packages/erk-shared/src/erk_shared/integrations/[kit_name]/kit_cli_commands/`
+A: `packages/erk-shared/src/erk_shared/gateway/[kit_name]/kit_cli_commands/`
 
 **Q: Where do I define the kit structure?**
 A: `packages/erk-kits/src/erk_kits/data/kits/[kit_name]/kit.yaml`

@@ -34,7 +34,7 @@ GitHub issue operations.
 
 ## Domain Gateways
 
-Located in `packages/erk-shared/src/erk_shared/integrations/`:
+Located in `packages/erk-shared/src/erk_shared/gateway/`:
 
 ### Browser (`browser/`)
 

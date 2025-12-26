@@ -4,7 +4,7 @@ This module provides commit message generation for PR submissions,
 using Claude CLI to analyze diffs and generate descriptive messages.
 
 The commit message prompt is loaded from the shared prompt file at:
-packages/erk-shared/src/erk_shared/integrations/gt/commit_message_prompt.md
+packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md
 """
 
 from collections.abc import Generator
