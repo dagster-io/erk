@@ -3,8 +3,8 @@
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
+from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.fake import FakeGit
-from erk_shared.integrations.graphite.fake import FakeGraphite
 from tests.fakes.claude_executor import FakeClaudeExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env

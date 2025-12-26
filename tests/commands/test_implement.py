@@ -712,7 +712,7 @@ def test_implement_from_issue_tracks_branch_with_graphite() -> None:
     The key assertion is that track_branch is called with repo_root (not worktree path)
     as the cwd argument, since Graphite metadata exists at the repo root.
     """
-    from erk_shared.integrations.graphite.fake import FakeGraphite
+    from erk_shared.gateway.graphite.fake import FakeGraphite
 
     plan_issue = _create_sample_plan_issue("500")
 

@@ -3,9 +3,9 @@
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
+from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
-from erk_shared.integrations.graphite.fake import FakeGraphite
 from tests.test_utils.env_helpers import erk_inmem_env
 from tests.test_utils.output_helpers import strip_ansi
 

@@ -276,7 +276,7 @@ def test_shell_integration_branch_checkout_invokes_successfully() -> None:
 def test_shell_integration_up_invokes_successfully() -> None:
     """Test that __shell up invokes command successfully with worktree stack."""
 
-    from erk_shared.integrations.graphite.types import BranchMetadata
+    from erk_shared.gateway.graphite.types import BranchMetadata
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()
@@ -306,7 +306,7 @@ def test_shell_integration_up_invokes_successfully() -> None:
 def test_shell_integration_down_invokes_successfully() -> None:
     """Test that __shell down invokes command successfully with worktree stack."""
 
-    from erk_shared.integrations.graphite.types import BranchMetadata
+    from erk_shared.gateway.graphite.types import BranchMetadata
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     runner = CliRunner()

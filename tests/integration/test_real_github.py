@@ -12,8 +12,8 @@ from pathlib import Path
 import pytest
 from pytest import MonkeyPatch
 
+from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.github.real import RealGitHub
-from erk_shared.integrations.time.fake import FakeTime
 from tests.integration.test_helpers import mock_subprocess_run
 
 # ============================================================================

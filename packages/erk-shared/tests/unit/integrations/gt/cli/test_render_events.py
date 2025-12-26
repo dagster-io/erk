@@ -9,8 +9,8 @@ from unittest.mock import patch
 
 import pytest
 
-from erk_shared.integrations.gt.cli import render_events
-from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.gateway.gt.cli import render_events
+from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 
 T = TypeVar("T")
 
@@ -51,7 +51,7 @@ def test_render_events_renders_to_stderr() -> None:
         CompletionEvent(result="done"),
     ]
 
-    with patch("erk_shared.integrations.gt.cli.click.echo") as mock_echo:
+    with patch("erk_shared.gateway.gt.cli.click.echo") as mock_echo:
         render_events(_create_event_generator(events))
 
         # Should have called click.echo with err=True

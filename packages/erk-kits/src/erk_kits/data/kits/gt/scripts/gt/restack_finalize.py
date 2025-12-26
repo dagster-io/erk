@@ -9,10 +9,10 @@ from pathlib import Path
 
 import click
 
-from erk_shared.integrations.gt.cli import render_events
-from erk_shared.integrations.gt.operations.restack_finalize import execute_restack_finalize
-from erk_shared.integrations.gt.real import RealGtKit
-from erk_shared.integrations.gt.types import RestackFinalizeError
+from erk_shared.gateway.gt.cli import render_events
+from erk_shared.gateway.gt.operations.restack_finalize import execute_restack_finalize
+from erk_shared.gateway.gt.real import RealGtKit
+from erk_shared.gateway.gt.types import RestackFinalizeError
 
 
 @click.command(name="restack-finalize")

@@ -9,13 +9,13 @@ from pathlib import Path
 import pytest
 
 from erk_shared.context.testing import context_for_test
+from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.gateway.pr.submit import execute_core_submit
+from erk_shared.gateway.pr.types import CoreSubmitError, CoreSubmitResult
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo
-from erk_shared.integrations.graphite.fake import FakeGraphite
-from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
-from erk_shared.integrations.pr.submit import execute_core_submit
-from erk_shared.integrations.pr.types import CoreSubmitError, CoreSubmitResult
 
 
 class TestExecuteCoreSubmit:

@@ -95,9 +95,9 @@ Always import from erk-shared:
 
 ```python
 # ✅ CORRECT - Import operations and types from erk-shared
-from erk_shared.integrations.gt.real import RealGtKit
-from erk_shared.integrations.gt.operations.preflight import execute_preflight
-from erk_shared.integrations.gt.types import PreflightResult
+from erk_shared.gateway.gt.real import RealGtKit
+from erk_shared.gateway.gt.operations.preflight import execute_preflight
+from erk_shared.gateway.gt.types import PreflightResult
 
 # ❌ WRONG - don't import from kit location (CLI wrappers)
 from erk_kits.data.kits.gt.kit_cli_commands.gt.submit_branch import pr_submit

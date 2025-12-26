@@ -11,10 +11,10 @@ and re-exported here. Erk-specific helper functions remain in this module.
 import json
 
 # Re-export all Shell types from erk_shared
-from erk_shared.integrations.shell import FakeShell as FakeShell
-from erk_shared.integrations.shell import RealShell as RealShell
-from erk_shared.integrations.shell import Shell as Shell
-from erk_shared.integrations.shell import detect_shell_from_env as detect_shell_from_env
+from erk_shared.gateway.shell import FakeShell as FakeShell
+from erk_shared.gateway.shell import RealShell as RealShell
+from erk_shared.gateway.shell import Shell as Shell
+from erk_shared.gateway.shell import detect_shell_from_env as detect_shell_from_env
 from erk_shared.subprocess_utils import run_subprocess_with_context as run_subprocess_with_context
 
 

@@ -6,10 +6,10 @@ from pathlib import Path
 
 import click
 
-from erk_shared.integrations.gt.cli import render_events
-from erk_shared.integrations.gt.operations.land_pr import execute_land_pr
-from erk_shared.integrations.gt.real import RealGtKit
-from erk_shared.integrations.gt.types import LandPrError, LandPrSuccess
+from erk_shared.gateway.gt.cli import render_events
+from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
+from erk_shared.gateway.gt.real import RealGtKit
+from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
 
 
 @click.command()

@@ -15,12 +15,12 @@ from erk.cli.commands.submit import (
 )
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
+from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
 from erk_shared.github.issues.types import PRReference
 from erk_shared.github.metadata import MetadataBlock, render_metadata_block
-from erk_shared.integrations.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 

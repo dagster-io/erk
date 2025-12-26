@@ -16,11 +16,11 @@ from erk_shared.core.fakes import (
     FakeScriptWriter,
 )
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
+from erk_shared.gateway.graphite.abc import Graphite
+from erk_shared.gateway.wt_stack.wt_stack import WtStack
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues
-from erk_shared.integrations.graphite.abc import Graphite
-from erk_shared.integrations.wt_stack.wt_stack import WtStack
 from erk_shared.prompt_executor import PromptExecutor
 
 
@@ -67,15 +67,15 @@ def context_for_test(
         >>> ctx = context_for_test(github_issues=github, git=git_ops, debug=True)
     """
     from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
+    from erk_shared.gateway.completion import FakeCompletion
+    from erk_shared.gateway.feedback import FakeUserFeedback
+    from erk_shared.gateway.graphite.fake import FakeGraphite
+    from erk_shared.gateway.shell import FakeShell
+    from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
-    from erk_shared.integrations.completion import FakeCompletion
-    from erk_shared.integrations.feedback import FakeUserFeedback
-    from erk_shared.integrations.graphite.fake import FakeGraphite
-    from erk_shared.integrations.shell import FakeShell
-    from erk_shared.integrations.time.fake import FakeTime
     from erk_shared.objectives.storage import FakeObjectiveStore
     from erk_shared.plan_store.fake import FakePlanStore
     from erk_shared.prompt_executor.fake import FakePromptExecutor

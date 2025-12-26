@@ -7,11 +7,11 @@ and writes it to a scratch file for AI analysis.
 from pathlib import Path
 
 from erk_shared.context.testing import context_for_test
+from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.integrations.graphite.fake import FakeGraphite
-from erk_shared.integrations.gt.events import CompletionEvent, ProgressEvent
-from erk_shared.integrations.pr.diff_extraction import execute_diff_extraction
 
 
 def test_execute_diff_extraction_success(tmp_path: Path) -> None:

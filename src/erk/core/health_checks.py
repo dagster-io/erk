@@ -16,8 +16,8 @@ from erk.core.claude_settings import (
 )
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
+from erk_shared.gateway.shell.abc import Shell
 from erk_shared.github_admin.abc import GitHubAdmin
-from erk_shared.integrations.shell.abc import Shell
 
 
 @dataclass

@@ -8,14 +8,14 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
+from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.metadata import MetadataBlock, render_metadata_block
 from erk_shared.github.types import PRDetails, PullRequestInfo
-from erk_shared.integrations.graphite.fake import FakeGraphite
-from erk_shared.integrations.graphite.types import BranchMetadata
 from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, create_marker
