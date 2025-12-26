@@ -29,6 +29,7 @@ from typing import NoReturn
 
 import click
 
+from erk_shared.context.helpers import require_cwd
 from erk_shared.impl_folder import (
     parse_progress_frontmatter,
     read_issue_reference,
@@ -42,8 +43,11 @@ def _error_json(error_type: str, message: str) -> NoReturn:
     raise SystemExit(1)
 
 
-def _validate_impl_folder() -> tuple[Path, str]:
+def _validate_impl_folder(cwd: Path) -> tuple[Path, str]:
     """Validate .impl/ or .worker-impl/ folder exists and has required files.
+
+    Args:
+        cwd: Current working directory
 
     Returns:
         Tuple of (impl_dir Path, impl_type string)
@@ -51,7 +55,6 @@ def _validate_impl_folder() -> tuple[Path, str]:
     Raises:
         SystemExit: If validation fails
     """
-    cwd = Path.cwd()
 
     # Check .impl/ first, then .worker-impl/
     impl_dir = cwd / ".impl"
@@ -156,14 +159,16 @@ def _extract_related_docs(plan_content: str) -> dict[str, list[str]]:
 
 @click.command(name="impl-init")
 @click.option("--json", "json_output", is_flag=True, default=True, help="Output JSON (default)")
-def impl_init(json_output: bool) -> None:
+@click.pass_context
+def impl_init(ctx: click.Context, json_output: bool) -> None:
     """Initialize implementation by validating .impl/ folder and extracting phases.
 
     Combines validation (check-impl) with phase extraction for /erk:plan-implement.
     Returns structured JSON with validation status, phases, and related documentation.
     """
     # Validate folder structure
-    impl_dir, impl_type = _validate_impl_folder()
+    cwd = require_cwd(ctx)
+    impl_dir, impl_type = _validate_impl_folder(cwd)
 
     # Get issue reference info
     issue_ref = read_issue_reference(impl_dir)

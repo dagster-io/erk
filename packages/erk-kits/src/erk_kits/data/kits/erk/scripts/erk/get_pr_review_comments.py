@@ -23,8 +23,6 @@ Examples:
     {"success": true, "pr_number": 456, "threads": [...]}
 """
 
-from __future__ import annotations
-
 import json
 from dataclasses import asdict, dataclass
 from typing import NoReturn, TypedDict

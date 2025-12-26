@@ -22,15 +22,16 @@ Examples:
     (no output)
 """
 
-from pathlib import Path
 
 import click
 
+from erk_shared.context.helpers import require_cwd
 from erk_shared.impl_folder import read_issue_reference
 
 
 @click.command(name="get-closing-text")
-def get_closing_text() -> None:
+@click.pass_context
+def get_closing_text(ctx: click.Context) -> None:
     """Get closing text for PR body based on .impl/issue.json reference.
 
     Reads .impl/issue.json from the current directory. If an issue reference
@@ -39,7 +40,7 @@ def get_closing_text() -> None:
 
     Outputs nothing and exits successfully if no issue reference is found.
     """
-    cwd = Path.cwd()
+    cwd = require_cwd(ctx)
 
     # Check .impl/ first, then .worker-impl/
     impl_dir = cwd / ".impl"

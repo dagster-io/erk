@@ -31,6 +31,7 @@ from typing import NoReturn
 
 import click
 
+from erk_shared.context.helpers import require_cwd
 from erk_shared.impl_folder import read_issue_reference
 
 
@@ -40,8 +41,11 @@ def _error(msg: str) -> NoReturn:
     raise SystemExit(1)
 
 
-def _validate_impl_folder() -> Path:
+def _validate_impl_folder(cwd: Path) -> Path:
     """Validate .impl/ folder exists and has required files.
+
+    Args:
+        cwd: Current working directory
 
     Returns:
         Path to .impl/ directory
@@ -49,7 +53,7 @@ def _validate_impl_folder() -> Path:
     Raises:
         SystemExit: If validation fails
     """
-    impl_dir = Path.cwd() / ".impl"
+    impl_dir = cwd / ".impl"
 
     if not impl_dir.exists():
         _error("No .impl/ folder found in current directory")
@@ -124,7 +128,8 @@ The /erk:plan-implement slash command will:
 
 @click.command(name="check-impl")
 @click.option("--dry-run", is_flag=True, help="Validate and output JSON")
-def check_impl(dry_run: bool) -> None:
+@click.pass_context
+def check_impl(ctx: click.Context, dry_run: bool) -> None:
     """Check .impl/ folder structure and validate prerequisites.
 
     Validates that .impl/ folder exists with required files (plan.md, progress.md).
@@ -133,7 +138,8 @@ def check_impl(dry_run: bool) -> None:
     In dry-run mode, outputs JSON with validation status.
     In normal mode, outputs instructions for running the implementation.
     """
-    impl_dir = _validate_impl_folder()
+    cwd = require_cwd(ctx)
+    impl_dir = _validate_impl_folder(cwd)
     # In dry-run mode, suppress info messages to keep JSON output clean
     issue_info = _get_issue_reference(impl_dir, silent=dry_run)
 

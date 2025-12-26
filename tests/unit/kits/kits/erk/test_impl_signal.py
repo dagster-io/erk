@@ -19,6 +19,7 @@ from erk_kits.data.kits.erk.scripts.erk.impl_signal import (
     _get_worktree_name,
     impl_signal,
 )
+from erk_shared.context.context import ErkContext
 
 
 @pytest.fixture
@@ -55,7 +56,8 @@ def test_impl_signal_started_no_issue_reference(impl_folder: Path, monkeypatch) 
     monkeypatch.chdir(impl_folder.parent)
 
     runner = CliRunner()
-    result = runner.invoke(impl_signal, ["started"])
+    ctx = ErkContext.for_test(cwd=impl_folder.parent)
+    result = runner.invoke(impl_signal, ["started"], obj=ctx)
 
     # Should exit 0 (graceful degradation for || true pattern)
     assert result.exit_code == 0
@@ -70,7 +72,8 @@ def test_impl_signal_ended_no_issue_reference(impl_folder: Path, monkeypatch) ->
     monkeypatch.chdir(impl_folder.parent)
 
     runner = CliRunner()
-    result = runner.invoke(impl_signal, ["ended"])
+    ctx = ErkContext.for_test(cwd=impl_folder.parent)
+    result = runner.invoke(impl_signal, ["ended"], obj=ctx)
 
     # Should exit 0 (graceful degradation for || true pattern)
     assert result.exit_code == 0
@@ -85,7 +88,8 @@ def test_impl_signal_started_missing_impl_folder(tmp_path: Path, monkeypatch) ->
     monkeypatch.chdir(tmp_path)
 
     runner = CliRunner()
-    result = runner.invoke(impl_signal, ["started"])
+    ctx = ErkContext.for_test(cwd=tmp_path)
+    result = runner.invoke(impl_signal, ["started"], obj=ctx)
 
     # Should exit 0 (graceful degradation)
     assert result.exit_code == 0
@@ -100,7 +104,8 @@ def test_impl_signal_ended_missing_impl_folder(tmp_path: Path, monkeypatch) -> N
     monkeypatch.chdir(tmp_path)
 
     runner = CliRunner()
-    result = runner.invoke(impl_signal, ["ended"])
+    ctx = ErkContext.for_test(cwd=tmp_path)
+    result = runner.invoke(impl_signal, ["ended"], obj=ctx)
 
     # Should exit 0 (graceful degradation)
     assert result.exit_code == 0
@@ -127,7 +132,8 @@ def test_impl_signal_with_worker_impl(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
 
     runner = CliRunner()
-    result = runner.invoke(impl_signal, ["started"])
+    ctx = ErkContext.for_test(cwd=tmp_path)
+    result = runner.invoke(impl_signal, ["started"], obj=ctx)
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -160,10 +166,10 @@ def test_get_branch_name_success() -> None:
     assert branch is None or isinstance(branch, str)
 
 
-def test_get_worktree_name_returns_string_or_none() -> None:
+def test_get_worktree_name_returns_string_or_none(tmp_path: Path) -> None:
     """Test _get_worktree_name returns string or None."""
     # This test assumes we're running in a git worktree context
-    worktree = _get_worktree_name()
+    worktree = _get_worktree_name(tmp_path)
 
     # Should return string or None depending on context
     assert worktree is None or isinstance(worktree, str)
@@ -181,13 +187,13 @@ def test_get_branch_name_handles_failure() -> None:
         assert result is None
 
 
-def test_get_worktree_name_handles_failure() -> None:
+def test_get_worktree_name_handles_failure(tmp_path: Path) -> None:
     """Test _get_worktree_name handles subprocess failure."""
     with patch("subprocess.run") as mock_run:
         import subprocess
 
         mock_run.side_effect = subprocess.CalledProcessError(1, "git")
 
-        result = _get_worktree_name()
+        result = _get_worktree_name(tmp_path)
 
         assert result is None

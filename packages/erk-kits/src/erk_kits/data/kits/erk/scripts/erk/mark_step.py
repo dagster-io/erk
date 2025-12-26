@@ -46,6 +46,7 @@ from typing import Any, NoReturn
 import click
 import frontmatter
 
+from erk_shared.context.helpers import require_cwd
 from erk_shared.impl_folder import validate_progress_schema
 
 
@@ -55,8 +56,11 @@ def _error(msg: str) -> NoReturn:
     raise SystemExit(1)
 
 
-def _validate_progress_file() -> Path:
+def _validate_progress_file(cwd: Path) -> Path:
     """Validate .impl/progress.md exists.
+
+    Args:
+        cwd: Current working directory
 
     Returns:
         Path to progress.md
@@ -64,7 +68,7 @@ def _validate_progress_file() -> Path:
     Raises:
         SystemExit: If validation fails
     """
-    progress_file = Path.cwd() / ".impl" / "progress.md"
+    progress_file = cwd / ".impl" / "progress.md"
 
     if not progress_file.exists():
         _error("No progress.md found in .impl/ folder")
@@ -207,7 +211,10 @@ def _write_progress_file(
     help="Mark as completed (default) or incomplete",
 )
 @click.option("--json", "output_json", is_flag=True, help="Output JSON format")
-def mark_step(step_nums: tuple[int, ...], completed: bool, output_json: bool) -> None:
+@click.pass_context
+def mark_step(
+    ctx: click.Context, step_nums: tuple[int, ...], completed: bool, output_json: bool
+) -> None:
     """Mark one or more steps as completed or incomplete in progress.md.
 
     Updates the YAML frontmatter to mark STEP_NUMS as completed/incomplete,
@@ -217,7 +224,8 @@ def mark_step(step_nums: tuple[int, ...], completed: bool, output_json: bool) ->
 
     STEP_NUMS: One or more step numbers to mark (1-indexed)
     """
-    progress_file = _validate_progress_file()
+    cwd = require_cwd(ctx)
+    progress_file = _validate_progress_file(cwd)
     metadata, _ = _parse_progress_file(progress_file)
 
     # Validate all steps first (fail fast before any modifications)
