@@ -122,7 +122,7 @@ def build_blocking_message(
             [
                 "",
                 "If user chooses 'View/Edit the plan':",
-                f"  1. Run: code {plan_file_path}",
+                f"  1. Run: ${{EDITOR:-code}} {plan_file_path}",
                 "  2. After user confirms they're done editing, ask the same question again",
                 "     (loop until user chooses Save or Implement)",
             ]
@@ -333,12 +333,13 @@ def _gather_inputs() -> HookInput:
 
     # Get current branch (only if we need to show the blocking message)
     current_branch = None
-    if (
+    needs_blocking_message = (
         session_id
         and plan_file_path is not None
         and not skip_marker_exists
         and not saved_marker_exists
-    ):
+    )
+    if needs_blocking_message:
         current_branch = _get_current_branch_within_hook()
 
     return HookInput(
