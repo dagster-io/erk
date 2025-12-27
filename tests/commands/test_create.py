@@ -150,9 +150,9 @@ def test_create_from_issue_with_valid_issue() -> None:
         import json
 
         issue_json = json.loads(issue_json_path.read_text(encoding="utf-8"))
-        assert issue_json["number"] == 123
-        assert issue_json["title"] == "Add User Authentication"
-        assert issue_json["url"] == "https://github.com/owner/repo/issues/123"
+        assert issue_json["issue_number"] == 123
+        assert issue_json["issue_title"] == "Add User Authentication"
+        assert issue_json["issue_url"] == "https://github.com/owner/repo/issues/123"
 
 
 def test_create_from_issue_missing_label() -> None:

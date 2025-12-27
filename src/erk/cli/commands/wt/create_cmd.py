@@ -16,13 +16,18 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_metadata import set_worktree_project
 from erk_shared.github.issues import IssueInfo
-from erk_shared.impl_folder import create_impl_folder, get_impl_path
+from erk_shared.impl_folder import create_impl_folder, get_impl_path, save_issue_reference
+from erk_shared.issue_workflow import (
+    IssueBranchSetup,
+    IssueValidationError,
+    prepare_issue_for_worktree,
+    validate_issue_for_worktree,
+)
 from erk_shared.naming import (
     default_branch_for_worktree,
     ensure_simple_worktree_name,
     ensure_unique_worktree_name,
     ensure_unique_worktree_name_with_date,
-    format_branch_timestamp_suffix,
     sanitize_worktree_name,
     strip_plan_from_filename,
 )
@@ -125,7 +130,7 @@ def ensure_worktree_for_branch(
                 f"To create a new branch and worktree, run:\n"
                 f"  erk wt create --branch {branch}"
             )
-            raise SystemExit(1)
+            raise SystemExit(1) from None
 
         # Remote branch exists - create local tracking branch
         user_output(f"Branch '{branch}' exists on origin, creating local tracking branch...")
@@ -184,7 +189,7 @@ def ensure_worktree_for_branch(
                             f"  2. Complete or abort the rebase first, then try again\n"
                             f"  3. Use a different branch name"
                         )
-                        raise SystemExit(1)
+                        raise SystemExit(1) from None
                     # Different branch: existing error handling
                     user_output(
                         f"Error: Worktree '{name}' already exists "
@@ -194,7 +199,7 @@ def ensure_worktree_for_branch(
                         f"  1. Switch to existing worktree: erk wt co {name}\n"
                         f"  2. Use a different branch name"
                     )
-                    raise SystemExit(1)
+                    raise SystemExit(1) from None
                 # Same branch - return existing path
                 return wt_path, False
         # Path exists but not in worktree list (shouldn't happen, but handle gracefully)
@@ -202,7 +207,7 @@ def ensure_worktree_for_branch(
             f"Error: Directory '{wt_path}' exists but is not a git worktree.\n"
             f"Please remove or rename the directory and try again."
         )
-        raise SystemExit(1)
+        raise SystemExit(1) from None
 
     # Create worktree from existing branch
     add_worktree(
@@ -259,7 +264,7 @@ def add_worktree(
                 f"  • Create a new branch instead: erk create {path.name}\n"
                 f"  • Switch to that worktree: erk br co {branch}",
             )
-            raise SystemExit(1)
+            raise SystemExit(1) from None
 
         ctx.git.add_worktree(repo_root, path, branch=branch, ref=None, create_branch=False)
 
@@ -283,7 +288,7 @@ def add_worktree(
                         + "A branch with this name is already pushed to the remote repository.\n"
                         + "Please choose a different name for your new branch."
                     )
-                    raise SystemExit(1)
+                    raise SystemExit(1) from None
             except Exception as e:
                 # Remote unavailable or other error - proceed with warning
                 user_output(
@@ -309,7 +314,7 @@ def add_worktree(
                     "  • Stash them: git stash\n"
                     "  • Disable Graphite: erk config set use_graphite false",
                 )
-                raise SystemExit(1)
+                raise SystemExit(1) from None
             run_with_error_reporting(
                 ["gt", "create", "--no-interactive", branch],
                 cwd=cwd,
@@ -639,7 +644,7 @@ def create_wt(
                 "Must provide NAME or --from-plan or --from-branch "
                 "or --from-current-branch or --from-issue or --branch option."
             )
-            raise SystemExit(1)
+            raise SystemExit(1) from None
 
     # Track if name came from plan file (will need unique naming with date suffix)
     is_plan_derived = from_plan is not None
@@ -661,8 +666,9 @@ def create_wt(
             "Use 'erk create --from-plan <file>' to create a worktree with a plan from a file.",
         )
 
-    # Track linked branch name for issue-based worktrees
+    # Track linked branch name and setup for issue-based worktrees
     linked_branch_name: str | None = None
+    setup: IssueBranchSetup | None = None
 
     # Handle issue fetching after repo discovery
     if from_issue:
@@ -686,37 +692,28 @@ def create_wt(
             )
             raise SystemExit(1) from e
 
-        # Validate erk-plan label
-        if "erk-plan" not in issue_info.labels:
-            user_output(
-                click.style("Error: ", fg="red")
-                + f"Issue #{issue_number_parsed} must have 'erk-plan' label\n\n"
-                + "To add the label:\n"
-                + f"  gh issue edit {issue_number_parsed} --add-label erk-plan\n\n"
-                + "Or create issues via:\n"
-                + "  /erk:create-plan-issue-from-plan-file"
-            )
-            raise SystemExit(1)
+        # Validate using shared helper
+        try:
+            warnings = validate_issue_for_worktree(issue_info)
+            for warning in warnings:
+                user_output(click.style("Warning: ", fg="yellow") + warning)
+        except IssueValidationError as e:
+            user_output(click.style("Error: ", fg="red") + str(e))
+            raise SystemExit(1) from None
 
-        # Create branch name: P prefix + issue number + sanitized title + timestamp
-        # Apply P prefix AFTER sanitization since sanitize_worktree_name lowercases input
-        # Truncate total to 31 chars before adding timestamp suffix
+        # Prepare branch/worktree names using shared helper
         trunk_branch = ctx.git.detect_trunk_branch(repo.root)
-        prefix = f"P{issue_number_parsed}-"
-        sanitized_title = sanitize_worktree_name(issue_info.title)
-        base_branch_name = (prefix + sanitized_title)[:31].rstrip("-")
-        timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
-        branch_name = base_branch_name + timestamp_suffix
+        setup = prepare_issue_for_worktree(issue_info, ctx.time.now())
 
         # Create branch directly via git
-        ctx.git.create_branch(repo.root, branch_name, trunk_branch)
-        user_output(f"Created branch: {branch_name}")
+        ctx.git.create_branch(repo.root, setup.branch_name, trunk_branch)
+        user_output(f"Created branch: {setup.branch_name}")
 
         # Track linked branch name for add_worktree call
-        linked_branch_name = branch_name
+        linked_branch_name = setup.branch_name
 
         # Use the branch name for the worktree name
-        name = sanitize_worktree_name(branch_name)
+        name = setup.worktree_name
 
     # At this point, name should always be set
     assert name is not None, "name must be set by now"
@@ -742,7 +739,7 @@ def create_wt(
             f"To switch to the {name} branch in the root repository, use:\n"
             f"  erk br co root",
         )
-        raise SystemExit(1)
+        raise SystemExit(1) from None
 
     # Apply date prefix and uniqueness for plan-derived names
     if is_plan_derived:
@@ -763,10 +760,10 @@ def create_wt(
                 status="exists",
             )
             user_output(json_response)
-            raise SystemExit(1)
+            raise SystemExit(1) from None
         else:
             user_output(f"Worktree path already exists: {wt_path}")
-            raise SystemExit(1)
+            raise SystemExit(1) from None
 
     # Handle from-current-branch logic: switch current worktree first
     to_branch = None
@@ -832,7 +829,7 @@ def create_wt(
                 f"To switch to {trunk_branch}, use:\n"
                 f"  erk br co root"
             )
-            raise SystemExit(1)
+            raise SystemExit(1) from None
 
         # Create worktree with existing branch
         add_worktree(
@@ -916,27 +913,23 @@ def create_wt(
 
     # Create impl folder if issue provided
     if from_issue:
-        # Type narrowing: issue_info must be set if from_issue is True
-        assert issue_info is not None, "issue_info must be set when from_issue is True"
-
-        # Use issue body as plan content
-        plan_content = issue_info.body
+        # Type narrowing: setup must be set if from_issue is True
+        assert setup is not None, "setup must be set when from_issue is True"
 
         # Create .impl/ folder in new worktree
         # Use overwrite=False since fresh worktree should not have .impl/
-        impl_folder_destination = create_impl_folder(wt_path, plan_content, overwrite=False)
+        impl_folder_destination = create_impl_folder(wt_path, setup.plan_content, overwrite=False)
 
-        # Create .impl/issue.json metadata
-        issue_json_path = wt_path / ".impl" / "issue.json"
-        issue_metadata = {
-            "number": issue_info.number,
-            "url": issue_info.url,
-            "title": issue_info.title,
-        }
-        issue_json_path.write_text(json.dumps(issue_metadata, indent=2), encoding="utf-8")
+        # Create .impl/issue.json metadata using shared helper
+        save_issue_reference(
+            wt_path / ".impl",
+            setup.issue_number,
+            setup.issue_url,
+            setup.issue_title,
+        )
 
         if not script and not output_json:
-            user_output(f"Created worktree from issue #{issue_info.number}: {issue_info.title}")
+            user_output(f"Created worktree from issue #{setup.issue_number}: {setup.issue_title}")
 
     # Copy .impl directory if --copy-plan flag is set
     if copy_plan:

@@ -9,6 +9,7 @@ from erk_shared.naming import (
     derive_branch_name_from_title,
     ensure_unique_worktree_name,
     extract_trailing_number,
+    generate_issue_branch_name,
     sanitize_branch_component,
     sanitize_worktree_name,
     strip_plan_from_filename,
@@ -355,3 +356,59 @@ def test_derive_branch_name_truncates_to_30_chars() -> None:
     result = derive_branch_name_from_title(long_name)
     assert len(result) == 30
     assert not result.endswith("-")  # No trailing hyphens after truncation
+
+
+# Tests for generate_issue_branch_name
+@pytest.mark.parametrize(
+    ("issue_number", "title", "timestamp", "expected"),
+    [
+        # Standard case
+        (123, "Fix Auth Bug", datetime(2024, 1, 15, 14, 30), "P123-fix-auth-bug-01-15-1430"),
+        # Integer issue number
+        (42, "My Feature", datetime(2024, 6, 20, 10, 0), "P42-my-feature-06-20-1000"),
+        # String issue number
+        ("456", "Add Tests", datetime(2024, 12, 31, 23, 59), "P456-add-tests-12-31-2359"),
+        # Midnight edge case
+        (789, "Update Docs", datetime(2024, 1, 1, 0, 0), "P789-update-docs-01-01-0000"),
+    ],
+)
+def test_generate_issue_branch_name_format(
+    issue_number: int | str, title: str, timestamp: datetime, expected: str
+) -> None:
+    """Branch name follows P{num}-{slug}-{timestamp} format."""
+    assert generate_issue_branch_name(issue_number, title, timestamp) == expected
+
+
+def test_generate_issue_branch_name_truncates_long_title() -> None:
+    """Long titles are truncated before timestamp is appended."""
+    # Very long title that would exceed 31 chars for base name
+    long_title = "This is a very long title that should be truncated before timestamp"
+    timestamp = datetime(2024, 1, 15, 14, 30)
+
+    result = generate_issue_branch_name(123, long_title, timestamp)
+
+    # Base (P123-...) should be truncated to 31 chars, then timestamp appended
+    # Total = 31 + 11 (timestamp with hyphen) = 42 chars max
+    assert len(result) <= 42
+    assert result.startswith("P123-")
+    assert result.endswith("-01-15-1430")
+    # No trailing hyphen before timestamp
+    assert not result[:-11].endswith("-")
+
+
+def test_generate_issue_branch_name_preserves_hyphens_in_title() -> None:
+    """Hyphens in titles are preserved (not doubled)."""
+    result = generate_issue_branch_name(123, "fix-auth-bug", datetime(2024, 1, 15, 14, 30))
+    # Should be P123-fix-auth-bug-..., not P123--fix-auth-bug-...
+    assert "P123-fix-auth-bug-" in result
+    assert "--" not in result
+
+
+def test_generate_issue_branch_name_handles_special_chars() -> None:
+    """Special characters in titles are sanitized."""
+    result = generate_issue_branch_name(123, "Fix: Bug #456!", datetime(2024, 1, 15, 14, 30))
+    # Special chars should be replaced with hyphens, then collapsed
+    assert ":" not in result
+    assert "#" not in result
+    assert "!" not in result
+    assert "--" not in result

@@ -28,14 +28,17 @@ from erk.core.project_discovery import ProjectContext, discover_project
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.core.worktree_utils import compute_relative_path_in_worktree
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
+from erk_shared.issue_workflow import (
+    IssueValidationError,
+    prepare_plan_for_worktree,
+    validate_plan_for_worktree,
+)
 from erk_shared.naming import (
     ensure_unique_worktree_name_with_date,
-    format_branch_timestamp_suffix,
     sanitize_worktree_name,
     strip_plan_from_filename,
 )
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import PlanState
 
 
 def _determine_base_branch(ctx: ErkContext, repo_root: Path) -> str:
@@ -434,51 +437,33 @@ def _prepare_plan_source_from_issue(
     # Output issue title
     ctx.feedback.info(f"Issue: {plan.title}")
 
-    # Validate issue has erk-plan label
-    if "erk-plan" not in plan.labels:
-        user_output(
-            click.style("Error: ", fg="red")
-            + f"Issue #{issue_number} does not have the 'erk-plan' label.\n"
-            + "Only issues tagged with 'erk-plan' can be used for implementation.\n\n"
-            + f"To add the label, visit: {plan.url}"
-        )
-        raise SystemExit(1)
+    # Validate using shared helper
+    try:
+        warnings = validate_plan_for_worktree(plan)
+        for warning in warnings:
+            user_output(click.style("Warning: ", fg="yellow") + warning)
+    except IssueValidationError as e:
+        user_output(click.style("Error: ", fg="red") + str(e))
+        raise SystemExit(1) from None
 
-    # Validate issue is open
-    if plan.state != PlanState.OPEN:
-        user_output(
-            click.style("Warning: ", fg="yellow")
-            + f"Issue #{issue_number} is {plan.state.value}. "
-            + "Proceeding anyway..."
-        )
-
-    # Create branch name: P prefix + issue number + sanitized title + timestamp
-    # Apply P prefix AFTER sanitization since sanitize_worktree_name lowercases input
-    # Truncate total to 31 chars before adding timestamp suffix
-    prefix = f"P{issue_number}-"
-    sanitized_title = sanitize_worktree_name(plan.title)
-    base_branch_name = (prefix + sanitized_title)[:31].rstrip("-")
-    timestamp_suffix = format_branch_timestamp_suffix(ctx.time.now())
-    branch_name = base_branch_name + timestamp_suffix
+    # Prepare branch/worktree names using shared helper
+    setup = prepare_plan_for_worktree(plan, ctx.time.now())
 
     # Create branch directly via git
-    ctx.git.create_branch(repo_root, branch_name, base_branch)
-    ctx.feedback.info(f"Created branch: {branch_name}")
-
-    # Use the branch name as the base name for the worktree
-    base_name = sanitize_worktree_name(branch_name)
+    ctx.git.create_branch(repo_root, setup.branch_name, base_branch)
+    ctx.feedback.info(f"Created branch: {setup.branch_name}")
 
     dry_run_desc = f"Would create worktree from issue #{issue_number}\n  Title: {plan.title}"
 
     plan_source = PlanSource(
-        plan_content=plan.body,
-        base_name=base_name,
+        plan_content=setup.plan_content,
+        base_name=setup.worktree_name,
         dry_run_description=dry_run_desc,
     )
 
     return IssuePlanSource(
         plan_source=plan_source,
-        branch_name=branch_name,
+        branch_name=setup.branch_name,
         already_existed=False,  # Always new branch since we create it directly
     )
 
@@ -499,7 +484,7 @@ def _prepare_plan_source_from_file(ctx: ErkContext, plan_file: Path) -> PlanSour
     # Validate plan file exists
     if not plan_file.exists():
         ctx.feedback.error(f"Error: Plan file not found: {plan_file}")
-        raise SystemExit(1)
+        raise SystemExit(1) from None
 
     # Output reading diagnostic
     ctx.feedback.info("Reading plan file...")
@@ -576,7 +561,7 @@ def _show_conflict_error(
         )
 
     ctx.feedback.error(f"Error: {conflict_msg}\n{suggestion}")
-    raise SystemExit(1)
+    raise SystemExit(1) from None
 
 
 def _handle_force_delete(
@@ -625,7 +610,7 @@ def _handle_force_delete(
         prompt_text = click.style("Proceed with deletion?", fg="yellow", bold=True)
         if not click.confirm(f"\n{prompt_text}", default=False, err=True):
             user_output(click.style("⭕ Aborted.", fg="red", bold=True))
-            raise SystemExit(1)
+            raise SystemExit(1) from None
 
     # Perform deletions
     if wt_exists and force_delete.worktree:
@@ -969,7 +954,7 @@ def _implement_from_issue(
     # Use impl_dir from result to handle monorepo project-root placement
     ctx.feedback.info("Saving issue reference for PR linking...")
     plan = ctx.plan_store.get_plan(repo.root, issue_number)
-    save_issue_reference(result.impl_dir, int(issue_number), plan.url)
+    save_issue_reference(result.impl_dir, int(issue_number), plan.url, plan.title)
 
     ctx.feedback.success(f"✓ Saved issue reference: {plan.url}")
 
@@ -1224,7 +1209,7 @@ def implement(
             user_output(
                 click.style("Error: ", fg="red") + "Failed to extract issue number from target"
             )
-            raise SystemExit(1)
+            raise SystemExit(1) from None
 
         _implement_from_issue(
             ctx,

@@ -490,6 +490,42 @@ def default_branch_for_worktree(name: str) -> str:
     return sanitize_branch_component(name)
 
 
+def generate_issue_branch_name(
+    issue_number: int | str,
+    title: str,
+    timestamp: datetime,
+) -> str:
+    """Generate branch name for issue-based worktree.
+
+    Format: P{issue_number}-{sanitized_title}-{timestamp}
+    Example: P123-fix-auth-bug-01-15-1430
+
+    The branch name is constructed as:
+    1. P prefix + issue number + hyphen
+    2. Sanitized title (lowercased, special chars replaced)
+    3. Truncated to 31 chars total (before timestamp)
+    4. Timestamp suffix appended (format: -MM-DD-HHMM)
+
+    Args:
+        issue_number: GitHub issue number
+        title: Issue title to sanitize
+        timestamp: Timestamp for the suffix
+
+    Returns:
+        Branch name in format P{num}-{slug}-{timestamp}
+
+    Examples:
+        >>> from datetime import datetime
+        >>> generate_issue_branch_name(123, "Fix Auth Bug", datetime(2024, 1, 15, 14, 30))
+        "P123-fix-auth-bug-01-15-1430"
+    """
+    prefix = f"P{issue_number}-"
+    sanitized_title = sanitize_worktree_name(title)
+    base_branch_name = (prefix + sanitized_title)[:31].rstrip("-")
+    timestamp_suffix = format_branch_timestamp_suffix(timestamp)
+    return base_branch_name + timestamp_suffix
+
+
 def derive_branch_name_from_title(title: str) -> str:
     """Derive branch name from issue/plan title.
 
