@@ -48,13 +48,6 @@ The command outputs:
 - Graphite URL
 - Success message
 
-After completion, suggest:
-
-```
-Create insight extraction plan to improve .erk/docs/agent (optional):
-    /erk:create-extraction-plan
-```
-
 ## Error Handling
 
 If `erk pr submit` fails, display the error and stop. The Python implementation handles all error cases including:

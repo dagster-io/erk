@@ -124,9 +124,7 @@ def test_prepare_issue_generates_branch_name_with_correct_format() -> None:
 
 def test_prepare_issue_long_title_is_truncated() -> None:
     """Long titles are truncated before timestamp."""
-    issue = _make_issue_info(
-        number=123, title="This is a very long title that should be truncated"
-    )
+    issue = _make_issue_info(number=123, title="This is a very long title that should be truncated")
     timestamp = datetime(2024, 1, 15, 14, 30)
 
     result = prepare_issue_for_worktree(issue, timestamp)
