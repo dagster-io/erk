@@ -10,7 +10,7 @@ from erk.cli.alias import alias
 from erk.cli.commands.pr.parse_pr_reference import parse_pr_reference
 from erk.cli.core import worktree_path_for
 from erk.cli.ensure import Ensure
-from erk.cli.help_formatter import ErkCommand, script_option
+from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.github.types import PRNotFound
@@ -18,7 +18,7 @@ from erk_shared.output.output import user_output
 
 
 @alias("co")
-@click.command("checkout", cls=ErkCommand)
+@click.command("checkout", cls=CommandWithHiddenOptions)
 @click.argument("pr_reference")
 @script_option
 @click.pass_obj

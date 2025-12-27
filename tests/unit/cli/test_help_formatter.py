@@ -126,7 +126,7 @@ def test_command_hidden_options_visible_when_config_enabled() -> None:
         ),
     )
 
-    # Test the 'up' command which uses ErkCommand with @script_option
+    # Test the 'up' command which uses CommandWithHiddenOptions with @script_option
     result = runner.invoke(cli, ["up", "--help"], obj=ctx)
 
     assert result.exit_code == 0
@@ -151,7 +151,7 @@ def test_command_hidden_options_hidden_when_config_disabled() -> None:
         ),
     )
 
-    # Test the 'up' command which uses ErkCommand with @script_option
+    # Test the 'up' command which uses CommandWithHiddenOptions with @script_option
     result = runner.invoke(cli, ["up", "--help"], obj=ctx)
 
     assert result.exit_code == 0
@@ -193,3 +193,39 @@ def test_script_option_help_text_clarifies_not_dry_run() -> None:
     assert result.exit_code == 0
     # The help text should clarify this is NOT a dry run
     assert "NOT a dry run" in result.output
+
+
+def test_commands_with_hidden_options_use_correct_class() -> None:
+    """Commands with hidden options must use CommandWithHiddenOptions.
+
+    This test scans all CLI commands and fails if any have hidden options
+    but don't use CommandWithHiddenOptions. This catches mistakes where
+    someone adds a hidden option but forgets to use the correct class.
+    """
+    import click
+
+    from erk.cli.help_formatter import CommandWithHiddenOptions
+
+    def check_command(cmd: click.Command, path: str = "") -> list[str]:
+        """Recursively check command and subcommands for hidden option violations."""
+        errors = []
+        full_name = f"{path} {cmd.name}".strip() if cmd.name else path
+
+        # Check if command has hidden options
+        has_hidden = any(getattr(p, "hidden", False) for p in cmd.params)
+
+        if has_hidden and not isinstance(cmd, CommandWithHiddenOptions):
+            errors.append(
+                f"Command '{full_name}' has hidden options but doesn't use "
+                f"CommandWithHiddenOptions. Add cls=CommandWithHiddenOptions."
+            )
+
+        # Recurse into groups
+        if isinstance(cmd, click.Group):
+            for subcmd in cmd.commands.values():
+                errors.extend(check_command(subcmd, full_name))
+
+        return errors
+
+    errors = check_command(cli)
+    assert not errors, "\n".join(errors)

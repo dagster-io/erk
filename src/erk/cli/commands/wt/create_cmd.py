@@ -10,7 +10,7 @@ from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.cli.ensure import Ensure
 from erk.cli.github_parsing import parse_issue_identifier
-from erk.cli.help_formatter import ErkCommand, script_option
+from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.cli.shell_utils import render_navigation_script
 from erk.cli.subprocess_utils import run_with_error_reporting
 from erk.core.context import ErkContext
@@ -418,7 +418,7 @@ def _create_json_response(
     )
 
 
-@click.command("create", cls=ErkCommand)
+@click.command("create", cls=CommandWithHiddenOptions)
 @click.argument("name", metavar="NAME", required=False)
 @click.option(
     "--branch",

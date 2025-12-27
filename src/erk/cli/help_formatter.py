@@ -28,9 +28,10 @@ def _get_show_hidden_from_context(ctx: click.Context) -> bool:
     return False
 
 
-class ErkCommand(click.Command):
+class CommandWithHiddenOptions(click.Command):
     """Command that respects show_hidden_commands config for hidden options.
 
+    Use this class for any command with hidden options (like --script).
     Hidden options are shown in a separate "Hidden Options" section when
     show_hidden_commands is enabled in config.
     """
@@ -70,11 +71,11 @@ class ErkCommand(click.Command):
 def script_option(fn: F) -> F:
     """Decorator that adds --script option with proper settings.
 
-    Must be applied to a function decorated with @click.command(cls=ErkCommand).
+    Must be applied to a function decorated with @click.command(cls=CommandWithHiddenOptions).
     The --script flag is hidden by default but visible when show_hidden_commands=True.
 
     Example:
-        @click.command("up", cls=ErkCommand)
+        @click.command("up", cls=CommandWithHiddenOptions)
         @script_option
         def up_cmd(ctx: ErkContext, script: bool) -> None:
             ...

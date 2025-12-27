@@ -34,7 +34,7 @@ from erk.cli.commands.plan.check_cmd import (
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
-from erk.cli.help_formatter import ErkCommand, script_option
+from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk_shared.extraction.raw_extraction import create_raw_extraction_plan
 from erk_shared.gateway.gt.cli import render_events
@@ -60,7 +60,7 @@ def is_extraction_origin_pr(ctx: ErkContext, repo_root: Path, pr_number: int) ->
     return ctx.github.has_pr_label(repo_root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
 
 
-@click.command("land", cls=ErkCommand)
+@click.command("land", cls=CommandWithHiddenOptions)
 @script_option
 @click.option(
     "--insights/--no-insights",
