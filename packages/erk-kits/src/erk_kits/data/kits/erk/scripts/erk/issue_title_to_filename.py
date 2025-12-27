@@ -3,9 +3,7 @@
 Usage:
     erk kit exec erk issue-title-to-filename "Plan Title"
 
-Single source of truth for filename transformation across:
-- /erk:save-plan
-- issue-wt-creator agent
+Single source of truth for filename transformation for /erk:save-plan.
 
 Output:
     Filename on stdout (e.g., "my-feature-plan.md")

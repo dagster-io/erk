@@ -24,7 +24,7 @@ Instead of embedding mechanical computation in prompts, push it down to kit CLI 
 
 **Real Python environment.** Kit CLI commands are installed Python packages with proper dependency management. They run in a known environment with a specific Python version. Dependencies are declared in `pyproject.toml` and installed via `uv`.
 
-**Full testability.** Commands are regular Python functions. You can write unit tests with pytest, mock external services, test edge cases exhaustively, and measure coverage. A command like `parse-issue-reference` has 24 unit tests covering URL formats, error cases, and boundary conditions.
+**Full testability.** Commands are regular Python functions. You can write unit tests with pytest, mock external services, test edge cases exhaustively, and measure coverage. A command like `issue-title-to-filename` has comprehensive unit tests covering edge cases and boundary conditions.
 
 **Type safety.** Python type hints catch errors before runtime. Dataclasses enforce structured output. The type checker validates that success and error responses have consistent schemas.
 
@@ -58,14 +58,13 @@ else
 fi
 ```
 
-**After**: Agent invokes tested Python command, reads structured JSON:
+**After**: Agent invokes tested Python command, reads structured output:
 
 ```bash
-parse_result=$(erk kit exec erk parse-issue-reference "$issue_arg")
-issue_number=$(echo "$parse_result" | jq -r '.issue_number')
+filename=$(erk kit exec erk issue-title-to-filename "$title")
 ```
 
-The parsing logic—URL regex, number validation, error messages—lives in Python with 24 unit tests. The agent prompt shrinks. Reliability increases.
+The conversion logic lives in Python with proper unit tests. The agent prompt shrinks. Reliability increases.
 
 ## The Architectural Win
 

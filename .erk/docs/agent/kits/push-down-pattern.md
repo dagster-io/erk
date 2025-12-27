@@ -50,19 +50,22 @@ fi
 
 ### After (Kit CLI Command)
 
-Benefits: Testable, no permission prompt, structured JSON output.
+Benefits: Testable, no permission prompt, structured output.
 
 ```bash
-# Agent markdown invocation
-parse_result=$(erk kit exec erk parse-issue-reference "$issue_arg")
+# Agent markdown invocation - simple output
+filename=$(erk kit exec erk issue-title-to-filename "$title")
 
-if ! echo "$parse_result" | jq -e '.success' > /dev/null; then
-    error_msg=$(echo "$parse_result" | jq -r '.message')
+# Agent markdown invocation - JSON output with error handling
+result=$(erk kit exec erk impl-init --json)
+
+if ! echo "$result" | jq -e '.valid' > /dev/null; then
+    error_msg=$(echo "$result" | jq -r '.error')
     echo "Error: $error_msg"
     exit 1
 fi
 
-issue_number=$(echo "$parse_result" | jq -r '.issue_number')
+phases=$(echo "$result" | jq -r '.phases')
 ```
 
 ## Implementation Checklist
