@@ -22,6 +22,7 @@ from erk.cli.commands.completions import complete_plan_files
 from erk.cli.commands.wt.create_cmd import add_worktree, run_post_worktree_setup
 from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context, worktree_path_for
+from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import ErkContext
 from erk.core.project_discovery import ProjectContext, discover_project
@@ -1067,7 +1068,7 @@ def _implement_from_file(
 
 
 @alias("impl")
-@click.command("implement")
+@click.command("implement", cls=CommandWithHiddenOptions)
 @click.argument("target", shell_complete=complete_plan_files)
 @click.option(
     "--worktree-name",
@@ -1097,12 +1098,7 @@ def _implement_from_file(
     default=False,
     help="Execute commands via subprocess without user interaction",
 )
-@click.option(
-    "--script",
-    is_flag=True,
-    hidden=True,
-    help="Output activation script for shell integration",
-)
+@script_option
 @click.option(
     "--yolo",
     is_flag=True,

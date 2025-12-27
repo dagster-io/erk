@@ -108,3 +108,124 @@ def test_help_hides_hidden_commands_when_config_disabled() -> None:
     assert result.exit_code == 0
     # When show_hidden is False, there should NOT be a "Hidden:" section
     assert "Hidden:" not in result.output
+
+
+def test_command_hidden_options_visible_when_config_enabled() -> None:
+    """Hidden options like --script are visible in a separate section when config enabled."""
+    runner = CliRunner()
+
+    # Create context with show_hidden_commands=True
+    ctx = context_for_test(
+        global_config=GlobalConfig(
+            erk_root=Path("/tmp/erks"),
+            use_graphite=False,
+            shell_setup_complete=True,
+            show_pr_info=True,
+            github_planning=True,
+            show_hidden_commands=True,
+        ),
+    )
+
+    # Test the 'up' command which uses CommandWithHiddenOptions with @script_option
+    result = runner.invoke(cli, ["up", "--help"], obj=ctx)
+
+    assert result.exit_code == 0
+    # Should have "Hidden Options" section with --script
+    assert "Hidden Options:" in result.output
+    assert "--script" in result.output
+
+
+def test_command_hidden_options_hidden_when_config_disabled() -> None:
+    """Hidden options like --script stay hidden when config disabled."""
+    runner = CliRunner()
+
+    # Create context with show_hidden_commands=False
+    ctx = context_for_test(
+        global_config=GlobalConfig(
+            erk_root=Path("/tmp/erks"),
+            use_graphite=False,
+            shell_setup_complete=True,
+            show_pr_info=True,
+            github_planning=True,
+            show_hidden_commands=False,
+        ),
+    )
+
+    # Test the 'up' command which uses CommandWithHiddenOptions with @script_option
+    result = runner.invoke(cli, ["up", "--help"], obj=ctx)
+
+    assert result.exit_code == 0
+    # Should NOT have "Hidden Options" section
+    assert "Hidden Options:" not in result.output
+    # The Options section should not list --script as an option
+    # (Note: --script may appear in usage examples in the docstring, which is fine)
+    lines = result.output.split("\n")
+    in_options_section = False
+    for line in lines:
+        if line.strip().startswith("Options:"):
+            in_options_section = True
+        elif in_options_section and line.strip() and not line.startswith(" "):
+            # End of options section (new section header)
+            in_options_section = False
+        elif in_options_section and "--script" in line:
+            raise AssertionError("--script should not appear in Options section when hidden")
+
+
+def test_script_option_help_text_clarifies_not_dry_run() -> None:
+    """The --script option help text clarifies it is NOT a dry run."""
+    runner = CliRunner()
+
+    # Create context with show_hidden_commands=True to see the help text
+    ctx = context_for_test(
+        global_config=GlobalConfig(
+            erk_root=Path("/tmp/erks"),
+            use_graphite=False,
+            shell_setup_complete=True,
+            show_pr_info=True,
+            github_planning=True,
+            show_hidden_commands=True,
+        ),
+    )
+
+    # Test the 'up' command
+    result = runner.invoke(cli, ["up", "--help"], obj=ctx)
+
+    assert result.exit_code == 0
+    # The help text should clarify this is NOT a dry run
+    assert "NOT a dry run" in result.output
+
+
+def test_commands_with_hidden_options_use_correct_class() -> None:
+    """Commands with hidden options must use CommandWithHiddenOptions.
+
+    This test scans all CLI commands and fails if any have hidden options
+    but don't use CommandWithHiddenOptions. This catches mistakes where
+    someone adds a hidden option but forgets to use the correct class.
+    """
+    import click
+
+    from erk.cli.help_formatter import CommandWithHiddenOptions
+
+    def check_command(cmd: click.Command, path: str = "") -> list[str]:
+        """Recursively check command and subcommands for hidden option violations."""
+        errors = []
+        full_name = f"{path} {cmd.name}".strip() if cmd.name else path
+
+        # Check if command has hidden options
+        has_hidden = any(getattr(p, "hidden", False) for p in cmd.params)
+
+        if has_hidden and not isinstance(cmd, CommandWithHiddenOptions):
+            errors.append(
+                f"Command '{full_name}' has hidden options but doesn't use "
+                f"CommandWithHiddenOptions. Add cls=CommandWithHiddenOptions."
+            )
+
+        # Recurse into groups
+        if isinstance(cmd, click.Group):
+            for subcmd in cmd.commands.values():
+                errors.extend(check_command(subcmd, full_name))
+
+        return errors
+
+    errors = check_command(cli)
+    assert not errors, "\n".join(errors)

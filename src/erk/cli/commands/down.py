@@ -13,15 +13,14 @@ from erk.cli.commands.navigation_helpers import (
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
+from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.worktree_utils import compute_relative_path_in_worktree
 from erk_shared.output.output import machine_output, user_output
 
 
-@click.command("down")
-@click.option(
-    "--script", is_flag=True, help="Print only the activation script without usage instructions."
-)
+@click.command("down", cls=CommandWithHiddenOptions)
+@script_option
 @click.option(
     "--delete-current",
     is_flag=True,
