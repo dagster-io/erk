@@ -369,9 +369,7 @@ def save_issue_reference(
         "issue_url": issue_url,
         "created_at": now,
         "synced_at": now,
-    }
-    if issue_title is not None:
-        data["issue_title"] = issue_title
+    } | ({"issue_title": issue_title} if issue_title is not None else {})
 
     issue_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
 

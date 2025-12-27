@@ -15,7 +15,7 @@ from erk_shared.plan_store.types import Plan, PlanState
 
 @dataclass(frozen=True)
 class IssueBranchSetup:
-    """Result of preparing an issue for worktree creation.
+    """Result of successfully preparing an issue for worktree creation.
 
     Attributes:
         branch_name: Git branch name (e.g., P123-fix-bug-01-15-1430)
@@ -24,6 +24,7 @@ class IssueBranchSetup:
         issue_number: GitHub issue number
         issue_url: Full GitHub issue URL
         issue_title: Issue title for reference
+        warnings: List of warning messages (e.g., non-OPEN issue)
     """
 
     branch_name: str
@@ -32,108 +33,65 @@ class IssueBranchSetup:
     issue_number: int
     issue_url: str
     issue_title: str
+    warnings: tuple[str, ...] = ()
 
 
-class IssueValidationError(Exception):
-    """Raised when issue validation fails."""
+@dataclass(frozen=True)
+class IssueValidationFailed:
+    """Result when issue validation fails.
 
-
-def validate_issue_for_worktree(
-    issue_info: IssueInfo,
-    *,
-    warn_non_open: bool = True,
-) -> list[str]:
-    """Validate issue is suitable for worktree creation.
-
-    Checks that the issue has the required 'erk-plan' label and
-    optionally warns about non-OPEN issues.
-
-    Args:
-        issue_info: Issue information from GitHub
-        warn_non_open: Whether to generate warning for non-OPEN issues
-
-    Returns:
-        List of warning messages (empty if no warnings)
-
-    Raises:
-        IssueValidationError: If erk-plan label is missing
+    Attributes:
+        message: User-facing error message explaining the failure
     """
-    warnings: list[str] = []
 
-    if "erk-plan" not in issue_info.labels:
-        raise IssueValidationError(
-            f"Issue #{issue_info.number} must have 'erk-plan' label.\n"
-            f"To add the label:\n"
-            f"  gh issue edit {issue_info.number} --add-label erk-plan"
-        )
-
-    if warn_non_open and issue_info.state != "OPEN":
-        warnings.append(f"Issue #{issue_info.number} is {issue_info.state}. Proceeding anyway...")
-
-    return warnings
+    message: str
 
 
-def validate_plan_for_worktree(
-    plan: Plan,
-    *,
-    warn_non_open: bool = True,
-) -> list[str]:
-    """Validate plan is suitable for worktree creation.
-
-    This is the Plan-based variant of validate_issue_for_worktree,
-    used when working with the plan_store abstraction.
-
-    Checks that the plan has the required 'erk-plan' label and
-    optionally warns about non-OPEN plans.
-
-    Args:
-        plan: Plan from plan_store
-        warn_non_open: Whether to generate warning for non-OPEN plans
-
-    Returns:
-        List of warning messages (empty if no warnings)
-
-    Raises:
-        IssueValidationError: If erk-plan label is missing
-    """
-    warnings: list[str] = []
-
-    if "erk-plan" not in plan.labels:
-        raise IssueValidationError(
-            f"Issue #{plan.plan_identifier} must have 'erk-plan' label.\n"
-            f"To add the label:\n"
-            f"  gh issue edit {plan.plan_identifier} --add-label erk-plan"
-        )
-
-    if warn_non_open and plan.state != PlanState.OPEN:
-        warnings.append(
-            f"Issue #{plan.plan_identifier} is {plan.state.value}. Proceeding anyway..."
-        )
-
-    return warnings
+# Union type for prepare results - clients handle both cases
+PrepareIssueResult = IssueBranchSetup | IssueValidationFailed
 
 
 def prepare_plan_for_worktree(
     plan: Plan,
     timestamp: datetime,
-) -> IssueBranchSetup:
-    """Prepare plan data for worktree creation.
+    *,
+    warn_non_open: bool = True,
+) -> PrepareIssueResult:
+    """Prepare and validate plan data for worktree creation.
 
-    This is the Plan-based variant of prepare_issue_for_worktree,
-    used when working with the plan_store abstraction.
-
-    Generates branch name and worktree name from plan metadata.
-    Does NOT create the branch or worktree - just computes names.
+    Validates the plan has required labels and generates branch/worktree names.
+    Does NOT create the branch or worktree - just validates and computes names.
 
     Args:
         plan: Plan from plan_store
         timestamp: Timestamp for branch name suffix
+        warn_non_open: Whether to include warning for non-OPEN plans
 
     Returns:
-        IssueBranchSetup with computed names and plan data
+        IssueBranchSetup on success, IssueValidationFailed on validation failure
     """
-    # Plan uses plan_identifier (string) but we need int for issue number
+    # Validate erk-plan label
+    if "erk-plan" not in plan.labels:
+        return IssueValidationFailed(
+            f"Issue #{plan.plan_identifier} must have 'erk-plan' label.\n"
+            f"To add the label:\n"
+            f"  gh issue edit {plan.plan_identifier} --add-label erk-plan"
+        )
+
+    # Validate plan_identifier can be converted to int (LBYL)
+    if not plan.plan_identifier.isdigit():
+        return IssueValidationFailed(
+            f"Plan identifier '{plan.plan_identifier}' is not a valid issue number. "
+            "Expected a numeric GitHub issue number."
+        )
     issue_number = int(plan.plan_identifier)
+
+    # Collect warnings
+    warnings: list[str] = []
+    if warn_non_open and plan.state != PlanState.OPEN:
+        warnings.append(
+            f"Issue #{plan.plan_identifier} is {plan.state.value}. Proceeding anyway..."
+        )
 
     branch_name = generate_issue_branch_name(
         issue_number,
@@ -149,25 +107,42 @@ def prepare_plan_for_worktree(
         issue_number=issue_number,
         issue_url=plan.url,
         issue_title=plan.title,
+        warnings=tuple(warnings),
     )
 
 
 def prepare_issue_for_worktree(
     issue_info: IssueInfo,
     timestamp: datetime,
-) -> IssueBranchSetup:
-    """Prepare issue data for worktree creation.
+    *,
+    warn_non_open: bool = True,
+) -> PrepareIssueResult:
+    """Prepare and validate issue data for worktree creation.
 
-    Generates branch name and worktree name from issue metadata.
-    Does NOT create the branch or worktree - just computes names.
+    Validates the issue has required labels and generates branch/worktree names.
+    Does NOT create the branch or worktree - just validates and computes names.
 
     Args:
-        issue_info: Validated issue information
+        issue_info: Issue information from GitHub
         timestamp: Timestamp for branch name suffix
+        warn_non_open: Whether to include warning for non-OPEN issues
 
     Returns:
-        IssueBranchSetup with computed names and issue data
+        IssueBranchSetup on success, IssueValidationFailed on validation failure
     """
+    # Validate erk-plan label
+    if "erk-plan" not in issue_info.labels:
+        return IssueValidationFailed(
+            f"Issue #{issue_info.number} must have 'erk-plan' label.\n"
+            f"To add the label:\n"
+            f"  gh issue edit {issue_info.number} --add-label erk-plan"
+        )
+
+    # Collect warnings
+    warnings: list[str] = []
+    if warn_non_open and issue_info.state != "OPEN":
+        warnings.append(f"Issue #{issue_info.number} is {issue_info.state}. Proceeding anyway...")
+
     branch_name = generate_issue_branch_name(
         issue_info.number,
         issue_info.title,
@@ -182,4 +157,5 @@ def prepare_issue_for_worktree(
         issue_number=issue_info.number,
         issue_url=issue_info.url,
         issue_title=issue_info.title,
+        warnings=tuple(warnings),
     )

@@ -19,9 +19,8 @@ from erk_shared.github.issues import IssueInfo
 from erk_shared.impl_folder import create_impl_folder, get_impl_path, save_issue_reference
 from erk_shared.issue_workflow import (
     IssueBranchSetup,
-    IssueValidationError,
+    IssueValidationFailed,
     prepare_issue_for_worktree,
-    validate_issue_for_worktree,
 )
 from erk_shared.naming import (
     default_branch_for_worktree,
@@ -692,18 +691,17 @@ def create_wt(
             )
             raise SystemExit(1) from e
 
-        # Validate using shared helper
-        try:
-            warnings = validate_issue_for_worktree(issue_info)
-            for warning in warnings:
-                user_output(click.style("Warning: ", fg="yellow") + warning)
-        except IssueValidationError as e:
-            user_output(click.style("Error: ", fg="red") + str(e))
+        # Prepare and validate using shared helper (returns union type)
+        trunk_branch = ctx.git.detect_trunk_branch(repo.root)
+        result = prepare_issue_for_worktree(issue_info, ctx.time.now())
+
+        if isinstance(result, IssueValidationFailed):
+            user_output(click.style("Error: ", fg="red") + result.message)
             raise SystemExit(1) from None
 
-        # Prepare branch/worktree names using shared helper
-        trunk_branch = ctx.git.detect_trunk_branch(repo.root)
-        setup = prepare_issue_for_worktree(issue_info, ctx.time.now())
+        setup = result
+        for warning in setup.warnings:
+            user_output(click.style("Warning: ", fg="yellow") + warning)
 
         # Create branch directly via git
         ctx.git.create_branch(repo.root, setup.branch_name, trunk_branch)

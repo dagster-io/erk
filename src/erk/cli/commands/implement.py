@@ -29,9 +29,9 @@ from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.core.worktree_utils import compute_relative_path_in_worktree
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.issue_workflow import (
-    IssueValidationError,
+    IssueBranchSetup,
+    IssueValidationFailed,
     prepare_plan_for_worktree,
-    validate_plan_for_worktree,
 )
 from erk_shared.naming import (
     ensure_unique_worktree_name_with_date,
@@ -437,17 +437,16 @@ def _prepare_plan_source_from_issue(
     # Output issue title
     ctx.feedback.info(f"Issue: {plan.title}")
 
-    # Validate using shared helper
-    try:
-        warnings = validate_plan_for_worktree(plan)
-        for warning in warnings:
-            user_output(click.style("Warning: ", fg="yellow") + warning)
-    except IssueValidationError as e:
-        user_output(click.style("Error: ", fg="red") + str(e))
+    # Prepare and validate using shared helper (returns union type)
+    result = prepare_plan_for_worktree(plan, ctx.time.now())
+
+    if isinstance(result, IssueValidationFailed):
+        user_output(click.style("Error: ", fg="red") + result.message)
         raise SystemExit(1) from None
 
-    # Prepare branch/worktree names using shared helper
-    setup = prepare_plan_for_worktree(plan, ctx.time.now())
+    setup: IssueBranchSetup = result
+    for warning in setup.warnings:
+        user_output(click.style("Warning: ", fg="yellow") + warning)
 
     # Create branch directly via git
     ctx.git.create_branch(repo_root, setup.branch_name, base_branch)
