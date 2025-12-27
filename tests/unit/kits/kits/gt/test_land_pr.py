@@ -318,7 +318,7 @@ class TestLandPrBaseBranchValidation:
         assert result.success is False
         assert result.error_type == "pr_base_mismatch"
         assert "targets 'branch-A' but should target 'main'" in result.message
-        assert "gt submit" in result.message
+        assert "gt restack && gt submit" in result.message
         assert result.details["pr_base"] == "branch-A"
         assert result.details["expected_base"] == "main"
 
