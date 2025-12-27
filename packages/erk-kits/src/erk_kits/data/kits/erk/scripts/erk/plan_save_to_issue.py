@@ -40,15 +40,22 @@ from erk_shared.output.next_steps import format_next_steps_plain
 from erk_shared.scratch.scratch import get_scratch_dir
 
 
-def _create_plan_saved_marker(session_id: str, repo_root: Path) -> None:
-    """Create marker file to signal plan was saved to GitHub.
+def _create_plan_saved_signal(session_id: str, repo_root: Path) -> None:
+    """Create signal file to indicate plan was saved to GitHub.
 
     Args:
         session_id: The session ID for the scratch directory.
         repo_root: The repository root path.
     """
-    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
-    (marker_dir / "plan-saved-to-github").touch()
+    signal_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    signal_file = signal_dir / "exit-plan-mode-hook.plan-saved.signal"
+    signal_file.write_text(
+        "Created by: exit-plan-mode-hook (via /erk:save-plan)\n"
+        "Trigger: Plan was successfully saved to GitHub\n"
+        "Effect: Next ExitPlanMode call will be BLOCKED (remain in plan mode, session complete)\n"
+        "Lifecycle: Deleted after being read by next hook invocation\n",
+        encoding="utf-8",
+    )
 
 
 @click.command(name="plan-save-to-issue")
@@ -169,9 +176,9 @@ def plan_save_to_issue(
 
         session_ids = session_result.session_ids
 
-    # Step 9: Create marker file to signal plan was saved
+    # Step 9: Create signal file to indicate plan was saved
     if effective_session_id:
-        _create_plan_saved_marker(effective_session_id, repo_root)
+        _create_plan_saved_signal(effective_session_id, repo_root)
 
     # Step 10: Output success
     # Detect enrichment status for informational output
