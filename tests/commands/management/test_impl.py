@@ -46,7 +46,9 @@ def test_create_with_plan_file() -> None:
 
         # Run erk create with --from-plan
         result = runner.invoke(
-            cli, ["wt", "create", "--from-plan", "Add_Auth_Feature.md", "--no-post"], obj=test_ctx
+            cli,
+            ["wt", "create", "--from-plan-file", "Add_Auth_Feature.md", "--no-post"],
+            obj=test_ctx,
         )
         assert result.exit_code == 0, f"Command failed: {result.output}"
 
@@ -98,7 +100,9 @@ def test_create_with_plan_name_sanitization() -> None:
 
         # Run erk create with --from-plan
         result = runner.invoke(
-            cli, ["wt", "create", "--from-plan", "MY_COOL_Plan_File.md", "--no-post"], obj=test_ctx
+            cli,
+            ["wt", "create", "--from-plan-file", "MY_COOL_Plan_File.md", "--no-post"],
+            obj=test_ctx,
         )
         assert result.exit_code == 0, f"Command failed: {result.output}"
 
