@@ -213,9 +213,6 @@ All CI checks passed after N iteration(s):
 ✅ **Sync-Kit (erk check)**: PASSED
 
 The code is ready for commit/PR.
-
-Create insight extraction plan to improve .erk/docs/agent (optional):
-/erk:create-extraction-plan
 ```
 
 **IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
