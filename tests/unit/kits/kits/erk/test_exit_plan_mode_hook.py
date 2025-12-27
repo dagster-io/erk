@@ -124,13 +124,14 @@ class TestDetermineExitAction:
 
     def test_plan_exists_blocks_with_instructions(self) -> None:
         """Plan exists without markers - blocks with instructions."""
+        plan_path = Path("/home/user/.claude/plans/my-plan.md")
         result = determine_exit_action(
             HookInput(
                 session_id="abc123",
                 github_planning_enabled=True,
                 skip_marker_exists=False,
                 saved_marker_exists=False,
-                plan_file_path=Path("/home/user/.claude/plans/my-plan.md"),
+                plan_file_path=plan_path,
                 current_branch="feature-branch",
             )
         )
@@ -206,7 +207,7 @@ class TestBuildBlockingMessage:
         plan_path = Path("/home/user/.claude/plans/my-plan.md")
         message = build_blocking_message("session-123", "feature-branch", plan_path)
         assert "If user chooses 'View/Edit the plan':" in message
-        assert f"code {plan_path}" in message
+        assert f"${{EDITOR:-code}} {plan_path}" in message
         assert "After user confirms they're done editing" in message
         assert "loop until user chooses Save or Implement" in message
 
