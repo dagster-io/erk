@@ -141,7 +141,7 @@ When a user saves their plan to GitHub (via `/erk:save-plan`), the workflow shou
 
 After saving to GitHub:
 
-1. The marker file `plan-saved-to-github` is created
+1. The signal file `exit-plan-mode-hook.plan-saved.signal` is created
 2. Success message is displayed with next steps
 3. **Session stays in plan mode** - no ExitPlanMode call
 
@@ -153,11 +153,11 @@ Why? ExitPlanMode shows a plan approval dialog. After saving, this dialog:
 
 ### Safety Net: Hook Blocks ExitPlanMode
 
-If ExitPlanMode is called anyway (e.g., by mistake), the `exit-plan-mode-hook` detects the saved marker and blocks with exit 2:
+If ExitPlanMode is called anyway (e.g., by mistake), the `exit-plan-mode-hook` detects the plan-saved signal and blocks with exit 2:
 
 ```python
-if saved_marker.exists():
-    saved_marker.unlink()
+if plan_saved_signal.exists():
+    plan_saved_signal.unlink()
     click.echo("✅ Plan saved to GitHub. Session complete.")
     sys.exit(2)  # Block to prevent plan approval dialog
 ```
