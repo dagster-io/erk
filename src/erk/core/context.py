@@ -239,7 +239,15 @@ def context_for_test(
         issues = FakeGitHubIssues()
 
     if plan_store is None:
-        plan_store = FakePlanStore()
+        # If issues was provided, wrap it in GitHubPlanStore for realistic testing
+        # Otherwise use FakePlanStore for tests that don't need issues
+        from erk_shared.github.issues import FakeGitHubIssues
+        from erk_shared.plan_store.github import GitHubPlanStore
+
+        if isinstance(issues, FakeGitHubIssues):
+            plan_store = GitHubPlanStore(issues)
+        else:
+            plan_store = FakePlanStore()
 
     if graphite is None:
         graphite = FakeGraphite()

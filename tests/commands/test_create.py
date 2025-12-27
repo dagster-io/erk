@@ -73,7 +73,7 @@ def test_create_from_current_branch_outputs_script_path_to_stdout() -> None:
 
 
 def test_create_from_issue_with_valid_issue() -> None:
-    """Test erk create --from-issue with valid erk-plan issue."""
+    """Test erk create --from-plan with valid erk-plan issue."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.erk_root / "repos" / env.cwd.name
@@ -111,10 +111,10 @@ def test_create_from_issue_with_valid_issue() -> None:
 
         test_ctx = env.build_context(git=git_ops, issues=fake_issues)
 
-        # Act: Run create --from-issue 123
+        # Act: Run create --from-plan 123
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-issue", "123"],
+            ["wt", "create", "--from-plan", "123"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -129,10 +129,13 @@ def test_create_from_issue_with_valid_issue() -> None:
         # Branch name is sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
         # "P123-Add User Authentication" -> "P123-add-user-authentication-01-15-1430"
         worktrees_dir = repo_dir / "worktrees"
-        expected_worktree_path = worktrees_dir / "P123-add-user-authentication-01-15-1430"
-        assert expected_worktree_path.exists(), (
-            f"Expected worktree at {expected_worktree_path}, found: {list(worktrees_dir.glob('*'))}"
+        # Use glob to find the worktree since date suffix changes with test run time
+        matching_worktrees = list(worktrees_dir.glob("P123-add-user-authentication-*"))
+        assert len(matching_worktrees) == 1, (
+            f"Expected exactly one worktree matching P123-add-user-authentication-*, "
+            f"found: {matching_worktrees}"
         )
+        expected_worktree_path = matching_worktrees[0]
 
         # Assert: .impl/ folder exists with correct content
         impl_path = expected_worktree_path / ".impl"
@@ -156,7 +159,7 @@ def test_create_from_issue_with_valid_issue() -> None:
 
 
 def test_create_from_issue_missing_label() -> None:
-    """Test erk create --from-issue fails if issue lacks erk-plan label."""
+    """Test erk create --from-plan fails if issue lacks erk-plan label."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
@@ -192,10 +195,10 @@ def test_create_from_issue_missing_label() -> None:
 
         test_ctx = env.build_context(git=git_ops, issues=fake_issues)
 
-        # Act: Run create --from-issue 456
+        # Act: Run create --from-plan 456
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-issue", "456"],
+            ["wt", "create", "--from-plan", "456"],
             obj=test_ctx,
         )
 
@@ -206,7 +209,7 @@ def test_create_from_issue_missing_label() -> None:
 
 
 def test_create_from_issue_url_parsing() -> None:
-    """Test erk create --from-issue with GitHub URL."""
+    """Test erk create --from-plan with GitHub URL."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
@@ -245,7 +248,7 @@ def test_create_from_issue_url_parsing() -> None:
         # Act: Run with full GitHub URL
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-issue", "https://github.com/owner/repo/issues/789"],
+            ["wt", "create", "--from-plan", "https://github.com/owner/repo/issues/789"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -298,7 +301,7 @@ def test_create_from_issue_name_derivation() -> None:
         # Act
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-issue", "111"],
+            ["wt", "create", "--from-plan", "111"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -308,14 +311,16 @@ def test_create_from_issue_name_derivation() -> None:
         # Note: truncated to 31 chars before timestamp suffix
         assert result.exit_code == 0
         worktrees_dir = repo_dir / "worktrees"
-        expected_worktree_path = worktrees_dir / "P111-fix-database-connection-is-01-15-1430"
-        assert expected_worktree_path.exists(), (
-            f"Expected worktree at {expected_worktree_path}, found: {list(worktrees_dir.glob('*'))}"
+        # Use glob to find the worktree since date suffix changes with test run time
+        matching_worktrees = list(worktrees_dir.glob("P111-fix-database-connection-is-*"))
+        assert len(matching_worktrees) == 1, (
+            f"Expected exactly one worktree matching P111-fix-database-connection-is-*, "
+            f"found: {matching_worktrees}"
         )
 
 
 def test_create_from_issue_not_found() -> None:
-    """Test erk create --from-issue when issue doesn't exist."""
+    """Test erk create --from-plan when issue doesn't exist."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
@@ -338,7 +343,7 @@ def test_create_from_issue_not_found() -> None:
         # Act: Request non-existent issue
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-issue", "999"],
+            ["wt", "create", "--from-plan", "999"],
             obj=test_ctx,
         )
 
@@ -349,7 +354,7 @@ def test_create_from_issue_not_found() -> None:
 
 
 def test_create_from_issue_readonly_operation() -> None:
-    """Test that --from-issue doesn't create/modify issues."""
+    """Test that --from-plan doesn't create/modify issues."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
@@ -388,7 +393,7 @@ def test_create_from_issue_readonly_operation() -> None:
         # Act
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-issue", "222"],
+            ["wt", "create", "--from-plan", "222"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -403,11 +408,11 @@ def test_create_from_issue_readonly_operation() -> None:
 
 
 def test_create_from_issue_tracks_branch_with_graphite() -> None:
-    """Test erk create --from-issue calls ctx.graphite.track_branch() when use_graphite=True.
+    """Test erk create --from-plan calls ctx.graphite.track_branch() when use_graphite=True.
 
     Verifies that when:
     1. use_graphite=True in global config
-    2. erk wt create --from-issue <issue> is called
+    2. erk wt create --from-plan <issue> is called
     3. Then ctx.graphite.track_branch() is called with the linked branch name and trunk as parent
     """
     runner = CliRunner()
@@ -458,10 +463,10 @@ def test_create_from_issue_tracks_branch_with_graphite() -> None:
             use_graphite=True,
         )
 
-        # Act: Run create --from-issue 500
+        # Act: Run create --from-plan 500
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-issue", "500"],
+            ["wt", "create", "--from-plan", "500"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -495,7 +500,7 @@ def test_create_from_issue_tracks_branch_with_graphite() -> None:
 
 
 def test_create_from_issue_no_graphite_tracking_when_disabled() -> None:
-    """Test erk create --from-issue does NOT call track_branch when use_graphite=False."""
+    """Test erk create --from-plan does NOT call track_branch when use_graphite=False."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
@@ -542,10 +547,10 @@ def test_create_from_issue_no_graphite_tracking_when_disabled() -> None:
             use_graphite=False,  # Explicitly disabled
         )
 
-        # Act: Run create --from-issue 501
+        # Act: Run create --from-plan 501
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-issue", "501"],
+            ["wt", "create", "--from-plan", "501"],
             obj=test_ctx,
             catch_exceptions=False,
         )

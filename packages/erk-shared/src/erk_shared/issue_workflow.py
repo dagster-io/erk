@@ -1,14 +1,13 @@
-"""Shared workflow for creating worktrees from GitHub issues.
+"""Shared workflow for creating worktrees from plans.
 
-This module provides the canonical logic for preparing issues for worktree creation,
-including validation, branch naming, and metadata extraction. Used by both
-`erk wt create --from-issue` and `erk implement`.
+This module provides the canonical logic for preparing plans for worktree creation,
+including validation, branch naming, and metadata extraction. Used by
+`erk wt create --from-plan`.
 """
 
 from dataclasses import dataclass
 from datetime import datetime
 
-from erk_shared.github.issues import IssueInfo
 from erk_shared.naming import generate_issue_branch_name, sanitize_worktree_name
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -107,55 +106,5 @@ def prepare_plan_for_worktree(
         issue_number=issue_number,
         issue_url=plan.url,
         issue_title=plan.title,
-        warnings=tuple(warnings),
-    )
-
-
-def prepare_issue_for_worktree(
-    issue_info: IssueInfo,
-    timestamp: datetime,
-    *,
-    warn_non_open: bool = True,
-) -> PrepareIssueResult:
-    """Prepare and validate issue data for worktree creation.
-
-    Validates the issue has required labels and generates branch/worktree names.
-    Does NOT create the branch or worktree - just validates and computes names.
-
-    Args:
-        issue_info: Issue information from GitHub
-        timestamp: Timestamp for branch name suffix
-        warn_non_open: Whether to include warning for non-OPEN issues
-
-    Returns:
-        IssueBranchSetup on success, IssueValidationFailed on validation failure
-    """
-    # Validate erk-plan label
-    if "erk-plan" not in issue_info.labels:
-        return IssueValidationFailed(
-            f"Issue #{issue_info.number} must have 'erk-plan' label.\n"
-            f"To add the label:\n"
-            f"  gh issue edit {issue_info.number} --add-label erk-plan"
-        )
-
-    # Collect warnings
-    warnings: list[str] = []
-    if warn_non_open and issue_info.state != "OPEN":
-        warnings.append(f"Issue #{issue_info.number} is {issue_info.state}. Proceeding anyway...")
-
-    branch_name = generate_issue_branch_name(
-        issue_info.number,
-        issue_info.title,
-        timestamp,
-    )
-    worktree_name = sanitize_worktree_name(branch_name)
-
-    return IssueBranchSetup(
-        branch_name=branch_name,
-        worktree_name=worktree_name,
-        plan_content=issue_info.body,
-        issue_number=issue_info.number,
-        issue_url=issue_info.url,
-        issue_title=issue_info.title,
         warnings=tuple(warnings),
     )
