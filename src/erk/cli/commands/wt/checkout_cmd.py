@@ -7,17 +7,16 @@ from erk.cli.commands.completions import complete_worktree_names
 from erk.cli.commands.navigation_helpers import activate_root_repo, activate_worktree
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
+from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.worktree_metadata import get_worktree_project
 from erk_shared.output.output import user_output
 
 
 @alias("co")
-@click.command("checkout")
+@click.command("checkout", cls=CommandWithHiddenOptions)
 @click.argument("worktree_name", shell_complete=complete_worktree_names)
-@click.option(
-    "--script", is_flag=True, help="Print only the activation script without usage instructions."
-)
+@script_option
 @click.pass_obj
 def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
     """Checkout a worktree by name.

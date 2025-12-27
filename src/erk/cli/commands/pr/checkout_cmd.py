@@ -10,6 +10,7 @@ from erk.cli.alias import alias
 from erk.cli.commands.pr.parse_pr_reference import parse_pr_reference
 from erk.cli.core import worktree_path_for
 from erk.cli.ensure import Ensure
+from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.github.types import PRNotFound
@@ -17,14 +18,9 @@ from erk_shared.output.output import user_output
 
 
 @alias("co")
-@click.command("checkout")
+@click.command("checkout", cls=CommandWithHiddenOptions)
 @click.argument("pr_reference")
-@click.option(
-    "--script",
-    is_flag=True,
-    hidden=True,
-    help="Output activation script path for shell integration.",
-)
+@script_option
 @click.pass_obj
 def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
     """Checkout PR into a worktree for review.
