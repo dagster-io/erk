@@ -321,8 +321,8 @@ Exit 2 (block) is often the RIGHT choice for successful terminal states:
 
 ```python
 # Example: Plan already saved to GitHub
-if saved_marker.exists():
-    saved_marker.unlink()
+if plan_saved_signal.exists():
+    plan_saved_signal.unlink()
     click.echo("✅ Plan saved to GitHub. Session complete.")
     sys.exit(2)  # BLOCK - prevents ExitPlanMode's plan approval dialog
 ```
@@ -412,27 +412,27 @@ The exit code is about **what should happen next**, not whether your hook succee
 5. **Debug with `--debug`**: Use `claude --debug` to see hook execution
 6. **Iterate**: Refine based on actual usage patterns
 
-#### State Coordination with Skip Markers
+#### State Coordination with Signal Files
 
-When a hook needs to allow future operations after user confirmation, use a skip marker file:
+When a hook needs to allow future operations after user confirmation, use a signal file:
 
 **Pattern:**
 
-1. Hook checks for marker file → if exists, delete and allow
-2. Hook blocks if no marker → Claude asks user
-3. On user confirmation, Claude creates marker file
+1. Hook checks for signal file → if exists, delete and allow
+2. Hook blocks if no signal → Claude asks user
+3. On user confirmation, Claude creates signal file
 4. Next invocation succeeds
 
 **Implementation:**
 
 ```python
-def _get_skip_marker_path(session_id: str, repo_root: Path) -> Path:
-    return repo_root / ".erk" / "scratch" / "sessions" / session_id / "skip-plan-save"
+def _get_implement_now_signal_path(session_id: str, repo_root: Path) -> Path:
+    return repo_root / ".erk" / "scratch" / "sessions" / session_id / "exit-plan-mode-hook.implement-now.signal"
 
-def check_and_consume_marker(session_id: str, repo_root: Path) -> bool:
-    marker = _get_skip_marker_path(session_id, repo_root)
-    if marker.exists():
-        marker.unlink()  # Consume marker
+def check_and_consume_signal(session_id: str, repo_root: Path) -> bool:
+    signal = _get_implement_now_signal_path(session_id, repo_root)
+    if signal.exists():
+        signal.unlink()  # Consume signal
         return True
     return False
 ```

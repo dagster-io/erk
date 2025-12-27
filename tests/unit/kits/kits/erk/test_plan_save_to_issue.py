@@ -502,14 +502,14 @@ def test_plan_save_to_issue_session_id_flag_enables_context_capture(tmp_path: Pa
     assert flag_session_id in output["session_ids"]
 
 
-def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
-    """Test plan_save_to_issue creates marker file on success."""
+def test_plan_save_to_issue_creates_signal_file(tmp_path: Path) -> None:
+    """Test plan_save_to_issue creates signal file on success."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    test_session_id = "marker-test-session-id"
+    test_session_id = "signal-test-session-id"
     plan_content = "# Feature Plan\n\n- Step 1"
     fake_store = FakeClaudeCodeSessionStore(
-        plans={"marker-test": plan_content},
+        plans={"signal-test": plan_content},
     )
     runner = CliRunner()
 
@@ -524,21 +524,33 @@ def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
 
         assert result.exit_code == 0, f"Failed: {result.output}"
 
-        # Verify marker file was created at correct path with sessions/ segment
-        marker_file = (
-            Path(td) / ".erk" / "scratch" / "sessions" / test_session_id / "plan-saved-to-github"
+        # Verify signal file was created at correct path with sessions/ segment
+        signal_file = (
+            Path(td)
+            / ".erk"
+            / "scratch"
+            / "sessions"
+            / test_session_id
+            / "exit-plan-mode-hook.plan-saved.signal"
         )
-        assert marker_file.exists()
+        assert signal_file.exists()
+
+        # Verify signal file has descriptive content
+        content = signal_file.read_text(encoding="utf-8")
+        assert "Created by:" in content
+        assert "Trigger:" in content
+        assert "Effect:" in content
+        assert "Lifecycle:" in content
 
 
-def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None:
-    """Test marker file is not created when no session ID is provided."""
+def test_plan_save_to_issue_no_signal_without_session_id(tmp_path: Path) -> None:
+    """Test signal file is not created when no session ID is provided."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
     plan_content = "# Feature Plan\n\n- Step 1"
     # Session store has plan but no session ID will be passed
     fake_store = FakeClaudeCodeSessionStore(
-        plans={"no-marker-test": plan_content},
+        plans={"no-signal-test": plan_content},
     )
     runner = CliRunner()
 
@@ -551,7 +563,7 @@ def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None
 
         assert result.exit_code == 0, f"Failed: {result.output}"
 
-        # Verify no marker directories were created
+        # Verify no signal directories were created
         scratch_dir = Path(td) / ".erk" / "scratch"
         if scratch_dir.exists():
             # Only the scratch dir should exist (no subdirectories)

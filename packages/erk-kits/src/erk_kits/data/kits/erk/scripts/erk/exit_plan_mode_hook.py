@@ -6,11 +6,34 @@ the ExitPlanMode tool via PreToolUse lifecycle to ask whether to save to GitHub
 or implement immediately.
 
 Exit codes:
-    0: Success (allow exit - no plan, skip marker present, or no session)
-    2: Block (plan exists, no skip marker - prompt user)
+    0: Success (allow exit - no plan, implement-now signal present, or no session)
+    2: Block (plan exists, no implement-now signal - prompt user)
 
 This command is invoked via:
     erk kit exec erk exit-plan-mode-hook
+
+Signal File State Machine
+=========================
+
+This hook uses signal files in .erk/scratch/sessions/<session-id>/ for state management.
+Signal files are self-describing: their names indicate their purpose and their contents
+explain their effect.
+
+Signal Files:
+    exit-plan-mode-hook.implement-now.signal
+        Created by: Agent (when user chooses "Implement now")
+        Effect: Next ExitPlanMode call is ALLOWED (exit plan mode, proceed to implementation)
+        Lifecycle: Deleted after being read by next hook invocation
+
+    exit-plan-mode-hook.plan-saved.signal
+        Created by: /erk:save-plan command
+        Effect: Next ExitPlanMode call is BLOCKED (remain in plan mode, session complete)
+        Lifecycle: Deleted after being read by next hook invocation
+
+State Transitions:
+    1. No signal files + plan exists → BLOCK with prompt
+    2. implement-now signal exists → ALLOW (delete signal)
+    3. plan-saved signal exists → BLOCK with "session complete" message (delete signal)
 """
 
 import json
@@ -45,8 +68,8 @@ class HookInput:
 
     session_id: str | None
     github_planning_enabled: bool
-    skip_marker_exists: bool
-    saved_marker_exists: bool
+    implement_now_signal_exists: bool
+    plan_saved_signal_exists: bool
     plan_file_path: Path | None  # Path to plan file if exists, None otherwise
     current_branch: str | None
 
@@ -57,8 +80,8 @@ class HookOutput:
 
     action: ExitAction
     message: str
-    delete_skip_marker: bool = False
-    delete_saved_marker: bool = False
+    delete_implement_now_signal: bool = False
+    delete_plan_saved_signal: bool = False
 
 
 # ============================================================================
@@ -110,9 +133,9 @@ def build_blocking_message(
             "     Stay in plan mode and let the user exit manually if desired.",
             "",
             "If user chooses 'Implement now':",
-            "  1. Create skip marker:",
+            "  1. Create implement-now signal:",
             f"     mkdir -p .erk/scratch/sessions/{session_id} && "
-            f"touch .erk/scratch/sessions/{session_id}/skip-plan-save",
+            f"touch .erk/scratch/sessions/{session_id}/exit-plan-mode-hook.implement-now.signal",
             "  2. Call ExitPlanMode",
         ]
     )
@@ -144,20 +167,20 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
     if hook_input.session_id is None:
         return HookOutput(ExitAction.ALLOW, "No session context available, allowing exit")
 
-    # Skip marker present (user chose "Implement now")
-    if hook_input.skip_marker_exists:
+    # Implement-now signal present (user chose "Implement now")
+    if hook_input.implement_now_signal_exists:
         return HookOutput(
             ExitAction.ALLOW,
-            "Skip marker found, allowing exit",
-            delete_skip_marker=True,
+            "Implement-now signal found, allowing exit",
+            delete_implement_now_signal=True,
         )
 
-    # Saved marker present (user chose "Save to GitHub")
-    if hook_input.saved_marker_exists:
+    # Plan-saved signal present (user chose "Save to GitHub")
+    if hook_input.plan_saved_signal_exists:
         return HookOutput(
             ExitAction.BLOCK,
             "✅ Plan already saved to GitHub. Session complete - no further action needed.",
-            delete_saved_marker=True,
+            delete_plan_saved_signal=True,
         )
 
     # No plan file
@@ -167,7 +190,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             "No plan file found for this session, allowing exit",
         )
 
-    # Plan exists, no skip marker - block and instruct
+    # Plan exists, no implement-now signal - block and instruct
     return HookOutput(
         ExitAction.BLOCK,
         build_blocking_message(
@@ -232,37 +255,37 @@ def _get_scratch_dir(session_id: str) -> Path | None:
         return None
 
 
-def _get_skip_marker_path(session_id: str) -> Path | None:
-    """Get skip marker path in .erk/scratch/sessions/<session_id>/.
+def _get_implement_now_signal_path(session_id: str) -> Path | None:
+    """Get implement-now signal path in .erk/scratch/sessions/<session_id>/.
 
     Args:
         session_id: The session ID to build the path for
 
     Returns:
-        Path to skip marker file, or None if not in a git repo
+        Path to implement-now signal file, or None if not in a git repo
     """
     scratch_dir = _get_scratch_dir(session_id)
     if scratch_dir is None:
         return None
-    return scratch_dir / "skip-plan-save"
+    return scratch_dir / "exit-plan-mode-hook.implement-now.signal"
 
 
-def _get_saved_marker_path(session_id: str) -> Path | None:
-    """Get saved marker path in .erk/scratch/sessions/<session_id>/.
+def _get_plan_saved_signal_path(session_id: str) -> Path | None:
+    """Get plan-saved signal path in .erk/scratch/sessions/<session_id>/.
 
-    The saved marker indicates the plan was already saved to GitHub,
+    The plan-saved signal indicates the plan was already saved to GitHub,
     so exit should proceed without triggering implementation.
 
     Args:
         session_id: The session ID to build the path for
 
     Returns:
-        Path to saved marker file, or None if not in a git repo
+        Path to plan-saved signal file, or None if not in a git repo
     """
     scratch_dir = _get_scratch_dir(session_id)
     if scratch_dir is None:
         return None
-    return scratch_dir / "plan-saved-to-github"
+    return scratch_dir / "exit-plan-mode-hook.plan-saved.signal"
 
 
 def _find_session_plan(session_id: str) -> Path | None:
@@ -317,14 +340,16 @@ def _gather_inputs() -> HookInput:
     """Gather all inputs from environment. All I/O happens here."""
     session_id = _get_session_id_from_stdin()
 
-    # Determine marker existence
-    skip_marker_exists = False
-    saved_marker_exists = False
+    # Determine signal existence
+    implement_now_signal_exists = False
+    plan_saved_signal_exists = False
     if session_id:
-        skip_marker = _get_skip_marker_path(session_id)
-        skip_marker_exists = skip_marker is not None and skip_marker.exists()
-        saved_marker = _get_saved_marker_path(session_id)
-        saved_marker_exists = saved_marker is not None and saved_marker.exists()
+        implement_now_signal = _get_implement_now_signal_path(session_id)
+        implement_now_signal_exists = (
+            implement_now_signal is not None and implement_now_signal.exists()
+        )
+        plan_saved_signal = _get_plan_saved_signal_path(session_id)
+        plan_saved_signal_exists = plan_saved_signal is not None and plan_saved_signal.exists()
 
     # Find plan file path (None if doesn't exist)
     plan_file_path: Path | None = None
@@ -336,8 +361,8 @@ def _gather_inputs() -> HookInput:
     needs_blocking_message = (
         session_id
         and plan_file_path is not None
-        and not skip_marker_exists
-        and not saved_marker_exists
+        and not implement_now_signal_exists
+        and not plan_saved_signal_exists
     )
     if needs_blocking_message:
         current_branch = _get_current_branch_within_hook()
@@ -345,8 +370,8 @@ def _gather_inputs() -> HookInput:
     return HookInput(
         session_id=session_id,
         github_planning_enabled=_is_github_planning_enabled(),
-        skip_marker_exists=skip_marker_exists,
-        saved_marker_exists=saved_marker_exists,
+        implement_now_signal_exists=implement_now_signal_exists,
+        plan_saved_signal_exists=plan_saved_signal_exists,
         plan_file_path=plan_file_path,
         current_branch=current_branch,
     )
@@ -354,15 +379,15 @@ def _gather_inputs() -> HookInput:
 
 def _execute_result(result: HookOutput, session_id: str | None) -> None:
     """Execute the decision result. All I/O happens here."""
-    if result.delete_skip_marker and session_id:
-        skip_marker = _get_skip_marker_path(session_id)
-        if skip_marker:
-            skip_marker.unlink()
+    if result.delete_implement_now_signal and session_id:
+        implement_now_signal = _get_implement_now_signal_path(session_id)
+        if implement_now_signal:
+            implement_now_signal.unlink()
 
-    if result.delete_saved_marker and session_id:
-        saved_marker = _get_saved_marker_path(session_id)
-        if saved_marker:
-            saved_marker.unlink()
+    if result.delete_plan_saved_signal and session_id:
+        plan_saved_signal = _get_plan_saved_signal_path(session_id)
+        if plan_saved_signal:
+            plan_saved_signal.unlink()
 
     if result.message:
         click.echo(result.message, err=True)
