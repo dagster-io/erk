@@ -12,6 +12,9 @@ artifacts:
     - commands/erk/save-plan.md
     - commands/erk/pr-address.md
     - commands/erk/pr-submit.md
+  skill:
+    - skills/gt-graphite/SKILL.md
+    - skills/gt-graphite/references/gt-reference.md
   doc:
     - docs/erk/EXAMPLES.md
     - docs/erk/includes/conflict-resolution.md
@@ -173,6 +176,18 @@ scripts:
   - name: update-pr-body
     path: scripts/erk/update_pr_body.py
     description: Update PR body with AI-generated summary and standardized footer
+  - name: restack-preflight
+    path: scripts/erk/restack_preflight.py
+    description: Squash and restack branch, detecting conflicts for manual resolution
+  - name: restack-continue
+    path: scripts/erk/restack_continue.py
+    description: Stage resolved files and continue restack
+  - name: restack-finalize
+    path: scripts/erk/restack_finalize.py
+    description: Verify restack completed cleanly
+  - name: quick-submit
+    path: scripts/erk/quick_submit.py
+    description: Quick commit all changes and submit with Graphite
 hooks:
   - id: session-id-injector-hook
     lifecycle: UserPromptSubmit

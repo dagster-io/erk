@@ -17,7 +17,7 @@ from erk_shared.gateway.gt.types import (
     RestackPreflightSuccess,
 )
 from erk_shared.git.fake import FakeGit
-from tests.unit.kits.kits.gt.fake_ops import FakeGtKitOps
+from tests.unit.gateways.gt.fake_ops import FakeGtKitOps
 
 
 class TestRestackPreflight:
