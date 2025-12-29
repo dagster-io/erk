@@ -77,9 +77,7 @@ def test_skill_references_use_relative_paths():
 
         for ref in expected_relative_refs:
             if ref not in content:
-                pytest.fail(
-                    f"Skill {version} SKILL.md missing expected relative reference: {ref}"
-                )
+                pytest.fail(f"Skill {version} SKILL.md missing expected relative reference: {ref}")
 
 
 def test_package_and_project_in_sync():
@@ -87,9 +85,7 @@ def test_package_and_project_in_sync():
     # From tests/integration/kits/kits/ -> go up 5 levels to project root
     project_root = Path(__file__).parent.parent.parent.parent.parent
 
-    package_kits_dir = (
-        project_root / "packages" / "erk-kits" / "src" / "erk_kits" / "data" / "kits"
-    )
+    package_kits_dir = project_root / "packages" / "erk-kits" / "src" / "erk_kits" / "data" / "kits"
     project_skills_dir = project_root / ".claude" / "skills"
 
     versions = ["310", "311", "312", "313"]
@@ -102,8 +98,7 @@ def test_package_and_project_in_sync():
 
         if not project_skill_dir.exists():
             pytest.fail(
-                f"Project skill directory missing: "
-                f".claude/skills/dignified-python-{version}/"
+                f"Project skill directory missing: .claude/skills/dignified-python-{version}/"
             )
 
         # Get all .md files from package
