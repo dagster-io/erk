@@ -30,22 +30,14 @@ Erk uses `.impl/` folders to track implementation progress for plans executed lo
 The `.impl/` folder lives at the **worktree root**:
 
 ```
-{repo_root}/.impl/
+{worktree_root}/.impl/
 ```
 
-**Path Resolution Pattern**:
+**Path Resolution**:
 
 ```python
-from erk_shared.context.helpers import require_repo_root
-
-repo_root = require_repo_root(ctx)
 impl_dir = repo_root / ".impl"
 ```
-
-**Reference implementations**:
-
-- `src/erk/cli/commands/pr/check_cmd.py` - Uses this pattern for issue reference validation
-- `src/erk/cli/commands/wt/create_cmd.py` - Uses this pattern for `--copy-plan` feature
 
 **Structure**:
 

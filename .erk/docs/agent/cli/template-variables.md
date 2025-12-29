@@ -13,11 +13,11 @@ Template variables can be used in `config.toml` env sections. They are substitut
 
 ## Available Variables
 
-| Variable          | Description                         | Example Value                     |
-| ----------------- | ----------------------------------- | --------------------------------- |
-| `{worktree_path}` | Absolute path to worktree directory | `/Users/you/erks/repo/my-feature` |
-| `{repo_root}`     | Absolute path to git repository     | `/Users/you/code/repo`            |
-| `{name}`          | Worktree name                       | `my-feature`                      |
+| Variable          | Description                          | Example Value                     |
+| ----------------- | ------------------------------------ | --------------------------------- |
+| `{worktree_path}` | Absolute path to worktree directory  | `/Users/you/erks/repo/my-feature` |
+| `{repo_root}`     | Absolute path to git repository root | `/Users/you/code/repo`            |
+| `{name}`          | Worktree name                        | `my-feature`                      |
 
 ## Auto-Generated Environment Variables
 
@@ -52,3 +52,7 @@ WORKTREE_NAME="my-feature"
 ```
 
 **File**: `src/erk/cli/commands/wt/create_cmd.py` (see `make_env_content()`)
+
+## Related Topics
+
+- [Worktree Metadata](../architecture/worktree-metadata.md) - Per-worktree storage

@@ -12,7 +12,7 @@ read_when:
 
 ## Overview
 
-Per-worktree metadata is stored in `~/.erk/repos/{repo}/worktrees.toml`. This file associates worktree names with metadata like project paths.
+Per-worktree metadata is stored in `~/.erk/repos/{repo}/worktrees.toml`. This file associates worktree names with metadata.
 
 ## File Location
 
@@ -23,59 +23,22 @@ Per-worktree metadata is stored in `~/.erk/repos/{repo}/worktrees.toml`. This fi
     └── worktrees.toml   ← Per-worktree metadata
 ```
 
-## Format
-
-```toml
-[feature-x]
-project = "python_modules/dagster-open-platform"
-
-[another-wt]
-project = "python_modules/another-project"
-```
-
 ## API
 
 **File**: `src/erk/core/worktree_metadata.py`
 
 ```python
-# Read project for a worktree
-project_path = get_worktree_project(repo_dir, worktree_name, git_ops)
-
-# Set project for a worktree
-set_worktree_project(repo_dir, worktree_name, project_path)
-
 # Remove worktree metadata (called when worktree deleted)
 remove_worktree_metadata(repo_dir, worktree_name)
 ```
 
-## Usage
-
-- **`erk wt create`**: Records project association if created from project context
-- **`erk wt co`**: Looks up project path and navigates to project subdirectory
-- **`erk wt rm`**: Removes metadata when worktree is deleted
-
 ## Subdirectory Navigation Patterns
 
-Navigation commands can determine where to navigate within a target worktree. There are two patterns:
-
-### Project Path Pattern (wt co)
-
-The `wt co` command uses stored project metadata to navigate to a project subdirectory:
-
-```python
-# From wt/checkout_cmd.py
-project_path = get_worktree_project(repo.repo_dir, worktree_name, ctx.git)
-if project_path is not None:
-    target_path = worktree_path / project_path
-else:
-    target_path = worktree_path
-```
-
-This uses the `worktrees.toml` metadata file to store/retrieve project associations.
+Navigation commands can preserve the user's relative position within a worktree.
 
 ### Relative Path Pattern (checkout, up, down)
 
-Navigation commands can preserve the user's relative position within a worktree by:
+Navigation commands preserve the user's relative position by:
 
 1. **Computing relative path from current worktree root to cwd**
 
@@ -112,6 +75,5 @@ This pattern allows users to stay in `src/components/` when switching worktrees,
 
 ## Related Topics
 
-- [Glossary: Project Context](../glossary.md#project-context) - What project context contains
-- [Template Variables](../cli/template-variables.md) - Variables available in project configs
+- [Template Variables](../cli/template-variables.md) - Variables available in configs
 - [Shell Integration Patterns](shell-integration-patterns.md) - Script generation for shell commands

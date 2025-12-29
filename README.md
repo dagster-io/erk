@@ -314,49 +314,20 @@ For smaller changes that don't require formal planning:
    erk pr land
    ```
 
-## Monorepo Support
+## File Locations
 
-Erk supports monorepos with multiple projects. Understanding where files live is important:
-
-### Repo Root vs Project Root
-
-- **Repo root**: The top-level directory containing `.git/`. This is where `.erk/` lives.
-- **Project root**: A subdirectory (or the repo root itself) containing a `pyproject.toml`. This is where `.impl/` lives.
-
-In a simple repo, these are the same directory. In a monorepo, you might have:
-
-```
-my-monorepo/           # repo root
-├── .erk/              # erk config (repo-scoped)
-├── .git/
-├── frontend/
-│   └── pyproject.toml
-└── backend/           # project root (when working here)
-    ├── .impl/         # implementation plans (project-scoped)
-    └── pyproject.toml
-```
-
-### What Lives Where
-
-| Location   | Scope        | Contents                                         |
-| ---------- | ------------ | ------------------------------------------------ |
-| `.erk/`    | Repo root    | Erk configuration, scratch storage, session data |
-| `.impl/`   | Project root | Implementation plans for the current project     |
-| `.claude/` | Repo root    | Claude Code commands, skills, hooks              |
-
-When you run `erk implement`, erk detects your project root and places `.impl/` there, ensuring plans are scoped to the correct project context.
-
-**Note:** `.claude/` is repo-scoped, but Claude Code sessions should be started from the project root. This ensures Claude has the correct working directory context for the project you're working on.
+| Location   | Contents                                         |
+| ---------- | ------------------------------------------------ |
+| `.erk/`    | Erk configuration, scratch storage, session data |
+| `.impl/`   | Implementation plans (at worktree root)          |
+| `.claude/` | Claude Code commands, skills, hooks              |
 
 ### Gitignore
 
 `erk init` automatically adds these entries to your `.gitignore`. If you ran `erk init`, this is already configured:
 
 ```gitignore
-# At repo root
 .erk/scratch/
-
-# At each project root (or repo root for single-project repos)
 .impl/
 ```
 

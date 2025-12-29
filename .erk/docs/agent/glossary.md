@@ -164,14 +164,11 @@ When writing CLI commands, use the correct path level for file lookups:
 | `ctx.cwd`                 | Where the user ran the command | **Rarely correct** - only for user-relative operations |
 | `repo.root` / `repo_root` | Git worktree root              | `.erk/`, `.impl/` lookups, git operations              |
 
-### Common Pattern: Getting Repo Root
+### Common Pattern: `.impl/` Lookup
 
-For operations that need `.impl/` or `.erk/` (which live at worktree root), use the repo root:
+`.impl/` lives at the worktree root:
 
 ```python
-from erk_shared.context.helpers import require_repo_root
-
-repo_root = require_repo_root(ctx)
 impl_dir = repo_root / ".impl"
 ```
 
@@ -183,10 +180,9 @@ impl_dir = repo_root / ".impl"
 impl_dir = ctx.cwd / ".impl"  # Wrong - user may run from any subdirectory
 ```
 
-**✅ Correct**: Using repo root
+**✅ Correct**: Using worktree root
 
 ```python
-repo_root = require_repo_root(ctx)
 impl_dir = repo_root / ".impl"
 ```
 
