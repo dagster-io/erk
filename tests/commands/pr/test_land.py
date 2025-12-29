@@ -19,18 +19,19 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
-from erk.cli.commands.pr.land_cmd import is_extraction_origin_pr
+from erk.cli.commands.pr.land_cmd import is_extraction_origin_pr, pr_land
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
+from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.types import PRDetails, PullRequestInfo
 from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, marker_exists
 from tests.test_utils.cli_helpers import assert_cli_error
-from tests.test_utils.env_helpers import erk_inmem_env
+from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
 
 def test_pr_land_default_skips_extraction_and_deletes_worktree() -> None:
@@ -1308,3 +1309,549 @@ def test_pr_land_with_up_multiple_children_fails_before_merge() -> None:
 
         # CRITICAL: PR should NOT have been merged (fail-fast)
         assert len(github_ops.merged_prs) == 0
+
+
+def test_pr_land_fix_flag_auto_fixes_base_mismatch() -> None:
+    """Test --fix flag auto-fixes PR base branch mismatch without prompting.
+
+    When --fix is passed and PR base doesn't match expected trunk:
+    1. Runs restack preflight
+    2. Runs restack finalize (no conflicts)
+    3. Submits stack to update PR
+    4. Retries land operation
+    """
+    runner = CliRunner()
+
+    with erk_isolated_fs_env(runner) as env:
+        # Create repo structure
+        env.setup_repo_structure()
+
+        # Configure git
+        wt_path = env.repo.worktrees_dir / "feature-branch"
+        git = FakeGit(
+            worktrees={
+                env.root_worktree: [
+                    WorktreeInfo(path=env.root_worktree, branch="main", is_root=True),
+                    WorktreeInfo(
+                        path=wt_path,
+                        branch="feature-branch",
+                        is_root=False,
+                    ),
+                ],
+            },
+            current_branches={
+                env.root_worktree: "main",
+                wt_path: "feature-branch",
+            },
+            git_common_dirs={
+                env.root_worktree: env.git_dir,
+                wt_path: env.git_dir,
+            },
+            default_branches={env.root_worktree: "main"},
+            trunk_branches={env.root_worktree: "main"},
+            repository_roots={
+                env.root_worktree: env.root_worktree,
+                wt_path: env.root_worktree,
+            },
+            rebase_in_progress=False,
+            conflicted_files=[],
+            commits_ahead={(wt_path, "main"): 1},  # Has commits to restack
+        )
+
+        # Configure graphite - PR parent should be master, not some old branch
+        branches = {
+            "main": BranchMetadata(
+                name="main",
+                parent=None,
+                children=["feature-branch"],
+                is_trunk=True,
+                commit_sha="abc123",
+            ),
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha="def456",
+            ),
+        }
+        graphite = FakeGraphite(branches=branches)
+
+        # Configure github - PR exists but base is wrong
+        prs = {
+            "feature-branch": PullRequestInfo(
+                number=42,
+                state="OPEN",
+                url="https://github.com/test/repo/pull/42",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=None,
+                owner="test-owner",
+                repo="test-repo",
+                has_conflicts=None,
+            ),
+        }
+        pr_details = {
+            42: PRDetails(
+                number=42,
+                url="https://github.com/test/repo/pull/42",
+                title="Test PR",
+                body="PR body",
+                state="OPEN",
+                is_draft=False,
+                base_ref_name="old-parent-branch",  # Wrong base! Should be "main"
+                head_ref_name="feature-branch",
+                is_cross_repository=False,
+                mergeable="MERGEABLE",
+                merge_state_status="CLEAN",
+                owner="test-owner",
+                repo="test-repo",
+            ),
+        }
+        # After submit_stack, the base gets corrected
+        pr_base_after_fix: list[str] = []
+
+        class FixableFakeGitHub(FakeGitHub):
+            """GitHub fake that tracks base branch fixes."""
+
+            def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
+                # Return wrong base initially, correct base after fix
+                if pr_base_after_fix:
+                    return pr_base_after_fix[0]
+                return "old-parent-branch"
+
+        github = FixableFakeGitHub(prs=prs, pr_details=pr_details, pr_bases={42: "old-parent-branch"})
+
+        # Override graphite's submit_stack to simulate fixing the base
+        original_submit_stack = graphite.submit_stack
+
+        def submit_stack_with_fix(
+            repo_root: Path,
+            *,
+            publish: bool = False,
+            restack: bool = False,
+            quiet: bool = False,
+            force: bool = False,
+        ) -> None:
+            original_submit_stack(
+                repo_root, publish=publish, restack=restack, quiet=quiet, force=force
+            )
+            # After submit, the PR base is fixed
+            pr_base_after_fix.append("main")
+
+        graphite.submit_stack = submit_stack_with_fix
+
+        test_ctx = env.build_context(
+            git=git,
+            graphite=graphite,
+            github=github,
+            cwd=wt_path,
+            use_graphite=True,
+        )
+
+        # Create the worktree directory
+        wt_path.mkdir(parents=True, exist_ok=True)
+
+        result = runner.invoke(pr_land, ["--fix", "--script"], obj=test_ctx)
+
+        # Should succeed (after auto-fix)
+        assert result.exit_code == 0, f"Expected exit code 0, got {result.exit_code}: {result.output}"
+
+        # Should have shown the mismatch warning
+        assert "targets 'old-parent-branch'" in result.output
+
+        # Should have restacked and submitted
+        assert len(graphite.submit_stack_calls) == 1
+
+        # Should have eventually merged the PR
+        assert len(github.merged_prs) == 1
+
+
+def test_pr_land_fix_flag_prompts_without_flag() -> None:
+    """Test that without --fix, base mismatch shows error and exits.
+
+    When --fix is NOT passed and PR base doesn't match:
+    - Error is shown explaining the mismatch
+    - Suggests running gt restack && gt submit
+    - Does NOT prompt (since there's no tty in test)
+    """
+    runner = CliRunner()
+
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        wt_path = env.repo.worktrees_dir / "feature-branch"
+        git = FakeGit(
+            worktrees={
+                env.root_worktree: [
+                    WorktreeInfo(path=env.root_worktree, branch="main", is_root=True),
+                    WorktreeInfo(
+                        path=wt_path,
+                        branch="feature-branch",
+                        is_root=False,
+                    ),
+                ],
+            },
+            current_branches={
+                env.root_worktree: "main",
+                wt_path: "feature-branch",
+            },
+            git_common_dirs={
+                env.root_worktree: env.git_dir,
+                wt_path: env.git_dir,
+            },
+            default_branches={env.root_worktree: "main"},
+            trunk_branches={env.root_worktree: "main"},
+            repository_roots={
+                env.root_worktree: env.root_worktree,
+                wt_path: env.root_worktree,
+            },
+            commits_ahead={(wt_path, "main"): 1},  # Has commits to restack
+        )
+
+        branches = {
+            "main": BranchMetadata(
+                name="main",
+                parent=None,
+                children=["feature-branch"],
+                is_trunk=True,
+                commit_sha="abc123",
+            ),
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha="def456",
+            ),
+        }
+        graphite = FakeGraphite(branches=branches)
+
+        prs = {
+            "feature-branch": PullRequestInfo(
+                number=42,
+                state="OPEN",
+                url="https://github.com/test/repo/pull/42",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=None,
+                owner="test-owner",
+                repo="test-repo",
+                has_conflicts=None,
+            ),
+        }
+        pr_details = {
+            42: PRDetails(
+                number=42,
+                url="https://github.com/test/repo/pull/42",
+                title="Test PR",
+                body="PR body",
+                state="OPEN",
+                is_draft=False,
+                base_ref_name="old-parent-branch",  # Wrong base!
+                head_ref_name="feature-branch",
+                is_cross_repository=False,
+                mergeable="MERGEABLE",
+                merge_state_status="CLEAN",
+                owner="test-owner",
+                repo="test-repo",
+            ),
+        }
+        github = FakeGitHub(prs=prs, pr_details=pr_details, pr_bases={42: "old-parent-branch"})
+
+        test_ctx = env.build_context(
+            git=git,
+            graphite=graphite,
+            github=github,
+            cwd=wt_path,
+            use_graphite=True,
+        )
+
+        wt_path.mkdir(parents=True, exist_ok=True)
+
+        result = runner.invoke(pr_land, ["--script"], obj=test_ctx, input="n\n")
+
+        # Should fail (user declined prompt)
+        assert result.exit_code == 1
+
+        # Should show the base mismatch error
+        assert "targets 'old-parent-branch'" in result.output
+        assert "should target 'main'" in result.output
+
+        # PR should NOT have been merged
+        assert len(github.merged_prs) == 0
+
+
+def test_pr_land_fix_with_conflicts_invokes_claude() -> None:
+    """Test that --fix invokes Claude when conflicts are detected.
+
+    When --fix is passed and restack hits conflicts:
+    1. Runs restack preflight (finds conflicts)
+    2. Invokes Claude for conflict resolution
+    3. After Claude succeeds, submits and lands
+    """
+    from tests.fakes.claude_executor import FakeClaudeExecutor
+
+    runner = CliRunner()
+
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        wt_path = env.repo.worktrees_dir / "feature-branch"
+        # Git starts with conflicts
+        git = FakeGit(
+            worktrees={
+                env.root_worktree: [
+                    WorktreeInfo(path=env.root_worktree, branch="main", is_root=True),
+                    WorktreeInfo(
+                        path=wt_path,
+                        branch="feature-branch",
+                        is_root=False,
+                    ),
+                ],
+            },
+            current_branches={
+                env.root_worktree: "main",
+                wt_path: "feature-branch",
+            },
+            git_common_dirs={
+                env.root_worktree: env.git_dir,
+                wt_path: env.git_dir,
+            },
+            default_branches={env.root_worktree: "main"},
+            trunk_branches={env.root_worktree: "main"},
+            repository_roots={
+                env.root_worktree: env.root_worktree,
+                wt_path: env.root_worktree,
+            },
+            rebase_in_progress=True,
+            conflicted_files=["src/main.py"],  # Conflicts exist
+            commits_ahead={(wt_path, "main"): 1},  # Has commits to restack
+        )
+
+        branches = {
+            "main": BranchMetadata(
+                name="main",
+                parent=None,
+                children=["feature-branch"],
+                is_trunk=True,
+                commit_sha="abc123",
+            ),
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha="def456",
+            ),
+        }
+        graphite = FakeGraphite(branches=branches)
+
+        pr_base_fixed: list[str] = []
+
+        class ConflictFixableGitHub(FakeGitHub):
+            def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
+                if pr_base_fixed:
+                    return pr_base_fixed[0]
+                return "old-parent-branch"
+
+        prs = {
+            "feature-branch": PullRequestInfo(
+                number=42,
+                state="OPEN",
+                url="https://github.com/test/repo/pull/42",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=None,
+                owner="test-owner",
+                repo="test-repo",
+                has_conflicts=None,
+            ),
+        }
+        pr_details = {
+            42: PRDetails(
+                number=42,
+                url="https://github.com/test/repo/pull/42",
+                title="Test PR",
+                body="PR body",
+                state="OPEN",
+                is_draft=False,
+                base_ref_name="old-parent-branch",
+                head_ref_name="feature-branch",
+                is_cross_repository=False,
+                mergeable="MERGEABLE",
+                merge_state_status="CLEAN",
+                owner="test-owner",
+                repo="test-repo",
+            ),
+        }
+        github = ConflictFixableGitHub(prs=prs, pr_details=pr_details, pr_bases={42: "old-parent-branch"})
+
+        # Claude executor that simulates successful conflict resolution
+        claude_executor = FakeClaudeExecutor(claude_available=True)
+
+        # Track git state changes
+        original_conflicted = git._conflicted_files.copy()
+
+        # After Claude resolves conflicts, clear them
+        original_execute = claude_executor.execute_command_streaming
+
+        def execute_and_fix_conflicts(
+            command: str,
+            worktree_path: Path,
+            dangerous: bool,
+            verbose: bool = False,
+            debug: bool = False,
+        ):
+            for event in original_execute(command, worktree_path, dangerous, verbose, debug):
+                yield event
+            # Simulate Claude fixing conflicts
+            git._conflicted_files = []
+            git._rebase_in_progress = False
+            pr_base_fixed.append("main")
+
+        claude_executor.execute_command_streaming = execute_and_fix_conflicts
+
+        test_ctx = env.build_context(
+            git=git,
+            graphite=graphite,
+            github=github,
+            cwd=wt_path,
+            use_graphite=True,
+            claude_executor=claude_executor,
+        )
+
+        wt_path.mkdir(parents=True, exist_ok=True)
+
+        result = runner.invoke(pr_land, ["--fix", "--script"], obj=test_ctx)
+
+        # Should succeed after Claude resolves conflicts
+        assert result.exit_code == 0, f"Exit code {result.exit_code}: {result.output}"
+
+        # Should have shown conflict detection
+        assert "Conflicts detected" in result.output or "conflict" in result.output.lower()
+
+        # Claude should have been invoked
+        assert len(claude_executor.executed_commands) >= 1
+
+
+def test_pr_land_fix_fails_without_claude() -> None:
+    """Test that --fix fails gracefully when Claude is not available.
+
+    When --fix is passed, conflicts exist, but Claude is not installed:
+    - Error message explains Claude is required
+    - Suggests installation URL
+    """
+    from tests.fakes.claude_executor import FakeClaudeExecutor
+
+    runner = CliRunner()
+
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        wt_path = env.repo.worktrees_dir / "feature-branch"
+        git = FakeGit(
+            worktrees={
+                env.root_worktree: [
+                    WorktreeInfo(path=env.root_worktree, branch="main", is_root=True),
+                    WorktreeInfo(
+                        path=wt_path,
+                        branch="feature-branch",
+                        is_root=False,
+                    ),
+                ],
+            },
+            current_branches={
+                env.root_worktree: "main",
+                wt_path: "feature-branch",
+            },
+            git_common_dirs={
+                env.root_worktree: env.git_dir,
+                wt_path: env.git_dir,
+            },
+            default_branches={env.root_worktree: "main"},
+            trunk_branches={env.root_worktree: "main"},
+            repository_roots={
+                env.root_worktree: env.root_worktree,
+                wt_path: env.root_worktree,
+            },
+            rebase_in_progress=True,
+            conflicted_files=["src/main.py"],
+            commits_ahead={(wt_path, "main"): 1},  # Has commits to restack
+        )
+
+        branches = {
+            "main": BranchMetadata(
+                name="main",
+                parent=None,
+                children=["feature-branch"],
+                is_trunk=True,
+                commit_sha="abc123",
+            ),
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha="def456",
+            ),
+        }
+        graphite = FakeGraphite(branches=branches)
+
+        prs = {
+            "feature-branch": PullRequestInfo(
+                number=42,
+                state="OPEN",
+                url="https://github.com/test/repo/pull/42",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=None,
+                owner="test-owner",
+                repo="test-repo",
+                has_conflicts=None,
+            ),
+        }
+        pr_details = {
+            42: PRDetails(
+                number=42,
+                url="https://github.com/test/repo/pull/42",
+                title="Test PR",
+                body="PR body",
+                state="OPEN",
+                is_draft=False,
+                base_ref_name="old-parent-branch",
+                head_ref_name="feature-branch",
+                is_cross_repository=False,
+                mergeable="MERGEABLE",
+                merge_state_status="CLEAN",
+                owner="test-owner",
+                repo="test-repo",
+            ),
+        }
+        github = FakeGitHub(prs=prs, pr_details=pr_details, pr_bases={42: "old-parent-branch"})
+
+        # Claude NOT available
+        claude_executor = FakeClaudeExecutor(claude_available=False)
+
+        test_ctx = env.build_context(
+            git=git,
+            graphite=graphite,
+            github=github,
+            cwd=wt_path,
+            use_graphite=True,
+            claude_executor=claude_executor,
+        )
+
+        wt_path.mkdir(parents=True, exist_ok=True)
+
+        result = runner.invoke(pr_land, ["--fix", "--script"], obj=test_ctx)
+
+        # Should fail
+        assert result.exit_code == 1
+
+        # Should mention Claude is required
+        assert "Claude" in result.output
+        assert "claude.com/download" in result.output
+
+        # PR should NOT have been merged
+        assert len(github.merged_prs) == 0

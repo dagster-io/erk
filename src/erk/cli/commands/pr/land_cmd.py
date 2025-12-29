@@ -35,12 +35,22 @@ from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+from erk.cli.output import stream_auto_restack
 from erk.core.context import ErkContext
 from erk_shared.extraction.raw_extraction import create_raw_extraction_plan
 from erk_shared.gateway.gt.cli import render_events
+from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
-from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
+from erk_shared.gateway.gt.operations.restack_finalize import execute_restack_finalize
+from erk_shared.gateway.gt.operations.restack_preflight import execute_restack_preflight
+from erk_shared.gateway.gt.types import (
+    LandPrError,
+    LandPrSuccess,
+    RestackFinalizeError,
+    RestackPreflightError,
+    RestackPreflightSuccess,
+)
 from erk_shared.output.output import user_output
 
 
@@ -60,6 +70,141 @@ def is_extraction_origin_pr(ctx: ErkContext, repo_root: Path, pr_number: int) ->
     return ctx.github.has_pr_label(repo_root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
 
 
+def _handle_base_mismatch_error(
+    ctx: ErkContext,
+    error: LandPrError,
+    fix_flag: bool,
+) -> LandPrSuccess | LandPrError:
+    """Handle PR base branch mismatch by optionally running restack + submit.
+
+    Args:
+        ctx: ErkContext for operations
+        error: The original LandPrError with pr_base_mismatch type
+        fix_flag: If True, auto-fix without prompting
+
+    Returns:
+        LandPrSuccess if fix succeeded and retry succeeded, LandPrError otherwise
+    """
+    pr_number = error.details.get("pr_number")
+    pr_base = error.details.get("pr_base")
+    expected_base = error.details.get("expected_base")
+
+    # Display the mismatch info
+    user_output(
+        click.style("⚠", fg="yellow")
+        + f" PR #{pr_number} targets '{pr_base}' but should target '{expected_base}'"
+    )
+
+    # Prompt unless --fix flag was passed
+    if not fix_flag:
+        if not click.confirm("Fix base branch by running restack and submit?"):
+            return error
+
+    user_output(click.style("🔧", fg="cyan") + " Fixing base branch mismatch...")
+
+    # Phase 1: Run restack preflight
+    preflight_result: RestackPreflightSuccess | RestackPreflightError | None = None
+    for event in execute_restack_preflight(ctx, ctx.cwd):
+        match event:
+            case ProgressEvent(message=msg):
+                click.echo(click.style(f"  {msg}", dim=True), err=True)
+            case CompletionEvent(result=result):
+                preflight_result = result
+
+    if isinstance(preflight_result, RestackPreflightError):
+        return LandPrError(
+            success=False,
+            error_type="pr_base_mismatch",
+            message=f"Restack failed: {preflight_result.message}",
+            details=error.details,
+        )
+
+    if preflight_result is None:
+        return LandPrError(
+            success=False,
+            error_type="pr_base_mismatch",
+            message="Restack preflight did not complete",
+            details=error.details,
+        )
+
+    # Phase 2: Handle conflicts if present
+    if preflight_result.has_conflicts:
+        user_output(
+            click.style("⚠", fg="yellow")
+            + f" Conflicts detected in {len(preflight_result.conflicts)} file(s)"
+        )
+
+        # Prompt unless --fix flag was passed
+        if not fix_flag:
+            if not click.confirm("Fix conflicts with Claude?"):
+                return LandPrError(
+                    success=False,
+                    error_type="pr_base_mismatch",
+                    message=(
+                        f"Conflicts detected. Run manually:\n"
+                        f"  1. Resolve conflicts in: {', '.join(preflight_result.conflicts)}\n"
+                        f"  2. gt submit\n"
+                        f"  3. erk pr land"
+                    ),
+                    details=error.details,
+                )
+
+        # Invoke Claude for conflict resolution
+        executor = ctx.claude_executor
+        if not executor.is_claude_available():
+            return LandPrError(
+                success=False,
+                error_type="pr_base_mismatch",
+                message=(
+                    "Conflicts require Claude for resolution.\n\n"
+                    "Install from: https://claude.com/download"
+                ),
+                details=error.details,
+            )
+
+        restack_result = stream_auto_restack(executor, ctx.cwd)
+        if restack_result.requires_interactive:
+            return LandPrError(
+                success=False,
+                error_type="pr_base_mismatch",
+                message="Semantic conflict requires interactive resolution",
+                details=error.details,
+            )
+        if not restack_result.success:
+            return LandPrError(
+                success=False,
+                error_type="pr_base_mismatch",
+                message=restack_result.error_message or "Auto-restack failed",
+                details=error.details,
+            )
+    else:
+        # No conflicts - finalize restack
+        for event in execute_restack_finalize(ctx, ctx.cwd):
+            match event:
+                case CompletionEvent(result=result):
+                    if isinstance(result, RestackFinalizeError):
+                        return LandPrError(
+                            success=False,
+                            error_type="pr_base_mismatch",
+                            message=f"Restack finalize failed: {result.message}",
+                            details=error.details,
+                        )
+
+    user_output(click.style("✓", fg="green") + " Restack completed")
+
+    # Phase 3: Submit to update PR base branch
+    user_output(click.style("📤", fg="cyan") + " Submitting to update PR...")
+    repo_root = ctx.git.get_repository_root(ctx.cwd)
+    ctx.graphite.submit_stack(repo_root)
+    user_output(click.style("✓", fg="green") + " PR base branch updated")
+
+    # Phase 4: Retry land operation
+    user_output(click.style("🔄", fg="cyan") + " Retrying land operation...")
+    retry_result = render_events(execute_land_pr(ctx, ctx.cwd))
+
+    return retry_result
+
+
 @click.command("land", cls=CommandWithHiddenOptions)
 @script_option
 @click.option(
@@ -74,6 +219,12 @@ def is_extraction_origin_pr(ctx: ErkContext, repo_root: Path, pr_number: int) ->
     help="Navigate to child branch instead of trunk after landing",
 )
 @click.option(
+    "--fix",
+    "fix_flag",
+    is_flag=True,
+    help="Auto-fix PR base branch mismatch by running restack and submit",
+)
+@click.option(
     "--session-id",
     default=None,
     type=str,
@@ -81,7 +232,12 @@ def is_extraction_origin_pr(ctx: ErkContext, repo_root: Path, pr_number: int) ->
 )
 @click.pass_obj
 def pr_land(
-    ctx: ErkContext, script: bool, insights: bool, up_flag: bool, session_id: str | None
+    ctx: ErkContext,
+    script: bool,
+    insights: bool,
+    up_flag: bool,
+    fix_flag: bool,
+    session_id: str | None,
 ) -> None:
     """Merge PR, run extraction, and delete worktree.
 
@@ -162,8 +318,16 @@ def pr_land(
     result = render_events(execute_land_pr(ctx, ctx.cwd))
 
     if isinstance(result, LandPrError):
-        user_output(click.style("Error: ", fg="red") + result.message)
-        raise SystemExit(1)
+        # Check if this is a base branch mismatch that we can auto-fix
+        if result.error_type == "pr_base_mismatch":
+            result = _handle_base_mismatch_error(ctx, result, fix_flag)
+            if isinstance(result, LandPrError):
+                # Fix failed or was declined
+                user_output(click.style("Error: ", fg="red") + result.message)
+                raise SystemExit(1)
+        else:
+            user_output(click.style("Error: ", fg="red") + result.message)
+            raise SystemExit(1)
 
     # Success - PR was merged
     success_result: LandPrSuccess = result
