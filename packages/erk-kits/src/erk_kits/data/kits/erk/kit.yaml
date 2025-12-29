@@ -3,6 +3,8 @@ version: 0.2.8
 description: Erk implementation workflow commands for creating worktrees from plans (.PLAN.md) and executing implementation. Includes commands for plan creation, execution, and quick access.
 license: See LICENSE.md
 artifacts:
+  agent:
+    - agents/erk/git-pr-push-agent.md
   command:
     - commands/erk/plan-implement.md
     - commands/erk/merge-conflicts-fix.md
@@ -12,9 +14,13 @@ artifacts:
     - commands/erk/save-plan.md
     - commands/erk/pr-address.md
     - commands/erk/pr-submit.md
+<<<<<<< HEAD
   skill:
     - skills/gt-graphite/SKILL.md
     - skills/gt-graphite/references/gt-reference.md
+=======
+    - commands/erk/git-pr-push.md
+>>>>>>> 30a6b9f2e (cp)
   doc:
     - docs/erk/EXAMPLES.md
     - docs/erk/includes/conflict-resolution.md

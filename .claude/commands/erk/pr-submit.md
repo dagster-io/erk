@@ -11,7 +11,7 @@ erk:
 
 Automatically create a git commit with a helpful summary message and submit the current branch as a pull request.
 
-**Note:** This command squashes commits and rebases the stack. If you prefer a simpler workflow that preserves your commit history, use `/git:pr-push` instead.
+**Note:** This command squashes commits and rebases the stack. If you prefer a simpler workflow that preserves your commit history, use `/erk:git-pr-push` instead.
 
 ## Usage
 

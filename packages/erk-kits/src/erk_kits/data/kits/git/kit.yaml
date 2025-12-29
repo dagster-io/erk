@@ -1,9 +1,0 @@
-name: git
-version: 0.2.8
-description: Git-only branch submission workflow using standard git + GitHub CLI
-license: See LICENSE.md
-artifacts:
-  command:
-    - commands/git/pr-push.md
-  agent:
-    - agents/git/git-branch-submitter.md

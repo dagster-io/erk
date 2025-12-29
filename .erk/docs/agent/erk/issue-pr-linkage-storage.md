@@ -32,7 +32,7 @@ The primary path for creating issue-PR linkages:
 
 **Key implementation**: `src/erk/cli/commands/submit.py`
 
-### Via `/gt:pr-submit` or `/git:pr-push`
+### Via `/gt:pr-submit` or `/erk:git-pr-push`
 
 Slash commands that create PRs read the issue reference from local storage:
 
