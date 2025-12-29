@@ -14,24 +14,24 @@ def test_skill_directories_self_contained():
     for version in versions:
         skill_dir = kits_dir / "dignified-python" / "skills" / f"dignified-python-{version}"
 
-        # Required files for all versions
-        required_files = [
+        # Required root-level files for all versions
+        required_root_files = [
             "SKILL.md",
             "VERSION-CONTEXT.md",
-            "dignified-python-core.md",
-            "checklist.md",
-            "cli-patterns.md",
-            "subprocess.md",
-            "pattern-table.md",
+            "type-annotations.md",
+            "version-specific-checklist.md",
         ]
 
-        # Version-specific type annotation files
-        if version == "313":
-            required_files.extend(["type-annotations-common.md", "type-annotations-delta.md"])
-        else:
-            required_files.append("type-annotations.md")
+        # Required files in common/ subdirectory
+        required_common_files = [
+            "common/dignified-python-core.md",
+            "common/cli-patterns.md",
+            "common/subprocess.md",
+        ]
 
-        for filename in required_files:
+        all_required_files = required_root_files + required_common_files
+
+        for filename in all_required_files:
             file_path = skill_dir / filename
             if not file_path.exists():
                 pytest.fail(
@@ -57,8 +57,8 @@ def test_skill_references_use_relative_paths():
 
         content = skill_md.read_text(encoding="utf-8")
 
-        # Check that SKILL.md uses relative references (e.g., @dignified-python-core.md)
-        # and does NOT use absolute paths (e.g., @.erk/docs/kits/dignified-python/)
+        # Check that SKILL.md uses relative references
+        # and does NOT use absolute paths
         forbidden_patterns = [
             "@.erk/docs/",
             "@.erk/docs/kits/dignified-python/",
@@ -69,11 +69,15 @@ def test_skill_references_use_relative_paths():
             if pattern in content:
                 pytest.fail(
                     f"Skill {version} SKILL.md uses absolute path reference: '{pattern}'\n"
-                    f"SKILL.md should use relative references (e.g., @dignified-python-core.md)"
+                    "SKILL.md should use relative references "
+                    "(e.g., @common/dignified-python-core.md)"
                 )
 
-        # Verify relative references exist
-        expected_relative_refs = ["@dignified-python-core.md", "@checklist.md"]
+        # Verify relative references exist (with common/ prefix for shared files)
+        expected_relative_refs = [
+            "@common/dignified-python-core.md",
+            "@version-specific-checklist.md",
+        ]
 
         for ref in expected_relative_refs:
             if ref not in content:
@@ -101,9 +105,13 @@ def test_package_and_project_in_sync():
                 f"Project skill directory missing: .claude/skills/dignified-python-{version}/"
             )
 
-        # Get all .md files from package
-        package_files = set(f.name for f in package_skill_dir.glob("*.md"))
-        project_files = set(f.name for f in project_skill_dir.glob("*.md"))
+        # Get all .md files from package (including common/ subdirectory)
+        package_files = set(
+            f.relative_to(package_skill_dir) for f in package_skill_dir.rglob("*.md")
+        )
+        project_files = set(
+            f.relative_to(project_skill_dir) for f in project_skill_dir.rglob("*.md")
+        )
 
         # Check package files exist in project
         missing_in_project = package_files - project_files
@@ -124,13 +132,13 @@ def test_package_and_project_in_sync():
             )
 
         # Verify file contents match
-        for filename in package_files:
-            package_content = (package_skill_dir / filename).read_text(encoding="utf-8")
-            project_content = (project_skill_dir / filename).read_text(encoding="utf-8")
+        for rel_path in package_files:
+            package_content = (package_skill_dir / rel_path).read_text(encoding="utf-8")
+            project_content = (project_skill_dir / rel_path).read_text(encoding="utf-8")
 
             if package_content != project_content:
                 pytest.fail(
-                    f"Skill {version}/{filename} content mismatch between package and project.\n"
+                    f"Skill {version}/{rel_path} content mismatch between package and project.\n"
                     f"Run 'erk dev kit-build' to sync."
                 )
 
@@ -182,10 +190,12 @@ def test_unified_kit_structure():
         if not version_context.exists():
             pytest.fail(f"Unified kit missing VERSION-CONTEXT.md for version {version}")
 
-        # Check dignified-python-core.md (embedded in each skill)
-        core_md = skill_dir / "dignified-python-core.md"
+        # Check dignified-python-core.md (now in common/ subdirectory)
+        core_md = skill_dir / "common" / "dignified-python-core.md"
         if not core_md.exists():
-            pytest.fail(f"Unified kit missing dignified-python-core.md for version {version}")
+            pytest.fail(
+                f"Unified kit missing common/dignified-python-core.md for version {version}"
+            )
 
 
 def test_all_doc_files_have_frontmatter():
@@ -199,8 +209,8 @@ def test_all_doc_files_have_frontmatter():
     for version in versions:
         skill_dir = kits_dir / "dignified-python" / "skills" / f"dignified-python-{version}"
 
-        # Get all .md files
-        md_files = list(skill_dir.glob("*.md"))
+        # Get all .md files (including common/ subdirectory)
+        md_files = list(skill_dir.rglob("*.md"))
 
         for md_file in md_files:
             content = md_file.read_text(encoding="utf-8")
@@ -228,4 +238,55 @@ def test_all_doc_files_have_frontmatter():
                     f"File missing kit identifier in frontmatter: "
                     f"{md_file.relative_to(project_root)}\n"
                     f"Frontmatter must include 'erk: kit: dignified-python'."
+                )
+
+
+def test_shared_docs_in_common_directories_match():
+    """Verify common/ directories are identical across all version skills.
+
+    The canonical source is dignified-python-310/common/.
+    All other versions must have identical common/ directories.
+    """
+    # From tests/integration/kits/kits/ -> go up 5 levels to project root
+    project_root = Path(__file__).parent.parent.parent.parent.parent
+    kits_dir = project_root / "packages" / "erk-kits" / "src" / "erk_kits" / "data" / "kits"
+
+    canonical_version = "310"
+    other_versions = ["311", "312", "313"]
+
+    skill_path = f"dignified-python-{canonical_version}"
+    canonical_dir = kits_dir / "dignified-python" / "skills" / skill_path / "common"
+
+    if not canonical_dir.exists():
+        pytest.fail(f"Canonical common/ directory missing: {canonical_dir}")
+
+    canonical_files = {f.name: f.read_text(encoding="utf-8") for f in canonical_dir.glob("*.md")}
+
+    for version in other_versions:
+        compare_dir = (
+            kits_dir / "dignified-python" / "skills" / f"dignified-python-{version}" / "common"
+        )
+
+        if not compare_dir.exists():
+            pytest.fail(f"Version {version} missing common/ directory")
+
+        compare_files = {f.name: f.read_text(encoding="utf-8") for f in compare_dir.glob("*.md")}
+
+        # File set must match
+        if set(canonical_files.keys()) != set(compare_files.keys()):
+            missing = set(canonical_files.keys()) - set(compare_files.keys())
+            extra = set(compare_files.keys()) - set(canonical_files.keys())
+            pytest.fail(
+                f"Version {version} common/ has different files than {canonical_version}.\n"
+                f"  Missing: {missing}\n"
+                f"  Extra: {extra}"
+            )
+
+        # Content must be identical
+        for filename, content in canonical_files.items():
+            if compare_files[filename] != content:
+                pytest.fail(
+                    f"common/{filename} differs between {canonical_version} and {version}.\n"
+                    f"The canonical source is dignified-python-{canonical_version}/common/.\n"
+                    f"Copy this file to the other versions to fix."
                 )

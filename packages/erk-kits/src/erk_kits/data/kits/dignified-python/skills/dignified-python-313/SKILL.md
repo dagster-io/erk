@@ -15,13 +15,12 @@ erk:
 
 ## Core Knowledge (ALWAYS Loaded)
 
-@dignified-python-core.md
-@type-annotations-common.md
-@type-annotations-delta.md
+@common/dignified-python-core.md
+@type-annotations.md
 
 ## Version-Specific Checklist
 
-@checklist.md
+@version-specific-checklist.md
 
 ## Conditional Loading (Load Based on Task Patterns)
 
@@ -29,8 +28,8 @@ Core files above cover 80%+ of Python code patterns. Only load these additional 
 
 Pattern detection examples:
 
-- If task mentions "click" or "CLI" → Load `cli-patterns.md`
-- If task mentions "subprocess" → Load `subprocess.md`
+- If task mentions "click" or "CLI" → Load `common/cli-patterns.md`
+- If task mentions "subprocess" → Load `common/subprocess.md`
 
 ## How to Use This Skill
 
