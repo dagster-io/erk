@@ -37,7 +37,6 @@ State Transitions:
 """
 
 import json
-import os
 import subprocess
 import sys
 import tomllib
@@ -49,6 +48,7 @@ import click
 
 from erk.kits.hooks.decorators import logged_hook, project_scoped
 from erk_kits.data.kits.erk.session_plan_extractor import extract_slugs_from_session
+from erk_shared.scratch.scratch import _get_repo_root, get_scratch_dir
 
 # ============================================================================
 # Data Classes for Pure Logic
@@ -233,6 +233,7 @@ def _get_session_id_from_stdin() -> str | None:
     return None
 
 
+<<<<<<< HEAD
 def _get_scratch_dir(session_id: str) -> Path | None:
     """Get scratch directory path in .erk/scratch/sessions/<session_id>/.
 
@@ -257,11 +258,16 @@ def _get_scratch_dir(session_id: str) -> Path | None:
 
 def _get_implement_now_signal_path(session_id: str) -> Path | None:
     """Get implement-now signal path in .erk/scratch/sessions/<session_id>/.
+=======
+def _get_skip_marker_path(session_id: str) -> Path:
+    """Get skip marker path in .erk/scratch/sessions/<session_id>/.
+>>>>>>> b25b5c4a7 (Fix hook subdirectory bug by using shared scratch directory utilities)
 
     Args:
         session_id: The session ID to build the path for
 
     Returns:
+<<<<<<< HEAD
         Path to implement-now signal file, or None if not in a git repo
     """
     scratch_dir = _get_scratch_dir(session_id)
@@ -272,6 +278,15 @@ def _get_implement_now_signal_path(session_id: str) -> Path | None:
 
 def _get_plan_saved_signal_path(session_id: str) -> Path | None:
     """Get plan-saved signal path in .erk/scratch/sessions/<session_id>/.
+=======
+        Path to skip marker file
+    """
+    return get_scratch_dir(session_id) / "skip-plan-save"
+
+
+def _get_saved_marker_path(session_id: str) -> Path:
+    """Get saved marker path in .erk/scratch/sessions/<session_id>/.
+>>>>>>> b25b5c4a7 (Fix hook subdirectory bug by using shared scratch directory utilities)
 
     The plan-saved signal indicates the plan was already saved to GitHub,
     so exit should proceed without triggering implementation.
@@ -280,12 +295,18 @@ def _get_plan_saved_signal_path(session_id: str) -> Path | None:
         session_id: The session ID to build the path for
 
     Returns:
+<<<<<<< HEAD
         Path to plan-saved signal file, or None if not in a git repo
     """
     scratch_dir = _get_scratch_dir(session_id)
     if scratch_dir is None:
         return None
     return scratch_dir / "exit-plan-mode-hook.plan-saved.signal"
+=======
+        Path to saved marker file
+    """
+    return get_scratch_dir(session_id) / "plan-saved-to-github"
+>>>>>>> b25b5c4a7 (Fix hook subdirectory bug by using shared scratch directory utilities)
 
 
 def _find_session_plan(session_id: str) -> Path | None:
@@ -301,8 +322,8 @@ def _find_session_plan(session_id: str) -> Path | None:
     if not plans_dir.exists():
         return None
 
-    cwd = os.getcwd()
-    slugs = extract_slugs_from_session(session_id, cwd_hint=cwd)
+    repo_root = str(_get_repo_root())
+    slugs = extract_slugs_from_session(session_id, cwd_hint=repo_root)
     if not slugs:
         return None
 
@@ -344,12 +365,17 @@ def _gather_inputs() -> HookInput:
     implement_now_signal_exists = False
     plan_saved_signal_exists = False
     if session_id:
+<<<<<<< HEAD
         implement_now_signal = _get_implement_now_signal_path(session_id)
         implement_now_signal_exists = (
             implement_now_signal is not None and implement_now_signal.exists()
         )
         plan_saved_signal = _get_plan_saved_signal_path(session_id)
         plan_saved_signal_exists = plan_saved_signal is not None and plan_saved_signal.exists()
+=======
+        skip_marker_exists = _get_skip_marker_path(session_id).exists()
+        saved_marker_exists = _get_saved_marker_path(session_id).exists()
+>>>>>>> b25b5c4a7 (Fix hook subdirectory bug by using shared scratch directory utilities)
 
     # Find plan file path (None if doesn't exist)
     plan_file_path: Path | None = None
@@ -379,6 +405,7 @@ def _gather_inputs() -> HookInput:
 
 def _execute_result(result: HookOutput, session_id: str | None) -> None:
     """Execute the decision result. All I/O happens here."""
+<<<<<<< HEAD
     if result.delete_implement_now_signal and session_id:
         implement_now_signal = _get_implement_now_signal_path(session_id)
         if implement_now_signal:
@@ -388,6 +415,13 @@ def _execute_result(result: HookOutput, session_id: str | None) -> None:
         plan_saved_signal = _get_plan_saved_signal_path(session_id)
         if plan_saved_signal:
             plan_saved_signal.unlink()
+=======
+    if result.delete_skip_marker and session_id:
+        _get_skip_marker_path(session_id).unlink()
+
+    if result.delete_saved_marker and session_id:
+        _get_saved_marker_path(session_id).unlink()
+>>>>>>> b25b5c4a7 (Fix hook subdirectory bug by using shared scratch directory utilities)
 
     if result.message:
         click.echo(result.message, err=True)
