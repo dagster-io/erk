@@ -69,53 +69,17 @@ artifacts = [
     ".erk/docs/kits/devrun/tools/ruff.md",
 ]
 
-[[kits.devrun.hooks]]
-id = "devrun-reminder-hook"
-lifecycle = "UserPromptSubmit"
-matcher = "*"
-invocation = "erk kit exec devrun devrun-reminder-hook"
-description = "Output devrun agent reminder on every prompt"
-timeout = 30
-
 [kits.dignified-python]
 kit_id = "dignified-python"
 source_type = "bundled"
 version = "0.2.8"
 artifacts = [
-    ".claude/skills/dignified-python-310/SKILL.md",
-    ".claude/skills/dignified-python-310/VERSION-CONTEXT.md",
-    ".claude/skills/dignified-python-310/type-annotations.md",
-    ".claude/skills/dignified-python-310/version-specific-checklist.md",
-    ".claude/skills/dignified-python-310/common/dignified-python-core.md",
-    ".claude/skills/dignified-python-310/common/cli-patterns.md",
-    ".claude/skills/dignified-python-310/common/subprocess.md",
-    ".claude/skills/dignified-python-311/SKILL.md",
-    ".claude/skills/dignified-python-311/VERSION-CONTEXT.md",
-    ".claude/skills/dignified-python-311/type-annotations.md",
-    ".claude/skills/dignified-python-311/version-specific-checklist.md",
-    ".claude/skills/dignified-python-311/common/dignified-python-core.md",
-    ".claude/skills/dignified-python-311/common/cli-patterns.md",
-    ".claude/skills/dignified-python-311/common/subprocess.md",
-    ".claude/skills/dignified-python-312/SKILL.md",
-    ".claude/skills/dignified-python-312/VERSION-CONTEXT.md",
-    ".claude/skills/dignified-python-312/type-annotations.md",
-    ".claude/skills/dignified-python-312/version-specific-checklist.md",
-    ".claude/skills/dignified-python-312/common/dignified-python-core.md",
-    ".claude/skills/dignified-python-312/common/cli-patterns.md",
-    ".claude/skills/dignified-python-312/common/subprocess.md",
-    ".claude/skills/dignified-python-313/SKILL.md",
-    ".claude/skills/dignified-python-313/VERSION-CONTEXT.md",
-    ".claude/skills/dignified-python-313/type-annotations.md",
-    ".claude/skills/dignified-python-313/version-specific-checklist.md",
-    ".claude/skills/dignified-python-313/common/dignified-python-core.md",
-    ".claude/skills/dignified-python-313/common/cli-patterns.md",
-    ".claude/skills/dignified-python-313/common/subprocess.md",
+    ".claude/skills/dignified-python/SKILL.md",
+    ".claude/skills/dignified-python/dignified-python-core.md",
+    ".claude/skills/dignified-python/cli-patterns.md",
+    ".claude/skills/dignified-python/subprocess.md",
+    ".claude/skills/dignified-python/versions/python-3.10.md",
+    ".claude/skills/dignified-python/versions/python-3.11.md",
+    ".claude/skills/dignified-python/versions/python-3.12.md",
+    ".claude/skills/dignified-python/versions/python-3.13.md",
 ]
-
-[[kits.dignified-python.hooks]]
-id = "version-aware-reminder-hook"
-lifecycle = "UserPromptSubmit"
-matcher = "*.py"
-invocation = "erk kit exec dignified-python version-aware-reminder-hook"
-description = "Output dignified-python compliance reminder when Python files are in context"
-timeout = 30
