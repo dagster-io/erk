@@ -757,7 +757,7 @@ The tool addresses specific pain points in parallel development: tracking which 
 
 #### Key Pattern: Plan-Based Development
 
-Parallel agent work requires comprehensive planning. Without detailed plans, agents cannot operate autonomously for extended periods. Plan-based development creates a contract between the human architect and the executing agents. When you use `erk create --from-plan`, the tool automatically copies your plan document into the worktree as `.PLAN.md`. This file is gitignored but remains accessible to agents and tools, providing immediate context for the task at hand.
+Parallel agent work requires comprehensive planning. Without detailed plans, agents cannot operate autonomously for extended periods. Plan-based development creates a contract between the human architect and the executing agents. When you use `erk create --from-plan-file`, the tool automatically copies your plan document into the worktree as `.PLAN.md`. This file is gitignored but remains accessible to agents and tools, providing immediate context for the task at hand.
 
 #### Erk Best Practices
 
@@ -769,7 +769,7 @@ When using this planning workflow in erk, the root repository should never have 
 # Create plans in root, execute in worktrees
 cd ~/repository/main
 echo "Implementation plan..." > plans/new-feature.md
-erk create --from-plan plans/new-feature.md new-feature
+erk create --from-plan-file plans/new-feature.md new-feature
 
 # It's best to avoid making changes directly in root
 # Prefer not to checkout branches or edit files in the root directory
@@ -784,7 +784,7 @@ Plan files serve as executable specifications for agents containing clear succes
 Erk's `--plan` flag automates the workflow of creating a worktree with embedded context:
 
 ```bash
-erk create --from-plan plans/auth-feature.md auth-feature
+erk create --from-plan-file plans/auth-feature.md auth-feature
 ```
 
 This command creates a new worktree for the feature, copies the plan to `.PLAN.md` in the worktree, checks out a new branch, and provides agents with immediate context. The `.PLAN.md` file is gitignored but accessible to tools, allowing agents to understand their mission without additional context.
@@ -804,9 +804,9 @@ echo "API v2 migration plan..." > plans/api-v2.md
 echo "Performance optimization plan..." > plans/perf-opt.md
 
 # Create worktrees with embedded plans
-erk create --from-plan plans/user-auth.md user-auth
-erk create --from-plan plans/api-v2.md api-v2
-erk create --from-plan plans/perf-opt.md perf-opt
+erk create --from-plan-file plans/user-auth.md user-auth
+erk create --from-plan-file plans/api-v2.md api-v2
+erk create --from-plan-file plans/perf-opt.md perf-opt
 
 # Three agents can now work in parallel
 # Agent 1: cd user-auth && implement based on .PLAN.md

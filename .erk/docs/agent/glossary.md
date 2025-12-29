@@ -761,7 +761,7 @@ class DryRunGit(Git):
 
 A `.impl/` folder containing implementation plans and progress tracking for a feature.
 
-**Usage**: `erk create --from-plan my-plan.md my-feature`
+**Usage**: `erk create --from-plan-file my-plan.md my-feature`
 
 **Behavior**:
 
@@ -784,8 +784,8 @@ A `.impl/` folder containing implementation plans and progress tracking for a fe
 # Create plan
 echo "## Implementation Plan\n1. Step 1\n2. Step 2" > plan.md
 
-# Create worktree from plan
-erk create --from-plan plan.md my-feature
+# Create worktree from plan file
+erk create --from-plan-file plan.md my-feature
 
 # Plan structure created:
 # ~/erks/erk/my-feature/.impl/

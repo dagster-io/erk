@@ -148,7 +148,7 @@ Delegates the complete worktree creation workflow to the `planned-wt-creator` ag
 
 1. Auto-detect most recent plan file at repository root
 2. Validate plan file (exists, readable, not empty)
-3. Run `erk create --from-plan` with JSON output
+3. Run `erk create --from-plan-file` with JSON output
 4. Display plan location and next steps
 
 ## Implementation

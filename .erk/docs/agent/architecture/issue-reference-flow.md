@@ -17,7 +17,7 @@ The `save_issue_reference(impl_dir, issue_number, issue_url)` function writes to
 Called by:
 
 - `create_worker_impl_folder()` - For remote implementation
-- `erk wt create --from-issue` - For local implementation
+- `erk wt create --from-plan` - For local implementation
 
 ## Reading
 
