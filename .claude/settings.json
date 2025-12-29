@@ -40,7 +40,7 @@
           },
           {
             "type": "command",
-            "command": "ERK_KIT_ID=fake-driven-testing ERK_HOOK_ID=fake-driven-testing-reminder-hook erk kit exec fake-driven-testing fake-driven-testing-reminder-hook",
+            "command": "uv run scripts/fake-driven-testing-reminder.py",
             "timeout": 30
           }
         ]
