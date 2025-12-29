@@ -23,7 +23,7 @@
 
 **Load these skills FIRST:**
 
-- **Python code** → `dignified-python-313` skill (LBYL, modern types, ABC interfaces)
+- **Python code** → `dignified-python` skill (LBYL, modern types, ABC interfaces)
 - **Test code** → `fake-driven-testing` skill (5-layer architecture, test placement)
 - **Dev tools** → Use `devrun` agent (NOT direct Bash for pytest/pyright/ruff/prettier/make/gt)
 
@@ -43,7 +43,7 @@
 
 These fundamentally change how you write code. Load before ANY code work:
 
-- **Writing Python** → Load `dignified-python-313` skill
+- **Writing Python** → Load `dignified-python` skill
 - **Writing or modifying tests** → Load `fake-driven-testing` skill
 
 ### Tier 2: Context-Specific Skills
