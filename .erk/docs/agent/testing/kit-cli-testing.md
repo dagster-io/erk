@@ -343,7 +343,7 @@ def test_command_with_fake_context() -> None:
 ```python
 def test_command_with_monkeypatch(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test command that internally creates dependencies."""
-    fake_store = FakePlanStore()
+    fake_store, _ = create_plan_store_with_plans({})
 
     # Mock the factory that creates the dependency
     monkeypatch.setattr(

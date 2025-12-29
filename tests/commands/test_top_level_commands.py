@@ -7,10 +7,10 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.cli.commands.plan.list_cmd import dash
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
-from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
+from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
 
 def plan_to_issue(plan: Plan) -> IssueInfo:
@@ -153,7 +153,7 @@ def test_top_level_get_command_works() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store = FakePlanStore(plans={"123": issue1})
+        store, _ = create_plan_store_with_plans({"123": issue1})
         ctx = build_workspace_test_context(env, plan_store=store)
 
         # Act - Use plan get command
@@ -172,7 +172,7 @@ def test_top_level_close_command_works() -> None:
     issue1 = Plan(
         plan_identifier="456",
         title="Plan to Close",
-        body="",
+        body="content",  # GitHubPlanStore requires non-empty body
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/456",
         labels=["erk-plan"],
@@ -184,12 +184,12 @@ def test_top_level_close_command_works() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store = FakePlanStore(plans={"456": issue1})
-        ctx = build_workspace_test_context(env, plan_store=store)
+        store, fake_issues = create_plan_store_with_plans({"456": issue1})
+        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
         # Act - Use plan close command
         result = runner.invoke(cli, ["plan", "close", "456"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
-        assert store.closed_plans == ["456"]
+        assert 456 in fake_issues.closed_issues

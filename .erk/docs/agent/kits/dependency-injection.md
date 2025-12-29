@@ -183,8 +183,8 @@ For commands that create dependencies internally (not via context):
 ```python
 def test_command_with_monkeypatch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test command that internally creates dependencies."""
-    # Arrange: Set up fake plan store
-    fake_plan_store = FakePlanStore(plans={"1028": plan})
+    # Arrange: Set up plan store backed by FakeGitHubIssues
+    fake_plan_store, _ = create_plan_store_with_plans({"1028": plan})
 
     # Mock the factory that creates the dependency
     monkeypatch.setattr(

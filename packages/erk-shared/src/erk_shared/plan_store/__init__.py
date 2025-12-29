@@ -7,5 +7,4 @@ Import from submodules:
 - types: Plan, PlanQuery, PlanState
 - store: PlanStore
 - github: GitHubPlanStore
-- fake: FakePlanStore
 """

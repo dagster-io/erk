@@ -13,8 +13,8 @@ from click.testing import CliRunner
 from erk_kits.data.kits.erk.scripts.erk.create_worker_impl_from_issue import (
     create_worker_impl_from_issue,
 )
-from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
+from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
 
 def test_create_worker_impl_from_issue_success(
@@ -36,9 +36,9 @@ def test_create_worker_impl_from_issue_success(
         metadata={},
     )
 
-    fake_plan_store = FakePlanStore(plans={"1028": plan})
+    fake_plan_store, _ = create_plan_store_with_plans({"1028": plan})
 
-    # Mock GitHubPlanStore to return our fake
+    # Mock GitHubPlanStore to return our fake-backed store
     monkeypatch.setattr(
         "erk_kits.data.kits.erk.scripts.erk.create_worker_impl_from_issue.GitHubPlanStore",
         lambda github_issues: fake_plan_store,
@@ -82,7 +82,7 @@ def test_create_worker_impl_from_issue_plan_not_found(
 ) -> None:
     """Test error handling when plan cannot be fetched."""
     # Arrange: Set up fake plan store with no plans
-    fake_plan_store = FakePlanStore()
+    fake_plan_store, _ = create_plan_store_with_plans({})
 
     # Mock GitHubPlanStore to return our empty fake
     monkeypatch.setattr(
@@ -135,7 +135,7 @@ def test_create_worker_impl_from_issue_uses_cwd_when_no_repo_root(
         metadata={},
     )
 
-    fake_plan_store = FakePlanStore(plans={"100": plan})
+    fake_plan_store, _ = create_plan_store_with_plans({"100": plan})
 
     # Mock GitHubPlanStore to return our fake
     monkeypatch.setattr(

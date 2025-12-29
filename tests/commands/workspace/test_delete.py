@@ -16,13 +16,13 @@ from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.metadata import MetadataBlock, render_metadata_block
 from erk_shared.github.types import PRDetails, PullRequestInfo
-from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, create_marker
 from tests.fakes.shell import FakeShell
 from tests.test_utils.cli_helpers import assert_cli_error, assert_cli_success
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
+from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
 
 def _make_plan_body_with_worktree(worktree_name: str) -> str:
@@ -414,7 +414,7 @@ def test_delete_all_closes_pr_and_plan() -> None:
             updated_at=now,
             metadata={},
         )
-        fake_plan_store = FakePlanStore(plans={"123": plan})
+        fake_plan_store, fake_issues = create_plan_store_with_plans({"123": plan})
 
         # Create PR for the branch - need both prs (branch -> PullRequestInfo) and pr_details
         pr_info = _make_pr_info(456, state="OPEN")
@@ -434,6 +434,7 @@ def test_delete_all_closes_pr_and_plan() -> None:
             git=fake_git,
             github=fake_github,
             plan_store=fake_plan_store,
+            issues=fake_issues,
             shell=FakeShell(),
             existing_paths={wt},
         )
@@ -443,8 +444,8 @@ def test_delete_all_closes_pr_and_plan() -> None:
         assert_cli_success(result)
         # Verify PR was closed
         assert 456 in fake_github.closed_prs
-        # Verify plan was closed
-        assert "123" in fake_plan_store.closed_plans
+        # Verify plan was closed (GitHubPlanStore closes via FakeGitHubIssues)
+        assert 123 in fake_issues.closed_issues
         # Verify branch was deleted (--all implies --branch)
         assert "feature-branch" in fake_git.deleted_branches
 

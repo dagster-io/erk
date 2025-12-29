@@ -21,8 +21,8 @@ from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
 from erk_shared.github.issues.types import PRReference
 from erk_shared.github.metadata import MetadataBlock, render_metadata_block
-from erk_shared.plan_store.fake import FakePlanStore
 from erk_shared.plan_store.types import Plan, PlanState
+from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
 
 def _make_plan_body(content: str = "Implementation details...") -> str:
@@ -62,22 +62,8 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    # Create issue with erk-plan label, OPEN state
+    # Create plan with erk-plan label, OPEN state
     now = datetime.now(UTC)
-    issue = IssueInfo(
-        number=123,
-        title="Implement feature X",
-        body=_make_plan_body(),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
-
-    # Create plan for the issue
     plan = Plan(
         plan_identifier="123",
         title="Implement feature X",
@@ -91,8 +77,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
         metadata={},
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_plan_store, fake_github_issues = create_plan_store_with_plans({"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -307,22 +292,8 @@ def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    # Create issue with erk-plan label, OPEN state
+    # Create plan with erk-plan label, OPEN state
     now = datetime.now(UTC)
-    issue = IssueInfo(
-        number=123,
-        title="Add workflow run URL to erk submit output",
-        body=_make_plan_body(),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
-
-    # Create plan for the issue
     plan = Plan(
         plan_identifier="123",
         title="Add workflow run URL to erk submit output",
@@ -336,8 +307,7 @@ def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
         metadata={},
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_plan_store, fake_github_issues = create_plan_store_with_plans({"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -445,20 +415,7 @@ def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
     repo_root.mkdir()
 
     now = datetime.now(UTC)
-    # Issue with "[erk-plan]" suffix (standard format for erk-plan issues)
-    issue = IssueInfo(
-        number=123,
-        title="Implement feature X [erk-plan]",
-        body=_make_plan_body(),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
-
+    # Plan with "[erk-plan]" suffix (standard format for erk-plan issues)
     plan = Plan(
         plan_identifier="123",
         title="Implement feature X [erk-plan]",
@@ -472,8 +429,7 @@ def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
         metadata={},
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_plan_store, fake_github_issues = create_plan_store_with_plans({"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -524,19 +480,6 @@ def test_submit_includes_closes_issue_in_pr_body(tmp_path: Path) -> None:
     repo_root.mkdir()
 
     now = datetime.now(UTC)
-    issue = IssueInfo(
-        number=123,
-        title="Implement feature X",
-        body=_make_plan_body(),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
-
     plan = Plan(
         plan_identifier="123",
         title="Implement feature X",
@@ -550,8 +493,7 @@ def test_submit_includes_closes_issue_in_pr_body(tmp_path: Path) -> None:
         metadata={},
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_plan_store, fake_github_issues = create_plan_store_with_plans({"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -760,19 +702,6 @@ def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
     repo_root.mkdir()
 
     now = datetime.now(UTC)
-    issue = IssueInfo(
-        number=123,
-        title="Implement feature X",
-        body=_make_plan_body(),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
-
     plan = Plan(
         plan_identifier="123",
         title="Implement feature X",
@@ -793,11 +722,10 @@ def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
         is_draft=True,
     )
 
-    fake_github_issues = FakeGitHubIssues(
-        issues={123: issue},
-        pr_references={123: [old_draft_pr]},
-    )
-    fake_plan_store = FakePlanStore(plans={"123": plan})
+    # Need both plan data AND pr_references, so manually construct FakeGitHubIssues
+    fake_plan_store, fake_github_issues = create_plan_store_with_plans({"123": plan})
+    # Add pr_references to the fake issues (the helper only sets up issues)
+    fake_github_issues._pr_references = {123: [old_draft_pr]}
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -838,32 +766,7 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
     repo_root.mkdir()
 
     now = datetime.now(UTC)
-    # Create two valid issues with erk-plan label
-    issue_123 = IssueInfo(
-        number=123,
-        title="Feature A",
-        body=_make_plan_body("Implementation for A..."),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
-    issue_456 = IssueInfo(
-        number=456,
-        title="Feature B",
-        body=_make_plan_body("Implementation for B..."),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/456",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
-
+    # Create two valid plans with erk-plan label
     plan_123 = Plan(
         plan_identifier="123",
         title="Feature A",
@@ -889,8 +792,9 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
         metadata={},
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={123: issue_123, 456: issue_456})
-    fake_plan_store = FakePlanStore(plans={"123": plan_123, "456": plan_456})
+    fake_plan_store, fake_github_issues = create_plan_store_with_plans(
+        {"123": plan_123, "456": plan_456}
+    )
 
     # Create a custom FakeGit that cleans up .worker-impl/ on branch checkout
     # This simulates the real behavior where checking out a branch without
@@ -1018,19 +922,6 @@ def test_submit_single_issue_still_works(tmp_path: Path) -> None:
     repo_root.mkdir()
 
     now = datetime.now(UTC)
-    issue = IssueInfo(
-        number=123,
-        title="Implement feature X",
-        body=_make_plan_body(),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
-
     plan = Plan(
         plan_identifier="123",
         title="Implement feature X",
@@ -1044,8 +935,7 @@ def test_submit_single_issue_still_works(tmp_path: Path) -> None:
         metadata={},
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_plan_store, fake_github_issues = create_plan_store_with_plans({"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -1089,19 +979,6 @@ def test_submit_updates_dispatch_info_in_issue(tmp_path: Path) -> None:
     repo_root.mkdir()
 
     now = datetime.now(UTC)
-    issue = IssueInfo(
-        number=123,
-        title="Implement feature X",
-        body=_make_plan_body(),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
-
     plan = Plan(
         plan_identifier="123",
         title="Implement feature X",
@@ -1115,8 +992,7 @@ def test_submit_updates_dispatch_info_in_issue(tmp_path: Path) -> None:
         metadata={},
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_plan_store, fake_github_issues = create_plan_store_with_plans({"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -1158,19 +1034,6 @@ def test_submit_warns_when_node_id_not_available(tmp_path: Path) -> None:
     repo_root.mkdir()
 
     now = datetime.now(UTC)
-    issue = IssueInfo(
-        number=123,
-        title="Implement feature X",
-        body=_make_plan_body(),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
-
     plan = Plan(
         plan_identifier="123",
         title="Implement feature X",
@@ -1184,8 +1047,7 @@ def test_submit_warns_when_node_id_not_available(tmp_path: Path) -> None:
         metadata={},
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_plan_store, fake_github_issues = create_plan_store_with_plans({"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -1230,22 +1092,8 @@ def test_submit_with_custom_base_branch(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    # Create issue with erk-plan label, OPEN state
+    # Create plan with erk-plan label, OPEN state
     now = datetime.now(UTC)
-    issue = IssueInfo(
-        number=123,
-        title="Implement feature X",
-        body=_make_plan_body(),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
-
-    # Create plan for the issue
     plan = Plan(
         plan_identifier="123",
         title="Implement feature X",
@@ -1259,8 +1107,7 @@ def test_submit_with_custom_base_branch(tmp_path: Path) -> None:
         metadata={},
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_plan_store, fake_github_issues = create_plan_store_with_plans({"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -1385,21 +1232,8 @@ def test_submit_extraction_plan_adds_skip_extraction_label(tmp_path: Path) -> No
     repo_root.mkdir()
 
     now = datetime.now(UTC)
-    # Issue with extraction plan_type in metadata
+    # Plan with extraction plan_type in metadata
     extraction_body = _make_extraction_plan_body()
-    issue = IssueInfo(
-        number=123,
-        title="Extract documentation from session X",
-        body=extraction_body,
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
-
     plan = Plan(
         plan_identifier="123",
         title="Extract documentation from session X",
@@ -1413,8 +1247,7 @@ def test_submit_extraction_plan_adds_skip_extraction_label(tmp_path: Path) -> No
         metadata={},
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_plan_store, fake_github_issues = create_plan_store_with_plans({"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -1462,19 +1295,6 @@ def test_submit_standard_plan_does_not_add_skip_extraction_label(tmp_path: Path)
     now = datetime.now(UTC)
     # Standard plan (not extraction)
     standard_body = _make_plan_body()
-    issue = IssueInfo(
-        number=456,
-        title="Implement feature Y",
-        body=standard_body,
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/456",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
-
     plan = Plan(
         plan_identifier="456",
         title="Implement feature Y",
@@ -1488,8 +1308,7 @@ def test_submit_standard_plan_does_not_add_skip_extraction_label(tmp_path: Path)
         metadata={},
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={456: issue})
-    fake_plan_store = FakePlanStore(plans={"456": plan})
+    fake_plan_store, fake_github_issues = create_plan_store_with_plans({"456": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -1632,19 +1451,6 @@ def test_submit_uses_workflow_config(tmp_path: Path) -> None:
     )
 
     now = datetime.now(UTC)
-    issue = IssueInfo(
-        number=123,
-        title="Test with workflow config",
-        body=_make_plan_body(),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
-
     plan = Plan(
         plan_identifier="123",
         title="Test with workflow config",
@@ -1658,8 +1464,7 @@ def test_submit_uses_workflow_config(tmp_path: Path) -> None:
         metadata={},
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_plan_store, fake_github_issues = create_plan_store_with_plans({"123": plan})
     fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
@@ -1710,19 +1515,6 @@ def test_submit_rollback_on_push_failure(tmp_path: Path) -> None:
     repo_root.mkdir()
 
     now = datetime.now(UTC)
-    issue = IssueInfo(
-        number=123,
-        title="Implement feature X",
-        body=_make_plan_body(),
-        state="OPEN",
-        url="https://github.com/test-owner/test-repo/issues/123",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=now,
-        updated_at=now,
-        author="test-user",
-    )
-
     plan = Plan(
         plan_identifier="123",
         title="Implement feature X",
@@ -1736,8 +1528,7 @@ def test_submit_rollback_on_push_failure(tmp_path: Path) -> None:
         metadata={},
     )
 
-    fake_github_issues = FakeGitHubIssues(issues={123: issue})
-    fake_plan_store = FakePlanStore(plans={"123": plan})
+    fake_plan_store, fake_github_issues = create_plan_store_with_plans({"123": plan})
 
     # Configure FakeGit to raise an exception on push_to_remote
     push_error = RuntimeError("Network error: Connection refused")

@@ -20,10 +20,7 @@ from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
 
 def plan_to_issue(plan: Plan) -> IssueInfo:
-    """Convert Plan to IssueInfo for test setup.
-
-    Used to adapt tests from FakePlanStore to FakeGitHubIssues.
-    """
+    """Convert Plan to IssueInfo for test setup."""
     return IssueInfo(
         number=int(plan.plan_identifier),
         title=plan.title,

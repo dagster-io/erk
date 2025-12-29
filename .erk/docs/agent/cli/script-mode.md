@@ -196,7 +196,7 @@ def test_implement_from_issue() -> None:
     """Test implementing from GitHub issue number."""
     # Arrange
     git = FakeGit(...)
-    store = FakePlanStore(plans={"42": plan})
+    store, _ = create_plan_store_with_plans({"42": plan})
     ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
     # Act

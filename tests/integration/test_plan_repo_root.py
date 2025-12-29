@@ -17,10 +17,9 @@ from erk.cli.commands.plan.get import get_plan
 from erk.cli.commands.plan.list_cmd import dash
 from erk.core.services.plan_list_service import RealPlanListService
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues import IssueInfo
+from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
 from erk_shared.github.types import GitHubRepoLocation, PullRequestInfo
-from erk_shared.plan_store.fake import FakePlanStore
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.plan_store.github import GitHubPlanStore
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
@@ -108,32 +107,32 @@ def test_plan_issue_get_uses_repo_root_not_metadata_dir() -> None:
         # Track which directory is passed to gh operations
         captured_repo_root: Path | None = None
 
-        class TrackingPlanStore(FakePlanStore):
-            def get_plan(self, repo_root: Path, identifier: str):
+        # Create a tracking FakeGitHubIssues that captures the repo_root
+        class TrackingFakeGitHubIssues(FakeGitHubIssues):
+            def get_issue(self, repo_root: Path, issue_number: int) -> IssueInfo:
                 nonlocal captured_repo_root
                 captured_repo_root = repo_root
-                # Return minimal valid Plan to satisfy command
-                return self._plan_issues[identifier]
+                return super().get_issue(repo_root, issue_number)
 
         # Create a fake issue to return
         from datetime import UTC, datetime
 
-        fake_issue = Plan(
-            plan_identifier="42",
+        fake_issue = IssueInfo(
+            number=42,
             title="Test Issue",
             body="Test body",
-            state=PlanState.OPEN,
+            state="OPEN",
             url="https://github.com/test/repo/issues/42",
             labels=[],
             assignees=[],
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
-            metadata={},
+            author="test-user",
         )
 
-        store = TrackingPlanStore()
-        store._plan_issues = {"42": fake_issue}
-        ctx = env.build_context(plan_store=store)
+        tracking_issues = TrackingFakeGitHubIssues(issues={42: fake_issue})
+        store = GitHubPlanStore(tracking_issues)
+        ctx = env.build_context(plan_store=store, issues=tracking_issues)
 
         # Act: Run the get command
         result = runner.invoke(get_plan, ["42"], obj=ctx)

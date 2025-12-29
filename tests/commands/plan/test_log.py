@@ -7,6 +7,7 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata import (
     create_implementation_status_block,
     create_plan_block,
@@ -14,10 +15,28 @@ from erk_shared.github.metadata import (
     create_workflow_started_block,
     render_metadata_block,
 )
-from erk_shared.plan_store.fake import FakePlanStore
+from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
+from tests.test_utils.plan_helpers import create_plan_store_with_plans
+
+
+def _make_issue_info(plan: Plan) -> IssueInfo:
+    """Helper to convert Plan to IssueInfo for tests needing custom FakeGitHubIssues config."""
+    state = "OPEN" if plan.state == PlanState.OPEN else "CLOSED"
+    return IssueInfo(
+        number=int(plan.plan_identifier),
+        title=plan.title,
+        body=plan.body,
+        state=state,
+        url=plan.url,
+        labels=plan.labels,
+        assignees=plan.assignees,
+        created_at=plan.created_at.astimezone(UTC),
+        updated_at=plan.updated_at.astimezone(UTC),
+        author="test-author",
+    )
 
 
 def test_log_displays_timeline_chronologically() -> None:
@@ -63,14 +82,15 @@ def test_log_displays_timeline_chronologically() -> None:
     comment2 = render_metadata_block(plan_block)
     comment3 = render_metadata_block(submission_block)
 
-    issues = FakeGitHubIssues(
+    fake_issues = FakeGitHubIssues(
+        issues={42: _make_issue_info(plan)},
         comments={42: [comment1, comment2, comment3]},
     )
+    store = GitHubPlanStore(fake_issues)
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store = FakePlanStore(plans={"42": plan})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=issues)
+        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
         # Act
         result = runner.invoke(cli, ["plan", "log", "42"], obj=ctx)
@@ -117,14 +137,15 @@ def test_log_json_output() -> None:
 
     comment = render_metadata_block(plan_block)
 
-    issues = FakeGitHubIssues(
+    fake_issues = FakeGitHubIssues(
+        issues={42: _make_issue_info(plan)},
         comments={42: [comment]},
     )
+    store = GitHubPlanStore(fake_issues)
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store = FakePlanStore(plans={"42": plan})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=issues)
+        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
         # Act
         result = runner.invoke(cli, ["plan", "log", "42", "--json"], obj=ctx)
@@ -160,14 +181,15 @@ def test_log_with_no_events() -> None:
         metadata={},
     )
 
-    issues = FakeGitHubIssues(
+    fake_issues = FakeGitHubIssues(
+        issues={42: _make_issue_info(plan)},
         comments={42: []},  # No comments
     )
+    store = GitHubPlanStore(fake_issues)
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store = FakePlanStore(plans={"42": plan})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=issues)
+        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
         # Act
         result = runner.invoke(cli, ["plan", "log", "42"], obj=ctx)
@@ -229,14 +251,15 @@ def test_log_with_all_event_types() -> None:
         render_metadata_block(status_block),
     ]
 
-    issues = FakeGitHubIssues(
+    fake_issues = FakeGitHubIssues(
+        issues={42: _make_issue_info(plan)},
         comments={42: comments},
     )
+    store = GitHubPlanStore(fake_issues)
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store = FakePlanStore(plans={"42": plan})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=issues)
+        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
         # Act
         result = runner.invoke(cli, ["plan", "log", "42"], obj=ctx)
@@ -256,9 +279,8 @@ def test_log_with_invalid_plan_identifier() -> None:
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store = FakePlanStore(plans={})
-        issues = FakeGitHubIssues()
-        ctx = build_workspace_test_context(env, plan_store=store, issues=issues)
+        store, fake_issues = create_plan_store_with_plans({})
+        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
         # Act
         result = runner.invoke(cli, ["plan", "log", "999"], obj=ctx)
@@ -312,14 +334,15 @@ def test_log_multiple_status_updates() -> None:
         render_metadata_block(status3),
     ]
 
-    issues = FakeGitHubIssues(
+    fake_issues = FakeGitHubIssues(
+        issues={42: _make_issue_info(plan)},
         comments={42: comments},
     )
+    store = GitHubPlanStore(fake_issues)
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store = FakePlanStore(plans={"42": plan})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=issues)
+        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
         # Act
         result = runner.invoke(cli, ["plan", "log", "42"], obj=ctx)
@@ -359,14 +382,15 @@ def test_log_json_structure() -> None:
 
     comment = render_metadata_block(submission_block)
 
-    issues = FakeGitHubIssues(
+    fake_issues = FakeGitHubIssues(
+        issues={42: _make_issue_info(plan)},
         comments={42: [comment]},
     )
+    store = GitHubPlanStore(fake_issues)
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store = FakePlanStore(plans={"42": plan})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=issues)
+        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
 
         # Act
         result = runner.invoke(cli, ["plan", "log", "42", "--json"], obj=ctx)

@@ -83,7 +83,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkConte
     from erk_shared.github.real import RealGitHub
     from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.objectives.storage import FakeObjectiveStore
-    from erk_shared.plan_store.fake import FakePlanStore
+    from erk_shared.plan_store.github import GitHubPlanStore
     from erk_shared.prompt_executor.real import RealPromptExecutor
 
     resolved_cwd = cwd if cwd is not None else Path.cwd()
@@ -116,17 +116,18 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkConte
     # Use fake implementations for erk-specific services that erk-kits doesn't need
     fake_graphite = FakeGraphite()
     wt_stack_repo_root = repo.root if not isinstance(repo, NoRepoSentinel) else resolved_cwd
+    github_issues = RealGitHubIssues()
     return ErkContext(
         git=git,
         github=RealGitHub(time=RealTime(), repo_info=repo_info),
         github_admin=FakeGitHubAdmin(),
-        issues=RealGitHubIssues(),
+        issues=github_issues,
         session_store=RealClaudeCodeSessionStore(),
         prompt_executor=RealPromptExecutor(),
         graphite=fake_graphite,
         wt_stack=WtStack(git, wt_stack_repo_root, fake_graphite),
         time=FakeTime(),
-        plan_store=FakePlanStore(),
+        plan_store=GitHubPlanStore(github_issues),
         objectives=FakeObjectiveStore(),
         shell=FakeShell(),
         completion=FakeCompletion(),
