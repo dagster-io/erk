@@ -37,7 +37,6 @@ State Transitions:
 """
 
 import json
-import os
 import subprocess
 import sys
 import tomllib
@@ -49,6 +48,7 @@ import click
 
 from erk.kits.hooks.decorators import logged_hook, project_scoped
 from erk_kits.data.kits.erk.session_plan_extractor import extract_slugs_from_session
+from erk_shared.scratch.scratch import _get_repo_root, get_scratch_dir
 
 # ============================================================================
 # Data Classes for Pure Logic
@@ -233,44 +233,19 @@ def _get_session_id_from_stdin() -> str | None:
     return None
 
 
-def _get_scratch_dir(session_id: str) -> Path | None:
-    """Get scratch directory path in .erk/scratch/sessions/<session_id>/.
-
-    Args:
-        session_id: The session ID to build the path for
-
-    Returns:
-        Path to scratch directory, or None if not in a git repo
-    """
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        repo_root = Path(result.stdout.strip())
-        return repo_root / ".erk" / "scratch" / "sessions" / session_id
-    except subprocess.CalledProcessError:
-        return None
-
-
-def _get_implement_now_signal_path(session_id: str) -> Path | None:
+def _get_implement_now_signal_path(session_id: str) -> Path:
     """Get implement-now signal path in .erk/scratch/sessions/<session_id>/.
 
     Args:
         session_id: The session ID to build the path for
 
     Returns:
-        Path to implement-now signal file, or None if not in a git repo
+        Path to implement-now signal file
     """
-    scratch_dir = _get_scratch_dir(session_id)
-    if scratch_dir is None:
-        return None
-    return scratch_dir / "exit-plan-mode-hook.implement-now.signal"
+    return get_scratch_dir(session_id) / "exit-plan-mode-hook.implement-now.signal"
 
 
-def _get_plan_saved_signal_path(session_id: str) -> Path | None:
+def _get_plan_saved_signal_path(session_id: str) -> Path:
     """Get plan-saved signal path in .erk/scratch/sessions/<session_id>/.
 
     The plan-saved signal indicates the plan was already saved to GitHub,
@@ -280,12 +255,9 @@ def _get_plan_saved_signal_path(session_id: str) -> Path | None:
         session_id: The session ID to build the path for
 
     Returns:
-        Path to plan-saved signal file, or None if not in a git repo
+        Path to plan-saved signal file
     """
-    scratch_dir = _get_scratch_dir(session_id)
-    if scratch_dir is None:
-        return None
-    return scratch_dir / "exit-plan-mode-hook.plan-saved.signal"
+    return get_scratch_dir(session_id) / "exit-plan-mode-hook.plan-saved.signal"
 
 
 def _find_session_plan(session_id: str) -> Path | None:
@@ -301,8 +273,8 @@ def _find_session_plan(session_id: str) -> Path | None:
     if not plans_dir.exists():
         return None
 
-    cwd = os.getcwd()
-    slugs = extract_slugs_from_session(session_id, cwd_hint=cwd)
+    repo_root = str(_get_repo_root())
+    slugs = extract_slugs_from_session(session_id, cwd_hint=repo_root)
     if not slugs:
         return None
 
@@ -344,12 +316,8 @@ def _gather_inputs() -> HookInput:
     implement_now_signal_exists = False
     plan_saved_signal_exists = False
     if session_id:
-        implement_now_signal = _get_implement_now_signal_path(session_id)
-        implement_now_signal_exists = (
-            implement_now_signal is not None and implement_now_signal.exists()
-        )
-        plan_saved_signal = _get_plan_saved_signal_path(session_id)
-        plan_saved_signal_exists = plan_saved_signal is not None and plan_saved_signal.exists()
+        implement_now_signal_exists = _get_implement_now_signal_path(session_id).exists()
+        plan_saved_signal_exists = _get_plan_saved_signal_path(session_id).exists()
 
     # Find plan file path (None if doesn't exist)
     plan_file_path: Path | None = None
@@ -380,14 +348,10 @@ def _gather_inputs() -> HookInput:
 def _execute_result(result: HookOutput, session_id: str | None) -> None:
     """Execute the decision result. All I/O happens here."""
     if result.delete_implement_now_signal and session_id:
-        implement_now_signal = _get_implement_now_signal_path(session_id)
-        if implement_now_signal:
-            implement_now_signal.unlink()
+        _get_implement_now_signal_path(session_id).unlink()
 
     if result.delete_plan_saved_signal and session_id:
-        plan_saved_signal = _get_plan_saved_signal_path(session_id)
-        if plan_saved_signal:
-            plan_saved_signal.unlink()
+        _get_plan_saved_signal_path(session_id).unlink()
 
     if result.message:
         click.echo(result.message, err=True)
