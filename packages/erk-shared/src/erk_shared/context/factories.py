@@ -139,7 +139,6 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkConte
         plan_list_service=FakePlanListService(),
         cwd=resolved_cwd,
         repo=repo,
-        project=None,
         repo_info=repo_info,
         global_config=None,
         local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),

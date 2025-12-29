@@ -120,52 +120,23 @@ def test_require_repo_root_exits_when_context_not_erk_context() -> None:
     assert exc_info.value.code == 1
 
 
-def test_require_project_root_returns_project_when_found(tmp_path: Path) -> None:
-    """Test that require_project_root returns project root when .erk/project.toml exists."""
+def test_require_project_root_returns_repo_root(tmp_path: Path) -> None:
+    """Test that require_project_root returns repo_root.
+
+    With the project system removed, require_project_root always returns repo_root.
+    """
     from unittest.mock import MagicMock
 
     from erk_shared.git.fake import FakeGit
 
-    # Set up directory structure: repo_root/subproject/subdir
-    repo_root = tmp_path / "repo"
-    project_root = repo_root / "subproject"
-    cwd = project_root / "subdir"
-
-    # Create directories
-    cwd.mkdir(parents=True)
-    project_config = project_root / ".erk" / "project.toml"
-    project_config.parent.mkdir(parents=True)
-    project_config.touch()
-
-    # Create fake git with existing paths
-    git = FakeGit(existing_paths={repo_root, project_root, cwd, project_config})
-
-    test_ctx = ErkContext.for_test(repo_root=repo_root, cwd=cwd, git=git)
-
-    mock_click_ctx = MagicMock()
-    mock_click_ctx.obj = test_ctx
-
-    # Act
-    result = require_project_root(mock_click_ctx)
-
-    # Assert - should return the project root, not repo root
-    assert result == project_root
-
-
-def test_require_project_root_falls_back_to_repo_root_when_no_project(tmp_path: Path) -> None:
-    """Test that require_project_root returns repo_root when no project found."""
-    from unittest.mock import MagicMock
-
-    from erk_shared.git.fake import FakeGit
-
-    # Set up directory structure without .erk/project.toml
+    # Set up directory structure
     repo_root = tmp_path / "repo"
     cwd = repo_root / "some" / "subdir"
 
     # Create directories
     cwd.mkdir(parents=True)
 
-    # Create fake git with existing paths (no project config)
+    # Create fake git with existing paths
     git = FakeGit(existing_paths={repo_root, cwd})
 
     test_ctx = ErkContext.for_test(repo_root=repo_root, cwd=cwd, git=git)
@@ -176,7 +147,7 @@ def test_require_project_root_falls_back_to_repo_root_when_no_project(tmp_path: 
     # Act
     result = require_project_root(mock_click_ctx)
 
-    # Assert - should fall back to repo root
+    # Assert - should always return repo root
     assert result == repo_root
 
 

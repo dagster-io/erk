@@ -131,7 +131,6 @@ def context_for_test(
         plan_list_service=FakePlanListService(),
         cwd=resolved_cwd,
         repo=repo,
-        project=None,
         repo_info=None,
         global_config=None,
         local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),

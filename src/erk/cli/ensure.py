@@ -32,7 +32,6 @@ from erk_shared.output.output import user_output
 
 if TYPE_CHECKING:
     from erk.core.context import ErkContext
-    from erk.core.project_discovery import ProjectContext
 
 T = TypeVar("T")
 
@@ -425,37 +424,6 @@ class Ensure:
                 + "This is required before submitting branches or creating PRs."
             )
             raise SystemExit(1)
-
-    @staticmethod
-    def in_project_context(ctx: "ErkContext") -> "ProjectContext":
-        """Ensure in a project context, otherwise output styled error and exit.
-
-        Projects are identified by `.erk/project.toml` in a subdirectory of the repo.
-        This is required for operations that need to locate project-specific resources
-        like `.impl/` folders in monorepos.
-
-        Args:
-            ctx: Application context with project field
-
-        Returns:
-            The ProjectContext if available (with narrowed type, not None)
-
-        Raises:
-            SystemExit: If not in a project context
-
-        Example:
-            >>> project = Ensure.in_project_context(ctx)
-            >>> impl_dir = repo_root / project.path_from_repo / ".impl"
-        """
-        if ctx.project is None:
-            user_output(
-                click.style("Error: ", fg="red")
-                + "Not in a project context. "
-                + "Run from a directory with .erk/project.toml "
-                + "or initialize with 'erk project init'"
-            )
-            raise SystemExit(1)
-        return ctx.project
 
     @staticmethod
     def gh_authenticated(ctx: "ErkContext") -> None:

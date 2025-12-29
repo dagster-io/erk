@@ -50,10 +50,8 @@ def pr_check(ctx: ErkContext) -> None:
     pr_body = pr.body
 
     # Check 1: Issue closing reference (if .impl/issue.json exists)
-    # Require project context - .impl always lives at project directory
-    project = Ensure.in_project_context(ctx)
-    project_dir = repo_root / project.path_from_repo
-    impl_dir = project_dir / ".impl"
+    # .impl always lives at worktree/repo root
+    impl_dir = repo_root / ".impl"
     issue_ref = read_issue_reference(impl_dir)
 
     if issue_ref is not None:

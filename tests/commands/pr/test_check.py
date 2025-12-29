@@ -6,7 +6,6 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
-from erk.core.project_discovery import ProjectContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo
@@ -20,7 +19,7 @@ def test_pr_check_passes_with_valid_footer_and_issue_reference(tmp_path: Path) -
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        # Create .impl/issue.json
+        # Create .impl/issue.json at repo root
         impl_dir = env.cwd / ".impl"
         impl_dir.mkdir()
         issue_json = impl_dir / "issue.json"
@@ -87,14 +86,7 @@ erk pr checkout 123
             existing_paths={env.cwd, impl_dir},
         )
 
-        # Create project context - .impl lives at project directory
-        project = ProjectContext(
-            root=env.cwd,
-            name="test-project",
-            path_from_repo=Path("."),  # Project is at repo root
-        )
-
-        ctx = build_workspace_test_context(env, git=git, github=github, project=project)
+        ctx = build_workspace_test_context(env, git=git, github=github)
 
         result = runner.invoke(pr_group, ["check"], obj=ctx)
 
@@ -110,7 +102,7 @@ def test_pr_check_fails_when_missing_issue_reference(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        # Create .impl/issue.json
+        # Create .impl/issue.json at repo root
         impl_dir = env.cwd / ".impl"
         impl_dir.mkdir()
         issue_json = impl_dir / "issue.json"
@@ -175,14 +167,7 @@ erk pr checkout 123
             existing_paths={env.cwd, impl_dir},
         )
 
-        # Create project context - .impl lives at project directory
-        project = ProjectContext(
-            root=env.cwd,
-            name="test-project",
-            path_from_repo=Path("."),
-        )
-
-        ctx = build_workspace_test_context(env, git=git, github=github, project=project)
+        ctx = build_workspace_test_context(env, git=git, github=github)
 
         result = runner.invoke(pr_group, ["check"], obj=ctx)
 
@@ -240,14 +225,7 @@ This PR adds a feature.
             current_branches={env.cwd: "feature-branch"},
         )
 
-        # Create project context - .impl lives at project directory
-        project = ProjectContext(
-            root=env.cwd,
-            name="test-project",
-            path_from_repo=Path("."),
-        )
-
-        ctx = build_workspace_test_context(env, git=git, github=github, project=project)
+        ctx = build_workspace_test_context(env, git=git, github=github)
 
         result = runner.invoke(pr_group, ["check"], obj=ctx)
 
@@ -311,14 +289,7 @@ erk pr checkout 123
             current_branches={env.cwd: "feature-branch"},
         )
 
-        # Create project context - .impl lives at project directory
-        project = ProjectContext(
-            root=env.cwd,
-            name="test-project",
-            path_from_repo=Path("."),
-        )
-
-        ctx = build_workspace_test_context(env, git=git, github=github, project=project)
+        ctx = build_workspace_test_context(env, git=git, github=github)
 
         result = runner.invoke(pr_group, ["check"], obj=ctx)
 
@@ -343,14 +314,7 @@ def test_pr_check_fails_when_no_pr_exists(tmp_path: Path) -> None:
             current_branches={env.cwd: "no-pr-branch"},
         )
 
-        # Create project context - .impl lives at project directory
-        project = ProjectContext(
-            root=env.cwd,
-            name="test-project",
-            path_from_repo=Path("."),
-        )
-
-        ctx = build_workspace_test_context(env, git=git, github=github, project=project)
+        ctx = build_workspace_test_context(env, git=git, github=github)
 
         result = runner.invoke(pr_group, ["check"], obj=ctx)
 
@@ -370,14 +334,7 @@ def test_pr_check_fails_when_not_on_branch(tmp_path: Path) -> None:
             current_branches={env.cwd: None},
         )
 
-        # Create project context - .impl lives at project directory
-        project = ProjectContext(
-            root=env.cwd,
-            name="test-project",
-            path_from_repo=Path("."),
-        )
-
-        ctx = build_workspace_test_context(env, git=git, project=project)
+        ctx = build_workspace_test_context(env, git=git)
 
         result = runner.invoke(pr_group, ["check"], obj=ctx)
 
@@ -429,14 +386,7 @@ def test_pr_check_handles_empty_pr_body(tmp_path: Path) -> None:
             current_branches={env.cwd: "feature-branch"},
         )
 
-        # Create project context - .impl lives at project directory
-        project = ProjectContext(
-            root=env.cwd,
-            name="test-project",
-            path_from_repo=Path("."),
-        )
-
-        ctx = build_workspace_test_context(env, git=git, github=github, project=project)
+        ctx = build_workspace_test_context(env, git=git, github=github)
 
         result = runner.invoke(pr_group, ["check"], obj=ctx)
 
@@ -450,7 +400,7 @@ def test_pr_check_case_insensitive_closes_pattern(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        # Create .impl/issue.json
+        # Create .impl/issue.json at repo root
         impl_dir = env.cwd / ".impl"
         impl_dir.mkdir()
         issue_json = impl_dir / "issue.json"
@@ -513,14 +463,7 @@ erk pr checkout 123
             existing_paths={env.cwd, impl_dir},
         )
 
-        # Create project context - .impl lives at project directory
-        project = ProjectContext(
-            root=env.cwd,
-            name="test-project",
-            path_from_repo=Path("."),
-        )
-
-        ctx = build_workspace_test_context(env, git=git, github=github, project=project)
+        ctx = build_workspace_test_context(env, git=git, github=github)
 
         result = runner.invoke(pr_group, ["check"], obj=ctx)
 
@@ -534,7 +477,7 @@ def test_pr_check_reports_multiple_failures(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        # Create .impl/issue.json
+        # Create .impl/issue.json at repo root
         impl_dir = env.cwd / ".impl"
         impl_dir.mkdir()
         issue_json = impl_dir / "issue.json"
@@ -590,14 +533,7 @@ def test_pr_check_reports_multiple_failures(tmp_path: Path) -> None:
             existing_paths={env.cwd, impl_dir},
         )
 
-        # Create project context - .impl lives at project directory
-        project = ProjectContext(
-            root=env.cwd,
-            name="test-project",
-            path_from_repo=Path("."),
-        )
-
-        ctx = build_workspace_test_context(env, git=git, github=github, project=project)
+        ctx = build_workspace_test_context(env, git=git, github=github)
 
         result = runner.invoke(pr_group, ["check"], obj=ctx)
 
@@ -605,57 +541,3 @@ def test_pr_check_reports_multiple_failures(tmp_path: Path) -> None:
         assert "[FAIL] PR body missing issue closing reference" in result.output
         assert "[FAIL] PR body missing checkout footer" in result.output
         assert "2 checks failed" in result.output
-
-
-def test_pr_check_fails_without_project_context(tmp_path: Path) -> None:
-    """Test PR check fails when not in a project context."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        env.setup_repo_structure()
-
-        # Setup a valid PR
-        pr_body = "## Summary\nerk pr checkout 123"
-        pr_details = PRDetails(
-            number=123,
-            url="https://github.com/owner/repo/pull/123",
-            title="Add feature",
-            body=pr_body,
-            state="OPEN",
-            is_draft=False,
-            base_ref_name="main",
-            head_ref_name="feature-branch",
-            is_cross_repository=False,
-            mergeable="MERGEABLE",
-            merge_state_status="CLEAN",
-            owner="owner",
-            repo="repo",
-        )
-        github = FakeGitHub(
-            prs={
-                "feature-branch": PullRequestInfo(
-                    number=123,
-                    state="OPEN",
-                    url="https://github.com/owner/repo/pull/123",
-                    is_draft=False,
-                    title="Add feature",
-                    checks_passing=None,
-                    owner="owner",
-                    repo="repo",
-                    has_conflicts=None,
-                )
-            },
-            pr_details={123: pr_details},
-        )
-
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-branch"},
-        )
-
-        # NO project context provided - should fail
-        ctx = build_workspace_test_context(env, git=git, github=github)
-
-        result = runner.invoke(pr_group, ["check"], obj=ctx)
-
-        assert result.exit_code == 1
-        assert "Not in a project context" in result.output

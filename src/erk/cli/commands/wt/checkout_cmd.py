@@ -9,7 +9,6 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
-from erk.core.worktree_metadata import get_worktree_project
 from erk_shared.output.output import user_output
 
 
@@ -89,30 +88,15 @@ def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
         target_worktree, f"Worktree '{worktree_name}' not found in git worktree list"
     )
 
-    # Look up project path for this worktree
-    project_path = get_worktree_project(repo.repo_dir, worktree_name, ctx.git)
-
-    # Determine target path and whether to preserve relative path
-    # Project path takes precedence over relative path preservation
-    if project_path is not None:
-        target_path = worktree_path / project_path
-        preserve_relative = False  # Project path overrides relative path preservation
-    else:
-        target_path = worktree_path
-        preserve_relative = True  # Preserve user's relative directory position
+    # Always navigate to worktree root and preserve relative path
+    target_path = worktree_path
 
     # Show worktree and branch info (only in non-script mode)
     if not script:
         branch_name = target_worktree.branch or "(detached HEAD)"
         styled_wt = click.style(worktree_name, fg="cyan", bold=True)
         styled_branch = click.style(branch_name, fg="yellow")
-        if project_path is not None:
-            styled_project = click.style(str(project_path), fg="magenta")
-            user_output(f"Went to worktree {styled_wt} [{styled_branch}] → {styled_project}")
-        else:
-            user_output(f"Went to worktree {styled_wt} [{styled_branch}]")
+        user_output(f"Went to worktree {styled_wt} [{styled_branch}]")
 
-    # Activate the worktree (at project path if applicable)
-    activate_worktree(
-        ctx, repo, target_path, script, "co", preserve_relative_path=preserve_relative
-    )
+    # Activate the worktree
+    activate_worktree(ctx, repo, target_path, script, "co", preserve_relative_path=True)

@@ -16,7 +16,6 @@ from erk.core.completion import RealCompletion
 from erk.core.config_store import RealConfigStore
 from erk.core.implementation_queue.github.real import RealGitHubAdmin
 from erk.core.planner.registry_real import RealPlannerRegistry
-from erk.core.project_discovery import ProjectContext, discover_project
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
 from erk.core.script_writer import RealScriptWriter
 from erk.core.services.plan_list_service import RealPlanListService
@@ -133,7 +132,6 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         global_config=None,
         local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
         repo=NoRepoSentinel(),
-        project=None,
         repo_info=None,
         dry_run=dry_run,
         debug=False,
@@ -164,7 +162,6 @@ def context_for_test(
     global_config: GlobalConfig | None = None,
     local_config: LoadedConfig | None = None,
     repo: RepoContext | NoRepoSentinel | None = None,
-    project: ProjectContext | None = None,
     repo_info: RepoInfo | None = None,
     dry_run: bool = False,
     debug: bool = False,
@@ -196,7 +193,6 @@ def context_for_test(
         global_config: Optional GlobalConfig. If None, uses test defaults.
         local_config: Optional LoadedConfig. If None, uses empty defaults.
         repo: Optional RepoContext or NoRepoSentinel. If None, uses NoRepoSentinel().
-        project: Optional ProjectContext. If None, stays None.
         repo_info: Optional RepoInfo. If None, stays None.
         dry_run: Whether to enable dry-run mode (default False).
         debug: Whether to enable debug mode (default False).
@@ -336,7 +332,6 @@ def context_for_test(
         global_config=global_config,
         local_config=local_config,
         repo=repo,
-        project=project,
         repo_info=repo_info,
         dry_run=dry_run,
         debug=debug,
@@ -465,12 +460,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     erk_root = global_config.erk_root if global_config else Path.home() / "worktrees"
     repo = discover_repo_or_sentinel(cwd, erk_root, git)
 
-    # 6. Discover project (if in a repo)
-    project: ProjectContext | None = None
-    if not isinstance(repo, NoRepoSentinel):
-        project = discover_project(cwd, repo.root, git)
-
-    # 6b. Fetch repo_info (if in a repo with origin remote)
+    # 6. Fetch repo_info (if in a repo with origin remote)
     # Note: try-except is acceptable at CLI entry point boundary per LBYL conventions
     repo_info: RepoInfo | None = None
     if not isinstance(repo, NoRepoSentinel):
@@ -482,13 +472,13 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
             # No origin remote configured - repo_info stays None
             pass
 
-    # 6c. Create GitHub-related classes (need repo_info)
+    # 7. Create GitHub-related classes (need repo_info)
     github: GitHub = RealGitHub(time, repo_info)
     issues: GitHubIssues = RealGitHubIssues()
     plan_store: PlanStore = GitHubPlanStore(issues)
     plan_list_service: PlanListService = RealPlanListService(github, issues)
 
-    # 7. Load local config (or defaults if no repo)
+    # 8. Load local config (or defaults if no repo)
     if isinstance(repo, NoRepoSentinel):
         local_config = LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
     else:
@@ -498,31 +488,31 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         # Legacy locations are detected by 'erk doctor' only
         local_config = load_config(repo.root)
 
-    # 8. Choose feedback implementation based on mode
+    # 9. Choose feedback implementation based on mode
     feedback: UserFeedback
     if script:
         feedback = SuppressedFeedback()  # Suppress diagnostics
     else:
         feedback = InteractiveFeedback()  # Show all messages
 
-    # 9. Apply dry-run wrappers if needed
+    # 10. Apply dry-run wrappers if needed
     if dry_run:
         git = DryRunGit(git)
         graphite = DryRunGraphite(graphite)
         github = DryRunGitHub(github)
         issues = DryRunGitHubIssues(issues)
 
-    # 10. Create WtStack (after dry-run wrapping so it uses wrapped git/graphite)
+    # 11. Create WtStack (after dry-run wrapping so it uses wrapped git/graphite)
     repo_root = repo.root if not isinstance(repo, NoRepoSentinel) else cwd
     wt_stack = WtStack(git, repo_root, graphite)
 
-    # 11. Create session store and prompt executor
+    # 12. Create session store and prompt executor
     from erk_shared.extraction.claude_code_session_store import RealClaudeCodeSessionStore
 
     session_store: ClaudeCodeSessionStore = RealClaudeCodeSessionStore()
     prompt_executor: PromptExecutor = RealPromptExecutor()
 
-    # 12. Create context with all values
+    # 13. Create context with all values
     return ErkContext(
         git=git,
         github=github,
@@ -547,7 +537,6 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         global_config=global_config,
         local_config=local_config,
         repo=repo,
-        project=project,
         repo_info=repo_info,
         dry_run=dry_run,
         debug=debug,

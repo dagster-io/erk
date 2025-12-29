@@ -57,6 +57,4 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before creating temp files for AI workflows** → Read [Scratch Storage](planning/scratch-storage.md) first. Use worktree-scoped scratch storage for session-specific data.
 
-**CRITICAL: Before looking up .impl/ directory in CLI code** → Read [Planning Workflow](planning/workflow.md) first. Use project-aware path resolution. .impl/ lives at project directory, not repo root. Use Ensure.in_project_context() to get project.
-
 **CRITICAL: Before working with session-specific data** → Read [Parallel Session Awareness](sessions/parallel-session-awareness.md) first. Multiple sessions can run in parallel. NEVER use "most recent by mtime" for session data lookup - always scope by session ID.

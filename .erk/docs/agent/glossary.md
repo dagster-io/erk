@@ -140,47 +140,6 @@ Erk branches follow the pattern `P{issue_number}-{slug}-{timestamp}`:
 
 **Automatic extraction**: `get_branch_issue()` uses this pattern to determine which GitHub issue a branch relates to, without requiring git config setup.
 
-### Project
-
-A subdirectory within a git repository that has its own erk configuration context.
-
-**Identification**: Contains `.erk/project.toml` file
-
-**Purpose**: Enables monorepo support where different subdirectories can have their own:
-
-- Environment variables
-- Post-create commands
-- Claude Code context (via `.claude/` directory in project)
-
-**Example structure**:
-
-```
-repo-root/
-├── .erk/config.toml              ← Repo-level config
-├── python_modules/
-│   └── my-project/
-│       ├── .erk/project.toml     ← Project config (identifies this as a project)
-│       └── .claude/CLAUDE.md     ← Project-specific Claude context
-```
-
-**Discovery**: `discover_project(cwd, repo_root)` walks up from current directory looking for `.erk/project.toml`
-
-**File**: `src/erk/core/project_discovery.py`
-
-### Project Context
-
-A frozen dataclass containing project information.
-
-**Fields**:
-
-- `root: Path` - Absolute path to project directory
-- `name: str` - Project name (defaults to directory name)
-- `path_from_repo: Path` - Relative path from repo root
-
-**Creation**: `discover_project(cwd, repo_root)`
-
-See `src/erk/core/project_discovery.py` for the canonical definition.
-
 ### Claude Code Project Directory
 
 The directory where Claude Code stores session data for a specific project. Located at `~/.claude/projects/<encoded-path>` where the path is encoded by replacing `/` and `.` with `-`.
@@ -200,31 +159,21 @@ The directory where Claude Code stores session data for a specific project. Loca
 
 When writing CLI commands, use the correct path level for file lookups:
 
-| Path                         | What it represents             | When to use                                            |
-| ---------------------------- | ------------------------------ | ------------------------------------------------------ |
-| `ctx.cwd`                    | Where the user ran the command | **Rarely correct** - only for user-relative operations |
-| `repo.root` / `repo_root`    | Git worktree root              | `.erk/` lookups, git operations                        |
-| `ctx.project.path_from_repo` | Project directory in monorepo  | `.impl/` lookups, project-specific files               |
+| Path                      | What it represents             | When to use                                            |
+| ------------------------- | ------------------------------ | ------------------------------------------------------ |
+| `ctx.cwd`                 | Where the user ran the command | **Rarely correct** - only for user-relative operations |
+| `repo.root` / `repo_root` | Git worktree root              | `.erk/`, `.impl/` lookups, git operations              |
 
-### Common Pattern: Requiring Project Context
+### Common Pattern: Getting Repo Root
 
-For operations that need `.impl/` (which lives at project directory level), use `Ensure.in_project_context()`:
+For operations that need `.impl/` or `.erk/` (which live at worktree root), use the repo root:
 
 ```python
-from erk.cli.ensure import Ensure
+from erk_shared.context.helpers import require_repo_root
 
-# Validate project context and get ProjectContext with narrowed type
-project = Ensure.in_project_context(ctx)
-
-# Now safely access project fields
-impl_dir = repo_root / project.path_from_repo / ".impl"
+repo_root = require_repo_root(ctx)
+impl_dir = repo_root / ".impl"
 ```
-
-This pattern:
-
-- Provides clear error message if not in project context
-- Returns `ProjectContext` (not `None`) for type safety
-- Directs users to run from project directory or use `erk project init`
 
 ### Common Mistake
 
@@ -234,11 +183,11 @@ This pattern:
 impl_dir = ctx.cwd / ".impl"  # Wrong - user may run from any subdirectory
 ```
 
-**✅ Correct**: Using project-aware resolution
+**✅ Correct**: Using repo root
 
 ```python
-project = Ensure.in_project_context(ctx)
-impl_dir = repo_root / project.path_from_repo / ".impl"
+repo_root = require_repo_root(ctx)
+impl_dir = repo_root / ".impl"
 ```
 
 ---
@@ -372,42 +321,6 @@ working_dir = "."
 
 **Access**: Via `load_config(erks_dir)` function.
 
-### Project Config
-
-Configuration stored in `{project_root}/.erk/project.toml`.
-
-**Scope**: Applies to worktrees created from this project directory.
-
-**Location**: `{repo_root}/{project_path}/.erk/project.toml`
-
-**Contents**:
-
-```toml
-# Optional: custom name (defaults to directory name)
-# name = "dagster-open-platform"
-
-[env]
-# Project-specific env vars (merged with repo-level)
-DAGSTER_HOME = "{project_root}"
-
-[post_create]
-# Runs AFTER repo-level commands, FROM project directory
-shell = "bash"
-commands = [
-  "source .venv/bin/activate",
-]
-```
-
-**Merge Rules** (when both repo and project config exist):
-
-| Field                  | Merge Behavior                                 |
-| ---------------------- | ---------------------------------------------- |
-| `env`                  | Project values override repo values            |
-| `post_create.commands` | Repo commands run first, then project commands |
-| `post_create.shell`    | Project shell overrides repo shell if set      |
-
-**File**: `src/erk/cli/config.py`
-
 ---
 
 ## Architecture Terms
@@ -465,7 +378,6 @@ A frozen dataclass containing all injected dependencies.
 
 - `cwd: Path` - Current working directory
 - `repo: RepoContext | NoRepoSentinel` - Repository context
-- `project: ProjectContext | None` - Project context within monorepo
 
 **Factory Methods**:
 

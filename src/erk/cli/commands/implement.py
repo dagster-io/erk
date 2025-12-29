@@ -25,7 +25,6 @@ from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import ErkContext
-from erk.core.project_discovery import ProjectContext, discover_project
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.core.worktree_utils import compute_relative_path_in_worktree
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
@@ -337,30 +336,11 @@ class WorktreeCreationResult:
 
     Attributes:
         worktree_path: Path to the created worktree root
-        impl_dir: Path to the .impl/ directory (may be inside a project subdirectory)
+        impl_dir: Path to the .impl/ directory (always at worktree root)
     """
 
     worktree_path: Path
     impl_dir: Path
-
-
-def get_impl_location(worktree_path: Path, project: ProjectContext | None) -> Path:
-    """Determine where to create .impl/ folder based on project context.
-
-    In monorepos, .impl/ should be placed at the project root (where .erk/project.toml
-    lives) rather than the worktree root. This ensures Claude starts in the correct
-    context for the project.
-
-    Args:
-        worktree_path: Path to the worktree root
-        project: Project context if running from within a project, None otherwise
-
-    Returns:
-        Path where .impl/ folder should be created (NOT including the .impl/ suffix)
-    """
-    if project is not None:
-        return worktree_path / project.path_from_repo
-    return worktree_path
 
 
 def _detect_target_type(target: str) -> TargetInfo:
@@ -697,10 +677,6 @@ def _create_worktree_with_plan_content(
     ensure_erk_metadata_dir(repo)
     repo_root = repo.root
 
-    # Detect project context from source directory (for monorepo support)
-    # If running from within a project subdirectory, we'll create .impl/ there
-    project: ProjectContext | None = discover_project(ctx.cwd, repo_root, ctx.git)
-
     # Determine branch name and worktree name
     # - linked_branch_name: use the issue-linked branch for the worktree
     # - worktree_name: user override for worktree directory name (not branch)
@@ -816,14 +792,12 @@ def _create_worktree_with_plan_content(
     # Run post-worktree setup
     run_post_worktree_setup(ctx, config, wt_path, repo_root, name)
 
-    # Create .impl/ folder with plan content
+    # Create .impl/ folder with plan content at worktree root
     # Use overwrite=True since new worktrees created from branches with existing
     # .impl/ folders inherit that folder, and we want to replace it with the new plan
-    impl_location = get_impl_location(wt_path, project)
-
     ctx.feedback.info("Creating .impl/ folder with plan...")
     create_impl_folder(
-        worktree_path=impl_location,
+        worktree_path=wt_path,
         plan_content=plan_source.plan_content,
         overwrite=True,
     )
@@ -831,7 +805,7 @@ def _create_worktree_with_plan_content(
 
     return WorktreeCreationResult(
         worktree_path=wt_path,
-        impl_dir=impl_location / ".impl",
+        impl_dir=wt_path / ".impl",
     )
 
 

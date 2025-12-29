@@ -36,7 +36,6 @@ from erk_shared.github.types import RepoInfo
 from erk_shared.github_admin.abc import GitHubAdmin
 from erk_shared.objectives.storage import ObjectiveStore
 from erk_shared.plan_store.store import PlanStore
-from erk_shared.project_discovery import ProjectContext
 from erk_shared.prompt_executor import PromptExecutor
 
 
@@ -90,7 +89,6 @@ class ErkContext:
 
     # Repository context
     repo: RepoContext | NoRepoSentinel
-    project: ProjectContext | None  # None if not in a project subdirectory
     repo_info: RepoInfo | None  # None when not in a GitHub repo
 
     # Configuration
