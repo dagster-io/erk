@@ -1,6 +1,6 @@
 ---
-name: dignified-python-312
-description: Load ONLY when Python 3.12 is the active Python environment.
+name: dignified-python
+description: Python coding standards with automatic version detection.
   Use when writing, reviewing, or refactoring Python to ensure adherence to LBYL exception
   handling patterns, modern type syntax (list[str], str | None), pathlib operations,
   ABC-based interfaces, absolute imports, and explicit error boundaries at CLI level.
@@ -11,16 +11,27 @@ erk:
   kit: dignified-python
 ---
 
-# Dignified Python - Python 3.12 Coding Standards
+# Dignified Python Coding Standards
 
 ## Core Knowledge (ALWAYS Loaded)
 
-@common/dignified-python-core.md
-@type-annotations.md
+@dignified-python-core.md
 
-## Version-Specific Checklist
+## Version Detection
 
-@version-specific-checklist.md
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = ">=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
 
 ## Conditional Loading (Load Based on Task Patterns)
 
@@ -28,13 +39,13 @@ Core files above cover 80%+ of Python code patterns. Only load these additional 
 
 Pattern detection examples:
 
-- If task mentions "click" or "CLI" → Load `common/cli-patterns.md`
-- If task mentions "subprocess" → Load `common/subprocess.md`
+- If task mentions "click" or "CLI" -> Load `cli-patterns.md`
+- If task mentions "subprocess" -> Load `subprocess.md`
 
 ## How to Use This Skill
 
 1. **Core knowledge** is loaded automatically (LBYL, pathlib, ABC, imports, exceptions)
-2. **Type annotations** are loaded automatically (Python 3.12 specific features including PEP 695)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
 3. **Additional patterns** may require extra loading (CLI patterns, subprocess)
 4. **Each file is self-contained** with complete guidance for its domain
 
