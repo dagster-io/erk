@@ -1,7 +1,7 @@
 ---
 name: dignified-python-312
 description:
-  This skill should be used when editing Python code in the erk codebase.
+  Load ONLY when Python 3.12 is the active Python environment.
   Use when writing, reviewing, or refactoring Python to ensure adherence to LBYL exception
   handling patterns, modern type syntax (list[str], str | None), pathlib operations,
   ABC-based interfaces, absolute imports, and explicit error boundaries at CLI level.
