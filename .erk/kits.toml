@@ -13,6 +13,8 @@ artifacts = [
     ".claude/commands/erk/save-plan.md",
     ".claude/commands/erk/pr-address.md",
     ".claude/commands/erk/pr-submit.md",
+    ".claude/skills/gt-graphite/SKILL.md",
+    ".claude/skills/gt-graphite/references/gt-reference.md",
     ".erk/docs/kits/erk/EXAMPLES.md",
     ".erk/docs/kits/erk/includes/conflict-resolution.md",
     ".erk/docs/kits/erk/includes/create-github-issue.md",
