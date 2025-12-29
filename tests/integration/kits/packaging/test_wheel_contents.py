@@ -66,7 +66,7 @@ def test_wheel_contains_registry(build_wheel: Path) -> None:
 
 @pytest.mark.parametrize(
     "kit_name",
-    ["gt", "devrun", "dignified-python", "erk"],
+    ["devrun", "dignified-python", "erk"],
 )
 def test_wheel_contains_kit_yaml(build_wheel: Path, kit_name: str) -> None:
     """Test that each kit's kit.yaml is included in the wheel."""
@@ -79,7 +79,7 @@ def test_wheel_contains_kit_yaml(build_wheel: Path, kit_name: str) -> None:
 @pytest.mark.parametrize(
     ("kit_name", "skill_name", "reference_file"),
     [
-        ("gt", "gt-graphite", "gt-reference.md"),
+        ("erk", "gt-graphite", "gt-reference.md"),
     ],
 )
 def test_wheel_contains_skill_references(
@@ -100,7 +100,7 @@ def test_wheel_contains_skill_references(
 @pytest.mark.parametrize(
     ("kit_name", "skill_name"),
     [
-        ("gt", "gt-graphite"),
+        ("erk", "gt-graphite"),
     ],
 )
 def test_wheel_contains_skill_markdown(
@@ -118,7 +118,10 @@ def test_wheel_contains_skill_markdown(
 @pytest.mark.parametrize(
     ("kit_name", "command_script"),
     [
-        ("gt", "submit_branch.py"),
+        ("erk", "restack_preflight.py"),
+        ("erk", "restack_continue.py"),
+        ("erk", "restack_finalize.py"),
+        ("erk", "quick_submit.py"),
     ],
 )
 def test_wheel_contains_scripts(
@@ -138,12 +141,6 @@ def test_wheel_contains_all_init_files(build_wheel: Path) -> None:
     expected_init_files = [
         "erk_kits/data/__init__.py",
         "erk_kits/data/kits/__init__.py",
-        "erk_kits/data/kits/gt/__init__.py",
-        "erk_kits/data/kits/gt/commands/__init__.py",
-        "erk_kits/data/kits/gt/scripts/__init__.py",
-        "erk_kits/data/kits/gt/skills/__init__.py",
-        "erk_kits/data/kits/gt/skills/gt-graphite/__init__.py",
-        "erk_kits/data/kits/gt/skills/gt-graphite/references/__init__.py",
         "erk_kits/data/kits/devrun/__init__.py",
         "erk_kits/data/kits/dignified-python/__init__.py",
         "erk_kits/data/kits/erk/__init__.py",

@@ -37,10 +37,4 @@
 
 <!-- ENTRY_END -->
 
-<!-- ENTRY_START kit_id="gt" version="0.2.8" source="bundled" -->
-
-@.erk/kits/gt/registry-entry.md
-
-<!-- ENTRY_END -->
-
 <!-- END_ENTRIES -->

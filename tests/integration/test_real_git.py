@@ -617,3 +617,256 @@ def test_get_commit_messages_since_returns_empty_for_invalid_branch(tmp_path: Pa
 
     # Assert: Returns empty list (graceful degradation)
     assert messages == []
+
+
+def test_has_uncommitted_changes_clean(tmp_path: Path) -> None:
+    """Test has_uncommitted_changes returns False when working directory is clean."""
+    from erk_shared.git.real import RealGit
+    from tests.integration.conftest import init_git_repo
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    git_ops = RealGit()
+
+    # Act: Check for uncommitted changes in clean repo
+    has_changes = git_ops.has_uncommitted_changes(repo)
+
+    # Assert: Should be clean after init
+    assert has_changes is False
+
+
+def test_has_uncommitted_changes_with_modifications(tmp_path: Path) -> None:
+    """Test has_uncommitted_changes returns True when files are modified."""
+    from erk_shared.git.real import RealGit
+    from tests.integration.conftest import init_git_repo
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    # Create a new untracked file
+    (repo / "new_file.txt").write_text("new content\n", encoding="utf-8")
+
+    git_ops = RealGit()
+
+    # Act
+    has_changes = git_ops.has_uncommitted_changes(repo)
+
+    # Assert
+    assert has_changes is True
+
+
+def test_add_all_stages_files(tmp_path: Path) -> None:
+    """Test add_all stages all files in the repository."""
+    from erk_shared.git.real import RealGit
+    from tests.integration.conftest import init_git_repo
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    # Create new files
+    (repo / "file1.txt").write_text("content1\n", encoding="utf-8")
+    (repo / "file2.txt").write_text("content2\n", encoding="utf-8")
+
+    git_ops = RealGit()
+
+    # Act
+    git_ops.add_all(repo)
+
+    # Assert: Verify files are staged
+    result = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    # Staged new files show as "A " (added to index)
+    assert "A  file1.txt" in result.stdout
+    assert "A  file2.txt" in result.stdout
+
+
+def test_commit_creates_commit(tmp_path: Path) -> None:
+    """Test commit creates a commit with the given message."""
+    from erk_shared.git.real import RealGit
+    from tests.integration.conftest import init_git_repo
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    # Create and stage a file
+    (repo / "file.txt").write_text("content\n", encoding="utf-8")
+    subprocess.run(["git", "add", "file.txt"], cwd=repo, check=True)
+
+    git_ops = RealGit()
+
+    # Act
+    git_ops.commit(repo, "Test commit message")
+
+    # Assert: Verify commit was created
+    result = subprocess.run(
+        ["git", "log", "-1", "--format=%s"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "Test commit message" in result.stdout
+
+
+def test_amend_commit_modifies_commit(tmp_path: Path) -> None:
+    """Test amend_commit modifies the last commit message."""
+    from erk_shared.git.real import RealGit
+    from tests.integration.conftest import init_git_repo
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    # Modify a file and stage it
+    (repo / "README.md").write_text("modified content\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=repo, check=True)
+
+    git_ops = RealGit()
+
+    # Act
+    git_ops.amend_commit(repo, "Amended commit message")
+
+    # Assert: Verify commit was amended
+    result = subprocess.run(
+        ["git", "log", "-1", "--format=%s"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "Amended commit message" in result.stdout
+
+
+def test_amend_commit_with_backticks(tmp_path: Path) -> None:
+    """Test amend_commit handles backticks in commit messages correctly.
+
+    This tests edge case behavior around shell quoting that could cause issues.
+    """
+    from erk_shared.git.real import RealGit
+    from tests.integration.conftest import init_git_repo
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    # Modify a file and stage it
+    (repo / "README.md").write_text("modified content\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=repo, check=True)
+
+    git_ops = RealGit()
+
+    # Act: Amend with backticks in message
+    message_with_backticks = "feat: add `some_function()` implementation"
+    git_ops.amend_commit(repo, message_with_backticks)
+
+    # Assert: Verify message was set correctly
+    result = subprocess.run(
+        ["git", "log", "-1", "--format=%B"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert message_with_backticks in result.stdout
+
+
+def test_count_commits_ahead(tmp_path: Path) -> None:
+    """Test count_commits_ahead counts commits since base branch."""
+    from erk_shared.git.real import RealGit
+    from tests.integration.conftest import init_git_repo
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    # Create feature branch with multiple commits
+    subprocess.run(["git", "checkout", "-b", "feature"], cwd=repo, check=True)
+
+    for i in range(3):
+        (repo / f"file{i}.txt").write_text(f"content{i}\n", encoding="utf-8")
+        subprocess.run(["git", "add", f"file{i}.txt"], cwd=repo, check=True)
+        subprocess.run(["git", "commit", "-m", f"Commit {i}"], cwd=repo, check=True)
+
+    git_ops = RealGit()
+
+    # Act
+    count = git_ops.count_commits_ahead(repo, "main")
+
+    # Assert
+    assert count == 3
+
+
+def test_check_merge_conflicts_detects_conflicts(tmp_path: Path) -> None:
+    """Test check_merge_conflicts detects conflicting changes between branches."""
+    from erk_shared.git.real import RealGit
+    from tests.integration.conftest import init_git_repo
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    # Create a file on main
+    (repo / "file.txt").write_text("line 1\nline 2\nline 3\n", encoding="utf-8")
+    subprocess.run(["git", "add", "file.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "Add file"], cwd=repo, check=True)
+
+    # Create feature branch and modify same lines
+    subprocess.run(["git", "checkout", "-b", "feature"], cwd=repo, check=True)
+    (repo / "file.txt").write_text("line 1 CHANGED\nline 2\nline 3\n", encoding="utf-8")
+    subprocess.run(["git", "commit", "-am", "Change on feature"], cwd=repo, check=True)
+
+    # Go back to main and make conflicting change
+    subprocess.run(["git", "checkout", "main"], cwd=repo, check=True)
+    (repo / "file.txt").write_text("line 1 DIFFERENT\nline 2\nline 3\n", encoding="utf-8")
+    subprocess.run(["git", "commit", "-am", "Change on main"], cwd=repo, check=True)
+
+    git_ops = RealGit()
+
+    # Act
+    has_conflicts = git_ops.check_merge_conflicts(repo, "main", "feature")
+
+    # Assert
+    assert has_conflicts is True
+
+
+def test_check_merge_conflicts_no_conflicts(tmp_path: Path) -> None:
+    """Test check_merge_conflicts returns False when branches can merge cleanly."""
+    from erk_shared.git.real import RealGit
+    from tests.integration.conftest import init_git_repo
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    # Create feature branch with non-conflicting changes
+    subprocess.run(["git", "checkout", "-b", "feature"], cwd=repo, check=True)
+    (repo / "new_file.txt").write_text("new content\n", encoding="utf-8")
+    subprocess.run(["git", "add", "new_file.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "Add new file"], cwd=repo, check=True)
+
+    git_ops = RealGit()
+
+    # Act
+    has_conflicts = git_ops.check_merge_conflicts(repo, "main", "feature")
+
+    # Assert
+    assert has_conflicts is False

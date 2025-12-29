@@ -6,7 +6,7 @@ description:
   or when dealing with dependent branches. Essential for understanding stack navigation,
   branch relationships, and Graphite's mental model.
 erk:
-  kit: gt
+  kit: erk
 ---
 
 # Graphite

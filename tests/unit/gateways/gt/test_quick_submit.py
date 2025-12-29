@@ -9,7 +9,7 @@ from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.quick_submit import execute_quick_submit
 from erk_shared.gateway.gt.types import QuickSubmitError, QuickSubmitSuccess
 from erk_shared.git.fake import FakeGit
-from tests.unit.kits.kits.gt.fake_ops import FakeGtKitOps
+from tests.unit.gateways.gt.fake_ops import FakeGtKitOps
 
 
 @pytest.fixture
