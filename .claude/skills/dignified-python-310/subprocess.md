@@ -1,3 +1,8 @@
+---
+erk:
+  kit: dignified-python
+---
+
 # Subprocess Handling - Safe Execution
 
 ## Core Rule

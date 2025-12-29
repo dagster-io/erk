@@ -9,3 +9,7 @@ src/erk_kits/data/kits/*/docs/**/*.md
 src/erk_kits/data/kits/*/workflows/**/*.yml
 # Keep scripts (source of truth lives in kit directory)
 !src/erk_kits/data/kits/*/scripts/
+
+# Exception: dignified-python skill directories ARE source of truth (embedded docs)
+# These files should be tracked in git
+!src/erk_kits/data/kits/dignified-python/skills/**/*.md

@@ -4,25 +4,43 @@ description: Version-aware Python coding standards with automatic version detect
 license: See LICENSE.md
 artifacts:
   skill:
+    # Python 3.10
     - skills/dignified-python-310/SKILL.md
     - skills/dignified-python-310/VERSION-CONTEXT.md
+    - skills/dignified-python-310/dignified-python-core.md
+    - skills/dignified-python-310/type-annotations.md
+    - skills/dignified-python-310/checklist.md
+    - skills/dignified-python-310/cli-patterns.md
+    - skills/dignified-python-310/subprocess.md
+    - skills/dignified-python-310/pattern-table.md
+    # Python 3.11
     - skills/dignified-python-311/SKILL.md
     - skills/dignified-python-311/VERSION-CONTEXT.md
+    - skills/dignified-python-311/dignified-python-core.md
+    - skills/dignified-python-311/type-annotations.md
+    - skills/dignified-python-311/checklist.md
+    - skills/dignified-python-311/cli-patterns.md
+    - skills/dignified-python-311/subprocess.md
+    - skills/dignified-python-311/pattern-table.md
+    # Python 3.12
     - skills/dignified-python-312/SKILL.md
     - skills/dignified-python-312/VERSION-CONTEXT.md
+    - skills/dignified-python-312/dignified-python-core.md
+    - skills/dignified-python-312/type-annotations.md
+    - skills/dignified-python-312/checklist.md
+    - skills/dignified-python-312/cli-patterns.md
+    - skills/dignified-python-312/subprocess.md
+    - skills/dignified-python-312/pattern-table.md
+    # Python 3.13
     - skills/dignified-python-313/SKILL.md
     - skills/dignified-python-313/VERSION-CONTEXT.md
-  doc:
-    - docs/dignified-python/dignified-python-core.md
-    - docs/dignified-python/type-annotations-common.md
-    - docs/dignified-python/version-specific/310/type-annotations.md
-    - docs/dignified-python/version-specific/310/checklist.md
-    - docs/dignified-python/version-specific/311/type-annotations.md
-    - docs/dignified-python/version-specific/311/checklist.md
-    - docs/dignified-python/version-specific/312/type-annotations.md
-    - docs/dignified-python/version-specific/312/checklist.md
-    - docs/dignified-python/version-specific/313/type-annotations-delta.md
-    - docs/dignified-python/version-specific/313/checklist.md
+    - skills/dignified-python-313/dignified-python-core.md
+    - skills/dignified-python-313/type-annotations-common.md
+    - skills/dignified-python-313/type-annotations-delta.md
+    - skills/dignified-python-313/checklist.md
+    - skills/dignified-python-313/cli-patterns.md
+    - skills/dignified-python-313/subprocess.md
+    - skills/dignified-python-313/pattern-table.md
 scripts:
   - name: version-aware-reminder-hook
     path: scripts/dignified-python/version_aware_reminder_hook.py

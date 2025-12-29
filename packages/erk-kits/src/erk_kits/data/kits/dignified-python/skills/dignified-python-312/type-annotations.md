@@ -1,24 +1,21 @@
-# Type Annotations - Python 3.13
+---
+erk:
+  kit: dignified-python
+---
 
-This document provides complete, canonical type annotation guidance for Python 3.13.
+# Type Annotations - Python 3.12
+
+This document provides complete, canonical type annotation guidance for Python 3.12.
 
 ## Overview
 
-Python 3.13 implements PEP 649 (Deferred Evaluation of Annotations), fundamentally changing how annotations are evaluated. **The key change: forward references and circular imports work naturally without `from __future__ import annotations`.**
+Python 3.12 introduces PEP 695, a major syntactic improvement for generic types. The new type parameter syntax makes generic functions and classes significantly more readable. All syntax from 3.10 and 3.11 continues to work.
 
-All type features from previous versions (3.10-3.12) continue to work.
-
-**What's new in 3.13:**
-
-- PEP 649 deferred annotation evaluation
-- Forward references work naturally (no quotes, no `from __future__`)
-- Circular imports no longer cause annotation errors
-- **DO NOT use `from __future__ import annotations`**
-
-**Available from 3.12:**
+**What's new in 3.12:**
 
 - PEP 695 type parameter syntax: `def func[T](x: T) -> T`
 - `type` statement for better type aliases
+- Cleaner generic class syntax
 
 **Available from 3.11:**
 
@@ -38,7 +35,7 @@ All type features from previous versions (3.10-3.12) continue to work.
 - `TYPE_CHECKING` for conditional imports
 - `Any` (use sparingly)
 
-## Complete Type Annotation Syntax for Python 3.13
+## Complete Type Annotation Syntax for Python 3.12
 
 ### Basic Collection Types
 
@@ -119,7 +116,7 @@ class Builder:
         return self
 ```
 
-### Generic Functions with PEP 695
+### Generic Functions with PEP 695 (NEW in 3.12)
 
 ✅ **PREFERRED** - Use PEP 695 type parameter syntax:
 
@@ -155,7 +152,7 @@ def first(items: list[T]) -> T | None:
 
 **Note**: Prefer PEP 695 syntax for simple generics. TypeVar is still needed for constraints/bounds.
 
-### Generic Classes with PEP 695
+### Generic Classes with PEP 695 (NEW in 3.12)
 
 ✅ **PREFERRED** - Use PEP 695 class syntax:
 
@@ -231,7 +228,7 @@ def add[Numeric](a: Numeric, b: Numeric) -> Numeric:
     return a + b
 ```
 
-### Type Aliases with type Statement
+### Type Aliases with type Statement (NEW in 3.12)
 
 ✅ **PREFERRED** - Use `type` statement:
 
@@ -276,52 +273,43 @@ callback: Callable[[], None] = lambda: None
 validator: Callable[[str, int], bool] = lambda s, i: len(s) > i
 ```
 
-### Forward References and Circular Imports (NEW in 3.13)
+### When from **future** import annotations is Needed
 
-✅ **CORRECT** - Just works naturally with PEP 649:
+Use `from __future__ import annotations` when you encounter:
+
+**Forward references** (class referencing itself):
 
 ```python
-# Forward reference - no quotes needed!
+from __future__ import annotations
+
 class Node:
     def __init__(self, value: int, parent: Node | None = None):
         self.value = value
         self.parent = parent
+```
 
-# Circular imports - just works!
+**Circular type imports**:
+
+```python
 # a.py
-from b import B
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from b import B
 
 class A:
     def method(self) -> B:
         ...
-
-# b.py
-from a import A
-
-class B:
-    def method(self) -> A:
-        ...
-
-# Recursive types - no future needed!
-type JsonValue = dict[str, JsonValue] | list[JsonValue] | str | int | float | bool | None
 ```
 
-❌ **WRONG** - Don't use `from __future__ import annotations`:
+**Complex recursive types**:
 
 ```python
-from __future__ import annotations  # DON'T DO THIS in Python 3.13
+from __future__ import annotations
 
-class Node:
-    def __init__(self, value: int, parent: Node | None = None):
-        ...
+type JsonValue = dict[str, JsonValue] | list[JsonValue] | str | int | float | bool | None
 ```
-
-**Why avoid `from __future__ import annotations` in 3.13:**
-
-- Unnecessary - PEP 649 provides better default behavior
-- Can cause confusion
-- Masks the native 3.13 deferred evaluation
-- Prevents you from leveraging improvements
 
 ### Interfaces: ABC vs Protocol
 
@@ -356,48 +344,42 @@ def render(obj: Drawable) -> None:
 
 ## Complete Examples
 
-### Tree Structure with Natural Forward References
+### Generic Stack with PEP 695
 
 ```python
 from typing import Self
 
-class Node[T]:
-    """Tree node - forward reference works naturally in 3.13!"""
+class Stack[T]:
+    """Type-safe stack with PEP 695 syntax."""
 
-    def __init__(
-        self,
-        value: T,
-        parent: Node[T] | None = None,  # Forward ref, no quotes!
-        children: list[Node[T]] | None = None,  # Forward ref, no quotes!
-    ) -> None:
-        self.value = value
-        self.parent = parent
-        self.children = children or []
+    def __init__(self) -> None:
+        self._items: list[T] = []
 
-    def add_child(self, child: Node[T]) -> Self:
-        """Add child and return self for chaining."""
-        self.children.append(child)
-        child.parent = self
+    def push(self, item: T) -> Self:
+        """Push item and return self for chaining."""
+        self._items.append(item)
         return self
 
-    def find(self, predicate: Callable[[T], bool]) -> Node[T] | None:
-        """Find first node matching predicate."""
-        from collections.abc import Callable
+    def pop(self) -> T | None:
+        """Pop item or return None if empty."""
+        if not self._items:
+            return None
+        return self._items.pop()
 
-        if predicate(self.value):
-            return self
+    def peek(self) -> T | None:
+        """Peek at top item without removing."""
+        if not self._items:
+            return None
+        return self._items[-1]
 
-        for child in self.children:
-            result = child.find(predicate)
-            if result:
-                return result
+    def is_empty(self) -> bool:
+        """Check if stack is empty."""
+        return len(self._items) == 0
 
-        return None
-
-# Usage - all type-safe with no __future__ import!
-root = Node[int](1)
-root.add_child(Node[int](2)).add_child(Node[int](3))
-node = root.find(lambda x: x == 2)  # Type: Node[int] | None
+# Usage
+numbers = Stack[int]()
+numbers.push(1).push(2).push(3)
+top = numbers.pop()  # Type checker knows this is int | None
 ```
 
 ### Generic Repository with PEP 695
@@ -407,7 +389,7 @@ from abc import ABC, abstractmethod
 from typing import Self
 
 class Repository[T]:
-    """Abstract repository - generic parameter with PEP 695."""
+    """Abstract repository with generic type parameter."""
 
     @abstractmethod
     def get(self, id: str) -> T | None:
@@ -438,6 +420,7 @@ class InMemoryRepository[T](Repository[T]):
         return self._storage.get(id)
 
     def save(self, entity: T) -> Self:
+        # Assume entity has 'id' attribute
         entity_id = str(getattr(entity, "id", id(entity)))
         self._storage[entity_id] = entity
         return self
@@ -461,40 +444,34 @@ repo.save(User("1", "Alice")).save(User("2", "Bob"))
 user = repo.get("1")  # Type: User | None
 ```
 
-### Complex Recursive Types
+### Type Aliases with type Statement
 
 ```python
-# Recursive type - works naturally in 3.13!
+# Simple aliases
+type UserId = str
+type ErrorMessage = str
+
+# Complex nested types
 type JsonValue = dict[str, JsonValue] | list[JsonValue] | str | int | float | bool | None
 
-def parse_json(text: str) -> JsonValue:
-    """Parse JSON text to JsonValue."""
-    import json
-    return json.loads(text)
+# Generic type aliases
+type Result[T] = tuple[T, ErrorMessage | None]
+type AsyncResult[T] = tuple[T | None, ErrorMessage | None]
 
-def validate_config(data: JsonValue) -> bool:
-    """Validate configuration data."""
-    if not isinstance(data, dict):
-        return False
-    # Validation logic...
-    return True
+def parse_int(value: str) -> Result[int]:
+    """Parse string to int, return result with optional error."""
+    try:
+        return (int(value), None)
+    except ValueError as e:
+        return (0, str(e))
 
-# Generic result type with recursive structure
-type Result[T] = tuple[T, str | None]
-type NestedResult[T] = Result[T | NestedResult[T]]
-
-def deep_parse(value: str, depth: int) -> NestedResult[int]:
-    """Parse with nested results."""
-    if depth == 0:
-        try:
-            return (int(value), None)
-        except ValueError as e:
-            return (0, str(e))
-    # Recursive parsing...
-    return ((int(value), None), None)
+def fetch_user(id: UserId) -> AsyncResult[dict[str, str]]:
+    """Fetch user data asynchronously."""
+    # Implementation...
+    return ({"id": id, "name": "Alice"}, None)
 ```
 
-### Builder Pattern with Self and Generics
+### Builder Pattern with Self and PEP 695
 
 ```python
 from typing import Self
@@ -525,8 +502,6 @@ class QueryBuilder[T]:
         return query
 
 # Usage
-from dataclasses import dataclass
-
 @dataclass
 class User:
     name: str
@@ -542,36 +517,36 @@ query = (
 )
 ```
 
-### Circular Module References
+### Generic Function Utilities
 
 ```python
-# models/user.py
-from models.post import Post  # Import works!
+def map_list[T, U](items: list[T], func: Callable[[T], U]) -> list[U]:
+    """Map function over list items."""
+    from collections.abc import Callable
+    return [func(item) for item in items]
 
-class User:
-    """User model with posts."""
+def filter_list[T](items: list[T], predicate: Callable[[T], bool]) -> list[T]:
+    """Filter list by predicate."""
+    from collections.abc import Callable
+    return [item for item in items if predicate(item)]
 
-    def __init__(self, id: str, name: str) -> None:
-        self.id = id
-        self.name = name
-        self.posts: list[Post] = []
+def reduce_list[T, U](
+    items: list[T],
+    func: Callable[[U, T], U],
+    initial: U,
+) -> U:
+    """Reduce list to single value."""
+    from collections.abc import Callable
+    result = initial
+    for item in items:
+        result = func(result, item)
+    return result
 
-    def add_post(self, post: Post) -> None:
-        """Add post to user."""
-        self.posts.append(post)
-
-# models/post.py
-from models.user import User  # Circular import works!
-
-class Post:
-    """Post model with author."""
-
-    def __init__(self, id: str, title: str, author: User) -> None:
-        self.id = id
-        self.title = title
-        self.author = author
-
-# No __future__ import needed - PEP 649 handles it!
+# Usage
+numbers = [1, 2, 3, 4, 5]
+doubled = map_list(numbers, lambda x: x * 2)  # list[int]
+evens = filter_list(numbers, lambda x: x % 2 == 0)  # list[int]
+sum_val = reduce_list(numbers, lambda acc, x: acc + x, 0)  # int
 ```
 
 ## Type Checking Rules
@@ -649,42 +624,6 @@ def first_or_default[T](items: list[T], default: T) -> T:
     return items[0]
 ```
 
-## Critical Guidelines for Python 3.13
-
-### DO NOT use from **future** import annotations
-
-🔴 **FORBIDDEN** in Python 3.13:
-
-```python
-from __future__ import annotations  # DON'T DO THIS
-```
-
-**Why:**
-
-- PEP 649 provides superior deferred evaluation by default
-- Forward references work naturally without it
-- Circular imports work naturally without it
-- Using it masks the improved 3.13 behavior
-- It's unnecessary and can cause confusion
-
-### DO use natural forward references
-
-✅ **CORRECT** - Just write the type naturally:
-
-```python
-class Node:
-    def __init__(self, parent: Node | None = None):  # Works!
-        self.parent = parent
-```
-
-❌ **WRONG** - Don't use quoted strings:
-
-```python
-class Node:
-    def __init__(self, parent: "Node | None" = None):  # Unnecessary
-        self.parent = parent
-```
-
 ## When to Use PEP 695 vs TypeVar
 
 **Use PEP 695 for**:
@@ -701,29 +640,25 @@ class Node:
 - Covariant/contravariant type variables
 - Reusing same TypeVar across multiple functions
 
-## Migration from Python 3.12
+## Migration from Python 3.11
 
-If upgrading from Python 3.12:
+If upgrading from Python 3.11:
 
-1. **Remove `from __future__ import annotations`**:
-   - It's no longer needed
-   - PEP 649 provides better behavior
+1. **Consider migrating to PEP 695 syntax**:
+   - `TypeVar` + `def func(x: T) -> T` → `def func[T](x: T) -> T`
+   - `Generic[T]` + `class C(Generic[T])` → `class C[T]`
 
-2. **Remove quoted forward references**:
-   - `parent: "Node"` → `parent: Node`
-   - Just works naturally now
+2. **Consider using `type` statement for aliases**:
+   - `Config = dict[str, str]` → `type Config = dict[str, str]`
 
-3. **Simplify circular imports**:
-   - Remove `TYPE_CHECKING` guards if only used for annotations
-   - Direct imports now work fine
+3. **Keep TypeVar for constraints**:
+   - `TypeVar` with constraints still needed
 
-4. **All existing 3.12 syntax continues to work**:
-   - PEP 695 syntax still preferred
+4. **All existing 3.11 syntax continues to work**:
    - `Self` type still preferred
-   - `type` statement still preferred
    - Union with `|` still preferred
 
 ## References
 
-- [PEP 649: Deferred Evaluation of Annotations](https://peps.python.org/pep-0649/)
-- [Python 3.13 What's New](https://docs.python.org/3.13/whatsnew/3.13.html)
+- [PEP 695: Type Parameter Syntax](https://peps.python.org/pep-0695/)
+- [Python 3.12 What's New - Type Hints](https://docs.python.org/3.12/whatsnew/3.12.html)

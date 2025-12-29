@@ -3,74 +3,156 @@ from pathlib import Path
 import pytest
 
 
-def test_shared_files_exist():
-    """Verify all universal files exist in .erk/docs/kits/dignified-python/ directory."""
-    # Documentation now lives in .erk/docs/kits/dignified-python/ (project-level)
-    # This test verifies the installed documentation structure
+def test_skill_directories_self_contained():
+    """Verify each skill directory contains all required documentation files."""
     # From tests/integration/kits/kits/ -> go up 5 levels to project root
-    repo_root = Path(__file__).parent.parent.parent.parent.parent
-    docs_dir = repo_root / ".erk" / "docs" / "kits" / "dignified-python"
+    project_root = Path(__file__).parent.parent.parent.parent.parent
+    kits_dir = project_root / "packages" / "erk-kits" / "src" / "erk_kits" / "data" / "kits"
 
-    # Check universal reference files at root level
-    # Note: Core standards have been consolidated into dignified-python-core.md
-    # CLI patterns and subprocess guidance are now in the core file
-    universal_files = [
-        "dignified-python-core.md",
-        "type-annotations-common.md",
-    ]
-
-    for filename in universal_files:
-        file_path = docs_dir / filename
-        if not file_path.exists():
-            pytest.fail(f"Documentation file missing: .erk/docs/kits/dignified-python/{filename}")
-
-
-def test_type_annotations_files_exist():
-    """Verify all version-specific type annotation files exist."""
-    # From tests/integration/kits/kits/ -> go up 5 levels to project root
-    repo_root = Path(__file__).parent.parent.parent.parent.parent
-    docs_dir = repo_root / ".erk" / "docs" / "kits" / "dignified-python"
-    version_specific_dir = docs_dir / "version-specific"
-
-    if not version_specific_dir.exists():
-        pytest.fail(
-            "Version-specific directory missing: .erk/docs/kits/dignified-python/version-specific/"
-        )
-
-    # Check version-specific files for each version
     versions = ["310", "311", "312", "313"]
-    # 310, 311, 312 have type-annotations.md, but 313 has type-annotations-delta.md
-    # All versions have checklist.md
 
     for version in versions:
-        version_dir = version_specific_dir / version
-        if not version_dir.exists():
-            pytest.fail(
-                f"Version directory missing: "
-                f".erk/docs/kits/dignified-python/version-specific/{version}/"
-            )
+        skill_dir = kits_dir / "dignified-python" / "skills" / f"dignified-python-{version}"
 
-        # Check checklist.md (required for all versions)
-        checklist_file = version_dir / "checklist.md"
-        if not checklist_file.exists():
-            pytest.fail(
-                f"Version-specific file missing: "
-                f".erk/docs/kits/dignified-python/version-specific/{version}/checklist.md"
-            )
+        # Required files for all versions
+        required_files = [
+            "SKILL.md",
+            "VERSION-CONTEXT.md",
+            "dignified-python-core.md",
+            "checklist.md",
+            "cli-patterns.md",
+            "subprocess.md",
+            "pattern-table.md",
+        ]
 
-        # Check type annotations file (name varies by version)
+        # Version-specific type annotation files
         if version == "313":
-            type_file = version_dir / "type-annotations-delta.md"
-            type_filename = "type-annotations-delta.md"
+            required_files.extend(["type-annotations-common.md", "type-annotations-delta.md"])
         else:
-            type_file = version_dir / "type-annotations.md"
-            type_filename = "type-annotations.md"
+            required_files.append("type-annotations.md")
 
-        if not type_file.exists():
+        for filename in required_files:
+            file_path = skill_dir / filename
+            if not file_path.exists():
+                pytest.fail(
+                    f"Self-contained skill {version} missing file: {filename}\n"
+                    f"Expected at: {file_path}"
+                )
+
+
+def test_skill_references_use_relative_paths():
+    """Verify SKILL.md files use relative references (not absolute paths)."""
+    # From tests/integration/kits/kits/ -> go up 5 levels to project root
+    project_root = Path(__file__).parent.parent.parent.parent.parent
+    kits_dir = project_root / "packages" / "erk-kits" / "src" / "erk_kits" / "data" / "kits"
+
+    versions = ["310", "311", "312", "313"]
+
+    for version in versions:
+        skill_md = (
+            kits_dir / "dignified-python" / "skills" / f"dignified-python-{version}" / "SKILL.md"
+        )
+        if not skill_md.exists():
+            continue  # Skip if file doesn't exist (caught by other test)
+
+        content = skill_md.read_text(encoding="utf-8")
+
+        # Check that SKILL.md uses relative references (e.g., @dignified-python-core.md)
+        # and does NOT use absolute paths (e.g., @.erk/docs/kits/dignified-python/)
+        forbidden_patterns = [
+            "@.erk/docs/",
+            "@.erk/docs/kits/dignified-python/",
+            "@.claude/skills/",
+        ]
+
+        for pattern in forbidden_patterns:
+            if pattern in content:
+                pytest.fail(
+                    f"Skill {version} SKILL.md uses absolute path reference: '{pattern}'\n"
+                    f"SKILL.md should use relative references (e.g., @dignified-python-core.md)"
+                )
+
+        # Verify relative references exist
+        expected_relative_refs = ["@dignified-python-core.md", "@checklist.md"]
+
+        for ref in expected_relative_refs:
+            if ref not in content:
+                pytest.fail(
+                    f"Skill {version} SKILL.md missing expected relative reference: {ref}"
+                )
+
+
+def test_package_and_project_in_sync():
+    """Verify package skill files match project .claude/skills/ files."""
+    # From tests/integration/kits/kits/ -> go up 5 levels to project root
+    project_root = Path(__file__).parent.parent.parent.parent.parent
+
+    package_kits_dir = (
+        project_root / "packages" / "erk-kits" / "src" / "erk_kits" / "data" / "kits"
+    )
+    project_skills_dir = project_root / ".claude" / "skills"
+
+    versions = ["310", "311", "312", "313"]
+
+    for version in versions:
+        package_skill_dir = (
+            package_kits_dir / "dignified-python" / "skills" / f"dignified-python-{version}"
+        )
+        project_skill_dir = project_skills_dir / f"dignified-python-{version}"
+
+        if not project_skill_dir.exists():
             pytest.fail(
-                f"Version-specific file missing: "
-                f".erk/docs/kits/dignified-python/version-specific/{version}/{type_filename}"
+                f"Project skill directory missing: "
+                f".claude/skills/dignified-python-{version}/"
             )
+
+        # Get all .md files from package
+        package_files = set(f.name for f in package_skill_dir.glob("*.md"))
+        project_files = set(f.name for f in project_skill_dir.glob("*.md"))
+
+        # Check package files exist in project
+        missing_in_project = package_files - project_files
+        if missing_in_project:
+            pytest.fail(
+                f"Skill {version} has files in package but missing in project:\n"
+                f"  {missing_in_project}\n"
+                f"Run 'erk dev kit-build' to sync."
+            )
+
+        # Check project files exist in package (extra files)
+        extra_in_project = project_files - package_files
+        if extra_in_project:
+            pytest.fail(
+                f"Skill {version} has extra files in project not in package:\n"
+                f"  {extra_in_project}\n"
+                f"These files should be in the package source."
+            )
+
+        # Verify file contents match
+        for filename in package_files:
+            package_content = (package_skill_dir / filename).read_text(encoding="utf-8")
+            project_content = (project_skill_dir / filename).read_text(encoding="utf-8")
+
+            if package_content != project_content:
+                pytest.fail(
+                    f"Skill {version}/{filename} content mismatch between package and project.\n"
+                    f"Run 'erk dev kit-build' to sync."
+                )
+
+
+def test_no_docs_in_erk_docs_kits():
+    """Verify dignified-python docs have been removed from .erk/docs/kits/."""
+    # From tests/integration/kits/kits/ -> go up 5 levels to project root
+    project_root = Path(__file__).parent.parent.parent.parent.parent
+    obsolete_docs_dir = project_root / ".erk" / "docs" / "kits" / "dignified-python"
+
+    if obsolete_docs_dir.exists():
+        pytest.fail(
+            "Obsolete documentation directory still exists: "
+            ".erk/docs/kits/dignified-python/\n"
+            "Documentation is now embedded in each skill directory.\n"
+            "Delete this directory: rm -rf .erk/docs/kits/dignified-python/"
+        )
 
 
 def test_unified_kit_structure():
@@ -90,7 +172,7 @@ def test_unified_kit_structure():
     if not hook_file.exists():
         pytest.fail("Unified kit missing hook file version_aware_reminder_hook.py")
 
-    # Check each version-specific skill exists
+    # Check each version-specific skill exists with full documentation
     versions = ["310", "311", "312", "313"]
     for version in versions:
         skill_dir = unified_kit_dir / "skills" / f"dignified-python-{version}"
@@ -105,9 +187,14 @@ def test_unified_kit_structure():
         if not version_context.exists():
             pytest.fail(f"Unified kit missing VERSION-CONTEXT.md for version {version}")
 
+        # Check dignified-python-core.md (embedded in each skill)
+        core_md = skill_dir / "dignified-python-core.md"
+        if not core_md.exists():
+            pytest.fail(f"Unified kit missing dignified-python-core.md for version {version}")
 
-def test_skill_references_correct_types():
-    """Verify each SKILL.md references correct documentation paths."""
+
+def test_all_doc_files_have_frontmatter():
+    """Verify all documentation files have required erk frontmatter."""
     # From tests/integration/kits/kits/ -> go up 5 levels to project root
     project_root = Path(__file__).parent.parent.parent.parent.parent
     kits_dir = project_root / "packages" / "erk-kits" / "src" / "erk_kits" / "data" / "kits"
@@ -115,74 +202,35 @@ def test_skill_references_correct_types():
     versions = ["310", "311", "312", "313"]
 
     for version in versions:
-        skill_md = (
-            kits_dir / "dignified-python" / "skills" / f"dignified-python-{version}" / "SKILL.md"
-        )
-        if not skill_md.exists():
-            continue  # Skip if file doesn't exist (caught by other test)
+        skill_dir = kits_dir / "dignified-python" / "skills" / f"dignified-python-{version}"
 
-        content = skill_md.read_text(encoding="utf-8")
+        # Get all .md files
+        md_files = list(skill_dir.glob("*.md"))
 
-        # Check that SKILL.md references .erk/docs/kits/dignified-python/ paths
-        expected_docs_path = "@.erk/docs/kits/dignified-python/"
-        expected_version_specific = f"@.erk/docs/kits/dignified-python/version-specific/{version}/"
+        for md_file in md_files:
+            content = md_file.read_text(encoding="utf-8")
 
-        has_docs_reference = expected_docs_path in content
-        has_version_specific_reference = expected_version_specific in content
-
-        if not (has_docs_reference and has_version_specific_reference):
-            pytest.fail(
-                f"Skill {version} SKILL.md does not properly reference documentation paths.\n"
-                f"Expected to find both:\n"
-                f"  - {expected_docs_path}\n"
-                f"  - {expected_version_specific}"
-            )
-
-
-def test_skill_components_exist():
-    """Verify core documentation file exists (skill components consolidated)."""
-    # From tests/integration/kits/kits/ -> go up 5 levels to project root
-    repo_root = Path(__file__).parent.parent.parent.parent.parent
-    docs_dir = repo_root / ".erk" / "docs" / "kits" / "dignified-python"
-
-    # Core components have been consolidated into dignified-python-core.md
-    core_file = docs_dir / "dignified-python-core.md"
-    if not core_file.exists():
-        pytest.fail(
-            "Core documentation file missing: "
-            ".erk/docs/kits/dignified-python/dignified-python-core.md"
-        )
-
-
-def test_no_version_specific_language_in_universal():
-    """Verify universal documentation files don't contain version-specific language."""
-    # From tests/integration/kits/kits/ -> go up 5 levels to project root
-    repo_root = Path(__file__).parent.parent.parent.parent.parent
-    docs_dir = repo_root / ".erk" / "docs" / "kits" / "dignified-python"
-
-    # Patterns that should NOT appear in universal files
-    prohibited_patterns = [
-        "Python 3.13+",
-        "3.13 and above",
-        "3.13 or higher",
-        "Python 3.13 only",
-        "Python 3.10+",
-        "3.10 and above",
-        "3.10 or higher",
-        "Python 3.10 only",
-    ]
-
-    # Get all markdown files at root level
-    # (excluding version-specific and skill-components subdirectories)
-    universal_files = [f for f in docs_dir.glob("*.md") if f.is_file() and f.parent == docs_dir]
-
-    for file_path in universal_files:
-        content = file_path.read_text(encoding="utf-8")
-
-        for pattern in prohibited_patterns:
-            if pattern in content:
+            # Check for frontmatter (must start with ---)
+            if not content.strip().startswith("---"):
                 pytest.fail(
-                    f"Universal documentation file {file_path.name} contains version-specific "
-                    f"language: '{pattern}'\n"
-                    f"Universal files must be version-neutral."
+                    f"File missing frontmatter: {md_file.relative_to(project_root)}\n"
+                    f"All doc files must have 'erk: kit: dignified-python' frontmatter."
+                )
+
+            # Check for erk: kit: dignified-python in frontmatter
+            # Find the end of frontmatter
+            if content.count("---") < 2:
+                pytest.fail(
+                    f"Invalid frontmatter in: {md_file.relative_to(project_root)}\n"
+                    f"Frontmatter must be enclosed with --- delimiters."
+                )
+
+            frontmatter_end = content.find("---", 3)  # Skip first ---
+            frontmatter = content[3:frontmatter_end]
+
+            if "kit: dignified-python" not in frontmatter:
+                pytest.fail(
+                    f"File missing kit identifier in frontmatter: "
+                    f"{md_file.relative_to(project_root)}\n"
+                    f"Frontmatter must include 'erk: kit: dignified-python'."
                 )

@@ -96,24 +96,43 @@ kit_id = "dignified-python"
 source_type = "bundled"
 version = "0.2.8"
 artifacts = [
+    # Python 3.10
     ".claude/skills/dignified-python-310/SKILL.md",
     ".claude/skills/dignified-python-310/VERSION-CONTEXT.md",
+    ".claude/skills/dignified-python-310/dignified-python-core.md",
+    ".claude/skills/dignified-python-310/type-annotations.md",
+    ".claude/skills/dignified-python-310/checklist.md",
+    ".claude/skills/dignified-python-310/cli-patterns.md",
+    ".claude/skills/dignified-python-310/subprocess.md",
+    ".claude/skills/dignified-python-310/pattern-table.md",
+    # Python 3.11
     ".claude/skills/dignified-python-311/SKILL.md",
     ".claude/skills/dignified-python-311/VERSION-CONTEXT.md",
+    ".claude/skills/dignified-python-311/dignified-python-core.md",
+    ".claude/skills/dignified-python-311/type-annotations.md",
+    ".claude/skills/dignified-python-311/checklist.md",
+    ".claude/skills/dignified-python-311/cli-patterns.md",
+    ".claude/skills/dignified-python-311/subprocess.md",
+    ".claude/skills/dignified-python-311/pattern-table.md",
+    # Python 3.12
     ".claude/skills/dignified-python-312/SKILL.md",
     ".claude/skills/dignified-python-312/VERSION-CONTEXT.md",
+    ".claude/skills/dignified-python-312/dignified-python-core.md",
+    ".claude/skills/dignified-python-312/type-annotations.md",
+    ".claude/skills/dignified-python-312/checklist.md",
+    ".claude/skills/dignified-python-312/cli-patterns.md",
+    ".claude/skills/dignified-python-312/subprocess.md",
+    ".claude/skills/dignified-python-312/pattern-table.md",
+    # Python 3.13
     ".claude/skills/dignified-python-313/SKILL.md",
     ".claude/skills/dignified-python-313/VERSION-CONTEXT.md",
-    ".erk/docs/kits/dignified-python/dignified-python-core.md",
-    ".erk/docs/kits/dignified-python/type-annotations-common.md",
-    ".erk/docs/kits/dignified-python/version-specific/310/type-annotations.md",
-    ".erk/docs/kits/dignified-python/version-specific/310/checklist.md",
-    ".erk/docs/kits/dignified-python/version-specific/311/type-annotations.md",
-    ".erk/docs/kits/dignified-python/version-specific/311/checklist.md",
-    ".erk/docs/kits/dignified-python/version-specific/312/type-annotations.md",
-    ".erk/docs/kits/dignified-python/version-specific/312/checklist.md",
-    ".erk/docs/kits/dignified-python/version-specific/313/type-annotations-delta.md",
-    ".erk/docs/kits/dignified-python/version-specific/313/checklist.md",
+    ".claude/skills/dignified-python-313/dignified-python-core.md",
+    ".claude/skills/dignified-python-313/type-annotations-common.md",
+    ".claude/skills/dignified-python-313/type-annotations-delta.md",
+    ".claude/skills/dignified-python-313/checklist.md",
+    ".claude/skills/dignified-python-313/cli-patterns.md",
+    ".claude/skills/dignified-python-313/subprocess.md",
+    ".claude/skills/dignified-python-313/pattern-table.md",
 ]
 
 [[kits.dignified-python.hooks]]

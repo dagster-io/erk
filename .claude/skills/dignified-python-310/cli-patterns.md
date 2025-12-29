@@ -1,3 +1,8 @@
+---
+erk:
+  kit: dignified-python
+---
+
 # CLI Patterns - Click Best Practices
 
 ## Core Rules
