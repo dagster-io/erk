@@ -12,8 +12,7 @@ For conditional loading of specialized patterns:
 - CLI development → Load `cli-patterns.md`
 - Subprocess operations → Load `subprocess.md`
 
-lkajsdlkjasdlfkjsalkfjd
----
+## lkajsdlkjasdlfkjsalkfjd
 
 ## The Cornerstone: LBYL Over EAFP
 
