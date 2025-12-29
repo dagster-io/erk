@@ -60,13 +60,13 @@ Does command orchestrate 3+ steps?
 
 **Examples:**
 
-| Scenario                                                        | Delegate? | Rationale                                                    |
-| --------------------------------------------------------------- | --------- | ------------------------------------------------------------ |
-| Run pytest with specialized output parsing                      | ✅ Yes    | Complex parsing, multiple tools (devrun agent)               |
-| Create worktree with validation, JSON parsing, formatted output | ✅ Yes    | Multi-step workflow with error handling (planned-wt-creator) |
-| Submit branch: stage, diff analysis, commit, PR creation        | ✅ Yes    | Complex orchestration with git + GitHub CLI (git-pr-push-agent)|
-| Run single git command with no processing                       | ❌ No     | Simple wrapper, no orchestration needed                      |
-| Display help text or documentation                              | ❌ No     | No workflow, just content display                            |
+| Scenario                                                        | Delegate? | Rationale                                                       |
+| --------------------------------------------------------------- | --------- | --------------------------------------------------------------- |
+| Run pytest with specialized output parsing                      | ✅ Yes    | Complex parsing, multiple tools (devrun agent)                  |
+| Create worktree with validation, JSON parsing, formatted output | ✅ Yes    | Multi-step workflow with error handling (planned-wt-creator)    |
+| Submit branch: stage, diff analysis, commit, PR creation        | ✅ Yes    | Complex orchestration with git + GitHub CLI (git-pr-push-agent) |
+| Run single git command with no processing                       | ❌ No     | Simple wrapper, no orchestration needed                         |
+| Display help text or documentation                              | ❌ No     | No workflow, just content display                               |
 
 ## Delegation Patterns
 
