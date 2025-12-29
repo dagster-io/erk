@@ -124,25 +124,3 @@ invocation = "erk kit exec dignified-python version-aware-reminder-hook"
 description = "Output dignified-python compliance reminder when Python files are in context"
 timeout = 30
 
-[kits.fake-driven-testing]
-kit_id = "fake-driven-testing"
-source_type = "bundled"
-version = "0.2.8"
-artifacts = [
-    ".claude/skills/fake-driven-testing/SKILL.md",
-    ".claude/skills/fake-driven-testing/references/anti-patterns.md",
-    ".claude/skills/fake-driven-testing/references/gateway-architecture.md",
-    ".claude/skills/fake-driven-testing/references/patterns.md",
-    ".claude/skills/fake-driven-testing/references/python-specific.md",
-    ".claude/skills/fake-driven-testing/references/quick-reference.md",
-    ".claude/skills/fake-driven-testing/references/testing-strategy.md",
-    ".claude/skills/fake-driven-testing/references/workflows.md",
-]
-
-[[kits.fake-driven-testing.hooks]]
-id = "fake-driven-testing-reminder-hook"
-lifecycle = "UserPromptSubmit"
-matcher = "*.py"
-invocation = "erk kit exec fake-driven-testing fake-driven-testing-reminder-hook"
-description = "Output fake-driven-testing reminder when Python files are in context"
-timeout = 30
