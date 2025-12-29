@@ -2,7 +2,7 @@
 description: Create git commit and push branch as PR using git + GitHub CLI
 argument-hint: <description>
 erk:
-  kit: git
+  kit: erk
 ---
 
 # Push PR (Git Only)
@@ -13,15 +13,15 @@ Automatically create a git commit with a helpful summary message and push the cu
 
 ```bash
 # Invoke the command (description argument is optional but recommended)
-/git:pr-push "Add user authentication feature"
+/erk:git-pr-push "Add user authentication feature"
 
 # Without argument (will analyze changes automatically)
-/git:pr-push
+/erk:git-pr-push
 ```
 
 ## What This Command Does
 
-Delegates the complete git-only push-pr workflow to the `git-branch-submitter` agent, which handles:
+Delegates the complete git-only push-pr workflow to the `git-pr-push-agent` agent, which handles:
 
 1. Check for uncommitted changes and stage/commit them if needed
 2. Analyze git diff to generate meaningful commit message
@@ -32,11 +32,11 @@ Delegates the complete git-only push-pr workflow to the `git-branch-submitter` a
 
 ## Key Differences from /gt:submit-branch
 
-- ✅ Uses standard `git push` instead of `gt submit`
-- ✅ Uses `gh pr create` instead of Graphite's PR submission
-- ✅ No stack operations (no restack, no stack metadata updates)
-- ✅ Simpler workflow: git → push → PR (no Graphite layer)
-- ✅ Works in any git repository (not just Graphite-enabled repos)
+- Uses standard `git push` instead of `gt submit`
+- Uses `gh pr create` instead of Graphite's PR submission
+- No stack operations (no restack, no stack metadata updates)
+- Simpler workflow: git -> push -> PR (no Graphite layer)
+- Works in any git repository (not just Graphite-enabled repos)
 
 ## Prerequisites
 

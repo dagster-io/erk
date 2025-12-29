@@ -289,7 +289,7 @@ This ensures only one implementation runs per issue at a time.
 #### Phase 5: Submission
 
 - Stage implementation changes (NOT `.worker-impl/` deletion)
-- Run `/git:pr-push` to create proper commit message
+- Run `/erk:git-pr-push` to create proper commit message
 - Clean up `.worker-impl/` in separate commit
 - Mark PR ready for review
 - Update PR body with implementation summary
@@ -377,7 +377,7 @@ erk kit exec erk get-progress       # Show current progress
 
 The final phase prepares the PR for review and merge.
 
-### `/git:pr-push` Submission
+### `/erk:git-pr-push` Submission
 
 The pure git submission flow:
 

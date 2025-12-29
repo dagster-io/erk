@@ -16,7 +16,3 @@ kits:
     source_type: bundled
     description: 5-layer testing architecture with ABC-based fakes for integration boundaries
     version: "0.1.0"
-  - kit_id: git
-    source_type: bundled
-    description: Git reference documentation with git-reference.md skill
-    version: "0.1.0"

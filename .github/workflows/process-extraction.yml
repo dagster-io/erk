@@ -146,7 +146,7 @@ jobs:
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
-            "/git:pr-push Documentation extraction from issue #$ISSUE_NUMBER"
+            "/erk:git-pr-push Documentation extraction from issue #$ISSUE_NUMBER"
 
           PR_URL=$(gh pr view "$BRANCH_NAME" --json url -q '.url' 2>/dev/null || echo "")
           echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT

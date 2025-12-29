@@ -190,7 +190,7 @@ jobs:
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
-            "/git:pr-push Implement issue #$ISSUE_NUMBER"
+            "/erk:git-pr-push Implement issue #$ISSUE_NUMBER"
           echo "impl_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
       - name: Mark PR ready for review

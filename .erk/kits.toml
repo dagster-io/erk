@@ -5,6 +5,7 @@ kit_id = "erk"
 source_type = "bundled"
 version = "0.2.8"
 artifacts = [
+    ".claude/agents/erk/git-pr-push-agent.md",
     ".claude/commands/erk/plan-implement.md",
     ".claude/commands/erk/merge-conflicts-fix.md",
     ".claude/commands/erk/plan-submit.md",
@@ -15,6 +16,7 @@ artifacts = [
     ".claude/commands/erk/pr-submit.md",
     ".claude/skills/gt-graphite/SKILL.md",
     ".claude/skills/gt-graphite/references/gt-reference.md",
+    ".claude/commands/erk/git-pr-push.md",
     ".erk/docs/kits/erk/EXAMPLES.md",
     ".erk/docs/kits/erk/includes/conflict-resolution.md",
     ".erk/docs/kits/erk/includes/create-github-issue.md",
@@ -52,24 +54,6 @@ matcher = "*"
 invocation = "erk kit exec erk tripwires-reminder-hook"
 description = "Reminds Claude to check tripwires before common operations"
 timeout = 30
-
-[kits.gt]
-kit_id = "gt"
-source_type = "bundled"
-version = "0.2.8"
-artifacts = [
-    ".claude/skills/gt-graphite/SKILL.md",
-    ".claude/skills/gt-graphite/references/gt-reference.md",
-]
-
-[kits.git]
-kit_id = "git"
-source_type = "bundled"
-version = "0.2.8"
-artifacts = [
-    ".claude/commands/git/pr-push.md",
-    ".claude/agents/git/git-branch-submitter.md",
-]
 
 [kits.devrun]
 kit_id = "devrun"
@@ -135,4 +119,3 @@ matcher = "*.py"
 invocation = "erk kit exec dignified-python version-aware-reminder-hook"
 description = "Output dignified-python compliance reminder when Python files are in context"
 timeout = 30
-
