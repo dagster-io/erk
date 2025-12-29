@@ -16,12 +16,11 @@ from erk.cli.subprocess_utils import run_with_error_reporting
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_metadata import set_worktree_project
-from erk_shared.github.issues import IssueInfo
 from erk_shared.impl_folder import create_impl_folder, get_impl_path, save_issue_reference
 from erk_shared.issue_workflow import (
     IssueBranchSetup,
     IssueValidationFailed,
-    prepare_issue_for_worktree,
+    prepare_plan_for_worktree,
 )
 from erk_shared.naming import (
     default_branch_for_worktree,
@@ -32,6 +31,7 @@ from erk_shared.naming import (
     strip_plan_from_filename,
 )
 from erk_shared.output.output import user_output
+from erk_shared.plan_store.types import Plan
 
 
 def run_post_worktree_setup(
@@ -582,7 +582,7 @@ def create_wt(
 
     # Initialize variables used in conditional blocks (for type checking)
     issue_number_parsed: int | None = None
-    issue_info: IssueInfo | None = None
+    plan: Plan | None = None
 
     # Handle --from-current-branch flag
     if from_current_branch:
@@ -676,9 +676,9 @@ def create_wt(
             "issue_number_parsed must be set when from_plan is True"
         )
 
-        # Fetch issue using integration layer
+        # Fetch plan using plan_store (composed from issues layer)
         try:
-            issue_info = ctx.issues.get_issue(repo.root, issue_number_parsed)
+            plan = ctx.plan_store.get_plan(repo.root, str(issue_number_parsed))
         except RuntimeError as e:
             user_output(
                 click.style("Error: ", fg="red")
@@ -693,7 +693,7 @@ def create_wt(
 
         # Prepare and validate using shared helper (returns union type)
         trunk_branch = ctx.git.detect_trunk_branch(repo.root)
-        result = prepare_issue_for_worktree(issue_info, ctx.time.now())
+        result = prepare_plan_for_worktree(plan, ctx.time.now())
 
         if isinstance(result, IssueValidationFailed):
             user_output(click.style("Error: ", fg="red") + result.message)

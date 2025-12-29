@@ -104,7 +104,6 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk_shared.github.issues import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.objectives.storage import FakeObjectiveStore
-    from erk_shared.plan_store.fake import FakePlanStore
     from erk_shared.prompt_executor.fake import FakePromptExecutor
 
     fake_github = FakeGitHub()
@@ -115,7 +114,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         github=fake_github,
         github_admin=FakeGitHubAdmin(),
         issues=fake_issues,
-        plan_store=FakePlanStore(),
+        plan_store=GitHubPlanStore(fake_issues),
         graphite=fake_graphite,
         wt_stack=WtStack(git, cwd, fake_graphite),
         shell=FakeShell(),
@@ -223,7 +222,6 @@ def context_for_test(
     from erk_shared.github.issues import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.objectives.storage import FakeObjectiveStore
-    from erk_shared.plan_store.fake import FakePlanStore
     from erk_shared.prompt_executor.fake import FakePromptExecutor
 
     if git is None:
@@ -239,7 +237,9 @@ def context_for_test(
         issues = FakeGitHubIssues()
 
     if plan_store is None:
-        plan_store = FakePlanStore()
+        # Always compose from issues layer - no separate FakePlanStore
+        # This ensures tests use the same composition as production code
+        plan_store = GitHubPlanStore(issues)
 
     if graphite is None:
         graphite = FakeGraphite()
