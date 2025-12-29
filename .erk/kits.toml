@@ -55,24 +55,6 @@ invocation = "erk kit exec erk tripwires-reminder-hook"
 description = "Reminds Claude to check tripwires before common operations"
 timeout = 30
 
-[kits.gt]
-kit_id = "gt"
-source_type = "bundled"
-version = "0.2.8"
-artifacts = [
-    ".claude/skills/gt-graphite/SKILL.md",
-    ".claude/skills/gt-graphite/references/gt-reference.md",
-]
-
-[kits.git]
-kit_id = "git"
-source_type = "bundled"
-version = "0.2.8"
-artifacts = [
-    ".claude/commands/git/pr-push.md",
-    ".claude/agents/git/git-branch-submitter.md",
-]
-
 [kits.devrun]
 kit_id = "devrun"
 source_type = "bundled"

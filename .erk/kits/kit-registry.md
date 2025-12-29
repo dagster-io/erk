@@ -31,10 +31,4 @@
 
 <!-- ENTRY_END -->
 
-<!-- ENTRY_START kit_id="git" version="0.2.8" source="bundled" -->
-
-@.erk/kits/git/registry-entry.md
-
-<!-- ENTRY_END -->
-
 <!-- END_ENTRIES -->
