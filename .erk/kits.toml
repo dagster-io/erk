@@ -69,17 +69,3 @@ artifacts = [
     ".erk/docs/kits/devrun/tools/ruff.md",
 ]
 
-[kits.dignified-python]
-kit_id = "dignified-python"
-source_type = "bundled"
-version = "0.2.8"
-artifacts = [
-    ".claude/skills/dignified-python/SKILL.md",
-    ".claude/skills/dignified-python/dignified-python-core.md",
-    ".claude/skills/dignified-python/cli-patterns.md",
-    ".claude/skills/dignified-python/subprocess.md",
-    ".claude/skills/dignified-python/versions/python-3.10.md",
-    ".claude/skills/dignified-python/versions/python-3.11.md",
-    ".claude/skills/dignified-python/versions/python-3.12.md",
-    ".claude/skills/dignified-python/versions/python-3.13.md",
-]
