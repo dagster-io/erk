@@ -35,12 +35,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "ERK_KIT_ID=dignified-python ERK_HOOK_ID=version-aware-reminder-hook erk kit exec dignified-python version-aware-reminder-hook",
+            "command": "uv run scripts/fake-driven-testing-reminder.py",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "uv run scripts/fake-driven-testing-reminder.py",
+            "command": "ERK_KIT_ID=dignified-python ERK_HOOK_ID=version-aware-reminder-hook erk kit exec dignified-python version-aware-reminder-hook",
             "timeout": 30
           }
         ]
