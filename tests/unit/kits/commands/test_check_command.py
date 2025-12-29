@@ -630,14 +630,9 @@ def test_check_command_bundled_kit_sync_in_sync(tmp_path: Path) -> None:
         claude_dir = project_dir / ".claude"
         claude_dir.mkdir()
 
-        # Create .erk/docs/kits directory for doc artifacts
-        erk_docs_kits_dir = project_dir / ".erk" / "docs" / "kits"
-        erk_docs_kits_dir.mkdir(parents=True)
-
         # Create config with bundled kit
         # Note: We use "bundled:devrun" which is a real bundled kit in the package
-        # Include all artifacts from the devrun kit
-        # Doc artifacts go to .erk/docs/kits/ (not .claude/docs/)
+        # The devrun kit now only has the agent artifact (tool docs are inlined)
         config = ProjectConfig(
             version="1",
             kits={
@@ -647,12 +642,6 @@ def test_check_command_bundled_kit_sync_in_sync(tmp_path: Path) -> None:
                     source_type="bundled",
                     artifacts=[
                         ".claude/agents/devrun/devrun.md",
-                        ".erk/docs/kits/devrun/tools/gt.md",
-                        ".erk/docs/kits/devrun/tools/make.md",
-                        ".erk/docs/kits/devrun/tools/prettier.md",
-                        ".erk/docs/kits/devrun/tools/pyright.md",
-                        ".erk/docs/kits/devrun/tools/pytest.md",
-                        ".erk/docs/kits/devrun/tools/ruff.md",
                     ],
                 ),
             },
@@ -672,24 +661,6 @@ def test_check_command_bundled_kit_sync_in_sync(tmp_path: Path) -> None:
                 if bundled_artifact.exists():
                     bundled_content = bundled_artifact.read_text(encoding="utf-8")
                     local_artifact = claude_dir / artifact_rel
-                    local_artifact.parent.mkdir(parents=True, exist_ok=True)
-                    local_artifact.write_text(bundled_content, encoding="utf-8")
-
-            # Create doc artifacts (go to .erk/docs/kits/)
-            for artifact_rel in [
-                "docs/devrun/tools/gt.md",
-                "docs/devrun/tools/make.md",
-                "docs/devrun/tools/prettier.md",
-                "docs/devrun/tools/pyright.md",
-                "docs/devrun/tools/pytest.md",
-                "docs/devrun/tools/ruff.md",
-            ]:
-                bundled_artifact = bundled_path / artifact_rel
-                if bundled_artifact.exists():
-                    bundled_content = bundled_artifact.read_text(encoding="utf-8")
-                    # Strip "docs/" prefix for local path since target dir is .erk/docs/kits
-                    local_rel = artifact_rel.removeprefix("docs/")
-                    local_artifact = erk_docs_kits_dir / local_rel
                     local_artifact.parent.mkdir(parents=True, exist_ok=True)
                     local_artifact.write_text(bundled_content, encoding="utf-8")
 

@@ -61,11 +61,5 @@ source_type = "bundled"
 version = "0.2.8"
 artifacts = [
     ".claude/agents/devrun/devrun.md",
-    ".erk/docs/kits/devrun/tools/gt.md",
-    ".erk/docs/kits/devrun/tools/make.md",
-    ".erk/docs/kits/devrun/tools/prettier.md",
-    ".erk/docs/kits/devrun/tools/pyright.md",
-    ".erk/docs/kits/devrun/tools/pytest.md",
-    ".erk/docs/kits/devrun/tools/ruff.md",
 ]
 
