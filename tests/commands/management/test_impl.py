@@ -44,13 +44,15 @@ def test_create_with_plan_file() -> None:
         # Create test context using env.build_context() helper
         test_ctx = env.build_context(git=git_ops)
 
-        # Run erk create with --from-plan
+        # Run erk create with --from-plan-file
         result = runner.invoke(
-            cli, ["wt", "create", "--from-plan", "Add_Auth_Feature.md", "--no-post"], obj=test_ctx
+            cli,
+            ["wt", "create", "--from-plan-file", "Add_Auth_Feature.md", "--no-post"],
+            obj=test_ctx,
         )
         assert result.exit_code == 0, f"Command failed: {result.output}"
 
-        # --plan flag adds date suffix in format -YY-MM-DD-HHMM
+        # --from-plan-file flag adds date suffix in format -YY-MM-DD-HHMM
         date_suffix = _get_current_date_suffix()
         expected_name = f"add-auth-feature-{date_suffix}"
 
@@ -96,13 +98,15 @@ def test_create_with_plan_name_sanitization() -> None:
         # Create test context using env.build_context() helper
         test_ctx = env.build_context(git=git_ops)
 
-        # Run erk create with --from-plan
+        # Run erk create with --from-plan-file
         result = runner.invoke(
-            cli, ["wt", "create", "--from-plan", "MY_COOL_Plan_File.md", "--no-post"], obj=test_ctx
+            cli,
+            ["wt", "create", "--from-plan-file", "MY_COOL_Plan_File.md", "--no-post"],
+            obj=test_ctx,
         )
         assert result.exit_code == 0, f"Command failed: {result.output}"
 
-        # --plan flag adds date suffix in format -YY-MM-DD-HHMM
+        # --from-plan-file flag adds date suffix in format -YY-MM-DD-HHMM
         date_suffix = _get_current_date_suffix()
         expected_name = f"my-cool-file-{date_suffix}"
 
@@ -116,8 +120,8 @@ def test_create_with_plan_name_sanitization() -> None:
         assert not plan_file.exists()
 
 
-def test_create_with_both_name_and_plan_fails() -> None:
-    """Test that providing both NAME and --from-plan is an error."""
+def test_create_with_both_name_and_plan_file_fails() -> None:
+    """Test that providing both NAME and --from-plan-file is an error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Create a plan file
@@ -151,14 +155,14 @@ def test_create_with_both_name_and_plan_fails() -> None:
             cwd=env.root_worktree,
         )
 
-        # Run erk create with both NAME and --from-plan
+        # Run erk create with both NAME and --from-plan-file
         result = runner.invoke(
-            cli, ["wt", "create", "myname", "--from-plan", "plan.md"], obj=test_ctx
+            cli, ["wt", "create", "myname", "--from-plan-file", "plan.md"], obj=test_ctx
         )
 
         # Should fail
         assert result.exit_code != 0
-        assert "Cannot specify both NAME and --from-plan" in result.output
+        assert "Cannot specify both NAME and --from-plan-file" in result.output
 
 
 def test_create_rejects_reserved_name_root() -> None:

@@ -442,8 +442,8 @@ def _create_json_response(
     help="Skip running post-create commands from config.toml.",
 )
 @click.option(
-    "--from-plan",
-    "from_plan",
+    "--from-plan-file",
+    "from_plan_file",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     help=(
         "Path to a plan markdown file. Will derive worktree name from filename "
@@ -453,13 +453,13 @@ def _create_json_response(
     ),
 )
 @click.option(
-    "--keep-plan",
+    "--keep-plan-file",
     is_flag=True,
-    help="Copy the plan file instead of moving it (requires --from-plan).",
+    help="Copy the plan file instead of moving it (requires --from-plan-file).",
 )
 @click.option(
-    "--from-issue",
-    "from_issue",
+    "--from-plan",
+    "from_plan",
     type=str,
     help=(
         "GitHub issue number or URL with erk-plan label. Fetches issue content "
@@ -523,9 +523,9 @@ def create_wt(
     branch: str | None,
     ref: str | None,
     no_post: bool,
-    from_plan: Path | None,
-    keep_plan: bool,
-    from_issue: str | None,
+    from_plan_file: Path | None,
+    keep_plan_file: bool,
+    from_plan: str | None,
     copy_plan: bool,
     from_current_branch: bool,
     from_branch: str | None,
@@ -537,9 +537,9 @@ def create_wt(
     """Create a worktree and write a .env file.
 
     Reads config.toml for env templates and post-create commands (if present).
-    If --from-plan is provided, derives name from the plan filename and creates
+    If --from-plan-file is provided, derives name from the plan filename and creates
     .impl/ folder in the worktree.
-    If --from-issue is provided, fetches the GitHub issue, validates the erk-plan label,
+    If --from-plan is provided, fetches the GitHub issue, validates the erk-plan label,
     derives name from the issue title, and creates .impl/ folder with issue.json metadata.
     If --from-current-branch is provided, moves the current branch to the new worktree.
     If --from-branch is provided, creates a worktree from an existing branch.
@@ -554,27 +554,31 @@ def create_wt(
         [
             from_current_branch,
             from_branch is not None,
+            from_plan_file is not None,
             from_plan is not None,
-            from_issue is not None,
         ]
     )
     Ensure.invariant(
         flags_set <= 1,
-        "Cannot use multiple of: --from-current-branch, --from-branch, --from-plan, --from-issue",
+        "Cannot use multiple of: --from-current-branch, --from-branch, "
+        "--from-plan-file, --from-plan",
     )
 
     # Validate --json and --script are mutually exclusive
     Ensure.invariant(not (output_json and script), "Cannot use both --json and --script")
 
-    # Validate --keep-plan requires --from-plan
-    Ensure.invariant(not keep_plan or from_plan is not None, "--keep-plan requires --from-plan")
-
-    # Validate --copy-plan and --from-plan/--from-issue are mutually exclusive
+    # Validate --keep-plan-file requires --from-plan-file
     Ensure.invariant(
-        not (copy_plan and (from_plan is not None or from_issue is not None)),
-        "--copy-plan and --from-plan/--from-issue are mutually exclusive. "
-        "Use --copy-plan to copy from current worktree OR --from-plan <file> to use a plan "
-        "file OR --from-issue <number> to use a GitHub issue.",
+        not keep_plan_file or from_plan_file is not None,
+        "--keep-plan-file requires --from-plan-file",
+    )
+
+    # Validate --copy-plan and --from-plan-file/--from-plan are mutually exclusive
+    Ensure.invariant(
+        not (copy_plan and (from_plan_file is not None or from_plan is not None)),
+        "--copy-plan and --from-plan-file/--from-plan are mutually exclusive. "
+        "Use --copy-plan to copy from current worktree OR --from-plan-file <file> to use a plan "
+        "file OR --from-plan <number> to use a GitHub issue.",
     )
 
     # Note: --copy-plan validation is deferred until after repo discovery
@@ -610,25 +614,25 @@ def create_wt(
         if not name:
             name = sanitize_worktree_name(from_branch)
 
-    # Handle --from-plan flag
-    elif from_plan:
+    # Handle --from-plan-file flag
+    elif from_plan_file:
         Ensure.invariant(
-            not name, "Cannot specify both NAME and --from-plan. Use one or the other."
+            not name, "Cannot specify both NAME and --from-plan-file. Use one or the other."
         )
         # Derive name from plan filename (strip extension)
-        plan_stem = from_plan.stem  # filename without extension
+        plan_stem = from_plan_file.stem  # filename without extension
         cleaned_stem = strip_plan_from_filename(plan_stem)
         base_name = sanitize_worktree_name(cleaned_stem)
         # Note: Apply ensure_unique_worktree_name() and truncation after getting erks_dir
         name = base_name
 
-    # Handle --from-issue flag
-    elif from_issue:
+    # Handle --from-plan flag (GitHub issue)
+    elif from_plan:
         Ensure.invariant(
-            not name, "Cannot specify both NAME and --from-issue. Use one or the other."
+            not name, "Cannot specify both NAME and --from-plan. Use one or the other."
         )
         # Parse issue number from URL or plain number - raises click.ClickException if invalid
-        issue_number_parsed = parse_issue_identifier(from_issue)
+        issue_number_parsed = parse_issue_identifier(from_plan)
         # Note: name will be derived from issue title after fetching
         # Defer fetch until after repo discovery below
         name = None  # Will be set after fetching issue
@@ -640,13 +644,13 @@ def create_wt(
             name = sanitize_worktree_name(branch)
         elif not name:
             user_output(
-                "Must provide NAME or --from-plan or --from-branch "
-                "or --from-current-branch or --from-issue or --branch option."
+                "Must provide NAME or --from-plan-file or --from-branch "
+                "or --from-current-branch or --from-plan or --branch option."
             )
             raise SystemExit(1) from None
 
     # Track if name came from plan file (will need unique naming with date suffix)
-    is_plan_derived = from_plan is not None
+    is_plan_derived = from_plan_file is not None
 
     # Discover repo context (needed for all paths)
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -662,7 +666,7 @@ def create_wt(
             ctx,
             impl_source_check,
             f"No .impl directory found at {source_dir}. "
-            "Use 'erk create --from-plan <file>' to create a worktree with a plan from a file.",
+            "Use 'erk create --from-plan-file <file>' to create a worktree with a plan.",
         )
 
     # Track linked branch name and setup for issue-based worktrees
@@ -670,10 +674,10 @@ def create_wt(
     setup: IssueBranchSetup | None = None
 
     # Handle issue fetching after repo discovery
-    if from_issue:
-        # Type narrowing: issue_number_parsed must be set if from_issue is True
+    if from_plan:
+        # Type narrowing: issue_number_parsed must be set if from_plan is True
         assert issue_number_parsed is not None, (
-            "issue_number_parsed must be set when from_issue is True"
+            "issue_number_parsed must be set when from_plan is True"
         )
 
         # Fetch issue using integration layer
@@ -890,29 +894,29 @@ def create_wt(
 
     # Create impl folder if plan file provided
     # Track impl folder destination: set to .impl/ path only if
-    # --from-plan or --from-issue was provided
+    # --from-plan-file or --from-plan was provided
     impl_folder_destination: Path | None = None
-    if from_plan:
+    if from_plan_file:
         # Read plan content from source file
-        plan_content = from_plan.read_text(encoding="utf-8")
+        plan_content = from_plan_file.read_text(encoding="utf-8")
 
         # Create .impl/ folder in new worktree
         # Use overwrite=False since fresh worktree should not have .impl/
         impl_folder_destination = create_impl_folder(wt_path, plan_content, overwrite=False)
 
-        # Handle --keep-plan flag
-        if keep_plan:
+        # Handle --keep-plan-file flag
+        if keep_plan_file:
             if not script and not output_json:
                 user_output(f"Copied plan to {impl_folder_destination}")
         else:
-            from_plan.unlink()  # Remove source file
+            from_plan_file.unlink()  # Remove source file
             if not script and not output_json:
                 user_output(f"Moved plan to {impl_folder_destination}")
 
-    # Create impl folder if issue provided
-    if from_issue:
-        # Type narrowing: setup must be set if from_issue is True
-        assert setup is not None, "setup must be set when from_issue is True"
+    # Create impl folder if GitHub issue provided
+    if from_plan:
+        # Type narrowing: setup must be set if from_plan is True
+        assert setup is not None, "setup must be set when from_plan is True"
 
         # Create .impl/ folder in new worktree
         # Use overwrite=False since fresh worktree should not have .impl/

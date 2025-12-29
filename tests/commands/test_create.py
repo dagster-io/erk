@@ -72,8 +72,8 @@ def test_create_from_current_branch_outputs_script_path_to_stdout() -> None:
         )
 
 
-def test_create_from_issue_with_valid_issue() -> None:
-    """Test erk create --from-issue with valid erk-plan issue."""
+def test_create_from_plan_with_valid_issue() -> None:
+    """Test erk create --from-plan with valid erk-plan issue."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.erk_root / "repos" / env.cwd.name
@@ -111,10 +111,10 @@ def test_create_from_issue_with_valid_issue() -> None:
 
         test_ctx = env.build_context(git=git_ops, issues=fake_issues)
 
-        # Act: Run create --from-issue 123
+        # Act: Run create --from-plan 123
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-issue", "123"],
+            ["wt", "create", "--from-plan", "123"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -155,8 +155,8 @@ def test_create_from_issue_with_valid_issue() -> None:
         assert issue_json["issue_url"] == "https://github.com/owner/repo/issues/123"
 
 
-def test_create_from_issue_missing_label() -> None:
-    """Test erk create --from-issue fails if issue lacks erk-plan label."""
+def test_create_from_plan_missing_label() -> None:
+    """Test erk create --from-plan fails if issue lacks erk-plan label."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
@@ -192,10 +192,10 @@ def test_create_from_issue_missing_label() -> None:
 
         test_ctx = env.build_context(git=git_ops, issues=fake_issues)
 
-        # Act: Run create --from-issue 456
+        # Act: Run create --from-plan 456
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-issue", "456"],
+            ["wt", "create", "--from-plan", "456"],
             obj=test_ctx,
         )
 
@@ -205,8 +205,8 @@ def test_create_from_issue_missing_label() -> None:
         assert "gh issue edit 456 --add-label erk-plan" in result.output
 
 
-def test_create_from_issue_url_parsing() -> None:
-    """Test erk create --from-issue with GitHub URL."""
+def test_create_from_plan_url_parsing() -> None:
+    """Test erk create --from-plan with GitHub URL."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
@@ -245,7 +245,7 @@ def test_create_from_issue_url_parsing() -> None:
         # Act: Run with full GitHub URL
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-issue", "https://github.com/owner/repo/issues/789"],
+            ["wt", "create", "--from-plan", "https://github.com/owner/repo/issues/789"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -256,7 +256,7 @@ def test_create_from_issue_url_parsing() -> None:
         assert "Created worktree" in result.output or "789-feature-request" in result.output
 
 
-def test_create_from_issue_name_derivation() -> None:
+def test_create_from_plan_name_derivation() -> None:
     """Test worktree name derived from issue title via sanitize_worktree_name."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -298,7 +298,7 @@ def test_create_from_issue_name_derivation() -> None:
         # Act
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-issue", "111"],
+            ["wt", "create", "--from-plan", "111"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -314,8 +314,8 @@ def test_create_from_issue_name_derivation() -> None:
         )
 
 
-def test_create_from_issue_not_found() -> None:
-    """Test erk create --from-issue when issue doesn't exist."""
+def test_create_from_plan_not_found() -> None:
+    """Test erk create --from-plan when issue doesn't exist."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
@@ -338,7 +338,7 @@ def test_create_from_issue_not_found() -> None:
         # Act: Request non-existent issue
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-issue", "999"],
+            ["wt", "create", "--from-plan", "999"],
             obj=test_ctx,
         )
 
@@ -348,8 +348,8 @@ def test_create_from_issue_not_found() -> None:
         assert "not found" in result.output.lower() or "Issue #999" in result.output
 
 
-def test_create_from_issue_readonly_operation() -> None:
-    """Test that --from-issue doesn't create/modify issues."""
+def test_create_from_plan_readonly_operation() -> None:
+    """Test that --from-plan doesn't create/modify issues."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
@@ -388,7 +388,7 @@ def test_create_from_issue_readonly_operation() -> None:
         # Act
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-issue", "222"],
+            ["wt", "create", "--from-plan", "222"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -402,12 +402,12 @@ def test_create_from_issue_readonly_operation() -> None:
         assert len(fake_issues.added_comments) == 0
 
 
-def test_create_from_issue_tracks_branch_with_graphite() -> None:
-    """Test erk create --from-issue calls ctx.graphite.track_branch() when use_graphite=True.
+def test_create_from_plan_tracks_branch_with_graphite() -> None:
+    """Test erk create --from-plan calls ctx.graphite.track_branch() when use_graphite=True.
 
     Verifies that when:
     1. use_graphite=True in global config
-    2. erk wt create --from-issue <issue> is called
+    2. erk wt create --from-plan <issue> is called
     3. Then ctx.graphite.track_branch() is called with the linked branch name and trunk as parent
     """
     runner = CliRunner()
@@ -458,10 +458,10 @@ def test_create_from_issue_tracks_branch_with_graphite() -> None:
             use_graphite=True,
         )
 
-        # Act: Run create --from-issue 500
+        # Act: Run create --from-plan 500
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-issue", "500"],
+            ["wt", "create", "--from-plan", "500"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -494,8 +494,8 @@ def test_create_from_issue_tracks_branch_with_graphite() -> None:
         assert parent_branch == "main", f"Parent branch should be 'main', got: {parent_branch}"
 
 
-def test_create_from_issue_no_graphite_tracking_when_disabled() -> None:
-    """Test erk create --from-issue does NOT call track_branch when use_graphite=False."""
+def test_create_from_plan_no_graphite_tracking_when_disabled() -> None:
+    """Test erk create --from-plan does NOT call track_branch when use_graphite=False."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
@@ -542,10 +542,10 @@ def test_create_from_issue_no_graphite_tracking_when_disabled() -> None:
             use_graphite=False,  # Explicitly disabled
         )
 
-        # Act: Run create --from-issue 501
+        # Act: Run create --from-plan 501
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-issue", "501"],
+            ["wt", "create", "--from-plan", "501"],
             obj=test_ctx,
             catch_exceptions=False,
         )

@@ -100,7 +100,11 @@ def test_create_with_plan_file() -> None:
 
         test_ctx = env.build_context(git=git_ops, local_config=local_config, repo=repo)
 
-        result = runner.invoke(cli, ["wt", "create", "--from-plan", str(plan_file)], obj=test_ctx)
+        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-plan-file", str(plan_file)],
+            obj=test_ctx,
+        )
 
         assert result.exit_code == 0, result.output
         # Should create worktree with "plan" stripped from filename and date suffix added
@@ -115,7 +119,7 @@ def test_create_with_plan_file() -> None:
 
 
 def test_create_with_plan_file_removes_plan_word() -> None:
-    """Test that --plan flag removes 'plan' from worktree names."""
+    """Test that --from-plan-file flag removes 'plan' from worktree names."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -157,7 +161,7 @@ def test_create_with_plan_file_removes_plan_word() -> None:
             plan_file.write_text(f"# {plan_filename}\n", encoding="utf-8")
 
             result = runner.invoke(
-                cli, ["wt", "create", "--from-plan", str(plan_file)], obj=test_ctx
+                cli, ["wt", "create", "--from-plan-file", str(plan_file)], obj=test_ctx
             )
 
             assert result.exit_code == 0, f"Failed for {plan_filename}: {result.output}"
@@ -544,7 +548,11 @@ def test_create_plan_file_not_found() -> None:
 
         test_ctx = env.build_context(git=git_ops)
 
-        result = runner.invoke(cli, ["wt", "create", "--from-plan", "nonexistent.md"], obj=test_ctx)
+        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-plan-file", "nonexistent.md"],
+            obj=test_ctx,
+        )
 
         # Click should fail validation before reaching our code
         assert result.exit_code != 0
@@ -723,8 +731,8 @@ def test_create_from_current_branch_on_master_fails() -> None:
         assert "Cannot use --from-current-branch when on 'master'" in result.output
 
 
-def test_create_with_keep_plan_flag() -> None:
-    """Test that --keep-plan copies instead of moves the plan file."""
+def test_create_with_keep_plan_file_flag() -> None:
+    """Test that --keep-plan-file copies instead of moves the plan file."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Create plan file
@@ -755,7 +763,9 @@ def test_create_with_keep_plan_flag() -> None:
         test_ctx = env.build_context(git=git_ops, local_config=local_config, repo=repo)
 
         result = runner.invoke(
-            cli, ["wt", "create", "--from-plan", str(plan_file), "--keep-plan"], obj=test_ctx
+            cli,
+            ["wt", "create", "--from-plan-file", str(plan_file), "--keep-plan-file"],
+            obj=test_ctx,
         )
 
         assert result.exit_code == 0, result.output
@@ -771,18 +781,22 @@ def test_create_with_keep_plan_flag() -> None:
         assert "Copied plan to" in result.output
 
 
-def test_create_keep_plan_without_plan_fails() -> None:
-    """Test that --keep-plan without --from-plan fails with error message."""
+def test_create_keep_plan_file_without_plan_file_fails() -> None:
+    """Test that --keep-plan-file without --from-plan-file fails with error message."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
 
         test_ctx = env.build_context(git=git_ops)
 
-        result = runner.invoke(cli, ["wt", "create", "test-feature", "--keep-plan"], obj=test_ctx)
+        result = runner.invoke(
+            cli,
+            ["wt", "create", "test-feature", "--keep-plan-file"],
+            obj=test_ctx,
+        )
 
         assert result.exit_code == 1
-        assert "--keep-plan requires --from-plan" in result.output
+        assert "--keep-plan-file requires --from-plan-file" in result.output
 
 
 def test_from_current_branch_with_main_in_use_prefers_graphite_parent() -> None:
@@ -1172,7 +1186,7 @@ def test_create_with_json_and_plan_file() -> None:
         # Don't provide NAME - it's derived from plan filename
         result = runner.invoke(
             cli,
-            ["wt", "create", "--json", "--from-plan", str(plan_file)],
+            ["wt", "create", "--json", "--from-plan-file", str(plan_file)],
             obj=test_ctx,
         )
 
@@ -1280,8 +1294,8 @@ def test_create_with_stay_and_json() -> None:
         repo_dir / "test-feature"
 
 
-def test_create_with_stay_and_plan() -> None:
-    """Test that --stay works with --plan flag."""
+def test_create_with_stay_and_plan_file() -> None:
+    """Test that --stay works with --from-plan-file flag."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Create plan file
@@ -1312,7 +1326,9 @@ def test_create_with_stay_and_plan() -> None:
         test_ctx = env.build_context(git=git_ops, local_config=local_config, repo=repo)
 
         result = runner.invoke(
-            cli, ["wt", "create", "--from-plan", str(plan_file), "--script", "--stay"], obj=test_ctx
+            cli,
+            ["wt", "create", "--from-plan-file", str(plan_file), "--script", "--stay"],
+            obj=test_ctx,
         )
 
         assert result.exit_code == 0, result.output
@@ -1377,14 +1393,14 @@ def test_create_with_long_name_truncation() -> None:
         assert result.exit_code == 0, result.output
         # Worktree base name should be truncated to 31 chars
         # Note: worktree name doesn't include sanitize_worktree_name truncation in this flow
-        # as create without --plan uses sanitize_worktree_name which truncates to 31
+        # as create without --from-plan-file uses sanitize_worktree_name which truncates to 31
         expected_truncated = "this-is-a-very-long-worktree-na"  # 31 chars
         repo_dir / expected_truncated
         assert len(expected_truncated) == 31, "Truncated base name should be exactly 31 chars"
 
 
-def test_create_with_plan_ensures_uniqueness() -> None:
-    """Test that --plan ensures uniqueness with date suffix and versioning."""
+def test_create_with_plan_file_ensures_uniqueness() -> None:
+    """Test that --from-plan-file ensures uniqueness with date suffix and versioning."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Create plan file
@@ -1404,7 +1420,11 @@ def test_create_with_plan_ensures_uniqueness() -> None:
         test_ctx = env.build_context(git=git_ops)
 
         # Create first worktree from plan
-        result1 = runner.invoke(cli, ["wt", "create", "--from-plan", str(plan_file)], obj=test_ctx)
+        result1 = runner.invoke(
+            cli,
+            ["wt", "create", "--from-plan-file", str(plan_file)],
+            obj=test_ctx,
+        )
         assert result1.exit_code == 0, result1.output
 
         # Check that first worktree has date suffix
@@ -1418,7 +1438,11 @@ def test_create_with_plan_ensures_uniqueness() -> None:
         plan_file.write_text("# My Feature Plan - Round 2\n", encoding="utf-8")
 
         # Create second worktree from same plan (same day)
-        result2 = runner.invoke(cli, ["wt", "create", "--from-plan", str(plan_file)], obj=test_ctx)
+        result2 = runner.invoke(
+            cli,
+            ["wt", "create", "--from-plan-file", str(plan_file)],
+            obj=test_ctx,
+        )
         assert result2.exit_code == 0, result2.output
 
         # Check that second worktree has -2 after date suffix
@@ -1476,7 +1500,11 @@ def test_create_with_long_plan_name_matches_branch_and_worktree() -> None:
         test_ctx = env.build_context(git=git_ops, local_config=local_config, repo=repo)
 
         # Create worktree from long plan filename
-        result = runner.invoke(cli, ["wt", "create", "--from-plan", str(plan_file)], obj=test_ctx)
+        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-plan-file", str(plan_file)],
+            obj=test_ctx,
+        )
         assert result.exit_code == 0, result.output
 
         # Get the created worktree (should be only directory in worktrees_dir)
