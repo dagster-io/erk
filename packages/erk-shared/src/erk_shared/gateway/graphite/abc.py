@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.git.abc import Git
+from erk_shared.git.abc import Git, WorktreeInfo
 from erk_shared.github.types import GitHubRepoId, PullRequestInfo
 
 if TYPE_CHECKING:
@@ -252,6 +252,42 @@ class Graphite(ABC):
         if branch not in all_branches:
             return []
         return all_branches[branch].children
+
+    def find_ancestor_worktree(
+        self,
+        git_ops: Git,
+        repo_root: Path,
+        worktrees: list[WorktreeInfo],
+        branch: str,
+    ) -> WorktreeInfo | None:
+        """Find the worktree of the closest ancestor branch.
+
+        Walks up the Graphite parent chain to find the first ancestor
+        that has a worktree checked out. This is a composite method that
+        uses get_parent_branch() to traverse the branch hierarchy.
+
+        Args:
+            git_ops: Git instance for accessing git common directory
+            repo_root: Repository root directory
+            worktrees: List of all worktrees from list_worktrees()
+            branch: Branch name to find ancestor worktree for
+
+        Returns:
+            WorktreeInfo of the closest ancestor with a worktree, or None if not found.
+        """
+        current = branch
+        while True:
+            parent = self.get_parent_branch(git_ops, repo_root, current)
+            if parent is None:
+                break
+
+            for wt in worktrees:
+                if wt.branch == parent:
+                    return wt
+
+            current = parent
+
+        return None
 
     @abstractmethod
     def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:

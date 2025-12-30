@@ -6,7 +6,7 @@ from rich.table import Table
 
 from erk.cli.alias import alias
 from erk.cli.core import discover_repo_context
-from erk.cli.graphite import find_ancestor_worktree, find_worktrees_containing_branch
+from erk.cli.graphite import find_worktrees_containing_branch
 from erk.core.context import ErkContext
 
 
@@ -56,7 +56,7 @@ def list_stack(ctx: ErkContext) -> None:
             wt = matching_worktrees[0]
         else:
             # Branch has no direct worktree - find closest ancestor with one
-            wt = find_ancestor_worktree(ctx, repo.root, worktrees, branch)
+            wt = ctx.graphite.find_ancestor_worktree(ctx.git, repo.root, worktrees, branch)
             if wt is None:
                 continue  # Only skip if truly no worktree found
 

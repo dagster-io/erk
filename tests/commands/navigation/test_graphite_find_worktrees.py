@@ -1,8 +1,8 @@
-"""Tests for find_worktrees_containing_branch and find_ancestor_worktree in graphite.py."""
+"""Tests for find_worktrees_containing_branch and Graphite.find_ancestor_worktree."""
 
 from pathlib import Path
 
-from erk.cli.graphite import find_ancestor_worktree, find_worktrees_containing_branch
+from erk.cli.graphite import find_worktrees_containing_branch
 from erk.core.config_store import GlobalConfig
 from erk.core.context import context_for_test
 from erk_shared.gateway.graphite.real import RealGraphite
@@ -184,20 +184,8 @@ def test_find_ancestor_worktree_finds_parent(tmp_path: Path) -> None:
 
     graphite_ops = RealGraphite()
 
-    ctx = context_for_test(
-        git=git_ops,
-        global_config=GlobalConfig.test(
-            Path("/fake/erks"), use_graphite=False, shell_setup_complete=False
-        ),
-        github=FakeGitHub(),
-        graphite=graphite_ops,
-        shell=FakeShell(),
-        cwd=tmp_path,
-        dry_run=False,
-    )
-
     # feat-2 has no worktree, should find feat-1's worktree (its parent)
-    result = find_ancestor_worktree(ctx, repo_root, worktrees, "feat-2")
+    result = graphite_ops.find_ancestor_worktree(git_ops, repo_root, worktrees, "feat-2")
     assert result is not None
     assert result.branch == "feat-1"
     assert result.path == feat1_path
@@ -237,20 +225,8 @@ def test_find_ancestor_worktree_finds_grandparent(tmp_path: Path) -> None:
 
     graphite_ops = RealGraphite()
 
-    ctx = context_for_test(
-        git=git_ops,
-        global_config=GlobalConfig.test(
-            Path("/fake/erks"), use_graphite=False, shell_setup_complete=False
-        ),
-        github=FakeGitHub(),
-        graphite=graphite_ops,
-        shell=FakeShell(),
-        cwd=tmp_path,
-        dry_run=False,
-    )
-
     # feat-3 has no worktree and neither do feat-2/feat-1, should find main's worktree
-    result = find_ancestor_worktree(ctx, repo_root, worktrees, "feat-3")
+    result = graphite_ops.find_ancestor_worktree(git_ops, repo_root, worktrees, "feat-3")
     assert result is not None
     assert result.branch == "main"
     assert result.path == repo_root
@@ -283,19 +259,7 @@ def test_find_ancestor_worktree_no_ancestor_with_worktree(tmp_path: Path) -> Non
 
     graphite_ops = RealGraphite()
 
-    ctx = context_for_test(
-        git=git_ops,
-        global_config=GlobalConfig.test(
-            Path("/fake/erks"), use_graphite=False, shell_setup_complete=False
-        ),
-        github=FakeGitHub(),
-        graphite=graphite_ops,
-        shell=FakeShell(),
-        cwd=tmp_path,
-        dry_run=False,
-    )
-
-    result = find_ancestor_worktree(ctx, repo_root, worktrees, "feat-1")
+    result = graphite_ops.find_ancestor_worktree(git_ops, repo_root, worktrees, "feat-1")
     assert result is None
 
 
@@ -325,18 +289,6 @@ def test_find_ancestor_worktree_trunk_branch(tmp_path: Path) -> None:
 
     graphite_ops = RealGraphite()
 
-    ctx = context_for_test(
-        git=git_ops,
-        global_config=GlobalConfig.test(
-            Path("/fake/erks"), use_graphite=False, shell_setup_complete=False
-        ),
-        github=FakeGitHub(),
-        graphite=graphite_ops,
-        shell=FakeShell(),
-        cwd=tmp_path,
-        dry_run=False,
-    )
-
     # main is trunk with no parent, should return None
-    result = find_ancestor_worktree(ctx, repo_root, worktrees, "main")
+    result = graphite_ops.find_ancestor_worktree(git_ops, repo_root, worktrees, "main")
     assert result is None

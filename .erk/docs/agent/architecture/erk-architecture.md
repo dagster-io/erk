@@ -5,6 +5,7 @@ read_when:
   - "implementing dry-run patterns"
   - "regenerating context after os.chdir"
   - "detecting root worktree"
+  - "adding composing template methods to ABC"
 tripwires:
   - action: "passing dry_run boolean flags through function parameters"
     warning: "Use dependency injection with DryRunGit/DryRunGitHub wrappers instead of boolean flags."
@@ -508,6 +509,64 @@ If you find code that should be a gateway but isn't:
 3. **Write Fake implementation** for testing
 4. **Update consumers** to use injected dependency instead of direct calls
 5. **Update tests** to use Fake instead of mocking subprocess
+
+## Composing Template Method Pattern
+
+The gateway ABCs use a variant of the **Template Method** pattern where concrete methods compose abstract methods to provide higher-level operations. Unlike classic Template Method (where subclasses override hooks to customize an algorithm), here the concrete methods are pure compositions that work identically for all implementations - no override points, just convenience wrappers.
+
+### When to Use
+
+Add a composing template method to an ABC when:
+
+1. The logic only depends on abstract methods already in the ABC
+2. There's no implementation-specific behavior (same logic for Real/Fake/DryRun)
+3. The operation would otherwise be duplicated or require passing the gateway around
+
+### Examples in Graphite ABC
+
+| Method                       | Composes              | Purpose                                  |
+| ---------------------------- | --------------------- | ---------------------------------------- |
+| `get_parent_branch()`        | `get_all_branches()`  | Extract single parent from branch map    |
+| `get_child_branches()`       | `get_all_branches()`  | Extract children list from branch map    |
+| `find_ancestor_worktree()`   | `get_parent_branch()` | Walk parent chain to find worktree       |
+| `squash_branch_idempotent()` | `squash_branch()`     | Add error handling for idempotent squash |
+
+### Pattern Structure
+
+```python
+class Gateway(ABC):
+    @abstractmethod
+    def primitive_operation(self, ...) -> Result:
+        """Subclasses must implement."""
+        ...
+
+    def composite_operation(self, ...) -> HigherLevelResult:
+        """Concrete method - same for all implementations.
+
+        Composes primitive_operation() to provide convenience API.
+        All implementations (Real, Fake, DryRun) inherit this unchanged.
+        """
+        result = self.primitive_operation(...)
+        # Additional logic using result
+        return transformed_result
+```
+
+### Benefits
+
+- **No duplication**: Logic defined once, inherited by all implementations
+- **Automatic testing**: Works with FakeGraphite, no separate fake needed
+- **Discoverability**: Related operations live together on the interface
+- **Lighter dependencies**: Takes primitive args (Git, Path) not heavy context objects
+
+### When NOT to Use
+
+Don't add a composing template method when:
+
+- The logic requires implementation-specific behavior
+- The method would need overriding in some implementations
+- The logic doesn't naturally belong to the gateway's domain
+
+In those cases, keep the logic as a standalone function or in the calling module.
 
 ## Branch Context Detection
 

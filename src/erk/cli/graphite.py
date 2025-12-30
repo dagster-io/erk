@@ -79,38 +79,3 @@ def find_worktrees_containing_branch(
             matching_worktrees.append(wt)
 
     return matching_worktrees
-
-
-def find_ancestor_worktree(
-    ctx: ErkContext,
-    repo_root: Path,
-    worktrees: list[WorktreeInfo],
-    branch: str,
-) -> WorktreeInfo | None:
-    """Find the worktree of the closest ancestor branch.
-
-    Walks up the Graphite parent chain to find the first ancestor
-    that has a worktree checked out.
-
-    Args:
-        ctx: Erk context with graphite operations
-        repo_root: Path to the repository root
-        worktrees: List of all worktrees from list_worktrees()
-        branch: Branch name to find ancestor worktree for
-
-    Returns:
-        WorktreeInfo of the closest ancestor with a worktree, or None if not found.
-    """
-    current = branch
-    while True:
-        parent = ctx.graphite.get_parent_branch(ctx.git, repo_root, current)
-        if parent is None:
-            break
-
-        for wt in worktrees:
-            if wt.branch == parent:
-                return wt
-
-        current = parent
-
-    return None
