@@ -27,15 +27,11 @@ def test_extract_hooks_for_kit_filters_correctly() -> None:
                     matcher="*",
                     hooks=[
                         HookEntry(
-                            command=(
-                                "ERK_HOOK_ID=my-hook python3 /path/to/script.py"
-                            ),
+                            command=("ERK_HOOK_ID=my-hook python3 /path/to/script.py"),
                             timeout=30,
                         ),
                         HookEntry(
-                            command=(
-                                "ERK_HOOK_ID=other-hook python3 /path/to/other.py"
-                            ),
+                            command=("ERK_HOOK_ID=other-hook python3 /path/to/other.py"),
                             timeout=30,
                         ),
                     ],
@@ -111,9 +107,7 @@ def test_extract_hooks_invalid_format_uppercase() -> None:
                     matcher="*",
                     hooks=[
                         HookEntry(
-                            command=(
-                                "ERK_HOOK_ID=Invalid-Hook python3 /path/to/script.py"
-                            ),
+                            command=("ERK_HOOK_ID=Invalid-Hook python3 /path/to/script.py"),
                             timeout=30,
                         ),
                     ],
@@ -153,9 +147,7 @@ def test_extract_hooks_invalid_format_spaces() -> None:
                     matcher="*",
                     hooks=[
                         HookEntry(
-                            command=(
-                                "ERK_HOOK_ID=my hook python3 /path/to/script.py"
-                            ),
+                            command=("ERK_HOOK_ID=my hook python3 /path/to/script.py"),
                             timeout=30,
                         ),
                     ],
@@ -192,9 +184,7 @@ def test_extract_hooks_invalid_format_special_chars() -> None:
                     matcher="*",
                     hooks=[
                         HookEntry(
-                            command=(
-                                "ERK_HOOK_ID=my@hook! python3 /path/to/script.py"
-                            ),
+                            command=("ERK_HOOK_ID=my@hook! python3 /path/to/script.py"),
                             timeout=30,
                         ),
                     ],
@@ -232,9 +222,7 @@ def test_extract_hooks_id_not_in_manifest() -> None:
                     matcher="*",
                     hooks=[
                         HookEntry(
-                            command=(
-                                "ERK_HOOK_ID=unknown-hook python3 /path/to/script.py"
-                            ),
+                            command=("ERK_HOOK_ID=unknown-hook python3 /path/to/script.py"),
                             timeout=30,
                         ),
                     ],
@@ -277,9 +265,7 @@ def test_extract_hooks_empty_manifest_with_hooks() -> None:
                     matcher="*",
                     hooks=[
                         HookEntry(
-                            command=(
-                                "ERK_HOOK_ID=some-hook python3 /path/to/script.py"
-                            ),
+                            command=("ERK_HOOK_ID=some-hook python3 /path/to/script.py"),
                             timeout=30,
                         ),
                     ],
@@ -312,10 +298,7 @@ def test_detect_hook_drift_no_drift() -> None:
     installed_hooks = [
         InstalledHook(
             hook_id="compliance-reminder-hook",
-            command=(
-                "ERK_HOOK_ID=compliance-reminder-hook "
-                "erk exec compliance-reminder-hook"
-            ),
+            command=("ERK_HOOK_ID=compliance-reminder-hook erk exec compliance-reminder-hook"),
             timeout=30,
             lifecycle="UserPromptSubmit",
             matcher="*",
@@ -665,9 +648,7 @@ def test_check_command_detects_hook_drift_integration(tmp_path: Path) -> None:
                         "matcher": "*",
                         "hooks": [
                             {
-                                "command": (
-                                    "ERK_HOOK_ID=old-hook python3 /path/to/old_hook.py"
-                                ),
+                                "command": ("ERK_HOOK_ID=old-hook python3 /path/to/old_hook.py"),
                                 "timeout": 30,
                             }
                         ],
@@ -786,10 +767,7 @@ def test_detect_hook_drift_matcher_mismatch() -> None:
     installed_hooks = [
         InstalledHook(
             hook_id="compliance-hook",
-            command=(
-                "ERK_HOOK_ID=compliance-hook "
-                "erk exec compliance-hook"
-            ),
+            command=("ERK_HOOK_ID=compliance-hook erk exec compliance-hook"),
             timeout=30,
             lifecycle="UserPromptSubmit",
             matcher="*",
@@ -822,10 +800,7 @@ def test_detect_hook_drift_matcher_none_normalized() -> None:
     installed_hooks = [
         InstalledHook(
             hook_id="compliance-hook",
-            command=(
-                "ERK_HOOK_ID=compliance-hook "
-                "erk exec compliance-hook"
-            ),
+            command=("ERK_HOOK_ID=compliance-hook erk exec compliance-hook"),
             timeout=30,
             lifecycle="UserPromptSubmit",
             matcher="*",
@@ -859,10 +834,7 @@ def test_check_command_detects_matcher_drift(tmp_path: Path) -> None:
                         "matcher": "*",
                         "hooks": [
                             {
-                                "command": (
-                                    "ERK_HOOK_ID=compliance-hook "
-                                    "erk exec compliance-hook"
-                                ),
+                                "command": ("ERK_HOOK_ID=compliance-hook erk exec compliance-hook"),
                                 "timeout": 30,
                             }
                         ],

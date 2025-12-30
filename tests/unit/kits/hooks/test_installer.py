@@ -200,7 +200,7 @@ def test_install_hooks_empty_list(tmp_project: Path) -> None:
     # Settings.json should not be created if it didn't exist
     settings_path = tmp_project / ".claude" / "settings.json"
     if settings_path.exists():
-        settings = load_settings(settings_path)
+        load_settings(settings_path)
         # Should be empty or not have hooks from this kit
         # Note: With ERK_HOOK_ID format, we can't verify by kit_id since hooks
         # don't contain kit_id. An empty hooks list creates no entries anyway.
@@ -310,10 +310,16 @@ def test_remove_hooks_preserves_other_hooks(tmp_project: Path) -> None:
 
     # Count hooks by hook_id
     hook_a_count = sum(
-        1 for group in lifecycle_hooks for hook in group.hooks if "ERK_HOOK_ID=hook-a" in hook.command
+        1
+        for group in lifecycle_hooks
+        for hook in group.hooks
+        if "ERK_HOOK_ID=hook-a" in hook.command
     )
     hook_b_count = sum(
-        1 for group in lifecycle_hooks for hook in group.hooks if "ERK_HOOK_ID=hook-b" in hook.command
+        1
+        for group in lifecycle_hooks
+        for hook in group.hooks
+        if "ERK_HOOK_ID=hook-b" in hook.command
     )
 
     assert hook_a_count == 0
@@ -336,7 +342,7 @@ def test_remove_hooks_nonexistent_hook(tmp_project: Path) -> None:
     assert count == 0
 
     # Should not crash or create files
-    settings_path = tmp_project / ".claude" / "settings.json"
+    tmp_project / ".claude" / "settings.json"
     # Just verify no crash
 
 

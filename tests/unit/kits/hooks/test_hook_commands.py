@@ -476,9 +476,7 @@ class TestHookCommandsIntegration:
 
     def test_unicode_in_commands(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """Test hooks with unicode characters in commands."""
-        hook_entry = create_test_hook_entry(
-            hook_id="unicode-hook", command="echo 'Hello 世界 🌍'"
-        )
+        hook_entry = create_test_hook_entry(hook_id="unicode-hook", command="echo 'Hello 世界 🌍'")
         settings = create_test_settings({"pre": [{"matcher": "**/*.py", "hooks": [hook_entry]}]})
         write_settings_json(tmp_path, settings)
 

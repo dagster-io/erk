@@ -2,9 +2,9 @@
 
 import click
 
+from erk.cli.commands.exec.group import exec_group
 from erk.cli.commands.kit import install
 from erk.cli.commands.kit.check import check
-from erk.cli.commands.exec.group import exec_group
 
 
 @click.group()

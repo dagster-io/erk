@@ -141,7 +141,9 @@ def assert_hook_installed(
     assert found, f"Hook {hook_id} not found in settings.json"
 
 
-def assert_hook_not_installed(project_root: Path, kit_id: str, hook_ids: set[str] | None = None) -> None:
+def assert_hook_not_installed(
+    project_root: Path, kit_id: str, hook_ids: set[str] | None = None
+) -> None:
     """Assert that no hooks are installed for a kit.
 
     Args:
@@ -159,7 +161,9 @@ def assert_hook_not_installed(project_root: Path, kit_id: str, hook_ids: set[str
                 for matcher_group in lifecycle_hooks:
                     for hook_entry in matcher_group.hooks:
                         entry_hook_id = extract_hook_id_from_command(hook_entry.command)
-                        assert entry_hook_id not in hook_ids, f"Found hook {entry_hook_id} in settings"
+                        assert entry_hook_id not in hook_ids, (
+                            f"Found hook {entry_hook_id} in settings"
+                        )
 
 
 class TestInstallCommandWithHooks:

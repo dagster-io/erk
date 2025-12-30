@@ -15,8 +15,7 @@ def test_extract_hooks_extracts_hook_id_from_command() -> None:
     hook_entry = HookEntry(
         type="command",
         command=(
-            "ERK_HOOK_ID=my-hook "
-            'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/my-kit/script.py"'
+            'ERK_HOOK_ID=my-hook python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/my-kit/script.py"'
         ),
         timeout=30,
     )
@@ -94,18 +93,12 @@ def test_extract_hooks_handles_multiple_hooks_for_same_kit() -> None:
     # Setup: Create settings with multiple hooks (new format, no kit_id)
     hook1 = HookEntry(
         type="command",
-        command=(
-            "ERK_HOOK_ID=hook-1 "
-            'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/my-kit/h1.py"'
-        ),
+        command=('ERK_HOOK_ID=hook-1 python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/my-kit/h1.py"'),
         timeout=30,
     )
     hook2 = HookEntry(
         type="command",
-        command=(
-            "ERK_HOOK_ID=hook-2 "
-            'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/my-kit/h2.py"'
-        ),
+        command=('ERK_HOOK_ID=hook-2 python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/my-kit/h2.py"'),
         timeout=60,
     )
 
@@ -156,18 +149,12 @@ def test_extract_hooks_matches_only_expected_hook_ids() -> None:
     # Setup: Create settings with multiple hooks (new format, no kit_id)
     hook1 = HookEntry(
         type="command",
-        command=(
-            "ERK_HOOK_ID=hook-a "
-            'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/kit-a/script.py"'
-        ),
+        command=('ERK_HOOK_ID=hook-a python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/kit-a/script.py"'),
         timeout=30,
     )
     hook2 = HookEntry(
         type="command",
-        command=(
-            "ERK_HOOK_ID=hook-b "
-            'python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/kit-b/script.py"'
-        ),
+        command=('ERK_HOOK_ID=hook-b python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/kit-b/script.py"'),
         timeout=30,
     )
 
