@@ -1,6 +1,6 @@
 """Unit tests for session plan extraction functions.
 
-Layer 3: Pure unit tests for isolated functions in session_plan_extractor.py
+Layer 3: Pure unit tests for isolated functions in local_plans.py
 """
 
 import time
@@ -8,12 +8,12 @@ from pathlib import Path
 
 import pytest
 
-from erk_kits.data.kits.erk.session_plan_extractor import (
+from erk_shared.extraction.local_plans import (
     extract_slugs_from_session,
     find_project_dir_for_session,
-    get_latest_plan,
+    get_latest_plan_content,
+    get_plans_dir,
 )
-from erk_shared.extraction.local_plans import get_plans_dir
 from tests.unit.kits.kits.erk.fixtures import (
     SAMPLE_PLAN_CONTENT,
     create_session_entry,
@@ -67,7 +67,7 @@ def test_get_latest_plan_returns_most_recent(monkeypatch, tmp_path: Path) -> Non
     newer_plan = plans_dir / "newer-plan.md"
     newer_plan.write_text(SAMPLE_PLAN_CONTENT, encoding="utf-8")
 
-    result = get_latest_plan("/any/working/dir")
+    result = get_latest_plan_content()
 
     assert result == SAMPLE_PLAN_CONTENT
 
@@ -77,7 +77,7 @@ def test_get_latest_plan_nonexistent_plans_dir(monkeypatch, tmp_path: Path) -> N
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
     # Don't create plans directory
-    result = get_latest_plan("/any/working/dir")
+    result = get_latest_plan_content()
 
     assert result is None
 
@@ -90,7 +90,7 @@ def test_get_latest_plan_empty_plans_dir(monkeypatch, tmp_path: Path) -> None:
     plans_dir = tmp_path / ".claude" / "plans"
     plans_dir.mkdir(parents=True)
 
-    result = get_latest_plan("/any/working/dir")
+    result = get_latest_plan_content()
 
     assert result is None
 
@@ -105,7 +105,7 @@ def test_get_latest_plan_single_plan(monkeypatch, tmp_path: Path) -> None:
     plan_file = plans_dir / "only-plan.md"
     plan_file.write_text(SAMPLE_PLAN_CONTENT, encoding="utf-8")
 
-    result = get_latest_plan("/any/working/dir")
+    result = get_latest_plan_content()
 
     assert result == SAMPLE_PLAN_CONTENT
 
@@ -129,7 +129,7 @@ def test_get_latest_plan_ignores_non_md_files(monkeypatch, tmp_path: Path) -> No
     plan_file = plans_dir / "real-plan.md"
     plan_file.write_text(SAMPLE_PLAN_CONTENT, encoding="utf-8")
 
-    result = get_latest_plan("/any/working/dir")
+    result = get_latest_plan_content()
 
     assert result == SAMPLE_PLAN_CONTENT
 
@@ -150,29 +150,9 @@ def test_get_latest_plan_ignores_directories(monkeypatch, tmp_path: Path) -> Non
     plan_file = plans_dir / "current-plan.md"
     plan_file.write_text(SAMPLE_PLAN_CONTENT, encoding="utf-8")
 
-    result = get_latest_plan("/any/working/dir")
+    result = get_latest_plan_content()
 
     assert result == SAMPLE_PLAN_CONTENT
-
-
-def test_get_latest_plan_working_dir_unused(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    """Test that working_dir parameter doesn't affect result."""
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
-
-    # Create plans directory and plan
-    plans_dir = tmp_path / ".claude" / "plans"
-    plans_dir.mkdir(parents=True)
-    plan_file = plans_dir / "test-plan.md"
-    plan_file.write_text(SAMPLE_PLAN_CONTENT, encoding="utf-8")
-
-    # Different working_dir should return same result
-    result1 = get_latest_plan("/path/one")
-    result2 = get_latest_plan("/path/two")
-
-    assert result1 == SAMPLE_PLAN_CONTENT
-    assert result2 == SAMPLE_PLAN_CONTENT
 
 
 # ===============================================
@@ -420,7 +400,7 @@ def test_get_latest_plan_with_session_id_uses_slug(
     )
 
     # Should return the slug-matched plan, not the newer one
-    result = get_latest_plan("/any/dir", session_id="session-abc123")
+    result = get_latest_plan_content(session_id="session-abc123")
 
     assert result == "# Session Plan\nThis is the session-specific plan"
 
@@ -451,7 +431,7 @@ def test_get_latest_plan_falls_back_without_slug(
     )
 
     # Should fall back to mtime selection
-    result = get_latest_plan("/any/dir", session_id="session-abc123")
+    result = get_latest_plan_content(session_id="session-abc123")
 
     assert result == SAMPLE_PLAN_CONTENT
 
@@ -482,6 +462,6 @@ def test_get_latest_plan_falls_back_when_slug_plan_missing(
     )
 
     # Should fall back to mtime selection since slug's file doesn't exist
-    result = get_latest_plan("/any/dir", session_id="session-abc123")
+    result = get_latest_plan_content(session_id="session-abc123")
 
     assert result == SAMPLE_PLAN_CONTENT

@@ -5,7 +5,7 @@ from pathlib import Path
 import yaml
 
 from erk.kits.hooks.models import HookDefinition
-from erk.kits.models.kit import KitManifest, ScriptDefinition
+from erk.kits.models.kit import KitManifest
 
 
 def load_kit_manifest(manifest_path: Path) -> KitManifest:
@@ -27,17 +27,6 @@ def load_kit_manifest(manifest_path: Path) -> KitManifest:
             )
             hooks.append(hook)
 
-    # Parse scripts if present
-    scripts = []
-    if "scripts" in data and data["scripts"]:
-        for script_data in data["scripts"]:
-            script = ScriptDefinition(
-                name=script_data["name"],
-                path=script_data["path"],
-                description=script_data["description"],
-            )
-            scripts.append(script)
-
     return KitManifest(
         name=data["name"],
         version=data["version"],
@@ -46,5 +35,4 @@ def load_kit_manifest(manifest_path: Path) -> KitManifest:
         license=data.get("license"),
         homepage=data.get("homepage"),
         hooks=hooks,
-        scripts=scripts,
     )

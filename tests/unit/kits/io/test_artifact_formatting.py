@@ -304,37 +304,16 @@ def test_format_verbose_list_with_hooks() -> None:
     assert "⚠️" in result  # Warning for local settings
 
 
-def test_format_bundled_kit_item_cli_command() -> None:
-    """Test formatting of bundled kit CLI command."""
-    kit_info = BundledKitInfo(
-        kit_id="gt",
-        version="0.1.0",
-        cli_commands=["submit-branch", "update-pr"],
-        available_docs=[],
-        level="project",
-    )
-
-    result = format_bundled_kit_item("submit-branch", kit_info, "cli_command")
-
-    # Should contain command name with kit prefix
-    assert "gt:submit-branch" in result
-    # Should contain level marker
-    assert "[P]" in result
-    # Should contain kit version
-    assert "gt@0.1.0" in result
-
-
 def test_format_bundled_kit_item_doc() -> None:
     """Test formatting of bundled kit doc."""
     kit_info = BundledKitInfo(
         kit_id="devrun",
         version="0.2.0",
-        cli_commands=[],
         available_docs=["tools/gt.md"],
         level="user",
     )
 
-    result = format_bundled_kit_item("tools/gt.md", kit_info, "doc")
+    result = format_bundled_kit_item("tools/gt.md", kit_info)
 
     # Should contain doc path
     assert "tools/gt.md" in result
@@ -345,7 +324,7 @@ def test_format_bundled_kit_item_doc() -> None:
 
 
 def test_format_compact_list_with_bundled_kits() -> None:
-    """Test compact list with bundled kits shows two sections."""
+    """Test compact list with bundled kits (no cli_commands anymore)."""
     artifacts = [
         InstalledArtifact(
             artifact_type="skill",
@@ -362,7 +341,6 @@ def test_format_compact_list_with_bundled_kits() -> None:
         "gt": BundledKitInfo(
             kit_id="gt",
             version="0.1.0",
-            cli_commands=["submit-branch", "update-pr"],
             available_docs=[],
             level="project",
         ),
@@ -373,12 +351,6 @@ def test_format_compact_list_with_bundled_kits() -> None:
     # Should have Claude Artifacts section
     assert "Claude Artifacts:" in result
     assert "dignified-python" in result
-
-    # Should have Installed Items section
-    assert "Installed Items:" in result
-    assert "Kit CLI Commands:" in result
-    assert "gt:submit-branch" in result
-    assert "gt:update-pr" in result
 
 
 def test_format_compact_list_with_empty_bundled_kits() -> None:
@@ -400,7 +372,7 @@ def test_format_compact_list_with_empty_bundled_kits() -> None:
 
 
 def test_format_compact_list_two_sections() -> None:
-    """Test compact list properly separates artifacts and kit items."""
+    """Test compact list properly separates artifacts and installed items."""
     artifacts = [
         InstalledArtifact(
             artifact_type="skill",
@@ -424,7 +396,6 @@ def test_format_compact_list_two_sections() -> None:
         "test-kit": BundledKitInfo(
             kit_id="test-kit",
             version="1.0.0",
-            cli_commands=["run"],
             available_docs=["tools/ref.md"],
             level="project",
         ),
@@ -437,14 +408,13 @@ def test_format_compact_list_two_sections() -> None:
     assert "test-skill" in claude_section
     assert "guide.md" not in claude_section
 
-    # Installed Items should contain doc and kit CLI command
+    # Installed Items should contain doc
     installed_section = result.split("Claude Artifacts:")[1]
     assert "guide.md" in installed_section
-    assert "test-kit:run" in installed_section
 
 
 def test_format_verbose_list_with_bundled_kits() -> None:
-    """Test verbose list with bundled kits shows full metadata."""
+    """Test verbose list with bundled kits (no cli_commands anymore)."""
     artifacts = [
         InstalledArtifact(
             artifact_type="agent",
@@ -461,7 +431,6 @@ def test_format_verbose_list_with_bundled_kits() -> None:
         "gt": BundledKitInfo(
             kit_id="gt",
             version="0.1.0",
-            cli_commands=["submit-branch"],
             available_docs=[],
             level="project",
         ),
@@ -473,12 +442,6 @@ def test_format_verbose_list_with_bundled_kits() -> None:
     assert "Claude Artifacts:" in result
     assert "devrun" in result
     assert "Agents:" in result
-
-    # Should have Installed Items section with kit CLI command metadata
-    assert "Installed Items:" in result
-    assert "Kit CLI Commands:" in result
-    assert "gt:submit-branch" in result
-    assert "Kit: gt@0.1.0" in result
 
 
 def test_format_compact_list_level_markers() -> None:
@@ -504,14 +467,12 @@ def test_format_compact_list_level_markers() -> None:
         "user-kit": BundledKitInfo(
             kit_id="user-kit",
             version="1.0.0",
-            cli_commands=["user-cmd"],
             available_docs=[],
             level="user",
         ),
         "project-kit": BundledKitInfo(
             kit_id="project-kit",
             version="1.0.0",
-            cli_commands=["proj-cmd"],
             available_docs=[],
             level="project",
         ),

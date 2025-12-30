@@ -8,7 +8,6 @@ from erk.kits.hooks.settings import (
     get_all_hooks,
     load_settings,
 )
-from erk.kits.io.manifest import load_kit_manifest
 from erk.kits.models.artifact import (
     ArtifactLevel,
     ArtifactSource,
@@ -579,7 +578,7 @@ class FilesystemArtifactRepository(ArtifactRepository):
         """Discover bundled kits that are installed in project config.
 
         Only returns bundled kits that are listed in the project's kits.toml
-        configuration file. Shows their CLI commands and available docs.
+        configuration file. Shows their available docs.
 
         Args:
             user_path: User-level .claude directory (e.g., ~/.claude)
@@ -587,7 +586,7 @@ class FilesystemArtifactRepository(ArtifactRepository):
             project_config: Project configuration from kits.toml
 
         Returns:
-            Dict mapping kit_id to BundledKitInfo with CLI commands and available docs
+            Dict mapping kit_id to BundledKitInfo with available docs
         """
         bundled_kits: dict[str, BundledKitInfo] = {}
         bundled_source = BundledKitSource()
@@ -605,10 +604,6 @@ class FilesystemArtifactRepository(ArtifactRepository):
             if not manifest_path.exists():
                 continue
 
-            # Load manifest to get CLI commands
-            manifest = load_kit_manifest(manifest_path)
-            cli_commands = [cmd.name for cmd in manifest.scripts]
-
             # Scan for available docs in kit's docs directory
             kit_base = manifest_path.parent
             docs_dir = kit_base / "docs"
@@ -623,7 +618,6 @@ class FilesystemArtifactRepository(ArtifactRepository):
             bundled_kits[kit_id] = BundledKitInfo(
                 kit_id=kit_id,
                 version=installed_kit.version,
-                cli_commands=cli_commands,
                 available_docs=available_docs,
                 level="project",
             )

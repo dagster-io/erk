@@ -1,14 +1,14 @@
 """Tests for erk branch list command."""
 
 from click.testing import CliRunner
-from tests.test_utils.builders import PullRequestInfoBuilder
-from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.output_helpers import strip_ansi
 
 from erk.cli.cli import cli
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
+from tests.test_utils.builders import PullRequestInfoBuilder
+from tests.test_utils.env_helpers import erk_inmem_env
+from tests.test_utils.output_helpers import strip_ansi
 
 
 def test_branch_list_shows_branches_with_worktrees() -> None:
