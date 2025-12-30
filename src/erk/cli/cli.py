@@ -11,6 +11,7 @@ from erk.cli.commands.branch import branch_group
 from erk.cli.commands.cc import cc_group
 from erk.cli.commands.completion import completion_group
 from erk.cli.commands.config import config_group
+from erk.cli.commands.docs.group import docs_group
 from erk.cli.commands.doctor import doctor_cmd
 from erk.cli.commands.down import down_cmd
 from erk.cli.commands.exec.group import exec_group
@@ -185,6 +186,7 @@ cli.add_command(hidden_shell_cmd)
 cli.add_command(prepare_cwd_recovery_cmd)
 
 # Additional command groups
+cli.add_command(docs_group)
 cli.add_command(exec_group)
 cli.add_command(md_group)
 

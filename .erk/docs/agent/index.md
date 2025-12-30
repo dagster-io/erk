@@ -11,7 +11,6 @@
 - [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
 - [erk-dev/](erk-dev/)
 - [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
-- [kits/](kits/) — Explore when working on kit CLI or artifact management. Add docs here for kit development patterns.
 - [planning/](planning/) — Explore when working with plans, .impl/ folders, or agent delegation. Add docs here for planning workflow patterns.
 - [reference/](reference/) — Explore for API/format specifications. Add docs here for reference material that doesn't fit other categories.
 - [sessions/](sessions/) — Explore when working with session logs or parallel sessions. Add docs here for session management patterns.

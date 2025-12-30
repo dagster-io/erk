@@ -1,4 +1,4 @@
-.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test py-fast-ci fast-ci all-ci md-check clean publish fix reinstall-erk-tools
+.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test py-fast-ci fast-ci all-ci md-check docs-validate docs-sync-check clean publish fix reinstall-erk-tools
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -61,6 +61,12 @@ test-all: test-all-erk test-erk-dev
 
 md-check:
 	uv run erk md check
+
+docs-validate:
+	uv run erk docs validate
+
+docs-sync-check:
+	uv run erk docs sync --check
 
 # Python-only Fast CI: Lint, format, type check, and unit tests (skips markdown checks)
 py-fast-ci:
