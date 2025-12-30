@@ -5,9 +5,7 @@ are constructed and output is parsed correctly.
 """
 
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from erk_shared.git.real import RealGit
 
@@ -30,13 +28,15 @@ class TestIsBranchDivergedFromRemote:
         behind_result.returncode = 0
         behind_result.stdout = "3\n"
 
-        with patch("subprocess.run", side_effect=[mock_result, ahead_result, behind_result]) as mock_run:
+        side_effects = [mock_result, ahead_result, behind_result]
+        with patch("subprocess.run", side_effect=side_effects) as mock_run:
             git = RealGit()
             git.is_branch_diverged_from_remote(cwd, "feature", "origin")
 
             # First call should verify remote branch exists
             first_call = mock_run.call_args_list[0]
-            assert first_call[0][0] == ["git", "rev-parse", "--verify", "origin/feature"]
+            expected = ["git", "rev-parse", "--verify", "origin/feature"]
+            assert first_call[0][0] == expected
             assert first_call[1]["cwd"] == cwd
 
     def test_returns_false_when_remote_branch_does_not_exist(self) -> None:
@@ -47,7 +47,8 @@ class TestIsBranchDivergedFromRemote:
 
         with patch("subprocess.run", return_value=mock_result):
             git = RealGit()
-            is_diverged, ahead, behind = git.is_branch_diverged_from_remote(cwd, "feature", "origin")
+            result = git.is_branch_diverged_from_remote(cwd, "feature", "origin")
+            is_diverged, ahead, behind = result
 
             assert is_diverged is False
             assert ahead == 0
@@ -72,18 +73,31 @@ class TestIsBranchDivergedFromRemote:
         behind_result.returncode = 0
         behind_result.stdout = "3\n"
 
-        with patch("subprocess.run", side_effect=[rev_parse_result, ahead_result, behind_result]) as mock_run:
+        side_effects = [rev_parse_result, ahead_result, behind_result]
+        with patch("subprocess.run", side_effect=side_effects) as mock_run:
             git = RealGit()
             git.is_branch_diverged_from_remote(cwd, "my-branch", "origin")
 
             # Second call: ahead count (remote..local)
             ahead_call = mock_run.call_args_list[1]
-            assert ahead_call[0][0] == ["git", "rev-list", "--count", "origin/my-branch..my-branch"]
+            expected_ahead = [
+                "git",
+                "rev-list",
+                "--count",
+                "origin/my-branch..my-branch",
+            ]
+            assert ahead_call[0][0] == expected_ahead
             assert ahead_call[1]["cwd"] == cwd
 
             # Third call: behind count (local..remote)
             behind_call = mock_run.call_args_list[2]
-            assert behind_call[0][0] == ["git", "rev-list", "--count", "my-branch..origin/my-branch"]
+            expected_behind = [
+                "git",
+                "rev-list",
+                "--count",
+                "my-branch..origin/my-branch",
+            ]
+            assert behind_call[0][0] == expected_behind
             assert behind_call[1]["cwd"] == cwd
 
     def test_returns_diverged_true_when_both_ahead_and_behind(self) -> None:
@@ -102,9 +116,11 @@ class TestIsBranchDivergedFromRemote:
         behind_result.returncode = 0
         behind_result.stdout = "3\n"
 
-        with patch("subprocess.run", side_effect=[rev_parse_result, ahead_result, behind_result]):
+        side_effects = [rev_parse_result, ahead_result, behind_result]
+        with patch("subprocess.run", side_effect=side_effects):
             git = RealGit()
-            is_diverged, ahead, behind = git.is_branch_diverged_from_remote(cwd, "feature", "origin")
+            result = git.is_branch_diverged_from_remote(cwd, "feature", "origin")
+            is_diverged, ahead, behind = result
 
             assert is_diverged is True
             assert ahead == 2
@@ -126,9 +142,11 @@ class TestIsBranchDivergedFromRemote:
         behind_result.returncode = 0
         behind_result.stdout = "0\n"
 
-        with patch("subprocess.run", side_effect=[rev_parse_result, ahead_result, behind_result]):
+        side_effects = [rev_parse_result, ahead_result, behind_result]
+        with patch("subprocess.run", side_effect=side_effects):
             git = RealGit()
-            is_diverged, ahead, behind = git.is_branch_diverged_from_remote(cwd, "feature", "origin")
+            result = git.is_branch_diverged_from_remote(cwd, "feature", "origin")
+            is_diverged, ahead, behind = result
 
             assert is_diverged is False
             assert ahead == 5
@@ -150,9 +168,11 @@ class TestIsBranchDivergedFromRemote:
         behind_result.returncode = 0
         behind_result.stdout = "4\n"
 
-        with patch("subprocess.run", side_effect=[rev_parse_result, ahead_result, behind_result]):
+        side_effects = [rev_parse_result, ahead_result, behind_result]
+        with patch("subprocess.run", side_effect=side_effects):
             git = RealGit()
-            is_diverged, ahead, behind = git.is_branch_diverged_from_remote(cwd, "feature", "origin")
+            result = git.is_branch_diverged_from_remote(cwd, "feature", "origin")
+            is_diverged, ahead, behind = result
 
             assert is_diverged is False
             assert ahead == 0
@@ -174,9 +194,11 @@ class TestIsBranchDivergedFromRemote:
         behind_result.returncode = 0
         behind_result.stdout = "0\n"
 
-        with patch("subprocess.run", side_effect=[rev_parse_result, ahead_result, behind_result]):
+        side_effects = [rev_parse_result, ahead_result, behind_result]
+        with patch("subprocess.run", side_effect=side_effects):
             git = RealGit()
-            is_diverged, ahead, behind = git.is_branch_diverged_from_remote(cwd, "feature", "origin")
+            result = git.is_branch_diverged_from_remote(cwd, "feature", "origin")
+            is_diverged, ahead, behind = result
 
             assert is_diverged is False
             assert ahead == 0
@@ -199,9 +221,11 @@ class TestIsBranchDivergedFromRemote:
         behind_result.returncode = 1
         behind_result.stdout = ""
 
-        with patch("subprocess.run", side_effect=[rev_parse_result, ahead_result, behind_result]):
+        side_effects = [rev_parse_result, ahead_result, behind_result]
+        with patch("subprocess.run", side_effect=side_effects):
             git = RealGit()
-            is_diverged, ahead, behind = git.is_branch_diverged_from_remote(cwd, "feature", "origin")
+            result = git.is_branch_diverged_from_remote(cwd, "feature", "origin")
+            is_diverged, ahead, behind = result
 
             assert is_diverged is False
             assert ahead == 0
@@ -223,9 +247,11 @@ class TestIsBranchDivergedFromRemote:
         behind_result.returncode = 0
         behind_result.stdout = "\n7\n\n"  # Multiple newlines
 
-        with patch("subprocess.run", side_effect=[rev_parse_result, ahead_result, behind_result]):
+        side_effects = [rev_parse_result, ahead_result, behind_result]
+        with patch("subprocess.run", side_effect=side_effects):
             git = RealGit()
-            is_diverged, ahead, behind = git.is_branch_diverged_from_remote(cwd, "feature", "origin")
+            result = git.is_branch_diverged_from_remote(cwd, "feature", "origin")
+            is_diverged, ahead, behind = result
 
             assert is_diverged is True
             assert ahead == 10
