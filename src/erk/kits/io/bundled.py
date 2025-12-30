@@ -15,11 +15,7 @@ def list_bundled_kits() -> list[str]:
     if not kits_dir.exists():
         return []
 
-    return [
-        d.name
-        for d in kits_dir.iterdir()
-        if d.is_dir() and (d / "kit.yaml").exists()
-    ]
+    return [d.name for d in kits_dir.iterdir() if d.is_dir() and (d / "kit.yaml").exists()]
 
 
 def get_bundled_kit_path(kit_name: str) -> Path | None:

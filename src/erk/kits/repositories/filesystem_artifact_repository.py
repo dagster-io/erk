@@ -8,14 +8,14 @@ from erk.kits.hooks.settings import (
     get_all_hooks,
     load_settings,
 )
+from erk.kits.io.bundled import get_bundled_kit_path
+from erk.kits.io.manifest import load_kit_manifest
 from erk.kits.models.artifact import (
     ArtifactLevel,
     ArtifactSource,
     ArtifactType,
     InstalledArtifact,
 )
-from erk.kits.io.bundled import get_bundled_kit_path
-from erk.kits.io.manifest import load_kit_manifest
 from erk.kits.models.bundled_kit import BundledKitInfo
 from erk.kits.models.config import InstalledKit, ProjectConfig
 from erk.kits.repositories.artifact_repository import ArtifactRepository
@@ -592,7 +592,7 @@ class FilesystemArtifactRepository(ArtifactRepository):
         bundled_kits: dict[str, BundledKitInfo] = {}
 
         # Only process kits that are in the project config
-        for kit_id, installed_kit in project_config.kits.items():
+        for kit_id, _installed_kit in project_config.kits.items():
             # Skip if not a bundled kit
             kit_path = get_bundled_kit_path(kit_id)
             if kit_path is None:
