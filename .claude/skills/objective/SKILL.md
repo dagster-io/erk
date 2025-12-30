@@ -1,0 +1,163 @@
+---
+name: objective
+description: >
+  This skill should be used when managing objectives - coherent goals that require 2+ plans/PRs
+  to complete. Use when users want to create multi-plan tracking issues, log progress across
+  related PRs, capture lessons learned, or coordinate work that spans multiple erk-plans.
+  Objectives are human-first coordination documents, not executable plans.
+---
+
+# Objective Skill
+
+## Overview
+
+Objectives are coordination documents for goals requiring multiple plans/PRs to complete. Unlike
+erk-plans (single executable implementations), objectives track progress across related work and
+capture lessons learned along the way.
+
+**Scope range:**
+
+- Small: Feature requiring 2-3 related PRs
+- Medium: Refactor spanning several plans
+- Large: Long-running strategic direction emitting many plans
+
+## When to Use
+
+Invoke this skill when users:
+
+- Want to create a multi-plan tracking issue
+- Need to coordinate work spanning 2+ PRs
+- Ask about logging progress or lessons across related work
+- Want to understand objectives vs erk-plans
+- Need to spawn erk-plans from an objective's roadmap
+
+## Objective vs Erk-Plan
+
+| Aspect   | Erk-Plan                         | Objective                           |
+| -------- | -------------------------------- | ----------------------------------- |
+| Purpose  | Single executable implementation | Coordinate 2+ related plans/PRs     |
+| Scope    | One PR or tightly-coupled change | Multiple plans toward coherent goal |
+| Body     | Machine-parseable metadata       | Human-readable markdown             |
+| Comments | Session context dumps            | Action logs + lessons               |
+| Label    | `erk-plan`                       | `erk-objective`                     |
+| Tooling  | `erk plan submit/implement`      | Manual updates via comments         |
+
+## Key Design Principles
+
+1. **Human-first** - Plain markdown, no machine-generated metadata
+2. **Incremental capture** - Each action gets its own comment
+3. **Lessons as first-class** - Every action comment includes lessons learned
+4. **Clear roadmap** - Status visible at a glance in the body
+5. **Body stays current** - Update body when roadmap status changes
+
+## Quick Reference
+
+### Creating an Objective
+
+```bash
+gh issue create --title "Objective: [Title]" --label "erk-objective" --body "$(cat <<'EOF'
+# Objective: [Title]
+
+> [1-2 sentence summary]
+
+## Goal
+
+[What success looks like - concrete end state]
+
+## Design Decisions
+
+1. **[Decision name]**: [What was decided]
+
+## Roadmap
+
+### Phase 1: [Name]
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | ... | pending | |
+
+## Current Focus
+
+**Next action:** [What should happen next]
+EOF
+)"
+```
+
+### Logging an Action
+
+```bash
+gh issue comment <issue-number> --body "$(cat <<'EOF'
+## Action: [Brief title]
+
+**Date:** YYYY-MM-DD
+**PR:** #123
+**Phase/Step:** 1.2
+
+### What Was Done
+- [Concrete actions taken]
+
+### Lessons Learned
+- [Insights for future work]
+
+### Roadmap Updates
+- Step 1.2: pending → done
+EOF
+)"
+```
+
+### Updating an Objective
+
+After completing work or hitting a milestone, always do **both** steps:
+
+```bash
+# 1. Post action comment (captures the moment)
+gh issue comment <issue-number> --body "$(cat <<'EOF'
+## Action: [Brief title]
+
+**Date:** YYYY-MM-DD
+**PR:** #123
+**Phase/Step:** 1.2
+
+### What Was Done
+- [Concrete actions]
+
+### Lessons Learned
+- [Insights for future work]
+
+### Roadmap Updates
+- Step 1.2: pending → done
+EOF
+)"
+
+# 2. Update issue body (reflects new state)
+gh issue view <issue-number> --web
+```
+
+Then edit the roadmap table statuses, "Current Focus", and any new design decisions.
+
+### Spawning an Erk-Plan
+
+To implement a specific roadmap step, create an erk-plan that references the objective:
+
+```bash
+erk plan create --title "Implement [step description]" --body "Part of Objective #123, Step 1.2"
+```
+
+## Workflow Summary
+
+1. **Create objective** - When starting multi-plan work
+2. **Log actions** - After completing each significant piece of work
+3. **Update body** - Keep roadmap status current
+4. **Spawn erk-plans** - For individual implementation steps
+5. **Close** - When goal achieved or abandoned (proactively ask when all steps done)
+
+## Resources
+
+### references/
+
+- `format.md` - Complete issue body and comment templates with examples
+- `workflow.md` - Procedures for creating objectives, spawning plans, resuming work
+- `updating.md` - Two-step update workflow (comment + body edit)
+- `closing.md` - Closing triggers and procedures
+
+Load references when users need complete templates or detailed workflow guidance.
