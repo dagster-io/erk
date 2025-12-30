@@ -5,7 +5,7 @@ from pathlib import Path
 
 import click
 
-from erk.kits.io.bundled import get_bundled_kit_path, list_bundled_kits
+import erk_kits
 from erk.kits.io.frontmatter import parse_artifact_frontmatter
 from erk.kits.io.git import find_git_root
 from erk.kits.io.manifest import load_kit_manifest
@@ -218,7 +218,12 @@ def kit_build(kit_name: str | None, check: bool, verbose: bool) -> None:
         click.echo("Error: Not in a git repository", err=True)
         raise SystemExit(1)
 
-    kit_names = list_bundled_kits()
+    kits_dir = erk_kits.get_kits_dir()
+    kit_names = (
+        [d.name for d in kits_dir.iterdir() if d.is_dir() and (d / "kit.yaml").exists()]
+        if kits_dir.exists()
+        else []
+    )
 
     if not kit_names:
         click.echo("No bundled kits found")
@@ -240,8 +245,8 @@ def kit_build(kit_name: str | None, check: bool, verbose: bool) -> None:
     total_errors = 0
 
     for name in sorted(kit_names):
-        kit_path = get_bundled_kit_path(name)
-        if kit_path is None:
+        kit_path = erk_kits.get_kits_dir() / name
+        if not kit_path.exists():
             continue
 
         result = build_kit(

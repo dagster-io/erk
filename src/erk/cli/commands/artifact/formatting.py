@@ -6,7 +6,6 @@ import click
 
 from erk.kits.io.frontmatter import parse_user_metadata
 from erk.kits.models.artifact import ArtifactLevel, ArtifactSource, InstalledArtifact
-from erk.kits.models.bundled_kit import BundledKitInfo
 
 
 def format_level_indicator(level: ArtifactLevel) -> str:
@@ -126,28 +125,6 @@ def format_hook_metadata(artifact: InstalledArtifact) -> str:
     return "\n".join(lines) if lines else ""
 
 
-def format_bundled_kit_item(item_name: str, kit_info: BundledKitInfo) -> str:
-    """Format single-line representation of a bundled kit item (doc).
-
-    Args:
-        item_name: Name of the item (doc path)
-        kit_info: Kit information containing version and level
-
-    Returns:
-        Formatted line: [level] name [kit@version]
-    """
-    level_indicator = (
-        click.style("[U]", fg="blue", bold=True)
-        if kit_info.level == "user"
-        else click.style("[P]", fg="green", bold=True)
-    )
-
-    name = click.style(item_name, bold=True)
-    source = click.style(f"[{kit_info.kit_id}@{kit_info.version}]", fg="cyan")
-
-    return f"{level_indicator} {name} {source}"
-
-
 def _get_artifact_description(
     artifact: InstalledArtifact, user_path: Path, project_path: Path
 ) -> str | None:
@@ -175,9 +152,7 @@ def _get_artifact_description(
     return None
 
 
-def format_compact_list(
-    artifacts: list[InstalledArtifact], bundled_kits: dict[str, BundledKitInfo] | None = None
-) -> str:
+def format_compact_list(artifacts: list[InstalledArtifact]) -> str:
     """Format compact view grouped by type with two sections.
 
     Creates output structure:
@@ -186,15 +161,11 @@ def format_compact_list(
 
     Args:
         artifacts: List of artifacts to format
-        bundled_kits: Dict of bundled kit information
 
     Returns:
         Formatted compact list with two-section structure
     """
-    if bundled_kits is None:
-        bundled_kits = {}
-
-    if not artifacts and not bundled_kits:
+    if not artifacts:
         return ""
 
     # Group artifacts by type
@@ -242,9 +213,9 @@ def format_compact_list(
 
 def format_verbose_list(
     artifacts: list[InstalledArtifact],
-    bundled_kits: dict[str, BundledKitInfo] | None = None,
-    user_path: Path | None = None,
-    project_path: Path | None = None,
+    *,
+    user_path: Path | None,
+    project_path: Path | None,
 ) -> str:
     """Format detailed view with grouped layout and indented details.
 
@@ -256,17 +227,13 @@ def format_verbose_list(
 
     Args:
         artifacts: List of artifacts to format
-        bundled_kits: Dict of bundled kit information
         user_path: User-level .claude/ directory for reading descriptions
         project_path: Project-level .claude/ directory for reading descriptions
 
     Returns:
         Formatted verbose list with grouped layout
     """
-    if bundled_kits is None:
-        bundled_kits = {}
-
-    if not artifacts and not bundled_kits:
+    if not artifacts:
         return ""
 
     # Group artifacts by type

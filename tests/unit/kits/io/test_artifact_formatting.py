@@ -4,7 +4,6 @@ from pathlib import Path
 
 from erk.cli.commands.artifact.formatting import (
     format_artifact_header,
-    format_bundled_kit_item,
     format_compact_artifact_line,
     format_compact_doc_line,
     format_compact_list,
@@ -14,7 +13,6 @@ from erk.cli.commands.artifact.formatting import (
     format_verbose_list,
 )
 from erk.kits.models.artifact import ArtifactLevel, ArtifactSource, InstalledArtifact
-from erk.kits.models.bundled_kit import BundledKitInfo
 
 
 def test_format_level_indicator_user() -> None:
@@ -235,7 +233,7 @@ def test_format_compact_list_grouped_by_type() -> None:
 
 def test_format_verbose_list_empty() -> None:
     """Test verbose list formatting with empty list."""
-    result = format_verbose_list([])
+    result = format_verbose_list([], user_path=None, project_path=None)
     assert result == ""
 
 
@@ -260,7 +258,7 @@ def test_format_verbose_list_with_metadata() -> None:
         ),
     ]
 
-    result = format_verbose_list(artifacts)
+    result = format_verbose_list(artifacts, user_path=None, project_path=None)
 
     # Should contain artifact names
     assert "test-skill" in result
@@ -296,79 +294,12 @@ def test_format_verbose_list_with_hooks() -> None:
         ),
     ]
 
-    result = format_verbose_list(artifacts)
+    result = format_verbose_list(artifacts, user_path=None, project_path=None)
 
     # Should contain hook metadata
     assert "test-hook" in result
     assert "settings.local.json" in result
     assert "⚠️" in result  # Warning for local settings
-
-
-def test_format_bundled_kit_item_doc() -> None:
-    """Test formatting of bundled kit doc."""
-    kit_info = BundledKitInfo(
-        kit_id="devrun",
-        version="0.2.0",
-        available_docs=["tools/gt.md"],
-        level="user",
-    )
-
-    result = format_bundled_kit_item("tools/gt.md", kit_info)
-
-    # Should contain doc path
-    assert "tools/gt.md" in result
-    # Should contain level marker for user
-    assert "[U]" in result
-    # Should contain kit version
-    assert "devrun@0.2.0" in result
-
-
-def test_format_compact_list_with_bundled_kits() -> None:
-    """Test compact list with bundled kits (no cli_commands anymore)."""
-    artifacts = [
-        InstalledArtifact(
-            artifact_type="skill",
-            artifact_name="dignified-python",
-            file_path=Path("skills/dignified-python/SKILL.md"),
-            source=ArtifactSource.MANAGED,
-            level=ArtifactLevel.PROJECT,
-            kit_id="dignified-python",
-            kit_version="0.1.0",
-        ),
-    ]
-
-    bundled_kits = {
-        "gt": BundledKitInfo(
-            kit_id="gt",
-            version="0.1.0",
-            available_docs=[],
-            level="project",
-        ),
-    }
-
-    result = format_compact_list(artifacts, bundled_kits)
-
-    # Should have Claude Artifacts section
-    assert "Claude Artifacts:" in result
-    assert "dignified-python" in result
-
-
-def test_format_compact_list_with_empty_bundled_kits() -> None:
-    """Test compact list with empty bundled kits dict."""
-    artifacts = [
-        InstalledArtifact(
-            artifact_type="command",
-            artifact_name="test-cmd",
-            file_path=Path("commands/test-cmd.md"),
-            source=ArtifactSource.LOCAL,
-            level=ArtifactLevel.PROJECT,
-        ),
-    ]
-
-    result = format_compact_list(artifacts, {})
-
-    # Should still work with empty bundled kits
-    assert "test-cmd" in result
 
 
 def test_format_compact_list_two_sections() -> None:
@@ -392,16 +323,7 @@ def test_format_compact_list_two_sections() -> None:
         ),
     ]
 
-    bundled_kits = {
-        "test-kit": BundledKitInfo(
-            kit_id="test-kit",
-            version="1.0.0",
-            available_docs=["tools/ref.md"],
-            level="project",
-        ),
-    }
-
-    result = format_compact_list(artifacts, bundled_kits)
+    result = format_compact_list(artifacts)
 
     # Claude Artifacts should contain skill but not doc
     claude_section = result.split("Installed Items:")[0]
@@ -411,37 +333,6 @@ def test_format_compact_list_two_sections() -> None:
     # Installed Items should contain doc
     installed_section = result.split("Claude Artifacts:")[1]
     assert "guide.md" in installed_section
-
-
-def test_format_verbose_list_with_bundled_kits() -> None:
-    """Test verbose list with bundled kits (no cli_commands anymore)."""
-    artifacts = [
-        InstalledArtifact(
-            artifact_type="agent",
-            artifact_name="devrun",
-            file_path=Path("agents/devrun.md"),
-            source=ArtifactSource.MANAGED,
-            level=ArtifactLevel.PROJECT,
-            kit_id="devrun",
-            kit_version="0.1.0",
-        ),
-    ]
-
-    bundled_kits = {
-        "gt": BundledKitInfo(
-            kit_id="gt",
-            version="0.1.0",
-            available_docs=[],
-            level="project",
-        ),
-    }
-
-    result = format_verbose_list(artifacts, bundled_kits)
-
-    # Should have Claude Artifacts section with metadata
-    assert "Claude Artifacts:" in result
-    assert "devrun" in result
-    assert "Agents:" in result
 
 
 def test_format_compact_list_level_markers() -> None:
@@ -463,22 +354,7 @@ def test_format_compact_list_level_markers() -> None:
         ),
     ]
 
-    bundled_kits = {
-        "user-kit": BundledKitInfo(
-            kit_id="user-kit",
-            version="1.0.0",
-            available_docs=[],
-            level="user",
-        ),
-        "project-kit": BundledKitInfo(
-            kit_id="project-kit",
-            version="1.0.0",
-            available_docs=[],
-            level="project",
-        ),
-    }
-
-    result = format_compact_list(artifacts, bundled_kits)
+    result = format_compact_list(artifacts)
 
     # Should contain both [U] and [P] markers
     assert "[U]" in result

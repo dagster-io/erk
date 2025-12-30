@@ -5,8 +5,8 @@ from pathlib import Path
 
 import click
 
+import erk_kits
 from erk.kits.io.at_reference import parse_at_references
-from erk.kits.io.bundled import get_bundled_kit_path, list_bundled_kits
 from erk.kits.io.manifest import load_kit_manifest
 
 
@@ -138,7 +138,12 @@ def kit_check(kit_name: str | None) -> None:
         # Check a specific kit
         dot-agent dev kit-check --kit dignified-python
     """
-    kit_names = list_bundled_kits()
+    kits_dir = erk_kits.get_kits_dir()
+    kit_names = (
+        [d.name for d in kits_dir.iterdir() if d.is_dir() and (d / "kit.yaml").exists()]
+        if kits_dir.exists()
+        else []
+    )
 
     if not kit_names:
         click.echo("No bundled kits found")
@@ -155,8 +160,8 @@ def kit_check(kit_name: str | None) -> None:
     total_missing = 0
 
     for name in sorted(kit_names):
-        kit_path = get_bundled_kit_path(name)
-        if kit_path is None:
+        kit_path = erk_kits.get_kits_dir() / name
+        if not kit_path.exists():
             continue
 
         result = check_kit_references(name, kit_path)
