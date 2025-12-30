@@ -10,7 +10,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from erk_shared.git.abc import BranchSyncInfo, Git, WorktreeInfo
+from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, WorktreeInfo
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
@@ -917,7 +917,7 @@ class RealGit(Git):
 
     def is_branch_diverged_from_remote(
         self, cwd: Path, branch: str, remote: str
-    ) -> tuple[bool, int, int]:
+    ) -> BranchDivergence:
         """Check if a local branch has diverged from its remote tracking branch."""
         remote_branch = f"{remote}/{branch}"
 
@@ -930,7 +930,7 @@ class RealGit(Git):
             check=False,
         )
         if result.returncode != 0:
-            return (False, 0, 0)
+            return BranchDivergence(is_diverged=False, ahead=0, behind=0)
 
         # Get ahead/behind counts
         ahead_result = subprocess.run(
@@ -952,4 +952,4 @@ class RealGit(Git):
         behind = int(behind_result.stdout.strip()) if behind_result.returncode == 0 else 0
 
         is_diverged = ahead > 0 and behind > 0
-        return (is_diverged, ahead, behind)
+        return BranchDivergence(is_diverged=is_diverged, ahead=ahead, behind=behind)

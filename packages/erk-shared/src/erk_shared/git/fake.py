@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import NamedTuple
 
-from erk_shared.git.abc import BranchSyncInfo, Git, WorktreeInfo
+from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, WorktreeInfo
 
 
 class PushedBranch(NamedTuple):
@@ -120,7 +120,7 @@ class FakeGit(Git):
         branch_commits_with_authors: dict[str, list[dict[str, str]]] | None = None,
         push_to_remote_raises: Exception | None = None,
         existing_tags: set[str] | None = None,
-        branch_divergence: dict[tuple[Path, str, str], tuple[bool, int, int]] | None = None,
+        branch_divergence: dict[tuple[Path, str, str], BranchDivergence] | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -166,7 +166,7 @@ class FakeGit(Git):
                 with keys: sha, author, timestamp
             push_to_remote_raises: Exception to raise when push_to_remote() is called
             existing_tags: Set of tag names that exist in the repository
-            branch_divergence: Mapping of (cwd, branch, remote) -> (is_diverged, ahead, behind)
+            branch_divergence: Mapping of (cwd, branch, remote) -> BranchDivergence
                 for is_branch_diverged_from_remote()
         """
         self._worktrees = worktrees or {}
@@ -1029,13 +1029,13 @@ class FakeGit(Git):
 
     def is_branch_diverged_from_remote(
         self, cwd: Path, branch: str, remote: str
-    ) -> tuple[bool, int, int]:
+    ) -> BranchDivergence:
         """Check if a local branch has diverged from its remote tracking branch.
 
         Returns the configured divergence state if the key exists in branch_divergence,
-        otherwise returns (False, 0, 0) to indicate no divergence.
+        otherwise returns BranchDivergence(False, 0, 0) to indicate no divergence.
         """
         key = (cwd, branch, remote)
         if key in self._branch_divergence:
             return self._branch_divergence[key]
-        return (False, 0, 0)
+        return BranchDivergence(is_diverged=False, ahead=0, behind=0)

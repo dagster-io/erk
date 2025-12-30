@@ -5,8 +5,7 @@
       "Read(/tmp/*)",
       "Write(/tmp/*)"
     ],
-    "deny": [],
-    "ask": []
+    "deny": []
   },
   "hooks": {
     "UserPromptSubmit": [

@@ -6,7 +6,7 @@ operations while delegating read-only operations to the wrapped implementation.
 
 from pathlib import Path
 
-from erk_shared.git.abc import BranchSyncInfo, Git, WorktreeInfo
+from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, WorktreeInfo
 from erk_shared.output.output import user_output
 
 # ============================================================================
@@ -319,6 +319,6 @@ class DryRunGit(Git):
 
     def is_branch_diverged_from_remote(
         self, cwd: Path, branch: str, remote: str
-    ) -> tuple[bool, int, int]:
+    ) -> BranchDivergence:
         """Check branch divergence (read-only, delegates to wrapped)."""
         return self._wrapped.is_branch_diverged_from_remote(cwd, branch, remote)
