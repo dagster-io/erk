@@ -4,10 +4,6 @@ from pathlib import Path
 
 import click
 
-from erk.artifacts.models import ArtifactState
-from erk.artifacts.staleness import get_current_version
-from erk.artifacts.state import save_artifact_state
-from erk.artifacts.sync import sync_artifacts
 from erk.cli.core import discover_repo_context
 from erk.core.claude_settings import (
     ERK_PERMISSION,
@@ -26,15 +22,8 @@ from erk.core.init_utils import (
     is_repo_named,
     render_config_template,
 )
-from erk.core.repo_discovery import ensure_erk_metadata_dir, in_erk_repo
+from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.core.shell import Shell
-from erk.kits.io.state import (
-    create_default_config as create_default_kit_config,
-)
-from erk.kits.io.state import (
-    save_project_config as save_kit_config,
-)
-from erk.kits.operations.agent_docs import init_docs_agent
 from erk_shared.output.output import user_output
 
 
@@ -225,11 +214,6 @@ def offer_claude_permission_setup(repo_root: Path) -> None:
     is_flag=True,
     help="Show shell integration setup instructions (completion + auto-activation wrapper).",
 )
-@click.option(
-    "--no-artifact-sync",
-    is_flag=True,
-    help="Skip artifact sync during initialization.",
-)
 @click.pass_obj
 def init_cmd(
     ctx: ErkContext,
@@ -237,7 +221,6 @@ def init_cmd(
     preset: str,
     list_presets: bool,
     shell: bool,
-    no_artifact_sync: bool,
 ) -> None:
     """Initialize erk for this repo and scaffold config.toml."""
 
@@ -348,36 +331,6 @@ def init_cmd(
     content = render_config_template(presets_dir, effective_preset)
     cfg_path.write_text(content, encoding="utf-8")
     user_output(f"Wrote {cfg_path}")
-
-    # Initialize .erk/kits.toml if it doesn't exist (or overwrite with --force)
-    kits_toml_path = repo_context.root / ".erk" / "kits.toml"
-    if kits_toml_path.exists() and not force:
-        user_output(f"Kit config already exists: {kits_toml_path}")
-    else:
-        kit_config = create_default_kit_config()
-        save_kit_config(repo_context.root, kit_config)
-        user_output(f"Created {kits_toml_path}")
-
-    # Install artifacts (unless in dev mode or --no-artifact-sync)
-    if no_artifact_sync:
-        user_output("Skipping artifact sync (--no-artifact-sync)")
-    elif not in_erk_repo(repo_context.root):
-        user_output("Installing erk artifacts...")
-        sync_result = sync_artifacts(repo_context.root)
-        user_output(f"  Installed {sync_result.artifacts_installed} artifacts")
-    else:
-        user_output("Dev mode detected - using source artifacts directly")
-        # Still create state file with current version
-        save_artifact_state(repo_context.root, ArtifactState(version=get_current_version()))
-
-    # Initialize .erk/docs/agent/ templates
-    docs_result = init_docs_agent(repo_context.root, force=force)
-    if docs_result.created:
-        for path in docs_result.created:
-            user_output(f"Created {path}")
-    if docs_result.skipped:
-        for path in docs_result.skipped:
-            user_output(f"Skipped {path} (already exists)")
 
     # Check for .gitignore and add .env
     gitignore_path = repo_context.root / ".gitignore"

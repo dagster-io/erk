@@ -5,7 +5,7 @@ Tests the RealClaudeCodeSessionStore against fixture files that represent
 actual Claude Code session log structure.
 
 Fixture layout:
-  tests/integration/kits/kits/erk/fixtures/session_logs/
+  tests/integration/fixtures/session_logs/
     project_alpha/     <- contents of a single ~/.claude/projects/<encoded-path>/ folder
       session-aaa....jsonl
     project_beta/
@@ -26,7 +26,7 @@ from erk_shared.extraction.claude_code_session_store.real import (
 )
 
 # Path to fixture session logs
-FIXTURES_DIR = Path(__file__).parent / "kits" / "kits" / "erk" / "fixtures" / "session_logs"
+FIXTURES_DIR = Path(__file__).parent / "fixtures" / "session_logs"
 
 
 @pytest.fixture

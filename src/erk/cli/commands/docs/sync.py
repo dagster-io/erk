@@ -8,8 +8,7 @@ from pathlib import Path
 
 import click
 
-from erk.kits.cli.output import user_output
-from erk.kits.operations.agent_docs import sync_agent_docs
+from erk.agent_docs.operations import sync_agent_docs
 
 
 @click.command(name="sync")
@@ -37,8 +36,8 @@ def sync_command(*, dry_run: bool, check: bool) -> None:
     - 1: Error during sync (or --check finds files out of sync)
     """
     # --check implies dry-run behavior
-    if check:
-        dry_run = True
+    effective_dry_run = dry_run or check
+
     # Find repository root
     result = subprocess.run(
         ["git", "rev-parse", "--show-toplevel"],
@@ -49,68 +48,75 @@ def sync_command(*, dry_run: bool, check: bool) -> None:
     project_root = Path(result.stdout.strip())
 
     if not project_root.exists():
-        user_output(click.style("✗ Error: Repository root not found", fg="red"))
+        click.echo(click.style("Error: Repository root not found", fg="red"), err=True)
         raise SystemExit(1)
 
     agent_docs_dir = project_root / ".erk" / "docs" / "agent"
     if not agent_docs_dir.exists():
-        user_output(click.style("ℹ️  No .erk/docs/agent/ directory found", fg="cyan"))
+        click.echo(click.style("No .erk/docs/agent/ directory found", fg="cyan"), err=True)
         raise SystemExit(0)
 
     # Sync index files
-    sync_result = sync_agent_docs(project_root, dry_run=dry_run)
+    sync_result = sync_agent_docs(project_root, dry_run=effective_dry_run)
 
     # Report results
-    if dry_run:
-        user_output(click.style("Dry run - no files written", fg="cyan", bold=True))
-        user_output()
+    if effective_dry_run:
+        click.echo(click.style("Dry run - no files written", fg="cyan", bold=True), err=True)
+        click.echo(err=True)
 
     total_changes = len(sync_result.created) + len(sync_result.updated)
 
     if sync_result.created:
-        action = "Would create" if dry_run else "Created"
-        user_output(f"{action} {len(sync_result.created)} file(s):")
+        action = "Would create" if effective_dry_run else "Created"
+        click.echo(f"{action} {len(sync_result.created)} file(s):", err=True)
         for path in sync_result.created:
-            user_output(f"  + {path}")
-        user_output()
+            click.echo(f"  + {path}", err=True)
+        click.echo(err=True)
 
     if sync_result.updated:
-        action = "Would update" if dry_run else "Updated"
-        user_output(f"{action} {len(sync_result.updated)} file(s):")
+        action = "Would update" if effective_dry_run else "Updated"
+        click.echo(f"{action} {len(sync_result.updated)} file(s):", err=True)
         for path in sync_result.updated:
-            user_output(f"  ~ {path}")
-        user_output()
+            click.echo(f"  ~ {path}", err=True)
+        click.echo(err=True)
 
     if sync_result.unchanged:
-        user_output(f"Unchanged: {len(sync_result.unchanged)} file(s)")
-        user_output()
+        click.echo(f"Unchanged: {len(sync_result.unchanged)} file(s)", err=True)
+        click.echo(err=True)
 
     # Report tripwires
     if sync_result.tripwires_count > 0:
-        user_output(f"Tripwires: {sync_result.tripwires_count} collected")
-        user_output()
+        click.echo(f"Tripwires: {sync_result.tripwires_count} collected", err=True)
+        click.echo(err=True)
 
     if sync_result.skipped_invalid > 0:
-        user_output(
+        click.echo(
             click.style(
-                f"⚠ Skipped {sync_result.skipped_invalid} doc(s) with invalid frontmatter",
+                f"Skipped {sync_result.skipped_invalid} doc(s) with invalid frontmatter",
                 fg="yellow",
-            )
+            ),
+            err=True,
         )
-        user_output("  Run 'erk docs validate' to see errors")
-        user_output()
+        click.echo("  Run 'erk docs validate' to see errors", err=True)
+        click.echo(err=True)
 
     # Summary
     if total_changes == 0 and sync_result.skipped_invalid == 0:
-        user_output(click.style("✓ All files are up to date", fg="green"))
+        click.echo(click.style("All files are up to date", fg="green"), err=True)
     elif total_changes > 0:
         if check:
-            msg = f"✗ Files out of sync: {total_changes} change(s) needed"
-            user_output(click.style(msg, fg="red", bold=True))
-            user_output()
-            user_output("Run 'erk docs sync' to regenerate files from frontmatter.")
+            msg = f"Files out of sync: {total_changes} change(s) needed"
+            click.echo(click.style(msg, fg="red", bold=True), err=True)
+            click.echo(err=True)
+            click.echo("Run 'erk docs sync' to regenerate files from frontmatter.", err=True)
             raise SystemExit(1)
-        elif dry_run:
-            user_output(click.style(f"Would make {total_changes} change(s)", fg="cyan", bold=True))
+        elif effective_dry_run:
+            click.echo(
+                click.style(f"Would make {total_changes} change(s)", fg="cyan", bold=True),
+                err=True,
+            )
         else:
-            user_output(click.style(f"✓ Sync complete: {total_changes} change(s)", fg="green"))
+            click.echo(
+                click.style(f"Sync complete: {total_changes} change(s)", fg="green"),
+                err=True,
+            )

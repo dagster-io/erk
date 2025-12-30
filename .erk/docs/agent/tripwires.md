@@ -23,8 +23,6 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before comparing worktree path to repo_root to detect root worktree** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. Use WorktreeInfo.is_root instead of path comparison. Path comparison fails when running from within a non-root worktree because ctx.cwd resolves differently.
 
-**CRITICAL: Before importing from erk package in erk-kits** → Read [erk_shared Package](architecture/erk-shared-package.md) first. erk-kits cannot import from erk. Use erk_shared for shared code.
-
 **CRITICAL: Before adding a new method to Git ABC** → Read [Gateway ABC Implementation Checklist](architecture/gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
 
 **CRITICAL: Before adding a new method to GitHub ABC** → Read [Gateway ABC Implementation Checklist](architecture/gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
@@ -44,12 +42,6 @@ Action-triggered rules that fire when you're about to perform specific actions.
 **CRITICAL: Before writing `__all__` to a Python file** → Read [Code Conventions](conventions.md) first. Re-export modules are forbidden. Import directly from where code is defined.
 
 **CRITICAL: Before running gt sync or gt repo sync on user's behalf** → Read [Auto-Restack Command Usage](erk/auto-restack.md) first. NEVER run 'gt sync' or 'gt repo sync' automatically. This command synchronizes all Graphite branches with GitHub and can delete branches, modify stack relationships, and make irreversible changes. The user must run this command explicitly.
-
-**CRITICAL: Before using Path.cwd() in kit CLI commands** → Read [Kit CLI Dependency Injection Patterns](kits/dependency-injection.md) first. Use require_cwd(ctx) instead. Path.cwd() bypasses dependency injection and makes tests require monkeypatching.
-
-**CRITICAL: Before editing artifacts without running kit-build** → Read [Kit Artifact Build System](kits/dev/artifact-management.md) first. After editing source files (.claude/, .erk/docs/kits/, .github/), run `erk dev kit-build` to sync changes to kit packages.
-
-**CRITICAL: Before editing artifact files in kit packages instead of source locations** → Read [Kit Artifact Build System](kits/dev/artifact-management.md) first. Kit packages are BUILD OUTPUTS. Edit source files in .claude/, .erk/docs/kits/, or .github/workflows/, then run `erk dev kit-build`.
 
 **CRITICAL: Before writing to /tmp/** → Read [Scratch Storage](planning/scratch-storage.md) first. AI workflow files belong in .erk/scratch/<session-id>/, NOT /tmp/.
 

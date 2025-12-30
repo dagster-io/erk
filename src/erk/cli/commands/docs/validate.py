@@ -9,8 +9,7 @@ from pathlib import Path
 
 import click
 
-from erk.kits.cli.output import user_output
-from erk.kits.operations.agent_docs import validate_agent_docs
+from erk.agent_docs.operations import validate_agent_docs
 
 
 @click.command(name="validate")
@@ -43,19 +42,19 @@ def validate_command(*, verbose: bool) -> None:
     project_root = Path(result.stdout.strip())
 
     if not project_root.exists():
-        user_output(click.style("✗ Error: Repository root not found", fg="red"))
+        click.echo(click.style("Error: Repository root not found", fg="red"), err=True)
         raise SystemExit(1)
 
     agent_docs_dir = project_root / ".erk" / "docs" / "agent"
     if not agent_docs_dir.exists():
-        user_output(click.style("ℹ️  No .erk/docs/agent/ directory found", fg="cyan"))
+        click.echo(click.style("No .erk/docs/agent/ directory found", fg="cyan"), err=True)
         raise SystemExit(0)
 
     # Validate all files
     results = validate_agent_docs(project_root)
 
     if len(results) == 0:
-        user_output(click.style("ℹ️  No agent documentation files found", fg="cyan"))
+        click.echo(click.style("No agent documentation files found", fg="cyan"), err=True)
         raise SystemExit(0)
 
     valid_count = sum(1 for r in results if r.is_valid)
@@ -63,35 +62,41 @@ def validate_command(*, verbose: bool) -> None:
 
     # Show results
     if verbose or invalid_count > 0:
-        for result in results:
-            if result.is_valid:
+        for validation_result in results:
+            if validation_result.is_valid:
                 if verbose:
-                    status = click.style("✓", fg="green")
-                    user_output(f"{status} {result.file_path}")
+                    status = click.style("OK", fg="green")
+                    click.echo(f"{status} {validation_result.file_path}", err=True)
             else:
-                status = click.style("✗", fg="red")
-                user_output(f"{status} {result.file_path}")
-                for error in result.errors:
-                    user_output(f"    {error}")
+                status = click.style("FAIL", fg="red")
+                click.echo(f"{status} {validation_result.file_path}", err=True)
+                for error in validation_result.errors:
+                    click.echo(f"    {error}", err=True)
 
     # Summary
-    user_output()
+    click.echo(err=True)
     if invalid_count == 0:
-        user_output(click.style("✓ Agent docs validation: PASSED", fg="green", bold=True))
-        user_output()
-        user_output(f"Files validated: {len(results)}")
-        user_output("All files have valid frontmatter!")
+        click.echo(
+            click.style("Agent docs validation: PASSED", fg="green", bold=True),
+            err=True,
+        )
+        click.echo(err=True)
+        click.echo(f"Files validated: {len(results)}", err=True)
+        click.echo("All files have valid frontmatter!", err=True)
     else:
-        user_output(click.style("✗ Agent docs validation: FAILED", fg="red", bold=True))
-        user_output()
-        user_output(f"Files validated: {len(results)}")
-        user_output(f"  ✓ Valid: {valid_count}")
-        user_output(f"  ✗ Invalid: {invalid_count}")
-        user_output()
-        user_output("Required frontmatter format:")
-        user_output("  ---")
-        user_output("  title: Document Title")
-        user_output("  read_when:")
-        user_output('    - "when to read this doc"')
-        user_output("  ---")
+        click.echo(
+            click.style("Agent docs validation: FAILED", fg="red", bold=True),
+            err=True,
+        )
+        click.echo(err=True)
+        click.echo(f"Files validated: {len(results)}", err=True)
+        click.echo(f"  Valid: {valid_count}", err=True)
+        click.echo(f"  Invalid: {invalid_count}", err=True)
+        click.echo(err=True)
+        click.echo("Required frontmatter format:", err=True)
+        click.echo("  ---", err=True)
+        click.echo("  title: Document Title", err=True)
+        click.echo("  read_when:", err=True)
+        click.echo('    - "when to read this doc"', err=True)
+        click.echo("  ---", err=True)
         raise SystemExit(1)

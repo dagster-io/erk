@@ -26,11 +26,13 @@ from pathlib import Path
 
 import click
 
-from erk.kits.context_helpers import require_github_issues
 from erk_shared.context.helpers import (
     require_cwd,
     require_repo_root,
     require_session_store,
+)
+from erk_shared.context.helpers import (
+    require_issues as require_github_issues,
 )
 from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.output.next_steps import format_next_steps_plain

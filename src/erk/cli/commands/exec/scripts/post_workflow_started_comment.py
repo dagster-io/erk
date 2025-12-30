@@ -43,7 +43,7 @@ from datetime import UTC, datetime
 
 import click
 
-from erk.kits.context_helpers import require_github_issues
+from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.context.helpers import require_repo_root
 
 

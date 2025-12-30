@@ -3,7 +3,6 @@ members = ["packages/*"]
 
 [tool.uv.sources]
 erk-dev = { workspace = true }
-erk-kits = { workspace = true }
 erk-shared = { workspace = true }
 
 [project]
@@ -28,7 +27,6 @@ dependencies = [
     "tomli-w>=1.0",
     "textual>=3.0.0",
     "pyperclip>=1.8.2",
-    "erk-kits",
     "erk-shared",
     "textual-dev>=1.8.0",
 ]
@@ -74,12 +72,12 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["erk", "erk_dev", "erk_kits", "erk_shared"]
+known-first-party = ["erk", "erk_dev", "erk_shared"]
 
 [tool.pyright]
 pythonVersion = "3.11"
 typeCheckingMode = "standard"
-include = ["src", "packages/erk-dev/src", "packages/erk-kits/src", "packages/erk-shared/src"]
+include = ["src", "packages/erk-dev/src", "packages/erk-shared/src"]
 exclude = [".claude/skills/"]
 venvPath = "."
 venv = ".venv"

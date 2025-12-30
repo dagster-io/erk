@@ -28,8 +28,14 @@ from typing import TypedDict
 import click
 
 from erk.cli.script_output import exit_with_error
-from erk.kits.context_helpers import require_github_issues
-from erk_shared.context.helpers import get_current_branch, require_github, require_repo_root
+from erk_shared.context.helpers import (
+    get_current_branch,
+    require_github,
+    require_repo_root,
+)
+from erk_shared.context.helpers import (
+    require_issues as require_github_issues,
+)
 from erk_shared.github.checks import GitHubChecks
 from erk_shared.non_ideal_state import (
     BranchDetectionFailed,

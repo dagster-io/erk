@@ -11,7 +11,6 @@ resolution-markers = [
 members = [
     "erk",
     "erk-dev",
-    "erk-kits",
     "erk-shared",
 ]
 
@@ -289,7 +288,6 @@ version = "0.2.8"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
-    { name = "erk-kits" },
     { name = "erk-shared" },
     { name = "packaging" },
     { name = "pathspec" },
@@ -320,7 +318,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.1.7" },
-    { name = "erk-kits", editable = "packages/erk-kits" },
     { name = "erk-shared", editable = "packages/erk-shared" },
     { name = "packaging", specifier = ">=21.0" },
     { name = "pathspec", specifier = ">=0.12.0" },
@@ -362,11 +359,6 @@ requires-dist = [
     { name = "click", specifier = ">=8.1.7" },
     { name = "erk-shared", editable = "packages/erk-shared" },
 ]
-
-[[package]]
-name = "erk-kits"
-version = "0.2.8"
-source = { editable = "packages/erk-kits" }
 
 [[package]]
 name = "erk-shared"

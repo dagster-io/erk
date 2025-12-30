@@ -52,9 +52,7 @@ def test_init_creates_global_config_first_time() -> None:
         )
 
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(
-                cli, ["init", "--no-artifact-sync"], obj=test_ctx, input=f"{erk_root}\nn\n"
-            )
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Global config not found" in result.output
@@ -82,9 +80,7 @@ def test_init_prompts_for_erk_root() -> None:
         )
 
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(
-                cli, ["init", "--no-artifact-sync"], obj=test_ctx, input=f"{erk_root}\nn\n"
-            )
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
 
         assert result.exit_code == 0, result.output
         assert ".erk folder" in result.output
@@ -111,9 +107,7 @@ def test_init_detects_graphite_installed() -> None:
         )
 
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(
-                cli, ["init", "--no-artifact-sync"], obj=test_ctx, input=f"{erk_root}\nn\n"
-            )
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Graphite (gt) detected" in result.output
@@ -138,9 +132,7 @@ def test_init_detects_graphite_not_installed() -> None:
         )
 
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(
-                cli, ["init", "--no-artifact-sync"], obj=test_ctx, input=f"{erk_root}\nn\n"
-            )
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Graphite (gt) not detected" in result.output
@@ -170,7 +162,7 @@ def test_init_auto_preset_detects_dagster() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx)
+        result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Config should be created in .erk/ directory (consolidated location)
@@ -199,7 +191,7 @@ def test_init_auto_preset_uses_generic_fallback() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx)
+        result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Config should be created in .erk/ directory (consolidated location)
@@ -224,9 +216,7 @@ def test_init_explicit_preset_dagster() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(
-            cli, ["init", "--preset", "dagster", "--no-artifact-sync"], obj=test_ctx
-        )
+        result = runner.invoke(cli, ["init", "--preset", "dagster"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Config should be created in .erk/ directory (consolidated location)
@@ -251,9 +241,7 @@ def test_init_explicit_preset_generic() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(
-            cli, ["init", "--preset", "generic", "--no-artifact-sync"], obj=test_ctx
-        )
+        result = runner.invoke(cli, ["init", "--preset", "generic"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Config should be created in .erk/ directory (consolidated location)
@@ -278,7 +266,7 @@ def test_init_list_presets_displays_available() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "--list-presets", "--no-artifact-sync"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "--list-presets"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         assert "Available presets:" in result.output
@@ -303,9 +291,7 @@ def test_init_invalid_preset_fails() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(
-            cli, ["init", "--preset", "nonexistent", "--no-artifact-sync"], obj=test_ctx
-        )
+        result = runner.invoke(cli, ["init", "--preset", "nonexistent"], obj=test_ctx)
 
         assert result.exit_code == 1
         assert "Invalid preset 'nonexistent'" in result.output
@@ -328,7 +314,7 @@ def test_init_creates_config_at_erk_dir() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx)
+        result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Config should be in .erk/ directory (consolidated location)
@@ -364,7 +350,7 @@ def test_init_force_overwrites_existing_config() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "--force", "--no-artifact-sync"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "--force"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         assert config_path.exists()
@@ -396,7 +382,7 @@ def test_init_fails_without_force_when_exists() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx)
+        result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 1
         assert "Config already exists" in result.output
@@ -430,7 +416,7 @@ def test_init_adds_env_to_gitignore() -> None:
 
         # Accept prompt for .env, decline .erk/scratch/ and .impl/
 
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx, input="y\nn\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -463,7 +449,7 @@ def test_init_skips_gitignore_entries_if_declined() -> None:
         )
 
         # Decline all three prompts (.env, .erk/scratch/, .impl/)
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx, input="n\nn\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -498,7 +484,7 @@ def test_init_adds_erk_scratch_and_impl_to_gitignore() -> None:
         )
 
         # Decline .env, accept .erk/scratch/ and .impl/
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx, input="n\ny\ny\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\ny\ny\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -530,7 +516,7 @@ def test_init_handles_missing_gitignore() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx)
+        result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Should not crash or prompt about gitignore
@@ -563,7 +549,7 @@ def test_init_preserves_gitignore_formatting() -> None:
         )
 
         # Accept .env, decline .erk/scratch/ and .impl/
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx, input="y\nn\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -597,9 +583,7 @@ def test_init_first_time_offers_shell_setup() -> None:
 
         # Provide input: erk_root, decline shell setup
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(
-                cli, ["init", "--no-artifact-sync"], obj=test_ctx, input=f"{erk_root}\nn\n"
-            )
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
 
         assert result.exit_code == 0, result.output
         # Should mention shell integration
@@ -630,9 +614,7 @@ def test_init_shell_flag_only_setup() -> None:
 
         # Decline shell setup
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(
-                cli, ["init", "--shell", "--no-artifact-sync"], obj=test_ctx, input="n\n"
-            )
+            result = runner.invoke(cli, ["init", "--shell"], obj=test_ctx, input="n\n")
 
         assert result.exit_code == 0, result.output
         # Should mention shell but not create config
@@ -665,7 +647,7 @@ def test_init_detects_bash_shell() -> None:
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             result = runner.invoke(
                 cli,
-                ["init", "--no-artifact-sync"],
+                ["init"],
                 obj=test_ctx,
                 input=f"{erk_root}\nn\n",
             )
@@ -698,7 +680,7 @@ def test_init_detects_zsh_shell() -> None:
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             result = runner.invoke(
                 cli,
-                ["init", "--no-artifact-sync"],
+                ["init"],
                 obj=test_ctx,
                 input=f"{erk_root}\nn\n",
             )
@@ -731,7 +713,7 @@ def test_init_detects_fish_shell() -> None:
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             result = runner.invoke(
                 cli,
-                ["init", "--no-artifact-sync"],
+                ["init"],
                 obj=test_ctx,
                 input=f"{erk_root}\nn\n",
             )
@@ -757,9 +739,7 @@ def test_init_skips_unknown_shell() -> None:
         )
 
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(
-                cli, ["init", "--no-artifact-sync"], obj=test_ctx, input=f"{erk_root}\n"
-            )
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\n")
 
         assert result.exit_code == 0, result.output
         assert "Unable to detect shell" in result.output
@@ -790,7 +770,7 @@ def test_init_prints_completion_instructions() -> None:
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             result = runner.invoke(
                 cli,
-                ["init", "--no-artifact-sync"],
+                ["init"],
                 obj=test_ctx,
                 input=f"{erk_root}\ny\ny\n",
             )
@@ -827,7 +807,7 @@ def test_init_prints_wrapper_instructions() -> None:
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             result = runner.invoke(
                 cli,
-                ["init", "--no-artifact-sync"],
+                ["init"],
                 obj=test_ctx,
                 input=f"{erk_root}\ny\ny\n",
             )
@@ -864,7 +844,7 @@ def test_init_skips_shell_if_declined() -> None:
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             result = runner.invoke(
                 cli,
-                ["init", "--no-artifact-sync"],
+                ["init"],
                 obj=test_ctx,
                 input=f"{erk_root}\nn\n",
             )
@@ -898,9 +878,7 @@ def test_init_not_in_git_repo_fails() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(
-            cli, ["init", "--no-artifact-sync"], obj=test_ctx, input=f"{env.cwd}/erks\n"
-        )
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{env.cwd}/erks\n")
 
         # The command should fail at repo discovery
         assert result.exit_code != 0
@@ -927,9 +905,7 @@ def test_shell_setup_confirmation_declined_with_shell_flag() -> None:
 
         # Answer "y" to shell setup, then "n" to config write confirmation
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(
-                cli, ["init", "--shell", "--no-artifact-sync"], obj=test_ctx, input="y\nn\n"
-            )
+            result = runner.invoke(cli, ["init", "--shell"], obj=test_ctx, input="y\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Shell integration instructions were displayed above" in result.output
@@ -960,9 +936,7 @@ def test_shell_setup_confirmation_accepted_with_shell_flag() -> None:
 
         # Answer "y" to shell setup, then "y" to config write confirmation
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(
-                cli, ["init", "--shell", "--no-artifact-sync"], obj=test_ctx, input="y\ny\n"
-            )
+            result = runner.invoke(cli, ["init", "--shell"], obj=test_ctx, input="y\ny\n")
 
         assert result.exit_code == 0, result.output
         assert "✓ Global config updated" in result.output
@@ -992,9 +966,7 @@ def test_shell_setup_confirmation_declined_first_init() -> None:
         # Provide erk_root, decline shell setup instructions, answer confirmation
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             # Input: erk_root path, "y" for shell setup, "n" for config confirmation
-            result = runner.invoke(
-                cli, ["init", "--no-artifact-sync"], obj=test_ctx, input=f"{erk_root}\ny\nn\n"
-            )
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\ny\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Shell integration instructions were displayed above" in result.output
@@ -1037,9 +1009,7 @@ def test_shell_setup_permission_error_with_shell_flag() -> None:
 
         # Answer "y" to shell setup, then "y" to config write confirmation
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(
-                cli, ["init", "--shell", "--no-artifact-sync"], obj=test_ctx, input="y\ny\n"
-            )
+            result = runner.invoke(cli, ["init", "--shell"], obj=test_ctx, input="y\ny\n")
 
         assert result.exit_code == 1, result.output
         assert "❌ Error: Could not save global config" in result.output
@@ -1086,9 +1056,7 @@ def test_shell_setup_permission_error_first_init() -> None:
 
         # Input: erk_root path, "y" for shell setup, "y" for config confirmation
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(
-                cli, ["init", "--no-artifact-sync"], obj=test_ctx, input=f"{erk_root}\ny\ny\n"
-            )
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\ny\ny\n")
 
         # Should NOT exit with error code (first-time init continues)
         assert result.exit_code == 0, result.output
@@ -1125,7 +1093,7 @@ def test_init_offers_claude_permission_when_missing() -> None:
         )
 
         # Accept permission addition (two prompts: 1) add permission, 2) confirm write)
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx, input="y\ny\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\ny\n")
 
         assert result.exit_code == 0, result.output
         assert "Claude settings found" in result.output
@@ -1162,7 +1130,7 @@ def test_init_skips_claude_permission_when_already_configured() -> None:
         )
 
         # No input needed - should skip silently
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx)
+        result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Should NOT prompt about Claude permission
@@ -1188,7 +1156,7 @@ def test_init_skips_claude_permission_when_no_settings() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx)
+        result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Should NOT prompt about Claude permission
@@ -1219,7 +1187,7 @@ def test_init_handles_declined_claude_permission() -> None:
         )
 
         # Decline permission addition
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx, input="n\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\n")
 
         assert result.exit_code == 0, result.output
         assert "Skipped" in result.output
@@ -1252,7 +1220,7 @@ def test_init_handles_declined_write_confirmation() -> None:
         )
 
         # Accept permission prompt (y) but decline write confirmation (n)
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx, input="y\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Proceed with writing changes?" in result.output
@@ -1260,167 +1228,3 @@ def test_init_handles_declined_write_confirmation() -> None:
         # Verify permission was NOT added
         unchanged_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
         assert "Bash(erk:*)" not in unchanged_settings["permissions"]["allow"]
-
-
-def test_init_creates_kits_toml() -> None:
-    """Test that init creates .erk/kits.toml file."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        erk_root = env.cwd / "erks"
-
-        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-
-        global_config_ops = FakeConfigStore(config=global_config)
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            config_store=global_config_ops,
-            global_config=global_config,
-        )
-
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx)
-
-        assert result.exit_code == 0, result.output
-        # Verify kits.toml was created
-        kits_toml_path = env.cwd / ".erk" / "kits.toml"
-        assert kits_toml_path.exists()
-        assert f"Created {kits_toml_path}" in result.output
-
-
-def test_init_skips_kits_toml_if_exists_without_force() -> None:
-    """Test that init skips kits.toml creation if already exists (without --force).
-
-    When kits.toml already exists and --force is not used, the command should
-    report that kit config already exists and not overwrite it.
-    """
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        erk_root = env.cwd / "erks"
-
-        # Pre-create .erk/kits.toml
-        erk_dir = env.cwd / ".erk"
-        erk_dir.mkdir(parents=True)
-        kits_toml_path = erk_dir / "kits.toml"
-        original_content = 'version = "1"\n'
-        kits_toml_path.write_text(original_content, encoding="utf-8")
-
-        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-
-        global_config_ops = FakeConfigStore(config=global_config)
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            config_store=global_config_ops,
-            global_config=global_config,
-        )
-
-        # Run without --force - kits.toml should be skipped since it exists
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx)
-
-        assert result.exit_code == 0, result.output
-        # Verify kits.toml was reported as already existing (not overwritten)
-        assert f"Kit config already exists: {kits_toml_path}" in result.output
-        # Verify content was not changed
-        assert kits_toml_path.read_text(encoding="utf-8") == original_content
-
-
-def test_init_force_overwrites_kits_toml() -> None:
-    """Test that --force overwrites existing kits.toml."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        erk_root = env.cwd / "erks"
-
-        # Pre-create .erk/ directory with existing config.toml and kits.toml
-        erk_dir = env.cwd / ".erk"
-        erk_dir.mkdir(parents=True)
-
-        # Pre-create config.toml so it doesn't block
-        config_path = erk_dir / "config.toml"
-        config_path.write_text("# Old config\n", encoding="utf-8")
-
-        # Pre-create kits.toml with old content
-        kits_toml_path = erk_dir / "kits.toml"
-        kits_toml_path.write_text('# Old kits config\nversion = "0"\n', encoding="utf-8")
-
-        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-
-        global_config_ops = FakeConfigStore(config=global_config)
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            config_store=global_config_ops,
-            global_config=global_config,
-        )
-
-        result = runner.invoke(cli, ["init", "--force", "--no-artifact-sync"], obj=test_ctx)
-
-        assert result.exit_code == 0, result.output
-        # Verify kits.toml was overwritten
-        content = kits_toml_path.read_text(encoding="utf-8")
-        assert "# Old kits config" not in content
-        assert f"Created {kits_toml_path}" in result.output
-
-
-def test_init_creates_docs_agent_templates() -> None:
-    """Test that init creates .erk/docs/agent/ template files."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        erk_root = env.cwd / "erks"
-
-        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-
-        global_config_ops = FakeConfigStore(config=global_config)
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            config_store=global_config_ops,
-            global_config=global_config,
-        )
-
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx)
-
-        assert result.exit_code == 0, result.output
-        # Verify .erk/docs/agent/ templates were created
-        docs_agent_dir = env.cwd / ".erk" / "docs" / "agent"
-        assert docs_agent_dir.exists()
-        assert (docs_agent_dir / "glossary.md").exists()
-        assert (docs_agent_dir / "conventions.md").exists()
-        assert (docs_agent_dir / "guide.md").exists()
-        # Verify output mentions creation
-        assert ".erk/docs/agent/glossary.md" in result.output
-
-
-def test_init_skips_docs_agent_if_exists() -> None:
-    """Test that init skips .erk/docs/agent/ files if they already exist."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        erk_root = env.cwd / "erks"
-
-        # Pre-create .erk/docs/agent/ files
-        docs_agent_dir = env.cwd / ".erk" / "docs" / "agent"
-        docs_agent_dir.mkdir(parents=True)
-        (docs_agent_dir / "glossary.md").write_text("# Existing glossary\n", encoding="utf-8")
-
-        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-
-        global_config_ops = FakeConfigStore(config=global_config)
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            config_store=global_config_ops,
-            global_config=global_config,
-        )
-
-        result = runner.invoke(cli, ["init", "--no-artifact-sync"], obj=test_ctx)
-
-        assert result.exit_code == 0, result.output
-        # Verify existing file was skipped
-        assert "Skipped .erk/docs/agent/glossary.md (already exists)" in result.output
-        # Verify content was not overwritten
-        content = (docs_agent_dir / "glossary.md").read_text(encoding="utf-8")
-        assert "# Existing glossary" in content
