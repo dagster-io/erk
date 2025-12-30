@@ -200,7 +200,7 @@ class FakeGit(Git):
         self._created_tracking_branches: list[tuple[str, str]] = []
         self._staged_files: list[str] = []
         self._commits: list[tuple[Path, str, list[str]]] = []
-        self._pushed_branches: list[tuple[str, str, bool]] = []
+        self._pushed_branches: list[tuple[str, str, bool, bool]] = []
         self._created_branches: list[tuple[Path, str, str]] = []  # (cwd, branch_name, start_point)
         self._rebase_continue_calls: list[Path] = []
         self._config_settings: list[tuple[str, str, str]] = []  # (key, value, scope)
@@ -779,12 +779,18 @@ class FakeGit(Git):
                 self._commits_ahead[(cwd, base_branch)] = count + 1
 
     def push_to_remote(
-        self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False
+        self,
+        cwd: Path,
+        remote: str,
+        branch: str,
+        *,
+        set_upstream: bool = False,
+        force: bool = False,
     ) -> None:
         """Record push to remote, or raise if failure configured."""
         if self._push_to_remote_raises is not None:
             raise self._push_to_remote_raises
-        self._pushed_branches.append((remote, branch, set_upstream))
+        self._pushed_branches.append((remote, branch, set_upstream, force))
 
     @property
     def staged_files(self) -> list[str]:
@@ -800,10 +806,10 @@ class FakeGit(Git):
         return self._commits
 
     @property
-    def pushed_branches(self) -> list[tuple[str, str, bool]]:
+    def pushed_branches(self) -> list[tuple[str, str, bool, bool]]:
         """Read-only access to pushed branches for test assertions.
 
-        Returns list of (remote, branch, set_upstream) tuples.
+        Returns list of (remote, branch, set_upstream, force) tuples.
         """
         return self._pushed_branches
 

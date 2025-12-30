@@ -224,7 +224,13 @@ class DryRunGit(Git):
         pass
 
     def push_to_remote(
-        self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False
+        self,
+        cwd: Path,
+        remote: str,
+        branch: str,
+        *,
+        set_upstream: bool = False,
+        force: bool = False,
     ) -> None:
         """No-op for pushing in dry-run mode."""
         # Do nothing - prevents actual push execution

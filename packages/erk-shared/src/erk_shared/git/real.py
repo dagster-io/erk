@@ -646,12 +646,20 @@ class RealGit(Git):
         )
 
     def push_to_remote(
-        self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False
+        self,
+        cwd: Path,
+        remote: str,
+        branch: str,
+        *,
+        set_upstream: bool = False,
+        force: bool = False,
     ) -> None:
         """Push a branch to a remote."""
         cmd = ["git", "push"]
         if set_upstream:
             cmd.append("-u")
+        if force:
+            cmd.append("--force")
         cmd.extend([remote, branch])
 
         run_subprocess_with_context(

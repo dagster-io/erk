@@ -60,6 +60,8 @@ def _run_gt_submit(
     ctx: ErkContext,
     repo_root: Path,
     branch_name: str,
+    *,
+    force: bool = False,
 ) -> Generator[ProgressEvent, None, GtSubmitResult]:
     """Run gt submit to add Graphite stack metadata.
 
@@ -69,6 +71,7 @@ def _run_gt_submit(
         ctx: ErkContext providing graphite operations
         repo_root: Repository root path
         branch_name: Current branch name (for error messages)
+        force: If True, force push (use when branch has diverged from remote)
 
     Yields:
         ProgressEvent for status updates
@@ -85,6 +88,7 @@ def _run_gt_submit(
             publish=True,  # Mark as ready for review (not draft)
             restack=False,  # Don't restack, we just want to add metadata
             quiet=False,
+            force=force,
         )
     except RuntimeError as e:
         error_msg = str(e).lower()
@@ -126,6 +130,8 @@ def execute_graphite_enhance(
     ctx: ErkContext,
     cwd: Path,
     pr_number: int,
+    *,
+    force: bool = False,
 ) -> Generator[
     ProgressEvent | CompletionEvent[GraphiteEnhanceResult | GraphiteEnhanceError | GraphiteSkipped]
 ]:
@@ -143,6 +149,7 @@ def execute_graphite_enhance(
         ctx: ErkContext providing git, github, and graphite operations
         cwd: Working directory (must be in a git repository)
         pr_number: PR number that was created/updated by core submit
+        force: If True, force push (use when branch has diverged from remote)
 
     Yields:
         ProgressEvent for status updates
@@ -197,7 +204,7 @@ def execute_graphite_enhance(
     yield ProgressEvent("Branch is tracked by Graphite", style="success")
 
     # Step 3: Run gt submit to add stack metadata
-    submit_result = yield from _run_gt_submit(ctx, repo_root, branch_name)
+    submit_result = yield from _run_gt_submit(ctx, repo_root, branch_name, force=force)
     if not submit_result.success:
         if submit_result.error_event is not None:
             yield submit_result.error_event

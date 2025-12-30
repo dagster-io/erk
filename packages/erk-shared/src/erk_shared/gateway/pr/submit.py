@@ -76,6 +76,8 @@ def execute_core_submit(
     cwd: Path,
     pr_title: str,
     pr_body: str,
+    *,
+    force: bool = False,
 ) -> Generator[ProgressEvent | CompletionEvent[CoreSubmitResult | CoreSubmitError]]:
     """Execute core PR submission: git push + gh pr create.
 
@@ -89,6 +91,7 @@ def execute_core_submit(
         cwd: Working directory (must be in a git repository)
         pr_title: Title for the PR (first line of commit message)
         pr_body: Body for the PR (remaining commit message lines)
+        force: If True, force push (use when branch has diverged from remote)
 
     Yields:
         ProgressEvent for status updates
@@ -162,9 +165,10 @@ def execute_core_submit(
             yield ProgressEvent(f"Found linked issue: #{issue_number}")
 
     # Step 6: Push branch to remote
-    yield ProgressEvent("Pushing branch to origin...")
+    push_msg = "Force pushing branch to origin..." if force else "Pushing branch to origin..."
+    yield ProgressEvent(push_msg)
     try:
-        ctx.git.push_to_remote(cwd, "origin", branch_name, set_upstream=True)
+        ctx.git.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=force)
     except RuntimeError as e:
         error_str = str(e)
         if "non-fast-forward" in error_str or "rejected" in error_str.lower():
@@ -176,7 +180,7 @@ def execute_core_submit(
                         f"Branch '{branch_name}' has diverged from remote.\n"
                         f"Your local branch is behind origin/{branch_name}.\n\n"
                         f"To fix: git pull --rebase origin {branch_name}\n"
-                        f"Then retry: erk pr submit"
+                        f"Or use: erk pr submit -f (to force push)"
                     ),
                     details={"branch": branch_name},
                 )
@@ -184,7 +188,8 @@ def execute_core_submit(
             return
         # Re-raise if it's a different error
         raise
-    yield ProgressEvent("Branch pushed to origin", style="success")
+    push_success = "Branch force pushed to origin" if force else "Branch pushed to origin"
+    yield ProgressEvent(push_success, style="success")
 
     # Step 7: Check for existing PR
     yield ProgressEvent("Checking for existing PR...")
