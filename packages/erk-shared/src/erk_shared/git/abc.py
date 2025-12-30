@@ -12,6 +12,22 @@ Architecture:
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
+from typing import NamedTuple
+
+
+class BranchDivergence(NamedTuple):
+    """Result of checking if a branch has diverged from its remote tracking branch.
+
+    Attributes:
+        is_diverged: True if the branch has commits both ahead and behind the remote.
+            A branch is diverged when it cannot be fast-forwarded in either direction.
+        ahead: Number of commits on local branch not present on remote.
+        behind: Number of commits on remote branch not present locally.
+    """
+
+    is_diverged: bool
+    ahead: int
+    behind: int
 
 
 @dataclass(frozen=True)
@@ -761,5 +777,24 @@ class Git(ABC):
 
         Raises:
             subprocess.CalledProcessError: If git command fails
+        """
+        ...
+
+    @abstractmethod
+    def is_branch_diverged_from_remote(
+        self, cwd: Path, branch: str, remote: str
+    ) -> BranchDivergence:
+        """Check if a local branch has diverged from its remote tracking branch.
+
+        A branch is considered diverged when it has commits both ahead and behind
+        the remote tracking branch.
+
+        Args:
+            cwd: Working directory
+            branch: Local branch name to check
+            remote: Remote name (e.g., "origin")
+
+        Returns:
+            BranchDivergence with is_diverged flag and ahead/behind counts.
         """
         ...

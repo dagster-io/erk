@@ -10,7 +10,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from erk_shared.git.abc import BranchSyncInfo, Git, WorktreeInfo
+from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, WorktreeInfo
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
@@ -914,3 +914,42 @@ class RealGit(Git):
             operation_context=f"push tag '{tag_name}' to remote '{remote}'",
             cwd=repo_root,
         )
+
+    def is_branch_diverged_from_remote(
+        self, cwd: Path, branch: str, remote: str
+    ) -> BranchDivergence:
+        """Check if a local branch has diverged from its remote tracking branch."""
+        remote_branch = f"{remote}/{branch}"
+
+        # Check if remote branch exists
+        result = subprocess.run(
+            ["git", "rev-parse", "--verify", remote_branch],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return BranchDivergence(is_diverged=False, ahead=0, behind=0)
+
+        # Get ahead/behind counts
+        ahead_result = subprocess.run(
+            ["git", "rev-list", "--count", f"{remote_branch}..{branch}"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        behind_result = subprocess.run(
+            ["git", "rev-list", "--count", f"{branch}..{remote_branch}"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        ahead = int(ahead_result.stdout.strip()) if ahead_result.returncode == 0 else 0
+        behind = int(behind_result.stdout.strip()) if behind_result.returncode == 0 else 0
+
+        is_diverged = ahead > 0 and behind > 0
+        return BranchDivergence(is_diverged=is_diverged, ahead=ahead, behind=behind)
