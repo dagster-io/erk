@@ -48,5 +48,3 @@ Pattern detection examples:
 2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
 3. **Additional patterns** may require extra loading (CLI patterns, subprocess)
 4. **Each file is self-contained** with complete guidance for its domain
-
-**For code reviews:** See `.erk/docs/kits/code-review/` for code smell patterns and refactoring guidance (not auto-loaded).
