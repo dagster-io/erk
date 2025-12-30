@@ -105,6 +105,36 @@ EOF
 )"
 ```
 
+### Updating an Objective
+
+After completing work or hitting a milestone, always do **both** steps:
+
+```bash
+# 1. Post action comment (captures the moment)
+gh issue comment <issue-number> --body "$(cat <<'EOF'
+## Action: [Brief title]
+
+**Date:** YYYY-MM-DD
+**PR:** #123
+**Phase/Step:** 1.2
+
+### What Was Done
+- [Concrete actions]
+
+### Lessons Learned
+- [Insights for future work]
+
+### Roadmap Updates
+- Step 1.2: pending → done
+EOF
+)"
+
+# 2. Update issue body (reflects new state)
+gh issue view <issue-number> --web
+```
+
+Then edit the roadmap table statuses, "Current Focus", and any new design decisions.
+
 ### Spawning an Erk-Plan
 
 To implement a specific roadmap step, create an erk-plan that references the objective:

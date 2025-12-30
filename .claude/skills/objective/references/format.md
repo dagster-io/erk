@@ -286,3 +286,114 @@ When a step turns out to need subdivision:
 ```
 
 Then update the issue body to reflect the new structure.
+
+## Update Examples
+
+Real examples of the two-step update workflow in action.
+
+### Completing Multiple Phases at Once
+
+When a single PR completes substantial work across multiple phases:
+
+**Action Comment:**
+
+```markdown
+## Action: Phase 2-6 Completed - Kit Infrastructure Deleted
+
+**Date:** 2025-12-30
+**PR:** #3485
+**Phase/Step:** 2.1-6.3
+
+### What Was Done
+
+- Deleted src/erk/kits/ directory (~4,200 lines)
+- Deleted packages/erk-kits/ package entirely
+- Removed all kit-related CLI commands
+- Fixed 16 exec scripts to use new imports
+
+**Impact:** ~21,500 lines deleted across 203 files
+
+### Lessons Learned
+
+- Deletion was straightforward once utilities were relocated in Phase 1
+- Discovered artifact sync needs to be restored separately (new Phase 7)
+- Large deletions benefit from capturing impact metrics
+
+### Roadmap Updates
+
+- Phase 2-6: all steps → done (#3485)
+- Added new Phase 7 for follow-up work discovered during deletion
+```
+
+**Body Changes:**
+
+- Changed all Phase 2-6 step statuses from `pending` to `done`
+- Added PR #3485 link to each completed step
+- Added new Phase 7 section with steps for discovered follow-up work
+- Updated "Current Focus" to "Complete Phase 7 - restore artifact sync"
+
+### Adding Discovered Work
+
+When implementation reveals additional scope:
+
+**Action Comment:**
+
+```markdown
+## Action: Discovered Follow-up Work During Kit Deletion
+
+**Date:** 2025-12-30
+**Phase/Step:** N/A (scope expansion)
+
+### What Was Done
+
+- Completed main kit deletion
+- Discovered that artifact sync functionality needs restoration
+- Artifact sync was startup check that prompted `erk init` if stale
+
+### Lessons Learned
+
+- Deleting infrastructure often reveals hidden dependencies
+- Better to add new phase than expand existing completed ones
+- Document what the deleted code did to guide restoration
+
+### Roadmap Updates
+
+- Added Phase 7: Artifact Sync Restoration
+  - 7.1: Implement startup version check
+  - 7.2: Restore artifact copy mechanism
+```
+
+### Updating After a Blocker Resolves
+
+**Action Comment:**
+
+```markdown
+## Action: CI Integration Blocker Resolved
+
+**Date:** 2025-01-22
+**PR:** #412
+**Phase/Step:** 2.3
+
+### What Was Done
+
+- Platform team merged #400 with new permissions
+- Implemented CI integration using new GITHUB_TOKEN scope
+- Added workflow file and tests
+
+### Lessons Learned
+
+- Document blockers in roadmap table with HTML comments
+- Check GitHub Actions permissions early in planning
+- Platform team turnaround was faster than expected
+
+### Roadmap Updates
+
+- Step 2.3: blocked → done
+```
+
+**Body Changes:**
+
+- Changed step 2.3 status from `blocked` to `done`
+- Removed HTML comment about blocker
+- Added PR #412 link
+- Updated "Current Focus" to next pending step
