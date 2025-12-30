@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk.core.repo_discovery import RepoContext, discover_repo_or_sentinel
+from erk.core.repo_discovery import RepoContext, discover_repo_or_sentinel, in_erk_repo
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 
@@ -153,3 +153,16 @@ def test_discover_repo_in_main_repo_returns_main_repo_root(tmp_path: Path):
     # In main repo, main_repo_root equals root
     assert result.main_repo_root == main_repo
     assert result.repo_name == "erk"
+
+
+def test_in_erk_repo_returns_true_for_erk_repo(tmp_path: Path) -> None:
+    """Test that in_erk_repo returns True when packages/erk-kits exists."""
+    dev_indicator = tmp_path / "packages" / "erk-kits"
+    dev_indicator.mkdir(parents=True)
+
+    assert in_erk_repo(tmp_path) is True
+
+
+def test_in_erk_repo_returns_false_for_regular_project(tmp_path: Path) -> None:
+    """Test that in_erk_repo returns False for a regular project."""
+    assert in_erk_repo(tmp_path) is False

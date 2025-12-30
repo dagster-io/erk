@@ -15,6 +15,21 @@ from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.types import GitHubRepoId
 
 
+def in_erk_repo(repo_root: Path) -> bool:
+    """Check if the given path is inside the erk development repository.
+
+    This is used internally to detect when erk is running in its own development
+    repo, where artifacts are read directly from source rather than installed.
+
+    Args:
+        repo_root: Repository root path to check
+
+    Returns:
+        True if this appears to be the erk development repo
+    """
+    return (repo_root / "packages" / "erk-kits").exists()
+
+
 def discover_repo_or_sentinel(
     cwd: Path, erk_root: Path, git_ops: Git | None = None
 ) -> RepoContext | NoRepoSentinel:

@@ -1,11 +1,14 @@
 import logging
 import sys
+from pathlib import Path
 
 import click
 
+from erk.artifacts.preamble import check_and_prompt_artifact_sync
 from erk.cli.alias import register_with_aliases
 from erk.cli.commands.admin import admin_group
 from erk.cli.commands.artifact.group import artifact_group
+from erk.cli.commands.artifacts.group import artifacts
 from erk.cli.commands.branch import branch_group
 from erk.cli.commands.cc import cc_group
 from erk.cli.commands.completion import completion_group
@@ -109,8 +112,9 @@ def _show_version_change_banner() -> None:
 @click.group(cls=ErkCommandGroup, context_settings=CONTEXT_SETTINGS)
 @click.version_option(package_name="erk")
 @click.option("--debug", is_flag=True, help="Enable debug logging")
+@click.option("--no-sync", is_flag=True, help="Skip artifact sync check")
 @click.pass_context
-def cli(ctx: click.Context, debug: bool) -> None:
+def cli(ctx: click.Context, debug: bool, no_sync: bool) -> None:
     """Manage git worktrees in a global worktrees directory."""
     if debug:
         logging.basicConfig(level=logging.DEBUG, format="%(name)s - %(levelname)s - %(message)s")
@@ -118,6 +122,10 @@ def cli(ctx: click.Context, debug: bool) -> None:
     # Show version change banner (only on actual CLI runs, not completions)
     if not ctx.resilient_parsing:
         _show_version_change_banner()
+
+        # Check artifact sync (skip for init and dev commands)
+        if ctx.invoked_subcommand not in ("init", "dev"):
+            check_and_prompt_artifact_sync(Path.cwd(), no_sync=no_sync)
 
     # Only create context if not already provided (e.g., by tests)
     if ctx.obj is None:
@@ -150,6 +158,7 @@ cli.add_command(prepare_cwd_recovery_cmd)
 
 # Kit management command groups
 cli.add_command(artifact_group)
+cli.add_command(artifacts)
 cli.add_command(dev_group)
 cli.add_command(docs_group)
 cli.add_command(exec_group)
