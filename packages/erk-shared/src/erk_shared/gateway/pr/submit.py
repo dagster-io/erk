@@ -77,7 +77,7 @@ def execute_core_submit(
     pr_title: str,
     pr_body: str,
     *,
-    force: bool = False,
+    force: bool,
 ) -> Generator[ProgressEvent | CompletionEvent[CoreSubmitResult | CoreSubmitError]]:
     """Execute core PR submission: git push + gh pr create.
 

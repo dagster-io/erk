@@ -61,7 +61,7 @@ def _run_gt_submit(
     repo_root: Path,
     branch_name: str,
     *,
-    force: bool = False,
+    force: bool,
 ) -> Generator[ProgressEvent, None, GtSubmitResult]:
     """Run gt submit to add Graphite stack metadata.
 
@@ -131,7 +131,7 @@ def execute_graphite_enhance(
     cwd: Path,
     pr_number: int,
     *,
-    force: bool = False,
+    force: bool,
 ) -> Generator[
     ProgressEvent | CompletionEvent[GraphiteEnhanceResult | GraphiteEnhanceError | GraphiteSkipped]
 ]:

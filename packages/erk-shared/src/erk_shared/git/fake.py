@@ -6,8 +6,25 @@ in its constructor. Construct instances directly with keyword arguments.
 
 import subprocess
 from pathlib import Path
+from typing import NamedTuple
 
 from erk_shared.git.abc import BranchSyncInfo, Git, WorktreeInfo
+
+
+class PushedBranch(NamedTuple):
+    """Record of a branch push operation.
+
+    Attributes:
+        remote: Remote name (e.g., "origin")
+        branch: Branch name that was pushed
+        set_upstream: Whether -u flag was used to set upstream tracking
+        force: Whether --force flag was used for force push
+    """
+
+    remote: str
+    branch: str
+    set_upstream: bool
+    force: bool
 
 
 class FakeGit(Git):
@@ -200,7 +217,7 @@ class FakeGit(Git):
         self._created_tracking_branches: list[tuple[str, str]] = []
         self._staged_files: list[str] = []
         self._commits: list[tuple[Path, str, list[str]]] = []
-        self._pushed_branches: list[tuple[str, str, bool, bool]] = []
+        self._pushed_branches: list[PushedBranch] = []
         self._created_branches: list[tuple[Path, str, str]] = []  # (cwd, branch_name, start_point)
         self._rebase_continue_calls: list[Path] = []
         self._config_settings: list[tuple[str, str, str]] = []  # (key, value, scope)
@@ -790,7 +807,9 @@ class FakeGit(Git):
         """Record push to remote, or raise if failure configured."""
         if self._push_to_remote_raises is not None:
             raise self._push_to_remote_raises
-        self._pushed_branches.append((remote, branch, set_upstream, force))
+        self._pushed_branches.append(
+            PushedBranch(remote=remote, branch=branch, set_upstream=set_upstream, force=force)
+        )
 
     @property
     def staged_files(self) -> list[str]:
@@ -806,10 +825,11 @@ class FakeGit(Git):
         return self._commits
 
     @property
-    def pushed_branches(self) -> list[tuple[str, str, bool, bool]]:
+    def pushed_branches(self) -> list[PushedBranch]:
         """Read-only access to pushed branches for test assertions.
 
-        Returns list of (remote, branch, set_upstream, force) tuples.
+        Returns list of PushedBranch named tuples with fields:
+        remote, branch, set_upstream, force.
         """
         return self._pushed_branches
 
