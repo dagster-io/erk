@@ -18,4 +18,3 @@
 - **[doc-installation.md](doc-installation.md)** — understanding where kit documentation gets installed, adding documentation to a kit, wondering why docs are in .erk instead of .claude, creating @ references to kit documentation
 - **[install-architecture.md](install-architecture.md)** — modifying kit install/update logic, debugging kit installation, understanding kit resolution
 - **[push-down-pattern.md](push-down-pattern.md)** — deciding what belongs in kit CLI vs agent markdown, moving bash logic from agent prompts to Python, reducing token usage in agent prompts, designing kit CLI commands for agents
-- **[registry-discovery.md](registry-discovery.md)** — kit not showing in search, debugging kit discovery, understanding registry.yaml

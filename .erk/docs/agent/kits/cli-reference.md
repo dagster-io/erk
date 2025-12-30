@@ -114,10 +114,6 @@ Execute scripts from bundled kits.
 erk kit exec erk impl-init --json
 ```
 
-### erk kit registry
-
-View and validate kit documentation registry.
-
 ## Common Workflows
 
 ### Initial Setup

@@ -250,18 +250,6 @@ def _process_update_result(
         if hooks_count > 0:
             user_output(f"  Installed {hooks_count} hook(s)")
 
-        # Update registry entry with new version (non-blocking)
-        try:
-            from erk.kits.io.registry import create_kit_registry_file, generate_registry_entry
-
-            entry_content = generate_registry_entry(
-                kit_id, updated_kit.version, manifest, updated_kit
-            )
-            create_kit_registry_file(kit_id, entry_content, project_dir)
-            # No need to call add_kit_to_registry - @-include already exists
-        except Exception as e:
-            user_output(f"  Warning: Failed to update registry: {e!s}")
-
 
 def _handle_fresh_install(
     kit_id: str,
@@ -325,22 +313,6 @@ def _handle_fresh_install(
         user_output(f"  Installed {hooks_count} hook(s)")
 
     user_output(f"  Location: {context.get_claude_dir()}")
-
-    # Update registry (non-blocking - failure doesn't stop installation)
-    try:
-        from erk.kits.io.registry import (
-            add_kit_to_registry,
-            create_kit_registry_file,
-            generate_registry_entry,
-        )
-
-        entry_content = generate_registry_entry(
-            kit_id, installed_kit.version, manifest, installed_kit
-        )
-        create_kit_registry_file(kit_id, entry_content, project_dir)
-        add_kit_to_registry(kit_id, project_dir, installed_kit.version, installed_kit.source_type)
-    except Exception as e:
-        user_output(f"  Warning: Failed to update registry: {e!s}")
 
 
 def _perform_atomic_hook_update(

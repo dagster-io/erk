@@ -4,7 +4,6 @@ import pytest
 
 from erk.kits.models.config import InstalledKit, ProjectConfig
 from erk.kits.models.kit import KitManifest
-from erk.kits.models.registry import RegistryEntry
 
 
 def test_installed_kit_immutable() -> None:
@@ -93,31 +92,3 @@ def test_kit_manifest_immutable() -> None:
 
     with pytest.raises(AttributeError):
         manifest.name = "other-kit"  # type: ignore
-
-
-def test_registry_entry_required_fields() -> None:
-    """Test RegistryEntry with required fields only."""
-    entry = RegistryEntry(
-        kit_id="test-kit",
-        source_type="bundled",
-        description="A test kit",
-        version="1.0.0",
-    )
-
-    assert entry.kit_id == "test-kit"
-    assert entry.source_type == "bundled"
-    assert entry.description == "A test kit"
-    assert entry.version == "1.0.0"
-
-
-def test_registry_entry_immutable() -> None:
-    """Test RegistryEntry is frozen (immutable)."""
-    entry = RegistryEntry(
-        kit_id="test-kit",
-        source_type="bundled",
-        description="A test kit",
-        version="1.0.0",
-    )
-
-    with pytest.raises(AttributeError):
-        entry.kit_id = "other-kit"  # type: ignore

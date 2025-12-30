@@ -4,5 +4,4 @@ Import from submodules:
 - config: InstalledKit, ProjectConfig
 - installation: InstallationContext
 - kit: KitCliCommandDefinition, KitManifest
-- registry: RegistryEntry
 """

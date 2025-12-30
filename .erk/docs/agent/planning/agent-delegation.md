@@ -584,22 +584,6 @@ Task(subagent_type="agent", prompt="Execute complete workflow")
 
 ### Finding Available Agents
 
-**Method 1: Kit Registry**
-
-```markdown
-@.erk/kits/kit-registry.md
-```
-
-Shows all installed kits with their agents and usage patterns.
-
-**Method 2: Browse Agent Directory**
-
-```bash
-ls .claude/agents/
-```
-
-Project-specific agents live here.
-
 **Method 3: Check AGENTS.md**
 Checklist table links to delegation pattern documentation.
 
