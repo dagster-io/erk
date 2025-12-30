@@ -59,6 +59,7 @@ def doctor_cmd(ctx: ErkContext) -> None:
     repo_check_names = {
         "repository",
         "claude settings",
+        "user prompt hook",
         "gitignore",
         "claude erk permission",
         "claude hooks",

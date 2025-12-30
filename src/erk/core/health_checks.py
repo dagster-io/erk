@@ -504,18 +504,7 @@ def check_claude_erk_permission(repo_root: Path) -> CheckResult:
         CheckResult with info about permission status
     """
     settings_path = get_repo_claude_settings_path(repo_root)
-
-    try:
-        settings = read_claude_settings(settings_path)
-    except json.JSONDecodeError as e:
-        return CheckResult(
-            name="claude erk permission",
-            passed=False,
-            message="Invalid JSON in .claude/settings.json",
-            details=str(e),
-        )
-
-    # No settings file - repo may not have Claude settings
+    settings = read_claude_settings(settings_path)
     if settings is None:
         return CheckResult(
             name="claude erk permission",
@@ -576,32 +565,17 @@ def check_claude_settings(repo_root: Path) -> CheckResult:
 
     Args:
         repo_root: Path to the repository root (where .claude/ should be located)
+
+    Raises:
+        json.JSONDecodeError: If settings.json contains invalid JSON
     """
     settings_path = repo_root / ".claude" / "settings.json"
-
-    if not settings_path.exists():
+    settings = read_claude_settings(settings_path)
+    if settings is None:
         return CheckResult(
             name="claude settings",
             passed=True,
             message="No .claude/settings.json (using defaults)",
-        )
-
-    # Parse settings
-    try:
-        settings_content = settings_path.read_text(encoding="utf-8")
-        settings = json.loads(settings_content)
-    except json.JSONDecodeError as e:
-        return CheckResult(
-            name="claude settings",
-            passed=False,
-            message="Invalid JSON in .claude/settings.json",
-            details=str(e),
-        )
-    except Exception as e:
-        return CheckResult(
-            name="claude settings",
-            passed=False,
-            message=f"Error reading .claude/settings.json: {e}",
         )
 
     # Check hooks for missing commands
@@ -639,6 +613,75 @@ def check_claude_settings(repo_root: Path) -> CheckResult:
         name="claude settings",
         passed=True,
         message=".claude/settings.json looks valid",
+    )
+
+
+def check_user_prompt_hook(repo_root: Path) -> CheckResult:
+    """Check that the UserPromptSubmit hook is configured.
+
+    Verifies that .claude/settings.json contains the unified erk-user-prompt-hook.py
+    hook for the UserPromptSubmit event.
+
+    Args:
+        repo_root: Path to the repository root (where .claude/ should be located)
+    """
+    settings_path = repo_root / ".claude" / "settings.json"
+    if not settings_path.exists():
+        return CheckResult(
+            name="user prompt hook",
+            passed=False,
+            message="No .claude/settings.json found",
+            details="Run 'erk init' to create settings with the hook configured",
+        )
+    # File exists, so read_claude_settings won't return None
+    settings = read_claude_settings(settings_path)
+    assert settings is not None  # file existence already checked
+
+    # Look for UserPromptSubmit hooks
+    hooks = settings.get("hooks", {})
+    user_prompt_hooks = hooks.get("UserPromptSubmit", [])
+
+    if not user_prompt_hooks:
+        return CheckResult(
+            name="user prompt hook",
+            passed=False,
+            message="No UserPromptSubmit hook configured",
+            details="Add 'uv run scripts/erk-user-prompt-hook.py' hook to .claude/settings.json",
+        )
+
+    # Check if the unified hook is present (handles nested matcher structure)
+    expected_command = "erk-user-prompt-hook.py"
+    for hook_entry in user_prompt_hooks:
+        if not isinstance(hook_entry, dict):
+            continue
+        # Handle nested structure: {matcher: ..., hooks: [...]}
+        nested_hooks = hook_entry.get("hooks", [])
+        if nested_hooks:
+            for hook in nested_hooks:
+                if not isinstance(hook, dict):
+                    continue
+                command = hook.get("command", "")
+                if expected_command in command:
+                    return CheckResult(
+                        name="user prompt hook",
+                        passed=True,
+                        message="UserPromptSubmit hook configured",
+                    )
+        # Handle flat structure: {type: command, command: ...}
+        command = hook_entry.get("command", "")
+        if expected_command in command:
+            return CheckResult(
+                name="user prompt hook",
+                passed=True,
+                message="UserPromptSubmit hook configured",
+            )
+
+    # Hook section exists but doesn't have the expected command
+    return CheckResult(
+        name="user prompt hook",
+        passed=False,
+        message="UserPromptSubmit hook missing unified hook script",
+        details=f"Expected command containing: {expected_command}",
     )
 
 
@@ -780,6 +823,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         metadata_dir = Path.home() / ".erk" / "repos" / repo_root.name
         results.append(check_claude_erk_permission(repo_root))
         results.append(check_claude_settings(repo_root))
+        results.append(check_user_prompt_hook(repo_root))
         results.append(check_gitignore_entries(repo_root))
         results.append(check_docs_agent(repo_root))
         results.append(check_orphaned_artifacts(repo_root))

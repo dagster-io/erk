@@ -14,17 +14,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run scripts/per-prompt-context-injection.py",
-            "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "ERK_HOOK_ID=session-id-injector-hook erk exec session-id-injector-hook",
-            "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "ERK_HOOK_ID=tripwires-reminder-hook erk exec tripwires-reminder-hook",
+            "command": "uv run scripts/erk-user-prompt-hook.py",
             "timeout": 30
           }
         ]
