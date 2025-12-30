@@ -42,8 +42,6 @@ jobs:
         run: uv sync
       - name: Install Graphite CLI
         run: npm install -g @withgraphite/graphite-cli
-      - name: Build kit artifacts
-        run: make kit-build
       - name: Run unit tests
         run: make test
 
@@ -63,7 +61,5 @@ jobs:
         run: uv sync
       - name: Install Graphite CLI
         run: npm install -g @withgraphite/graphite-cli
-      - name: Build kit artifacts
-        run: make kit-build
       - name: Run integration tests
         run: make test-integration

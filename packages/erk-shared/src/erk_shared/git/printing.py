@@ -227,12 +227,8 @@ class PrintingGit(PrintingBase, Git):
         """Push to remote with printed output."""
         upstream_flag = "-u " if set_upstream else ""
         force_flag = "--force " if force else ""
-        self._emit(
-            self._format_command(f"git push {upstream_flag}{force_flag}{remote} {branch}")
-        )
-        self._wrapped.push_to_remote(
-            cwd, remote, branch, set_upstream=set_upstream, force=force
-        )
+        self._emit(self._format_command(f"git push {upstream_flag}{force_flag}{remote} {branch}"))
+        self._wrapped.push_to_remote(cwd, remote, branch, set_upstream=set_upstream, force=force)
 
     def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
         """Get branch last commit time (read-only, no printing)."""

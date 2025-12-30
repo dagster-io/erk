@@ -22,7 +22,6 @@ from erk.cli.commands.hook.group import hook_group
 from erk.cli.commands.implement import implement
 from erk.cli.commands.info import info_group
 from erk.cli.commands.init import init_cmd
-from erk.cli.commands.kit.group import kit_group
 from erk.cli.commands.md.group import md_group
 from erk.cli.commands.plan import plan_group
 from erk.cli.commands.plan.list_cmd import dash
@@ -163,7 +162,6 @@ cli.add_command(dev_group)
 cli.add_command(docs_group)
 cli.add_command(exec_group)
 cli.add_command(hook_group)
-cli.add_command(kit_group)
 cli.add_command(md_group)
 
 

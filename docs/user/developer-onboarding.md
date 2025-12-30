@@ -57,14 +57,6 @@ You're not in a directory with erk configured. Either:
 - Navigate to the repository root
 - Ensure the repo has erk configured (see [Project Setup](project-setup.md))
 
-### Kits not loading
-
-Try reinstalling kits:
-
-```bash
-erk kit install <kit-id> --force
-```
-
 ### Claude Code doesn't recognize erk commands
 
-Restart your Claude Code session after installing kits.
+Restart your Claude Code session to pick up changes to `.claude/` artifacts.

@@ -18,41 +18,26 @@ Project-specific guide for using Claude Code hooks in the erk repository.
 
 ## How Hooks Work in This Project
 
-This project uses **erk kit** commands to manage Claude Code hooks. This provides:
-
-- **Kit-based organization**: Hooks bundled with related skills, commands, and agents
-- **Atomic installation**: Install/remove entire kit including hooks
-- **Metadata tracking**: Track hook sources in `kits.toml`
-- **Version control**: Hooks are code artifacts in the repository
+Hooks are configured in `.claude/settings.json` and their scripts live in `.claude/hooks/`.
 
 **Architecture**:
 
 ```
-packages/erk-kits/src/erk_kits/data/kits/{kit-name}/
-├── kit_cli_commands/        # Hook implementation scripts
-│   └── {kit-name}/
-│       └── {hook_name}.py   # Python script with Click command
-├── kit.yaml                 # MUST register hook in TWO places:
-│   ├── kit_cli_commands:    # 1. Register script as CLI command
-│   └── hooks:               # 2. Register hook lifecycle/matcher
+.claude/
+├── settings.json            # Hook configuration
+└── hooks/
+    └── {kit-name}/
+        └── {hook_name}.py   # Python script with Click command
 ```
 
-**Installation flow**:
+**How hooks fire**:
 
-1. `erk kit install {kit-name}` reads `kit.yaml`
-2. Writes hook configuration to `.claude/settings.json`
-3. Tracks installation in `kits.toml` metadata
-4. Claude Code reads `.claude/settings.json` at startup
-5. Hook fires when lifecycle event + matcher conditions met
-
-**Key difference from native Claude Code hooks**:
-
-- **Native**: Manually edit `.claude/settings.json`, full control over all features
-- **erk kit**: Use kit commands, hooks bundled with related artifacts, currently command-based only
+1. Claude Code reads `.claude/settings.json` at startup
+2. Hook fires when lifecycle event + matcher conditions met
+3. Hook script is executed, output shown to user
 
 **Related documentation**:
 
-- Kit system overview: `.erk/kits/README.md`
 - Technical implementation: `packages/erk-kits/docs/HOOKS.md`
 
 ## Current Hooks
@@ -223,47 +208,27 @@ def is_in_managed_project() -> bool:
 ### Viewing Installed Hooks
 
 ```bash
-# List all installed hooks
-erk kit list
-
 # Show hook configuration in Claude
 /hooks  # Run inside Claude Code session
+
+# View hooks in settings.json
+cat .claude/settings.json | grep -A 10 "hooks"
 ```
 
 ### Modifying an Existing Hook
 
-Hooks are bundled in kits, so modifications require reinstallation:
-
-1. **Edit the hook script**:
+1. **Edit the hook script** in `.claude/hooks/{kit-name}/`:
 
    ```bash
-   # Example: Edit devrun reminder hook
-   vim packages/erk-kits/src/erk_kits/data/kits/devrun/kit_cli_commands/devrun/devrun_reminder_hook.py
+   vim .claude/hooks/devrun/devrun_reminder_hook.py
    ```
 
-2. **Remove the kit**:
+2. **Verify**:
 
    ```bash
-   erk kit remove devrun
-   ```
-
-3. **Reinstall the kit**:
-
-   ```bash
-   erk kit install devrun
-   ```
-
-4. **Verify**:
-
-   ```bash
-   # Check hook appears in settings
-   cat .claude/settings.json | grep -A 5 "devrun-reminder-hook"
-
    # Test hook directly
-   erk kit-command devrun devrun-reminder-hook
+   python .claude/hooks/devrun/devrun_reminder_hook.py
    ```
-
-**Important**: Changes to hook scripts don't take effect until reinstalled. The hook configuration in `.claude/settings.json` is written during `kit install`.
 
 ### Creating a New Hook
 
@@ -271,15 +236,7 @@ See comprehensive guide: `packages/erk-kits/docs/HOOKS.md`
 
 **Quick steps**:
 
-1. **Create directory structure**:
-
-   ```bash
-   packages/erk-kits/src/erk_kits/data/kits/{kit-name}/
-   ├── kit_cli_commands/{kit-name}/{hook_name}.py
-   └── kit.yaml
-   ```
-
-2. **Implement hook script** (Python + Click):
+1. **Create hook script** in `.claude/hooks/{kit-name}/`:
 
    ```python
    import click
@@ -289,24 +246,24 @@ See comprehensive guide: `packages/erk-kits/docs/HOOKS.md`
        click.echo("🔴 CRITICAL: Your reminder here")
    ```
 
-3. **Register in kit.yaml** (TWO sections required):
+2. **Register in `.claude/settings.json`**:
 
-   ```yaml
-   kit_cli_commands:
-     - name: my-reminder-hook
-       script: kit_cli_commands/{kit-name}/{hook_name}.py:{function_name}
-
-   hooks:
-     - id: my-reminder-hook
-       lifecycle: UserPromptSubmit
-       matcher: "*.txt"
-       invocation: "erk kit-command {kit-name} my-reminder-hook"
+   ```json
+   {
+     "hooks": {
+       "UserPromptSubmit": [
+         {
+           "matcher": "*.txt",
+           "hooks": ["python .claude/hooks/{kit-name}/my_reminder_hook.py"]
+         }
+       ]
+     }
+   }
    ```
 
-4. **Install and test**:
+3. **Test**:
    ```bash
-   erk kit install {kit-name}
-   erk kit-command {kit-name} my-reminder-hook  # Test directly
+   python .claude/hooks/{kit-name}/my_reminder_hook.py
    ```
 
 ### Testing Hooks
@@ -314,11 +271,8 @@ See comprehensive guide: `packages/erk-kits/docs/HOOKS.md`
 **Test hook script independently**:
 
 ```bash
-# Run hook command directly
-erk kit-command {kit-name} {hook-name}
-
-# Or run Python script directly
-python packages/erk-kits/src/erk_kits/data/kits/{kit-name}/kit_cli_commands/{kit-name}/{hook_name}.py
+# Run Python script directly
+python .claude/hooks/{kit-name}/{hook_name}.py
 ```
 
 **Test hook in Claude Code**:
@@ -416,7 +370,7 @@ claude --debug
 
 **Common causes**:
 
-- Hook not installed (run `erk kit install {kit-name}`)
+- Hook not configured in `.claude/settings.json`
 - Matcher doesn't match current context
 - Hook script has errors (test independently)
 - Claude Code settings cache stale (restart Claude)
@@ -426,8 +380,8 @@ claude --debug
 **Check 1: Test script independently**
 
 ```bash
-# Run hook command directly
-erk kit-command {kit-name} {hook-name}
+# Run hook script directly
+python .claude/hooks/{kit-name}/{hook-name}.py
 
 # Check exit code
 echo $?  # Should be 0 or 2
@@ -445,15 +399,11 @@ def reminder_hook():  # ❌ Doesn't match
     pass
 ```
 
-**Check 3: Verify kit.yaml registration**
+**Check 3: Verify settings.json registration**
 
-```yaml
-# BOTH sections required
-kit_cli_commands:
-  - name: my-hook # ✅ Registered
-
-hooks:
-  - id: my-hook # ✅ Registered
+```bash
+# Check hook appears in settings
+cat .claude/settings.json | grep -A 5 "{hook-name}"
 ```
 
 ### Hook Output Not Showing
@@ -487,20 +437,9 @@ claude --debug
 
 ### Hook Modifications Not Taking Effect
 
-**Solution**: Reinstall kit after changes
+**Solution**: Restart Claude Code after changes to `.claude/settings.json` or hook scripts.
 
-```bash
-# Remove kit
-erk kit remove {kit-name}
-
-# Reinstall kit
-erk kit install {kit-name}
-
-# Verify changes
-erk kit-command {kit-name} {hook-name}
-```
-
-**Why**: Hook configuration is written to `.claude/settings.json` during installation. Source file changes don't auto-update installed hooks.
+Claude Code caches hook configuration at startup, so changes require a restart to take effect.
 
 ---
 
@@ -510,5 +449,4 @@ erk kit-command {kit-name} {hook-name}
 - **Official Claude Code Hooks**: https://code.claude.com/docs/en/hooks
 - **Official Hooks Guide**: https://code.claude.com/docs/en/hooks-guide.md
 - **erk-kits Hook Development**: `../../packages/erk-kits/docs/HOOKS.md`
-- **Kit System Overview**: `../../.erk/kits/README.md`
 - **Project Glossary**: `../glossary.md`

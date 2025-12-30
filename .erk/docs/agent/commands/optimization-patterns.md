@@ -161,15 +161,15 @@ For each phase:
 3. Mark complete
 ```
 
-### Step 4: For Kits - Register in kit.yaml
+### Step 4: Build Artifacts
 
-```yaml
-artifacts:
-  doc:
-    - docs/erk/plan-implement/execution-guide.md
+After creating the external doc, run:
+
+```bash
+erk dev kit-build
 ```
 
-Then run `erk kit install <kit-id>` to install.
+This syncs the documentation to kit packages.
 
 ## Size Targets
 
@@ -232,15 +232,13 @@ wc -c .claude/docs/my-command/guide.md
 @docs/execution-workflow.md
 ```
 
-### Forgetting Kit Registration
+### Forgetting to Build
 
-```yaml
-# DON'T: Create doc without registering
+```bash
+# DON'T: Create doc without building
 
-# DO: Add to kit.yaml
-artifacts:
-  doc:
-    - docs/new-doc.md
+# DO: Run kit-build after creating docs
+erk dev kit-build
 ```
 
 ## Case Study: /erk:plan-implement

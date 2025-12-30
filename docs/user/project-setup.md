@@ -14,39 +14,7 @@ erk init
 
 This creates the `erk.toml` configuration file in your repository root.
 
-## Step 2: Install Kits
-
-Install the kits that provide erk's slash commands and agents:
-
-```bash
-# Install the erk kit (provides /erk:* commands and agents)
-erk kit install erk
-
-# Verify installation
-erk kit list
-```
-
-The erk kit includes:
-
-- **Commands**: `/erk:plan-implement`, `/erk:save-plan`, `/erk:replan`, etc.
-- **Workflows**: GitHub Actions templates for erk queue processing
-
-### Step 3: Install Related Kits (Optional)
-
-For the full erk experience, consider installing these complementary kits:
-
-```bash
-# Graphite integration for stacked PRs
-erk kit install gt
-
-# Development runner for CI iteration
-erk kit install devrun
-
-# Python coding standards (if your project uses Python)
-erk kit install dignified-python
-```
-
-## Directory Structure
+## Step 2: Directory Structure
 
 Erk uses specific directories in your repository:
 
@@ -61,11 +29,11 @@ your-repo/
 │   └── issue.json
 ├── .github/
 │   └── workflows/
-│       └── erk/             # Installed erk GitHub Actions (from kit)
+│       └── erk/             # Erk GitHub Actions
 └── ...
 ```
 
-## Step 4: Configure .gitignore
+## Step 3: Configure .gitignore
 
 Add these entries to your `.gitignore` to exclude erk's temporary and session-specific files:
 
@@ -80,12 +48,12 @@ Add these entries to your `.gitignore` to exclude erk's temporary and session-sp
 - **`.erk/scratch/`**: Session-specific scratch storage. Each Claude session creates temporary files here scoped by session ID. These are ephemeral and should not be committed.
 - **`.impl/`**: Implementation plan files created per-worktree. These track in-progress work and are deleted after successful PR submission.
 
-## Step 5: Commit Your Setup
+## Step 4: Commit Your Setup
 
 After completing the setup, commit the following files to git:
 
 - **`erk.toml`** - Project configuration (created by `erk init`)
-- **`.claude/`** - Kit artifacts (commands, skills, hooks installed by kits)
+- **`.claude/`** - Claude Code artifacts (commands, skills, hooks)
 - **`.gitignore`** - Updated exclusions for erk temporary files
 
 This makes the erk configuration available to all team members who clone the repository.
