@@ -1,17 +1,17 @@
 """Artifact check command."""
 
-from pathlib import Path
-
 import click
 
 from erk.artifacts.staleness import check_staleness, get_current_version, is_dev_mode
 from erk.artifacts.state import load_artifact_state
+from erk.core.context import ErkContext
 
 
 @click.command()
-def check() -> None:
+@click.pass_obj
+def check(ctx: ErkContext) -> None:
     """Check artifact sync status."""
-    project_dir = Path.cwd()
+    project_dir = ctx.cwd
 
     click.echo(f"erk version: {get_current_version()}")
     click.echo(f"Dev mode: {is_dev_mode(project_dir)}")

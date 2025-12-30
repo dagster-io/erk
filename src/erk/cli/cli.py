@@ -3,6 +3,7 @@ import sys
 
 import click
 
+from erk.artifacts.preamble import check_and_prompt_artifact_sync
 from erk.cli.alias import register_with_aliases
 from erk.cli.commands.admin import admin_group
 from erk.cli.commands.artifact.group import artifact_group
@@ -124,18 +125,10 @@ def cli(ctx: click.Context, debug: bool, no_sync: bool) -> None:
 
         # Check artifact sync (skip for init and dev commands)
         if ctx.invoked_subcommand not in ("init", "dev"):
-            try:
-                # Inline import to avoid import-time side effects
-                from pathlib import Path
+            from pathlib import Path
 
-                from erk.artifacts.preamble import check_and_prompt_artifact_sync
-
-                project_dir = Path.cwd()
-                check_and_prompt_artifact_sync(project_dir, no_sync=no_sync)
-            except Exception:
-                # Never break CLI for preamble failures
-                if debug:
-                    raise
+            project_dir = Path.cwd()
+            check_and_prompt_artifact_sync(project_dir, no_sync=no_sync)
 
     # Only create context if not already provided (e.g., by tests)
     if ctx.obj is None:

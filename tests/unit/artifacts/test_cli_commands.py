@@ -1,5 +1,6 @@
 """Tests for artifacts CLI commands."""
 
+from dataclasses import dataclass
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -11,13 +12,21 @@ from erk.cli.commands.artifacts.check import check
 from erk.cli.commands.artifacts.sync import sync
 
 
+@dataclass
+class MinimalContext:
+    """Minimal context for CLI commands that only need cwd."""
+
+    cwd: Path
+
+
 def test_check_command_not_initialized(tmp_path: Path) -> None:
     """Test check command when project is not initialized."""
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
+        ctx = MinimalContext(cwd=Path.cwd())
         with patch("erk.cli.commands.artifacts.check.get_current_version", return_value="1.0.0"):
-            result = runner.invoke(check)
+            result = runner.invoke(check, obj=ctx)
 
     assert result.exit_code == 0
     assert "erk version: 1.0.0" in result.output
@@ -30,6 +39,7 @@ def test_check_command_up_to_date(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         project_dir = Path.cwd()
+        ctx = MinimalContext(cwd=project_dir)
         save_artifact_state(project_dir, ArtifactState(version="1.0.0"))
 
         # Need to patch both the version getter AND check_staleness at their usage sites
@@ -43,7 +53,7 @@ def test_check_command_up_to_date(tmp_path: Path) -> None:
             mock_check.return_value = MagicMock(
                 is_stale=False, reason="up to date", installed_version="1.0.0"
             )
-            result = runner.invoke(check)
+            result = runner.invoke(check, obj=ctx)
 
     assert result.exit_code == 0
     assert "Installed version: 1.0.0" in result.output
@@ -56,6 +66,7 @@ def test_check_command_version_mismatch(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         project_dir = Path.cwd()
+        ctx = MinimalContext(cwd=project_dir)
         save_artifact_state(project_dir, ArtifactState(version="1.0.0"))
 
         with (
@@ -68,7 +79,7 @@ def test_check_command_version_mismatch(tmp_path: Path) -> None:
             mock_check.return_value = MagicMock(
                 is_stale=True, reason="version mismatch", installed_version="1.0.0"
             )
-            result = runner.invoke(check)
+            result = runner.invoke(check, obj=ctx)
 
     assert result.exit_code == 0
     assert "version mismatch" in result.output
@@ -80,10 +91,11 @@ def test_check_command_dev_mode(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         project_dir = Path.cwd()
+        ctx = MinimalContext(cwd=project_dir)
         (project_dir / "packages" / "erk-kits").mkdir(parents=True)
 
         with patch("erk.cli.commands.artifacts.check.get_current_version", return_value="1.0.0"):
-            result = runner.invoke(check)
+            result = runner.invoke(check, obj=ctx)
 
     assert result.exit_code == 0
     assert "Dev mode: True" in result.output
@@ -95,9 +107,10 @@ def test_sync_command_dev_mode(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         project_dir = Path.cwd()
+        ctx = MinimalContext(cwd=project_dir)
         (project_dir / "packages" / "erk-kits").mkdir(parents=True)
 
-        result = runner.invoke(sync)
+        result = runner.invoke(sync, obj=ctx)
 
     assert result.exit_code == 0
     assert "Dev mode" in result.output
@@ -110,11 +123,12 @@ def test_sync_command_up_to_date(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         project_dir = Path.cwd()
+        ctx = MinimalContext(cwd=project_dir)
         save_artifact_state(project_dir, ArtifactState(version="1.0.0"))
 
         with patch("erk.cli.commands.artifacts.sync.check_staleness") as mock_check:
             mock_check.return_value = MagicMock(is_stale=False)
-            result = runner.invoke(sync)
+            result = runner.invoke(sync, obj=ctx)
 
     assert result.exit_code == 0
     assert "up to date" in result.output
@@ -130,13 +144,14 @@ def test_sync_command_force_flag(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         project_dir = Path.cwd()
+        ctx = MinimalContext(cwd=project_dir)
         save_artifact_state(project_dir, ArtifactState(version="1.0.0"))
 
         with patch(
             "erk.cli.commands.artifacts.sync.sync_artifacts",
             return_value=mock_sync_result,
         ):
-            result = runner.invoke(sync, ["--force"])
+            result = runner.invoke(sync, ["--force"], obj=ctx)
 
     assert result.exit_code == 0
     assert "Synced 3 artifacts" in result.output
@@ -152,6 +167,7 @@ def test_sync_command_when_stale(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         project_dir = Path.cwd()
+        ctx = MinimalContext(cwd=project_dir)
         save_artifact_state(project_dir, ArtifactState(version="1.0.0"))
 
         with (
@@ -162,7 +178,7 @@ def test_sync_command_when_stale(tmp_path: Path) -> None:
             ),
         ):
             mock_check.return_value = MagicMock(is_stale=True)
-            result = runner.invoke(sync)
+            result = runner.invoke(sync, obj=ctx)
 
     assert result.exit_code == 0
     assert "Synced 5 artifacts, 2 hooks" in result.output

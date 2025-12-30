@@ -1,18 +1,18 @@
 """Artifact sync command."""
 
-from pathlib import Path
-
 import click
 
 from erk.artifacts.staleness import check_staleness, is_dev_mode
 from erk.artifacts.sync import sync_artifacts
+from erk.core.context import ErkContext
 
 
 @click.command()
 @click.option("--force", is_flag=True, help="Sync even if up to date")
-def sync(force: bool) -> None:
+@click.pass_obj
+def sync(ctx: ErkContext, force: bool) -> None:
     """Sync erk artifacts to project."""
-    project_dir = Path.cwd()
+    project_dir = ctx.cwd
 
     if is_dev_mode(project_dir):
         click.echo("Dev mode - artifacts read from source, nothing to sync")
