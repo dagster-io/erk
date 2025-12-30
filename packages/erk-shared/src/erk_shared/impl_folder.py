@@ -163,7 +163,7 @@ def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) 
         steps = json.loads(output)
     except json.JSONDecodeError as e:
         msg = f"LLM returned invalid JSON: {e}. Output was: {output[:200]}"
-        raise RuntimeError(msg) from None
+        raise RuntimeError(msg) from e
 
     # Validate response structure
     if not isinstance(steps, list):
