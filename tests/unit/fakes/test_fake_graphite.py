@@ -291,3 +291,34 @@ def test_fake_graphite_ops_stack_returns_copy() -> None:
 
     # Original should be unchanged
     assert original_stack == ["main", "feature"]
+
+
+def test_fake_graphite_is_branch_tracked_returns_true_for_tracked() -> None:
+    """Test that is_branch_tracked returns True for branches in branches dict."""
+    branches = {
+        "main": BranchMetadata.trunk("main", children=["feature"]),
+        "feature": BranchMetadata.branch("feature", "main"),
+    }
+    ops = FakeGraphite(branches=branches)
+
+    assert ops.is_branch_tracked(Path("/repo"), "main") is True
+    assert ops.is_branch_tracked(Path("/repo"), "feature") is True
+
+
+def test_fake_graphite_is_branch_tracked_returns_false_for_untracked() -> None:
+    """Test that is_branch_tracked returns False for branches not in branches dict."""
+    branches = {
+        "main": BranchMetadata.trunk("main"),
+    }
+    ops = FakeGraphite(branches=branches)
+
+    # "untracked-branch" is not in branches dict
+    assert ops.is_branch_tracked(Path("/repo"), "untracked-branch") is False
+    assert ops.is_branch_tracked(Path("/repo"), "nonexistent") is False
+
+
+def test_fake_graphite_is_branch_tracked_empty_branches() -> None:
+    """Test that is_branch_tracked returns False when no branches configured."""
+    ops = FakeGraphite()
+
+    assert ops.is_branch_tracked(Path("/repo"), "any-branch") is False
