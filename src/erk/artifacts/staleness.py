@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from erk.artifacts.detection import is_in_erk_repo
 from erk.artifacts.models import StalenessResult
 from erk.artifacts.state import load_artifact_state
 from erk.core.release_notes import get_current_version
@@ -12,11 +13,21 @@ def check_staleness(project_dir: Path) -> StalenessResult:
 
     Returns a StalenessResult with:
     - is_stale: True if artifacts need to be synced
-    - reason: "not-initialized", "version-mismatch", or "up-to-date"
+    - reason: "not-initialized", "version-mismatch", "up-to-date", or "erk-repo"
     - current_version: The installed erk package version
     - installed_version: The version artifacts were last synced from (or None)
     """
     current_version = get_current_version()
+
+    # In erk repo, artifacts are read from source - always up to date
+    if is_in_erk_repo(project_dir):
+        return StalenessResult(
+            is_stale=False,
+            reason="erk-repo",
+            current_version=current_version,
+            installed_version=None,
+        )
+
     state = load_artifact_state(project_dir)
 
     if state is None:

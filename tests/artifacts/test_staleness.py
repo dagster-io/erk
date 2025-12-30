@@ -47,3 +47,18 @@ def test_check_staleness_up_to_date(tmp_path: Path) -> None:
     assert result.reason == "up-to-date"
     assert result.current_version == "1.0.0"
     assert result.installed_version == "1.0.0"
+
+
+def test_check_staleness_erk_repo(tmp_path: Path) -> None:
+    """Returns erk-repo reason when in erk repository."""
+    # Create pyproject.toml with erk name
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text('[project]\nname = "erk"\n', encoding="utf-8")
+
+    with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
+        result = check_staleness(tmp_path)
+
+    assert result.is_stale is False
+    assert result.reason == "erk-repo"
+    assert result.current_version == "1.0.0"
+    assert result.installed_version is None

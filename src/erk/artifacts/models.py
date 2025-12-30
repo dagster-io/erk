@@ -31,6 +31,6 @@ class StalenessResult:
     """Result of checking artifact staleness."""
 
     is_stale: bool
-    reason: Literal["not-initialized", "version-mismatch", "up-to-date"]
+    reason: Literal["not-initialized", "version-mismatch", "up-to-date", "erk-repo"]
     current_version: str
     installed_version: str | None

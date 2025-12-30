@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 
+from erk.artifacts.detection import is_in_erk_repo
 from erk.artifacts.models import ArtifactState
 from erk.artifacts.state import save_artifact_state
 from erk.core.release_notes import get_current_version
@@ -31,21 +32,6 @@ def get_bundled_claude_dir() -> Path:
     return Path(erk.__file__).parent / "data" / "claude"
 
 
-def _is_in_erk_repo(project_dir: Path) -> bool:
-    """Check if we're running inside the erk repository itself.
-
-    When running in the erk repo, artifacts are read from source
-    rather than synced from package data.
-    """
-    # Check if this looks like the erk repo
-    pyproject = project_dir / "pyproject.toml"
-    if not pyproject.exists():
-        return False
-
-    content = pyproject.read_text(encoding="utf-8")
-    return 'name = "erk"' in content
-
-
 def _copy_directory_contents(source_dir: Path, target_dir: Path) -> int:
     """Copy directory contents recursively, returning count of files copied."""
     if not source_dir.exists():
@@ -69,7 +55,7 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     are read directly from source.
     """
     # Skip sync in erk repo - artifacts are already at source
-    if _is_in_erk_repo(project_dir):
+    if is_in_erk_repo(project_dir):
         return SyncResult(
             success=True,
             artifacts_installed=0,

@@ -145,6 +145,19 @@ class TestCheckCommand:
         assert result.exit_code == 0
         assert "up to date" in result.output
 
+    def test_check_erk_repo(self, tmp_path: Path) -> None:
+        """Shows development mode when in erk repo."""
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            # Create pyproject.toml with erk name
+            Path("pyproject.toml").write_text('[project]\nname = "erk"\n', encoding="utf-8")
+
+            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
+                result = runner.invoke(check_cmd)
+
+        assert result.exit_code == 0
+        assert "Development mode" in result.output
+
 
 class TestSyncCommand:
     """Tests for erk artifact sync."""

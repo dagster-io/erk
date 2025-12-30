@@ -24,7 +24,9 @@ def check_cmd() -> None:
 
     result = check_staleness(project_dir)
 
-    if result.reason == "not-initialized":
+    if result.reason == "erk-repo":
+        click.echo(click.style("✓ ", fg="green") + "Development mode (artifacts read from source)")
+    elif result.reason == "not-initialized":
         click.echo(click.style("⚠️  ", fg="yellow") + "Artifacts not initialized")
         click.echo(f"   Current erk version: {result.current_version}")
         click.echo("   Run 'erk artifact sync' to initialize")
