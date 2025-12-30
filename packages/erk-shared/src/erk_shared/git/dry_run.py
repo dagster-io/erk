@@ -316,3 +316,9 @@ class DryRunGit(Git):
     def push_tag(self, repo_root: Path, remote: str, tag_name: str) -> None:
         """Print dry-run message instead of pushing tag."""
         user_output(f"[DRY RUN] Would run: git push {remote} {tag_name}")
+
+    def is_branch_diverged_from_remote(
+        self, cwd: Path, branch: str, remote: str
+    ) -> tuple[bool, int, int]:
+        """Check branch divergence (read-only, delegates to wrapped)."""
+        return self._wrapped.is_branch_diverged_from_remote(cwd, branch, remote)

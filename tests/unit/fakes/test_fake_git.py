@@ -576,3 +576,45 @@ def test_fake_git_get_commit_messages_since_returns_empty_for_unknown_cwd() -> N
     result = git_ops.get_commit_messages_since(other_cwd, "main")
 
     assert result == []
+
+
+# ============================================================================
+# Branch Divergence Tests
+# ============================================================================
+
+
+def test_fake_git_is_branch_diverged_returns_configured_divergence() -> None:
+    """Test is_branch_diverged_from_remote returns configured divergence state."""
+    cwd = Path("/repo")
+    git_ops = FakeGit(branch_divergence={(cwd, "feature", "origin"): (True, 3, 2)})
+
+    is_diverged, ahead, behind = git_ops.is_branch_diverged_from_remote(cwd, "feature", "origin")
+
+    assert is_diverged is True
+    assert ahead == 3
+    assert behind == 2
+
+
+def test_fake_git_is_branch_diverged_returns_default_for_unconfigured() -> None:
+    """Test is_branch_diverged_from_remote returns default for unconfigured branch."""
+    git_ops = FakeGit()
+
+    is_diverged, ahead, behind = git_ops.is_branch_diverged_from_remote(
+        Path("/repo"), "feature", "origin"
+    )
+
+    assert is_diverged is False
+    assert ahead == 0
+    assert behind == 0
+
+
+def test_fake_git_is_branch_diverged_not_diverged_when_only_ahead() -> None:
+    """Test is_branch_diverged_from_remote with only ahead commits (not diverged)."""
+    cwd = Path("/repo")
+    git_ops = FakeGit(branch_divergence={(cwd, "feature", "origin"): (False, 3, 0)})
+
+    is_diverged, ahead, behind = git_ops.is_branch_diverged_from_remote(cwd, "feature", "origin")
+
+    assert is_diverged is False
+    assert ahead == 3
+    assert behind == 0

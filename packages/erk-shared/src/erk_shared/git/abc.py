@@ -763,3 +763,22 @@ class Git(ABC):
             subprocess.CalledProcessError: If git command fails
         """
         ...
+
+    @abstractmethod
+    def is_branch_diverged_from_remote(
+        self, cwd: Path, branch: str, remote: str
+    ) -> tuple[bool, int, int]:
+        """Check if a local branch has diverged from its remote tracking branch.
+
+        A branch is considered diverged when it has commits both ahead and behind
+        the remote tracking branch.
+
+        Args:
+            cwd: Working directory
+            branch: Local branch name to check
+            remote: Remote name (e.g., "origin")
+
+        Returns:
+            Tuple of (is_diverged, ahead_count, behind_count)
+        """
+        ...

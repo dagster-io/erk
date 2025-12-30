@@ -164,7 +164,31 @@ def execute_core_submit(
             issue_number = issue_ref.issue_number
             yield ProgressEvent(f"Found linked issue: #{issue_number}")
 
-    # Step 6: Push branch to remote
+    # Step 6: Pre-flight divergence check
+    is_diverged, ahead, behind = ctx.git.is_branch_diverged_from_remote(cwd, branch_name, "origin")
+    if is_diverged:
+        if not force:
+            yield CompletionEvent(
+                CoreSubmitError(
+                    success=False,
+                    error_type="branch_diverged",
+                    message=(
+                        f"Branch '{branch_name}' has diverged from remote.\n"
+                        f"Local is {ahead} commit(s) ahead and {behind} commit(s) behind "
+                        f"origin/{branch_name}.\n\n"
+                        f"To fix: git pull --rebase origin {branch_name}\n"
+                        f"Or use: erk pr submit -f (to force push)"
+                    ),
+                    details={"branch": branch_name, "ahead": str(ahead), "behind": str(behind)},
+                )
+            )
+            return
+        yield ProgressEvent(
+            f"Branch diverged (ahead={ahead}, behind={behind}), force pushing...",
+            style="warning",
+        )
+
+    # Step 7: Push branch to remote
     push_msg = "Force pushing branch to origin..." if force else "Pushing branch to origin..."
     yield ProgressEvent(push_msg)
     try:
@@ -191,7 +215,7 @@ def execute_core_submit(
     push_success = "Branch force pushed to origin" if force else "Branch pushed to origin"
     yield ProgressEvent(push_success, style="success")
 
-    # Step 7: Check for existing PR
+    # Step 8: Check for existing PR
     yield ProgressEvent("Checking for existing PR...")
     existing_pr = ctx.github.get_pr_for_branch(repo_root, branch_name)
 

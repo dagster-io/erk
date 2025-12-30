@@ -313,3 +313,9 @@ class PrintingGit(PrintingBase, Git):
         """Push tag with printed output."""
         self._emit(self._format_command(f"git push {remote} {tag_name}"))
         self._wrapped.push_tag(repo_root, remote, tag_name)
+
+    def is_branch_diverged_from_remote(
+        self, cwd: Path, branch: str, remote: str
+    ) -> tuple[bool, int, int]:
+        """Check branch divergence (read-only, no printing)."""
+        return self._wrapped.is_branch_diverged_from_remote(cwd, branch, remote)
