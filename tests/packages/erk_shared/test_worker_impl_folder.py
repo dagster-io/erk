@@ -226,10 +226,9 @@ def example():
 
 > Note: blockquote text
 """
-    executor = _make_executor([
-        "1. First step with `inline code`",
-        "2. Second step with special chars: $, &, *, ()"
-    ])
+    executor = _make_executor(
+        ["1. First step with `inline code`", "2. Second step with special chars: $, &, *, ()"]
+    )
     create_worker_impl_folder(
         plan_content=plan_content,
         issue_number=456,

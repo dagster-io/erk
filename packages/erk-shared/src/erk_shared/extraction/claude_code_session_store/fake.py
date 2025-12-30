@@ -11,7 +11,7 @@ from erk_shared.extraction.claude_code_session_store.abc import (
 )
 
 
-@dataclass
+@dataclass(frozen=True)
 class FakeSessionData:
     """Test data for a fake session."""
 

@@ -20,7 +20,7 @@ from erk_shared.gateway.shell.abc import Shell
 from erk_shared.github_admin.abc import GitHubAdmin
 
 
-@dataclass
+@dataclass(frozen=True)
 class CheckResult:
     """Result of a single health check.
 

@@ -12,7 +12,7 @@ from erk_dev.commands.bump_version.command import find_repo_root
 STANDARD_CATEGORIES = frozenset({"Added", "Changed", "Deprecated", "Removed", "Fixed", "Security"})
 
 
-@dataclass
+@dataclass(frozen=True)
 class ValidationIssue:
     """A validation issue found in CHANGELOG.md."""
 
@@ -21,7 +21,7 @@ class ValidationIssue:
     line: int | None = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class VersionInfo:
     """Information about a version section in the changelog."""
 

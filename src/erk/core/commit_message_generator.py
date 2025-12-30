@@ -16,7 +16,7 @@ from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.prompts import COMMIT_MESSAGE_SYSTEM_PROMPT
 
 
-@dataclass
+@dataclass(frozen=True)
 class CommitMessageRequest:
     """Request for generating a commit message.
 
@@ -35,7 +35,7 @@ class CommitMessageRequest:
     commit_messages: list[str] | None = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class CommitMessageResult:
     """Result of commit message generation.
 

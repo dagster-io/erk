@@ -50,7 +50,7 @@ from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 
 
-@dataclass
+@dataclass(frozen=True)
 class ConfiguredUser:
     """Success result with configured user identity."""
 
@@ -59,7 +59,7 @@ class ConfiguredUser:
     email: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class ConfigurationError:
     """Error result when user identity cannot be configured."""
 

@@ -11,7 +11,7 @@ from erk.kits.io.manifest import load_kit_manifest
 from erk.kits.sources.bundled import BundledKitSource
 
 
-@dataclass
+@dataclass(frozen=True)
 class ArtifactValidationError:
     """Error during artifact validation."""
 

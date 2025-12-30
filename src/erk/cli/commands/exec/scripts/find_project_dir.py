@@ -62,7 +62,7 @@ from pathlib import Path
 import click
 
 
-@dataclass
+@dataclass(frozen=True)
 class ProjectInfo:
     """Success result with project information."""
 
@@ -74,7 +74,7 @@ class ProjectInfo:
     latest_session_id: str | None
 
 
-@dataclass
+@dataclass(frozen=True)
 class ProjectError:
     """Error result when project directory not found."""
 

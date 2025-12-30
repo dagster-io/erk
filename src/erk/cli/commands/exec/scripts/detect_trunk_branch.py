@@ -57,7 +57,7 @@ from erk_shared.context.helpers import require_git, require_repo_root
 from erk_shared.git.abc import Git
 
 
-@dataclass
+@dataclass(frozen=True)
 class DetectedTrunk:
     """Success result with detected trunk branch."""
 
@@ -65,7 +65,7 @@ class DetectedTrunk:
     trunk_branch: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class DetectionError:
     """Error result when trunk branch cannot be detected."""
 

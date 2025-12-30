@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class IssueNextSteps:
     """Canonical commands for issue operations."""
 
