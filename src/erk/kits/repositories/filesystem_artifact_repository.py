@@ -8,15 +8,12 @@ from erk.kits.hooks.settings import (
     get_all_hooks,
     load_settings,
 )
-from erk.kits.io.bundled import get_bundled_kit_path
-from erk.kits.io.manifest import load_kit_manifest
 from erk.kits.models.artifact import (
     ArtifactLevel,
     ArtifactSource,
     ArtifactType,
     InstalledArtifact,
 )
-from erk.kits.models.bundled_kit import BundledKitInfo
 from erk.kits.models.config import InstalledKit, ProjectConfig
 from erk.kits.repositories.artifact_repository import ArtifactRepository
 
@@ -572,54 +569,3 @@ class FilesystemArtifactRepository(ArtifactRepository):
             kit_id=kit_id,
             kit_version=kit_version,
         )
-
-    def discover_bundled_kits(
-        self, user_path: Path, project_path: Path, project_config: ProjectConfig
-    ) -> dict[str, BundledKitInfo]:
-        """Discover bundled kits that are installed in project config.
-
-        Only returns bundled kits that are listed in the project's kits.toml
-        configuration file. Shows their available docs.
-
-        Args:
-            user_path: User-level .claude directory (e.g., ~/.claude)
-            project_path: Project-level .claude directory (e.g., ./.claude)
-            project_config: Project configuration from kits.toml
-
-        Returns:
-            Dict mapping kit_id to BundledKitInfo with available docs
-        """
-        bundled_kits: dict[str, BundledKitInfo] = {}
-
-        # Only process kits that are in the project config
-        for kit_id, _installed_kit in project_config.kits.items():
-            # Skip if not a bundled kit
-            kit_path = get_bundled_kit_path(kit_id)
-            if kit_path is None:
-                continue
-
-            manifest_path = kit_path / "kit.yaml"
-            if not manifest_path.exists():
-                continue
-
-            # Load manifest to verify kit
-            manifest = load_kit_manifest(manifest_path)
-
-            # Scan for available docs in kit's docs directory
-            docs_dir = kit_path / "docs"
-            available_docs: list[str] = []
-
-            if docs_dir.exists():
-                for doc_file in docs_dir.rglob("*.md"):
-                    relative_doc = doc_file.relative_to(docs_dir)
-                    available_docs.append(str(relative_doc).replace("\\", "/"))
-
-            # All kits in project config are project-level
-            bundled_kits[kit_id] = BundledKitInfo(
-                kit_id=kit_id,
-                version=manifest.version,
-                available_docs=available_docs,
-                level="project",
-            )
-
-        return bundled_kits

@@ -72,16 +72,11 @@ def _list_artifacts_impl(
     repository = FilesystemArtifactRepository()
     all_artifacts = repository.discover_multi_level(user_path, project_path, project_config)
 
-    # Discover bundled kits
-    bundled_kits = repository.discover_bundled_kits(user_path, project_path, project_config)
-
     # Filter by level
     if level_filter == "user":
         all_artifacts = [a for a in all_artifacts if a.level == ArtifactLevel.USER]
-        bundled_kits = {k: v for k, v in bundled_kits.items() if v.level == "user"}
     elif level_filter == "project":
         all_artifacts = [a for a in all_artifacts if a.level == ArtifactLevel.PROJECT]
-        bundled_kits = {k: v for k, v in bundled_kits.items() if v.level == "project"}
 
     # Filter by type
     if artifact_type:
@@ -92,14 +87,14 @@ def _list_artifacts_impl(
         all_artifacts = [a for a in all_artifacts if a.source == ArtifactSource.MANAGED]
 
     # Display results
-    if not all_artifacts and not bundled_kits:
+    if not all_artifacts:
         user_output("No artifacts found.")
         raise SystemExit(1)
 
     if verbose:
-        output = format_verbose_list(all_artifacts, bundled_kits, user_path, project_path)
+        output = format_verbose_list(all_artifacts, user_path=user_path, project_path=project_path)
     else:
-        output = format_compact_list(all_artifacts, bundled_kits)
+        output = format_compact_list(all_artifacts)
 
     user_output(output)
 
