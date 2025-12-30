@@ -5,8 +5,8 @@ from pathlib import Path
 import yaml
 
 from erk.kits.hooks.settings import extract_hook_id_from_command, load_settings
+from erk.kits.models.resolved import ResolvedKit
 from erk.kits.operations.install import install_kit
-from erk.kits.sources.resolver import ResolvedKit
 
 
 def test_install_kit_installs_hooks(tmp_path: Path) -> None:

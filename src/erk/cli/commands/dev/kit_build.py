@@ -5,10 +5,10 @@ from pathlib import Path
 
 import click
 
+from erk.kits.io.bundled import get_bundled_kit_path, list_bundled_kits
 from erk.kits.io.frontmatter import parse_artifact_frontmatter
 from erk.kits.io.git import find_git_root
 from erk.kits.io.manifest import load_kit_manifest
-from erk.kits.sources.bundled import BundledKitSource
 
 
 @dataclass(frozen=True)
@@ -218,8 +218,7 @@ def kit_build(kit_name: str | None, check: bool, verbose: bool) -> None:
         click.echo("Error: Not in a git repository", err=True)
         raise SystemExit(1)
 
-    bundled_source = BundledKitSource()
-    kit_names = bundled_source.list_available()
+    kit_names = list_bundled_kits()
 
     if not kit_names:
         click.echo("No bundled kits found")
@@ -241,7 +240,7 @@ def kit_build(kit_name: str | None, check: bool, verbose: bool) -> None:
     total_errors = 0
 
     for name in sorted(kit_names):
-        kit_path = bundled_source._get_bundled_kit_path(name)
+        kit_path = get_bundled_kit_path(name)
         if kit_path is None:
             continue
 

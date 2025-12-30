@@ -4,9 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from erk.kits.models.resolved import ArtifactConflictError, ResolvedKit
 from erk.kits.operations.install import install_kit
-from erk.kits.sources.exceptions import ArtifactConflictError
-from erk.kits.sources.resolver import ResolvedKit
 
 
 def test_install_kit_basic(tmp_project: Path) -> None:
@@ -279,82 +278,6 @@ def test_kit_manifest_namespace_validation() -> None:
     )
     errors = manifest.validate_namespace_pattern()
     assert errors == []  # No enforcement - returns empty list
-
-
-def test_bundled_kit_namespace_enforcement(tmp_path: Path) -> None:
-    """Test that bundled kits can use any namespace structure (not enforced)."""
-    from erk.kits.sources.bundled import BundledKitSource
-
-    # Create a mock bundled kit with any namespace structure
-    kit_dir = tmp_path / "data" / "kits" / "any-kit"
-    kit_dir.mkdir(parents=True)
-
-    manifest = kit_dir / "kit.yaml"
-    manifest.write_text(
-        "name: any-kit\n"
-        "version: 1.0.0\n"
-        "description: Kit with any namespace structure\n"
-        "artifacts:\n"
-        "  agent:\n"
-        "    - agents/helper.md\n",  # Any structure is allowed
-        encoding="utf-8",
-    )
-
-    agents_dir = kit_dir / "agents"
-    agents_dir.mkdir()
-    (agents_dir / "helper.md").write_text("# Helper Agent", encoding="utf-8")
-
-    # Create a custom source that points to our temp directory
-    class TestBundledSource(BundledKitSource):
-        def _get_bundled_kit_path(self, source: str) -> Path | None:
-            test_path = tmp_path / "data" / "kits" / source
-            if test_path.exists():
-                return test_path
-            return None
-
-    source = TestBundledSource()
-
-    # Should resolve successfully - namespace validation is not enforced
-    resolved = source.resolve("any-kit")
-    assert resolved.kit_id == "any-kit"
-
-
-def test_bundled_kit_valid_namespace_succeeds(tmp_path: Path) -> None:
-    """Test that properly namespaced bundled kits resolve successfully."""
-    from erk.kits.sources.bundled import BundledKitSource
-
-    # Create a mock bundled kit with valid namespace
-    kit_dir = tmp_path / "data" / "kits" / "good-kit"
-    kit_dir.mkdir(parents=True)
-
-    manifest = kit_dir / "kit.yaml"
-    manifest.write_text(
-        "name: good-kit\n"
-        "version: 1.0.0\n"
-        "description: Kit with valid namespace\n"
-        "artifacts:\n"
-        "  agent:\n"
-        "    - agents/good-kit/helper.md\n",  # Properly namespaced
-        encoding="utf-8",
-    )
-
-    agents_dir = kit_dir / "agents" / "good-kit"
-    agents_dir.mkdir(parents=True)
-    (agents_dir / "helper.md").write_text("# Helper Agent", encoding="utf-8")
-
-    # Create a custom source that points to our temp directory
-    class TestBundledSource(BundledKitSource):
-        def _get_bundled_kit_path(self, source: str) -> Path | None:
-            test_path = tmp_path / "data" / "kits" / source
-            if test_path.exists():
-                return test_path
-            return None
-
-    source = TestBundledSource()
-
-    # Should resolve successfully
-    resolved = source.resolve("good-kit")
-    assert resolved.kit_id == "good-kit"
 
 
 def test_install_kit_with_docs(tmp_project: Path) -> None:
