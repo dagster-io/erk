@@ -303,6 +303,28 @@ def test_extract_steps_llm_non_string_item_raises_runtime_error() -> None:
         extract_steps_from_plan(plan, executor)
 
 
+def test_extract_steps_llm_empty_output_raises_runtime_error(capsys) -> None:
+    """Test that empty LLM output (success but no content) raises RuntimeError.
+
+    This tests the case where Claude CLI returns exit code 0 (success=True)
+    but produces empty stdout. Previously this caused a confusing JSONDecodeError
+    with "Expecting value: line 1 column 1 (char 0)".
+    """
+    plan = "# Plan\n\n1. Step one\n2. Step two"
+    # FakePromptExecutor with empty output simulates LLM returning empty stdout
+    executor = FakePromptExecutor(output="")
+
+    with pytest.raises(RuntimeError, match="LLM returned empty output for step extraction"):
+        extract_steps_from_plan(plan, executor)
+
+    # Verify diagnostic output was written to stderr
+    captured = capsys.readouterr()
+    assert "WARNING: LLM returned empty output" in captured.err
+    assert "Model: haiku" in captured.err
+    assert "Prompt length:" in captured.err
+    assert "First 500 chars of prompt:" in captured.err
+
+
 def test_create_impl_folder_generates_frontmatter(tmp_path: Path) -> None:
     """Test that creating a plan folder generates YAML front matter in progress.md."""
     plan_content = """# Test Plan

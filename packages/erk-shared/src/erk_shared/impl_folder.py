@@ -11,6 +11,7 @@ These utilities are used by both erk (for local operations) and erk-kits
 
 import json
 import shutil
+import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -152,6 +153,20 @@ def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) 
 
     # Parse JSON response
     output = result.output.strip()
+
+    # Handle empty output (LLM may return empty response even on success)
+    if not output:
+        # LOUD warning to help debug this edge case
+        print("=" * 60, file=sys.stderr)
+        print("WARNING: LLM returned empty output for step extraction", file=sys.stderr)
+        print("=" * 60, file=sys.stderr)
+        print("Model: haiku", file=sys.stderr)
+        print(f"Prompt length: {len(prompt)} chars", file=sys.stderr)
+        print("First 500 chars of prompt:", file=sys.stderr)
+        print(prompt[:500], file=sys.stderr)
+        print("=" * 60, file=sys.stderr)
+        msg = "LLM returned empty output for step extraction (see stderr for details)"
+        raise RuntimeError(msg)
 
     # Handle markdown code blocks (LLM may wrap in ```json ... ```)
     if output.startswith("```"):
