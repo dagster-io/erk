@@ -17,6 +17,7 @@ authors = [
 requires-python = ">=3.11"
 dependencies = [
     "click>=8.1.7",
+    "packaging>=21.0",
     "pathspec>=0.12.0",
     "pydantic>=2.0",
     "pyyaml>=6.0",
