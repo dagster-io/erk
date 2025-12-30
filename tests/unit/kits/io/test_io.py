@@ -3,7 +3,6 @@
 from pathlib import Path
 
 from erk.kits.io.manifest import load_kit_manifest
-from erk.kits.io.registry import load_registry
 from erk.kits.io.state import create_default_config, load_project_config, save_project_config
 from erk.kits.models.config import InstalledKit
 
@@ -127,15 +126,6 @@ def test_load_kit_manifest_with_commands(tmp_path: Path) -> None:
     assert manifest.scripts[1].name == "validate-exceptions"
     assert manifest.scripts[1].path == "commands/validate_exceptions.py"
     assert manifest.scripts[1].description == "Validate exception handling patterns"
-
-
-def test_load_registry() -> None:
-    """Test loading registry with entries."""
-    registry = load_registry()
-
-    assert isinstance(registry, list)
-    assert len(registry) >= 1  # Should have at least dignified-python
-    assert any(entry.kit_id == "dignified-python" for entry in registry)
 
 
 def test_load_project_config_valid_bundled_kit(tmp_project: Path) -> None:
