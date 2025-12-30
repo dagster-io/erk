@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run scripts/user-prompt-hook.py",
+            "command": "uv run scripts/erk-user-prompt-hook.py",
             "timeout": 30
           }
         ]

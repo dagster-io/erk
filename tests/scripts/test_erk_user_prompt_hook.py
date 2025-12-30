@@ -1,4 +1,4 @@
-"""Unit tests for user-prompt-hook.py."""
+"""Unit tests for erk-user-prompt-hook.py."""
 
 import json
 import subprocess
@@ -15,9 +15,11 @@ REPO_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 from importlib.util import module_from_spec, spec_from_file_location  # noqa: E402
 
-spec = spec_from_file_location("user_prompt_hook", REPO_ROOT / "scripts" / "user-prompt-hook.py")
+spec = spec_from_file_location(
+    "erk_user_prompt_hook", REPO_ROOT / "scripts" / "erk-user-prompt-hook.py"
+)
 if spec is None or spec.loader is None:
-    raise ImportError("Could not load user-prompt-hook.py")
+    raise ImportError("Could not load erk-user-prompt-hook.py")
 user_prompt_hook = module_from_spec(spec)
 spec.loader.exec_module(user_prompt_hook)
 
