@@ -90,6 +90,10 @@ class DryRunGraphite(Graphite):
         """No-op for gt submit in dry-run mode."""
         pass
 
+    def is_branch_tracked(self, repo_root: Path, branch: str) -> bool:
+        """Delegate to wrapped implementation for tracking check (read-only)."""
+        return self._wrapped.is_branch_tracked(repo_root, branch)
+
     def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
         """No-op for gt continue in dry-run mode."""
         pass

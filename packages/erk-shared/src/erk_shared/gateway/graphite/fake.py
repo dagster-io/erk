@@ -298,6 +298,10 @@ class FakeGraphite(Graphite):
         """
         return self._submit_stack_calls
 
+    def is_branch_tracked(self, repo_root: Path, branch: str) -> bool:
+        """Return True if branch is in configured branches."""
+        return branch in self._branches
+
     def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
         """Track continue_restack calls and optionally raise."""
         self._continue_restack_calls.append((repo_root, quiet))

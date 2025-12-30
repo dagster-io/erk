@@ -145,9 +145,6 @@ def test_create_with_plan_file_removes_plan_word() -> None:
 
         test_ctx = env.build_context(git=git_ops, local_config=local_config, repo=repo)
 
-        # Test multiple plan file examples
-        date_suffix = _get_current_date_suffix()
-
         test_cases = [
             ("devclikit-extraction-plan.md", "devclikit-extraction"),
             ("auth-plan.md", "auth"),
@@ -165,7 +162,9 @@ def test_create_with_plan_file_removes_plan_word() -> None:
             )
 
             assert result.exit_code == 0, f"Failed for {plan_filename}: {result.output}"
-            # Worktree name includes date suffix
+
+            # Compute date suffix after invoke to avoid timing issues at minute boundaries
+            date_suffix = _get_current_date_suffix()
             expected_worktree_name = f"{expected_worktree_base}-{date_suffix}"
             wt_path = repo_dir / "worktrees" / expected_worktree_name
             assert wt_path.exists(), f"Expected worktree at {wt_path} for {plan_filename}"
@@ -1428,8 +1427,9 @@ def test_create_with_plan_file_ensures_uniqueness() -> None:
         assert result1.exit_code == 0, result1.output
 
         # Check that first worktree has date suffix
-        date_suffix = _get_current_date_suffix()
-        expected_name1 = f"my-feature-{date_suffix}"
+        # Compute date suffix after invoke to avoid timing issues at minute boundaries
+        date_suffix1 = _get_current_date_suffix()
+        expected_name1 = f"my-feature-{date_suffix1}"
         wt_path1 = repo_dir / "worktrees" / expected_name1
         assert wt_path1.exists(), f"Expected first worktree at {wt_path1}"
         assert (wt_path1 / ".impl" / "plan.md").exists()
@@ -1445,8 +1445,15 @@ def test_create_with_plan_file_ensures_uniqueness() -> None:
         )
         assert result2.exit_code == 0, result2.output
 
-        # Check that second worktree has -2 after date suffix
-        expected_name2 = f"my-feature-{date_suffix}-2"
+        # Check that second worktree has -2 after date suffix (if same minute)
+        # or just date suffix (if minute boundary crossed)
+        date_suffix2 = _get_current_date_suffix()
+        if date_suffix1 == date_suffix2:
+            # Same minute: uniqueness versioning adds -2
+            expected_name2 = f"my-feature-{date_suffix2}-2"
+        else:
+            # Minute boundary crossed: different timestamp, no -2 needed
+            expected_name2 = f"my-feature-{date_suffix2}"
         wt_path2 = repo_dir / "worktrees" / expected_name2
         assert wt_path2.exists(), f"Expected second worktree at {wt_path2}"
         assert (wt_path2 / ".impl" / "plan.md").exists()

@@ -298,6 +298,23 @@ class Graphite(ABC):
         return None
 
     @abstractmethod
+    def is_branch_tracked(self, repo_root: Path, branch: str) -> bool:
+        """Check if a branch is tracked by Graphite.
+
+        Uses `gt branch info` to get authoritative tracking status from the gt CLI.
+        This is a LBYL check to verify tracking status before operations that
+        require a tracked branch (like gt delete).
+
+        Args:
+            repo_root: Repository root directory
+            branch: Name of the branch to check
+
+        Returns:
+            True if branch is tracked by Graphite, False if untracked or gt reports error.
+        """
+        ...
+
+    @abstractmethod
     def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
         """Continue an in-progress gt restack (gt continue).
 

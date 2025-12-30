@@ -48,6 +48,10 @@ class PrintingGraphite(PrintingBase, Graphite):
         """Get parent branch (read-only, no printing)."""
         return self._wrapped.get_parent_branch(git_ops, repo_root, branch)
 
+    def is_branch_tracked(self, repo_root: Path, branch: str) -> bool:
+        """Check if branch is tracked (read-only, no printing)."""
+        return self._wrapped.is_branch_tracked(repo_root, branch)
+
     # Operations that need printing
 
     def sync(self, repo_root: Path, *, force: bool, quiet: bool) -> None:

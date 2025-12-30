@@ -108,11 +108,12 @@ docs-sync-check:
 # Removed: land-branch command has been deprecated
 # Removed: sync-dignified-python-universal (obsolete - shared content now referenced directly)
 
-# Python-only Fast CI: Lint, type check, and unit tests (skips formatting/markdown checks)
+# Python-only Fast CI: Lint, format, type check, and unit tests (skips markdown checks)
 py-fast-ci:
 	@echo "=== Python Fast CI ===" && \
 	exit_code=0; \
 	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
+	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
