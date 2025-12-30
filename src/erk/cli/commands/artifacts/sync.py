@@ -2,9 +2,10 @@
 
 import click
 
-from erk.artifacts.staleness import check_staleness, is_dev_mode
+from erk.artifacts.staleness import check_staleness
 from erk.artifacts.sync import sync_artifacts
 from erk.core.context import ErkContext
+from erk.core.repo_discovery import in_erk_repo
 
 
 @click.command()
@@ -14,7 +15,7 @@ def sync(ctx: ErkContext, force: bool) -> None:
     """Sync erk artifacts to project."""
     project_dir = ctx.cwd
 
-    if is_dev_mode(project_dir):
+    if in_erk_repo(project_dir):
         click.echo("Dev mode - artifacts read from source, nothing to sync")
         return
 

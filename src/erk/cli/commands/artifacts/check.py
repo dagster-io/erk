@@ -2,9 +2,10 @@
 
 import click
 
-from erk.artifacts.staleness import check_staleness, get_current_version, is_dev_mode
+from erk.artifacts.staleness import check_staleness, get_current_version
 from erk.artifacts.state import load_artifact_state
 from erk.core.context import ErkContext
+from erk.core.repo_discovery import in_erk_repo
 
 
 @click.command()
@@ -14,7 +15,7 @@ def check(ctx: ErkContext) -> None:
     project_dir = ctx.cwd
 
     click.echo(f"erk version: {get_current_version()}")
-    click.echo(f"Dev mode: {is_dev_mode(project_dir)}")
+    click.echo(f"In erk repo: {in_erk_repo(project_dir)}")
 
     state = load_artifact_state(project_dir)
     if state:

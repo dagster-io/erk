@@ -7,15 +7,11 @@ import pytest
 
 @pytest.fixture
 def tmp_project(tmp_path: Path) -> Path:
-    """Create a temporary project directory for testing.
+    """Alias for tmp_path with semantic meaning as a project directory.
 
-    This fixture provides a clean temporary directory that can be used
-    as a project root for artifact testing.
-
-    Args:
-        tmp_path: pytest's built-in tmp_path fixture
-
-    Returns:
-        Path to the temporary project directory
+    This fixture exists to provide clearer test semantics - tests that use
+    'tmp_project' communicate that they are testing project-level operations,
+    while allowing future setup (e.g., git init, .erk/ structure) without
+    changing test signatures.
     """
     return tmp_path

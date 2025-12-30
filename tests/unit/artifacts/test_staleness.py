@@ -4,22 +4,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from erk.artifacts.models import ArtifactState
-from erk.artifacts.staleness import check_staleness, is_dev_mode
+from erk.artifacts.staleness import check_staleness
 from erk.artifacts.state import save_artifact_state
-
-
-def test_is_dev_mode_returns_true_for_erk_repo(tmp_project: Path) -> None:
-    """Test that is_dev_mode returns True when packages/erk-kits exists."""
-    # Create the dev mode indicator directory
-    dev_indicator = tmp_project / "packages" / "erk-kits"
-    dev_indicator.mkdir(parents=True)
-
-    assert is_dev_mode(tmp_project) is True
-
-
-def test_is_dev_mode_returns_false_for_regular_project(tmp_project: Path) -> None:
-    """Test that is_dev_mode returns False for a regular project."""
-    assert is_dev_mode(tmp_project) is False
 
 
 def test_check_staleness_not_initialized(tmp_project: Path) -> None:

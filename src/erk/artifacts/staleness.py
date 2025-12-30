@@ -12,11 +12,6 @@ def get_current_version() -> str:
     return importlib.metadata.version("erk")
 
 
-def is_dev_mode(repo_root: Path) -> bool:
-    """Check if running in erk development repo."""
-    return (repo_root / "packages" / "erk-kits").exists()
-
-
 def check_staleness(project_dir: Path) -> StalenessResult:
     """Check if artifacts are stale."""
     state = load_artifact_state(project_dir)

@@ -5,11 +5,12 @@ from pathlib import Path
 
 import click
 
-from erk.artifacts.staleness import check_staleness, is_dev_mode
+from erk.artifacts.staleness import check_staleness
+from erk.core.repo_discovery import in_erk_repo
 from erk.artifacts.sync import sync_artifacts
 
 
-def check_and_prompt_artifact_sync(project_dir: Path, no_sync: bool = False) -> None:
+def check_and_prompt_artifact_sync(project_dir: Path, *, no_sync: bool) -> None:
     """Check for stale artifacts and prompt to sync.
 
     Called from CLI callback before command execution.
@@ -21,8 +22,8 @@ def check_and_prompt_artifact_sync(project_dir: Path, no_sync: bool = False) -> 
     if no_sync:
         return
 
-    # Skip in dev mode - artifacts read from source
-    if is_dev_mode(project_dir):
+    # Skip in erk repo - artifacts read from source
+    if in_erk_repo(project_dir):
         return
 
     result = check_staleness(project_dir)
@@ -49,8 +50,9 @@ def check_and_prompt_artifact_sync(project_dir: Path, no_sync: bool = False) -> 
 
     # TTY: prompt user
     click.echo(
-        click.style("⚠️  Artifacts out of sync", fg="yellow")
-        + f" (installed: {result.installed_version}, current: {result.current_version})"
+        click.style("⚠️  Erk artifacts out of sync", fg="yellow")
+        + f" (installed: {result.installed_version}, current: {result.current_version})\n"
+        "Out-of-sync artifacts may cause erk commands to malfunction."
     )
 
     if click.confirm("Sync now?", default=True):

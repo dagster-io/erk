@@ -98,7 +98,7 @@ def test_check_command_dev_mode(tmp_path: Path) -> None:
             result = runner.invoke(check, obj=ctx)
 
     assert result.exit_code == 0
-    assert "Dev mode: True" in result.output
+    assert "In erk repo: True" in result.output
 
 
 def test_sync_command_dev_mode(tmp_path: Path) -> None:

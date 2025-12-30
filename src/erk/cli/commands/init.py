@@ -5,7 +5,7 @@ from pathlib import Path
 import click
 
 from erk.artifacts.models import ArtifactState
-from erk.artifacts.staleness import get_current_version, is_dev_mode
+from erk.artifacts.staleness import get_current_version
 from erk.artifacts.state import save_artifact_state
 from erk.artifacts.sync import sync_artifacts
 from erk.cli.core import discover_repo_context
@@ -26,7 +26,7 @@ from erk.core.init_utils import (
     is_repo_named,
     render_config_template,
 )
-from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk.core.repo_discovery import ensure_erk_metadata_dir, in_erk_repo
 from erk.core.shell import Shell
 from erk.kits.io.state import (
     create_default_config as create_default_kit_config,
@@ -361,7 +361,7 @@ def init_cmd(
     # Install artifacts (unless in dev mode or --no-artifact-sync)
     if no_artifact_sync:
         user_output("Skipping artifact sync (--no-artifact-sync)")
-    elif not is_dev_mode(repo_context.root):
+    elif not in_erk_repo(repo_context.root):
         user_output("Installing erk artifacts...")
         sync_result = sync_artifacts(repo_context.root)
         user_output(

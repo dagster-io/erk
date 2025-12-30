@@ -13,7 +13,7 @@ from erk.kits.operations.artifact_operations import create_artifact_operations
 from erk_kits import get_kits_dir
 
 
-@dataclass
+@dataclass(frozen=True)
 class SyncResult:
     """Result of artifact sync operation."""
 

@@ -23,7 +23,7 @@ def load_artifact_state(project_dir: Path) -> ArtifactState | None:
         return None
     with open(path, "rb") as f:
         data = tomli.load(f)
-    return ArtifactState(version=data["artifacts"]["version"])
+        return ArtifactState(version=data["artifacts"]["version"])
 
 
 def save_artifact_state(project_dir: Path, state: ArtifactState) -> None:
