@@ -7,7 +7,7 @@ from rich.table import Table
 from erk.cli.alias import alias
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk.core.display_utils import get_pr_status_emoji
+from erk.core.display_utils import format_relative_time, get_pr_status_emoji
 from erk_shared.github.types import PullRequestInfo
 
 
@@ -25,6 +25,9 @@ def branch_list(ctx: ErkContext) -> None:
         erk br ls
     """
     repo = discover_repo_context(ctx, ctx.cwd)
+
+    # Detect trunk branch for last commit calculation
+    trunk = ctx.git.detect_trunk_branch(repo.root)
 
     # Get worktrees and PR info
     worktrees = ctx.git.list_worktrees(repo.root)
@@ -51,6 +54,7 @@ def branch_list(ctx: ErkContext) -> None:
     table.add_column("branch", style="yellow")
     table.add_column("worktree", style="cyan")
     table.add_column("pr")
+    table.add_column("last", no_wrap=True)
     table.add_column("state", style="dim")
 
     for branch in sorted(active_branches.keys()):
@@ -63,10 +67,15 @@ def branch_list(ctx: ErkContext) -> None:
             pr_cell = f"{emoji} #{pr.number}"
             state_cell = pr.state
 
+        # Get last commit time for this branch
+        timestamp = ctx.git.get_branch_last_commit_time(repo.root, branch, trunk)
+        last_cell = format_relative_time(timestamp) if timestamp is not None else "-"
+
         table.add_row(
             branch,
             wt_name or "-",
             pr_cell,
+            last_cell,
             state_cell,
         )
 

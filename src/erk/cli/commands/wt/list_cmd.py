@@ -317,9 +317,8 @@ def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool = False) -> None:
 
 @alias("ls")
 @click.command("list")
-@click.option("--last-commit", is_flag=True, help="Show last commit time column")
 @click.pass_obj
-def list_wt(ctx: ErkContext, last_commit: bool) -> None:
+def list_wt(ctx: ErkContext) -> None:
     """List worktrees with branch, PR, sync, and implementation info.
 
     Shows a fast local-only table with:
@@ -327,7 +326,7 @@ def list_wt(ctx: ErkContext, last_commit: bool) -> None:
     - branch: Branch name (or = if matches worktree name)
     - pr: PR status from Graphite cache
     - sync: Ahead/behind status vs tracking branch
-    - last: Last commit time (with --last-commit flag)
+    - last: Last commit time
     - impl: Implementation issue number
     """
-    _list_worktrees(ctx, show_last_commit=last_commit)
+    _list_worktrees(ctx, show_last_commit=True)

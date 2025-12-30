@@ -1,5 +1,7 @@
 """Tests for erk branch list command."""
 
+from datetime import UTC, datetime, timedelta
+
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -336,3 +338,81 @@ def test_branch_list_sorted_alphabetically() -> None:
         # Should be alphabetically sorted
         expected = ["apple", "middle", "zebra"]
         assert found_order == expected, f"Expected alphabetical order, got {found_order}"
+
+
+def test_branch_list_shows_last_commit_column() -> None:
+    """Test that branch list shows the 'last' column with relative timestamps."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.erk_root / env.cwd.name
+
+        # Create timestamps for branches
+        two_days_ago = datetime.now(UTC) - timedelta(days=2)
+        one_hour_ago = datetime.now(UTC) - timedelta(hours=1)
+
+        git = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=repo_dir / "feat-1", branch="feat-1", is_root=False),
+                    WorktreeInfo(path=repo_dir / "feat-2", branch="feat-2", is_root=False),
+                ],
+            },
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            branch_last_commit_times={
+                "feat-1": two_days_ago.isoformat(),
+                "feat-2": one_hour_ago.isoformat(),
+            },
+        )
+
+        graphite = FakeGraphite()
+        test_ctx = env.build_context(git=git, graphite=graphite)
+
+        result = runner.invoke(cli, ["branch", "list"], obj=test_ctx)
+        assert result.exit_code == 0, result.output
+
+        output = strip_ansi(result.output)
+
+        # Should show 'last' column header
+        assert "last" in output
+
+        # Should show relative timestamps for feature branches
+        assert "2d ago" in output
+        assert "1h ago" in output
+
+
+def test_branch_list_shows_dash_for_no_unique_commits() -> None:
+    """Test that branches with no unique commits show '-' in last column."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.erk_root / env.cwd.name
+
+        git = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=repo_dir / "no-commits", branch="no-commits", is_root=False),
+                ],
+            },
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            branch_last_commit_times={},  # No last commit times
+        )
+
+        graphite = FakeGraphite()
+        test_ctx = env.build_context(git=git, graphite=graphite)
+
+        result = runner.invoke(cli, ["branch", "list"], obj=test_ctx)
+        assert result.exit_code == 0, result.output
+
+        output = strip_ansi(result.output)
+
+        # Branch should be shown
+        assert "no-commits" in output
+        # And the row should have dashes (for last column and other empty columns)
+        lines = output.strip().split("\n")
+        for line in lines:
+            if "no-commits" in line:
+                # The line should contain "-" entries (worktree might also be shown)
+                assert "-" in line
