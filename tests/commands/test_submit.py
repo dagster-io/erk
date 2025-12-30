@@ -120,10 +120,11 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
 
     # Verify branch was pushed
     assert len(fake_git.pushed_branches) == 1
-    remote, branch, set_upstream = fake_git.pushed_branches[0]
+    remote, branch, set_upstream, force = fake_git.pushed_branches[0]
     assert remote == "origin"
     assert branch == expected_branch
     assert set_upstream is True
+    assert force is False
 
     # Verify draft PR was created
     assert len(fake_github.created_prs) == 1

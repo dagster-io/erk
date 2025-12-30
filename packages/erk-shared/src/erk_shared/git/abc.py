@@ -518,7 +518,13 @@ class Git(ABC):
 
     @abstractmethod
     def push_to_remote(
-        self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False
+        self,
+        cwd: Path,
+        remote: str,
+        branch: str,
+        *,
+        set_upstream: bool = False,
+        force: bool = False,
     ) -> None:
         """Push a branch to a remote.
 
@@ -527,6 +533,7 @@ class Git(ABC):
             remote: Remote name (e.g., "origin")
             branch: Branch name to push
             set_upstream: If True, set upstream tracking (-u flag)
+            force: If True, force push (--force flag)
 
         Raises:
             subprocess.CalledProcessError: If git command fails

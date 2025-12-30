@@ -60,7 +60,7 @@ class TestExecuteGraphiteEnhance:
         graphite = FakeGraphite(authenticated=False)
         ops = FakePrKit(git=git, github=github, graphite=graphite)
 
-        events = list(execute_graphite_enhance(ops, tmp_path, pr_number=42))
+        events = list(execute_graphite_enhance(ops, tmp_path, pr_number=42, force=False))
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
         assert len(completion) == 1
@@ -80,7 +80,7 @@ class TestExecuteGraphiteEnhance:
         graphite = FakeGraphite(authenticated=True, branches={})
         ops = FakePrKit(git=git, github=github, graphite=graphite)
 
-        events = list(execute_graphite_enhance(ops, tmp_path, pr_number=42))
+        events = list(execute_graphite_enhance(ops, tmp_path, pr_number=42, force=False))
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
         assert len(completion) == 1
@@ -99,7 +99,7 @@ class TestExecuteGraphiteEnhance:
         graphite = FakeGraphite(authenticated=True)
         ops = FakePrKit(git=git, github=github, graphite=graphite)
 
-        events = list(execute_graphite_enhance(ops, tmp_path, pr_number=42))
+        events = list(execute_graphite_enhance(ops, tmp_path, pr_number=42, force=False))
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
         assert len(completion) == 1
@@ -123,7 +123,7 @@ class TestExecuteGraphiteEnhance:
         )
         ops = FakePrKit(git=git, github=github, graphite=graphite)
 
-        events = list(execute_graphite_enhance(ops, tmp_path, pr_number=42))
+        events = list(execute_graphite_enhance(ops, tmp_path, pr_number=42, force=False))
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
         assert len(completion) == 1
@@ -137,6 +137,7 @@ class TestExecuteGraphiteEnhance:
         repo_root, publish, restack, quiet, force = graphite._submit_stack_calls[0]
         assert repo_root == tmp_path
         assert publish is True
+        assert force is False
 
     def test_returns_error_on_graphite_submit_failure(self, tmp_path: Path) -> None:
         """Test that Graphite submission failure returns error."""
@@ -154,7 +155,7 @@ class TestExecuteGraphiteEnhance:
         )
         ops = FakePrKit(git=git, github=github, graphite=graphite)
 
-        events = list(execute_graphite_enhance(ops, tmp_path, pr_number=42))
+        events = list(execute_graphite_enhance(ops, tmp_path, pr_number=42, force=False))
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
         assert len(completion) == 1
@@ -179,7 +180,7 @@ class TestExecuteGraphiteEnhance:
         )
         ops = FakePrKit(git=git, github=github, graphite=graphite)
 
-        events = list(execute_graphite_enhance(ops, tmp_path, pr_number=42))
+        events = list(execute_graphite_enhance(ops, tmp_path, pr_number=42, force=False))
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
         assert len(completion) == 1
@@ -203,7 +204,7 @@ class TestExecuteGraphiteEnhance:
         )
         ops = FakePrKit(git=git, github=github, graphite=graphite)
 
-        events = list(execute_graphite_enhance(ops, tmp_path, pr_number=42))
+        events = list(execute_graphite_enhance(ops, tmp_path, pr_number=42, force=False))
 
         progress_events = [e for e in events if isinstance(e, ProgressEvent)]
         assert len(progress_events) >= 3  # Auth check, track check, submit

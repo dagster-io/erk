@@ -615,6 +615,193 @@ def test_pr_submit_uses_graphite_parent_for_commit_messages() -> None:
         assert "feat: add feature 1 (from branch-1)" not in prompt
 
 
+def test_pr_submit_force_flag_bypasses_divergence_error() -> None:
+    """Test that -f/--force flag allows force push when branch has diverged."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        pr_info = PullRequestInfo(
+            number=123,
+            state="OPEN",
+            url="https://github.com/owner/repo/pull/123",
+            is_draft=False,
+            title="Feature PR",
+            checks_passing=True,
+            owner="owner",
+            repo="repo",
+        )
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+            labels=(),
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "main"): 1},
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        github = FakeGitHub(
+            authenticated=True,
+            prs={"feature": pr_info},
+            pr_details={123: pr_details},
+            pr_diffs={123: "diff --git a/file.py b/file.py\n+content"},
+        )
+
+        claude_executor = FakeClaudeExecutor(
+            claude_available=True,
+            simulated_prompt_output="Title\n\nBody",
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
+        )
+
+        # Run with --force flag
+        result = runner.invoke(pr_group, ["submit", "--force"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Verify force was passed to push_to_remote
+        assert len(git.pushed_branches) == 1
+        remote, branch, set_upstream, force = git.pushed_branches[0]
+        assert remote == "origin"
+        assert branch == "feature"
+        assert set_upstream is True
+        assert force is True
+
+
+def test_pr_submit_short_force_flag() -> None:
+    """Test that -f short flag works the same as --force."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        pr_info = PullRequestInfo(
+            number=123,
+            state="OPEN",
+            url="https://github.com/owner/repo/pull/123",
+            is_draft=False,
+            title="Feature PR",
+            checks_passing=True,
+            owner="owner",
+            repo="repo",
+        )
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+            labels=(),
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "main"): 1},
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        github = FakeGitHub(
+            authenticated=True,
+            prs={"feature": pr_info},
+            pr_details={123: pr_details},
+            pr_diffs={123: "diff --git a/file.py b/file.py\n+content"},
+        )
+
+        claude_executor = FakeClaudeExecutor(
+            claude_available=True,
+            simulated_prompt_output="Title\n\nBody",
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
+        )
+
+        # Run with -f short flag
+        result = runner.invoke(pr_group, ["submit", "-f"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Verify force was passed to push_to_remote
+        assert len(git.pushed_branches) == 1
+        remote, branch, set_upstream, force = git.pushed_branches[0]
+        assert force is True
+
+
 def test_pr_submit_shows_graphite_url() -> None:
     """Test that Graphite URL is displayed on success."""
     runner = CliRunner()

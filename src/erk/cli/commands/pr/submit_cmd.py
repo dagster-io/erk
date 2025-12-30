@@ -58,8 +58,14 @@ def _render_progress(event: ProgressEvent) -> None:
     is_flag=True,
     help="Skip Graphite enhancement (use git + gh only)",
 )
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Force push (use when branch has diverged from remote)",
+)
 @click.pass_obj
-def pr_submit(ctx: ErkContext, debug: bool, no_graphite: bool) -> None:
+def pr_submit(ctx: ErkContext, debug: bool, no_graphite: bool, force: bool) -> None:
     """Submit PR with AI-generated commit message.
 
     Uses a two-layer architecture:
@@ -78,11 +84,16 @@ def pr_submit(ctx: ErkContext, debug: bool, no_graphite: bool) -> None:
 
       # Submit PR without Graphite enhancement
       erk pr submit --no-graphite
+
+      # Force push when branch has diverged
+      erk pr submit -f
     """
-    _execute_pr_submit(ctx, debug=debug, use_graphite=not no_graphite)
+    _execute_pr_submit(ctx, debug=debug, use_graphite=not no_graphite, force=force)
 
 
-def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool) -> None:
+def _execute_pr_submit(
+    ctx: ErkContext, debug: bool, use_graphite: bool, force: bool
+) -> None:
     """Execute PR submission with positively-named parameters."""
     # Verify Claude is available (needed for commit message generation)
     if not ctx.claude_executor.is_claude_available():
@@ -98,7 +109,7 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool) -> None
 
     # Phase 1: Core submit (git push + gh pr create)
     click.echo(click.style("Phase 1: Creating PR", bold=True))
-    core_result = _run_core_submit(ctx, cwd, debug)
+    core_result = _run_core_submit(ctx, cwd, debug, force)
 
     if isinstance(core_result, CoreSubmitError):
         raise click.ClickException(core_result.message)
@@ -150,7 +161,7 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool) -> None
     graphite_url: str | None = None
     if use_graphite:
         click.echo(click.style("Phase 4: Graphite enhancement", bold=True))
-        graphite_result = _run_graphite_enhance(ctx, cwd, core_result.pr_number, debug)
+        graphite_result = _run_graphite_enhance(ctx, cwd, core_result.pr_number, debug, force)
 
         if isinstance(graphite_result, GraphiteEnhanceResult):
             graphite_url = graphite_result.graphite_url
@@ -198,11 +209,12 @@ def _run_core_submit(
     ctx: ErkContext,
     cwd: Path,
     debug: bool,
+    force: bool,
 ) -> CoreSubmitResult | CoreSubmitError:
     """Run core submit phase (git push + gh pr create)."""
     result: CoreSubmitResult | CoreSubmitError | None = None
 
-    for event in execute_core_submit(ctx, cwd, pr_title="WIP", pr_body=""):
+    for event in execute_core_submit(ctx, cwd, pr_title="WIP", pr_body="", force=force):
         if isinstance(event, ProgressEvent):
             if debug:
                 _render_progress(event)
@@ -245,11 +257,12 @@ def _run_graphite_enhance(
     cwd: Path,
     pr_number: int,
     debug: bool,
+    force: bool,
 ) -> GraphiteEnhanceResult | GraphiteEnhanceError | GraphiteSkipped:
     """Run Graphite enhancement phase."""
     result: GraphiteEnhanceResult | GraphiteEnhanceError | GraphiteSkipped | None = None
 
-    for event in execute_graphite_enhance(ctx, cwd, pr_number):
+    for event in execute_graphite_enhance(ctx, cwd, pr_number, force=force):
         if isinstance(event, ProgressEvent):
             if debug:
                 _render_progress(event)

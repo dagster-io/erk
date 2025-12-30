@@ -201,7 +201,13 @@ def test_create_extraction_branch_push_fails(tmp_path: Path) -> None:
 
     class FailingPushGit(FakeGit):
         def push_to_remote(
-            self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False
+            self,
+            cwd: Path,
+            remote: str,
+            branch: str,
+            *,
+            set_upstream: bool = False,
+            force: bool = False,
         ) -> None:
             raise RuntimeError("Remote rejected push")
 
@@ -342,7 +348,8 @@ def test_git_operations_sequence(tmp_path: Path) -> None:
 
     # Verify push with upstream tracking
     assert len(fake_git.pushed_branches) == 1
-    remote, branch, set_upstream = fake_git.pushed_branches[0]
+    remote, branch, set_upstream, force = fake_git.pushed_branches[0]
     assert remote == "origin"
     assert branch == "extraction-docs-P606"
     assert set_upstream is True
+    assert force is False

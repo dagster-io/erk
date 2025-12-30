@@ -216,12 +216,23 @@ class PrintingGit(PrintingBase, Git):
         self._wrapped.commit(cwd, message)
 
     def push_to_remote(
-        self, cwd: Path, remote: str, branch: str, *, set_upstream: bool = False
+        self,
+        cwd: Path,
+        remote: str,
+        branch: str,
+        *,
+        set_upstream: bool = False,
+        force: bool = False,
     ) -> None:
         """Push to remote with printed output."""
         upstream_flag = "-u " if set_upstream else ""
-        self._emit(self._format_command(f"git push {upstream_flag}{remote} {branch}"))
-        self._wrapped.push_to_remote(cwd, remote, branch, set_upstream=set_upstream)
+        force_flag = "--force " if force else ""
+        self._emit(
+            self._format_command(f"git push {upstream_flag}{force_flag}{remote} {branch}")
+        )
+        self._wrapped.push_to_remote(
+            cwd, remote, branch, set_upstream=set_upstream, force=force
+        )
 
     def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -> str | None:
         """Get branch last commit time (read-only, no printing)."""
