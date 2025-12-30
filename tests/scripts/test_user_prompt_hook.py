@@ -11,10 +11,11 @@ import pytest
 
 # Import by path since scripts/ is not a package
 # We test the functions directly via exec
-sys.path.insert(0, str(Path(__file__).parent))
+REPO_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
 from importlib.util import module_from_spec, spec_from_file_location
 
-spec = spec_from_file_location("user_prompt_hook", Path(__file__).parent / "user-prompt-hook.py")
+spec = spec_from_file_location("user_prompt_hook", REPO_ROOT / "scripts" / "user-prompt-hook.py")
 if spec is None or spec.loader is None:
     raise ImportError("Could not load user-prompt-hook.py")
 user_prompt_hook = module_from_spec(spec)
