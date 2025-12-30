@@ -141,15 +141,18 @@ def check_command(*, check_links: bool, exclude: tuple[str, ...]) -> None:
         user_output(click.style("✗ Error: Repository root not found", fg="red"))
         raise SystemExit(1)
 
-    # Find all CLAUDE.md files
+    # Find all CLAUDE.md and AGENTS.md files
     claude_files = list(repo_root_path.rglob("CLAUDE.md"))
+    agents_files = list(repo_root_path.rglob("AGENTS.md"))
 
-    if len(claude_files) == 0:
-        user_output(click.style("ℹ️  No CLAUDE.md files found in repository", fg="cyan"))
+    if len(claude_files) == 0 and len(agents_files) == 0:
+        message = "ℹ️  No CLAUDE.md or AGENTS.md files found in repository"
+        user_output(click.style(message, fg="cyan"))
         raise SystemExit(0)
 
     # Track violations
-    missing_agents: list[Path] = []
+    missing_agents: list[Path] = []  # CLAUDE.md without peer AGENTS.md
+    missing_claude: list[Path] = []  # AGENTS.md without peer CLAUDE.md
     invalid_content: list[Path] = []
     broken_links: list[BrokenLink] = []
 
@@ -165,6 +168,12 @@ def check_command(*, check_links: bool, exclude: tuple[str, ...]) -> None:
         if content.strip() != "@AGENTS.md":
             invalid_content.append(claude_path)
 
+    # Check that all AGENTS.md files have peer CLAUDE.md
+    for agents_path in agents_files:
+        claude_path = agents_path.parent / "CLAUDE.md"
+        if not claude_path.exists():
+            missing_claude.append(agents_path.parent)
+
     # Optionally validate @ references
     all_md_files: list[Path] = []
     if check_links:
@@ -174,11 +183,13 @@ def check_command(*, check_links: bool, exclude: tuple[str, ...]) -> None:
             broken_links.extend(validate_links_in_file(md_file, repo_root_path))
 
     # Report results
-    violation_count = len(missing_agents) + len(invalid_content) + len(broken_links)
+    violation_count = (
+        len(missing_agents) + len(missing_claude) + len(invalid_content) + len(broken_links)
+    )
     if violation_count == 0:
         user_output(click.style("✓ AGENTS.md standard: PASSED", fg="green", bold=True))
         user_output()
-        user_output("All CLAUDE.md files properly reference AGENTS.md.")
+        user_output("All CLAUDE.md and AGENTS.md files properly paired.")
         if check_links:
             user_output("All @ references are valid.")
         user_output()
@@ -198,6 +209,13 @@ def check_command(*, check_links: bool, exclude: tuple[str, ...]) -> None:
     if len(missing_agents) > 0:
         user_output(click.style("Missing AGENTS.md:", fg="yellow"))
         for path in missing_agents:
+            rel_path = path.relative_to(repo_root_path)
+            user_output(f"  • {click.style(str(rel_path) + '/', fg='cyan')}")
+        user_output()
+
+    if len(missing_claude) > 0:
+        user_output(click.style("Missing CLAUDE.md:", fg="yellow"))
+        for path in missing_claude:
             rel_path = path.relative_to(repo_root_path)
             user_output(f"  • {click.style(str(rel_path) + '/', fg='cyan')}")
         user_output()

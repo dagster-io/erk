@@ -138,7 +138,7 @@ def test_check_no_claude_files(tmp_path: Path) -> None:
         result = runner.invoke(cli, ["md", "check"])
 
     assert result.exit_code == 0
-    assert "No CLAUDE.md files found" in result.output
+    assert "No CLAUDE.md or AGENTS.md files found" in result.output
 
 
 def test_check_cli_help() -> None:
@@ -537,3 +537,56 @@ def test_check_finds_all_markdown_files(tmp_path: Path) -> None:
     assert result.exit_code == 1
     assert "Broken @ references:" in result.output
     assert "@nonexistent.md" in result.output
+
+
+def test_check_fails_missing_claude_md(tmp_path: Path) -> None:
+    """Test check fails when AGENTS.md exists without peer CLAUDE.md."""
+    (tmp_path / ".git").mkdir()
+
+    # Create AGENTS.md without peer CLAUDE.md
+    (tmp_path / "AGENTS.md").write_text("# Standards", encoding="utf-8")
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=["git", "rev-parse", "--show-toplevel"],
+            returncode=0,
+            stdout=str(tmp_path),
+            stderr="",
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["md", "check"])
+
+    assert result.exit_code == 1
+    assert "✗ AGENTS.md standard: FAILED" in result.output
+    assert "Missing CLAUDE.md:" in result.output
+    assert "Found 1 violation" in result.output
+
+
+def test_check_fails_bidirectional_violations(tmp_path: Path) -> None:
+    """Test check reports violations in both directions."""
+    (tmp_path / ".git").mkdir()
+
+    # Dir1: CLAUDE.md without AGENTS.md
+    (tmp_path / "dir1").mkdir()
+    (tmp_path / "dir1" / "CLAUDE.md").write_text("@AGENTS.md", encoding="utf-8")
+
+    # Dir2: AGENTS.md without CLAUDE.md
+    (tmp_path / "dir2").mkdir()
+    (tmp_path / "dir2" / "AGENTS.md").write_text("# Standards", encoding="utf-8")
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=["git", "rev-parse", "--show-toplevel"],
+            returncode=0,
+            stdout=str(tmp_path),
+            stderr="",
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["md", "check"])
+
+    assert result.exit_code == 1
+    assert "Missing AGENTS.md:" in result.output
+    assert "Missing CLAUDE.md:" in result.output
+    assert "Found 2 violations" in result.output
