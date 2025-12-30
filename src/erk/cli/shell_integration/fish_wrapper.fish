@@ -1,19 +1,43 @@
 # Erk shell integration for fish
 # This function wraps the erk CLI to provide seamless worktree switching
 
-function erk
-    # Don't intercept if we're doing shell completion
-    if set -q _ERK_COMPLETE
-        command erk $argv
+# Helper to invoke erk with proper version
+function _erk_cmd
+    # Allow override for local dev
+    if set -q ERK_INVOKE
+        $ERK_INVOKE $argv
         return
     end
 
-    set -l script_path (env ERK_SHELL=fish command erk __shell $argv)
+    # Read version from repo
+    set -l repo_root (git rev-parse --show-toplevel 2>/dev/null)
+    set -l version ""
+
+    if test -n "$repo_root" -a -f "$repo_root/.erk/pinned-uvx-erk-version"
+        set version (string trim (cat "$repo_root/.erk/pinned-uvx-erk-version"))
+    end
+
+    if test -n "$version"
+        uvx "erk@$version" $argv
+    else
+        # Fallback to uvx erk (latest) if no version file or outside repo
+        uvx erk $argv
+    end
+end
+
+function erk
+    # Don't intercept if we're doing shell completion
+    if set -q _ERK_COMPLETE
+        _erk_cmd $argv
+        return
+    end
+
+    set -l script_path (env ERK_SHELL=fish _erk_cmd __shell $argv)
     set -l exit_status $status
 
     # Passthrough mode
     if test "$script_path" = "__ERK_PASSTHROUGH__"
-        command erk $argv
+        _erk_cmd $argv
         return
     end
 
