@@ -13,7 +13,7 @@ import pytest
 # We test the functions directly via exec
 REPO_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
-from importlib.util import module_from_spec, spec_from_file_location
+from importlib.util import module_from_spec, spec_from_file_location  # noqa: E402
 
 spec = spec_from_file_location("user_prompt_hook", REPO_ROOT / "scripts" / "user-prompt-hook.py")
 if spec is None or spec.loader is None:
