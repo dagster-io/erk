@@ -86,17 +86,14 @@ def test_check_claude_settings_valid_json(tmp_path: Path) -> None:
 
 
 def test_check_claude_settings_invalid_json(tmp_path: Path) -> None:
-    """Test claude settings check with invalid JSON."""
+    """Test claude settings check raises JSONDecodeError for invalid JSON."""
     claude_dir = tmp_path / ".claude"
     claude_dir.mkdir()
     settings_file = claude_dir / "settings.json"
     settings_file.write_text("{invalid json", encoding="utf-8")
 
-    result = check_claude_settings(tmp_path)
-
-    assert result.name == "claude settings"
-    assert result.passed is False
-    assert "Invalid JSON" in result.message
+    with pytest.raises(json.JSONDecodeError):
+        check_claude_settings(tmp_path)
 
 
 def test_check_claude_settings_with_hooks(tmp_path: Path) -> None:

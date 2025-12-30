@@ -560,44 +560,22 @@ def check_repository(ctx: ErkContext) -> CheckResult:
     )
 
 
-def _try_parse_json(content: str) -> dict | None:
-    """Attempt to parse JSON content, returning None on decode error.
-
-    This is a boundary helper that transforms JSONDecodeError into a None return,
-    allowing callers to check for parse failure. Exception handling is appropriate
-    here because there is no way to validate JSON without parsing it, and this
-    function encapsulates the external data boundary.
-    """
-    try:
-        result = json.loads(content)
-    except json.JSONDecodeError:
-        return None
-    if not isinstance(result, dict):
-        return None
-    return result
-
-
 def check_claude_settings(repo_root: Path) -> CheckResult:
     """Check Claude settings for misconfigurations.
 
     Args:
         repo_root: Path to the repository root (where .claude/ should be located)
+
+    Raises:
+        json.JSONDecodeError: If settings.json contains invalid JSON
     """
     settings_path = repo_root / ".claude" / "settings.json"
-    if not settings_path.exists():
+    settings = read_claude_settings(settings_path)
+    if settings is None:
         return CheckResult(
             name="claude settings",
             passed=True,
             message="No .claude/settings.json (using defaults)",
-        )
-
-    content = settings_path.read_text(encoding="utf-8")
-    settings = _try_parse_json(content)
-    if settings is None:
-        return CheckResult(
-            name="claude settings",
-            passed=False,
-            message="Invalid JSON in .claude/settings.json",
         )
 
     # Check hooks for missing commands
@@ -648,14 +626,16 @@ def check_user_prompt_hook(repo_root: Path) -> CheckResult:
         repo_root: Path to the repository root (where .claude/ should be located)
     """
     settings_path = repo_root / ".claude" / "settings.json"
-    settings = read_claude_settings(settings_path)
-    if settings is None:
+    if not settings_path.exists():
         return CheckResult(
             name="user prompt hook",
             passed=False,
             message="No .claude/settings.json found",
             details="Run 'erk init' to create settings with the hook configured",
         )
+    # File exists, so read_claude_settings won't return None
+    settings = read_claude_settings(settings_path)
+    assert settings is not None  # file existence already checked
 
     # Look for UserPromptSubmit hooks
     hooks = settings.get("hooks", {})
