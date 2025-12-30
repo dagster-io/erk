@@ -180,8 +180,15 @@ def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) 
     try:
         steps = json.loads(output)
     except json.JSONDecodeError as e:
-        msg = f"LLM returned invalid JSON: {e}. Output was: {output[:200]}"
-        raise RuntimeError(msg) from e
+        # LOUD warning and fallback to empty list
+        print("=" * 60, file=sys.stderr)
+        print("WARNING: LLM returned invalid JSON for step extraction", file=sys.stderr)
+        print("=" * 60, file=sys.stderr)
+        print(f"Error: {e}", file=sys.stderr)
+        print(f"Output (first 500 chars): {output[:500]}", file=sys.stderr)
+        print("Falling back to empty steps list", file=sys.stderr)
+        print("=" * 60, file=sys.stderr)
+        steps = []
 
     # Validate response structure
     if not isinstance(steps, list):
