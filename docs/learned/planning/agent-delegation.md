@@ -170,7 +170,7 @@ prompt="Execute the complete planned worktree creation workflow"
 
 **When to use:** Multiple commands delegate to the same agent or share workflow logic.
 
-**Example:** `/fast-ci` and `/all-ci` both reference `.claude/docs/ci-iteration.md`
+**Example:** `/fast-ci` and `/all-ci` both reference `.claude/skills/ci-iteration/SKILL.md`
 
 **Characteristics:**
 

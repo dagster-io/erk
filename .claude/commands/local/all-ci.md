@@ -24,7 +24,7 @@ The `make all-ci` target runs these checks in order:
 
 ## Iteration Process
 
-@.claude/docs/ci-iteration.md
+@.claude/skills/ci-iteration/SKILL.md
 
 ## Begin Now
 
