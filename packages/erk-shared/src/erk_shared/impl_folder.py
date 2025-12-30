@@ -177,14 +177,6 @@ def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) 
         lines = output.split("\n")
         output = "\n".join(lines[1:-1])
 
-    # Try to extract JSON array if there's preamble text
-    # Look for the first [ and last ] to extract the JSON array
-    if not output.startswith("["):
-        start_idx = output.find("[")
-        end_idx = output.rfind("]")
-        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-            output = output[start_idx : end_idx + 1]
-
     try:
         steps = json.loads(output)
     except json.JSONDecodeError as e:
