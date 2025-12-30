@@ -46,7 +46,7 @@ def _show_version_change_banner() -> None:
 
     Displays all release notes since the last seen version and prompts user
     to confirm before continuing. This function is designed to never fail -
-    any exception is silently caught to ensure the CLI always works.
+    exceptions are logged but don't break the CLI.
     """
     # Inline import to avoid import-time side effects
     from erk.core.release_notes import check_for_version_change, get_current_version
@@ -104,16 +104,15 @@ def _show_version_change_banner() -> None:
     except click.Abort:
         # User pressed Ctrl+C or declined - exit gracefully
         raise SystemExit(0) from None
-    except Exception:
-        # Never let release notes break the CLI
-        pass
+    except Exception as e:
+        # Never let release notes break the CLI, but warn so issues can be diagnosed
+        logging.warning("Failed to show version change banner: %s", e)
 
 
 def _show_version_warning() -> None:
-    """Show warning if installed erk version is older than repo-required version.
+    """Show warning if installed erk version doesn't match repo-required version.
 
-    This is designed to never fail - any exception is silently caught to ensure
-    the CLI always works.
+    This is designed to never fail - exceptions are logged but don't break the CLI.
     """
     # Skip if user has disabled version checking
     if os.environ.get("ERK_SKIP_VERSION_CHECK") == "1":
@@ -148,9 +147,9 @@ def _show_version_warning() -> None:
         # Show warning
         click.echo(format_version_warning(installed, required), err=True)
         click.echo(file=sys.stderr)
-    except Exception:
-        # Never let version checking break the CLI
-        pass
+    except Exception as e:
+        # Never let version checking break the CLI, but warn so issues can be diagnosed
+        logging.warning("Failed to check version: %s", e)
 
 
 @click.group(cls=ErkCommandGroup, context_settings=CONTEXT_SETTINGS)

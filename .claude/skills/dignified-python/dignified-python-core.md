@@ -151,6 +151,8 @@ except ValueError:
 
 **❌ Never swallow exceptions silently**
 
+Even at error boundaries, you must at least log/warn so issues can be diagnosed:
+
 ```python
 # ❌ WRONG: Silent exception swallowing
 try:
@@ -158,8 +160,20 @@ try:
 except:
     pass
 
-# ✅ CORRECT: Let exceptions bubble up
+# ❌ WRONG: Silent swallowing even at error boundary
+try:
+    optional_feature()
+except Exception:
+    pass  # Silent - impossible to diagnose issues
+
+# ✅ CORRECT: Let exceptions bubble up (default)
 risky_operation()
+
+# ✅ CORRECT: At error boundaries, log the exception
+try:
+    optional_feature()
+except Exception as e:
+    logging.warning("Optional feature failed: %s", e)  # Diagnosable
 ```
 
 **❌ Never use silent fallback behavior**
@@ -881,6 +895,7 @@ Benefits:
 - [ ] Is third-party API forcing me to use exceptions?
 - [ ] Have I encapsulated the violation?
 - [ ] Am I catching specific exceptions, not broad?
+- [ ] If catching at error boundary, am I logging/warning? (Never silently swallow)
 
 **Default: Let exceptions bubble up**
 
