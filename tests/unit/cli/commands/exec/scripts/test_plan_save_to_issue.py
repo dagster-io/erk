@@ -144,6 +144,7 @@ def test_plan_save_to_issue_display_format() -> None:
 
     assert result.exit_code == 0
     assert "Plan saved to GitHub issue #1" in result.output
+    assert "Title: Test Feature" in result.output
     assert "URL: " in result.output
     assert "Enrichment: No" in result.output
     # Verify Next steps section with copy/pasteable commands

@@ -194,6 +194,7 @@ def plan_save_to_issue(
 
     if output_format == "display":
         click.echo(f"Plan saved to GitHub issue #{result.issue_number}")
+        click.echo(f"Title: {result.title}")
         click.echo(f"URL: {result.issue_url}")
         click.echo(f"Enrichment: {'Yes' if is_enriched else 'No'}")
         if session_context_chunks > 0:
