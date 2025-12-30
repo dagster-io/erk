@@ -25,24 +25,25 @@ class FakePromptExecutor(PromptExecutor):
         prompt_calls: Read-only list of all prompt calls made (for assertions)
 
     Example:
-        >>> executor = FakePromptExecutor(output="Generated summary text")
-        >>> result = executor.execute_prompt("Generate summary", model="haiku")
+        >>> executor = FakePromptExecutor(output='["1. First step", "2. Second step"]')
+        >>> result = executor.execute_prompt("Extract steps", model="haiku")
         >>> assert result.success
-        >>> assert result.output == "Generated summary text"
+        >>> assert result.output == '["1. First step", "2. Second step"]'
         >>> assert len(executor.prompt_calls) == 1
     """
 
     def __init__(
         self,
         *,
-        output: str = "Fake output",
+        output: str = "[]",
         error: str | None = None,
         should_fail: bool = False,
     ) -> None:
         """Create FakePromptExecutor with pre-configured behavior.
 
         Args:
-            output: Output to return on successful calls
+            output: Output to return on successful calls. Defaults to empty JSON
+                    array for compatibility with step extraction prompts.
             error: Error message to return on failure (requires should_fail=True)
             should_fail: If True, execute_prompt returns failure
         """

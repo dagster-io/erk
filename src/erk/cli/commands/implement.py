@@ -799,6 +799,7 @@ def _create_worktree_with_plan_content(
     create_impl_folder(
         worktree_path=wt_path,
         plan_content=plan_source.plan_content,
+        prompt_executor=ctx.prompt_executor,
         overwrite=True,
     )
     ctx.feedback.success("✓ Created .impl/ folder")

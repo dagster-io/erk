@@ -11,6 +11,12 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.mark_step import mark_step
 from erk_shared.impl_folder import create_impl_folder, parse_progress_frontmatter
+from erk_shared.prompt_executor.fake import FakePromptExecutor
+
+
+def _make_executor(steps: list[str]) -> FakePromptExecutor:
+    """Create a FakePromptExecutor that returns the given steps as JSON."""
+    return FakePromptExecutor(output=json.dumps(steps))
 
 
 @pytest.fixture
@@ -22,7 +28,8 @@ def impl_folder_with_steps(tmp_path: Path) -> Path:
 2. Second step
 3. Third step
 """
-    create_impl_folder(tmp_path, plan_content, overwrite=False)
+    executor = _make_executor(["1. First step", "2. Second step", "3. Third step"])
+    create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
     return tmp_path
 
 
