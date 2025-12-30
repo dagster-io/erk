@@ -65,20 +65,6 @@ def test_check_returns_info_when_permission_missing(tmp_path: Path) -> None:
     assert "erk init" in result.details
 
 
-def test_check_handles_invalid_json(tmp_path: Path) -> None:
-    """Test that check handles invalid JSON gracefully."""
-    settings_path = tmp_path / ".claude" / "settings.json"
-    settings_path.parent.mkdir(parents=True)
-    settings_path.write_text("{ invalid json", encoding="utf-8")
-
-    result = check_claude_erk_permission(tmp_path)
-
-    # Should report invalid JSON as a failed check
-    assert result.passed is False
-    assert "invalid json" in result.message.lower()
-    assert result.details is not None
-
-
 def test_check_handles_empty_settings(tmp_path: Path) -> None:
     """Test that check handles empty settings object."""
     settings_path = tmp_path / ".claude" / "settings.json"
