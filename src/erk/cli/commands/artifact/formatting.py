@@ -126,13 +126,12 @@ def format_hook_metadata(artifact: InstalledArtifact) -> str:
     return "\n".join(lines) if lines else ""
 
 
-def format_bundled_kit_item(item_name: str, kit_info: BundledKitInfo, item_type: str) -> str:
-    """Format single-line representation of a bundled kit item.
+def format_bundled_kit_item(item_name: str, kit_info: BundledKitInfo) -> str:
+    """Format single-line representation of a bundled kit item (doc).
 
     Args:
-        item_name: Name of the item (command name or doc path)
+        item_name: Name of the item (doc path)
         kit_info: Kit information containing version and level
-        item_type: Type of item ("cli_command" or "doc")
 
     Returns:
         Formatted line: [level] name [kit@version]
@@ -143,13 +142,7 @@ def format_bundled_kit_item(item_name: str, kit_info: BundledKitInfo, item_type:
         else click.style("[P]", fg="green", bold=True)
     )
 
-    # Format name based on item type
-    if item_type == "cli_command":
-        display_name = f"{kit_info.kit_id}:{item_name}"
-    else:  # doc
-        display_name = item_name
-
-    name = click.style(display_name, bold=True)
+    name = click.style(item_name, bold=True)
     source = click.style(f"[{kit_info.kit_id}@{kit_info.version}]", fg="cyan")
 
     return f"{level_indicator} {name} {source}"
@@ -189,7 +182,7 @@ def format_compact_list(
 
     Creates output structure:
     - Claude Artifacts: skills, commands, agents, hooks
-    - Installed Items: docs, kit CLI commands
+    - Installed Items: docs
 
     Args:
         artifacts: List of artifacts to format
@@ -230,37 +223,19 @@ def format_compact_list(
             for artifact in sorted(type_artifacts, key=lambda a: a.artifact_name):
                 lines.append(f"    {format_compact_artifact_line(artifact)}")
 
-    # Section 2: Installed Items (docs, kit CLI commands)
+    # Section 2: Installed Items (docs)
     has_docs = "doc" in by_type
-    has_kit_commands = any(kit.cli_commands for kit in bundled_kits.values())
 
-    if has_docs or has_kit_commands:
+    if has_docs:
         if has_claude_artifacts:
             lines.append("")  # Blank line between sections
 
         lines.append(click.style("Installed Items:", bold=True, fg="white"))
 
         # Docs subsection
-        if has_docs:
-            lines.append(click.style("  Docs:", bold=True, fg="white"))
-            for artifact in sorted(by_type["doc"], key=lambda a: a.file_path):
-                lines.append(f"    {format_compact_doc_line(artifact)}")
-
-        # Kit CLI Commands subsection
-        if has_kit_commands:
-            lines.append(click.style("  Kit CLI Commands:", bold=True, fg="white"))
-
-            # Collect all commands from all kits
-            all_commands: list[tuple[str, BundledKitInfo]] = []
-            for kit_info in bundled_kits.values():
-                for cmd_name in kit_info.cli_commands:
-                    all_commands.append((cmd_name, kit_info))
-
-            # Sort by full command name (kit:command)
-            all_commands.sort(key=lambda x: f"{x[1].kit_id}:{x[0]}")
-
-            for cmd_name, kit_info in all_commands:
-                lines.append(f"    {format_bundled_kit_item(cmd_name, kit_info, 'cli_command')}")
+        lines.append(click.style("  Docs:", bold=True, fg="white"))
+        for artifact in sorted(by_type["doc"], key=lambda a: a.file_path):
+            lines.append(f"    {format_compact_doc_line(artifact)}")
 
     return "\n".join(lines)
 
@@ -276,7 +251,7 @@ def format_verbose_list(
     Creates output structure:
     - Claude Artifacts: grouped by type (Skills, Commands, Agents, Hooks)
       with indented details (description, kit, path)
-    - Installed Items: grouped by type (Docs, Kit CLI Commands)
+    - Installed Items: grouped by type (Docs)
       with indented details
 
     Args:
@@ -350,52 +325,32 @@ def format_verbose_list(
 
     # Section 2: Installed Items
     has_docs = "doc" in by_type
-    has_kit_commands = any(kit.cli_commands for kit in bundled_kits.values())
 
-    if has_docs or has_kit_commands:
+    if has_docs:
         if has_claude_artifacts:
             lines.append("")
 
         lines.append(click.style("Installed Items:", bold=True, fg="white"))
 
         # Docs subsection
-        if has_docs:
-            lines.append(click.style("  Docs:", bold=True, fg="white"))
-            for artifact in sorted(by_type["doc"], key=lambda a: a.file_path):
-                lines.append(f"    {format_compact_doc_line(artifact)}")
+        lines.append(click.style("  Docs:", bold=True, fg="white"))
+        for artifact in sorted(by_type["doc"], key=lambda a: a.file_path):
+            lines.append(f"    {format_compact_doc_line(artifact)}")
 
-                # Indented details
-                if user_path and project_path:
-                    description = _get_artifact_description(artifact, user_path, project_path)
-                    if description:
-                        lines.append(f"        → {description}")
+            # Indented details
+            if user_path and project_path:
+                description = _get_artifact_description(artifact, user_path, project_path)
+                if description:
+                    lines.append(f"        → {description}")
 
-                is_managed = artifact.source == ArtifactSource.MANAGED
-                if is_managed and artifact.kit_id and artifact.kit_version:
-                    lines.append(f"        Kit: {artifact.kit_id}@{artifact.kit_version}")
+            is_managed = artifact.source == ArtifactSource.MANAGED
+            if is_managed and artifact.kit_id and artifact.kit_version:
+                lines.append(f"        Kit: {artifact.kit_id}@{artifact.kit_version}")
 
-                # Path now shows full repo-relative path
-                full_path = Path(".claude") / artifact.file_path
-                lines.append(f"        Path: {full_path}")
-                lines.append("")
-
-        # Kit CLI Commands subsection
-        if has_kit_commands:
-            lines.append(click.style("  Kit CLI Commands:", bold=True, fg="white"))
-
-            all_commands: list[tuple[str, BundledKitInfo]] = []
-            for kit_info in bundled_kits.values():
-                for cmd_name in kit_info.cli_commands:
-                    all_commands.append((cmd_name, kit_info))
-
-            all_commands.sort(key=lambda x: f"{x[1].kit_id}:{x[0]}")
-
-            for cmd_name, kit_info in all_commands:
-                lines.append(f"    {format_bundled_kit_item(cmd_name, kit_info, 'cli_command')}")
-
-                # Indented details for kit CLI commands
-                lines.append(f"        Kit: {kit_info.kit_id}@{kit_info.version}")
-                lines.append("")
+            # Path now shows full repo-relative path
+            full_path = Path(".claude") / artifact.file_path
+            lines.append(f"        Path: {full_path}")
+            lines.append("")
 
     # Remove trailing blank line if present
     if lines and lines[-1] == "":

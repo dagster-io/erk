@@ -94,40 +94,6 @@ def test_load_kit_manifest_minimal(tmp_path: Path) -> None:
     assert manifest.homepage is None
 
 
-def test_load_kit_manifest_with_commands(tmp_path: Path) -> None:
-    """Test kit.yaml with kit cli commands section."""
-    manifest_path = tmp_path / "kit.yaml"
-    manifest_path.write_text(
-        "name: test-kit\n"
-        "version: 1.0.0\n"
-        "description: Test kit\n"
-        "scripts:\n"
-        "  - name: compliance-reminder-hook\n"
-        "    path: commands/compliance_reminder_hook.py\n"
-        "    description: Output dignified-python compliance reminder for UserPromptSubmit hook\n"
-        "  - name: validate-exceptions\n"
-        "    path: commands/validate_exceptions.py\n"
-        "    description: Validate exception handling patterns\n",
-        encoding="utf-8",
-    )
-
-    manifest = load_kit_manifest(manifest_path)
-
-    assert manifest.name == "test-kit"
-    assert manifest.version == "1.0.0"
-    assert manifest.description == "Test kit"
-    assert len(manifest.scripts) == 2
-    assert manifest.scripts[0].name == "compliance-reminder-hook"
-    assert manifest.scripts[0].path == "commands/compliance_reminder_hook.py"
-    assert (
-        manifest.scripts[0].description
-        == "Output dignified-python compliance reminder for UserPromptSubmit hook"
-    )
-    assert manifest.scripts[1].name == "validate-exceptions"
-    assert manifest.scripts[1].path == "commands/validate_exceptions.py"
-    assert manifest.scripts[1].description == "Validate exception handling patterns"
-
-
 def test_load_project_config_valid_bundled_kit(tmp_project: Path) -> None:
     """Test loading config with valid bundled kit."""
     # Write a config with bundled kit

@@ -115,27 +115,6 @@ def test_wheel_contains_skill_markdown(
         assert any(expected_path in f for f in files), f"Missing {expected_path}"
 
 
-@pytest.mark.parametrize(
-    ("kit_name", "command_script"),
-    [
-        ("erk", "restack_preflight.py"),
-        ("erk", "restack_continue.py"),
-        ("erk", "restack_finalize.py"),
-        ("erk", "quick_submit.py"),
-    ],
-)
-def test_wheel_contains_scripts(
-    build_wheel: Path,
-    kit_name: str,
-    command_script: str,
-) -> None:
-    """Test that kit CLI command scripts are included in the wheel."""
-    with zipfile.ZipFile(build_wheel) as wheel:
-        files = wheel.namelist()
-        expected_path = f"erk_kits/data/kits/{kit_name}/scripts/{kit_name}/{command_script}"
-        assert any(expected_path in f for f in files), f"Missing {expected_path}"
-
-
 def test_wheel_contains_all_init_files(build_wheel: Path) -> None:
     """Test that all __init__.py files are included in data directories."""
     expected_init_files = [

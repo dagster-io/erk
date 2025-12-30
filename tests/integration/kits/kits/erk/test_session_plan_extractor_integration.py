@@ -11,10 +11,10 @@ from pathlib import Path
 
 import pytest
 
-from erk_kits.data.kits.erk.session_plan_extractor import (
+from erk_shared.extraction.local_plans import (
     extract_slugs_from_session,
     find_project_dir_for_session,
-    get_latest_plan,
+    get_latest_plan_content,
 )
 from tests.unit.kits.kits.erk.fixtures import (
     SAMPLE_PLAN_CONTENT,
@@ -65,7 +65,7 @@ def test_full_workflow_returns_most_recent_plan(tmp_path: Path, monkeypatch) -> 
     create_plan_file(tmp_path, "newer-plan", SAMPLE_PLAN_CONTENT)
 
     # Should return newest plan
-    result = get_latest_plan("/any/working/dir")
+    result = get_latest_plan_content()
 
     assert result == SAMPLE_PLAN_CONTENT
 
@@ -78,7 +78,7 @@ def test_empty_plans_directory_returns_none(tmp_path: Path, monkeypatch) -> None
     plans_dir = tmp_path / ".claude" / "plans"
     plans_dir.mkdir(parents=True)
 
-    result = get_latest_plan("/any/working/dir")
+    result = get_latest_plan_content()
 
     assert result is None
 
@@ -88,7 +88,7 @@ def test_no_plans_directory_returns_none(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
     # Don't create any directories
-    result = get_latest_plan("/any/working/dir")
+    result = get_latest_plan_content()
 
     assert result is None
 
@@ -100,7 +100,7 @@ def test_single_plan_file(tmp_path: Path, monkeypatch) -> None:
     # Create single plan
     create_plan_file(tmp_path, "only-plan", SAMPLE_PLAN_CONTENT)
 
-    result = get_latest_plan("/any/working/dir")
+    result = get_latest_plan_content()
 
     assert result == SAMPLE_PLAN_CONTENT
 
@@ -117,7 +117,7 @@ def test_multiple_plans_returns_most_recent(tmp_path: Path, monkeypatch) -> None
     # Create the expected newest plan
     create_plan_file(tmp_path, "newest-plan", SAMPLE_PLAN_CONTENT)
 
-    result = get_latest_plan("/any/working/dir")
+    result = get_latest_plan_content()
 
     assert result == SAMPLE_PLAN_CONTENT
 
@@ -140,7 +140,7 @@ def test_ignores_non_markdown_files(tmp_path: Path, monkeypatch) -> None:
     # Create actual plan file
     create_plan_file(tmp_path, "real-plan", SAMPLE_PLAN_CONTENT)
 
-    result = get_latest_plan("/any/working/dir")
+    result = get_latest_plan_content()
 
     assert result == SAMPLE_PLAN_CONTENT
 
@@ -160,7 +160,7 @@ def test_ignores_subdirectories(tmp_path: Path, monkeypatch) -> None:
     # Create actual plan file
     create_plan_file(tmp_path, "real-plan", SAMPLE_PLAN_CONTENT)
 
-    result = get_latest_plan("/any/working/dir")
+    result = get_latest_plan_content()
 
     assert result == SAMPLE_PLAN_CONTENT
 
@@ -172,9 +172,9 @@ def test_working_dir_parameter_ignored(tmp_path: Path, monkeypatch) -> None:
     create_plan_file(tmp_path, "test-plan", SAMPLE_PLAN_CONTENT)
 
     # All different working dirs should return same result
-    result1 = get_latest_plan("/path/one")
-    result2 = get_latest_plan("/completely/different/path")
-    result3 = get_latest_plan("/Users/someone/.erk/repos/project")
+    result1 = get_latest_plan_content()
+    result2 = get_latest_plan_content()
+    result3 = get_latest_plan_content()
 
     assert result1 == SAMPLE_PLAN_CONTENT
     assert result2 == SAMPLE_PLAN_CONTENT
@@ -188,9 +188,9 @@ def test_session_id_parameter_ignored(tmp_path: Path, monkeypatch) -> None:
     create_plan_file(tmp_path, "test-plan", SAMPLE_PLAN_CONTENT)
 
     # Different session IDs should return same result
-    result1 = get_latest_plan("/path", session_id=None)
-    result2 = get_latest_plan("/path", session_id="abc123")
-    result3 = get_latest_plan("/path", session_id="different-session")
+    result1 = get_latest_plan_content(session_id=None)
+    result2 = get_latest_plan_content(session_id="abc123")
+    result3 = get_latest_plan_content(session_id="different-session")
 
     assert result1 == SAMPLE_PLAN_CONTENT
     assert result2 == SAMPLE_PLAN_CONTENT
@@ -211,7 +211,7 @@ def test_plan_with_unicode_content(tmp_path: Path, monkeypatch) -> None:
 """
     create_plan_file(tmp_path, "unicode-plan", unicode_content)
 
-    result = get_latest_plan("/any/path")
+    result = get_latest_plan_content()
 
     assert result == unicode_content
 
@@ -225,7 +225,7 @@ def test_plan_selection_by_mtime_not_name(tmp_path: Path, monkeypatch) -> None:
     time.sleep(0.01)
     create_plan_file(tmp_path, "aaa-newest", SAMPLE_PLAN_CONTENT)
 
-    result = get_latest_plan("/path")
+    result = get_latest_plan_content()
 
     # Should return "aaa-newest" because it's most recent, not "zzz-oldest"
     assert result == SAMPLE_PLAN_CONTENT
@@ -374,7 +374,7 @@ class TestExtractSlugsFromSession:
 
 
 class TestGetLatestPlanWithSessionId:
-    """Integration tests for get_latest_plan with session_id parameter."""
+    """Integration tests for get_latest_plan_content with session_id parameter."""
 
     def test_session_scoped_lookup_finds_correct_plan(self, mock_claude_projects: Path) -> None:
         """Test that session_id finds plan via slug, not mtime."""
@@ -392,7 +392,7 @@ class TestGetLatestPlanWithSessionId:
         newer_plan.write_text("# Newer Plan\nNewer content", encoding="utf-8")
 
         # Session-scoped lookup should return alpha plan, not newer
-        result = get_latest_plan("/any", session_id="aaa11111-2222-3333-4444-555555555555")
+        result = get_latest_plan_content(session_id="aaa11111-2222-3333-4444-555555555555")
 
         assert result == "# Alpha Plan\nAlpha content"
 
@@ -406,7 +406,7 @@ class TestGetLatestPlanWithSessionId:
         (plans_dir / "gamma-second.md").write_text("# Second Plan", encoding="utf-8")
 
         # Should return second (most recent slug)
-        result = get_latest_plan("/any", session_id="ddd11111-2222-3333-4444-555555555555")
+        result = get_latest_plan_content(session_id="ddd11111-2222-3333-4444-555555555555")
 
         assert result == "# Second Plan"
 
@@ -420,7 +420,7 @@ class TestGetLatestPlanWithSessionId:
         only_plan.write_text(SAMPLE_PLAN_CONTENT, encoding="utf-8")
 
         # Should fall back to mtime selection
-        result = get_latest_plan("/any", session_id="eee11111-2222-3333-4444-555555555555")
+        result = get_latest_plan_content(session_id="eee11111-2222-3333-4444-555555555555")
 
         assert result == SAMPLE_PLAN_CONTENT
 
@@ -434,6 +434,6 @@ class TestGetLatestPlanWithSessionId:
         fallback.write_text(SAMPLE_PLAN_CONTENT, encoding="utf-8")
 
         # alpha-feature-plan.md doesn't exist, should fall back
-        result = get_latest_plan("/any", session_id="aaa11111-2222-3333-4444-555555555555")
+        result = get_latest_plan_content(session_id="aaa11111-2222-3333-4444-555555555555")
 
         assert result == SAMPLE_PLAN_CONTENT
