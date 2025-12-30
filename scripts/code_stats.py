@@ -6,7 +6,7 @@ import re
 import subprocess
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 
 @dataclass
@@ -325,7 +325,7 @@ def local_to_utc(dt: datetime) -> datetime:
     """Convert a naive local datetime to UTC."""
     # Treat naive datetime as local time, then convert to UTC
     local_dt = dt.astimezone()  # Adds local timezone
-    return local_dt.astimezone(timezone.utc)
+    return local_dt.astimezone(UTC)
 
 
 def fetch_all_merged_prs(since: datetime) -> list[dict]:

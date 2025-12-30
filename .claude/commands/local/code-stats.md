@@ -39,6 +39,7 @@ python3 scripts/code_stats.py <ISO_DATETIME>
 ```
 
 The Python script expects a single argument in one of these formats:
+
 - ISO date: `2025-12-28`
 - ISO datetime: `2025-12-28T14:30:00`
 
