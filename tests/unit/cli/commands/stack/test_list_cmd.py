@@ -61,8 +61,12 @@ def test_list_stack_shows_branches_with_worktrees() -> None:
         assert "→" in output
 
 
-def test_list_stack_filters_branches_without_worktrees() -> None:
-    """Test that branches without worktrees are filtered out."""
+def test_list_stack_shows_branches_sharing_ancestor_worktrees() -> None:
+    """Test that branches without their own worktree show ancestor's worktree.
+
+    When feat-2 has no worktree but its parent feat-1 does, feat-2 should
+    still appear in the output, displaying feat-1's worktree path.
+    """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.erk_root / env.cwd.name
@@ -73,7 +77,7 @@ def test_list_stack_filters_branches_without_worktrees() -> None:
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
                     WorktreeInfo(path=repo_dir / "feat-1", branch="feat-1", is_root=False),
-                    # feat-2 has NO worktree
+                    # feat-2 has NO worktree - should use feat-1's worktree
                 ],
             },
             current_branches={env.cwd: "feat-1"},
@@ -99,18 +103,18 @@ def test_list_stack_filters_branches_without_worktrees() -> None:
 
         output = strip_ansi(result.output)
 
-        # feat-1 has worktree, should be shown
+        # Both feat-1 AND feat-2 should appear as branches
         assert "feat-1" in output
-        # feat-2 has no worktree, should NOT be in output as a branch entry
-        # (feat-2 appears in worktree path for feat-1, so we need to be specific)
-        # Count occurrences - should only appear once if it's just in a path
-        lines = output.strip().split("\n")
-        feat_2_in_branch_col = any(
-            "feat-2" in line.split()[1] for line in lines if len(line.split()) > 1
+        assert "feat-2" in output
+
+        # Find the line with feat-2 and verify it shows feat-1's worktree
+        lines = [line for line in output.strip().split("\n") if line.strip()]
+        feat_2_line = next((line for line in lines if "feat-2" in line), None)
+        assert feat_2_line is not None, "feat-2 should appear in output"
+        # feat-2 should show feat-1 as the worktree (ancestor's worktree)
+        assert "feat-1" in feat_2_line, (
+            f"feat-2's line should show feat-1 as worktree. Got: {feat_2_line}"
         )
-        # feat-2 should NOT appear as a branch name
-        first_cols = [line.split()[0] for line in lines if line.strip()]
-        assert not feat_2_in_branch_col or "feat-2" not in first_cols
 
 
 def test_list_stack_includes_trunk_branch() -> None:

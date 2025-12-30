@@ -47,19 +47,21 @@ def list_stack(ctx: ErkContext) -> None:
     table.add_column("branch", style="cyan", no_wrap=True)
     table.add_column("worktree", no_wrap=True)
 
-    # Filter stack to branches that have an associated worktree
+    # Show all branches in stack, using ancestor worktree for branches without their own
     # Reverse order: upstack (children) at top, downstack (trunk) at bottom
     for branch in reversed(stack_branches):
-        # Find worktrees containing this branch
         matching_worktrees = find_worktrees_containing_branch(ctx, repo.root, worktrees, branch)
-        if not matching_worktrees:
-            continue
 
-        # Use the first matching worktree
-        wt = matching_worktrees[0]
+        if matching_worktrees:
+            wt = matching_worktrees[0]
+        else:
+            # Branch has no direct worktree - find closest ancestor with one
+            wt = ctx.graphite.find_ancestor_worktree(ctx.git, repo.root, branch)
+            if wt is None:
+                continue  # Only skip if truly no worktree found
+
         wt_name = "root" if wt.is_root else wt.path.name
 
-        # Determine marker and style
         is_current = branch == current_branch
         marker = "→" if is_current else ""
         branch_display = f"[bold cyan]{branch}[/bold cyan]" if is_current else branch

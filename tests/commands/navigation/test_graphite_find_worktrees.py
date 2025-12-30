@@ -1,6 +1,8 @@
-"""Tests for find_worktrees_containing_branch function in graphite.py."""
+"""Tests for find_worktrees_containing_branch and Graphite.find_ancestor_worktree."""
 
 from pathlib import Path
+
+import pytest
 
 from erk.cli.graphite import find_worktrees_containing_branch
 from erk.core.config_store import GlobalConfig
@@ -147,3 +149,178 @@ def test_find_worktree_for_branch_detached_head(tmp_path: Path) -> None:
     # Should not match None (detached HEAD)
     none_result = find_worktree_for_branch(worktrees, "None")
     assert none_result is None
+
+
+def test_find_ancestor_worktree_finds_parent(tmp_path: Path) -> None:
+    """Test finding ancestor worktree when parent branch has one."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    git_dir = repo_root / ".git"
+    git_dir.mkdir()
+    work_dir = tmp_path / "erks" / "repo"
+    work_dir.mkdir(parents=True)
+
+    # Set up stack: main -> feat-1 -> feat-2
+    # feat-2 has no worktree, should find feat-1's worktree
+    setup_graphite_stack(
+        git_dir,
+        {
+            "main": {"parent": None, "children": ["feat-1"], "is_trunk": True},
+            "feat-1": {"parent": "main", "children": ["feat-2"]},
+            "feat-2": {"parent": "feat-1", "children": []},
+        },
+    )
+
+    feat1_path = work_dir / "feat-1"
+    worktrees = [
+        WorktreeInfo(path=repo_root, branch="main", is_root=True),
+        WorktreeInfo(path=feat1_path, branch="feat-1", is_root=False),
+        # feat-2 has NO worktree
+    ]
+
+    git_ops = FakeGit(
+        worktrees={repo_root: worktrees},
+        current_branches={repo_root: "main"},
+        git_common_dirs={repo_root: git_dir},
+    )
+
+    graphite_ops = RealGraphite()
+
+    # feat-2 has no worktree, should find feat-1's worktree (its parent)
+    result = graphite_ops.find_ancestor_worktree(git_ops, repo_root, "feat-2")
+    assert result is not None
+    assert result.branch == "feat-1"
+    assert result.path == feat1_path
+
+
+def test_find_ancestor_worktree_finds_grandparent(tmp_path: Path) -> None:
+    """Test finding ancestor worktree when grandparent has one but parent doesn't."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    git_dir = repo_root / ".git"
+    git_dir.mkdir()
+    work_dir = tmp_path / "erks" / "repo"
+    work_dir.mkdir(parents=True)
+
+    # Set up stack: main -> feat-1 -> feat-2 -> feat-3
+    # Only main has a worktree - feat-3 should find main's worktree
+    setup_graphite_stack(
+        git_dir,
+        {
+            "main": {"parent": None, "children": ["feat-1"], "is_trunk": True},
+            "feat-1": {"parent": "main", "children": ["feat-2"]},
+            "feat-2": {"parent": "feat-1", "children": ["feat-3"]},
+            "feat-3": {"parent": "feat-2", "children": []},
+        },
+    )
+
+    worktrees = [
+        WorktreeInfo(path=repo_root, branch="main", is_root=True),
+        # feat-1, feat-2, feat-3 have NO worktrees
+    ]
+
+    git_ops = FakeGit(
+        worktrees={repo_root: worktrees},
+        current_branches={repo_root: "main"},
+        git_common_dirs={repo_root: git_dir},
+    )
+
+    graphite_ops = RealGraphite()
+
+    # feat-3 has no worktree and neither do feat-2/feat-1, should find main's worktree
+    result = graphite_ops.find_ancestor_worktree(git_ops, repo_root, "feat-3")
+    assert result is not None
+    assert result.branch == "main"
+    assert result.path == repo_root
+
+
+def test_find_ancestor_worktree_no_ancestor_with_worktree(tmp_path: Path) -> None:
+    """Test returns None when no ancestor has a worktree."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    git_dir = repo_root / ".git"
+    git_dir.mkdir()
+
+    # Set up stack: main -> feat-1
+    # But we configure empty worktree list (simulating no worktrees)
+    setup_graphite_stack(
+        git_dir,
+        {
+            "main": {"parent": None, "children": ["feat-1"], "is_trunk": True},
+            "feat-1": {"parent": "main", "children": []},
+        },
+    )
+
+    git_ops = FakeGit(
+        worktrees={repo_root: []},  # No worktrees at all
+        current_branches={repo_root: "main"},
+        git_common_dirs={repo_root: git_dir},
+    )
+
+    graphite_ops = RealGraphite()
+
+    result = graphite_ops.find_ancestor_worktree(git_ops, repo_root, "feat-1")
+    assert result is None
+
+
+def test_find_ancestor_worktree_trunk_branch(tmp_path: Path) -> None:
+    """Test returns None for trunk branch (no parent)."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    git_dir = repo_root / ".git"
+    git_dir.mkdir()
+
+    setup_graphite_stack(
+        git_dir,
+        {
+            "main": {"parent": None, "children": [], "is_trunk": True},
+        },
+    )
+
+    worktrees = [
+        WorktreeInfo(path=repo_root, branch="main", is_root=True),
+    ]
+
+    git_ops = FakeGit(
+        worktrees={repo_root: worktrees},
+        current_branches={repo_root: "main"},
+        git_common_dirs={repo_root: git_dir},
+    )
+
+    graphite_ops = RealGraphite()
+
+    # main is trunk with no parent, should return None
+    result = graphite_ops.find_ancestor_worktree(git_ops, repo_root, "main")
+    assert result is None
+
+
+def test_find_ancestor_worktree_untracked_branch(tmp_path: Path) -> None:
+    """Test raises ValueError for branch not tracked by Graphite."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    git_dir = repo_root / ".git"
+    git_dir.mkdir()
+
+    # Set up stack with only main - untracked-branch is NOT in Graphite
+    setup_graphite_stack(
+        git_dir,
+        {
+            "main": {"parent": None, "children": [], "is_trunk": True},
+        },
+    )
+
+    worktrees = [
+        WorktreeInfo(path=repo_root, branch="main", is_root=True),
+    ]
+
+    git_ops = FakeGit(
+        worktrees={repo_root: worktrees},
+        current_branches={repo_root: "main"},
+        git_common_dirs={repo_root: git_dir},
+    )
+
+    graphite_ops = RealGraphite()
+
+    # untracked-branch is not in Graphite, should raise ValueError (caller bug)
+    with pytest.raises(ValueError, match="not tracked by Graphite"):
+        graphite_ops.find_ancestor_worktree(git_ops, repo_root, "untracked-branch")
