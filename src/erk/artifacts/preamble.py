@@ -6,8 +6,8 @@ from pathlib import Path
 import click
 
 from erk.artifacts.staleness import check_staleness
-from erk.core.repo_discovery import in_erk_repo
 from erk.artifacts.sync import sync_artifacts
+from erk.core.repo_discovery import in_erk_repo
 
 
 def check_and_prompt_artifact_sync(project_dir: Path, *, no_sync: bool) -> None:
