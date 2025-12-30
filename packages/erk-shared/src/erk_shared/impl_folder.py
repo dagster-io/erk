@@ -10,7 +10,6 @@ These utilities are used by both erk (for local operations) and erk-kits
 """
 
 import json
-import re
 import shutil
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -24,14 +23,22 @@ from erk_shared.github.metadata import (
     create_worktree_creation_block,
     render_erk_issue_event,
 )
+from erk_shared.prompt_executor.abc import PromptExecutor
 
 
-def create_impl_folder(worktree_path: Path, plan_content: str, *, overwrite: bool) -> Path:
+def create_impl_folder(
+    worktree_path: Path,
+    plan_content: str,
+    prompt_executor: PromptExecutor,
+    *,
+    overwrite: bool,
+) -> Path:
     """Create .impl/ folder with plan.md and progress.md files.
 
     Args:
         worktree_path: Path to the worktree directory
         plan_content: Content for plan.md file
+        prompt_executor: Executor for LLM-based step extraction
         overwrite: If True, remove existing .impl/ folder before creating new one.
                    If False, raise FileExistsError when .impl/ already exists.
 
@@ -40,6 +47,7 @@ def create_impl_folder(worktree_path: Path, plan_content: str, *, overwrite: boo
 
     Raises:
         FileExistsError: If .impl/ directory already exists and overwrite is False
+        RuntimeError: If LLM step extraction fails
     """
     impl_folder = worktree_path / ".impl"
 
@@ -56,8 +64,8 @@ def create_impl_folder(worktree_path: Path, plan_content: str, *, overwrite: boo
     plan_file = impl_folder / "plan.md"
     plan_file.write_text(plan_content, encoding="utf-8")
 
-    # Extract steps and generate progress.md
-    steps = extract_steps_from_plan(plan_content)
+    # Extract steps using LLM and generate progress.md
+    steps = extract_steps_from_plan(plan_content, prompt_executor)
     progress_content = generate_progress_content(steps)
 
     progress_file = impl_folder / "progress.md"
@@ -105,54 +113,78 @@ def get_progress_path(worktree_path: Path) -> Path | None:
     return None
 
 
-def extract_steps_from_plan(plan_content: str) -> list[str]:
-    """Extract numbered steps from plan markdown.
+_STEP_EXTRACTION_PROMPT = """Extract implementation steps from this plan.
 
-    Handles various numbering formats:
-    - "1. Step description"
-    - "1) Step description"
-    - "Step 1: description"
-    - Nested: "1.1", "1.2", "2.1"
+Return ONLY actionable implementation steps/phases.
+EXCLUDE: Testing strategy, Success criteria, Prerequisites, Related documentation
+INCLUDE: Numbered steps, Phase headings, Task lists for implementation
+
+Return as JSON array of strings. Keep original numbering if present.
+Example: ["1. Create module", "2. Add tests", "3. Update docs"]
+If no steps found, return: []
+
+Plan content:
+{plan_content}"""
+
+
+def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) -> list[str]:
+    """Extract implementation steps from plan markdown using LLM.
+
+    Uses Claude Haiku to semantically understand the plan and extract
+    actionable implementation steps.
 
     Args:
         plan_content: Full plan markdown content
+        prompt_executor: Executor for running the extraction prompt
 
     Returns:
         List of step descriptions with their numbers
+
+    Raises:
+        RuntimeError: If LLM execution fails or returns invalid response
     """
-    steps = []
-    lines = plan_content.split("\n")
+    prompt = _STEP_EXTRACTION_PROMPT.format(plan_content=plan_content)
+    result = prompt_executor.execute_prompt(prompt, model="haiku")
 
-    # Patterns for step detection
-    # Match: "1. ", "1) ", "1.1. ", "1.1) "
-    numbered_pattern = re.compile(r"^\s*(\d+(?:\.\d+)*)[.)]")
+    if not result.success:
+        msg = f"LLM step extraction failed: {result.error}"
+        raise RuntimeError(msg)
 
-    # Match: "Step 1:", "Step 1.1:"
-    step_word_pattern = re.compile(r"^\s*Step (\d+(?:\.\d+)*):?")
+    # Parse JSON response
+    output = result.output.strip()
 
-    for line in lines:
-        # Check numbered pattern first
-        match = numbered_pattern.match(line)
-        if match:
-            # Extract the full line as step description
-            step_text = line.strip()
-            steps.append(step_text)
-            continue
+    # Handle markdown code blocks (LLM may wrap in ```json ... ```)
+    if output.startswith("```"):
+        # Remove first and last lines (code block markers)
+        lines = output.split("\n")
+        output = "\n".join(lines[1:-1])
 
-        # Check "Step X:" pattern
-        match = step_word_pattern.match(line)
-        if match:
-            step_text = line.strip()
-            steps.append(step_text)
+    try:
+        steps = json.loads(output)
+    except json.JSONDecodeError as e:
+        msg = f"LLM returned invalid JSON: {e}. Output was: {output[:200]}"
+        raise RuntimeError(msg) from e
+
+    # Validate response structure
+    if not isinstance(steps, list):
+        msg = f"LLM returned non-list: {type(steps).__name__}"
+        raise RuntimeError(msg)
+
+    # Validate all items are strings
+    for i, step in enumerate(steps):
+        if not isinstance(step, str):
+            msg = f"Step {i} is not a string: {type(step).__name__}"
+            raise RuntimeError(msg)
 
     return steps
 
 
-def extract_plan_steps(impl_dir: Path) -> list[str]:
+def extract_plan_steps(impl_dir: Path, prompt_executor: PromptExecutor) -> list[str]:
     """Extract step descriptions from .impl/plan.md file.
 
     Args:
         impl_dir: Path to .impl/ directory
+        prompt_executor: Executor for LLM-based step extraction
 
     Returns:
         List of step description strings
@@ -160,6 +192,7 @@ def extract_plan_steps(impl_dir: Path) -> list[str]:
     Raises:
         FileNotFoundError: If plan.md doesn't exist
         ValueError: If plan.md contains no steps
+        RuntimeError: If LLM step extraction fails
     """
     plan_file = impl_dir / "plan.md"
 
@@ -168,7 +201,7 @@ def extract_plan_steps(impl_dir: Path) -> list[str]:
         raise FileNotFoundError(msg)
 
     plan_content = plan_file.read_text(encoding="utf-8")
-    steps = extract_steps_from_plan(plan_content)
+    steps = extract_steps_from_plan(plan_content, prompt_executor)
 
     if not steps:
         msg = f"No steps found in plan file: {plan_file}"

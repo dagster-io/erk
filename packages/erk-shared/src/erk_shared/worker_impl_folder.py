@@ -24,6 +24,7 @@ from erk_shared.impl_folder import (
     generate_progress_content,
     save_issue_reference,
 )
+from erk_shared.prompt_executor.abc import PromptExecutor
 
 
 def create_worker_impl_folder(
@@ -31,6 +32,7 @@ def create_worker_impl_folder(
     issue_number: int,
     issue_url: str,
     repo_root: Path,
+    prompt_executor: PromptExecutor,
 ) -> Path:
     """Create .worker-impl/ folder with all required files.
 
@@ -39,6 +41,7 @@ def create_worker_impl_folder(
         issue_number: GitHub issue number
         issue_url: Full GitHub issue URL
         repo_root: Repository root directory path
+        prompt_executor: Executor for LLM-based step extraction
 
     Returns:
         Path to the created .worker-impl/ directory
@@ -46,6 +49,7 @@ def create_worker_impl_folder(
     Raises:
         FileExistsError: If .worker-impl/ folder already exists
         ValueError: If repo_root doesn't exist or isn't a directory
+        RuntimeError: If LLM step extraction fails
     """
     # Validate repo_root exists and is a directory (LBYL)
     if not repo_root.exists():
@@ -70,8 +74,8 @@ def create_worker_impl_folder(
     # Write issue.json using canonical function from impl_folder
     save_issue_reference(worker_impl_folder, issue_number, issue_url)
 
-    # Generate and write progress.md using canonical function from impl_folder
-    steps = extract_steps_from_plan(plan_content)
+    # Generate and write progress.md using LLM-based extraction
+    steps = extract_steps_from_plan(plan_content, prompt_executor)
     progress_content = generate_progress_content(steps)
     progress_file = worker_impl_folder / "progress.md"
     progress_file.write_text(progress_content, encoding="utf-8")

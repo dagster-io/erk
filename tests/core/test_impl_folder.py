@@ -1,5 +1,6 @@
 """Tests for implementation folder management utilities."""
 
+import json
 from pathlib import Path
 
 import pytest
@@ -23,6 +24,12 @@ from erk_shared.impl_folder import (
     save_issue_reference,
     validate_progress_schema,
 )
+from erk_shared.prompt_executor.fake import FakePromptExecutor
+
+
+def _make_executor(steps: list[str]) -> FakePromptExecutor:
+    """Create a FakePromptExecutor that returns the given steps as JSON."""
+    return FakePromptExecutor(output=json.dumps(steps))
 
 
 def test_create_impl_folder_basic(tmp_path: Path) -> None:
@@ -38,8 +45,9 @@ Build a test feature.
 2. Add tests
 3. Update documentation
 """
-
-    plan_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
+    # Configure executor to return the expected steps
+    executor = _make_executor(["1. Create module", "2. Add tests", "3. Update documentation"])
+    plan_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
 
     # Verify folder structure
     assert plan_folder.exists()
@@ -62,13 +70,14 @@ Build a test feature.
 def test_create_impl_folder_already_exists(tmp_path: Path) -> None:
     """Test that creating a plan folder when one exists raises error."""
     plan_content = "# Test Plan\n\n1. Step one"
+    executor = _make_executor(["1. Step one"])
 
     # Create first time - should succeed
-    create_impl_folder(tmp_path, plan_content, overwrite=False)
+    create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
 
     # Try to create again - should raise
     with pytest.raises(FileExistsError, match="Implementation folder already exists"):
-        create_impl_folder(tmp_path, plan_content, overwrite=False)
+        create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
 
 
 def test_create_impl_folder_overwrite_replaces_existing(tmp_path: Path) -> None:
@@ -79,9 +88,13 @@ def test_create_impl_folder_overwrite_replaces_existing(tmp_path: Path) -> None:
     """
     old_plan = "# Old Plan\n\n1. Old step one\n2. Old step two"
     new_plan = "# New Plan\n\n1. New step one\n2. New step two\n3. New step three"
+    old_executor = _make_executor(["1. Old step one", "2. Old step two"])
+    new_executor = _make_executor(
+        ["1. New step one", "2. New step two", "3. New step three"]
+    )
 
     # Create first .impl/ folder
-    impl_folder = create_impl_folder(tmp_path, old_plan, overwrite=False)
+    impl_folder = create_impl_folder(tmp_path, old_plan, old_executor, overwrite=False)
     old_plan_file = impl_folder / "plan.md"
     old_progress_file = impl_folder / "progress.md"
 
@@ -92,7 +105,7 @@ def test_create_impl_folder_overwrite_replaces_existing(tmp_path: Path) -> None:
     assert "total_steps: 2" in old_progress_content
 
     # Create again with overwrite=True - should succeed and replace content
-    new_impl_folder = create_impl_folder(tmp_path, new_plan, overwrite=True)
+    new_impl_folder = create_impl_folder(tmp_path, new_plan, new_executor, overwrite=True)
 
     # Verify new content replaced old
     assert new_impl_folder == impl_folder  # Same path
@@ -126,8 +139,16 @@ def test_create_impl_folder_with_nested_steps(tmp_path: Path) -> None:
 2.2. Substep two
 2.3. Substep three
 """
-
-    plan_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
+    executor = _make_executor([
+        "1. Main step one",
+        "1.1. Substep one",
+        "1.2. Substep two",
+        "2. Main step two",
+        "2.1. Substep one",
+        "2.2. Substep two",
+        "2.3. Substep three",
+    ])
+    plan_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
     progress_file = plan_folder / "progress.md"
     progress_content = progress_file.read_text(encoding="utf-8")
 
@@ -154,8 +175,9 @@ def test_create_impl_folder_empty_plan(tmp_path: Path) -> None:
 This plan has no numbered steps.
 Just some text.
 """
-
-    plan_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
+    # LLM returns empty array when no steps found
+    executor = _make_executor([])
+    plan_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
     progress_file = plan_folder / "progress.md"
     progress_content = progress_file.read_text(encoding="utf-8")
 
@@ -179,7 +201,8 @@ Just some text.
 def test_get_impl_path_exists(tmp_path: Path) -> None:
     """Test getting plan path when it exists."""
     plan_content = "# Test\n\n1. Step"
-    create_impl_folder(tmp_path, plan_content, overwrite=False)
+    executor = _make_executor(["1. Step"])
+    create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
 
     plan_path = get_impl_path(tmp_path)
     assert plan_path is not None
@@ -196,7 +219,8 @@ def test_get_impl_path_not_exists(tmp_path: Path) -> None:
 def test_get_progress_path_exists(tmp_path: Path) -> None:
     """Test getting progress path when it exists."""
     plan_content = "# Test\n\n1. Step"
-    create_impl_folder(tmp_path, plan_content, overwrite=False)
+    executor = _make_executor(["1. Step"])
+    create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
 
     progress_path = get_progress_path(tmp_path)
     assert progress_path is not None
@@ -210,132 +234,73 @@ def test_get_progress_path_not_exists(tmp_path: Path) -> None:
     assert progress_path is None
 
 
-def test_extract_steps_numbered_with_period(tmp_path: Path) -> None:
-    """Test extracting steps with '1.' format."""
+def test_extract_steps_llm_returns_json(tmp_path: Path) -> None:
+    """Test LLM-based step extraction with FakePromptExecutor."""
     plan = """# Plan
 
 1. First step
 2. Second step
 3. Third step
 """
-    steps = extract_steps_from_plan(plan)
+    # Configure executor to return specific steps
+    executor = _make_executor(["1. First step", "2. Second step", "3. Third step"])
+    steps = extract_steps_from_plan(plan, executor)
     assert len(steps) == 3
     assert "1. First step" in steps
     assert "2. Second step" in steps
     assert "3. Third step" in steps
 
 
-def test_extract_steps_numbered_with_paren(tmp_path: Path) -> None:
-    """Test extracting steps with '1)' format."""
-    plan = """# Plan
-
-1) First step
-2) Second step
-"""
-    steps = extract_steps_from_plan(plan)
-    assert len(steps) == 2
-    assert "1) First step" in steps
-    assert "2) Second step" in steps
-
-
-def test_extract_steps_with_step_word(tmp_path: Path) -> None:
-    """Test extracting steps with 'Step X:' format."""
-    plan = """# Plan
-
-Step 1: First step
-Step 2: Second step
-"""
-    steps = extract_steps_from_plan(plan)
-    assert len(steps) == 2
-    assert "Step 1: First step" in steps
-    assert "Step 2: Second step" in steps
-
-
-def test_extract_steps_nested_numbering(tmp_path: Path) -> None:
-    """Test extracting steps with nested numbering."""
-    plan = """# Plan
-
-1. Main step
-1.1. Substep A
-1.2. Substep B
-2. Another main step
-2.1. Substep C
-"""
-    steps = extract_steps_from_plan(plan)
-    assert len(steps) == 5
-    assert "1. Main step" in steps
-    assert "1.1. Substep A" in steps
-    assert "1.2. Substep B" in steps
-    assert "2. Another main step" in steps
-    assert "2.1. Substep C" in steps
-
-
-def test_extract_steps_mixed_formats(tmp_path: Path) -> None:
-    """Test extracting steps from plan with mixed formats."""
-    plan = """# Plan
-
-1. First format
-2) Second format
-Step 3: Third format
-"""
-    steps = extract_steps_from_plan(plan)
-    assert len(steps) == 3
-
-
-def test_extract_steps_ignores_non_steps(tmp_path: Path) -> None:
-    """Test that extraction ignores non-step content."""
-    plan = """# Plan
-
-This is intro text.
-
-1. Actual step
-2. Another step
-
-Some more text that isn't a step.
-"""
-    steps = extract_steps_from_plan(plan)
-    assert len(steps) == 2
-    assert "1. Actual step" in steps
-    assert "2. Another step" in steps
-
-
-def test_extract_steps_empty_plan(tmp_path: Path) -> None:
-    """Test extracting steps from plan with no steps."""
+def test_extract_steps_llm_empty_response(tmp_path: Path) -> None:
+    """Test LLM returning empty array."""
     plan = """# Plan
 
 Just text, no steps.
 """
-    steps = extract_steps_from_plan(plan)
+    executor = _make_executor([])
+    steps = extract_steps_from_plan(plan, executor)
     assert len(steps) == 0
 
 
-def test_extract_steps_indented_steps(tmp_path: Path) -> None:
-    """Test extracting indented steps."""
-    plan = """# Plan
-
-   1. Indented step
-     2. More indented
-"""
-    steps = extract_steps_from_plan(plan)
-    assert len(steps) == 2
-    assert any("1. Indented step" in s for s in steps)
-    assert any("2. More indented" in s for s in steps)
+def test_extract_steps_llm_handles_markdown_code_block(tmp_path: Path) -> None:
+    """Test that LLM response wrapped in markdown code block is handled."""
+    plan = "# Plan\n\n1. Step"
+    # Simulate LLM wrapping response in code block
+    executor = FakePromptExecutor(output='```json\n["1. Step"]\n```')
+    steps = extract_steps_from_plan(plan, executor)
+    assert steps == ["1. Step"]
 
 
-def test_extract_steps_with_special_characters(tmp_path: Path) -> None:
-    """Test extracting steps with special characters in descriptions."""
-    plan = """# Plan
+def test_extract_steps_llm_failure_raises_runtime_error() -> None:
+    """Test that LLM execution failure raises RuntimeError."""
+    plan = "# Plan\n\n1. Step"
+    executor = FakePromptExecutor(should_fail=True, error="API error")
+    with pytest.raises(RuntimeError, match="LLM step extraction failed"):
+        extract_steps_from_plan(plan, executor)
 
-1. Step with **bold** and *italic*
-2. Step with `code` and [link](url)
-3. Step with emoji 🎉
-"""
-    steps = extract_steps_from_plan(plan)
-    assert len(steps) == 3
-    # Steps should preserve the full line including special characters
-    assert any("**bold**" in s for s in steps)
-    assert any("`code`" in s for s in steps)
-    assert any("🎉" in s for s in steps)
+
+def test_extract_steps_llm_invalid_json_raises_runtime_error() -> None:
+    """Test that invalid JSON response raises RuntimeError."""
+    plan = "# Plan\n\n1. Step"
+    executor = FakePromptExecutor(output="not valid json")
+    with pytest.raises(RuntimeError, match="LLM returned invalid JSON"):
+        extract_steps_from_plan(plan, executor)
+
+
+def test_extract_steps_llm_non_list_raises_runtime_error() -> None:
+    """Test that non-list JSON response raises RuntimeError."""
+    plan = "# Plan\n\n1. Step"
+    executor = FakePromptExecutor(output='{"step": "1. Step"}')
+    with pytest.raises(RuntimeError, match="LLM returned non-list"):
+        extract_steps_from_plan(plan, executor)
+
+
+def test_extract_steps_llm_non_string_item_raises_runtime_error() -> None:
+    """Test that non-string items in list raise RuntimeError."""
+    plan = "# Plan\n\n1. Step"
+    executor = FakePromptExecutor(output='["1. Step", 123]')
+    with pytest.raises(RuntimeError, match="Step 1 is not a string"):
+        extract_steps_from_plan(plan, executor)
 
 
 def test_create_impl_folder_generates_frontmatter(tmp_path: Path) -> None:
@@ -346,7 +311,8 @@ def test_create_impl_folder_generates_frontmatter(tmp_path: Path) -> None:
 2. Second step
 3. Third step
 """
-    plan_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
+    executor = _make_executor(["1. First step", "2. Second step", "3. Third step"])
+    plan_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
     progress_file = plan_folder / "progress.md"
     progress_content = progress_file.read_text(encoding="utf-8")
 
@@ -365,7 +331,8 @@ def test_create_impl_folder_generates_steps_array(tmp_path: Path) -> None:
 2. Second step
 3. Third step
 """
-    plan_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
+    executor = _make_executor(["1. First step", "2. Second step", "3. Third step"])
+    plan_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
     progress_file = plan_folder / "progress.md"
     progress_content = progress_file.read_text(encoding="utf-8")
 
@@ -666,7 +633,8 @@ def test_issue_reference_with_plan_folder(tmp_path: Path) -> None:
     """Test issue reference integration with plan folder creation."""
     # Create plan folder
     plan_content = "# Test Plan\n\n1. Step one"
-    plan_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
+    executor = _make_executor(["1. Step one"])
+    plan_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
 
     # Initially no issue reference
     assert has_issue_reference(plan_folder) is False
