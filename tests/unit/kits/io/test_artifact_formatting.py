@@ -6,6 +6,7 @@ from erk.cli.commands.artifact.formatting import (
     format_artifact_header,
     format_bundled_kit_item,
     format_compact_artifact_line,
+    format_compact_doc_line,
     format_compact_list,
     format_hook_metadata,
     format_level_indicator,
@@ -74,6 +75,25 @@ def test_format_compact_artifact_line() -> None:
     assert "test-cmd" in result
     assert "[P]" in result
     assert "[local]" in result
+
+
+def test_format_compact_doc_line() -> None:
+    """Test compact single-line doc artifact formatting with full repo-relative path."""
+    artifact = InstalledArtifact(
+        artifact_type="doc",
+        artifact_name="guide.md",
+        file_path=Path("docs/test-kit/guide.md"),
+        source=ArtifactSource.MANAGED,
+        level=ArtifactLevel.PROJECT,
+        kit_id="test-kit",
+        kit_version="1.0.0",
+    )
+
+    result = format_compact_doc_line(artifact)
+    # Should display full repo-relative path (.claude/ prepended)
+    assert ".claude/docs/test-kit/guide.md" in result
+    assert "[P]" in result
+    assert "test-kit@1.0.0" in result
 
 
 def test_format_artifact_header() -> None:
