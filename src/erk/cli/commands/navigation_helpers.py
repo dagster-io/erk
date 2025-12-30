@@ -247,6 +247,9 @@ def activate_worktree(
         activation_script = render_activation_script(
             worktree_path=wt_path,
             target_subpath=relative_path,
+            post_cd_commands=None,
+            final_message='echo "Activated worktree: $(pwd)"',
+            comment="work activate-script",
         )
         result = ctx.script_writer.write_activation_script(
             activation_script,

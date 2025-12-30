@@ -262,6 +262,8 @@ def _build_activation_script_with_commands(
     # Get base activation script (cd + venv + env)
     script = render_activation_script(
         worktree_path=worktree_path,
+        target_subpath=None,
+        post_cd_commands=None,
         final_message="",  # We'll add commands instead
         comment="implement activation",
     )

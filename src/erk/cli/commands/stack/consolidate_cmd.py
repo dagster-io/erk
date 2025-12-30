@@ -360,6 +360,8 @@ def consolidate_stack(
     if name is not None and script and not dry_run:
         script_content = render_activation_script(
             worktree_path=target_worktree_path,
+            target_subpath=None,
+            post_cd_commands=None,
             final_message='echo "✓ Went to consolidated worktree."',
             comment="work activate-script (consolidate)",
         )

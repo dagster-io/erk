@@ -84,6 +84,8 @@ def test_render_navigation_script_non_root_matches_activation_script(tmp_path: P
 
     activation_result = render_activation_script(
         worktree_path=worktree_path,
+        target_subpath=None,
+        post_cd_commands=None,
         final_message='echo "Success"',
         comment="test comment",
     )

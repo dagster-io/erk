@@ -96,6 +96,8 @@ def render_navigation_script(
         )
     return render_activation_script(
         worktree_path=target_path,
+        target_subpath=None,
+        post_cd_commands=None,
         final_message=f'echo "{success_message}"',
         comment=comment,
     )

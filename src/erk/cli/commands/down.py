@@ -100,6 +100,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                 script_content = render_activation_script(
                     worktree_path=root_path,
                     target_subpath=compute_relative_path_in_worktree(worktrees, ctx.cwd),
+                    post_cd_commands=None,
                     final_message='echo "Went to root repo: $(pwd)"',
                     comment="work activate-script (root repo)",
                 )
@@ -135,6 +136,9 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
             activation_script = render_activation_script(
                 worktree_path=target_wt_path,
                 target_subpath=compute_relative_path_in_worktree(worktrees, ctx.cwd),
+                post_cd_commands=None,
+                final_message='echo "Activated worktree: $(pwd)"',
+                comment="work activate-script",
             )
             result = ctx.script_writer.write_activation_script(
                 activation_script,

@@ -38,10 +38,10 @@ __erk_log_verbose() {
 def render_activation_script(
     *,
     worktree_path: Path,
-    target_subpath: Path | None = None,
-    post_cd_commands: Sequence[str] | None = None,
-    final_message: str = 'echo "Activated worktree: $(pwd)"',
-    comment: str = "work activate-script",
+    target_subpath: Path | None,
+    post_cd_commands: Sequence[str] | None,
+    final_message: str,
+    comment: str,
 ) -> str:
     """Return shell code that activates a worktree's venv and .env.
 
@@ -60,8 +60,9 @@ def render_activation_script(
             falls back to the worktree root.
         post_cd_commands: Optional sequence of shell commands to run after venv
             activation, before final message. Useful for git pull after landing a PR.
-        final_message: Shell command for final echo message (default shows activation)
-        comment: Comment line for script identification (default: "work activate-script")
+            Pass None if no post-cd commands are needed.
+        final_message: Shell command for final echo message
+        comment: Comment line for script identification
 
     Returns:
         Shell script as a string with newlines
@@ -70,7 +71,9 @@ def render_activation_script(
         >>> script = render_activation_script(
         ...     worktree_path=Path("/path/to/worktree"),
         ...     target_subpath=Path("src/lib"),
-        ...     final_message='echo "Ready: $(pwd)"'
+        ...     post_cd_commands=None,
+        ...     final_message='echo "Ready: $(pwd)"',
+        ...     comment="work activate-script",
         ... )
     """
     wt = shlex.quote(str(worktree_path))

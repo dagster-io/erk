@@ -75,7 +75,10 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
         if script:
             activation_script = render_activation_script(
                 worktree_path=existing_worktree,
+                target_subpath=None,
+                post_cd_commands=None,
                 final_message=f'echo "Went to existing worktree for PR #{pr_number}"',
+                comment="work activate-script",
             )
             result = ctx.script_writer.write_activation_script(
                 activation_script,
@@ -126,7 +129,10 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
     if script:
         activation_script = render_activation_script(
             worktree_path=worktree_path,
+            target_subpath=None,
+            post_cd_commands=None,
             final_message=f'echo "Checked out PR #{pr_number} at $(pwd)"',
+            comment="work activate-script",
         )
         result = ctx.script_writer.write_activation_script(
             activation_script,

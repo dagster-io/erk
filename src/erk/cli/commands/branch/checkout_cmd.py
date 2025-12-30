@@ -212,7 +212,9 @@ def _perform_checkout(
         script_content = render_activation_script(
             worktree_path=target_path,
             target_subpath=relative_path,
+            post_cd_commands=None,
             final_message=switch_message,
+            comment="work activate-script",
         )
 
         result = ctx.script_writer.write_activation_script(
