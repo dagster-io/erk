@@ -59,6 +59,23 @@ Use agents instead of direct Bash:
 
 - **pytest, pyright, ruff, prettier, make, gt** → Use `devrun` agent (Task tool)
 
+#### devrun Agent - Prompt Restrictions
+
+**FORBIDDEN prompts to devrun:**
+
+- ❌ "fix any errors that arise"
+- ❌ "make the tests pass"
+- ❌ "update the imports"
+- ❌ "correct the issues"
+- ❌ Any prompt implying devrun should modify files
+
+**REQUIRED prompt pattern:**
+
+- ✅ "Run [command] and report results"
+- ✅ "Execute [command] and parse output"
+
+devrun is READ-ONLY. It runs commands and reports. Parent agent handles all fixes.
+
 ### Tier 4: Documentation Lookup
 
 For detailed reference, consult the documentation index which maps each document to specific "read when..." conditions:
