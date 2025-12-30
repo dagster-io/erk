@@ -257,24 +257,30 @@ class Graphite(ABC):
         self,
         git_ops: Git,
         repo_root: Path,
-        worktrees: list[WorktreeInfo],
         branch: str,
     ) -> WorktreeInfo | None:
         """Find the worktree of the closest ancestor branch.
 
         Walks up the Graphite parent chain to find the first ancestor
-        that has a worktree checked out. This is a composite method that
-        uses get_parent_branch() to traverse the branch hierarchy.
+        that has a worktree checked out. This is a composing template method
+        that uses get_parent_branch() to traverse the branch hierarchy.
 
         Args:
-            git_ops: Git instance for accessing git common directory
+            git_ops: Git instance for worktree listing and git common directory
             repo_root: Repository root directory
-            worktrees: List of all worktrees from list_worktrees()
             branch: Branch name to find ancestor worktree for
 
         Returns:
-            WorktreeInfo of the closest ancestor with a worktree, or None if not found.
+            WorktreeInfo of the closest ancestor with a worktree, or None if:
+            - Branch is not tracked by Graphite
+            - No ancestor has a worktree
         """
+        # Validate branch exists in Graphite
+        all_branches = self.get_all_branches(git_ops, repo_root)
+        if branch not in all_branches:
+            return None
+
+        worktrees = git_ops.list_worktrees(repo_root)
         current = branch
         while True:
             parent = self.get_parent_branch(git_ops, repo_root, current)

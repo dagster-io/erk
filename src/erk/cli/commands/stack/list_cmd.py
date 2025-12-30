@@ -56,7 +56,7 @@ def list_stack(ctx: ErkContext) -> None:
             wt = matching_worktrees[0]
         else:
             # Branch has no direct worktree - find closest ancestor with one
-            wt = ctx.graphite.find_ancestor_worktree(ctx.git, repo.root, worktrees, branch)
+            wt = ctx.graphite.find_ancestor_worktree(ctx.git, repo.root, branch)
             if wt is None:
                 continue  # Only skip if truly no worktree found
 
