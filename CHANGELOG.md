@@ -7,11 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-As of a92830194
+As of bc6a308b0
+
+### Major Changes
+
+- The kit system has been completed eliminated. Erk installs its own artifacts directly with no user management required.
+- We have moved back everything to be at repo-level. You must run claude at git repo root. This has simplified the architecture
+- Migrate to static `erk exec` architecture, eliminating dynamic kit script loading (d82789f66)
+- Merge git kit into erk artifacts with unified `/erk:git-pr-push` command namespace (e224d4279)
+- Merge gt kit into erk artifacts, consolidating Graphite stack management (38de6381e)
+
+### Added
+
+- Add "Edit the plan" option to exit plan mode hook (d0ddc2889)
+- Add `-f`/`--force` flag to `erk pr submit` for diverged branches (a8b46b01f)
+- Add `show_hidden_commands` config option to control visibility of deprecated commands (91032b07d)
 
 ### Changed
 
 - Move `/gt:pr-submit` to `/erk:pr-submit`, from the gt kit to the erk kit
+- Move erk scripts to top-level `erk exec` from `erk kit exec erk` (7b3c2b2fd)
+- Remove kit registry subsystem (e77266b27)
+- Remove `kit list`, `remove`, `search`, and `show` commands - consolidated into `dot-agent` (0ab9f47c6)
+- Rename `auto_restack_skip_dangerous` config to `auto_restack_require_dangerous_flag` with flipped default (9785d6fd5)
+- Convert devrun from kit to single agent file (8ad2729fc)
+- Remove dignified-python kit - consolidated into vanilla skill (d3f19bc5d)
+- Consolidate dignified-python skill into single version-aware implementation (a058a259f)
+
+### Fixed
+
+- Fix `erk stack list` to show branches without worktrees using ancestor worktree (bc6a308b0)
+- Fix: Validate GitHub PR base branch matches local trunk before landing (3897eb658)
+- Fix AskUserQuestion option formatting in exit plan mode hook (ff62f6ac0)
+- Fix hook subdirectory bug by using shared scratch directory utilities (7da1528fc)
+
+### Removed
+
+- Remove objectives feature (cf812796e)
+- Disable session context embedding in plan save-to-issue command (8a85b62e6)
 
 ## [0.2.8] - 2025-12-18 06:51 PT
 
