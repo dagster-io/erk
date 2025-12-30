@@ -5,7 +5,6 @@ kit_id = "erk"
 source_type = "bundled"
 version = "0.2.8"
 artifacts = [
-    ".claude/agents/erk/git-pr-push-agent.md",
     ".claude/commands/erk/plan-implement.md",
     ".claude/commands/erk/merge-conflicts-fix.md",
     ".claude/commands/erk/plan-submit.md",

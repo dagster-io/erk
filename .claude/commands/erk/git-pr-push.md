@@ -21,13 +21,13 @@ Automatically create a git commit with a helpful summary message and push the cu
 
 ## What This Command Does
 
-Delegates the complete git-only push-pr workflow to the `git-pr-push-agent` agent, which handles:
+Handles the complete git-only push-pr workflow:
 
 1. Check for uncommitted changes and stage/commit them if needed
 2. Analyze git diff to generate meaningful commit message
 3. Create commit with AI-generated message
 4. Push to origin with upstream tracking
-5. Create GitHub PR
+5. Create GitHub PR (or find existing one)
 6. Report results with PR URL
 
 ## Key Differences from /gt:submit-branch
@@ -86,7 +86,7 @@ repo_root=$(git rev-parse --show-toplevel)
 git diff --staged
 ```
 
-@../../docs/shared/diff-analysis-guide.md
+Load the `diff-analysis` skill for commit message generation guidance.
 
 ### Step 4: Create Commit
 
@@ -267,3 +267,81 @@ Option 2: Force push (⚠️ overwrites remote)
 ```
 
 Note: The "PR already exists" case is now handled automatically in Step 6.5. If a PR exists for the current branch, the command will skip PR creation and report the existing PR URL instead.
+
+## Best Practices
+
+### Never Change Directory
+
+**NEVER use `cd` during execution.** Always use absolute paths or git's `-C` flag.
+
+```bash
+# ❌ WRONG
+cd /path/to/repo && git status
+
+# ✅ CORRECT
+git -C /path/to/repo status
+```
+
+**Rationale:** Changing directories pollutes the execution context and makes it harder to reason about state. The working directory should remain stable throughout the entire workflow.
+
+### Never Write to Temporary Files
+
+**NEVER write commit messages or other content to temporary files.** Always use in-context manipulation and shell built-ins.
+
+```bash
+# ❌ WRONG - Triggers permission prompts
+echo "$message" > "${TMPDIR:-/tmp}/commit_msg.txt"
+git commit -F "${TMPDIR:-/tmp}/commit_msg.txt"
+
+# ✅ CORRECT - In-memory heredoc
+git commit -m "$(cat <<'EOF'
+$message
+EOF
+)"
+```
+
+**Rationale:** Temporary files require filesystem permissions and create unnecessary I/O. Since agents operate in isolated contexts, there's no risk of context pollution from in-memory manipulation.
+
+## Quality Standards
+
+### Always
+
+- Be concise and strategic in analysis
+- Use component-level descriptions
+- Highlight breaking changes prominently
+- Note test coverage patterns
+- Use relative paths from repository root
+- Provide clear error guidance
+- Use standard git + GitHub CLI commands (no Graphite dependencies)
+
+### Never
+
+- Add Claude attribution or footer to commit messages
+- Speculate about intentions without code evidence
+- Provide exhaustive lists of every function touched
+- Include implementation details (specific variable names, line numbers)
+- Provide time estimates
+- Use vague language like "various changes"
+- Retry failed operations automatically
+- Write to temporary files (use in-context quoting and shell built-ins instead)
+- Use Graphite-specific commands (`gt submit`, `gt restack`, etc.)
+
+## Self-Verification
+
+Before completing, verify:
+
+- [ ] GitHub CLI authentication checked
+- [ ] Git status verified
+- [ ] Uncommitted changes staged (if any existed)
+- [ ] Staged diff analyzed
+- [ ] Diff analysis is concise and strategic (3-5 key changes max)
+- [ ] Commit message has no Claude footer
+- [ ] File paths are relative to repository root
+- [ ] Commit created successfully
+- [ ] Branch pushed to origin with upstream tracking
+- [ ] Closing text obtained (if issue reference exists)
+- [ ] GitHub PR created successfully (or existing PR found)
+- [ ] PR URL extracted from output
+- [ ] Results displayed with "What Was Done" section listing actions
+- [ ] PR URL placed at end under "View PR" section
+- [ ] Any errors handled with helpful guidance

@@ -3,8 +3,6 @@ version: 0.2.8
 description: Erk implementation workflow commands for creating worktrees from plans (.PLAN.md) and executing implementation. Includes commands for plan creation, execution, and quick access.
 license: See LICENSE.md
 artifacts:
-  agent:
-    - agents/erk/git-pr-push-agent.md
   command:
     - commands/erk/plan-implement.md
     - commands/erk/merge-conflicts-fix.md
