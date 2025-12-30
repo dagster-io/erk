@@ -18,3 +18,7 @@ print(
 ⚠️ MANDATORY: Load and READ the full dignified-python skill documents.
    These are examples only. You MUST strictly abide by ALL rules in the skill."""
 )
+print(
+    "🧪 AFTER completing Python changes: Verify sufficient test coverage. "
+    "Behavior changes ALWAYS need tests."
+)
