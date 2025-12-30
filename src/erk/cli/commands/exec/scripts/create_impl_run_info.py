@@ -47,7 +47,7 @@ import click
 from erk_shared.context.helpers import require_cwd
 
 
-@dataclass
+@dataclass(frozen=True)
 class RunInfoCreated:
     """Success result with path to created file."""
 
@@ -55,7 +55,7 @@ class RunInfoCreated:
     path: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class RunInfoError:
     """Error result when run-info.json cannot be created."""
 

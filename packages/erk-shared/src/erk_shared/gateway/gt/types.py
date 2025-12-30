@@ -23,7 +23,7 @@ class CommandResult(NamedTuple):
 # =============================================================================
 
 
-@dataclass
+@dataclass(frozen=True)
 class SquashSuccess:
     """Success result from idempotent squash."""
 
@@ -33,7 +33,7 @@ class SquashSuccess:
     message: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class SquashError:
     """Error result from idempotent squash."""
 
@@ -63,7 +63,7 @@ LandPrErrorType = Literal[
 ]
 
 
-@dataclass
+@dataclass(frozen=True)
 class LandPrSuccess:
     """Success result from landing a PR."""
 
@@ -73,7 +73,7 @@ class LandPrSuccess:
     message: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class LandPrError:
     """Error result from landing a PR."""
 
@@ -99,7 +99,7 @@ PrepErrorType = Literal[
 ]
 
 
-@dataclass
+@dataclass(frozen=True)
 class PrepResult:
     """Success result from prep phase."""
 
@@ -113,7 +113,7 @@ class PrepResult:
     message: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class PrepError:
     """Error result from prep phase."""
 
@@ -152,7 +152,7 @@ PostAnalysisErrorType = Literal[
 ]
 
 
-@dataclass
+@dataclass(frozen=True)
 class PreAnalysisResult:
     """Success result from pre-analysis phase."""
 
@@ -169,7 +169,7 @@ class PreAnalysisResult:
     issue_number: int | None = None  # Issue number if linked via .impl/issue.json
 
 
-@dataclass
+@dataclass(frozen=True)
 class PreAnalysisError:
     """Error result from pre-analysis phase."""
 
@@ -179,7 +179,7 @@ class PreAnalysisError:
     details: dict[str, str | bool]
 
 
-@dataclass
+@dataclass(frozen=True)
 class PostAnalysisResult:
     """Success result from post-analysis phase."""
 
@@ -193,7 +193,7 @@ class PostAnalysisResult:
     message: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class PostAnalysisError:
     """Error result from post-analysis phase."""
 
@@ -203,7 +203,7 @@ class PostAnalysisError:
     details: dict[str, str]
 
 
-@dataclass
+@dataclass(frozen=True)
 class PreflightResult:
     """Result from preflight phase (pre-analysis + submit + diff extraction)."""
 

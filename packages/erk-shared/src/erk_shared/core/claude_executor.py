@@ -108,7 +108,7 @@ ClaudeEvent = (
 )
 
 
-@dataclass
+@dataclass(frozen=True)
 class PromptResult:
     """Result of executing a single prompt.
 
@@ -123,7 +123,7 @@ class PromptResult:
     error: str | None
 
 
-@dataclass
+@dataclass(frozen=True)
 class CommandResult:
     """Result of executing a Claude CLI command.
 

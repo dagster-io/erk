@@ -58,7 +58,7 @@ from erk_shared.github.types import PRNotFound
 from erk_shared.prompt_executor import PromptExecutor
 
 
-@dataclass
+@dataclass(frozen=True)
 class UpdateSuccess:
     """Success result when PR body is updated."""
 
@@ -66,7 +66,7 @@ class UpdateSuccess:
     pr_number: int
 
 
-@dataclass
+@dataclass(frozen=True)
 class UpdateError:
     """Error result when PR body update fails."""
 

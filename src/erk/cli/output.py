@@ -243,7 +243,7 @@ def stream_command_with_feedback(
     )
 
 
-@dataclass
+@dataclass(frozen=True)
 class AutoRestackResult:
     """Result from auto-restack streaming execution."""
 

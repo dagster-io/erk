@@ -16,7 +16,7 @@ from erk_shared.extraction.types import BranchContext
 from erk_shared.git.abc import Git
 
 
-@dataclass
+@dataclass(frozen=True)
 class SessionContextResult:
     """Result of session context collection.
 

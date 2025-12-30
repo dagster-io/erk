@@ -11,7 +11,7 @@ from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.real import RealGit
 
 
-@dataclass
+@dataclass(frozen=True)
 class ErkDevContext:
     """Context object for erk-dev commands.
 

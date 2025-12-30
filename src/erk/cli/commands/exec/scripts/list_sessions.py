@@ -42,7 +42,7 @@ from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionSto
 from erk_shared.git.abc import Git
 
 
-@dataclass
+@dataclass(frozen=True)
 class BranchContext:
     """Git branch context for session selection behavior."""
 
@@ -51,7 +51,7 @@ class BranchContext:
     is_on_trunk: bool
 
 
-@dataclass
+@dataclass(frozen=True)
 class SessionInfo:
     """Metadata for a session log file."""
 
@@ -64,7 +64,7 @@ class SessionInfo:
     is_current: bool
 
 
-@dataclass
+@dataclass(frozen=True)
 class ListSessionsResult:
     """Success result with session list and context."""
 
@@ -76,7 +76,7 @@ class ListSessionsResult:
     filtered_count: int  # Count of sessions filtered by --min-size
 
 
-@dataclass
+@dataclass(frozen=True)
 class ListSessionsError:
     """Error result when listing sessions fails."""
 

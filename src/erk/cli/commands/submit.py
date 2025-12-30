@@ -108,7 +108,7 @@ def load_workflow_config(repo_root: Path, workflow_name: str) -> dict[str, str]:
     return {k: str(v) for k, v in data.items()}
 
 
-@dataclass
+@dataclass(frozen=True)
 class ValidatedIssue:
     """Issue that passed all validation checks."""
 
@@ -120,7 +120,7 @@ class ValidatedIssue:
     is_extraction_origin: bool
 
 
-@dataclass
+@dataclass(frozen=True)
 class SubmitResult:
     """Result of submitting a single issue."""
 

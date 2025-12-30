@@ -6,7 +6,7 @@ from pathlib import Path
 from erk_shared.prompt_executor.abc import PromptExecutor, PromptResult
 
 
-@dataclass
+@dataclass(frozen=True)
 class PromptCall:
     """Record of a prompt execution call."""
 
