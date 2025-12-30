@@ -243,7 +243,7 @@ class TestHookIntegration:
         mock_git_result.stdout = str(tmp_path) + "\n"
 
         with (
-            patch("erk.kits.hooks.decorators.is_in_managed_project", return_value=True),
+            patch("erk.hooks.decorators.is_in_managed_project", return_value=True),
             patch("subprocess.run", return_value=mock_git_result),
             patch(
                 "erk.cli.commands.exec.scripts.exit_plan_mode_hook.extract_slugs_from_session",
@@ -273,7 +273,7 @@ class TestHookIntegration:
         mock_git_result.stdout = str(tmp_path) + "\n"
 
         with (
-            patch("erk.kits.hooks.decorators.is_in_managed_project", return_value=True),
+            patch("erk.hooks.decorators.is_in_managed_project", return_value=True),
             patch("subprocess.run", return_value=mock_git_result),
             patch(
                 "erk.cli.commands.exec.scripts.exit_plan_mode_hook.extract_slugs_from_session",
@@ -291,7 +291,7 @@ class TestHookIntegration:
         """Verify hook works when no stdin provided."""
         runner = CliRunner()
 
-        with patch("erk.kits.hooks.decorators.is_in_managed_project", return_value=True):
+        with patch("erk.hooks.decorators.is_in_managed_project", return_value=True):
             result = runner.invoke(exit_plan_mode_hook)
 
         assert result.exit_code == 0

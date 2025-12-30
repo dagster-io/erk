@@ -14,7 +14,7 @@ from pathlib import Path
 
 import click
 
-from erk.kits.hooks.decorators import logged_hook, project_scoped
+from erk.hooks.decorators import logged_hook, project_scoped
 
 
 def _get_repo_root() -> Path:

@@ -27,10 +27,11 @@ import json
 
 import click
 
-from erk.kits.cli_result import exit_with_error
+from erk.cli.script_output import exit_with_error
 from erk.kits.context_helpers import require_github_issues
-from erk.kits.non_ideal_state import GitHubAPIFailed, GitHubChecks
 from erk_shared.context.helpers import require_repo_root
+from erk_shared.github.checks import GitHubChecks
+from erk_shared.non_ideal_state import GitHubAPIFailed
 
 
 @click.command(name="add-reaction-to-comment")

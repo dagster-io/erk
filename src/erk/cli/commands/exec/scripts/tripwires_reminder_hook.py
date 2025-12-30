@@ -3,7 +3,7 @@
 
 import click
 
-from erk.kits.hooks.decorators import logged_hook, project_scoped
+from erk.hooks.decorators import logged_hook, project_scoped
 
 
 @click.command()

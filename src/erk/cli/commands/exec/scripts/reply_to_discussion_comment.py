@@ -26,16 +26,16 @@ from datetime import UTC, datetime
 
 import click
 
-from erk.kits.cli_result import exit_with_error
+from erk.cli.script_output import exit_with_error
 from erk.kits.context_helpers import require_github_issues
-from erk.kits.non_ideal_state import (
+from erk_shared.context.helpers import get_current_branch, require_github, require_repo_root
+from erk_shared.github.checks import GitHubChecks
+from erk_shared.non_ideal_state import (
     BranchDetectionFailed,
     GitHubAPIFailed,
-    GitHubChecks,
     NoPRForBranch,
     PRNotFoundError,
 )
-from erk_shared.context.helpers import get_current_branch, require_github, require_repo_root
 
 
 def _format_reply(author: str, url: str, body: str, action_summary: str) -> str:
