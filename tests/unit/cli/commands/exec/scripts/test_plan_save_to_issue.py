@@ -184,8 +184,8 @@ def test_plan_save_to_issue_label_created() -> None:
     assert color == "0E8A16"
 
 
-def test_plan_save_to_issue_session_context_captured(tmp_path: Path) -> None:
-    """Test that session context is captured and posted as comments."""
+def test_plan_save_to_issue_session_context_disabled(tmp_path: Path) -> None:
+    """Test that session context is NOT captured (feature disabled)."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
         current_branches={tmp_path: "feature-branch"},
@@ -230,18 +230,14 @@ def test_plan_save_to_issue_session_context_captured(tmp_path: Path) -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["session_context_chunks"] >= 1
-    assert output["session_ids"] == ["test-session-id"]
+    # Session context embedding is disabled - always returns 0 chunks and empty session_ids
+    assert output["session_context_chunks"] == 0
+    assert output["session_ids"] == []
 
-    # Verify: plan comment + at least one session context comment
-    assert len(fake_gh.added_comments) >= 2
-    # First comment is the plan
-    _issue_num1, plan_comment, _comment_id1 = fake_gh.added_comments[0]
+    # Only plan comment is posted, no session context comments
+    assert len(fake_gh.added_comments) == 1
+    _issue_num, plan_comment, _comment_id = fake_gh.added_comments[0]
     assert "Step 1" in plan_comment
-
-    # Second comment is session context
-    _issue_num2, session_comment, _comment_id2 = fake_gh.added_comments[1]
-    assert "session-content" in session_comment
 
 
 def test_plan_save_to_issue_session_context_skipped_when_none() -> None:
@@ -307,8 +303,8 @@ def test_plan_save_to_issue_json_output_includes_session_metadata() -> None:
     assert isinstance(output["session_ids"], list)
 
 
-def test_plan_save_to_issue_passes_session_id_to_session_store(tmp_path: Path) -> None:
-    """Test that --session-id argument affects session selection."""
+def test_plan_save_to_issue_session_id_still_creates_signal(tmp_path: Path) -> None:
+    """Test that --session-id argument still creates signal file even with context disabled."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
         current_branches={tmp_path: "feature"},
@@ -316,48 +312,48 @@ def test_plan_save_to_issue_passes_session_id_to_session_store(tmp_path: Path) -
     )
 
     test_session_id = "test-session-12345"
-    session_content = '{"type": "user", "message": {"content": "Test"}}\n'
     plan_content = "# Feature Plan\n\n- Step 1"
 
-    # Session store with the specific session ID and plan
     fake_store = FakeClaudeCodeSessionStore(
-        projects={
-            tmp_path: FakeProject(
-                sessions={
-                    test_session_id: FakeSessionData(
-                        content=session_content,
-                        size_bytes=2000,
-                        modified_at=1234567890.0,
-                    )
-                }
-            )
-        },
         plans={"session-id-test": plan_content},
     )
 
     runner = CliRunner()
 
-    result = runner.invoke(
-        plan_save_to_issue,
-        ["--format", "json", "--session-id", test_session_id],
-        obj=ErkContext.for_test(
-            github_issues=fake_gh,
-            git=fake_git,
-            session_store=fake_store,
-            cwd=tmp_path,
-            repo_root=tmp_path,
-        ),
-    )
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        result = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "json", "--session-id", test_session_id],
+            obj=ErkContext.for_test(
+                github_issues=fake_gh,
+                git=fake_git,
+                session_store=fake_store,
+                cwd=Path(td),
+                repo_root=Path(td),
+            ),
+        )
 
-    assert result.exit_code == 0, f"Failed: {result.output}"
-    output = json.loads(result.output)
-    assert output["success"] is True
-    # The session should be captured
-    assert test_session_id in output["session_ids"]
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = json.loads(result.output)
+        assert output["success"] is True
+        # Session context embedding is disabled - session_ids will be empty
+        assert output["session_ids"] == []
+        assert output["session_context_chunks"] == 0
+
+        # But signal file should still be created
+        signal_file = (
+            Path(td)
+            / ".erk"
+            / "scratch"
+            / "sessions"
+            / test_session_id
+            / "exit-plan-mode-hook.plan-saved.signal"
+        )
+        assert signal_file.exists()
 
 
-def test_plan_save_to_issue_display_format_shows_session_context(tmp_path: Path) -> None:
-    """Test display format shows session context chunk count when present."""
+def test_plan_save_to_issue_display_format_no_session_context_shown(tmp_path: Path) -> None:
+    """Test display format does NOT show session context (feature disabled)."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
         current_branches={tmp_path: "feature-branch"},
@@ -396,8 +392,8 @@ def test_plan_save_to_issue_display_format_shows_session_context(tmp_path: Path)
     )
 
     assert result.exit_code == 0
-    assert "Session context:" in result.output
-    assert "chunks" in result.output
+    # Session context embedding is disabled - no session context line shown
+    assert "Session context:" not in result.output
 
 
 def test_plan_save_to_issue_no_session_context_without_session_id(tmp_path: Path) -> None:
@@ -449,11 +445,11 @@ def test_plan_save_to_issue_no_session_context_without_session_id(tmp_path: Path
     assert output["session_context_chunks"] == 0
 
 
-def test_plan_save_to_issue_session_id_flag_enables_context_capture(tmp_path: Path) -> None:
-    """Test --session-id flag enables session context capture.
+def test_plan_save_to_issue_session_id_flag_does_not_capture_context(tmp_path: Path) -> None:
+    """Test --session-id flag does NOT capture context (feature disabled).
 
-    When --session-id is provided, it should be used to find and capture
-    session context from the session store.
+    Even when --session-id is provided, session context is not captured
+    because the feature is disabled.
     """
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
@@ -498,8 +494,9 @@ def test_plan_save_to_issue_session_id_flag_enables_context_capture(tmp_path: Pa
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    # The flag session should be captured
-    assert flag_session_id in output["session_ids"]
+    # Session context embedding is disabled - session_ids will be empty
+    assert output["session_ids"] == []
+    assert output["session_context_chunks"] == 0
 
 
 def test_plan_save_to_issue_creates_signal_file(tmp_path: Path) -> None:

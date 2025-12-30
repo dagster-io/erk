@@ -29,12 +29,9 @@ import click
 from erk.kits.context_helpers import require_github_issues
 from erk_shared.context.helpers import (
     require_cwd,
-    require_git,
     require_repo_root,
     require_session_store,
 )
-from erk_shared.extraction.session_context import collect_session_context
-from erk_shared.github.metadata import render_session_content_blocks
 from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.output.next_steps import format_next_steps_plain
 from erk_shared.scratch.scratch import get_scratch_dir
@@ -142,39 +139,45 @@ def plan_save_to_issue(
                 click.echo(json.dumps({"success": False, "error": result.error}))
         raise SystemExit(1)
 
-    # Capture and embed session context (non-blocking)
+    # DISABLED: Session context embedding is temporarily disabled while rethinking extraction plans
+    # To re-enable, uncomment the following block and restore imports:
+    #   from erk_shared.context.helpers import require_git
+    #   from erk_shared.extraction.session_context import collect_session_context
+    #   from erk_shared.github.metadata import render_session_content_blocks
+    #
+    #   git = require_git(ctx)
+    #   session_result = collect_session_context(
+    #       git=git,
+    #       cwd=cwd,
+    #       session_store=session_store,
+    #       current_session_id=effective_session_id,
+    #       min_size=1024,
+    #       limit=20,
+    #   )
+    #
+    #   if session_result is not None and result.issue_number is not None:
+    #       # Render and post as comments
+    #       session_label = session_result.branch_context.current_branch or "planning-session"
+    #       content_blocks = render_session_content_blocks(
+    #           content=session_result.combined_xml,
+    #           session_label=session_label,
+    #           extraction_hints=["Planning session context for downstream analysis"],
+    #       )
+    #
+    #       # Post each block as a comment (failures are non-blocking)
+    #       for block in content_blocks:
+    #           try:
+    #               github.add_comment(repo_root, result.issue_number, block)
+    #               session_context_chunks += 1
+    #           except RuntimeError:
+    #               # Session context is supplementary - don't fail the command
+    #               pass
+    #
+    #       session_ids = session_result.session_ids
+
+    # Output JSON still includes these for backwards compatibility
     session_context_chunks = 0
     session_ids: list[str] = []
-
-    git = require_git(ctx)
-    session_result = collect_session_context(
-        git=git,
-        cwd=cwd,
-        session_store=session_store,
-        current_session_id=effective_session_id,
-        min_size=1024,
-        limit=20,
-    )
-
-    if session_result is not None and result.issue_number is not None:
-        # Render and post as comments
-        session_label = session_result.branch_context.current_branch or "planning-session"
-        content_blocks = render_session_content_blocks(
-            content=session_result.combined_xml,
-            session_label=session_label,
-            extraction_hints=["Planning session context for downstream analysis"],
-        )
-
-        # Post each block as a comment (failures are non-blocking)
-        for block in content_blocks:
-            try:
-                github.add_comment(repo_root, result.issue_number, block)
-                session_context_chunks += 1
-            except RuntimeError:
-                # Session context is supplementary - don't fail the command
-                pass
-
-        session_ids = session_result.session_ids
 
     # Step 9: Create signal file to indicate plan was saved
     if effective_session_id:
