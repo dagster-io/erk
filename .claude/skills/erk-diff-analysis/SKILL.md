@@ -1,5 +1,5 @@
 ---
-name: diff-analysis
+name: erk-diff-analysis
 description: Internal skill for commit message generation. Only load when explicitly requested by name or invoked by commands.
 ---
 
@@ -11,7 +11,7 @@ This skill provides the commit message generation prompt used by PR submission c
 
 Only load this skill when:
 
-- Explicitly requested by name (`diff-analysis`)
+- Explicitly requested by name (`erk-diff-analysis`)
 - Invoked by commands like `/erk:git-pr-push`
 
 ## Usage

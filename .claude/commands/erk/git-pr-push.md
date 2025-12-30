@@ -86,7 +86,7 @@ repo_root=$(git rev-parse --show-toplevel)
 git diff --staged
 ```
 
-Load the `diff-analysis` skill for commit message generation guidance.
+Load the `erk-diff-analysis` skill for commit message generation guidance.
 
 ### Step 4: Create Commit
 

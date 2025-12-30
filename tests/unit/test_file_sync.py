@@ -19,8 +19,8 @@ def test_diff_analysis_guide_in_sync_with_commit_message_prompt() -> None:
     """Verify the two copies of the diff-analysis prompt are identical.
 
     The prompt exists in two locations:
-    1. .claude/skills/diff-analysis/references/commit-message-prompt.md
-       (used by diff-analysis skill)
+    1. .claude/skills/erk-diff-analysis/references/commit-message-prompt.md
+       (used by erk-diff-analysis skill)
     2. packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md
        (used by Python CLI)
 
@@ -29,7 +29,7 @@ def test_diff_analysis_guide_in_sync_with_commit_message_prompt() -> None:
     repo_root = _get_repo_root()
 
     claude_docs_copy = (
-        repo_root / ".claude/skills/diff-analysis/references/commit-message-prompt.md"
+        repo_root / ".claude/skills/erk-diff-analysis/references/commit-message-prompt.md"
     )
     python_package_copy = (
         repo_root / "packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md"
