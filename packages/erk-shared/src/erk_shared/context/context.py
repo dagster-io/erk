@@ -34,7 +34,6 @@ from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues
 from erk_shared.github.types import RepoInfo
 from erk_shared.github_admin.abc import GitHubAdmin
-from erk_shared.objectives.storage import ObjectiveStore
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.prompt_executor import PromptExecutor
 
@@ -69,7 +68,6 @@ class ErkContext:
     time: Time
     session_store: ClaudeCodeSessionStore
     plan_store: PlanStore
-    objectives: ObjectiveStore
     prompt_executor: PromptExecutor  # From DotAgentContext
 
     # Shell/CLI integrations (moved to erk_shared)

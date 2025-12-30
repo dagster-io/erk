@@ -82,7 +82,6 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkConte
     from erk_shared.github.issues import RealGitHubIssues
     from erk_shared.github.real import RealGitHub
     from erk_shared.github_admin.fake import FakeGitHubAdmin
-    from erk_shared.objectives.storage import FakeObjectiveStore
     from erk_shared.plan_store.github import GitHubPlanStore
     from erk_shared.prompt_executor.real import RealPromptExecutor
 
@@ -128,7 +127,6 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkConte
         wt_stack=WtStack(git, wt_stack_repo_root, fake_graphite),
         time=FakeTime(),
         plan_store=GitHubPlanStore(github_issues),
-        objectives=FakeObjectiveStore(),
         shell=FakeShell(),
         completion=FakeCompletion(),
         feedback=SuppressedFeedback(),

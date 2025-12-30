@@ -76,7 +76,6 @@ def context_for_test(
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
-    from erk_shared.objectives.storage import FakeObjectiveStore
     from erk_shared.plan_store.github import GitHubPlanStore
     from erk_shared.prompt_executor.fake import FakePromptExecutor
 
@@ -120,7 +119,6 @@ def context_for_test(
         wt_stack=resolved_wt_stack,
         time=FakeTime(),
         plan_store=GitHubPlanStore(resolved_issues),
-        objectives=FakeObjectiveStore(),
         shell=FakeShell(),
         completion=FakeCompletion(),
         feedback=FakeUserFeedback(),

@@ -62,7 +62,6 @@ from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.real import RealGitHub
 from erk_shared.github.types import RepoInfo
 from erk_shared.github_admin.abc import GitHubAdmin
-from erk_shared.objectives.storage import FileObjectiveStore, ObjectiveStore
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.store import PlanStore
@@ -102,7 +101,6 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
-    from erk_shared.objectives.storage import FakeObjectiveStore
     from erk_shared.prompt_executor.fake import FakePromptExecutor
 
     fake_github = FakeGitHub()
@@ -126,7 +124,6 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         plan_list_service=FakePlanListService(),
         planner_registry=FakePlannerRegistry(),
         session_store=FakeClaudeCodeSessionStore(),
-        objectives=FakeObjectiveStore(),
         prompt_executor=FakePromptExecutor(),
         cwd=cwd,
         global_config=None,
@@ -156,7 +153,6 @@ def context_for_test(
     plan_list_service: PlanListService | None = None,
     planner_registry: PlannerRegistry | None = None,
     session_store: ClaudeCodeSessionStore | None = None,
-    objectives: ObjectiveStore | None = None,
     prompt_executor: PromptExecutor | None = None,
     cwd: Path | None = None,
     global_config: GlobalConfig | None = None,
@@ -217,7 +213,6 @@ def context_for_test(
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
-    from erk_shared.objectives.storage import FakeObjectiveStore
     from erk_shared.prompt_executor.fake import FakePromptExecutor
 
     if git is None:
@@ -272,9 +267,6 @@ def context_for_test(
     if session_store is None:
         session_store = FakeClaudeCodeSessionStore()
 
-    if objectives is None:
-        objectives = FakeObjectiveStore()
-
     if prompt_executor is None:
         prompt_executor = FakePromptExecutor()
 
@@ -326,7 +318,6 @@ def context_for_test(
         plan_list_service=plan_list_service,
         planner_registry=planner_registry,
         session_store=session_store,
-        objectives=objectives,
         prompt_executor=prompt_executor,
         cwd=cwd or sentinel_path(),
         global_config=global_config,
@@ -531,7 +522,6 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         plan_list_service=plan_list_service,
         planner_registry=RealPlannerRegistry(),
         session_store=session_store,
-        objectives=FileObjectiveStore(),
         prompt_executor=prompt_executor,
         cwd=cwd,
         global_config=global_config,

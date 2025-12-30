@@ -149,27 +149,3 @@ def complete_plan_files(
 
         return sorted(candidates)
     return []
-
-
-def complete_objective_names(
-    ctx: click.Context, param: click.Parameter | None, incomplete: str
-) -> list[str]:
-    """Shell completion for objective names.
-
-    Args:
-        ctx: Click context
-        param: Click parameter (unused, but required by Click's completion protocol)
-        incomplete: Partial input string to complete
-
-    Returns:
-        List of completion candidates (objective names matching incomplete text)
-    """
-    with shell_completion_context(ctx) as erk_ctx:
-        repo = discover_repo_context(erk_ctx, erk_ctx.cwd)
-
-        # Get objective names from store
-        objectives = erk_ctx.objectives.list_objectives(repo.root)
-
-        # Filter by incomplete prefix
-        return [name for name in objectives if name.startswith(incomplete)]
-    return []
