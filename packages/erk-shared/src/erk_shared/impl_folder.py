@@ -114,24 +114,27 @@ def get_progress_path(worktree_path: Path) -> Path | None:
     return None
 
 
-_STEP_EXTRACTION_PROMPT = """Extract implementation steps from this plan.
+_STEP_EXTRACTION_PROMPT = """You are a JSON extraction tool. Your ONLY output must be valid JSON with NO other text.
 
-Return ONLY actionable implementation steps/phases.
-EXCLUDE: Testing strategy, Success criteria, Prerequisites, Related documentation
-INCLUDE: Numbered steps, Phase headings, Task lists for implementation
+CRITICAL: Output ONLY a JSON array. No explanations, no markdown, no preamble.
 
-Return as JSON array of strings. Keep original numbering if present.
-Example: ["1. Create module", "2. Add tests", "3. Update docs"]
-If no steps found, return: []
+Task: Extract implementation steps from the plan below.
+- Include: Numbered steps, phase headings, implementation tasks
+- Exclude: Testing strategy, success criteria, prerequisites, documentation
 
-Plan content:
+Output format: ["1. Step one", "2. Step two"]
+Empty plan: []
+
+IMPORTANT: Your response must start with [ and end with ] - nothing else.
+
+Plan:
 {plan_content}"""
 
 
 def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) -> list[str]:
     """Extract implementation steps from plan markdown using LLM.
 
-    Uses Claude Haiku to semantically understand the plan and extract
+    Uses Claude Sonnet to semantically understand the plan and extract
     actionable implementation steps.
 
     Args:
@@ -145,7 +148,7 @@ def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) 
         RuntimeError: If LLM execution fails or returns invalid response
     """
     prompt = _STEP_EXTRACTION_PROMPT.format(plan_content=plan_content)
-    result = prompt_executor.execute_prompt(prompt, model="haiku")
+    result = prompt_executor.execute_prompt(prompt, model="sonnet")
 
     if not result.success:
         msg = f"LLM step extraction failed: {result.error}"
@@ -160,7 +163,7 @@ def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) 
         print("=" * 60, file=sys.stderr)
         print("WARNING: LLM returned empty output for step extraction", file=sys.stderr)
         print("=" * 60, file=sys.stderr)
-        print("Model: haiku", file=sys.stderr)
+        print("Model: sonnet", file=sys.stderr)
         print(f"Prompt length: {len(prompt)} chars", file=sys.stderr)
         print("First 500 chars of prompt:", file=sys.stderr)
         print(prompt[:500], file=sys.stderr)
@@ -173,6 +176,14 @@ def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) 
         # Remove first and last lines (code block markers)
         lines = output.split("\n")
         output = "\n".join(lines[1:-1])
+
+    # Try to extract JSON array if there's preamble text
+    # Look for the first [ and last ] to extract the JSON array
+    if not output.startswith("["):
+        start_idx = output.find("[")
+        end_idx = output.rfind("]")
+        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+            output = output[start_idx : end_idx + 1]
 
     try:
         steps = json.loads(output)
