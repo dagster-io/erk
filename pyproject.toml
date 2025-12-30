@@ -55,7 +55,16 @@ packages = ["src/erk"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "CHANGELOG.md" = "erk/data/CHANGELOG.md"
-"src/erk/data/artifacts" = "erk/data/artifacts"
+# Whitelist specific artifacts from .claude/ for distribution to external users
+# Commands: erk namespace only (not local)
+".claude/commands/erk" = "erk/data/claude/commands/erk"
+# Skills: selected skills useful for external projects
+".claude/skills/dignified-python" = "erk/data/claude/skills/dignified-python"
+".claude/skills/fake-driven-testing" = "erk/data/claude/skills/fake-driven-testing"
+".claude/skills/agent-docs" = "erk/data/claude/skills/agent-docs"
+".claude/skills/erk-diff-analysis" = "erk/data/claude/skills/erk-diff-analysis"
+# Agents: devrun only
+".claude/agents/devrun" = "erk/data/claude/agents/devrun"
 
 [tool.ruff]
 target-version = "py311"

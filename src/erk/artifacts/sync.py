@@ -20,14 +20,15 @@ class SyncResult:
 
 
 @cache
-def get_bundled_artifacts_dir() -> Path:
-    """Get path to bundled artifacts in installed erk package.
+def get_bundled_claude_dir() -> Path:
+    """Get path to bundled .claude/ directory in installed erk package.
 
-    Artifacts are bundled in src/erk/data/artifacts/ as package data.
+    The .claude/ directory from the erk repo is bundled as package data
+    at erk/data/claude/ via pyproject.toml force-include.
     """
     import erk
 
-    return Path(erk.__file__).parent / "data" / "artifacts"
+    return Path(erk.__file__).parent / "data" / "claude"
 
 
 def _is_in_erk_repo(project_dir: Path) -> bool:
@@ -75,12 +76,12 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
             message="Skipped: running in erk repo (artifacts read from source)",
         )
 
-    bundled_dir = get_bundled_artifacts_dir()
+    bundled_dir = get_bundled_claude_dir()
     if not bundled_dir.exists():
         return SyncResult(
             success=False,
             artifacts_installed=0,
-            message=f"Bundled artifacts not found at {bundled_dir}",
+            message=f"Bundled .claude/ not found at {bundled_dir}",
         )
 
     target_claude_dir = project_dir / ".claude"
@@ -88,8 +89,9 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
 
     total_copied = 0
 
-    # Sync each artifact type
-    for subdir in ["commands", "skills", "agents", "docs"]:
+    # Sync whitelisted artifact folders (commands, skills, agents)
+    # Note: docs are not synced - they are project-specific
+    for subdir in ["commands", "skills", "agents"]:
         source = bundled_dir / subdir
         target = target_claude_dir / subdir
         total_copied += _copy_directory_contents(source, target)

@@ -162,11 +162,11 @@ class TestSyncCommand:
         assert "Skipped" in result.output
 
     def test_sync_bundled_not_found(self, tmp_path: Path) -> None:
-        """Fails when bundled artifacts not found."""
+        """Fails when bundled .claude/ not found."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             with patch(
-                "erk.artifacts.sync.get_bundled_artifacts_dir",
+                "erk.artifacts.sync.get_bundled_claude_dir",
                 return_value=Path("/nonexistent"),
             ):
                 result = runner.invoke(sync_cmd)

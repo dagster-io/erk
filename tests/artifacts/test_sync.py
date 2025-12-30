@@ -20,9 +20,9 @@ def test_sync_artifacts_skips_in_erk_repo(tmp_path: Path) -> None:
 
 
 def test_sync_artifacts_fails_when_bundled_not_found(tmp_path: Path) -> None:
-    """Fails when bundled artifacts directory doesn't exist."""
+    """Fails when bundled .claude/ directory doesn't exist."""
     nonexistent = tmp_path / "nonexistent"
-    with patch("erk.artifacts.sync.get_bundled_artifacts_dir", return_value=nonexistent):
+    with patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=nonexistent):
         result = sync_artifacts(tmp_path, force=False)
 
     assert result.success is False
@@ -42,7 +42,7 @@ def test_sync_artifacts_copies_files(tmp_path: Path) -> None:
     target_dir = tmp_path / "project"
     target_dir.mkdir()
 
-    with patch("erk.artifacts.sync.get_bundled_artifacts_dir", return_value=bundled_dir):
+    with patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_dir):
         with patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"):
             result = sync_artifacts(target_dir, force=False)
 
@@ -63,7 +63,7 @@ def test_sync_artifacts_saves_state(tmp_path: Path) -> None:
     target_dir = tmp_path / "project"
     target_dir.mkdir()
 
-    with patch("erk.artifacts.sync.get_bundled_artifacts_dir", return_value=bundled_dir):
+    with patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_dir):
         with patch("erk.artifacts.sync.get_current_version", return_value="2.0.0"):
             sync_artifacts(target_dir, force=False)
 
