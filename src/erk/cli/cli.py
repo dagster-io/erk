@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -108,6 +109,50 @@ def _show_version_change_banner() -> None:
         pass
 
 
+def _show_version_warning() -> None:
+    """Show warning if installed erk version is older than repo-required version.
+
+    This is designed to never fail - any exception is silently caught to ensure
+    the CLI always works.
+    """
+    # Skip if user has disabled version checking
+    if os.environ.get("ERK_SKIP_VERSION_CHECK") == "1":
+        return
+
+    try:
+        # Inline imports to avoid import-time side effects
+        from erk.core.release_notes import get_current_version
+        from erk.core.version_check import (
+            format_version_warning,
+            get_required_version,
+            is_version_outdated,
+        )
+        from erk_shared.git.real import RealGit
+
+        # Find git repo root (if in a git repo)
+        git = RealGit()
+        repo_root = git.get_repository_root(Path.cwd())
+        if repo_root is None:
+            return
+
+        # Read required version from repo
+        required = get_required_version(repo_root)
+        if required is None:
+            return
+
+        # Compare versions
+        installed = get_current_version()
+        if not is_version_outdated(installed, required):
+            return
+
+        # Show warning
+        click.echo(format_version_warning(installed, required), err=True)
+        click.echo(file=sys.stderr)
+    except Exception:
+        # Never let version checking break the CLI
+        pass
+
+
 @click.group(cls=ErkCommandGroup, context_settings=CONTEXT_SETTINGS)
 @click.version_option(package_name="erk")
 @click.option("--debug", is_flag=True, help="Enable debug logging")
@@ -121,6 +166,7 @@ def cli(ctx: click.Context, debug: bool, no_sync: bool) -> None:
     # Show version change banner (only on actual CLI runs, not completions)
     if not ctx.resilient_parsing:
         _show_version_change_banner()
+        _show_version_warning()
 
         # Check artifact sync (skip for init and dev commands)
         if ctx.invoked_subcommand not in ("init", "dev"):
