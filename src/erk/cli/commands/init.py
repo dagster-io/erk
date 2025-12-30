@@ -4,6 +4,10 @@ from pathlib import Path
 
 import click
 
+from erk.artifacts.models import ArtifactState
+from erk.artifacts.staleness import get_current_version, is_dev_mode
+from erk.artifacts.state import save_artifact_state
+from erk.artifacts.sync import sync_artifacts
 from erk.cli.core import discover_repo_context
 from erk.core.claude_settings import (
     ERK_PERMISSION,
@@ -30,10 +34,6 @@ from erk.kits.io.state import (
 from erk.kits.io.state import (
     save_project_config as save_kit_config,
 )
-from erk.artifacts.models import ArtifactState
-from erk.artifacts.staleness import get_current_version, is_dev_mode
-from erk.artifacts.state import save_artifact_state
-from erk.artifacts.sync import sync_artifacts
 from erk.kits.operations.agent_docs import init_docs_agent
 from erk_shared.output.output import user_output
 
