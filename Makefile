@@ -162,9 +162,19 @@ all-ci:
 	echo "\n--- Kit Build Check ---" && uv run erk dev kit-build --check || exit_code=1; \
 	exit $$exit_code
 
-# Clean build artifacts
+# Clean build artifacts and Python caches
 clean:
 	rm -rf dist/*.whl dist/*.tar.gz
+	find . -type d -name "__pycache__" -exec rm -rf {} + || true
+	find . -type d -name ".pytest_cache" -exec rm -rf {} + || true
+	find . -type d -name ".mypy_cache" -exec rm -rf {} + || true
+	find . -type d -name ".ruff_cache" -exec rm -rf {} + || true
+	find . -type d -name "*.egg-info" -exec rm -rf {} + || true
+	find . -type f -name "*.pyc" -delete || true
+	find . -type f -name "*.pyo" -delete || true
+	find . -type f -name ".coverage" -delete || true
+	rm -rf htmlcov/ .coverage.* || true
+	find . -type d -empty -delete || true
 
 # Build erk and erk-kits packages
 build: clean
