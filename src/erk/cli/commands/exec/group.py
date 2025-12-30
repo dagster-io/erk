@@ -78,6 +78,9 @@ from erk.cli.commands.exec.scripts.post_workflow_started_comment import (
 )
 from erk.cli.commands.exec.scripts.preprocess_session import preprocess_session
 from erk.cli.commands.exec.scripts.quick_submit import quick_submit
+from erk.cli.commands.exec.scripts.reply_to_discussion_comment import (
+    reply_to_discussion_comment,
+)
 from erk.cli.commands.exec.scripts.resolve_review_thread import (
     resolve_review_thread,
 )
@@ -152,6 +155,7 @@ exec_group.add_command(quick_submit, name="quick-submit")
 exec_group.add_command(resolve_review_thread, name="resolve-review-thread")
 exec_group.add_command(restack_continue, name="restack-continue")
 exec_group.add_command(restack_finalize, name="restack-finalize")
+exec_group.add_command(reply_to_discussion_comment, name="reply-to-discussion-comment")
 exec_group.add_command(restack_preflight, name="restack-preflight")
 exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook")
 exec_group.add_command(tripwires_reminder_hook, name="tripwires-reminder-hook")

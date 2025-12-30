@@ -157,8 +157,13 @@ For each comment in the batch:
 1. Determine if action is needed:
    - If it's a request (e.g., "Please update docs"), take the requested action
    - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
    - If it's just acknowledgment/thanks, note it and move on
-2. Take action if needed
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
 
 **For Outdated Review Threads** (`is_outdated: true`):
 
@@ -203,9 +208,33 @@ erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Resolved via
 
 **For Discussion Comments:**
 
+Post a substantive reply that quotes the original comment and explains what action was taken:
+
 ```bash
-erk exec add-reaction-to-comment --comment-id 12345
+erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:** <substantive summary>"
 ```
+
+**Writing substantive replies:**
+
+The `--reply` argument should include meaningful findings, not just generic acknowledgments:
+
+❌ **Bad (too generic):**
+```bash
+--reply "**Action taken:** Noted for future consideration."
+--reply "**Action taken:** Added to backlog."
+```
+
+✅ **Good (includes investigation findings):**
+```bash
+--reply "**Action taken:** Investigated the gateway pattern suggestion. The current artifact sync implementation uses direct function calls rather than a gateway ABC pattern. This is intentional - artifact operations are file-based and don't require the testability benefits of gateway injection that external APIs need. Filed as backlog consideration for if we add remote artifact fetching."
+```
+
+✅ **Good (explains why no code change):**
+```bash
+--reply "**Action taken:** Reviewed the suggestion to add caching here. After checking the call sites, this function is only called once per CLI invocation (in main.py:45), so caching wouldn't provide measurable benefit. The perceived slowness is actually from the subprocess call inside, not repeated invocations."
+```
+
+The reply becomes a permanent record in the PR - make it useful for future readers who wonder "what happened with this feedback?"
 
 #### Step 3.5: Report Progress
 
