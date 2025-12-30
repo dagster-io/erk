@@ -167,3 +167,53 @@ def test_render_activation_script_with_subpath_logs_correctly() -> None:
     )
     # Should log cd command with full worktree path
     assert '__erk_log "->" "cd /path/to/worktree"' in script
+
+
+# post_cd_commands tests
+
+
+def test_render_activation_script_with_post_cd_commands() -> None:
+    """Activation script includes post_cd_commands after venv activation."""
+    script = render_activation_script(
+        worktree_path=Path("/path/to/worktree"),
+        post_cd_commands=[
+            '__erk_log "->" "git pull origin main"',
+            'git pull --ff-only origin main || echo "Warning: git pull failed" >&2',
+        ],
+    )
+    # Should include post-activation commands section
+    assert "# Post-activation commands" in script
+    assert '__erk_log "->" "git pull origin main"' in script
+    assert "git pull --ff-only origin main" in script
+    # Commands should be after .env loading and before final message
+    env_index = script.index("set +a")  # End of .env loading
+    pull_index = script.index("git pull")
+    final_index = script.index("Activated worktree")
+    assert env_index < pull_index < final_index
+
+
+def test_render_activation_script_without_post_cd_commands() -> None:
+    """Activation script without post_cd_commands has no post-activation section."""
+    script = render_activation_script(worktree_path=Path("/path/to/worktree"))
+    assert "# Post-activation commands" not in script
+
+
+def test_render_activation_script_post_cd_commands_none_same_as_omitted() -> None:
+    """Passing post_cd_commands=None produces same script as omitting it."""
+    script_with_none = render_activation_script(
+        worktree_path=Path("/path/to/worktree"),
+        post_cd_commands=None,
+    )
+    script_omitted = render_activation_script(
+        worktree_path=Path("/path/to/worktree"),
+    )
+    assert script_with_none == script_omitted
+
+
+def test_render_activation_script_post_cd_commands_empty_list_no_section() -> None:
+    """Passing empty post_cd_commands list produces no post-activation section."""
+    script = render_activation_script(
+        worktree_path=Path("/path/to/worktree"),
+        post_cd_commands=[],
+    )
+    assert "# Post-activation commands" not in script

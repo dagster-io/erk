@@ -1,4 +1,5 @@
 import os
+from collections.abc import Sequence
 from pathlib import Path
 
 import click
@@ -161,6 +162,7 @@ def activate_root_repo(
     repo: RepoContext,
     script: bool,
     command_name: str,
+    post_cd_commands: Sequence[str] | None,
 ) -> None:
     """Activate the root repository and exit.
 
@@ -169,6 +171,7 @@ def activate_root_repo(
         repo: Repository context
         script: Whether to output script path or user message
         command_name: Name of the command (for script generation)
+        post_cd_commands: Optional shell commands to run after cd (e.g., git pull)
 
     Raises:
         SystemExit: Always (successful exit after activation)
@@ -186,6 +189,7 @@ def activate_root_repo(
         script_content = render_activation_script(
             worktree_path=root_path,
             target_subpath=relative_path,
+            post_cd_commands=post_cd_commands,
             final_message='echo "Went to root repo: $(pwd)"',
             comment="work activate-script (root repo)",
         )

@@ -119,7 +119,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
             raise SystemExit(0)
         else:
             # No cleanup needed, use standard activation
-            activate_root_repo(ctx, repo, script, "down")
+            activate_root_repo(ctx, repo, script, "down", post_cd_commands=None)
 
     # Resolve target branch to actual worktree path
     target_wt_path = Ensure.not_none(

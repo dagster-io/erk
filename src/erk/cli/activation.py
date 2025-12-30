@@ -5,6 +5,7 @@ worktree environments by setting up virtual environments and loading .env files.
 """
 
 import shlex
+from collections.abc import Sequence
 from pathlib import Path
 
 
@@ -38,6 +39,7 @@ def render_activation_script(
     *,
     worktree_path: Path,
     target_subpath: Path | None = None,
+    post_cd_commands: Sequence[str] | None = None,
     final_message: str = 'echo "Activated worktree: $(pwd)"',
     comment: str = "work activate-script",
 ) -> str:
@@ -48,6 +50,7 @@ def render_activation_script(
       - creates .venv with `uv sync` if not present
       - sources `.venv/bin/activate` if present
       - exports variables from `.env` if present
+      - runs optional post-activation commands (e.g., git pull)
     Works in bash and zsh.
 
     Args:
@@ -55,6 +58,8 @@ def render_activation_script(
         target_subpath: Optional relative path within the worktree to cd to.
             If the subpath doesn't exist, a warning is shown and the script
             falls back to the worktree root.
+        post_cd_commands: Optional sequence of shell commands to run after venv
+            activation, before final message. Useful for git pull after landing a PR.
         final_message: Shell command for final echo message (default shows activation)
         comment: Comment line for script identification (default: "work activate-script")
 
@@ -90,6 +95,13 @@ cd {wt}"""
 
     logging_helper = _render_logging_helper()
 
+    # Build optional post-activation commands section
+    post_activation_section = ""
+    if post_cd_commands:
+        post_activation_section = (
+            "# Post-activation commands\n" + "\n".join(post_cd_commands) + "\n"
+        )
+
     return f"""# {comment}
 {logging_helper}
 {cd_command}
@@ -112,6 +124,6 @@ if [ -f ./.env ]; then
   . ./.env
 fi
 set +a
-# Optional: show where we are
+{post_activation_section}# Optional: show where we are
 {final_message}
 """

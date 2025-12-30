@@ -79,9 +79,20 @@ def is_extraction_origin_pr(ctx: ErkContext, repo_root: Path, pr_number: int) ->
     type=str,
     help="Current session ID (for extraction)",
 )
+@click.option(
+    "--pull/--no-pull",
+    "pull_flag",
+    default=True,
+    help="Pull latest changes after landing (default: --pull)",
+)
 @click.pass_obj
 def pr_land(
-    ctx: ErkContext, script: bool, insights: bool, up_flag: bool, session_id: str | None
+    ctx: ErkContext,
+    script: bool,
+    insights: bool,
+    up_flag: bool,
+    session_id: str | None,
+    pull_flag: bool,
 ) -> None:
     """Merge PR, run extraction, and delete worktree.
 
@@ -265,6 +276,17 @@ def pr_land(
         activate_worktree(ctx, post_deletion_repo, target_path, script, command_name="pr-land")
         # activate_worktree raises SystemExit(0)
     else:
+        # Construct git pull commands if pull_flag is set
+        post_commands: list[str] | None = None
+        if pull_flag:
+            trunk_branch = ctx.git.detect_trunk_branch(main_repo_root)
+            post_commands = [
+                f'__erk_log "->" "git pull origin {trunk_branch}"',
+                f"git pull --ff-only origin {trunk_branch} || "
+                f'echo "Warning: git pull failed (try running manually)" >&2',
+            ]
         # Output activation script pointing to trunk/root repo
-        activate_root_repo(ctx, post_deletion_repo, script, command_name="pr-land")
+        activate_root_repo(
+            ctx, post_deletion_repo, script, command_name="pr-land", post_cd_commands=post_commands
+        )
         # activate_root_repo raises SystemExit(0)
