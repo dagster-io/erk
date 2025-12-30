@@ -279,12 +279,20 @@ def test_extract_steps_llm_failure_raises_runtime_error() -> None:
         extract_steps_from_plan(plan, executor)
 
 
-def test_extract_steps_llm_invalid_json_raises_runtime_error() -> None:
-    """Test that invalid JSON response raises RuntimeError."""
+def test_extract_steps_llm_invalid_json_warns_and_returns_empty(capsys) -> None:
+    """Test that invalid JSON response warns loudly and returns empty list."""
     plan = "# Plan\n\n1. Step"
     executor = FakePromptExecutor(output="not valid json")
-    with pytest.raises(RuntimeError, match="LLM returned invalid JSON"):
-        extract_steps_from_plan(plan, executor)
+
+    result = extract_steps_from_plan(plan, executor)
+
+    # Should return empty list instead of raising
+    assert result == []
+
+    # Verify diagnostic output was written to stderr
+    captured = capsys.readouterr()
+    assert "WARNING: LLM returned invalid JSON for step extraction" in captured.err
+    assert "Falling back to empty steps list" in captured.err
 
 
 def test_extract_steps_llm_non_list_raises_runtime_error() -> None:
@@ -320,7 +328,7 @@ def test_extract_steps_llm_empty_output_raises_runtime_error(capsys) -> None:
     # Verify diagnostic output was written to stderr
     captured = capsys.readouterr()
     assert "WARNING: LLM returned empty output" in captured.err
-    assert "Model: haiku" in captured.err
+    assert "Model: sonnet" in captured.err
     assert "Prompt length:" in captured.err
     assert "First 500 chars of prompt:" in captured.err
 

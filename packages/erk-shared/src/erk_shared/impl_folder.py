@@ -114,21 +114,17 @@ def get_progress_path(worktree_path: Path) -> Path | None:
     return None
 
 
-_STEP_EXTRACTION_PROMPT = """You are a JSON extraction tool. Your ONLY output must be valid JSON with NO other text.
-
-CRITICAL: Output ONLY a JSON array. No explanations, no markdown, no preamble.
-
-Task: Extract implementation steps from the plan below.
-- Include: Numbered steps, phase headings, implementation tasks
-- Exclude: Testing strategy, success criteria, prerequisites, documentation
-
-Output format: ["1. Step one", "2. Step two"]
-Empty plan: []
-
-IMPORTANT: Your response must start with [ and end with ] - nothing else.
-
-Plan:
-{plan_content}"""
+_STEP_EXTRACTION_PROMPT = (
+    "You are a JSON extraction tool. Your ONLY output must be valid JSON.\n\n"
+    "CRITICAL: Output ONLY a JSON array. No explanations, no markdown, no preamble.\n\n"
+    "Task: Extract implementation steps from the plan below.\n"
+    "- Include: Numbered steps, phase headings, implementation tasks\n"
+    "- Exclude: Testing strategy, success criteria, prerequisites, documentation\n\n"
+    'Output format: ["1. Step one", "2. Step two"]\n'
+    "Empty plan: []\n\n"
+    "IMPORTANT: Your response must start with [ and end with ] - nothing else.\n\n"
+    "Plan:\n{plan_content}"
+)
 
 
 def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) -> list[str]:
