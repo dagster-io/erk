@@ -130,9 +130,7 @@ def test_real_graphite_ops_submit_branch_quiet_no_stderr_output() -> None:
 
 def test_real_graphite_is_branch_tracked_returns_true_for_tracked() -> None:
     """Test is_branch_tracked returns True when gt returns exit code 0."""
-    with patch(
-        "erk_shared.gateway.graphite.real.subprocess.run"
-    ) as mock_run:
+    with patch("erk_shared.gateway.graphite.real.subprocess.run") as mock_run:
         # Mock exit code 0 (branch is tracked)
         mock_run.return_value = MagicMock(returncode=0)
 
@@ -149,9 +147,7 @@ def test_real_graphite_is_branch_tracked_returns_true_for_tracked() -> None:
 
 def test_real_graphite_is_branch_tracked_returns_false_for_untracked() -> None:
     """Test is_branch_tracked returns False when gt returns non-zero exit code."""
-    with patch(
-        "erk_shared.gateway.graphite.real.subprocess.run"
-    ) as mock_run:
+    with patch("erk_shared.gateway.graphite.real.subprocess.run") as mock_run:
         # Mock exit code 1 (branch is untracked)
         mock_run.return_value = MagicMock(returncode=1)
 
@@ -164,9 +160,7 @@ def test_real_graphite_is_branch_tracked_returns_false_for_untracked() -> None:
 
 def test_real_graphite_is_branch_tracked_constructs_correct_command() -> None:
     """Test is_branch_tracked passes correct arguments to subprocess."""
-    with patch(
-        "erk_shared.gateway.graphite.real.subprocess.run"
-    ) as mock_run:
+    with patch("erk_shared.gateway.graphite.real.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0)
 
         ops = RealGraphite()
