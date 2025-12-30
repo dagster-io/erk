@@ -27,10 +27,11 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
-from typing import NoReturn, TypedDict
+from typing import TypedDict
 
 import click
 
+from erk.cli.script_output import exit_with_error
 from erk_shared.context.helpers import get_current_branch, require_github, require_repo_root
 from erk_shared.github.types import PRDetails, PRNotFound, PRReviewThread
 
@@ -64,26 +65,10 @@ class ReviewCommentSuccess:
     threads: list[ReviewThreadDict]
 
 
-@dataclass(frozen=True)
-class ReviewCommentError:
-    """Error response for PR review comments."""
-
-    success: bool
-    error_type: str
-    message: str
-
-
-def _exit_with_error(error_type: str, message: str) -> NoReturn:
-    """Output JSON error and exit with success code."""
-    result = ReviewCommentError(success=False, error_type=error_type, message=message)
-    click.echo(json.dumps(asdict(result), indent=2))
-    raise SystemExit(0)
-
-
 def _ensure_branch(branch: str | None) -> str:
     """Ensure branch was detected, exit with error if not."""
     if branch is None:
-        _exit_with_error("branch_detection_failed", "Could not determine current branch")
+        exit_with_error("branch_detection_failed", "Could not determine current branch")
     return branch
 
 
@@ -96,9 +81,9 @@ def _ensure_pr_result(
     """Ensure PR lookup succeeded, exit with appropriate error if not."""
     if isinstance(pr_result, PRNotFound):
         if branch is not None:
-            _exit_with_error("no_pr_for_branch", f"No PR found for branch '{branch}'")
+            exit_with_error("no_pr_for_branch", f"No PR found for branch '{branch}'")
         else:
-            _exit_with_error("pr_not_found", f"PR #{pr_number} not found")
+            exit_with_error("pr_not_found", f"PR #{pr_number} not found")
     return pr_result
 
 
@@ -153,7 +138,7 @@ def get_pr_review_comments(ctx: click.Context, pr: int | None, include_resolved:
             repo_root, pr_result.number, include_resolved=include_resolved
         )
     except RuntimeError as e:
-        _exit_with_error("github_api_failed", str(e))
+        exit_with_error("github_api_failed", str(e))
 
     result_success = ReviewCommentSuccess(
         success=True,

@@ -22,7 +22,7 @@ def test_session_id_injector_hook_writes_session_id_to_file(tmp_path: Path) -> N
     mock_git_result.stdout = str(tmp_path) + "\n"
 
     with (
-        patch("erk.kits.hooks.decorators.is_in_managed_project", return_value=True),
+        patch("erk.hooks.decorators.is_in_managed_project", return_value=True),
         patch("subprocess.run", return_value=mock_git_result),
     ):
         result = runner.invoke(session_id_injector_hook, input=stdin_data)
@@ -53,7 +53,7 @@ def test_session_id_injector_hook_creates_parent_directories(tmp_path: Path) -> 
     mock_git_result.stdout = str(tmp_path) + "\n"
 
     with (
-        patch("erk.kits.hooks.decorators.is_in_managed_project", return_value=True),
+        patch("erk.hooks.decorators.is_in_managed_project", return_value=True),
         patch("subprocess.run", return_value=mock_git_result),
     ):
         result = runner.invoke(session_id_injector_hook, input=stdin_data)
@@ -66,7 +66,7 @@ def test_session_id_injector_hook_no_session_id_no_file_created(tmp_path: Path) 
     """Test that no file is created when no session ID is provided."""
     runner = CliRunner()
 
-    with patch("erk.kits.hooks.decorators.is_in_managed_project", return_value=True):
+    with patch("erk.hooks.decorators.is_in_managed_project", return_value=True):
         result = runner.invoke(session_id_injector_hook, input="")
 
     assert result.exit_code == 0
@@ -84,7 +84,7 @@ def test_session_id_injector_hook_github_planning_disabled(tmp_path: Path) -> No
     stdin_data = json.dumps({"session_id": session_id})
 
     with (
-        patch("erk.kits.hooks.decorators.is_in_managed_project", return_value=True),
+        patch("erk.hooks.decorators.is_in_managed_project", return_value=True),
         patch(
             "erk.cli.commands.exec.scripts.session_id_injector_hook._is_github_planning_enabled",
             return_value=False,
@@ -118,7 +118,7 @@ def test_session_id_injector_hook_overwrites_existing_file(tmp_path: Path) -> No
     # Run hook with new session ID
     stdin_data = json.dumps({"session_id": new_session_id})
     with (
-        patch("erk.kits.hooks.decorators.is_in_managed_project", return_value=True),
+        patch("erk.hooks.decorators.is_in_managed_project", return_value=True),
         patch("subprocess.run", return_value=mock_git_result),
     ):
         result = runner.invoke(session_id_injector_hook, input=stdin_data)

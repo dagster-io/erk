@@ -7,8 +7,8 @@ from unittest.mock import patch
 import click
 from click.testing import CliRunner
 
-from erk.kits.hooks.decorators import project_scoped
-from erk.kits.hooks.scope import is_in_managed_project
+from erk.hooks.decorators import project_scoped
+from erk.hooks.scope import is_in_managed_project
 
 
 class TestIsInManagedProject:
@@ -22,7 +22,7 @@ class TestIsInManagedProject:
         (erk_dir / "kits.toml").write_text("version = 1", encoding="utf-8")
 
         # Mock git rev-parse to return our temp path as repo root
-        with patch("erk.kits.hooks.scope.subprocess.run") as mock_run:
+        with patch("erk.hooks.scope.subprocess.run") as mock_run:
             mock_run.return_value = subprocess.CompletedProcess(
                 args=["git", "rev-parse", "--show-toplevel"],
                 returncode=0,
@@ -38,7 +38,7 @@ class TestIsInManagedProject:
         # No .erk directory created
 
         # Mock git rev-parse to return our temp path as repo root
-        with patch("erk.kits.hooks.scope.subprocess.run") as mock_run:
+        with patch("erk.hooks.scope.subprocess.run") as mock_run:
             mock_run.return_value = subprocess.CompletedProcess(
                 args=["git", "rev-parse", "--show-toplevel"],
                 returncode=0,
@@ -55,7 +55,7 @@ class TestIsInManagedProject:
         erk_dir = tmp_path / ".erk"
         erk_dir.mkdir()
 
-        with patch("erk.kits.hooks.scope.subprocess.run") as mock_run:
+        with patch("erk.hooks.scope.subprocess.run") as mock_run:
             mock_run.return_value = subprocess.CompletedProcess(
                 args=["git", "rev-parse", "--show-toplevel"],
                 returncode=0,
@@ -68,7 +68,7 @@ class TestIsInManagedProject:
 
     def test_returns_false_when_not_in_git_repo(self) -> None:
         """Test returns False when not in a git repository."""
-        with patch("erk.kits.hooks.scope.subprocess.run") as mock_run:
+        with patch("erk.hooks.scope.subprocess.run") as mock_run:
             mock_run.side_effect = subprocess.CalledProcessError(
                 returncode=128,
                 cmd=["git", "rev-parse", "--show-toplevel"],
@@ -90,7 +90,7 @@ class TestProjectScopedDecorator:
         def test_hook() -> None:
             click.echo("Hook executed")
 
-        with patch("erk.kits.hooks.decorators.is_in_managed_project", return_value=True):
+        with patch("erk.hooks.decorators.is_in_managed_project", return_value=True):
             result = cli_runner.invoke(test_hook)
 
         assert result.exit_code == 0
@@ -104,7 +104,7 @@ class TestProjectScopedDecorator:
         def test_hook() -> None:
             click.echo("Hook executed")
 
-        with patch("erk.kits.hooks.decorators.is_in_managed_project", return_value=False):
+        with patch("erk.hooks.decorators.is_in_managed_project", return_value=False):
             result = cli_runner.invoke(test_hook)
 
         assert result.exit_code == 0
@@ -136,7 +136,7 @@ class TestProjectScopedDecorator:
         def test_hook(name: str) -> None:
             click.echo(f"Hello, {name}!")
 
-        with patch("erk.kits.hooks.decorators.is_in_managed_project", return_value=True):
+        with patch("erk.hooks.decorators.is_in_managed_project", return_value=True):
             result = cli_runner.invoke(test_hook, ["--name", "Test"])
 
         assert result.exit_code == 0
@@ -159,7 +159,7 @@ class TestProjectScopedIntegration:
             click.echo("Hook fired")
 
         # Mock git to return our temp path
-        with patch("erk.kits.hooks.scope.subprocess.run") as mock_run:
+        with patch("erk.hooks.scope.subprocess.run") as mock_run:
             mock_run.return_value = subprocess.CompletedProcess(
                 args=["git", "rev-parse", "--show-toplevel"],
                 returncode=0,
@@ -180,7 +180,7 @@ class TestProjectScopedIntegration:
             click.echo("Hook fired")
 
         # Mock git to return our temp path (no .erk/kits.toml)
-        with patch("erk.kits.hooks.scope.subprocess.run") as mock_run:
+        with patch("erk.hooks.scope.subprocess.run") as mock_run:
             mock_run.return_value = subprocess.CompletedProcess(
                 args=["git", "rev-parse", "--show-toplevel"],
                 returncode=0,
@@ -201,7 +201,7 @@ class TestProjectScopedIntegration:
             click.echo("Hook fired")
 
         # Mock git to fail (not in repo)
-        with patch("erk.kits.hooks.scope.subprocess.run") as mock_run:
+        with patch("erk.hooks.scope.subprocess.run") as mock_run:
             mock_run.side_effect = subprocess.CalledProcessError(
                 returncode=128,
                 cmd=["git", "rev-parse", "--show-toplevel"],

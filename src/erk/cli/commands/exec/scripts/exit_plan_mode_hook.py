@@ -46,7 +46,7 @@ from pathlib import Path
 
 import click
 
-from erk.kits.hooks.decorators import logged_hook, project_scoped
+from erk.hooks.decorators import logged_hook, project_scoped
 from erk_shared.extraction.local_plans import extract_slugs_from_session
 from erk_shared.scratch.scratch import _get_repo_root, get_scratch_dir
 
