@@ -1,6 +1,4 @@
 ---
-erk:
-  kit: dignified-python
 ---
 
 # Type Annotations - Python 3.13

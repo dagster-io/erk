@@ -58,6 +58,5 @@ def check_and_prompt_artifact_sync(project_dir: Path, *, no_sync: bool) -> None:
     if click.confirm("Sync now?", default=True):
         sync_result = sync_artifacts(project_dir)
         click.echo(
-            click.style("✓ ", fg="green") + f"Synced {sync_result.artifacts_installed} artifacts, "
-            f"{sync_result.hooks_installed} hooks"
+            click.style("✓ ", fg="green") + f"Synced {sync_result.artifacts_installed} artifacts"
         )

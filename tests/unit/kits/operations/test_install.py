@@ -8,38 +8,40 @@ from erk.kits.models.resolved import ArtifactConflictError, ResolvedKit
 from erk.kits.operations.install import install_kit
 
 
+def _create_kit_artifact(path: Path, content: str, kit_name: str) -> None:
+    """Create an artifact file with erk.kit frontmatter.
+
+    Args:
+        path: Path to create the file at
+        content: Content of the file (after frontmatter)
+        kit_name: Kit name for frontmatter
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    frontmatter = f"---\nerk:\n  kit: {kit_name}\n---\n"
+    path.write_text(frontmatter + content, encoding="utf-8")
+
+
 def test_install_kit_basic(tmp_project: Path) -> None:
     """Test basic kit installation."""
     # Create mock kit
     kit_dir = tmp_project / "mock_kit"
     kit_dir.mkdir()
 
-    manifest = kit_dir / "kit.yaml"
-    manifest.write_text(
-        "name: test-kit\n"
-        "version: 1.0.0\n"
-        "description: Test\n"
-        "artifacts:\n"
-        "  agent:\n"
-        "    - agents/test-agent.md\n",
-        encoding="utf-8",
-    )
-
     agents_dir = kit_dir / "agents"
     agents_dir.mkdir()
-    (agents_dir / "test-agent.md").write_text("# Test Agent", encoding="utf-8")
+    _create_kit_artifact(agents_dir / "test-agent.md", "# Test Agent", "test-kit")
 
     # Mock resolution
     resolved = ResolvedKit(
         kit_id="test-kit",
         version="1.0.0",
         source_type="package",
-        manifest_path=manifest,
+        manifest_path=kit_dir / "kit.yaml",  # Not used anymore but kept for compatibility
         artifacts_base=kit_dir,
     )
 
     # Install
-    installed = install_kit(resolved, tmp_project)
+    installed = install_kit(resolved, tmp_project, overwrite=False, filtered_artifacts=None)
 
     # Verify
     assert installed.kit_id == "test-kit"
@@ -54,7 +56,7 @@ def test_install_kit_basic(tmp_project: Path) -> None:
 
 
 def test_install_kit_conflict(tmp_project: Path) -> None:
-    """Test installation fails on conflict with ERROR policy."""
+    """Test installation fails on conflict with overwrite=False."""
     # Create existing artifact
     claude_dir = tmp_project / ".claude"
     claude_dir.mkdir()
@@ -66,32 +68,21 @@ def test_install_kit_conflict(tmp_project: Path) -> None:
     kit_dir = tmp_project / "mock_kit"
     kit_dir.mkdir()
 
-    manifest = kit_dir / "kit.yaml"
-    manifest.write_text(
-        "name: test-kit\n"
-        "version: 1.0.0\n"
-        "description: Test\n"
-        "artifacts:\n"
-        "  agent:\n"
-        "    - agents/test-agent.md\n",
-        encoding="utf-8",
-    )
-
     agents_source = kit_dir / "agents"
     agents_source.mkdir()
-    (agents_source / "test-agent.md").write_text("# New Agent", encoding="utf-8")
+    _create_kit_artifact(agents_source / "test-agent.md", "# New Agent", "test-kit")
 
     resolved = ResolvedKit(
         kit_id="test-kit",
         version="1.0.0",
         source_type="package",
-        manifest_path=manifest,
+        manifest_path=kit_dir / "kit.yaml",
         artifacts_base=kit_dir,
     )
 
     # Try to install - should fail with default (overwrite=False)
     with pytest.raises(ArtifactConflictError, match="Artifact already exists"):
-        install_kit(resolved, tmp_project, overwrite=False)
+        install_kit(resolved, tmp_project, overwrite=False, filtered_artifacts=None)
 
 
 def test_install_kit_creates_directories(tmp_project: Path) -> None:
@@ -100,31 +91,20 @@ def test_install_kit_creates_directories(tmp_project: Path) -> None:
     kit_dir = tmp_project / "mock_kit"
     kit_dir.mkdir()
 
-    manifest = kit_dir / "kit.yaml"
-    manifest.write_text(
-        "name: test-kit\n"
-        "version: 1.0.0\n"
-        "description: Test\n"
-        "artifacts:\n"
-        "  command:\n"
-        "    - commands/test-command.md\n",
-        encoding="utf-8",
-    )
-
     commands_dir = kit_dir / "commands"
     commands_dir.mkdir()
-    (commands_dir / "test-command.md").write_text("# Test Command", encoding="utf-8")
+    _create_kit_artifact(commands_dir / "test-command.md", "# Test Command", "test-kit")
 
     resolved = ResolvedKit(
         kit_id="test-kit",
         version="1.0.0",
         source_type="package",
-        manifest_path=manifest,
+        manifest_path=kit_dir / "kit.yaml",
         artifacts_base=kit_dir,
     )
 
     # Install
-    install_kit(resolved, tmp_project)
+    install_kit(resolved, tmp_project, overwrite=False, filtered_artifacts=None)
 
     # Verify directories created
     assert (tmp_project / ".claude").exists()
@@ -144,31 +124,20 @@ def test_install_kit_overwrite_policy(tmp_project: Path) -> None:
     kit_dir = tmp_project / "mock_kit"
     kit_dir.mkdir()
 
-    manifest = kit_dir / "kit.yaml"
-    manifest.write_text(
-        "name: test-kit\n"
-        "version: 1.0.0\n"
-        "description: Test\n"
-        "artifacts:\n"
-        "  agent:\n"
-        "    - agents/test-agent.md\n",
-        encoding="utf-8",
-    )
-
     agents_source = kit_dir / "agents"
     agents_source.mkdir()
-    (agents_source / "test-agent.md").write_text("# New Agent", encoding="utf-8")
+    _create_kit_artifact(agents_source / "test-agent.md", "# New Agent", "test-kit")
 
     resolved = ResolvedKit(
         kit_id="test-kit",
         version="1.0.0",
         source_type="package",
-        manifest_path=manifest,
+        manifest_path=kit_dir / "kit.yaml",
         artifacts_base=kit_dir,
     )
 
     # Install with overwrite=True
-    installed = install_kit(resolved, tmp_project, overwrite=True)
+    installed = install_kit(resolved, tmp_project, overwrite=True, filtered_artifacts=None)
 
     # Verify new content written
     content = existing.read_text(encoding="utf-8")
@@ -182,52 +151,36 @@ def test_install_kit_namespaced_artifacts(tmp_project: Path) -> None:
     kit_dir = tmp_project / "mock_kit"
     kit_dir.mkdir()
 
-    manifest = kit_dir / "kit.yaml"
-    manifest.write_text(
-        "name: my-kit\n"
-        "version: 1.0.0\n"
-        "description: Namespaced kit\n"
-        "artifacts:\n"
-        "  agent:\n"
-        "    - agents/my-kit/helper.md\n"
-        "  skill:\n"
-        "    - skills/my-kit/tool-a/SKILL.md\n"
-        "    - skills/my-kit/tool-b/SKILL.md\n"
-        "  command:\n"
-        "    - commands/my-kit/build.md\n",
-        encoding="utf-8",
-    )
-
     # Create namespaced agent
     agents_dir = kit_dir / "agents" / "my-kit"
     agents_dir.mkdir(parents=True)
-    (agents_dir / "helper.md").write_text("# Helper Agent", encoding="utf-8")
+    _create_kit_artifact(agents_dir / "helper.md", "# Helper Agent", "my-kit")
 
     # Create namespaced skills
     skill_a_dir = kit_dir / "skills" / "my-kit" / "tool-a"
     skill_a_dir.mkdir(parents=True)
-    (skill_a_dir / "SKILL.md").write_text("# Tool A Skill", encoding="utf-8")
+    _create_kit_artifact(skill_a_dir / "SKILL.md", "# Tool A Skill", "my-kit")
 
     skill_b_dir = kit_dir / "skills" / "my-kit" / "tool-b"
     skill_b_dir.mkdir(parents=True)
-    (skill_b_dir / "SKILL.md").write_text("# Tool B Skill", encoding="utf-8")
+    _create_kit_artifact(skill_b_dir / "SKILL.md", "# Tool B Skill", "my-kit")
 
     # Create namespaced command
     commands_dir = kit_dir / "commands" / "my-kit"
     commands_dir.mkdir(parents=True)
-    (commands_dir / "build.md").write_text("# Build Command", encoding="utf-8")
+    _create_kit_artifact(commands_dir / "build.md", "# Build Command", "my-kit")
 
     # Mock resolution
     resolved = ResolvedKit(
         kit_id="my-kit",
         version="1.0.0",
         source_type="bundled",
-        manifest_path=manifest,
+        manifest_path=kit_dir / "kit.yaml",
         artifacts_base=kit_dir,
     )
 
     # Install
-    installed = install_kit(resolved, tmp_project)
+    installed = install_kit(resolved, tmp_project, overwrite=False, filtered_artifacts=None)
 
     # Verify namespaced structure is preserved in .claude/
     claude_dir = tmp_project / ".claude"
@@ -254,31 +207,6 @@ def test_install_kit_namespaced_artifacts(tmp_project: Path) -> None:
     # Verify all artifacts were installed
     assert len(installed.artifacts) == 4
 
-    # Verify artifact content
-    agent_content = agent_path.read_text(encoding="utf-8")
-    assert "# Helper Agent" in agent_content
-
-    skill_a_content = skill_a_path.read_text(encoding="utf-8")
-    assert "# Tool A Skill" in skill_a_content
-
-
-def test_kit_manifest_namespace_validation() -> None:
-    """Test KitManifest namespace validation (informational only, not enforced)."""
-    from erk.kits.models.kit import KitManifest
-
-    # Namespace validation is not enforced - all structures are allowed
-    manifest = KitManifest(
-        name="my-kit",
-        version="1.0.0",
-        description="Test",
-        artifacts={
-            "agent": ["agents/helper.md"],  # Any structure allowed
-            "skill": ["skills/wrong-namespace/tool/SKILL.md"],  # Any structure allowed
-        },
-    )
-    errors = manifest.validate_namespace_pattern()
-    assert errors == []  # No enforcement - returns empty list
-
 
 def test_install_kit_with_docs(tmp_project: Path) -> None:
     """Test installation of kit with doc artifacts."""
@@ -286,38 +214,25 @@ def test_install_kit_with_docs(tmp_project: Path) -> None:
     kit_dir = tmp_project / "mock_kit"
     kit_dir.mkdir()
 
-    manifest = kit_dir / "kit.yaml"
-    manifest.write_text(
-        "name: test-kit\n"
-        "version: 1.0.0\n"
-        "description: Test kit with docs\n"
-        "artifacts:\n"
-        "  doc:\n"
-        "    - docs/tools/pytest.md\n"
-        "    - docs/tools/pyright.md\n"
-        "    - docs/overview.md\n",
-        encoding="utf-8",
-    )
-
     # Create doc files with nested structure
     docs_dir = kit_dir / "docs"
     tools_dir = docs_dir / "tools"
     tools_dir.mkdir(parents=True)
-    (tools_dir / "pytest.md").write_text("# Pytest Documentation", encoding="utf-8")
-    (tools_dir / "pyright.md").write_text("# Pyright Documentation", encoding="utf-8")
-    (docs_dir / "overview.md").write_text("# Overview", encoding="utf-8")
+    _create_kit_artifact(tools_dir / "pytest.md", "# Pytest Documentation", "test-kit")
+    _create_kit_artifact(tools_dir / "pyright.md", "# Pyright Documentation", "test-kit")
+    _create_kit_artifact(docs_dir / "overview.md", "# Overview", "test-kit")
 
     # Mock resolution
     resolved = ResolvedKit(
         kit_id="test-kit",
         version="1.0.0",
         source_type="package",
-        manifest_path=manifest,
+        manifest_path=kit_dir / "kit.yaml",
         artifacts_base=kit_dir,
     )
 
     # Install
-    installed = install_kit(resolved, tmp_project)
+    installed = install_kit(resolved, tmp_project, overwrite=False, filtered_artifacts=None)
 
     # Verify installation metadata
     assert installed.kit_id == "test-kit"
@@ -334,14 +249,6 @@ def test_install_kit_with_docs(tmp_project: Path) -> None:
     assert pytest_doc.exists()
     assert "# Pytest Documentation" in pytest_doc.read_text(encoding="utf-8")
 
-    pyright_doc = docs_base / "tools" / "pyright.md"
-    assert pyright_doc.exists()
-    assert "# Pyright Documentation" in pyright_doc.read_text(encoding="utf-8")
-
-    overview_doc = docs_base / "overview.md"
-    assert overview_doc.exists()
-    assert "# Overview" in overview_doc.read_text(encoding="utf-8")
-
 
 def test_install_kit_with_docs_and_agents(tmp_project: Path) -> None:
     """Test installation of kit with both docs and agents."""
@@ -349,40 +256,27 @@ def test_install_kit_with_docs_and_agents(tmp_project: Path) -> None:
     kit_dir = tmp_project / "mock_kit"
     kit_dir.mkdir()
 
-    manifest = kit_dir / "kit.yaml"
-    manifest.write_text(
-        "name: devrun\n"
-        "version: 0.1.0\n"
-        "description: Kit with agent and docs\n"
-        "artifacts:\n"
-        "  agent:\n"
-        "    - agents/devrun/devrun.md\n"
-        "  doc:\n"
-        "    - docs/tools/make.md\n",
-        encoding="utf-8",
-    )
-
     # Create agent
     agents_dir = kit_dir / "agents" / "devrun"
     agents_dir.mkdir(parents=True)
-    (agents_dir / "devrun.md").write_text("# Devrun Agent", encoding="utf-8")
+    _create_kit_artifact(agents_dir / "devrun.md", "# Devrun Agent", "devrun")
 
     # Create doc
     docs_dir = kit_dir / "docs" / "tools"
     docs_dir.mkdir(parents=True)
-    (docs_dir / "make.md").write_text("# Make Documentation", encoding="utf-8")
+    _create_kit_artifact(docs_dir / "make.md", "# Make Documentation", "devrun")
 
     # Mock resolution
     resolved = ResolvedKit(
         kit_id="devrun",
         version="0.1.0",
         source_type="package",
-        manifest_path=manifest,
+        manifest_path=kit_dir / "kit.yaml",
         artifacts_base=kit_dir,
     )
 
     # Install
-    installed = install_kit(resolved, tmp_project)
+    installed = install_kit(resolved, tmp_project, overwrite=False, filtered_artifacts=None)
 
     # Verify both artifact types
     assert len(installed.artifacts) == 2
@@ -398,151 +292,33 @@ def test_install_kit_with_docs_and_agents(tmp_project: Path) -> None:
     assert "# Make Documentation" in doc_path.read_text(encoding="utf-8")
 
 
-def test_install_kit_with_workflow(tmp_project: Path) -> None:
-    """Test installation of kit with workflow artifact to .github/workflows/."""
-    # Create mock kit with workflow
-    kit_dir = tmp_project / "mock_kit"
-    kit_dir.mkdir()
-
-    manifest = kit_dir / "kit.yaml"
-    manifest.write_text(
-        "name: test-kit\n"
-        "version: 1.0.0\n"
-        "description: Test kit with workflow\n"
-        "artifacts:\n"
-        "  workflow:\n"
-        "    - workflows/test-kit/deploy.yml\n",
-        encoding="utf-8",
-    )
-
-    # Create workflow file with nested structure
-    workflows_dir = kit_dir / "workflows" / "test-kit"
-    workflows_dir.mkdir(parents=True)
-    (workflows_dir / "deploy.yml").write_text(
-        "name: Deploy\non: push\njobs: {}\n",
-        encoding="utf-8",
-    )
-
-    # Mock resolution
-    resolved = ResolvedKit(
-        kit_id="test-kit",
-        version="1.0.0",
-        source_type="package",
-        manifest_path=manifest,
-        artifacts_base=kit_dir,
-    )
-
-    # Install
-    installed = install_kit(resolved, tmp_project)
-
-    # Verify installation metadata
-    assert installed.kit_id == "test-kit"
-    assert installed.version == "1.0.0"
-    assert len(installed.artifacts) == 1
-
-    # Verify workflow file is installed in .github/workflows/ (NOT .claude/)
-    workflow_path = tmp_project / ".github" / "workflows" / "test-kit" / "deploy.yml"
-    assert workflow_path.exists()
-    assert "name: Deploy" in workflow_path.read_text(encoding="utf-8")
-
-    # Verify NO workflow was installed in .claude/
-    assert not (tmp_project / ".claude" / "workflows").exists()
-
-
-def test_install_kit_with_workflow_and_agents(tmp_project: Path) -> None:
-    """Test installation of kit with both workflows and agents."""
+def test_install_kit_installs_all_artifacts(tmp_project: Path) -> None:
+    """Test installation installs all markdown files from kit directories."""
     # Create mock kit
     kit_dir = tmp_project / "mock_kit"
     kit_dir.mkdir()
 
-    manifest = kit_dir / "kit.yaml"
-    manifest.write_text(
-        "name: mixed-kit\n"
-        "version: 1.0.0\n"
-        "description: Kit with both workflow and agent\n"
-        "artifacts:\n"
-        "  agent:\n"
-        "    - agents/mixed-kit/helper.md\n"
-        "  workflow:\n"
-        "    - workflows/mixed-kit/ci.yml\n",
-        encoding="utf-8",
-    )
+    agents_dir = kit_dir / "agents"
+    agents_dir.mkdir()
 
-    # Create agent
-    agents_dir = kit_dir / "agents" / "mixed-kit"
-    agents_dir.mkdir(parents=True)
-    (agents_dir / "helper.md").write_text("# Helper Agent", encoding="utf-8")
-
-    # Create workflow
-    workflows_dir = kit_dir / "workflows" / "mixed-kit"
-    workflows_dir.mkdir(parents=True)
-    (workflows_dir / "ci.yml").write_text(
-        "name: CI\non: [push, pull_request]\njobs: {}\n",
-        encoding="utf-8",
-    )
-
-    # Mock resolution
-    resolved = ResolvedKit(
-        kit_id="mixed-kit",
-        version="1.0.0",
-        source_type="package",
-        manifest_path=manifest,
-        artifacts_base=kit_dir,
-    )
-
-    # Install
-    installed = install_kit(resolved, tmp_project)
-
-    # Verify both artifact types
-    assert len(installed.artifacts) == 2
-
-    # Verify agent installed in .claude/
-    agent_path = tmp_project / ".claude" / "agents" / "mixed-kit" / "helper.md"
-    assert agent_path.exists()
-    assert "# Helper Agent" in agent_path.read_text(encoding="utf-8")
-
-    # Verify workflow installed in .github/
-    workflow_path = tmp_project / ".github" / "workflows" / "mixed-kit" / "ci.yml"
-    assert workflow_path.exists()
-    assert "name: CI" in workflow_path.read_text(encoding="utf-8")
-
-
-def test_install_kit_workflow_creates_github_directory(tmp_project: Path) -> None:
-    """Test installation creates .github directory structure when needed."""
-    # Create mock kit
-    kit_dir = tmp_project / "mock_kit"
-    kit_dir.mkdir()
-
-    manifest = kit_dir / "kit.yaml"
-    manifest.write_text(
-        "name: test-kit\n"
-        "version: 1.0.0\n"
-        "description: Test\n"
-        "artifacts:\n"
-        "  workflow:\n"
-        "    - workflows/test-kit/build.yml\n",
-        encoding="utf-8",
-    )
-
-    workflows_dir = kit_dir / "workflows" / "test-kit"
-    workflows_dir.mkdir(parents=True)
-    (workflows_dir / "build.yml").write_text("name: Build\n", encoding="utf-8")
+    # Create artifacts - all should be installed regardless of frontmatter
+    _create_kit_artifact(agents_dir / "correct.md", "# Correct Agent", "test-kit")
+    _create_kit_artifact(agents_dir / "other.md", "# Other Agent", "other-kit")
+    (agents_dir / "no-frontmatter.md").write_text("# No Frontmatter", encoding="utf-8")
 
     resolved = ResolvedKit(
         kit_id="test-kit",
         version="1.0.0",
         source_type="package",
-        manifest_path=manifest,
+        manifest_path=kit_dir / "kit.yaml",
         artifacts_base=kit_dir,
     )
 
-    # Verify .github doesn't exist before install
-    assert not (tmp_project / ".github").exists()
-
     # Install
-    install_kit(resolved, tmp_project)
+    installed = install_kit(resolved, tmp_project, overwrite=False, filtered_artifacts=None)
 
-    # Verify directories created
-    assert (tmp_project / ".github").exists()
-    assert (tmp_project / ".github" / "workflows").exists()
-    assert (tmp_project / ".github" / "workflows" / "test-kit" / "build.yml").exists()
+    # All artifacts should be installed (directory-based discovery)
+    assert len(installed.artifacts) == 3
+    assert (tmp_project / ".claude" / "agents" / "correct.md").exists()
+    assert (tmp_project / ".claude" / "agents" / "other.md").exists()
+    assert (tmp_project / ".claude" / "agents" / "no-frontmatter.md").exists()

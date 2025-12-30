@@ -1,8 +1,6 @@
 ---
 name: fake-driven-testing-testing-strategy
 description: Five-layer testing approach and test placement decisions
-erk:
-  kit: fake-driven-testing
 ---
 
 # Testing Strategy by Layer

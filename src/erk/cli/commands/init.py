@@ -364,10 +364,7 @@ def init_cmd(
     elif not in_erk_repo(repo_context.root):
         user_output("Installing erk artifacts...")
         sync_result = sync_artifacts(repo_context.root)
-        user_output(
-            f"  Installed {sync_result.artifacts_installed} artifacts, "
-            f"{sync_result.hooks_installed} hooks"
-        )
+        user_output(f"  Installed {sync_result.artifacts_installed} artifacts")
     else:
         user_output("Dev mode detected - using source artifacts directly")
         # Still create state file with current version

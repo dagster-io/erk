@@ -1,8 +1,6 @@
 ---
 name: fake-driven-testing-anti-patterns
 description: Common testing mistakes to avoid
-erk:
-  kit: fake-driven-testing
 ---
 
 # Testing Anti-Patterns

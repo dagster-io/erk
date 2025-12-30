@@ -1,8 +1,6 @@
 ---
 name: fake-driven-testing-python-specific
 description: Python-specific testing patterns for pytest and type hints
-erk:
-  kit: fake-driven-testing
 ---
 
 # Python-Specific Testing Patterns

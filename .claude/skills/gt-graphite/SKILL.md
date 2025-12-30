@@ -5,8 +5,6 @@ description:
   pull requests. Use when users mention gt commands, stack management, PR workflows,
   or when dealing with dependent branches. Essential for understanding stack navigation,
   branch relationships, and Graphite's mental model.
-erk:
-  kit: erk
 ---
 
 # Graphite

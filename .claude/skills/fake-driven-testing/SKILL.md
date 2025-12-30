@@ -6,8 +6,6 @@ description:
   working with fakes, implementing ABC gateway interfaces, or understanding the defense-in-depth
   testing strategy. Essential for maintaining test quality and understanding where
   different types of tests belong.
-erk:
-  kit: fake-driven-testing
 ---
 
 # Fake-Driven Testing Architecture for Python

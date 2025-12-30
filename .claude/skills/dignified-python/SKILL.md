@@ -7,8 +7,6 @@ description: Python coding standards with automatic version detection.
   Also provides production-tested code smell patterns from Dagster Labs for API design,
   parameter complexity, and code organization. Essential for maintaining erk's dignified
   Python standards.
-erk:
-  kit: dignified-python
 ---
 
 # Dignified Python Coding Standards

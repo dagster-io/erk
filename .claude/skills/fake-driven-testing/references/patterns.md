@@ -1,8 +1,6 @@
 ---
 name: fake-driven-testing-patterns
 description: Testing patterns including constructor injection and mutation tracking
-erk:
-  kit: fake-driven-testing
 ---
 
 # Testing Patterns

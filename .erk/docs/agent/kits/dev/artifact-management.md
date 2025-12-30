@@ -30,27 +30,17 @@ SOURCE LOCATIONS (source of truth)        BUILT OUTPUT
 
 **Key Insight**: Source locations are the source of truth. Kit packages contain built artifacts copied via `erk dev kit-build`.
 
-## Frontmatter Requirements
+## Directory-Based Discovery
 
-Source files must declare which kit they belong to using YAML frontmatter:
+Artifacts are discovered by scanning source directories for all markdown files.
+All artifacts from source directories are included in the built kit.
 
-```yaml
----
-erk.kit: <kit-name>
----
-```
+Source directories:
 
-### Example
-
-```yaml
----
-title: My Skill
-erk.kit: erk-core
----
-# My Skill Content
-```
-
-The `erk.kit` field tells the build system which kit package should receive this artifact.
+- `.claude/commands/` - Command artifacts
+- `.claude/skills/` - Skill artifacts
+- `.claude/agents/` - Agent artifacts
+- `.erk/docs/kits/` - Documentation artifacts
 
 ## Development Workflow
 
@@ -63,13 +53,12 @@ The `erk.kit` field tells the build system which kit package should receive this
 ### Adding New Artifacts
 
 1. **Create the source file** in the appropriate location:
+   - Commands → `.claude/commands/<namespace>/`
    - Skills → `.claude/skills/<name>/SKILL.md`
+   - Agents → `.claude/agents/`
    - Kit docs → `.erk/docs/kits/<path>/`
-   - Workflows → `.github/workflows/`
-2. **Add frontmatter** with `erk.kit: <kit-name>`
-3. **Run build**: `erk dev kit-build`
-4. **Update kit.yaml** to list the new artifact path
-5. **Commit all changes**
+2. **Run build**: `erk dev kit-build`
+3. **Commit all changes**
 
 ## The `kit-build` Command
 
@@ -78,7 +67,7 @@ The `erk.kit` field tells the build system which kit package should receive this
 erk dev kit-build
 
 # Build specific kit
-erk dev kit-build --kit erk-core
+erk dev kit-build --kit erk
 
 # Check for drift without building (CI mode)
 erk dev kit-build --check
@@ -117,16 +106,6 @@ make kit-build-check
 If CI fails with "kit artifacts out of sync", the developer forgot to run `kit-build` after editing source files.
 
 ## Troubleshooting
-
-### Problem: kit-build says "missing frontmatter"
-
-**Cause**: Source file doesn't have `erk.kit: <kit-name>` in its YAML frontmatter
-**Fix**: Add the frontmatter field specifying which kit owns this artifact
-
-### Problem: kit-build says "wrong kit field"
-
-**Cause**: The `erk.kit` value doesn't match any known kit name
-**Fix**: Check kit names in `packages/erk-kits/data/kits/` and use the correct one
 
 ### Problem: Built artifact doesn't appear in kit package
 

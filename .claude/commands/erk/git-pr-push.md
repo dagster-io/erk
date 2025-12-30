@@ -1,8 +1,6 @@
 ---
 description: Create git commit and push branch as PR using git + GitHub CLI
 argument-hint: <description>
-erk:
-  kit: erk
 ---
 
 # Push PR (Git Only)

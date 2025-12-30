@@ -1,6 +1,4 @@
 ---
-erk:
-  kit: erk
 ---
 
 # Git Repository Validation

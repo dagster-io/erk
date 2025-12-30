@@ -1,8 +1,7 @@
 """Configuration models for erk.kits."""
 
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 
-from erk.kits.hooks.models import HookDefinition
 from erk.kits.models.types import SourceType
 
 
@@ -14,7 +13,6 @@ class InstalledKit:
     source_type: SourceType
     version: str
     artifacts: list[str]
-    hooks: list[HookDefinition] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

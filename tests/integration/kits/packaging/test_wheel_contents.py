@@ -65,18 +65,6 @@ def test_wheel_contains_registry(build_wheel: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    "kit_name",
-    ["erk"],
-)
-def test_wheel_contains_kit_yaml(build_wheel: Path, kit_name: str) -> None:
-    """Test that each kit's kit.yaml is included in the wheel."""
-    with zipfile.ZipFile(build_wheel) as wheel:
-        files = wheel.namelist()
-        expected_path = f"erk_kits/data/kits/{kit_name}/kit.yaml"
-        assert any(expected_path in f for f in files), f"Missing {expected_path}"
-
-
-@pytest.mark.parametrize(
     ("kit_name", "skill_name", "reference_file"),
     [
         ("erk", "gt-graphite", "gt-reference.md"),
