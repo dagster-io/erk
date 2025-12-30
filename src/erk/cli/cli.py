@@ -125,7 +125,7 @@ def _show_version_warning() -> None:
         from erk.core.version_check import (
             format_version_warning,
             get_required_version,
-            is_version_outdated,
+            is_version_mismatch,
         )
         from erk_shared.git.real import RealGit
 
@@ -142,7 +142,7 @@ def _show_version_warning() -> None:
 
         # Compare versions
         installed = get_current_version()
-        if not is_version_outdated(installed, required):
+        if not is_version_mismatch(installed, required):
             return
 
         # Show warning

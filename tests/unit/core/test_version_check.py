@@ -5,7 +5,7 @@ from pathlib import Path
 from erk.core.version_check import (
     format_version_warning,
     get_required_version,
-    is_version_outdated,
+    is_version_mismatch,
 )
 
 
@@ -40,24 +40,20 @@ def test_get_required_version_strips_whitespace(tmp_path: Path) -> None:
     assert result == "0.2.8"
 
 
-def test_is_version_outdated_returns_true_when_installed_is_older() -> None:
-    """Test is_version_outdated returns True when installed < required."""
-    assert is_version_outdated("0.2.7", "0.2.8") is True
-    assert is_version_outdated("0.2.0", "0.3.0") is True
-    assert is_version_outdated("0.2.8", "1.0.0") is True
+def test_is_version_mismatch_returns_true_when_versions_differ() -> None:
+    """Test is_version_mismatch returns True when versions don't match."""
+    # Installed older than required
+    assert is_version_mismatch("0.2.7", "0.2.8") is True
+    assert is_version_mismatch("0.2.0", "0.3.0") is True
+    # Installed newer than required
+    assert is_version_mismatch("0.2.9", "0.2.8") is True
+    assert is_version_mismatch("1.0.0", "0.2.8") is True
 
 
-def test_is_version_outdated_returns_false_when_installed_is_same() -> None:
-    """Test is_version_outdated returns False when installed == required."""
-    assert is_version_outdated("0.2.8", "0.2.8") is False
-    assert is_version_outdated("1.0.0", "1.0.0") is False
-
-
-def test_is_version_outdated_returns_false_when_installed_is_newer() -> None:
-    """Test is_version_outdated returns False when installed > required."""
-    assert is_version_outdated("0.2.9", "0.2.8") is False
-    assert is_version_outdated("0.3.0", "0.2.8") is False
-    assert is_version_outdated("1.0.0", "0.2.8") is False
+def test_is_version_mismatch_returns_false_when_versions_match() -> None:
+    """Test is_version_mismatch returns False when versions match exactly."""
+    assert is_version_mismatch("0.2.8", "0.2.8") is False
+    assert is_version_mismatch("1.0.0", "1.0.0") is False
 
 
 def test_format_version_warning_includes_both_versions() -> None:

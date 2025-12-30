@@ -25,21 +25,21 @@ def get_required_version(repo_root: Path) -> str | None:
     return version_file.read_text(encoding="utf-8").strip()
 
 
-def is_version_outdated(installed: str, required: str) -> bool:
-    """Check if installed version is older than required.
+def is_version_mismatch(installed: str, required: str) -> bool:
+    """Check if installed version doesn't match required version exactly.
 
     Args:
         installed: Currently installed version (e.g., "0.2.7")
         required: Required version from repo (e.g., "0.2.8")
 
     Returns:
-        True if installed < required, False otherwise
+        True if versions don't match exactly, False if they match
     """
-    return Version(installed) < Version(required)
+    return Version(installed) != Version(required)
 
 
 def format_version_warning(installed: str, required: str) -> str:
-    """Format warning message for outdated version.
+    """Format warning message for version mismatch.
 
     Args:
         installed: Currently installed version
@@ -49,7 +49,7 @@ def format_version_warning(installed: str, required: str) -> str:
         Formatted warning message
     """
     return (
-        f"⚠️  Your erk ({installed}) is older than required ({required})\n"
+        f"⚠️  Your erk ({installed}) doesn't match required ({required})\n"
         f"   You must update or erk may not work properly.\n"
         f"   Update: uv tool upgrade erk"
     )
