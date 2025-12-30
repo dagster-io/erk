@@ -4,9 +4,20 @@ read_when:
   - "creating hooks"
   - "modifying hooks"
   - "understanding hook lifecycle"
+  - "configuring .claude/settings.json hooks"
+  - "adding SessionStart hook"
+  - "adding UserPromptSubmit hook"
+  - "adding PreToolUse hook"
+tripwires:
+  - action: "adding or modifying hooks in .claude/settings.json"
+    warning: "Fetch https://code.claude.com/docs/en/hooks.md first. Hook APIs change - never rely on cached knowledge."
 ---
 
 # Claude Code Hooks Guide
+
+> **CRITICAL**: Before writing any hook configuration, fetch the official documentation:
+> `WebFetch: https://code.claude.com/docs/en/hooks.md`
+> Hook APIs evolve - never rely on assumed knowledge about events, matchers, or output schemas.
 
 Complete guide to Claude Code hooks: general capabilities and project-specific usage.
 
