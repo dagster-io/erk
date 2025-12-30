@@ -9,8 +9,6 @@ Two-layer architecture:
 - src/erk/cli/github_parsing.py: CLI wrappers that raise SystemExit(1)
 """
 
-import re
-
 import click
 
 from erk_shared.github.parsing import (
@@ -62,8 +60,7 @@ def parse_issue_identifier(identifier: str) -> int:
 def parse_pr_identifier(identifier: str) -> int:
     """Parse PR number from plain number or GitHub PR URL.
 
-    This is a CLI-level function that handles user input. Supports both
-    github.com and GitHub Enterprise URLs.
+    This is a CLI-level function that handles user input.
 
     Args:
         identifier: Plain number ("42") or GitHub PR URL
@@ -79,24 +76,20 @@ def parse_pr_identifier(identifier: str) -> int:
         42
         >>> parse_pr_identifier("https://github.com/owner/repo/pull/123")
         123
-        >>> parse_pr_identifier("https://github.company.com/org/repo/pull/888")
-        888
     """
     # Plain number (handles leading zeros like "0042" -> 42)
     if identifier.isdigit():
         return int(identifier)
 
-    # Try strict github.com URL first
+    # Try strict github.com URL (PR or issue URL)
     pr_number = parse_pr_number_from_url(identifier)
     if pr_number is not None:
         return pr_number
 
-    # Fallback: permissive pattern for GitHub Enterprise and other URLs
-    # Matches /pull/123 or /issues/123 or plain 123 at end of string
-    pattern = r"(?:(?:pull|issues)/)?(\d+)(?:[?#].*)?$"
-    match = re.search(pattern, identifier)
-    if match:
-        return int(match.group(1))
+    # Also accept /issues/ URLs (same repository reference pattern)
+    issue_number = parse_issue_number_from_url(identifier)
+    if issue_number is not None:
+        return issue_number
 
     user_output(
         click.style("Error: ", fg="red")
