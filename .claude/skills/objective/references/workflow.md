@@ -29,7 +29,7 @@ Do NOT create an objective for:
 ```bash
 gh issue create \
   --title "Objective: [Descriptive Title]" \
-  --label "objective" \
+  --label "erk-objective" \
   --body "$(cat <<'EOF'
 # Objective: [Title]
 
@@ -242,7 +242,7 @@ gh issue close <issue-number> --reason "not planned"
 
 ```bash
 # List open objectives
-gh issue list --label "objective" --state open
+gh issue list --label "erk-objective" --state open
 
 # View specific objective
 gh issue view <issue-number>

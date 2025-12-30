@@ -39,7 +39,7 @@ Invoke this skill when users:
 | Scope    | One PR or tightly-coupled change | Multiple plans toward coherent goal |
 | Body     | Machine-parseable metadata       | Human-readable markdown             |
 | Comments | Session context dumps            | Action logs + lessons               |
-| Label    | `erk-plan`                       | `objective`                         |
+| Label    | `erk-plan`                       | `erk-objective`                     |
 | Tooling  | `erk plan submit/implement`      | Manual updates via comments         |
 
 ## Key Design Principles
@@ -55,7 +55,7 @@ Invoke this skill when users:
 ### Creating an Objective
 
 ```bash
-gh issue create --title "Objective: [Title]" --label "objective" --body "$(cat <<'EOF'
+gh issue create --title "Objective: [Title]" --label "erk-objective" --body "$(cat <<'EOF'
 # Objective: [Title]
 
 > [1-2 sentence summary]
