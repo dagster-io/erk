@@ -10,6 +10,7 @@ from erk.kits.hooks.installer import install_hooks
 from erk.kits.io.manifest import load_kit_manifest
 from erk.kits.models.artifact import ARTIFACT_TARGET_DIRS, ArtifactType
 from erk.kits.operations.artifact_operations import create_artifact_operations
+from erk_kits import get_kits_dir
 
 
 @dataclass
@@ -34,9 +35,6 @@ def sync_artifacts(project_dir: Path) -> SyncResult:
     Returns:
         SyncResult with counts of installed artifacts and hooks
     """
-    # Inline import to avoid import-time side effects
-    from erk_kits import get_kits_dir
-
     erk_kit_path = get_kits_dir() / "erk"
     manifest = load_kit_manifest(erk_kit_path / "kit.yaml")
 

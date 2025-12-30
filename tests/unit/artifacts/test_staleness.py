@@ -28,7 +28,7 @@ def test_check_staleness_not_initialized(tmp_project: Path) -> None:
         result = check_staleness(tmp_project)
 
     assert result.is_stale is True
-    assert result.reason == "not initialized"
+    assert result.reason == "not-initialized"
     assert result.current_version == "1.0.0"
     assert result.installed_version is None
 
@@ -41,7 +41,7 @@ def test_check_staleness_version_mismatch(tmp_project: Path) -> None:
         result = check_staleness(tmp_project)
 
     assert result.is_stale is True
-    assert result.reason == "version mismatch"
+    assert result.reason == "version-mismatch"
     assert result.current_version == "2.0.0"
     assert result.installed_version == "1.0.0"
 
@@ -54,7 +54,7 @@ def test_check_staleness_up_to_date(tmp_project: Path) -> None:
         result = check_staleness(tmp_project)
 
     assert result.is_stale is False
-    assert result.reason == "up to date"
+    assert result.reason == "up-to-date"
     assert result.current_version == "1.0.0"
     assert result.installed_version == "1.0.0"
 
@@ -65,7 +65,7 @@ def test_staleness_result_is_frozen() -> None:
 
     result = StalenessResult(
         is_stale=True,
-        reason="test",
+        reason="not-initialized",
         current_version="1.0.0",
         installed_version=None,
     )

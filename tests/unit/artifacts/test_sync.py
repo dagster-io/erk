@@ -81,7 +81,7 @@ def test_sync_artifacts_installs_and_saves_state(tmp_project: Path) -> None:
 
     with (
         patch("erk.artifacts.sync.get_current_version", return_value="1.2.3"),
-        patch("erk_kits.get_kits_dir", return_value=tmp_project / "kits"),
+        patch("erk.artifacts.sync.get_kits_dir", return_value=tmp_project / "kits"),
         patch("erk.artifacts.sync.load_kit_manifest", return_value=mock_manifest),
     ):
         # Create the expected kit path
@@ -111,7 +111,7 @@ def test_sync_artifacts_creates_parent_dirs(tmp_project: Path) -> None:
 
     with (
         patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
-        patch("erk_kits.get_kits_dir", return_value=tmp_project / "kits"),
+        patch("erk.artifacts.sync.get_kits_dir", return_value=tmp_project / "kits"),
         patch("erk.artifacts.sync.load_kit_manifest", return_value=mock_manifest),
     ):
         # Create the expected kit path with nested artifact
@@ -138,7 +138,7 @@ def test_sync_artifacts_skips_missing_source_files(tmp_project: Path) -> None:
 
     with (
         patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
-        patch("erk_kits.get_kits_dir", return_value=tmp_project / "kits"),
+        patch("erk.artifacts.sync.get_kits_dir", return_value=tmp_project / "kits"),
         patch("erk.artifacts.sync.load_kit_manifest", return_value=mock_manifest),
     ):
         # Create kit dir but NOT the artifact

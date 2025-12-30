@@ -51,7 +51,7 @@ def test_check_command_up_to_date(tmp_path: Path) -> None:
             patch("erk.cli.commands.artifacts.check.check_staleness") as mock_check,
         ):
             mock_check.return_value = MagicMock(
-                is_stale=False, reason="up to date", installed_version="1.0.0"
+                is_stale=False, reason="up-to-date", installed_version="1.0.0"
             )
             result = runner.invoke(check, obj=ctx)
 
@@ -77,12 +77,12 @@ def test_check_command_version_mismatch(tmp_path: Path) -> None:
             patch("erk.cli.commands.artifacts.check.check_staleness") as mock_check,
         ):
             mock_check.return_value = MagicMock(
-                is_stale=True, reason="version mismatch", installed_version="1.0.0"
+                is_stale=True, reason="version-mismatch", installed_version="1.0.0"
             )
             result = runner.invoke(check, obj=ctx)
 
     assert result.exit_code == 0
-    assert "version mismatch" in result.output
+    assert "version-mismatch" in result.output
 
 
 def test_check_command_dev_mode(tmp_path: Path) -> None:

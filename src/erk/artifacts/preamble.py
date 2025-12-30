@@ -6,6 +6,7 @@ from pathlib import Path
 import click
 
 from erk.artifacts.staleness import check_staleness, is_dev_mode
+from erk.artifacts.sync import sync_artifacts
 
 
 def check_and_prompt_artifact_sync(project_dir: Path, no_sync: bool = False) -> None:
@@ -31,7 +32,7 @@ def check_and_prompt_artifact_sync(project_dir: Path, no_sync: bool = False) -> 
 
     # Skip silently if not initialized - artifacts are optional
     # Users can run 'erk init' or 'erk artifacts sync' to enable artifact sync
-    if result.reason == "not initialized":
+    if result.reason == "not-initialized":
         return
 
     # Handle "version mismatch" case
@@ -53,9 +54,6 @@ def check_and_prompt_artifact_sync(project_dir: Path, no_sync: bool = False) -> 
     )
 
     if click.confirm("Sync now?", default=True):
-        # Inline import to avoid circular dependency
-        from erk.artifacts.sync import sync_artifacts
-
         sync_result = sync_artifacts(project_dir)
         click.echo(
             click.style("✓ ", fg="green") + f"Synced {sync_result.artifacts_installed} artifacts, "

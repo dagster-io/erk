@@ -1,5 +1,6 @@
 import logging
 import sys
+from pathlib import Path
 
 import click
 
@@ -125,10 +126,7 @@ def cli(ctx: click.Context, debug: bool, no_sync: bool) -> None:
 
         # Check artifact sync (skip for init and dev commands)
         if ctx.invoked_subcommand not in ("init", "dev"):
-            from pathlib import Path
-
-            project_dir = Path.cwd()
-            check_and_prompt_artifact_sync(project_dir, no_sync=no_sync)
+            check_and_prompt_artifact_sync(Path.cwd(), no_sync=no_sync)
 
     # Only create context if not already provided (e.g., by tests)
     if ctx.obj is None:
