@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 
 
 @dataclass
@@ -265,6 +266,35 @@ CATEGORY_DATA = [
 ]
 
 
+class InvalidDateFormat(Exception):
+    """Raised when a date string cannot be parsed."""
+
+
+def parse_since_date(value: str) -> datetime:
+    """Parse a date/time string into a datetime object.
+
+    Supports:
+    - ISO date: 2025-12-28
+    - ISO datetime: 2025-12-28T14:30:00
+
+    Raises:
+        InvalidDateFormat: If the value cannot be parsed.
+    """
+    # Try ISO date format first
+    try:
+        return datetime.strptime(value, "%Y-%m-%d")
+    except ValueError:
+        pass
+
+    # Try ISO datetime format
+    try:
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S")
+    except ValueError:
+        pass
+
+    raise InvalidDateFormat(f"Cannot parse date: {value}")
+
+
 def fetch_merged_prs(since_date: str, until_date: str | None = None) -> list[dict]:
     """Fetch merged PRs from GitHub for a date range."""
     if until_date:
@@ -291,21 +321,32 @@ def fetch_merged_prs(since_date: str, until_date: str | None = None) -> list[dic
     return json.loads(result.stdout)
 
 
-def fetch_all_merged_prs(since_date: str) -> list[dict]:
-    """Fetch all merged PRs using pagination by date ranges to avoid 1000 limit."""
-    from datetime import datetime, timedelta
+def local_to_utc(dt: datetime) -> datetime:
+    """Convert a naive local datetime to UTC."""
+    # Treat naive datetime as local time, then convert to UTC
+    local_dt = dt.astimezone()  # Adds local timezone
+    return local_dt.astimezone(timezone.utc)
 
-    start = datetime.strptime(since_date, "%Y-%m-%d")
-    end = datetime.now()
+
+def fetch_all_merged_prs(since: datetime) -> list[dict]:
+    """Fetch all merged PRs using pagination by date ranges to avoid 1000 limit.
+
+    Args:
+        since: A naive datetime in local time.
+    """
+    # Convert local times to UTC for GitHub API queries
+    since_utc = local_to_utc(since)
+    end_utc = local_to_utc(datetime.now())
+
     all_prs: list[dict] = []
     seen_numbers: set[int] = set()
 
     # Paginate in 2-week chunks
-    current = start
-    while current < end:
-        chunk_end = min(current + timedelta(days=14), end)
-        chunk_start_str = current.strftime("%Y-%m-%d")
-        chunk_end_str = chunk_end.strftime("%Y-%m-%d")
+    current = since_utc
+    while current < end_utc:
+        chunk_end = min(current + timedelta(days=14), end_utc)
+        chunk_start_str = current.strftime("%Y-%m-%dT%H:%M:%S")
+        chunk_end_str = chunk_end.strftime("%Y-%m-%dT%H:%M:%S")
 
         prs = fetch_merged_prs(chunk_start_str, chunk_end_str)
         for pr in prs:
@@ -353,7 +394,7 @@ def analyze_prs(prs: list[dict]) -> dict[str, CategoryStats]:
     return categories
 
 
-def print_report(categories: dict[str, CategoryStats], since_date: str) -> None:
+def print_report(categories: dict[str, CategoryStats], since: datetime) -> None:
     """Print the formatted report."""
     total_prs = sum(len(c.prs) for c in categories.values())
     total_loc = sum(c.total for c in categories.values())
@@ -361,7 +402,12 @@ def print_report(categories: dict[str, CategoryStats], since_date: str) -> None:
     total_py_test = sum(c.py_test for c in categories.values())
     total_md = sum(c.md for c in categories.values())
 
-    print(f"## PRs Merged Since {since_date}\n")
+    # Format datetime for display - use ISO format with time if not midnight
+    if since.hour == 0 and since.minute == 0 and since.second == 0:
+        display_date = since.strftime("%Y-%m-%d")
+    else:
+        display_date = since.strftime("%Y-%m-%dT%H:%M:%S")
+    print(f"## PRs Merged Since {display_date}\n")
     header = (
         "| Category                        "
         "| PRs |    % |       Py | Py (test) |  Markdown | Net LOC |    % |"
@@ -395,11 +441,12 @@ def print_report(categories: dict[str, CategoryStats], since_date: str) -> None:
 
 def main() -> None:
     """Main entry point."""
-    since_date = sys.argv[1] if len(sys.argv) > 1 else "2025-12-08"
+    since_input = sys.argv[1] if len(sys.argv) > 1 else "2025-12-08"
+    since = parse_since_date(since_input)
 
-    prs = fetch_all_merged_prs(since_date)
+    prs = fetch_all_merged_prs(since)
     categories = analyze_prs(prs)
-    print_report(categories, since_date)
+    print_report(categories, since)
 
 
 if __name__ == "__main__":

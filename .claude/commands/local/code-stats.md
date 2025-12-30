@@ -1,6 +1,6 @@
 ---
 description: Analyze merged PRs by category with net lines of code statistics
-argument-hint: [since-date]
+argument-hint: [since]
 ---
 
 # /local:code-stats
@@ -10,19 +10,37 @@ Analyzes merged PRs and categorizes them by type (user-facing features, bug fixe
 ## Usage
 
 ```bash
-/local:code-stats                    # Default: since yesterday
+/local:code-stats                    # Default: since 2025-12-08
 /local:code-stats 2025-12-01         # Since specific date
+/local:code-stats "last 48 hours"    # Since 48 hours ago
+/local:code-stats "last 2 weeks"     # Since 2 weeks ago
 ```
+
+### Supported date formats
+
+- **ISO date**: `2025-12-01`
+- **ISO datetime**: `2025-12-01T14:30:00`
+- **Relative**: `last N hour(s)`, `last N day(s)`, `last N week(s)`
 
 ## Implementation
 
-Run the Python script:
+1. **Interpret the user's input** (`$ARGUMENTS`) and convert it to an ISO datetime string:
+   - "4 hours ago" / "since 4 hours ago" → subtract 4 hours from now
+   - "yesterday" → yesterday's date at 00:00:00
+   - "last week" → 7 days ago
+   - "last 2 weeks" → 14 days ago
+   - "2025-12-01" → use as-is
+   - Empty/no argument → default to `2025-12-08`
+
+2. **Run the Python script** with the ISO datetime:
 
 ```bash
-python3 scripts/code_stats.py $ARGUMENTS
+python3 scripts/code_stats.py <ISO_DATETIME>
 ```
 
-If no argument provided, default to yesterday's date in ISO format (YYYY-MM-DD).
+The Python script expects a single argument in one of these formats:
+- ISO date: `2025-12-28`
+- ISO datetime: `2025-12-28T14:30:00`
 
 ## Output
 
