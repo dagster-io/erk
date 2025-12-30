@@ -37,6 +37,13 @@ from erk.cli.commands.up import up_cmd
 from erk.cli.commands.wt import wt_group
 from erk.cli.help_formatter import ErkCommandGroup
 from erk.core.context import create_context
+from erk.core.release_notes import check_for_version_change, get_current_version
+from erk.core.version_check import (
+    format_version_warning,
+    get_required_version,
+    is_version_mismatch,
+)
+from erk_shared.git.real import RealGit
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])  # terse help flags
 
@@ -48,9 +55,6 @@ def _show_version_change_banner() -> None:
     to confirm before continuing. This function is designed to never fail -
     exceptions are logged but don't break the CLI.
     """
-    # Inline import to avoid import-time side effects
-    from erk.core.release_notes import check_for_version_change, get_current_version
-
     try:
         changed, releases = check_for_version_change()
         if not changed or not releases:
@@ -119,15 +123,6 @@ def _show_version_warning() -> None:
         return
 
     try:
-        # Inline imports to avoid import-time side effects
-        from erk.core.release_notes import get_current_version
-        from erk.core.version_check import (
-            format_version_warning,
-            get_required_version,
-            is_version_mismatch,
-        )
-        from erk_shared.git.real import RealGit
-
         # Find git repo root (if in a git repo)
         git = RealGit()
         repo_root = git.get_repository_root(Path.cwd())
