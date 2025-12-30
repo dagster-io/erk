@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash scripts/venv-activation-check.sh"
+            "command": "python scripts/venv-activation-check.py"
           }
         ]
       }
