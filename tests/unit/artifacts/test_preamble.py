@@ -36,13 +36,15 @@ def test_preamble_passes_when_up_to_date(tmp_project: Path) -> None:
     # No exception means success
 
 
-def test_preamble_fails_not_initialized(tmp_project: Path) -> None:
-    """Test that preamble fails when project is not initialized."""
-    with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-        with pytest.raises(SystemExit) as exc_info:
-            check_and_prompt_artifact_sync(tmp_project, no_sync=False)
+def test_preamble_skips_when_not_initialized(tmp_project: Path) -> None:
+    """Test that preamble silently skips when project is not initialized.
 
-    assert exc_info.value.code == 1
+    Artifact sync is optional - projects that haven't run 'erk init' with
+    the artifact sync feature should not be blocked from using erk commands.
+    """
+    with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
+        check_and_prompt_artifact_sync(tmp_project, no_sync=False)
+    # No exception means success - not initialized is silently skipped
 
 
 def test_preamble_fails_stale_non_tty(tmp_project: Path) -> None:
@@ -78,9 +80,7 @@ def test_preamble_prompts_stale_tty_user_accepts(tmp_project: Path) -> None:
     """Test that preamble prompts in TTY mode when stale, user accepts sync."""
     save_artifact_state(tmp_project, ArtifactState(version="1.0.0"))
 
-    mock_sync_result = type(
-        "SyncResult", (), {"artifacts_installed": 5, "hooks_installed": 2}
-    )()
+    mock_sync_result = type("SyncResult", (), {"artifacts_installed": 5, "hooks_installed": 2})()
 
     with (
         patch("erk.artifacts.staleness.get_current_version", return_value="2.0.0"),

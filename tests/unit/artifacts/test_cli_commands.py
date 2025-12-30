@@ -16,9 +16,7 @@ def test_check_command_not_initialized(tmp_path: Path) -> None:
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        with patch(
-            "erk.cli.commands.artifacts.check.get_current_version", return_value="1.0.0"
-        ):
+        with patch("erk.cli.commands.artifacts.check.get_current_version", return_value="1.0.0"):
             result = runner.invoke(check)
 
     assert result.exit_code == 0
@@ -84,9 +82,7 @@ def test_check_command_dev_mode(tmp_path: Path) -> None:
         project_dir = Path.cwd()
         (project_dir / "packages" / "erk-kits").mkdir(parents=True)
 
-        with patch(
-            "erk.cli.commands.artifacts.check.get_current_version", return_value="1.0.0"
-        ):
+        with patch("erk.cli.commands.artifacts.check.get_current_version", return_value="1.0.0"):
             result = runner.invoke(check)
 
     assert result.exit_code == 0
@@ -116,9 +112,7 @@ def test_sync_command_up_to_date(tmp_path: Path) -> None:
         project_dir = Path.cwd()
         save_artifact_state(project_dir, ArtifactState(version="1.0.0"))
 
-        with patch(
-            "erk.cli.commands.artifacts.sync.check_staleness"
-        ) as mock_check:
+        with patch("erk.cli.commands.artifacts.sync.check_staleness") as mock_check:
             mock_check.return_value = MagicMock(is_stale=False)
             result = runner.invoke(sync)
 

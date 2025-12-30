@@ -88,9 +88,7 @@ def test_sync_artifacts_installs_and_saves_state(tmp_project: Path) -> None:
         erk_kit = tmp_project / "kits" / "erk"
         erk_kit.mkdir(parents=True)
         (erk_kit / "commands" / "test").mkdir(parents=True)
-        (erk_kit / "commands" / "test" / "hello.md").write_text(
-            "# Test Command", encoding="utf-8"
-        )
+        (erk_kit / "commands" / "test" / "hello.md").write_text("# Test Command", encoding="utf-8")
 
         result = sync_artifacts(tmp_project)
 

@@ -29,13 +29,10 @@ def check_and_prompt_artifact_sync(project_dir: Path, no_sync: bool = False) -> 
     if not result.is_stale:
         return
 
-    # Handle "not initialized" case
+    # Skip silently if not initialized - artifacts are optional
+    # Users can run 'erk init' or 'erk artifacts sync' to enable artifact sync
     if result.reason == "not initialized":
-        click.echo(
-            click.style("Error: ", fg="red") + "erk not initialized. Run 'erk init' first.",
-            err=True,
-        )
-        raise SystemExit(1)
+        return
 
     # Handle "version mismatch" case
     if not sys.stdin.isatty():
@@ -61,7 +58,6 @@ def check_and_prompt_artifact_sync(project_dir: Path, no_sync: bool = False) -> 
 
         sync_result = sync_artifacts(project_dir)
         click.echo(
-            click.style("✓ ", fg="green")
-            + f"Synced {sync_result.artifacts_installed} artifacts, "
+            click.style("✓ ", fg="green") + f"Synced {sync_result.artifacts_installed} artifacts, "
             f"{sync_result.hooks_installed} hooks"
         )

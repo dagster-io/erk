@@ -221,8 +221,20 @@ def offer_claude_permission_setup(repo_root: Path) -> None:
     is_flag=True,
     help="Show shell integration setup instructions (completion + auto-activation wrapper).",
 )
+@click.option(
+    "--no-artifact-sync",
+    is_flag=True,
+    help="Skip artifact sync during initialization.",
+)
 @click.pass_obj
-def init_cmd(ctx: ErkContext, force: bool, preset: str, list_presets: bool, shell: bool) -> None:
+def init_cmd(
+    ctx: ErkContext,
+    force: bool,
+    preset: str,
+    list_presets: bool,
+    shell: bool,
+    no_artifact_sync: bool,
+) -> None:
     """Initialize erk for this repo and scaffold config.toml."""
 
     # Handle --shell flag: only do shell setup
@@ -342,11 +354,13 @@ def init_cmd(ctx: ErkContext, force: bool, preset: str, list_presets: bool, shel
         save_kit_config(repo_context.root, kit_config)
         user_output(f"Created {kits_toml_path}")
 
-    # Install artifacts (unless in dev mode)
+    # Install artifacts (unless in dev mode or --no-artifact-sync)
     # Inline imports to avoid import-time side effects
     from erk.artifacts.staleness import get_current_version, is_dev_mode
 
-    if not is_dev_mode(repo_context.root):
+    if no_artifact_sync:
+        user_output("Skipping artifact sync (--no-artifact-sync)")
+    elif not is_dev_mode(repo_context.root):
         from erk.artifacts.sync import sync_artifacts
 
         user_output("Installing erk artifacts...")
