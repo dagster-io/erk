@@ -7,7 +7,7 @@ import click
 
 import erk_kits
 from erk.kits.io.at_reference import parse_at_references
-from erk.kits.io.manifest import load_kit_manifest
+from erk.kits.io.frontmatter import parse_artifact_frontmatter
 
 
 @dataclass(frozen=True)
@@ -32,19 +32,58 @@ class KitCheckResult:
         return len(self.missing_references) == 0
 
 
-def get_kit_artifact_paths(manifest_path: Path) -> set[str]:
-    """Get all artifact paths declared in a kit manifest.
+def _discover_kit_artifacts(kit_path: Path, kit_name: str) -> dict[str, list[str]]:
+    """Discover artifacts in kit by scanning files for erk.kit frontmatter.
 
     Args:
-        manifest_path: Path to kit.yaml
+        kit_path: Path to kit directory
+        kit_name: Expected kit name in frontmatter
+
+    Returns:
+        Dict mapping artifact type to list of relative paths
+    """
+    artifacts: dict[str, list[str]] = {}
+
+    # Scan known artifact directories
+    artifact_dirs: list[tuple[str, str]] = [
+        ("commands", "command"),
+        ("skills", "skill"),
+        ("agents", "agent"),
+        ("docs", "doc"),
+    ]
+
+    for dir_name, artifact_type in artifact_dirs:
+        artifact_dir = kit_path / dir_name
+        if not artifact_dir.exists():
+            continue
+
+        for md_file in artifact_dir.rglob("*.md"):
+            content = md_file.read_text(encoding="utf-8")
+            frontmatter = parse_artifact_frontmatter(content)
+
+            if frontmatter is not None and frontmatter.kit == kit_name:
+                rel_path = str(md_file.relative_to(kit_path))
+                if artifact_type not in artifacts:
+                    artifacts[artifact_type] = []
+                artifacts[artifact_type].append(rel_path)
+
+    return artifacts
+
+
+def get_kit_artifact_paths(kit_path: Path, kit_name: str) -> set[str]:
+    """Get all artifact paths discovered in a kit by frontmatter scanning.
+
+    Args:
+        kit_path: Path to kit directory
+        kit_name: Kit name to match in frontmatter
 
     Returns:
         Set of artifact paths (with .claude/ prefix normalized)
     """
-    manifest = load_kit_manifest(manifest_path)
+    artifacts = _discover_kit_artifacts(kit_path, kit_name)
 
     paths: set[str] = set()
-    for artifact_list in manifest.artifacts.values():
+    for artifact_list in artifacts.values():
         for artifact_rel in artifact_list:
             # Normalize to .claude/ prefix for comparison
             paths.add(f".claude/{artifact_rel}")
@@ -56,26 +95,22 @@ def check_kit_references(kit_name: str, kit_path: Path) -> KitCheckResult:
     """Check all @ references in a kit's artifacts.
 
     Parses each artifact file and checks that all @ references point to
-    files that are also included in the kit's artifact list.
+    files that are also included in the kit's artifacts.
 
     Args:
         kit_name: Name of the kit being checked
-        kit_path: Path to the kit directory (containing kit.yaml)
+        kit_path: Path to the kit directory
 
     Returns:
         KitCheckResult with any missing references found
     """
-    manifest_path = kit_path / "kit.yaml"
-    if not manifest_path.exists():
-        return KitCheckResult(kit_name=kit_name, missing_references=[])
-
-    manifest = load_kit_manifest(manifest_path)
-    kit_artifacts = get_kit_artifact_paths(manifest_path)
+    artifacts = _discover_kit_artifacts(kit_path, kit_name)
+    kit_artifacts = get_kit_artifact_paths(kit_path, kit_name)
 
     missing: list[MissingReference] = []
 
     # Check each artifact for @ references
-    for artifact_list in manifest.artifacts.values():
+    for artifact_list in artifacts.values():
         for artifact_rel in artifact_list:
             artifact_path = kit_path / artifact_rel
             if not artifact_path.exists():
@@ -114,6 +149,25 @@ def check_kit_references(kit_name: str, kit_path: Path) -> KitCheckResult:
     return KitCheckResult(kit_name=kit_name, missing_references=missing)
 
 
+def _get_kit_names(kits_dir: Path) -> list[str]:
+    """Get list of kit names from the kits directory.
+
+    Args:
+        kits_dir: Path to kits directory
+
+    Returns:
+        List of kit directory names
+    """
+    if not kits_dir.exists():
+        return []
+
+    kit_names = []
+    for d in kits_dir.iterdir():
+        if d.is_dir() and d.name != "__pycache__":
+            kit_names.append(d.name)
+    return kit_names
+
+
 @click.command(name="kit-check")
 @click.option(
     "--kit",
@@ -125,7 +179,7 @@ def kit_check(kit_name: str | None) -> None:
     """Check kit integrity by validating @ references.
 
     Scans kit artifacts for @ references and verifies that all
-    referenced files are also included in the kit's artifacts list.
+    referenced files are also included in the kit's artifacts.
 
     This helps prevent broken references when a skill references
     documentation that wasn't included in the kit.
@@ -133,17 +187,13 @@ def kit_check(kit_name: str | None) -> None:
     Examples:
 
         # Check all bundled kits
-        dot-agent dev kit-check
+        erk dev kit-check
 
         # Check a specific kit
-        dot-agent dev kit-check --kit dignified-python
+        erk dev kit-check --kit erk
     """
     kits_dir = erk_kits.get_kits_dir()
-    kit_names = (
-        [d.name for d in kits_dir.iterdir() if d.is_dir() and (d / "kit.yaml").exists()]
-        if kits_dir.exists()
-        else []
-    )
+    kit_names = _get_kit_names(kits_dir)
 
     if not kit_names:
         click.echo("No bundled kits found")
@@ -172,10 +222,10 @@ def kit_check(kit_name: str | None) -> None:
             all_valid = False
             total_missing += len(result.missing_references)
             click.echo(f"  {name}: FAILED")
-            for missing in result.missing_references:
+            for missing_ref in result.missing_references:
                 click.echo(
-                    f"    {missing.artifact_path}:{missing.line_number} "
-                    f"references '{missing.reference_path}' (not in kit)"
+                    f"    {missing_ref.artifact_path}:{missing_ref.line_number} "
+                    f"references '{missing_ref.reference_path}' (not in kit)"
                 )
 
     click.echo()

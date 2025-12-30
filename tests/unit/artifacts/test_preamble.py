@@ -80,7 +80,7 @@ def test_preamble_prompts_stale_tty_user_accepts(tmp_project: Path) -> None:
     """Test that preamble prompts in TTY mode when stale, user accepts sync."""
     save_artifact_state(tmp_project, ArtifactState(version="1.0.0"))
 
-    mock_sync_result = type("SyncResult", (), {"artifacts_installed": 5, "hooks_installed": 2})()
+    mock_sync_result = type("SyncResult", (), {"artifacts_installed": 5})()
 
     with (
         patch("erk.artifacts.staleness.get_current_version", return_value="2.0.0"),

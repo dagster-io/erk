@@ -2,84 +2,11 @@
 
 from pathlib import Path
 
-import click
 import tomli
 import tomli_w
-from pydantic import ValidationError
 
 from erk.kits.cli.output import user_output
-from erk.kits.hooks.models import HookDefinition
 from erk.kits.models.config import InstalledKit, ProjectConfig
-
-
-def _extract_validation_error_details(error: ValidationError) -> tuple[list[str], list[str]]:
-    """Extract missing and invalid field information from Pydantic ValidationError.
-
-    Args:
-        error: Pydantic ValidationError instance
-
-    Returns:
-        Tuple of (missing_fields, invalid_fields) where:
-        - missing_fields: List of field names that are missing
-        - invalid_fields: List of "field_name (error_type)" strings for invalid fields
-    """
-    missing_fields = []
-    invalid_fields = []
-
-    for err in error.errors():
-        error_type = err.get("type", "")
-        field_path = err.get("loc", ())
-        field_name = ".".join(str(p) for p in field_path if isinstance(p, str))
-
-        if error_type == "missing":
-            missing_fields.append(field_name)
-        else:
-            invalid_fields.append(f"{field_name} ({error_type})")
-
-    return missing_fields, invalid_fields
-
-
-def _build_hook_validation_error_message(
-    kit_name: str,
-    hook_id: str,
-    hook_position: int,
-    total_hooks: int,
-    missing_fields: list[str],
-    invalid_fields: list[str],
-) -> str:
-    """Build user-friendly error message for hook validation failures.
-
-    Args:
-        kit_name: Name of the kit containing the invalid hook
-        hook_id: ID of the hook that failed validation (or "unknown")
-        hook_position: 0-based index of the hook in the list
-        total_hooks: Total number of hooks in the kit
-        missing_fields: List of missing required field names
-        invalid_fields: List of invalid field descriptions
-
-    Returns:
-        Formatted error message string
-    """
-    error_lines = [f"❌ Error: Invalid hook definition in kit '{kit_name}'", ""]
-    error_lines.append(f"Details: Hook ID: {hook_id}")
-    error_lines.append(f"  Position: Hook #{hook_position + 1} of {total_hooks}")
-
-    if missing_fields:
-        error_lines.append(f"  Missing required fields: {', '.join(missing_fields)}")
-    if invalid_fields:
-        error_lines.append(f"  Invalid fields: {', '.join(invalid_fields)}")
-
-    error_lines.extend(
-        [
-            "",
-            "Suggested action:",
-            f"  1. Run 'erk kit install {kit_name}' to reinstall with correct configuration",
-            "  2. Or manually edit kits.toml to add missing fields",
-            "  3. Check kit documentation for hook format",
-        ]
-    )
-
-    return "\n".join(error_lines)
 
 
 def _find_config_path(project_dir: Path) -> Path | None:
@@ -115,32 +42,6 @@ def load_project_config(project_dir: Path) -> ProjectConfig | None:
     kits: dict[str, InstalledKit] = {}
     if "kits" in data:
         for kit_name, kit_data in data["kits"].items():
-            # Parse hooks if present
-            hooks: list[HookDefinition] = []
-            if "hooks" in kit_data:
-                for idx, hook_data in enumerate(kit_data["hooks"]):
-                    try:
-                        hooks.append(HookDefinition.model_validate(hook_data))
-                    except ValidationError as e:
-                        # Error boundary: translate Pydantic errors to user-friendly messages
-                        # Extract hook ID from the specific failing hook
-                        if isinstance(hook_data, dict):
-                            hook_id = hook_data.get("id", "unknown")
-                        else:
-                            hook_id = "unknown"
-
-                        # Extract error details and build user-friendly message
-                        missing_fields, invalid_fields = _extract_validation_error_details(e)
-                        msg = _build_hook_validation_error_message(
-                            kit_name=kit_name,
-                            hook_id=hook_id,
-                            hook_position=idx,
-                            total_hooks=len(kit_data["hooks"]),
-                            missing_fields=missing_fields,
-                            invalid_fields=invalid_fields,
-                        )
-                        raise click.ClickException(msg) from e
-
             # Require kit_id field (no fallback)
             if "kit_id" not in kit_data:
                 msg = f"Kit configuration missing required 'kit_id' field: {kit_name}"
@@ -158,7 +59,6 @@ def load_project_config(project_dir: Path) -> ProjectConfig | None:
                 source_type=source_type,
                 version=kit_data["version"],
                 artifacts=kit_data["artifacts"],
-                hooks=hooks,
             )
 
     return ProjectConfig(
@@ -205,18 +105,12 @@ def save_project_config(project_dir: Path, config: ProjectConfig) -> None:
     }
 
     for kit_id, kit in config.kits.items():
-        kit_data = {
+        data["kits"][kit_id] = {
             "kit_id": kit.kit_id,
             "source_type": kit.source_type,
             "version": kit.version,
             "artifacts": kit.artifacts,
         }
-
-        # Add hooks if present
-        if kit.hooks:
-            kit_data["hooks"] = [h.model_dump(mode="json", exclude_none=True) for h in kit.hooks]
-
-        data["kits"][kit_id] = kit_data
 
     with open(config_path, "wb") as f:
         tomli_w.dump(data, f)

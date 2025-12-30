@@ -140,7 +140,6 @@ def test_sync_command_force_flag(tmp_path: Path) -> None:
 
     mock_sync_result = MagicMock()
     mock_sync_result.artifacts_installed = 3
-    mock_sync_result.hooks_installed = 1
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         project_dir = Path.cwd()
@@ -163,7 +162,6 @@ def test_sync_command_when_stale(tmp_path: Path) -> None:
 
     mock_sync_result = MagicMock()
     mock_sync_result.artifacts_installed = 5
-    mock_sync_result.hooks_installed = 2
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         project_dir = Path.cwd()
@@ -181,4 +179,4 @@ def test_sync_command_when_stale(tmp_path: Path) -> None:
             result = runner.invoke(sync, obj=ctx)
 
     assert result.exit_code == 0
-    assert "Synced 5 artifacts, 2 hooks" in result.output
+    assert "Synced 5 artifacts" in result.output

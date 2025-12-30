@@ -30,13 +30,18 @@ SOURCE LOCATIONS (source of truth)        BUILT OUTPUT
 
 **Key Insight**: Source locations are the source of truth. Kit packages contain built artifacts copied via `erk dev kit-build`.
 
-## Frontmatter Requirements
+## Frontmatter-Based Discovery
+
+Artifacts are discovered by scanning source files for the `erk.kit` frontmatter field.
+There is no manifest file - the frontmatter in each artifact is the sole source of truth
+for kit membership.
 
 Source files must declare which kit they belong to using YAML frontmatter:
 
 ```yaml
 ---
-erk.kit: <kit-name>
+erk:
+  kit: <kit-name>
 ---
 ```
 
@@ -45,12 +50,14 @@ erk.kit: <kit-name>
 ```yaml
 ---
 title: My Skill
-erk.kit: erk-core
+erk:
+  kit: erk
 ---
 # My Skill Content
 ```
 
-The `erk.kit` field tells the build system which kit package should receive this artifact.
+The `erk.kit` field (nested under `erk:` namespace) tells the build system which kit
+package should receive this artifact.
 
 ## Development Workflow
 
@@ -63,13 +70,16 @@ The `erk.kit` field tells the build system which kit package should receive this
 ### Adding New Artifacts
 
 1. **Create the source file** in the appropriate location:
+   - Commands → `.claude/commands/<namespace>/`
    - Skills → `.claude/skills/<name>/SKILL.md`
+   - Agents → `.claude/agents/`
    - Kit docs → `.erk/docs/kits/<path>/`
-   - Workflows → `.github/workflows/`
-2. **Add frontmatter** with `erk.kit: <kit-name>`
+2. **Add frontmatter** with `erk: kit: <kit-name>`
 3. **Run build**: `erk dev kit-build`
-4. **Update kit.yaml** to list the new artifact path
-5. **Commit all changes**
+4. **Commit all changes**
+
+No manifest file is needed - the build system discovers artifacts by scanning
+for frontmatter.
 
 ## The `kit-build` Command
 

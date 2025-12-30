@@ -6,8 +6,7 @@ from pathlib import Path
 from erk.artifacts.models import ArtifactState
 from erk.artifacts.staleness import get_current_version
 from erk.artifacts.state import save_artifact_state
-from erk.kits.hooks.installer import install_hooks
-from erk.kits.io.manifest import load_kit_manifest
+from erk.kits.io.frontmatter import parse_artifact_frontmatter
 from erk.kits.models.artifact import ARTIFACT_TARGET_DIRS, ArtifactType
 from erk.kits.operations.artifact_operations import create_artifact_operations
 from erk_kits import get_kits_dir
@@ -19,32 +18,68 @@ class SyncResult:
 
     success: bool
     artifacts_installed: int
-    hooks_installed: int
     error: str | None = None
+
+
+def _discover_kit_artifacts(kit_path: Path, kit_name: str) -> dict[ArtifactType, list[str]]:
+    """Discover artifacts in kit by scanning files for erk.kit frontmatter.
+
+    Args:
+        kit_path: Path to kit directory
+        kit_name: Expected kit name in frontmatter
+
+    Returns:
+        Dict mapping artifact type to list of relative paths
+    """
+    artifacts: dict[ArtifactType, list[str]] = {}
+
+    # Scan known artifact directories
+    artifact_dirs: list[tuple[str, ArtifactType]] = [
+        ("commands", "command"),
+        ("skills", "skill"),
+        ("agents", "agent"),
+        ("docs", "doc"),
+    ]
+
+    for dir_name, artifact_type in artifact_dirs:
+        artifact_dir = kit_path / dir_name
+        if not artifact_dir.exists():
+            continue
+
+        for md_file in artifact_dir.rglob("*.md"):
+            content = md_file.read_text(encoding="utf-8")
+            frontmatter = parse_artifact_frontmatter(content)
+
+            if frontmatter is not None and frontmatter.kit == kit_name:
+                rel_path = str(md_file.relative_to(kit_path))
+                if artifact_type not in artifacts:
+                    artifacts[artifact_type] = []
+                artifacts[artifact_type].append(rel_path)
+
+    return artifacts
 
 
 def sync_artifacts(project_dir: Path) -> SyncResult:
     """Sync artifacts from erk package to project.
 
     This function copies artifacts from the bundled erk kit to the project
-    directory and installs any associated hooks.
+    directory. Artifacts are discovered by scanning for files with erk.kit
+    frontmatter.
 
     Args:
         project_dir: Project root directory
 
     Returns:
-        SyncResult with counts of installed artifacts and hooks
+        SyncResult with counts of installed artifacts
     """
     erk_kit_path = get_kits_dir() / "erk"
-    manifest = load_kit_manifest(erk_kit_path / "kit.yaml")
+    artifacts = _discover_kit_artifacts(erk_kit_path, "erk")
 
     operations = create_artifact_operations()
     artifacts_installed = 0
 
-    # Copy artifacts (reuse existing logic from kit install)
-    for artifact_type_str, paths in manifest.artifacts.items():
-        artifact_type: ArtifactType = artifact_type_str  # type: ignore[assignment]
-
+    # Copy artifacts
+    for artifact_type, paths in artifacts.items():
         for artifact_path in paths:
             source = erk_kit_path / artifact_path
             if not source.exists():
@@ -56,22 +91,12 @@ def sync_artifacts(project_dir: Path) -> SyncResult:
             operations.install_artifact(source, target)
             artifacts_installed += 1
 
-    # Install hooks
-    hooks_installed = 0
-    if manifest.hooks:
-        hooks_installed = install_hooks(
-            kit_id=manifest.name,
-            hooks=manifest.hooks,
-            project_root=project_dir,
-        )
-
     # Save state with current version
     save_artifact_state(project_dir, ArtifactState(version=get_current_version()))
 
     return SyncResult(
         success=True,
         artifacts_installed=artifacts_installed,
-        hooks_installed=hooks_installed,
     )
 
 

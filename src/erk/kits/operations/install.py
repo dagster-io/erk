@@ -4,19 +4,56 @@ import shutil
 from pathlib import Path
 
 from erk.kits.cli.output import user_output
-from erk.kits.hooks.installer import install_hooks
-from erk.kits.io.manifest import load_kit_manifest
+from erk.kits.io.frontmatter import parse_artifact_frontmatter
 from erk.kits.models.artifact import ARTIFACT_TARGET_DIRS, ArtifactType
 from erk.kits.models.config import InstalledKit
 from erk.kits.models.resolved import ArtifactConflictError, ResolvedKit
 from erk.kits.operations.artifact_operations import create_artifact_operations
 
 
+def _discover_kit_artifacts(kit_path: Path, kit_name: str) -> dict[str, list[str]]:
+    """Discover artifacts in kit by scanning files for erk.kit frontmatter.
+
+    Args:
+        kit_path: Path to kit directory
+        kit_name: Expected kit name in frontmatter
+
+    Returns:
+        Dict mapping artifact type to list of relative paths
+    """
+    artifacts: dict[str, list[str]] = {}
+
+    # Scan known artifact directories
+    artifact_dirs: list[tuple[str, str]] = [
+        ("commands", "command"),
+        ("skills", "skill"),
+        ("agents", "agent"),
+        ("docs", "doc"),
+    ]
+
+    for dir_name, artifact_type in artifact_dirs:
+        artifact_dir = kit_path / dir_name
+        if not artifact_dir.exists():
+            continue
+
+        for md_file in artifact_dir.rglob("*.md"):
+            content = md_file.read_text(encoding="utf-8")
+            frontmatter = parse_artifact_frontmatter(content)
+
+            if frontmatter is not None and frontmatter.kit == kit_name:
+                rel_path = str(md_file.relative_to(kit_path))
+                if artifact_type not in artifacts:
+                    artifacts[artifact_type] = []
+                artifacts[artifact_type].append(rel_path)
+
+    return artifacts
+
+
 def install_kit(
     resolved: ResolvedKit,
     project_dir: Path,
-    overwrite: bool = False,
-    filtered_artifacts: dict[str, list[str]] | None = None,
+    overwrite: bool,
+    filtered_artifacts: dict[str, list[str]] | None,
 ) -> InstalledKit:
     """Install a kit to the project.
 
@@ -25,19 +62,18 @@ def install_kit(
         project_dir: Directory to install to
         overwrite: Whether to overwrite existing files
         filtered_artifacts: Optional filtered artifacts dict (type -> paths).
-                          If None, installs all artifacts from manifest.
+                          If None, discovers artifacts via frontmatter.
     """
-    manifest = load_kit_manifest(resolved.manifest_path)
-
     installed_artifacts: list[str] = []
 
     # Create installation strategy
     operations = create_artifact_operations()
 
-    # Use filtered artifacts if provided, otherwise use all from manifest
-    artifacts_to_install = (
-        filtered_artifacts if filtered_artifacts is not None else manifest.artifacts
-    )
+    # Use filtered artifacts if provided, otherwise discover via frontmatter
+    if filtered_artifacts is not None:
+        artifacts_to_install = filtered_artifacts
+    else:
+        artifacts_to_install = _discover_kit_artifacts(resolved.artifacts_base, resolved.kit_id)
 
     # Process each artifact type
     for artifact_type_str, paths in artifacts_to_install.items():
@@ -104,18 +140,9 @@ def install_kit(
             # Track installation
             installed_artifacts.append(str(target.relative_to(project_dir)))
 
-    # Install hooks if manifest has them
-    if manifest.hooks:
-        install_hooks(
-            kit_id=manifest.name,
-            hooks=manifest.hooks,
-            project_root=project_dir,
-        )
-
     return InstalledKit(
-        kit_id=manifest.name,
+        kit_id=resolved.kit_id,
         source_type=resolved.source_type,
-        version=manifest.version,
+        version=resolved.version,
         artifacts=installed_artifacts,
-        hooks=manifest.hooks if manifest.hooks else [],
     )

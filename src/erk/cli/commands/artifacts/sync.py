@@ -26,4 +26,4 @@ def sync(ctx: ErkContext, force: bool) -> None:
             return
 
     result = sync_artifacts(project_dir)
-    click.echo(f"✓ Synced {result.artifacts_installed} artifacts, {result.hooks_installed} hooks")
+    click.echo(f"✓ Synced {result.artifacts_installed} artifacts")

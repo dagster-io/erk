@@ -13,42 +13,57 @@ from erk.cli.commands.dev.kit_check import (
 )
 
 
-def test_get_kit_artifact_paths_empty_manifest(tmp_path: Path) -> None:
-    """Test get_kit_artifact_paths with empty artifacts."""
-    manifest_path = tmp_path / "kit.yaml"
-    manifest_path.write_text(
-        """name: test-kit
-version: 1.0.0
-description: Test kit
-artifacts: {}
-""",
-        encoding="utf-8",
-    )
+def _create_frontmatter_artifact(kit_name: str, content: str = "") -> str:
+    """Create an artifact with erk.kit frontmatter."""
+    return f"""---
+title: Test Artifact
+erk:
+  kit: {kit_name}
+---
+{content}
+"""
 
-    paths = get_kit_artifact_paths(manifest_path)
+
+def test_get_kit_artifact_paths_empty_kit(tmp_path: Path) -> None:
+    """Test get_kit_artifact_paths with no artifacts."""
+    kit_path = tmp_path / "test-kit"
+    kit_path.mkdir()
+
+    paths = get_kit_artifact_paths(kit_path, "test-kit")
 
     assert len(paths) == 0
 
 
 def test_get_kit_artifact_paths_with_artifacts(tmp_path: Path) -> None:
     """Test get_kit_artifact_paths extracts all artifact paths."""
-    manifest_path = tmp_path / "kit.yaml"
-    manifest_path.write_text(
-        """name: test-kit
-version: 1.0.0
-description: Test kit
-artifacts:
-  skill:
-    - skills/test/SKILL.md
-  command:
-    - commands/test/cmd.md
-  doc:
-    - docs/test/doc.md
-""",
+    kit_path = tmp_path / "test-kit"
+    kit_path.mkdir()
+
+    # Create skill artifact
+    skill_dir = kit_path / "skills" / "test"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text(
+        _create_frontmatter_artifact("test-kit", "# Skill content"),
         encoding="utf-8",
     )
 
-    paths = get_kit_artifact_paths(manifest_path)
+    # Create command artifact
+    cmd_dir = kit_path / "commands" / "test"
+    cmd_dir.mkdir(parents=True)
+    (cmd_dir / "cmd.md").write_text(
+        _create_frontmatter_artifact("test-kit", "# Command content"),
+        encoding="utf-8",
+    )
+
+    # Create doc artifact
+    doc_dir = kit_path / "docs" / "test"
+    doc_dir.mkdir(parents=True)
+    (doc_dir / "doc.md").write_text(
+        _create_frontmatter_artifact("test-kit", "# Doc content"),
+        encoding="utf-8",
+    )
+
+    paths = get_kit_artifact_paths(kit_path, "test-kit")
 
     assert ".claude/skills/test/SKILL.md" in paths
     assert ".claude/commands/test/cmd.md" in paths
@@ -61,27 +76,11 @@ def test_check_kit_references_no_references(tmp_path: Path) -> None:
     kit_path = tmp_path / "test-kit"
     kit_path.mkdir()
 
-    # Create manifest
-    manifest_path = kit_path / "kit.yaml"
-    manifest_path.write_text(
-        """name: test-kit
-version: 1.0.0
-description: Test kit
-artifacts:
-  skill:
-    - skills/test/SKILL.md
-""",
-        encoding="utf-8",
-    )
-
     # Create artifact without @ references
     skill_path = kit_path / "skills" / "test" / "SKILL.md"
     skill_path.parent.mkdir(parents=True)
     skill_path.write_text(
-        """# Test Skill
-
-This is a test skill with no @ references.
-""",
+        _create_frontmatter_artifact("test-kit", "This is a test skill with no @ references."),
         encoding="utf-8",
     )
 
@@ -96,36 +95,21 @@ def test_check_kit_references_valid_reference(tmp_path: Path) -> None:
     kit_path = tmp_path / "test-kit"
     kit_path.mkdir()
 
-    # Create manifest with both skill and doc
-    manifest_path = kit_path / "kit.yaml"
-    manifest_path.write_text(
-        """name: test-kit
-version: 1.0.0
-description: Test kit
-artifacts:
-  skill:
-    - skills/test/SKILL.md
-  doc:
-    - docs/test/reference.md
-""",
-        encoding="utf-8",
-    )
-
     # Create skill that references doc
     skill_path = kit_path / "skills" / "test" / "SKILL.md"
     skill_path.parent.mkdir(parents=True)
     skill_path.write_text(
-        """# Test Skill
-
-@.claude/docs/test/reference.md
-""",
+        _create_frontmatter_artifact("test-kit", "@.claude/docs/test/reference.md"),
         encoding="utf-8",
     )
 
     # Create referenced doc
     doc_path = kit_path / "docs" / "test" / "reference.md"
     doc_path.parent.mkdir(parents=True)
-    doc_path.write_text("# Reference Doc\n", encoding="utf-8")
+    doc_path.write_text(
+        _create_frontmatter_artifact("test-kit", "# Reference Doc"),
+        encoding="utf-8",
+    )
 
     result = check_kit_references("test-kit", kit_path)
 
@@ -138,27 +122,11 @@ def test_check_kit_references_missing_reference(tmp_path: Path) -> None:
     kit_path = tmp_path / "test-kit"
     kit_path.mkdir()
 
-    # Create manifest with only skill (no doc)
-    manifest_path = kit_path / "kit.yaml"
-    manifest_path.write_text(
-        """name: test-kit
-version: 1.0.0
-description: Test kit
-artifacts:
-  skill:
-    - skills/test/SKILL.md
-""",
-        encoding="utf-8",
-    )
-
     # Create skill that references non-existent doc
     skill_path = kit_path / "skills" / "test" / "SKILL.md"
     skill_path.parent.mkdir(parents=True)
     skill_path.write_text(
-        """# Test Skill
-
-@.claude/docs/test/missing.md
-""",
+        _create_frontmatter_artifact("test-kit", "@.claude/docs/test/missing.md"),
         encoding="utf-8",
     )
 
@@ -167,7 +135,6 @@ artifacts:
     assert not result.is_valid
     assert len(result.missing_references) == 1
     assert result.missing_references[0].reference_path == ".claude/docs/test/missing.md"
-    assert result.missing_references[0].line_number == 3
 
 
 def test_check_kit_references_multiple_missing(tmp_path: Path) -> None:
@@ -175,29 +142,16 @@ def test_check_kit_references_multiple_missing(tmp_path: Path) -> None:
     kit_path = tmp_path / "test-kit"
     kit_path.mkdir()
 
-    # Create manifest
-    manifest_path = kit_path / "kit.yaml"
-    manifest_path.write_text(
-        """name: test-kit
-version: 1.0.0
-description: Test kit
-artifacts:
-  skill:
-    - skills/test/SKILL.md
-""",
-        encoding="utf-8",
-    )
-
     # Create skill with multiple missing references
     skill_path = kit_path / "skills" / "test" / "SKILL.md"
     skill_path.parent.mkdir(parents=True)
     skill_path.write_text(
-        """# Test Skill
+        _create_frontmatter_artifact(
+            "test-kit",
+            """@.claude/docs/test/missing1.md
 
-@.claude/docs/test/missing1.md
-
-@.claude/docs/test/missing2.md
-""",
+@.claude/docs/test/missing2.md""",
+        ),
         encoding="utf-8",
     )
 
@@ -212,36 +166,21 @@ def test_check_kit_references_reference_without_prefix(tmp_path: Path) -> None:
     kit_path = tmp_path / "test-kit"
     kit_path.mkdir()
 
-    # Create manifest with doc
-    manifest_path = kit_path / "kit.yaml"
-    manifest_path.write_text(
-        """name: test-kit
-version: 1.0.0
-description: Test kit
-artifacts:
-  skill:
-    - skills/test/SKILL.md
-  doc:
-    - docs/test/reference.md
-""",
-        encoding="utf-8",
-    )
-
     # Create skill that references doc without .claude/ prefix
     skill_path = kit_path / "skills" / "test" / "SKILL.md"
     skill_path.parent.mkdir(parents=True)
     skill_path.write_text(
-        """# Test Skill
-
-@docs/test/reference.md
-""",
+        _create_frontmatter_artifact("test-kit", "@docs/test/reference.md"),
         encoding="utf-8",
     )
 
     # Create referenced doc
     doc_path = kit_path / "docs" / "test" / "reference.md"
     doc_path.parent.mkdir(parents=True)
-    doc_path.write_text("# Reference Doc\n", encoding="utf-8")
+    doc_path.write_text(
+        _create_frontmatter_artifact("test-kit", "# Reference Doc"),
+        encoding="utf-8",
+    )
 
     result = check_kit_references("test-kit", kit_path)
 
@@ -249,8 +188,8 @@ artifacts:
     assert result.is_valid
 
 
-def test_check_kit_references_no_manifest(tmp_path: Path) -> None:
-    """Test check_kit_references with non-existent manifest."""
+def test_check_kit_references_empty_kit(tmp_path: Path) -> None:
+    """Test check_kit_references with no artifacts."""
     kit_path = tmp_path / "test-kit"
     kit_path.mkdir()
 

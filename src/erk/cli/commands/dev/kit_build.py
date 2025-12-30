@@ -8,7 +8,6 @@ import click
 import erk_kits
 from erk.kits.io.frontmatter import parse_artifact_frontmatter
 from erk.kits.io.git import find_git_root
-from erk.kits.io.manifest import load_kit_manifest
 
 
 @dataclass(frozen=True)
@@ -35,92 +34,78 @@ class BuildResult:
         return len(self.errors) == 0
 
 
-def _get_source_location(artifact_type: str, artifact_path: str, repo_root: Path) -> Path:
-    """Get source location for an artifact based on its type.
+@dataclass(frozen=True)
+class DiscoveredArtifact:
+    """An artifact discovered from source files."""
+
+    source_path: Path
+    artifact_type: str
+    relative_target: str  # Relative path within kit (e.g., "commands/erk/foo.md")
+
+
+def _discover_source_artifacts(repo_root: Path, kit_name: str) -> list[DiscoveredArtifact]:
+    """Discover artifacts from source files that belong to a kit.
+
+    Scans source directories (.claude/, .erk/docs/kits/) for files with
+    erk.kit frontmatter matching the kit name.
 
     Args:
-        artifact_type: Type of artifact (command, skill, agent, doc, workflow)
-        artifact_path: Relative path from kit.yaml artifacts section
         repo_root: Repository root directory
+        kit_name: Kit name to match in frontmatter
 
     Returns:
-        Absolute path to source file
+        List of discovered artifacts with source paths and target paths
     """
-    # Map artifact types to source directories
-    # Paths in kit.yaml are like "commands/erk/plan-implement.md"
-    # Source locations are:
-    #   command -> .claude/commands/
-    #   skill -> .claude/skills/
-    #   agent -> .claude/agents/
-    #   doc -> .erk/docs/kits/
-    #   workflow -> .github/workflows/
+    artifacts: list[DiscoveredArtifact] = []
 
-    if artifact_type == "command":
-        return repo_root / ".claude" / artifact_path
-    elif artifact_type == "skill":
-        return repo_root / ".claude" / artifact_path
-    elif artifact_type == "agent":
-        return repo_root / ".claude" / artifact_path
-    elif artifact_type == "doc":
-        return repo_root / ".erk" / "docs" / "kits" / artifact_path.removeprefix("docs/")
-    elif artifact_type == "workflow":
-        return repo_root / ".github" / artifact_path
-    else:
-        # Default to .claude/ for unknown types
-        return repo_root / ".claude" / artifact_path
+    # Source directories and their artifact type mappings
+    # (source_dir, artifact_type, target_prefix)
+    source_mappings: list[tuple[Path, str, str]] = [
+        (repo_root / ".claude" / "commands", "command", "commands"),
+        (repo_root / ".claude" / "skills", "skill", "skills"),
+        (repo_root / ".claude" / "agents", "agent", "agents"),
+        (repo_root / ".erk" / "docs" / "kits", "doc", "docs"),
+    ]
 
+    for source_dir, artifact_type, target_prefix in source_mappings:
+        if not source_dir.exists():
+            continue
 
-def _validate_artifact_frontmatter(
-    source_path: Path, expected_kit: str
-) -> ArtifactValidationError | None:
-    """Validate that artifact has correct kit frontmatter.
+        for md_file in source_dir.rglob("*.md"):
+            content = md_file.read_text(encoding="utf-8")
+            frontmatter = parse_artifact_frontmatter(content)
 
-    Args:
-        source_path: Path to source artifact file
-        expected_kit: Expected kit name in frontmatter
+            if frontmatter is not None and frontmatter.kit == kit_name:
+                # Compute relative target path
+                rel_to_source = md_file.relative_to(source_dir)
+                relative_target = f"{target_prefix}/{rel_to_source}"
 
-    Returns:
-        Error if validation fails, None if valid
-    """
-    if not source_path.exists():
-        return ArtifactValidationError(
-            artifact_path=str(source_path),
-            source_path=source_path,
-            error="Source file does not exist",
-        )
+                artifacts.append(
+                    DiscoveredArtifact(
+                        source_path=md_file,
+                        artifact_type=artifact_type,
+                        relative_target=relative_target,
+                    )
+                )
 
-    content = source_path.read_text(encoding="utf-8")
-    frontmatter = parse_artifact_frontmatter(content)
-
-    if frontmatter is None:
-        return ArtifactValidationError(
-            artifact_path=str(source_path),
-            source_path=source_path,
-            error="Missing frontmatter",
-        )
-
-    if frontmatter.kit != expected_kit:
-        return ArtifactValidationError(
-            artifact_path=str(source_path),
-            source_path=source_path,
-            error=f"Expected kit: {expected_kit}, found kit: {frontmatter.kit}",
-        )
-
-    return None
+    return artifacts
 
 
 def build_kit(
     kit_name: str,
     kit_path: Path,
     repo_root: Path,
-    check_only: bool = False,
-    verbose: bool = False,
+    check_only: bool,
+    verbose: bool,
 ) -> BuildResult:
     """Build a kit by copying artifacts from source locations.
 
+    Discovers artifacts by scanning source files for erk.kit frontmatter,
+    then copies them to the kit package directory.
+
     Args:
         kit_name: Name of the kit to build
-        kit_path: Path to kit directory (containing kit.yaml)
+        kit_path: Path to kit directory in packages/erk-kits/
         repo_root: Repository root directory
         check_only: If True, only validate, don't copy
         verbose: If True, print verbose output
@@ -130,44 +115,52 @@ def build_kit(
     """
     result = BuildResult(kit_name=kit_name)
 
-    manifest_path = kit_path / "kit.yaml"
-    if not manifest_path.exists():
-        result.errors.append(
-            ArtifactValidationError(
-                artifact_path="kit.yaml",
-                source_path=manifest_path,
-                error="kit.yaml not found",
-            )
-        )
+    # Discover artifacts from source files
+    artifacts = _discover_source_artifacts(repo_root, kit_name)
+
+    if not artifacts:
+        # No artifacts found for this kit
         return result
 
-    manifest = load_kit_manifest(manifest_path)
+    # Process each discovered artifact
+    for artifact in artifacts:
+        target_path = kit_path / artifact.relative_target
 
-    # Process each artifact type
-    for artifact_type, paths in manifest.artifacts.items():
-        for artifact_rel in paths:
-            source_path = _get_source_location(artifact_type, artifact_rel, repo_root)
-            target_path = kit_path / artifact_rel
+        if check_only:
+            result.copied.append(artifact.relative_target)
+            continue
 
-            # Validate frontmatter
-            error = _validate_artifact_frontmatter(source_path, kit_name)
-            if error is not None:
-                result.errors.append(error)
-                continue
+        # Copy artifact
+        if not target_path.parent.exists():
+            target_path.parent.mkdir(parents=True, exist_ok=True)
 
-            if check_only:
-                result.copied.append(artifact_rel)
-                continue
-
-            # Copy artifact
-            if not target_path.parent.exists():
-                target_path.parent.mkdir(parents=True, exist_ok=True)
-
-            content = source_path.read_text(encoding="utf-8")
-            target_path.write_text(content, encoding="utf-8")
-            result.copied.append(artifact_rel)
+        content = artifact.source_path.read_text(encoding="utf-8")
+        target_path.write_text(content, encoding="utf-8")
+        result.copied.append(artifact.relative_target)
 
     return result
+
+
+def _get_kit_names(kits_dir: Path) -> list[str]:
+    """Get list of kit names from the kits directory.
+
+    A kit is identified by having a directory with at least one subdirectory
+    (commands, skills, agents, docs).
+
+    Args:
+        kits_dir: Path to kits directory
+
+    Returns:
+        List of kit directory names
+    """
+    if not kits_dir.exists():
+        return []
+
+    kit_names = []
+    for d in kits_dir.iterdir():
+        if d.is_dir() and d.name != "__pycache__":
+            kit_names.append(d.name)
+    return kit_names
 
 
 @click.command(name="kit-build")
@@ -191,12 +184,9 @@ def build_kit(
 def kit_build(kit_name: str | None, check: bool, verbose: bool) -> None:
     """Build kit packages by copying artifacts from source locations.
 
-    This command copies artifacts from their source locations (.claude/,
-    .erk/docs/kits/, .github/workflows/) into the kit package directories
-    in packages/erk-kits/.
-
-    Before copying, it validates that each artifact has the correct
-    `kit:` field in its frontmatter matching the kit it belongs to.
+    This command discovers artifacts by scanning source locations (.claude/,
+    .erk/docs/kits/) for files with matching erk.kit frontmatter, then copies
+    them into the kit package directories in packages/erk-kits/.
 
     Examples:
 
@@ -219,11 +209,7 @@ def kit_build(kit_name: str | None, check: bool, verbose: bool) -> None:
         raise SystemExit(1)
 
     kits_dir = erk_kits.get_kits_dir()
-    kit_names = (
-        [d.name for d in kits_dir.iterdir() if d.is_dir() and (d / "kit.yaml").exists()]
-        if kits_dir.exists()
-        else []
-    )
+    kit_names = _get_kit_names(kits_dir)
 
     if not kit_names:
         click.echo("No bundled kits found")
