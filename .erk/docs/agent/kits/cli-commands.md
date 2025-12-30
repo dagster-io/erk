@@ -345,11 +345,11 @@ def execute_assemble(plan_path: Path, discoveries_path: Path) -> None:
 **LLM's role (in command markdown):**
 
 ```markdown
-1. Call `erk kit exec erk command discover`
+1. Call `erk exec command discover`
 2. Parse JSON output
 3. Analyze compressed_xml semantically
 4. Structure discoveries as JSON
-5. Call `erk kit exec erk command assemble`
+5. Call `erk exec command assemble`
 6. Compose final output from returned data
 ```
 
@@ -771,6 +771,6 @@ When a slash command needs to pass content to a kit CLI command:
 Write plan to temp file and call CLI:
 
 \`\`\`bash
-erk kit exec erk plan-save-to-issue --plan-file="/tmp/plan-session-abc123.md"
+erk exec plan-save-to-issue --plan-file="/tmp/plan-session-abc123.md"
 \`\`\`
 ```

@@ -57,7 +57,7 @@ Plans created in Plan Mode are logged to session logs with a `slug` field. To fi
 2. Look for entries with `slug` field matching the session ID
 3. Return the slug to construct the plan path
 
-**CLI command**: Use `erk kit exec erk find-plan-slug --session-id <id>` for plan lookup.
+**CLI command**: Use `erk exec find-plan-slug --session-id <id>` for plan lookup.
 
 **Source**: See `session_plan_extractor.py` for the canonical implementation.
 
@@ -110,7 +110,7 @@ When you know the working directory, compute the project directory name directly
 - ❌ **Historical analysis**: Working directory may be unknown for old sessions
 - ❌ **Cross-project searches**: Deliberately searching all projects
 
-**CLI command**: Use `erk kit exec erk find-project-dir --cwd <path>` for O(1) project directory lookup.
+**CLI command**: Use `erk exec find-project-dir --cwd <path>` for O(1) project directory lookup.
 
 **Performance comparison:**
 
@@ -180,7 +180,7 @@ Session log parsing should be pushed down to Python CLI commands:
 
 ```bash
 # CLI handles all the complexity
-erk kit exec erk find-plan-slug --session-id abc123
+erk exec find-plan-slug --session-id abc123
 
 # Returns: "add-auth-feature"
 # Or: {"error": "no_plan_found"}

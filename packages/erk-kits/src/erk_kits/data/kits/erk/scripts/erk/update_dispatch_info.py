@@ -1,7 +1,7 @@
 """Update dispatch info in GitHub issue plan-header metadata.
 
 Usage:
-    erk kit exec erk update-dispatch-info <issue-number> <run-id> <node-id> <dispatched-at>
+    erk exec update-dispatch-info <issue-number> <run-id> <node-id> <dispatched-at>
 
 Output:
     JSON with success status and issue_number

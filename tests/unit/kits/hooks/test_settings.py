@@ -11,10 +11,11 @@ from erk.kits.hooks.models import (
 )
 from erk.kits.hooks.settings import (
     add_hook_to_settings,
+    extract_hook_id_from_command,
     get_all_hooks,
     load_settings,
     merge_matcher_groups,
-    remove_hooks_by_kit,
+    remove_hooks_by_hook_ids,
     save_settings,
 )
 
@@ -163,42 +164,56 @@ class TestAddHookToSettings:
         assert len(new_settings.hooks["UserPromptSubmit"]) == 2
 
 
-class TestRemoveHooksByKit:
-    """Tests for remove_hooks_by_kit function."""
+class TestRemoveHooksByHookIds:
+    """Tests for remove_hooks_by_hook_ids function."""
 
     def test_remove_from_empty_settings(self) -> None:
         """Test removing from empty settings."""
         settings = ClaudeSettings()
-        new_settings, count = remove_hooks_by_kit(settings, "test-kit")
+        new_settings, count = remove_hooks_by_hook_ids(settings, {"hook1"})
         assert count == 0
         assert new_settings.hooks is None
 
-    def test_remove_all_hooks_for_kit(self) -> None:
-        """Test removing all hooks for a kit."""
-        cmd = "ERK_KIT_ID=test-kit ERK_HOOK_ID=hook1 python3 script.py"
+    def test_remove_all_hooks_by_id(self) -> None:
+        """Test removing all hooks by their IDs."""
+        cmd = "ERK_HOOK_ID=hook1 erk exec hook1"
         entry = HookEntry(command=cmd, timeout=30)
         group = MatcherGroup(matcher="**", hooks=[entry])
         settings = ClaudeSettings(hooks={"UserPromptSubmit": [group]})
 
-        new_settings, count = remove_hooks_by_kit(settings, "test-kit")
+        new_settings, count = remove_hooks_by_hook_ids(settings, {"hook1"})
 
         assert count == 1
         assert new_settings.hooks is None  # All hooks removed
 
     def test_remove_partial_hooks(self) -> None:
         """Test removing some hooks but not all."""
-        cmd1 = "ERK_KIT_ID=kit1 ERK_HOOK_ID=hook1 python3 script1.py"
-        cmd2 = "ERK_KIT_ID=kit2 ERK_HOOK_ID=hook2 python3 script2.py"
+        cmd1 = "ERK_HOOK_ID=hook1 erk exec hook1"
+        cmd2 = "ERK_HOOK_ID=hook2 erk exec hook2"
         entry1 = HookEntry(command=cmd1, timeout=30)
         entry2 = HookEntry(command=cmd2, timeout=30)
         group = MatcherGroup(matcher="**", hooks=[entry1, entry2])
         settings = ClaudeSettings(hooks={"UserPromptSubmit": [group]})
 
-        new_settings, count = remove_hooks_by_kit(settings, "kit1")
+        new_settings, count = remove_hooks_by_hook_ids(settings, {"hook1"})
 
         assert count == 1
         assert new_settings.hooks is not None
         assert len(new_settings.hooks["UserPromptSubmit"][0].hooks) == 1
+
+
+class TestExtractHookIdFromCommand:
+    """Tests for extract_hook_id_from_command function."""
+
+    def test_extract_hook_id(self) -> None:
+        """Test extracting hook ID from command."""
+        command = "ERK_HOOK_ID=session-id-injector-hook erk exec session-id-injector-hook"
+        assert extract_hook_id_from_command(command) == "session-id-injector-hook"
+
+    def test_extract_hook_id_not_present(self) -> None:
+        """Test returning None when hook ID not present."""
+        command = "python3 script.py"
+        assert extract_hook_id_from_command(command) is None
 
 
 class TestGetAllHooks:
@@ -212,7 +227,7 @@ class TestGetAllHooks:
 
     def test_get_all_hooks(self) -> None:
         """Test getting all hooks."""
-        cmd = "ERK_KIT_ID=test-kit ERK_HOOK_ID=test-hook python3 script.py"
+        cmd = "ERK_HOOK_ID=test-hook erk exec test-hook"
         entry = HookEntry(command=cmd, timeout=30)
         group = MatcherGroup(matcher="**", hooks=[entry])
         settings = ClaudeSettings(hooks={"UserPromptSubmit": [group]})
@@ -223,7 +238,7 @@ class TestGetAllHooks:
         lifecycle, matcher, hook_entry = hooks[0]
         assert lifecycle == "UserPromptSubmit"
         assert matcher == "**"
-        assert "ERK_KIT_ID=test-kit" in hook_entry.command
+        assert "ERK_HOOK_ID=test-hook" in hook_entry.command
 
 
 class TestMergeMatcherGroups:

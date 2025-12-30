@@ -46,7 +46,7 @@ Examples:
 
 - `erk pr land` - Merges PR, deletes worktree (deterministic git operations)
 - `erk wt create` - Creates worktree (git operations)
-- `erk kit exec erk create-extraction-plan` - Creates GitHub issue (API call)
+- `erk exec create-extraction-plan` - Creates GitHub issue (API call)
 
 ## Hybrid Pattern: CLI Spawning Agent
 

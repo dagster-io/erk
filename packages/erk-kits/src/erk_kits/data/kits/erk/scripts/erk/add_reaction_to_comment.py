@@ -4,9 +4,9 @@ This kit CLI command adds a reaction (typically +1) to a PR discussion comment
 to indicate the comment has been addressed.
 
 Usage:
-    erk kit exec erk add-reaction-to-comment --comment-id 12345
-    erk kit exec erk add-reaction-to-comment --comment-id 12345 --reaction "+1"
-    erk kit exec erk add-reaction-to-comment --comment-id 12345 --reaction "eyes"
+    erk exec add-reaction-to-comment --comment-id 12345
+    erk exec add-reaction-to-comment --comment-id 12345 --reaction "+1"
+    erk exec add-reaction-to-comment --comment-id 12345 --reaction "eyes"
 
 Output:
     JSON with success status
@@ -16,10 +16,10 @@ Exit Codes:
     1: Context not initialized
 
 Examples:
-    $ erk kit exec erk add-reaction-to-comment --comment-id 12345
+    $ erk exec add-reaction-to-comment --comment-id 12345
     {"success": true, "comment_id": 12345, "reaction": "+1"}
 
-    $ erk kit exec erk add-reaction-to-comment --comment-id 12345 --reaction "rocket"
+    $ erk exec add-reaction-to-comment --comment-id 12345 --reaction "rocket"
     {"success": true, "comment_id": 12345, "reaction": "rocket"}
 """
 

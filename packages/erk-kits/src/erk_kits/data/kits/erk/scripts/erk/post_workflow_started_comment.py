@@ -8,7 +8,7 @@ that can be parsed programmatically.
 This replaces ~40 lines of bash heredoc template assembly in GitHub Actions workflows.
 
 Usage:
-    erk kit exec erk post-workflow-started-comment \\
+    erk exec post-workflow-started-comment \\
         --issue-number 123 \\
         --branch-name my-feature-branch \\
         --pr-number 456 \\
@@ -24,7 +24,7 @@ Exit Codes:
     1: Error (GitHub API failed)
 
 Examples:
-    $ erk kit exec erk post-workflow-started-comment \\
+    $ erk exec post-workflow-started-comment \\
         --issue-number 123 \\
         --branch-name feat-auth \\
         --pr-number 456 \\

@@ -20,7 +20,7 @@ Patterns discovered through session analysis for reducing context waste.
 **Detection:** Use session preprocessing to identify files read more than once:
 
 ```bash
-erk kit exec erk preprocess-session <session.jsonl> --stdout | grep -o 'file_path">[^<]*' | sort | uniq -c | sort -rn
+erk exec preprocess-session <session.jsonl> --stdout | grep -o 'file_path">[^<]*' | sort | uniq -c | sort -rn
 ```
 
 **Prevention:**

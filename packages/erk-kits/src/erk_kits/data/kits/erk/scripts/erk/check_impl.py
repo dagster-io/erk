@@ -4,8 +4,8 @@ This kit CLI command validates that .impl/ folder has required files
 (plan.md, progress.md) and checks for optional GitHub issue tracking.
 
 Usage:
-    erk kit exec erk check-impl
-    erk kit exec erk check-impl --dry-run
+    erk exec check-impl
+    erk exec check-impl --dry-run
 
 Output:
     JSON with validation status and tracking info (dry-run mode)
@@ -16,10 +16,10 @@ Exit Codes:
     1: Validation error
 
 Examples:
-    $ erk kit exec erk check-impl --dry-run
+    $ erk exec check-impl --dry-run
     {"valid": true, "has_issue_tracking": true, "plan_length": 1234}
 
-    $ erk kit exec erk check-impl
+    $ erk exec check-impl
     Plan loaded from .impl/plan.md
     GitHub tracking: ENABLED (issue #123)
     ...

@@ -6,7 +6,7 @@ extracts metadata (timestamps, summaries), and provides branch context
 for intelligent session selection.
 
 Usage:
-    erk kit exec erk list-sessions
+    erk exec list-sessions
 
 Output:
     JSON object with success status, branch context, and session list
@@ -16,7 +16,7 @@ Exit Codes:
     1: Error (project directory not found or other error)
 
 Examples:
-    $ erk kit exec erk list-sessions
+    $ erk exec list-sessions
     {
       "success": true,
       "branch_context": {

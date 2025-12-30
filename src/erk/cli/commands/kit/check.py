@@ -11,7 +11,7 @@ import tomli
 from erk.kits.cli.output import user_output
 from erk.kits.hooks.models import ClaudeSettings, HookDefinition, HookEntry
 from erk.kits.hooks.settings import (
-    extract_kit_id_from_command,
+    extract_hook_id_from_command,
     load_settings,
 )
 from erk.kits.io.manifest import load_kit_manifest
@@ -356,11 +356,11 @@ def _process_hook_entry(
     Returns:
         HookValidationDetail with processing information
     """
-    # Try to extract kit ID
-    command_kit_id = extract_kit_id_from_command(hook_entry.command)
+    # Try to extract hook ID (managed hooks have ERK_HOOK_ID)
+    hook_id = extract_hook_id_from_command(hook_entry.command)
 
-    if command_kit_id is None:
-        # Not a dot-agent managed hook
+    if hook_id is None:
+        # Not an erk managed hook
         return HookValidationDetail(
             lifecycle=lifecycle,
             command=hook_entry.command,
@@ -369,26 +369,13 @@ def _process_hook_entry(
             action="skipped_not_dot_agent",
         )
 
-    # Try to extract hook ID
-    hook_id_match = re.search(r"ERK_HOOK_ID=(\S+)", hook_entry.command)
-    if hook_id_match:
-        hook_id = hook_id_match.group(1)
-        return HookValidationDetail(
-            lifecycle=lifecycle,
-            command=hook_entry.command,
-            kit_id=command_kit_id,
-            hook_id=hook_id,
-            action="found_and_parsed",
-        )
-
-    # dot-agent hook but missing hook ID
+    # Managed hook with hook ID
     return HookValidationDetail(
         lifecycle=lifecycle,
         command=hook_entry.command,
-        kit_id=command_kit_id,
-        hook_id=None,
-        action="parse_error",
-        error_message="Missing ERK_HOOK_ID environment variable",
+        kit_id="erk",  # All managed hooks are from erk kit now
+        hook_id=hook_id,
+        action="found_and_parsed",
     )
 
 
@@ -399,12 +386,12 @@ def _extract_hooks_for_kit(
 ) -> list[InstalledHook]:
     """Extract hooks for specific kit from settings.json with strict validation.
 
-    Uses extract_kit_id_from_command() to identify kit ownership.
+    Uses extract_hook_id_from_command() to identify managed hooks.
     Validates extracted hook IDs against expected format and manifest.
 
     Args:
         settings: Loaded settings object
-        kit_id: Kit ID to filter for
+        kit_id: Kit ID to filter for (currently only "erk" is supported)
         expected_hooks: List of hook definitions from manifest (for validation)
 
     Returns:
@@ -419,57 +406,45 @@ def _extract_hooks_for_kit(
     if not settings.hooks:
         return results
 
+    # Build set of expected hook IDs for this kit
+    expected_hook_ids = {hook.id for hook in expected_hooks}
+
     for lifecycle, groups in settings.hooks.items():
         for group in groups:
             # Extract matcher from the MatcherGroup
             matcher = group.matcher
 
             for hook_entry in group.hooks:
-                # Extract kit ID from command
-                command_kit_id = extract_kit_id_from_command(hook_entry.command)
+                # Extract hook ID from command (managed hooks have ERK_HOOK_ID)
+                hook_id = extract_hook_id_from_command(hook_entry.command)
 
-                if command_kit_id == kit_id:
-                    # Extract hook ID from command
-                    # Format: ERK_KIT_ID=kit-name ERK_HOOK_ID=hook-id python3 ...
-                    import re
+                if hook_id is None:
+                    # Not a managed hook
+                    continue
 
-                    hook_id_match = re.search(r"ERK_HOOK_ID=(\S+)", hook_entry.command)
-                    if not hook_id_match:
-                        raise ValueError(
-                            f"Hook command for kit '{kit_id}' is missing "
-                            f"ERK_HOOK_ID environment variable. "
-                            f"Command: {hook_entry.command}"
-                        )
+                # Check if this hook ID belongs to the kit we're looking for
+                if hook_id not in expected_hook_ids:
+                    # Hook ID doesn't match any expected hooks for this kit
+                    continue
 
-                    hook_id = hook_id_match.group(1)
-
-                    # Validate hook ID format (must be lowercase kebab-case)
-                    format_pattern = r"^[a-z0-9-]+$"
-                    if not re.match(format_pattern, hook_id):
-                        raise ValueError(
-                            f"Invalid hook ID format: '{hook_id}' for kit '{kit_id}'. "
-                            f"Hook IDs must match pattern {format_pattern} "
-                            f"(lowercase letters, numbers, and hyphens only)"
-                        )
-
-                    # Validate hook ID exists in manifest
-                    expected_hook_ids = {hook.id for hook in expected_hooks}
-                    if hook_id not in expected_hook_ids:
-                        expected_ids_str = ", ".join(f"'{id}'" for id in sorted(expected_hook_ids))
-                        raise ValueError(
-                            f"Hook ID '{hook_id}' for kit '{kit_id}' not found in manifest. "
-                            f"Expected hook IDs: [{expected_ids_str}]"
-                        )
-
-                    results.append(
-                        InstalledHook(
-                            hook_id=hook_id,
-                            command=hook_entry.command,
-                            timeout=hook_entry.timeout,
-                            lifecycle=lifecycle,
-                            matcher=matcher,
-                        )
+                # Validate hook ID format (must be lowercase kebab-case)
+                format_pattern = r"^[a-z0-9-]+$"
+                if not re.match(format_pattern, hook_id):
+                    raise ValueError(
+                        f"Invalid hook ID format: '{hook_id}' for kit '{kit_id}'. "
+                        f"Hook IDs must match pattern {format_pattern} "
+                        f"(lowercase letters, numbers, and hyphens only)"
                     )
+
+                results.append(
+                    InstalledHook(
+                        hook_id=hook_id,
+                        command=hook_entry.command,
+                        timeout=hook_entry.timeout,
+                        lifecycle=lifecycle,
+                        matcher=matcher,
+                    )
+                )
 
     return results
 
@@ -511,8 +486,8 @@ def _detect_hook_drift(
             # Check if command format matches expectations
             installed = installed_by_id[expected_hook.id]
 
-            # Expected format: "ERK_KIT_ID={kit_id} ERK_HOOK_ID={hook_id} {invocation}"
-            expected_env_prefix = f"ERK_KIT_ID={kit_id} ERK_HOOK_ID={expected_hook.id}"
+            # Expected format: "ERK_HOOK_ID={hook_id} {invocation}"
+            expected_env_prefix = f"ERK_HOOK_ID={expected_hook.id}"
             expected_command = f"{expected_env_prefix} {expected_hook.invocation}"
 
             # Check if command matches expected format

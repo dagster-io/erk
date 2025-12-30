@@ -8,7 +8,7 @@ with the appropriate event fields based on the execution environment:
 Also writes .impl/local-run-state.json for fast local access (no GitHub API needed).
 
 Usage:
-    erk kit exec erk mark-impl-started
+    erk exec mark-impl-started
 
 Output:
     JSON with success status or error information
@@ -18,10 +18,10 @@ Exit Codes:
     0: Always (even on error, to support || true pattern)
 
 Examples:
-    $ erk kit exec erk mark-impl-started
+    $ erk exec mark-impl-started
     {"success": true, "issue_number": 123}
 
-    $ erk kit exec erk mark-impl-started
+    $ erk exec mark-impl-started
     {"success": false, "error_type": "no_issue_reference", "message": "..."}
 """
 

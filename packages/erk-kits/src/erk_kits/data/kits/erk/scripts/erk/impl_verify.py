@@ -5,7 +5,7 @@ did not delete .impl/ during implementation. The .impl/ folder MUST be preserved
 for user review.
 
 Usage:
-    erk kit exec erk impl-verify
+    erk exec impl-verify
 
 Output:
     JSON with validation status
@@ -15,10 +15,10 @@ Exit Codes:
     1: .impl/ folder was deleted (violation of instructions)
 
 Examples:
-    $ erk kit exec erk impl-verify
+    $ erk exec impl-verify
     {"valid": true, "impl_dir": "/path/to/.impl"}
 
-    $ erk kit exec erk impl-verify  # when .impl/ is missing
+    $ erk exec impl-verify  # when .impl/ is missing
     {"valid": false, "error": ".impl/ folder was deleted during implementation...", ...}
 """
 

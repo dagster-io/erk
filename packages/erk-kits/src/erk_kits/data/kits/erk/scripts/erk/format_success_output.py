@@ -4,7 +4,7 @@ This kit CLI command generates standardized markdown output for successful
 issue creation with next steps and JSON metadata.
 
 Usage:
-    erk kit exec erk format-success-output --issue-number N --issue-url URL
+    erk exec format-success-output --issue-number N --issue-url URL
 
 Output:
     Formatted markdown with success message, commands, and JSON metadata
@@ -13,7 +13,7 @@ Exit Codes:
     0: Success
 
 Examples:
-    $ erk kit exec erk format-success-output \\
+    $ erk exec format-success-output \\
         --issue-number 123 \\
         --issue-url https://github.com/org/repo/issues/123
     ✅ GitHub issue created: #123

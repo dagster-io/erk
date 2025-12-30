@@ -8,7 +8,7 @@ import yaml
 from click.testing import CliRunner
 
 from erk.cli.commands.kit.install import install
-from erk.kits.hooks.settings import extract_kit_id_from_command, load_settings
+from erk.kits.hooks.settings import extract_hook_id_from_command, load_settings
 from erk.kits.io.state import load_project_config
 from erk.kits.sources.resolver import KitResolver
 from tests.fakes.fake_local_source import FakeLocalSource
@@ -115,45 +115,51 @@ def assert_hook_installed(
     expected_lifecycle: str,
     expected_matcher: str,
 ) -> None:
-    """Assert that a hook is properly installed."""
+    """Assert that a hook is properly installed.
+
+    Note: kit_id is kept for API compatibility but is now ignored since
+    all managed hooks are identified by their hook_id only.
+    """
     # Check settings.json has the hook
     settings_path = project_root / ".claude" / "settings.json"
     settings = load_settings(settings_path)
     assert settings.hooks is not None, "No hooks in settings.json"
     assert expected_lifecycle in settings.hooks, f"Lifecycle {expected_lifecycle} not in settings"
 
-    # Find the hook in settings
+    # Find the hook in settings by hook_id
     found = False
     for matcher_group in settings.hooks[expected_lifecycle]:
         if matcher_group.matcher == expected_matcher:
             for hook_entry in matcher_group.hooks:
-                entry_kit_id = extract_kit_id_from_command(hook_entry.command)
-                if entry_kit_id == kit_id:
-                    import re
-
-                    hook_id_match = re.search(r"ERK_HOOK_ID=(\S+)", hook_entry.command)
-                    entry_hook_id = hook_id_match.group(1) if hook_id_match else None
-                    if entry_hook_id == hook_id:
-                        found = True
-                        break
+                entry_hook_id = extract_hook_id_from_command(hook_entry.command)
+                if entry_hook_id == hook_id:
+                    found = True
+                    break
         if found:
             break
 
-    assert found, f"Hook {kit_id}:{hook_id} not found in settings.json"
+    assert found, f"Hook {hook_id} not found in settings.json"
 
 
-def assert_hook_not_installed(project_root: Path, kit_id: str) -> None:
-    """Assert that no hooks are installed for a kit."""
-    # Check settings.json has no hooks for this kit
+def assert_hook_not_installed(project_root: Path, kit_id: str, hook_ids: set[str] | None = None) -> None:
+    """Assert that no hooks are installed for a kit.
+
+    Args:
+        project_root: Project root directory
+        kit_id: Kit ID (kept for API compatibility but now ignored)
+        hook_ids: Optional set of specific hook IDs to check for. If not provided,
+                  we can't check since hooks no longer contain kit_id.
+    """
+    # Check settings.json has no hooks with matching hook IDs
     settings_path = project_root / ".claude" / "settings.json"
     if settings_path.exists():
         settings = load_settings(settings_path)
-        if settings.hooks:
+        if settings.hooks and hook_ids:
             for lifecycle_hooks in settings.hooks.values():
                 for matcher_group in lifecycle_hooks:
                     for hook_entry in matcher_group.hooks:
-                        entry_kit_id = extract_kit_id_from_command(hook_entry.command)
-                        assert entry_kit_id != kit_id, f"Found hook for {kit_id} in settings"
+                        entry_hook_id = extract_hook_id_from_command(hook_entry.command)
+                        assert entry_hook_id not in hook_ids, f"Found hook {entry_hook_id} in settings"
 
 
 class TestInstallCommandWithHooks:
@@ -400,14 +406,9 @@ class TestInstallCommandWithHooks:
             for lifecycle_hooks in settings.hooks.values():
                 for matcher_group in lifecycle_hooks:
                     for hook_entry in matcher_group.hooks:
-                        entry_kit_id = extract_kit_id_from_command(hook_entry.command)
-                        if entry_kit_id == "versioned-kit":
-                            import re
-
-                            pattern = r"ERK_HOOK_ID=(\S+)"
-                            hook_id_match = re.search(pattern, hook_entry.command)
-                            if hook_id_match:
-                                all_hook_ids.append(hook_id_match.group(1))
+                        entry_hook_id = extract_hook_id_from_command(hook_entry.command)
+                        if entry_hook_id:
+                            all_hook_ids.append(entry_hook_id)
 
         assert "hook-1" not in all_hook_ids
         assert "hook-2" not in all_hook_ids

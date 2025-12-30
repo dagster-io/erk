@@ -13,7 +13,7 @@ def wrap_plan_in_metadata_block() -> None:
     Formatting and workflow instructions will be added via a separate comment.
 
     Usage:
-        echo "$plan" | erk kit exec erk wrap-plan-in-metadata-block
+        echo "$plan" | erk exec wrap-plan-in-metadata-block
 
     Exit Codes:
         0: Success

@@ -4,7 +4,7 @@ This kit CLI command fetches a plan from a GitHub issue and creates the .worker-
 folder structure, providing a testable alternative to inline workflow scripts.
 
 Usage:
-    erk kit exec erk create-worker-impl-from-issue <issue-number>
+    erk exec create-worker-impl-from-issue <issue-number>
 
 Output:
     Structured JSON output with success status and folder details
@@ -14,10 +14,10 @@ Exit Codes:
     1: Error (issue not found, plan fetch failed, folder creation failed)
 
 Examples:
-    $ erk kit exec erk create-worker-impl-from-issue 1028
+    $ erk exec create-worker-impl-from-issue 1028
     {"success": true, "worker_impl_path": "/path/to/.worker-impl", "issue_number": 1028}
 
-    $ erk kit exec erk create-worker-impl-from-issue 999
+    $ erk exec create-worker-impl-from-issue 999
     {"success": false, "error": "issue_not_found", "message": "..."}
 """
 

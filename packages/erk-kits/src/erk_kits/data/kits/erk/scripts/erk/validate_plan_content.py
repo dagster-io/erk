@@ -4,7 +4,7 @@ This kit CLI command validates that plan content meets minimum requirements
 for structure and length. It accepts plan content via stdin.
 
 Usage:
-    echo "$plan" | erk kit exec erk validate-plan-content
+    echo "$plan" | erk exec validate-plan-content
 
 Output:
     JSON with validation status and details
@@ -13,11 +13,11 @@ Exit Codes:
     0: Success (always - check JSON for validation result)
 
 Examples:
-    $ echo "# My Plan\n\n- Step 1\n- Step 2" | erk kit exec erk validate-plan-content
+    $ echo "# My Plan\n\n- Step 1\n- Step 2" | erk exec validate-plan-content
     {"valid": true, "error": null, "details": {"length": 29, "has_headers": true,
     "has_lists": true}}
 
-    $ echo "too short" | erk kit exec erk validate-plan-content
+    $ echo "too short" | erk exec validate-plan-content
     {"valid": false, "error": "Plan too short (9 characters, minimum 100)",
     "details": {"length": 9, "has_headers": false, "has_lists": false}}
 """

@@ -34,13 +34,13 @@ erk find-project-dir /path/to/project
 }
 ```
 
-### erk kit exec erk list-sessions
+### erk exec list-sessions
 
 Discover Claude Code sessions for the current worktree (kit CLI command).
 
 ```bash
 # List sessions for current worktree
-erk kit exec erk list-sessions [--limit N] [--min-size BYTES]
+erk exec list-sessions [--limit N] [--min-size BYTES]
 ```
 
 **Output format:**
@@ -107,12 +107,12 @@ Analyzes context window usage across all sessions in the current worktree.
 - Identifying optimization opportunities
 - Finding duplicate file reads that waste tokens
 
-### erk kit exec erk preprocess-session
+### erk exec preprocess-session
 
 Converts raw JSONL session logs to readable XML format for analysis.
 
 ```bash
-erk kit exec erk preprocess-session <session-file.jsonl> --stdout
+erk exec preprocess-session <session-file.jsonl> --stdout
 ```
 
 **Useful for:**
@@ -124,7 +124,7 @@ erk kit exec erk preprocess-session <session-file.jsonl> --stdout
 **Example:**
 
 ```bash
-erk kit exec erk preprocess-session ~/.claude/projects/.../abc123.jsonl --stdout | head -500
+erk exec preprocess-session ~/.claude/projects/.../abc123.jsonl --stdout | head -500
 ```
 
 ## Finding Session Logs

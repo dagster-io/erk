@@ -1,7 +1,7 @@
 """Post extraction workflow status comments to GitHub issues.
 
 Usage:
-    erk kit exec erk post-extraction-comment \
+    erk exec post-extraction-comment \
         --issue-number 123 \
         --status started \
         --workflow-run-url "https://..."

@@ -54,10 +54,10 @@ Benefits: Testable, no permission prompt, structured output.
 
 ```bash
 # Agent markdown invocation - simple output
-filename=$(erk kit exec erk issue-title-to-filename "$title")
+filename=$(erk exec issue-title-to-filename "$title")
 
 # Agent markdown invocation - JSON output with error handling
-result=$(erk kit exec erk impl-init --json)
+result=$(erk exec impl-init --json)
 
 if ! echo "$result" | jq -e '.valid' > /dev/null; then
     error_msg=$(echo "$result" | jq -r '.error')

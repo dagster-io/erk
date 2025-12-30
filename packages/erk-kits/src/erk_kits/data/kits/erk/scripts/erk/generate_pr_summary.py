@@ -9,7 +9,7 @@ This is used by the GitHub Actions workflow when updating PR bodies
 after implementation.
 
 Usage:
-    erk kit exec erk generate-pr-summary --pr-number 123
+    erk exec generate-pr-summary --pr-number 123
 
 Output:
     PR summary text (title on first line, body follows)
@@ -19,7 +19,7 @@ Exit Codes:
     1: Error (missing pr-number, no diff, Claude failure)
 
 Examples:
-    $ erk kit exec erk generate-pr-summary --pr-number 1895
+    $ erk exec generate-pr-summary --pr-number 1895
     Fix authentication flow for OAuth providers
 
     This PR fixes the OAuth authentication flow...

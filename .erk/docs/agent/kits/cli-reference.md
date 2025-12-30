@@ -111,7 +111,7 @@ Execute scripts from bundled kits.
 
 ```bash
 # Execute a kit script
-erk kit exec erk impl-init --json
+erk exec impl-init --json
 ```
 
 ## Common Workflows

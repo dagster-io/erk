@@ -35,7 +35,7 @@ def create_plan_from_context(ctx: click.Context) -> None:
     2. Update issue body to include execution commands (using returned issue number)
 
     Usage:
-        echo "$plan" | erk kit exec erk create-plan-from-context
+        echo "$plan" | erk exec create-plan-from-context
 
     Exit Codes:
         0: Success

@@ -4,9 +4,9 @@ This kit CLI command fetches unresolved (or all) PR review comments from GitHub
 and outputs them as JSON for agent processing.
 
 Usage:
-    erk kit exec erk get-pr-review-comments
-    erk kit exec erk get-pr-review-comments --pr 123
-    erk kit exec erk get-pr-review-comments --include-resolved
+    erk exec get-pr-review-comments
+    erk exec get-pr-review-comments --pr 123
+    erk exec get-pr-review-comments --include-resolved
 
 Output:
     JSON with success status, PR info, and review threads
@@ -16,10 +16,10 @@ Exit Codes:
     1: Context not initialized
 
 Examples:
-    $ erk kit exec erk get-pr-review-comments
+    $ erk exec get-pr-review-comments
     {"success": true, "pr_number": 123, "threads": [...]}
 
-    $ erk kit exec erk get-pr-review-comments --pr 456
+    $ erk exec get-pr-review-comments --pr 456
     {"success": true, "pr_number": 456, "threads": [...]}
 """
 

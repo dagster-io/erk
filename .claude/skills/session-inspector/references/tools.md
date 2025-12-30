@@ -4,14 +4,14 @@ Complete reference for kit CLI commands and jq recipes for analyzing Claude Code
 
 ## Kit CLI Commands
 
-All commands invoked via `erk kit exec erk <command>`.
+All commands invoked via `erk exec <command>`.
 
 ### list-sessions
 
 List sessions for the current worktree with metadata.
 
 ```bash
-erk kit exec erk list-sessions [--limit N] [--min-size BYTES]
+erk exec list-sessions [--limit N] [--min-size BYTES]
 ```
 
 **Options:**
@@ -55,7 +55,7 @@ erk kit exec erk list-sessions [--limit N] [--min-size BYTES]
 Convert raw JSONL session log to compressed XML format.
 
 ```bash
-erk kit exec erk preprocess-session <log-path> [OPTIONS]
+erk exec preprocess-session <log-path> [OPTIONS]
 ```
 
 **Options:**
@@ -97,7 +97,7 @@ erk kit exec erk preprocess-session <log-path> [OPTIONS]
 Extract the latest plan from session files.
 
 ```bash
-erk kit exec erk extract-latest-plan [--session-id SESSION_ID]
+erk exec extract-latest-plan [--session-id SESSION_ID]
 ```
 
 **Options:**
@@ -124,7 +124,7 @@ erk kit exec erk extract-latest-plan [--session-id SESSION_ID]
 Extract plan from session and create GitHub issue.
 
 ```bash
-erk kit exec erk create-issue-from-session [--session-id SESSION_ID]
+erk exec create-issue-from-session [--session-id SESSION_ID]
 ```
 
 **Output:**
@@ -154,7 +154,7 @@ Or on failure:
 Extract session XML content from GitHub issue comments.
 
 ```bash
-erk kit exec erk extract-session-from-issue <issue-number> [OPTIONS]
+erk exec extract-session-from-issue <issue-number> [OPTIONS]
 ```
 
 **Options:**
@@ -394,7 +394,7 @@ cat session.jsonl | jq 'select(.type == "summary")'
 
 3. View agent conversation:
    ```bash
-   erk kit exec erk preprocess-session agent-<id>.jsonl --stdout | head -200
+   erk exec preprocess-session agent-<id>.jsonl --stdout | head -200
    ```
 
 ### Compare Session Sizes
@@ -414,18 +414,18 @@ grep -l "specific text" "$PROJECT_DIR"/*.jsonl | grep -v agent-
 ### Extract Plan from Specific Session
 
 ```bash
-erk kit exec erk extract-latest-plan --session-id abc123-def456
+erk exec extract-latest-plan --session-id abc123-def456
 ```
 
 ### Full Extraction Workflow
 
 ```bash
 # 1. List sessions and find the one to extract from
-erk kit exec erk list-sessions --limit 20
+erk exec list-sessions --limit 20
 
 # 2. Preprocess to XML
-erk kit exec erk preprocess-session /path/to/session.jsonl --stdout > session.xml
+erk exec preprocess-session /path/to/session.jsonl --stdout > session.xml
 
 # 3. Create issue with session context
-erk kit exec erk create-issue-from-session --session-id abc123
+erk exec create-issue-from-session --session-id abc123
 ```

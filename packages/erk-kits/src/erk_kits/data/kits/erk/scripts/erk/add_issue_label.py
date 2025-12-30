@@ -1,7 +1,7 @@
 """Add a label to a GitHub issue.
 
 Usage:
-    erk kit exec erk add-issue-label --issue-number 123 --label "extraction-failed"
+    erk exec add-issue-label --issue-number 123 --label "extraction-failed"
 
 Output:
     JSON with success status, issue_number, and label

@@ -105,7 +105,7 @@ Project directories use **deterministic path encoding**:
 - Contains the main conversation thread
 - Includes user messages, assistant responses, and tool results
 
-**Discovery:** Main session logs are `.jsonl` files in the project directory that don't start with `agent-`. Use `erk kit exec erk list-sessions` to list sessions for the current project.
+**Discovery:** Main session logs are `.jsonl` files in the project directory that don't start with `agent-`. Use `erk exec list-sessions` to list sessions for the current project.
 
 ### Agent Subprocess Logs
 
@@ -281,7 +281,7 @@ Session IDs are passed explicitly to CLI commands via `--session-id` options. Th
 **CLI Examples:**
 
 ```bash
-erk kit exec erk list-sessions --session-id abc123-def456
+erk exec list-sessions --session-id abc123-def456
 erk plan create-raw --session-id abc123-def456
 ```
 
@@ -395,7 +395,7 @@ See `erk_shared/scratch/scratch.py:get_scratch_dir()` for the canonical implemen
 
 **Why walk-up?** This enables running erk commands from subdirectories of a Claude project. If you start Claude Code in `/Users/dev/myrepo` but later `cd` into `/Users/dev/myrepo/src/components`, the walk-up search finds the parent project.
 
-**CLI:** Use `erk kit exec erk find-project-dir` to find the project directory for the current working directory.
+**CLI:** Use `erk exec find-project-dir` to find the project directory for the current working directory.
 
 **Implementation:** See `RealClaudeCodeSessionStore._get_project_dir()` in `packages/erk-shared/src/erk_shared/extraction/claude_code_session_store/real.py`
 
@@ -454,7 +454,7 @@ See `erk_shared/scratch/scratch.py:get_scratch_dir()` for the canonical implemen
 3. Sort by modification time (most recent first)
 4. Extract session ID from filename (`.stem`)
 
-**CLI:** Use `erk kit exec erk find-project-dir` which outputs the latest session ID.
+**CLI:** Use `erk exec find-project-dir` which outputs the latest session ID.
 
 **Implementation:** Part of `find_project_info()` in `packages/erk-kits/src/erk_kits/data/kits/erk/kit_cli_commands/erk/find_project_dir.py`
 
@@ -615,7 +615,7 @@ List sessions by modification time to find recent activity:
 
 ```bash
 # Find project directory for current path
-erk kit exec erk find-project-dir
+erk exec find-project-dir
 
 # Example output:
 # Project: -Users-schrockn--erk-repos-erk
@@ -646,13 +646,13 @@ These are rough estimates. Actual counts depend on:
 
 ### Get Project Directory for Current Working Directory
 
-Use `erk kit exec erk find-project-dir` to get the project directory for the current path. The directory path is constructed by encoding the working directory path (see "Project Directory Encoding" above).
+Use `erk exec find-project-dir` to get the project directory for the current path. The directory path is constructed by encoding the working directory path (see "Project Directory Encoding" above).
 
 ### List All Sessions for a Project
 
 Session IDs are the filenames (stems) of `.jsonl` files that don't start with `agent-`.
 
-**CLI:** Use `erk kit exec erk list-sessions` to list sessions for the current project.
+**CLI:** Use `erk exec list-sessions` to list sessions for the current project.
 
 ### Get Session ID
 

@@ -9,12 +9,12 @@ from typing import NamedTuple
 from erk.kits.hooks.models import ClaudeSettings, HookEntry, MatcherGroup
 
 
-def extract_kit_id_from_command(command: str) -> str | None:
-    """Extract kit_id from ERK_KIT_ID environment variable in command.
+def extract_hook_id_from_command(command: str) -> str | None:
+    """Extract hook_id from ERK_HOOK_ID environment variable in command.
 
-    Returns None if kit_id not found in command.
+    Returns None if hook_id not found in command.
     """
-    match = re.search(r"ERK_KIT_ID=(\S+)", command)
+    match = re.search(r"ERK_HOOK_ID=(\S+)", command)
     if match:
         return match.group(1)
     return None
@@ -140,21 +140,22 @@ def add_hook_to_settings(
     )
 
 
-def remove_hooks_by_kit(
+def remove_hooks_by_hook_ids(
     settings: ClaudeSettings,
-    kit_id: str,
+    hook_ids: set[str],
 ) -> tuple[ClaudeSettings, int]:
-    """Remove all hooks installed by a specific kit.
+    """Remove all hooks with matching hook IDs.
 
     Args:
         settings: Current settings object
-        kit_id: Kit ID to match in _dot_agent metadata
+        hook_ids: Set of hook IDs to remove
 
     Returns:
         Tuple of (new settings, count of removed hooks)
 
     Note:
         Removes empty matcher groups and lifecycle entries.
+        Matches hooks by ERK_HOOK_ID environment variable in command.
     """
     if not settings.hooks:
         return settings, 0
@@ -166,9 +167,11 @@ def remove_hooks_by_kit(
         new_groups: list[MatcherGroup] = []
 
         for group in groups:
-            # Filter out hooks from this kit
+            # Filter out hooks with matching hook IDs
             remaining_hooks = [
-                hook for hook in group.hooks if extract_kit_id_from_command(hook.command) != kit_id
+                hook
+                for hook in group.hooks
+                if extract_hook_id_from_command(hook.command) not in hook_ids
             ]
 
             removed_count += len(group.hooks) - len(remaining_hooks)

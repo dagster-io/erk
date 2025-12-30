@@ -61,7 +61,7 @@ fi
 **After**: Agent invokes tested Python command, reads structured output:
 
 ```bash
-filename=$(erk kit exec erk issue-title-to-filename "$title")
+filename=$(erk exec issue-title-to-filename "$title")
 ```
 
 The conversion logic lives in Python with proper unit tests. The agent prompt shrinks. Reliability increases.

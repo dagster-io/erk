@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-from erk.kits.hooks.settings import extract_kit_id_from_command, load_settings
+from erk.kits.hooks.settings import extract_hook_id_from_command, load_settings
 from erk.kits.operations.install import install_kit
 from erk.kits.sources.resolver import ResolvedKit
 
@@ -84,8 +84,8 @@ def test_install_kit_installs_hooks(tmp_path: Path) -> None:
     for matcher_group in settings.hooks["UserPromptSubmit"]:
         if matcher_group.matcher == "*":
             for hook_entry in matcher_group.hooks:
-                kit_id = extract_kit_id_from_command(hook_entry.command)
-                if kit_id == "test-kit":
+                hook_id = extract_hook_id_from_command(hook_entry.command)
+                if hook_id == "test-hook":
                     # Verify hook ID is in command
                     assert "ERK_HOOK_ID=test-hook" in hook_entry.command
                     assert hook_entry.timeout == 30
@@ -138,16 +138,23 @@ def test_install_kit_without_hooks_does_not_create_hook_entries(tmp_path: Path) 
     if settings_path.exists():
         settings = load_settings(settings_path)
         if settings.hooks is not None:
-            # If hooks exist, verify no hooks for this kit
+            # If hooks exist, verify no hooks with expected IDs
             for lifecycle_hooks in settings.hooks.values():
                 for matcher_group in lifecycle_hooks:
                     for hook_entry in matcher_group.hooks:
-                        kit_id = extract_kit_id_from_command(hook_entry.command)
-                        assert kit_id != "no-hooks-kit", "No hooks should exist for this kit"
+                        hook_id = extract_hook_id_from_command(hook_entry.command)
+                        # No hooks should have been installed for this kit
+                        assert hook_id is None, "No hooks should exist for this kit"
 
 
-def test_install_kit_replaces_old_hooks_on_reinstall(tmp_path: Path) -> None:
-    """Test that reinstalling a kit with different hooks replaces old configuration."""
+def test_install_kit_replaces_same_id_hooks_on_reinstall(tmp_path: Path) -> None:
+    """Test that reinstalling a kit with same hook ID replaces the old hook.
+
+    Note: install_kit only replaces hooks with matching IDs. For full update
+    behavior (removing ALL old hooks before installing new ones), use the
+    higher-level _perform_atomic_hook_update function which is called by
+    the install command.
+    """
     kit_dir = tmp_path / "versioned-kit"
     kit_dir.mkdir()
 
@@ -162,10 +169,10 @@ def test_install_kit_replaces_old_hooks_on_reinstall(tmp_path: Path) -> None:
         "artifacts": {"agent": ["agents/v1-agent.md"]},
         "hooks": [
             {
-                "id": "old-hook",
+                "id": "shared-hook",  # Same ID in both versions
                 "lifecycle": "UserPromptSubmit",
                 "matcher": "*",
-                "invocation": "erk kit exec versioned-kit old-hook",
+                "invocation": "erk kit exec versioned-kit v1-action",
                 "description": "Old hook",
                 "timeout": 30,
             }
@@ -193,7 +200,14 @@ def test_install_kit_replaces_old_hooks_on_reinstall(tmp_path: Path) -> None:
 
     install_kit(resolved_v1, project_dir, overwrite=False)
 
-    # Install v2 with different hook
+    # Verify v1 hook installed
+    settings_path = project_dir / ".claude" / "settings.json"
+    settings = load_settings(settings_path)
+    assert settings.hooks is not None
+    v1_hook = settings.hooks["UserPromptSubmit"][0].hooks[0]
+    assert "v1-action" in v1_hook.command
+
+    # Install v2 with same hook ID but different invocation
     manifest_v2 = {
         "name": "versioned-kit",
         "version": "2.0.0",
@@ -201,10 +215,10 @@ def test_install_kit_replaces_old_hooks_on_reinstall(tmp_path: Path) -> None:
         "artifacts": {"agent": ["agents/v2-agent.md"]},
         "hooks": [
             {
-                "id": "new-hook",
+                "id": "shared-hook",  # Same ID in both versions
                 "lifecycle": "UserPromptSubmit",
                 "matcher": "*",
-                "invocation": "erk kit exec versioned-kit new-hook",
+                "invocation": "erk kit exec versioned-kit v2-action",
                 "description": "New hook",
                 "timeout": 60,
             }
@@ -225,23 +239,20 @@ def test_install_kit_replaces_old_hooks_on_reinstall(tmp_path: Path) -> None:
 
     install_kit(resolved_v2, project_dir, overwrite=True)
 
-    # Verify: Only new hook exists
-    settings_path = project_dir / ".claude" / "settings.json"
+    # Verify: v2 hook replaced v1 (same hook ID)
     settings = load_settings(settings_path)
 
     hook_ids = []
     if settings.hooks and "UserPromptSubmit" in settings.hooks:
         for matcher_group in settings.hooks["UserPromptSubmit"]:
             for hook_entry in matcher_group.hooks:
-                kit_id = extract_kit_id_from_command(hook_entry.command)
-                if kit_id == "versioned-kit":
-                    # Extract hook ID
-                    import re
+                hook_id = extract_hook_id_from_command(hook_entry.command)
+                if hook_id:
+                    hook_ids.append(hook_id)
+                    # Verify it's the v2 action
+                    if hook_id == "shared-hook":
+                        assert "v2-action" in hook_entry.command, "Should have v2 action"
+                        assert "v1-action" not in hook_entry.command, "Should not have v1 action"
 
-                    match = re.search(r"ERK_HOOK_ID=(\S+)", hook_entry.command)
-                    if match:
-                        hook_ids.append(match.group(1))
-
-    assert "old-hook" not in hook_ids, "Old hook should be removed"
-    assert "new-hook" in hook_ids, "New hook should be present"
+    assert "shared-hook" in hook_ids, "Hook should be present"
     assert len(hook_ids) == 1, "Should only have one hook"

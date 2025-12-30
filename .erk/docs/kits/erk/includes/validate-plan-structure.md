@@ -13,10 +13,10 @@ Use the `validate-plan-content` kit CLI command to validate plan structure:
 
 ```bash
 # Validate plan structure
-validate_result=$(echo "$plan_content" | erk kit exec erk validate-plan-content)
+validate_result=$(echo "$plan_content" | erk exec validate-plan-content)
 if ! echo "$validate_result" | jq -e '.valid' > /dev/null; then
     error_msg=$(echo "$validate_result" | jq -r '.error')
-    formatted_error=$(erk kit exec erk format-error \
+    formatted_error=$(erk exec format-error \
         --brief "Plan content is too minimal or invalid" \
         --details "$error_msg" \
         --action "Provide a more detailed implementation plan" \
@@ -56,7 +56,7 @@ The validation command returns JSON with this structure:
 When validation fails, use the `format-error` command to generate consistent error messages:
 
 ```bash
-formatted_error=$(erk kit exec erk format-error \
+formatted_error=$(erk exec format-error \
     --brief "Brief error description" \
     --details "Detailed error context" \
     --action "First suggested action" \
@@ -93,7 +93,7 @@ In `/erk:session-plan-enrich`, the same validation pattern applies:
 plan_content="..."  # Extracted from conversation
 
 # Step 2: Validate plan structure
-validate_result=$(echo "$plan_content" | erk kit exec erk validate-plan-content)
+validate_result=$(echo "$plan_content" | erk exec validate-plan-content)
 
 # Step 3: Check if validation passed
 if ! echo "$validate_result" | jq -e '.valid' > /dev/null; then
@@ -101,7 +101,7 @@ if ! echo "$validate_result" | jq -e '.valid' > /dev/null; then
     error_msg=$(echo "$validate_result" | jq -r '.error')
 
     # Step 5: Format error with context
-    formatted_error=$(erk kit exec erk format-error \
+    formatted_error=$(erk exec format-error \
         --brief "Plan content is too minimal or invalid" \
         --details "$error_msg" \
         --action "Provide a more detailed implementation plan" \

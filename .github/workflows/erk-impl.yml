@@ -68,7 +68,7 @@ jobs:
         id: trunk
         run: |
           source $HOME/.cargo/env
-          result=$(erk kit exec erk detect-trunk-branch)
+          result=$(erk exec detect-trunk-branch)
           echo "trunk_branch=$(echo "$result" | jq -r '.trunk_branch')" >> $GITHUB_OUTPUT
 
       - name: Set branch and PR from inputs
@@ -91,7 +91,7 @@ jobs:
           git fetch origin "$BRANCH_NAME"
           git checkout "$BRANCH_NAME"
           rm -rf .worker-impl
-          erk kit exec erk create-worker-impl-from-issue "$ISSUE_NUMBER"
+          erk exec create-worker-impl-from-issue "$ISSUE_NUMBER"
           if [ $? -ne 0 ]; then
             gh issue comment "$ISSUE_NUMBER" --body "Could not fetch plan content for issue #$ISSUE_NUMBER."
             exit 1
@@ -113,7 +113,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           source $HOME/.cargo/env
-          erk kit exec erk post-workflow-started-comment \
+          erk exec post-workflow-started-comment \
             --issue-number "$ISSUE_NUMBER" \
             --branch-name "$BRANCH_NAME" \
             --pr-number "$PR_NUMBER" \
@@ -129,7 +129,7 @@ jobs:
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           source $HOME/.cargo/env
-          erk kit exec erk add-remote-execution-note \
+          erk exec add-remote-execution-note \
             --pr-number "$PR_NUMBER" \
             --run-id "$WORKFLOW_RUN_ID" \
             --run-url "$WORKFLOW_RUN_URL"
@@ -212,7 +212,7 @@ jobs:
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           source $HOME/.cargo/env
-          erk kit exec erk update-pr-body \
+          erk exec update-pr-body \
             --issue-number "$ISSUE_NUMBER" \
             --run-id "$WORKFLOW_RUN_ID" \
             --run-url "$WORKFLOW_RUN_URL"

@@ -10,7 +10,7 @@ Exit codes:
     2: Block (plan exists, no implement-now signal - prompt user)
 
 This command is invoked via:
-    erk kit exec erk exit-plan-mode-hook
+    erk exec exit-plan-mode-hook
 
 Signal File State Machine
 =========================

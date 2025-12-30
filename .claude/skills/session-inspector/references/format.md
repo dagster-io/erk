@@ -205,7 +205,7 @@ Session IDs are passed explicitly to CLI commands via `--session-id` options. Th
 **Example:**
 
 ```bash
-erk kit exec erk list-sessions --session-id abc123-def456
+erk exec list-sessions --session-id abc123-def456
 ```
 
 ## Agent ID

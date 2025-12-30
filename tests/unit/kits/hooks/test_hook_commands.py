@@ -10,16 +10,16 @@ from erk.cli.commands.hook.group import hook_group
 
 
 def create_test_hook_entry(
-    kit_id: str = "test-kit",
     hook_id: str = "test-hook",
-    lifecycle: str = "PreToolUse",
-    matcher: str = "**/*.py",
     command: str = "echo test",
     timeout: int = 30,
 ) -> dict:
-    """Factory for creating test hook entry dictionaries."""
+    """Factory for creating test hook entry dictionaries.
+
+    Note: kit_id is no longer used in the new hook format.
+    """
     # Encode metadata in command via environment variables
-    command_with_metadata = f"ERK_KIT_ID={kit_id} ERK_HOOK_ID={hook_id} {command}"
+    command_with_metadata = f"ERK_HOOK_ID={hook_id} {command}"
     return {
         "command": command_with_metadata,
         "timeout": timeout,
@@ -75,36 +75,34 @@ class TestHookListCommand:
 
     def test_single_hook(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """Test list command with a single hook."""
-        hook_entry = create_test_hook_entry(
-            kit_id="my-kit", hook_id="my-hook", command="echo hello"
-        )
+        hook_entry = create_test_hook_entry(hook_id="my-hook", command="echo hello")
         settings = create_test_settings({"pre": [{"matcher": "**/*.py", "hooks": [hook_entry]}]})
         write_settings_json(tmp_path, settings)
 
         result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["list"])
 
         assert result.exit_code == 0
-        assert "my-kit:my-hook" in result.output
+        assert "my-hook" in result.output
         assert "pre:" in result.output
 
     def test_multiple_hooks_same_matcher(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """Test list command with multiple hooks in same matcher."""
-        hook1 = create_test_hook_entry(kit_id="kit1", hook_id="hook1")
-        hook2 = create_test_hook_entry(kit_id="kit2", hook_id="hook2")
+        hook1 = create_test_hook_entry(hook_id="hook1")
+        hook2 = create_test_hook_entry(hook_id="hook2")
         settings = create_test_settings({"pre": [{"matcher": "**/*.py", "hooks": [hook1, hook2]}]})
         write_settings_json(tmp_path, settings)
 
         result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["list"])
 
         assert result.exit_code == 0
-        assert "kit1:hook1" in result.output
-        assert "kit2:hook2" in result.output
+        assert "hook1" in result.output
+        assert "hook2" in result.output
         assert "pre:" in result.output
 
     def test_multiple_hooks_multiple_matchers(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """Test list command with hooks across different matchers."""
-        hook1 = create_test_hook_entry(kit_id="kit1", hook_id="hook1")
-        hook2 = create_test_hook_entry(kit_id="kit2", hook_id="hook2")
+        hook1 = create_test_hook_entry(hook_id="hook1")
+        hook2 = create_test_hook_entry(hook_id="hook2")
         settings = create_test_settings(
             {
                 "pre": [
@@ -118,16 +116,16 @@ class TestHookListCommand:
         result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["list"])
 
         assert result.exit_code == 0
-        assert "kit1:hook1" in result.output
-        assert "kit2:hook2" in result.output
+        assert "hook1" in result.output
+        assert "hook2" in result.output
         assert "pre:" in result.output
 
     def test_multiple_hooks_multiple_lifecycles(
         self, cli_runner: CliRunner, tmp_path: Path
     ) -> None:
         """Test list command with hooks across different lifecycles."""
-        hook1 = create_test_hook_entry(kit_id="kit1", hook_id="hook1")
-        hook2 = create_test_hook_entry(kit_id="kit2", hook_id="hook2")
+        hook1 = create_test_hook_entry(hook_id="hook1")
+        hook2 = create_test_hook_entry(hook_id="hook2")
         settings = create_test_settings(
             {
                 "pre": [{"matcher": "**/*.py", "hooks": [hook1]}],
@@ -139,8 +137,8 @@ class TestHookListCommand:
         result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["list"])
 
         assert result.exit_code == 0
-        assert "kit1:hook1" in result.output
-        assert "kit2:hook2" in result.output
+        assert "hook1" in result.output
+        assert "hook2" in result.output
         assert "pre:" in result.output
         assert "post:" in result.output
 
@@ -218,7 +216,6 @@ class TestHookShowCommand:
     def test_show_existing_hook(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """Test show command for an existing hook."""
         hook_entry = create_test_hook_entry(
-            kit_id="my-kit",
             hook_id="my-hook",
             command="echo hello world",
             timeout=45,
@@ -226,65 +223,46 @@ class TestHookShowCommand:
         settings = create_test_settings({"pre": [{"matcher": "**/*.py", "hooks": [hook_entry]}]})
         write_settings_json(tmp_path, settings)
 
-        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "my-kit:my-hook"])
+        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "my-hook"])
 
         assert result.exit_code == 0
-        assert "Hook: my-kit:my-hook" in result.output
+        assert "Hook: my-hook" in result.output
         assert "Lifecycle: pre" in result.output
         assert "Matcher: **/*.py" in result.output
         assert "Timeout: 45s" in result.output
-        expected_cmd = "ERK_KIT_ID=my-kit ERK_HOOK_ID=my-hook echo hello world"
+        expected_cmd = "ERK_HOOK_ID=my-hook echo hello world"
         assert f"Command: {expected_cmd}" in result.output
 
     def test_show_hook_in_post_lifecycle(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """Test show command for hook in post lifecycle."""
-        hook_entry = create_test_hook_entry(
-            kit_id="post-kit", hook_id="post-hook", command="cleanup"
-        )
+        hook_entry = create_test_hook_entry(hook_id="post-hook", command="cleanup")
         settings = create_test_settings({"post": [{"matcher": "**/*.js", "hooks": [hook_entry]}]})
         write_settings_json(tmp_path, settings)
 
-        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "post-kit:post-hook"])
+        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "post-hook"])
 
         assert result.exit_code == 0
-        assert "Hook: post-kit:post-hook" in result.output
+        assert "Hook: post-hook" in result.output
         assert "Lifecycle: post" in result.output
         assert "Matcher: **/*.js" in result.output
 
-    def test_show_missing_colon(self, cli_runner: CliRunner, tmp_path: Path) -> None:
-        """Test show command with invalid spec format (missing colon)."""
-        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "no-colon"])
-
-        assert result.exit_code == 1
-        assert "Invalid hook spec 'no-colon'" in result.output
-        assert "Expected format: kit-id:hook-id" in result.output
-
-    def test_show_multiple_colons(self, cli_runner: CliRunner, tmp_path: Path) -> None:
-        """Test show command with too many colons."""
-        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "kit:hook:extra"])
-
-        # The implementation splits on first colon only, so this should work
-        # but the hook won't be found
-        assert result.exit_code == 1
-        assert "Hook 'kit:hook:extra' not found" in result.output
-
     def test_show_nonexistent_hook(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """Test show command for hook that doesn't exist."""
-        hook_entry = create_test_hook_entry(kit_id="existing", hook_id="hook")
+        hook_entry = create_test_hook_entry(hook_id="existing-hook")
         settings = create_test_settings({"pre": [{"matcher": "**/*.py", "hooks": [hook_entry]}]})
         write_settings_json(tmp_path, settings)
 
-        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "nonexistent:hook"])
+        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "nonexistent-hook"])
 
         assert result.exit_code == 1
-        assert "Hook 'nonexistent:hook' not found" in result.output
+        assert "Hook 'nonexistent-hook' not found" in result.output
 
     def test_show_no_settings_file(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """Test show command when no settings.json exists."""
-        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "any:hook"])
+        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "any-hook"])
 
         assert result.exit_code == 1
-        assert "Hook 'any:hook' not found" in result.output
+        assert "Hook 'any-hook' not found" in result.output
 
     def test_show_invalid_json(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """Test show command with malformed JSON."""
@@ -293,26 +271,26 @@ class TestHookShowCommand:
         settings_path = claude_dir / "settings.json"
         settings_path.write_text("{invalid json", encoding="utf-8")
 
-        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "any:hook"])
+        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "any-hook"])
 
         assert result.exit_code == 1
         assert "Error loading settings.json" in result.output
 
     def test_show_case_sensitive(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """Test that show command is case-sensitive."""
-        hook_entry = create_test_hook_entry(kit_id="MyKit", hook_id="MyHook")
+        hook_entry = create_test_hook_entry(hook_id="MyHook")
         settings = create_test_settings({"pre": [{"matcher": "**/*.py", "hooks": [hook_entry]}]})
         write_settings_json(tmp_path, settings)
 
         # Try lowercase - should not find it
-        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "mykit:myhook"])
+        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "myhook"])
         assert result.exit_code == 1
         assert "not found" in result.output
 
         # Try correct case - should find it
-        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "MyKit:MyHook"])
+        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "MyHook"])
         assert result.exit_code == 0
-        assert "Hook: MyKit:MyHook" in result.output
+        assert "Hook: MyHook" in result.output
 
 
 class TestHookValidateCommand:
@@ -329,7 +307,7 @@ class TestHookValidateCommand:
 
     def test_validate_valid_configuration(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """Test validate command with valid configuration."""
-        hook_entry = create_test_hook_entry(kit_id="my-kit", hook_id="my-hook")
+        hook_entry = create_test_hook_entry(hook_id="my-hook")
         settings = create_test_settings({"pre": [{"matcher": "**/*.py", "hooks": [hook_entry]}]})
         write_settings_json(tmp_path, settings)
 
@@ -352,7 +330,7 @@ class TestHookValidateCommand:
 
     def test_validate_with_extra_fields(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """Test validate command with extra fields (should be allowed)."""
-        hook_entry = create_test_hook_entry(kit_id="my-kit", hook_id="my-hook")
+        hook_entry = create_test_hook_entry(hook_id="my-hook")
         settings = create_test_settings({"pre": [{"matcher": "**/*.py", "hooks": [hook_entry]}]})
         # Add extra top-level field
         settings["extra_field"] = "some_value"
@@ -432,12 +410,8 @@ class TestHookCommandsIntegration:
     def test_list_show_validate_workflow(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """Test complete workflow: create hooks, list, show, validate."""
         # Create a settings file with multiple hooks
-        hook1 = create_test_hook_entry(
-            kit_id="kit1", hook_id="hook1", command="echo first", timeout=30
-        )
-        hook2 = create_test_hook_entry(
-            kit_id="kit2", hook_id="hook2", command="echo second", timeout=60
-        )
+        hook1 = create_test_hook_entry(hook_id="hook1", command="echo first", timeout=30)
+        hook2 = create_test_hook_entry(hook_id="hook2", command="echo second", timeout=60)
         settings = create_test_settings(
             {
                 "pre": [{"matcher": "**/*.py", "hooks": [hook1]}],
@@ -454,26 +428,26 @@ class TestHookCommandsIntegration:
         # 2. List all hooks
         result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["list"])
         assert result.exit_code == 0
-        assert "kit1:hook1" in result.output
-        assert "kit2:hook2" in result.output
+        assert "hook1" in result.output
+        assert "hook2" in result.output
         assert "pre:" in result.output
         assert "post:" in result.output
 
         # 3. Show first hook
-        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "kit1:hook1"])
+        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "hook1"])
         assert result.exit_code == 0
-        assert "Hook: kit1:hook1" in result.output
+        assert "Hook: hook1" in result.output
         assert "Lifecycle: pre" in result.output
-        expected_cmd1 = "ERK_KIT_ID=kit1 ERK_HOOK_ID=hook1 echo first"
+        expected_cmd1 = "ERK_HOOK_ID=hook1 echo first"
         assert f"Command: {expected_cmd1}" in result.output
         assert "Timeout: 30s" in result.output
 
         # 4. Show second hook
-        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "kit2:hook2"])
+        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "hook2"])
         assert result.exit_code == 0
-        assert "Hook: kit2:hook2" in result.output
+        assert "Hook: hook2" in result.output
         assert "Lifecycle: post" in result.output
-        expected_cmd2 = "ERK_KIT_ID=kit2 ERK_HOOK_ID=hook2 echo second"
+        expected_cmd2 = "ERK_HOOK_ID=hook2 echo second"
         assert f"Command: {expected_cmd2}" in result.output
         assert "Timeout: 60s" in result.output
 
@@ -503,7 +477,7 @@ class TestHookCommandsIntegration:
     def test_unicode_in_commands(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """Test hooks with unicode characters in commands."""
         hook_entry = create_test_hook_entry(
-            kit_id="unicode-kit", hook_id="unicode-hook", command="echo 'Hello 世界 🌍'"
+            hook_id="unicode-hook", command="echo 'Hello 世界 🌍'"
         )
         settings = create_test_settings({"pre": [{"matcher": "**/*.py", "hooks": [hook_entry]}]})
         write_settings_json(tmp_path, settings)
@@ -515,51 +489,42 @@ class TestHookCommandsIntegration:
         # List
         result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["list"])
         assert result.exit_code == 0
-        assert "unicode-kit:unicode-hook" in result.output
+        assert "unicode-hook" in result.output
 
         # Show
-        result = invoke_in_dir(
-            cli_runner, tmp_path, hook_group, ["show", "unicode-kit:unicode-hook"]
-        )
+        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "unicode-hook"])
         assert result.exit_code == 0
         assert "echo 'Hello 世界 🌍'" in result.output
 
     def test_special_characters_in_identifiers(self, cli_runner: CliRunner, tmp_path: Path) -> None:
-        """Test hooks with special characters in kit_id and hook_id."""
-        hook_entry = create_test_hook_entry(
-            kit_id="my-special_kit.v2", hook_id="my-special_hook.v1"
-        )
+        """Test hooks with special characters in hook_id."""
+        hook_entry = create_test_hook_entry(hook_id="my-special_hook.v1")
         settings = create_test_settings({"pre": [{"matcher": "**/*.py", "hooks": [hook_entry]}]})
         write_settings_json(tmp_path, settings)
 
         # List
         result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["list"])
         assert result.exit_code == 0
-        assert "my-special_kit.v2:my-special_hook.v1" in result.output
+        assert "my-special_hook.v1" in result.output
 
         # Show
-        result = invoke_in_dir(
-            cli_runner, tmp_path, hook_group, ["show", "my-special_kit.v2:my-special_hook.v1"]
-        )
+        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", "my-special_hook.v1"])
         assert result.exit_code == 0
-        assert "Hook: my-special_kit.v2:my-special_hook.v1" in result.output
+        assert "Hook: my-special_hook.v1" in result.output
 
     def test_very_long_hook_spec(self, cli_runner: CliRunner, tmp_path: Path) -> None:
         """Test hooks with very long identifiers."""
-        long_kit_id = "very-long-kit-name-" + "x" * 100
         long_hook_id = "very-long-hook-name-" + "y" * 100
-        hook_entry = create_test_hook_entry(kit_id=long_kit_id, hook_id=long_hook_id)
+        hook_entry = create_test_hook_entry(hook_id=long_hook_id)
         settings = create_test_settings({"pre": [{"matcher": "**/*.py", "hooks": [hook_entry]}]})
         write_settings_json(tmp_path, settings)
 
         # List
         result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["list"])
         assert result.exit_code == 0
-        assert f"{long_kit_id}:{long_hook_id}" in result.output
+        assert long_hook_id in result.output
 
         # Show
-        result = invoke_in_dir(
-            cli_runner, tmp_path, hook_group, ["show", f"{long_kit_id}:{long_hook_id}"]
-        )
+        result = invoke_in_dir(cli_runner, tmp_path, hook_group, ["show", long_hook_id])
         assert result.exit_code == 0
-        assert f"Hook: {long_kit_id}:{long_hook_id}" in result.output
+        assert f"Hook: {long_hook_id}" in result.output

@@ -920,7 +920,7 @@ A Python Click command registered in a kit's `kit.yaml` and invoked via `erk kit
 **Example**:
 
 ```bash
-erk kit exec erk check-impl --dry-run
+erk exec check-impl --dry-run
 ```
 
 **See also**: [Kit CLI Command Development](kits/cli-command-development.md)

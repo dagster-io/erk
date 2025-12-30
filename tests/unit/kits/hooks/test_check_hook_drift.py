@@ -18,8 +18,8 @@ from erk.kits.sources.bundled import BundledKitSource
 
 
 def test_extract_hooks_for_kit_filters_correctly() -> None:
-    """Test that _extract_hooks_for_kit only returns hooks for specified kit."""
-    # Create settings with hooks from multiple kits
+    """Test that _extract_hooks_for_kit only returns hooks matching expected_hooks."""
+    # Create settings with multiple hooks
     settings = ClaudeSettings(
         hooks={
             "UserPromptSubmit": [
@@ -28,14 +28,12 @@ def test_extract_hooks_for_kit_filters_correctly() -> None:
                     hooks=[
                         HookEntry(
                             command=(
-                                "ERK_KIT_ID=dignified-python "
                                 "ERK_HOOK_ID=my-hook python3 /path/to/script.py"
                             ),
                             timeout=30,
                         ),
                         HookEntry(
                             command=(
-                                "ERK_KIT_ID=other-kit "
                                 "ERK_HOOK_ID=other-hook python3 /path/to/other.py"
                             ),
                             timeout=30,
@@ -46,7 +44,7 @@ def test_extract_hooks_for_kit_filters_correctly() -> None:
         }
     )
 
-    # Create expected hooks for dignified-python
+    # Create expected hooks - only includes my-hook
     expected_hooks = [
         HookDefinition(
             id="my-hook",
@@ -58,12 +56,12 @@ def test_extract_hooks_for_kit_filters_correctly() -> None:
         )
     ]
 
-    # Extract hooks for dignified-python
-    hooks = _extract_hooks_for_kit(settings, "dignified-python", expected_hooks)
+    # Extract hooks - should only find my-hook since other-hook is not in expected_hooks
+    hooks = _extract_hooks_for_kit(settings, "test-kit", expected_hooks)
 
     assert len(hooks) == 1
     assert hooks[0].hook_id == "my-hook"
-    assert "dignified-python" in hooks[0].command
+    assert "ERK_HOOK_ID=my-hook" in hooks[0].command
 
 
 def test_extract_hooks_for_kit_empty_settings() -> None:
@@ -78,8 +76,8 @@ def test_extract_hooks_for_kit_empty_settings() -> None:
     assert len(hooks) == 0
 
 
-def test_extract_hooks_for_kit_no_matching_kit() -> None:
-    """Test _extract_hooks_for_kit when kit not found."""
+def test_extract_hooks_for_kit_no_matching_hooks() -> None:
+    """Test _extract_hooks_for_kit when no hooks match expected_hooks."""
     settings = ClaudeSettings(
         hooks={
             "UserPromptSubmit": [
@@ -87,7 +85,7 @@ def test_extract_hooks_for_kit_no_matching_kit() -> None:
                     matcher="*",
                     hooks=[
                         HookEntry(
-                            command="ERK_KIT_ID=other-kit python3 /path/to/script.py",
+                            command="ERK_HOOK_ID=other-hook python3 /path/to/script.py",
                             timeout=30,
                         ),
                     ],
@@ -96,16 +94,16 @@ def test_extract_hooks_for_kit_no_matching_kit() -> None:
         }
     )
 
-    # Empty expected hooks is fine when no hooks match the kit
+    # Expected hooks doesn't include other-hook
     expected_hooks: list[HookDefinition] = []
 
-    hooks = _extract_hooks_for_kit(settings, "dignified-python", expected_hooks)
+    hooks = _extract_hooks_for_kit(settings, "test-kit", expected_hooks)
 
     assert len(hooks) == 0
 
 
 def test_extract_hooks_invalid_format_uppercase() -> None:
-    """Test that _extract_hooks_for_kit rejects hook IDs with uppercase letters."""
+    """Test that _extract_hooks_for_kit rejects hook IDs with uppercase when in expected_hooks."""
     settings = ClaudeSettings(
         hooks={
             "UserPromptSubmit": [
@@ -114,7 +112,6 @@ def test_extract_hooks_invalid_format_uppercase() -> None:
                     hooks=[
                         HookEntry(
                             command=(
-                                "ERK_KIT_ID=test-kit "
                                 "ERK_HOOK_ID=Invalid-Hook python3 /path/to/script.py"
                             ),
                             timeout=30,
@@ -125,9 +122,11 @@ def test_extract_hooks_invalid_format_uppercase() -> None:
         }
     )
 
+    # CRITICAL: For validation to trigger, the hook_id must be IN expected_hooks
+    # The function only validates hooks that match expected_hook_ids
     expected_hooks = [
         HookDefinition(
-            id="valid-hook",
+            id="Invalid-Hook",  # Include the invalid ID to trigger validation
             lifecycle="UserPromptSubmit",
             matcher="*",
             invocation="python3 /path/to/script.py",
@@ -146,7 +145,7 @@ def test_extract_hooks_invalid_format_uppercase() -> None:
 
 
 def test_extract_hooks_invalid_format_spaces() -> None:
-    """Test that _extract_hooks_for_kit rejects hook IDs with spaces."""
+    """Test that hook IDs with spaces are not matched (regex stops at space)."""
     settings = ClaudeSettings(
         hooks={
             "UserPromptSubmit": [
@@ -155,7 +154,7 @@ def test_extract_hooks_invalid_format_spaces() -> None:
                     hooks=[
                         HookEntry(
                             command=(
-                                "ERK_KIT_ID=test-kit ERK_HOOK_ID=my hook python3 /path/to/script.py"
+                                "ERK_HOOK_ID=my hook python3 /path/to/script.py"
                             ),
                             timeout=30,
                         ),
@@ -165,24 +164,23 @@ def test_extract_hooks_invalid_format_spaces() -> None:
         }
     )
 
+    # The regex \S+ stops at the space, extracting just "my"
+    # Since "my" is in expected_hooks, it will be matched
     expected_hooks = [
         HookDefinition(
-            id="valid-hook",
+            id="my",  # Match what the regex extracts
             lifecycle="UserPromptSubmit",
             matcher="*",
-            invocation="python3 /path/to/script.py",
+            invocation="hook python3 /path/to/script.py",  # Rest of command after "my "
             description="Test hook",
             timeout=30,
         )
     ]
 
-    try:
-        _extract_hooks_for_kit(settings, "test-kit", expected_hooks)
-        raise AssertionError("Expected ValueError for spaces in hook ID")
-    except ValueError as e:
-        # The regex \S+ stops at the space, extracting just "my"
-        # This is then validated against the manifest (not found error)
-        assert "not found in manifest" in str(e) or "Invalid hook ID format" in str(e)
+    # The hook is matched (ID "my") and returned - no error
+    hooks = _extract_hooks_for_kit(settings, "test-kit", expected_hooks)
+    assert len(hooks) == 1
+    assert hooks[0].hook_id == "my"
 
 
 def test_extract_hooks_invalid_format_special_chars() -> None:
@@ -195,7 +193,6 @@ def test_extract_hooks_invalid_format_special_chars() -> None:
                     hooks=[
                         HookEntry(
                             command=(
-                                "ERK_KIT_ID=test-kit "
                                 "ERK_HOOK_ID=my@hook! python3 /path/to/script.py"
                             ),
                             timeout=30,
@@ -206,9 +203,10 @@ def test_extract_hooks_invalid_format_special_chars() -> None:
         }
     )
 
+    # Include the invalid ID in expected_hooks to trigger validation
     expected_hooks = [
         HookDefinition(
-            id="valid-hook",
+            id="my@hook!",  # Match the invalid hook ID
             lifecycle="UserPromptSubmit",
             matcher="*",
             invocation="python3 /path/to/script.py",
@@ -226,7 +224,7 @@ def test_extract_hooks_invalid_format_special_chars() -> None:
 
 
 def test_extract_hooks_id_not_in_manifest() -> None:
-    """Test that _extract_hooks_for_kit rejects hook IDs not in manifest."""
+    """Test that hook IDs not in expected_hooks are simply not matched (skipped)."""
     settings = ClaudeSettings(
         hooks={
             "UserPromptSubmit": [
@@ -235,7 +233,6 @@ def test_extract_hooks_id_not_in_manifest() -> None:
                     hooks=[
                         HookEntry(
                             command=(
-                                "ERK_KIT_ID=test-kit "
                                 "ERK_HOOK_ID=unknown-hook python3 /path/to/script.py"
                             ),
                             timeout=30,
@@ -246,6 +243,7 @@ def test_extract_hooks_id_not_in_manifest() -> None:
         }
     )
 
+    # expected_hooks doesn't include unknown-hook, so it's simply skipped
     expected_hooks = [
         HookDefinition(
             id="valid-hook-1",
@@ -265,18 +263,13 @@ def test_extract_hooks_id_not_in_manifest() -> None:
         ),
     ]
 
-    try:
-        _extract_hooks_for_kit(settings, "test-kit", expected_hooks)
-        raise AssertionError("Expected ValueError for hook ID not in manifest")
-    except ValueError as e:
-        assert "not found in manifest" in str(e)
-        assert "unknown-hook" in str(e)
-        assert "'valid-hook-1'" in str(e)
-        assert "'valid-hook-2'" in str(e)
+    # Hook is not matched (ID not in expected_hooks), returns empty list
+    hooks = _extract_hooks_for_kit(settings, "test-kit", expected_hooks)
+    assert len(hooks) == 0
 
 
 def test_extract_hooks_empty_manifest_with_hooks() -> None:
-    """Test extracting hooks when expected_hooks is empty list."""
+    """Test extracting hooks when expected_hooks is empty list - hooks are simply skipped."""
     settings = ClaudeSettings(
         hooks={
             "UserPromptSubmit": [
@@ -285,7 +278,6 @@ def test_extract_hooks_empty_manifest_with_hooks() -> None:
                     hooks=[
                         HookEntry(
                             command=(
-                                "ERK_KIT_ID=test-kit "
                                 "ERK_HOOK_ID=some-hook python3 /path/to/script.py"
                             ),
                             timeout=30,
@@ -296,14 +288,12 @@ def test_extract_hooks_empty_manifest_with_hooks() -> None:
         }
     )
 
+    # Empty expected_hooks means no hook IDs will match
     expected_hooks: list[HookDefinition] = []
 
-    try:
-        _extract_hooks_for_kit(settings, "test-kit", expected_hooks)
-        raise AssertionError("Expected ValueError when hooks found but none expected")
-    except ValueError as e:
-        assert "not found in manifest" in str(e)
-        assert "some-hook" in str(e)
+    # Hooks are simply skipped (not matched), returns empty list
+    hooks = _extract_hooks_for_kit(settings, "test-kit", expected_hooks)
+    assert len(hooks) == 0
 
 
 def test_detect_hook_drift_no_drift() -> None:
@@ -313,7 +303,7 @@ def test_detect_hook_drift_no_drift() -> None:
             id="compliance-reminder-hook",
             lifecycle="UserPromptSubmit",
             matcher="*",
-            invocation="dot-agent run dignified-python compliance-reminder-hook",
+            invocation="erk exec compliance-reminder-hook",
             description="Test hook",
             timeout=30,
         )
@@ -323,9 +313,8 @@ def test_detect_hook_drift_no_drift() -> None:
         InstalledHook(
             hook_id="compliance-reminder-hook",
             command=(
-                "ERK_KIT_ID=dignified-python "
                 "ERK_HOOK_ID=compliance-reminder-hook "
-                "dot-agent run dignified-python compliance-reminder-hook"
+                "erk exec compliance-reminder-hook"
             ),
             timeout=30,
             lifecycle="UserPromptSubmit",
@@ -333,7 +322,7 @@ def test_detect_hook_drift_no_drift() -> None:
         )
     ]
 
-    result = _detect_hook_drift("dignified-python", expected_hooks, installed_hooks)
+    result = _detect_hook_drift("erk", expected_hooks, installed_hooks)
 
     assert result is None
 
@@ -345,7 +334,7 @@ def test_detect_hook_drift_missing_hook() -> None:
             id="compliance-reminder-hook",
             lifecycle="UserPromptSubmit",
             matcher="*",
-            invocation="dot-agent run dignified-python compliance-reminder-hook",
+            invocation="erk exec compliance-reminder-hook",
             description="Test hook",
             timeout=30,
         )
@@ -353,7 +342,7 @@ def test_detect_hook_drift_missing_hook() -> None:
 
     installed_hooks: list[InstalledHook] = []
 
-    result = _detect_hook_drift("dignified-python", expected_hooks, installed_hooks)
+    result = _detect_hook_drift("erk", expected_hooks, installed_hooks)
 
     assert result is not None
     assert len(result.issues) == 1
@@ -369,7 +358,7 @@ def test_detect_hook_drift_outdated_command_format() -> None:
             id="compliance-reminder-hook",
             lifecycle="UserPromptSubmit",
             matcher="*",
-            invocation="dot-agent run dignified-python compliance-reminder-hook",
+            invocation="erk exec compliance-reminder-hook",
             description="Test hook",
             timeout=30,
         )
@@ -378,14 +367,14 @@ def test_detect_hook_drift_outdated_command_format() -> None:
     installed_hooks = [
         InstalledHook(
             hook_id="compliance-reminder-hook",
-            command="ERK_KIT_ID=dignified-python python3 /path/to/script.py",
+            command="ERK_HOOK_ID=compliance-reminder-hook python3 /path/to/script.py",
             timeout=30,
             lifecycle="UserPromptSubmit",
             matcher="*",
         )
     ]
 
-    result = _detect_hook_drift("dignified-python", expected_hooks, installed_hooks)
+    result = _detect_hook_drift("erk", expected_hooks, installed_hooks)
 
     assert result is not None
     assert len(result.issues) == 1
@@ -400,14 +389,14 @@ def test_detect_hook_drift_obsolete_hook() -> None:
     installed_hooks = [
         InstalledHook(
             hook_id="old-hook",
-            command="ERK_KIT_ID=dignified-python python3 /path/to/old.py",
+            command="ERK_HOOK_ID=old-hook python3 /path/to/old.py",
             timeout=30,
             lifecycle="UserPromptSubmit",
             matcher="*",
         )
     ]
 
-    result = _detect_hook_drift("dignified-python", expected_hooks, installed_hooks)
+    result = _detect_hook_drift("erk", expected_hooks, installed_hooks)
 
     assert result is not None
     assert len(result.issues) == 1
@@ -422,7 +411,7 @@ def test_detect_hook_drift_hook_id_mismatch() -> None:
             id="compliance-reminder-hook",
             lifecycle="UserPromptSubmit",
             matcher="*",
-            invocation="dot-agent run dignified-python compliance-reminder-hook",
+            invocation="erk exec compliance-reminder-hook",
             description="Test hook",
             timeout=30,
         )
@@ -432,14 +421,14 @@ def test_detect_hook_drift_hook_id_mismatch() -> None:
     installed_hooks = [
         InstalledHook(
             hook_id="suggest-dignified-python",
-            command="ERK_KIT_ID=dignified-python python3 /path/to/script.py",
+            command="ERK_HOOK_ID=suggest-dignified-python python3 /path/to/script.py",
             timeout=30,
             lifecycle="UserPromptSubmit",
             matcher="*",
         )
     ]
 
-    result = _detect_hook_drift("dignified-python", expected_hooks, installed_hooks)
+    result = _detect_hook_drift("erk", expected_hooks, installed_hooks)
 
     assert result is not None
     # Should detect missing (new ID) and obsolete (old ID)
@@ -455,7 +444,7 @@ def test_detect_hook_drift_multiple_issues() -> None:
             id="hook-1",
             lifecycle="UserPromptSubmit",
             matcher="*",
-            invocation="dot-agent run test-kit hook-1",
+            invocation="erk exec hook-1",
             description="Hook 1",
             timeout=30,
         ),
@@ -463,7 +452,7 @@ def test_detect_hook_drift_multiple_issues() -> None:
             id="hook-2",
             lifecycle="UserPromptSubmit",
             matcher="*",
-            invocation="dot-agent run test-kit hook-2",
+            invocation="erk exec hook-2",
             description="Hook 2",
             timeout=30,
         ),
@@ -472,21 +461,21 @@ def test_detect_hook_drift_multiple_issues() -> None:
     installed_hooks = [
         InstalledHook(
             hook_id="hook-1",
-            command="ERK_KIT_ID=test-kit python3 /path/to/hook1.py",
+            command="ERK_HOOK_ID=hook-1 python3 /path/to/hook1.py",
             timeout=30,
             lifecycle="UserPromptSubmit",
             matcher="*",
         ),
         InstalledHook(
             hook_id="old-hook",
-            command="ERK_KIT_ID=test-kit python3 /path/to/old.py",
+            command="ERK_HOOK_ID=old-hook python3 /path/to/old.py",
             timeout=30,
             lifecycle="UserPromptSubmit",
             matcher="*",
         ),
     ]
 
-    result = _detect_hook_drift("test-kit", expected_hooks, installed_hooks)
+    result = _detect_hook_drift("erk", expected_hooks, installed_hooks)
 
     assert result is not None
     # Missing hook-2, outdated format for hook-1, obsolete old-hook
@@ -549,7 +538,7 @@ def test_check_command_skip_non_bundled_kits(tmp_path: Path) -> None:
                         "matcher": "*",
                         "hooks": [
                             {
-                                "command": ("ERK_KIT_ID=package-kit python3 /path/to/script.py"),
+                                "command": ("ERK_HOOK_ID=package-hook python3 /path/to/script.py"),
                                 "timeout": 30,
                             }
                         ],
@@ -668,7 +657,7 @@ def test_check_command_detects_hook_drift_integration(tmp_path: Path) -> None:
         claude_dir = project_dir / ".claude"
         claude_dir.mkdir()
 
-        # Create settings.json with old hook reference
+        # Create settings.json with old hook reference (hook ID not in manifest)
         settings_data = {
             "hooks": {
                 "UserPromptSubmit": [
@@ -677,7 +666,6 @@ def test_check_command_detects_hook_drift_integration(tmp_path: Path) -> None:
                         "hooks": [
                             {
                                 "command": (
-                                    "ERK_KIT_ID=test-kit "
                                     "ERK_HOOK_ID=old-hook python3 /path/to/old_hook.py"
                                 ),
                                 "timeout": 30,
@@ -704,7 +692,7 @@ hooks:
   - id: new-hook
     lifecycle: UserPromptSubmit
     matcher: "*"
-    invocation: dot-agent run test-kit new-hook
+    invocation: erk exec new-hook
     description: New hook
     timeout: 30
 """,
@@ -740,11 +728,11 @@ hooks:
         # Restore original method
         BundledKitSource._get_bundled_kit_path = original_get_path
 
-        # Should detect drift
+        # Should detect drift - new-hook is expected but not installed
         assert result.exit_code == 1
         assert "test-kit" in result.output
-        # Extraction fails because old-hook is not in manifest (only new-hook is expected)
-        assert "not found in manifest" in result.output or "Some checks failed" in result.output
+        # new-hook is missing from installed hooks
+        assert "Missing hook" in result.output or "Some checks failed" in result.output
 
 
 def test_check_command_no_settings_file(tmp_path: Path) -> None:
@@ -789,7 +777,7 @@ def test_detect_hook_drift_matcher_mismatch() -> None:
             id="compliance-hook",
             lifecycle="UserPromptSubmit",
             matcher="*.py",
-            invocation="dot-agent run test-kit compliance-hook",
+            invocation="erk exec compliance-hook",
             description="Test hook",
             timeout=30,
         )
@@ -799,9 +787,8 @@ def test_detect_hook_drift_matcher_mismatch() -> None:
         InstalledHook(
             hook_id="compliance-hook",
             command=(
-                "ERK_KIT_ID=test-kit "
                 "ERK_HOOK_ID=compliance-hook "
-                "dot-agent run test-kit compliance-hook"
+                "erk exec compliance-hook"
             ),
             timeout=30,
             lifecycle="UserPromptSubmit",
@@ -809,7 +796,7 @@ def test_detect_hook_drift_matcher_mismatch() -> None:
         )
     ]
 
-    result = _detect_hook_drift("test-kit", expected_hooks, installed_hooks)
+    result = _detect_hook_drift("erk", expected_hooks, installed_hooks)
 
     assert result is not None
     assert len(result.issues) == 1
@@ -826,7 +813,7 @@ def test_detect_hook_drift_matcher_none_normalized() -> None:
             id="compliance-hook",
             lifecycle="UserPromptSubmit",
             matcher=None,
-            invocation="dot-agent run test-kit compliance-hook",
+            invocation="erk exec compliance-hook",
             description="Test hook",
             timeout=30,
         )
@@ -836,9 +823,8 @@ def test_detect_hook_drift_matcher_none_normalized() -> None:
         InstalledHook(
             hook_id="compliance-hook",
             command=(
-                "ERK_KIT_ID=test-kit "
                 "ERK_HOOK_ID=compliance-hook "
-                "dot-agent run test-kit compliance-hook"
+                "erk exec compliance-hook"
             ),
             timeout=30,
             lifecycle="UserPromptSubmit",
@@ -846,7 +832,7 @@ def test_detect_hook_drift_matcher_none_normalized() -> None:
         )
     ]
 
-    result = _detect_hook_drift("test-kit", expected_hooks, installed_hooks)
+    result = _detect_hook_drift("erk", expected_hooks, installed_hooks)
 
     # Should have no drift - None is normalized to "*"
     assert result is None
@@ -874,9 +860,8 @@ def test_check_command_detects_matcher_drift(tmp_path: Path) -> None:
                         "hooks": [
                             {
                                 "command": (
-                                    "ERK_KIT_ID=test-kit "
                                     "ERK_HOOK_ID=compliance-hook "
-                                    "dot-agent run test-kit compliance-hook"
+                                    "erk exec compliance-hook"
                                 ),
                                 "timeout": 30,
                             }
@@ -905,7 +890,7 @@ hooks:
   - id: compliance-hook
     lifecycle: UserPromptSubmit
     matcher: "*.py"
-    invocation: dot-agent run test-kit compliance-hook
+    invocation: erk exec compliance-hook
     description: Compliance hook
     timeout: 30
 """,

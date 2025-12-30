@@ -26,8 +26,8 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 Run both kit CLI commands to get review comments AND discussion comments:
 
 ```bash
-erk kit exec erk get-pr-review-comments
-erk kit exec erk get-pr-discussion-comments
+erk exec get-pr-review-comments
+erk exec get-pr-discussion-comments
 ```
 
 **Review Comments JSON:**
@@ -198,13 +198,13 @@ After committing, resolve each review thread and mark each discussion comment:
 **For Review Threads:**
 
 ```bash
-erk kit exec erk resolve-review-thread --thread-id "PRRT_abc123" --comment "Resolved via /erk:pr-address at $(date '+%Y-%m-%d %I:%M %p %Z')"
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Resolved via /erk:pr-address at $(date '+%Y-%m-%d %I:%M %p %Z')"
 ```
 
 **For Discussion Comments:**
 
 ```bash
-erk kit exec erk add-reaction-to-comment --comment-id 12345
+erk exec add-reaction-to-comment --comment-id 12345
 ```
 
 #### Step 3.5: Report Progress
@@ -235,8 +235,8 @@ After all batches complete:
 Re-fetch comments to confirm nothing was missed:
 
 ```bash
-erk kit exec erk get-pr-review-comments
-erk kit exec erk get-pr-discussion-comments
+erk exec get-pr-review-comments
+erk exec get-pr-discussion-comments
 ```
 
 If any unresolved threads remain, report them.

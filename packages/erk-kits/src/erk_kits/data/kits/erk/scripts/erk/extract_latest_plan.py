@@ -1,7 +1,7 @@
 """Extract the latest plan from Claude session files.
 
 Usage:
-    erk kit exec erk extract-latest-plan [--session-id SESSION_ID]
+    erk exec extract-latest-plan [--session-id SESSION_ID]
 
 This command searches Claude session files for the most recent ExitPlanMode
 tool use and extracts the plan text. It can search either the current session

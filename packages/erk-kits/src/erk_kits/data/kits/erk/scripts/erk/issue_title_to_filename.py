@@ -1,7 +1,7 @@
 """Convert plan title to filename.
 
 Usage:
-    erk kit exec erk issue-title-to-filename "Plan Title"
+    erk exec issue-title-to-filename "Plan Title"
 
 Single source of truth for filename transformation for /erk:save-plan.
 

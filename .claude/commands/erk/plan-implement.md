@@ -18,7 +18,7 @@ erk:
 ### Step 0: Initialize
 
 ```bash
-erk kit exec erk impl-init --json
+erk exec impl-init --json
 ```
 
 If validation fails, display error and stop. Use returned `phases` for TodoWrite entries.
@@ -45,7 +45,7 @@ Create todo entries for each phase from impl-init output.
 ### Step 4: Signal GitHub Started
 
 ```bash
-erk kit exec erk impl-signal started 2>/dev/null || true
+erk exec impl-signal started 2>/dev/null || true
 ```
 
 ### Step 5: Execute Each Phase Sequentially
@@ -60,7 +60,7 @@ For each phase:
    - Follow project AGENTS.md standards
 4. **Mark phase as completed**:
    ```bash
-   erk kit exec erk mark-step <step_number>
+   erk exec mark-step <step_number>
    ```
    **NEVER** run multiple `mark-step` commands in parallel - use batching: `mark-step 1 2 3`
 5. **Report progress**: changes made, what's next
@@ -81,7 +81,7 @@ Confirm all tasks executed, success criteria met, note deviations, summarize cha
 ### Step 8: Signal GitHub Ended
 
 ```bash
-erk kit exec erk impl-signal ended 2>/dev/null || true
+erk exec impl-signal ended 2>/dev/null || true
 ```
 
 ### Step 8.5: Verify .impl/ Preserved
@@ -89,7 +89,7 @@ erk kit exec erk impl-signal ended 2>/dev/null || true
 **CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
 
 ```bash
-erk kit exec erk impl-verify
+erk exec impl-verify
 ```
 
 If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.

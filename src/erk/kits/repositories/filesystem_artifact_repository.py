@@ -4,7 +4,7 @@ from pathlib import Path
 
 from erk.kits.hooks.settings import (
     discover_hooks_with_source,
-    extract_kit_id_from_command,
+    extract_hook_id_from_command,
     get_all_hooks,
     load_settings,
 )
@@ -182,21 +182,17 @@ class FilesystemArtifactRepository(ArtifactRepository):
                         script_path = Path(path_part)
 
                 # Determine hook name, source, and metadata
-                entry_kit_id = extract_kit_id_from_command(entry.command)
-                if entry_kit_id:
-                    # Managed hook with kit metadata
-                    import re
-
-                    hook_id_match = re.search(r"ERK_HOOK_ID=(\S+)", entry.command)
-                    entry_hook_id = hook_id_match.group(1) if hook_id_match else "unknown"
-                    hook_name = f"{entry_kit_id}:{entry_hook_id}"
-                    kit_id = entry_kit_id
+                entry_hook_id = extract_hook_id_from_command(entry.command)
+                if entry_hook_id:
+                    # Managed hook with hook ID (from erk kit)
+                    hook_name = entry_hook_id
+                    kit_id = "erk"  # All managed hooks are from erk kit now
                     source = ArtifactSource.LOCAL
                     kit_version = None
 
                     # If we couldn't extract a path, create a placeholder
                     if not script_path:
-                        script_path = Path("hooks") / entry_kit_id / "hook"
+                        script_path = Path("hooks") / "erk" / "hook"
 
                     hook_path_str = str(script_path).replace("\\", "/")
 
@@ -206,7 +202,7 @@ class FilesystemArtifactRepository(ArtifactRepository):
                             "\\", "/"
                         )
                         matches_path = normalized_artifact == hook_path_str
-                        matches_kit = kit.kit_id == entry_kit_id
+                        matches_kit = kit.kit_id == "erk"
                         if matches_path or matches_kit:
                             source = ArtifactSource.MANAGED
                             kit_version = kit.version
@@ -472,20 +468,16 @@ class FilesystemArtifactRepository(ArtifactRepository):
                     script_path = Path(path_part)
 
             # Determine hook name, source, and metadata
-            entry_kit_id = extract_kit_id_from_command(entry.command)
-            if entry_kit_id:
-                # Managed hook with kit metadata
-                import re
-
-                hook_id_match = re.search(r"ERK_HOOK_ID=(\S+)", entry.command)
-                entry_hook_id = hook_id_match.group(1) if hook_id_match else "unknown"
-                hook_name = f"{entry_kit_id}:{entry_hook_id}"
-                kit_id = entry_kit_id
+            entry_hook_id = extract_hook_id_from_command(entry.command)
+            if entry_hook_id:
+                # Managed hook with hook ID (from erk kit)
+                hook_name = entry_hook_id
+                kit_id = "erk"  # All managed hooks are from erk kit now
                 source = ArtifactSource.LOCAL
                 kit_version = None
 
                 if not script_path:
-                    script_path = Path("hooks") / entry_kit_id / "hook"
+                    script_path = Path("hooks") / "erk" / "hook"
 
                 hook_path_str = str(script_path).replace("\\", "/")
 
@@ -493,7 +485,7 @@ class FilesystemArtifactRepository(ArtifactRepository):
                 for artifact_path, kit in managed_artifacts.items():
                     normalized_artifact = artifact_path.replace(".claude/", "").replace("\\", "/")
                     matches_path = normalized_artifact == hook_path_str
-                    matches_kit = kit.kit_id == entry_kit_id
+                    matches_kit = kit.kit_id == "erk"
                     if matches_path or matches_kit:
                         source = ArtifactSource.MANAGED
                         kit_version = kit.version

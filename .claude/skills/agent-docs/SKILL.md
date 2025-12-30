@@ -239,7 +239,7 @@ Main session logs are `.jsonl` files that don't start with `agent-`. Agent
 subprocess logs use the `agent-<id>.jsonl` naming convention.
 
 To list sessions for a project, use:
-erk kit exec erk list-sessions
+erk exec list-sessions
 
 See `preprocess_session.py` for the canonical implementation.
 ```

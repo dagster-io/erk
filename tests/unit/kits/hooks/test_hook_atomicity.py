@@ -76,12 +76,13 @@ def test_atomic_hook_update_success():
             ),
         ]
 
-        # Perform atomic update
+        # Perform atomic update - pass old_hooks so they get removed
         hooks_count = _perform_atomic_hook_update(
             kit_id="test-kit",
             manifest_hooks=new_hooks,
             kit_path=kit_root,
             project_dir=project_dir,
+            old_hooks=old_hooks,
         )
 
         assert hooks_count == 2
@@ -100,7 +101,7 @@ def test_atomic_hook_update_success():
 
         # Check that no old hook IDs remain
         for hook in all_hooks:
-            assert "ERK_KIT_ID=test-kit" in hook.command
+            assert "ERK_HOOK_ID=" in hook.command
             assert "ERK_HOOK_ID=old_hook" not in hook.command
 
 
@@ -226,12 +227,13 @@ def test_atomic_hook_update_removes_hooks_when_none_in_manifest():
         # Install initial hooks
         install_hooks("test-kit", old_hooks, project_dir)
 
-        # Perform atomic update with no hooks
+        # Perform atomic update with no hooks - pass old_hooks so they get removed
         hooks_count = _perform_atomic_hook_update(
             kit_id="test-kit",
             manifest_hooks=None,  # No hooks in new manifest
             kit_path=kit_root,
             project_dir=project_dir,
+            old_hooks=old_hooks,
         )
 
         assert hooks_count == 0
@@ -247,7 +249,7 @@ def test_atomic_hook_update_removes_hooks_when_none_in_manifest():
                     all_hooks.extend(group.hooks)
 
         for hook in all_hooks:
-            assert "ERK_KIT_ID=test-kit" not in hook.command
+            assert "ERK_HOOK_ID=old_hook" not in hook.command
 
 
 def test_atomic_hook_update_cleans_up_partial_installation_on_failure():
@@ -290,4 +292,4 @@ def test_atomic_hook_update_cleans_up_partial_installation_on_failure():
                 for lifecycle_groups in settings.hooks.values():
                     for group in lifecycle_groups:
                         for hook in group.hooks:
-                            assert "ERK_KIT_ID=test-kit" not in hook.command
+                            assert "ERK_HOOK_ID=new_hook" not in hook.command

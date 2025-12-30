@@ -122,7 +122,7 @@ Before creating the PR, get the closing text if an issue reference exists:
 
 ```bash
 # Get closing text if .impl/issue.json exists
-closing_text=$(erk kit exec erk get-closing-text 2>/dev/null || echo "")
+closing_text=$(erk exec get-closing-text 2>/dev/null || echo "")
 ```
 
 **What this does:**
@@ -189,7 +189,7 @@ After PR creation, update the body to include the checkout command:
 pr_number=$(gh pr view --json number --jq '.number')
 
 # Generate full footer with checkout command
-pr_footer=$(erk kit exec erk get-pr-body-footer --pr-number "$pr_number" 2>/dev/null || echo "")
+pr_footer=$(erk exec get-pr-body-footer --pr-number "$pr_number" 2>/dev/null || echo "")
 
 # If we have a footer, update the PR body
 if [ -n "$pr_footer" ]; then
@@ -225,7 +225,7 @@ If an issue reference exists (from Step 6), post a comment to the GitHub issue l
 
 ```bash
 # Extract PR number and URL from gh pr create output, then post comment
-erk kit exec erk post-pr-comment --pr-url "<pr_url>" --pr-number <pr_number> 2>/dev/null || true
+erk exec post-pr-comment --pr-url "<pr_url>" --pr-number <pr_number> 2>/dev/null || true
 ```
 
 **What this does:**

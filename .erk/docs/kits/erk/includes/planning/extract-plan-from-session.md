@@ -9,7 +9,7 @@ Use the kit CLI to extract the latest plan from `~/.claude/plans/`:
 
 ```bash
 # Extract plan using kit CLI
-plan_result=$(erk kit exec erk save-plan-from-session --extract-only --format json 2>&1)
+plan_result=$(erk exec save-plan-from-session --extract-only --format json 2>&1)
 ```
 
 **Parse the result:**

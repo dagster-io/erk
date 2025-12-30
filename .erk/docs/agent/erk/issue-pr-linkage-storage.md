@@ -38,7 +38,7 @@ Slash commands that create PRs read the issue reference from local storage:
 
 1. Check for `.impl/issue.json` or `.worker-impl/issue.json`
 2. If found, append `Closes #N` to PR body
-3. Uses `erk kit exec erk get-closing-text` to read the reference
+3. Uses `erk exec get-closing-text` to read the reference
 
 **Key implementation**: `packages/erk-kits/.../get_closing_text.py`
 

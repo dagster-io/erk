@@ -4,7 +4,7 @@ This kit CLI command posts a comment to the linked GitHub issue with the PR URL
 after a PR has been created via the submit workflow.
 
 Usage:
-    erk kit exec erk post-pr-comment --pr-url "<url>" --pr-number <number>
+    erk exec post-pr-comment --pr-url "<url>" --pr-number <number>
 
 Output:
     JSON with success status or error information
@@ -14,10 +14,10 @@ Exit Codes:
     0: Always (even on error, to support || true pattern)
 
 Examples:
-    $ erk kit exec erk post-pr-comment --pr-url "https://github.com/o/r/pull/1" --pr-number 1
+    $ erk exec post-pr-comment --pr-url "https://github.com/o/r/pull/1" --pr-number 1
     {"success": true, "issue_number": 456}
 
-    $ erk kit exec erk post-pr-comment --pr-url "https://github.com/o/r/pull/1" --pr-number 1
+    $ erk exec post-pr-comment --pr-url "https://github.com/o/r/pull/1" --pr-number 1
     {"success": false, "error_type": "no_issue_reference", "message": "..."}
 """
 

@@ -8,8 +8,8 @@ Provides a single entry point for /erk:plan-implement to signal events
 with graceful failure (always exits 0 for || true pattern).
 
 Usage:
-    erk kit exec erk impl-signal started
-    erk kit exec erk impl-signal ended
+    erk exec impl-signal started
+    erk exec impl-signal ended
 
 Output:
     JSON with success status or error information
@@ -19,10 +19,10 @@ Exit Codes:
     0: Always (even on error, to support || true pattern)
 
 Examples:
-    $ erk kit exec erk impl-signal started
+    $ erk exec impl-signal started
     {"success": true, "event": "started", "issue_number": 123}
 
-    $ erk kit exec erk impl-signal ended
+    $ erk exec impl-signal ended
     {"success": true, "event": "ended", "issue_number": 123}
 """
 

@@ -112,7 +112,7 @@ git push -u origin "$(git branch --show-current)"
 Get the issue closing text if this worktree was created from a GitHub issue:
 
 ```bash
-closing_text=$(erk kit exec erk get-closing-text 2>/dev/null || echo "")
+closing_text=$(erk exec get-closing-text 2>/dev/null || echo "")
 ```
 
 This reads `.impl/issue.json` and returns `Closes #N` if an issue reference exists.

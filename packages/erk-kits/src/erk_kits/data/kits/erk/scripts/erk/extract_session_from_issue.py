@@ -1,8 +1,8 @@
 """Extract session XML content from a GitHub issue's comments.
 
 Usage:
-    erk kit exec erk extract-session-from-issue <issue-number> [--output <path>]
-    erk kit exec erk extract-session-from-issue <issue-number> --stdout
+    erk exec extract-session-from-issue <issue-number> [--output <path>]
+    erk exec extract-session-from-issue <issue-number> --stdout
 
 This command:
 1. Fetches all comments from the specified GitHub issue

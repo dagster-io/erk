@@ -162,7 +162,7 @@ def update_installed_kit(
 def _handle_update_workflow(
     kit_id: str,
     installed: InstalledKit,
-    resolver: KitResolver,
+    resolved: ResolvedKit,
     config: ProjectConfig,
     project_dir: Path,
     force: bool,
@@ -172,7 +172,7 @@ def _handle_update_workflow(
     Args:
         kit_id: Kit identifier
         installed: Currently installed kit info
-        resolver: Kit resolver instance
+        resolved: The resolved kit from the source
         config: Project configuration
         project_dir: Project root directory
         force: Whether to force reinstall
@@ -180,27 +180,17 @@ def _handle_update_workflow(
     Raises:
         SystemExit: If resolution fails or kit not found
     """
-    check_result = check_for_updates(installed, resolver, force=force)
+    manifest = load_kit_manifest(resolved.manifest_path)
 
-    # Handle resolution errors - fail loudly rather than assuming up-to-date
-    if check_result.error_message:
-        user_output(f"Error: Failed to check for updates: {check_result.error_message}")
-        raise SystemExit(1)
-
-    # No update available and not forcing - report and exit
-    if not check_result.has_update:
+    # Check if update is needed (force always updates)
+    if not force and manifest.version == installed.version:
         user_output(f"Kit '{kit_id}' is already up to date (v{installed.version})")
         return
 
-    # resolved must be non-None at this point (error_message would be set otherwise)
-    if check_result.resolved is None:
-        user_output("Error: Internal error - resolved kit is None")
-        raise SystemExit(1)
-
     # Update the kit
-    user_output(f"Updating {kit_id} to v{check_result.resolved.version}...")
+    user_output(f"Updating {kit_id} to v{resolved.version}...")
     result = update_installed_kit(
-        kit_id, installed, check_result.resolved, project_dir, force=force
+        kit_id, installed, resolved, project_dir, force=force
     )
 
     if not result.was_updated:
@@ -208,7 +198,7 @@ def _handle_update_workflow(
         return
 
     # Process successful update
-    _process_update_result(kit_id, result, check_result.resolved, config, project_dir)
+    _process_update_result(kit_id, result, resolved, config, project_dir)
 
 
 def _process_update_result(
@@ -232,11 +222,15 @@ def _process_update_result(
 
     # Handle hooks atomically
     manifest = load_kit_manifest(resolved.manifest_path)
+    # Get old hooks from the previously installed kit config
+    old_installed = config.kits.get(kit_id)
+    old_hooks = old_installed.hooks if old_installed else None
     hooks_count = _perform_atomic_hook_update(
         kit_id=manifest.name,
         manifest_hooks=manifest.hooks,
         kit_path=resolved.artifacts_base,
         project_dir=project_dir,
+        old_hooks=old_hooks,
     )
 
     # Save updated config with new hooks
@@ -253,7 +247,7 @@ def _process_update_result(
 
 def _handle_fresh_install(
     kit_id: str,
-    resolver: KitResolver,
+    resolved: ResolvedKit,
     config: ProjectConfig,
     context: InstallationContext,
     project_dir: Path,
@@ -262,21 +256,13 @@ def _handle_fresh_install(
     """Handle fresh installation of a kit.
 
     Args:
-        kit_id: Kit identifier
-        resolver: Kit resolver instance
+        kit_id: Kit identifier (can be path or name, used for display)
+        resolved: The resolved kit from the source
         config: Project configuration
         context: Installation context
         project_dir: Project root directory
         force: Whether to force overwrite
-
-    Raises:
-        SystemExit: If kit not found
     """
-    resolved = resolver.resolve(kit_id)
-    if resolved is None:
-        user_output(f"Error: Kit '{kit_id}' not found")
-        raise SystemExit(1)
-
     # Load manifest
     manifest = load_kit_manifest(resolved.manifest_path)
 
@@ -320,6 +306,7 @@ def _perform_atomic_hook_update(
     manifest_hooks: list | None,
     kit_path: Path,
     project_dir: Path,
+    old_hooks: list | None = None,
 ) -> int:
     """Perform atomic hook update with rollback on failure.
 
@@ -330,6 +317,7 @@ def _perform_atomic_hook_update(
         manifest_hooks: List of hook definitions from manifest (can be None)
         kit_path: Path to kit directory containing hook scripts
         project_dir: Project root directory
+        old_hooks: List of hook definitions from previous installation (for removal)
 
     Returns:
         Count of installed hooks
@@ -337,9 +325,10 @@ def _perform_atomic_hook_update(
     Raises:
         Exception: Re-raises any exception after attempting rollback
     """
-    # No hooks to install - just remove old ones
+    # No hooks to install - just remove old ones if we have them
     if not manifest_hooks:
-        remove_hooks(kit_id, project_dir)
+        if old_hooks:
+            remove_hooks(old_hooks, project_dir)
         return 0
 
     # Save current state for rollback
@@ -360,7 +349,8 @@ def _perform_atomic_hook_update(
 
             try:
                 # Remove old hooks - this modifies settings.json and deletes hooks_dir
-                remove_hooks(kit_id, project_dir)
+                if old_hooks:
+                    remove_hooks(old_hooks, project_dir)
 
                 # Attempt to install new hooks
                 hooks_count = install_hooks(
@@ -390,8 +380,12 @@ def _perform_atomic_hook_update(
                 # Re-raise the original exception
                 raise
     else:
-        # No existing hooks to backup - simpler flow
+        # No existing hooks directory to backup - simpler flow
         try:
+            # Remove old hooks from settings.json even if no hooks directory exists
+            if old_hooks:
+                remove_hooks(old_hooks, project_dir)
+
             hooks_count = install_hooks(
                 kit_id=kit_id,
                 hooks=manifest_hooks,
@@ -440,13 +434,21 @@ def install(kit_id: str, force: bool) -> None:
     # Resolve kit source (use both bundled and package sources)
     resolver = KitResolver(sources=[BundledKitSource(), StandalonePackageSource()])
 
-    # Route to appropriate workflow
-    if kit_id in config.kits:
+    # Resolve kit first to get the canonical kit_id from manifest
+    # This handles both "devrun" and "/path/to/kit" as input
+    resolved = resolver.resolve(kit_id)
+    if resolved is None:
+        user_output(f"Error: Kit '{kit_id}' not found")
+        raise SystemExit(1)
+    canonical_kit_id = resolved.kit_id
+
+    # Route to appropriate workflow using canonical kit_id
+    if canonical_kit_id in config.kits:
         # Kit already installed - update workflow
         _handle_update_workflow(
-            kit_id=kit_id,
-            installed=config.kits[kit_id],
-            resolver=resolver,
+            kit_id=canonical_kit_id,
+            installed=config.kits[canonical_kit_id],
+            resolved=resolved,
             config=config,
             project_dir=project_dir,
             force=force,
@@ -455,7 +457,7 @@ def install(kit_id: str, force: bool) -> None:
         # Kit not installed - fresh install workflow
         _handle_fresh_install(
             kit_id=kit_id,
-            resolver=resolver,
+            resolved=resolved,
             config=config,
             context=context,
             project_dir=project_dir,

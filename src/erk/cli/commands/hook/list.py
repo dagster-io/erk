@@ -16,7 +16,7 @@ from erk.kits.cli.list_formatting import (
     format_source_indicator,
 )
 from erk.kits.cli.output import user_output
-from erk.kits.hooks.settings import discover_hooks_with_source, extract_kit_id_from_command
+from erk.kits.hooks.settings import discover_hooks_with_source, extract_hook_id_from_command
 
 
 class HookDisplayData(NamedTuple):
@@ -26,42 +26,33 @@ class HookDisplayData(NamedTuple):
     matcher: str
     level: str
     source: str
-    kit_id: str | None
     hook_id: str | None
     version: str | None
 
 
-def _extract_hook_metadata(command: str) -> tuple[str | None, str | None, str | None]:
-    """Extract kit_id, hook_id, and version from hook command.
+def _extract_hook_metadata(command: str) -> tuple[str | None, str | None]:
+    """Extract hook_id and version from hook command.
 
     Args:
         command: Hook command string
 
     Returns:
-        Tuple of (kit_id, hook_id, version) - any can be None
+        Tuple of (hook_id, version) - either can be None
     """
-    kit_id = extract_kit_id_from_command(command)
-
-    hook_id = None
-    hook_id_match = re.search(r"ERK_HOOK_ID=(\S+)", command)
-    if hook_id_match:
-        hook_id = hook_id_match.group(1)
+    hook_id = extract_hook_id_from_command(command)
 
     version = None
     version_match = re.search(r"ERK_KIT_VERSION=(\S+)", command)
     if version_match:
         version = version_match.group(1)
 
-    return kit_id, hook_id, version
+    return hook_id, version
 
 
-def _format_hook_line(
-    kit_id: str | None, hook_id: str | None, version: str | None, level: str
-) -> str:
+def _format_hook_line(hook_id: str | None, version: str | None, level: str) -> str:
     """Format a single hook line with level and source indicators.
 
     Args:
-        kit_id: Kit identifier
         hook_id: Hook identifier
         version: Kit version
         level: Level indicator ("user" or "project")
@@ -71,9 +62,10 @@ def _format_hook_line(
     """
     level_indicator = format_level_indicator(level)
 
-    if kit_id and hook_id:
-        name = format_item_name(f"{kit_id}:{hook_id}")
-        source = format_source_indicator(kit_id, version)
+    if hook_id:
+        # Managed hook (from erk kit)
+        name = format_item_name(hook_id)
+        source = format_source_indicator("erk", version)
     else:
         name = format_item_name("local-hook")
         source = format_source_indicator(None, None)
@@ -102,28 +94,26 @@ def _list_hooks_impl(verbose: bool) -> None:
     all_hooks: list[HookDisplayData] = []
 
     for hook, source in user_hooks:
-        kit_id, hook_id, version = _extract_hook_metadata(hook.entry.command)
+        hook_id, version = _extract_hook_metadata(hook.entry.command)
         all_hooks.append(
             HookDisplayData(
                 lifecycle=hook.lifecycle,
                 matcher=hook.matcher,
                 level="user",
                 source=source,
-                kit_id=kit_id,
                 hook_id=hook_id,
                 version=version,
             )
         )
 
     for hook, source in project_hooks:
-        kit_id, hook_id, version = _extract_hook_metadata(hook.entry.command)
+        hook_id, version = _extract_hook_metadata(hook.entry.command)
         all_hooks.append(
             HookDisplayData(
                 lifecycle=hook.lifecycle,
                 matcher=hook.matcher,
                 level="project",
                 source=source,
-                kit_id=kit_id,
                 hook_id=hook_id,
                 version=version,
             )
@@ -148,9 +138,7 @@ def _list_hooks_impl(verbose: bool) -> None:
         user_output(format_section_header(f"  {lifecycle}:"))
 
         for hook_data in hooks:
-            hook_line = _format_hook_line(
-                hook_data.kit_id, hook_data.hook_id, hook_data.version, hook_data.level
-            )
+            hook_line = _format_hook_line(hook_data.hook_id, hook_data.version, hook_data.level)
             user_output(f"    {hook_line}")
 
             if verbose:

@@ -4,7 +4,7 @@ This kit CLI command posts a structured comment to a plan issue containing
 the plan content and workflow instructions for starting work.
 
 Usage:
-    erk kit exec erk post-plan-issue-comment --issue-number 123 \\
+    erk exec post-plan-issue-comment --issue-number 123 \\
         --plan-content "..." --plan-title "..."
 """
 

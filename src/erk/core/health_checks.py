@@ -734,8 +734,8 @@ def _kit_command_exists(command: str) -> bool:
     if it's recognized. This avoids executing arbitrary commands while
     still validating that the kit command is defined.
     """
-    # Parse command to extract the base kit command
-    # Format: ERK_KIT_ID=erk ... erk kit exec erk <command-name>
+    # Parse command to extract the base exec command
+    # Format: ERK_HOOK_ID=... erk exec <command-name>
     try:
         # Quick check - just see if the kit-command is recognized
         # We don't want to actually run hooks, just validate they exist

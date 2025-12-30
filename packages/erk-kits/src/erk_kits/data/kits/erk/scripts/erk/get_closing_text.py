@@ -5,7 +5,7 @@ This command reads the .impl/issue.json file to determine if there's an
 associated GitHub issue that should be closed when the PR merges.
 
 Usage:
-    erk kit exec erk get-closing-text
+    erk exec get-closing-text
 
 Output:
     Plain text "Closes #N" if issue reference exists
@@ -15,10 +15,10 @@ Exit Codes:
     0: Always (whether issue reference exists or not)
 
 Examples:
-    $ erk kit exec erk get-closing-text
+    $ erk exec get-closing-text
     Closes #776
 
-    $ erk kit exec erk get-closing-text  # No .impl/issue.json
+    $ erk exec get-closing-text  # No .impl/issue.json
     (no output)
 """
 

@@ -1,7 +1,7 @@
 """Extract plan from Claude session and create GitHub issue.
 
 Usage:
-    erk kit exec erk create-issue-from-session [--session-id SESSION_ID]
+    erk exec create-issue-from-session [--session-id SESSION_ID]
 
 This command combines plan extraction from Claude session files with GitHub
 issue creation. It extracts the latest ExitPlanMode plan, ensures the erk-plan

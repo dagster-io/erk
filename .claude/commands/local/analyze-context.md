@@ -29,7 +29,7 @@ Displays:
 Run the kit command to get all sessions for this worktree:
 
 ```bash
-erk kit exec erk list-sessions --min-size 1000
+erk exec list-sessions --min-size 1000
 ```
 
 Parse the JSON output which contains:
@@ -264,7 +264,7 @@ X files were read multiple times across sessions (~Y tokens could be saved)
 import json
 
 # Step 1: Get sessions
-sessions_json = run("erk kit exec erk list-sessions --min-size 1000")
+sessions_json = run("erk exec list-sessions --min-size 1000")
 data = json.loads(sessions_json)
 
 if not data["success"] or not data["sessions"]:

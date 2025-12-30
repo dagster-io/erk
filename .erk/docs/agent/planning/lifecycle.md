@@ -366,9 +366,9 @@ steps:
 Use kit CLI commands to update progress:
 
 ```bash
-erk kit exec erk mark-step 1        # Mark step 1 complete
-erk kit exec erk mark-step 1 2 3    # Mark multiple steps
-erk kit exec erk get-progress       # Show current progress
+erk exec mark-step 1        # Mark step 1 complete
+erk exec mark-step 1 2 3    # Mark multiple steps
+erk exec get-progress       # Show current progress
 ```
 
 ---
@@ -622,5 +622,5 @@ gh run view 1234567890 --json displayTitle -q '.displayTitle' | cut -d: -f1
 
 - [Planning Workflow](workflow.md) - `.impl/` folder structure and commands
 - [Plan Enrichment](enrichment.md) - Context preservation in plans
-- [Kit CLI Commands](../kits/cli-commands.md) - Available `erk kit exec erk` commands
+- [Kit CLI Commands](../kits/cli-commands.md) - Available `erk exec` commands
 - [Glossary](../glossary.md) - Erk terminology definitions

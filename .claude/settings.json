@@ -20,12 +20,12 @@
           },
           {
             "type": "command",
-            "command": "ERK_KIT_ID=erk ERK_HOOK_ID=session-id-injector-hook erk kit exec erk session-id-injector-hook",
+            "command": "ERK_HOOK_ID=session-id-injector-hook erk exec session-id-injector-hook",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "ERK_KIT_ID=erk ERK_HOOK_ID=tripwires-reminder-hook erk kit exec erk tripwires-reminder-hook",
+            "command": "ERK_HOOK_ID=tripwires-reminder-hook erk exec tripwires-reminder-hook",
             "timeout": 30
           }
         ]
@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "ERK_KIT_ID=erk ERK_HOOK_ID=exit-plan-mode-hook erk kit exec erk exit-plan-mode-hook",
+            "command": "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook",
             "timeout": 30
           }
         ]

@@ -92,7 +92,7 @@ Parse the context argument (if provided) for:
 Run the session discovery helper with size filtering to exclude tiny sessions:
 
 ```bash
-erk kit exec erk list-sessions --min-size 1024
+erk exec list-sessions --min-size 1024
 ```
 
 The JSON output includes:
@@ -161,7 +161,7 @@ Load and preprocess the session logs. Session logs are stored in `project_dir` a
 Match session IDs against filenames (full or partial prefix match), then preprocess:
 
 ```bash
-erk kit exec erk preprocess-session <project-dir>/<session-id>.jsonl --stdout
+erk exec preprocess-session <project-dir>/<session-id>.jsonl --stdout
 ```
 
 ### Step 2: Check for Associated Plan Issue Session Content
@@ -178,7 +178,7 @@ cat .impl/issue.json 2>/dev/null
 1. Extract the `issue_number` from the JSON response
 2. Attempt to extract session content from the plan issue:
    ```bash
-   erk kit exec erk extract-session-from-issue <issue_number> --stdout
+   erk exec extract-session-from-issue <issue_number> --stdout
    ```
 3. If session XML is returned (not an error), store it as "plan issue session content"
 4. Note the session IDs from the stderr JSON output
@@ -313,7 +313,7 @@ Format the selected suggestions as an implementation plan with this structure:
 Get the session ID from the `SESSION_CONTEXT` reminder in your conversation context.
 
 ```bash
-erk kit exec erk create-extraction-plan \
+erk exec create-extraction-plan \
     --plan-content="<the formatted plan content>" \
     --session-id="<session-id-from-SESSION_CONTEXT>" \
     --extraction-session-ids="<comma-separated-session-ids-that-were-analyzed>"

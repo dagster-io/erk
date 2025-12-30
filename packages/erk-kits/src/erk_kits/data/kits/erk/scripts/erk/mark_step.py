@@ -7,9 +7,9 @@ Supports marking multiple steps in a single invocation to avoid race conditions
 when Claude runs parallel commands.
 
 Usage:
-    erk kit exec erk mark-step STEP_NUM [STEP_NUM ...]
-    erk kit exec erk mark-step STEP_NUM --incomplete
-    erk kit exec erk mark-step STEP_NUM --json
+    erk exec mark-step STEP_NUM [STEP_NUM ...]
+    erk exec mark-step STEP_NUM --incomplete
+    erk exec mark-step STEP_NUM --json
 
 Output:
     JSON format: {"success": true, "step_nums": [N, ...], "completed": true,
@@ -21,20 +21,20 @@ Exit Codes:
     1: Error (missing file, invalid step number, malformed YAML)
 
 Examples:
-    $ erk kit exec erk mark-step 5
+    $ erk exec mark-step 5
     ✓ Step 5: Implement feature X
     Progress: 5/10
 
-    $ erk kit exec erk mark-step 1 2 3
+    $ erk exec mark-step 1 2 3
     ✓ Step 1: First step
     ✓ Step 2: Second step
     ✓ Step 3: Third step
     Progress: 3/10
 
-    $ erk kit exec erk mark-step 5 --json
+    $ erk exec mark-step 5 --json
     {"success": true, "step_nums": [5], "completed": true, "total_completed": 5, "total_steps": 10}
 
-    $ erk kit exec erk mark-step 5 --incomplete
+    $ erk exec mark-step 5 --incomplete
     ○ Step 5: Implement feature X
     Progress: 4/10
 """

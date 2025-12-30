@@ -1,13 +1,13 @@
 """Create extraction plan issue from file or content with proper metadata.
 
 Usage (new - preferred):
-    erk kit exec erk create-extraction-plan \
+    erk exec create-extraction-plan \
         --plan-content="# Plan Title..." \
         --session-id="abc123" \
         --extraction-session-ids="abc123,def456"
 
 Usage (legacy - file path):
-    erk kit exec erk create-extraction-plan \
+    erk exec create-extraction-plan \
         --plan-file=".erk/scratch/<session-id>/extraction-plan.md" \
         --source-plan-issues="123,456" \
         --extraction-session-ids="abc123,def456"

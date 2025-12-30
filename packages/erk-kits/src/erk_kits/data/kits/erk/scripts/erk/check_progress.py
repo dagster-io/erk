@@ -4,8 +4,8 @@ This kit CLI command validates that progress.md has valid YAML frontmatter
 with required fields (steps, total_steps, completed_steps) and internal consistency.
 
 Usage:
-    erk kit exec erk check-progress
-    erk kit exec erk check-progress --json
+    erk exec check-progress
+    erk exec check-progress --json
 
 Output:
     JSON with validation status and errors (--json mode)
@@ -16,13 +16,13 @@ Exit Codes:
     1: Invalid or missing
 
 Examples:
-    $ erk kit exec erk check-progress --json
+    $ erk exec check-progress --json
     {"valid": true, "errors": []}
 
-    $ erk kit exec erk check-progress --json
+    $ erk exec check-progress --json
     {"valid": false, "errors": ["Missing 'steps' field"]}
 
-    $ erk kit exec erk check-progress
+    $ erk exec check-progress
     progress.md schema is valid
 """
 

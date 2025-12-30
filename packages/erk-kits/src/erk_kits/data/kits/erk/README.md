@@ -22,7 +22,7 @@ This directory contains the erk kit for Claude Code.
 
 Kit CLI commands are Python modules in `kit_cli_commands/` that:
 
-1. Are invoked via `erk kit exec erk <command-name>`
+1. Are invoked via `erk exec <command-name>`
 2. Can return JSON (for programmatic use) or formatted text (for display)
 3. Should handle errors internally and exit with proper status codes
 

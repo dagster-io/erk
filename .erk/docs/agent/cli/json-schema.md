@@ -57,7 +57,7 @@ Kit CLI commands invoked via `erk kit exec <kit> <command>` produce JSON for age
 
 Validates `.impl/` folder and extracts phases.
 
-**Command**: `erk kit exec erk impl-init --json`
+**Command**: `erk exec impl-init --json`
 
 **Success Output**:
 
@@ -100,7 +100,7 @@ Validates `.impl/` folder and extracts phases.
 
 Lists Claude Code sessions for the current project.
 
-**Command**: `erk kit exec erk list-sessions --min-size 1024`
+**Command**: `erk exec list-sessions --min-size 1024`
 
 **Output**:
 
@@ -131,7 +131,7 @@ Lists Claude Code sessions for the current project.
 
 Mark implementation steps as complete.
 
-**Command**: `erk kit exec erk mark-step 1 2 3`
+**Command**: `erk exec mark-step 1 2 3`
 
 **Output**:
 
@@ -147,7 +147,7 @@ Mark implementation steps as complete.
 
 Validate implementation folder (precursor to impl-init).
 
-**Command**: `erk kit exec erk check-impl`
+**Command**: `erk exec check-impl`
 
 **Output** (same as impl-init but without phases):
 

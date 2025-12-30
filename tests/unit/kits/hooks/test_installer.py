@@ -43,7 +43,7 @@ def test_install_hooks_basic(tmp_project: Path) -> None:
     assert len(lifecycle_hooks[0].hooks) == 1
 
     hook_entry = lifecycle_hooks[0].hooks[0]
-    expected_cmd = "ERK_KIT_ID=test-kit ERK_HOOK_ID=test-hook erk kit exec test-kit test-hook"
+    expected_cmd = "ERK_HOOK_ID=test-hook erk kit exec test-kit test-hook"
     assert hook_entry.command == expected_cmd
     assert hook_entry.timeout == 30
 
@@ -143,49 +143,48 @@ def test_install_hooks_missing_script(tmp_project: Path) -> None:
     assert len(lifecycle_hooks[0].hooks) == 2
 
 
-def test_install_hooks_replaces_existing(tmp_project: Path) -> None:
-    """Test that reinstalling hooks removes old installation."""
+def test_install_hooks_replaces_same_hook_id(tmp_project: Path) -> None:
+    """Test that installing a hook with same ID replaces the old one."""
     # First installation
     old_hook = HookDefinition(
-        id="old",
+        id="my-hook",
         lifecycle="UserPromptSubmit",
         matcher="**",
-        invocation="erk kit exec test-kit old",
-        description="Old",
+        invocation="erk kit exec test-kit v1",
+        description="Version 1",
         timeout=30,
     )
     install_hooks("test-kit", [old_hook], tmp_project)
 
-    # Second installation with different hook
+    # Second installation with same hook ID but different details
     new_hook = HookDefinition(
-        id="new",
-        lifecycle="PostToolUse",
+        id="my-hook",
+        lifecycle="PostToolUse",  # Different lifecycle
         matcher="*.md",
-        invocation="erk kit exec test-kit new",
-        description="New",
+        invocation="erk kit exec test-kit v2",
+        description="Version 2",
         timeout=45,
     )
     count = install_hooks("test-kit", [new_hook], tmp_project)
 
     assert count == 1
 
-    # Settings should only have new hook
+    # Settings should only have the new version
     settings = load_settings(tmp_project / ".claude" / "settings.json")
     assert settings.hooks is not None
 
-    # Old lifecycle should be gone (or contain other kits' hooks only)
+    # Old lifecycle should not have the hook
     if "UserPromptSubmit" in settings.hooks:
-        # Should not have our kit's hooks
         for group in settings.hooks["UserPromptSubmit"]:
             for hook in group.hooks:
-                assert "ERK_KIT_ID=test-kit" not in hook.command
+                assert "ERK_HOOK_ID=my-hook" not in hook.command
 
     # New lifecycle should have the hook
     assert "PostToolUse" in settings.hooks
     result_hooks = settings.hooks["PostToolUse"]
     assert len(result_hooks) == 1
     hook_entry = result_hooks[0].hooks[0]
-    assert "ERK_HOOK_ID=new" in hook_entry.command
+    assert "ERK_HOOK_ID=my-hook" in hook_entry.command
 
 
 def test_install_hooks_empty_list(tmp_project: Path) -> None:
@@ -203,11 +202,8 @@ def test_install_hooks_empty_list(tmp_project: Path) -> None:
     if settings_path.exists():
         settings = load_settings(settings_path)
         # Should be empty or not have hooks from this kit
-        if settings.hooks is not None:
-            for lifecycle_groups in settings.hooks.values():
-                for group in lifecycle_groups:
-                    for hook in group.hooks:
-                        assert "ERK_KIT_ID=empty-kit" not in hook.command
+        # Note: With ERK_HOOK_ID format, we can't verify by kit_id since hooks
+        # don't contain kit_id. An empty hooks list creates no entries anyway.
 
 
 def test_install_hooks_creates_directories(tmp_project: Path) -> None:
@@ -249,7 +245,7 @@ def test_install_hooks_flattens_nested_scripts(tmp_project: Path) -> None:
     settings = load_settings(tmp_project / ".claude" / "settings.json")
     assert settings.hooks is not None
     hook_entry = settings.hooks["UserPromptSubmit"][0].hooks[0]
-    expected_cmd = "ERK_KIT_ID=test-kit ERK_HOOK_ID=nested erk kit exec test-kit nested"
+    expected_cmd = "ERK_HOOK_ID=nested erk kit exec test-kit nested"
     assert hook_entry.command == expected_cmd
 
 
@@ -266,8 +262,8 @@ def test_remove_hooks_basic(tmp_project: Path) -> None:
     )
     install_hooks("test-kit", [hook], tmp_project)
 
-    # Remove hooks
-    count = remove_hooks("test-kit", tmp_project)
+    # Remove hooks by passing the hook definitions
+    count = remove_hooks([hook], tmp_project)
 
     assert count == 1
 
@@ -276,11 +272,11 @@ def test_remove_hooks_basic(tmp_project: Path) -> None:
     if settings.hooks is not None and "UserPromptSubmit" in settings.hooks:
         for group in settings.hooks["UserPromptSubmit"]:
             for hook_entry in group.hooks:
-                assert "ERK_KIT_ID=test-kit" not in hook_entry.command
+                assert "ERK_HOOK_ID=test" not in hook_entry.command
 
 
-def test_remove_hooks_preserves_other_kits(tmp_project: Path) -> None:
-    """Test that removing one kit's hooks preserves other kits."""
+def test_remove_hooks_preserves_other_hooks(tmp_project: Path) -> None:
+    """Test that removing one hook preserves other hooks."""
     # Install hooks from two kits
     hook_a = HookDefinition(
         id="hook-a",
@@ -302,44 +298,46 @@ def test_remove_hooks_preserves_other_kits(tmp_project: Path) -> None:
     install_hooks("kit-a", [hook_a], tmp_project)
     install_hooks("kit-b", [hook_b], tmp_project)
 
-    # Remove kit-a
-    count = remove_hooks("kit-a", tmp_project)
+    # Remove only hook-a
+    count = remove_hooks([hook_a], tmp_project)
 
     assert count == 1
 
-    # Settings should only have kit-b
+    # Settings should only have hook-b
     settings = load_settings(tmp_project / ".claude" / "settings.json")
     assert settings.hooks is not None
     lifecycle_hooks = settings.hooks["UserPromptSubmit"]
 
-    # Count hooks from each kit
-    kit_a_count = sum(
-        1 for group in lifecycle_hooks for hook in group.hooks if "ERK_KIT_ID=kit-a" in hook.command
+    # Count hooks by hook_id
+    hook_a_count = sum(
+        1 for group in lifecycle_hooks for hook in group.hooks if "ERK_HOOK_ID=hook-a" in hook.command
     )
-    kit_b_count = sum(
-        1 for group in lifecycle_hooks for hook in group.hooks if "ERK_KIT_ID=kit-b" in hook.command
+    hook_b_count = sum(
+        1 for group in lifecycle_hooks for hook in group.hooks if "ERK_HOOK_ID=hook-b" in hook.command
     )
 
-    assert kit_a_count == 0
-    assert kit_b_count == 1
+    assert hook_a_count == 0
+    assert hook_b_count == 1
 
 
-def test_remove_hooks_nonexistent_kit(tmp_project: Path) -> None:
-    """Test removing hooks for a kit that was never installed."""
-    count = remove_hooks("nonexistent-kit", tmp_project)
+def test_remove_hooks_nonexistent_hook(tmp_project: Path) -> None:
+    """Test removing hooks that were never installed."""
+    # Create a hook definition that was never installed
+    nonexistent_hook = HookDefinition(
+        id="nonexistent",
+        lifecycle="UserPromptSubmit",
+        matcher="**",
+        invocation="erk kit exec test-kit nonexistent",
+        description="Never installed",
+        timeout=30,
+    )
+    count = remove_hooks([nonexistent_hook], tmp_project)
 
     assert count == 0
 
     # Should not crash or create files
     settings_path = tmp_project / ".claude" / "settings.json"
-    if settings_path.exists():
-        # Settings should be unchanged
-        settings = load_settings(settings_path)
-        if settings.hooks is not None:
-            for lifecycle_groups in settings.hooks.values():
-                for group in lifecycle_groups:
-                    for hook in group.hooks:
-                        assert "ERK_KIT_ID=nonexistent-kit" not in hook.command
+    # Just verify no crash
 
 
 def test_remove_hooks_cleans_empty_lifecycles(tmp_project: Path) -> None:
@@ -354,7 +352,7 @@ def test_remove_hooks_cleans_empty_lifecycles(tmp_project: Path) -> None:
     )
 
     install_hooks("test-kit", [hook], tmp_project)
-    remove_hooks("test-kit", tmp_project)
+    remove_hooks([hook], tmp_project)
 
     # Settings should not have the lifecycle anymore
     settings = load_settings(tmp_project / ".claude" / "settings.json")
@@ -380,7 +378,7 @@ def test_hook_entry_metadata_roundtrip(tmp_project: Path) -> None:
     # Read raw JSON to check env vars in command
     settings_path = tmp_project / ".claude" / "settings.json"
     raw_json = settings_path.read_text(encoding="utf-8")
-    assert "ERK_KIT_ID=metadata-kit" in raw_json
+    # Note: hooks no longer contain ERK_KIT_ID, only ERK_HOOK_ID
     assert "ERK_HOOK_ID=metadata-test" in raw_json
 
     # Load and verify structure
@@ -388,7 +386,6 @@ def test_hook_entry_metadata_roundtrip(tmp_project: Path) -> None:
     assert settings.hooks is not None
 
     hook_entry = settings.hooks["UserPromptSubmit"][0].hooks[0]
-    assert "ERK_KIT_ID=metadata-kit" in hook_entry.command
     assert "ERK_HOOK_ID=metadata-test" in hook_entry.command
 
     # Re-save and re-load to ensure roundtrip works
@@ -399,7 +396,6 @@ def test_hook_entry_metadata_roundtrip(tmp_project: Path) -> None:
 
     assert reloaded_settings.hooks is not None
     reloaded_entry = reloaded_settings.hooks["UserPromptSubmit"][0].hooks[0]
-    assert "ERK_KIT_ID=metadata-kit" in reloaded_entry.command
     assert "ERK_HOOK_ID=metadata-test" in reloaded_entry.command
 
 
@@ -438,7 +434,6 @@ def test_install_hook_without_matcher(tmp_project: Path) -> None:
     assert len(lifecycle_hooks[0].hooks) == 1
 
     hook_entry = lifecycle_hooks[0].hooks[0]
-    assert "ERK_KIT_ID=test-kit" in hook_entry.command
     assert "ERK_HOOK_ID=test-hook" in hook_entry.command
 
 
