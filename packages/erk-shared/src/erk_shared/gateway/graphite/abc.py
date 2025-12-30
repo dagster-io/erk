@@ -271,14 +271,16 @@ class Graphite(ABC):
             branch: Branch name to find ancestor worktree for
 
         Returns:
-            WorktreeInfo of the closest ancestor with a worktree, or None if:
-            - Branch is not tracked by Graphite
-            - No ancestor has a worktree
+            WorktreeInfo of the closest ancestor with a worktree, or None if
+            no ancestor has a worktree (reaches trunk without finding one).
+
+        Raises:
+            ValueError: If branch is not tracked by Graphite (indicates caller bug).
         """
-        # Validate branch exists in Graphite
+        # Validate branch exists in Graphite - if not, it's a caller bug
         all_branches = self.get_all_branches(git_ops, repo_root)
         if branch not in all_branches:
-            return None
+            raise ValueError(f"Branch '{branch}' is not tracked by Graphite")
 
         worktrees = git_ops.list_worktrees(repo_root)
         current = branch

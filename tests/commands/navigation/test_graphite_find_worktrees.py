@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from erk.cli.graphite import find_worktrees_containing_branch
 from erk.core.config_store import GlobalConfig
 from erk.core.context import context_for_test
@@ -293,7 +295,7 @@ def test_find_ancestor_worktree_trunk_branch(tmp_path: Path) -> None:
 
 
 def test_find_ancestor_worktree_untracked_branch(tmp_path: Path) -> None:
-    """Test returns None for branch not tracked by Graphite."""
+    """Test raises ValueError for branch not tracked by Graphite."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     git_dir = repo_root / ".git"
@@ -319,6 +321,6 @@ def test_find_ancestor_worktree_untracked_branch(tmp_path: Path) -> None:
 
     graphite_ops = RealGraphite()
 
-    # untracked-branch is not in Graphite, should return None
-    result = graphite_ops.find_ancestor_worktree(git_ops, repo_root, "untracked-branch")
-    assert result is None
+    # untracked-branch is not in Graphite, should raise ValueError (caller bug)
+    with pytest.raises(ValueError, match="not tracked by Graphite"):
+        graphite_ops.find_ancestor_worktree(git_ops, repo_root, "untracked-branch")
