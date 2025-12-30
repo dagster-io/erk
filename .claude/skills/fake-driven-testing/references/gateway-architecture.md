@@ -1,8 +1,6 @@
 ---
 name: fake-driven-testing-gateway-architecture
 description: Gateway layer architecture and interface patterns
-erk:
-  kit: fake-driven-testing
 ---
 
 # Gateway Layer Architecture

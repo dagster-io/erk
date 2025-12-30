@@ -7,7 +7,6 @@ import click
 
 import erk_kits
 from erk.kits.io.at_reference import parse_at_references
-from erk.kits.io.frontmatter import parse_artifact_frontmatter
 
 
 @dataclass(frozen=True)
@@ -32,12 +31,11 @@ class KitCheckResult:
         return len(self.missing_references) == 0
 
 
-def _discover_kit_artifacts(kit_path: Path, kit_name: str) -> dict[str, list[str]]:
-    """Discover artifacts in kit by scanning files for erk.kit frontmatter.
+def _discover_kit_artifacts(kit_path: Path) -> dict[str, list[str]]:
+    """Discover artifacts in kit by scanning directories.
 
     Args:
         kit_path: Path to kit directory
-        kit_name: Expected kit name in frontmatter
 
     Returns:
         Dict mapping artifact type to list of relative paths
@@ -58,29 +56,24 @@ def _discover_kit_artifacts(kit_path: Path, kit_name: str) -> dict[str, list[str
             continue
 
         for md_file in artifact_dir.rglob("*.md"):
-            content = md_file.read_text(encoding="utf-8")
-            frontmatter = parse_artifact_frontmatter(content)
-
-            if frontmatter is not None and frontmatter.kit == kit_name:
-                rel_path = str(md_file.relative_to(kit_path))
-                if artifact_type not in artifacts:
-                    artifacts[artifact_type] = []
-                artifacts[artifact_type].append(rel_path)
+            rel_path = str(md_file.relative_to(kit_path))
+            if artifact_type not in artifacts:
+                artifacts[artifact_type] = []
+            artifacts[artifact_type].append(rel_path)
 
     return artifacts
 
 
-def get_kit_artifact_paths(kit_path: Path, kit_name: str) -> set[str]:
-    """Get all artifact paths discovered in a kit by frontmatter scanning.
+def get_kit_artifact_paths(kit_path: Path) -> set[str]:
+    """Get all artifact paths discovered in a kit by directory scanning.
 
     Args:
         kit_path: Path to kit directory
-        kit_name: Kit name to match in frontmatter
 
     Returns:
         Set of artifact paths (with .claude/ prefix normalized)
     """
-    artifacts = _discover_kit_artifacts(kit_path, kit_name)
+    artifacts = _discover_kit_artifacts(kit_path)
 
     paths: set[str] = set()
     for artifact_list in artifacts.values():
@@ -104,8 +97,8 @@ def check_kit_references(kit_name: str, kit_path: Path) -> KitCheckResult:
     Returns:
         KitCheckResult with any missing references found
     """
-    artifacts = _discover_kit_artifacts(kit_path, kit_name)
-    kit_artifacts = get_kit_artifact_paths(kit_path, kit_name)
+    artifacts = _discover_kit_artifacts(kit_path)
+    kit_artifacts = get_kit_artifact_paths(kit_path)
 
     missing: list[MissingReference] = []
 

@@ -1,8 +1,6 @@
 ---
 name: fake-driven-testing-quick-reference
 description: Quick lookup for file locations, fixtures, and example tests
-erk:
-  kit: fake-driven-testing
 ---
 
 # Quick Reference

@@ -1,7 +1,5 @@
 ---
 description: Address PR review comments on current branch
-erk:
-  kit: erk
 ---
 
 # /erk:pr-address

@@ -1,7 +1,5 @@
 ---
 description: Execute the implementation plan from .impl/ folder in current directory
-erk:
-  kit: erk
 ---
 
 # /erk:plan-implement

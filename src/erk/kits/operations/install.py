@@ -4,19 +4,17 @@ import shutil
 from pathlib import Path
 
 from erk.kits.cli.output import user_output
-from erk.kits.io.frontmatter import parse_artifact_frontmatter
 from erk.kits.models.artifact import ARTIFACT_TARGET_DIRS, ArtifactType
 from erk.kits.models.config import InstalledKit
 from erk.kits.models.resolved import ArtifactConflictError, ResolvedKit
 from erk.kits.operations.artifact_operations import create_artifact_operations
 
 
-def _discover_kit_artifacts(kit_path: Path, kit_name: str) -> dict[str, list[str]]:
-    """Discover artifacts in kit by scanning files for erk.kit frontmatter.
+def _discover_kit_artifacts(kit_path: Path) -> dict[str, list[str]]:
+    """Discover artifacts in kit by scanning directories.
 
     Args:
         kit_path: Path to kit directory
-        kit_name: Expected kit name in frontmatter
 
     Returns:
         Dict mapping artifact type to list of relative paths
@@ -37,14 +35,10 @@ def _discover_kit_artifacts(kit_path: Path, kit_name: str) -> dict[str, list[str
             continue
 
         for md_file in artifact_dir.rglob("*.md"):
-            content = md_file.read_text(encoding="utf-8")
-            frontmatter = parse_artifact_frontmatter(content)
-
-            if frontmatter is not None and frontmatter.kit == kit_name:
-                rel_path = str(md_file.relative_to(kit_path))
-                if artifact_type not in artifacts:
-                    artifacts[artifact_type] = []
-                artifacts[artifact_type].append(rel_path)
+            rel_path = str(md_file.relative_to(kit_path))
+            if artifact_type not in artifacts:
+                artifacts[artifact_type] = []
+            artifacts[artifact_type].append(rel_path)
 
     return artifacts
 
@@ -62,18 +56,18 @@ def install_kit(
         project_dir: Directory to install to
         overwrite: Whether to overwrite existing files
         filtered_artifacts: Optional filtered artifacts dict (type -> paths).
-                          If None, discovers artifacts via frontmatter.
+                          If None, discovers artifacts by scanning directories.
     """
     installed_artifacts: list[str] = []
 
     # Create installation strategy
     operations = create_artifact_operations()
 
-    # Use filtered artifacts if provided, otherwise discover via frontmatter
+    # Use filtered artifacts if provided, otherwise discover by directory scan
     if filtered_artifacts is not None:
         artifacts_to_install = filtered_artifacts
     else:
-        artifacts_to_install = _discover_kit_artifacts(resolved.artifacts_base, resolved.kit_id)
+        artifacts_to_install = _discover_kit_artifacts(resolved.artifacts_base)
 
     # Process each artifact type
     for artifact_type_str, paths in artifacts_to_install.items():

@@ -1,7 +1,5 @@
 ---
 description: Automate Graphite restacking with intelligent conflict resolution
-erk:
-  kit: erk
 ---
 
 # Auto Restack

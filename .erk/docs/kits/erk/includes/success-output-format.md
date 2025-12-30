@@ -1,6 +1,4 @@
 ---
-erk:
-  kit: erk
 ---
 
 # Success Output Format

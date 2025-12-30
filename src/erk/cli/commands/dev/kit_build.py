@@ -6,7 +6,6 @@ from pathlib import Path
 import click
 
 import erk_kits
-from erk.kits.io.frontmatter import parse_artifact_frontmatter
 from erk.kits.io.git import find_git_root
 
 
@@ -43,15 +42,14 @@ class DiscoveredArtifact:
     relative_target: str  # Relative path within kit (e.g., "commands/erk/foo.md")
 
 
-def _discover_source_artifacts(repo_root: Path, kit_name: str) -> list[DiscoveredArtifact]:
-    """Discover artifacts from source files that belong to a kit.
+def _discover_source_artifacts(repo_root: Path) -> list[DiscoveredArtifact]:
+    """Discover artifacts from source files by directory structure.
 
-    Scans source directories (.claude/, .erk/docs/kits/) for files with
-    erk.kit frontmatter matching the kit name.
+    Scans source directories (.claude/, .erk/docs/kits/) for all markdown files.
+    All artifacts are collected for the single bundled kit.
 
     Args:
         repo_root: Repository root directory
-        kit_name: Kit name to match in frontmatter
 
     Returns:
         List of discovered artifacts with source paths and target paths
@@ -72,21 +70,17 @@ def _discover_source_artifacts(repo_root: Path, kit_name: str) -> list[Discovere
             continue
 
         for md_file in source_dir.rglob("*.md"):
-            content = md_file.read_text(encoding="utf-8")
-            frontmatter = parse_artifact_frontmatter(content)
+            # Compute relative target path
+            rel_to_source = md_file.relative_to(source_dir)
+            relative_target = f"{target_prefix}/{rel_to_source}"
 
-            if frontmatter is not None and frontmatter.kit == kit_name:
-                # Compute relative target path
-                rel_to_source = md_file.relative_to(source_dir)
-                relative_target = f"{target_prefix}/{rel_to_source}"
-
-                artifacts.append(
-                    DiscoveredArtifact(
-                        source_path=md_file,
-                        artifact_type=artifact_type,
-                        relative_target=relative_target,
-                    )
+            artifacts.append(
+                DiscoveredArtifact(
+                    source_path=md_file,
+                    artifact_type=artifact_type,
+                    relative_target=relative_target,
                 )
+            )
 
     return artifacts
 
@@ -100,7 +94,7 @@ def build_kit(
 ) -> BuildResult:
     """Build a kit by copying artifacts from source locations.
 
-    Discovers artifacts by scanning source files for erk.kit frontmatter,
+    Discovers artifacts by scanning source directories for all markdown files,
     then copies them to the kit package directory.
 
     Args:
@@ -116,7 +110,7 @@ def build_kit(
     result = BuildResult(kit_name=kit_name)
 
     # Discover artifacts from source files
-    artifacts = _discover_source_artifacts(repo_root, kit_name)
+    artifacts = _discover_source_artifacts(repo_root)
 
     if not artifacts:
         # No artifacts found for this kit
@@ -185,8 +179,8 @@ def kit_build(kit_name: str | None, check: bool, verbose: bool) -> None:
     """Build kit packages by copying artifacts from source locations.
 
     This command discovers artifacts by scanning source locations (.claude/,
-    .erk/docs/kits/) for files with matching erk.kit frontmatter, then copies
-    them into the kit package directories in packages/erk-kits/.
+    .erk/docs/kits/) and copies them into the kit package directories in
+    packages/erk-kits/.
 
     Examples:
 

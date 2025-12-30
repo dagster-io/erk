@@ -2,8 +2,6 @@
 name: gt-graphite-reference
 description: Graphite CLI for stacked pull requests
 url: https://graphite.com/
-erk:
-  kit: erk
 ---
 
 # Graphite (gt) Mental Model

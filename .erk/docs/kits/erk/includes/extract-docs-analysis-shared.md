@@ -1,6 +1,4 @@
 ---
-erk:
-  kit: erk
 ---
 
 # Extract Agent Docs - Analysis Logic

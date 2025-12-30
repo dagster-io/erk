@@ -1,7 +1,5 @@
 ---
 description: Create an extraction plan for documentation improvements
-erk:
-  kit: erk
 ---
 
 # /erk:create-extraction-plan

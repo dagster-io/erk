@@ -292,8 +292,8 @@ def test_install_kit_with_docs_and_agents(tmp_project: Path) -> None:
     assert "# Make Documentation" in doc_path.read_text(encoding="utf-8")
 
 
-def test_install_kit_ignores_artifacts_for_other_kits(tmp_project: Path) -> None:
-    """Test installation ignores artifacts with frontmatter for different kits."""
+def test_install_kit_installs_all_artifacts(tmp_project: Path) -> None:
+    """Test installation installs all markdown files from kit directories."""
     # Create mock kit
     kit_dir = tmp_project / "mock_kit"
     kit_dir.mkdir()
@@ -301,13 +301,9 @@ def test_install_kit_ignores_artifacts_for_other_kits(tmp_project: Path) -> None
     agents_dir = kit_dir / "agents"
     agents_dir.mkdir()
 
-    # Create an artifact for the correct kit
+    # Create artifacts - all should be installed regardless of frontmatter
     _create_kit_artifact(agents_dir / "correct.md", "# Correct Agent", "test-kit")
-
-    # Create an artifact for a different kit
     _create_kit_artifact(agents_dir / "other.md", "# Other Agent", "other-kit")
-
-    # Create an artifact without frontmatter
     (agents_dir / "no-frontmatter.md").write_text("# No Frontmatter", encoding="utf-8")
 
     resolved = ResolvedKit(
@@ -321,8 +317,8 @@ def test_install_kit_ignores_artifacts_for_other_kits(tmp_project: Path) -> None
     # Install
     installed = install_kit(resolved, tmp_project, overwrite=False, filtered_artifacts=None)
 
-    # Only the correct artifact should be installed
-    assert len(installed.artifacts) == 1
+    # All artifacts should be installed (directory-based discovery)
+    assert len(installed.artifacts) == 3
     assert (tmp_project / ".claude" / "agents" / "correct.md").exists()
-    assert not (tmp_project / ".claude" / "agents" / "other.md").exists()
-    assert not (tmp_project / ".claude" / "agents" / "no-frontmatter.md").exists()
+    assert (tmp_project / ".claude" / "agents" / "other.md").exists()
+    assert (tmp_project / ".claude" / "agents" / "no-frontmatter.md").exists()

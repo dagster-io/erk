@@ -6,7 +6,6 @@ from pathlib import Path
 from erk.artifacts.models import ArtifactState
 from erk.artifacts.staleness import get_current_version
 from erk.artifacts.state import save_artifact_state
-from erk.kits.io.frontmatter import parse_artifact_frontmatter
 from erk.kits.models.artifact import ARTIFACT_TARGET_DIRS, ArtifactType
 from erk.kits.operations.artifact_operations import create_artifact_operations
 from erk_kits import get_kits_dir
@@ -21,12 +20,11 @@ class SyncResult:
     error: str | None = None
 
 
-def _discover_kit_artifacts(kit_path: Path, kit_name: str) -> dict[ArtifactType, list[str]]:
-    """Discover artifacts in kit by scanning files for erk.kit frontmatter.
+def _discover_kit_artifacts(kit_path: Path) -> dict[ArtifactType, list[str]]:
+    """Discover artifacts in kit by scanning directories.
 
     Args:
         kit_path: Path to kit directory
-        kit_name: Expected kit name in frontmatter
 
     Returns:
         Dict mapping artifact type to list of relative paths
@@ -47,14 +45,10 @@ def _discover_kit_artifacts(kit_path: Path, kit_name: str) -> dict[ArtifactType,
             continue
 
         for md_file in artifact_dir.rglob("*.md"):
-            content = md_file.read_text(encoding="utf-8")
-            frontmatter = parse_artifact_frontmatter(content)
-
-            if frontmatter is not None and frontmatter.kit == kit_name:
-                rel_path = str(md_file.relative_to(kit_path))
-                if artifact_type not in artifacts:
-                    artifacts[artifact_type] = []
-                artifacts[artifact_type].append(rel_path)
+            rel_path = str(md_file.relative_to(kit_path))
+            if artifact_type not in artifacts:
+                artifacts[artifact_type] = []
+            artifacts[artifact_type].append(rel_path)
 
     return artifacts
 
@@ -63,8 +57,7 @@ def sync_artifacts(project_dir: Path) -> SyncResult:
     """Sync artifacts from erk package to project.
 
     This function copies artifacts from the bundled erk kit to the project
-    directory. Artifacts are discovered by scanning for files with erk.kit
-    frontmatter.
+    directory. Artifacts are discovered by scanning directories.
 
     Args:
         project_dir: Project root directory
@@ -73,7 +66,7 @@ def sync_artifacts(project_dir: Path) -> SyncResult:
         SyncResult with counts of installed artifacts
     """
     erk_kit_path = get_kits_dir() / "erk"
-    artifacts = _discover_kit_artifacts(erk_kit_path, "erk")
+    artifacts = _discover_kit_artifacts(erk_kit_path)
 
     operations = create_artifact_operations()
     artifacts_installed = 0

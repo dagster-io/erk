@@ -1,6 +1,4 @@
 ---
-erk:
-  kit: dignified-python
 ---
 
 # Dignified Python - Core Standards

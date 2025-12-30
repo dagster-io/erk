@@ -1,8 +1,6 @@
 ---
 name: fake-driven-testing-workflows
 description: Step-by-step guidance for specific testing tasks
-erk:
-  kit: fake-driven-testing
 ---
 
 # Testing Workflows

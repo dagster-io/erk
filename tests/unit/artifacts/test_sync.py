@@ -105,13 +105,13 @@ def test_sync_artifacts_creates_parent_dirs(tmp_project: Path) -> None:
     assert target_path.exists()
 
 
-def test_sync_artifacts_ignores_files_without_frontmatter(tmp_project: Path) -> None:
-    """Test that sync_artifacts ignores artifacts without erk.kit frontmatter."""
+def test_sync_artifacts_installs_all_markdown_files(tmp_project: Path) -> None:
+    """Test that sync_artifacts installs all markdown files from kit directories."""
     # Create kit structure
     kit_dir = tmp_project / "kits" / "erk"
     commands_dir = kit_dir / "commands"
     commands_dir.mkdir(parents=True)
-    # File without frontmatter
+    # File without frontmatter - should still be installed
     (commands_dir / "no-frontmatter.md").write_text("# No frontmatter", encoding="utf-8")
 
     with (
@@ -120,6 +120,6 @@ def test_sync_artifacts_ignores_files_without_frontmatter(tmp_project: Path) -> 
     ):
         result = sync_artifacts(tmp_project)
 
-    # Should succeed but with 0 artifacts installed
+    # All markdown files are installed
     assert result.success is True
-    assert result.artifacts_installed == 0
+    assert result.artifacts_installed == 1
