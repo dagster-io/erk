@@ -149,13 +149,15 @@ erk plan create --title "Implement [step description]" --body "Part of Objective
 2. **Log actions** - After completing each significant piece of work
 3. **Update body** - Keep roadmap status current
 4. **Spawn erk-plans** - For individual implementation steps
-5. **Close** - When goal achieved or abandoned
+5. **Close** - When goal achieved or abandoned (proactively ask when all steps done)
 
 ## Resources
 
 ### references/
 
 - `format.md` - Complete issue body and comment templates with examples
-- `workflow.md` - Detailed procedures for creating, updating, and closing objectives
+- `workflow.md` - Procedures for creating objectives, spawning plans, resuming work
+- `updating.md` - Two-step update workflow (comment + body edit)
+- `closing.md` - Closing triggers and procedures
 
 Load references when users need complete templates or detailed workflow guidance.
