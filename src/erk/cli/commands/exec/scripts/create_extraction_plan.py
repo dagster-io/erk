@@ -30,9 +30,13 @@ from pathlib import Path
 
 import click
 
-from erk.kits.context_helpers import require_github_issues
-from erk.kits.operations.agent_docs import check_docs_agent_ready
-from erk_shared.context.helpers import require_cwd, require_repo_root
+from erk_shared.context.helpers import (
+    require_cwd,
+    require_repo_root,
+)
+from erk_shared.context.helpers import (
+    require_issues as require_github_issues,
+)
 from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, delete_marker
 from erk_shared.scratch.scratch import write_scratch_file
@@ -92,20 +96,6 @@ def create_extraction_plan(
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
-
-    # Validate .erk/docs/agent is ready before creating extraction plans
-    is_ready, warning = check_docs_agent_ready(repo_root)
-    if not is_ready:
-        click.echo(
-            json.dumps(
-                {
-                    "success": False,
-                    "error": warning,
-                    "suggestion": "Run 'erk docs init' first",
-                }
-            )
-        )
-        raise SystemExit(1)
 
     # Validate options: must provide either --plan-content or --plan-file
     if plan_content is None and plan_file is None:

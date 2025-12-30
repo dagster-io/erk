@@ -1,1 +1,0 @@
-"""Agent documentation command group."""

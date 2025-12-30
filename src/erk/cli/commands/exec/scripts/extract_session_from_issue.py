@@ -21,7 +21,7 @@ from pathlib import Path
 
 import click
 
-from erk.kits.context_helpers import require_github_issues
+from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.context.helpers import require_repo_root
 from erk_shared.github.metadata import extract_session_content_from_comments
 from erk_shared.scratch.scratch import write_scratch_file

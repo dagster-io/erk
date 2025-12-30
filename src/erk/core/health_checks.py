@@ -355,98 +355,6 @@ def check_hooks_disabled() -> CheckResult:
     )
 
 
-def check_orphaned_artifacts(repo_root: Path) -> CheckResult:
-    """Check for orphaned artifacts in .claude/ directory.
-
-    Detects directories that appear kit-related but the kit isn't installed.
-    This is a warning-level check - orphaned files don't break anything.
-
-    Args:
-        repo_root: Path to the repository root
-
-    Returns:
-        CheckResult with warning if orphaned artifacts found
-    """
-    from erk.kits.io.state import load_project_config
-    from erk.kits.operations.orphan_detection import detect_orphaned_artifacts
-
-    claude_dir = repo_root / ".claude"
-    if not claude_dir.exists():
-        return CheckResult(
-            name="orphaned artifacts",
-            passed=True,
-            message="No .claude/ directory",
-        )
-
-    config = load_project_config(repo_root)
-    result = detect_orphaned_artifacts(repo_root, config)
-
-    if not result.orphaned_directories:
-        return CheckResult(
-            name="orphaned artifacts",
-            passed=True,
-            message="No orphaned artifacts found",
-        )
-
-    # Build details listing orphaned paths
-    details_lines: list[str] = []
-    for orphan in result.orphaned_directories:
-        details_lines.append(f"{orphan.path}/ ({orphan.reason})")
-    details_lines.append("")
-    details_lines.append("Run 'rm -r <path>' to clean up orphaned directories")
-
-    return CheckResult(
-        name="orphaned artifacts",
-        passed=True,  # Warning only - doesn't fail the check
-        warning=True,
-        message=f"Found {len(result.orphaned_directories)} orphaned artifact(s)",
-        details="\n".join(details_lines),
-    )
-
-
-def check_docs_agent(repo_root: Path) -> CheckResult:
-    """Check if .erk/docs/agent/ templates exist and are valid.
-
-    Args:
-        repo_root: Path to the repository root
-
-    Returns:
-        CheckResult indicating whether .erk/docs/agent/ is properly configured
-    """
-    docs_agent_dir = repo_root / ".erk" / "docs" / "agent"
-
-    # Check if directory exists
-    if not docs_agent_dir.exists():
-        return CheckResult(
-            name=".erk/docs/agent",
-            passed=True,  # Info level - not required
-            message="No .erk/docs/agent/ directory",
-            details="Run 'erk init' to create agent documentation templates",
-        )
-
-    # Check for expected template files
-    expected_files = ["glossary.md", "conventions.md", "guide.md"]
-    missing_files: list[str] = []
-
-    for filename in expected_files:
-        if not (docs_agent_dir / filename).exists():
-            missing_files.append(filename)
-
-    if missing_files:
-        return CheckResult(
-            name=".erk/docs/agent",
-            passed=True,  # Info level - warn but don't fail
-            message=f"Missing template files: {', '.join(missing_files)}",
-            details="Run 'erk init --force' to recreate templates",
-        )
-
-    return CheckResult(
-        name=".erk/docs/agent",
-        passed=True,
-        message="Agent documentation templates present",
-    )
-
-
 def check_gitignore_entries(repo_root: Path) -> CheckResult:
     """Check that required gitignore entries exist.
 
@@ -781,8 +689,6 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         results.append(check_claude_erk_permission(repo_root))
         results.append(check_claude_settings(repo_root))
         results.append(check_gitignore_entries(repo_root))
-        results.append(check_docs_agent(repo_root))
-        results.append(check_orphaned_artifacts(repo_root))
         # Hook health check
         results.append(check_hook_health(repo_root))
         # GitHub workflow permissions check (requires repo context)
