@@ -54,6 +54,23 @@ def format_compact_artifact_line(artifact: InstalledArtifact) -> str:
     return f"{level} {name} {source}"
 
 
+def format_compact_doc_line(artifact: InstalledArtifact) -> str:
+    """Format single-line representation of doc artifact with full path relative to repo root.
+
+    Args:
+        artifact: Doc artifact to format
+
+    Returns:
+        Formatted line: [level] .claude/path/to/doc [source]
+    """
+    level = format_level_indicator(artifact.level)
+    source = format_source_indicator(artifact)
+    # file_path is relative to .claude/, so prepend .claude/ to get repo-relative path
+    full_path = Path(".claude") / artifact.file_path
+    name = click.style(str(full_path), bold=True)
+    return f"{level} {name} {source}"
+
+
 def format_artifact_header(artifact: InstalledArtifact, absolute_path: Path | None = None) -> str:
     """Format metadata header for artifact show command.
 
@@ -226,8 +243,8 @@ def format_compact_list(
         # Docs subsection
         if has_docs:
             lines.append(click.style("  Docs:", bold=True, fg="white"))
-            for artifact in sorted(by_type["doc"], key=lambda a: a.artifact_name):
-                lines.append(f"    {format_compact_artifact_line(artifact)}")
+            for artifact in sorted(by_type["doc"], key=lambda a: a.file_path):
+                lines.append(f"    {format_compact_doc_line(artifact)}")
 
         # Kit CLI Commands subsection
         if has_kit_commands:
@@ -344,8 +361,8 @@ def format_verbose_list(
         # Docs subsection
         if has_docs:
             lines.append(click.style("  Docs:", bold=True, fg="white"))
-            for artifact in sorted(by_type["doc"], key=lambda a: a.artifact_name):
-                lines.append(f"    {format_compact_artifact_line(artifact)}")
+            for artifact in sorted(by_type["doc"], key=lambda a: a.file_path):
+                lines.append(f"    {format_compact_doc_line(artifact)}")
 
                 # Indented details
                 if user_path and project_path:
@@ -357,7 +374,9 @@ def format_verbose_list(
                 if is_managed and artifact.kit_id and artifact.kit_version:
                     lines.append(f"        Kit: {artifact.kit_id}@{artifact.kit_version}")
 
-                lines.append(f"        Path: {artifact.file_path}")
+                # Path now shows full repo-relative path
+                full_path = Path(".claude") / artifact.file_path
+                lines.append(f"        Path: {full_path}")
                 lines.append("")
 
         # Kit CLI Commands subsection
