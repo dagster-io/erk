@@ -89,9 +89,7 @@ def test_create_impl_folder_overwrite_replaces_existing(tmp_path: Path) -> None:
     old_plan = "# Old Plan\n\n1. Old step one\n2. Old step two"
     new_plan = "# New Plan\n\n1. New step one\n2. New step two\n3. New step three"
     old_executor = _make_executor(["1. Old step one", "2. Old step two"])
-    new_executor = _make_executor(
-        ["1. New step one", "2. New step two", "3. New step three"]
-    )
+    new_executor = _make_executor(["1. New step one", "2. New step two", "3. New step three"])
 
     # Create first .impl/ folder
     impl_folder = create_impl_folder(tmp_path, old_plan, old_executor, overwrite=False)
@@ -139,15 +137,17 @@ def test_create_impl_folder_with_nested_steps(tmp_path: Path) -> None:
 2.2. Substep two
 2.3. Substep three
 """
-    executor = _make_executor([
-        "1. Main step one",
-        "1.1. Substep one",
-        "1.2. Substep two",
-        "2. Main step two",
-        "2.1. Substep one",
-        "2.2. Substep two",
-        "2.3. Substep three",
-    ])
+    executor = _make_executor(
+        [
+            "1. Main step one",
+            "1.1. Substep one",
+            "1.2. Substep two",
+            "2. Main step two",
+            "2.1. Substep one",
+            "2.2. Substep two",
+            "2.3. Substep three",
+        ]
+    )
     plan_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
     progress_file = plan_folder / "progress.md"
     progress_content = progress_file.read_text(encoding="utf-8")

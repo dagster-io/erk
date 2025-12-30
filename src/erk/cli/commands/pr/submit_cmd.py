@@ -91,9 +91,7 @@ def pr_submit(ctx: ErkContext, debug: bool, no_graphite: bool, force: bool) -> N
     _execute_pr_submit(ctx, debug=debug, use_graphite=not no_graphite, force=force)
 
 
-def _execute_pr_submit(
-    ctx: ErkContext, debug: bool, use_graphite: bool, force: bool
-) -> None:
+def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: bool) -> None:
     """Execute PR submission with positively-named parameters."""
     # Verify Claude is available (needed for commit message generation)
     if not ctx.claude_executor.is_claude_available():
