@@ -60,11 +60,11 @@ def test_parse_url_without_number() -> None:
     assert exc_info.value.code == 1
 
 
-def test_parse_issues_url_still_extracts_number() -> None:
-    """Test that /issues/ URLs still extract the number (same pattern)."""
-    # The parser just looks for /number at the end, so issues work too
-    url = "https://github.com/owner/repo/issues/303"
-    assert parse_pr_reference(url) == 303
+def test_parse_issues_url_rejected() -> None:
+    """Test that /issues/ URLs are rejected (only /pull/ URLs accepted)."""
+    with pytest.raises(SystemExit) as exc_info:
+        parse_pr_reference("https://github.com/owner/repo/issues/303")
+    assert exc_info.value.code == 1
 
 
 def test_parse_large_pr_number() -> None:

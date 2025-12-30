@@ -81,15 +81,10 @@ def parse_pr_identifier(identifier: str) -> int:
     if identifier.isdigit():
         return int(identifier)
 
-    # Try strict github.com URL (PR or issue URL)
+    # Try strict github.com /pull/ URL only
     pr_number = parse_pr_number_from_url(identifier)
     if pr_number is not None:
         return pr_number
-
-    # Also accept /issues/ URLs (same repository reference pattern)
-    issue_number = parse_issue_number_from_url(identifier)
-    if issue_number is not None:
-        return issue_number
 
     user_output(
         click.style("Error: ", fg="red")
