@@ -1,0 +1,3 @@
+{"type":"file-history-snapshot","messageId":"msg_060","snapshot":{"trackedFileBackups":{}}}
+{"parentUuid":"parent_060","sessionId":"fff11111-2222-3333-4444-555555555555","type":"assistant","slug":"agent-should-be-ignored","message":{"role":"assistant","content":[{"type":"text","text":"Agent subprocess."}]},"cwd":"/projects/epsilon","gitBranch":"main"}
+{"parentUuid":"parent_061","sessionId":"fff11111-2222-3333-4444-555555555555","type":"user","message":{"role":"user","content":[{"type":"text","text":"Agent result"}]},"cwd":"/projects/epsilon","gitBranch":"main"}

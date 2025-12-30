@@ -1,0 +1,4 @@
+{"type":"file-history-snapshot","messageId":"msg_020","snapshot":{"trackedFileBackups":{}}}
+{"parentUuid":"parent_020","sessionId":"ccc11111-2222-3333-4444-555555555555","type":"user","message":{"role":"user","content":[{"type":"text","text":"Different session, different plan"}]},"cwd":"/projects/beta","gitBranch":"feature-2"}
+{"parentUuid":"parent_021","sessionId":"ccc11111-2222-3333-4444-555555555555","type":"assistant","slug":"beta-plan-two","message":{"role":"assistant","content":[{"type":"text","text":"Creating a different plan."}]},"cwd":"/projects/beta","gitBranch":"feature-2"}
+{"parentUuid":"parent_022","sessionId":"ccc11111-2222-3333-4444-555555555555","type":"user","message":{"role":"user","content":[{"type":"text","text":"Continue"}]},"cwd":"/projects/beta","gitBranch":"feature-2"}

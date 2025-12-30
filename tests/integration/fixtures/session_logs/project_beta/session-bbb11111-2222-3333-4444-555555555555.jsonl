@@ -1,0 +1,3 @@
+{"type":"file-history-snapshot","messageId":"msg_010","snapshot":{"trackedFileBackups":{}}}
+{"parentUuid":"parent_010","sessionId":"bbb11111-2222-3333-4444-555555555555","type":"user","message":{"role":"user","content":[{"type":"text","text":"Help me plan the API"}]},"cwd":"/projects/beta","gitBranch":"feature-1"}
+{"parentUuid":"parent_011","sessionId":"bbb11111-2222-3333-4444-555555555555","type":"assistant","slug":"beta-plan-one","message":{"role":"assistant","content":[{"type":"text","text":"I'll help you plan the API."}]},"cwd":"/projects/beta","gitBranch":"feature-1"}
