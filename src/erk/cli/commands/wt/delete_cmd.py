@@ -302,11 +302,10 @@ def _delete_branch_at_error_boundary(
     """
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
 
-    # Determine if branch is tracked by Graphite (LBYL check)
+    # Determine if branch is tracked by Graphite (LBYL check using gt branch info)
     branch_is_tracked = False
     if use_graphite:
-        all_branches = graphite.get_all_branches(ctx.git, repo_root)
-        branch_is_tracked = branch in all_branches
+        branch_is_tracked = graphite.is_branch_tracked(repo_root, branch)
 
     try:
         if branch_is_tracked:

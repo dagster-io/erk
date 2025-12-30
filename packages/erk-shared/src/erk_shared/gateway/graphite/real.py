@@ -375,6 +375,21 @@ class RealGraphite(Graphite):
                 f"gt submit failed (exit code {e.returncode}): {e.stderr or ''}"
             ) from e
 
+    def is_branch_tracked(self, repo_root: Path, branch: str) -> bool:
+        """Check if a branch is tracked by Graphite.
+
+        Uses `gt branch info` to get authoritative tracking status. Exit code 0
+        means the branch is tracked, non-zero means untracked or error.
+        """
+        result = subprocess.run(
+            ["gt", "branch", "info", branch, "--quiet"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return result.returncode == 0
+
     def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
         """Run gt continue to continue an in-progress restack."""
         cmd = ["gt", "continue"]
