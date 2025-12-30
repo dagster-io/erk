@@ -11,7 +11,7 @@ from erk.hooks.decorators import logged_hook, project_scoped
 @project_scoped
 def tripwires_reminder_hook() -> None:
     """Output tripwires reminder for UserPromptSubmit hook."""
-    click.echo("🚧 Ensure .erk/docs/agent/tripwires.md is loaded and follow its directives.")
+    click.echo("🚧 Ensure docs/learned/tripwires.md is loaded and follow its directives.")
 
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@ from erk.agent_docs.models import (
     Tripwire,
 )
 
-AGENT_DOCS_DIR = ".erk/docs/agent"
+AGENT_DOCS_DIR = "docs/learned"
 FRONTMATTER_PATTERN = re.compile(r"^---\s*\n(.*?)\n---", re.DOTALL)
 
 # Category descriptions for root index generation.

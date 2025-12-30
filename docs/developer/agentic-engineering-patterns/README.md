@@ -11,12 +11,12 @@ This documentation serves two audiences:
 
 ## Relationship to Other Documentation
 
-This section complements the existing `.erk/docs/agent/` folder:
+This section complements the existing `docs/learned/` folder:
 
 | Section                                          | Purpose               | Focus                                                                   |
 | ------------------------------------------------ | --------------------- | ----------------------------------------------------------------------- |
 | **docs/developer/agentic-engineering-patterns/** | Pattern catalog       | WHAT patterns are (naming, concepts), WHY they exist (design rationale) |
-| **.erk/docs/agent/**                             | Implementation guides | HOW to implement (step-by-step, technical details, code examples)       |
+| **docs/learned/**                                | Implementation guides | HOW to implement (step-by-step, technical details, code examples)       |
 
 Both sections serve complementary roles in the documentation architecture.
 
@@ -34,7 +34,7 @@ Commands that immediately delegate to specialized agents for workflow orchestrat
 
 **Documentation:** [agent-delegating-commands.md](agent-delegating-commands.md)
 
-**Implementation Guide:** [../agent/command-agent-delegation.md](../agent/command-agent-delegation.md)
+**Implementation Guide:** [../../learned/command-agent-delegation.md](../../learned/command-agent-delegation.md)
 
 ---
 
@@ -51,7 +51,7 @@ Python commands for mechanical preprocessing before LLM inference.
 
 **Documentation:** [kit-cli-push-down.md](kit-cli-push-down.md)
 
-**Implementation Guide:** [../agent/kit-cli-commands.md](../agent/kit-cli-commands.md)
+**Implementation Guide:** [../../learned/kit-cli-commands.md](../../learned/kit-cli-commands.md)
 
 ---
 
@@ -61,6 +61,6 @@ When adding new patterns to this catalog:
 
 1. Create a new markdown file in this directory
 2. Update this README with a brief entry
-3. Cross-link to relevant implementation guides in `.erk/docs/agent/`
+3. Cross-link to relevant implementation guides in `docs/learned/`
 4. Include examples from the actual codebase
 5. Explain WHAT and WHY, not just HOW

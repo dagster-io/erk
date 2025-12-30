@@ -6,7 +6,7 @@ User-facing CLI commands for working with Claude Code sessions.
 
 **Before modifying this code, read the session documentation:**
 
-@.erk/docs/agent/sessions/
+@docs/learned/sessions/
 
 ## Architecture
 

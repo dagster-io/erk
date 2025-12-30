@@ -212,7 +212,7 @@ class TestWorktreeUtils:
     def test_is_root_worktree(self) -> None: ...
 ```
 
-**For detailed guidance on when to split files vs keep as single file, see [.erk/docs/agent/testing.md#test-organization-principles](../.erk/docs/agent/testing.md#test-organization-principles)**
+**For detailed guidance on when to split files vs keep as single file, see [docs/learned/testing.md#test-organization-principles](../docs/learned/testing.md#test-organization-principles)**
 
 ## Quick Reference
 

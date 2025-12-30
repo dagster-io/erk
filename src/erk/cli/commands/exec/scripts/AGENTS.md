@@ -75,5 +75,5 @@ def test_my_command(tmp_path: Path) -> None:
 
 ## See Also
 
-- [Kit CLI Dependency Injection Patterns](/.erk/docs/agent/kits/dependency-injection.md)
+- [Kit CLI Dependency Injection Patterns](/docs/learned/kits/dependency-injection.md)
 - [fake-driven-testing skill](/.claude/skills/fake-driven-testing/)

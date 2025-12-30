@@ -53,9 +53,9 @@ Read and parse the session XML from the issue comments below. The XML contains:
 ### Step 2: Verify Existing Documentation
 
 Before analyzing gaps, scan the project:
-- `.erk/docs/agent/` - Existing agent docs
+- `docs/learned/` - Existing agent docs
 - `.claude/skills/` - Existing skills
-- `.erk/docs/agent/glossary.md` - Terms and definitions
+- `docs/learned/glossary.md` - Terms and definitions
 
 ### Step 3: Identify Category A - Learning Gaps
 
@@ -78,7 +78,7 @@ Documentation needed for what was BUILT. Signals:
 ### Step 5: Categorize Each Finding
 
 For each finding, determine:
-- **Type:** Agent Doc (`.erk/docs/agent/`) or Skill (`.claude/skills/`)
+- **Type:** Agent Doc (`docs/learned/`) or Skill (`.claude/skills/`)
 - **Action:** New doc | Update existing | Merge into
 - **Priority:** High (significant friction) | Medium | Low
 

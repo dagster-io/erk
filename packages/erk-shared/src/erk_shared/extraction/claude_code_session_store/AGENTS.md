@@ -6,7 +6,7 @@ Gateway abstraction for Claude Code session data operations.
 
 **Before modifying this code, read the session documentation:**
 
-@.erk/docs/agent/sessions/
+@docs/learned/sessions/
 
 ## Architecture
 
@@ -60,4 +60,4 @@ store = FakeClaudeCodeSessionStore(
 )
 ```
 
-See `.erk/docs/agent/testing/session-store-testing.md` for detailed patterns.
+See `docs/learned/testing/session-store-testing.md` for detailed patterns.

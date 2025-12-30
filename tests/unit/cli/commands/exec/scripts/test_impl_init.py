@@ -41,8 +41,8 @@ Build a test feature.
 - `fake-driven-testing`
 
 **Docs:**
-- [Kit CLI Testing](.erk/docs/agent/testing/kit-cli-testing.md)
-- `.erk/docs/agent/patterns.md`
+- [Kit CLI Testing](docs/learned/testing/kit-cli-testing.md)
+- `docs/learned/patterns.md`
 """
     plan_md = impl_dir / "plan.md"
     plan_md.write_text(plan_content, encoding="utf-8")
@@ -116,8 +116,8 @@ def test_impl_init_extracts_related_docs(impl_folder: Path, monkeypatch) -> None
 
     assert "dignified-python-313" in related_docs["skills"]
     assert "fake-driven-testing" in related_docs["skills"]
-    assert ".erk/docs/agent/testing/kit-cli-testing.md" in related_docs["docs"]
-    assert ".erk/docs/agent/patterns.md" in related_docs["docs"]
+    assert "docs/learned/testing/kit-cli-testing.md" in related_docs["docs"]
+    assert "docs/learned/patterns.md" in related_docs["docs"]
 
 
 def test_impl_init_with_issue_tracking(impl_folder: Path, monkeypatch) -> None:

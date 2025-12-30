@@ -253,7 +253,7 @@ erk pr land
 
 ## Documentation Extraction
 
-Erk supports extracting reusable documentation from implementation sessions into the `.erk/docs/agent/` folder—a directory of **agent-generated, agent-consumed documentation**.
+Erk supports extracting reusable documentation from implementation sessions into the `docs/learned/` folder—a directory of **agent-generated, agent-consumed documentation**.
 
 This documentation:
 

@@ -1,6 +1,6 @@
 """Sync agent documentation index files.
 
-This command generates index.md files for .erk/docs/agent/ from frontmatter metadata.
+This command generates index.md files for docs/learned/ from frontmatter metadata.
 """
 
 import subprocess
@@ -26,8 +26,8 @@ def sync_command(*, dry_run: bool, check: bool) -> None:
     """Regenerate index files from frontmatter.
 
     Generates index.md files for:
-    - .erk/docs/agent/index.md (root index with categories and uncategorized docs)
-    - .erk/docs/agent/<category>/index.md (for categories with 2+ docs)
+    - docs/learned/index.md (root index with categories and uncategorized docs)
+    - docs/learned/<category>/index.md (for categories with 2+ docs)
 
     Index files are auto-generated and should not be manually edited.
 
@@ -51,9 +51,9 @@ def sync_command(*, dry_run: bool, check: bool) -> None:
         click.echo(click.style("Error: Repository root not found", fg="red"), err=True)
         raise SystemExit(1)
 
-    agent_docs_dir = project_root / ".erk" / "docs" / "agent"
+    agent_docs_dir = project_root / "docs" / "learned"
     if not agent_docs_dir.exists():
-        click.echo(click.style("No .erk/docs/agent/ directory found", fg="cyan"), err=True)
+        click.echo(click.style("No docs/learned/ directory found", fg="cyan"), err=True)
         raise SystemExit(0)
 
     # Sync index files

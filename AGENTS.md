@@ -19,7 +19,7 @@
 
 **CRITICAL: NEVER push code to remote (git push, gt ss, gt submit) unless the user explicitly requests it.**
 
-@.erk/docs/agent/tripwires.md
+@docs/learned/tripwires.md
 
 **Load these skills FIRST:**
 
@@ -80,7 +80,7 @@ devrun is READ-ONLY. It runs commands and reports. Parent agent handles all fixe
 
 For detailed reference, consult the documentation index which maps each document to specific "read when..." conditions:
 
-→ **[.erk/docs/agent/index.md](.erk/docs/agent/index.md)** - Complete document registry (auto-generated, always current)
+→ **[docs/learned/index.md](docs/learned/index.md)** - Complete document registry (auto-generated, always current)
 
 #### Including Documentation in Plans
 
@@ -112,7 +112,7 @@ Core patterns for this codebase:
 - **Use ABC** when you want nominal typing with explicit inheritance. Ideal for implementation contracts like `Git`, `GitHub`, `Graphite` where you want to enforce that classes explicitly declare they implement the interface.
 - **Protocol with `@property`**: When a Protocol needs to accept frozen dataclasses (read-only attributes), use `@property` decorators instead of bare attributes. A read-only consumer accepts both read-only and read-write providers.
 
-**Full guide**: [Architecture](.erk/docs/agent/architecture/)
+**Full guide**: [Architecture](docs/learned/architecture/)
 
 ## Project Naming Conventions
 
@@ -127,7 +127,7 @@ Core patterns for this codebase:
 
 **Worktree Terminology:** Use "root worktree" (not "main worktree") to refer to the primary git worktree created with `git init`. This ensures "main" unambiguously refers to the branch name, since trunk branches can be named either "main" or "master". In code, use the `is_root` field to identify the root worktree.
 
-**CLI Command Organization:** Plan verbs are top-level (create, get, implement), worktree verbs are grouped under `erk wt`, stack verbs under `erk stack`. This follows the "plan is dominant noun" principle for ergonomic access to high-frequency operations. See [CLI Development](.erk/docs/agent/cli/) for complete decision framework.
+**CLI Command Organization:** Plan verbs are top-level (create, get, implement), worktree verbs are grouped under `erk wt`, stack verbs under `erk stack`. This follows the "plan is dominant noun" principle for ergonomic access to high-frequency operations. See [CLI Development](docs/learned/cli/) for complete decision framework.
 
 ## Project Constraints
 
@@ -151,5 +151,5 @@ Core patterns for this codebase:
 
 ## Documentation Hub
 
-- **Full navigation guide**: [.erk/docs/agent/guide.md](.erk/docs/agent/guide.md)
-- **Document index with "read when..." conditions**: [.erk/docs/agent/index.md](.erk/docs/agent/index.md)
+- **Full navigation guide**: [docs/learned/guide.md](docs/learned/guide.md)
+- **Document index with "read when..." conditions**: [docs/learned/index.md](docs/learned/index.md)

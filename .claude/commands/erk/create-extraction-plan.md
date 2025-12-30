@@ -8,19 +8,19 @@ Analyzes session context to identify documentation gaps and creates an extractio
 
 ## Prerequisites
 
-Before running this command, ensure `.erk/docs/agent/` exists and has at least one documentation file:
+Before running this command, ensure `docs/learned/` exists and has at least one documentation file:
 
 ```bash
-# Initialize .erk/docs/agent if it doesn't exist
+# Initialize docs/learned if it doesn't exist
 erk docs init
 
 # Verify it's ready
-ls .erk/docs/agent/*.md
+ls docs/learned/*.md
 ```
 
-If `.erk/docs/agent/` is missing or empty, the command will fail with a suggestion to run `erk docs init` first.
+If `docs/learned/` is missing or empty, the command will fail with a suggestion to run `erk docs init` first.
 
-**Note:** Running `erk init` for a new project automatically initializes `.erk/docs/agent/` with template files (glossary.md, conventions.md, guide.md).
+**Note:** Running `erk init` for a new project automatically initializes `docs/learned/` with template files (glossary.md, conventions.md, guide.md).
 
 ## Usage
 
@@ -189,7 +189,7 @@ Before analyzing gaps, scan the project for existing documentation:
 
 ```bash
 # Check for existing agent docs
-ls -la .erk/docs/agent/ 2>/dev/null || echo "No .erk/docs/agent/ directory"
+ls -la docs/learned/ 2>/dev/null || echo "No docs/learned/ directory"
 
 # Check for existing skills
 ls -la .claude/skills/ 2>/dev/null || echo "No .claude/skills/ directory"

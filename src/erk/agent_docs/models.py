@@ -46,7 +46,7 @@ class AgentDocValidationResult:
     """Result of validating a single agent doc file.
 
     Attributes:
-        file_path: Relative path to the file from .erk/docs/agent/.
+        file_path: Relative path to the file from docs/learned/.
         frontmatter: Parsed frontmatter, or None if parsing failed.
         errors: List of validation errors.
     """
@@ -66,7 +66,7 @@ class DocInfo:
     """Information about a documentation file.
 
     Attributes:
-        rel_path: Relative path from .erk/docs/agent/.
+        rel_path: Relative path from docs/learned/.
         frontmatter: Parsed frontmatter.
     """
 
@@ -113,7 +113,7 @@ class CollectedTripwire:
     Attributes:
         action: The action pattern that triggers.
         warning: Brief explanation of why and what to do instead.
-        doc_path: Relative path from .erk/docs/agent/.
+        doc_path: Relative path from docs/learned/.
         doc_title: Human-readable document title.
     """
 

@@ -14,12 +14,12 @@ from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, create_marker,
 
 
 def _setup_docs_agent(tmp_path: Path) -> None:
-    """Set up a minimal .erk/docs/agent directory for tests.
+    """Set up a minimal docs/learned directory for tests.
 
-    The create-extraction-plan command validates that .erk/docs/agent exists and has
+    The create-extraction-plan command validates that docs/learned exists and has
     at least one .md file before proceeding.
     """
-    agent_docs = tmp_path / ".erk" / "docs" / "agent"
+    agent_docs = tmp_path / "docs" / "learned"
     agent_docs.mkdir(parents=True)
     # Create a minimal doc file to pass validation
     (agent_docs / "glossary.md").write_text(

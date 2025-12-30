@@ -78,4 +78,4 @@ The agent becomes an orchestrator that delegates deterministic work to tested co
 ## Implementation
 
 For detailed implementation patterns, examples, and checklists, see:
-→ [.erk/docs/agent/kits/push-down-pattern.md](../../../.erk/docs/agent/kits/push-down-pattern.md)
+→ [docs/learned/kits/push-down-pattern.md](../../learned/kits/push-down-pattern.md)

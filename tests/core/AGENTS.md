@@ -236,7 +236,7 @@ class TestDeletableWorktree:
     def test_frozen(self) -> None: ...
 ```
 
-**See [.erk/docs/agent/testing.md#test-organization-principles](../../.erk/docs/agent/testing.md#test-organization-principles) for detailed guidance.**
+**See [docs/learned/testing.md#test-organization-principles](../../docs/learned/testing.md#test-organization-principles) for detailed guidance.**
 
 ## See Also
 

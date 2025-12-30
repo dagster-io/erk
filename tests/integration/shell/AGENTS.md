@@ -75,4 +75,4 @@ categorized as integration tests because:
 
 - `tests/commands/shell/AGENTS.md` - Shell command unit test patterns
 - `tests/integration/AGENTS.md` - General integration testing patterns
-- `.erk/docs/agent/testing.md` - Complete testing guide
+- `docs/learned/testing.md` - Complete testing guide

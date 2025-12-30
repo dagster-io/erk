@@ -130,7 +130,7 @@ Behavior changes ALWAYS need tests."""
 
 def tripwires_reminder() -> str:
     """Return tripwires context."""
-    return "🚧 Ensure .erk/docs/agent/tripwires.md is loaded and follow its directives."
+    return "🚧 Ensure docs/learned/tripwires.md is loaded and follow its directives."
 
 
 def main() -> None:

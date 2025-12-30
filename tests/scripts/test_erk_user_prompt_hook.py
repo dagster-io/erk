@@ -205,7 +205,7 @@ class TestTripwiresReminder:
         result = tripwires_reminder()
 
         assert "tripwires.md" in result
-        assert ".erk/docs/agent/tripwires.md" in result
+        assert "docs/learned/tripwires.md" in result
 
 
 class TestMainFunction:

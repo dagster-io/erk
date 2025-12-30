@@ -51,13 +51,13 @@ Use `current_version_tag` as the starting point. If no tag exists either, this i
 Get commits between the marker and HEAD on master:
 
 ```bash
-git log --oneline --first-parent <marker_commit>..HEAD -- . ':!.claude' ':!.erk/docs/agent' ':!.impl'
+git log --oneline --first-parent <marker_commit>..HEAD -- . ':!.claude' ':!docs/learned' ':!.impl'
 ```
 
 If using a tag instead of "As of" marker:
 
 ```bash
-git log --oneline --first-parent <current_version_tag>..HEAD -- . ':!.claude' ':!.erk/docs/agent' ':!.impl'
+git log --oneline --first-parent <current_version_tag>..HEAD -- . ':!.claude' ':!docs/learned' ':!.impl'
 ```
 
 If no new commits exist, report "CHANGELOG.md is already up-to-date" and exit.
