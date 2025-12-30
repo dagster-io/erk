@@ -1,0 +1,67 @@
+"""CLI preamble check for artifact staleness."""
+
+import sys
+from pathlib import Path
+
+import click
+
+from erk.artifacts.staleness import check_staleness, is_dev_mode
+
+
+def check_and_prompt_artifact_sync(project_dir: Path, no_sync: bool = False) -> None:
+    """Check for stale artifacts and prompt to sync.
+
+    Called from CLI callback before command execution.
+
+    Args:
+        project_dir: Project root directory
+        no_sync: If True, skip the staleness check entirely
+    """
+    if no_sync:
+        return
+
+    # Skip in dev mode - artifacts read from source
+    if is_dev_mode(project_dir):
+        return
+
+    result = check_staleness(project_dir)
+
+    if not result.is_stale:
+        return
+
+    # Handle "not initialized" case
+    if result.reason == "not initialized":
+        click.echo(
+            click.style("Error: ", fg="red") + "erk not initialized. Run 'erk init' first.",
+            err=True,
+        )
+        raise SystemExit(1)
+
+    # Handle "version mismatch" case
+    if not sys.stdin.isatty():
+        # Non-TTY: fail with instructions
+        click.echo(
+            click.style("Error: ", fg="red")
+            + f"Artifacts out of sync (installed: {result.installed_version}, "
+            f"current: {result.current_version}).\n"
+            "Run 'erk artifacts sync' or use --no-sync to skip.",
+            err=True,
+        )
+        raise SystemExit(1)
+
+    # TTY: prompt user
+    click.echo(
+        click.style("⚠️  Artifacts out of sync", fg="yellow")
+        + f" (installed: {result.installed_version}, current: {result.current_version})"
+    )
+
+    if click.confirm("Sync now?", default=True):
+        # Inline import to avoid circular dependency
+        from erk.artifacts.sync import sync_artifacts
+
+        sync_result = sync_artifacts(project_dir)
+        click.echo(
+            click.style("✓ ", fg="green")
+            + f"Synced {sync_result.artifacts_installed} artifacts, "
+            f"{sync_result.hooks_installed} hooks"
+        )
