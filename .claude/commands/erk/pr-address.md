@@ -219,17 +219,20 @@ erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:
 The `--reply` argument should include meaningful findings, not just generic acknowledgments:
 
 ❌ **Bad (too generic):**
+
 ```bash
 --reply "**Action taken:** Noted for future consideration."
 --reply "**Action taken:** Added to backlog."
 ```
 
 ✅ **Good (includes investigation findings):**
+
 ```bash
 --reply "**Action taken:** Investigated the gateway pattern suggestion. The current artifact sync implementation uses direct function calls rather than a gateway ABC pattern. This is intentional - artifact operations are file-based and don't require the testability benefits of gateway injection that external APIs need. Filed as backlog consideration for if we add remote artifact fetching."
 ```
 
 ✅ **Good (explains why no code change):**
+
 ```bash
 --reply "**Action taken:** Reviewed the suggestion to add caching here. After checking the call sites, this function is only called once per CLI invocation (in main.py:45), so caching wouldn't provide measurable benefit. The perceived slowness is actually from the subprocess call inside, not repeated invocations."
 ```
