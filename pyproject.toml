@@ -55,6 +55,7 @@ packages = ["src/erk"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "CHANGELOG.md" = "erk/data/CHANGELOG.md"
+"src/erk/data/artifacts" = "erk/data/artifacts"
 
 [tool.ruff]
 target-version = "py311"

@@ -7,6 +7,7 @@ import click
 
 from erk.cli.alias import register_with_aliases
 from erk.cli.commands.admin import admin_group
+from erk.cli.commands.artifact.group import artifact_group
 from erk.cli.commands.branch import branch_group
 from erk.cli.commands.cc import cc_group
 from erk.cli.commands.completion import completion_group
@@ -164,6 +165,7 @@ def cli(ctx: click.Context, debug: bool) -> None:
 # Register all commands
 # Commands with @alias decorators use register_with_aliases() to auto-register aliases
 cli.add_command(admin_group)
+cli.add_command(artifact_group)
 register_with_aliases(cli, branch_group)  # Has @alias("br")
 cli.add_command(cc_group)
 cli.add_command(completion_group)
