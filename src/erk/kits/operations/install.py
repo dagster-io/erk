@@ -8,9 +8,8 @@ from erk.kits.hooks.installer import install_hooks
 from erk.kits.io.manifest import load_kit_manifest
 from erk.kits.models.artifact import ARTIFACT_TARGET_DIRS, ArtifactType
 from erk.kits.models.config import InstalledKit
+from erk.kits.models.resolved import ArtifactConflictError, ResolvedKit
 from erk.kits.operations.artifact_operations import create_artifact_operations
-from erk.kits.sources.exceptions import ArtifactConflictError
-from erk.kits.sources.resolver import ResolvedKit
 
 
 def install_kit(

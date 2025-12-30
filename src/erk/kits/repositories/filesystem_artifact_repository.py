@@ -14,10 +14,11 @@ from erk.kits.models.artifact import (
     ArtifactType,
     InstalledArtifact,
 )
+from erk.kits.io.bundled import get_bundled_kit_path
+from erk.kits.io.manifest import load_kit_manifest
 from erk.kits.models.bundled_kit import BundledKitInfo
 from erk.kits.models.config import InstalledKit, ProjectConfig
 from erk.kits.repositories.artifact_repository import ArtifactRepository
-from erk.kits.sources.bundled import BundledKitSource
 
 
 class FilesystemArtifactRepository(ArtifactRepository):
@@ -589,24 +590,23 @@ class FilesystemArtifactRepository(ArtifactRepository):
             Dict mapping kit_id to BundledKitInfo with available docs
         """
         bundled_kits: dict[str, BundledKitInfo] = {}
-        bundled_source = BundledKitSource()
 
         # Only process kits that are in the project config
         for kit_id, installed_kit in project_config.kits.items():
             # Skip if not a bundled kit
-            if not bundled_source.can_resolve(kit_id):
+            kit_path = get_bundled_kit_path(kit_id)
+            if kit_path is None:
                 continue
 
-            # Resolve kit to get manifest path
-            resolved_kit = bundled_source.resolve(kit_id)
-            manifest_path = resolved_kit.manifest_path
-
+            manifest_path = kit_path / "kit.yaml"
             if not manifest_path.exists():
                 continue
 
+            # Load manifest to verify kit
+            manifest = load_kit_manifest(manifest_path)
+
             # Scan for available docs in kit's docs directory
-            kit_base = manifest_path.parent
-            docs_dir = kit_base / "docs"
+            docs_dir = kit_path / "docs"
             available_docs: list[str] = []
 
             if docs_dir.exists():
@@ -617,7 +617,7 @@ class FilesystemArtifactRepository(ArtifactRepository):
             # All kits in project config are project-level
             bundled_kits[kit_id] = BundledKitInfo(
                 kit_id=kit_id,
-                version=installed_kit.version,
+                version=manifest.version,
                 available_docs=available_docs,
                 level="project",
             )
