@@ -30,6 +30,10 @@ from erk.kits.io.state import (
 from erk.kits.io.state import (
     save_project_config as save_kit_config,
 )
+from erk.artifacts.models import ArtifactState
+from erk.artifacts.staleness import get_current_version, is_dev_mode
+from erk.artifacts.state import save_artifact_state
+from erk.artifacts.sync import sync_artifacts
 from erk.kits.operations.agent_docs import init_docs_agent
 from erk_shared.output.output import user_output
 
@@ -355,14 +359,9 @@ def init_cmd(
         user_output(f"Created {kits_toml_path}")
 
     # Install artifacts (unless in dev mode or --no-artifact-sync)
-    # Inline imports to avoid import-time side effects
-    from erk.artifacts.staleness import get_current_version, is_dev_mode
-
     if no_artifact_sync:
         user_output("Skipping artifact sync (--no-artifact-sync)")
     elif not is_dev_mode(repo_context.root):
-        from erk.artifacts.sync import sync_artifacts
-
         user_output("Installing erk artifacts...")
         sync_result = sync_artifacts(repo_context.root)
         user_output(
@@ -372,9 +371,6 @@ def init_cmd(
     else:
         user_output("Dev mode detected - using source artifacts directly")
         # Still create state file with current version
-        from erk.artifacts.models import ArtifactState
-        from erk.artifacts.state import save_artifact_state
-
         save_artifact_state(repo_context.root, ArtifactState(version=get_current_version()))
 
     # Initialize .erk/docs/agent/ templates
