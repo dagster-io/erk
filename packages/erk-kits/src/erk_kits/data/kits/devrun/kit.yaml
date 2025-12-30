@@ -1,9 +1,0 @@
-name: devrun
-version: 0.2.8
-description:
-  Consolidated development tool runner agent with integrated tool documentation
-  for pytest, pyright, ruff, prettier, make, and gt
-license: See LICENSE.md
-artifacts:
-  agent:
-    - agents/devrun/devrun.md

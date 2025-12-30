@@ -134,8 +134,8 @@ def test_load_registry() -> None:
     registry = load_registry()
 
     assert isinstance(registry, list)
-    assert len(registry) >= 1  # Should have at least devrun
-    assert any(entry.kit_id == "devrun" for entry in registry)
+    assert len(registry) >= 1  # Should have at least dignified-python
+    assert any(entry.kit_id == "dignified-python" for entry in registry)
 
 
 def test_load_project_config_valid_bundled_kit(tmp_project: Path) -> None:

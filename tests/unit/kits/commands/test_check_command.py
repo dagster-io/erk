@@ -620,57 +620,6 @@ def test_validate_kit_fields_multiple_errors() -> None:
     assert any("artifacts list is empty" in e for e in errors)
 
 
-def test_check_command_bundled_kit_sync_in_sync(tmp_path: Path) -> None:
-    """Test check command with bundled kit when artifacts are in sync."""
-    runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path):
-        project_dir = Path.cwd()
-
-        # Create .claude directory
-        claude_dir = project_dir / ".claude"
-        claude_dir.mkdir()
-
-        # Create config with bundled kit
-        # Note: We use "bundled:devrun" which is a real bundled kit in the package
-        # The devrun kit now only has the agent artifact (tool docs are inlined)
-        config = ProjectConfig(
-            version="1",
-            kits={
-                "devrun": InstalledKit(
-                    kit_id="devrun",
-                    version="0.1.0",
-                    source_type="bundled",
-                    artifacts=[
-                        ".claude/agents/devrun/devrun.md",
-                    ],
-                ),
-            },
-        )
-        save_project_config(project_dir, config)
-
-        # Create local artifacts that match bundled version
-        # Read bundled artifact content
-        from erk.kits.sources.bundled import BundledKitSource
-
-        bundled_source = BundledKitSource()
-        bundled_path = bundled_source._get_bundled_kit_path("devrun")
-        if bundled_path is not None:
-            # Create agent artifacts (go to .claude/)
-            for artifact_rel in ["agents/devrun/devrun.md"]:
-                bundled_artifact = bundled_path / artifact_rel
-                if bundled_artifact.exists():
-                    bundled_content = bundled_artifact.read_text(encoding="utf-8")
-                    local_artifact = claude_dir / artifact_rel
-                    local_artifact.parent.mkdir(parents=True, exist_ok=True)
-                    local_artifact.write_text(bundled_content, encoding="utf-8")
-
-            result = runner.invoke(check)
-
-            assert result.exit_code == 0
-            assert "All checks passed" in result.output
-            assert "Warning: Could not find bundled kit" not in result.output
-
-
 def test_check_command_detects_missing_artifacts(tmp_path: Path) -> None:
     """Test check detects artifacts in manifest but not installed."""
     runner = CliRunner()

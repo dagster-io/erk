@@ -1,9 +1,5 @@
 version: "1"
 kits:
-  - kit_id: devrun
-    source_type: bundled
-    description: Consolidated development tool runner agent with integrated tool documentation for pytest, pyright, ruff, prettier, make, and gt
-    version: "0.1.0"
   - kit_id: erk
     source_type: bundled
     description: Erk implementation workflow commands for creating worktrees from plans and executing implementation

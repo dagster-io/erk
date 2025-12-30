@@ -4,8 +4,6 @@ description: Execute development CLI tools (pytest, pyright, ruff, prettier, mak
 model: haiku
 color: green
 tools: Read, Bash, Grep, Glob, Task
-erk:
-  kit: devrun
 ---
 
 # Development CLI Tool Runner

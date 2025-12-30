@@ -55,11 +55,3 @@ invocation = "erk kit exec erk tripwires-reminder-hook"
 description = "Reminds Claude to check tripwires before common operations"
 timeout = 30
 
-[kits.devrun]
-kit_id = "devrun"
-source_type = "bundled"
-version = "0.2.8"
-artifacts = [
-    ".claude/agents/devrun/devrun.md",
-]
-
