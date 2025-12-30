@@ -329,6 +329,37 @@ def process_user(user: "User") -> None:
 - Avoiding circular dependencies in type hints
 - Forward declarations
 
+#### 4. Startup Time Optimization (Rare)
+
+Some packages have genuinely heavy import costs (pyspark, jupyter ecosystem, large ML frameworks). Deferring these imports can improve CLI startup time.
+
+**However, apply "innocent until proven guilty":**
+
+- Default to module-level imports
+- Only defer imports when you have MEASURED evidence of startup impact
+- Document the measured cost in a comment
+
+```python
+# ✅ ACCEPTABLE: Measured heavy import (adds 800ms to startup)
+def run_spark_job(config: SparkConfig) -> None:
+    from pyspark.sql import SparkSession  # Heavy: 800ms import time
+    session = SparkSession.builder.getOrCreate()
+    ...
+
+# ❌ WRONG: Speculative deferral without measurement
+def check_staleness(project_dir: Path) -> None:
+    # Inline imports to avoid import-time side effects  <- WRONG: no evidence
+    from myapp.staleness import get_version
+    ...
+```
+
+**When NOT to defer:**
+
+- Standard library modules
+- Lightweight internal modules
+- Modules you haven't measured
+- "Just in case" optimization
+
 ### Absolute vs Relative Imports
 
 ```python
@@ -876,6 +907,9 @@ Benefits:
 - [ ] Is this to break a circular dependency?
 - [ ] Is this for TYPE_CHECKING?
 - [ ] Is this for conditional features?
+- [ ] If for startup time: Have I MEASURED the import cost?
+- [ ] If for startup time: Is the cost significant (>100ms)?
+- [ ] If for startup time: Have I documented the measured cost in a comment?
 - [ ] Have I documented why the inline import is needed?
 
 **Default: Module-level imports**
