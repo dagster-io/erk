@@ -1464,3 +1464,74 @@ def test_init_main_flow_offers_hooks_after_permission() -> None:
         # Verify hooks were added
         updated_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
         assert "hooks" in updated_settings
+
+
+def test_init_syncs_artifacts_successfully() -> None:
+    """Test that init calls sync_artifacts and shows success message."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        # Mock sync_artifacts to return success
+        from erk.artifacts.sync import SyncResult
+
+        with mock.patch("erk.cli.commands.init.sync_artifacts") as mock_sync:
+            mock_sync.return_value = SyncResult(
+                success=True, artifacts_installed=5, message="Synced 5 artifact files"
+            )
+
+            result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
+
+            assert result.exit_code == 0, result.output
+            # Verify sync_artifacts was called with correct arguments
+            mock_sync.assert_called_once_with(env.cwd, force=False)
+            # Verify success message appears in output
+            assert "✓" in result.output
+            assert "Synced 5 artifact files" in result.output
+
+
+def test_init_shows_warning_on_artifact_sync_failure() -> None:
+    """Test that init shows warning but continues when artifact sync fails."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        # Mock sync_artifacts to return failure
+        from erk.artifacts.sync import SyncResult
+
+        with mock.patch("erk.cli.commands.init.sync_artifacts") as mock_sync:
+            mock_sync.return_value = SyncResult(
+                success=False, artifacts_installed=0, message="Bundled .claude/ not found"
+            )
+
+            result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
+
+            # Init should continue despite sync failure (non-fatal)
+            assert result.exit_code == 0, result.output
+            # Verify sync_artifacts was called
+            mock_sync.assert_called_once_with(env.cwd, force=False)
+            # Verify warning appears in output
+            assert "⚠" in result.output
+            assert "Artifact sync failed" in result.output
+            assert "Bundled .claude/ not found" in result.output
+            assert "Run 'erk artifact sync' to retry" in result.output
