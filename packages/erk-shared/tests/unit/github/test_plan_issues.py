@@ -150,11 +150,11 @@ class TestCreatePlanIssueSuccess:
         _, body, _ = fake_gh.created_issues[0]
         assert "source_repo:" in body
         assert "owner/impl-repo" in body
-        # Verify schema version is 3 for cross-repo plans (YAML format)
-        assert "schema_version: '3'" in body
+        # Schema version remains 2 (source_repo is just an optional field)
+        assert "schema_version: '2'" in body
 
     def test_omits_source_repo_for_same_repo_plans(self, tmp_path: Path) -> None:
-        """Omit source_repo for same-repo plans (schema v2)."""
+        """Omit source_repo for same-repo plans."""
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# Same-Repo Plan\n\nContent..."
 
@@ -169,7 +169,7 @@ class TestCreatePlanIssueSuccess:
         _, body, _ = fake_gh.created_issues[0]
         # source_repo should not appear in the body
         assert "source_repo:" not in body
-        # Schema version should be 2 (YAML format)
+        # Schema version is always 2
         assert "schema_version: '2'" in body
 
 
