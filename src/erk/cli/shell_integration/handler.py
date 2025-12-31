@@ -5,11 +5,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
 
+import click
+
 from erk.cli.commands.prepare_cwd_recovery import generate_recovery_script
 from erk.cli.shell_utils import (
     STALE_SCRIPT_MAX_AGE_SECONDS,
     cleanup_stale_scripts,
 )
+from erk.cli.uvx_detection import get_uvx_warning_message, is_running_via_uvx
 from erk.core.context import create_context
 from erk_shared.debug import debug_log
 from erk_shared.output.output import user_output
@@ -152,6 +155,11 @@ def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellInt
         if command_name in PASSTHROUGH_COMMANDS:
             return _build_passthrough_script(command_name, args)
         return ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
+
+    # Check for uvx invocation and warn
+    if is_running_via_uvx():
+        user_output(click.style("Warning: ", fg="yellow") + get_uvx_warning_message())
+        user_output("")  # Blank line for readability
 
     # Clean up stale scripts before running (opportunistic cleanup)
     cleanup_stale_scripts(max_age_seconds=STALE_SCRIPT_MAX_AGE_SECONDS)
