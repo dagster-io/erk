@@ -10,6 +10,10 @@ from pathlib import Path
 # The permission pattern that allows Claude to run erk commands without prompting
 ERK_PERMISSION = "Bash(erk:*)"
 
+# Hook commands for erk integration
+ERK_USER_PROMPT_HOOK_COMMAND = "uv run scripts/erk-user-prompt-hook.py"
+ERK_EXIT_PLAN_HOOK_COMMAND = "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
+
 
 def get_repo_claude_settings_path(repo_root: Path) -> Path:
     """Return the path to the repo's Claude settings file.
@@ -35,6 +39,99 @@ def has_erk_permission(settings: dict) -> bool:
     permissions = settings.get("permissions", {})
     allow_list = permissions.get("allow", [])
     return ERK_PERMISSION in allow_list
+
+
+def has_erk_hooks(settings: dict) -> tuple[bool, bool]:
+    """Check if erk hooks are configured in Claude settings.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+
+    Returns:
+        Tuple of (has_user_prompt_hook, has_pre_tool_use_hook)
+    """
+    hooks = settings.get("hooks", {})
+
+    # Check UserPromptSubmit for exact command match
+    has_user_prompt = False
+    user_prompt_hooks = hooks.get("UserPromptSubmit", [])
+    for entry in user_prompt_hooks:
+        for hook in entry.get("hooks", []):
+            if hook.get("command") == ERK_USER_PROMPT_HOOK_COMMAND:
+                has_user_prompt = True
+                break
+        if has_user_prompt:
+            break
+
+    # Check PreToolUse for exact command match with ExitPlanMode matcher
+    has_pre_tool = False
+    pre_tool_hooks = hooks.get("PreToolUse", [])
+    for entry in pre_tool_hooks:
+        if entry.get("matcher") == "ExitPlanMode":
+            for hook in entry.get("hooks", []):
+                if hook.get("command") == ERK_EXIT_PLAN_HOOK_COMMAND:
+                    has_pre_tool = True
+                    break
+        if has_pre_tool:
+            break
+
+    return (has_user_prompt, has_pre_tool)
+
+
+def add_erk_hooks(settings: dict) -> dict:
+    """Return a new settings dict with erk hooks added.
+
+    This is a pure function that doesn't modify the input.
+    Adds missing hooks while preserving existing settings.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+
+    Returns:
+        New settings dict with erk hooks added
+    """
+    # Deep copy to avoid mutating input
+    new_settings = json.loads(json.dumps(settings))
+
+    # Ensure hooks structure exists
+    if "hooks" not in new_settings:
+        new_settings["hooks"] = {}
+
+    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
+
+    # Add UserPromptSubmit hook if missing
+    if not has_user_prompt:
+        if "UserPromptSubmit" not in new_settings["hooks"]:
+            new_settings["hooks"]["UserPromptSubmit"] = []
+        new_settings["hooks"]["UserPromptSubmit"].append(
+            {
+                "matcher": "",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": ERK_USER_PROMPT_HOOK_COMMAND,
+                    }
+                ],
+            }
+        )
+
+    # Add PreToolUse hook for ExitPlanMode if missing
+    if not has_pre_tool:
+        if "PreToolUse" not in new_settings["hooks"]:
+            new_settings["hooks"]["PreToolUse"] = []
+        new_settings["hooks"]["PreToolUse"].append(
+            {
+                "matcher": "ExitPlanMode",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": ERK_EXIT_PLAN_HOOK_COMMAND,
+                    }
+                ],
+            }
+        )
+
+    return new_settings
 
 
 def add_erk_permission(settings: dict) -> dict:

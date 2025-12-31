@@ -51,6 +51,7 @@ def test_init_creates_global_config_first_time() -> None:
             global_config=None,
         )
 
+        # Input: erk_root, decline hooks (shell not detected so no prompt)
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
 
@@ -162,7 +163,7 @@ def test_init_auto_preset_detects_dagster() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Config should be created in .erk/ directory (consolidated location)
@@ -191,7 +192,7 @@ def test_init_auto_preset_uses_generic_fallback() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Config should be created in .erk/ directory (consolidated location)
@@ -216,7 +217,9 @@ def test_init_explicit_preset_dagster() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "--preset", "dagster"], obj=test_ctx)
+        result = runner.invoke(
+            cli, ["init", "--preset", "dagster", "--no-interactive"], obj=test_ctx
+        )
 
         assert result.exit_code == 0, result.output
         # Config should be created in .erk/ directory (consolidated location)
@@ -241,7 +244,9 @@ def test_init_explicit_preset_generic() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "--preset", "generic"], obj=test_ctx)
+        result = runner.invoke(
+            cli, ["init", "--preset", "generic", "--no-interactive"], obj=test_ctx
+        )
 
         assert result.exit_code == 0, result.output
         # Config should be created in .erk/ directory (consolidated location)
@@ -314,7 +319,7 @@ def test_init_creates_config_at_erk_dir() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Config should be in .erk/ directory (consolidated location)
@@ -350,7 +355,7 @@ def test_init_force_overwrites_existing_config() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init", "--force"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "--force", "--no-interactive"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         assert config_path.exists()
@@ -414,9 +419,8 @@ def test_init_adds_env_to_gitignore() -> None:
             global_config=global_config,
         )
 
-        # Accept prompt for .env, decline .erk/scratch/ and .impl/
-
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\n")
+        # Accept prompt for .env, decline .erk/scratch/, .impl/, and hooks
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -448,8 +452,8 @@ def test_init_skips_gitignore_entries_if_declined() -> None:
             global_config=global_config,
         )
 
-        # Decline all three prompts (.env, .erk/scratch/, .impl/)
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\n")
+        # Decline all three prompts (.env, .erk/scratch/, .impl/) and hooks
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -483,8 +487,8 @@ def test_init_adds_erk_scratch_and_impl_to_gitignore() -> None:
             global_config=global_config,
         )
 
-        # Decline .env, accept .erk/scratch/ and .impl/
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\ny\ny\n")
+        # Decline .env, accept .erk/scratch/ and .impl/, decline hooks
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\ny\ny\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -516,7 +520,7 @@ def test_init_handles_missing_gitignore() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Should not crash or prompt about gitignore
@@ -548,8 +552,8 @@ def test_init_preserves_gitignore_formatting() -> None:
             global_config=global_config,
         )
 
-        # Accept .env, decline .erk/scratch/ and .impl/
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\n")
+        # Accept .env, decline .erk/scratch/, .impl/, and hooks
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -581,9 +585,9 @@ def test_init_first_time_offers_shell_setup() -> None:
             dry_run=False,
         )
 
-        # Provide input: erk_root, decline shell setup
+        # Provide input: erk_root, decline hooks, decline shell setup
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         # Should mention shell integration
@@ -644,12 +648,13 @@ def test_init_detects_bash_shell() -> None:
             dry_run=False,
         )
 
+        # Input: erk_root, decline hooks, decline shell
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             result = runner.invoke(
                 cli,
                 ["init"],
                 obj=test_ctx,
-                input=f"{erk_root}\nn\n",
+                input=f"{erk_root}\nn\nn\n",
             )
 
         assert result.exit_code == 0, result.output
@@ -677,12 +682,13 @@ def test_init_detects_zsh_shell() -> None:
             dry_run=False,
         )
 
+        # Input: erk_root, decline hooks, decline shell
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             result = runner.invoke(
                 cli,
                 ["init"],
                 obj=test_ctx,
-                input=f"{erk_root}\nn\n",
+                input=f"{erk_root}\nn\nn\n",
             )
 
         assert result.exit_code == 0, result.output
@@ -710,12 +716,13 @@ def test_init_detects_fish_shell() -> None:
             dry_run=False,
         )
 
+        # Input: erk_root, decline hooks, decline shell
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             result = runner.invoke(
                 cli,
                 ["init"],
                 obj=test_ctx,
-                input=f"{erk_root}\nn\n",
+                input=f"{erk_root}\nn\nn\n",
             )
 
         assert result.exit_code == 0, result.output
@@ -738,8 +745,9 @@ def test_init_skips_unknown_shell() -> None:
             global_config=None,
         )
 
+        # Input: erk_root, decline hooks (no shell prompt - unknown shell)
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Unable to detect shell" in result.output
@@ -766,13 +774,13 @@ def test_init_prints_completion_instructions() -> None:
             dry_run=False,
         )
 
-        # Accept shell setup to see instructions
+        # Input: erk_root, decline hooks, accept shell, accept config save
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             result = runner.invoke(
                 cli,
                 ["init"],
                 obj=test_ctx,
-                input=f"{erk_root}\ny\ny\n",
+                input=f"{erk_root}\nn\ny\ny\n",
             )
 
         assert result.exit_code == 0, result.output
@@ -803,13 +811,13 @@ def test_init_prints_wrapper_instructions() -> None:
             dry_run=False,
         )
 
-        # Accept shell setup to see instructions
+        # Input: erk_root, decline hooks, accept shell, accept config save
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             result = runner.invoke(
                 cli,
                 ["init"],
                 obj=test_ctx,
-                input=f"{erk_root}\ny\ny\n",
+                input=f"{erk_root}\nn\ny\ny\n",
             )
 
         assert result.exit_code == 0, result.output
@@ -840,13 +848,13 @@ def test_init_skips_shell_if_declined() -> None:
             dry_run=False,
         )
 
-        # Decline shell setup
+        # Input: erk_root, decline hooks, decline shell
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             result = runner.invoke(
                 cli,
                 ["init"],
                 obj=test_ctx,
-                input=f"{erk_root}\nn\n",
+                input=f"{erk_root}\nn\nn\n",
             )
 
         assert result.exit_code == 0, result.output
@@ -963,10 +971,9 @@ def test_shell_setup_confirmation_declined_first_init() -> None:
             shell=FakeShell(detected_shell=("bash", bashrc)),
         )
 
-        # Provide erk_root, decline shell setup instructions, answer confirmation
+        # Input: erk_root, decline hooks, accept shell, decline config save
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            # Input: erk_root path, "y" for shell setup, "n" for config confirmation
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\ny\nn\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\ny\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Shell integration instructions were displayed above" in result.output
@@ -1054,9 +1061,9 @@ def test_shell_setup_permission_error_first_init() -> None:
             shell=FakeShell(detected_shell=("bash", bashrc)),
         )
 
-        # Input: erk_root path, "y" for shell setup, "y" for config confirmation
+        # Input: erk_root, decline hooks, accept shell, accept config save
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\ny\ny\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\ny\ny\n")
 
         # Should NOT exit with error code (first-time init continues)
         assert result.exit_code == 0, result.output
@@ -1092,8 +1099,8 @@ def test_init_offers_claude_permission_when_missing() -> None:
             global_config=global_config,
         )
 
-        # Accept permission addition (two prompts: 1) add permission, 2) confirm write)
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\ny\n")
+        # Accept permission (y), confirm write (y), decline hooks (n)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\ny\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Claude settings found" in result.output
@@ -1129,8 +1136,7 @@ def test_init_skips_claude_permission_when_already_configured() -> None:
             global_config=global_config,
         )
 
-        # No input needed - should skip silently
-        result = runner.invoke(cli, ["init"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Should NOT prompt about Claude permission
@@ -1156,7 +1162,7 @@ def test_init_skips_claude_permission_when_no_settings() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         # Should NOT prompt about Claude permission
@@ -1186,8 +1192,8 @@ def test_init_handles_declined_claude_permission() -> None:
             global_config=global_config,
         )
 
-        # Decline permission addition
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\n")
+        # Decline permission (n), decline hooks (n)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Skipped" in result.output
@@ -1219,8 +1225,8 @@ def test_init_handles_declined_write_confirmation() -> None:
             global_config=global_config,
         )
 
-        # Accept permission prompt (y) but decline write confirmation (n)
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\n")
+        # Accept permission (y), decline write (n), decline hooks (n)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Proceed with writing changes?" in result.output
@@ -1228,3 +1234,231 @@ def test_init_handles_declined_write_confirmation() -> None:
         # Verify permission was NOT added
         unchanged_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
         assert "Bash(erk:*)" not in unchanged_settings["permissions"]["allow"]
+
+
+# --- Tests for --hooks flag ---
+
+
+def test_init_hooks_flag_adds_hooks_to_empty_settings() -> None:
+    """Test that --hooks flag adds erk hooks to settings.json."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        # Create empty Claude settings
+        claude_settings_path = env.cwd / ".claude" / "settings.json"
+        claude_settings_path.parent.mkdir(parents=True)
+        claude_settings_path.write_text("{}", encoding="utf-8")
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        # Accept hook addition
+        result = runner.invoke(cli, ["init", "--hooks"], obj=test_ctx, input="y\n")
+
+        assert result.exit_code == 0, result.output
+        assert "Erk uses Claude Code hooks" in result.output
+        assert "Added erk hooks" in result.output
+
+        # Verify hooks were added
+        updated_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
+        assert "hooks" in updated_settings
+        assert "UserPromptSubmit" in updated_settings["hooks"]
+        assert "PreToolUse" in updated_settings["hooks"]
+
+
+def test_init_hooks_flag_skips_when_already_configured() -> None:
+    """Test that --hooks flag skips when hooks already exist."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        # Create Claude settings WITH erk hooks already present
+        claude_settings_path = env.cwd / ".claude" / "settings.json"
+        claude_settings_path.parent.mkdir(parents=True)
+        existing_settings = {
+            "hooks": {
+                "UserPromptSubmit": [
+                    {
+                        "matcher": "",
+                        "hooks": [
+                            {
+                                "type": "command",
+                                "command": "uv run scripts/erk-user-prompt-hook.py",
+                            }
+                        ],
+                    }
+                ],
+                "PreToolUse": [
+                    {
+                        "matcher": "ExitPlanMode",
+                        "hooks": [
+                            {
+                                "type": "command",
+                                "command": (
+                                    "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
+                                ),
+                            }
+                        ],
+                    }
+                ],
+            }
+        }
+        claude_settings_path.write_text(json.dumps(existing_settings), encoding="utf-8")
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        # No input needed - should skip silently
+        result = runner.invoke(cli, ["init", "--hooks"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "Hooks already configured" in result.output
+
+
+def test_init_hooks_flag_handles_declined() -> None:
+    """Test that --hooks flag handles user declining gracefully."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        # Create empty Claude settings
+        claude_settings_path = env.cwd / ".claude" / "settings.json"
+        claude_settings_path.parent.mkdir(parents=True)
+        claude_settings_path.write_text("{}", encoding="utf-8")
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        # Decline hook addition
+        result = runner.invoke(cli, ["init", "--hooks"], obj=test_ctx, input="n\n")
+
+        assert result.exit_code == 0, result.output
+        assert "Skipped" in result.output
+        assert "erk init --hooks" in result.output
+
+        # Verify hooks were NOT added
+        unchanged_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
+        assert "hooks" not in unchanged_settings
+
+
+def test_init_hooks_flag_creates_settings_if_missing() -> None:
+    """Test that --hooks flag creates settings.json if it doesn't exist."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        # No .claude/settings.json file
+        claude_settings_path = env.cwd / ".claude" / "settings.json"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        # Accept hook addition
+        result = runner.invoke(cli, ["init", "--hooks"], obj=test_ctx, input="y\n")
+
+        assert result.exit_code == 0, result.output
+        assert "Added erk hooks" in result.output
+
+        # Verify file was created with hooks
+        assert claude_settings_path.exists()
+        created_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
+        assert "hooks" in created_settings
+
+
+def test_init_hooks_flag_only_does_hook_setup() -> None:
+    """Test that --hooks flag skips all other init steps."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        # Accept hook addition
+        result = runner.invoke(cli, ["init", "--hooks"], obj=test_ctx, input="y\n")
+
+        assert result.exit_code == 0, result.output
+
+        # Verify no config.toml was created (other init steps skipped)
+        config_path = env.cwd / ".erk" / "config.toml"
+        assert not config_path.exists()
+
+
+def test_init_main_flow_offers_hooks_after_permission() -> None:
+    """Test that main init flow offers hook setup after permission setup."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        # Create Claude settings without erk permission or hooks
+        claude_settings_path = env.cwd / ".claude" / "settings.json"
+        claude_settings_path.parent.mkdir(parents=True)
+        claude_settings_path.write_text(
+            json.dumps({"permissions": {"allow": []}}),
+            encoding="utf-8",
+        )
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        # Decline permission (n), accept hooks (y)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\ny\n")
+
+        assert result.exit_code == 0, result.output
+        # Both prompts should appear
+        assert "Bash(erk:*)" in result.output  # Permission prompt
+        assert "Erk uses Claude Code hooks" in result.output  # Hooks prompt
+        assert "Added erk hooks" in result.output
+
+        # Verify hooks were added
+        updated_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
+        assert "hooks" in updated_settings

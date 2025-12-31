@@ -7,8 +7,10 @@ import click
 from erk.cli.core import discover_repo_context
 from erk.core.claude_settings import (
     ERK_PERMISSION,
+    add_erk_hooks,
     add_erk_permission,
     get_repo_claude_settings_path,
+    has_erk_hooks,
     has_erk_permission,
     read_claude_settings,
     write_claude_settings,
@@ -193,6 +195,47 @@ def offer_claude_permission_setup(repo_root: Path) -> None:
     user_output(click.style("✓", fg="green") + f" Added {ERK_PERMISSION} to {settings_path}")
 
 
+def offer_claude_hook_setup(repo_root: Path) -> None:
+    """Offer to add erk hooks to repo's Claude Code settings.
+
+    This checks if the repo's .claude/settings.json exists and whether the erk
+    hooks are already configured. If the file exists but hooks are missing,
+    it prompts the user to add them.
+
+    Args:
+        repo_root: Path to the repository root
+    """
+    settings_path = get_repo_claude_settings_path(repo_root)
+
+    try:
+        settings = read_claude_settings(settings_path)
+    except json.JSONDecodeError as e:
+        warning = click.style("⚠️  Warning: ", fg="yellow")
+        user_output(warning + "Invalid JSON in .claude/settings.json")
+        user_output(f"   {e}")
+        return
+
+    # No settings file - create one with hooks
+    if settings is None:
+        settings = {}
+
+    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
+    if has_user_prompt and has_pre_tool:
+        user_output(click.style("✓", fg="green") + " Hooks already configured")
+        return
+
+    # Explain what hooks do
+    user_output("\nErk uses Claude Code hooks for session management and plan tracking.")
+
+    if not click.confirm("Add erk hooks to .claude/settings.json?", default=True):
+        user_output("Skipped. You can add hooks later with: erk init --hooks")
+        return
+
+    new_settings = add_erk_hooks(settings)
+    write_claude_settings(settings_path, new_settings)
+    user_output(click.style("✓", fg="green") + " Added erk hooks")
+
+
 @click.command("init")
 @click.option("--force", is_flag=True, help="Overwrite existing repo config if present.")
 @click.option(
@@ -214,6 +257,18 @@ def offer_claude_permission_setup(repo_root: Path) -> None:
     is_flag=True,
     help="Show shell integration setup instructions (completion + auto-activation wrapper).",
 )
+@click.option(
+    "--hooks",
+    "hooks_only",
+    is_flag=True,
+    help="Only set up Claude Code hooks.",
+)
+@click.option(
+    "--no-interactive",
+    "no_interactive",
+    is_flag=True,
+    help="Skip all interactive prompts (gitignore, permissions, hooks, shell setup).",
+)
 @click.pass_obj
 def init_cmd(
     ctx: ErkContext,
@@ -221,6 +276,8 @@ def init_cmd(
     preset: str,
     list_presets: bool,
     shell: bool,
+    hooks_only: bool,
+    no_interactive: bool,
 ) -> None:
     """Initialize erk for this repo and scaffold config.toml."""
 
@@ -261,6 +318,12 @@ def init_cmd(
                 user_output("\nShell integration instructions were displayed above.")
                 user_output("You can use them now - erk just couldn't save this preference.")
                 raise SystemExit(1) from e
+        return
+
+    # Handle --hooks flag: only do hook setup
+    if hooks_only:
+        repo_context = discover_repo_context(ctx, ctx.cwd)
+        offer_claude_hook_setup(repo_context.root)
         return
 
     # Discover available presets on demand
@@ -332,45 +395,47 @@ def init_cmd(
     cfg_path.write_text(content, encoding="utf-8")
     user_output(f"Wrote {cfg_path}")
 
-    # Check for .gitignore and add .env
-    gitignore_path = repo_context.root / ".gitignore"
-    if not gitignore_path.exists():
-        # Early return: no gitignore file
-        pass
-    else:
-        gitignore_content = gitignore_path.read_text(encoding="utf-8")
+    # Interactive prompts (skip if --no-interactive)
+    if not no_interactive:
+        # Check for .gitignore and add .env
+        gitignore_path = repo_context.root / ".gitignore"
+        if gitignore_path.exists():
+            gitignore_content = gitignore_path.read_text(encoding="utf-8")
 
-        # Add .env
-        gitignore_content, env_added = _add_gitignore_entry_with_prompt(
-            gitignore_content,
-            ".env",
-            "Add .env to .gitignore?",
-        )
+            # Add .env
+            gitignore_content, env_added = _add_gitignore_entry_with_prompt(
+                gitignore_content,
+                ".env",
+                "Add .env to .gitignore?",
+            )
 
-        # Add .erk/scratch/
-        gitignore_content, scratch_added = _add_gitignore_entry_with_prompt(
-            gitignore_content,
-            ".erk/scratch/",
-            "Add .erk/scratch/ to .gitignore (session-specific working files)?",
-        )
+            # Add .erk/scratch/
+            gitignore_content, scratch_added = _add_gitignore_entry_with_prompt(
+                gitignore_content,
+                ".erk/scratch/",
+                "Add .erk/scratch/ to .gitignore (session-specific working files)?",
+            )
 
-        # Add .impl/
-        gitignore_content, impl_added = _add_gitignore_entry_with_prompt(
-            gitignore_content,
-            ".impl/",
-            "Add .impl/ to .gitignore (temporary implementation plans)?",
-        )
+            # Add .impl/
+            gitignore_content, impl_added = _add_gitignore_entry_with_prompt(
+                gitignore_content,
+                ".impl/",
+                "Add .impl/ to .gitignore (temporary implementation plans)?",
+            )
 
-        # Write if any entry was modified
-        if env_added or scratch_added or impl_added:
-            gitignore_path.write_text(gitignore_content, encoding="utf-8")
-            user_output(f"Updated {gitignore_path}")
+            # Write if any entry was modified
+            if env_added or scratch_added or impl_added:
+                gitignore_path.write_text(gitignore_content, encoding="utf-8")
+                user_output(f"Updated {gitignore_path}")
 
-    # Offer to add erk permission to repo's Claude Code settings
-    offer_claude_permission_setup(repo_context.root)
+        # Offer to add erk permission to repo's Claude Code settings
+        offer_claude_permission_setup(repo_context.root)
+
+        # Offer to add erk hooks to repo's Claude Code settings
+        offer_claude_hook_setup(repo_context.root)
 
     # On first-time init, offer shell setup if not already completed
-    if first_time_init:
+    if first_time_init and not no_interactive:
         # Reload global config after creating it
         fresh_config = ctx.config_store.load()
         if not fresh_config.shell_setup_complete:

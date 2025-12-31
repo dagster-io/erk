@@ -12,9 +12,13 @@ from pathlib import Path
 import pytest
 
 from erk.core.claude_settings import (
+    ERK_EXIT_PLAN_HOOK_COMMAND,
     ERK_PERMISSION,
+    ERK_USER_PROMPT_HOOK_COMMAND,
+    add_erk_hooks,
     add_erk_permission,
     get_repo_claude_settings_path,
+    has_erk_hooks,
     has_erk_permission,
     read_claude_settings,
     write_claude_settings,
@@ -272,3 +276,325 @@ def test_read_raises_on_invalid_json(tmp_path: Path) -> None:
 
     with pytest.raises(json.JSONDecodeError):
         read_claude_settings(settings_path)
+
+
+# --- Tests for hook functions ---
+
+
+def test_hook_command_constants() -> None:
+    """Test that hook command constants have expected values."""
+    assert ERK_USER_PROMPT_HOOK_COMMAND == "uv run scripts/erk-user-prompt-hook.py"
+    assert ERK_EXIT_PLAN_HOOK_COMMAND == (
+        "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
+    )
+
+
+def test_has_erk_hooks_returns_both_false_for_empty_settings() -> None:
+    """Test that has_erk_hooks returns (False, False) for empty settings."""
+    settings: dict = {}
+    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
+    assert has_user_prompt is False
+    assert has_pre_tool is False
+
+
+def test_has_erk_hooks_returns_both_false_for_missing_hooks_key() -> None:
+    """Test that has_erk_hooks returns (False, False) when hooks key is missing."""
+    settings = {"permissions": {"allow": []}}
+    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
+    assert has_user_prompt is False
+    assert has_pre_tool is False
+
+
+def test_has_erk_hooks_returns_both_false_for_empty_hooks() -> None:
+    """Test that has_erk_hooks returns (False, False) for empty hooks structure."""
+    settings = {"hooks": {}}
+    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
+    assert has_user_prompt is False
+    assert has_pre_tool is False
+
+
+def test_has_erk_hooks_detects_user_prompt_hook() -> None:
+    """Test that has_erk_hooks detects UserPromptSubmit hook."""
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": ERK_USER_PROMPT_HOOK_COMMAND,
+                        }
+                    ],
+                }
+            ]
+        }
+    }
+    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
+    assert has_user_prompt is True
+    assert has_pre_tool is False
+
+
+def test_has_erk_hooks_detects_pre_tool_use_hook() -> None:
+    """Test that has_erk_hooks detects PreToolUse hook with ExitPlanMode matcher."""
+    settings = {
+        "hooks": {
+            "PreToolUse": [
+                {
+                    "matcher": "ExitPlanMode",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": ERK_EXIT_PLAN_HOOK_COMMAND,
+                        }
+                    ],
+                }
+            ]
+        }
+    }
+    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
+    assert has_user_prompt is False
+    assert has_pre_tool is True
+
+
+def test_has_erk_hooks_detects_both_hooks() -> None:
+    """Test that has_erk_hooks detects both hooks when present."""
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": ERK_USER_PROMPT_HOOK_COMMAND,
+                        }
+                    ],
+                }
+            ],
+            "PreToolUse": [
+                {
+                    "matcher": "ExitPlanMode",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": ERK_EXIT_PLAN_HOOK_COMMAND,
+                        }
+                    ],
+                }
+            ],
+        }
+    }
+    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
+    assert has_user_prompt is True
+    assert has_pre_tool is True
+
+
+def test_has_erk_hooks_ignores_wrong_matcher_for_pretooluse() -> None:
+    """Test that has_erk_hooks only matches PreToolUse with ExitPlanMode matcher."""
+    settings = {
+        "hooks": {
+            "PreToolUse": [
+                {
+                    "matcher": "Bash",  # Wrong matcher
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": ERK_EXIT_PLAN_HOOK_COMMAND,
+                        }
+                    ],
+                }
+            ]
+        }
+    }
+    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
+    assert has_user_prompt is False
+    assert has_pre_tool is False
+
+
+def test_has_erk_hooks_requires_exact_command_match() -> None:
+    """Test that has_erk_hooks requires exact command string match."""
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": "different-command",  # Different command
+                        }
+                    ],
+                }
+            ]
+        }
+    }
+    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
+    assert has_user_prompt is False
+    assert has_pre_tool is False
+
+
+def test_has_erk_hooks_finds_hook_among_multiple_entries() -> None:
+    """Test that has_erk_hooks finds the erk hook among multiple hook entries."""
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "*.py",
+                    "hooks": [{"type": "command", "command": "other-hook"}],
+                },
+                {
+                    "matcher": "",
+                    "hooks": [
+                        {"type": "command", "command": "another-hook"},
+                        {"type": "command", "command": ERK_USER_PROMPT_HOOK_COMMAND},
+                    ],
+                },
+            ]
+        }
+    }
+    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
+    assert has_user_prompt is True
+    assert has_pre_tool is False
+
+
+def test_add_erk_hooks_adds_both_hooks_to_empty_settings() -> None:
+    """Test that add_erk_hooks adds both hooks to empty settings."""
+    settings: dict = {}
+    result = add_erk_hooks(settings)
+
+    assert "hooks" in result
+    assert "UserPromptSubmit" in result["hooks"]
+    assert "PreToolUse" in result["hooks"]
+
+    # Verify UserPromptSubmit hook structure
+    user_prompt_hooks = result["hooks"]["UserPromptSubmit"]
+    assert len(user_prompt_hooks) == 1
+    assert user_prompt_hooks[0]["matcher"] == ""
+    assert user_prompt_hooks[0]["hooks"][0]["command"] == ERK_USER_PROMPT_HOOK_COMMAND
+
+    # Verify PreToolUse hook structure
+    pre_tool_hooks = result["hooks"]["PreToolUse"]
+    assert len(pre_tool_hooks) == 1
+    assert pre_tool_hooks[0]["matcher"] == "ExitPlanMode"
+    assert pre_tool_hooks[0]["hooks"][0]["command"] == ERK_EXIT_PLAN_HOOK_COMMAND
+
+
+def test_add_erk_hooks_adds_missing_user_prompt_hook() -> None:
+    """Test that add_erk_hooks adds missing UserPromptSubmit hook."""
+    settings = {
+        "hooks": {
+            "PreToolUse": [
+                {
+                    "matcher": "ExitPlanMode",
+                    "hooks": [{"type": "command", "command": ERK_EXIT_PLAN_HOOK_COMMAND}],
+                }
+            ]
+        }
+    }
+    result = add_erk_hooks(settings)
+
+    # PreToolUse should be unchanged
+    assert len(result["hooks"]["PreToolUse"]) == 1
+
+    # UserPromptSubmit should be added
+    assert "UserPromptSubmit" in result["hooks"]
+    assert len(result["hooks"]["UserPromptSubmit"]) == 1
+
+
+def test_add_erk_hooks_adds_missing_pre_tool_hook() -> None:
+    """Test that add_erk_hooks adds missing PreToolUse hook."""
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [{"type": "command", "command": ERK_USER_PROMPT_HOOK_COMMAND}],
+                }
+            ]
+        }
+    }
+    result = add_erk_hooks(settings)
+
+    # UserPromptSubmit should be unchanged
+    assert len(result["hooks"]["UserPromptSubmit"]) == 1
+
+    # PreToolUse should be added
+    assert "PreToolUse" in result["hooks"]
+    assert len(result["hooks"]["PreToolUse"]) == 1
+
+
+def test_add_erk_hooks_preserves_existing_hooks() -> None:
+    """Test that add_erk_hooks preserves existing hooks when adding erk hooks."""
+    settings = {
+        "hooks": {
+            "SessionStart": [
+                {"matcher": "*", "hooks": [{"type": "command", "command": "echo start"}]}
+            ],
+            "UserPromptSubmit": [
+                {"matcher": "*.py", "hooks": [{"type": "command", "command": "lint"}]}
+            ],
+        }
+    }
+    result = add_erk_hooks(settings)
+
+    # SessionStart should be preserved
+    assert "SessionStart" in result["hooks"]
+    assert len(result["hooks"]["SessionStart"]) == 1
+
+    # UserPromptSubmit should have the existing hook plus the erk hook
+    assert len(result["hooks"]["UserPromptSubmit"]) == 2
+
+    # PreToolUse should be added
+    assert "PreToolUse" in result["hooks"]
+
+
+def test_add_erk_hooks_does_not_duplicate_hooks() -> None:
+    """Test that add_erk_hooks doesn't add hooks if already present."""
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [{"type": "command", "command": ERK_USER_PROMPT_HOOK_COMMAND}],
+                }
+            ],
+            "PreToolUse": [
+                {
+                    "matcher": "ExitPlanMode",
+                    "hooks": [{"type": "command", "command": ERK_EXIT_PLAN_HOOK_COMMAND}],
+                }
+            ],
+        }
+    }
+    result = add_erk_hooks(settings)
+
+    # Should not have duplicates
+    assert len(result["hooks"]["UserPromptSubmit"]) == 1
+    assert len(result["hooks"]["PreToolUse"]) == 1
+
+
+def test_add_erk_hooks_is_pure_function() -> None:
+    """Test that add_erk_hooks doesn't modify the input."""
+    original = {"hooks": {"SessionStart": []}}
+    original_copy = json.loads(json.dumps(original))
+
+    add_erk_hooks(original)
+
+    # Original should be unchanged
+    assert original == original_copy
+
+
+def test_add_erk_hooks_preserves_other_settings() -> None:
+    """Test that add_erk_hooks preserves other top-level settings."""
+    settings = {
+        "permissions": {"allow": ["Bash(git:*)"]},
+        "statusLine": {"type": "command", "command": "echo status"},
+        "alwaysThinkingEnabled": True,
+    }
+    result = add_erk_hooks(settings)
+
+    # Other settings should be preserved
+    assert result["permissions"]["allow"] == ["Bash(git:*)"]
+    assert result["statusLine"]["type"] == "command"
+    assert result["alwaysThinkingEnabled"] is True
