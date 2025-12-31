@@ -141,12 +141,13 @@ Evaluate the skill against these criteria based on the fetched standards:
 
 These are project-specific conventions that differ from or extend Anthropic's standards:
 
-| Check              | Criteria                                                                                    |
-| ------------------ | ------------------------------------------------------------------------------------------- |
-| No embedded scripts | Skills MUST NOT have a `scripts/` directory; use `erk exec` commands instead              |
-| erk exec pattern   | Executable logic lives in `src/erk/cli/commands/exec/scripts/` and is invoked via `erk exec <script-name>` |
+| Check               | Criteria                                                                                                   |
+| ------------------- | ---------------------------------------------------------------------------------------------------------- |
+| No embedded scripts | Skills MUST NOT have a `scripts/` directory; use `erk exec` commands instead                               |
+| erk exec pattern    | Executable logic lives in `src/erk/cli/commands/exec/scripts/` and is invoked via `erk exec <script-name>` |
 
 **Rationale:** Centralizing scripts in `erk exec` provides:
+
 - Single location for all executable scripts
 - Consistent CLI interface (`erk exec <name>`)
 - Easier testing and maintenance
