@@ -55,7 +55,6 @@ jobs:
           npm install -g prettier
           cd $GITHUB_WORKSPACE
           uv tool install --from . --with ./packages/erk-shared erk
-          erk kit install erk --force
 
       - name: Configure git
         env:

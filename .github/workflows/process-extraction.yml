@@ -54,9 +54,6 @@ jobs:
           # Install workspace packages
           uv tool install --from . --with ./packages/erk-shared erk
 
-          # Install erk kit for Claude Code
-          erk kit install erk
-
       - name: Configure git
         run: |
           git config user.name "erk-bot"
