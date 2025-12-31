@@ -172,7 +172,7 @@ def check_github_auth(shell: Shell, admin: GitHubAdmin) -> CheckResult:
     gh_path = shell.get_installed_tool_path("gh")
     if gh_path is None:
         return CheckResult(
-            name="github auth",
+            name="github-auth",
             passed=False,
             message="Cannot check auth: gh not installed",
         )
@@ -181,7 +181,7 @@ def check_github_auth(shell: Shell, admin: GitHubAdmin) -> CheckResult:
 
     if auth_status.error is not None:
         return CheckResult(
-            name="github auth",
+            name="github-auth",
             passed=False,
             message=f"Auth check failed: {auth_status.error}",
         )
@@ -189,18 +189,18 @@ def check_github_auth(shell: Shell, admin: GitHubAdmin) -> CheckResult:
     if auth_status.authenticated:
         if auth_status.username:
             return CheckResult(
-                name="github auth",
+                name="github-auth",
                 passed=True,
                 message=f"GitHub authenticated as {auth_status.username}",
             )
         return CheckResult(
-            name="github auth",
+            name="github-auth",
             passed=True,
             message="Authenticated to GitHub",
         )
     else:
         return CheckResult(
-            name="github auth",
+            name="github-auth",
             passed=False,
             message="Not authenticated to GitHub",
             details="Run: gh auth login",
@@ -227,7 +227,7 @@ def check_workflow_permissions(ctx: ErkContext, repo_root: Path, admin: GitHubAd
         remote_url = ctx.git.get_remote_url(repo_root, "origin")
     except ValueError:
         return CheckResult(
-            name="workflow permissions",
+            name="workflow-permissions",
             passed=True,  # Info level
             message="No origin remote configured",
         )
@@ -240,7 +240,7 @@ def check_workflow_permissions(ctx: ErkContext, repo_root: Path, admin: GitHubAd
         owner_repo = parse_git_remote_url(remote_url)
     except ValueError:
         return CheckResult(
-            name="workflow permissions",
+            name="workflow-permissions",
             passed=True,  # Info level
             message="Not a GitHub repository",
         )
@@ -254,20 +254,20 @@ def check_workflow_permissions(ctx: ErkContext, repo_root: Path, admin: GitHubAd
 
         if enabled:
             return CheckResult(
-                name="workflow permissions",
+                name="workflow-permissions",
                 passed=True,
                 message="Workflows can create PRs",
             )
         else:
             return CheckResult(
-                name="workflow permissions",
+                name="workflow-permissions",
                 passed=True,  # Info level - always passes
                 message="Workflows cannot create PRs",
                 details="Run 'erk admin github-pr-setting --enable' to allow",
             )
     except Exception:
         return CheckResult(
-            name="workflow permissions",
+            name="workflow-permissions",
             passed=True,  # Info level - don't fail on API errors
             message="Could not check workflow permissions",
         )
@@ -341,7 +341,7 @@ def check_hooks_disabled() -> CheckResult:
 
     if disabled_in:
         return CheckResult(
-            name="claude hooks",
+            name="claude-hooks",
             passed=True,  # Don't fail, just warn
             warning=True,
             message=f"Hooks disabled in {', '.join(disabled_in)}",
@@ -349,7 +349,7 @@ def check_hooks_disabled() -> CheckResult:
         )
 
     return CheckResult(
-        name="claude hooks",
+        name="claude-hooks",
         passed=True,
         message="Hooks enabled (not globally disabled)",
     )
@@ -415,7 +415,7 @@ def check_claude_erk_permission(repo_root: Path) -> CheckResult:
     settings = read_claude_settings(settings_path)
     if settings is None:
         return CheckResult(
-            name="claude erk permission",
+            name="claude-erk-permission",
             passed=True,  # Info level - always passes
             message="No .claude/settings.json in repo",
         )
@@ -423,13 +423,13 @@ def check_claude_erk_permission(repo_root: Path) -> CheckResult:
     # Check for permission
     if has_erk_permission(settings):
         return CheckResult(
-            name="claude erk permission",
+            name="claude-erk-permission",
             passed=True,
             message=f"erk permission configured ({ERK_PERMISSION})",
         )
     else:
         return CheckResult(
-            name="claude erk permission",
+            name="claude-erk-permission",
             passed=True,  # Info level - always passes
             message="erk permission not configured",
             details=f"Run 'erk init' to add {ERK_PERMISSION} to .claude/settings.json",
@@ -481,13 +481,13 @@ def check_claude_settings(repo_root: Path) -> CheckResult:
     settings = read_claude_settings(settings_path)
     if settings is None:
         return CheckResult(
-            name="claude settings",
+            name="claude-settings",
             passed=True,
             message="No .claude/settings.json (using defaults)",
         )
 
     return CheckResult(
-        name="claude settings",
+        name="claude-settings",
         passed=True,
         message=".claude/settings.json looks valid",
     )
@@ -505,7 +505,7 @@ def check_user_prompt_hook(repo_root: Path) -> CheckResult:
     settings_path = repo_root / ".claude" / "settings.json"
     if not settings_path.exists():
         return CheckResult(
-            name="user prompt hook",
+            name="user-prompt-hook",
             passed=False,
             message="No .claude/settings.json found",
             details="Run 'erk init' to create settings with the hook configured",
@@ -520,7 +520,7 @@ def check_user_prompt_hook(repo_root: Path) -> CheckResult:
 
     if not user_prompt_hooks:
         return CheckResult(
-            name="user prompt hook",
+            name="user-prompt-hook",
             passed=False,
             message="No UserPromptSubmit hook configured",
             details="Add 'uv run scripts/erk-user-prompt-hook.py' hook to .claude/settings.json",
@@ -540,7 +540,7 @@ def check_user_prompt_hook(repo_root: Path) -> CheckResult:
                 command = hook.get("command", "")
                 if expected_command in command:
                     return CheckResult(
-                        name="user prompt hook",
+                        name="user-prompt-hook",
                         passed=True,
                         message="UserPromptSubmit hook configured",
                     )
@@ -548,14 +548,14 @@ def check_user_prompt_hook(repo_root: Path) -> CheckResult:
         command = hook_entry.get("command", "")
         if expected_command in command:
             return CheckResult(
-                name="user prompt hook",
+                name="user-prompt-hook",
                 passed=True,
                 message="UserPromptSubmit hook configured",
             )
 
     # Hook section exists but doesn't have the expected command
     return CheckResult(
-        name="user prompt hook",
+        name="user-prompt-hook",
         passed=False,
         message="UserPromptSubmit hook missing unified hook script",
         details=f"Expected command containing: {expected_command}",

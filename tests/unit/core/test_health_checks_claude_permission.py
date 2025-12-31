@@ -16,7 +16,7 @@ def test_check_returns_info_when_settings_not_found(tmp_path: Path) -> None:
     result = check_claude_erk_permission(tmp_path)
 
     assert result.passed is True
-    assert result.name == "claude erk permission"
+    assert result.name == "claude-erk-permission"
     assert "no .claude/settings.json" in result.message.lower()
 
 

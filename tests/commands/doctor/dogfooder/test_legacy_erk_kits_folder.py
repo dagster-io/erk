@@ -13,7 +13,7 @@ def test_check_passes_when_no_kits_directory(tmp_path: Path) -> None:
 
     assert result.passed is True
     assert result.warning is not True
-    assert result.name == "legacy erk kits folder"
+    assert result.name == "legacy-erk-kits-folder"
     assert "No legacy" in result.message
 
 
@@ -52,7 +52,7 @@ def test_check_warns_when_kits_directory_has_content(tmp_path: Path) -> None:
 
     assert result.passed is True  # Warning only, doesn't fail
     assert result.warning is True
-    assert result.name == "legacy erk kits folder"
+    assert result.name == "legacy-erk-kits-folder"
     assert "1 item" in result.message
     assert result.details is not None
     assert "kit system has been removed" in result.details

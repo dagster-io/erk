@@ -53,7 +53,7 @@ def check_legacy_kit_yaml(repo_root: Path) -> CheckResult:
 
     if not kit_yaml_files:
         return CheckResult(
-            name="legacy kit.yaml",
+            name="legacy-kit-yaml",
             passed=True,
             message="No legacy kit.yaml files found",
         )
@@ -70,7 +70,7 @@ def check_legacy_kit_yaml(repo_root: Path) -> CheckResult:
     details_lines.append("You can safely delete these files.")
 
     return CheckResult(
-        name="legacy kit.yaml",
+        name="legacy-kit-yaml",
         passed=True,  # Warning only, doesn't fail
         warning=True,
         message=f"Found {len(kit_yaml_files)} legacy kit.yaml file(s)",

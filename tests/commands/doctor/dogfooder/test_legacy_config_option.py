@@ -12,7 +12,7 @@ def test_check_passes_when_no_config_file(tmp_path: Path) -> None:
     result = check_legacy_config_option(tmp_path)
 
     assert result.passed is True
-    assert result.name == "legacy config option"
+    assert result.name == "legacy-config-option"
     assert "No .erk/config.toml" in result.message
 
 
@@ -43,7 +43,7 @@ def test_check_fails_when_deprecated_option_found(tmp_path: Path) -> None:
     result = check_legacy_config_option(tmp_path)
 
     assert result.passed is False  # Failure, not warning
-    assert result.name == "legacy config option"
+    assert result.name == "legacy-config-option"
     assert "1 deprecated config option" in result.message
     assert result.details is not None
     assert "auto_restack_skip_dangerous" in result.details

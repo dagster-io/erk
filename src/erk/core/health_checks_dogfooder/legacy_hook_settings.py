@@ -80,7 +80,7 @@ def check_legacy_hook_settings(repo_root: Path) -> CheckResult:
 
     if not legacy_commands:
         return CheckResult(
-            name="legacy hook settings",
+            name="legacy-hook-settings",
             passed=True,
             message="No legacy hook commands found",
         )
@@ -97,7 +97,7 @@ def check_legacy_hook_settings(repo_root: Path) -> CheckResult:
     details_lines.append("Run 'erk init' to update hook configuration")
 
     return CheckResult(
-        name="legacy hook settings",
+        name="legacy-hook-settings",
         passed=False,  # Failure - hooks won't work
         message=f"Found {len(legacy_commands)} legacy hook command(s)",
         details="\n".join(details_lines),

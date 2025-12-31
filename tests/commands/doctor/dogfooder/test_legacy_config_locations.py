@@ -17,7 +17,7 @@ def test_check_legacy_config_passes_when_primary_location_exists(
     result = check_legacy_config_locations(tmp_path, metadata_dir=None)
 
     assert result.passed is True
-    assert result.name == "legacy config"
+    assert result.name == "legacy-config"
     assert "primary location" in result.message
 
 
@@ -28,7 +28,7 @@ def test_check_legacy_config_passes_when_no_legacy_configs(
     result = check_legacy_config_locations(tmp_path, metadata_dir=None)
 
     assert result.passed is True
-    assert result.name == "legacy config"
+    assert result.name == "legacy-config"
     assert "No legacy" in result.message
 
 
@@ -43,7 +43,7 @@ def test_check_legacy_config_warns_on_repo_root_config(
 
     assert result.passed is True  # Warning only, doesn't fail
     assert result.warning is True
-    assert result.name == "legacy config"
+    assert result.name == "legacy-config"
     assert "1 legacy config" in result.message
     assert result.details is not None
     assert "repo root" in result.details
@@ -66,7 +66,7 @@ def test_check_legacy_config_warns_on_metadata_dir_config(
 
     assert result.passed is True  # Warning only, doesn't fail
     assert result.warning is True
-    assert result.name == "legacy config"
+    assert result.name == "legacy-config"
     assert "1 legacy config" in result.message
     assert result.details is not None
     assert "metadata dir" in result.details
@@ -90,7 +90,7 @@ def test_check_legacy_config_warns_on_multiple_legacy_locations(
 
     assert result.passed is True  # Warning only, doesn't fail
     assert result.warning is True
-    assert result.name == "legacy config"
+    assert result.name == "legacy-config"
     assert "2 legacy config" in result.message
     assert result.details is not None
     assert "repo root" in result.details

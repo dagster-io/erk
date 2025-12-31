@@ -29,7 +29,7 @@ def test_check_workflow_permissions_no_origin_remote() -> None:
 
         # Should pass (info level) with appropriate message
         assert result.passed is True
-        assert result.name == "workflow permissions"
+        assert result.name == "workflow-permissions"
         assert "No origin remote configured" in result.message
 
 
@@ -54,5 +54,5 @@ def test_check_workflow_permissions_non_github_remote() -> None:
 
         # Should pass (info level) with appropriate message
         assert result.passed is True
-        assert result.name == "workflow permissions"
+        assert result.name == "workflow-permissions"
         assert "Not a GitHub repository" in result.message

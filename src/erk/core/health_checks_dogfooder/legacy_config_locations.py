@@ -91,7 +91,7 @@ def check_legacy_config_locations(
     primary_path = repo_root / ".erk" / "config.toml"
     if primary_path.exists():
         return CheckResult(
-            name="legacy config",
+            name="legacy-config",
             passed=True,
             message="Config at primary location (.erk/config.toml)",
         )
@@ -101,7 +101,7 @@ def check_legacy_config_locations(
 
     if not legacy_locations:
         return CheckResult(
-            name="legacy config",
+            name="legacy-config",
             passed=True,
             message="No legacy config files found",
         )
@@ -114,7 +114,7 @@ def check_legacy_config_locations(
     details_lines.append(f"Move to: {primary_path}")
 
     return CheckResult(
-        name="legacy config",
+        name="legacy-config",
         passed=True,  # Warning only - doesn't fail the check
         warning=True,
         message=f"Found {len(legacy_locations)} legacy config file(s)",

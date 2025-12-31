@@ -25,13 +25,13 @@ def check_legacy_kits_toml(repo_root: Path) -> CheckResult:
 
     if not kits_toml_path.exists():
         return CheckResult(
-            name="legacy kits.toml",
+            name="legacy-kits-toml",
             passed=True,
             message="No legacy kits.toml found",
         )
 
     return CheckResult(
-        name="legacy kits.toml",
+        name="legacy-kits-toml",
         passed=True,  # Warning only, doesn't fail
         warning=True,
         message="Legacy kits.toml found",

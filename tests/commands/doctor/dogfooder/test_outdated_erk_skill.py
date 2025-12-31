@@ -48,7 +48,7 @@ def test_check_outdated_erk_skill_fails_when_erk_skill_exists(
     result = check_outdated_erk_skill(tmp_path)
 
     assert result.passed is False
-    assert result.name == "outdated erk skill"
+    assert result.name == "outdated-erk-skill"
     assert ".claude/skills/erk/" in result.message
     assert result.details is not None
     assert "rm -rf" in result.details

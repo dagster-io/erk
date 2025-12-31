@@ -13,7 +13,7 @@ def test_check_passes_when_no_settings_file(tmp_path: Path) -> None:
     result = check_legacy_hook_settings(tmp_path)
 
     assert result.passed is True
-    assert result.name == "legacy hook settings"
+    assert result.name == "legacy-hook-settings"
     assert "No legacy" in result.message
 
 
@@ -64,7 +64,7 @@ def test_check_fails_with_erk_kit_exec_command(tmp_path: Path) -> None:
     result = check_legacy_hook_settings(tmp_path)
 
     assert result.passed is False
-    assert result.name == "legacy hook settings"
+    assert result.name == "legacy-hook-settings"
     assert "1 legacy hook" in result.message
     assert result.details is not None
     assert "erk kit exec" in result.details

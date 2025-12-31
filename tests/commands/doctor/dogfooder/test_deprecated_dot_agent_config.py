@@ -67,7 +67,7 @@ some_setting = true
     result = check_deprecated_dot_agent_config(tmp_path)
 
     assert result.passed is False
-    assert result.name == "deprecated dot-agent config"
+    assert result.name == "deprecated-dot-agent-config"
     assert "[tool.dot-agent]" in result.message
     assert result.details is not None
     assert "[tool.erk]" in result.details
