@@ -74,8 +74,12 @@ def list_cmd(artifact_type: str | None, verbose: bool) -> None:
             if current_type is not None:
                 click.echo("")  # Blank line between types
             current_type = artifact.artifact_type
-            # Capitalize first letter only (e.g., "Commands:")
-            header = current_type.capitalize() + "s:"
+            # Special header for workflows with location
+            if current_type == "workflow":
+                header = "Github Workflows (.github/workflows):"
+            else:
+                # Capitalize first letter only (e.g., "Commands:")
+                header = current_type.capitalize() + "s:"
             click.echo(click.style(header, bold=True))
 
         # Format badge based on management status

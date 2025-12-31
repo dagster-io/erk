@@ -4,7 +4,6 @@ import hashlib
 from pathlib import Path
 
 from erk.artifacts.models import ArtifactType, InstalledArtifact
-from erk.artifacts.orphans import BUNDLED_WORKFLOWS
 
 
 def _compute_content_hash(path: Path) -> str:
@@ -109,10 +108,9 @@ def _discover_agents(claude_dir: Path) -> list[InstalledArtifact]:
 
 
 def _discover_workflows(workflows_dir: Path) -> list[InstalledArtifact]:
-    """Discover erk-managed workflows in .github/workflows/ directory.
+    """Discover all workflows in .github/workflows/ directory.
 
-    Only discovers workflows that are in the BUNDLED_WORKFLOWS registry
-    to avoid surfacing user workflows that erk doesn't manage.
+    Discovers all .yml and .yaml files in the workflows directory.
 
     Pattern: .github/workflows/<name>.yml
     """
@@ -124,9 +122,6 @@ def _discover_workflows(workflows_dir: Path) -> list[InstalledArtifact]:
         if not workflow_file.is_file():
             continue
         if workflow_file.suffix not in (".yml", ".yaml"):
-            continue
-        # Only include erk-managed workflows
-        if workflow_file.name not in BUNDLED_WORKFLOWS:
             continue
         artifacts.append(
             InstalledArtifact(
@@ -146,7 +141,7 @@ def discover_artifacts(project_dir: Path) -> list[InstalledArtifact]:
     - skills: .claude/skills/<name>/SKILL.md
     - commands: .claude/commands/<namespace>/<name>.md
     - agents: .claude/agents/<name>/<name>.md
-    - workflows: .github/workflows/<name>.yml (only erk-managed)
+    - workflows: .github/workflows/<name>.yml (all workflows)
     """
     claude_dir = project_dir / ".claude"
     workflows_dir = project_dir / ".github" / "workflows"
