@@ -1,4 +1,4 @@
-"""Unit tests for update_pr_body kit CLI command.
+"""Unit tests for ci_update_pr_body kit CLI command.
 
 Tests the PR body update with AI-generated summary and footer.
 Uses FakeGit, FakeGitHub, and FakePromptExecutor for dependency injection.
@@ -9,15 +9,15 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.update_pr_body import (
+from erk.cli.commands.exec.scripts.ci_update_pr_body import (
     UpdateError,
     UpdateSuccess,
     _build_pr_body,
     _build_prompt,
     _update_pr_body_impl,
 )
-from erk.cli.commands.exec.scripts.update_pr_body import (
-    update_pr_body as update_pr_body_command,
+from erk.cli.commands.exec.scripts.ci_update_pr_body import (
+    ci_update_pr_body as ci_ci_update_pr_body_command,
 )
 from erk_shared.context import ErkContext
 from erk_shared.git.fake import FakeGit
@@ -358,7 +358,7 @@ def test_cli_success(tmp_path: Path) -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_pr_body_command,
+        ci_update_pr_body_command,
         ["--issue-number", "456"],
         obj=ctx,
     )
@@ -414,7 +414,7 @@ def test_cli_with_workflow_run(tmp_path: Path) -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_pr_body_command,
+        ci_update_pr_body_command,
         [
             "--issue-number",
             "456",
@@ -444,7 +444,7 @@ def test_cli_error_exit_code(tmp_path: Path) -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_pr_body_command,
+        ci_update_pr_body_command,
         ["--issue-number", "456"],
         obj=ctx,
     )
@@ -459,7 +459,7 @@ def test_cli_requires_issue_number() -> None:
     """Test that --issue-number is required."""
     runner = CliRunner()
 
-    result = runner.invoke(update_pr_body_command, [])
+    result = runner.invoke(ci_update_pr_body_command, [])
 
     assert result.exit_code != 0
     assert "Missing option" in result.output or "required" in result.output.lower()
@@ -510,7 +510,7 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_pr_body_command,
+        ci_update_pr_body_command,
         ["--issue-number", "456"],
         obj=ctx,
     )
@@ -539,7 +539,7 @@ def test_cli_json_output_structure_error(tmp_path: Path) -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_pr_body_command,
+        ci_update_pr_body_command,
         ["--issue-number", "456"],
         obj=ctx,
     )

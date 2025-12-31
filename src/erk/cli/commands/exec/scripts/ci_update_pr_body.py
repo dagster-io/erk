@@ -8,7 +8,7 @@ This combines generate-pr-summary + footer construction + gh pr edit in one step
 replacing ~30 lines of bash in GitHub Actions workflows.
 
 Usage:
-    dot-agent run erk update-pr-body \\
+    erk exec ci-update-pr-body \\
         --issue-number 123 \\
         [--run-id 456789] \\
         [--run-url https://github.com/owner/repo/actions/runs/456789]
@@ -21,13 +21,13 @@ Exit Codes:
     1: Error (no PR for branch, empty diff, Claude failure, or GitHub API failed)
 
 Examples:
-    $ dot-agent run erk update-pr-body --issue-number 123
+    $ erk exec ci-update-pr-body --issue-number 123
     {
       "success": true,
       "pr_number": 789
     }
 
-    $ dot-agent run erk update-pr-body \\
+    $ erk exec ci-update-pr-body \\
         --issue-number 123 \\
         --run-id 456789 \\
         --run-url https://github.com/owner/repo/actions/runs/456789
@@ -233,12 +233,12 @@ def _update_pr_body_impl(
     return UpdateSuccess(success=True, pr_number=pr_number)
 
 
-@click.command(name="update-pr-body")
+@click.command(name="ci-update-pr-body")
 @click.option("--issue-number", type=int, required=True, help="Issue number to close on merge")
 @click.option("--run-id", type=str, default=None, help="Optional workflow run ID")
 @click.option("--run-url", type=str, default=None, help="Optional workflow run URL")
 @click.pass_context
-def update_pr_body(
+def ci_update_pr_body(
     ctx: click.Context,
     issue_number: int,
     run_id: str | None,

@@ -218,7 +218,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           source $HOME/.cargo/env
-          erk exec update-pr-body \
+          erk exec ci-update-pr-body \
             --issue-number "${{ inputs.issue_number }}" \
             --run-id "${{ github.run_id }}" \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

@@ -94,7 +94,7 @@ from erk.cli.commands.exec.scripts.tripwires_reminder_hook import (
     tripwires_reminder_hook,
 )
 from erk.cli.commands.exec.scripts.update_dispatch_info import update_dispatch_info
-from erk.cli.commands.exec.scripts.update_pr_body import update_pr_body
+from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
 from erk.cli.commands.exec.scripts.update_pr_summary import update_pr_summary
 from erk.cli.commands.exec.scripts.user_prompt_hook import user_prompt_hook
 from erk.cli.commands.exec.scripts.validate_plan_content import (
@@ -161,7 +161,7 @@ exec_group.add_command(restack_preflight, name="restack-preflight")
 exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook")
 exec_group.add_command(tripwires_reminder_hook, name="tripwires-reminder-hook")
 exec_group.add_command(update_dispatch_info, name="update-dispatch-info")
-exec_group.add_command(update_pr_body, name="update-pr-body")
+exec_group.add_command(ci_update_pr_body)
 exec_group.add_command(update_pr_summary, name="update-pr-summary")
 exec_group.add_command(user_prompt_hook, name="user-prompt-hook")
 exec_group.add_command(validate_plan_content, name="validate-plan-content")
