@@ -137,6 +137,21 @@ Evaluate the skill against these criteria based on the fetched standards:
 | assets/           | Output files (templates, images, fonts)     |
 | Proper separation | Each file in correct directory type         |
 
+#### 4.6 Local Conventions (erk-specific)
+
+These are project-specific conventions that differ from or extend Anthropic's standards:
+
+| Check              | Criteria                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------- |
+| No embedded scripts | Skills MUST NOT have a `scripts/` directory; use `erk exec` commands instead              |
+| erk exec pattern   | Executable logic lives in `src/erk/cli/commands/exec/scripts/` and is invoked via `erk exec <script-name>` |
+
+**Rationale:** Centralizing scripts in `erk exec` provides:
+- Single location for all executable scripts
+- Consistent CLI interface (`erk exec <name>`)
+- Easier testing and maintenance
+- No need to discover/read scripts from skill directories
+
 ### Phase 5: Generate Report
 
 Present the audit findings in this structured format:
@@ -157,6 +172,7 @@ Present the audit findings in this structured format:
 | Writing Style          | PASS/WARN/FAIL | [Brief explanation] |
 | Progressive Disclosure | PASS/WARN/FAIL | [Brief explanation] |
 | Resource Organization  | PASS/WARN/FAIL | [Brief explanation] |
+| Local Conventions      | PASS/WARN/FAIL | [Brief explanation] |
 
 ### Recommendations
 
@@ -187,6 +203,10 @@ Present the audit findings in this structured format:
 #### Resource Organization
 
 [Analysis of bundled resources]
+
+#### Local Conventions
+
+[Analysis of erk-specific patterns: no scripts/ directory, erk exec usage]
 ```
 
 **Status definitions:**
