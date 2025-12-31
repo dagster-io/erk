@@ -36,7 +36,7 @@ class TestCreatePlanIssueSuccess:
 
         # Verify plan content was added as comment
         assert len(fake_gh.added_comments) == 1
-        issue_num, comment = fake_gh.added_comments[0]
+        issue_num, comment, _comment_id = fake_gh.added_comments[0]
         assert issue_num == 1
         assert "My Feature Plan" in comment
         assert "Implementation steps" in comment

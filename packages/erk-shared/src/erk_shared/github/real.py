@@ -94,7 +94,10 @@ class RealGitHub(GitHub):
             return None
 
     def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -> None:
-        """Update base branch of a PR on GitHub.
+        """Update base branch of a PR on GitHub via REST API.
+
+        Uses PATCH /repos/{owner}/{repo}/pulls/{pull_number} instead of
+        gh pr edit to avoid consuming GraphQL rate limit quota.
 
         Gracefully handles gh CLI availability issues (not installed, not authenticated).
         The calling code should validate preconditions (PR exists, is open, new base exists)
@@ -105,7 +108,15 @@ class RealGitHub(GitHub):
         caught by precondition checks in the caller.
         """
         try:
-            cmd = ["gh", "pr", "edit", str(pr_number), "--base", new_base]
+            cmd = [
+                "gh",
+                "api",
+                "--method",
+                "PATCH",
+                f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+                "-f",
+                f"base={new_base}",
+            ]
             execute_gh_command(cmd, repo_root)
         except (RuntimeError, FileNotFoundError):
             # gh not installed, not authenticated, or command failed
@@ -114,7 +125,10 @@ class RealGitHub(GitHub):
             pass
 
     def update_pr_body(self, repo_root: Path, pr_number: int, body: str) -> None:
-        """Update body of a PR on GitHub.
+        """Update body of a PR on GitHub via REST API.
+
+        Uses PATCH /repos/{owner}/{repo}/pulls/{pull_number} instead of
+        gh pr edit to avoid consuming GraphQL rate limit quota.
 
         Gracefully handles gh CLI availability issues (not installed, not authenticated).
         The calling code should validate preconditions (PR exists, is open)
@@ -125,7 +139,15 @@ class RealGitHub(GitHub):
         caught by precondition checks in the caller.
         """
         try:
-            cmd = ["gh", "pr", "edit", str(pr_number), "--body", body]
+            cmd = [
+                "gh",
+                "api",
+                "--method",
+                "PATCH",
+                f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+                "-f",
+                f"body={body}",
+            ]
             execute_gh_command(cmd, repo_root)
         except (RuntimeError, FileNotFoundError):
             # gh not installed, not authenticated, or command failed
@@ -157,14 +179,31 @@ class RealGitHub(GitHub):
         subject: str | None = None,
         body: str | None = None,
     ) -> bool | str:
-        """Merge a pull request on GitHub via gh CLI."""
-        cmd = ["gh", "pr", "merge", str(pr_number)]
+        """Merge a pull request on GitHub via REST API.
+
+        Uses PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge instead of
+        gh pr merge to avoid consuming GraphQL rate limit quota.
+        """
+        # Build REST API command
+        cmd = [
+            "gh",
+            "api",
+            "--method",
+            "PUT",
+            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}/merge",
+        ]
+
+        # Add merge method
         if squash:
-            cmd.append("--squash")
+            cmd.extend(["-f", "merge_method=squash"])
+
+        # Add commit title (corresponds to --subject)
         if subject is not None:
-            cmd.extend(["--subject", subject])
+            cmd.extend(["-f", f"commit_title={subject}"])
+
+        # Add commit message (corresponds to --body)
         if body is not None:
-            cmd.extend(["--body", body])
+            cmd.extend(["-f", f"commit_message={body}"])
 
         try:
             result = run_subprocess_with_context(
@@ -347,7 +386,10 @@ class RealGitHub(GitHub):
         *,
         draft: bool = False,
     ) -> int:
-        """Create a pull request using gh CLI.
+        """Create a pull request using REST API.
+
+        Uses POST /repos/{owner}/{repo}/pulls instead of gh pr create
+        to avoid consuming GraphQL rate limit quota.
 
         Args:
             repo_root: Repository root directory
@@ -360,25 +402,28 @@ class RealGitHub(GitHub):
         Returns:
             PR number
         """
+        # Build REST API command
         cmd = [
             "gh",
-            "pr",
-            "create",
-            "--head",
-            branch,
-            "--title",
-            title,
-            "--body",
-            body,
+            "api",
+            "--method",
+            "POST",
+            "repos/{owner}/{repo}/pulls",
+            "-f",
+            f"head={branch}",
+            "-f",
+            f"title={title}",
+            "-f",
+            f"body={body}",
         ]
 
-        # Add --draft flag if specified
+        # Add draft flag if specified
         if draft:
-            cmd.append("--draft")
+            cmd.extend(["-F", "draft=true"])
 
-        # Add --base flag if specified
+        # Add base branch if specified
         if base is not None:
-            cmd.extend(["--base", base])
+            cmd.extend(["-f", f"base={base}"])
 
         result = run_subprocess_with_context(
             cmd,
@@ -386,16 +431,25 @@ class RealGitHub(GitHub):
             cwd=repo_root,
         )
 
-        # Extract PR number from gh output
-        # Format: https://github.com/owner/repo/pull/123
-        pr_url = result.stdout.strip()
-        pr_number = int(pr_url.split("/")[-1])
-
-        return pr_number
+        # Extract PR number from REST API JSON response
+        data = json.loads(result.stdout)
+        return data["number"]
 
     def close_pr(self, repo_root: Path, pr_number: int) -> None:
-        """Close a pull request without deleting its branch."""
-        cmd = ["gh", "pr", "close", str(pr_number)]
+        """Close a pull request without deleting its branch via REST API.
+
+        Uses PATCH /repos/{owner}/{repo}/pulls/{pull_number} with state=closed
+        instead of gh pr close to avoid consuming GraphQL rate limit quota.
+        """
+        cmd = [
+            "gh",
+            "api",
+            "--method",
+            "PATCH",
+            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+            "-f",
+            "state=closed",
+        ]
         execute_gh_command(cmd, repo_root)
 
     def list_workflow_runs(
@@ -1365,30 +1419,45 @@ query {{
     def update_pr_title_and_body(
         self, repo_root: Path, pr_number: int, title: str, body: str
     ) -> None:
-        """Update PR title and body using gh CLI.
+        """Update PR title and body using REST API.
+
+        Uses PATCH /repos/{owner}/{repo}/pulls/{pull_number} instead of
+        gh pr edit to avoid consuming GraphQL rate limit quota.
 
         Raises:
             RuntimeError: If gh command fails (auth issues, network errors, etc.)
         """
         cmd = [
             "gh",
-            "pr",
-            "edit",
-            str(pr_number),
-            "--title",
-            title,
-            "--body",
-            body,
+            "api",
+            "--method",
+            "PATCH",
+            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+            "-f",
+            f"title={title}",
+            "-f",
+            f"body={body}",
         ]
         execute_gh_command(cmd, repo_root)
 
     def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
-        """Mark a draft PR as ready for review using gh CLI.
+        """Mark a draft PR as ready for review using REST API.
+
+        Uses PATCH /repos/{owner}/{repo}/pulls/{pull_number} with draft=false
+        instead of gh pr ready to avoid consuming GraphQL rate limit quota.
 
         Raises:
             RuntimeError: If gh command fails (auth issues, network errors, etc.)
         """
-        cmd = ["gh", "pr", "ready", str(pr_number)]
+        cmd = [
+            "gh",
+            "api",
+            "--method",
+            "PATCH",
+            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+            "-F",
+            "draft=false",
+        ]
         execute_gh_command(cmd, repo_root)
 
     def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
@@ -1433,12 +1502,24 @@ query {{
         return ("UNKNOWN", "UNKNOWN")
 
     def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
-        """Add a label to a pull request using gh CLI.
+        """Add a label to a pull request using REST API.
+
+        Uses POST /repos/{owner}/{repo}/issues/{pr_number}/labels instead of
+        gh pr edit to avoid consuming GraphQL rate limit quota.
+        (PRs share the same labels endpoint as issues.)
 
         Raises:
             RuntimeError: If gh command fails (auth issues, network errors, etc.)
         """
-        cmd = ["gh", "pr", "edit", str(pr_number), "--add-label", label]
+        cmd = [
+            "gh",
+            "api",
+            "--method",
+            "POST",
+            f"repos/{{owner}}/{{repo}}/issues/{pr_number}/labels",
+            "-f",
+            f"labels[]={label}",
+        ]
         execute_gh_command(cmd, repo_root)
 
     def has_pr_label(self, repo_root: Path, pr_number: int, label: str) -> bool:
