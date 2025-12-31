@@ -79,18 +79,6 @@ def has_exit_plan_hook(settings: dict) -> bool:
     return False
 
 
-def has_erk_hooks(settings: dict) -> tuple[bool, bool]:
-    """Check if erk hooks are configured in Claude settings.
-
-    Args:
-        settings: Parsed Claude settings dictionary
-
-    Returns:
-        Tuple of (has_user_prompt_hook, has_exit_plan_hook)
-    """
-    return (has_user_prompt_hook(settings), has_exit_plan_hook(settings))
-
-
 def add_erk_hooks(settings: dict) -> dict:
     """Return a new settings dict with erk hooks added.
 
@@ -109,10 +97,8 @@ def add_erk_hooks(settings: dict) -> dict:
     # Use defaultdict for cleaner hook list initialization
     hooks: defaultdict[str, list] = defaultdict(list, new_settings.get("hooks", {}))
 
-    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
-
     # Add UserPromptSubmit hook if missing
-    if not has_user_prompt:
+    if not has_user_prompt_hook(settings):
         hooks["UserPromptSubmit"].append(
             {
                 "matcher": "",
@@ -126,7 +112,7 @@ def add_erk_hooks(settings: dict) -> dict:
         )
 
     # Add PreToolUse hook for ExitPlanMode if missing
-    if not has_pre_tool:
+    if not has_exit_plan_hook(settings):
         hooks["PreToolUse"].append(
             {
                 "matcher": "ExitPlanMode",

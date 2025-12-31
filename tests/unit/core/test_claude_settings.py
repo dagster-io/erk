@@ -18,7 +18,6 @@ from erk.core.claude_settings import (
     add_erk_hooks,
     add_erk_permission,
     get_repo_claude_settings_path,
-    has_erk_hooks,
     has_erk_permission,
     has_exit_plan_hook,
     has_user_prompt_hook,
@@ -364,32 +363,29 @@ def test_hook_command_constants() -> None:
     )
 
 
-def test_has_erk_hooks_returns_both_false_for_empty_settings() -> None:
-    """Test that has_erk_hooks returns (False, False) for empty settings."""
+def test_hook_detection_returns_false_for_empty_settings() -> None:
+    """Test that hook detection functions return False for empty settings."""
     settings: dict = {}
-    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
-    assert has_user_prompt is False
-    assert has_pre_tool is False
+    assert has_user_prompt_hook(settings) is False
+    assert has_exit_plan_hook(settings) is False
 
 
-def test_has_erk_hooks_returns_both_false_for_missing_hooks_key() -> None:
-    """Test that has_erk_hooks returns (False, False) when hooks key is missing."""
+def test_hook_detection_returns_false_for_missing_hooks_key() -> None:
+    """Test that hook detection returns False when hooks key is missing."""
     settings = {"permissions": {"allow": []}}
-    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
-    assert has_user_prompt is False
-    assert has_pre_tool is False
+    assert has_user_prompt_hook(settings) is False
+    assert has_exit_plan_hook(settings) is False
 
 
-def test_has_erk_hooks_returns_both_false_for_empty_hooks() -> None:
-    """Test that has_erk_hooks returns (False, False) for empty hooks structure."""
+def test_hook_detection_returns_false_for_empty_hooks() -> None:
+    """Test that hook detection returns False for empty hooks structure."""
     settings = {"hooks": {}}
-    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
-    assert has_user_prompt is False
-    assert has_pre_tool is False
+    assert has_user_prompt_hook(settings) is False
+    assert has_exit_plan_hook(settings) is False
 
 
-def test_has_erk_hooks_detects_user_prompt_hook() -> None:
-    """Test that has_erk_hooks detects UserPromptSubmit hook."""
+def test_hook_detection_detects_user_prompt_hook() -> None:
+    """Test that has_user_prompt_hook detects UserPromptSubmit hook."""
     settings = {
         "hooks": {
             "UserPromptSubmit": [
@@ -405,13 +401,12 @@ def test_has_erk_hooks_detects_user_prompt_hook() -> None:
             ]
         }
     }
-    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
-    assert has_user_prompt is True
-    assert has_pre_tool is False
+    assert has_user_prompt_hook(settings) is True
+    assert has_exit_plan_hook(settings) is False
 
 
-def test_has_erk_hooks_detects_pre_tool_use_hook() -> None:
-    """Test that has_erk_hooks detects PreToolUse hook with ExitPlanMode matcher."""
+def test_hook_detection_detects_pre_tool_use_hook() -> None:
+    """Test that has_exit_plan_hook detects PreToolUse hook with ExitPlanMode matcher."""
     settings = {
         "hooks": {
             "PreToolUse": [
@@ -427,13 +422,12 @@ def test_has_erk_hooks_detects_pre_tool_use_hook() -> None:
             ]
         }
     }
-    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
-    assert has_user_prompt is False
-    assert has_pre_tool is True
+    assert has_user_prompt_hook(settings) is False
+    assert has_exit_plan_hook(settings) is True
 
 
-def test_has_erk_hooks_detects_both_hooks() -> None:
-    """Test that has_erk_hooks detects both hooks when present."""
+def test_hook_detection_detects_both_hooks() -> None:
+    """Test that hook detection finds both hooks when present."""
     settings = {
         "hooks": {
             "UserPromptSubmit": [
@@ -460,13 +454,12 @@ def test_has_erk_hooks_detects_both_hooks() -> None:
             ],
         }
     }
-    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
-    assert has_user_prompt is True
-    assert has_pre_tool is True
+    assert has_user_prompt_hook(settings) is True
+    assert has_exit_plan_hook(settings) is True
 
 
-def test_has_erk_hooks_ignores_wrong_matcher_for_pretooluse() -> None:
-    """Test that has_erk_hooks only matches PreToolUse with ExitPlanMode matcher."""
+def test_hook_detection_ignores_wrong_matcher_for_pretooluse() -> None:
+    """Test that has_exit_plan_hook only matches PreToolUse with ExitPlanMode matcher."""
     settings = {
         "hooks": {
             "PreToolUse": [
@@ -482,13 +475,12 @@ def test_has_erk_hooks_ignores_wrong_matcher_for_pretooluse() -> None:
             ]
         }
     }
-    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
-    assert has_user_prompt is False
-    assert has_pre_tool is False
+    assert has_user_prompt_hook(settings) is False
+    assert has_exit_plan_hook(settings) is False
 
 
-def test_has_erk_hooks_requires_exact_command_match() -> None:
-    """Test that has_erk_hooks requires exact command string match."""
+def test_hook_detection_requires_exact_command_match() -> None:
+    """Test that hook detection requires exact command string match."""
     settings = {
         "hooks": {
             "UserPromptSubmit": [
@@ -504,13 +496,12 @@ def test_has_erk_hooks_requires_exact_command_match() -> None:
             ]
         }
     }
-    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
-    assert has_user_prompt is False
-    assert has_pre_tool is False
+    assert has_user_prompt_hook(settings) is False
+    assert has_exit_plan_hook(settings) is False
 
 
-def test_has_erk_hooks_finds_hook_among_multiple_entries() -> None:
-    """Test that has_erk_hooks finds the erk hook among multiple hook entries."""
+def test_hook_detection_finds_hook_among_multiple_entries() -> None:
+    """Test that hook detection finds the erk hook among multiple hook entries."""
     settings = {
         "hooks": {
             "UserPromptSubmit": [
@@ -528,9 +519,8 @@ def test_has_erk_hooks_finds_hook_among_multiple_entries() -> None:
             ]
         }
     }
-    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
-    assert has_user_prompt is True
-    assert has_pre_tool is False
+    assert has_user_prompt_hook(settings) is True
+    assert has_exit_plan_hook(settings) is False
 
 
 def test_add_erk_hooks_adds_both_hooks_to_empty_settings() -> None:

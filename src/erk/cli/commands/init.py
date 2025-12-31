@@ -10,8 +10,9 @@ from erk.core.claude_settings import (
     add_erk_hooks,
     add_erk_permission,
     get_repo_claude_settings_path,
-    has_erk_hooks,
     has_erk_permission,
+    has_exit_plan_hook,
+    has_user_prompt_hook,
     read_claude_settings,
     write_claude_settings,
 )
@@ -262,8 +263,7 @@ def offer_claude_hook_setup(repo_root: Path) -> None:
         settings = {}
         user_output(f"\nNo .claude/settings.json found. Will create: {settings_path}")
 
-    has_user_prompt, has_pre_tool = has_erk_hooks(settings)
-    if has_user_prompt and has_pre_tool:
+    if has_user_prompt_hook(settings) and has_exit_plan_hook(settings):
         user_output(click.style("✓", fg="green") + " Hooks already configured")
         return
 
