@@ -5,7 +5,19 @@ from pathlib import Path
 import click
 
 from erk.artifacts.discovery import discover_artifacts
-from erk.artifacts.models import ArtifactType
+from erk.artifacts.models import ArtifactType, InstalledArtifact
+from erk.artifacts.orphans import BUNDLED_AGENTS, BUNDLED_SKILLS
+
+
+def _is_erk_managed(artifact: InstalledArtifact) -> bool:
+    """Check if artifact is managed by erk."""
+    if artifact.artifact_type == "command":
+        return artifact.name.startswith("erk:")
+    if artifact.artifact_type == "skill":
+        return artifact.name in BUNDLED_SKILLS
+    if artifact.artifact_type == "agent":
+        return artifact.name in BUNDLED_AGENTS
+    return False
 
 
 @click.command("list")
@@ -61,10 +73,11 @@ def list_cmd(artifact_type: str | None, verbose: bool) -> None:
             current_type = artifact.artifact_type
             click.echo(click.style(f"{current_type.upper()}S:", bold=True))
 
+        managed_suffix = " [erk-managed]" if _is_erk_managed(artifact) else ""
         if verbose:
-            click.echo(f"  {artifact.name}")
+            click.echo(f"  {artifact.name}{managed_suffix}")
             click.echo(click.style(f"    Path: {artifact.path}", dim=True))
             if artifact.content_hash:
                 click.echo(click.style(f"    Hash: {artifact.content_hash}", dim=True))
         else:
-            click.echo(f"  {artifact.name}")
+            click.echo(f"  {artifact.name}{managed_suffix}")

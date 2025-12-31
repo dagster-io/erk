@@ -5,8 +5,9 @@ from unittest.mock import patch
 
 from click.testing import CliRunner
 
+from erk.artifacts.models import InstalledArtifact
 from erk.cli.commands.artifact.check import check_cmd
-from erk.cli.commands.artifact.list_cmd import list_cmd
+from erk.cli.commands.artifact.list_cmd import _is_erk_managed, list_cmd
 from erk.cli.commands.artifact.show import show_cmd
 from erk.cli.commands.artifact.sync_cmd import sync_cmd
 
@@ -65,6 +66,132 @@ class TestListCommand:
         assert result.exit_code == 0
         assert "test-skill" in result.output
         assert "test-cmd" not in result.output
+
+    def test_list_shows_erk_managed_indicator_for_erk_command(self, tmp_path: Path) -> None:
+        """Shows [erk-managed] for erk: prefixed commands."""
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            cmd_dir = Path(".claude/commands/erk")
+            cmd_dir.mkdir(parents=True)
+            (cmd_dir / "plan-implement.md").write_text("# Cmd", encoding="utf-8")
+
+            result = runner.invoke(list_cmd)
+
+        assert result.exit_code == 0
+        assert "erk:plan-implement [erk-managed]" in result.output
+
+    def test_list_shows_erk_managed_indicator_for_bundled_skill(self, tmp_path: Path) -> None:
+        """Shows [erk-managed] for bundled skills."""
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            skill_dir = Path(".claude/skills/dignified-python")
+            skill_dir.mkdir(parents=True)
+            (skill_dir / "SKILL.md").write_text("# Skill", encoding="utf-8")
+
+            result = runner.invoke(list_cmd)
+
+        assert result.exit_code == 0
+        assert "dignified-python [erk-managed]" in result.output
+
+    def test_list_shows_erk_managed_indicator_for_bundled_agent(self, tmp_path: Path) -> None:
+        """Shows [erk-managed] for bundled agents."""
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            agent_dir = Path(".claude/agents/devrun")
+            agent_dir.mkdir(parents=True)
+            # Agent discovery expects <agent-name>/<agent-name>.md pattern
+            (agent_dir / "devrun.md").write_text("# Agent", encoding="utf-8")
+
+            result = runner.invoke(list_cmd)
+
+        assert result.exit_code == 0
+        assert "devrun [erk-managed]" in result.output
+
+    def test_list_no_indicator_for_local_artifacts(self, tmp_path: Path) -> None:
+        """No indicator for local/user-defined artifacts."""
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            # Local command
+            cmd_dir = Path(".claude/commands/local")
+            cmd_dir.mkdir(parents=True)
+            (cmd_dir / "my-cmd.md").write_text("# Cmd", encoding="utf-8")
+
+            # Custom skill (not in BUNDLED_SKILLS)
+            skill_dir = Path(".claude/skills/my-skill")
+            skill_dir.mkdir(parents=True)
+            (skill_dir / "SKILL.md").write_text("# Skill", encoding="utf-8")
+
+            result = runner.invoke(list_cmd)
+
+        assert result.exit_code == 0
+        assert "local:my-cmd" in result.output
+        assert "local:my-cmd [erk-managed]" not in result.output
+        assert "my-skill" in result.output
+        assert "my-skill [erk-managed]" not in result.output
+
+
+class TestIsErkManaged:
+    """Tests for _is_erk_managed helper function."""
+
+    def test_erk_command_is_managed(self) -> None:
+        """Commands with erk: prefix are erk-managed."""
+        artifact = InstalledArtifact(
+            name="erk:plan-implement",
+            artifact_type="command",
+            path=Path(".claude/commands/erk/plan-implement.md"),
+            content_hash=None,
+        )
+        assert _is_erk_managed(artifact) is True
+
+    def test_local_command_not_managed(self) -> None:
+        """Commands with local: prefix are not erk-managed."""
+        artifact = InstalledArtifact(
+            name="local:my-cmd",
+            artifact_type="command",
+            path=Path(".claude/commands/local/my-cmd.md"),
+            content_hash=None,
+        )
+        assert _is_erk_managed(artifact) is False
+
+    def test_bundled_skill_is_managed(self) -> None:
+        """Skills in BUNDLED_SKILLS are erk-managed."""
+        artifact = InstalledArtifact(
+            name="dignified-python",
+            artifact_type="skill",
+            path=Path(".claude/skills/dignified-python"),
+            content_hash=None,
+        )
+        assert _is_erk_managed(artifact) is True
+
+    def test_custom_skill_not_managed(self) -> None:
+        """Skills not in BUNDLED_SKILLS are not erk-managed."""
+        artifact = InstalledArtifact(
+            name="my-custom-skill",
+            artifact_type="skill",
+            path=Path(".claude/skills/my-custom-skill"),
+            content_hash=None,
+        )
+        assert _is_erk_managed(artifact) is False
+
+    def test_bundled_agent_is_managed(self) -> None:
+        """Agents in BUNDLED_AGENTS are erk-managed."""
+        artifact = InstalledArtifact(
+            name="devrun",
+            artifact_type="agent",
+            path=Path(".claude/agents/devrun"),
+            content_hash=None,
+        )
+        assert _is_erk_managed(artifact) is True
+
+    def test_custom_agent_not_managed(self) -> None:
+        """Agents not in BUNDLED_AGENTS are not erk-managed."""
+        artifact = InstalledArtifact(
+            name="my-agent",
+            artifact_type="agent",
+            path=Path(".claude/agents/my-agent"),
+            content_hash=None,
+        )
+        assert _is_erk_managed(artifact) is False
 
 
 class TestShowCommand:
