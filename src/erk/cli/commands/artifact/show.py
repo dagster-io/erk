@@ -13,7 +13,7 @@ from erk.artifacts.models import ArtifactType
 @click.option(
     "--type",
     "artifact_type",
-    type=click.Choice(["skill", "command", "agent", "doc"]),
+    type=click.Choice(["skill", "command", "agent"]),
     help="Artifact type (optional, helps disambiguate)",
 )
 def show_cmd(name: str, artifact_type: str | None) -> None:

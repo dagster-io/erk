@@ -93,28 +93,6 @@ def _discover_agents(claude_dir: Path) -> list[InstalledArtifact]:
     return artifacts
 
 
-def _discover_docs(claude_dir: Path) -> list[InstalledArtifact]:
-    """Discover docs in .claude/docs/ directory.
-
-    Pattern: docs/*.md
-    """
-    docs_dir = claude_dir / "docs"
-    if not docs_dir.exists():
-        return []
-
-    artifacts: list[InstalledArtifact] = []
-    for doc_file in docs_dir.glob("*.md"):
-        artifacts.append(
-            InstalledArtifact(
-                name=doc_file.stem,
-                artifact_type="doc",
-                path=doc_file,
-                content_hash=_compute_content_hash(doc_file),
-            )
-        )
-    return artifacts
-
-
 def discover_artifacts(claude_dir: Path) -> list[InstalledArtifact]:
     """Scan .claude/ directory and return all installed artifacts.
 
@@ -122,7 +100,6 @@ def discover_artifacts(claude_dir: Path) -> list[InstalledArtifact]:
     - skills: skills/<name>/SKILL.md
     - commands: commands/<namespace>/<name>.md
     - agents: agents/<name>/<name>.md
-    - docs: docs/<name>.md
     """
     if not claude_dir.exists():
         return []
@@ -131,7 +108,6 @@ def discover_artifacts(claude_dir: Path) -> list[InstalledArtifact]:
     artifacts.extend(_discover_skills(claude_dir))
     artifacts.extend(_discover_commands(claude_dir))
     artifacts.extend(_discover_agents(claude_dir))
-    artifacts.extend(_discover_docs(claude_dir))
 
     # Sort by type then name for consistent output
     return sorted(artifacts, key=lambda a: (a.artifact_type, a.name))

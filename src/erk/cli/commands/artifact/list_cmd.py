@@ -12,7 +12,7 @@ from erk.artifacts.models import ArtifactType
 @click.option(
     "--type",
     "artifact_type",
-    type=click.Choice(["skill", "command", "agent", "doc"]),
+    type=click.Choice(["skill", "command", "agent"]),
     help="Filter by artifact type",
 )
 @click.option("--verbose", "-v", is_flag=True, help="Show additional details")

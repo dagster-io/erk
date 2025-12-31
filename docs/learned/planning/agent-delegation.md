@@ -166,7 +166,7 @@ prompt="Execute the complete planned worktree creation workflow"
 - Handle errors at each boundary
 - Format final results for user
 
-### Pattern 3: Shared Workflow Documentation
+### Pattern 3: Shared Workflow Skills
 
 **When to use:** Multiple commands delegate to the same agent or share workflow logic.
 
@@ -174,13 +174,13 @@ prompt="Execute the complete planned worktree creation workflow"
 
 **Characteristics:**
 
-- Workflow documentation lives in `.claude/docs/`
-- Commands reference shared doc with `@` syntax
+- Workflow documentation lives in skills (`.claude/skills/`)
+- Commands reference shared skill with `@` syntax
 - Single source of truth for workflow details
 - Reduces duplication across commands
 - Agent implements shared workflow
 
-**Shared doc pattern:**
+**Shared skill pattern:**
 
 ```markdown
 # CI Iteration Workflow

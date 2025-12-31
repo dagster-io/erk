@@ -55,16 +55,16 @@ class TestListCommand:
             skill_dir.mkdir(parents=True)
             (skill_dir / "SKILL.md").write_text("# Test", encoding="utf-8")
 
-            # Create doc
-            doc_dir = Path(".claude/docs")
-            doc_dir.mkdir(parents=True)
-            (doc_dir / "test-doc.md").write_text("# Doc", encoding="utf-8")
+            # Create command
+            cmd_dir = Path(".claude/commands/local")
+            cmd_dir.mkdir(parents=True)
+            (cmd_dir / "test-cmd.md").write_text("# Cmd", encoding="utf-8")
 
             result = runner.invoke(list_cmd, ["--type", "skill"])
 
         assert result.exit_code == 0
         assert "test-skill" in result.output
-        assert "test-doc" not in result.output
+        assert "test-cmd" not in result.output
 
 
 class TestShowCommand:

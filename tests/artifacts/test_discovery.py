@@ -62,22 +62,6 @@ def test_discover_artifacts_finds_agents(tmp_path: Path) -> None:
     assert result[0].path == agent_file
 
 
-def test_discover_artifacts_finds_docs(tmp_path: Path) -> None:
-    """Discovers docs from docs/<name>.md pattern."""
-    claude_dir = tmp_path / ".claude"
-    docs_dir = claude_dir / "docs"
-    docs_dir.mkdir(parents=True)
-    doc_file = docs_dir / "my-doc.md"
-    doc_file.write_text("# My Doc", encoding="utf-8")
-
-    result = discover_artifacts(claude_dir)
-
-    assert len(result) == 1
-    assert result[0].name == "my-doc"
-    assert result[0].artifact_type == "doc"
-    assert result[0].path == doc_file
-
-
 def test_discover_artifacts_sorted_by_type_and_name(tmp_path: Path) -> None:
     """Results are sorted by type then name."""
     claude_dir = tmp_path / ".claude"

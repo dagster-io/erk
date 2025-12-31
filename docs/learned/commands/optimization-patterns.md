@@ -122,7 +122,6 @@ Look for:
 
 **Placement:**
 
-- Project commands: `.claude/docs/<command-name>/`
 - Kit commands: `docs/<kit-name>/<command-name>/`
 
 ### Step 3: Replace with Reference
@@ -194,9 +193,6 @@ After optimization:
 ```bash
 wc -c .claude/commands/my-command.md
 # 7,000 chars (-48%)
-
-wc -c .claude/docs/my-command/guide.md
-# 3,700 chars (loaded once per session)
 ```
 
 ## Anti-Patterns

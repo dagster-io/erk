@@ -75,8 +75,7 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
 
     total_copied = 0
 
-    # Sync whitelisted artifact folders (commands, skills, agents)
-    # Note: docs are not synced - they are project-specific
+    # Sync artifact folders (commands, skills, agents)
     for subdir in ["commands", "skills", "agents"]:
         source = bundled_dir / subdir
         target = target_claude_dir / subdir
