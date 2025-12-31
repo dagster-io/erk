@@ -42,7 +42,17 @@ This command:
 - Strips commit hashes from entries
 - Bumps version in pyproject.toml
 
-### 3. Squash, Commit, and Tag
+### 3. Update Required Version File
+
+Update the required erk version to match the new release:
+
+```bash
+echo "X.Y.Z" > .erk/required-erk-uv-tool-version
+```
+
+This file is used by version checking to warn users when their installed erk doesn't match the repository's required version. Failing to update this will cause CI failures due to version mismatch warnings in shell integration tests.
+
+### 4. Squash, Commit, and Tag
 
 Squash all release prep commits into a single release commit:
 
@@ -57,7 +67,15 @@ erk-dev release-tag
 
 This ensures a clean single commit for the release with the tag pointing to it.
 
-### 4. Publish to PyPI
+### 5. Run CI
+
+```bash
+make all-ci
+```
+
+Verify all checks pass before publishing. This catches issues like version mismatches that would break users.
+
+### 6. Publish to PyPI
 
 ```bash
 make publish
@@ -65,7 +83,7 @@ make publish
 
 This builds and publishes all packages to PyPI in dependency order.
 
-### 5. Merge to Master
+### 7. Merge to Master
 
 After confirming the publish succeeded:
 
