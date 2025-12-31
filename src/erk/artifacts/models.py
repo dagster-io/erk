@@ -42,3 +42,11 @@ class OrphanCheckResult:
 
     orphans: dict[str, list[str]]  # folder -> list of orphaned filenames
     skipped_reason: Literal["erk-repo", "no-claude-dir", "no-bundled-dir"] | None
+
+
+@dataclass(frozen=True)
+class CompletenessCheckResult:
+    """Result of checking for missing bundled artifacts."""
+
+    missing: dict[str, list[str]]  # folder -> list of missing filenames
+    skipped_reason: Literal["erk-repo", "no-claude-dir", "no-bundled-dir"] | None
