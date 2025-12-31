@@ -4,6 +4,7 @@
 # Planning Documentation
 
 - **[agent-delegation.md](agent-delegation.md)** — delegating to agents from commands, implementing command-agent pattern, workflow orchestration
+- **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [plans] repo in config.toml, understanding cross-repo issue closing syntax
 - **[enrichment.md](enrichment.md)** — enriching a plan, adding metadata to plans, understanding plan enrichment workflow
 - **[lifecycle.md](lifecycle.md)** — creating a plan, closing a plan, understanding plan states
 - **[plan-schema.md](plan-schema.md)** — understanding plan issue structure, debugging plan validation errors, working with plan-header or plan-body blocks

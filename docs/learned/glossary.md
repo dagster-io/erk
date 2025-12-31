@@ -313,7 +313,12 @@ API_KEY = "${SECRET_API_KEY}"
 [[post_create]]
 command = ["uv", "sync"]
 working_dir = "."
+
+[plans]
+repo = "owner/plans-repo"  # Store plan issues in separate repo
 ```
+
+When `[plans] repo` is configured, plan issues are created in the specified repository instead of the current repo. PRs use `Closes owner/plans-repo#N` format to close issues across repositories.
 
 **Access**: Via `load_config(erks_dir)` function.
 

@@ -57,17 +57,18 @@ last_remote_impl_at: null
 
 **Optional fields:**
 
-| Field                     | Type         | Description                             |
-| ------------------------- | ------------ | --------------------------------------- |
-| `worktree_name`           | string\|null | Set when worktree is created            |
-| `last_dispatched_run_id`  | string\|null | Workflow run ID (set by workflow)       |
-| `last_dispatched_node_id` | string\|null | GraphQL node ID (for batch queries)     |
-| `last_dispatched_at`      | string\|null | Dispatch timestamp                      |
-| `last_local_impl_at`      | string\|null | Local implementation timestamp          |
-| `last_local_impl_event`   | string\|null | "started" or "ended"                    |
-| `last_local_impl_session` | string\|null | Claude Code session ID                  |
-| `last_local_impl_user`    | string\|null | User who ran implementation             |
-| `last_remote_impl_at`     | string\|null | GitHub Actions implementation timestamp |
+| Field                     | Type         | Description                              |
+| ------------------------- | ------------ | ---------------------------------------- |
+| `worktree_name`           | string\|null | Set when worktree is created             |
+| `last_dispatched_run_id`  | string\|null | Workflow run ID (set by workflow)        |
+| `last_dispatched_node_id` | string\|null | GraphQL node ID (for batch queries)      |
+| `last_dispatched_at`      | string\|null | Dispatch timestamp                       |
+| `last_local_impl_at`      | string\|null | Local implementation timestamp           |
+| `last_local_impl_event`   | string\|null | "started" or "ended"                     |
+| `last_local_impl_session` | string\|null | Claude Code session ID                   |
+| `last_local_impl_user`    | string\|null | User who ran implementation              |
+| `last_remote_impl_at`     | string\|null | GitHub Actions implementation timestamp  |
+| `source_repo`             | string\|null | Implementation repo for cross-repo plans |
 
 **Extraction plan fields (when `plan_type: extraction`):**
 
