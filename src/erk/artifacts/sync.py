@@ -20,15 +20,20 @@ class SyncResult:
     message: str
 
 
+@cache
+def _get_erk_package_dir() -> Path:
+    """Get the erk package directory (where erk/__init__.py lives)."""
+    # __file__ is .../erk/artifacts/sync.py, so parent.parent is erk/
+    return Path(__file__).parent.parent
+
+
 def _is_editable_install() -> bool:
     """Check if erk is installed in editable mode.
 
-    Editable: erk.__file__ is in src/ layout (e.g., .../src/erk/__init__.py)
-    Wheel: erk.__file__ is in site-packages (e.g., .../site-packages/erk/__init__.py)
+    Editable: erk package is in src/ layout (e.g., .../src/erk/)
+    Wheel: erk package is in site-packages (e.g., .../site-packages/erk/)
     """
-    import erk
-
-    return "site-packages" not in str(Path(erk.__file__).resolve())
+    return "site-packages" not in str(_get_erk_package_dir().resolve())
 
 
 @cache
@@ -41,12 +46,10 @@ def get_bundled_claude_dir() -> Path:
     For editable installs: .claude/ is at the erk repo root (no wheel is built,
     so erk/data/ doesn't exist).
     """
-    import erk
-
-    erk_package_dir = Path(erk.__file__).parent
+    erk_package_dir = _get_erk_package_dir()
 
     if _is_editable_install():
-        # Editable: erk.__file__ is src/erk/__init__.py, repo root is ../..
+        # Editable: erk package is at src/erk/, repo root is ../..
         erk_repo_root = erk_package_dir.parent.parent
         return erk_repo_root / ".claude"
 
