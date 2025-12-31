@@ -85,6 +85,7 @@ jobs:
           ISSUE_NUMBER: ${{ inputs.issue_number }}
           SUBMITTED_BY: ${{ inputs.submitted_by }}
           GH_TOKEN: ${{ github.token }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           source $HOME/.cargo/env
           git fetch origin "$BRANCH_NAME"
