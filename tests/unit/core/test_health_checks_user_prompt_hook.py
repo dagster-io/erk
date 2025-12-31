@@ -33,7 +33,7 @@ def test_check_passes_when_hook_configured_nested(tmp_path: Path) -> None:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "uv run scripts/erk-user-prompt-hook.py",
+                                    "command": "erk exec user-prompt-hook",
                                     "timeout": 30,
                                 }
                             ],
@@ -62,7 +62,7 @@ def test_check_passes_when_hook_configured_flat(tmp_path: Path) -> None:
                     "UserPromptSubmit": [
                         {
                             "type": "command",
-                            "command": "uv run scripts/erk-user-prompt-hook.py",
+                            "command": "erk exec user-prompt-hook",
                             "timeout": 30,
                         }
                     ]
@@ -119,7 +119,7 @@ def test_check_fails_when_wrong_hook_command(tmp_path: Path) -> None:
     assert result.passed is False
     assert "missing unified hook" in result.message.lower()
     assert result.details is not None
-    assert "erk-user-prompt-hook.py" in result.details
+    assert "erk exec user-prompt-hook" in result.details
 
 
 def test_check_handles_empty_settings(tmp_path: Path) -> None:
