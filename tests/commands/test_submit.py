@@ -1367,7 +1367,7 @@ def test_load_workflow_config_valid_toml(tmp_path: Path) -> None:
     config_file = config_dir / "dispatch-erk-queue.toml"
     config_file.write_text(
         'kit_names = "erk,gt,devrun"\n'
-        'model_name = "claude-sonnet-4-5-20250929"\n'
+        'model_name = "claude-sonnet-4-5"\n'
         'package_install_script = ""\n',
         encoding="utf-8",
     )
@@ -1376,7 +1376,7 @@ def test_load_workflow_config_valid_toml(tmp_path: Path) -> None:
 
     assert result == {
         "kit_names": "erk,gt,devrun",
-        "model_name": "claude-sonnet-4-5-20250929",
+        "model_name": "claude-sonnet-4-5",
         "package_install_script": "",
     }
 
@@ -1447,7 +1447,7 @@ def test_submit_uses_workflow_config(tmp_path: Path) -> None:
     config_dir.mkdir(parents=True)
     config_file = config_dir / "erk-impl.toml"
     config_file.write_text(
-        'kit_names = "erk,gt,devrun"\nmodel_name = "claude-sonnet-4-5-20250929"\n',
+        'kit_names = "erk,gt,devrun"\nmodel_name = "claude-sonnet-4-5"\n',
         encoding="utf-8",
     )
 
@@ -1502,7 +1502,7 @@ def test_submit_uses_workflow_config(tmp_path: Path) -> None:
     assert inputs["submitted_by"] == "test-user"
     # Config-based inputs from .erk/workflows/erk-impl.toml
     assert inputs["kit_names"] == "erk,gt,devrun"
-    assert inputs["model_name"] == "claude-sonnet-4-5-20250929"
+    assert inputs["model_name"] == "claude-sonnet-4-5"
 
 
 def test_submit_rollback_on_push_failure(tmp_path: Path) -> None:

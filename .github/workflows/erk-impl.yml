@@ -28,6 +28,11 @@ on:
         description: "PR number for implementation (created by submit command)"
         required: true
         type: string
+      model_name:
+        description: "Claude model to use for implementation"
+        required: false
+        type: string
+        default: "claude-sonnet-4-5"
 
 concurrency:
   group: implement-issue-${{ github.event.inputs.issue_number }}
@@ -152,7 +157,7 @@ jobs:
         run: |
           set +e
           claude --print \
-            --model claude-sonnet-4-5-20250929 \
+            --model ${{ inputs.model_name }} \
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
@@ -189,7 +194,7 @@ jobs:
           git config user.name "$SUBMITTED_BY"
           git config user.email "$SUBMITTED_BY@users.noreply.github.com"
           claude --print \
-            --model claude-sonnet-4-5-20250929 \
+            --model ${{ inputs.model_name }} \
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
