@@ -4,7 +4,12 @@ from pathlib import Path
 
 import click
 
-from erk.artifacts.artifact_health import BUNDLED_AGENTS, BUNDLED_SKILLS, BUNDLED_WORKFLOWS
+from erk.artifacts.artifact_health import (
+    BUNDLED_AGENTS,
+    BUNDLED_HOOKS,
+    BUNDLED_SKILLS,
+    BUNDLED_WORKFLOWS,
+)
 from erk.artifacts.discovery import discover_artifacts
 from erk.artifacts.models import ArtifactType, InstalledArtifact
 
@@ -19,6 +24,8 @@ def _is_erk_managed(artifact: InstalledArtifact) -> bool:
         return artifact.name in BUNDLED_AGENTS
     if artifact.artifact_type == "workflow":
         return f"{artifact.name}.yml" in BUNDLED_WORKFLOWS
+    if artifact.artifact_type == "hook":
+        return artifact.name in BUNDLED_HOOKS
     return False
 
 
@@ -26,7 +33,7 @@ def _is_erk_managed(artifact: InstalledArtifact) -> bool:
 @click.option(
     "--type",
     "artifact_type",
-    type=click.Choice(["skill", "command", "agent", "workflow"]),
+    type=click.Choice(["skill", "command", "agent", "workflow", "hook"]),
     help="Filter by artifact type",
 )
 @click.option("--verbose", "-v", is_flag=True, help="Show additional details")
@@ -74,9 +81,11 @@ def list_cmd(artifact_type: str | None, verbose: bool) -> None:
             if current_type is not None:
                 click.echo("")  # Blank line between types
             current_type = artifact.artifact_type
-            # Special header for workflows with location
+            # Special headers for types with non-standard locations/display
             if current_type == "workflow":
                 header = "Github Workflows (.github/workflows):"
+            elif current_type == "hook":
+                header = "Hooks (.claude/settings.json):"
             else:
                 # Capitalize first letter only (e.g., "Commands:")
                 header = current_type.capitalize() + "s:"

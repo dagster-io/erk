@@ -269,3 +269,111 @@ def test_is_erk_managed_workflow_badge_logic(tmp_path: Path) -> None:
     # Find user workflow
     user_artifact = next(a for a in artifacts if a.name == "user-ci")
     assert _is_erk_managed(user_artifact) is False
+
+
+def test_discover_hooks_from_settings_json(tmp_path: Path) -> None:
+    """Discovers hooks configured in .claude/settings.json."""
+    import json
+
+    from erk.core.claude_settings import (
+        ERK_EXIT_PLAN_HOOK_COMMAND,
+        ERK_USER_PROMPT_HOOK_COMMAND,
+    )
+
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir(parents=True)
+
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [{"type": "command", "command": ERK_USER_PROMPT_HOOK_COMMAND}],
+                }
+            ],
+            "PreToolUse": [
+                {
+                    "matcher": "ExitPlanMode",
+                    "hooks": [{"type": "command", "command": ERK_EXIT_PLAN_HOOK_COMMAND}],
+                }
+            ],
+        }
+    }
+    (claude_dir / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    result = discover_artifacts(tmp_path)
+
+    hook_artifacts = [a for a in result if a.artifact_type == "hook"]
+    assert len(hook_artifacts) == 2
+
+    hook_names = {a.name for a in hook_artifacts}
+    assert hook_names == {"user-prompt-hook", "exit-plan-mode-hook"}
+
+
+def test_discover_hooks_no_settings_json(tmp_path: Path) -> None:
+    """Returns empty list when settings.json doesn't exist."""
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir(parents=True)
+
+    result = discover_artifacts(tmp_path)
+
+    hook_artifacts = [a for a in result if a.artifact_type == "hook"]
+    assert hook_artifacts == []
+
+
+def test_discover_hooks_partial_configuration(tmp_path: Path) -> None:
+    """Discovers only configured hooks."""
+    import json
+
+    from erk.core.claude_settings import ERK_USER_PROMPT_HOOK_COMMAND
+
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir(parents=True)
+
+    # Only configure user-prompt-hook (not exit-plan-mode-hook)
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [{"type": "command", "command": ERK_USER_PROMPT_HOOK_COMMAND}],
+                }
+            ],
+        }
+    }
+    (claude_dir / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    result = discover_artifacts(tmp_path)
+
+    hook_artifacts = [a for a in result if a.artifact_type == "hook"]
+    assert len(hook_artifacts) == 1
+    assert hook_artifacts[0].name == "user-prompt-hook"
+
+
+def test_is_erk_managed_hook_badge_logic(tmp_path: Path) -> None:
+    """Verifies badge logic correctly identifies erk-managed hooks."""
+    import json
+
+    from erk.cli.commands.artifact.list_cmd import _is_erk_managed
+    from erk.core.claude_settings import ERK_USER_PROMPT_HOOK_COMMAND
+
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir(parents=True)
+
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [{"type": "command", "command": ERK_USER_PROMPT_HOOK_COMMAND}],
+                }
+            ],
+        }
+    }
+    (claude_dir / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    artifacts = discover_artifacts(tmp_path)
+    hook_artifact = next(a for a in artifacts if a.artifact_type == "hook")
+
+    # user-prompt-hook is in BUNDLED_HOOKS
+    assert _is_erk_managed(hook_artifact) is True

@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Literal
 
 # Type of artifact based on directory structure in .claude/ or .github/
-ArtifactType = Literal["skill", "command", "agent", "workflow"]
+# Note: "hook" is not file-based like others; it's a config entry in settings.json
+ArtifactType = Literal["skill", "command", "agent", "workflow", "hook"]
 
 
 @dataclass(frozen=True)

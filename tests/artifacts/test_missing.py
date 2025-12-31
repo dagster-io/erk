@@ -164,3 +164,117 @@ def test_find_missing_artifacts_missing_workflow(tmp_path: Path, monkeypatch) ->
 
     assert ".github/workflows" in result.missing
     assert "erk-impl.yml" in result.missing[".github/workflows"]
+
+
+def test_find_missing_artifacts_missing_hooks_no_settings(tmp_path: Path, monkeypatch) -> None:
+    """All hooks missing when settings.json doesn't exist."""
+    # Bundled .claude exists
+    bundled_claude = tmp_path / "bundled" / ".claude"
+    bundled_claude.mkdir(parents=True)
+
+    # Project .claude exists but no settings.json
+    project_claude = tmp_path / "project" / ".claude"
+    project_claude.mkdir(parents=True)
+
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_claude_dir",
+        lambda: bundled_claude,
+    )
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_github_dir",
+        lambda: tmp_path / "bundled" / ".github",
+    )
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.is_in_erk_repo",
+        lambda _: False,
+    )
+
+    result = find_missing_artifacts(tmp_path / "project")
+
+    assert "settings.json" in result.missing
+    # Both bundled hooks should be missing
+    assert "exit-plan-mode-hook" in result.missing["settings.json"]
+    assert "user-prompt-hook" in result.missing["settings.json"]
+
+
+def test_find_missing_artifacts_partial_hooks(tmp_path: Path, monkeypatch) -> None:
+    """Only missing hooks are reported."""
+    import json
+
+    from erk.core.claude_settings import ERK_USER_PROMPT_HOOK_COMMAND
+
+    # Bundled .claude exists
+    bundled_claude = tmp_path / "bundled" / ".claude"
+    bundled_claude.mkdir(parents=True)
+
+    # Project has user-prompt-hook but not exit-plan-mode-hook
+    project_claude = tmp_path / "project" / ".claude"
+    project_claude.mkdir(parents=True)
+
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [{"type": "command", "command": ERK_USER_PROMPT_HOOK_COMMAND}],
+                }
+            ],
+        }
+    }
+    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_claude_dir",
+        lambda: bundled_claude,
+    )
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_github_dir",
+        lambda: tmp_path / "bundled" / ".github",
+    )
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.is_in_erk_repo",
+        lambda _: False,
+    )
+
+    result = find_missing_artifacts(tmp_path / "project")
+
+    assert "settings.json" in result.missing
+    # Only exit-plan-mode-hook should be missing
+    assert "exit-plan-mode-hook" in result.missing["settings.json"]
+    assert "user-prompt-hook" not in result.missing["settings.json"]
+
+
+def test_find_missing_artifacts_all_hooks_present(tmp_path: Path, monkeypatch) -> None:
+    """No missing hooks when all are configured."""
+    import json
+
+    from erk.core.claude_settings import add_erk_hooks
+
+    # Bundled .claude exists
+    bundled_claude = tmp_path / "bundled" / ".claude"
+    bundled_claude.mkdir(parents=True)
+
+    # Project has all hooks configured
+    project_claude = tmp_path / "project" / ".claude"
+    project_claude.mkdir(parents=True)
+
+    settings = add_erk_hooks({})
+    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_claude_dir",
+        lambda: bundled_claude,
+    )
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_github_dir",
+        lambda: tmp_path / "bundled" / ".github",
+    )
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.is_in_erk_repo",
+        lambda _: False,
+    )
+
+    result = find_missing_artifacts(tmp_path / "project")
+
+    # No hooks should be missing
+    assert "settings.json" not in result.missing

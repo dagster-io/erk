@@ -775,16 +775,23 @@ def test_check_orphaned_artifacts_user_created_folders_not_checked(
 
 def test_check_missing_artifacts_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Check fails when artifacts are missing."""
+    import json
+
+    from erk.core.claude_settings import add_erk_hooks
+
     # Create bundled dir with command
     bundled_dir = tmp_path / "bundled" / ".claude"
     bundled_commands = bundled_dir / "commands" / "erk"
     bundled_commands.mkdir(parents=True)
     (bundled_commands / "plan-save.md").write_text("# Command", encoding="utf-8")
 
-    # Create project dir WITHOUT the command
+    # Create project dir WITHOUT the command but WITH hooks (to isolate test)
     project_dir = tmp_path / "project"
     project_claude = project_dir / ".claude"
     project_claude.mkdir(parents=True)
+    # Add hooks so we only test missing command
+    settings = add_erk_hooks({})
+    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
     monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
     monkeypatch.setattr(
@@ -807,17 +814,25 @@ def test_check_missing_artifacts_all_present(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Check passes when all artifacts present."""
+    import json
+
+    from erk.core.claude_settings import add_erk_hooks
+
     # Create bundled dir with command
     bundled_dir = tmp_path / "bundled" / ".claude"
     bundled_commands = bundled_dir / "commands" / "erk"
     bundled_commands.mkdir(parents=True)
     (bundled_commands / "plan-save.md").write_text("# Command", encoding="utf-8")
 
-    # Create project dir WITH the command
+    # Create project dir WITH the command and hooks
     project_dir = tmp_path / "project"
-    project_commands = project_dir / ".claude" / "commands" / "erk"
+    project_claude = project_dir / ".claude"
+    project_commands = project_claude / "commands" / "erk"
     project_commands.mkdir(parents=True)
     (project_commands / "plan-save.md").write_text("# Command", encoding="utf-8")
+    # Add hooks so all bundled artifacts are present
+    settings = add_erk_hooks({})
+    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
     monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
     monkeypatch.setattr(

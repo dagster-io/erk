@@ -162,6 +162,52 @@ def _sync_workflows(bundled_github_dir: Path, target_workflows_dir: Path) -> int
     return count
 
 
+def _sync_hooks(target_claude_dir: Path) -> int:
+    """Sync erk-managed hooks to project's .claude/settings.json.
+
+    Hooks are configuration entries, not files. This adds missing hooks
+    to settings.json using the existing add_erk_hooks() function.
+
+    Returns:
+        Number of hooks added (0, 1, or 2)
+    """
+    import json
+
+    from erk.core.claude_settings import (
+        add_erk_hooks,
+        has_exit_plan_hook,
+        has_user_prompt_hook,
+    )
+
+    settings_path = target_claude_dir / "settings.json"
+
+    # Read existing settings or start with empty
+    if settings_path.exists():
+        content = settings_path.read_text(encoding="utf-8")
+        settings = json.loads(content)
+    else:
+        settings = {}
+
+    # Count hooks before adding
+    had_user_prompt = has_user_prompt_hook(settings)
+    had_exit_plan = has_exit_plan_hook(settings)
+
+    # Add missing hooks
+    updated_settings = add_erk_hooks(settings)
+
+    # Write updated settings
+    target_claude_dir.mkdir(parents=True, exist_ok=True)
+    settings_path.write_text(json.dumps(updated_settings, indent=2), encoding="utf-8")
+
+    # Count hooks added
+    added = 0
+    if not had_user_prompt:
+        added += 1
+    if not had_exit_plan:
+        added += 1
+    return added
+
+
 def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     """Sync artifacts from erk package to project's .claude/ and .github/ directories.
 
@@ -199,6 +245,9 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     if bundled_github_dir.exists():
         target_workflows_dir = project_dir / ".github" / "workflows"
         total_copied += _sync_workflows(bundled_github_dir, target_workflows_dir)
+
+    # Sync hooks to settings.json
+    total_copied += _sync_hooks(target_claude_dir)
 
     # Save state with current version
     save_artifact_state(project_dir, ArtifactState(version=get_current_version()))

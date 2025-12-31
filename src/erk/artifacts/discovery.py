@@ -1,9 +1,14 @@
 """Discover artifacts installed in a project's .claude/ and .github/ directories."""
 
 import hashlib
+import json
 from pathlib import Path
 
 from erk.artifacts.models import ArtifactType, InstalledArtifact
+from erk.core.claude_settings import (
+    ERK_EXIT_PLAN_HOOK_COMMAND,
+    ERK_USER_PROMPT_HOOK_COMMAND,
+)
 
 
 def _compute_content_hash(path: Path) -> str:
@@ -134,6 +139,60 @@ def _discover_workflows(workflows_dir: Path) -> list[InstalledArtifact]:
     return artifacts
 
 
+def _discover_hooks(claude_dir: Path) -> list[InstalledArtifact]:
+    """Discover hooks configured in .claude/settings.json.
+
+    Hooks are configuration entries in settings.json, not files.
+    We look for erk-managed hooks by checking for known command patterns.
+
+    Pattern: hooks.UserPromptSubmit[].hooks[].command or hooks.PreToolUse[].hooks[].command
+    """
+    settings_path = claude_dir / "settings.json"
+    if not settings_path.exists():
+        return []
+
+    content = settings_path.read_text(encoding="utf-8")
+    settings = json.loads(content)
+    hooks_section = settings.get("hooks", {})
+    if not hooks_section:
+        return []
+
+    artifacts: list[InstalledArtifact] = []
+
+    # Check UserPromptSubmit hooks for user-prompt-hook
+    user_prompt_hooks = hooks_section.get("UserPromptSubmit", [])
+    for entry in user_prompt_hooks:
+        for hook in entry.get("hooks", []):
+            if hook.get("command") == ERK_USER_PROMPT_HOOK_COMMAND:
+                artifacts.append(
+                    InstalledArtifact(
+                        name="user-prompt-hook",
+                        artifact_type="hook",
+                        path=settings_path,
+                        content_hash=None,  # Hooks don't have individual content hashes
+                    )
+                )
+                break
+
+    # Check PreToolUse hooks for exit-plan-mode-hook
+    pre_tool_hooks = hooks_section.get("PreToolUse", [])
+    for entry in pre_tool_hooks:
+        if entry.get("matcher") == "ExitPlanMode":
+            for hook in entry.get("hooks", []):
+                if hook.get("command") == ERK_EXIT_PLAN_HOOK_COMMAND:
+                    artifacts.append(
+                        InstalledArtifact(
+                            name="exit-plan-mode-hook",
+                            artifact_type="hook",
+                            path=settings_path,
+                            content_hash=None,
+                        )
+                    )
+                    break
+
+    return artifacts
+
+
 def discover_artifacts(project_dir: Path) -> list[InstalledArtifact]:
     """Scan project directory and return all installed artifacts.
 
@@ -142,6 +201,7 @@ def discover_artifacts(project_dir: Path) -> list[InstalledArtifact]:
     - commands: .claude/commands/<namespace>/<name>.md
     - agents: .claude/agents/<name>/<name>.md
     - workflows: .github/workflows/<name>.yml (all workflows)
+    - hooks: configured in .claude/settings.json
     """
     claude_dir = project_dir / ".claude"
     workflows_dir = project_dir / ".github" / "workflows"
@@ -152,6 +212,7 @@ def discover_artifacts(project_dir: Path) -> list[InstalledArtifact]:
         artifacts.extend(_discover_skills(claude_dir))
         artifacts.extend(_discover_commands(claude_dir))
         artifacts.extend(_discover_agents(claude_dir))
+        artifacts.extend(_discover_hooks(claude_dir))
 
     artifacts.extend(_discover_workflows(workflows_dir))
 

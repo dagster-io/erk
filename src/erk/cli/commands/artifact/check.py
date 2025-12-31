@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 
-from erk.artifacts.artifact_health import find_orphaned_artifacts
+from erk.artifacts.artifact_health import find_missing_artifacts, find_orphaned_artifacts
 from erk.artifacts.discovery import discover_artifacts
 from erk.artifacts.staleness import check_staleness
 
@@ -30,6 +30,19 @@ def _display_orphan_warnings(orphans: dict[str, list[str]]) -> None:
                 click.echo(f"     rm .claude/{folder}/{filename}")
 
 
+def _display_missing_warnings(missing: dict[str, list[str]]) -> None:
+    """Display missing artifact warnings."""
+    total_missing = sum(len(files) for files in missing.values())
+    click.echo(click.style("⚠️  ", fg="yellow") + f"Found {total_missing} missing artifact(s)")
+    click.echo("   Missing from project:")
+    for folder, files in sorted(missing.items()):
+        click.echo(f"     {folder}:")
+        for filename in sorted(files):
+            click.echo(f"       - {filename}")
+    click.echo("")
+    click.echo("   Run 'erk artifact sync' to install missing artifacts")
+
+
 def _display_installed_artifacts(project_dir: Path) -> None:
     """Display list of artifacts actually installed in project."""
     artifacts = discover_artifacts(project_dir)
@@ -53,6 +66,8 @@ def _display_installed_artifacts(project_dir: Path) -> None:
             click.echo(f"   agents/{artifact.name}")
         elif artifact.artifact_type == "workflow":
             click.echo(f"   .github/workflows/{artifact.name}.yml")
+        elif artifact.artifact_type == "hook":
+            click.echo(f"   hooks/{artifact.name} (settings.json)")
 
 
 @click.command("check")
@@ -73,6 +88,7 @@ def check_cmd() -> None:
 
     staleness_result = check_staleness(project_dir)
     orphan_result = find_orphaned_artifacts(project_dir)
+    missing_result = find_missing_artifacts(project_dir)
 
     has_errors = False
 
@@ -105,6 +121,14 @@ def check_cmd() -> None:
             has_errors = True
         else:
             click.echo(click.style("✓ ", fg="green") + "No orphaned artifacts")
+
+    # Check for missing artifacts (skip if erk-repo or no-claude-dir)
+    if missing_result.skipped_reason is None:
+        if missing_result.missing:
+            _display_missing_warnings(missing_result.missing)
+            has_errors = True
+        else:
+            click.echo(click.style("✓ ", fg="green") + "No missing artifacts")
 
     if has_errors:
         raise SystemExit(1)

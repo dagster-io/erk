@@ -8,6 +8,7 @@ from erk.artifacts.sync import (
     _is_editable_install,
     _sync_agents,
     _sync_commands,
+    _sync_hooks,
     _sync_skills,
     get_bundled_claude_dir,
     get_bundled_github_dir,
@@ -357,3 +358,118 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
     assert not (target_dir / ".claude" / "skills" / "fake-driven-testing").exists()
     assert not (target_dir / ".claude" / "agents" / "haiku-devrun").exists()
     assert not (target_dir / ".claude" / "commands" / "local").exists()
+
+
+def test_sync_hooks_adds_missing_hooks(tmp_path: Path) -> None:
+    """_sync_hooks adds missing hooks to settings.json."""
+    import json
+
+    from erk.core.claude_settings import (
+        ERK_EXIT_PLAN_HOOK_COMMAND,
+        ERK_USER_PROMPT_HOOK_COMMAND,
+    )
+
+    target_claude_dir = tmp_path / ".claude"
+    target_claude_dir.mkdir(parents=True)
+
+    # No settings.json exists yet
+    added = _sync_hooks(target_claude_dir)
+
+    # Both hooks should be added
+    assert added == 2
+
+    # Verify hooks were written
+    settings_path = target_claude_dir / "settings.json"
+    assert settings_path.exists()
+
+    settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert "hooks" in settings
+    assert "UserPromptSubmit" in settings["hooks"]
+    assert "PreToolUse" in settings["hooks"]
+
+    # Verify hook commands
+    user_prompt_hooks = settings["hooks"]["UserPromptSubmit"]
+    assert any(
+        hook.get("command") == ERK_USER_PROMPT_HOOK_COMMAND
+        for entry in user_prompt_hooks
+        for hook in entry.get("hooks", [])
+    )
+
+    pre_tool_hooks = settings["hooks"]["PreToolUse"]
+    assert any(
+        entry.get("matcher") == "ExitPlanMode"
+        and any(
+            hook.get("command") == ERK_EXIT_PLAN_HOOK_COMMAND for hook in entry.get("hooks", [])
+        )
+        for entry in pre_tool_hooks
+    )
+
+
+def test_sync_hooks_preserves_existing_settings(tmp_path: Path) -> None:
+    """_sync_hooks preserves existing settings when adding hooks."""
+    import json
+
+    target_claude_dir = tmp_path / ".claude"
+    target_claude_dir.mkdir(parents=True)
+
+    # Create existing settings with permissions
+    existing_settings = {"permissions": {"allow": ["Bash(git:*)"]}}
+    settings_path = target_claude_dir / "settings.json"
+    settings_path.write_text(json.dumps(existing_settings), encoding="utf-8")
+
+    _sync_hooks(target_claude_dir)
+
+    # Verify existing settings preserved
+    settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert "permissions" in settings
+    assert "Bash(git:*)" in settings["permissions"]["allow"]
+    assert "hooks" in settings
+
+
+def test_sync_hooks_skips_existing_hooks(tmp_path: Path) -> None:
+    """_sync_hooks returns 0 when hooks already exist."""
+    import json
+
+    from erk.core.claude_settings import add_erk_hooks
+
+    target_claude_dir = tmp_path / ".claude"
+    target_claude_dir.mkdir(parents=True)
+
+    # Create settings with hooks already configured
+    settings = add_erk_hooks({})
+    settings_path = target_claude_dir / "settings.json"
+    settings_path.write_text(json.dumps(settings), encoding="utf-8")
+
+    added = _sync_hooks(target_claude_dir)
+
+    # No hooks should be added
+    assert added == 0
+
+
+def test_sync_artifacts_includes_hooks(tmp_path: Path) -> None:
+    """sync_artifacts also syncs hooks to settings.json."""
+    import json
+
+    bundled_dir = tmp_path / "bundled"
+    bundled_dir.mkdir()
+
+    target_dir = tmp_path / "project"
+    target_dir.mkdir()
+
+    nonexistent = tmp_path / "nonexistent"
+    with (
+        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_dir),
+        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=nonexistent),
+        patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
+    ):
+        result = sync_artifacts(target_dir, force=False)
+
+    assert result.success is True
+    # Should include 2 hooks in the count
+    assert result.artifacts_installed == 2
+
+    # Verify hooks were synced
+    settings_path = target_dir / ".claude" / "settings.json"
+    assert settings_path.exists()
+    settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert "hooks" in settings

@@ -1427,8 +1427,13 @@ def test_init_hooks_flag_only_does_hook_setup() -> None:
         assert not config_path.exists()
 
 
-def test_init_main_flow_offers_hooks_after_permission() -> None:
-    """Test that main init flow offers hook setup after permission setup."""
+def test_init_main_flow_syncs_hooks_automatically() -> None:
+    """Test that main init flow syncs hooks automatically via artifact sync.
+
+    Hooks are now part of artifact sync (since they're bundled artifacts),
+    so they're added automatically before the interactive hook prompt runs.
+    This test verifies that behavior.
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
@@ -1452,16 +1457,17 @@ def test_init_main_flow_offers_hooks_after_permission() -> None:
             global_config=global_config,
         )
 
-        # Decline permission (n), accept hooks (y)
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\ny\n")
+        # Decline permission (n) - hooks should already be synced via artifact sync
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\n")
 
         assert result.exit_code == 0, result.output
-        # Both prompts should appear
-        assert "Bash(erk:*)" in result.output  # Permission prompt
-        assert "Erk uses Claude Code hooks" in result.output  # Hooks prompt
-        assert "Added erk hooks" in result.output
+        # Permission prompt should appear
+        assert "Bash(erk:*)" in result.output
+        # Hooks are synced as part of artifact sync, so the interactive prompt
+        # shows "Hooks already configured" instead of asking
+        assert "Hooks already configured" in result.output
 
-        # Verify hooks were added
+        # Verify hooks were added (by artifact sync)
         updated_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
         assert "hooks" in updated_settings
 
