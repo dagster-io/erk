@@ -144,3 +144,50 @@ def test_doctor_shows_github_section() -> None:
         assert result.exit_code == 0
         # Should show GitHub section header
         assert "GitHub" in result.output
+
+
+def test_doctor_shows_required_version_check() -> None:
+    """Test that doctor shows required version check result."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
+
+        result = runner.invoke(doctor_cmd, [], obj=ctx)
+
+        assert result.exit_code == 0
+        # Should include version-related check in output
+        # The check will fail because no version file exists, but it should appear
+        output_lower = result.output.lower()
+        assert "version" in output_lower
+
+
+def test_doctor_shows_exit_plan_hook_check() -> None:
+    """Test that doctor shows exit plan hook check result."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        # Create .claude/settings.json so we can check for the specific exit-plan-hook message
+        settings_path = env.cwd / ".claude" / "settings.json"
+        settings_path.parent.mkdir(parents=True)
+        settings_path.write_text('{"hooks": {}}', encoding="utf-8")
+
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
+
+        result = runner.invoke(doctor_cmd, [], obj=ctx)
+
+        assert result.exit_code == 0
+        # Should include exit plan hook check in output (message contains "ExitPlanMode")
+        # When settings.json exists but hook is not configured, message is
+        # "ExitPlanMode hook not configured"
+        assert "ExitPlanMode" in result.output

@@ -59,10 +59,12 @@ def doctor_cmd(ctx: ErkContext) -> None:
         "repository",
         "claude-settings",
         "user-prompt-hook",
+        "exit-plan-hook",
         "gitignore",
         "claude-erk-permission",
         "claude-hooks",
         "legacy-config",
+        "required-version",
     }
     github_check_names = {"github-auth", "workflow-permissions"}
     hooks_check_names = {"hooks"}
