@@ -101,6 +101,7 @@ def test_top_level_commands_registered() -> None:
         "up",
         "down",
         "implement",
+        "impl",  # alias
     ]
 
     for cmd in expected_top_level:
