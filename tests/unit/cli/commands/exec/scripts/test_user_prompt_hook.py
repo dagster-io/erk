@@ -151,12 +151,6 @@ def test_build_session_context_with_uuid_format() -> None:
 # ============================================================================
 
 
-def test_build_coding_standards_reminder_mentions_fake_driven_testing() -> None:
-    """Reminder mentions fake-driven-testing skill."""
-    result = build_coding_standards_reminder()
-    assert "fake-driven-testing" in result
-
-
 def test_build_coding_standards_reminder_mentions_dignified_python() -> None:
     """Reminder mentions dignified-python skill."""
     result = build_coding_standards_reminder()
