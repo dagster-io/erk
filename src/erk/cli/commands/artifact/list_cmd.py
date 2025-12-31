@@ -4,9 +4,9 @@ from pathlib import Path
 
 import click
 
+from erk.artifacts.artifact_health import BUNDLED_AGENTS, BUNDLED_SKILLS, BUNDLED_WORKFLOWS
 from erk.artifacts.discovery import discover_artifacts
 from erk.artifacts.models import ArtifactType, InstalledArtifact
-from erk.artifacts.orphans import BUNDLED_AGENTS, BUNDLED_SKILLS, BUNDLED_WORKFLOWS
 
 
 def _is_erk_managed(artifact: InstalledArtifact) -> bool:

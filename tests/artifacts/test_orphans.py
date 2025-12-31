@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from erk.artifacts.orphans import find_orphaned_artifacts
+from erk.artifacts.artifact_health import find_orphaned_artifacts
 
 
 def test_find_orphaned_artifacts_no_claude_dir(tmp_path: Path) -> None:
@@ -40,7 +40,7 @@ def test_find_orphaned_artifacts_no_bundled_dir(
 
     # Mock bundled dir to non-existent path
     monkeypatch.setattr(
-        "erk.artifacts.orphans.get_bundled_claude_dir", lambda: Path("/nonexistent")
+        "erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: Path("/nonexistent")
     )
 
     result = find_orphaned_artifacts(tmp_path)
@@ -67,7 +67,7 @@ def test_find_orphaned_artifacts_no_orphans(
     (project_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
 
     # Monkeypatch get_bundled_claude_dir to return our mock
-    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
 
     result = find_orphaned_artifacts(project_dir)
 
@@ -93,7 +93,7 @@ def test_find_orphaned_artifacts_orphaned_command(
     (project_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
     (project_commands / "old-command.md").write_text("# Orphan", encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
 
     result = find_orphaned_artifacts(project_dir)
 
@@ -120,7 +120,7 @@ def test_find_orphaned_artifacts_orphaned_skill(
     (project_skill / "core.md").write_text("# Core", encoding="utf-8")
     (project_skill / "deprecated-file.md").write_text("# Orphan", encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
 
     result = find_orphaned_artifacts(project_dir)
 
@@ -147,7 +147,7 @@ def test_find_orphaned_artifacts_orphaned_agent(
     (project_agent / "agent.md").write_text("# Agent", encoding="utf-8")
     (project_agent / "old-file.md").write_text("# Orphan", encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
 
     result = find_orphaned_artifacts(project_dir)
 
@@ -174,7 +174,7 @@ def test_find_orphaned_artifacts_detects_init_py(
     (project_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
     (project_commands / "__init__.py").write_text("", encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
 
     result = find_orphaned_artifacts(project_dir)
 
@@ -209,7 +209,7 @@ def test_find_orphaned_artifacts_user_created_folders_not_checked(
     custom_skill.mkdir(parents=True)
     (custom_skill / "SKILL.md").write_text("# Custom", encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
 
     result = find_orphaned_artifacts(project_dir)
 
@@ -240,8 +240,12 @@ def test_find_orphaned_workflows_not_detected_when_bundled_exists(
     project_workflows.mkdir(parents=True)
     (project_workflows / "erk-impl.yml").write_text("name: Erk Impl", encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_claude)
-    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_github_dir", lambda: bundled_github)
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_claude
+    )
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_github_dir", lambda: bundled_github
+    )
 
     result = find_orphaned_artifacts(project_dir)
 
@@ -272,8 +276,12 @@ def test_find_orphaned_workflows_detected_when_bundled_missing(
     project_workflows.mkdir(parents=True)
     (project_workflows / "erk-impl.yml").write_text("name: Erk Impl", encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_claude)
-    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_github_dir", lambda: bundled_github)
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_claude
+    )
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_github_dir", lambda: bundled_github
+    )
 
     result = find_orphaned_artifacts(project_dir)
 
@@ -305,8 +313,12 @@ def test_find_orphaned_workflows_ignores_user_workflows(
     (project_workflows / "ci.yml").write_text("name: CI", encoding="utf-8")
     (project_workflows / "deploy.yml").write_text("name: Deploy", encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_claude)
-    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_github_dir", lambda: bundled_github)
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_claude
+    )
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_github_dir", lambda: bundled_github
+    )
 
     result = find_orphaned_artifacts(project_dir)
 

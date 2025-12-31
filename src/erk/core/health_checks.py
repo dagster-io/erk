@@ -8,7 +8,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk.artifacts.orphans import find_orphaned_artifacts
+from erk.artifacts.artifact_health import find_missing_artifacts, find_orphaned_artifacts
 from erk.core.claude_settings import (
     ERK_PERMISSION,
     get_repo_claude_settings_path,
@@ -857,6 +857,72 @@ def check_orphaned_artifacts(repo_root: Path) -> CheckResult:
     )
 
 
+def check_missing_artifacts(repo_root: Path) -> CheckResult:
+    """Check for bundled artifacts missing from local installation.
+
+    Detects incomplete artifact syncs by comparing bundled package
+    files against local .claude/ directory.
+
+    Args:
+        repo_root: Path to the repository root
+
+    Returns:
+        CheckResult with missing artifact status (warning if found)
+    """
+    result = find_missing_artifacts(repo_root)
+
+    # Handle skipped cases
+    if result.skipped_reason == "erk-repo":
+        return CheckResult(
+            name="missing-artifacts",
+            passed=True,
+            message="Skipped: running in erk repo",
+        )
+
+    if result.skipped_reason == "no-claude-dir":
+        return CheckResult(
+            name="missing-artifacts",
+            passed=True,
+            message="No .claude/ directory (nothing to check)",
+        )
+
+    if result.skipped_reason == "no-bundled-dir":
+        return CheckResult(
+            name="missing-artifacts",
+            passed=True,
+            message="Bundled .claude/ not found (skipping check)",
+        )
+
+    # No missing artifacts
+    if not result.missing:
+        return CheckResult(
+            name="missing-artifacts",
+            passed=True,
+            message="All bundled artifacts present",
+        )
+
+    # Build warning message with missing files and remediation
+    total_missing = sum(len(files) for files in result.missing.values())
+    details_lines: list[str] = ["Missing bundled artifacts:"]
+
+    for folder, files in sorted(result.missing.items()):
+        details_lines.append(f"  {folder}/:")
+        for filename in sorted(files):
+            details_lines.append(f"    - {filename}")
+
+    details_lines.append("")
+    details_lines.append("To restore:")
+    details_lines.append("  erk artifact sync")
+
+    return CheckResult(
+        name="missing-artifacts",
+        passed=True,
+        warning=True,
+        message=f"Found {total_missing} missing artifact(s)",
+        details="\n".join(details_lines),
+    )
+
+
 def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
     """Run all health checks and return results.
 
@@ -902,6 +968,8 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         results.append(check_workflow_permissions(ctx, repo_root, admin))
         # Orphaned artifacts check
         results.append(check_orphaned_artifacts(repo_root))
+        # Missing artifacts check
+        results.append(check_missing_artifacts(repo_root))
 
         from erk.core.health_checks_dogfooder import run_early_dogfooder_checks
 

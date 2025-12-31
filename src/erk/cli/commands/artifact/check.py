@@ -4,8 +4,8 @@ from pathlib import Path
 
 import click
 
+from erk.artifacts.artifact_health import find_orphaned_artifacts
 from erk.artifacts.discovery import discover_artifacts
-from erk.artifacts.orphans import find_orphaned_artifacts
 from erk.artifacts.staleness import check_staleness
 
 
