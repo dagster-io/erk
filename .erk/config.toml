@@ -10,3 +10,6 @@
 #   "uv venv",
 #   "uv run make dev_install",
 # ]
+
+[workflows.erk-impl]
+model_name = "claude-opus-4-5"

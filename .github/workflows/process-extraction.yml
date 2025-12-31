@@ -6,14 +6,25 @@
 # "GitHub Actions is not permitted to create or approve pull requests"
 
 name: Implement Extraction Plan
-run-name: "Implement Extraction: #${{ github.event.issue.number }}"
+run-name: "Implement Extraction: #${{ github.event_name == 'workflow_dispatch' && inputs.issue_number || github.event.issue.number }}"
 
 on:
   issues:
     types: [opened, labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number to process"
+        required: true
+        type: string
+      model_name:
+        description: "Claude model to use for implementation"
+        required: false
+        type: string
+        default: "claude-sonnet-4-5"
 
 concurrency:
-  group: process-extraction-${{ github.event.issue.number }}
+  group: process-extraction-${{ github.event_name == 'workflow_dispatch' && inputs.issue_number || github.event.issue.number }}
   cancel-in-progress: true
 
 jobs:
@@ -66,6 +77,17 @@ jobs:
           result=$(erk exec detect-trunk-branch)
           echo "trunk_branch=$(echo "$result" | jq -r '.trunk_branch')" >> $GITHUB_OUTPUT
 
+      - name: Determine issue context
+        id: issue_context
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "issue_number=${{ inputs.issue_number }}" >> $GITHUB_OUTPUT
+            echo "model_name=${{ inputs.model_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "issue_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+            echo "model_name=claude-sonnet-4-5" >> $GITHUB_OUTPUT
+          fi
+
       # =================================================================
       # PHASE 2: CREATE BRANCH AND SETUP
       # =================================================================
@@ -73,7 +95,7 @@ jobs:
         id: branch
         env:
           GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_NUMBER: ${{ steps.issue_context.outputs.issue_number }}
           TRUNK_BRANCH: ${{ steps.trunk.outputs.trunk_branch }}
         run: |
           source $HOME/.cargo/env
@@ -86,7 +108,7 @@ jobs:
         id: worker_impl
         env:
           GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_NUMBER: ${{ steps.issue_context.outputs.issue_number }}
         run: |
           source $HOME/.cargo/env
           result=$(erk exec create-worker-impl-from-issue "$ISSUE_NUMBER")
@@ -106,7 +128,7 @@ jobs:
         run: |
           set +e
           claude --print \
-            --model claude-sonnet-4-5-20250929 \
+            --model ${{ steps.issue_context.outputs.model_name }} \
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
@@ -129,7 +151,7 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN == '' && secrets.ANTHROPIC_API_KEY || '' }}
           GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_NUMBER: ${{ steps.issue_context.outputs.issue_number }}
           BRANCH_NAME: ${{ steps.branch.outputs.branch_name }}
         run: |
           if [ -z "$(git status --porcelain)" ]; then
@@ -140,7 +162,7 @@ jobs:
           echo "has_changes=true" >> $GITHUB_OUTPUT
 
           claude --print \
-            --model claude-sonnet-4-5-20250929 \
+            --model ${{ steps.issue_context.outputs.model_name }} \
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
@@ -161,7 +183,7 @@ jobs:
         if: steps.submit.outputs.has_changes == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_NUMBER: ${{ steps.issue_context.outputs.issue_number }}
           PR_URL: ${{ steps.submit.outputs.pr_url }}
         run: |
           source $HOME/.cargo/env
@@ -174,7 +196,7 @@ jobs:
         if: steps.submit.outputs.has_changes == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_NUMBER: ${{ steps.issue_context.outputs.issue_number }}
         run: |
           source $HOME/.cargo/env
           erk exec post-extraction-comment \
@@ -188,7 +210,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_NUMBER: ${{ steps.issue_context.outputs.issue_number }}
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           source $HOME/.cargo/env
