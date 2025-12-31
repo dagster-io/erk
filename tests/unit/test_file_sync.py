@@ -2,17 +2,16 @@
 
 from pathlib import Path
 
+from erk_shared.path_utils import find_git_root
+
 
 def _get_repo_root() -> Path:
     """Get the repository root directory."""
-    current = Path(__file__).resolve()
-    # Walk up until we find .git directory
-    while current != current.parent:
-        if (current / ".git").exists() or (current / ".git").is_file():
-            return current
-        current = current.parent
-    msg = "Could not find repository root"
-    raise RuntimeError(msg)
+    result = find_git_root(Path(__file__))
+    if result is None:
+        msg = "Could not find repository root"
+        raise RuntimeError(msg)
+    return result
 
 
 def test_diff_analysis_guide_in_sync_with_commit_message_prompt() -> None:

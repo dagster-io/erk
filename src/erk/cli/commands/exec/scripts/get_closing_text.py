@@ -31,16 +31,7 @@ import click
 
 from erk.cli.config import load_config
 from erk_shared.impl_folder import read_issue_reference
-
-
-def _find_repo_root(start: Path) -> Path | None:
-    """Find repository root by looking for .git directory."""
-    current = start
-    while current != current.parent:
-        if (current / ".git").exists():
-            return current
-        current = current.parent
-    return None
+from erk_shared.path_utils import find_git_root
 
 
 @click.command(name="get-closing-text")
@@ -69,7 +60,7 @@ def get_closing_text() -> None:
 
     if issue_ref is not None:
         # Load config to check for cross-repo plans
-        repo_root = _find_repo_root(cwd)
+        repo_root = find_git_root(cwd)
         plans_repo: str | None = None
         if repo_root is not None:
             config = load_config(repo_root)
