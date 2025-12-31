@@ -21,7 +21,8 @@ Erk uses specific directories in your repository:
 ```
 your-repo/
 ├── .erk/
-│   ├── post-implement.md    # Custom CI workflow (optional)
+│   ├── prompt-hooks/
+│   │   └── post-plan-implement-ci.md  # Custom CI workflow (optional)
 │   └── scratch/             # Session-specific temporary files
 ├── .impl/                   # Created per-worktree for implementation plans
 │   ├── plan.md
@@ -60,17 +61,17 @@ This makes the erk configuration available to all team members who clone the rep
 
 ## Post-Implementation CI Configuration
 
-After erk completes a plan implementation, it runs CI validation. You can customize this workflow by creating `.erk/post-implement.md`.
+After erk completes a plan implementation, it runs CI validation. You can customize this workflow by creating `.erk/prompt-hooks/post-plan-implement-ci.md`.
 
 ### How It Works
 
-1. When `/erk:plan-implement` finishes implementing a plan, it checks for `.erk/post-implement.md`
+1. When `/erk:plan-implement` finishes implementing a plan, it checks for `.erk/prompt-hooks/post-plan-implement-ci.md`
 2. If found, erk follows the instructions in that file for CI validation
 3. If not found, erk skips automated CI and prompts you to run it manually
 
 ### Example: Python Project
 
-For a Python project using a Makefile for CI, create `.erk/post-implement.md`:
+For a Python project using a Makefile for CI, create `.erk/prompt-hooks/post-plan-implement-ci.md`:
 
 ```markdown
 # Post-Implementation CI

@@ -83,6 +83,31 @@ def _add_gitignore_entry_with_prompt(
     return (new_content, True)
 
 
+def _create_prompt_hooks_directory(repo_root: Path) -> None:
+    """Create .erk/prompt-hooks/ directory and install README.
+
+    Args:
+        repo_root: Path to the repository root
+    """
+    prompt_hooks_dir = repo_root / ".erk" / "prompt-hooks"
+    prompt_hooks_dir.mkdir(parents=True, exist_ok=True)
+
+    # Install README template
+    template_path = Path(__file__).parent.parent / "prompt_hooks_templates" / "README.md"
+    readme_path = prompt_hooks_dir / "README.md"
+
+    if template_path.exists():
+        readme_content = template_path.read_text(encoding="utf-8")
+        readme_path.write_text(readme_content, encoding="utf-8")
+        user_output(click.style("✓", fg="green") + " Created prompt hooks directory")
+        user_output("  See .erk/prompt-hooks/README.md for available hooks")
+    else:
+        # Fallback: create directory but warn about missing template
+        user_output(
+            click.style("⚠️", fg="yellow") + " Created .erk/prompt-hooks/ (template not found)"
+        )
+
+
 def _run_gitignore_prompts(repo_root: Path) -> None:
     """Run interactive prompts for .gitignore entries.
 
@@ -469,6 +494,9 @@ def init_cmd(
         # Non-fatal: warn but continue init
         user_output(click.style("⚠ ", fg="yellow") + f"Artifact sync failed: {sync_result.message}")
         user_output("  Run 'erk artifact sync' to retry")
+
+    # Create prompt hooks directory with README
+    _create_prompt_hooks_directory(repo_root=repo_context.root)
 
     # Skip interactive prompts if requested
     interactive = not no_interactive

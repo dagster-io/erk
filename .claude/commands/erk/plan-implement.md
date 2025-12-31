@@ -94,7 +94,7 @@ If this fails, you have violated instructions. The .impl/ folder must be preserv
 
 ### Step 9: Run CI Iteratively
 
-1. If `.erk/post-implement.md` exists: follow its instructions
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
 2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
 
 After CI passes:
