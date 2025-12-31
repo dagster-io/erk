@@ -496,8 +496,8 @@ def check_claude_settings(repo_root: Path) -> CheckResult:
 def check_user_prompt_hook(repo_root: Path) -> CheckResult:
     """Check that the UserPromptSubmit hook is configured.
 
-    Verifies that .claude/settings.json contains the unified erk-user-prompt-hook.py
-    hook for the UserPromptSubmit event.
+    Verifies that .claude/settings.json contains the erk exec user-prompt-hook
+    command for the UserPromptSubmit event.
 
     Args:
         repo_root: Path to the repository root (where .claude/ should be located)
@@ -523,11 +523,11 @@ def check_user_prompt_hook(repo_root: Path) -> CheckResult:
             name="user-prompt-hook",
             passed=False,
             message="No UserPromptSubmit hook configured",
-            details="Add 'uv run scripts/erk-user-prompt-hook.py' hook to .claude/settings.json",
+            details="Add 'erk exec user-prompt-hook' hook to .claude/settings.json",
         )
 
     # Check if the unified hook is present (handles nested matcher structure)
-    expected_command = "erk-user-prompt-hook.py"
+    expected_command = "erk exec user-prompt-hook"
     for hook_entry in user_prompt_hooks:
         if not isinstance(hook_entry, dict):
             continue
