@@ -15,7 +15,7 @@ from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues import GitHubIssues, IssueInfo
 from erk_shared.github.metadata import extract_plan_from_comment, extract_plan_header_comment_id
-from erk_shared.github.retry import with_github_retry
+from erk_shared.github.retry import RetriesExhausted, RetryRequested, with_retries
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.plan_store.types import Plan, PlanQuery, PlanState
 
@@ -92,20 +92,26 @@ class GitHubPlanStore(PlanStore):
         Returns:
             Plan content extracted from comment, or None if fetch fails
         """
-        try:
-            comment_body = with_github_retry(
-                self._time,
-                f"fetch plan comment {comment_id}",
-                lambda: self._github_issues.get_comment_by_id(repo_root, comment_id),
-            )
-            return extract_plan_from_comment(comment_body)
-        except RuntimeError:
+
+        def fetch_comment() -> str | RetryRequested:
+            try:
+                return self._github_issues.get_comment_by_id(repo_root, comment_id)
+            except RuntimeError as e:
+                return RetryRequested(reason=f"API error: {e}")
+
+        result = with_retries(
+            self._time,
+            f"fetch plan comment {comment_id}",
+            fetch_comment,
+        )
+        if isinstance(result, RetriesExhausted):
             # All retries exhausted - fall back to first comment
             print(
                 "Falling back to first comment lookup (comment may be deleted)",
                 file=sys.stderr,
             )
             return None
+        return extract_plan_from_comment(result)
 
     def _get_plan_body(self, repo_root: Path, issue_info: IssueInfo) -> str:
         """Get the plan body from the issue.

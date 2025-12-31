@@ -34,6 +34,7 @@ from erk_shared.github.parsing import (
     parse_aggregated_check_counts,
     parse_gh_auth_status_output,
 )
+from erk_shared.github.retry import RetriesExhausted, RetryRequested, with_retries
 from erk_shared.github.types import (
     BRANCH_NOT_AVAILABLE,
     DISPLAY_TITLE_NOT_AVAILABLE,
@@ -881,13 +882,11 @@ query {{
         Returns:
             Run ID as string if found within timeout, None otherwise
         """
-        from erk_shared.github.retry import ShouldRetry, with_github_retry
-
         start_time = datetime.now(UTC)
         max_attempts = timeout // poll_interval
 
-        def _fetch_and_find_run() -> str:
-            """Fetch runs and find matching run, or raise ShouldRetry if not found."""
+        def _fetch_and_find_run() -> str | RetryRequested:
+            """Fetch runs and find matching run, or return RetryRequested if not found."""
             # Query for recent runs with branch info
             runs_cmd = [
                 "gh",
@@ -914,11 +913,11 @@ query {{
                 runs_data = json.loads(runs_result.stdout)
             except (RuntimeError, FileNotFoundError, json.JSONDecodeError) as e:
                 # Transient API error - retry
-                raise ShouldRetry(f"API error: {e}") from e
+                return RetryRequested(reason=f"API error: {e}")
 
             if not runs_data or not isinstance(runs_data, list):
                 # Data not available yet - keep polling
-                raise ShouldRetry("No runs data yet")
+                return RetryRequested(reason="No runs data yet")
 
             # Find run matching our criteria
             for run in runs_data:
@@ -942,18 +941,18 @@ query {{
                         return str(run_id)
 
             # Run not found in results yet - keep polling
-            raise ShouldRetry("Run not found in results")
+            return RetryRequested(reason="Run not found in results")
 
-        try:
-            return with_github_retry(
-                self._time,
-                f"poll for workflow run ({workflow}, {branch_name})",
-                _fetch_and_find_run,
-                retry_delays=[float(poll_interval)] * max_attempts,
-            )
-        except ShouldRetry:
+        result = with_retries(
+            self._time,
+            f"poll for workflow run ({workflow}, {branch_name})",
+            _fetch_and_find_run,
+            retry_delays=[float(poll_interval)] * max_attempts,
+        )
+        if isinstance(result, RetriesExhausted):
             # Timeout - run never appeared
             return None
+        return result
 
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Check GitHub CLI authentication status.
