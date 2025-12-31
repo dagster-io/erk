@@ -6,6 +6,9 @@ from unittest.mock import patch
 from erk.artifacts.sync import (
     _get_erk_package_dir,
     _is_editable_install,
+    _sync_agents,
+    _sync_commands,
+    _sync_skills,
     get_bundled_claude_dir,
     get_bundled_github_dir,
     sync_artifacts,
@@ -40,7 +43,8 @@ def test_sync_artifacts_copies_files(tmp_path: Path) -> None:
     """Copies artifact files from bundled to target."""
     # Create bundled artifacts directory
     bundled_dir = tmp_path / "bundled"
-    skill_dir = bundled_dir / "skills" / "test-skill"
+    # Use a skill that's in BUNDLED_SKILLS (dignified-python)
+    skill_dir = bundled_dir / "skills" / "dignified-python"
     skill_dir.mkdir(parents=True)
     (skill_dir / "SKILL.md").write_text("# Test Skill", encoding="utf-8")
 
@@ -61,7 +65,7 @@ def test_sync_artifacts_copies_files(tmp_path: Path) -> None:
     assert result.artifacts_installed == 1
 
     # Verify file was copied
-    copied_file = target_dir / ".claude" / "skills" / "test-skill" / "SKILL.md"
+    copied_file = target_dir / ".claude" / "skills" / "dignified-python" / "SKILL.md"
     assert copied_file.exists()
     assert copied_file.read_text(encoding="utf-8") == "# Test Skill"
 
@@ -203,3 +207,153 @@ def test_sync_artifacts_copies_workflows(tmp_path: Path) -> None:
     # Verify other-workflow.yml was NOT copied (not in BUNDLED_WORKFLOWS)
     other_workflow = target_dir / ".github" / "workflows" / "other-workflow.yml"
     assert not other_workflow.exists()
+
+
+def test_sync_skills_only_syncs_bundled_skills(tmp_path: Path) -> None:
+    """_sync_skills only copies skills listed in BUNDLED_SKILLS registry."""
+    source_dir = tmp_path / "source" / "skills"
+
+    # Create a bundled skill (dignified-python is in BUNDLED_SKILLS)
+    bundled_skill = source_dir / "dignified-python"
+    bundled_skill.mkdir(parents=True)
+    (bundled_skill / "SKILL.md").write_text("# Bundled Skill", encoding="utf-8")
+
+    # Create a non-bundled skill (should NOT be synced)
+    non_bundled_skill = source_dir / "fake-driven-testing"
+    non_bundled_skill.mkdir(parents=True)
+    (non_bundled_skill / "SKILL.md").write_text("# Non-bundled Skill", encoding="utf-8")
+
+    target_dir = tmp_path / "target" / "skills"
+
+    copied = _sync_skills(source_dir, target_dir)
+
+    # Should copy exactly 1 file (the bundled skill)
+    assert copied == 1
+
+    # Bundled skill should exist
+    assert (target_dir / "dignified-python" / "SKILL.md").exists()
+
+    # Non-bundled skill should NOT exist
+    assert not (target_dir / "fake-driven-testing").exists()
+
+
+def test_sync_agents_only_syncs_bundled_agents(tmp_path: Path) -> None:
+    """_sync_agents only copies agents listed in BUNDLED_AGENTS registry."""
+    source_dir = tmp_path / "source" / "agents"
+
+    # Create a bundled agent (devrun is in BUNDLED_AGENTS)
+    bundled_agent = source_dir / "devrun"
+    bundled_agent.mkdir(parents=True)
+    (bundled_agent / "AGENT.md").write_text("# Bundled Agent", encoding="utf-8")
+
+    # Create a non-bundled agent (should NOT be synced)
+    non_bundled_agent = source_dir / "haiku-devrun"
+    non_bundled_agent.mkdir(parents=True)
+    (non_bundled_agent / "AGENT.md").write_text("# Non-bundled Agent", encoding="utf-8")
+
+    target_dir = tmp_path / "target" / "agents"
+
+    copied = _sync_agents(source_dir, target_dir)
+
+    # Should copy exactly 1 file (the bundled agent)
+    assert copied == 1
+
+    # Bundled agent should exist
+    assert (target_dir / "devrun" / "AGENT.md").exists()
+
+    # Non-bundled agent should NOT exist
+    assert not (target_dir / "haiku-devrun").exists()
+
+
+def test_sync_commands_only_syncs_erk_namespace(tmp_path: Path) -> None:
+    """_sync_commands only copies commands in erk namespace."""
+    source_dir = tmp_path / "source" / "commands"
+
+    # Create erk namespace commands
+    erk_commands = source_dir / "erk"
+    erk_commands.mkdir(parents=True)
+    (erk_commands / "plan-implement.md").write_text("# Erk Command", encoding="utf-8")
+
+    # Create local namespace commands (should NOT be synced)
+    local_commands = source_dir / "local"
+    local_commands.mkdir(parents=True)
+    (local_commands / "fast-ci.md").write_text("# Local Command", encoding="utf-8")
+
+    # Create gt namespace commands (should NOT be synced)
+    gt_commands = source_dir / "gt"
+    gt_commands.mkdir(parents=True)
+    (gt_commands / "some-command.md").write_text("# GT Command", encoding="utf-8")
+
+    target_dir = tmp_path / "target" / "commands"
+
+    copied = _sync_commands(source_dir, target_dir)
+
+    # Should copy exactly 1 file (the erk namespace command)
+    assert copied == 1
+
+    # Erk command should exist
+    assert (target_dir / "erk" / "plan-implement.md").exists()
+
+    # Local and gt commands should NOT exist
+    assert not (target_dir / "local").exists()
+    assert not (target_dir / "gt").exists()
+
+
+def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
+    """Full integration test: sync_artifacts filters skills, agents, and commands."""
+    bundled_claude = tmp_path / "bundled"
+
+    # Create bundled skills (only bundled ones)
+    bundled_skill = bundled_claude / "skills" / "dignified-python"
+    bundled_skill.mkdir(parents=True)
+    (bundled_skill / "SKILL.md").write_text("# Bundled", encoding="utf-8")
+
+    # Create non-bundled skill (simulating editable install with dev artifacts)
+    non_bundled_skill = bundled_claude / "skills" / "fake-driven-testing"
+    non_bundled_skill.mkdir(parents=True)
+    (non_bundled_skill / "SKILL.md").write_text("# Dev Only", encoding="utf-8")
+
+    # Create bundled agent
+    bundled_agent = bundled_claude / "agents" / "devrun"
+    bundled_agent.mkdir(parents=True)
+    (bundled_agent / "AGENT.md").write_text("# Bundled Agent", encoding="utf-8")
+
+    # Create non-bundled agent
+    non_bundled_agent = bundled_claude / "agents" / "haiku-devrun"
+    non_bundled_agent.mkdir(parents=True)
+    (non_bundled_agent / "AGENT.md").write_text("# Dev Only", encoding="utf-8")
+
+    # Create erk commands
+    erk_commands = bundled_claude / "commands" / "erk"
+    erk_commands.mkdir(parents=True)
+    (erk_commands / "plan-implement.md").write_text("# Erk", encoding="utf-8")
+
+    # Create local commands (should not be synced)
+    local_commands = bundled_claude / "commands" / "local"
+    local_commands.mkdir(parents=True)
+    (local_commands / "fast-ci.md").write_text("# Local", encoding="utf-8")
+
+    target_dir = tmp_path / "project"
+    target_dir.mkdir()
+
+    nonexistent = tmp_path / "nonexistent"
+    with (
+        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
+        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=nonexistent),
+        patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
+    ):
+        result = sync_artifacts(target_dir, force=False)
+
+    assert result.success is True
+    # Should copy: 1 skill + 1 agent + 1 command = 3 files
+    assert result.artifacts_installed == 3
+
+    # Bundled artifacts should exist
+    assert (target_dir / ".claude" / "skills" / "dignified-python" / "SKILL.md").exists()
+    assert (target_dir / ".claude" / "agents" / "devrun" / "AGENT.md").exists()
+    assert (target_dir / ".claude" / "commands" / "erk" / "plan-implement.md").exists()
+
+    # Non-bundled artifacts should NOT exist
+    assert not (target_dir / ".claude" / "skills" / "fake-driven-testing").exists()
+    assert not (target_dir / ".claude" / "agents" / "haiku-devrun").exists()
+    assert not (target_dir / ".claude" / "commands" / "local").exists()
