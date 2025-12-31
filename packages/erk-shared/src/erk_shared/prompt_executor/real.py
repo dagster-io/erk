@@ -6,8 +6,8 @@ from pathlib import Path
 from erk_shared.gateway.time.abc import Time
 from erk_shared.prompt_executor.abc import PromptExecutor, PromptResult
 
-# Retry delays following exponential backoff pattern: [0.5, 1.0, 2.0, 4.0] (~7.5s max)
-RETRY_DELAYS = [0.5, 1.0, 2.0, 4.0]
+# Retry delays following exponential backoff pattern: [0.5, 1.0] (~1.5s max, 2 retries)
+RETRY_DELAYS = [0.5, 1.0]
 
 
 class RealPromptExecutor(PromptExecutor):

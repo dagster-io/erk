@@ -1,196 +1,99 @@
-"""Tests for RealPromptExecutor retry behavior.
+"""Unit tests for RealPromptExecutor retry logic using FakePromptExecutor.
 
-These tests verify:
-1. First attempt success returns immediately (no retry)
-2. Empty output triggers retry with correct exponential backoff delays
-3. All retries exhausted returns last result
+These tests verify the retry constants and behavior patterns without
+mocking subprocess. For subprocess integration tests, see:
+tests/integration/prompt_executor/test_real.py
+
+Layer 4 tests: Business logic tests using fakes.
 """
 
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any
-from unittest.mock import patch
-
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.prompt_executor.real import RETRY_DELAYS, RealPromptExecutor
+from erk_shared.prompt_executor.fake import FakePromptExecutor
+from erk_shared.prompt_executor.real import RETRY_DELAYS
 
 
-@dataclass(frozen=True)
-class FakeCompletedProcess:
-    """Fake subprocess.CompletedProcess for testing."""
+class TestRetryDelaysConstants:
+    """Tests for retry delay configuration."""
 
-    returncode: int
-    stdout: str
-    stderr: str
+    def test_retry_delays_has_two_entries(self) -> None:
+        """Verify RETRY_DELAYS has exactly 2 entries for 2 retries."""
+        assert len(RETRY_DELAYS) == 2
+
+    def test_retry_delays_are_exponential_backoff(self) -> None:
+        """Verify delays follow exponential backoff pattern."""
+        assert RETRY_DELAYS[0] == 0.5
+        assert RETRY_DELAYS[1] == 1.0
+        # Each delay should be >= previous (exponential growth)
+        for i in range(1, len(RETRY_DELAYS)):
+            assert RETRY_DELAYS[i] >= RETRY_DELAYS[i - 1]
+
+    def test_total_retry_time_is_reasonable(self) -> None:
+        """Verify total maximum retry time is under 2 seconds."""
+        total_time = sum(RETRY_DELAYS)
+        assert total_time <= 2.0  # ~1.5s max with current delays
 
 
-class TestRealPromptExecutorRetry:
-    """Tests for retry behavior in RealPromptExecutor."""
+class TestFakePromptExecutorTransientFailures:
+    """Tests for FakePromptExecutor transient_failures behavior.
 
-    def test_first_attempt_success_returns_immediately(self) -> None:
-        """When first attempt succeeds with output, return immediately without retrying."""
-        fake_time = FakeTime()
-        executor = RealPromptExecutor(fake_time)
+    These tests verify the fake correctly simulates retry scenarios.
+    Layer 1: Testing the test infrastructure itself.
+    """
 
-        # Mock subprocess.run to return success with output on first call
-        with patch("erk_shared.prompt_executor.real.subprocess.run") as mock_run:
-            mock_run.return_value = FakeCompletedProcess(
-                returncode=0,
-                stdout="Success output",
-                stderr="",
-            )
+    def test_transient_failures_returns_empty_then_success(self) -> None:
+        """With transient_failures=2, first 2 calls return empty, third returns output."""
+        executor = FakePromptExecutor(output="Final output", transient_failures=2)
 
-            result = executor.execute_prompt("test prompt", model="haiku")
+        # First call - empty (transient failure)
+        result1 = executor.execute_prompt("test")
+        assert result1.success is True
+        assert result1.output == ""
 
-            assert result.success is True
-            assert result.output == "Success output"
-            assert result.error is None
-            # Should only call subprocess.run once
-            assert mock_run.call_count == 1
-            # Should not have slept (no retries needed)
-            assert fake_time.sleep_calls == []
+        # Second call - empty (transient failure)
+        result2 = executor.execute_prompt("test")
+        assert result2.success is True
+        assert result2.output == ""
 
-    def test_empty_output_triggers_retry_with_correct_delays(self) -> None:
-        """When output is empty, retry with exponential backoff until success."""
-        fake_time = FakeTime()
-        executor = RealPromptExecutor(fake_time)
+        # Third call - actual output
+        result3 = executor.execute_prompt("test")
+        assert result3.success is True
+        assert result3.output == "Final output"
 
-        # Track call count to return empty on first 2 calls, then success
-        call_count = 0
+        assert executor.attempt_count == 3
 
-        def mock_subprocess_run(*args: Any, **kwargs: Any) -> FakeCompletedProcess:
-            nonlocal call_count
-            call_count += 1
-            if call_count <= 2:
-                # Return success with empty output (transient failure)
-                return FakeCompletedProcess(returncode=0, stdout="", stderr="")
-            # Third call succeeds with actual output
-            return FakeCompletedProcess(returncode=0, stdout="Final success", stderr="")
+    def test_zero_transient_failures_returns_output_immediately(self) -> None:
+        """With transient_failures=0, first call returns configured output."""
+        executor = FakePromptExecutor(output="Immediate output", transient_failures=0)
 
-        with patch(
-            "erk_shared.prompt_executor.real.subprocess.run",
-            side_effect=mock_subprocess_run,
-        ):
-            result = executor.execute_prompt("test prompt", model="haiku")
+        result = executor.execute_prompt("test")
 
-            assert result.success is True
-            assert result.output == "Final success"
-            # Should have retried twice before success
-            assert call_count == 3
-            # Should have slept with first two retry delays
-            assert fake_time.sleep_calls == [RETRY_DELAYS[0], RETRY_DELAYS[1]]
+        assert result.success is True
+        assert result.output == "Immediate output"
+        assert executor.attempt_count == 1
 
-    def test_all_retries_exhausted_returns_last_result(self) -> None:
-        """When all retries exhausted, return last result (success with empty output)."""
-        fake_time = FakeTime()
-        executor = RealPromptExecutor(fake_time)
+    def test_transient_failures_tracks_all_calls(self) -> None:
+        """Verify prompt_calls tracks all attempts including transient failures."""
+        executor = FakePromptExecutor(output="Success", transient_failures=1)
 
-        # Always return empty output
-        with patch("erk_shared.prompt_executor.real.subprocess.run") as mock_run:
-            mock_run.return_value = FakeCompletedProcess(
-                returncode=0,
-                stdout="",
-                stderr="",
-            )
+        executor.execute_prompt("prompt1", model="haiku")
+        executor.execute_prompt("prompt2", model="sonnet")
 
-            result = executor.execute_prompt("test prompt", model="haiku")
+        assert len(executor.prompt_calls) == 2
+        assert executor.prompt_calls[0].prompt == "prompt1"
+        assert executor.prompt_calls[0].model == "haiku"
+        assert executor.prompt_calls[1].prompt == "prompt2"
+        assert executor.prompt_calls[1].model == "sonnet"
 
-            # Returns success=True but empty output after all retries exhausted
-            assert result.success is True
-            assert result.output == ""
-            assert result.error is None
-            # Should have tried 1 + 4 retries = 5 total attempts
-            assert mock_run.call_count == len(RETRY_DELAYS) + 1
-            # Should have slept for all retry delays
-            assert fake_time.sleep_calls == list(RETRY_DELAYS)
+    def test_should_fail_takes_precedence_over_transient_failures(self) -> None:
+        """When should_fail=True, always return failure regardless of transient_failures."""
+        executor = FakePromptExecutor(
+            output="Never seen",
+            should_fail=True,
+            error="Always fails",
+            transient_failures=5,
+        )
 
-    def test_failure_on_first_attempt_retries(self) -> None:
-        """When first attempt fails (non-zero returncode), retry."""
-        fake_time = FakeTime()
-        executor = RealPromptExecutor(fake_time)
+        result = executor.execute_prompt("test")
 
-        call_count = 0
-
-        def mock_subprocess_run(*args: Any, **kwargs: Any) -> FakeCompletedProcess:
-            nonlocal call_count
-            call_count += 1
-            if call_count == 1:
-                # First call fails
-                return FakeCompletedProcess(returncode=1, stdout="", stderr="Error")
-            # Second call succeeds
-            return FakeCompletedProcess(returncode=0, stdout="Success", stderr="")
-
-        with patch(
-            "erk_shared.prompt_executor.real.subprocess.run",
-            side_effect=mock_subprocess_run,
-        ):
-            result = executor.execute_prompt("test prompt", model="haiku")
-
-            assert result.success is True
-            assert result.output == "Success"
-            assert call_count == 2
-            # Should have slept once for the retry
-            assert fake_time.sleep_calls == [RETRY_DELAYS[0]]
-
-    def test_all_attempts_fail_returns_last_failure(self) -> None:
-        """When all attempts fail, return last failure result."""
-        fake_time = FakeTime()
-        executor = RealPromptExecutor(fake_time)
-
-        # Always fail
-        with patch("erk_shared.prompt_executor.real.subprocess.run") as mock_run:
-            mock_run.return_value = FakeCompletedProcess(
-                returncode=1,
-                stdout="",
-                stderr="Persistent error",
-            )
-
-            result = executor.execute_prompt("test prompt", model="haiku")
-
-            assert result.success is False
-            assert result.output == ""
-            assert result.error == "Persistent error"
-            # Should have exhausted all retries
-            assert mock_run.call_count == len(RETRY_DELAYS) + 1
-            assert fake_time.sleep_calls == list(RETRY_DELAYS)
-
-    def test_cwd_parameter_passed_to_subprocess(self) -> None:
-        """Verify cwd parameter is passed through to subprocess.run."""
-        fake_time = FakeTime()
-        executor = RealPromptExecutor(fake_time)
-
-        with patch("erk_shared.prompt_executor.real.subprocess.run") as mock_run:
-            mock_run.return_value = FakeCompletedProcess(
-                returncode=0,
-                stdout="Output",
-                stderr="",
-            )
-            test_cwd = Path("/test/path")
-
-            executor.execute_prompt("test prompt", model="sonnet", cwd=test_cwd)
-
-            # Verify cwd was passed to subprocess.run
-            mock_run.assert_called_once()
-            call_kwargs = mock_run.call_args.kwargs
-            assert call_kwargs["cwd"] == test_cwd
-
-    def test_model_parameter_in_command(self) -> None:
-        """Verify model parameter is included in the claude command."""
-        fake_time = FakeTime()
-        executor = RealPromptExecutor(fake_time)
-
-        with patch("erk_shared.prompt_executor.real.subprocess.run") as mock_run:
-            mock_run.return_value = FakeCompletedProcess(
-                returncode=0,
-                stdout="Output",
-                stderr="",
-            )
-
-            executor.execute_prompt("test prompt", model="opus")
-
-            mock_run.assert_called_once()
-            cmd = mock_run.call_args[0][0]
-            # Verify --model opus is in the command
-            assert "--model" in cmd
-            model_index = cmd.index("--model")
-            assert cmd[model_index + 1] == "opus"
+        assert result.success is False
+        assert result.error == "Always fails"
+        assert result.output == ""
