@@ -189,7 +189,7 @@ def _get_presets_dir() -> Path:
     return Path(__file__).parent.parent / "presets"
 
 
-def offer_claude_permission_setup(repo_root: Path) -> Path | None:
+def offer_claude_permission_setup(repo_root: Path) -> Path | NoBackupCreated:
     """Offer to add erk permission to repo's Claude Code settings.
 
     This checks if the repo's .claude/settings.json exists and whether the erk
@@ -200,7 +200,7 @@ def offer_claude_permission_setup(repo_root: Path) -> Path | None:
         repo_root: Path to the repository root
 
     Returns:
-        Path to backup file if one was created, None otherwise.
+        Path to backup file if one was created, NoBackupCreated sentinel otherwise.
     """
     settings_path = get_repo_claude_settings_path(repo_root)
 
@@ -210,15 +210,15 @@ def offer_claude_permission_setup(repo_root: Path) -> Path | None:
         warning = click.style("⚠️  Warning: ", fg="yellow")
         user_output(warning + "Invalid JSON in .claude/settings.json")
         user_output(f"   {e}")
-        return None
+        return NoBackupCreated()
 
     # No settings file - skip silently (repo may not have Claude settings)
     if settings is None:
-        return None
+        return NoBackupCreated()
 
     # Permission already exists - skip silently
     if has_erk_permission(settings):
-        return None
+        return NoBackupCreated()
 
     # Offer to add permission
     user_output("\nClaude settings found. The erk permission allows Claude to run")
@@ -226,7 +226,7 @@ def offer_claude_permission_setup(repo_root: Path) -> Path | None:
 
     if not click.confirm(f"Add {ERK_PERMISSION} to .claude/settings.json?", default=True):
         user_output("Skipped. You can add the permission manually to .claude/settings.json")
-        return None
+        return NoBackupCreated()
 
     # Add permission
     new_settings = add_erk_permission(settings)
@@ -235,7 +235,7 @@ def offer_claude_permission_setup(repo_root: Path) -> Path | None:
     user_output(f"\nThis will update: {settings_path}")
     if not click.confirm("Proceed with writing changes?", default=True):
         user_output("Skipped. No changes made to settings.json")
-        return None
+        return NoBackupCreated()
 
     backup_result = write_claude_settings(settings_path, new_settings)
     user_output(click.style("✓", fg="green") + f" Added {ERK_PERMISSION} to {settings_path}")
@@ -244,9 +244,8 @@ def offer_claude_permission_setup(repo_root: Path) -> Path | None:
     if not isinstance(backup_result, NoBackupCreated):
         user_output(f"\n📁 Backup created: {backup_result}")
         user_output(f"   To restore: cp {backup_result} {settings_path}")
-        return backup_result
 
-    return None
+    return backup_result
 
 
 def offer_backup_cleanup(backup_path: Path) -> None:
@@ -465,7 +464,7 @@ def init_cmd(
     interactive = not no_interactive
 
     # Track backup files for cleanup at end
-    pending_backup: Path | None = None
+    pending_backup: Path | NoBackupCreated = NoBackupCreated()
 
     if interactive:
         _run_gitignore_prompts(repo_context.root)
@@ -508,5 +507,5 @@ def init_cmd(
                         user_output(msg)
 
     # Offer to clean up any pending backup files (at end to ensure safety)
-    if pending_backup is not None:
+    if not isinstance(pending_backup, NoBackupCreated):
         offer_backup_cleanup(pending_backup)
