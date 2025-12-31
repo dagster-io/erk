@@ -67,34 +67,36 @@ class TestListCommand:
         assert "test-skill" in result.output
         assert "test-cmd" not in result.output
 
-    def test_list_shows_erk_managed_indicator_for_erk_command(self, tmp_path: Path) -> None:
-        """Shows [erk-managed] for erk: prefixed commands."""
+    def test_list_shows_erk_indicator_for_erk_command(self, tmp_path: Path) -> None:
+        """Shows [erk] badge for erk: prefixed commands."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             cmd_dir = Path(".claude/commands/erk")
             cmd_dir.mkdir(parents=True)
             (cmd_dir / "plan-implement.md").write_text("# Cmd", encoding="utf-8")
 
-            result = runner.invoke(list_cmd)
+            result = runner.invoke(list_cmd, color=True)
 
         assert result.exit_code == 0
-        assert "erk:plan-implement [erk-managed]" in result.output
+        assert "erk:plan-implement" in result.output
+        assert "[erk]" in result.output
 
-    def test_list_shows_erk_managed_indicator_for_bundled_skill(self, tmp_path: Path) -> None:
-        """Shows [erk-managed] for bundled skills."""
+    def test_list_shows_erk_indicator_for_bundled_skill(self, tmp_path: Path) -> None:
+        """Shows [erk] badge for bundled skills."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             skill_dir = Path(".claude/skills/dignified-python")
             skill_dir.mkdir(parents=True)
             (skill_dir / "SKILL.md").write_text("# Skill", encoding="utf-8")
 
-            result = runner.invoke(list_cmd)
+            result = runner.invoke(list_cmd, color=True)
 
         assert result.exit_code == 0
-        assert "dignified-python [erk-managed]" in result.output
+        assert "dignified-python" in result.output
+        assert "[erk]" in result.output
 
-    def test_list_shows_erk_managed_indicator_for_bundled_agent(self, tmp_path: Path) -> None:
-        """Shows [erk-managed] for bundled agents."""
+    def test_list_shows_erk_indicator_for_bundled_agent(self, tmp_path: Path) -> None:
+        """Shows [erk] badge for bundled agents."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             agent_dir = Path(".claude/agents/devrun")
@@ -102,13 +104,14 @@ class TestListCommand:
             # Agent discovery expects <agent-name>/<agent-name>.md pattern
             (agent_dir / "devrun.md").write_text("# Agent", encoding="utf-8")
 
-            result = runner.invoke(list_cmd)
+            result = runner.invoke(list_cmd, color=True)
 
         assert result.exit_code == 0
-        assert "devrun [erk-managed]" in result.output
+        assert "devrun" in result.output
+        assert "[erk]" in result.output
 
-    def test_list_no_indicator_for_local_artifacts(self, tmp_path: Path) -> None:
-        """No indicator for local/user-defined artifacts."""
+    def test_list_shows_local_badge_for_local_artifacts(self, tmp_path: Path) -> None:
+        """Shows [local] badge for local/user-defined artifacts."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Local command
@@ -121,13 +124,14 @@ class TestListCommand:
             skill_dir.mkdir(parents=True)
             (skill_dir / "SKILL.md").write_text("# Skill", encoding="utf-8")
 
-            result = runner.invoke(list_cmd)
+            result = runner.invoke(list_cmd, color=True)
 
         assert result.exit_code == 0
         assert "local:my-cmd" in result.output
-        assert "local:my-cmd [erk-managed]" not in result.output
         assert "my-skill" in result.output
-        assert "my-skill [erk-managed]" not in result.output
+        # Both should show [local] badge, not [erk]
+        assert "[local]" in result.output
+        assert result.output.count("[local]") == 2  # Both artifacts
 
 
 class TestIsErkManaged:

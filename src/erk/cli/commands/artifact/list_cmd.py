@@ -71,13 +71,21 @@ def list_cmd(artifact_type: str | None, verbose: bool) -> None:
             if current_type is not None:
                 click.echo("")  # Blank line between types
             current_type = artifact.artifact_type
-            click.echo(click.style(f"{current_type.upper()}S:", bold=True))
+            # Capitalize first letter only (e.g., "Commands:")
+            header = current_type.capitalize() + "s:"
+            click.echo(click.style(header, bold=True))
 
-        managed_suffix = " [erk-managed]" if _is_erk_managed(artifact) else ""
-        if verbose:
-            click.echo(f"  {artifact.name}{managed_suffix}")
-            click.echo(click.style(f"    Path: {artifact.path}", dim=True))
-            if artifact.content_hash:
-                click.echo(click.style(f"    Hash: {artifact.content_hash}", dim=True))
+        # Format badge based on management status
+        is_managed = _is_erk_managed(artifact)
+        if is_managed:
+            badge = click.style(" [erk]", fg="cyan")
         else:
-            click.echo(f"  {artifact.name}{managed_suffix}")
+            badge = click.style(" [local]", fg="yellow")
+
+        if verbose:
+            click.echo(f"    {artifact.name}{badge}")
+            click.echo(click.style(f"      Path: {artifact.path}", dim=True))
+            if artifact.content_hash:
+                click.echo(click.style(f"      Hash: {artifact.content_hash}", dim=True))
+        else:
+            click.echo(f"    {artifact.name}{badge}")
