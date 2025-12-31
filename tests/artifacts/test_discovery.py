@@ -122,3 +122,19 @@ def test_get_artifact_by_name_filters_by_type(tmp_path: Path) -> None:
 
     result = get_artifact_by_name(claude_dir, "same-name", "command")
     assert result is None
+
+
+def test_discover_top_level_commands(tmp_path: Path) -> None:
+    """Top-level commands (no namespace) should be discovered."""
+    claude_dir = tmp_path / ".claude"
+    commands_dir = claude_dir / "commands"
+    commands_dir.mkdir(parents=True)
+    cmd_file = commands_dir / "my-command.md"
+    cmd_file.write_text("# My Command", encoding="utf-8")
+
+    result = discover_artifacts(claude_dir)
+
+    assert len(result) == 1
+    assert result[0].name == "my-command"
+    assert result[0].artifact_type == "command"
+    assert result[0].path == cmd_file
