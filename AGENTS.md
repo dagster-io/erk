@@ -1,11 +1,58 @@
-# Erk Coding Standards
-
-> **Note**: This is unreleased, completely private software. We can break backwards
-> compatibility completely at will based on preferences of the engineer developing
-> the product.
-
 <!-- AGENT NOTICE: This file is loaded automatically. Read FULLY before writing code. -->
 <!-- Priority: This is a ROUTING FILE. Load skills and docs as directed for complete guidance. -->
+
+# Erk - Plan-Oriented Agentic Engineering
+
+## What is Erk?
+
+**Erk** is a CLI tool for plan-oriented agentic engineering: a workflow where AI agents create implementation plans, execute them in isolated worktrees, and ship code via automated PR workflows.
+
+**Status**: Unreleased, completely private software. We can break backwards compatibility at will based on developer preferences.
+
+## Core Architecture
+
+**Tech Stack:**
+
+- Python 3.10+ (managed with `uv`)
+- Git worktrees for parallel development
+- Graphite (`gt`) for stacked PRs
+- GitHub CLI (`gh`) for PR management
+- Claude Code for AI-driven development
+
+**Project Structure:**
+
+```
+erk/
+├── .claude/          # Claude Code commands, skills, hooks
+├── .erk/             # Erk configuration, scratch storage
+├── docs/learned/     # Agent-generated documentation
+├── src/erk/          # Core implementation
+└── tests/            # Test suite (5-layer fake-driven architecture)
+```
+
+**Design Principles:**
+
+- **Plan-first workflow**: Create plans → implement → ship (often without IDE)
+- **Worktree isolation**: Each feature branch gets its own worktree
+- **Agent-driven**: Claude Code executes implementation plans autonomously
+- **Documentation as code**: Agents extract reusable patterns into `docs/learned/`
+
+## How Agents Work on This Project
+
+**Routing Model**: This file (AGENTS.md) is a routing document. It doesn't contain all information—it directs you to load the right skills and documentation based on the task.
+
+**Key Skills** (loaded on-demand):
+
+- `dignified-python`: Python coding standards (LBYL, frozen dataclasses, modern types)
+- `fake-driven-testing`: 5-layer test architecture with comprehensive fakes
+- `gt-graphite`: Worktree stack mental model
+- `devrun`: READ-ONLY agent for running pytest/pyright/ruff/make
+
+**Documentation Index**: See [docs/learned/index.md](docs/learned/index.md) for complete document registry with "read when..." conditions.
+
+---
+
+# Erk Coding Standards
 
 ## ⚠️ CRITICAL: Before Writing Any Code
 
