@@ -6,6 +6,7 @@ Schema Version 2:
 - Plan content is always fetched fresh (no caching)
 """
 
+import sys
 from datetime import UTC
 from pathlib import Path
 from urllib.parse import urlparse
@@ -77,8 +78,16 @@ class GitHubPlanStore(PlanStore):
         plan_body = None
         plan_comment_id = extract_plan_header_comment_id(issue_info.body)
         if plan_comment_id is not None:
-            comment_body = self._github_issues.get_comment_by_id(repo_root, plan_comment_id)
-            plan_body = extract_plan_from_comment(comment_body)
+            try:
+                comment_body = self._github_issues.get_comment_by_id(repo_root, plan_comment_id)
+                plan_body = extract_plan_from_comment(comment_body)
+            except RuntimeError as e:
+                # Comment fetch failed (404, network error, etc.) - fall back to first comment
+                print(
+                    f"Warning: Failed to fetch plan comment {plan_comment_id}: {e}",
+                    file=sys.stderr,
+                )
+                print("Falling back to first comment lookup", file=sys.stderr)
 
         if plan_body:
             return plan_body

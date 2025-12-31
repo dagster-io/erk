@@ -637,3 +637,52 @@ schema_version: '2'
     # (Fallback uses issue body if no plan markers in comments)
     result = store.get_plan(Path("/fake/repo"), "302")
     assert result.body == metadata_body
+
+
+def test_get_plan_body_comment_id_not_found_falls_back() -> None:
+    """When plan_comment_id fetch fails, fall back to first comment.
+
+    Tests the error handling added to fix issue #3598. When the metadata
+    contains a plan_comment_id pointing to a non-existent comment (deleted,
+    404, network error), the code should catch the RuntimeError and fall back
+    to fetching the first comment instead of crashing.
+    """
+    # Issue body has plan_comment_id pointing to non-existent comment
+    metadata_body = """<!-- erk:metadata-block:plan-header -->
+<details><summary><code>plan-header</code></summary>
+
+```yaml
+plan_comment_id: 99999
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    # First comment contains actual plan (fallback target)
+    plan_comment = """<!-- erk:plan-content -->
+# Plan: Test Fallback
+
+## Step 1
+This is the actual plan content.
+<!-- /erk:plan-content -->"""
+
+    issue = create_test_issue(
+        number=42,
+        title="Plan: Test Fallback",
+        body=metadata_body,
+    )
+    fake_github = FakeGitHubIssues(
+        issues={42: issue},
+        comments={42: [plan_comment]},
+    )
+    store = GitHubPlanStore(fake_github)
+
+    # Should successfully fall back to first comment despite invalid plan_comment_id
+    result = store.get_plan(Path("/fake/repo"), "42")
+
+    # Verify plan was extracted from first comment (fallback)
+    assert "# Plan: Test Fallback" in result.body
+    assert "## Step 1" in result.body
+    assert "This is the actual plan content." in result.body
+    # Should NOT contain metadata
+    assert "plan_comment_id" not in result.body
