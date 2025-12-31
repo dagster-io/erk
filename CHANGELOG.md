@@ -7,10 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-As of b6a2bb40b
+As of af8fa25c9
 
 ### Major Changes
 
+- Extend artifact management to GitHub workflows with model configurability and OAuth support (de0bfa279, 52579c0e4, f7597c52e)
 - The kit system has been completed eliminated. Erk installs its own artifacts directly with no user management required.
 - We have moved back everything to be at repo-level. You must run claude at git repo root. This has simplified the architecture
 - Migrate to static `erk exec` architecture, eliminating dynamic kit script loading (d82789f66)
@@ -22,6 +23,12 @@ As of b6a2bb40b
 
 ### Added
 
+- Add missing artifact detection to complement orphan detection for bidirectional artifact health checks (26d86f12a)
+- Add doctor checks for exit-plan-hook and required-version validation (fa8abf494)
+- Add erk-managed indicator badges to artifact list command output (36455b0c6)
+- Add retry logic with exponential backoff to prompt executor for transient API failures (01aa33028)
+- Add `impl` command alias for `implement` in shell integration (d7c9a4596)
+- Establish `.erk/prompt-hooks/` directory for AI-readable hook instructions (049bca462)
 - Add "Edit the plan" option to exit plan mode hook (d0ddc2889)
 - Add `-f`/`--force` flag to `erk pr submit` for diverged branches (a8b46b01f)
 - Add `show_hidden_commands` config option to control visibility of deprecated commands (91032b07d)
@@ -36,6 +43,12 @@ As of b6a2bb40b
 
 ### Changed
 
+- Restrict artifact sync to only copy bundled items, preventing dev-only artifacts from leaking into projects (af8fa25c9)
+- Make missing artifacts detection fail instead of warn (4f9cead04)
+- Rename `/erk:save-plan` command to `/erk:plan-save` for consistency (becabfd1c)
+- Integrate artifact syncing into `erk init` command (0130af179)
+- Rename agent-docs skill to learned-docs (05f176b71)
+- Flatten agent folders to top-level artifacts (0a15dabe2)
 - Move `/gt:pr-submit` to `/erk:pr-submit`, from the gt kit to the erk kit
 - Move erk scripts to top-level `erk exec` from `erk kit exec erk` (7b3c2b2fd)
 - Remove kit registry subsystem (e77266b27)
@@ -56,6 +69,10 @@ As of b6a2bb40b
 
 ### Fixed
 
+- Fix missing error handling for deleted plan comment references with graceful fallback (37bbece52)
+- Fix artifact check to display only installed artifacts instead of bundled defaults (02d8392b9)
+- Fix artifact sync path detection for editable installs (9623b0c87)
+- Fix function name import and call in post_plan_comment script (435c0bb09)
 - Fix `erk stack list` to show branches without worktrees using ancestor worktree (bc6a308b0)
 - Fix: Validate GitHub PR base branch matches local trunk before landing (3897eb658)
 - Fix AskUserQuestion option formatting in exit plan mode hook (ff62f6ac0)
