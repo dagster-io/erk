@@ -64,6 +64,7 @@ def create_plan_issue(
     title_suffix: str | None = None,
     source_plan_issues: list[int] | None = None,
     extraction_session_ids: list[str] | None = None,
+    objective_issue: int | None = None,
 ) -> CreatePlanIssueResult:
     """Create Schema v2 plan issue with proper structure.
 
@@ -84,6 +85,7 @@ def create_plan_issue(
         title_suffix: Suffix for issue title (default: "[erk-plan]" or "[erk-extraction]")
         source_plan_issues: For extraction plans, list of source issue numbers
         extraction_session_ids: For extraction plans, list of session IDs analyzed
+        objective_issue: Optional GitHub issue number of the parent objective
 
     Returns:
         CreatePlanIssueResult with success status and details
@@ -146,6 +148,7 @@ def create_plan_issue(
         plan_type=plan_type,
         source_plan_issues=source_plan_issues if source_plan_issues else [],
         extraction_session_ids=extraction_session_ids if extraction_session_ids else [],
+        objective_issue=objective_issue,
     )
 
     # Create issue

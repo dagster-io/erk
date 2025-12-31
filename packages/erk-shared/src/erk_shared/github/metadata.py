@@ -1154,6 +1154,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
             "plan_type",
             "source_plan_issues",
             "extraction_session_ids",
+            "objective_issue",
         }
 
         # Check required fields exist
@@ -1276,6 +1277,13 @@ class PlanHeaderSchema(MetadataBlockSchema):
                     "extraction_session_ids is required when plan_type is 'extraction'"
                 )
 
+        # Validate objective_issue field (optional, integer, positive when provided)
+        if "objective_issue" in data and data["objective_issue"] is not None:
+            if not isinstance(data["objective_issue"], int):
+                raise ValueError("objective_issue must be an integer or null")
+            if data["objective_issue"] <= 0:
+                raise ValueError("objective_issue must be positive when provided")
+
         # Check for unexpected fields
         known_fields = required_fields | optional_fields
         unknown_fields = set(data.keys()) - known_fields
@@ -1303,6 +1311,7 @@ def create_plan_header_block(
     plan_type: str | None = None,
     source_plan_issues: list[int] | None = None,
     extraction_session_ids: list[str] | None = None,
+    objective_issue: int | None = None,
 ) -> MetadataBlock:
     """Create a plan-header metadata block with validation.
 
@@ -1322,6 +1331,7 @@ def create_plan_header_block(
         plan_type: Optional type discriminator ("standard" or "extraction")
         source_plan_issues: For extraction plans, list of issue numbers analyzed
         extraction_session_ids: For extraction plans, list of session IDs analyzed
+        objective_issue: Optional GitHub issue number of the parent objective
 
     Returns:
         MetadataBlock with plan-header schema
@@ -1355,6 +1365,10 @@ def create_plan_header_block(
     if extraction_session_ids is not None:
         data["extraction_session_ids"] = extraction_session_ids
 
+    # Include objective_issue if provided
+    if objective_issue is not None:
+        data["objective_issue"] = objective_issue
+
     return create_metadata_block(
         key=schema.get_key(),
         data=data,
@@ -1379,6 +1393,7 @@ def format_plan_header_body(
     plan_type: str | None = None,
     source_plan_issues: list[int] | None = None,
     extraction_session_ids: list[str] | None = None,
+    objective_issue: int | None = None,
 ) -> str:
     """Format issue body with only metadata (schema version 2).
 
@@ -1401,6 +1416,7 @@ def format_plan_header_body(
         plan_type: Optional type discriminator ("standard" or "extraction")
         source_plan_issues: For extraction plans, list of issue numbers analyzed
         extraction_session_ids: For extraction plans, list of session IDs analyzed
+        objective_issue: Optional GitHub issue number of the parent objective
 
     Returns:
         Issue body string with metadata block only
@@ -1421,6 +1437,7 @@ def format_plan_header_body(
         plan_type=plan_type,
         source_plan_issues=source_plan_issues,
         extraction_session_ids=extraction_session_ids,
+        objective_issue=objective_issue,
     )
 
     return render_metadata_block(block)
@@ -1877,6 +1894,22 @@ def extract_plan_header_remote_impl_at(issue_body: str) -> str | None:
         return None
 
     return block.data.get("last_remote_impl_at")
+
+
+def extract_plan_header_objective_issue(issue_body: str) -> int | None:
+    """Extract objective_issue from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        objective_issue number if found, None if block is missing or field is unset
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get("objective_issue")
 
 
 # =============================================================================

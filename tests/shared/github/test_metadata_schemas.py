@@ -727,3 +727,61 @@ class TestPlanHeaderSchema:
         """get_key returns correct key."""
         schema = PlanHeaderSchema()
         assert schema.get_key() == "plan-header"
+
+    def test_valid_with_objective_issue(self) -> None:
+        """Valid plan-header with objective_issue field."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "objective_issue": 42,
+        }
+        schema.validate(data)  # Should not raise
+
+    def test_null_objective_issue_is_valid(self) -> None:
+        """Null objective_issue is valid (not set)."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "objective_issue": None,
+        }
+        schema.validate(data)  # Should not raise
+
+    def test_non_integer_objective_issue_raises(self) -> None:
+        """Non-integer objective_issue raises ValueError."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "objective_issue": "42",
+        }
+        with pytest.raises(ValueError, match="objective_issue must be an integer or null"):
+            schema.validate(data)
+
+    def test_zero_objective_issue_raises(self) -> None:
+        """Zero objective_issue raises ValueError."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "objective_issue": 0,
+        }
+        with pytest.raises(ValueError, match="objective_issue must be positive when provided"):
+            schema.validate(data)
+
+    def test_negative_objective_issue_raises(self) -> None:
+        """Negative objective_issue raises ValueError."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "objective_issue": -1,
+        }
+        with pytest.raises(ValueError, match="objective_issue must be positive when provided"):
+            schema.validate(data)

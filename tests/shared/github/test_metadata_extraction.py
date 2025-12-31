@@ -10,6 +10,7 @@ from erk_shared.github.metadata import (
     extract_plan_header_comment_id,
     extract_plan_header_dispatch_info,
     extract_plan_header_local_impl_at,
+    extract_plan_header_objective_issue,
     extract_plan_header_remote_impl_at,
     extract_plan_header_worktree_name,
     update_plan_header_comment_id,
@@ -579,3 +580,100 @@ last_dispatched_at: '2025-11-26T08:00:00Z'
     # Should have the new comment ID
     comment_id = extract_plan_header_comment_id(result)
     assert comment_id == 55555555
+
+
+# === Objective Issue Extraction Tests ===
+
+
+def test_extract_plan_header_objective_issue_found() -> None:
+    """Extract objective_issue from plan-header block when present."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2024-01-15T10:30:00Z'
+created_by: user123
+objective_issue: 42
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    result = extract_plan_header_objective_issue(issue_body)
+    assert result == 42
+
+
+def test_extract_plan_header_objective_issue_null() -> None:
+    """Return None when objective_issue is explicitly null."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2024-01-15T10:30:00Z'
+created_by: user123
+objective_issue: null
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    result = extract_plan_header_objective_issue(issue_body)
+    assert result is None
+
+
+def test_extract_plan_header_objective_issue_missing() -> None:
+    """Return None when objective_issue field is missing."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2024-01-15T10:30:00Z'
+created_by: user123
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    result = extract_plan_header_objective_issue(issue_body)
+    assert result is None
+
+
+def test_extract_plan_header_objective_issue_missing_block() -> None:
+    """Return None when plan-header block is missing."""
+    issue_body = """This is a plain issue body without any metadata blocks."""
+
+    result = extract_plan_header_objective_issue(issue_body)
+    assert result is None
+
+
+def test_extract_plan_header_objective_issue_with_other_fields() -> None:
+    """Extract objective_issue from block with other fields."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2024-01-15T10:30:00Z'
+created_by: user123
+worktree_name: feature-branch-b-24-01-15
+objective_issue: 123
+last_dispatched_run_id: '1234567890'
+last_dispatched_at: '2024-01-15T11:00:00Z'
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    objective = extract_plan_header_objective_issue(issue_body)
+    assert objective == 123
+
+    # Verify other fields are also extractable
+    worktree = extract_plan_header_worktree_name(issue_body)
+    assert worktree == "feature-branch-b-24-01-15"

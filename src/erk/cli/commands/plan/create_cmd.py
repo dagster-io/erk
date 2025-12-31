@@ -22,12 +22,19 @@ from erk_shared.output.output import user_output
 )
 @click.option("--title", "-t", type=str, help="Issue title (default: extract from H1)")
 @click.option("--label", "-l", multiple=True, help="Additional labels")
+@click.option(
+    "--objective",
+    "-o",
+    type=int,
+    help="Link to parent objective issue number",
+)
 @click.pass_obj
 def create_plan(
     ctx: ErkContext,
     file: Path | None,
     title: str | None,
     label: tuple[str, ...],
+    objective: int | None,
 ) -> None:
     """Create a plan issue from markdown content.
 
@@ -73,6 +80,16 @@ def create_plan(
     # Convert extra labels tuple to list
     extra_labels = list(label) if label else None
 
+    # Validate objective if provided
+    if objective is not None:
+        objective_issue = ctx.issues.get_issue(repo_root, objective)
+        if "erk-objective" not in objective_issue.labels:
+            user_output(
+                click.style("Error: ", fg="red")
+                + f"Issue #{objective} does not have the 'erk-objective' label."
+            )
+            raise SystemExit(1)
+
     # Use consolidated create_plan_issue for the entire workflow
     result = create_plan_issue(
         github_issues=ctx.issues,
@@ -80,6 +97,7 @@ def create_plan(
         plan_content=content,
         title=title,
         extra_labels=extra_labels,
+        objective_issue=objective,
     )
 
     if not result.success:

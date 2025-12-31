@@ -41,7 +41,10 @@ from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
+from erk_shared.github.metadata import extract_plan_header_objective_issue
+from erk_shared.impl_folder import read_issue_reference
 from erk_shared.output.output import user_output
+from erk_shared.scratch.landed_plan import LandedPlanState, write_landed_plan_state
 
 
 def is_extraction_origin_pr(ctx: ErkContext, repo_root: Path, pr_number: int) -> bool:
@@ -58,6 +61,124 @@ def is_extraction_origin_pr(ctx: ErkContext, repo_root: Path, pr_number: int) ->
         True if the PR has the erk-skip-extraction label, False otherwise
     """
     return ctx.github.has_pr_label(repo_root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
+
+
+def _handle_objective_update(
+    ctx: ErkContext,
+    repo_root: Path,
+    worktree_path: Path,
+    pr_number: int,
+    pr_title: str,
+    session_id: str | None,
+) -> None:
+    """Check for linked objective and prompt user for action.
+
+    Looks up the plan issue from .impl/issue.json, extracts objective_issue
+    from plan-header metadata, and prompts user with choices:
+    - Interactive: Load objective-update skill
+    - Auto-update: Post comment automatically
+    - Skip: Continue without update
+
+    Args:
+        ctx: ErkContext with GitHub operations
+        repo_root: Repository root directory
+        worktree_path: Path to the current worktree (before deletion)
+        pr_number: PR number that was merged
+        pr_title: PR title for the action comment
+        session_id: Session ID for scratch storage
+    """
+    impl_dir = worktree_path / ".impl"
+
+    # Check for .impl/issue.json
+    issue_ref = read_issue_reference(impl_dir)
+    if issue_ref is None:
+        return  # No linked plan issue
+
+    # Fetch plan issue to get objective_issue from metadata
+    plan_issue = ctx.issues.get_issue(repo_root, issue_ref.issue_number)
+    objective_issue_num = extract_plan_header_objective_issue(plan_issue.body)
+
+    if objective_issue_num is None:
+        return  # No linked objective
+
+    # Write LandedPlanState to scratch for skill access
+    if session_id is not None:
+        state = LandedPlanState(
+            plan_issue=issue_ref.issue_number,
+            objective_issue=objective_issue_num,
+            pr_number=pr_number,
+            pr_title=pr_title,
+        )
+        write_landed_plan_state(session_id, state, repo_root=repo_root)
+
+    # Prompt user with choices
+    user_output("")
+    user_output(
+        click.style("📌 Objective linked:", fg="cyan")
+        + f" This plan is linked to objective #{objective_issue_num}"
+    )
+    user_output("")
+    user_output("How would you like to update the objective?")
+    user_output("  1. Interactive - Load objective-update skill for guided update")
+    user_output("  2. Auto-update - Post action comment automatically")
+    user_output("  3. Skip - Continue without updating objective")
+    user_output("")
+
+    choice = click.prompt("Choice", type=click.Choice(["1", "2", "3"]), default="1")
+
+    if choice == "1":
+        # Interactive: Just inform user to run the skill
+        user_output("")
+        user_output(
+            click.style("💡", fg="cyan") + " After landing completes, run: /erk:objective-update"
+        )
+    elif choice == "2":
+        # Auto-update: Post action comment
+        _auto_update_objective(ctx, repo_root, objective_issue_num, pr_number, pr_title)
+    # else choice == "3": Skip - do nothing
+
+
+def _auto_update_objective(
+    ctx: ErkContext,
+    repo_root: Path,
+    objective_issue: int,
+    pr_number: int,
+    pr_title: str,
+) -> None:
+    """Post an action comment to the objective issue.
+
+    Creates a simple action comment documenting the PR merge.
+
+    Args:
+        ctx: ErkContext with GitHub operations
+        repo_root: Repository root directory
+        objective_issue: Objective issue number
+        pr_number: PR number that was merged
+        pr_title: PR title for the comment
+    """
+    from datetime import UTC, datetime
+
+    date_str = datetime.now(UTC).strftime("%Y-%m-%d")
+
+    comment_body = f"""## Action: PR Merged
+
+**Date:** {date_str}
+**PR:** #{pr_number}
+
+### What Was Done
+- Merged PR: {pr_title}
+
+### Lessons Learned
+- _(Add lessons learned after reviewing the changes)_
+
+### Roadmap Updates
+- _(Update roadmap status in the objective body)_
+"""
+
+    ctx.issues.add_comment(repo_root, objective_issue, comment_body)
+    user_output(
+        click.style("✓", fg="green") + f" Posted action comment to objective #{objective_issue}"
+    )
 
 
 @click.command("land", cls=CommandWithHiddenOptions)
@@ -250,6 +371,21 @@ def pr_land(
             user_output(
                 click.style("⚠", fg="yellow") + f" Extraction failed: {extraction_result.error}"
             )
+
+    # Step 2.5: Check for linked objective and prompt for action
+    # Fetch PR title for the action comment (may return None if PR not found)
+    pr_title = ctx.github.get_pr_title(repo.root, success_result.pr_number)
+    if pr_title is None:
+        pr_title = f"PR #{success_result.pr_number}"  # Fallback
+
+    _handle_objective_update(
+        ctx,
+        repo.root,
+        current_worktree_path,
+        success_result.pr_number,
+        pr_title,
+        session_id,
+    )
 
     # Step 3: Delete worktree and branch
     delete_branch_and_worktree(ctx, repo, current_branch, current_worktree_path)
