@@ -72,9 +72,15 @@ class UpdateError:
 
     success: bool
     error: Literal[
-        "pr_not_found", "empty_diff", "diff_fetch_failed", "claude_failed", "github_api_failed"
+        "pr_not_found",
+        "empty_diff",
+        "diff_fetch_failed",
+        "claude_execution_failed",
+        "claude_empty_output",
+        "github_api_failed",
     ]
     message: str
+    stderr: str | None
 
 
 def _build_prompt(diff_content: str, current_branch: str, parent_branch: str) -> str:
@@ -162,6 +168,7 @@ def _update_pr_body_impl(
             success=False,
             error="pr_not_found",
             message="Could not determine current branch",
+            stderr=None,
         )
 
     # Get PR for branch
@@ -171,6 +178,7 @@ def _update_pr_body_impl(
             success=False,
             error="pr_not_found",
             message=f"No PR found for branch {current_branch}",
+            stderr=None,
         )
 
     pr_number = pr_result.number
@@ -183,6 +191,7 @@ def _update_pr_body_impl(
             success=False,
             error="diff_fetch_failed",
             message=f"Failed to get PR diff: {e}",
+            stderr=None,
         )
 
     if not pr_diff.strip():
@@ -190,6 +199,7 @@ def _update_pr_body_impl(
             success=False,
             error="empty_diff",
             message="PR diff is empty",
+            stderr=None,
         )
 
     # Truncate diff if needed
@@ -202,19 +212,24 @@ def _update_pr_body_impl(
     prompt = _build_prompt(diff_content, current_branch, parent_branch)
     result = executor.execute_prompt(prompt, model="haiku", cwd=repo_root)
 
+    # Separate failure modes for better diagnostics
     if not result.success:
+        stderr_preview = result.error[:500] if result.error else None
         return UpdateError(
             success=False,
-            error="claude_failed",
-            message=f"Claude execution failed: {result.error}",
+            error="claude_execution_failed",
+            message="Claude CLI returned non-zero exit code",
+            stderr=stderr_preview,
         )
 
-    # Check for empty output
+    # Check for empty output (success=True but no content)
     if not result.output or not result.output.strip():
+        stderr_preview = result.error[:500] if result.error else None
         return UpdateError(
             success=False,
-            error="claude_failed",
-            message="Claude returned empty output (possible API/auth issue)",
+            error="claude_empty_output",
+            message="Claude returned empty output (check API quota, rate limits, or token)",
+            stderr=stderr_preview,
         )
 
     # Build full PR body
@@ -228,6 +243,7 @@ def _update_pr_body_impl(
             success=False,
             error="github_api_failed",
             message=f"Failed to update PR: {e}",
+            stderr=None,
         )
 
     return UpdateSuccess(success=True, pr_number=pr_number)
