@@ -1,4 +1,4 @@
-"""List artifacts installed in the project's .claude/ directory."""
+"""List artifacts installed in the project."""
 
 from pathlib import Path
 
@@ -6,7 +6,7 @@ import click
 
 from erk.artifacts.discovery import discover_artifacts
 from erk.artifacts.models import ArtifactType, InstalledArtifact
-from erk.artifacts.orphans import BUNDLED_AGENTS, BUNDLED_SKILLS
+from erk.artifacts.orphans import BUNDLED_AGENTS, BUNDLED_SKILLS, BUNDLED_WORKFLOWS
 
 
 def _is_erk_managed(artifact: InstalledArtifact) -> bool:
@@ -17,6 +17,8 @@ def _is_erk_managed(artifact: InstalledArtifact) -> bool:
         return artifact.name in BUNDLED_SKILLS
     if artifact.artifact_type == "agent":
         return artifact.name in BUNDLED_AGENTS
+    if artifact.artifact_type == "workflow":
+        return f"{artifact.name}.yml" in BUNDLED_WORKFLOWS
     return False
 
 
@@ -24,12 +26,12 @@ def _is_erk_managed(artifact: InstalledArtifact) -> bool:
 @click.option(
     "--type",
     "artifact_type",
-    type=click.Choice(["skill", "command", "agent"]),
+    type=click.Choice(["skill", "command", "agent", "workflow"]),
     help="Filter by artifact type",
 )
 @click.option("--verbose", "-v", is_flag=True, help="Show additional details")
 def list_cmd(artifact_type: str | None, verbose: bool) -> None:
-    """List all artifacts in .claude/ directory.
+    """List all artifacts in project.
 
     Examples:
 
@@ -45,12 +47,13 @@ def list_cmd(artifact_type: str | None, verbose: bool) -> None:
       # List with details
       erk artifact list --verbose
     """
-    claude_dir = Path.cwd() / ".claude"
+    project_dir = Path.cwd()
+    claude_dir = project_dir / ".claude"
     if not claude_dir.exists():
         click.echo("No .claude/ directory found in current directory", err=True)
         raise SystemExit(1)
 
-    artifacts = discover_artifacts(claude_dir)
+    artifacts = discover_artifacts(project_dir)
 
     # Filter by type if specified
     if artifact_type is not None:

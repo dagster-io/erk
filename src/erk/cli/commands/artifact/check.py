@@ -12,9 +12,7 @@ from erk.artifacts.staleness import check_staleness
 def _display_orphan_warnings(orphans: dict[str, list[str]]) -> None:
     """Display orphan warnings with remediation commands."""
     total_orphans = sum(len(files) for files in orphans.values())
-    click.echo(
-        click.style("⚠️  ", fg="yellow") + f"Found {total_orphans} orphaned artifact(s) in .claude/"
-    )
+    click.echo(click.style("⚠️  ", fg="yellow") + f"Found {total_orphans} orphaned artifact(s)")
     click.echo("   Orphaned files (not in current erk package):")
     for folder, files in sorted(orphans.items()):
         click.echo(f"     {folder}/:")
@@ -25,12 +23,16 @@ def _display_orphan_warnings(orphans: dict[str, list[str]]) -> None:
     click.echo("   To remove:")
     for folder, files in sorted(orphans.items()):
         for filename in sorted(files):
-            click.echo(f"     rm .claude/{folder}/{filename}")
+            # Workflows are in .github/, not .claude/
+            if folder.startswith(".github"):
+                click.echo(f"     rm {folder}/{filename}")
+            else:
+                click.echo(f"     rm .claude/{folder}/{filename}")
 
 
-def _display_installed_artifacts(claude_dir: Path) -> None:
-    """Display list of artifacts actually installed in project's .claude/ directory."""
-    artifacts = discover_artifacts(claude_dir)
+def _display_installed_artifacts(project_dir: Path) -> None:
+    """Display list of artifacts actually installed in project."""
+    artifacts = discover_artifacts(project_dir)
 
     if not artifacts:
         click.echo("   (no artifacts installed)")
@@ -49,6 +51,8 @@ def _display_installed_artifacts(claude_dir: Path) -> None:
             click.echo(f"   skills/{artifact.name}")
         elif artifact.artifact_type == "agent":
             click.echo(f"   agents/{artifact.name}")
+        elif artifact.artifact_type == "workflow":
+            click.echo(f"   .github/workflows/{artifact.name}.yml")
 
 
 @click.command("check")
@@ -66,7 +70,6 @@ def check_cmd() -> None:
       erk artifact check
     """
     project_dir = Path.cwd()
-    claude_dir = project_dir / ".claude"
 
     staleness_result = check_staleness(project_dir)
     orphan_result = find_orphaned_artifacts(project_dir)
@@ -76,7 +79,7 @@ def check_cmd() -> None:
     # Check staleness
     if staleness_result.reason == "erk-repo":
         click.echo(click.style("✓ ", fg="green") + "Development mode (artifacts read from source)")
-        _display_installed_artifacts(claude_dir)
+        _display_installed_artifacts(project_dir)
     elif staleness_result.reason == "not-initialized":
         click.echo(click.style("⚠️  ", fg="yellow") + "Artifacts not initialized")
         click.echo(f"   Current erk version: {staleness_result.current_version}")
@@ -93,7 +96,7 @@ def check_cmd() -> None:
             click.style("✓ ", fg="green")
             + f"Artifacts up to date (v{staleness_result.current_version})"
         )
-        _display_installed_artifacts(claude_dir)
+        _display_installed_artifacts(project_dir)
 
     # Check for orphans (skip if erk-repo or no-claude-dir)
     if orphan_result.skipped_reason is None:
