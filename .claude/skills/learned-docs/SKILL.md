@@ -1,12 +1,12 @@
 ---
-name: agent-docs
+name: learned-docs
 description: This skill should be used when writing, modifying, or reorganizing
   documentation in docs/learned/. Use when creating new documents, updating frontmatter,
   choosing categories, creating index files, updating routing tables, or moving
   files between categories. Essential for maintaining consistent documentation structure.
 ---
 
-# Agent Documentation Guide
+# Learned Documentation Guide
 
 Overview: `docs/learned/` contains agent-focused documentation with:
 

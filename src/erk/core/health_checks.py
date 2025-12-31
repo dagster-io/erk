@@ -742,11 +742,13 @@ def check_hook_health(repo_root: Path) -> CheckResult:
 
 
 # Bundled artifacts that erk syncs to projects
-BUNDLED_SKILLS = frozenset({
-    "dignified-python",
-    "learned-docs",
-    "erk-diff-analysis",
-})
+BUNDLED_SKILLS = frozenset(
+    {
+        "dignified-python",
+        "learned-docs",
+        "erk-diff-analysis",
+    }
+)
 BUNDLED_AGENTS = frozenset({"devrun"})
 
 
@@ -777,9 +779,6 @@ def _find_orphaned_artifacts(
         for local_file in local_commands.iterdir():
             if not local_file.is_file():
                 continue
-            # Ignore __init__.py
-            if local_file.name == "__init__.py":
-                continue
             if local_file.name not in bundled_files:
                 folder_key = "commands/erk"
                 if folder_key not in orphans:
@@ -794,9 +793,7 @@ def _find_orphaned_artifacts(
         if local_skill.exists() and bundled_skill.exists():
             # Get all files recursively from bundled
             bundled_files = {
-                str(f.relative_to(bundled_skill))
-                for f in bundled_skill.rglob("*")
-                if f.is_file()
+                str(f.relative_to(bundled_skill)) for f in bundled_skill.rglob("*") if f.is_file()
             }
             # Check local files
             for local_file in local_skill.rglob("*"):
@@ -817,9 +814,7 @@ def _find_orphaned_artifacts(
         if local_agent.exists() and bundled_agent.exists():
             # Get all files recursively from bundled
             bundled_files = {
-                str(f.relative_to(bundled_agent))
-                for f in bundled_agent.rglob("*")
-                if f.is_file()
+                str(f.relative_to(bundled_agent)) for f in bundled_agent.rglob("*") if f.is_file()
             }
             # Check local files
             for local_file in local_agent.rglob("*"):

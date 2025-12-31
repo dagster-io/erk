@@ -150,5 +150,5 @@ Follow the existing pattern of:
 
 ## Related Topics
 
-- [Agent Documentation Guide](../../../.claude/skills/agent-docs/SKILL.md) - Operational guidance for doc maintenance
+- [Learned Documentation Guide](../../../.claude/skills/learned-docs/SKILL.md) - Operational guidance for doc maintenance
 - [Erk Architecture Patterns](erk-architecture.md) - Contains the meta-tripwire definition

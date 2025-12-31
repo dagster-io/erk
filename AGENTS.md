@@ -51,7 +51,7 @@ These fundamentally change how you write code. Load before ANY code work:
 Load when the context applies:
 
 - **Worktree stacks, `gt` commands** → Load `gt-graphite` skill
-- **Writing agent documentation** → Load `agent-docs` skill
+- **Writing agent documentation** → Load `learned-docs` skill
 
 ### Tier 3: Tool Routing
 
