@@ -38,8 +38,8 @@ def _get_repo_root() -> Path | None:
 
 
 def _is_in_managed_project(repo_root: Path) -> bool:
-    """Check if repo is a managed project (has .erk/kits.toml)."""
-    return (repo_root / ".erk" / "kits.toml").exists()
+    """Check if repo is a managed project (has .erk/config.toml)."""
+    return (repo_root / ".erk" / "config.toml").exists()
 
 
 def check_venv(repo_root: Path, session_id: str) -> tuple[bool, str]:

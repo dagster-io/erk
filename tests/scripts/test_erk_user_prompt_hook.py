@@ -58,18 +58,18 @@ class TestGetRepoRoot:
 class TestIsInManagedProject:
     """Tests for _is_in_managed_project function."""
 
-    def test_returns_true_when_kits_toml_exists(self, tmp_path: Path) -> None:
-        """Test returns True when .erk/kits.toml exists."""
-        kits_file = tmp_path / ".erk" / "kits.toml"
-        kits_file.parent.mkdir(parents=True)
-        kits_file.write_text("# kits config", encoding="utf-8")
+    def test_returns_true_when_config_toml_exists(self, tmp_path: Path) -> None:
+        """Test returns True when .erk/config.toml exists."""
+        config_file = tmp_path / ".erk" / "config.toml"
+        config_file.parent.mkdir(parents=True)
+        config_file.write_text("# erk config", encoding="utf-8")
 
         result = _is_in_managed_project(tmp_path)
 
         assert result is True
 
-    def test_returns_false_when_kits_toml_missing(self, tmp_path: Path) -> None:
-        """Test returns False when .erk/kits.toml does not exist."""
+    def test_returns_false_when_config_toml_missing(self, tmp_path: Path) -> None:
+        """Test returns False when .erk/config.toml does not exist."""
         result = _is_in_managed_project(tmp_path)
 
         assert result is False
@@ -232,8 +232,8 @@ class TestMainFunction:
     ) -> None:
         """Test exit code 2 and stderr output when venv check fails."""
         # Set up managed project
-        (tmp_path / ".erk" / "kits.toml").parent.mkdir(parents=True)
-        (tmp_path / ".erk" / "kits.toml").write_text("", encoding="utf-8")
+        (tmp_path / ".erk" / "config.toml").parent.mkdir(parents=True)
+        (tmp_path / ".erk" / "config.toml").write_text("", encoding="utf-8")
         (tmp_path / ".venv").mkdir()
 
         stdin_data = json.dumps({"session_id": "test-session"})
@@ -255,8 +255,8 @@ class TestMainFunction:
     ) -> None:
         """Test stdout contains all context when all checks pass."""
         # Set up managed project with venv
-        (tmp_path / ".erk" / "kits.toml").parent.mkdir(parents=True)
-        (tmp_path / ".erk" / "kits.toml").write_text("", encoding="utf-8")
+        (tmp_path / ".erk" / "config.toml").parent.mkdir(parents=True)
+        (tmp_path / ".erk" / "config.toml").write_text("", encoding="utf-8")
         venv_path = tmp_path / ".venv"
         venv_path.mkdir()
 
@@ -279,8 +279,8 @@ class TestMainFunction:
     def test_handles_empty_stdin(self, tmp_path: Path) -> None:
         """Test graceful handling of empty stdin."""
         # Set up managed project with venv
-        (tmp_path / ".erk" / "kits.toml").parent.mkdir(parents=True)
-        (tmp_path / ".erk" / "kits.toml").write_text("", encoding="utf-8")
+        (tmp_path / ".erk" / "config.toml").parent.mkdir(parents=True)
+        (tmp_path / ".erk" / "config.toml").write_text("", encoding="utf-8")
         venv_path = tmp_path / ".venv"
         venv_path.mkdir()
 
