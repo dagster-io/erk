@@ -12,10 +12,12 @@ from erk.core.claude_settings import (
     ERK_PERMISSION,
     get_repo_claude_settings_path,
     has_erk_permission,
+    has_exit_plan_hook,
     read_claude_settings,
 )
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
+from erk.core.version_check import get_required_version, is_version_mismatch
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.github_admin.abc import GitHubAdmin
 
@@ -57,6 +59,60 @@ def check_erk_version() -> CheckResult:
             passed=False,
             message="erk package not found",
         )
+
+
+def _get_installed_erk_version() -> str | None:
+    """Get installed erk version, or None if not installed."""
+    try:
+        from importlib.metadata import version
+
+        return version("erk")
+    except Exception:
+        return None
+
+
+def check_required_tool_version(repo_root: Path) -> CheckResult:
+    """Check that installed erk version matches the required version file.
+
+    Args:
+        repo_root: Path to the repository root
+
+    Returns:
+        CheckResult indicating:
+        - FAIL if version file missing
+        - FAIL with warning if versions mismatch
+        - PASS if versions match
+    """
+    required_version = get_required_version(repo_root)
+    if required_version is None:
+        return CheckResult(
+            name="required-version",
+            passed=False,
+            message="Required version file missing (.erk/required-erk-uv-tool-version)",
+            details="Run 'erk init' to create this file",
+        )
+
+    installed_version = _get_installed_erk_version()
+    if installed_version is None:
+        return CheckResult(
+            name="required-version",
+            passed=False,
+            message="Could not determine installed erk version",
+        )
+
+    if is_version_mismatch(installed_version, required_version):
+        return CheckResult(
+            name="required-version",
+            passed=False,
+            message=f"Version mismatch: installed {installed_version}, required {required_version}",
+            details="Run 'uv tool upgrade erk' to update",
+        )
+
+    return CheckResult(
+        name="required-version",
+        passed=True,
+        message=f"erk version matches required ({required_version})",
+    )
 
 
 def check_claude_cli(shell: Shell) -> CheckResult:
@@ -562,6 +618,42 @@ def check_user_prompt_hook(repo_root: Path) -> CheckResult:
     )
 
 
+def check_exit_plan_hook(repo_root: Path) -> CheckResult:
+    """Check that the ExitPlanMode hook is configured.
+
+    Verifies that .claude/settings.json contains the erk exec exit-plan-mode-hook
+    command for the PreToolUse ExitPlanMode matcher.
+
+    Args:
+        repo_root: Path to the repository root (where .claude/ should be located)
+    """
+    settings_path = repo_root / ".claude" / "settings.json"
+    if not settings_path.exists():
+        return CheckResult(
+            name="exit-plan-hook",
+            passed=False,
+            message="No .claude/settings.json found",
+            details="Run 'erk init' to create settings with the hook configured",
+        )
+    # File exists, so read_claude_settings won't return None
+    settings = read_claude_settings(settings_path)
+    assert settings is not None  # file existence already checked
+
+    if has_exit_plan_hook(settings):
+        return CheckResult(
+            name="exit-plan-hook",
+            passed=True,
+            message="ExitPlanMode hook configured",
+        )
+
+    return CheckResult(
+        name="exit-plan-hook",
+        passed=False,
+        message="ExitPlanMode hook not configured",
+        details="Run 'erk init' to add the hook to .claude/settings.json",
+    )
+
+
 def check_hook_health(repo_root: Path) -> CheckResult:
     """Check hook execution health from recent logs.
 
@@ -682,7 +774,9 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         results.append(check_claude_erk_permission(repo_root))
         results.append(check_claude_settings(repo_root))
         results.append(check_user_prompt_hook(repo_root))
+        results.append(check_exit_plan_hook(repo_root))
         results.append(check_gitignore_entries(repo_root))
+        results.append(check_required_tool_version(repo_root))
         # Hook health check
         results.append(check_hook_health(repo_root))
         # GitHub workflow permissions check (requires repo context)
