@@ -156,10 +156,12 @@ def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellInt
             return _build_passthrough_script(command_name, args)
         return ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
 
-    # Check for uvx invocation and warn
+    # Check for uvx invocation and warn with confirmation
     if is_running_via_uvx():
-        user_output(click.style("Warning: ", fg="yellow") + get_uvx_warning_message())
+        user_output(click.style("Warning: ", fg="yellow") + get_uvx_warning_message(command_name))
         user_output("")  # Blank line for readability
+        if not click.confirm("Continue anyway?"):
+            return ShellIntegrationResult(passthrough=False, script=None, exit_code=1)
 
     # Clean up stale scripts before running (opportunistic cleanup)
     cleanup_stale_scripts(max_age_seconds=STALE_SCRIPT_MAX_AGE_SECONDS)

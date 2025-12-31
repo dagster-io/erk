@@ -100,12 +100,12 @@ def test_not_uvx_homebrew_python(tmp_path: Path) -> None:
 
 def test_warning_message_contains_key_phrases() -> None:
     """Warning message should contain key information."""
-    message = get_uvx_warning_message()
+    message = get_uvx_warning_message("checkout")
 
     # Should mention uvx/uv tool
     assert "uvx" in message.lower() or "uv" in message
 
-    # Should mention shell integration won't work
+    # Should mention shell integration
     assert "shell integration" in message.lower()
 
     # Should mention the fix
@@ -115,11 +115,13 @@ def test_warning_message_contains_key_phrases() -> None:
     assert "erk init --shell" in message
 
 
-def test_warning_message_mentions_affected_commands() -> None:
-    """Warning message should mention specific affected commands."""
-    message = get_uvx_warning_message()
-
-    # Should mention example commands that won't work
-    assert "erk up" in message
+def test_warning_message_includes_command_name() -> None:
+    """Warning message should include the specific command being invoked."""
+    message = get_uvx_warning_message("checkout")
     assert "erk checkout" in message
+
+    message = get_uvx_warning_message("up")
+    assert "erk up" in message
+
+    message = get_uvx_warning_message("pr land")
     assert "erk pr land" in message

@@ -40,20 +40,20 @@ def is_running_via_uvx() -> bool:
     return any(marker in prefix_str for marker in ephemeral_markers)
 
 
-def get_uvx_warning_message() -> str:
+def get_uvx_warning_message(command_name: str) -> str:
     """Get the warning message to display when running via uvx.
+
+    Args:
+        command_name: The shell integration command being invoked (e.g., "checkout", "up")
 
     Returns:
         Multi-line warning message explaining the issue and fix
     """
-    return """Running via 'uvx erk' - shell integration won't work properly
+    return f"""Running 'erk {command_name}' via uvx - this command requires shell integration
 
-Shell integration commands like 'erk up', 'erk checkout', and 'erk pr land' need to
-change your shell's directory and activate virtual environments, which doesn't work
+Shell integration commands need to change your shell's directory, which doesn't work
 when running in uvx's isolated subprocess.
 
 To fix this:
   1. Install erk in uv's tools: uv tool install erk
-  2. Set up shell integration: erk init --shell
-
-Commands will execute, but directory changes won't affect your shell."""
+  2. Set up shell integration: erk init --shell"""
