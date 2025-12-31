@@ -13,7 +13,7 @@ git config --local user.email "${gh_user}@users.noreply.github.com"
 ```
 
 Usage:
-    dot-agent run erk configure-git-user
+    erk configure-git-user
 
 Output:
     JSON object with success status and configured values
@@ -23,14 +23,14 @@ Exit Codes:
     1: Error (not authenticated or git config failed)
 
 Examples:
-    $ dot-agent run erk configure-git-user
+    $ erk configure-git-user
     {
       "success": true,
       "username": "octocat",
       "email": "octocat@users.noreply.github.com"
     }
 
-    $ dot-agent run erk configure-git-user  # when not authenticated
+    $ erk configure-git-user  # when not authenticated
     {
       "success": false,
       "error": "not_authenticated",

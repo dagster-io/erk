@@ -140,7 +140,7 @@ Analyzing changes...
 ✓ Found .PLAN.md - using plan context
 ✓ Found changes in 3 files
 
-Creating commit: "Add dot-agent submit-stack command for automated PR workflow"
+Creating commit: "Add submit-stack command for automated PR workflow"
 ✓ Commit created
 
 Restacking branches...
@@ -149,11 +149,11 @@ Restacking branches...
 Submitting stack...
 ✓ 2 PRs created/updated:
 
-- PR #123: dot-agent-claude-folder-support (new)
+- PR #123: feature-submit-stack (new)
 - PR #122: base-branch (updated)
 
 Current stack:
-◯ dot-agent-claude-folder-support (current)
+◯ feature-submit-stack (current)
 ◯ base-branch
 ◉ main
 \`\`\`

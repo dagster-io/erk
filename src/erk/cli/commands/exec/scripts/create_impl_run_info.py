@@ -10,7 +10,7 @@ echo "{\"run_id\": \"$RUN_ID\", \"run_url\": \"$RUN_URL\"}" > .impl/run-info.jso
 ```
 
 Usage:
-    dot-agent run erk create-impl-run-info \\
+    erk create-impl-run-info \\
         --run-id 12345 \\
         --run-url https://github.com/owner/repo/actions/runs/12345
 
@@ -22,13 +22,13 @@ Exit Codes:
     1: Error (directory doesn't exist or write failed)
 
 Examples:
-    $ dot-agent run erk create-impl-run-info --run-id 12345 --run-url https://github.com/owner/repo/actions/runs/12345
+    $ erk create-impl-run-info --run-id 12345 --run-url https://github.com/owner/repo/actions/runs/12345
     {
       "success": true,
       "path": "/path/to/repo/.impl/run-info.json"
     }
 
-    $ dot-agent run erk create-impl-run-info --run-id 12345 --run-url https://...
+    $ erk create-impl-run-info --run-id 12345 --run-url https://...
     # when .impl/ doesn't exist
     {
       "success": false,
