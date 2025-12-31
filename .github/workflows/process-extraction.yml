@@ -51,9 +51,8 @@ jobs:
 
           cd $GITHUB_WORKSPACE
 
-          # Install workspace packages in dependency order
-          uv tool install --from ./packages/erk-kits --with ./packages/erk-shared erk-kits
-          uv tool install --from . --with ./packages/erk-shared --with ./packages/erk-kits erk
+          # Install workspace packages
+          uv tool install --from . --with ./packages/erk-shared erk
 
           # Install erk kit for Claude Code
           erk kit install erk
