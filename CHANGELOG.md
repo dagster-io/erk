@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.0] - 2025-12-31
+## [0.3.1] - 2025-12-31 15:52 PT
+
+### Fixed
+
+- Make step extraction gracefully degrade to empty list on empty LLM output
+
+### Changed
+
+- Update release process documentation and consolidate into RELEASING.md
 
 ## [0.3.0] - 2025-12-31 14:13 PT
 
