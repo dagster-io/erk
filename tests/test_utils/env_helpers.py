@@ -91,6 +91,7 @@ from erk.core.repo_discovery import RepoContext
 from erk.core.script_writer import RealScriptWriter
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.gateway.stack_backend.abc import StackBackend
 from erk_shared.git.abc import Git, WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
@@ -383,6 +384,7 @@ class ErkIsolatedFsEnv:
         graphite: FakeGraphite | None = None,
         github: FakeGitHub | None = None,
         shell: FakeShell | None = None,
+        stack_backend: StackBackend | None = None,
         repo: RepoContext | None = None,
         dry_run: bool = False,
         **kwargs,
@@ -402,6 +404,7 @@ class ErkIsolatedFsEnv:
             graphite: Custom FakeGraphite instance
             github: Custom FakeGitHub instance
             shell: Custom FakeShell instance
+            stack_backend: Custom StackBackend instance (default: FakeStackBackend enabled)
             repo: Custom RepoContext (default: None)
             dry_run: Whether to wrap with DryRunGit
             **kwargs: Additional context_for_test() parameters
@@ -539,6 +542,7 @@ class ErkIsolatedFsEnv:
             graphite=graphite,
             github=github,
             shell=shell,
+            stack_backend=stack_backend,
             global_config=global_config,
             repo=repo,
             **kwargs,
@@ -796,6 +800,7 @@ class ErkInMemEnv:
         graphite: FakeGraphite | None = None,
         github: FakeGitHub | None = None,
         shell: FakeShell | None = None,
+        stack_backend: StackBackend | None = None,
         repo: RepoContext | None = None,
         existing_paths: set[Path] | None = None,
         file_contents: dict[Path, str] | None = None,
@@ -817,6 +822,7 @@ class ErkInMemEnv:
             graphite: Custom FakeGraphite instance
             github: Custom FakeGitHub instance
             shell: Custom FakeShell instance
+            stack_backend: Custom StackBackend instance (default: FakeStackBackend enabled)
             repo: Custom RepoContext (default: None)
             existing_paths: Set of sentinel paths to treat as existing (pure mode only)
             file_contents: Mapping of sentinel paths to file content (pure mode only)
@@ -956,6 +962,7 @@ class ErkInMemEnv:
             graphite=graphite,
             github=github,
             shell=shell,
+            stack_backend=stack_backend,
             global_config=global_config,
             repo=repo,
             **kwargs,

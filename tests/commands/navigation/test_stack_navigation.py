@@ -313,8 +313,8 @@ def test_down_parent_has_no_worktree() -> None:
         assert any(branch == "feature-1" for _path, branch in git_ops.added_worktrees)
 
 
-def test_up_down_graphite_not_enabled() -> None:
-    """Test 'erk up' and 'erk down' require Graphite to be enabled."""
+def test_up_graphite_not_enabled() -> None:
+    """Test 'erk up' requires Graphite to be enabled."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         git_ops = FakeGit(
@@ -335,11 +335,29 @@ def test_up_down_graphite_not_enabled() -> None:
         assert "requires Graphite to be enabled" in result.stderr
         assert "erk config set use_graphite true" in result.stderr
 
+
+def test_down_stacking_not_enabled_stack_navigation() -> None:
+    """Test 'erk down' requires stacking to be enabled via stack_backend."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        # Use simple mode (stacking disabled via stack_backend)
+        from erk_shared.gateway.stack_backend.fake import FakeStackBackend
+
+        simple_backend = FakeStackBackend(stacking_enabled=False)
+        test_ctx = env.build_context(git=git_ops, stack_backend=simple_backend)
+
         # Try 'erk down'
         result = runner.invoke(cli, ["down"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
-        assert "requires Graphite to be enabled" in result.stderr
+        assert "requires stacking to be enabled" in result.stderr
+        assert "simple mode" in result.stderr
 
 
 def test_up_detached_head() -> None:

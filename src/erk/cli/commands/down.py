@@ -6,7 +6,7 @@ from erk.cli.commands.navigation_helpers import (
     check_clean_working_tree,
     check_pending_extraction_marker,
     delete_branch_and_worktree,
-    ensure_graphite_enabled,
+    ensure_stacking_enabled,
     render_activation_script,
     resolve_down_navigation,
     verify_pr_closed_or_merged,
@@ -51,7 +51,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
     """
     # Validate preconditions upfront (LBYL)
     Ensure.gh_authenticated(ctx)
-    ensure_graphite_enabled(ctx)
+    ensure_stacking_enabled(ctx)
     repo = discover_repo_context(ctx, ctx.cwd)
     trunk_branch = ctx.trunk_branch
 

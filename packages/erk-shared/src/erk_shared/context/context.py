@@ -27,6 +27,7 @@ from erk_shared.gateway.completion import Completion
 from erk_shared.gateway.feedback import UserFeedback
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.shell import Shell
+from erk_shared.gateway.stack_backend.abc import StackBackend
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.wt_stack.wt_stack import WtStack
 from erk_shared.git.abc import Git
@@ -65,6 +66,7 @@ class ErkContext:
     issues: GitHubIssues  # Note: ErkContext naming (was github_issues in DotAgentContext)
     graphite: Graphite
     wt_stack: WtStack  # Unified worktree+stack operations (Graphite optional)
+    stack_backend: StackBackend  # Stack backend for stacking operations
     time: Time
     session_store: ClaudeCodeSessionStore
     plan_store: PlanStore

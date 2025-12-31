@@ -15,6 +15,7 @@ from erk_shared.core.fakes import (
     FakePlannerRegistry,
     FakeScriptWriter,
 )
+from erk_shared.gateway.stack_backend.fake import FakeStackBackend
 
 if TYPE_CHECKING:
     from erk_shared.context.context import ErkContext
@@ -125,6 +126,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkConte
         prompt_executor=RealPromptExecutor(),
         graphite=fake_graphite,
         wt_stack=WtStack(git, wt_stack_repo_root, fake_graphite),
+        stack_backend=FakeStackBackend(stacking_enabled=True),
         time=FakeTime(),
         plan_store=GitHubPlanStore(github_issues),
         shell=FakeShell(),
@@ -139,7 +141,12 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkConte
         repo=repo,
         repo_info=repo_info,
         global_config=None,
-        local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
+        local_config=LoadedConfig(
+            env={},
+            post_create_commands=[],
+            post_create_shell=None,
+            stack_backend="graphite",
+        ),
         dry_run=False,
         debug=debug,
     )

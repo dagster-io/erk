@@ -56,7 +56,14 @@ def _parse_config_file(cfg_path: Path) -> LoadedConfig:
     shell = post.get("shell")
     if shell is not None:
         shell = str(shell)
-    return LoadedConfig(env=env, post_create_commands=commands, post_create_shell=shell)
+    # Parse stack_backend with default of "graphite" for backward compatibility
+    stack_backend = str(data.get("stack_backend", "graphite"))
+    return LoadedConfig(
+        env=env,
+        post_create_commands=commands,
+        post_create_shell=shell,
+        stack_backend=stack_backend,
+    )
 
 
 def detect_legacy_config_locations(
@@ -130,8 +137,13 @@ def load_config(repo_root: Path) -> LoadedConfig:
     if config_path.exists():
         return _parse_config_file(config_path)
 
-    # No config found
-    return LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
+    # No config found - default to "graphite" for backward compatibility
+    return LoadedConfig(
+        env={},
+        post_create_commands=[],
+        post_create_shell=None,
+        stack_backend="graphite",
+    )
 
 
 def load_project_config(project_root: Path) -> ProjectConfig:
@@ -174,6 +186,7 @@ def merge_configs(repo_config: LoadedConfig, project_config: ProjectConfig) -> L
     - env: Project values override repo values (dict merge)
     - post_create_commands: Repo commands run first, then project commands (list concat)
     - post_create_shell: Project shell overrides repo shell if set
+    - stack_backend: Inherited from repo_config (project-level override not supported)
 
     Args:
         repo_config: Repository-level configuration
@@ -199,4 +212,5 @@ def merge_configs(repo_config: LoadedConfig, project_config: ProjectConfig) -> L
         env=merged_env,
         post_create_commands=merged_commands,
         post_create_shell=merged_shell,
+        stack_backend=repo_config.stack_backend,
     )

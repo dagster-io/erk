@@ -32,6 +32,27 @@ def ensure_graphite_enabled(ctx: ErkContext) -> None:
     )
 
 
+def ensure_stacking_enabled(ctx: ErkContext) -> None:
+    """Validate that stacking operations are enabled.
+
+    Uses the StackBackend abstraction to check if stacking is available.
+    This allows commands to work with both Graphite-based stacking and
+    future alternative stack implementations.
+
+    Args:
+        ctx: Erk context
+
+    Raises:
+        SystemExit: If stacking is not enabled
+    """
+    Ensure.invariant(
+        ctx.stack_backend.is_stacking_enabled(),
+        "This command requires stacking to be enabled.\n"
+        "Currently using simple mode (stack_backend=simple in .erk/config.toml).\n"
+        "Stack navigation is only available with stack_backend=graphite.",
+    )
+
+
 def check_pending_extraction_marker(worktree_path: Path, force: bool) -> None:
     """Check for pending extraction marker and block deletion if present.
 

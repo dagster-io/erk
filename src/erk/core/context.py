@@ -49,6 +49,9 @@ from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.graphite.real import RealGraphite
 from erk_shared.gateway.shell import Shell
+from erk_shared.gateway.stack_backend.abc import StackBackend
+from erk_shared.gateway.stack_backend.graphite_compat import GraphiteCompatStackBackend
+from erk_shared.gateway.stack_backend.simple import SimpleStackBackend
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.gateway.wt_stack.wt_stack import WtStack
@@ -97,6 +100,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk_shared.gateway.feedback import FakeUserFeedback
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell import FakeShell
+    from erk_shared.gateway.stack_backend.fake import FakeStackBackend
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues import FakeGitHubIssues
@@ -114,6 +118,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         plan_store=GitHubPlanStore(fake_issues),
         graphite=fake_graphite,
         wt_stack=WtStack(git, cwd, fake_graphite),
+        stack_backend=FakeStackBackend(stacking_enabled=True),
         shell=FakeShell(),
         claude_executor=FakeClaudeExecutor(),
         completion=FakeCompletion(),
@@ -127,7 +132,12 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         prompt_executor=FakePromptExecutor(),
         cwd=cwd,
         global_config=None,
-        local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
+        local_config=LoadedConfig(
+            env={},
+            post_create_commands=[],
+            post_create_shell=None,
+            stack_backend="graphite",
+        ),
         repo=NoRepoSentinel(),
         repo_info=None,
         dry_run=dry_run,
@@ -143,6 +153,7 @@ def context_for_test(
     plan_store: PlanStore | None = None,
     graphite: Graphite | None = None,
     wt_stack: WtStack | None = None,
+    stack_backend: StackBackend | None = None,
     shell: Shell | None = None,
     claude_executor: ClaudeExecutor | None = None,
     completion: Completion | None = None,
@@ -208,6 +219,7 @@ def context_for_test(
     from erk_shared.gateway.graphite.dry_run import DryRunGraphite
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell import FakeShell
+    from erk_shared.gateway.stack_backend.fake import FakeStackBackend
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
@@ -283,7 +295,12 @@ def context_for_test(
         config_store = FakeConfigStore(config=global_config)
 
     if local_config is None:
-        local_config = LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
+        local_config = LoadedConfig(
+            env={},
+            post_create_commands=[],
+            post_create_shell=None,
+            stack_backend="graphite",
+        )
 
     if repo is None:
         repo = NoRepoSentinel()
@@ -292,6 +309,10 @@ def context_for_test(
     if wt_stack is None:
         repo_root = repo.root if not isinstance(repo, NoRepoSentinel) else (cwd or sentinel_path())
         wt_stack = WtStack(git, repo_root, graphite)
+
+    # Resolve stack_backend (defaults to enabled for backward compatibility)
+    if stack_backend is None:
+        stack_backend = FakeStackBackend(stacking_enabled=True)
 
     # Apply dry-run wrappers if needed (matching production behavior)
     if dry_run:
@@ -308,6 +329,7 @@ def context_for_test(
         plan_store=plan_store,
         graphite=graphite,
         wt_stack=wt_stack,
+        stack_backend=stack_backend,
         shell=shell,
         claude_executor=claude_executor,
         completion=completion,
@@ -471,7 +493,12 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
 
     # 8. Load local config (or defaults if no repo)
     if isinstance(repo, NoRepoSentinel):
-        local_config = LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
+        local_config = LoadedConfig(
+            env={},
+            post_create_commands=[],
+            post_create_shell=None,
+            stack_backend="graphite",
+        )
     else:
         # Ensure metadata directories exist (needed for worktrees)
         ensure_erk_metadata_dir(repo)
@@ -497,6 +524,13 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     repo_root = repo.root if not isinstance(repo, NoRepoSentinel) else cwd
     wt_stack = WtStack(git, repo_root, graphite)
 
+    # 11.5. Create stack_backend based on local_config.stack_backend
+    stack_backend_impl: StackBackend
+    if local_config.stack_backend == "simple":
+        stack_backend_impl = SimpleStackBackend()
+    else:
+        stack_backend_impl = GraphiteCompatStackBackend()
+
     # 12. Create session store and prompt executor
     from erk_shared.extraction.claude_code_session_store import RealClaudeCodeSessionStore
 
@@ -512,6 +546,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         plan_store=plan_store,
         graphite=graphite,
         wt_stack=wt_stack,
+        stack_backend=stack_backend_impl,
         shell=RealShell(),
         claude_executor=RealClaudeExecutor(),
         completion=RealCompletion(),

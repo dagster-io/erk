@@ -106,6 +106,7 @@ class TestMergeConfigs:
             env={"VAR1": "repo_val1", "VAR2": "repo_val2"},
             post_create_commands=[],
             post_create_shell=None,
+            stack_backend="graphite",
         )
         project_config = ProjectConfig(
             name=None,
@@ -128,6 +129,7 @@ class TestMergeConfigs:
             env={},
             post_create_commands=["repo_cmd1", "repo_cmd2"],
             post_create_shell=None,
+            stack_backend="graphite",
         )
         project_config = ProjectConfig(
             name=None,
@@ -151,6 +153,7 @@ class TestMergeConfigs:
             env={},
             post_create_commands=[],
             post_create_shell="bash",
+            stack_backend="graphite",
         )
         project_config = ProjectConfig(
             name=None,
@@ -169,6 +172,7 @@ class TestMergeConfigs:
             env={},
             post_create_commands=[],
             post_create_shell="bash",
+            stack_backend="graphite",
         )
         project_config = ProjectConfig(
             name=None,
@@ -183,7 +187,12 @@ class TestMergeConfigs:
 
     def test_merges_empty_configs(self) -> None:
         """Handles merging empty configs."""
-        repo_config = LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
+        repo_config = LoadedConfig(
+            env={},
+            post_create_commands=[],
+            post_create_shell=None,
+            stack_backend="graphite",
+        )
         project_config = ProjectConfig(
             name=None, env={}, post_create_commands=[], post_create_shell=None
         )

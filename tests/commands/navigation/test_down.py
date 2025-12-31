@@ -180,8 +180,8 @@ def test_down_parent_has_no_worktree() -> None:
         assert any(branch == "feature-1" for _path, branch in git_ops.added_worktrees)
 
 
-def test_down_graphite_not_enabled() -> None:
-    """Test down command requires Graphite to be enabled."""
+def test_down_stacking_not_enabled() -> None:
+    """Test down command requires stacking to be enabled via stack_backend."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         git_ops = FakeGit(
@@ -190,16 +190,19 @@ def test_down_graphite_not_enabled() -> None:
             git_common_dirs={env.cwd: env.git_dir},
         )
 
-        # Graphite is NOT enabled
-        test_ctx = env.build_context(git=git_ops)
+        # Use simple mode (stacking disabled via stack_backend)
+        from erk_shared.gateway.stack_backend.fake import FakeStackBackend
+
+        simple_backend = FakeStackBackend(stacking_enabled=False)
+        test_ctx = env.build_context(git=git_ops, stack_backend=simple_backend)
 
         result = runner.invoke(cli, ["down"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(
             result,
             1,
-            "requires Graphite to be enabled",
-            "erk config set use_graphite true",
+            "requires stacking to be enabled",
+            "simple mode",
         )
 
 

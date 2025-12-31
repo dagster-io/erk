@@ -765,7 +765,12 @@ def _create_worktree_with_plan_content(
     config = (
         ctx.local_config
         if ctx.local_config is not None
-        else LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
+        else LoadedConfig(
+            env={},
+            post_create_commands=[],
+            post_create_shell=None,
+            stack_backend="graphite",
+        )
     )
 
     # Output worktree creation diagnostic
