@@ -377,3 +377,94 @@ def test_is_erk_managed_hook_badge_logic(tmp_path: Path) -> None:
 
     # user-prompt-hook is in BUNDLED_HOOKS
     assert _is_erk_managed(hook_artifact) is True
+
+
+def test_discover_hooks_finds_local_hooks(tmp_path: Path) -> None:
+    """Discovers local/user-defined hooks from settings.json."""
+    import json
+
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir(parents=True)
+
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [
+                        {"type": "command", "command": ".claude/hooks/my-custom-hook.sh"}
+                    ],
+                }
+            ],
+        }
+    }
+    (claude_dir / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    result = discover_artifacts(tmp_path)
+
+    hook_artifacts = [a for a in result if a.artifact_type == "hook"]
+    assert len(hook_artifacts) == 1
+    assert hook_artifacts[0].name == "my-custom-hook"
+
+
+def test_discover_hooks_mixed_erk_and_local(tmp_path: Path) -> None:
+    """Discovers both erk-managed and local hooks."""
+    import json
+
+    from erk.core.claude_settings import ERK_USER_PROMPT_HOOK_COMMAND
+
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir(parents=True)
+
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [
+                        {"type": "command", "command": ERK_USER_PROMPT_HOOK_COMMAND},
+                        {"type": "command", "command": ".claude/hooks/my-local-hook.sh"},
+                    ],
+                }
+            ],
+        }
+    }
+    (claude_dir / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    result = discover_artifacts(tmp_path)
+
+    hook_artifacts = [a for a in result if a.artifact_type == "hook"]
+    assert len(hook_artifacts) == 2
+
+    hook_names = {a.name for a in hook_artifacts}
+    assert hook_names == {"user-prompt-hook", "my-local-hook"}
+
+
+def test_is_erk_managed_local_hook_badge_logic(tmp_path: Path) -> None:
+    """Verifies badge logic correctly identifies local hooks as NOT erk-managed."""
+    import json
+
+    from erk.cli.commands.artifact.list_cmd import _is_erk_managed
+
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir(parents=True)
+
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [
+                        {"type": "command", "command": ".claude/hooks/my-local-hook.sh"}
+                    ],
+                }
+            ],
+        }
+    }
+    (claude_dir / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    artifacts = discover_artifacts(tmp_path)
+    hook_artifact = next(a for a in artifacts if a.artifact_type == "hook")
+
+    # my-local-hook is NOT in BUNDLED_HOOKS
+    assert _is_erk_managed(hook_artifact) is False

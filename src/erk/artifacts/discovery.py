@@ -139,13 +139,36 @@ def _discover_workflows(workflows_dir: Path) -> list[InstalledArtifact]:
     return artifacts
 
 
+def _extract_hook_name(command: str) -> str:
+    """Extract a meaningful name from a hook command.
+
+    For erk hooks, returns the known name.
+    For local hooks, extracts name from script path or command.
+    """
+    # Check for erk-managed hooks first
+    if command == ERK_USER_PROMPT_HOOK_COMMAND:
+        return "user-prompt-hook"
+    if command == ERK_EXIT_PLAN_HOOK_COMMAND:
+        return "exit-plan-mode-hook"
+
+    # For local hooks, try to extract a meaningful name
+    # If command looks like a path (contains /), use the script's stem
+    if "/" in command:
+        # Extract just the script path (first word if command has arguments)
+        script_path = command.split()[0]
+        return Path(script_path).stem
+
+    # For other commands, use the first word
+    return command.split()[0]
+
+
 def _discover_hooks(claude_dir: Path) -> list[InstalledArtifact]:
-    """Discover hooks configured in .claude/settings.json.
+    """Discover all hooks configured in .claude/settings.json.
 
     Hooks are configuration entries in settings.json, not files.
-    We look for erk-managed hooks by checking for known command patterns.
+    Discovers both erk-managed hooks and local/user-defined hooks.
 
-    Pattern: hooks.UserPromptSubmit[].hooks[].command or hooks.PreToolUse[].hooks[].command
+    Pattern: hooks.<HookType>[].hooks[].command
     """
     settings_path = claude_dir / "settings.json"
     if not settings_path.exists():
@@ -158,37 +181,37 @@ def _discover_hooks(claude_dir: Path) -> list[InstalledArtifact]:
         return []
 
     artifacts: list[InstalledArtifact] = []
+    seen_names: set[str] = set()
 
-    # Check UserPromptSubmit hooks for user-prompt-hook
-    user_prompt_hooks = hooks_section.get("UserPromptSubmit", [])
-    for entry in user_prompt_hooks:
-        for hook in entry.get("hooks", []):
-            if hook.get("command") == ERK_USER_PROMPT_HOOK_COMMAND:
+    # Iterate through all hook types (UserPromptSubmit, PreToolUse, etc.)
+    for hook_entries in hooks_section.values():
+        if not isinstance(hook_entries, list):
+            continue
+        for entry in hook_entries:
+            if not isinstance(entry, dict):
+                continue
+            for hook in entry.get("hooks", []):
+                if not isinstance(hook, dict):
+                    continue
+                command = hook.get("command")
+                if not command:
+                    continue
+
+                name = _extract_hook_name(command)
+
+                # Avoid duplicates
+                if name in seen_names:
+                    continue
+                seen_names.add(name)
+
                 artifacts.append(
                     InstalledArtifact(
-                        name="user-prompt-hook",
+                        name=name,
                         artifact_type="hook",
                         path=settings_path,
                         content_hash=None,  # Hooks don't have individual content hashes
                     )
                 )
-                break
-
-    # Check PreToolUse hooks for exit-plan-mode-hook
-    pre_tool_hooks = hooks_section.get("PreToolUse", [])
-    for entry in pre_tool_hooks:
-        if entry.get("matcher") == "ExitPlanMode":
-            for hook in entry.get("hooks", []):
-                if hook.get("command") == ERK_EXIT_PLAN_HOOK_COMMAND:
-                    artifacts.append(
-                        InstalledArtifact(
-                            name="exit-plan-mode-hook",
-                            artifact_type="hook",
-                            path=settings_path,
-                            content_hash=None,
-                        )
-                    )
-                    break
 
     return artifacts
 
