@@ -838,10 +838,6 @@ def create_workflow_started_block(
     )
 
 
-# Backward compatibility alias
-create_plan_issue_block = create_plan_block
-
-
 def create_plan_body_block(plan_content: str) -> MetadataBlock:
     """Create a metadata block that wraps the plan body content.
 
