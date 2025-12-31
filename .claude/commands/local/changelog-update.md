@@ -25,50 +25,46 @@ Brings the CHANGELOG.md Unreleased section up-to-date with commits merged to mas
 
 ## Agent Instructions
 
-### Phase 1: Get Current State
+### Phase 1-2: Get Commits Since Last Sync
 
-Get the current HEAD commit:
-
-```bash
-git rev-parse --short HEAD
-```
-
-Read CHANGELOG.md and find the Unreleased section. Look for:
-
-1. The "As of" line (e.g., `As of b5e949b45`) - extract the commit hash
-2. If no "As of" marker, get the current version tag:
+Run the changelog-commits command to get all commits since the last "As of" marker:
 
 ```bash
-erk-dev release-info --json-output
+erk-dev changelog-commits --json-output
 ```
 
-Use `current_version_tag` as the starting point. If no tag exists either, this is likely a first-time setup.
+This command:
 
-### Phase 2: Get New Commits
+- Parses CHANGELOG.md to find the "As of <commit>" marker
+- Gets commits using `--first-parent` (excludes feature branch commits)
+- Excludes paths: `.claude/`, `docs/learned/`, `.impl/`
+- Returns JSON with commit details including PR numbers
 
-**IMPORTANT: Only include commits that are on master.** Use `--first-parent` to follow only the first parent (merge commits), which excludes commits from feature branches that haven't been squash-merged.
+**JSON output structure:**
 
-Get commits between the marker and HEAD on master:
-
-```bash
-git log --oneline --first-parent <marker_commit>..HEAD -- . ':!.claude' ':!docs/learned' ':!.impl'
+```json
+{
+  "success": true,
+  "since_commit": "b6a2bb40b",
+  "head_commit": "af8fa25c9",
+  "commits": [
+    {
+      "hash": "af8fa25c9",
+      "subject": "Fix artifact sync... (#3619)",
+      "body": "...",
+      "files_changed": ["src/erk/artifacts/sync.py", ...],
+      "pr_number": 3619
+    }
+  ]
+}
 ```
 
-If using a tag instead of "As of" marker:
-
-```bash
-git log --oneline --first-parent <current_version_tag>..HEAD -- . ':!.claude' ':!docs/learned' ':!.impl'
-```
-
-If no new commits exist, report "CHANGELOG.md is already up-to-date" and exit.
+If `success` is false, display the error message and exit.
+If `commits` array is empty, report "CHANGELOG.md is already up-to-date" and exit.
 
 ### Phase 3: Analyze and Categorize Commits
 
-For each commit, fetch additional context to understand its scope:
-
-```bash
-git show --stat --format="%s%n%n%b" <commit_hash> | head -40
-```
+Use the commit details from the JSON output (subject, body, files_changed) to categorize each commit.
 
 #### Categories
 
