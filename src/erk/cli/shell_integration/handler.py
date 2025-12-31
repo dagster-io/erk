@@ -31,6 +31,7 @@ SHELL_INTEGRATION_COMMANDS: Final[dict[str, list[str]]] = {
     "up": ["up"],
     "down": ["down"],
     "implement": ["implement"],
+    "impl": ["implement"],  # Alias for implement
     # Subcommands under pr
     "pr land": ["pr", "land"],
     "pr checkout": ["pr", "checkout"],
