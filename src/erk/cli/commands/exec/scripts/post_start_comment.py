@@ -1,6 +1,6 @@
 """Post GitHub issue start comment with plan context and steps.
 
-This kit CLI command posts a single comprehensive start comment to GitHub issues
+This exec command posts a single comprehensive start comment to GitHub issues
 with worktree name, branch name, complete steps list, and structured YAML metadata.
 
 Usage:

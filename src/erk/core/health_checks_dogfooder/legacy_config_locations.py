@@ -47,13 +47,13 @@ def detect_legacy_config_locations(
             )
         )
 
-    # Check for dot-agent.toml at repo root (legacy kit config location)
+    # Check for dot-agent.toml at repo root (legacy config location)
     repo_root_dot_agent = repo_root / "dot-agent.toml"
     if repo_root_dot_agent.exists():
         legacy_locations.append(
             LegacyConfigLocation(
                 path=repo_root_dot_agent,
-                description="repo root (legacy kit config)",
+                description="repo root (legacy config)",
             )
         )
 

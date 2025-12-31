@@ -38,23 +38,6 @@ Commands that immediately delegate to specialized agents for workflow orchestrat
 
 ---
 
-### 2. Kit CLI Preprocessing
-
-Python commands for mechanical preprocessing before LLM inference.
-
-**Key Benefits:**
-
-- Testability: Full unit test coverage with pytest
-- Reliability: Robust error handling, type safety
-- Token efficiency: Reduces agent prompt size
-- No permission prompts for deterministic operations
-
-**Documentation:** [kit-cli-push-down.md](kit-cli-push-down.md)
-
-**Implementation Guide:** [../../learned/kit-cli-commands.md](../../learned/kit-cli-commands.md)
-
----
-
 ## Contributing Patterns
 
 When adding new patterns to this catalog:

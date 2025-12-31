@@ -486,37 +486,6 @@ def check_claude_settings(repo_root: Path) -> CheckResult:
             message="No .claude/settings.json (using defaults)",
         )
 
-    # Check hooks for missing commands
-    warnings: list[str] = []
-    hooks = settings.get("hooks", {})
-
-    for hook_name, hook_config in hooks.items():
-        if not isinstance(hook_config, list):
-            continue
-        for hook in hook_config:
-            if not isinstance(hook, dict):
-                continue
-            hook_cmd = hook.get("command")
-            if hook_cmd is not None and isinstance(hook_cmd, str):
-                # Check if the command looks like a kit command
-                is_kit_command = "erk kit exec" in hook_cmd
-                if is_kit_command:
-                    # Extract kit command name for warning
-                    parts = hook_cmd.split()
-                    if len(parts) >= 4:
-                        kit_cmd = parts[-1]
-                        # We can't easily check if command exists, so just note it
-                        if not _kit_command_exists(hook_cmd):
-                            warnings.append(f"Hook '{hook_name}' references '{kit_cmd}'")
-
-    if warnings:
-        return CheckResult(
-            name="claude settings",
-            passed=True,  # Warnings don't fail the check
-            message=".claude/settings.json has hook references",
-            details="\n".join(warnings),
-        )
-
     return CheckResult(
         name="claude settings",
         passed=True,
@@ -676,25 +645,6 @@ def check_hook_health(repo_root: Path) -> CheckResult:
         message=f"{total_failures} hook failure(s) in last 24h",
         details="\n".join(details_lines),
     )
-
-
-def _kit_command_exists(command: str) -> bool:
-    """Check if a kit command exists by trying to run it with --help.
-
-    This is a heuristic check - we run the command with --help to see
-    if it's recognized. This avoids executing arbitrary commands while
-    still validating that the kit command is defined.
-    """
-    # Parse command to extract the base exec command
-    # Format: ERK_HOOK_ID=... erk exec <command-name>
-    try:
-        # Quick check - just see if the kit-command is recognized
-        # We don't want to actually run hooks, just validate they exist
-        # For now, return True and let the actual command fail at runtime
-        # This is a conservative approach
-        return True
-    except Exception:
-        return True  # Assume it exists if we can't check
 
 
 def run_all_checks(ctx: ErkContext) -> list[CheckResult]:

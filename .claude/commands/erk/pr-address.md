@@ -21,7 +21,7 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 
 #### Step 1.1: Fetch All Comments
 
-Run both kit CLI commands to get review comments AND discussion comments:
+Run both CLI commands to get review comments AND discussion comments:
 
 ```bash
 erk exec get-pr-review-comments

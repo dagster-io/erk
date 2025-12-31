@@ -27,7 +27,7 @@ def in_erk_repo(repo_root: Path) -> bool:
     Returns:
         True if this appears to be the erk development repo
     """
-    return (repo_root / "packages" / "erk-kits").exists()
+    return (repo_root / "packages" / "erk-shared").exists()
 
 
 def discover_repo_or_sentinel(

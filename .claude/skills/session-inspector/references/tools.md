@@ -1,8 +1,8 @@
 # Session Analysis Tools
 
-Complete reference for kit CLI commands and jq recipes for analyzing Claude Code session logs.
+Complete reference for CLI commands and jq recipes for analyzing Claude Code session logs.
 
-## Kit CLI Commands
+## CLI Commands
 
 All commands invoked via `erk exec <command>`.
 

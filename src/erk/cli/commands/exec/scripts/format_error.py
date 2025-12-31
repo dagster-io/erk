@@ -1,6 +1,6 @@
 """Format error messages with consistent structure.
 
-This kit CLI command generates standardized error messages with brief description,
+This exec command generates standardized error messages with brief description,
 details, and suggested actions.
 
 Usage:

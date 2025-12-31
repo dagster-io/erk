@@ -669,11 +669,11 @@ from myapp.core import main_command  # Only import what this module uses
 
 **Shim modules:** When a module must exist as an entry point (e.g., for plugin systems or CLI registration), import only the minimum symbols needed for that purpose. Document that other symbols should be imported from the canonical location.
 
-**When re-exports ARE required:** Some systems (like kit CLI entry points) require a module to exist at a specific path and expose a specific symbol. In these cases, use the explicit `import X as X` syntax to signal intentional re-export:
+**When re-exports ARE required:** Some systems (like plugin entry points) require a module to exist at a specific path and expose a specific symbol. In these cases, use the explicit `import X as X` syntax to signal intentional re-export:
 
 ```python
 # ✅ CORRECT: Explicit re-export syntax for required entry points
-# This shim exists because the kit CLI system expects a module at this path
+# This shim exists because the plugin system expects a module at this path
 from myapp.core.feature import my_function as my_function
 
 # ❌ WRONG: Plain import looks like unused import to linters

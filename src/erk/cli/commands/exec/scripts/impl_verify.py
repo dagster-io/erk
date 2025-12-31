@@ -1,6 +1,6 @@
 """Verify .impl/ folder still exists after implementation.
 
-This kit CLI command is a guardrail for /erk:plan-implement to ensure the agent
+This exec command is a guardrail for /erk:plan-implement to ensure the agent
 did not delete .impl/ during implementation. The .impl/ folder MUST be preserved
 for user review.
 

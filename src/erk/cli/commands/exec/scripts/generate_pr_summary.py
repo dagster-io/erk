@@ -1,6 +1,6 @@
 """Generate PR summary from PR diff.
 
-This kit CLI command generates a PR summary by analyzing the PR diff
+This exec command generates a PR summary by analyzing the PR diff
 using Claude. It uses the same prompt as commit message generation but
 does NOT include commit messages (which may contain misleading info
 about .worker-impl/ deletions).

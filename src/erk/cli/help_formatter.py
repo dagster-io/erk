@@ -200,7 +200,6 @@ class ErkCommandGroup(click.Group):
             "docs",
             "hook",
             "info",
-            "kit",
             "md",
             "objective",
             "plan",

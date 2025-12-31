@@ -36,8 +36,7 @@ def doctor_cmd(ctx: ErkContext) -> None:
     Checks for:
 
     \b
-      - CLI tools: erk, claude, gt, gh, dot-agent
-      - dot-agent health: kit configuration
+      - CLI tools: erk, claude, gt, gh
       - Repository: git setup, .erk/ directory
       - Claude settings: hooks, configuration
 

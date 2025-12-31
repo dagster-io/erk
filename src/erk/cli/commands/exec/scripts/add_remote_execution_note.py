@@ -1,6 +1,6 @@
 """Add remote execution note to PR body.
 
-This kit CLI command appends a remote execution tracking note to a PR body.
+This exec command appends a remote execution tracking note to a PR body.
 Used by GitHub Actions workflows to track workflow runs that executed against a PR.
 
 Usage:

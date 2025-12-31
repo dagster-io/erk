@@ -1,6 +1,6 @@
 """Mark one or more steps as completed or incomplete in progress.md.
 
-This kit CLI command updates the YAML frontmatter in .impl/progress.md to mark
+This exec command updates the YAML frontmatter in .impl/progress.md to mark
 steps as completed or incomplete, then regenerates the checkboxes.
 
 Supports marking multiple steps in a single invocation to avoid race conditions

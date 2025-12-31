@@ -1,6 +1,6 @@
 """Post GitHub issue comment with PR link after PR publication.
 
-This kit CLI command posts a comment to the linked GitHub issue with the PR URL
+This exec command posts a comment to the linked GitHub issue with the PR URL
 after a PR has been created via the submit workflow.
 
 Usage:

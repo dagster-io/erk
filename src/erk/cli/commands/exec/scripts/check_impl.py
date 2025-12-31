@@ -1,6 +1,6 @@
 """Check .impl/ folder structure and validate prerequisites.
 
-This kit CLI command validates that .impl/ folder has required files
+This exec command validates that .impl/ folder has required files
 (plan.md, progress.md) and checks for optional GitHub issue tracking.
 
 Usage:

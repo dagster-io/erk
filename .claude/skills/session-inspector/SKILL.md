@@ -36,7 +36,7 @@ Invoke this skill when users:
 - Ask about session history or previous conversations
 - Need to understand session preprocessing or extraction
 
-## Quick Reference: Kit CLI Commands
+## Quick Reference: CLI Commands
 
 All commands invoked via `erk exec <command>`:
 
@@ -255,7 +255,7 @@ programmatic access to extraction capabilities.
 
 This skill documents capabilities that primarily live in:
 
-- **Kit CLI commands:** `packages/erk-kits/src/erk_kits/data/kits/erk/kit_cli_commands/erk/`
+- **CLI commands:** `packages/erk-cli/src/erk_cli/commands/`
 - **Shared library:** `packages/erk-shared/src/erk_shared/extraction/`
 - **GitHub metadata:** `packages/erk-shared/src/erk_shared/github/metadata.py`
 - **Scratch storage:** `packages/erk-shared/src/erk_shared/scratch/`

@@ -1,6 +1,6 @@
 """Initialize implementation by validating .impl/ folder and extracting phases.
 
-This kit CLI command combines validation and initialization for /erk:plan-implement:
+This exec command combines validation and initialization for /erk:plan-implement:
 - Validates .impl/ folder structure (plan.md, progress.md exist)
 - Checks for GitHub issue tracking (issue.json)
 - Extracts phases from plan.md

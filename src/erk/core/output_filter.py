@@ -140,7 +140,7 @@ def make_relative_to_worktree(filepath: str, worktree_path: Path) -> str:
 
 
 def extract_pr_url(tool_result_content: str) -> str | None:
-    """Extract PR URL from kit CLI command JSON output.
+    """Extract PR URL from exec command JSON output.
 
     Args:
         tool_result_content: Content string from tool_result
@@ -177,7 +177,7 @@ def extract_pr_url(tool_result_content: str) -> str | None:
 
 
 def extract_pr_metadata(tool_result_content: str) -> dict[str, str | int | None]:
-    """Extract PR metadata from kit CLI command JSON output.
+    """Extract PR metadata from exec command JSON output.
 
     Args:
         tool_result_content: Content string from tool_result

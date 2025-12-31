@@ -14,7 +14,7 @@ Quickly commit all changes with a generic "update" message and submit to Graphit
 
 ## Implementation
 
-Run the kit CLI command:
+Run the CLI command:
 
 ```bash
 erk exec quick-submit

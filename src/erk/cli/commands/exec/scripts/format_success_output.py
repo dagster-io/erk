@@ -1,6 +1,6 @@
 """Format success output for GitHub issue creation.
 
-This kit CLI command generates standardized markdown output for successful
+This exec command generates standardized markdown output for successful
 issue creation with next steps and JSON metadata.
 
 Usage:

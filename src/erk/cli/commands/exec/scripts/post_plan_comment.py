@@ -1,6 +1,6 @@
 """Post plan issue comment with workflow instructions.
 
-This kit CLI command posts a structured comment to a plan issue containing
+This exec command posts a structured comment to a plan issue containing
 the plan content and workflow instructions for starting work.
 
 Usage:

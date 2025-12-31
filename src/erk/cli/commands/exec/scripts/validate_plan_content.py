@@ -1,6 +1,6 @@
 """Validate plan content structure and quality.
 
-This kit CLI command validates that plan content meets minimum requirements
+This exec command validates that plan content meets minimum requirements
 for structure and length. It accepts plan content via stdin.
 
 Usage:

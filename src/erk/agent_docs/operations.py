@@ -46,10 +46,6 @@ CATEGORY_DESCRIPTIONS: dict[str, str] = {
     "hooks": (
         "Explore when creating or debugging hooks. Add docs here for hook development patterns."
     ),
-    "kits": (
-        "Explore when working on kit CLI or artifact management. "
-        "Add docs here for kit development patterns."
-    ),
     "planning": (
         "Explore when working with plans, .impl/ folders, or agent delegation. "
         "Add docs here for planning workflow patterns."

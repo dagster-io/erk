@@ -1,6 +1,6 @@
 """Validate progress.md schema and structure.
 
-This kit CLI command validates that progress.md has valid YAML frontmatter
+This exec command validates that progress.md has valid YAML frontmatter
 with required fields (steps, total_steps, completed_steps) and internal consistency.
 
 Usage:

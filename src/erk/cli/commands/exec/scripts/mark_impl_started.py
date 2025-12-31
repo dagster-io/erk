@@ -1,6 +1,6 @@
 """Mark implementation started by updating GitHub issue metadata.
 
-This kit CLI command updates the plan-header metadata block in a GitHub issue
+This exec command updates the plan-header metadata block in a GitHub issue
 with the appropriate event fields based on the execution environment:
 - Local machine: Updates last_local_impl_* fields (timestamp, event, session, user)
 - GitHub Actions: Updates last_remote_impl_at field

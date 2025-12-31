@@ -25,7 +25,6 @@ The `make py-fast-ci` target runs these checks in order:
 - Prettier check (markdown formatting)
 - Markdown check (AGENTS.md compliance)
 - Docs validate/sync
-- Kit build/check
 
 ## Iteration Process
 

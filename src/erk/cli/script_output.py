@@ -14,7 +14,7 @@ import click
 def exit_with_error(error_type: str, message: str) -> NoReturn:
     """Output JSON error and exit with code 0.
 
-    Kit CLI commands exit with 0 even on error to support || true patterns
+    Exec commands exit with 0 even on error to support || true patterns
     in shell scripts. The error is communicated via JSON output.
 
     Args:

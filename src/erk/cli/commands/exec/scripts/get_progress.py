@@ -1,6 +1,6 @@
 """Query progress information from progress.md.
 
-This kit CLI command reads the YAML frontmatter from .impl/progress.md and
+This exec command reads the YAML frontmatter from .impl/progress.md and
 returns progress information including completion status and steps array.
 
 Usage:

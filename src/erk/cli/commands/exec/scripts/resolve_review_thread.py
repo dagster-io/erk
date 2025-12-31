@@ -1,6 +1,6 @@
 """Resolve a PR review thread via GraphQL mutation.
 
-This kit CLI command resolves a single PR review thread and outputs
+This exec command resolves a single PR review thread and outputs
 JSON with the result. Optionally adds a reply comment before resolving.
 
 Usage:

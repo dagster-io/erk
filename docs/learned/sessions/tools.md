@@ -36,7 +36,7 @@ erk find-project-dir /path/to/project
 
 ### erk exec list-sessions
 
-Discover Claude Code sessions for the current worktree (kit CLI command).
+Discover Claude Code sessions for the current worktree.
 
 ```bash
 # List sessions for current worktree

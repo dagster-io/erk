@@ -1,6 +1,6 @@
 """Reply to a PR discussion comment with a blockquote and action summary.
 
-This kit CLI command posts a reply to a discussion comment that:
+This exec command posts a reply to a discussion comment that:
 1. Quotes the original comment with author attribution
 2. Includes an action summary explaining what was done
 3. Adds a reaction to the original comment

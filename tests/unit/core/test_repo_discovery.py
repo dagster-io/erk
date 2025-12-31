@@ -156,8 +156,8 @@ def test_discover_repo_in_main_repo_returns_main_repo_root(tmp_path: Path):
 
 
 def test_in_erk_repo_returns_true_for_erk_repo(tmp_path: Path) -> None:
-    """Test that in_erk_repo returns True when packages/erk-kits exists."""
-    dev_indicator = tmp_path / "packages" / "erk-kits"
+    """Test that in_erk_repo returns True when packages/erk-shared exists."""
+    dev_indicator = tmp_path / "packages" / "erk-shared"
     dev_indicator.mkdir(parents=True)
 
     assert in_erk_repo(tmp_path) is True

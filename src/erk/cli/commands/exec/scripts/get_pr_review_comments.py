@@ -1,6 +1,6 @@
 """Fetch PR review comments for agent context injection.
 
-This kit CLI command fetches unresolved (or all) PR review comments from GitHub
+This exec command fetches unresolved (or all) PR review comments from GitHub
 and outputs them as JSON for agent processing.
 
 Usage:

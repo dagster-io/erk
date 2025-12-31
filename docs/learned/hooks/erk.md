@@ -26,7 +26,7 @@ Hooks are configured in `.claude/settings.json` and their scripts live in `.clau
 .claude/
 ├── settings.json            # Hook configuration
 └── hooks/
-    └── {kit-name}/
+    └── {category}/
         └── {hook_name}.py   # Python script with Click command
 ```
 
@@ -38,7 +38,7 @@ Hooks are configured in `.claude/settings.json` and their scripts live in `.clau
 
 **Related documentation**:
 
-- Technical implementation: `packages/erk-kits/docs/HOOKS.md`
+- Technical implementation: See hook scripts in `.claude/hooks/`
 
 ## Current Hooks
 
@@ -63,7 +63,7 @@ WHY: Specialized parsing & cost efficiency
 
 **Why**: Development tools have complex output that devrun agent parses efficiently, reducing token costs and improving error handling.
 
-**Location**: `packages/erk-kits/src/erk_kits/data/kits/devrun/`
+**Location**: `.claude/hooks/devrun/`
 
 ### 2. dignified-python-reminder-hook
 
@@ -82,7 +82,7 @@ NOTE: Checklist rules are EXCERPTS - skill contains complete philosophy & ration
 
 **Why**: Ensures Python code follows project coding standards (LBYL exception handling, modern type syntax, ABC interfaces).
 
-**Location**: `packages/erk-kits/src/erk_kits/data/kits/dignified-python-313/`
+**Location**: `.claude/hooks/dignified-python/`
 
 ### 3. fake-driven-testing-reminder-hook
 
@@ -101,7 +101,7 @@ NOTE: Guides test placement, fake usage, integration class architecture patterns
 
 **Why**: Ensures tests follow project testing architecture (fake-driven testing, proper test categorization).
 
-**Location**: `packages/erk-kits/src/erk_kits/data/kits/fake-driven-testing/`
+**Location**: `.claude/hooks/fake-driven-testing/`
 
 ### 4. exit-plan-mode-hook
 
@@ -127,15 +127,15 @@ Use AskUserQuestion to ask the user:
 
 **Why**: Prevents losing unsaved plans when exiting Plan Mode. Uses exit code 2 to redirect Claude to ask user preference.
 
-**Location**: `packages/erk-kits/src/erk_kits/data/kits/erk/kit_cli_commands/erk/exit_plan_mode_hook.py`
+**Location**: `.claude/hooks/erk/exit_plan_mode_hook.py`
 
 ## Project-Scoped Hooks
 
-Hooks can be decorated with `@project_scoped` to silently skip execution when not in a managed project (one with `.erk/kits.toml`).
+Hooks can be decorated with `@project_scoped` to silently skip execution when not in a managed project (one with `erk.toml`).
 
 ### Why Use Project-Scoped Hooks?
 
-In monorepo or multi-project environments, hooks installed at the user level (`~/.claude/`) would fire in ALL repositories, even those not using erk-kits. This causes:
+In monorepo or multi-project environments, hooks installed at the user level (`~/.claude/`) would fire in ALL repositories, even those not using erk. This causes:
 
 - Confusing reminders in unrelated projects
 - Performance overhead from unnecessary hook execution
@@ -154,11 +154,11 @@ def my_reminder_hook() -> None:
 
 **Behavior**:
 
-| Scenario                         | Behavior                        |
-| -------------------------------- | ------------------------------- |
-| In repo with `.erk/kits.toml`    | Hook fires normally             |
-| In repo without `.erk/kits.toml` | Hook exits silently (no output) |
-| Not in git repo                  | Hook exits silently             |
+| Scenario                   | Behavior                        |
+| -------------------------- | ------------------------------- |
+| In repo with `erk.toml`    | Hook fires normally             |
+| In repo without `erk.toml` | Hook exits silently (no output) |
+| Not in git repo            | Hook exits silently             |
 
 ### Current Project-Scoped Hooks
 
@@ -197,7 +197,7 @@ def is_in_managed_project() -> bool:
 
     Returns True if:
     1. Current directory is inside a git repository
-    2. Repository root contains .erk/kits.toml
+    2. Repository root contains erk.toml
 
     Returns False otherwise (fails silently, no exceptions).
     """
@@ -217,7 +217,7 @@ cat .claude/settings.json | grep -A 10 "hooks"
 
 ### Modifying an Existing Hook
 
-1. **Edit the hook script** in `.claude/hooks/{kit-name}/`:
+1. **Edit the hook script** in `.claude/hooks/{category}/`:
 
    ```bash
    vim .claude/hooks/devrun/devrun_reminder_hook.py
@@ -232,11 +232,9 @@ cat .claude/settings.json | grep -A 10 "hooks"
 
 ### Creating a New Hook
 
-See comprehensive guide: `packages/erk-kits/docs/HOOKS.md`
-
 **Quick steps**:
 
-1. **Create hook script** in `.claude/hooks/{kit-name}/`:
+1. **Create hook script** in `.claude/hooks/{category}/`:
 
    ```python
    import click
@@ -254,7 +252,7 @@ See comprehensive guide: `packages/erk-kits/docs/HOOKS.md`
        "UserPromptSubmit": [
          {
            "matcher": "*.txt",
-           "hooks": ["python .claude/hooks/{kit-name}/my_reminder_hook.py"]
+           "hooks": ["python .claude/hooks/{category}/my_reminder_hook.py"]
          }
        ]
      }
@@ -263,7 +261,7 @@ See comprehensive guide: `packages/erk-kits/docs/HOOKS.md`
 
 3. **Test**:
    ```bash
-   python .claude/hooks/{kit-name}/my_reminder_hook.py
+   python .claude/hooks/{category}/my_reminder_hook.py
    ```
 
 ### Testing Hooks
@@ -272,7 +270,7 @@ See comprehensive guide: `packages/erk-kits/docs/HOOKS.md`
 
 ```bash
 # Run Python script directly
-python .claude/hooks/{kit-name}/{hook_name}.py
+python .claude/hooks/{category}/{hook_name}.py
 ```
 
 **Test hook in Claude Code**:
@@ -349,8 +347,8 @@ def test_hook_silent_in_unmanaged_project() -> None:
 # Verify hook in settings.json
 cat .claude/settings.json | grep -A 10 "hooks"
 
-# Verify kit installed
-erk kit list
+# Verify hooks directory exists
+ls .claude/hooks/
 ```
 
 **Check 2: Matcher conditions met**
@@ -381,7 +379,7 @@ claude --debug
 
 ```bash
 # Run hook script directly
-python .claude/hooks/{kit-name}/{hook-name}.py
+python .claude/hooks/{category}/{hook-name}.py
 
 # Check exit code
 echo $?  # Should be 0 or 2
@@ -448,5 +446,5 @@ Claude Code caches hook configuration at startup, so changes require a restart t
 - **General Claude Code Hooks Guide**: [hooks.md](hooks.md)
 - **Official Claude Code Hooks**: https://code.claude.com/docs/en/hooks
 - **Official Hooks Guide**: https://code.claude.com/docs/en/hooks-guide.md
-- **erk-kits Hook Development**: `../../packages/erk-kits/docs/HOOKS.md`
+- **Hook Scripts**: `.claude/hooks/`
 - **Project Glossary**: `../glossary.md`

@@ -1,6 +1,6 @@
 """Create GitHub issue from plan content (via stdin) with erk-plan label.
 
-This kit CLI command handles the complete workflow for creating a plan:
+This exec command handles the complete workflow for creating a plan:
 1. Read plan from stdin
 2. Extract title from plan
 3. Ensure erk-plan label exists

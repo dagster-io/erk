@@ -363,7 +363,7 @@ steps:
 - [ ] 5. Fifth step
 ```
 
-Use kit CLI commands to update progress:
+Use erk exec commands to update progress:
 
 ```bash
 erk exec mark-step 1        # Mark step 1 complete
@@ -458,7 +458,7 @@ last_dispatched_run_id: "1234567890"
 last_dispatched_at: 2025-01-15T10:30:00Z
 ```
 
-Updated by `update-dispatch-info` kit CLI command.
+Updated by `erk exec update-dispatch-info` command.
 
 ### Workflow Run → Issue
 

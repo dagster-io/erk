@@ -56,15 +56,14 @@ def logged_hook(func: F) -> F:
     happens even when the hook exits early due to project scope.
 
     The decorator:
-    1. Reads ERK_KIT_ID and ERK_HOOK_ID from environment
+    1. Reads ERK_HOOK_ID from environment
     2. Captures stdin (contains session_id in JSON from Claude Code)
     3. Redirects stdout/stderr to capture output
     4. Records timing and exit status
     5. Writes log on exit (success or failure)
     6. Re-emits captured output to real stdout/stderr
 
-    Environment variables (set by kit installer):
-        ERK_KIT_ID: Kit identifier (e.g., "erk")
+    Environment variables:
         ERK_HOOK_ID: Hook identifier (e.g., "session-id-injector-hook")
 
     Usage:
@@ -78,7 +77,6 @@ def logged_hook(func: F) -> F:
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         # Read environment variables
-        kit_id = os.environ.get("ERK_KIT_ID", "unknown")
         hook_id = os.environ.get("ERK_HOOK_ID", "unknown")
 
         # Capture stdin before hook reads it
@@ -132,7 +130,7 @@ def logged_hook(func: F) -> F:
 
             # Create log entry
             log = HookExecutionLog(
-                kit_id=kit_id,
+                kit_id="erk",  # All hooks are now in erk
                 hook_id=hook_id,
                 session_id=session_id,
                 started_at=started_at.isoformat(),

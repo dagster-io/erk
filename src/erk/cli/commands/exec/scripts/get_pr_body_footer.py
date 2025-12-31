@@ -1,6 +1,6 @@
 """Generate PR body footer for remote implementation PRs.
 
-This kit CLI command generates a footer section for PR descriptions that includes
+This exec command generates a footer section for PR descriptions that includes
 the `erk pr checkout` command. This is used by the GitHub Actions workflow when
 creating PRs from remote implementations.
 

@@ -1,4 +1,4 @@
-# Kit CLI Push Down Pattern
+# CLI Push Down Pattern
 
 ## The Problem with Embedded Scripts
 
@@ -16,13 +16,13 @@ Claude Code skills and slash commands support embedded bash scripts directly in 
 
 ## The Push Down Solution
 
-Instead of embedding mechanical computation in prompts, push it down to kit CLI commands—proper Python programs installed as packages.
+Instead of embedding mechanical computation in prompts, push it down to `erk exec` commands—proper Python programs installed as packages.
 
 **Analogy**: Like database query optimizers that "push down" predicates closer to the data layer for efficiency, this pattern moves computation from LLM prompts to Python CLI where it belongs.
 
-### What Kit CLI Commands Provide
+### What erk exec Commands Provide
 
-**Real Python environment.** Kit CLI commands are installed Python packages with proper dependency management. They run in a known environment with a specific Python version. Dependencies are declared in `pyproject.toml` and installed via `uv`.
+**Real Python environment.** The `erk exec` commands are installed Python packages with proper dependency management. They run in a known environment with a specific Python version. Dependencies are declared in `pyproject.toml` and installed via `uv`.
 
 **Full testability.** Commands are regular Python functions. You can write unit tests with pytest, mock external services, test edge cases exhaustively, and measure coverage. A command like `issue-title-to-filename` has comprehensive unit tests covering edge cases and boundary conditions.
 
@@ -34,9 +34,9 @@ Instead of embedding mechanical computation in prompts, push it down to kit CLI 
 
 ## The Decision Rule
 
-**If it requires understanding meaning → use LLM. If it's mechanical transformation → use kit CLI.**
+**If it requires understanding meaning → use LLM. If it's mechanical transformation → use erk exec.**
 
-| Push to Kit CLI                                     | Keep in Agent                              |
+| Push to erk exec                                    | Keep in Agent                              |
 | --------------------------------------------------- | ------------------------------------------ |
 | Parsing/validation (URLs, formats, paths)           | Semantic analysis (summarizing, naming)    |
 | Data extraction (JSON/YAML, filtering)              | Content generation (docs, code, messages)  |
@@ -70,12 +70,11 @@ The conversion logic lives in Python with proper unit tests. The agent prompt sh
 
 This pattern separates concerns cleanly:
 
-- **Kit CLI**: Mechanical operations (parsing, validation, file I/O, data transformation)
+- **erk exec**: Mechanical operations (parsing, validation, file I/O, data transformation)
 - **Agent**: Semantic operations (understanding intent, generating content, making decisions)
 
 The agent becomes an orchestrator that delegates deterministic work to tested code. It focuses on what LLMs do well—understanding and generating—while Python handles what programming languages do well—precise, repeatable computation.
 
 ## Implementation
 
-For detailed implementation patterns, examples, and checklists, see:
-→ [docs/learned/kits/push-down-pattern.md](../../learned/kits/push-down-pattern.md)
+For detailed implementation patterns, examples, and checklists, see the exec command implementations in `src/erk/cli/commands/exec/scripts/`.

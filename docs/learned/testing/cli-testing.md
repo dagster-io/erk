@@ -1,18 +1,18 @@
 ---
-title: Kit CLI Testing Patterns
+title: CLI Testing Patterns
 read_when:
-  - "writing tests for kit CLI commands"
-  - "using DotAgentContext.for_test()"
+  - "writing tests for erk CLI commands"
+  - "using ErkContext.for_test()"
   - "testing Click commands with context"
 ---
 
-# Kit CLI Testing Patterns
+# CLI Testing Patterns
 
-This document covers testing patterns specific to kit CLI commands that use `DotAgentContext` for dependency injection.
+This document covers testing patterns specific to erk CLI commands that use `ErkContext` for dependency injection.
 
 ## Overview
 
-Kit CLI commands use Click's context system (`@click.pass_context`) to receive dependencies. Testing these commands requires passing a test context via the `obj` parameter to `CliRunner.invoke()`.
+Erk CLI commands use Click's context system (`@click.pass_context`) to receive dependencies. Testing these commands requires passing a test context via the `obj` parameter to `CliRunner.invoke()`.
 
 ## The ErkContext.for_test() Pattern
 
@@ -45,7 +45,7 @@ def test_my_command() -> None:
 
 ### Why This Pattern?
 
-This pattern is **mandatory** for testing kit CLI commands because:
+This pattern is **mandatory** for testing erk CLI commands because:
 
 1. **Layer 4 testing** - Tests business logic over fakes (70% of tests should be Layer 4)
 2. **No subprocess calls** - Uses in-memory fakes instead of real git/gh/gt commands
@@ -330,7 +330,7 @@ def test_command_with_fake_context() -> None:
 
 - Command accepts `@click.pass_context` and uses `require_*()` helpers
 - You want to inspect fake state after execution
-- Command is a kit CLI command
+- Command is an erk CLI command
 
 **Use `monkeypatch` when:**
 
@@ -359,7 +359,7 @@ def test_command_with_monkeypatch(monkeypatch: pytest.MonkeyPatch) -> None:
 
 ## Testing Checklist
 
-When writing tests for kit CLI commands:
+When writing tests for erk CLI commands:
 
 - [ ] Use `DotAgentContext.for_test()` to create test context
 - [ ] Pass context via `obj=` parameter to `runner.invoke()`
@@ -434,7 +434,7 @@ def test_command(tmp_path: Path) -> None:
 
 ## Testing Commands That Use Current Working Directory
 
-Some kit CLI commands use `Path.cwd()` internally rather than receiving the path via `DotAgentContext`. For these commands, use `monkeypatch.chdir()` to change the working directory before invoking the command.
+Some erk CLI commands use `Path.cwd()` internally rather than receiving the path via `ErkContext`. For these commands, use `monkeypatch.chdir()` to change the working directory before invoking the command.
 
 ### Pattern: Using monkeypatch.chdir()
 
@@ -467,11 +467,11 @@ def test_command_with_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
 
 ### When to Use monkeypatch.chdir() vs DotAgentContext
 
-| Scenario                                | Use                                      |
-| --------------------------------------- | ---------------------------------------- |
-| Command uses `ctx.obj.cwd` from context | `DotAgentContext.for_test(cwd=tmp_path)` |
-| Command uses `Path.cwd()` directly      | `monkeypatch.chdir(tmp_path)`            |
-| Command does both                       | Both approaches together                 |
+| Scenario                                | Use                                 |
+| --------------------------------------- | ----------------------------------- |
+| Command uses `ctx.obj.cwd` from context | `ErkContext.for_test(cwd=tmp_path)` |
+| Command uses `Path.cwd()` directly      | `monkeypatch.chdir(tmp_path)`       |
+| Command does both                       | Both approaches together            |
 
 ### Example: Testing impl-init Command
 
@@ -500,7 +500,6 @@ def test_impl_init_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
 ## See Also
 
 - [fake-driven-testing skill](/.claude/skills/fake-driven-testing/) - Complete 5-layer testing strategy
-- [Kit CLI Dependency Injection](../kits/dependency-injection.md) - How dependencies are injected in commands
 - [Testing Guide](testing.md) - General testing patterns
 - [Testing with FakeClaudeCodeSessionStore](session-store-testing.md) - Session store fake details
 - [Mock Elimination Workflow](mock-elimination.md) - Replacing mocks with fakes

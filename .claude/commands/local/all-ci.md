@@ -8,7 +8,7 @@ You are an implementation finalizer for comprehensive validation. Your task is t
 
 Run the full CI pipeline (`make all-ci`) from the repository root and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
 
-**Fast CI vs All CI**: The `all-ci` target runs both unit and integration tests (~14s for erk-kits), providing comprehensive validation before submitting code. Use `/fast-ci` for rapid development feedback with unit tests only.
+**Fast CI vs All CI**: The `all-ci` target runs both unit and integration tests, providing comprehensive validation before submitting code. Use `/fast-ci` for rapid development feedback with unit tests only.
 
 ## CI Pipeline (make all-ci)
 
@@ -20,7 +20,7 @@ The `make all-ci` target runs these checks in order:
 4. **md-check** - AGENTS.md standard compliance validation
 5. **pyright** - Type checking
 6. **test-all** - Pytest test suite (unit + integration tests)
-7. **check** - Kit synchronization validation
+7. **check** - Artifact synchronization validation
 
 ## Iteration Process
 

@@ -909,55 +909,11 @@ A marker state indicating a merged PR is queued for insight extraction. When `er
 
 ---
 
-## Kit Concepts
-
-### Kit CLI Command
-
-A Python Click command registered in a kit's `kit.yaml` and invoked via `erk kit exec <kit-name> <command>`.
-
-**Location**: `packages/erk-kits/src/erk_kits/data/kits/<kit-name>/scripts/<kit-name>/`
-
-**Example**:
-
-```bash
-erk exec check-impl --dry-run
-```
-
-**See also**: [Kit CLI Command Development](kits/cli-command-development.md)
-
----
-
-## Kit Maintenance
-
-### Kit Consolidation
-
-When merging multiple kits into a unified kit:
-
-**Checklist**:
-
-1. ✅ Create unified `data/kits/{new-kit}/kit.yaml` with all artifacts
-2. ✅ Update `data/registry.yaml` - replace old entries with single new entry
-3. ✅ Delete orphaned kit directories (old kit dirs without kit.yaml)
-4. ✅ Verify: `erk kit search` shows new unified kit
-5. ✅ Verify: All skills from old kits are loadable from new kit
-
-**Common failure mode**: Forgetting to update `registry.yaml` after consolidation causes old kit IDs to fail resolution (no `kit.yaml` in expected location).
-
----
-
 ## Streaming & Execution Terms
 
 ### Bypass PR Commands (Historical)
 
 A set of now-removed commands (`pr-prep`, `pr-update`, `prepare-local`) that allowed preparing PR branches locally without GitHub CLI. Removed in favor of the streamlined `gt` workflow.
-
-### Kit Artifact
-
-A file (command, tool, etc.) bundled within a kit. Must be declared in the kit manifest to pass synchronization validation.
-
-**Validation**: Kit sync tests verify every manifest entry has a corresponding file and vice versa.
-
-**Related**: [Kit Artifact Synchronization](kits/artifact-synchronization.md)
 
 ### Streaming Subprocess
 

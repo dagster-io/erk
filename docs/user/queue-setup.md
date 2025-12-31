@@ -66,9 +66,6 @@ erk admin github-pr-setting --disable
 Customize workflow parameters by creating `.erk/workflows/dispatch-erk-queue.toml` in your repository:
 
 ```toml
-# Kits to install (comma-separated)
-kit_names = "erk,gt,devrun"
-
 # Claude model to use
 model_name = "claude-sonnet-4-5-20250929"
 
@@ -89,7 +86,6 @@ These values are passed as inputs to the GitHub Actions workflow at dispatch tim
 
 | Parameter                | Description                             | Example                        |
 | ------------------------ | --------------------------------------- | ------------------------------ |
-| `kit_names`              | Comma-separated list of kits to install | `"erk,gt,devrun"`              |
 | `model_name`             | Claude model ID to use                  | `"claude-sonnet-4-5-20250929"` |
 | `package_install_script` | Shell commands for package installation | `"pip install -e ."`           |
 

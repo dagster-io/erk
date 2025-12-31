@@ -1,6 +1,6 @@
 """Add a reaction to a PR/issue comment to mark it as addressed.
 
-This kit CLI command adds a reaction (typically +1) to a PR discussion comment
+This exec command adds a reaction (typically +1) to a PR discussion comment
 to indicate the comment has been addressed.
 
 Usage:

@@ -1,6 +1,6 @@
 """Fetch PR discussion comments (main conversation thread) for agent context injection.
 
-This kit CLI command fetches discussion comments from the PR's main conversation
+This exec command fetches discussion comments from the PR's main conversation
 (not inline code review comments) and outputs them as JSON for agent processing.
 
 Usage:

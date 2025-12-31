@@ -18,7 +18,7 @@ Before you begin, ensure you have:
 Since erk is already configured by the project maintainer, you'll find:
 
 - **`erk.toml`** - Project configuration
-- **`.claude/`** - Kit artifacts (commands, skills, hooks)
+- **`.claude/`** - Claude Code artifacts (commands, skills, hooks)
 
 These are committed to git and ready to use.
 

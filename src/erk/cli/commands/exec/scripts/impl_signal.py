@@ -1,6 +1,6 @@
 """Signal implementation events (started/ended) to GitHub.
 
-This kit CLI command wraps the start/end signaling operations:
+This exec command wraps the start/end signaling operations:
 - "started": Combines post-start-comment and mark-impl-started
 - "ended": Runs mark-impl-ended
 

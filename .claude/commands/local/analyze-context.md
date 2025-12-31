@@ -26,7 +26,7 @@ Displays:
 
 ### Step 1: Discover Sessions
 
-Run the kit command to get all sessions for this worktree:
+Run the command to get all sessions for this worktree:
 
 ```bash
 erk exec list-sessions --min-size 1000

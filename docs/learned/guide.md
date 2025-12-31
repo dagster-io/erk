@@ -22,7 +22,6 @@ The documentation is organized by topic category:
 | [Testing](testing/)           | Test architecture, fakes, rebase conflicts       |
 | [Sessions](sessions/)         | Session logs, context analysis, tools            |
 | [Hooks](hooks/)               | Hook system, erk-specific hooks                  |
-| [Kits](kits/)                 | Kit CLI commands, kit architecture               |
 | [Commands](commands/)         | Slash command optimization                       |
 | [Reference](reference/)       | GitHub integration, external references          |
 | [Erk](erk/)                   | Erk-specific workflows                           |
@@ -67,7 +66,6 @@ docs/agent/
 ├── commands/                  # Slash command patterns
 ├── erk/                       # Erk-specific guides
 ├── hooks/                     # Hook system
-├── kits/                      # Kit development
 ├── planning/                  # Plan workflows
 ├── reference/                 # External integrations
 ├── sessions/                  # Session log tools

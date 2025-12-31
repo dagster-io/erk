@@ -645,7 +645,7 @@ jobs:
 
 - [Plan Lifecycle](plan-lifecycle.md) - Current lifecycle documentation
 - [Planning Workflow](planning-workflow.md) - `.impl/` folder structure
-- [Kit CLI Commands](kit-cli-commands.md) - Available commands
+- [Exec Commands](exec-commands.md) - Available commands
 
 ---
 
@@ -693,8 +693,8 @@ Replaced custom `derive_branch_name_with_date()` with GitHub's native `gh issue 
 ### Files Deleted (Custom Code Removed)
 
 - `packages/erk-shared/src/erk_shared/naming.py` (partial - derive_branch_name_with_date)
-- `packages/erk-kits/.../get_closing_text.py`
-- `packages/erk-kits/.../get_pr_metadata.py`
+- `get_closing_text.py` (previously in erk-kits)
+- `get_pr_metadata.py` (previously in erk-kits)
 - `src/erk/cli/constants.py` - `USE_GITHUB_NATIVE_BRANCH_LINKING` flag
 
 ### New Abstractions Added (Subsequently Removed)
@@ -706,5 +706,5 @@ Replaced custom `derive_branch_name_with_date()` with GitHub's native `gh issue 
 
 - ~~`IssueDevelopment` ABC in `erk_shared/github/issue_link_branches.py`~~ (removed)
 - ~~Real/Fake/DryRun implementations following existing patterns~~ (removed)
-- ~~Kit CLI commands: `get-linked-branch`, `get-pr-for-branch`~~ (removed)
+- ~~Exec commands: `get-linked-branch`, `get-pr-for-branch`~~ (removed)
 - ~~Documentation: `docs/agent/github-branch-linking.md`~~ (removed)

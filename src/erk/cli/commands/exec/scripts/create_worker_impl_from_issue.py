@@ -1,6 +1,6 @@
 """Create .worker-impl/ folder from GitHub issue with plan content.
 
-This kit CLI command fetches a plan from a GitHub issue and creates the .worker-impl/
+This exec command fetches a plan from a GitHub issue and creates the .worker-impl/
 folder structure, providing a testable alternative to inline workflow scripts.
 
 Usage:
